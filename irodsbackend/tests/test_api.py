@@ -41,36 +41,6 @@ IRODS_ENV = {
 }
 
 
-class TestIrodsbackendAPIInit(
-    ProjectMixin,
-    RoleAssignmentMixin,
-    SampleSheetIOMixin,
-    LandingZoneMixin,
-    TestCase,
-):
-    """Tests for initializing the irodsbackend app"""
-
-    def test_init(self):
-        """Test initialization valid settings"""
-        self.assertIsInstance(IrodsAPI(), IrodsAPI)
-
-    @override_settings(IRODS_PASS='Iequ4QueOchai2ro')
-    def test_init_no_auth(self):
-        """Test initialization with invalid authentication"""
-        with self.assertRaises(Exception):
-            IrodsAPI()
-
-    @override_settings(IRODS_ENV_BACKEND=IRODS_ENV)
-    def test_init_env(self):
-        """Test initialization with an iRODS environment file"""
-        self.assertIsInstance(IrodsAPI(), IrodsAPI)
-
-    def test_init_no_conn(self):
-        """Test initialization with disabled connection"""
-        irods_backend = IrodsAPI(conn=False)
-        self.assertEqual(irods_backend.irods, None)
-
-
 class TestIrodsbackendAPI(
     ProjectMixin,
     RoleAssignmentMixin,
@@ -119,7 +89,7 @@ class TestIrodsbackendAPI(
             config_data={},
         )
 
-        self.irods_backend = IrodsAPI(conn=False)
+        self.irods_backend = IrodsAPI()
 
     def test_format_env(self):
         """Test format_env() to ensure correct formatting"""

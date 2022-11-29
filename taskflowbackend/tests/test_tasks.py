@@ -978,7 +978,7 @@ class TestIssueTicketTask(IRODSTestBase):
 
     def test_execute(self):
         """Test issuing a ticket"""
-        self.assertIsNone(self.irods_backend.get_ticket(TICKET_STR))
+        self.assertIsNone(self.irods_backend.get_ticket(self.irods, TICKET_STR))
         self._add_task(
             cls=IssueTicketTask,
             name='Issue ticket',
@@ -991,7 +991,9 @@ class TestIssueTicketTask(IRODSTestBase):
         )
         result = self._run_flow()
         self.assertEqual(result, True)
-        self.assertIsInstance(self.irods_backend.get_ticket(TICKET_STR), Ticket)
+        self.assertIsInstance(
+            self.irods_backend.get_ticket(self.irods, TICKET_STR), Ticket
+        )
 
     def test_execute_twice(self):
         """Test issuing a ticket_twice"""
@@ -1007,7 +1009,9 @@ class TestIssueTicketTask(IRODSTestBase):
         )
         result = self._run_flow()
         self.assertEqual(result, True)
-        self.assertIsInstance(self.irods_backend.get_ticket(TICKET_STR), Ticket)
+        self.assertIsInstance(
+            self.irods_backend.get_ticket(self.irods, TICKET_STR), Ticket
+        )
 
         self.flow = self._init_flow()
         self._add_task(
@@ -1022,11 +1026,13 @@ class TestIssueTicketTask(IRODSTestBase):
         )
         result = self._run_flow()
         self.assertEqual(result, True)
-        self.assertIsInstance(self.irods_backend.get_ticket(TICKET_STR), Ticket)
+        self.assertIsInstance(
+            self.irods_backend.get_ticket(self.irods, TICKET_STR), Ticket
+        )
 
     def test_revert_modified(self):
         """Test reverting a ticket issuing"""
-        self.assertIsNone(self.irods_backend.get_ticket(TICKET_STR))
+        self.assertIsNone(self.irods_backend.get_ticket(self.irods, TICKET_STR))
         self._add_task(
             cls=IssueTicketTask,
             name='Issue ticket',
@@ -1040,14 +1046,16 @@ class TestIssueTicketTask(IRODSTestBase):
         )  # FAIL
         result = self._run_flow()
         self.assertEqual(result, False)
-        self.assertIsNone(self.irods_backend.get_ticket(TICKET_STR))
+        self.assertIsNone(self.irods_backend.get_ticket(self.irods, TICKET_STR))
 
     def test_revert_not_modified(self):
         """Test reverting a ticket issuing with no modification"""
         self.irods_backend.issue_ticket(
-            TEST_ACCESS_READ_IN, self.test_coll_path, TICKET_STR
+            self.irods, TEST_ACCESS_READ_IN, self.test_coll_path, TICKET_STR
         )
-        self.assertIsInstance(self.irods_backend.get_ticket(TICKET_STR), Ticket)
+        self.assertIsInstance(
+            self.irods_backend.get_ticket(self.irods, TICKET_STR), Ticket
+        )
         self._add_task(
             cls=IssueTicketTask,
             name='Issue ticket',
@@ -1061,7 +1069,9 @@ class TestIssueTicketTask(IRODSTestBase):
         )  # FAIL
         result = self._run_flow()
         self.assertEqual(result, False)
-        self.assertIsInstance(self.irods_backend.get_ticket(TICKET_STR), Ticket)
+        self.assertIsInstance(
+            self.irods_backend.get_ticket(self.irods, TICKET_STR), Ticket
+        )
 
 
 class TestDeleteTicketTask(IRODSTestBase):
@@ -1070,9 +1080,11 @@ class TestDeleteTicketTask(IRODSTestBase):
     def test_execute(self):
         """Test deleting a ticket"""
         self.irods_backend.issue_ticket(
-            TEST_ACCESS_READ_IN, self.test_coll_path, TICKET_STR
+            self.irods, TEST_ACCESS_READ_IN, self.test_coll_path, TICKET_STR
         )
-        self.assertIsInstance(self.irods_backend.get_ticket(TICKET_STR), Ticket)
+        self.assertIsInstance(
+            self.irods_backend.get_ticket(self.irods, TICKET_STR), Ticket
+        )
         self._add_task(
             cls=DeleteTicketTask,
             name='Delete ticket',
@@ -1085,14 +1097,16 @@ class TestDeleteTicketTask(IRODSTestBase):
         )
         result = self._run_flow()
         self.assertEqual(result, True)
-        self.assertIsNone(self.irods_backend.get_ticket(TICKET_STR))
+        self.assertIsNone(self.irods_backend.get_ticket(self.irods, TICKET_STR))
 
     def test_execute_twice(self):
         """Test deleting a ticket twice"""
         self.irods_backend.issue_ticket(
-            TEST_ACCESS_READ_IN, self.test_coll_path, TICKET_STR
+            self.irods, TEST_ACCESS_READ_IN, self.test_coll_path, TICKET_STR
         )
-        self.assertIsInstance(self.irods_backend.get_ticket(TICKET_STR), Ticket)
+        self.assertIsInstance(
+            self.irods_backend.get_ticket(self.irods, TICKET_STR), Ticket
+        )
         self._add_task(
             cls=DeleteTicketTask,
             name='Delete ticket',
@@ -1105,7 +1119,7 @@ class TestDeleteTicketTask(IRODSTestBase):
         )
         result = self._run_flow()
         self.assertEqual(result, True)
-        self.assertIsNone(self.irods_backend.get_ticket(TICKET_STR))
+        self.assertIsNone(self.irods_backend.get_ticket(self.irods, TICKET_STR))
 
         self.flow = self._init_flow()
         self._add_task(
@@ -1120,14 +1134,16 @@ class TestDeleteTicketTask(IRODSTestBase):
         )
         result = self._run_flow()
         self.assertEqual(result, True)
-        self.assertIsNone(self.irods_backend.get_ticket(TICKET_STR))
+        self.assertIsNone(self.irods_backend.get_ticket(self.irods, TICKET_STR))
 
     def test_revert_modified(self):
         """Test reverting ticket deletion"""
         self.irods_backend.issue_ticket(
-            TEST_ACCESS_READ_IN, self.test_coll_path, TICKET_STR
+            self.irods, TEST_ACCESS_READ_IN, self.test_coll_path, TICKET_STR
         )
-        self.assertIsInstance(self.irods_backend.get_ticket(TICKET_STR), Ticket)
+        self.assertIsInstance(
+            self.irods_backend.get_ticket(self.irods, TICKET_STR), Ticket
+        )
         self._add_task(
             cls=DeleteTicketTask,
             name='Delete ticket',
@@ -1141,11 +1157,13 @@ class TestDeleteTicketTask(IRODSTestBase):
         )  # FAIL
         result = self._run_flow()
         self.assertEqual(result, False)
-        self.assertIsInstance(self.irods_backend.get_ticket(TICKET_STR), Ticket)
+        self.assertIsInstance(
+            self.irods_backend.get_ticket(self.irods, TICKET_STR), Ticket
+        )
 
     def test_revert_not_modified(self):
         """Test reverting ticket deletion with no modification"""
-        self.assertIsNone(self.irods_backend.get_ticket(TICKET_STR))
+        self.assertIsNone(self.irods_backend.get_ticket(self.irods, TICKET_STR))
         self._add_task(
             cls=DeleteTicketTask,
             name='Delete ticket',
@@ -1159,7 +1177,7 @@ class TestDeleteTicketTask(IRODSTestBase):
         )  # FAIL
         result = self._run_flow()
         self.assertEqual(result, False)
-        self.assertIsNone(self.irods_backend.get_ticket(TICKET_STR))
+        self.assertIsNone(self.irods_backend.get_ticket(self.irods, TICKET_STR))
 
 
 class TestSetDataObjAccessTask(IRODSTestBase):

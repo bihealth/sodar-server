@@ -119,7 +119,7 @@ class ZoneCreateMixin(ZoneConfigPluginMixin):
         """
         taskflow = get_backend_api('taskflow')
         timeline = get_backend_api('timeline_backend')
-        irods_backend = get_backend_api('omics_irods', conn=False)
+        irods_backend = get_backend_api('omics_irods')
         project = zone.project
         tl_event = None
         config_str = (
@@ -340,7 +340,7 @@ class ProjectZoneView(
         )
         # iRODS backend
         context['irods_backend_enabled'] = (
-            True if get_backend_api('omics_irods', conn=False) else False
+            True if get_backend_api('omics_irods') else False
         )
         # iRODS WebDAV
         context['irods_webdav_enabled'] = int(settings.IRODS_WEBDAV_ENABLED)
@@ -569,7 +569,7 @@ class ZoneMoveView(
 
     def post(self, request, **kwargs):
         taskflow = get_backend_api('taskflow')
-        irods_backend = get_backend_api('omics_irods', conn=False)
+        irods_backend = get_backend_api('omics_irods')
         zone = LandingZone.objects.get(sodar_uuid=self.kwargs['landingzone'])
         project = zone.project
         redirect_url = reverse(

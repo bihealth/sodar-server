@@ -194,7 +194,7 @@ class TaskflowbackendTestBase(
             )
         self.taskflow = get_backend_api('taskflow', force=True)
         self.irods_backend = get_backend_api('omics_irods')
-        self.irods = self.irods_backend.get_session()
+        self.irods = self.irods_backend.get_session_obj()
 
         # Init roles
         self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
@@ -229,6 +229,7 @@ class TaskflowbackendTestBase(
             self.assertIn(
                 user[UserGroup.name], settings.TASKFLOW_TEST_PERMANENT_USERS
             )
+        self.irods.cleanup()
 
 
 class TestTaskflowAPIBase(
@@ -292,7 +293,7 @@ class TestTaskflowAPIBase(
             )
         self.taskflow = get_backend_api('taskflow', force=True)
         self.irods_backend = get_backend_api('omics_irods')
-        self.irods = self.irods_backend.get_session()
+        self.irods = self.irods_backend.get_session_obj()
 
         # Init roles
         self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
@@ -321,3 +322,4 @@ class TestTaskflowAPIBase(
 
     def tearDown(self):
         self.taskflow.cleanup()
+        self.irods.cleanup()

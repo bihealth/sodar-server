@@ -4,7 +4,6 @@ from django.test import override_settings
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
 from projectroles.tests.test_permissions import TestPermissionMixin
 
 # Samplesheets dependency
@@ -39,7 +38,6 @@ class TestIrodsbackendPermissions(
 
     def setUp(self):
         super().setUp()
-
         # Init users
         self.superuser = self.user  # HACK
         self.anonymous = None
@@ -74,18 +72,9 @@ class TestIrodsbackendPermissions(
         # Create iRODS collections
         self.make_irods_colls(self.investigation)
 
-        # Set up irodsbackend
-        self.irods_backend = get_backend_api('omics_irods')
-        self.irods = self.irods_backend.get_session()
-
         # Set up test paths
         self.project_path = self.irods_backend.get_path(self.project)
         self.sample_path = self.irods_backend.get_sample_path(self.project)
-
-    def tearDown(self):
-        if self.irods:
-            self.irods.cleanup()
-        super().tearDown()
 
     def test_stats_get(self):
         """Test stats API view GET"""

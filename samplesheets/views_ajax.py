@@ -294,7 +294,7 @@ class SheetContextAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
         project = self.get_project()
         inv = Investigation.objects.filter(project=project, active=True).first()
         studies = Study.objects.filter(investigation=inv).order_by('pk')
-        irods_backend = get_backend_api('omics_irods', conn=False)
+        irods_backend = get_backend_api('omics_irods')
 
         # General context data for Vue app
         ret_data = {
@@ -549,7 +549,7 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
         from samplesheets.plugins import get_irods_content
 
         timeline = get_backend_api('timeline_backend')
-        irods_backend = get_backend_api('omics_irods', conn=False)
+        irods_backend = get_backend_api('omics_irods')
         study = Study.objects.filter(sodar_uuid=self.kwargs['study']).first()
         if not study:
             return Response(
@@ -1868,13 +1868,13 @@ class IrodsObjectListAjaxView(BaseIrodsAjaxView):
         self.path = None
 
     def get(self, request, *args, **kwargs):
-        try:
-            irods_backend = get_backend_api('omics_irods')
-        except Exception as ex:
-            return Response({'detail': str(ex)}, status=400)
+        irods_backend = get_backend_api('omics_irods')
+        if not irods_backend:
+            return Response({'detail': 'iRODS backend not enabled'}, status=400)
         # Get files
         try:
-            ret_data = irods_backend.get_objects(self.path)
+            with irods_backend.get_session() as irods:
+                ret_data = irods_backend.get_objects(irods, self.path)
         except Exception as ex:
             return Response({'detail': str(ex)}, status=400)
         for data_obj in ret_data.get('irods_data', []):

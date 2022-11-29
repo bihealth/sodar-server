@@ -21,7 +21,7 @@ class BaseLinearFlow:
         tl_event=None,
     ):
         self.irods_backend = irods_backend
-        self.irods = irods_backend.get_session()
+        self.irods = irods_backend.get_session_obj()
         self.project = project
         self.flow_name = flow_name
         self.flow_data = flow_data
@@ -72,28 +72,30 @@ class BaseLinearFlow:
         engine = engines.load(self.flow, engine='serial')
         try:
             engine.run()
+            # TODO: Better reporting of failed jobs?
+            result = (
+                True
+                if (
+                    engine.statistics['incomplete'] == 0
+                    and engine.statistics['discarded_failures'] == 0
+                )
+                else False
+            )
+            if verbose:
+                logger.info(
+                    'Flow finished: {} ({} completed, {} incomplete, '
+                    '{} discarded)'.format(
+                        'OK' if result is True else 'ROLLBACK',
+                        engine.statistics['completed'],
+                        engine.statistics['incomplete'],
+                        engine.statistics['discarded_failures'],
+                    )
+                )
+            return result
         except ForceFailException:
             return False
         except Exception as ex:
             logger.error('Exception in run_flow(): {}'.format(ex))
             raise ex
-        # TODO: Better reporting of failed jobs?
-        result = (
-            True
-            if (
-                engine.statistics['incomplete'] == 0
-                and engine.statistics['discarded_failures'] == 0
-            )
-            else False
-        )
-        if verbose:
-            logger.info(
-                'Flow finished: {} ({} completed, {} incomplete, '
-                '{} discarded)'.format(
-                    'OK' if result is True else 'ROLLBACK',
-                    engine.statistics['completed'],
-                    engine.statistics['incomplete'],
-                    engine.statistics['discarded_failures'],
-                )
-            )
-        return result
+        finally:
+            self.irods.cleanup()

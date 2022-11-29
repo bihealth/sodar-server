@@ -1189,7 +1189,7 @@ class TestPublicAccessUpdate(
             self.group_name, self.sample_path, IRODS_ACCESS_READ
         )
         self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
-        self.assertIsNone(self.irods_backend.get_ticket(TICKET_STR))
+        self.assertIsNone(self.irods_backend.get_ticket(self.irods, TICKET_STR))
 
         flow_data = {
             'path': self.sample_path,
@@ -1213,7 +1213,9 @@ class TestPublicAccessUpdate(
         self.assert_irods_access(
             PUBLIC_GROUP, self.sample_path, IRODS_ACCESS_READ
         )
-        self.assertIsInstance(self.irods_backend.get_ticket(TICKET_STR), Ticket)
+        self.assertIsInstance(
+            self.irods_backend.get_ticket(self.irods, TICKET_STR), Ticket
+        )
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_disable_access_anon(self):
@@ -1229,7 +1231,9 @@ class TestPublicAccessUpdate(
         self.assert_irods_access(
             PUBLIC_GROUP, self.sample_path, IRODS_ACCESS_READ
         )
-        self.assertIsInstance(self.irods_backend.get_ticket(TICKET_STR), Ticket)
+        self.assertIsInstance(
+            self.irods_backend.get_ticket(self.irods, TICKET_STR), Ticket
+        )
 
         flow_data = {
             'path': self.sample_path,
@@ -1249,7 +1253,7 @@ class TestPublicAccessUpdate(
             self.group_name, self.sample_path, IRODS_ACCESS_READ
         )
         self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
-        self.assertIsNone(self.irods_backend.get_ticket(TICKET_STR))
+        self.assertIsNone(self.irods_backend.get_ticket(self.irods, TICKET_STR))
 
 
 class TestRoleDelete(TaskflowbackendTestBase):
@@ -1269,7 +1273,6 @@ class TestRoleDelete(TaskflowbackendTestBase):
     def test_delete(self):
         """Test role_delete for deleting a role assignment"""
         self.assert_group_member(self.project, self.user_new, True)
-
         flow_data = {'username': self.user_new.username}
         flow = self.taskflow.get_flow(
             irods_backend=self.irods_backend,
@@ -1280,7 +1283,6 @@ class TestRoleDelete(TaskflowbackendTestBase):
         self.assertEqual(type(flow), RoleDeleteFlow)
         flow.build()
         flow.run()
-
         self.assert_group_member(self.project, self.user_new, False)
 
 
@@ -1517,7 +1519,7 @@ class TestSheetCollsCreate(
         self.project.public_guest_access = True
         self.project.save()
         self.assertEqual(self.irods.collections.exists(self.sample_path), False)
-        self.assertIsNone(self.irods_backend.get_ticket(TICKET_STR))
+        self.assertIsNone(self.irods_backend.get_ticket(self.irods, TICKET_STR))
 
         flow_data = {
             'colls': [RESULTS_COLL, MISC_FILES_COLL],
@@ -1539,7 +1541,9 @@ class TestSheetCollsCreate(
         self.assert_irods_access(
             PUBLIC_GROUP, self.sample_path, IRODS_ACCESS_READ
         )
-        self.assertIsInstance(self.irods_backend.get_ticket(TICKET_STR), Ticket)
+        self.assertIsInstance(
+            self.irods_backend.get_ticket(self.irods, TICKET_STR), Ticket
+        )
 
     def test_revert(self):
         """Test reverting sheet_colls_create"""
@@ -1565,7 +1569,7 @@ class TestSheetCollsCreate(
         """Test reverting with anonymous access"""
         self.assertEqual(self.investigation.irods_status, False)
         self.assertEqual(self.irods.collections.exists(self.sample_path), False)
-        self.assertIsNone(self.irods_backend.get_ticket(TICKET_STR))
+        self.assertIsNone(self.irods_backend.get_ticket(self.irods, TICKET_STR))
 
         flow_data = {
             'colls': [RESULTS_COLL, MISC_FILES_COLL],
@@ -1583,7 +1587,7 @@ class TestSheetCollsCreate(
         self.investigation.refresh_from_db()
         self.assertEqual(self.investigation.irods_status, False)
         self.assertEqual(self.irods.collections.exists(self.sample_path), False)
-        self.assertIsNone(self.irods_backend.get_ticket(TICKET_STR))
+        self.assertIsNone(self.irods_backend.get_ticket(self.irods, TICKET_STR))
 
 
 class TestSheetDelete(

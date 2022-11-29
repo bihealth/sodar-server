@@ -11,7 +11,6 @@ from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
 
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import TestTaskflowAPIBase
@@ -39,11 +38,6 @@ class TestSampleSheetAPITaskflowBase(
 
     def setUp(self):
         super().setUp()
-
-        # Get iRODS backend for session access
-        self.irods_backend = get_backend_api('omics_irods')
-        self.assertIsNotNone(self.irods_backend)
-
         # Make project with owner in Taskflow and Django
         self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
@@ -52,7 +46,6 @@ class TestSampleSheetAPITaskflowBase(
             owner=self.user,
             description='description',
         )
-
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
@@ -150,7 +143,6 @@ class TestSampleDataFileExistsAPIView(TestSampleSheetAPITaskflowBase):
     def setUp(self):
         super().setUp()
         self.make_irods_colls(self.investigation)
-        self.irods = self.irods_backend.get_session()
 
     def test_get(self):
         """Test getting file existence info with no file uploaded"""

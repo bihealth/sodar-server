@@ -1418,11 +1418,13 @@ class SheetDeleteView(
         """Override get_context_data() to check for data objects in iRODS"""
         context = super().get_context_data(*args, **kwargs)
         irods_backend = get_backend_api('omics_irods')
-        if irods_backend:
+        if not irods_backend:
+            return context
+        with irods_backend.get_session() as irods:
             project = self.get_project()
             try:
                 context['irods_sample_stats'] = irods_backend.get_object_stats(
-                    irods_backend.get_sample_path(project)
+                    irods, irods_backend.get_sample_path(project)
                 )
             except FileNotFoundError:
                 pass
@@ -2017,14 +2019,26 @@ class IrodsAccessTicketCreateView(
         return {'project': self.get_project()}
 
     def form_valid(self, form):
-        # Create iRODS ticket
-        irods_backend = get_backend_api('omics_irods')
-        ticket = irods_backend.issue_ticket(
-            'read',
-            form.cleaned_data['path'],
-            ticket_str=build_secret(16),
-            expiry_date=form.cleaned_data.get('date_expires'),
+        redirect_url = reverse(
+            'samplesheets:irods_tickets',
+            kwargs={'project': self.kwargs['project']},
         )
+        irods_backend = get_backend_api('omics_irods')
+        try:
+            with irods_backend.get_session() as irods:
+                ticket = irods_backend.issue_ticket(
+                    irods,
+                    'read',
+                    form.cleaned_data['path'],
+                    ticket_str=build_secret(16),
+                    expiry_date=form.cleaned_data.get('date_expires'),
+                )
+        except Exception as ex:
+            messages.error(
+                self.request,
+                'Exception issuing iRODS access ticket: {}'.format(ex),
+            )
+            return redirect(redirect_url)
         # Create database object
         obj = form.save(commit=False)
         obj.project = self.get_project()
@@ -2037,12 +2051,7 @@ class IrodsAccessTicketCreateView(
             self.request,
             'iRODS access ticket "{}" created.'.format(obj.get_display_name()),
         )
-        return redirect(
-            reverse(
-                'samplesheets:irods_tickets',
-                kwargs={'project': self.kwargs['project']},
-            )
-        )
+        return redirect(redirect_url)
 
 
 class IrodsAccessTicketUpdateView(
@@ -2103,15 +2112,18 @@ class IrodsAccessTicketDeleteView(
         obj = self.get_object()
         irods_backend = get_backend_api('omics_irods')
         try:
-            irods_backend.delete_ticket(obj.ticket)
+            with irods_backend.get_session() as irods:
+                irods_backend.delete_ticket(irods, obj.ticket)
             messages.success(
                 request,
                 'iRODS access ticket "{}" deleted.'.format(
                     obj.get_display_name()
                 ),
             )
-        except Exception as e:
-            messages.error(request, '%s. Maybe it didn\'t exist.' % e)
+        except Exception as ex:
+            messages.error(
+                request, 'Error deleting iRODS access ticket: {}'.format(ex)
+            )
         return super().delete(request, *args, **kwargs)
 
 
@@ -2257,12 +2269,13 @@ class IrodsRequestAcceptView(
             coll = irods_backend.get_coll_by_path(
                 context_data['irods_request'].path
             )
-            context_data[
-                'affected_objects'
-            ] += irods_backend.get_objs_recursively(coll)
-            context_data[
-                'affected_collections'
-            ] += irods_backend.get_colls_recursively(coll)
+            with irods_backend.get_session() as irods:
+                context_data[
+                    'affected_objects'
+                ] += irods_backend.get_objs_recursively(irods, coll)
+                context_data[
+                    'affected_collections'
+                ] += irods_backend.get_colls_recursively(irods, coll)
         return context_data
 
     def form_valid(self, request, *args, **kwargs):

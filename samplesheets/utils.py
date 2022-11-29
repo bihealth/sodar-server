@@ -48,7 +48,7 @@ def get_sample_colls(investigation):
     :return: List
     """
     ret = []
-    irods_backend = get_backend_api('omics_irods', conn=False)
+    irods_backend = get_backend_api('omics_irods')
     if irods_backend:
         for study in investigation.studies.all():
             ret.append(irods_backend.get_sub_path(study))

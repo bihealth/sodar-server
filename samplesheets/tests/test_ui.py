@@ -217,7 +217,7 @@ class TestProjectSheetsView(TestProjectSheetsVueAppBase):
     def test_render_alert(self):
         """Test rendering an alert retrieved from SODAR context"""
         # NOTE: Testing here as we don't (yet) have vue tests for entire app
-        irods_backend = get_backend_api('omics_irods', conn=False)
+        irods_backend = get_backend_api('omics_irods')
         self.investigation.irods_status = True
         self.investigation.save()
         # TODO: Use model helper instead (see #1088)

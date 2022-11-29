@@ -298,11 +298,13 @@ class ProjectAppPlugin(
         """Return iRODS files for search results"""
         ret = []
         try:
-            obj_data = irods_backend.get_objects(
-                path=irods_backend.get_projects_path(),
-                name_like=search_terms,
-                limit=settings.SHEETS_IRODS_LIMIT,
-            )
+            with irods_backend.get_session() as irods:
+                obj_data = irods_backend.get_objects(
+                    irods=irods,
+                    path=irods_backend.get_projects_path(),
+                    name_like=search_terms,
+                    limit=settings.SHEETS_IRODS_LIMIT,
+                )
         # Skip rest if no data objects were found or iRODS is unreachable
         except (FileNotFoundError, NetworkException):
             return ret
@@ -448,7 +450,7 @@ class ProjectAppPlugin(
                 )
 
         elif column_id == 'files':
-            irods_backend = get_backend_api('omics_irods', conn=False)
+            irods_backend = get_backend_api('omics_irods')
             if (
                 irods_backend
                 and investigation
@@ -551,7 +553,7 @@ class ProjectAppPlugin(
         :param request: Request object or None
         """
         taskflow = get_backend_api('taskflow')
-        irods_backend = get_backend_api('omics_irods')  # Need conn for ticket
+        irods_backend = get_backend_api('omics_irods')
 
         # Check for conditions and skip if not met
         def _skip(msg):
@@ -817,7 +819,7 @@ class SampleSheetAssayPluginPoint(PluginPoint):
         :param assay: Assay object
         :return: Full iRODS path for the assay
         """
-        irods_backend = get_backend_api('omics_irods', conn=False)
+        irods_backend = get_backend_api('omics_irods')
         if not irods_backend:
             return None
         return irods_backend.get_path(assay)
@@ -936,15 +938,14 @@ class SampleSheetAssayPluginPoint(PluginPoint):
 
                 # Build cache for paths
                 cache_data = {'paths': {}}
-
-                for path in row_paths:
-                    try:
-                        cache_data['paths'][
-                            path
-                        ] = irods_backend.get_object_stats(path)
-                    except FileNotFoundError:
-                        cache_data['paths'][path] = None
-
+                with irods_backend.get_session() as irods:
+                    for path in row_paths:
+                        try:
+                            cache_data['paths'][
+                                path
+                            ] = irods_backend.get_object_stats(irods, path)
+                        except FileNotFoundError:
+                            cache_data['paths'][path] = None
                 cache_backend.set_cache_item(
                     name=item_name,
                     app_name=app_name,

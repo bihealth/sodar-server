@@ -335,17 +335,23 @@ uses an admin account to perform actions on the iRODS server. The
 ``IRODS_ENV_BACKEND`` setting can be used to override environment values for
 these backend connections.
 
-The API object handles opening and closing iRODS connections when alive, thus a
-manual cleanup of the iRODS connection is not needed.
-
-By default, creating the API also creates an iRODS connection. If you only want
-to use the API for offline activity such as building iRODS paths from an object
-and want to avoid opening unnecessary connections, you can use the
-``conn=False`` kwarg:
+To create and access the iRODS session, it is recommended to do it using the
+backend API using ``get_session()`` via a context manager:
 
 .. code-block:: python
 
-    irods_backend = get_backend_api('omics_irods', conn=False)
+    with irods_backend.get_session() as irods:
+        pass  # Your session code here
+
+Alternatively, you can get the object directly with ``get_session_obj()``. This
+requires you to call ``cleanup()`` manually and it is mostly recommended for
+testing.
+
+.. code-block:: python
+
+    irods = irods_backend.get_session_obj()
+    pass  # Your session code here
+    irods.cleanup()
 
 
 Irodsinfo

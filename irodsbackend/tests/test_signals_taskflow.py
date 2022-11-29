@@ -32,7 +32,7 @@ class TestCreateIrodsUser(TestCase):
         self.taskflow = get_backend_api('taskflow', force=True)
         self.user = self.make_user(USER_NAME)
         self.irods_backend = IrodsAPI()
-        self.irods = self.irods_backend.get_session()
+        self.irods = self.irods_backend.get_session_obj()
 
     def tearDown(self):
         self.taskflow.cleanup()
@@ -42,6 +42,8 @@ class TestCreateIrodsUser(TestCase):
             self.assertIn(
                 user[UserGroup.name], settings.TASKFLOW_TEST_PERMANENT_USERS
             )
+        self.irods.cleanup()
+        super().tearDown()
 
     def test_create(self):
         """Test create_irods_user by logging in"""

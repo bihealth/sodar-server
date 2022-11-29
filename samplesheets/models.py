@@ -1376,14 +1376,14 @@ class IrodsDataRequest(models.Model):
     def is_data_object(self):
         """Return True if data object exists for the object path"""
         irods_backend = get_backend_api('omics_irods')
-        irods_session = irods_backend.get_session()
-        return irods_session.data_objects.exists(self.path)
+        with irods_backend.get_session() as irods:
+            return irods.data_objects.exists(self.path)
 
     def is_collection(self):
         """Return True if iRODS collection exists for the object path"""
         irods_backend = get_backend_api('omics_irods')
-        irods_session = irods_backend.get_session()
-        return irods_session.collections.exists(self.path)
+        with irods_backend.get_session() as irods:
+            return irods.collections.exists(self.path)
 
     def get_short_path(self):
         """Return shortened layout-friendly path"""

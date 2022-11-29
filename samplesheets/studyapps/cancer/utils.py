@@ -23,11 +23,12 @@ def get_library_file_path(file_type, library):
     # Get paths to relevant files
     file_paths = []
     try:
-        obj_list = irods_backend.get_objects(query_path)
+        with irods_backend.get_session() as irods:
+            obj_list = irods_backend.get_objects(irods, query_path)
         for obj in obj_list['irods_data']:
             if obj['name'].lower().endswith(FILE_TYPE_SUFFIXES[file_type]):
                 file_paths.append(obj['path'])
-    except FileNotFoundError:
+    except Exception:
         pass
 
     if not file_paths:

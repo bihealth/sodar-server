@@ -262,7 +262,6 @@ class TaskflowAPI:
                 'TASKFLOW_TEST_MODE not True, cleanup command not allowed'
             )
         irods_backend = get_backend_api('omics_irods')
-        irods = irods_backend.get_session()
         projects_root = irods_backend.get_projects_path()
         permanent_users = getattr(
             settings, 'TASKFLOW_TEST_PERMANENT_USERS', DEFAULT_PERMANENT_USERS
@@ -270,26 +269,29 @@ class TaskflowAPI:
         # TODO: Remove stuff from user folders
         # TODO: Remove stuff from trash
 
-        # Remove project folders
-        try:
-            irods.collections.remove(projects_root, recurse=True, force=True)
-            logger.debug('Removed projects root: {}'.format(projects_root))
-        except Exception:
-            pass  # This is OK, the root just wasn't there
+        with irods_backend.get_session() as irods:
+            # Remove project folders
+            try:
+                irods.collections.remove(
+                    projects_root, recurse=True, force=True
+                )
+                logger.debug('Removed projects root: {}'.format(projects_root))
+            except Exception:
+                pass  # This is OK, the root just wasn't there
+                # Remove created user groups and users
 
-        # Remove created user groups and users
-        # NOTE: user_groups.remove does both
-        for g in irods.query(UserGroup).all():
-            if g[UserGroup.name] not in permanent_users:
-                irods.user_groups.remove(user_name=g[UserGroup.name])
-                logger.debug('Removed user: {}'.format(g[UserGroup.name]))
+            # NOTE: user_groups.remove does both
+            for g in irods.query(UserGroup).all():
+                if g[UserGroup.name] not in permanent_users:
+                    irods.user_groups.remove(user_name=g[UserGroup.name])
+                    logger.debug('Removed user: {}'.format(g[UserGroup.name]))
 
-        # Remove all tickets
-        ticket_query = irods.query(TicketQuery.Ticket).all()
-        for ticket in ticket_query:
-            ticket_str = ticket[TicketQuery.Ticket.string]
-            irods_backend.delete_ticket(ticket_str)
-            logger.debug('Deleted ticket: {}'.format(ticket_str))
+            # Remove all tickets
+            ticket_query = irods.query(TicketQuery.Ticket).all()
+            for ticket in ticket_query:
+                ticket_str = ticket[TicketQuery.Ticket.string]
+                irods_backend.delete_ticket(irods, ticket_str)
+                logger.debug('Deleted ticket: {}'.format(ticket_str))
 
     @classmethod
     def get_error_msg(cls, flow_name, submit_info):

@@ -32,9 +32,7 @@ class IrodsInfoView(LoggedInPermissionMixin, HTTPRefererMixin, TemplateView):
         context = super().get_context_data(*args, **kwargs)
 
         # HACK for #909
-        ib_enabled = (
-            True if get_backend_api('omics_irods', conn=False) else False
-        )
+        ib_enabled = True if get_backend_api('omics_irods') else False
         irods_backend = get_backend_api('omics_irods')
         unavail_info = {
             'server_ok': False,
@@ -47,7 +45,8 @@ class IrodsInfoView(LoggedInPermissionMixin, HTTPRefererMixin, TemplateView):
 
         if irods_backend:
             try:
-                context['server_info'] = irods_backend.get_info()
+                with irods_backend.get_session() as irods:
+                    context['server_info'] = irods_backend.get_info(irods)
                 # HACK: Display FQDN of iRODS server in UI
                 context['server_info']['server_host'] = settings.IRODS_HOST_FQDN
             except NetworkException:
@@ -56,7 +55,6 @@ class IrodsInfoView(LoggedInPermissionMixin, HTTPRefererMixin, TemplateView):
                 unavail_status = 'Invalid Authentication'
             except irods_backend.IrodsQueryException:
                 unavail_status = 'Invalid iRODS Query'
-
         if not context.get('server_info'):
             if unavail_status:
                 unavail_info['server_status'] = 'Unavailable: {}'.format(
@@ -65,7 +63,6 @@ class IrodsInfoView(LoggedInPermissionMixin, HTTPRefererMixin, TemplateView):
                 context['server_info'] = unavail_info
 
         context['irods_backend_enabled'] = ib_enabled
-
         return context
 
 
@@ -75,7 +72,7 @@ class IrodsConfigView(LoggedInPermissionMixin, HTTPRefererMixin, View):
     permission_required = 'irodsinfo.get_config'
 
     def get(self, request, *args, **kwargs):
-        irods_backend = get_backend_api('omics_irods', conn=False)
+        irods_backend = get_backend_api('omics_irods')
         if not irods_backend:
             messages.error(request, 'iRODS Backend not enabled.')
             return redirect(reverse('irodsinfo:info'))

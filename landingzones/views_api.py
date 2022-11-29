@@ -330,7 +330,7 @@ class LandingZoneOldListAPIView(APIView):
     def get(self, *args, **kwargs):
         from landingzones.plugins import get_zone_config_plugin
 
-        irods_backend = get_backend_api('omics_irods', conn=False)
+        irods_backend = get_backend_api('omics_irods')
         if not irods_backend:
             return Response('iRODS backend not enabled', status=500)
 

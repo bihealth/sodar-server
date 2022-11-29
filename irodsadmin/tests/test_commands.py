@@ -82,7 +82,7 @@ class TestIrodsOrphans(
             config_data={},
         )
         self.irods_backend = get_backend_api('omics_irods')
-        self.irods = self.irods_backend.get_session()
+        self.irods = self.irods_backend.get_session_obj()
 
         # Create the actual assay, study and landing zone in the irods session
         self.irods.collections.create(self.irods_backend.get_path(self.assay))
@@ -109,6 +109,7 @@ class TestIrodsOrphans(
             self.irods_backend.get_projects_path()
         ).remove(force=True)
         self.irods.cleanup()
+        super().tearDown()
 
     def test_get_assay_collections(self):
         """Test get_assay_collections()"""
@@ -314,7 +315,7 @@ class TestIrodsOrphans(
             [self.assay],
         )
         self.assertListEqual(
-            irodsorphans.get_output(orphans, self.irods_backend),
+            irodsorphans.get_output(orphans, self.irods_backend, self.irods),
             [
                 '{};{};{};0;0 bytes'.format(
                     str(self.project.sodar_uuid),
@@ -343,7 +344,7 @@ class TestIrodsOrphans(
             [self.assay],
         )
         self.assertListEqual(
-            irodsorphans.get_output(orphans, self.irods_backend),
+            irodsorphans.get_output(orphans, self.irods_backend, self.irods),
             [
                 '{};<DELETED>;{};0;0 bytes'.format(
                     project_uuid,

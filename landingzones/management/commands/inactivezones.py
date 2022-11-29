@@ -23,13 +23,12 @@ def get_inactive_zones(weeks=2):
     ).exclude(status__in=('DELETED', 'MOVED'))
 
 
-def get_output(zones, irods_backend):
+def get_output(zones, irods_backend, irods):
     """Return list of inactive landing zone details"""
     lines = []
-    irods_session = irods_backend.get_session()
     for zone in zones:
         path = irods_backend.get_path(zone)
-        if not irods_session.collections.exists(path):
+        if not irods.collections.exists(path):
             logger.error(
                 'No iRODS collection found for zone "{}/{}" ({})'.format(
                     zone.user.username, zone.title, zone.sodar_uuid
@@ -37,7 +36,7 @@ def get_output(zones, irods_backend):
             )
             continue
         try:
-            stats = irods_backend.get_object_stats(path)
+            stats = irods_backend.get_object_stats(irods, path)
             lines.append(
                 ';'.join(
                     [
@@ -68,6 +67,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         irods_backend = get_backend_api('omics_irods')
         zones = get_inactive_zones()
-        output = get_output(zones, irods_backend)
+        with irods_backend.get_session() as irods:
+            output = get_output(zones, irods_backend, irods)
         for o in output:
             logger.info(o)

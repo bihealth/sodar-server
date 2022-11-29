@@ -59,7 +59,7 @@ class TestSamplesheetsModifyAPIMixin:
             ticket_str = app_settings.get_app_setting(
                 APP_NAME, 'public_access_ticket', project=project
             )
-        ticket = self.irods_backend.get_ticket(ticket_str)
+        ticket = self.irods_backend.get_ticket(self.irods, ticket_str)
         if expected:
             self.assertIsNotNone(ticket)
             self.assertEqual(type(ticket), Ticket)
@@ -341,7 +341,9 @@ class TestPerformProjectSync(
         investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.make_irods_colls(investigation)
         # NOTE: Project.public_guest_access = False
-        ticket_new = self.irods_backend.issue_ticket('read', self.sample_path)
+        ticket_new = self.irods_backend.issue_ticket(
+            self.irods, 'read', self.sample_path
+        )
         ticket_str = ticket_new.string
         app_settings.set_app_setting(
             APP_NAME, 'public_access_ticket', ticket_str, self.project

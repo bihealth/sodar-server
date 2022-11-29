@@ -78,7 +78,6 @@ class TestInactiveZones(TestCommandBase):
 
     def setUp(self):
         super().setUp()
-
         testtime1 = localtime() - timedelta(weeks=3)
         testtime2 = localtime() - timedelta(weeks=1)
 
@@ -129,7 +128,7 @@ class TestInactiveZones(TestCommandBase):
             )
 
         self.irods_backend = get_backend_api('omics_irods')
-        self.irods = self.irods_backend.get_session()
+        self.irods = self.irods_backend.get_session_obj()
 
         # Create the irods collections
         self.irods.collections.create(self.irods_backend.get_path(self.zone))
@@ -139,6 +138,7 @@ class TestInactiveZones(TestCommandBase):
 
     def tearDown(self):
         self.irods.collections.get('/sodarZone/projects').remove(force=True)
+        self.irods.cleanup()
 
     def test_get_inactive_zones(self):
         """Test get_inactive_zones()"""
@@ -149,7 +149,7 @@ class TestInactiveZones(TestCommandBase):
         """Test get_output()"""
         zones = get_inactive_zones()
         self.assertListEqual(
-            get_output(zones, self.irods_backend),
+            get_output(zones, self.irods_backend, self.irods),
             [
                 '{};{};{};{};0;0 bytes'.format(
                     str(self.project.sodar_uuid),

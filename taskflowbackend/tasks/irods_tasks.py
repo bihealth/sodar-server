@@ -367,9 +367,11 @@ class IssueTicketTask(IrodsBaseTask):
     def execute(
         self, access_name, path, ticket_str, irods_backend, *args, **kwargs
     ):
-        if not irods_backend.get_ticket(ticket_str):
+        if not irods_backend.get_ticket(self.irods, ticket_str):
             try:
-                irods_backend.issue_ticket(access_name, path, ticket_str)
+                irods_backend.issue_ticket(
+                    self.irods, access_name, path, ticket_str
+                )
                 self.data_modified = True
             except Exception as ex:
                 self._raise_irods_exception(ex)
@@ -379,7 +381,7 @@ class IssueTicketTask(IrodsBaseTask):
         self, access_name, path, ticket_str, irods_backend, *args, **kwargs
     ):
         if self.data_modified:
-            irods_backend.delete_ticket(ticket_str)
+            irods_backend.delete_ticket(self.irods, ticket_str)
 
 
 class DeleteTicketTask(IrodsBaseTask):
@@ -388,10 +390,10 @@ class DeleteTicketTask(IrodsBaseTask):
     def execute(
         self, access_name, path, ticket_str, irods_backend, *args, **kwargs
     ):
-        ticket = irods_backend.get_ticket(ticket_str)
+        ticket = irods_backend.get_ticket(self.irods, ticket_str)
         if ticket:
             try:
-                irods_backend.delete_ticket(ticket_str)
+                irods_backend.delete_ticket(self.irods, ticket_str)
                 self.data_modified = True
             except Exception as ex:
                 self._raise_irods_exception(ex)
@@ -401,7 +403,9 @@ class DeleteTicketTask(IrodsBaseTask):
         self, access_name, path, ticket_str, irods_backend, *args, **kwargs
     ):
         if self.data_modified:
-            irods_backend.issue_ticket(access_name, path, ticket_str)
+            irods_backend.issue_ticket(
+                self.irods, access_name, path, ticket_str
+            )
 
 
 class CreateUserTask(IrodsBaseTask):

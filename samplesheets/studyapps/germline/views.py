@@ -46,7 +46,7 @@ class BaseGermlineConfigView(
         Override get() to set up stuff and return with failure if something is
         missing.
         """
-        irods_backend = get_backend_api('omics_irods', conn=False)
+        irods_backend = get_backend_api('omics_irods')
         self.redirect_url = get_sheets_url(self.get_project())
 
         try:

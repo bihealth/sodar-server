@@ -47,7 +47,7 @@ class TestViewsBase(ProjectMixin, RoleAssignmentMixin, TestCase):
         self.irods_backend = get_backend_api('omics_irods')
         self.assertIsNotNone(self.irods_backend)
         # Get iRODS session
-        self.irods = self.irods_backend.get_session()
+        self.irods = self.irods_backend.get_session_obj()
 
         # Init roles
         self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
@@ -82,6 +82,7 @@ class TestViewsBase(ProjectMixin, RoleAssignmentMixin, TestCase):
     def tearDown(self):
         if self.irods.collections.exists(self.project_path):
             self.irods.collections.get(self.project_path).remove(force=True)
+        self.irods.cleanup()
 
 
 class TestIrodsStatisticsAjaxView(TestViewsBase):
@@ -184,12 +185,10 @@ class TestIrodsObjectListAjaxView(TestViewsBase):
 
     def setUp(self):
         super().setUp()
-
         # Build path for test collection
         self.irods_path = (
             self.irods_backend.get_path(self.project) + '/' + IRODS_TEMP_COLL
         )
-
         # Create test collection in iRODS
         self.irods_coll = self.irods.collections.create(self.irods_path)
 

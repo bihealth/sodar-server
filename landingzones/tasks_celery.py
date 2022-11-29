@@ -46,8 +46,7 @@ class TriggerZoneMoveTask(ZoneMoveMixin):
         if not irods_backend:
             return
 
-        irods = irods_backend.get_session()
-
+        irods = irods_backend.get_session_obj()
         # Get projects, omit those which should currently be locked by Taskflow
         # TODO: Once we integrate Taskflow, check for lock status directly
         projects = (
@@ -77,7 +76,6 @@ class TriggerZoneMoveTask(ZoneMoveMixin):
                         trigger_path, z_log
                     )
                 )
-
                 if irods.data_objects.exists(trigger_path):
                     logger.info('Trigger file found for zone {}'.format(z_log))
                     try:
@@ -102,5 +100,4 @@ class TriggerZoneMoveTask(ZoneMoveMixin):
                     logger.debug(
                         'Trigger file not found for zone {}'.format(z_log)
                     )
-
         irods.cleanup()

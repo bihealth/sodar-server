@@ -299,11 +299,13 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
 
         # Pre-fetch study objects to eliminate redundant queries
         obj_len = 0
+        study_objs = None
         try:
             logger.debug('Querying for study objects in iRODS..')
-            study_objs = irods_backend.get_objects(
-                irods_backend.get_path(study)
-            )
+            with irods_backend.get_session() as irods:
+                study_objs = irods_backend.get_objects(
+                    irods, irods_backend.get_path(study)
+                )
             obj_len = len(study_objs['irods_data'])
             logger.debug(
                 'Query returned {} data object{}'.format(
@@ -311,8 +313,9 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 )
             )
         except FileNotFoundError:
-            study_objs = None
             logger.debug('No data objects found')
+        except Exception as ex:
+            logger.error('Error querying for study objects: {}'.format(ex))
 
         for assay in study.assays.all():
             assay_plugin = assay.get_plugin()

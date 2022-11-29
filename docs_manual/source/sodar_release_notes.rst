@@ -15,6 +15,7 @@ Major feature update.
 
 - Add optional landing zone write access restriction to created collections
 - Create iRODS user accounts at login for users with LDAP/SODAR auth
+- Fix iRODS connection handling issues
 
 
 v0.12.1 (2022-11-09)

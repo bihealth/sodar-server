@@ -69,7 +69,7 @@ class TestLandingZoneListAPIView(TestLandingZoneAPIViewsBase):
 
     def test_get_owner(self):
         """Test LandingZoneListAPIView get() as project owner"""
-        irods_backend = get_backend_api('omics_irods', conn=False)
+        irods_backend = get_backend_api('omics_irods')
         url = reverse(
             'landingzones:api_list', kwargs={'project': self.project.sodar_uuid}
         )
@@ -182,7 +182,7 @@ class TestLandingZoneRetrieveAPIView(TestLandingZoneAPIViewsBase):
 
     def test_get(self):
         """Test LandingZoneRetrieveAPIView get() as zone owner"""
-        irods_backend = get_backend_api('omics_irods', conn=False)
+        irods_backend = get_backend_api('omics_irods')
         url = reverse(
             'landingzones:api_retrieve',
             kwargs={'landingzone': self.landing_zone.sodar_uuid},

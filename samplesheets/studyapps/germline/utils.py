@@ -68,10 +68,11 @@ def get_pedigree_file_path(file_type, source, study_tables):
     # Get paths to relevant files
     file_paths = []
     try:
-        obj_list = irods_backend.get_objects(
-            irods_backend.get_path(source.study)
-        )
-    except FileNotFoundError:
+        with irods_backend.get_session() as irods:
+            obj_list = irods_backend.get_objects(
+                irods, irods_backend.get_path(source.study)
+            )
+    except Exception:
         obj_list = None
     if obj_list:
         for query_path in query_paths:

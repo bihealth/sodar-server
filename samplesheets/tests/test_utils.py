@@ -99,7 +99,7 @@ class TestGetSampleColls(TestUtilsBase):
 
     def setUp(self):
         super().setUp()
-        self.irods_backend = get_backend_api('omics_irods', conn=False)
+        self.irods_backend = get_backend_api('omics_irods')
 
     def test_get_sample_colls(self):
         """Test get_sample_colls() with a minimal ISA-Tab example"""

@@ -129,13 +129,13 @@ def is_project(collection):
     )
 
 
-def get_orphans(session, irods_backend, expected, assays):
+def get_orphans(irods, irods_backend, expected, assays):
     """
     Return a list of orphans in a given irods session that are not in a given
     list of expected collections.
     """
     orphans = []
-    collections = session.collections.get('/{}/projects'.format(session.zone))
+    collections = irods.collections.get('/{}/projects'.format(irods.zone))
 
     for collection in irods_backend.get_colls_recursively(collections):
         if (
@@ -158,10 +158,10 @@ def get_orphans(session, irods_backend, expected, assays):
     return orphans
 
 
-def get_output(orphans, irods_backend):
+def get_output(orphans, irods_backend, irods):
     lines = []
     for orphan in orphans:
-        stats = irods_backend.get_object_stats(orphan)
+        stats = irods_backend.get_object_stats(irods, orphan)
         m = re.search(r'/projects/([^/]{2})/(\1[^/]+)', orphan)
 
         if m:
@@ -196,7 +196,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         irods_backend = get_backend_api('omics_irods')
-        session = irods_backend.get_session()
         studies = list(Study.objects.all())
         assays = list(Assay.objects.all())
         expected = (
@@ -206,8 +205,8 @@ class Command(BaseCommand):
             *get_project_collections(irods_backend),
             *get_assay_subcollections(studies, irods_backend),
         )
-
-        orphans = get_orphans(session, irods_backend, expected, assays)
-        output = get_output(orphans, irods_backend)
-        if output:
-            self.stdout.write('\n'.join(output))
+        with irods_backend.get_session() as irods:
+            orphans = get_orphans(irods, irods_backend, expected, assays)
+            output = get_output(orphans, irods_backend, irods)
+            if output:
+                self.stdout.write('\n'.join(output))

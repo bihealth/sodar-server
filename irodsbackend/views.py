@@ -38,7 +38,6 @@ class BaseIrodsAjaxView(SODARBaseProjectAjaxView):
     """Base iRODS Ajax API View"""
 
     irods_backend = None
-    irods_session = None
     permission_required = 'irodsbackend.view_stats'  # Default perm
 
     def __init__(self, *args, **kwargs):
@@ -56,24 +55,25 @@ class BaseIrodsAjaxView(SODARBaseProjectAjaxView):
         """
         return {'detail': str(msg)}
 
-    def _check_collection_perm(self, path, user):
+    def _check_collection_perm(self, path, user, irods):
         """
         Check if request user has any perms for iRODS collection by path.
 
         :param path: Full path to iRODS collection
         :param user: User object
+        :param irods: iRODSSession object
         :return: Boolean
         """
         # Just in case this was called with superuser..
         if user and user.is_superuser:
             return True
         try:
-            coll = self.irods_session.collections.get(path)
+            coll = irods.collections.get(path)
         except Exception:
             return False
 
         # Project users
-        perms = self.irods_session.permissions.get(coll)
+        perms = irods.permissions.get(coll)
         owner_or_delegate = False
         user_as = RoleAssignment.objects.get_assignment(user, self.project)
         if user_as and user_as.role.name in [
@@ -104,7 +104,6 @@ class BaseIrodsAjaxView(SODARBaseProjectAjaxView):
             return JsonResponse(self._get_detail(ex), status=500)
         if not self.irods_backend:
             return JsonResponse(self._get_detail(ERROR_NO_BACKEND), status=500)
-        self.irods_session = self.irods_backend.get_session()
 
         # Collection checks
         # NOTE: If supplying multiple paths via POST, implement these in request
@@ -121,11 +120,16 @@ class BaseIrodsAjaxView(SODARBaseProjectAjaxView):
                 return JsonResponse(
                     self._get_detail(ERROR_NOT_FOUND), status=404
                 )
-            if (
-                not request.user.is_superuser
-                and not self._check_collection_perm(path, request.user)
-            ):
-                return JsonResponse(self._get_detail(ERROR_NO_AUTH), status=403)
+            with self.irods_backend.get_session() as irods:
+                if (
+                    not request.user.is_superuser
+                    and not self._check_collection_perm(
+                        path, request.user, irods
+                    )
+                ):
+                    return JsonResponse(
+                        self._get_detail(ERROR_NO_AUTH), status=403
+                    )
         self.path = path
         return super().dispatch(request, *args, **kwargs)
 
@@ -135,7 +139,8 @@ class IrodsStatisticsAjaxView(BaseIrodsAjaxView):
 
     def get(self, *args, **kwargs):
         try:
-            stats = self.irods_backend.get_object_stats(self.path)
+            with self.irods_backend.get_session() as irods:
+                stats = self.irods_backend.get_object_stats(irods, self.path)
             return Response(stats, status=200)
         except Exception as ex:
             return Response(self._get_detail(ex), status=500)
@@ -145,31 +150,34 @@ class IrodsStatisticsAjaxView(BaseIrodsAjaxView):
         q_dict = request.POST
         project_path = self.irods_backend.get_path(self.project)
 
-        for path in q_dict.getlist('paths'):
-            if project_path not in path:
-                data['coll_objects'].append(
-                    {'path': path, 'status': '400', 'stats': {}}
-                )
-                break
-            if not self._check_collection_perm(path, request.user):
-                data['coll_objects'].append(
-                    {'path': path, 'status': '403', 'stats': {}}
-                )
-                break
-            try:
-                if not self.irods_backend.collection_exists(path):
+        with self.irods_backend.get_session() as irods:
+            for path in q_dict.getlist('paths'):
+                if project_path not in path:
                     data['coll_objects'].append(
-                        {'path': path, 'status': '404', 'stats': {}}
+                        {'path': path, 'status': '400', 'stats': {}}
                     )
-                else:
-                    ret_data = self.irods_backend.get_object_stats(path)
+                    break
+                if not self._check_collection_perm(path, request.user, irods):
                     data['coll_objects'].append(
-                        {'path': path, 'status': '200', 'stats': ret_data}
+                        {'path': path, 'status': '403', 'stats': {}}
                     )
-            except Exception:
-                data['coll_objects'].append(
-                    {'path': path, 'status': '500', 'stats': {}}
-                )
+                    break
+                try:
+                    if not irods.collections.exists(path):
+                        data['coll_objects'].append(
+                            {'path': path, 'status': '404', 'stats': {}}
+                        )
+                    else:
+                        ret_data = self.irods_backend.get_object_stats(
+                            irods, path
+                        )
+                        data['coll_objects'].append(
+                            {'path': path, 'status': '200', 'stats': ret_data}
+                        )
+                except Exception:
+                    data['coll_objects'].append(
+                        {'path': path, 'status': '500', 'stats': {}}
+                    )
         return Response(data, status=200)
 
 
@@ -183,11 +191,13 @@ class IrodsObjectListAjaxView(BaseIrodsAjaxView):
         colls = request.GET.get('colls')
         # Get files
         try:
-            ret_data = self.irods_backend.get_objects(
-                self.path,
-                check_md5=bool(int(md5)),
-                include_colls=bool(int(colls)),
-            )
+            with self.irods_backend.get_session() as irods:
+                ret_data = self.irods_backend.get_objects(
+                    irods,
+                    self.path,
+                    check_md5=bool(int(md5)),
+                    include_colls=bool(int(colls)),
+                )
             return Response(ret_data, status=200)
         except Exception as ex:
             return Response(self._get_detail(ex), status=500)

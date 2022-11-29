@@ -67,7 +67,7 @@ class TestLandingZoneAPITaskflowBase(
         # Get iRODS backend for session access
         self.irods_backend = get_backend_api('omics_irods')
         self.assertIsNotNone(self.irods_backend)
-        self.irods = self.irods_backend.get_session()
+        self.irods = self.irods_backend.get_session_obj()
 
         # Init project
         # Make project with owner in Taskflow and Django
@@ -87,6 +87,10 @@ class TestLandingZoneAPITaskflowBase(
         self.make_irods_colls(self.investigation)
         # Set up helpers
         self.group_name = self.irods_backend.get_user_group_name(self.project)
+
+    def tearDown(self):
+        self.irods.cleanup()
+        super().tearDown()
 
 
 class TestLandingZoneCreateAPIView(TestLandingZoneAPITaskflowBase):

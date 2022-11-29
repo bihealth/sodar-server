@@ -184,9 +184,6 @@ class TestLandingZoneCreateView(
 
     def setUp(self):
         super().setUp()
-        self.irods_backend = get_backend_api('omics_irods')
-        self.assertIsNotNone(self.irods_backend)
-        self.irods = self.irods_backend.get_session()
         # Make project with owner in Taskflow and Django
         self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
@@ -412,9 +409,6 @@ class TestLandingZoneMoveView(
 
     def setUp(self):
         super().setUp()
-        self.irods_backend = get_backend_api('omics_irods')
-        self.assertIsNotNone(self.irods_backend)
-        self.irods = self.irods_backend.get_session()
         # Make project with owner in Taskflow and Django
         self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',

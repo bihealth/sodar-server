@@ -229,12 +229,12 @@ class ProjectAppPlugin(
             logger.debug('Skipping: Required backend plugins not active')
             return
 
-        irods_session = irods_backend.get_session()
-        for zone in zones:
-            zone_path = irods_backend.get_path(zone)
-            if irods_session.collections.exists(zone_path):
-                continue  # Skip if already there
-            self.submit_create(zone, False)
+        with irods_backend.get_session() as irods:
+            for zone in zones:
+                zone_path = irods_backend.get_path(zone)
+                if irods.collections.exists(zone_path):
+                    continue  # Skip if already there
+                self.submit_create(zone, False)
 
 
 # Landingzones configuration sub-app plugin ------------------------------------

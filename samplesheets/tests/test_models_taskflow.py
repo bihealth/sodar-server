@@ -7,7 +7,6 @@ from django.utils.timezone import localtime
 
 # Projectroles dependency
 from projectroles.constants import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
 
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import TaskflowbackendTestBase
@@ -45,10 +44,6 @@ class TestIrodsDataRequestBase(
 
     def setUp(self):
         super().setUp()
-
-        self.irods_backend = get_backend_api('omics_irods')
-        self.irods = self.irods_backend.get_session()
-
         self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
@@ -108,6 +103,7 @@ class TestIrodsDataRequestBase(
 
     def tearDown(self):
         self.irods.collections.get('/sodarZone/projects').remove(force=True)
+        super().tearDown()
 
     @classmethod
     def _make_irods_data_request(

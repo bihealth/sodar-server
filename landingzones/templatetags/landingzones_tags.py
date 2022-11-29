@@ -79,7 +79,7 @@ def is_zone_disabled(zone):
 @register.simple_tag
 def get_zone_list_url(zone):
     """Return iRODS file list querying URL for landing zone"""
-    irods_backend = get_backend_api('omics_irods', conn=False)
+    irods_backend = get_backend_api('omics_irods')
     if not irods_backend:
         return None
     return irods_backend.get_url(

@@ -8,7 +8,7 @@ from irodsbackend.api import IrodsAPI
 from samplesheets.utils import get_webdav_url as _get_webdav_url
 
 
-irods_backend = IrodsAPI(conn=False)
+irods_backend = IrodsAPI()
 register = template.Library()
 
 

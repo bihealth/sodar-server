@@ -23,6 +23,8 @@ Changed
 
 - **General**
     - Use default Gunicorn worker class in production (#1536)
+- **Irodsbackend**
+    - Update backend iRODS connection handling (#909, #1542)
 - **Samplesheets**
     - Upgrade ``loader-utils`` in Vue app (#1527)
 
@@ -31,8 +33,15 @@ Fixed
 
 - **Irodsbackend**
     - Unhandled backend init exception in ``IrodsStatisticsAjaxView`` (#1539)
+    - iRODS session disconnection issues (#909, #1542)
 - **Landingzones**
     - Typo in ``LANDINGZONES_TRIGGER_MOVE_INTERVAL`` (#1541)
+
+Removed
+-------
+
+- **Irodsbackend**
+    - Backend API ``conn`` argument (#909)
 
 
 v0.12.1 (2022-11-09)

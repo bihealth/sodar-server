@@ -54,7 +54,7 @@ class LandingZoneSerializer(SODARProjectModelSerializer):
         return obj.is_locked()
 
     def get_irods_path(self, obj):
-        irods_backend = get_backend_api('omics_irods', conn=False)
+        irods_backend = get_backend_api('omics_irods')
         if irods_backend and obj.status not in [
             'MOVED',
             'DELETED',

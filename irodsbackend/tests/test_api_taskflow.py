@@ -20,8 +20,6 @@ from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import TaskflowbackendTestBase
 
-from irodsbackend.api import IrodsAPI
-
 
 # SODAR constants
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
@@ -68,11 +66,10 @@ class TestIrodsBackendAPITaskflow(
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-        self.irods_backend = IrodsAPI()
 
     def test_get_info(self):
         """Test get_info()"""
-        info = self.irods_backend.get_info()
+        info = self.irods_backend.get_info(self.irods)
         self.assertIsNotNone(info)
         self.assertEqual(info['server_ok'], True)
         self.assertEqual(info['server_status'], SERVER_AVAILABLE)
@@ -89,10 +86,11 @@ class TestIrodsBackendAPITaskflow(
 
         # Create objects
         # TODO: Test with actual files and put() instead
-        irods = self.irods_backend.get_session()
-        irods.data_objects.create(path + '/' + TEST_FILE_NAME)
-        irods.data_objects.create(path + '/{}.md5'.format(TEST_FILE_NAME))
-        obj_list = self.irods_backend.get_objects(path, check_md5=True)
+        self.irods.data_objects.create(path + '/' + TEST_FILE_NAME)
+        self.irods.data_objects.create(path + '/{}.md5'.format(TEST_FILE_NAME))
+        obj_list = self.irods_backend.get_objects(
+            self.irods, path, check_md5=True
+        )
         self.assertIsNotNone(obj_list)
         self.assertEqual(len(obj_list['irods_data']), 1)  # md5 not listed
 
@@ -111,12 +109,11 @@ class TestIrodsBackendAPITaskflow(
         """Test get_objects() with collections included"""
         self.make_irods_colls(self.investigation)
         path = self.irods_backend.get_path(self.assay)
-        irods = self.irods_backend.get_session()
-        irods.data_objects.create(path + '/' + TEST_FILE_NAME)
-        irods.data_objects.create(path + '/{}.md5'.format(TEST_FILE_NAME))
-        irods.collections.create(path + '/subcoll')
+        self.irods.data_objects.create(path + '/' + TEST_FILE_NAME)
+        self.irods.data_objects.create(path + '/{}.md5'.format(TEST_FILE_NAME))
+        self.irods.collections.create(path + '/subcoll')
         obj_list = self.irods_backend.get_objects(
-            path, include_colls=True, check_md5=True
+            self.irods, path, include_colls=True, check_md5=True
         )
         self.assertIsNotNone(obj_list)
         self.assertEqual(len(obj_list['irods_data']), 2)  # md5 not listed
@@ -142,13 +139,15 @@ class TestIrodsBackendAPITaskflow(
         """Test get_objects() with multiple search terms"""
         self.make_irods_colls(self.investigation)
         path = self.irods_backend.get_path(self.assay)
-        irods = self.irods_backend.get_session()
-        irods.data_objects.create(path + '/' + TEST_FILE_NAME)
-        irods.data_objects.create(path + '/{}.md5'.format(TEST_FILE_NAME))
-        irods.data_objects.create(path + '/' + TEST_FILE_NAME2)
-        irods.data_objects.create(path + '/{}.md5'.format(TEST_FILE_NAME2))
+        self.irods.data_objects.create(path + '/' + TEST_FILE_NAME)
+        self.irods.data_objects.create(path + '/{}.md5'.format(TEST_FILE_NAME))
+        self.irods.data_objects.create(path + '/' + TEST_FILE_NAME2)
+        self.irods.data_objects.create(path + '/{}.md5'.format(TEST_FILE_NAME2))
         obj_list = self.irods_backend.get_objects(
-            path, name_like=[TEST_FILE_NAME, TEST_FILE_NAME2], check_md5=True
+            self.irods,
+            path,
+            name_like=[TEST_FILE_NAME, TEST_FILE_NAME2],
+            check_md5=True,
         )
         self.assertIsNotNone(obj_list)
         self.assertEqual(len(obj_list['irods_data']), 2)  # md5 not listed
@@ -177,11 +176,10 @@ class TestIrodsBackendAPITaskflow(
         """Test get_objects() with a long query"""
         self.make_irods_colls(self.investigation)
         path = self.irods_backend.get_path(self.assay)
-        irods = self.irods_backend.get_session()
-        irods.data_objects.create(path + '/' + TEST_FILE_NAME)
-        irods.data_objects.create(path + '/{}.md5'.format(TEST_FILE_NAME))
-        irods.data_objects.create(path + '/' + TEST_FILE_NAME2)
-        irods.data_objects.create(path + '/{}.md5'.format(TEST_FILE_NAME2))
+        self.irods.data_objects.create(path + '/' + TEST_FILE_NAME)
+        self.irods.data_objects.create(path + '/{}.md5'.format(TEST_FILE_NAME))
+        self.irods.data_objects.create(path + '/' + TEST_FILE_NAME2)
+        self.irods.data_objects.create(path + '/{}.md5'.format(TEST_FILE_NAME2))
 
         # Generate a large number of name search terms
         name_like = [TEST_FILE_NAME]
@@ -197,7 +195,10 @@ class TestIrodsBackendAPITaskflow(
         name_like.append(TEST_FILE_NAME2)
 
         obj_list = self.irods_backend.get_objects(
-            path, name_like=[TEST_FILE_NAME, TEST_FILE_NAME2], check_md5=True
+            self.irods,
+            path,
+            name_like=[TEST_FILE_NAME, TEST_FILE_NAME2],
+            check_md5=True,
         )
         self.assertIsNotNone(obj_list)
         self.assertEqual(len(obj_list['irods_data']), 2)  # md5 not listed
@@ -226,7 +227,7 @@ class TestIrodsBackendAPITaskflow(
         """Test get_objects() with an empty sample collection"""
         self.make_irods_colls(self.investigation)
         path = self.irods_backend.get_path(self.project) + '/' + SAMPLE_COLL
-        obj_list = self.irods_backend.get_objects(path)
+        obj_list = self.irods_backend.get_objects(self.irods, path)
         self.assertIsNotNone(obj_list)
         self.assertEqual(len(obj_list['irods_data']), 0)
 
@@ -234,17 +235,16 @@ class TestIrodsBackendAPITaskflow(
         """Test get_objects() with no created collections"""
         path = self.irods_backend.get_path(self.project) + '/' + SAMPLE_COLL
         with self.assertRaises(FileNotFoundError):
-            self.irods_backend.get_objects(path)
+            self.irods_backend.get_objects(self.irods, path)
 
     def test_get_objects_limit(self):
         """Test get_objects() with a limit applied"""
         self.make_irods_colls(self.investigation)
         path = self.irods_backend.get_path(self.assay)
-        irods = self.irods_backend.get_session()
-        irods.data_objects.create(path + '/' + TEST_FILE_NAME)
-        irods.data_objects.create(path + '/' + TEST_FILE_NAME2)
+        self.irods.data_objects.create(path + '/' + TEST_FILE_NAME)
+        self.irods.data_objects.create(path + '/' + TEST_FILE_NAME2)
         obj_list = self.irods_backend.get_objects(
-            path, check_md5=False, limit=1
+            self.irods, path, check_md5=False, limit=1
         )
         self.assertIsNotNone(obj_list)
         self.assertEqual(len(obj_list['irods_data']), 1)  # Limited to 1
@@ -253,7 +253,10 @@ class TestIrodsBackendAPITaskflow(
         """Test issue_ticket()"""
         self.make_irods_colls(self.investigation)
         ticket = self.irods_backend.issue_ticket(
-            'read', self.irods_backend.get_sample_path(self.project), TICKET_STR
+            self.irods,
+            'read',
+            self.irods_backend.get_sample_path(self.project),
+            TICKET_STR,
         )
         self.assertEqual(type(ticket), Ticket)
         self.assertEqual(ticket.string, TICKET_STR)
@@ -262,10 +265,14 @@ class TestIrodsBackendAPITaskflow(
         """Test get_ticket() and delete_ticket()"""
         self.make_irods_colls(self.investigation)
         orig_ticket = self.irods_backend.issue_ticket(
-            'read', self.irods_backend.get_sample_path(self.project)
+            self.irods, 'read', self.irods_backend.get_sample_path(self.project)
         )
-        retr_ticket = self.irods_backend.get_ticket(orig_ticket.string)
+        retr_ticket = self.irods_backend.get_ticket(
+            self.irods, orig_ticket.string
+        )
         self.assertEqual(type(retr_ticket), Ticket)
-        self.irods_backend.delete_ticket(orig_ticket.string)
-        retr_ticket = self.irods_backend.get_ticket(orig_ticket.string)
+        self.irods_backend.delete_ticket(self.irods, orig_ticket.string)
+        retr_ticket = self.irods_backend.get_ticket(
+            self.irods, orig_ticket.string
+        )
         self.assertIsNone(retr_ticket)
