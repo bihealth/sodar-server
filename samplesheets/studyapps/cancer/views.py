@@ -7,6 +7,9 @@ from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.views.generic import View
 
+# Local helper for authenticating with auth basic
+from sodar.users.auth import fallback_to_auth_basic
+
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
 from projectroles.views import (
@@ -15,16 +18,14 @@ from projectroles.views import (
     ProjectPermissionMixin,
 )
 
-# Samplesheets dependency
 from samplesheets.models import GenericMaterial
 from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.utils import get_sample_libraries, get_sheets_url
 from samplesheets.studyapps.utils import get_igv_xml
-
-# Local helper for authenticating with auth basic
-from sodar.users.auth import fallback_to_auth_basic
-
 from samplesheets.studyapps.cancer.utils import get_library_file_path
+
+
+table_builder = SampleSheetTableBuilder()
 
 
 class BaseCancerConfigView(
@@ -76,11 +77,7 @@ class IGVSessionFileRenderView(BaseCancerConfigView):
     def get(self, request, *args, **kwargs):
         """Override get() to return IGV session file"""
         super(IGVSessionFileRenderView, self).get(request, *args, **kwargs)
-
-        ###################
         # Get resource URLs
-        ###################
-
         samples = self.material.get_samples()
         if not samples:
             messages.error(
@@ -90,9 +87,8 @@ class IGVSessionFileRenderView(BaseCancerConfigView):
             )
             return redirect(self.redirect_url)
 
-        # Build render table
-        tb = SampleSheetTableBuilder()
-        study_tables = tb.build_study_tables(self.material.study, ui=False)
+        # Get/build render tables
+        study_tables = table_builder.get_study_tables(self.material.study)
         # Get libraries
         libraries = get_sample_libraries(samples, study_tables)
         bam_urls = {}
@@ -115,10 +111,6 @@ class IGVSessionFileRenderView(BaseCancerConfigView):
             if vcf_path:
                 vcf_urls[library.name] = webdav_url + vcf_path
 
-        ###########
-        # Build XML
-        ###########
-
         # Build IGV session XML file
         xml_str = get_igv_xml(
             bam_urls=bam_urls,
@@ -126,11 +118,7 @@ class IGVSessionFileRenderView(BaseCancerConfigView):
             vcf_title='Library',
             request=request,
         )
-
-        ###########
         # Serve XML
-        ###########
-
         file_name = self.material.name + '.case.igv.xml'
         # Set up response
         response = HttpResponse(xml_str, content_type='text/xml')

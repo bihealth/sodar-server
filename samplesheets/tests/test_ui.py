@@ -59,7 +59,7 @@ class TestProjectSheetsVueAppBase(
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         if config_data:
             # Set up UUIDs and default config
-            self._update_uuids(self.investigation, config_data)
+            self.update_uuids(self.investigation, config_data)
             app_settings.set_app_setting(
                 'samplesheets',
                 'sheet_config',

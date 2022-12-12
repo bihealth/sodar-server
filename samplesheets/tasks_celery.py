@@ -32,7 +32,7 @@ def update_project_cache_task(
     _self, project_uuid, user_uuid, add_alert=False, alert_msg=None
 ):
     """
-    Update project cache asynchronously.
+    Update project iRODS cache asynchronously.
 
     :param project_uuid: Project UUID for cache item
     :param user_uuid: User UUID or None

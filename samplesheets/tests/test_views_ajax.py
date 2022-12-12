@@ -13,13 +13,16 @@ from django.urls import reverse
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 
+# Sodarcache dependency
+from sodarcache.models import JSONCacheItem
+
+# Timeline dependency
+from timeline.models import ProjectEvent
+
 # Ontologyaccess dependency
 from ontologyaccess.io import OBOFormatOntologyIO
 from ontologyaccess.models import DEFAULT_TERM_URL
 from ontologyaccess.tests.test_io import OBO_PATH, OBO_NAME
-
-# Timeline dependency
-from timeline.models import ProjectEvent
 
 from samplesheets.models import (
     Study,
@@ -30,6 +33,10 @@ from samplesheets.models import (
     ISATab,
     IrodsAccessTicket,
     IrodsDataRequest,
+)
+from samplesheets.rendering import (
+    SampleSheetTableBuilder,
+    STUDY_TABLE_CACHE_ITEM,
 )
 from samplesheets.sheet_config import SheetConfigAPI
 from samplesheets.tests.test_sheet_config import (
@@ -52,6 +59,7 @@ from samplesheets.views_ajax import ALERT_ACTIVE_REQS
 
 
 conf_api = SheetConfigAPI()
+table_builder = SampleSheetTableBuilder()
 
 
 # SODAR constants
@@ -215,6 +223,8 @@ class TestContextAjaxView(TestViewsBase):
             'irods_webdav_enabled': settings.IRODS_WEBDAV_ENABLED,
             'irods_webdav_url': settings.IRODS_WEBDAV_URL,
             'external_link_labels': get_ext_link_labels(),
+            'ontology_url_template': settings.SHEETS_ONTOLOGY_URL_TEMPLATE,
+            'ontology_url_skip': settings.SHEETS_ONTOLOGY_URL_SKIP,
             'table_height': settings.SHEETS_TABLE_HEIGHT,
             'min_col_width': settings.SHEETS_MIN_COLUMN_WIDTH,
             'max_col_width': settings.SHEETS_MAX_COLUMN_WIDTH,
@@ -448,16 +458,20 @@ class TestStudyTablesAjaxView(IrodsAccessTicketMixin, TestViewsBase):
 
     def setUp(self):
         super().setUp()
-
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-
         # Allow sample sheet editing in project
         app_settings.set_app_setting(
             APP_NAME, 'allow_editing', True, project=self.project
         )
+        # Set up helpers
+        self.cache_backend = get_backend_api('sodar_cache')
+        self.cache_name = STUDY_TABLE_CACHE_ITEM.format(
+            study=self.study.sodar_uuid
+        )
+        self.cache_args = [APP_NAME, self.cache_name, self.project]
 
     def test_get(self):
         """Test study tables retrieval"""
@@ -476,9 +490,7 @@ class TestStudyTablesAjaxView(IrodsAccessTicketMixin, TestViewsBase):
         self.assertNotIn('render_error', ret_data)
         self.assertNotIn('shortcuts', ret_data['tables']['study'])
         self.assertEqual(len(ret_data['tables']['assays']), 1)
-        self.assertNotIn(
-            'uuid', ret_data['tables']['study']['table_data'][0][0]
-        )
+        self.assertIn('uuid', ret_data['tables']['study']['table_data'][0][0])
         self.assertIn('display_config', ret_data)
         self.assertNotIn('edit_context', ret_data)
 
@@ -530,6 +542,47 @@ class TestStudyTablesAjaxView(IrodsAccessTicketMixin, TestViewsBase):
             )
         self.assertEqual(response.status_code, 200)
         # TODO fill out ... assays are not yet tested, as well as shortcuts
+
+    def test_get_study_cache(self):
+        """Test cached study table creation on retrieval"""
+        self.assertIsNone(self.cache_backend.get_cache_item(*self.cache_args))
+        self.assertEqual(JSONCacheItem.objects.count(), 0)
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:ajax_study_tables',
+                    kwargs={'study': self.study.sodar_uuid},
+                )
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNotNone(
+            self.cache_backend.get_cache_item(*self.cache_args)
+        )
+        self.assertEqual(JSONCacheItem.objects.count(), 1)
+
+    def test_get_study_cache_existing(self):
+        """Test retrieval with existing cached study tables"""
+        study_tables = table_builder.build_study_tables(self.study)
+        cache_name = STUDY_TABLE_CACHE_ITEM.format(study=self.study.sodar_uuid)
+        self.cache_backend.set_cache_item(
+            APP_NAME, cache_name, study_tables, 'json', self.project
+        )
+        self.assertIsNotNone(
+            self.cache_backend.get_cache_item(*self.cache_args)
+        )
+        self.assertEqual(JSONCacheItem.objects.count(), 1)
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:ajax_study_tables',
+                    kwargs={'study': self.study.sodar_uuid},
+                )
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNotNone(
+            self.cache_backend.get_cache_item(*self.cache_args)
+        )
+        self.assertEqual(JSONCacheItem.objects.count(), 1)
 
 
 class TestStudyLinksAjaxView(TestViewsBase):
@@ -585,6 +638,20 @@ class TestSheetWarningsAjaxView(TestViewsBase):
 class TestSheetCellEditAjaxView(TestViewsBase):
     """Tests for SheetCellEditAjaxView"""
 
+    def setUp(self):
+        super().setUp()
+        # Import investigation
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        # Set up POST data
+        self.values = {'updated_cells': []}
+        # Set up helpers
+        self.cache_backend = get_backend_api('sodar_cache')
+        self.cache_name = STUDY_TABLE_CACHE_ITEM.format(
+            study=self.study.sodar_uuid
+        )
+        self.cache_args = [APP_NAME, self.cache_name, self.project]
+
     @classmethod
     def _convert_ontology_value(cls, value):
         """
@@ -600,16 +667,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
             value['unit'] = None
         return value
 
-    def setUp(self):
-        super().setUp()
-
-        # Import investigation
-        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
-        self.study = self.investigation.studies.first()
-
-        # Set up POST data
-        self.values = {'updated_cells': []}
-
     def test_edit_name(self):
         """Test editing the name of a material"""
         obj = GenericMaterial.objects.get(study=self.study, name='0816')
@@ -623,7 +680,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
                 'value': new_name,
             }
         )
-
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -649,7 +705,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
                 'value': '',
             }
         )
-
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -676,7 +731,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
                 'value': value,
             }
         )
-
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -703,7 +757,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
                 'value': value,
             }
         )
-
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -730,7 +783,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
                 'value': value,
             }
         )
-
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -758,7 +810,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
                 'value': value,
             }
         )
-
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -1151,6 +1202,49 @@ class TestSheetCellEditAjaxView(TestViewsBase):
         }
         self.assertEqual(ref, expected)
 
+    def test_edit_study_cache(self):
+        """Test editing with cached study tables"""
+        # Create cache item
+        study_tables = table_builder.build_study_tables(self.study)
+        cache_name = STUDY_TABLE_CACHE_ITEM.format(study=self.study.sodar_uuid)
+        self.cache_backend.set_cache_item(
+            APP_NAME, cache_name, study_tables, 'json', self.project
+        )
+        self.assertIsNotNone(
+            self.cache_backend.get_cache_item(*self.cache_args)
+        )
+        self.assertEqual(JSONCacheItem.objects.count(), 1)
+
+        obj = GenericMaterial.objects.get(study=self.study, name='0816')
+        new_name = '0816aaa'
+        self.values['updated_cells'].append(
+            {
+                'uuid': str(obj.sodar_uuid),
+                'header_name': 'name',
+                'header_type': 'name',
+                'obj_cls': 'GenericMaterial',
+                'value': new_name,
+            }
+        )
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:ajax_edit_cell',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps(self.values),
+                content_type='application/json',
+            )
+        self.assertEqual(response.status_code, 200)
+        obj.refresh_from_db()
+        self.assertEqual(obj.name, new_name)
+
+        # We should have the cache item but without data
+        cache_item = self.cache_backend.get_cache_item(*self.cache_args)
+        self.assertEqual(cache_item.data, {})
+        self.assertEqual(JSONCacheItem.objects.count(), 1)
+
 
 class TestSheetCellEditAjaxViewSpecial(TestViewsBase):
     """Tests for SheetCellEditAjaxView with special columns"""
@@ -1205,19 +1299,24 @@ class TestSheetRowInsertAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
 
     def setUp(self):
         super().setUp()
-
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         # Set up UUIDs and default config
-        self._update_uuids(self.investigation, CONFIG_DATA_DEFAULT)
+        self.update_uuids(self.investigation, CONFIG_DATA_DEFAULT)
         app_settings.set_app_setting(
             APP_NAME,
             'sheet_config',
-            conf_api.build_sheet_config(self.investigation),
+            self.build_sheet_config(self.investigation),
             project=self.project,
         )
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
+        # Set up helpers
+        self.cache_backend = get_backend_api('sodar_cache')
+        self.cache_name = STUDY_TABLE_CACHE_ITEM.format(
+            study=self.study.sodar_uuid
+        )
+        self.cache_args = [APP_NAME, self.cache_name, self.project]
 
     def test_insert_study_row(self):
         """Test inserting a new row into a study"""
@@ -1397,23 +1496,39 @@ class TestSheetRowInsertAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
 
     # TODO: Test ontology ref updating
 
+    def test_insert_study_cache(self):
+        """Test inserting new row with cached study tables"""
+        study_tables = table_builder.build_study_tables(self.study)
+        cache_name = STUDY_TABLE_CACHE_ITEM.format(study=self.study.sodar_uuid)
+        self.cache_backend.set_cache_item(
+            APP_NAME, cache_name, study_tables, 'json', self.project
+        )
+        self.assertIsNotNone(
+            self.cache_backend.get_cache_item(*self.cache_args)
+        )
+        self.assertEqual(JSONCacheItem.objects.count(), 1)
+        response = self.insert_row(path=STUDY_INSERT_PATH)
+        self.assertEqual(response.status_code, 200)
+        cache_item = self.cache_backend.get_cache_item(*self.cache_args)
+        self.assertEqual(cache_item.data, {})
+        self.assertEqual(JSONCacheItem.objects.count(), 1)
+
 
 class TestSheetRowDeleteAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
     """Tests for SheetRowDeleteAjaxView"""
 
     def setUp(self):
         super().setUp()
-
         # Import investigation where extra rows have been inserted
         self.investigation = self.import_isa_from_file(
             SHEET_PATH_INSERTED, self.project
         )
         # Set up UUIDs and default config
-        self._update_uuids(self.investigation, CONFIG_DATA_DEFAULT)
+        self.update_uuids(self.investigation, CONFIG_DATA_DEFAULT)
         app_settings.set_app_setting(
             APP_NAME,
             'sheet_config',
-            conf_api.build_sheet_config(self.investigation),
+            self.build_sheet_config(self.investigation),
             project=self.project,
         )
         self.study = self.investigation.studies.first()
@@ -1425,7 +1540,6 @@ class TestSheetRowDeleteAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
         )
         source.sodar_uuid = EDIT_SOURCE_UUID
         source.save()
-
         proc = (
             Process.objects.filter(
                 study=self.study, assay=None, protocol__name='sample collection'
@@ -1435,9 +1549,15 @@ class TestSheetRowDeleteAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
         )
         proc.sodar_uuid = EDIT_STUDY_PROC_UUID
         proc.save()
-
         # Update UUIDs in assay
         self.update_assay_row_uuids()
+
+        # Set up helpers
+        self.cache_backend = get_backend_api('sodar_cache')
+        self.cache_name = STUDY_TABLE_CACHE_ITEM.format(
+            study=self.study.sodar_uuid
+        )
+        self.cache_args = [APP_NAME, self.cache_name, self.project]
 
     def test_delete_assay_row(self):
         """Test row deletion from assay"""
@@ -1501,6 +1621,23 @@ class TestSheetRowDeleteAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
         )
 
     # TODO: Test deletion with splitting/pooling
+
+    def test_delete_assay_row_study_cache(self):
+        """Test row deletion from assay with cached study tables"""
+        study_tables = table_builder.build_study_tables(self.study)
+        cache_name = STUDY_TABLE_CACHE_ITEM.format(study=self.study.sodar_uuid)
+        self.cache_backend.set_cache_item(
+            APP_NAME, cache_name, study_tables, 'json', self.project
+        )
+        self.assertIsNotNone(
+            self.cache_backend.get_cache_item(*self.cache_args)
+        )
+        self.assertEqual(JSONCacheItem.objects.count(), 1)
+        response = self.delete_row(ASSAY_DELETE_PATH)
+        self.assertEqual(response.status_code, 200)
+        cache_item = self.cache_backend.get_cache_item(*self.cache_args)
+        self.assertEqual(cache_item.data, {})
+        self.assertEqual(JSONCacheItem.objects.count(), 1)
 
 
 class TestSheetVersionSaveAjaxView(TestViewsBase):
@@ -1590,15 +1727,14 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
 
     def setUp(self):
         super().setUp()
-
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         # Set up UUIDs and default config
-        self._update_uuids(self.investigation, CONFIG_DATA_DEFAULT)
+        self.update_uuids(self.investigation, CONFIG_DATA_DEFAULT)
         app_settings.set_app_setting(
             APP_NAME,
             'sheet_config',
-            conf_api.build_sheet_config(self.investigation),
+            self.build_sheet_config(self.investigation),
             project=self.project,
         )
         app_settings.set_app_setting(
@@ -1609,6 +1745,7 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
         )
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
+
         self.post_values = {
             'fields': [
                 {
@@ -1631,6 +1768,13 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
                 }
             ]
         }
+
+        # Set up helpers
+        self.cache_backend = get_backend_api('sodar_cache')
+        self.cache_name = STUDY_TABLE_CACHE_ITEM.format(
+            study=self.study.sodar_uuid
+        )
+        self.cache_args = [APP_NAME, self.cache_name, self.project]
 
     def test_update_study_column(self):
         """Test posting a study column update"""
@@ -1768,8 +1912,35 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
             'User not allowed to modify column config',
         )
 
+    def test_update_study_cache(self):
+        """Test posting a study column update with cached study tables"""
+        study_tables = table_builder.build_study_tables(self.study)
+        cache_name = STUDY_TABLE_CACHE_ITEM.format(study=self.study.sodar_uuid)
+        self.cache_backend.set_cache_item(
+            APP_NAME, cache_name, study_tables, 'json', self.project
+        )
+        self.assertIsNotNone(
+            self.cache_backend.get_cache_item(*self.cache_args)
+        )
+        self.assertEqual(JSONCacheItem.objects.count(), 1)
 
-class TestStudyDisplayConfigAjaxView(TestViewsBase):
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:ajax_config_update',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps(self.post_values),
+                content_type='application/json',
+            )
+        self.assertEqual(response.status_code, 200)
+
+        cache_item = self.cache_backend.get_cache_item(*self.cache_args)
+        self.assertEqual(cache_item.data, {})
+        self.assertEqual(JSONCacheItem.objects.count(), 1)
+
+
+class TestStudyDisplayConfigAjaxView(SheetConfigMixin, TestViewsBase):
     """Tests for StudyDisplayConfigAjaxView"""
 
     def setUp(self):
@@ -1783,9 +1954,10 @@ class TestStudyDisplayConfigAjaxView(TestViewsBase):
             self.investigation.studies.first().assays.first().sodar_uuid
         )
         # Build sheet config and default display config
-        self.sheet_config = conf_api.build_sheet_config(self.investigation)
+        inv_tables = table_builder.build_inv_tables(self.investigation)
+        self.sheet_config = self.build_sheet_config(self.investigation)
         self.display_config = conf_api.build_display_config(
-            self.investigation, self.sheet_config
+            inv_tables, self.sheet_config
         )
         app_settings.set_app_setting(
             APP_NAME,

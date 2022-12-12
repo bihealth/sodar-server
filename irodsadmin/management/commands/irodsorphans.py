@@ -21,6 +21,7 @@ from samplesheets.views import TRACK_HUBS_COLL, RESULTS_COLL, MISC_FILES_COLL
 
 
 logger = ManagementCommandLogger(__name__)
+table_builder = SampleSheetTableBuilder()
 
 
 def get_assay_collections(assays, irods_backend):
@@ -30,12 +31,10 @@ def get_assay_collections(assays, irods_backend):
 
 def get_assay_subcollections(studies, irods_backend):
     """Return a list of all assay row colletion names."""
-    tb = SampleSheetTableBuilder()
     collections = []
-
     for study in studies:
         try:
-            study_tables = tb.build_study_tables(study, ui=False)
+            study_tables = table_builder.get_study_tables(study)
         except Exception as ex:
             logger.error(
                 'Study table building exception for "{}" '
@@ -60,7 +59,6 @@ def get_assay_subcollections(studies, irods_backend):
                     )
                     if row_path not in collections:
                         collections.append(row_path)
-
                 shortcuts = assay_plugin.get_shortcuts(assay)
                 if shortcuts:
                     for shortcut in shortcuts:
@@ -70,7 +68,6 @@ def get_assay_subcollections(studies, irods_backend):
                 collections.append(assay_path + '/' + TRACK_HUBS_COLL)
                 collections.append(assay_path + '/' + RESULTS_COLL)
                 collections.append(assay_path + '/' + MISC_FILES_COLL)
-
     return collections
 
 
@@ -154,7 +151,6 @@ def get_orphans(irods, irods_backend, expected, assays):
         ):
             if collection.path not in expected:
                 orphans.append(collection.path)
-
     return orphans
 
 
@@ -163,7 +159,6 @@ def get_output(orphans, irods_backend, irods):
     for orphan in orphans:
         stats = irods_backend.get_object_stats(irods, orphan)
         m = re.search(r'/projects/([^/]{2})/(\1[^/]+)', orphan)
-
         if m:
             uuid = m.group(2)
             try:
@@ -174,7 +169,6 @@ def get_output(orphans, irods_backend, irods):
         else:
             uuid = '<ERROR>'
             title = '<ERROR>'
-
         lines.append(
             ';'.join(
                 [

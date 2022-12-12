@@ -26,6 +26,9 @@ from samplesheets.utils import get_sheets_url
 from sodar.users.auth import fallback_to_auth_basic
 
 
+table_builder = SampleSheetTableBuilder()
+
+
 class BaseGermlineConfigView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
@@ -64,10 +67,8 @@ class BaseGermlineConfigView(
         if not settings.IRODS_WEBDAV_ENABLED or not settings.IRODS_WEBDAV_URL:
             messages.error(self.request, 'iRODS WebDAV not available')
             return redirect(self.redirect_url)
-
-        # Build render table
-        tb = SampleSheetTableBuilder()
-        self.study_tables = tb.build_study_tables(self.source.study, ui=False)
+        # Get/build render tables
+        self.study_tables = table_builder.get_study_tables(self.source.study)
 
 
 @fallback_to_auth_basic

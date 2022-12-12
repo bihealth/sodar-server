@@ -15,7 +15,9 @@
     "x-sodar-example-link": {
         "label": "Example ID with hyperlink",
         "url": "https://example.com/{id}"
-    }
+    },
+  "ontology_url_template": "https://bioportal.bioontology.org/ontologies/{ontology_name}/?p=classes&conceptid={accession}",
+  "ontology_url_skip": ["bioontology.org"]
   },
   "table_height": 400,
   "min_col_width": 100,

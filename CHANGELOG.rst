@@ -17,6 +17,8 @@ Added
     - Optional zone write access restriction to created collections (#1050, #1540)
 - **Samplesheets**
     - Mac keyboard shortcut support for multi-cell copying (#1531)
+    - Study render table caching (#1509)
+    - ``syncstudytables`` management command (#1509)
 
 Changed
 -------
@@ -27,6 +29,7 @@ Changed
     - Update backend iRODS connection handling (#909, #1542)
 - **Samplesheets**
     - Upgrade ``loader-utils`` in Vue app (#1527)
+    - Remove redundant node UUIDs from render tables (#708)
 
 Fixed
 -----
@@ -36,12 +39,16 @@ Fixed
     - iRODS session disconnection issues (#909, #1542)
 - **Landingzones**
     - Typo in ``LANDINGZONES_TRIGGER_MOVE_INTERVAL`` (#1541)
+- **Samplesheets**
+    - Crash from incompatibility with ``packaging==0.22`` (#1550)
 
 Removed
 -------
 
 - **Irodsbackend**
     - Backend API ``conn`` argument (#909)
+- **Samplesheets**
+    - Unused ``config_set`` and ``num_col`` header parameters (#1551)
 
 
 v0.12.1 (2022-11-09)

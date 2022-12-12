@@ -89,6 +89,7 @@ from samplesheets.utils import (
 logger = logging.getLogger(__name__)
 app_settings = AppSettingAPI()
 conf_api = SheetConfigAPI()
+table_builder = SampleSheetTableBuilder()
 
 
 # SODAR constants
@@ -194,7 +195,6 @@ class SheetImportMixin:
 
     def handle_replace(self, investigation, old_inv, tl_event=None):
         project = investigation.project
-        tb = SampleSheetTableBuilder()
         old_study_uuids = {}
         old_assay_uuids = {}
         old_study_count = old_inv.studies.count()
@@ -208,7 +208,6 @@ class SheetImportMixin:
 
         # Ensure existing studies and assays are found in new inv
         compare_ok = compare_inv_replace(old_inv, investigation)
-
         try:
             if old_inv.irods_status and not compare_ok:
                 raise ValueError(
@@ -229,7 +228,8 @@ class SheetImportMixin:
 
             # Check if we can keep existing configurations
             if (
-                tb.get_headers(investigation) == tb.get_headers(old_inv)
+                table_builder.get_headers(investigation)
+                == table_builder.get_headers(old_inv)
                 and compare_ok
                 and old_study_count == new_study_count
                 and old_assay_count == new_assay_count
@@ -242,6 +242,10 @@ class SheetImportMixin:
                 zone.assay = new_assays[zone.assay.get_name()]
                 zone.save()
 
+            # If replacing with alt sheet, clear study cache (force delete)
+            if not compare_ok:
+                for study in old_inv.studies.all():
+                    table_builder.clear_study_cache(study, delete=True)
             # Delete old investigation
             old_inv.delete()
 
@@ -280,7 +284,6 @@ class SheetImportMixin:
                     if assay.get_name() in old_assay_uuids:
                         assay.sodar_uuid = old_assay_uuids[assay.get_name()]
                         assay.save()
-
         return investigation
 
     def handle_import_exception(self, ex, tl_event=None, ui_mode=True):
@@ -307,7 +310,6 @@ class SheetImportMixin:
                 for k, v in ex.args[1]['assays'].items():
                     ex_msg = _add_crits(k, v, ex_msg)
                 ex_msg += '</ul>'
-
             if ui_mode:
                 messages.error(self.request, mark_safe(ex_msg))
 
@@ -367,6 +369,7 @@ class SheetImportMixin:
         sheet_config = None
         display_config = None
         sheet_config_valid = True
+        inv_tables = None  # Ensure we only build render tables once
 
         # If replacing, delete old user display configurations
         if action == 'replace':
@@ -380,7 +383,12 @@ class SheetImportMixin:
                 sheet_config = app_settings.get_app_setting(
                     APP_NAME, 'sheet_config', project=project
                 )
-                conf_api.restore_sheet_config(investigation, sheet_config)
+                inv_tables = table_builder.build_inv_tables(
+                    investigation, use_config=False
+                )
+                conf_api.restore_sheet_config(
+                    investigation, inv_tables, sheet_config
+                )
                 display_config = app_settings.get_app_setting(
                     APP_NAME, 'display_config_default', project=project
                 )
@@ -389,21 +397,34 @@ class SheetImportMixin:
             logger.debug('Restoring previous edit and display configurations')
             sheet_config = isa_version.data.get('sheet_config')
             display_config = isa_version.data.get('display_config')
-
+            if not inv_tables:
+                inv_tables = table_builder.build_inv_tables(
+                    investigation, use_config=False
+                )
             try:
                 conf_api.validate_sheet_config(sheet_config)
-                conf_api.restore_sheet_config(investigation, sheet_config)
+                conf_api.restore_sheet_config(
+                    investigation, inv_tables, sheet_config
+                )
             except ValueError:
                 sheet_config_valid = False
 
-        if not sheet_config or not sheet_config_valid:
-            logger.debug('Building new sheet configuration')
-            sheet_config = conf_api.build_sheet_config(investigation)
-        if not display_config:
-            logger.debug('Building new display configuration')
-            display_config = conf_api.build_display_config(
-                investigation, sheet_config
-            )
+        if not sheet_config or not sheet_config_valid or not display_config:
+            if not inv_tables:
+                inv_tables = table_builder.build_inv_tables(
+                    investigation, use_config=False
+                )
+            if not sheet_config or not sheet_config_valid:
+                logger.debug('Building new sheet configuration')
+                sheet_config = conf_api.build_sheet_config(
+                    investigation, inv_tables
+                )
+                # TODO: Delete possible cached sheets here
+            if not display_config:
+                logger.debug('Building new display configuration')
+                display_config = conf_api.build_display_config(
+                    inv_tables, sheet_config
+                )
 
         # Save configs to isa version if we are creating the sheet
         # (or if the version is missing these configs for some reason)
@@ -431,6 +452,12 @@ class SheetImportMixin:
         )
         logger.info('Sheet configurations updated')
 
+        # Clear cached study tables
+        if action in ['replace', 'restore']:
+            for study in investigation.studies.all():
+                study.refresh_from_db()
+                table_builder.clear_study_cache(study)
+
         # Update project cache if replacing sheets and iRODS collections exists
         if (
             action in ['replace', 'restore']
@@ -439,6 +466,7 @@ class SheetImportMixin:
         ):
             from samplesheets.tasks_celery import update_project_cache_task
 
+            # Update iRODS cache
             update_project_cache_task.delay(
                 project_uuid=str(project.sodar_uuid),
                 user_uuid=str(self.request.user.sodar_uuid),
@@ -533,7 +561,6 @@ class SheetISAExportMixin:
             if isa_version
             else investigation.archive_name
         )
-
         if archive_name:
             file_name = archive_name.split('.zip')[0]
         else:
@@ -884,7 +911,6 @@ class SheetRemoteSyncAPI(SheetImportMixin):
                 project.title, project.sodar_uuid
             )
         )
-
         # Check input
         url = app_settings.get_app_setting(
             APP_NAME, 'sheet_sync_url', project=project
@@ -920,7 +946,6 @@ class SheetRemoteSyncAPI(SheetImportMixin):
                     response.status_code
                 )
             )
-
         try:
             source_data = response.json()
         except json.JSONDecodeError as ex:
@@ -935,7 +960,6 @@ class SheetRemoteSyncAPI(SheetImportMixin):
         ).replace(tzinfo=pytz.UTC)
         old_inv = project.investigations.first()
         replace = bool(old_inv)
-
         if old_inv and source_date < old_inv.date_modified:
             logger.debug('No updates detected, skipping sync')
             return False
@@ -955,12 +979,14 @@ class SheetRemoteSyncAPI(SheetImportMixin):
                 old_inv=old_inv,
                 tl_event=None,
             )
-
         # Activate investigation
         investigation.active = True
         investigation.save()
+        # Clear cached study tables
+        for study in investigation.studies.all():
+            table_builder.clear_study_cache(study)
 
-        # Update project cache if replacing sheets and iRODS collections exists
+        # Update project cache if replacing sheets and iRODS collections exist
         if (
             replace
             and investigation.irods_status
@@ -999,7 +1025,6 @@ class ProjectSheetsView(
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-
         studies = Study.objects.filter(
             investigation=context['investigation']
         ).order_by('pk')
@@ -1014,7 +1039,6 @@ class ProjectSheetsView(
                 )
             ),
         }
-
         if 'study' in self.kwargs:
             app_context['initial_study'] = self.kwargs['study']
         elif studies.count() > 0:
@@ -1124,7 +1148,6 @@ class SheetImportView(
             # Display warnings if assay plugins are not found
             for a in self.get_assays_without_plugins(self.object):
                 messages.warning(self.request, self.get_assay_plugin_warning(a))
-
         return redirect(redirect_url)
 
 
@@ -1250,11 +1273,9 @@ class SheetTemplateCreateFormView(
                 tl_event=tl_event,
                 isa_version=isa_version,
             )
-
             # Display warnings if assay plugins are not found
             for a in self.get_assays_without_plugins(self.object):
                 messages.warning(self.request, self.get_assay_plugin_warning(a))
-
         return redirect(redirect_url)
 
     def get(self, request, *args, **kwargs):
@@ -1307,10 +1328,9 @@ class SheetExcelExportView(
             )
             return redirect(redirect_url)
 
-        # Build study tables
-        tb = SampleSheetTableBuilder()
+        # Get/build study tables
         try:
-            tables = tb.build_study_tables(study, ui=False)
+            tables = table_builder.get_study_tables(study)
         except Exception as ex:
             messages.error(
                 self.request, 'Unable to render table for export: {}'.format(ex)
@@ -1333,7 +1353,6 @@ class SheetExcelExportView(
         ] = 'attachment; filename="{}.xlsx"'.format(
             input_name.split('.')[0]
         )  # TODO: TBD: Output file name?
-
         # Build Excel file
         write_excel_table(table, response, display_name)
 
@@ -1362,8 +1381,6 @@ class SheetExcelExportView(
                 tl_event.add_object(
                     obj=study, label='study', name=study.get_display_name()
                 )
-
-        # Return file
         return response
 
 
@@ -1446,7 +1463,6 @@ class SheetDeleteView(
             if 'irods_sample_stats' in context
             else 0
         )
-
         if (
             file_count > 0
             and not self.request.user.is_superuser
@@ -1494,7 +1510,6 @@ class SheetDeleteView(
             return redirect(redirect_url)
 
         delete_success = True
-
         if taskflow and investigation.irods_status:
             if tl_event:
                 tl_event.set_status('SUBMIT')
@@ -1511,6 +1526,9 @@ class SheetDeleteView(
                     'Failed to delete sample sheets: {}'.format(ex),
                 )
         else:
+            # Clear cached study tables (force delete)
+            for study in investigation.studies.all():
+                table_builder.clear_study_cache(study, delete=True)
             investigation.delete()
             tl_event.set_status('OK')
 
@@ -1536,7 +1554,6 @@ class SheetDeleteView(
                 APP_NAME, 'display_config', project=project
             )
             messages.success(self.request, 'Sample sheets deleted.')
-
         return redirect(redirect_url)
 
 
@@ -1610,7 +1627,6 @@ class IrodsCollsCreateView(
                 ),
             )
             return redirect(redirect_url)
-
         # Else go on with the creation
         try:
             self.create_colls(investigation, request)
@@ -1623,7 +1639,6 @@ class IrodsCollsCreateView(
             messages.success(self.request, success_msg)
         except taskflow.FlowSubmitException as ex:
             messages.error(self.request, str(ex))
-
         return redirect(redirect_url)
 
     def get(self, request, *args, **kwargs):

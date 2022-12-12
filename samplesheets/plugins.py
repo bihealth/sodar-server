@@ -50,6 +50,7 @@ from samplesheets.views import (
 
 app_settings = AppSettingAPI()
 logger = logging.getLogger(__name__)
+table_builder = SampleSheetTableBuilder()
 
 
 # SODAR constants
@@ -625,6 +626,9 @@ class ProjectAppPlugin(
         :raise: Exception if required backends (sodar_cache and omics_irods)
                 are not found.
         """
+        # NOTE: This will not sync cached study render tables, they are created
+        #       synchronously upon access if not up-to-date. To sync the cache
+        #       for all study tables, use the syncstudytables command.
         cache_backend = get_backend_api('sodar_cache')
         irods_backend = get_backend_api('omics_irods')
         if not cache_backend or not irods_backend:
@@ -895,7 +899,6 @@ class SampleSheetAssayPluginPoint(PluginPoint):
         if not cache_backend or not irods_backend:
             return
 
-        tb = SampleSheetTableBuilder()
         projects = (
             [project]
             if project
@@ -921,8 +924,7 @@ class SampleSheetAssayPluginPoint(PluginPoint):
 
         # Get assay paths
         for study in studies:
-            study_tables = tb.build_study_tables(study, ui=False)
-
+            study_tables = table_builder.get_study_tables(study)
             for assay in [a for a in study.assays.all() if a in config_assays]:
                 assay_table = study_tables['assays'][str(assay.sodar_uuid)]
                 assay_path = irods_backend.get_path(assay)

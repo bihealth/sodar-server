@@ -5,16 +5,19 @@ import itertools
 import logging
 import re
 import time
+
 from datetime import date
 from packaging import version
 
 from altamisa.constants import table_headers as th
 from altamisa.isatab.write_assay_study import RefTableBuilder
 
-from django.conf import settings
-
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
+from projectroles.plugins import get_backend_api
+
+# Sodarcache dependency (see bihealth/sodar-core#1068)
+from sodarcache.models import JSONCacheItem
 
 from samplesheets.models import Process, GenericMaterial
 from samplesheets.utils import get_node_obj
@@ -26,29 +29,25 @@ logger = logging.getLogger(__name__)
 app_settings = AppSettingAPI()
 
 
+APP_NAME = 'samplesheets'
 TOP_HEADER_MATERIAL_COLOURS = {
     'SOURCE': 'info',
     'SAMPLE': 'warning',
     'MATERIAL': 'success',
     'DATA': 'success',
 }
-
 TOP_HEADER_MATERIAL_VALUES = {
     'SOURCE': 'Source',
     'SAMPLE': 'Sample',
     'MATERIAL': 'Material',
     'DATA': 'Data File',
 }
-
 EMPTY_VALUE = '-'
-
 STUDY_HIDEABLE_CLASS = 'sodar-ss-hideable-study'
 SOURCE_SEARCH_STR = '-source-'
 NARROW_CHARS = 'fIijlt;:.,/"!\'!()[]{}'
 WIDE_CHARS = 'ABCDEFHKLMNOPQRSTUVXYZ<>%$_'
-
 IGNORED_HEADERS = ['Unit', 'Term Source REF', 'Term Accession Number']
-
 # Name fields (NOTE: Missing labeled extract name by purpose)
 ALTAMISA_MATERIAL_NAMES = [
     th.EXTRACT_NAME,
@@ -56,7 +55,6 @@ ALTAMISA_MATERIAL_NAMES = [
     th.SAMPLE_NAME,
     th.SOURCE_NAME,
 ]
-
 # Attribute list lookup
 LIST_ATTR_MAP = {
     th.CHARACTERISTICS: 'characteristics',
@@ -64,10 +62,8 @@ LIST_ATTR_MAP = {
     th.FACTOR_VALUE: 'factor_values',
     th.PARAMETER_VALUE: 'parameter_values',
 }
-
 # Basic fields lookup (header -> member of node)
 BASIC_FIELD_MAP = {th.PERFORMER: 'performer', th.DATE: 'perform_date'}
-
 # altamISA -> SODAR header name lookup
 HEADER_MAP = {
     th.LABELED_EXTRACT_NAME: 'Label',
@@ -75,7 +71,6 @@ HEADER_MAP = {
     th.PERFORMER: 'Performer',
     th.DATE: 'Perform Date',
 }
-
 # Map JSON attributes to model attributes
 MODEL_JSON_ATTRS = [
     'characteristics',
@@ -83,9 +78,9 @@ MODEL_JSON_ATTRS = [
     'factor_values',
     'parameter_values',
 ]
-
 # HACK: Special cases for inline file linking (see issue #817)
 SPECIAL_FILE_LINK_HEADERS = ['report file']
+STUDY_TABLE_CACHE_ITEM = 'sheet/tables/study/{study}'
 
 
 # Table building ---------------------------------------------------------------
@@ -116,7 +111,6 @@ class SampleSheetTableBuilder:
         self._node_idx = 0
         self._field_idx = 0
         self._parser_version = None
-        self._edit = False
         self._sheet_config = None
 
     # General Data and Cell Functions ------------------------------------------
@@ -137,44 +131,6 @@ class SampleSheetTableBuilder:
             return field['value']
         return ''
 
-    @classmethod
-    def _get_ontology_url(cls, ontology_name, accession):
-        """
-        Return full URL for ontology reference.
-
-        :param ontology_name: String
-        :param accession: String (contains an URL)
-        :return: String
-        """
-        if (
-            not settings.SHEETS_ONTOLOGY_URL_TEMPLATE
-            or not accession
-            or any(s in accession for s in settings.SHEETS_ONTOLOGY_URL_SKIP)
-        ):
-            return accession
-        # HACK: "HP" is commonly incorrectly provided as "HPO"
-        if ontology_name == 'HPO':
-            ontology_name = 'HP'
-        return settings.SHEETS_ONTOLOGY_URL_TEMPLATE.format(
-            ontology_name=ontology_name, accession=accession
-        )
-
-    @classmethod
-    def _get_ontology_link(cls, ontology_name, accession):
-        """
-        Build ontology link(s).
-
-        :param ontology_name: Ontology name
-        :param accession: Ontology accession URL
-        :return: String
-        """
-        return ';'.join(
-            [
-                cls._get_ontology_url(ontology_name, a)
-                for a in accession.split(';')
-            ]
-        )
-
     def _add_top_header(self, obj, colspan):
         """
         Append columns to top header.
@@ -193,9 +149,12 @@ class SampleSheetTableBuilder:
         else:  # Process
             colour = 'danger'
             value = 'Process'
-        th = {'value': value.strip(), 'colour': colour, 'colspan': colspan}
-        if self._edit:
-            th['headers'] = obj.headers  # Store the full header for editing
+        th = {
+            'value': value.strip(),
+            'colour': colour,
+            'colspan': colspan,
+            'headers': obj.headers,
+        }
         self._top_header.append(th)
         self._node_idx += 1
         self._field_idx = 0
@@ -211,12 +170,11 @@ class SampleSheetTableBuilder:
         header = {
             'value': name.strip().title(),  # TODO: Better titling (#576)
             'name': name,  # Store original field name
+            'type': header_type,
             'obj_cls': obj.__class__.__name__,
             'item_type': obj.item_type
             if isinstance(obj, GenericMaterial)
             else None,
-            'num_col': False,  # Will be checked for sorting later
-            'config_set': False,
         }
         field_config = None
 
@@ -254,38 +212,27 @@ class SampleSheetTableBuilder:
             name.lower() == 'name' or name in th.PROCESS_NAME_HEADERS
         ) and header['item_type'] != 'DATA':
             header['col_type'] = 'NAME'
-
         elif name.lower() == 'protocol':
             header['col_type'] = 'PROTOCOL'
-
         elif 'contact' in name.lower() or name == 'Performer':
             header['col_type'] = 'CONTACT'
-
         elif name == 'Perform Date':
             header['col_type'] = 'DATE'
-
         elif name.lower() == 'external links':
             header['col_type'] = 'EXTERNAL_LINKS'
-
         elif (
             name.lower() == 'name' and header['item_type'] == 'DATA'
         ) or name.lower() in SPECIAL_FILE_LINK_HEADERS:  # HACK for issue #817
             header['col_type'] = 'LINK_FILE'
-
         # Recognize ONTOLOGY by headers
         elif obj.is_ontology_field(name, header_type):
             header['col_type'] = 'ONTOLOGY'
-
         # Recognize UNIT by headers
         elif obj.has_unit(name, header_type):
             header['col_type'] = 'UNIT'
-
         else:
             header['col_type'] = None  # Default / to be determined later
 
-        # Add extra data for editing
-        if self._edit:
-            header['type'] = header_type
         self._field_header.append(header)
         self._field_idx += 1
 
@@ -318,8 +265,10 @@ class SampleSheetTableBuilder:
         # Get printable value in case the function is called with a reference
         if isinstance(value, dict):
             value = self._get_value(value)
+        # Format date into text
+        if isinstance(value, date):
+            value = value.strftime('%Y-%m-%d')
         cell = {'value': value.strip() if isinstance(value, str) else value}
-
         if unit:
             cell['unit'] = unit.strip() if isinstance(unit, str) else unit
         if link:
@@ -328,12 +277,12 @@ class SampleSheetTableBuilder:
             cell['tooltip'] = tooltip
 
         # Add extra data for editing
-        if self._edit:
-            cell['uuid'] = str(obj.sodar_uuid)  # Node UUID
-            # Object reference UUID for special cases
-            if header_type == 'protocol':
-                cell['uuid_ref'] = str(obj.protocol.sodar_uuid)
-
+        # Only add object UUID for name and protocol headers
+        if header_type in ['name', 'protocol']:
+            cell['uuid'] = str(obj.sodar_uuid)
+        # Reference UUID to another object for special cases
+        if header_type == 'protocol':
+            cell['uuid_ref'] = str(obj.protocol.sodar_uuid)
         self._row.append(cell)
 
         # Store value for detecting unfilled columns
@@ -357,7 +306,6 @@ class SampleSheetTableBuilder:
 
         for h in headers:
             list_ref = re.findall(header_re, h)
-
             # Value lists with possible ontology annotation
             if list_ref:
                 h_type = list_ref[0][0]
@@ -453,12 +401,10 @@ class SampleSheetTableBuilder:
         :param obj: GenericMaterial or Pocess object the annotation belongs to
         """
         unit = None
-
         # Special case: Comments as parsed in SODAR v0.5.2 (see #629)
         # TODO: TBD: Should these be added in this function at all?
         if isinstance(ann, str):
             val = ann
-
         # Ontology reference(s) (altamISA v0.1+, SODAR v0.5.2+)
         elif isinstance(ann['value'], dict) or (
             isinstance(ann['value'], list)
@@ -467,7 +413,6 @@ class SampleSheetTableBuilder:
         ):
             val = []
             tmp_val = ann['value']
-
             # Make single reference into a list for simpler rendering
             if isinstance(ann['value'], dict):
                 tmp_val = [ann['value']]
@@ -480,13 +425,7 @@ class SampleSheetTableBuilder:
                         v['name'] = v['name'].strip()  # Cleanup name
                     elif v['name'] is None:
                         v['name'] = ''
-                    if not self._edit:
-                        # If not editing, provide user friendly ontology URL
-                        v['accession'] = self._get_ontology_url(
-                            v['ontology_name'], v['accession']
-                        )
                     val.append(v)
-
         # Basic value string OR a list of strings
         else:
             val = ann['value']
@@ -556,10 +495,8 @@ class SampleSheetTableBuilder:
 
         top_idx = 0  # Top header index
         grp_idx = 0  # Index within current top header group
-
         for i in range(len(self._field_header)):
             header_name = self._field_header[i]['value']
-
             # Set column type to NUMERIC if values are all numeric or empty
             # (except if name or process name)
             # Skip check if column is already defined as UNIT
@@ -580,7 +517,6 @@ class SampleSheetTableBuilder:
             field_header_len = round(
                 _get_length(self._field_header[i]['value'])
             )
-
             # If there is only one column in top header, use top header length
             if self._top_header[top_idx]['colspan'] == 1:
                 top_header_len = round(
@@ -591,7 +527,6 @@ class SampleSheetTableBuilder:
                 header_len = field_header_len
 
             col_type = self._field_header[i]['col_type']
-
             if col_type == 'CONTACT':
                 max_cell_len = max(
                     [
@@ -605,10 +540,8 @@ class SampleSheetTableBuilder:
                         for x in self._table_data
                     ]
                 )
-
             elif col_type == 'EXTERNAL_LINKS':  # Special case, count elements
                 header_len = 0  # Header length is not comparable
-
                 max_cell_len = max(
                     [
                         _get_length(x[i]['value'], col_type)
@@ -617,7 +550,6 @@ class SampleSheetTableBuilder:
                         for x in self._table_data
                     ]
                 )
-
             else:  # Generic type
                 max_cell_len = max(
                     [
@@ -627,7 +559,6 @@ class SampleSheetTableBuilder:
                         for x in self._table_data
                     ]
                 )
-
             self._field_header[i]['max_value_len'] = max(
                 [header_len, max_cell_len]
             )
@@ -638,9 +569,7 @@ class SampleSheetTableBuilder:
             else:
                 grp_idx += 1
 
-    def _build_table(
-        self, table_refs, node_map=None, study=None, assay=None, ui=True
-    ):
+    def _build_table(self, table_refs, node_map=None, study=None, assay=None):
         """
         Build a table from the node graph reference.
 
@@ -648,7 +577,6 @@ class SampleSheetTableBuilder:
         :param node_map: Lookup dictionary containing objects (optional)
         :param study: Study object (optional, required if rendering study)
         :param assay: Assay object (optional, required if rendering assay)
-        :param ui: Add UI specific data if True (boolean)
         :raise: ValueError if both study and assay are None
         :return: Dict
         """
@@ -666,7 +594,6 @@ class SampleSheetTableBuilder:
         self._col_values = []
         self._col_idx = 0
         row_id = 0
-
         if not node_map:
             node_map = self.get_node_map(self._study.get_nodes())
 
@@ -679,22 +606,17 @@ class SampleSheetTableBuilder:
             self._append_row()
             row_id += 1
 
-        # Aggregate UI specific data
-        if ui:
-            self._add_ui_table_data()
-
-        ret = {
+        # Aggregate UI specific data, store index of last visible column
+        self._add_ui_table_data()
+        return {
             'top_header': self._top_header,
             'field_header': self._field_header,
             'table_data': self._table_data,
             'col_values': self._col_values,
+            'col_last_vis': len(self._col_values)
+            - self._col_values[::-1].index(1)
+            - 1,
         }
-        # Store index of last visible column for UI
-        if ui:
-            ret['col_last_vis'] = (
-                len(self._col_values) - self._col_values[::-1].index(1) - 1
-            )
-        return ret
 
     @classmethod
     def build_study_reference(cls, study, nodes=None):
@@ -785,96 +707,6 @@ class SampleSheetTableBuilder:
                 assay_refs.append(row[start_idx:])
         return assay_refs
 
-    def build_study_tables(self, study, edit=False, use_config=True, ui=True):
-        """
-        Build study table and associated assay tables for rendering.
-
-        :param study: Study object
-        :param edit: Return extra data for editing if true (bool)
-        :param use_config: Use sheet configuration in building (bool)
-        :return: Dict
-        """
-        s_start = time.time()
-        logger.debug(
-            'Building study "{}" (UUID={}, edit={})..'.format(
-                study.get_name(), study.sodar_uuid, edit
-            )
-        )
-
-        # Get study config for column type detection
-        if use_config:
-            self._sheet_config = app_settings.get_app_setting(
-                'samplesheets', 'sheet_config', project=study.get_project()
-            )
-
-        # HACK: In case of deletion from database bypassing the database,
-        # HACK: make sure the correct UUIDs are in the config
-        if (
-            self._sheet_config
-            and str(study.sodar_uuid) not in self._sheet_config['studies']
-        ):
-            logger.warning(
-                'Unable to use sheet configuration, study UUID not found'
-            )
-            self._sheet_config = None
-        elif self._sheet_config:
-            logger.debug('Using sheet configuration from app settings')
-        elif not use_config:
-            logger.debug('Not using sheet configuration (use_config=False)')
-        else:
-            logger.debug('No sheet configuration found in app settings')
-
-        self._edit = edit
-        self._parser_version = (
-            version.parse(study.investigation.parser_version)
-            if study.investigation.parser_version
-            else version.parse('')
-        )
-
-        logger.debug(
-            'altamISA version at import: {}'.format(
-                self._parser_version
-                if not isinstance(self._parser_version, version.LegacyVersion)
-                else 'LEGACY'
-            )
-        )
-
-        ret = {'study': None, 'assays': {}}
-        nodes = study.get_nodes()
-        all_refs = self.build_study_reference(study, nodes)
-        sample_idx = self.get_sample_idx(all_refs)
-        node_map = self.get_node_map(nodes)
-
-        # Study ref table without duplicates
-        study_refs = self.get_study_refs(all_refs, sample_idx)
-        ret['study'] = self._build_table(
-            study_refs, node_map, study=study, ui=ui
-        )
-        logger.debug(
-            'Building study OK ({:.1f}s)'.format(time.time() - s_start)
-        )
-
-        # Assay tables
-        assay_id = 0
-
-        for assay in study.assays.all().order_by('pk'):
-            a_start = time.time()
-            logger.debug(
-                'Building assay "{}" (UUID={}, edit={})..'.format(
-                    assay.get_name(), assay.sodar_uuid, edit
-                )
-            )
-            assay_refs = self.get_assay_refs(all_refs, assay_id, sample_idx)
-            ret['assays'][str(assay.sodar_uuid)] = self._build_table(
-                assay_refs, node_map, assay=assay, ui=ui
-            )
-            assay_id += 1
-            logger.debug(
-                'Building assay OK ({:.1f}s)'.format(time.time() - a_start)
-            )
-
-        return ret
-
     def get_headers(self, investigation):
         """
         Return lists of headers for the studies and assays in an investigation.
@@ -883,7 +715,6 @@ class SampleSheetTableBuilder:
         :return: Dict
         """
         ret = {'studies': []}
-
         for study in investigation.studies.all().order_by('pk'):
             study_data = {'headers': [], 'assays': []}
             all_refs = self.build_study_reference(study, study.get_nodes())
@@ -907,5 +738,182 @@ class SampleSheetTableBuilder:
                 assay_id += 1
 
             ret['studies'].append(study_data)
-
         return ret
+
+    def build_study_tables(self, study, use_config=True):
+        """
+        Build study table and associated assay tables for rendering.
+
+        :param study: Study object
+        :param use_config: Use sheet configuration in building (bool)
+        :return: Dict
+        """
+        s_start = time.time()
+        logger.debug(
+            'Building study "{}" ({})..'.format(
+                study.get_name(), study.sodar_uuid
+            )
+        )
+        # Get study config for column type detection
+        if use_config:
+            self._sheet_config = app_settings.get_app_setting(
+                'samplesheets', 'sheet_config', project=study.get_project()
+            )
+        # HACK: In case of deletion from database bypassing the database,
+        # HACK: make sure the correct UUIDs are in the config
+        if (
+            self._sheet_config
+            and str(study.sodar_uuid) not in self._sheet_config['studies']
+        ):
+            logger.warning(
+                'Unable to use sheet configuration, study UUID not found'
+            )
+            self._sheet_config = None
+        elif self._sheet_config:
+            logger.debug('Using sheet configuration from app settings')
+        elif not use_config:
+            logger.debug('Not using sheet configuration (use_config=False)')
+        else:
+            logger.debug('No sheet configuration found in app settings')
+
+        # NOTE: Parsing version here in case of version-specific tweaks
+        self._parser_version = (
+            version.parse(study.investigation.parser_version)
+            if study.investigation.parser_version
+            else None
+        )
+        logger.debug(
+            'altamISA version at import: {}'.format(
+                self._parser_version if self._parser_version else 'LEGACY'
+            )
+        )
+
+        ret = {'study': None, 'assays': {}}
+        nodes = study.get_nodes()
+        all_refs = self.build_study_reference(study, nodes)
+        sample_idx = self.get_sample_idx(all_refs)
+        node_map = self.get_node_map(nodes)
+
+        # Study ref table without duplicates
+        study_refs = self.get_study_refs(all_refs, sample_idx)
+        ret['study'] = self._build_table(study_refs, node_map, study=study)
+        logger.debug(
+            'Building study OK ({:.1f}s)'.format(time.time() - s_start)
+        )
+
+        # Assay tables
+        assay_id = 0
+        for assay in study.assays.all().order_by('pk'):
+            a_start = time.time()
+            logger.debug(
+                'Building assay "{}" ({})..'.format(
+                    assay.get_name(), assay.sodar_uuid
+                )
+            )
+            assay_refs = self.get_assay_refs(all_refs, assay_id, sample_idx)
+            ret['assays'][str(assay.sodar_uuid)] = self._build_table(
+                assay_refs, node_map, assay=assay
+            )
+            assay_id += 1
+            logger.debug(
+                'Building assay OK ({:.1f}s)'.format(time.time() - a_start)
+            )
+        return ret
+
+    def build_inv_tables(self, investigation, use_config=True):
+        """
+        Build all study and assay tables of an investigation for rendering.
+
+        :param investigation: Investigation object
+        :param use_config: Use sheet configuration in building (bool)
+        :return: Dict
+        """
+        ret = {}
+        for study in investigation.studies.all().order_by('pk'):
+            ret[study] = self.build_study_tables(study, use_config=use_config)
+        return ret
+
+    def get_study_tables(self, study):
+        """
+        Get study and assay tables for rendering. Retrieve from sodarcache or
+        build and save to cache if not found.
+
+        :param study: Study object
+        :return: Dict
+        """
+        logger.info(
+            'Retrieving cached render tables for study "{}" ({})'.format(
+                study.get_name(), study.sodar_uuid
+            )
+        )
+        cache_backend = get_backend_api('sodar_cache')
+        item_name = STUDY_TABLE_CACHE_ITEM.format(study=study.sodar_uuid)
+        project = study.get_project()
+        # Get cached tables
+        if cache_backend:
+            item = cache_backend.get_cache_item(
+                app_name=APP_NAME,
+                name=item_name,
+                project=project,
+            )
+            if item and item.data:
+                logger.debug('Returning cached study tables')
+                return item.data
+            logger.debug('Cache item "{}" not set'.format(item_name))
+        # If not found in cache, build and save tables
+        study_tables = self.build_study_tables(study, use_config=True)
+        if cache_backend:
+            try:
+                cache_backend.set_cache_item(
+                    app_name=APP_NAME,
+                    name=item_name,
+                    data=study_tables,
+                    project=project,
+                )
+                logger.debug('Set cache item "{}"'.format(item_name))
+            except Exception as ex:
+                logger.error(
+                    'Failed to set cache item "{}": {}'.format(item_name, ex)
+                )
+        return study_tables
+
+    @classmethod
+    def clear_study_cache(cls, study, delete=False):
+        """
+        Clear study render table data from sodarcache, if cache is enabled and
+        cached tables exist.
+
+        :param study: Study object
+        :param delete: Delete item instead of clearing value if true (bool)
+        """
+        cache_backend = get_backend_api('sodar_cache')
+        if cache_backend:
+            item_name = STUDY_TABLE_CACHE_ITEM.format(study=study.sodar_uuid)
+            project = study.get_project()
+            item_kwargs = {
+                'app_name': APP_NAME,
+                'name': item_name,
+                'project': project,
+            }
+            try:
+                msg = 'Cleared cache item "{}"'.format(item_name)
+                if delete:
+                    # TODO: Use delete method (see bihealth/sodar-core#1068)
+                    item = JSONCacheItem.objects.filter(**item_kwargs).first()
+                    if item:
+                        item.delete()
+                        logger.debug(msg + ' (delete setting object)')
+                else:
+                    item = cache_backend.get_cache_item(**item_kwargs)
+                    if item:
+                        cache_backend.set_cache_item(
+                            app_name=APP_NAME,
+                            name=item_name,
+                            data={},
+                            project=project,
+                        )
+                        logger.debug(msg + ' (clear value)')
+            except Exception as ex:
+                logger.error(
+                    'Failed to clear cache item "{}": {}'.format(item_name, ex)
+                )

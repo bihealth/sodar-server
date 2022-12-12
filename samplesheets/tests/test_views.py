@@ -15,10 +15,6 @@ from django.utils.timezone import localtime
 
 from test_plus.test import TestCase
 
-# Landingzones dependency
-from landingzones.models import LandingZone
-from landingzones.tests.test_models import LandingZoneMixin
-
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import Role, AppSetting, SODAR_CONSTANTS
@@ -28,8 +24,19 @@ from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
 from projectroles.tests.test_views_api import SODARAPIViewTestMixin
 from projectroles.utils import build_secret
 
+# Sodarcache dependency
+from sodarcache.models import JSONCacheItem
+
+# Landingzones dependency
+from landingzones.models import LandingZone
+from landingzones.tests.test_models import LandingZoneMixin
+
 from samplesheets.io import SampleSheetIO
 from samplesheets.models import Investigation, Assay, ISATab
+from samplesheets.rendering import (
+    SampleSheetTableBuilder,
+    STUDY_TABLE_CACHE_ITEM,
+)
 from samplesheets.sheet_config import SheetConfigAPI
 from samplesheets.tests.test_io import (
     SampleSheetIOMixin,
@@ -54,6 +61,7 @@ from samplesheets.views import (
 
 app_settings = AppSettingAPI()
 conf_api = SheetConfigAPI()
+table_builder = SampleSheetTableBuilder()
 
 
 # SODAR constants
@@ -100,6 +108,9 @@ IRODS_BACKEND_ENABLED = (
 IRODS_BACKEND_SKIP_MSG = 'iRODS backend not enabled in settings'
 
 
+# TODO: Add testing for study table cache updates
+
+
 class TestViewsBase(
     ProjectMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase
 ):
@@ -116,7 +127,7 @@ class TestViewsBase(
         )[0]
         self.role_guest = Role.objects.get_or_create(name=PROJECT_ROLE_GUEST)[0]
 
-        # Init superuser
+        # Init suusers
         self.user = self.make_user('superuser')
         self.user.is_staff = True
         self.user.is_superuser = True
@@ -126,6 +137,7 @@ class TestViewsBase(
         self.user_contributor = self.make_user('contributor')
         self.user_guest = self.make_user('guest')
         self.user_no_roles = self.make_user('user_no_roles')
+
         # Init projects
         self.category = self._make_project(
             'TestCategory', PROJECT_TYPE_CATEGORY, None
@@ -181,6 +193,7 @@ class TestSheetImportView(SheetImportMixin, LandingZoneMixin, TestViewsBase):
     def setUp(self):
         super().setUp()
         self.timeline = get_backend_api('timeline_backend')
+        self.cache_backend = get_backend_api('sodar_cache')
 
     def test_render(self):
         """Test rendering the investigation import view"""
@@ -193,7 +206,7 @@ class TestSheetImportView(SheetImportMixin, LandingZoneMixin, TestViewsBase):
             )
         self.assertEqual(response.status_code, 200)
 
-    def test_post(self):
+    def test_import(self):
         """Test posting an ISA-Tab zip file in the import form"""
         self.assertEqual(Investigation.objects.count(), 0)
         self.assertEqual(ISATab.objects.count(), 0)
@@ -216,8 +229,19 @@ class TestSheetImportView(SheetImportMixin, LandingZoneMixin, TestViewsBase):
         self.assertListEqual(isa_version.tags, ['IMPORT'])
         self.assertIsNotNone(isa_version.data['sheet_config'])
         self.assertIsNotNone(isa_version.data['display_config'])
+        # Assert study render table cache
+        # NOTE: Cache item not created in this case
+        inv = Investigation.objects.first()
+        cache_name = STUDY_TABLE_CACHE_ITEM.format(
+            study=inv.studies.first().sodar_uuid
+        )
+        self.assertIsNone(
+            self.cache_backend.get_cache_item(
+                APP_NAME, cache_name, self.project
+            )
+        )
 
-    def test_post_replace(self):
+    def test_replace(self):
         """Test replacing an existing investigation by posting"""
         inv = self.import_isa_from_file(SHEET_PATH, self.project)
         uuid = inv.sodar_uuid
@@ -262,8 +286,18 @@ class TestSheetImportView(SheetImportMixin, LandingZoneMixin, TestViewsBase):
         self.assertEqual(
             AppSetting.objects.filter(name='display_config').count(), 0
         )
+        # Assert study render table cache
+        inv = Investigation.objects.first()
+        cache_name = STUDY_TABLE_CACHE_ITEM.format(
+            study=inv.studies.first().sodar_uuid
+        )
+        self.assertIsNone(
+            self.cache_backend.get_cache_item(
+                APP_NAME, cache_name, self.project
+            )
+        )
 
-    def test_post_replace_config_keep(self):
+    def test_replace_config_keep(self):
         """Test keeping configs when replacing"""
         inv = self.import_isa_from_file(SHEET_PATH, self.project)
         s_uuid = str(inv.studies.first().sodar_uuid)
@@ -310,7 +344,7 @@ class TestSheetImportView(SheetImportMixin, LandingZoneMixin, TestViewsBase):
             edited_field,
         )
 
-    def test_post_replace_not_allowed(self):
+    def test_replace_not_allowed(self):
         """Test replacing an iRODS-enabled investigation with missing data"""
         inv = self.import_isa_from_file(SHEET_PATH, self.project)
         inv.irods_status = True
@@ -334,7 +368,7 @@ class TestSheetImportView(SheetImportMixin, LandingZoneMixin, TestViewsBase):
         new_inv = Investigation.objects.first()
         self.assertEqual(uuid, new_inv.sodar_uuid)  # Should not have changed
 
-    def test_post_replace_zone(self):
+    def test_replace_zone(self):
         """Test replacing with existing landing zone"""
         inv = self.import_isa_from_file(SHEET_PATH, self.project)
         inv.irods_status = True
@@ -388,7 +422,78 @@ class TestSheetImportView(SheetImportMixin, LandingZoneMixin, TestViewsBase):
             Assay.objects.filter(study__investigation=inv).first(),
         )
 
-    def test_post_critical_warnings(self):
+    def test_replace_study_cache(self):
+        """Test replacing with existing study table cache"""
+        inv = self.import_isa_from_file(SHEET_PATH, self.project)
+        conf_api.get_sheet_config(inv)
+        study = inv.studies.first()
+        study_uuid = str(study.sodar_uuid)
+
+        # Build study tables and cache item
+        study_tables = table_builder.build_study_tables(study)
+        cache_name = STUDY_TABLE_CACHE_ITEM.format(study=study_uuid)
+        self.cache_backend.set_cache_item(
+            APP_NAME, cache_name, study_tables, 'json', self.project
+        )
+        cache_args = [APP_NAME, cache_name, self.project]
+        cache_item = self.cache_backend.get_cache_item(*cache_args)
+        self.assertEqual(cache_item.data, study_tables)
+        self.assertEqual(JSONCacheItem.objects.count(), 1)
+
+        with open(SHEET_PATH_INSERTED, 'rb') as file:
+            with self.login(self.user):
+                values = {'file_upload': file}
+                response = self.client.post(
+                    reverse(
+                        'samplesheets:import',
+                        kwargs={'project': self.project.sodar_uuid},
+                    ),
+                    values,
+                )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Investigation.objects.count(), 1)
+        self.assertEqual(ISATab.objects.count(), 2)
+        cache_item = self.cache_backend.get_cache_item(*cache_args)
+        self.assertEqual(cache_item.data, {})
+        self.assertEqual(JSONCacheItem.objects.count(), 1)
+
+    def test_replace_study_cache_new_sheet(self):
+        """Test replacing with study table cache and different sheet"""
+        inv = self.import_isa_from_file(SHEET_PATH, self.project)
+        conf_api.get_sheet_config(inv)
+        study = inv.studies.first()
+        study_uuid = str(study.sodar_uuid)
+
+        study_tables = table_builder.build_study_tables(study)
+        cache_name = STUDY_TABLE_CACHE_ITEM.format(study=study_uuid)
+        self.cache_backend.set_cache_item(
+            APP_NAME, cache_name, study_tables, 'json', self.project
+        )
+        cache_args = [APP_NAME, cache_name, self.project]
+        cache_item = self.cache_backend.get_cache_item(*cache_args)
+        self.assertEqual(cache_item.data, study_tables)
+        self.assertEqual(JSONCacheItem.objects.count(), 1)
+
+        with open(SHEET_PATH_SMALL2, 'rb') as file:
+            with self.login(self.user):
+                values = {'file_upload': file}
+                response = self.client.post(
+                    reverse(
+                        'samplesheets:import',
+                        kwargs={'project': self.project.sodar_uuid},
+                    ),
+                    values,
+                )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Investigation.objects.count(), 1)
+        self.assertEqual(ISATab.objects.count(), 2)
+        cache_item = self.cache_backend.get_cache_item(*cache_args)
+        self.assertIsNone(cache_item)
+        self.assertEqual(JSONCacheItem.objects.count(), 0)
+
+    def test_import_critical_warnings(self):
         """Test posting an ISA-Tab which raises critical warnings in altamISA"""
         self.assertEqual(Investigation.objects.count(), 0)
         with open(SHEET_PATH_CRITICAL, 'rb') as file:
@@ -411,7 +516,7 @@ class TestSheetImportView(SheetImportMixin, LandingZoneMixin, TestViewsBase):
         self.assertIsNotNone(tl_status.extra_data['warnings'])
 
     @override_settings(SHEETS_ALLOW_CRITICAL=True)
-    def test_post_critical_warnings_allowed(self):
+    def test_import_critical_warnings_allowed(self):
         """Test posting an ISA-Tab with critical warnings allowed"""
         self.assertEqual(Investigation.objects.count(), 0)
 
@@ -435,7 +540,7 @@ class TestSheetImportView(SheetImportMixin, LandingZoneMixin, TestViewsBase):
         tl_status = tl_event.get_status()
         self.assertIsNotNone(tl_status.extra_data['warnings'])
 
-    def test_post_multiple(self):
+    def test_import_multiple(self):
         """Test posting an ISA-Tab as multiple files"""
         self.assertEqual(Investigation.objects.count(), 0)
         self.assertEqual(ISATab.objects.count(), 0)
@@ -460,7 +565,7 @@ class TestSheetImportView(SheetImportMixin, LandingZoneMixin, TestViewsBase):
         self.assertEqual(ISATab.objects.count(), 1)
         self.assertListEqual(ISATab.objects.first().tags, ['IMPORT'])
 
-    def test_post_multiple_no_study(self):
+    def test_import_multiple_no_study(self):
         """Test posting an ISA-Tab as multiple files without required study"""
         self.assertEqual(Investigation.objects.count(), 0)
         self.assertEqual(ISATab.objects.count(), 0)
@@ -486,7 +591,7 @@ class TestSheetImportView(SheetImportMixin, LandingZoneMixin, TestViewsBase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(Investigation.objects.count(), 0)
 
-    def test_post_multiple_no_assay(self):
+    def test_import_multiple_no_assay(self):
         """Test posting an ISA-Tab as multiple files without required assay"""
         self.assertEqual(Investigation.objects.count(), 0)
         self.assertEqual(ISATab.objects.count(), 0)
@@ -512,7 +617,7 @@ class TestSheetImportView(SheetImportMixin, LandingZoneMixin, TestViewsBase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Investigation.objects.count(), 0)
 
-    def test_post_empty_assay(self):
+    def test_import_empty_assay(self):
         """Test posting an ISA-Tab with an empty assay table (should fail)"""
         self.assertEqual(Investigation.objects.count(), 0)
         with open(SHEET_PATH_EMPTY_ASSAY, 'rb') as file:
@@ -528,7 +633,7 @@ class TestSheetImportView(SheetImportMixin, LandingZoneMixin, TestViewsBase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Investigation.objects.count(), 0)
 
-    def test_post_no_plugin_assay(self):
+    def test_import_no_plugin_assay(self):
         """Test posting an ISA-Tab with an assay without plugin"""
         self.assertEqual(Investigation.objects.count(), 0)
         with open(SHEET_PATH_NO_PLUGIN_ASSAY, 'rb') as file:
@@ -797,6 +902,8 @@ class TestSheetDeleteView(TestViewsBase):
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
+        # Set up helpers
+        self.cache_backend = get_backend_api('sodar_cache')
 
     def test_render(self):
         """Test rendering the project sheets view"""
@@ -872,6 +979,44 @@ class TestSheetDeleteView(TestViewsBase):
         self.assertEqual(Investigation.objects.count(), 1)
         self.assertEqual(ISATab.objects.count(), 1)
 
+    def test_delete_study_cache(self):
+        """Test deleting with cached study tables"""
+        self.assertEqual(Investigation.objects.count(), 1)
+        self.assertEqual(ISATab.objects.count(), 1)
+
+        study_tables = table_builder.build_study_tables(self.study)
+        cache_name = STUDY_TABLE_CACHE_ITEM.format(study=self.study.sodar_uuid)
+        self.cache_backend.set_cache_item(
+            APP_NAME, cache_name, study_tables, 'json', self.project
+        )
+        cache_args = [APP_NAME, cache_name, self.project]
+        cache_item = self.cache_backend.get_cache_item(*cache_args)
+        self.assertEqual(cache_item.data, study_tables)
+        self.assertEqual(JSONCacheItem.objects.count(), 1)
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:delete',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                data={'delete_host_confirm': 'testserver'},
+            )
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(
+                response.url,
+                reverse(
+                    'samplesheets:project_sheets',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
+
+        self.assertEqual(Investigation.objects.count(), 0)
+        self.assertEqual(ISATab.objects.count(), 0)
+        cache_item = self.cache_backend.get_cache_item(*cache_args)
+        self.assertIsNone(cache_item)
+        self.assertEqual(JSONCacheItem.objects.count(), 0)
+
 
 class TestSheetVersionListView(TestViewsBase):
     """Tests for the sample sheet version list view"""
@@ -927,6 +1072,8 @@ class TestSheetVersionRestoreView(TestViewsBase):
         self.isatab = ISATab.objects.get(
             investigation_uuid=self.investigation.sodar_uuid
         )
+        # Set up helpers
+        self.cache_backend = get_backend_api('sodar_cache')
 
     def test_render(self):
         """Test rendering the sheet version restore view"""
@@ -940,8 +1087,8 @@ class TestSheetVersionRestoreView(TestViewsBase):
         self.assertEqual(response.status_code, 200)
         self.assertIsNotNone(response.context['sheet_version'])
 
-    def test_post(self):
-        """Test issuing a POST request for the sheet version restore view"""
+    def test_restore(self):
+        """Test restoring sheet version"""
         sheet_io = SampleSheetIO()
         isatab_new = sheet_io.save_isa(
             project=self.project,
@@ -966,6 +1113,38 @@ class TestSheetVersionRestoreView(TestViewsBase):
         )
         self.assertEqual(Investigation.objects.count(), 1)
         self.assertEqual(ISATab.objects.count(), 2)
+
+    def test_restore_study_cache(self):
+        """Test restoring sheet version with cached study table"""
+        sheet_io = SampleSheetIO()
+        isatab_new = sheet_io.save_isa(
+            project=self.project,
+            inv_uuid=self.investigation.sodar_uuid,
+            isa_data=sheet_io.export_isa(self.investigation),
+        )
+
+        study_tables = table_builder.build_study_tables(self.study)
+        cache_name = STUDY_TABLE_CACHE_ITEM.format(study=self.study.sodar_uuid)
+        self.cache_backend.set_cache_item(
+            APP_NAME, cache_name, study_tables, 'json', self.project
+        )
+        cache_args = [APP_NAME, cache_name, self.project]
+        cache_item = self.cache_backend.get_cache_item(*cache_args)
+        self.assertEqual(cache_item.data, study_tables)
+        self.assertEqual(JSONCacheItem.objects.count(), 1)
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:version_restore',
+                    kwargs={'isatab': isatab_new.sodar_uuid},
+                )
+            )
+
+        self.assertEqual(response.status_code, 302)
+        cache_item = self.cache_backend.get_cache_item(*cache_args)
+        self.assertEqual(cache_item.data, {})
+        self.assertEqual(JSONCacheItem.objects.count(), 1)
 
 
 class TestSheetVersionUpdateView(TestViewsBase):
@@ -1377,7 +1556,6 @@ class TestSheetRemoteSyncBase(
             parent=None,
         )
         self._make_assignment(self.category, self.user, self.role_owner)
-
         self.project_source = self._make_project(
             title='TestProjectSource',
             type=PROJECT_TYPE_PROJECT,
@@ -1386,7 +1564,6 @@ class TestSheetRemoteSyncBase(
         self.owner_as_source = self._make_assignment(
             self.project_source, self.user, self.role_owner
         )
-
         self.project_target = self._make_project(
             title='TestProjectTarget',
             type=PROJECT_TYPE_PROJECT,
@@ -1400,7 +1577,6 @@ class TestSheetRemoteSyncBase(
         self.inv_source = self.import_isa_from_file(
             SHEET_PATH, self.project_source
         )
-
         # Allow sheet sync in project
         app_settings.set_app_setting(
             APP_NAME, 'sheet_sync_enable', True, project=self.project_target

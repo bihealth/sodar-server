@@ -46,6 +46,7 @@ from samplesheets.views import (
 
 app_settings = AppSettingAPI()
 logger = logging.getLogger(__name__)
+table_builder = SampleSheetTableBuilder()
 
 
 MD5_RE = re.compile(r'([a-fA-F\d]{32})')
@@ -126,7 +127,6 @@ class IrodsCollsCreateAPIView(
             self.create_colls(investigation, request)
         except Exception as ex:
             raise APIException('{}{}'.format(ex_msg, ex))
-
         return Response(
             {
                 'detail': 'iRODS collections created',
@@ -198,17 +198,14 @@ class SheetImportAPIView(SheetImportMixin, SODARAPIBaseProjectMixin, APIView):
     def post(self, request, *args, **kwargs):
         """Handle POST request for submitting"""
         project = self.get_project()
-
         if app_settings.get_app_setting(APP_NAME, 'sheet_sync_enable', project):
             raise ValidationError(
                 'Sheet synchronization enabled in project: import not allowed'
             )
-
         sheet_io = SampleSheetIO()
         old_inv = Investigation.objects.filter(
             project=project, active=True
         ).first()
-
         zip_file = None
         if len(request.FILES) == 0:
             raise ParseError('No files provided')
@@ -221,7 +218,6 @@ class SheetImportAPIView(SheetImportMixin, SODARAPIBaseProjectMixin, APIView):
             except OSError as ex:
                 raise ParseError('Failed to parse zip archive: {}'.format(ex))
             isa_data = sheet_io.get_isa_from_zip(zip_file)
-
         # Multi-file handling
         else:
             try:
@@ -232,7 +228,6 @@ class SheetImportAPIView(SheetImportMixin, SODARAPIBaseProjectMixin, APIView):
         # Handle import
         action = 'replace' if old_inv else 'create'
         tl_event = self.create_timeline_event(project=project, action=action)
-
         try:
             investigation = sheet_io.import_isa(
                 isa_data=isa_data,
@@ -283,7 +278,6 @@ class SheetImportAPIView(SheetImportMixin, SODARAPIBaseProjectMixin, APIView):
             tl_event=tl_event,
             isa_version=isa_version,
         )
-
         ret_data = {
             'detail': 'Sample sheets {}d for project "{}" ({})'.format(
                 action, project.title, project.sodar_uuid
@@ -376,19 +370,15 @@ class RemoteSheetGetAPIView(APIView):
 
     def get(self, request, **kwargs):
         secret = kwargs['secret']
-        isa = request.GET.get('isa')
-
         try:
             target_site = RemoteSite.objects.get(
                 mode=SITE_MODE_TARGET, secret=secret
             )
         except RemoteSite.DoesNotExist:
             return Response('Remote site not found, unauthorized', status=401)
-
         target_project = target_site.projects.filter(
             project_uuid=kwargs['project']
         ).first()
-
         if (
             not target_project
             or target_project.level != REMOTE_LEVEL_READ_ROLES
@@ -396,7 +386,6 @@ class RemoteSheetGetAPIView(APIView):
             return Response(
                 'No project access for remote site, unauthorized', status=401
             )
-
         try:
             investigation = Investigation.objects.get(
                 project=target_project.get_project(), active=True
@@ -407,19 +396,17 @@ class RemoteSheetGetAPIView(APIView):
             )
 
         # All OK so far, return data
+        isa = request.GET.get('isa')
         # Rendered tables
         if not isa or int(isa) != 1:
             ret = {'studies': {}}
-            tb = SampleSheetTableBuilder()
-
-            # Build study tables
+            # Get/build study tables
             for study in investigation.studies.all():
                 try:
-                    tables = tb.build_study_tables(study, ui=False)
+                    tables = table_builder.get_study_tables(study)
                 except Exception as ex:
                     return Response(str(ex), status=500)
                 ret['studies'][str(study.sodar_uuid)] = tables
-
         # Original ISA-Tab
         else:
             sheet_io = SampleSheetIO()
@@ -427,5 +414,4 @@ class RemoteSheetGetAPIView(APIView):
                 ret = sheet_io.export_isa(investigation)
             except Exception as ex:
                 return Response(str(ex), status=500)
-
         return Response(ret, status=200)

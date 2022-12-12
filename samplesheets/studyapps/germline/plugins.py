@@ -23,6 +23,7 @@ from samplesheets.studyapps.germline.utils import (
 )
 
 logger = logging.getLogger(__name__)
+table_builder = SampleSheetTableBuilder()
 User = auth.get_user_model()
 
 
@@ -293,9 +294,8 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         item_name = 'irods/{}'.format(study.sodar_uuid)
         bam_paths = {}
         vcf_paths = {}
-        # Build render table
-        tb = SampleSheetTableBuilder()
-        study_tables = tb.build_study_tables(study, ui=False)
+        # Get/build render tables
+        study_tables = table_builder.get_study_tables(study)
 
         # Pre-fetch study objects to eliminate redundant queries
         obj_len = 0

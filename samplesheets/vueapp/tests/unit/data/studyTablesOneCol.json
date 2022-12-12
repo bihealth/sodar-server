@@ -17,8 +17,6 @@
           "name": "Name",
           "obj_cls": "GenericMaterial",
           "item_type": "SOURCE",
-          "num_col": false,
-          "config_set": false,
           "col_type": "NAME",
           "max_value_len": 5
         }
@@ -50,8 +48,6 @@
             "name": "Name",
             "obj_cls": "GenericMaterial",
             "item_type": "SOURCE",
-            "num_col": false,
-            "config_set": false,
             "col_type": "NAME",
             "max_value_len": 5
           }

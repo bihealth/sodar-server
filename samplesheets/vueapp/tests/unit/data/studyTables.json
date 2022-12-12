@@ -27,8 +27,6 @@
           "name": "Name",
           "obj_cls": "GenericMaterial",
           "item_type": "SOURCE",
-          "num_col": false,
-          "config_set": false,
           "col_type": "NAME",
           "max_value_len": 5
         },
@@ -37,8 +35,6 @@
           "name": "organism",
           "obj_cls": "GenericMaterial",
           "item_type": "SOURCE",
-          "num_col": false,
-          "config_set": false,
           "col_type": "ONTOLOGY",
           "max_value_len": 26
         },
@@ -47,8 +43,6 @@
           "name": "age",
           "obj_cls": "GenericMaterial",
           "item_type": "SOURCE",
-          "num_col": false,
-          "config_set": false,
           "col_type": "UNIT",
           "max_value_len": 7
         },
@@ -57,8 +51,6 @@
           "name": "Protocol",
           "obj_cls": "Process",
           "item_type": null,
-          "num_col": false,
-          "config_set": false,
           "col_type": "PROTOCOL",
           "max_value_len": 16
         },
@@ -67,8 +59,6 @@
           "name": "instrument",
           "obj_cls": "Process",
           "item_type": null,
-          "num_col": false,
-          "config_set": false,
           "col_type": null,
           "max_value_len": 29
         },
@@ -77,8 +67,6 @@
           "name": "Performer",
           "obj_cls": "Process",
           "item_type": null,
-          "num_col": false,
-          "config_set": false,
           "col_type": "CONTACT",
           "max_value_len": 9
         },
@@ -87,8 +75,6 @@
           "name": "Perform Date",
           "obj_cls": "Process",
           "item_type": null,
-          "num_col": false,
-          "config_set": false,
           "col_type": "DATE",
           "max_value_len": 12
         },
@@ -97,8 +83,6 @@
           "name": "Name",
           "obj_cls": "GenericMaterial",
           "item_type": "SAMPLE",
-          "num_col": false,
-          "config_set": false,
           "col_type": "NAME",
           "max_value_len": 8
         },
@@ -107,8 +91,6 @@
           "name": "status",
           "obj_cls": "GenericMaterial",
           "item_type": "SAMPLE",
-          "num_col": false,
-          "config_set": false,
           "col_type": "NUMERIC",
           "max_value_len": 6
         },
@@ -117,8 +99,6 @@
           "name": "treatment",
           "obj_cls": "GenericMaterial",
           "item_type": "SAMPLE",
-          "num_col": false,
-          "config_set": false,
           "col_type": null,
           "max_value_len": 8
         }
@@ -396,8 +376,6 @@
             "name": "Name",
             "obj_cls": "GenericMaterial",
             "item_type": "SOURCE",
-            "num_col": false,
-            "config_set": false,
             "col_type": "NAME",
             "max_value_len": 5
           },
@@ -406,8 +384,6 @@
             "name": "organism",
             "obj_cls": "GenericMaterial",
             "item_type": "SOURCE",
-            "num_col": false,
-            "config_set": false,
             "col_type": "ONTOLOGY",
             "max_value_len": 13
           },
@@ -416,8 +392,6 @@
             "name": "age",
             "obj_cls": "GenericMaterial",
             "item_type": "SOURCE",
-            "num_col": false,
-            "config_set": false,
             "col_type": "UNIT",
             "max_value_len": 6
           },
@@ -426,8 +400,6 @@
             "name": "Protocol",
             "obj_cls": "Process",
             "item_type": null,
-            "num_col": false,
-            "config_set": false,
             "col_type": "PROTOCOL",
             "max_value_len": 16
           },
@@ -436,8 +408,6 @@
             "name": "instrument",
             "obj_cls": "Process",
             "item_type": null,
-            "num_col": false,
-            "config_set": false,
             "col_type": null,
             "max_value_len": 29
           },
@@ -446,8 +416,6 @@
             "name": "Performer",
             "obj_cls": "Process",
             "item_type": null,
-            "num_col": false,
-            "config_set": false,
             "col_type": "CONTACT",
             "max_value_len": 9
           },
@@ -456,8 +424,6 @@
             "name": "Perform Date",
             "obj_cls": "Process",
             "item_type": null,
-            "num_col": false,
-            "config_set": false,
             "col_type": "DATE",
             "max_value_len": 12
           },
@@ -466,8 +432,6 @@
             "name": "Name",
             "obj_cls": "GenericMaterial",
             "item_type": "SAMPLE",
-            "num_col": false,
-            "config_set": false,
             "col_type": "NAME",
             "max_value_len": 8
           },
@@ -476,8 +440,6 @@
             "name": "status",
             "obj_cls": "GenericMaterial",
             "item_type": "SAMPLE",
-            "num_col": false,
-            "config_set": false,
             "col_type": "NUMERIC",
             "max_value_len": 6
           },
@@ -486,8 +448,6 @@
             "name": "treatment",
             "obj_cls": "GenericMaterial",
             "item_type": "SAMPLE",
-            "num_col": false,
-            "config_set": false,
             "col_type": null,
             "max_value_len": 8
           },
@@ -496,8 +456,6 @@
             "name": "Protocol",
             "obj_cls": "Process",
             "item_type": null,
-            "num_col": false,
-            "config_set": false,
             "col_type": "PROTOCOL",
             "max_value_len": 18
           },
@@ -506,8 +464,6 @@
             "name": "Name",
             "obj_cls": "GenericMaterial",
             "item_type": "MATERIAL",
-            "num_col": false,
-            "config_set": false,
             "col_type": "NAME",
             "max_value_len": 14
           },
@@ -516,8 +472,6 @@
             "name": "Protocol",
             "obj_cls": "Process",
             "item_type": null,
-            "num_col": false,
-            "config_set": false,
             "col_type": "PROTOCOL",
             "max_value_len": 22
           },
@@ -526,8 +480,6 @@
             "name": "Assay Name",
             "obj_cls": "Process",
             "item_type": null,
-            "num_col": false,
-            "config_set": false,
             "col_type": "NAME",
             "max_value_len": 20
           },
@@ -536,8 +488,6 @@
             "name": "Name",
             "obj_cls": "GenericMaterial",
             "item_type": "DATA",
-            "num_col": false,
-            "config_set": false,
             "col_type": "LINK_FILE",
             "max_value_len": 41
           },
@@ -546,8 +496,6 @@
             "name": "Name",
             "obj_cls": "GenericMaterial",
             "item_type": "DATA",
-            "num_col": false,
-            "config_set": false,
             "col_type": "LINK_FILE",
             "max_value_len": 41
           },
@@ -556,8 +504,6 @@
             "name": "Data Transformation Name",
             "obj_cls": "Process",
             "item_type": null,
-            "num_col": false,
-            "config_set": false,
             "col_type": "NAME",
             "max_value_len": 23
           },
@@ -566,8 +512,6 @@
             "name": "Name",
             "obj_cls": "GenericMaterial",
             "item_type": "DATA",
-            "num_col": false,
-            "config_set": false,
             "col_type": "LINK_FILE",
             "max_value_len": 18
           }

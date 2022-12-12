@@ -23,12 +23,12 @@ from samplesheets.utils import (
 
 
 logger = logging.getLogger(__name__)
+table_builder = SampleSheetTableBuilder()
 User = auth.get_user_model()
 
 
 # SODAR constants
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
-
 # Local constants
 APP_NAME = 'samplesheets.studyapps.cancer'
 
@@ -268,7 +268,6 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         if not cache_backend:
             return
 
-        tb = SampleSheetTableBuilder()
         projects = (
             [project]
             if project
@@ -300,8 +299,8 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 bam_paths = {}
                 vcf_paths = {}
 
-                # Build render table
-                study_tables = tb.build_study_tables(study, ui=False)
+                # Get/build render tables
+                study_tables = table_builder.get_study_tables(study)
                 for library in get_study_libraries(study, study_tables):
                     if not library.assay:
                         continue

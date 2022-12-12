@@ -14,6 +14,7 @@ v0.13.0 (WIP)
 Major feature update.
 
 - Add optional landing zone write access restriction to created collections
+- Add study render table caching for sample sheets
 - Create iRODS user accounts at login for users with LDAP/SODAR auth
 - Fix iRODS connection handling issues
 
