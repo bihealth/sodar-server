@@ -19,6 +19,8 @@ Added
     - Mac keyboard shortcut support for multi-cell copying (#1531)
     - Study render table caching (#1509)
     - ``syncstudytables`` management command (#1509)
+    - ``get_last_material_index()`` helper (#1554)
+    - ``get_latest_file_path()`` helper (#1554)
 
 Changed
 -------
@@ -41,6 +43,8 @@ Fixed
     - Typo in ``LANDINGZONES_TRIGGER_MOVE_INTERVAL`` (#1541)
 - **Samplesheets**
     - Crash from incompatibility with ``packaging==0.22`` (#1550)
+    - Cancer shortcuts expecting specific naming convention (#1554)
+    - Cancer shortcut caching with identical library names in study (#1560)
 
 Removed
 -------
@@ -49,6 +53,9 @@ Removed
     - Backend API ``conn`` argument (#909)
 - **Samplesheets**
     - Unused ``config_set`` and ``num_col`` header parameters (#1551)
+    - ``get_sample_libraries()`` helper (#1554)
+    - ``get_study_libraries()`` helper (#1554)
+    - ``GenericMaterial.get_samples()`` (#1557)
 
 
 v0.12.1 (2022-11-09)

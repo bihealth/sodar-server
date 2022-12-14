@@ -1,37 +1,34 @@
 """ Utilities for the cancer study app"""
 
-from projectroles.plugins import get_backend_api
+import os
+
 from samplesheets.studyapps.utils import FILE_TYPE_SUFFIXES
+from samplesheets.utils import get_latest_file_path
 
 
-def get_library_file_path(file_type, library):
+def get_library_file_path(assay, library_name, file_type, irods_backend, irods):
     """
     Return iRODS path for the most recent file of type "bam" or "vcf"
     linked to the library.
 
+    :param assay: Assay object
+    :param library_name: Library name (string)
     :param file_type: String ("bam" or "vcf")
-    :param library: GenericMaterial object
+    :param irods_backend: IrodsAPI object
+    :param irods: IRODSSession object
     :return: String
     """
-    irods_backend = get_backend_api('omics_irods')
-    if not irods_backend:
-        raise Exception('iRODS Backend not available')
-
-    assay_path = irods_backend.get_path(library.assay)
-    query_path = assay_path + '/' + library.name
-
-    # Get paths to relevant files
+    assay_path = irods_backend.get_path(assay)
+    query_path = os.path.join(assay_path, library_name)
     file_paths = []
     try:
-        with irods_backend.get_session() as irods:
-            obj_list = irods_backend.get_objects(irods, query_path)
+        obj_list = irods_backend.get_objects(irods, query_path)
         for obj in obj_list['irods_data']:
             if obj['name'].lower().endswith(FILE_TYPE_SUFFIXES[file_type]):
                 file_paths.append(obj['path'])
     except Exception:
         pass
-
     if not file_paths:
         return None
     # Return the last file of type by file name
-    return sorted(file_paths, key=lambda x: x.split('/')[-1])[-1]
+    return get_latest_file_path(file_paths)

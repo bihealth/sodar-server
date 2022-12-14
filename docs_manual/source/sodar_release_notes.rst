@@ -15,7 +15,8 @@ Major feature update.
 
 - Add optional landing zone write access restriction to created collections
 - Add study render table caching for sample sheets
-- Create iRODS user accounts at login for users with LDAP/SODAR auth
+- Add iRODS user account creation at login for users with LDAP/SODAR auth
+- Update cancer study shortcut generating
 - Fix iRODS connection handling issues
 
 
