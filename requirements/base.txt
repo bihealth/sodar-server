@@ -99,7 +99,7 @@ openpyxl==3.0.10
 django-webpack-loader==1.6.0
 
 # OBO ontology file parsing
-fastobo==0.12.1
+fastobo==0.12.2
 pronto==2.5.0  # For OWL conversion
 
 # CUBI-TK for sheet templates
