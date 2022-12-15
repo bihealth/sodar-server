@@ -16,6 +16,7 @@
           size="sm"
           placeholder="Filter"
           class="ml-auto"
+          v-model="filterInput"
           @update="onFilterUpdate">
       </b-input>
       <button
@@ -125,7 +126,8 @@ export default {
       dirPath: null,
       dirPathLength: null,
       fileCount: 0,
-      fileSize: 0
+      fileSize: 0,
+      filterInput: null
     }
   },
   methods: {
@@ -244,7 +246,6 @@ export default {
     },
     showModal (path) {
       const modalElement = this.$refs.irodsDirModal
-
       // Clear previous data
       this.empty = false
       this.message = null
@@ -253,11 +254,10 @@ export default {
       this.dirPathLength = this.dirPath.split('/').length
       this.fileCount = 0
       this.fileSize = 0
-
+      this.filterInput = ''
       this.getObjList(path)
       modalElement.show()
     },
-
     hideModal () {
       this.$refs.irodsDirModal.hide()
     }
