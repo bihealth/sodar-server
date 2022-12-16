@@ -281,7 +281,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                         bam_paths[lib] = get_latest_file_path(
                             [bam_paths[lib], bam_path]
                         )
-                    else:
+                    elif not bam_paths.get(lib):
                         bam_paths[lib] = bam_path
                     vcf_path = get_library_file_path(
                         assay, lib, 'vcf', irods_backend, irods
@@ -290,7 +290,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                         vcf_paths[lib] = get_latest_file_path(
                             [vcf_paths[lib], vcf_path]
                         )
-                    else:
+                    elif not vcf_paths.get(lib):
                         vcf_paths[lib] = vcf_path
 
         updated_data = {'bam': bam_paths, 'vcf': vcf_paths}
