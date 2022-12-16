@@ -20,7 +20,7 @@ from projectroles.views import (
 
 from samplesheets.models import GenericMaterial
 from samplesheets.rendering import SampleSheetTableBuilder
-from samplesheets.utils import get_sheets_url
+from samplesheets.utils import get_sheets_url, get_last_material_index
 from samplesheets.studyapps.utils import get_igv_xml
 
 
@@ -28,6 +28,9 @@ table_builder = SampleSheetTableBuilder()
 
 
 APP_NAME = 'samplesheets.studyapps.cancer'
+
+
+# TODO: Rename self.material to source?
 
 
 class BaseCancerConfigView(
@@ -43,7 +46,6 @@ class BaseCancerConfigView(
         super(BaseCancerConfigView, self).__init__(*args, **kwargs)
         self.redirect_url = None
         self.material = None
-        self.study_tables = None
 
     def get(self, request, *args, **kwargs):
         """
@@ -87,11 +89,23 @@ class IGVSessionFileRenderView(BaseCancerConfigView):
         bam_urls = {}
         vcf_urls = {}
         if cache_item:
+            # Get libraries
+            study_tables = table_builder.get_study_tables(study)
+            source_name = self.material.name
+            libs = []
+            for k, assay_table in study_tables['assays'].items():
+                lib_idx = get_last_material_index(assay_table)
+                for row in assay_table['table_data']:
+                    row_name = row[0]['value'].strip()
+                    lib_name = row[lib_idx]['value'].strip()
+                    if row_name == source_name and lib_name not in libs:
+                        libs.append(lib_name)
+            # Add URLs
             for k, v in cache_item.data['bam'].items():
-                if v:
+                if k in libs and v:
                     bam_urls[k] = webdav_url + v
             for k, v in cache_item.data['vcf'].items():
-                if v:
+                if k in libs and v:
                     vcf_urls[k] = webdav_url + v
 
         # Build IGV session XML file

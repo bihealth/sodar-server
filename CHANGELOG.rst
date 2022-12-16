@@ -45,7 +45,7 @@ Fixed
     - Typo in ``LANDINGZONES_TRIGGER_MOVE_INTERVAL`` (#1541)
 - **Samplesheets**
     - Crash from incompatibility with ``packaging==0.22`` (#1550)
-    - Cancer shortcuts expecting specific naming convention (#1554)
+    - Cancer shortcuts expecting specific naming convention (#1554, #1563)
     - Cancer shortcut caching with identical library names in study (#1560)
     - iRODS modal filter input not cleared on modal re-open (#1555)
 
