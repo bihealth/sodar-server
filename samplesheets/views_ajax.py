@@ -1,6 +1,7 @@
 """Ajax API views for the samplesheets app"""
 
 import json
+import os
 
 from altamisa.constants import table_headers as th
 from datetime import datetime as dt
@@ -72,6 +73,10 @@ EDIT_FIELD_MAP = {
 ALERT_ACTIVE_REQS = (
     'Active iRODS delete requests in this project require your attention. '
     '<a href="{url}">See request list for details</a>.'
+)
+ALERT_LIB_FILES_EXIST = (
+    'iRODS collection exists for "{name}". Renaming may result in orphaned '
+    'files. Do you want to proceed?'
 )
 ERROR_NOT_IN_PROJECT = 'Collection does not belong to project'
 ERROR_NOT_FOUND = 'Collection not found'
@@ -717,6 +722,54 @@ class SheetWarningsAjaxView(SODARBaseProjectAjaxView):
 class SheetCellEditAjaxView(BaseSheetEditAjaxView):
     """Ajax view to edit sample sheet cells"""
 
+    def _verify_update(self, node_obj, cell):
+        """
+        Verify cell update. Return None is all is OK, else return message to be
+        displayed as alert to confirm the update.
+
+        :param node_obj: GenericMaterial or Process object
+        :param cell: Cell update data from the client (dict)
+        :return: String or None
+        """
+        # TODO: Should be refactored once we support multi-cell edit here
+        # Only verify if editing material name and iRODS colls were created
+        if (
+            cell['header_type'] != 'name'
+            or cell['item_type'] not in ['SOURCE', 'SAMPLE', 'MATERIAL']
+            or not node_obj.study.investigation.irods_status
+        ):
+            return None
+        assay = node_obj.assay
+        assay_plugin = assay.get_plugin() if assay else None
+        if not assay or not assay_plugin:
+            return None
+        logger.debug(
+            'Verifying edit for node "{}" ({}): {}'.format(
+                node_obj.name, node_obj.sodar_uuid, cell
+            )
+        )
+        cache_backend = get_backend_api('sodar_cache')
+        cache_item = cache_backend.get_cache_item(
+            app_name=assay_plugin.app_name,
+            name='irods/rows/{}'.format(assay.sodar_uuid),
+            project=node_obj.get_project(),
+        )
+        if not cache_item:
+            return None
+        irods_backend = get_backend_api('omics_irods')
+        # NOTE: Can we assume all assay apps ever will follow this convention?
+        #       (At the time of implementation they do)
+        obj_path = os.path.join(irods_backend.get_path(assay), node_obj.name)
+        cache_paths = cache_item.data.get('paths')
+        if not cache_paths:  # Not sure if this can happen but just in case..
+            return None
+        path = cache_paths.get(obj_path)
+        if path and path.get('file_count') > 0:
+            # Files for material exist -> alert
+            return ALERT_LIB_FILES_EXIST.format(name=node_obj.name)
+        logger.debug('Verify OK')
+        return None
+
     @transaction.atomic
     def _update_cell(self, node_obj, cell, save=False):
         """
@@ -847,6 +900,7 @@ class SheetCellEditAjaxView(BaseSheetEditAjaxView):
             project=self.get_project(), active=True
         ).first()
         updated_cells = request.data.get('updated_cells', [])
+        verify = request.data.get('verify', False)
         studies = []
 
         for cell in updated_cells:
@@ -860,13 +914,26 @@ class SheetCellEditAjaxView(BaseSheetEditAjaxView):
                 logger.error(err_msg)
                 # TODO: Return list of errors when processing in batch
                 return Response({'detail': err_msg}, status=500)
-            study = node_obj.get_study()
-            if study not in studies:
-                studies.append(study)
+
+            # Verify cell edit
+            if verify:
+                alert = self._verify_update(node_obj, cell)
+                if alert:
+                    logger.info(
+                        'Verify returned alert for cell: {}'.format(cell)
+                    )
+                    logger.info('Alert: {}'.format(alert))
+                    return Response(
+                        {'detail': 'alert', 'alert_msg': alert}, status=200
+                    )
 
             # Update cell, save immediately (now we are only editing one cell)
             try:
                 self._update_cell(node_obj, cell, save=True)
+                # Add node study for study table cache clearing
+                study = node_obj.get_study()
+                if study not in studies:
+                    studies.append(study)
             except self.SheetEditException as ex:
                 return Response({'detail': str(ex)}, status=500)
 
@@ -881,7 +948,6 @@ class SheetCellEditAjaxView(BaseSheetEditAjaxView):
             # Clear cached study tables
             for study in studies:
                 table_builder.clear_study_cache(study)
-
         # TODO: Log edits in timeline here, once saving in bulk
         return Response(self.ok_data, status=200)
 

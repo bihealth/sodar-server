@@ -1,9 +1,9 @@
 """Tests for Ajax API views in the samplesheets app"""
 
+import fastobo
 import json
 import os
 
-import fastobo
 from altamisa.constants import table_headers as th
 
 from django.conf import settings
@@ -592,7 +592,6 @@ class TestStudyLinksAjaxView(TestViewsBase):
 
     def setUp(self):
         super().setUp()
-
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
@@ -1251,13 +1250,11 @@ class TestSheetCellEditAjaxViewSpecial(TestViewsBase):
 
     def setUp(self):
         super().setUp()
-
         # Import investigation
         self.investigation = self.import_isa_from_file(
             SHEET_PATH_SMALL2, self.project
         )
         self.study = self.investigation.studies.first()
-
         # Set up POST data
         self.values = {'updated_cells': []}
 
@@ -1325,7 +1322,6 @@ class TestSheetRowInsertAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
                 study=self.study, name='0818'
             ).first()
         )
-
         process_pks = [
             p.pk for p in Process.objects.filter(study=self.study, assay=None)
         ]
@@ -1396,8 +1392,6 @@ class TestSheetRowInsertAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
         mat_count = GenericMaterial.objects.filter(assay=self.assay).count()
         proc_count = Process.objects.filter(assay=self.assay).count()
         arc_count = len(self.assay.arcs)
-
-        # Insert assay row
         response = self.insert_row(path=ASSAY_INSERT_PATH)
 
         self.assertEqual(response.status_code, 200)
@@ -1450,8 +1444,6 @@ class TestSheetRowInsertAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
         mat_count = GenericMaterial.objects.filter(assay=self.assay).count()
         proc_count = Process.objects.filter(assay=self.assay).count()
         arc_count = len(self.assay.arcs)
-
-        # Insert new row
         response = self.insert_row(path=ASSAY_INSERT_SPLIT_PATH)
 
         self.assertEqual(response.status_code, 200)
@@ -1479,8 +1471,6 @@ class TestSheetRowInsertAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
         mat_count = GenericMaterial.objects.filter(assay=self.assay).count()
         proc_count = Process.objects.filter(assay=self.assay).count()
         arc_count = len(self.assay.arcs)
-
-        # Insert new row
         response = self.insert_row(path=ASSAY_INSERT_POOL_PATH)
 
         self.assertEqual(response.status_code, 200)
@@ -1945,7 +1935,6 @@ class TestStudyDisplayConfigAjaxView(SheetConfigMixin, TestViewsBase):
 
     def setUp(self):
         super().setUp()
-
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()

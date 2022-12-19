@@ -1,23 +1,221 @@
 """Tests for Ajax API views in the samplesheets app with Taskflow enabled"""
 
+import json
 import os
 
 from django.conf import settings
 from django.urls import reverse
 
-from samplesheets.models import IrodsDataRequest
+# Projectroles dependency
+from projectroles.models import SODAR_CONSTANTS
+
+# Taskflowbackend dependency
+from taskflowbackend.tests.base import TaskflowbackendTestBase
+
+from samplesheets.models import GenericMaterial, IrodsDataRequest
+from samplesheets.rendering import SampleSheetTableBuilder
+from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_views_taskflow import (
     TestIrodsRequestViewsBase,
+    SampleSheetTaskflowMixin,
     TEST_FILE_NAME2,
 )
 from samplesheets.views import IRODS_REQ_CREATE_ALERT as CREATE_ALERT
+from samplesheets.views_ajax import ALERT_LIB_FILES_EXIST
 
 
+table_builder = SampleSheetTableBuilder()
+
+
+# SODAR constants
+PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 # Local constants
+APP_NAME = 'samplesheets'
+GERMLINE_SHEET_PATH = os.path.join(SHEET_DIR, 'bih_germline.zip')
+LIBRARY_NAME = 'p1-N1-DNA1-WES1'
+LIBRARY_NAME_EDIT = 'p1-N1-DNA1-WES1-EDITED'
+LIBRARY_FIELD = 'p1'
+LIBRARY_FIELD_EDIT = 'p1-EDITED'
+DATA_OBJ_NAME = 'p1-N1.bam'
 IRODS_NON_PROJECT_PATH = (
     '/' + settings.IRODS_ZONE + '/home/' + settings.IRODS_USER
 )
 IRODS_FAIL_COLL = 'xeiJ1Vie'
+
+
+class TestSheetCellEditAjaxView(
+    SampleSheetIOMixin, SampleSheetTaskflowMixin, TaskflowbackendTestBase
+):
+    """Tests for SheetCellEditAjaxView with iRODS and taskflow"""
+
+    def setUp(self):
+        super().setUp()
+        # Make project with owner
+        self.project, self.owner_as = self.make_project_taskflow(
+            title='TestProject',
+            type=PROJECT_TYPE_PROJECT,
+            parent=self.category,
+            owner=self.user,
+            description='description',
+        )
+        # Import investigation
+        self.investigation = self.import_isa_from_file(
+            GERMLINE_SHEET_PATH, self.project
+        )
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+        self.assay_plugin = self.assay.get_plugin()
+        # Set up library
+        self.library = GenericMaterial.objects.get(
+            assay=self.assay, name=LIBRARY_NAME
+        )
+        self.library_path = os.path.join(
+            self.irods_backend.get_path(self.assay), self.library.name
+        )
+        # Create iRODS collections
+        self.make_irods_colls(self.investigation)
+        # Set up POST data
+        self.values = {'updated_cells': [], 'verify': True}
+        self.values['updated_cells'].append(
+            {
+                'uuid': str(self.library.sodar_uuid),
+                'value': LIBRARY_NAME_EDIT,
+                'colType': 'NAME',
+                'header_name': 'Name',
+                'header_type': 'name',
+                'header_field': 'col51',
+                'obj_cls': 'GenericMaterial',
+                'item_type': 'MATERIAL',
+                'og_value': LIBRARY_NAME,
+            }
+        )
+
+    def test_update_library_name(self):
+        """Test updating library name with no collection or files in iRODS"""
+        self.assertEqual(self.library.name, LIBRARY_NAME)
+        self.assay_plugin.update_cache(project=self.project, user=self.user)
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:ajax_edit_cell',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps(self.values),
+                content_type='application/json',
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['detail'], 'ok')
+        self.library.refresh_from_db()
+        self.assertEqual(self.library.name, LIBRARY_NAME_EDIT)
+
+    def test_update_library_name_coll(self):
+        """Test updating library name with empty collection"""
+        with self.irods_backend.get_session() as irods:
+            irods.collections.create(self.library_path)
+            self.assertIsNotNone(irods.collections.get(self.library_path))
+        self.assay_plugin.update_cache(project=self.project, user=self.user)
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:ajax_edit_cell',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps(self.values),
+                content_type='application/json',
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['detail'], 'ok')
+        self.library.refresh_from_db()
+        self.assertEqual(self.library.name, LIBRARY_NAME_EDIT)
+
+    def test_update_library_name_file(self):
+        """Test updating library name with file in iRODS (should fail)"""
+        with self.irods_backend.get_session() as irods:
+            irods.collections.create(self.library_path)
+            self.assertIsNotNone(irods.collections.get(self.library_path))
+            irods.data_objects.create(
+                os.path.join(self.library_path, DATA_OBJ_NAME)
+            )
+        self.assay_plugin.update_cache(project=self.project, user=self.user)
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:ajax_edit_cell',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps(self.values),
+                content_type='application/json',
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['detail'], 'alert')
+        self.assertEqual(
+            response.data['alert_msg'],
+            ALERT_LIB_FILES_EXIST.format(name=self.library.name),
+        )
+        self.library.refresh_from_db()
+        self.assertEqual(self.library.name, LIBRARY_NAME)
+
+    def test_update_library_name_file_no_verify(self):
+        """Test updating library name with file in iRODS and no verify"""
+        self.values['verify'] = False
+        with self.irods_backend.get_session() as irods:
+            irods.collections.create(self.library_path)
+            self.assertIsNotNone(irods.collections.get(self.library_path))
+            irods.data_objects.create(
+                os.path.join(self.library_path, DATA_OBJ_NAME)
+            )
+        self.assay_plugin.update_cache(project=self.project, user=self.user)
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:ajax_edit_cell',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps(self.values),
+                content_type='application/json',
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['detail'], 'ok')
+        self.library.refresh_from_db()
+        self.assertEqual(self.library.name, LIBRARY_NAME_EDIT)
+
+    def test_update_library_field(self):
+        """Test updating library characteristics field with file in iRODS"""
+        self.values['updated_cells'][0] = {
+            'uuid': str(self.library.sodar_uuid),
+            'value': LIBRARY_FIELD_EDIT,
+            'colType': 'NAME',
+            'header_name': 'Folder name',
+            'header_type': 'characteristics',
+            'header_field': 'col52',
+            'obj_cls': 'GenericMaterial',
+            'item_type': 'MATERIAL',
+            'og_value': LIBRARY_FIELD,
+        }
+        with self.irods_backend.get_session() as irods:
+            irods.collections.create(self.library_path)
+            self.assertIsNotNone(irods.collections.get(self.library_path))
+            irods.data_objects.create(
+                os.path.join(self.library_path, DATA_OBJ_NAME)
+            )
+        self.assay_plugin.update_cache(project=self.project, user=self.user)
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:ajax_edit_cell',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps(self.values),
+                content_type='application/json',
+            )
+        self.assertEqual(response.status_code, 200)
+        # Not updating name = this is OK
+        self.assertEqual(response.data['detail'], 'ok')
+        self.library.refresh_from_db()
+        self.assertEqual(
+            self.library.characteristics['Folder name']['value'],
+            LIBRARY_FIELD_EDIT,
+        )
 
 
 class TestIrodsRequestCreateAjaxView(TestIrodsRequestViewsBase):
