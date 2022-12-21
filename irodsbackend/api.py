@@ -524,17 +524,6 @@ class IrodsAPI:
             query.remove()
         return ret
 
-    # TODO: Remove this, use session.collections.exists() instead
-    def collection_exists(self, path):
-        """
-        Return True/False depending if the collection defined in path exists
-
-        :param path: Full path to iRODS collection
-        :return: Boolean
-        """
-        with self.get_session() as irods:
-            return irods.collections.exists(self._sanitize_coll_path(path))
-
     @classmethod
     def get_colls_recursively(cls, coll):
         """
@@ -713,20 +702,21 @@ class IrodsAPI:
             )
         return ret
 
-    # TODO: Remove this, refactor usages
-    def get_coll_by_path(self, path):
-        with self.get_session() as irods:
-            try:
-                return irods.collections.get(path)
-            except CollectionDoesNotExist:
-                return None
+    @classmethod
+    def get_child_colls(cls, irods, path):
+        """
+        Return child collections for a collection by path. Does not return
+        children recursively.
 
-    # TODO: Remove this, refactor usages
-    def get_child_colls_by_path(self, path):
-        coll = self.get_coll_by_path(path)
-        if coll:
+        :param irods: iRODSSession object
+        :param path: Full path to iRODS collection
+        :return: List
+        """
+        try:
+            coll = irods.collections.get(cls._sanitize_coll_path(path))
             return coll.subcollections
-        return []
+        except CollectionDoesNotExist:
+            return []
 
     def get_query(self, irods, sql, columns=None, register=True):
         """

@@ -56,7 +56,6 @@ class LandingZoneForm(forms.ModelForm):
         from landingzones.plugins import LandingZoneConfigPluginPoint
 
         config_plugins = LandingZoneConfigPluginPoint.get_plugins()
-
         self.current_user = current_user
         if project:
             self.project = Project.objects.filter(sodar_uuid=project).first()
@@ -64,10 +63,8 @@ class LandingZoneForm(forms.ModelForm):
             self.assay = Assay.objects.filter(sodar_uuid=assay).first()
 
         # Form modifications
-
         # Modify ModelChoiceFields to use sodar_uuid
         self.fields['assay'].to_field_name = 'sodar_uuid'
-
         # Set suffix
         self.fields['title_suffix'].label = 'Title suffix'
         self.fields[
@@ -78,7 +75,6 @@ class LandingZoneForm(forms.ModelForm):
         # Get options for configuration
         self.fields['configuration'].widget = forms.Select()
         self.fields['configuration'].widget.choices = [(None, '--------------')]
-
         for plugin in config_plugins:
             self.fields['configuration'].widget.choices.append(
                 (plugin.config_name, plugin.config_display_name)
@@ -88,23 +84,21 @@ class LandingZoneForm(forms.ModelForm):
         if not self.instance.pk:
             self.fields['assay'].choices = []
             # Only show choices for assays which are in iRODS
-            for assay in Assay.objects.filter(
-                study__investigation__project=self.project,
-                study__investigation__active=True,
-            ):
-                if not irods_backend or irods_backend.collection_exists(
-                    irods_backend.get_path(assay)
+            with irods_backend.get_session() as irods:
+                for assay in Assay.objects.filter(
+                    study__investigation__project=self.project,
+                    study__investigation__active=True,
                 ):
-                    self.fields['assay'].choices.append(
-                        (
-                            assay.sodar_uuid,
-                            '{} / {}'.format(
-                                assay.study.get_display_name(),
-                                assay.get_display_name(),
-                            ),
+                    if irods.collections.exists(irods_backend.get_path(assay)):
+                        self.fields['assay'].choices.append(
+                            (
+                                assay.sodar_uuid,
+                                '{} / {}'.format(
+                                    assay.study.get_display_name(),
+                                    assay.get_display_name(),
+                                ),
+                            )
                         )
-                    )
-
         # Updating
         else:
             # Don't allow modifying certain fields

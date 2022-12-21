@@ -116,11 +116,11 @@ class BaseIrodsAjaxView(SODARBaseProjectAjaxView):
                 return JsonResponse(
                     self._get_detail(ERROR_NOT_IN_PROJECT), status=400
                 )
-            if not self.irods_backend.collection_exists(path):
-                return JsonResponse(
-                    self._get_detail(ERROR_NOT_FOUND), status=404
-                )
             with self.irods_backend.get_session() as irods:
+                if not irods.collections.exists(path):
+                    return JsonResponse(
+                        self._get_detail(ERROR_NOT_FOUND), status=404
+                    )
                 if (
                     not request.user.is_superuser
                     and not self._check_collection_perm(

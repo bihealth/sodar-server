@@ -501,10 +501,11 @@ class TestIrodsAccessTicketCreateView(
                 "{} / {}".format(self.assay.get_display_name(), track_hub.name),
             )
             for track_hub in (
-                self.irods_backend.get_child_colls_by_path(
+                self.irods_backend.get_child_colls(
+                    self.irods,
                     self.irods_backend.get_path(self.assay)
                     + '/'
-                    + TRACK_HUBS_COLL
+                    + TRACK_HUBS_COLL,
                 )
             )
         ]

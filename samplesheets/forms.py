@@ -279,16 +279,22 @@ class IrodsAccessTicketForm(forms.ModelForm):
             study__investigation__project=kwargs['initial']['project']
         )
         if irods_backend:
-            choices = [
-                (
-                    track_hub.path,
-                    "{} / {}".format(assay.get_display_name(), track_hub.name),
-                )
-                for assay in assays
-                for track_hub in irods_backend.get_child_colls_by_path(
-                    irods_backend.get_path(assay) + '/' + TRACK_HUBS_COLL
-                )
-            ]
+            with irods_backend.get_session() as irods:
+                choices = [
+                    (
+                        track_hub.path,
+                        "{} / {}".format(
+                            assay.get_display_name(), track_hub.name
+                        ),
+                    )
+                    for assay in assays
+                    for track_hub in irods_backend.get_child_colls(
+                        irods,
+                        os.path.join(
+                            irods_backend.get_path(assay), TRACK_HUBS_COLL
+                        ),
+                    )
+                ]
         else:
             choices = []
 

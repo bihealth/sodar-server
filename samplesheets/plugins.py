@@ -657,44 +657,42 @@ class ProjectAppPlugin(
             study__investigation__irods_status=True,
         )
 
-        for assay in assays:
-            item_name = 'irods/shortcuts/assay/{}'.format(assay.sodar_uuid)
-            assay_path = irods_backend.get_path(assay)
-            assay_plugin = assay.get_plugin()
-
-            # Default assay shortcuts
-            cache_data = {
-                'shortcuts': {
-                    'results_reports': irods_backend.collection_exists(
-                        assay_path + '/' + RESULTS_COLL
-                    ),
-                    'misc_files': irods_backend.collection_exists(
-                        assay_path + '/' + MISC_FILES_COLL
-                    ),
+        with irods_backend.get_session() as irods:
+            for assay in assays:
+                item_name = 'irods/shortcuts/assay/{}'.format(assay.sodar_uuid)
+                assay_path = irods_backend.get_path(assay)
+                assay_plugin = assay.get_plugin()
+                # Default assay shortcuts
+                cache_data = {
+                    'shortcuts': {
+                        'results_reports': irods.collections.exists(
+                            assay_path + '/' + RESULTS_COLL
+                        ),
+                        'misc_files': irods.collections.exists(
+                            assay_path + '/' + MISC_FILES_COLL
+                        ),
+                    }
                 }
-            }
-
-            # Plugin assay shortcuts
-            if assay_plugin:
-                plugin_shortcuts = assay_plugin.get_shortcuts(assay) or []
-                for sc in plugin_shortcuts:
-                    cache_data['shortcuts'][
-                        sc['id']
-                    ] = irods_backend.collection_exists(sc['path'])
-
-            cache_data['shortcuts']['track_hubs'] = [
-                track_hub_coll.path
-                for track_hub_coll in irods_backend.get_child_colls_by_path(
-                    assay_path + '/' + TRACK_HUBS_COLL
+                # Plugin assay shortcuts
+                if assay_plugin:
+                    plugin_shortcuts = assay_plugin.get_shortcuts(assay) or []
+                    for sc in plugin_shortcuts:
+                        cache_data['shortcuts'][
+                            sc['id']
+                        ] = irods.collections.exists(sc['path'])
+                cache_data['shortcuts']['track_hubs'] = [
+                    c.path
+                    for c in irods_backend.get_child_colls(
+                        irods, os.path.join(assay_path, TRACK_HUBS_COLL)
+                    )
+                ]
+                cache_backend.set_cache_item(
+                    name=item_name,
+                    app_name='samplesheets',
+                    user=user,
+                    data=cache_data,
+                    project=assay.get_project(),
                 )
-            ]
-            cache_backend.set_cache_item(
-                name=item_name,
-                app_name='samplesheets',
-                user=user,
-                data=cache_data,
-                project=assay.get_project(),
-            )
 
         # Assay sub-app plugins
         for assay_plugin in SampleSheetAssayPluginPoint.get_plugins():

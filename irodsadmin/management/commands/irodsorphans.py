@@ -146,11 +146,12 @@ def get_orphans(irods, irods_backend, expected, assays):
     for assay in assays:
         if not assay.get_plugin():
             continue
-        for collection in irods_backend.get_child_colls_by_path(
-            irods_backend.get_path(assay)
-        ):
-            if collection.path not in expected:
-                orphans.append(collection.path)
+        with irods_backend.get_session() as irods:
+            for collection in irods_backend.get_child_colls(
+                irods, irods_backend.get_path(assay)
+            ):
+                if collection.path not in expected:
+                    orphans.append(collection.path)
     return orphans
 
 

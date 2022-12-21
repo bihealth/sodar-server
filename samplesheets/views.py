@@ -5,12 +5,13 @@ import io
 import json
 import logging
 import os
+import pytz
 import requests
 import zipfile
-from packaging import version
 
-import pytz
 from cubi_tk.isa_tpl import _TEMPLATES as TK_TEMPLATES
+from irods.exception import CollectionDoesNotExist
+from packaging import version
 
 from django.conf import settings
 from django.contrib import messages
@@ -2004,15 +2005,19 @@ class IrodsAccessTicketListView(
         assays = Assay.objects.filter(
             study__investigation__project__sodar_uuid=self.kwargs['project']
         )
-        context['track_hubs_available'] = bool(
-            [
-                track_hub
-                for assay in assays
-                for track_hub in irods_backend.get_child_colls_by_path(
-                    irods_backend.get_path(assay) + '/' + TRACK_HUBS_COLL
-                )
-            ]
-        )
+        with irods_backend.get_session() as irods:
+            context['track_hubs_available'] = bool(
+                [
+                    track_hub
+                    for assay in assays
+                    for track_hub in irods_backend.get_child_colls(
+                        irods,
+                        os.path.join(
+                            irods_backend.get_path(assay), TRACK_HUBS_COLL
+                        ),
+                    )
+                ]
+            )
         return context
 
 
@@ -2281,16 +2286,20 @@ class IrodsRequestAcceptView(
         context_data['affected_collections'] = []
         context_data['is_collection'] = obj.is_collection()
         if context_data['is_collection']:
-            coll = irods_backend.get_coll_by_path(
-                context_data['irods_request'].path
-            )
             with irods_backend.get_session() as irods:
-                context_data[
-                    'affected_objects'
-                ] += irods_backend.get_objs_recursively(irods, coll)
-                context_data[
-                    'affected_collections'
-                ] += irods_backend.get_colls_recursively(irods, coll)
+                try:
+                    coll = irods.collections.get(
+                        context_data['irods_request'].path
+                    )
+                except CollectionDoesNotExist:
+                    coll = None
+                if coll:
+                    context_data[
+                        'affected_objects'
+                    ] += irods_backend.get_objs_recursively(irods, coll)
+                    context_data[
+                        'affected_collections'
+                    ] += irods_backend.get_colls_recursively(irods, coll)
         return context_data
 
     def form_valid(self, request, *args, **kwargs):

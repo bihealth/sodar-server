@@ -32,6 +32,7 @@ Changed
     - Upgrade to fastobo v0.12.2 (#1561)
 - **Irodsbackend**
     - Update backend iRODS connection handling (#909, #1542)
+    - Rename ``IrodsAPI.get_child_colls()``
 - **Samplesheets**
     - Upgrade ``loader-utils`` in Vue app (#1527)
     - Remove redundant node UUIDs from render tables (#708)
@@ -55,6 +56,8 @@ Removed
 
 - **Irodsbackend**
     - Backend API ``conn`` argument (#909)
+    - ``IrodsAPI.collection_exists()`` helper (#1546)
+    - ``IrodsAPI.get_coll_by_path()`` helper
 - **Samplesheets**
     - Unused ``config_set`` and ``num_col`` header parameters (#1551)
     - ``get_sample_libraries()`` helper (#1554)
