@@ -43,6 +43,7 @@ Fixed
 - **Irodsbackend**
     - Unhandled backend init exception in ``IrodsStatisticsAjaxView`` (#1539)
     - iRODS session disconnection issues (#909, #1542)
+    - Ajax view access for inherited owners (#1566)
 - **Landingzones**
     - Typo in ``LANDINGZONES_TRIGGER_MOVE_INTERVAL`` (#1541)
 - **Samplesheets**

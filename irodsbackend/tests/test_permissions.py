@@ -83,10 +83,11 @@ class TestIrodsbackendPermissions(
         )
         good_users = [
             self.superuser,
-            self.as_owner.user,
-            self.as_delegate.user,
-            self.as_contributor.user,
-            self.as_guest.user,
+            self.user_cat,  # Inherited owner
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
         ]
         bad_users = [self.user_no_roles, self.anonymous]
         self.assert_response(url, good_users, 200)
@@ -120,10 +121,11 @@ class TestIrodsbackendPermissions(
         )
         bad_users = [
             self.superuser,
-            self.as_owner.user,
-            self.as_delegate.user,
-            self.as_contributor.user,
-            self.as_guest.user,
+            self.user_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
             self.user_no_roles,
             self.anonymous,
         ]
@@ -137,10 +139,15 @@ class TestIrodsbackendPermissions(
         url = self.irods_backend.get_url(
             view='stats', project=self.project, path=test_path
         )
-        good_users = [self.superuser, self.as_owner.user, self.as_delegate.user]
+        good_users = [
+            self.superuser,
+            self.user_cat,
+            self.as_owner.user,
+            self.as_delegate.user,
+        ]
         bad_users = [
-            self.as_contributor.user,
-            self.as_guest.user,
+            self.user_contributor,
+            self.user_guest,
             self.user_no_roles,
             self.anonymous,
         ]
@@ -159,10 +166,11 @@ class TestIrodsbackendPermissions(
 
         good_users = [
             self.superuser,
-            self.as_owner.user,
-            self.as_delegate.user,
-            self.as_contributor.user,
-            self.as_guest.user,
+            self.user_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
         ]
         bad_users = [self.user_no_roles, self.anonymous]
         self.assert_response(
@@ -177,10 +185,11 @@ class TestIrodsbackendPermissions(
         )
         good_users = [
             self.superuser,
-            self.as_owner.user,
-            self.as_delegate.user,
-            self.as_contributor.user,
-            self.as_guest.user,
+            self.user_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
         ]
         bad_users = [self.user_no_roles, self.anonymous]
         self.assert_response(url, good_users, 200)
@@ -214,10 +223,11 @@ class TestIrodsbackendPermissions(
         )
         bad_users = [
             self.superuser,
-            self.as_owner.user,
-            self.as_delegate.user,
-            self.as_contributor.user,
-            self.as_guest.user,
+            self.user_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
             self.user_no_roles,
             self.anonymous,
         ]
@@ -231,10 +241,15 @@ class TestIrodsbackendPermissions(
         url = self.irods_backend.get_url(
             view='list', project=self.project, path=test_path, md5=0
         )
-        good_users = [self.superuser, self.as_owner.user, self.as_delegate.user]
+        good_users = [
+            self.superuser,
+            self.user_cat,
+            self.user_owner,
+            self.user_delegate,
+        ]
         bad_users = [
-            self.as_contributor.user,
-            self.as_guest.user,
+            self.user_contributor,
+            self.user_guest,
             self.user_no_roles,
             self.anonymous,
         ]

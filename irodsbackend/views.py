@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 # Projectroles dependency
-from projectroles.models import RoleAssignment, SODAR_CONSTANTS
+from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 from projectroles.views_ajax import SODARBaseProjectAjaxView
 
@@ -64,26 +64,19 @@ class BaseIrodsAjaxView(SODARBaseProjectAjaxView):
         :param irods: iRODSSession object
         :return: Boolean
         """
-        # Just in case this was called with superuser..
-        if user and user.is_superuser:
+        # Superuser and project users
+        if user and (
+            user.is_superuser or self.project.is_owner_or_delegate(user)
+        ):
             return True
+        # iRODS access
         try:
             coll = irods.collections.get(path)
         except Exception:
             return False
-
-        # Project users
         perms = irods.permissions.get(coll)
-        owner_or_delegate = False
-        user_as = RoleAssignment.objects.get_assignment(user, self.project)
-        if user_as and user_as.role.name in [
-            PROJECT_ROLE_OWNER,
-            PROJECT_ROLE_DELEGATE,
-        ]:
-            owner_or_delegate = True
-        if owner_or_delegate or user.username in [p.user_name for p in perms]:
+        if user.username in [p.user_name for p in perms]:
             return True
-
         # Public guest access
         if (
             self.project.public_guest_access
