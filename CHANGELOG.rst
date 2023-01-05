@@ -51,6 +51,7 @@ Fixed
     - Cancer shortcuts expecting specific naming convention (#1554, #1563)
     - Cancer shortcut caching with identical library names in study (#1560, #1564)
     - iRODS modal filter input not cleared on modal re-open (#1555)
+    - Column config editing access for inherited owners (#1568)
 
 Removed
 -------

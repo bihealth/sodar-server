@@ -184,7 +184,7 @@ class IrodsAccessTicketMixin:
         return obj
 
 
-class TestContextAjaxView(TestViewsBase):
+class TestSheetContextAjaxView(TestViewsBase):
     """Tests for SheetContextAjaxView"""
 
     # TODO: Test with realistic ISA-Tab examples using BIH configs (see #434)
@@ -302,8 +302,8 @@ class TestContextAjaxView(TestViewsBase):
         }
         self.assertEqual(response_data, expected)
 
-    def test_get_no_sheets(self):
-        """Test GET for context retrieval without sample sheets"""
+    def test_no_sheets(self):
+        """Test context retrieval without sample sheets"""
         self.investigation.active = False
         self.investigation.save()
 
@@ -357,7 +357,7 @@ class TestContextAjaxView(TestViewsBase):
 
     # TODO: Test anonymous request and irods_webdav_enabled
 
-    def test_get_as_delegate_min_owner(self):
+    def test_delegate_min_owner(self):
         """Test GET as delegate with owner minimum role"""
         app_settings.set_app_setting(
             APP_NAME,
@@ -375,7 +375,7 @@ class TestContextAjaxView(TestViewsBase):
         self.assertEqual(response.status_code, 200)
         self.assertFalse(json.loads(response.json())['perms']['edit_config'])
 
-    def test_get_as_delegate_min_delegate(self):
+    def test_delegate_min_delegate(self):
         """Test GET as delegate with delegate minimum role"""
         app_settings.set_app_setting(
             APP_NAME,
@@ -393,7 +393,7 @@ class TestContextAjaxView(TestViewsBase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(json.loads(response.json())['perms']['edit_config'])
 
-    def test_get_irods_request_alert_owner(self):
+    def test_irods_request_alert_owner(self):
         """Test GET with active iRODS request alert as owner"""
         self.investigation.irods_status = True
         self.investigation.save()
@@ -425,7 +425,7 @@ class TestContextAjaxView(TestViewsBase):
             ),
         )
 
-    def test_get_irods_request_alert_contributor(self):
+    def test_irods_request_alert_contributor(self):
         """Test GET with active iRODS request alert as contributor"""
         self.investigation.irods_status = True
         self.investigation.save()
@@ -449,6 +449,22 @@ class TestContextAjaxView(TestViewsBase):
         self.assertEqual(response.status_code, 200)
         response_data = json.loads(response.data)
         self.assertEqual(len(response_data['alerts']), 0)
+
+    def test_inherited_owner(self):
+        """Test GET as inherited owner"""
+        # Set up category owner
+        user_cat = self.make_user('user_cat')
+        self._make_assignment(self.category, user_cat, self.role_owner)
+        with self.login(user_cat):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:ajax_context',
+                    kwargs={'project': self.project.sodar_uuid},
+                )
+            )
+        self.assertEqual(response.status_code, 200)
+        response_data = json.loads(response.data)
+        self.assertEqual(response_data['perms']['edit_config'], True)
 
 
 class TestStudyTablesAjaxView(IrodsAccessTicketMixin, TestViewsBase):
@@ -1717,6 +1733,10 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
 
     def setUp(self):
         super().setUp()
+        # Set up category owner
+        self.user_cat = self.make_user('user_cat')
+        self._make_assignment(self.category, self.user_cat, self.role_owner)
+
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         # Set up UUIDs and default config
@@ -1818,7 +1838,7 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
             1,
         )
 
-    def test_update_as_superuser_min_owner(self):
+    def test_superuser_min_owner(self):
         """Test updating as superuser with minimum role of owner"""
         edit_config_min_role = app_settings.get_app_setting(
             APP_NAME, 'edit_config_min_role', project=self.project
@@ -1837,8 +1857,8 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
             )
         self.assertEqual(response.status_code, 200)
 
-    def test_update_as_owner_min_owner(self):
-        """Test updating as owner with minimum role of owner"""
+    def test_owner_min_owner(self):
+        """Test updating as owner with minimum=owner"""
         edit_config_min_role = app_settings.get_app_setting(
             APP_NAME, 'edit_config_min_role', project=self.project
         )
@@ -1856,8 +1876,8 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
             )
         self.assertEqual(response.status_code, 200)
 
-    def test_update_as_delegate_min_owner(self):
-        """Test updating as delegate with minimum role of owner (should fail)"""
+    def test_delegate_min_owner(self):
+        """Test updating as delegate with minimum=owner (should fail)"""
         edit_config_min_role = app_settings.get_app_setting(
             APP_NAME, 'edit_config_min_role', project=self.project
         )
@@ -1879,8 +1899,8 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
             'User not allowed to modify column config',
         )
 
-    def test_update_as_contributor_min_owner(self):
-        """Test updating as contributor with minimum role of owner (should fail)"""
+    def test_contributor_min_owner(self):
+        """Test updating as contributor with minimum=owner (should fail)"""
         edit_config_min_role = app_settings.get_app_setting(
             APP_NAME, 'edit_config_min_role', project=self.project
         )
@@ -1901,6 +1921,19 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
             response.json()['detail'],
             'User not allowed to modify column config',
         )
+
+    def test_inherited_owner(self):
+        """Test updating as inherited owner"""
+        with self.login(self.user_cat):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:ajax_config_update',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps(self.post_values),
+                content_type='application/json',
+            )
+        self.assertEqual(response.status_code, 200)
 
     def test_update_study_cache(self):
         """Test posting a study column update with cached study tables"""

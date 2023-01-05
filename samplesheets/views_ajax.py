@@ -232,25 +232,30 @@ class BaseSheetEditAjaxView(SODARBaseProjectAjaxView):
 
 
 class EditConfigMixin:
-    """Mixin class to check if user can edit config"""
+    """Mixin class to check if user can edit column configuration"""
 
     @classmethod
-    def _can_edit_config(cls, user, project):
+    def can_edit_config(cls, user, project):
         if user.is_superuser:
             return True
         edit_config_min_role = app_settings.get_app_setting(
             APP_NAME, 'edit_config_min_role', project=project
         )
-        assignment = RoleAssignment.objects.get_assignment(user, project)
+        if project.is_owner(user):  # Local or inherited owner
+            as_name = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
+        else:
+            role_as = RoleAssignment.objects.get_assignment(user, project)
+            if not role_as:
+                return False
+            as_name = role_as.role.name
+        # TODO: Update this to use role ranking once using SODAR Core v0.12
         role_order = [
             SODAR_CONSTANTS['PROJECT_ROLE_OWNER'],
             SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE'],
             SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR'],
             SODAR_CONSTANTS['PROJECT_ROLE_GUEST'],
         ]
-        if not assignment:
-            return False
-        return role_order.index(assignment.role.name) <= role_order.index(
+        return role_order.index(as_name) <= role_order.index(
             edit_config_min_role
         )
 
@@ -459,7 +464,7 @@ class SheetContextAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
             'view_versions': request.user.has_perm(
                 'samplesheets.view_versions', project
             ),
-            'edit_config': self._can_edit_config(request.user, project),
+            'edit_config': self.can_edit_config(request.user, project),
             'is_superuser': request.user.is_superuser,
         }
 
@@ -1642,7 +1647,7 @@ class SheetEditConfigAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
         sheet_config = app_settings.get_app_setting(
             APP_NAME, 'sheet_config', project=project
         )
-        if not self._can_edit_config(request.user, project):
+        if not self.can_edit_config(request.user, project):
             return Response(
                 {'detail': 'User not allowed to modify column config'},
                 status=403,
