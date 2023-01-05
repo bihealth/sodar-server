@@ -131,9 +131,9 @@ class TestProjectCreateView(TaskflowbackendTestBase):
         self.assertEqual(group.hasmember(self.user.username), True)
         # Assert inherited role updating for category owner
         self.assertIsInstance(
-            self.irods.users.get(self.user_cat.username), iRODSUser
+            self.irods.users.get(self.user_owner_cat.username), iRODSUser
         )
-        self.assertEqual(group.hasmember(self.user_cat.username), True)
+        self.assertEqual(group.hasmember(self.user_owner_cat.username), True)
 
 
 class TestProjectUpdateView(TaskflowbackendTestBase):
@@ -408,7 +408,7 @@ class TestRoleAssignmentOwnerTransferView(TaskflowbackendTestBase):
         self.assertEqual(RoleAssignment.objects.count(), 3)
         self.assert_group_member(self.project, self.user, True)
         self.assert_group_member(self.project, self.user_new, True)
-        self.assert_group_member(self.project, self.user_cat, True)
+        self.assert_group_member(self.project, self.user_owner_cat, True)
 
         with self.login(self.user):
             self.client.post(
@@ -430,7 +430,7 @@ class TestRoleAssignmentOwnerTransferView(TaskflowbackendTestBase):
         self.assertEqual(role_as.role, self.role_owner)
         self.assert_group_member(self.project, self.user, True)
         self.assert_group_member(self.project, self.user_new, True)
-        self.assert_group_member(self.project, self.user_cat, True)
+        self.assert_group_member(self.project, self.user_owner_cat, True)
 
     def test_transfer_category(self):
         """Test ownership transfer with category and owner inheritance"""
@@ -439,7 +439,7 @@ class TestRoleAssignmentOwnerTransferView(TaskflowbackendTestBase):
         )
         self.assertEqual(RoleAssignment.objects.count(), 4)
         self.assert_group_member(self.project, self.user, True)
-        self.assert_group_member(self.project, self.user_cat, True)
+        self.assert_group_member(self.project, self.user_owner_cat, True)
 
         with self.login(self.user):
             self.client.post(
@@ -456,7 +456,7 @@ class TestRoleAssignmentOwnerTransferView(TaskflowbackendTestBase):
 
         self.assertEqual(RoleAssignment.objects.count(), 4)
         self.assert_group_member(self.project, self.user, True)
-        self.assert_group_member(self.project, self.user_cat, False)
+        self.assert_group_member(self.project, self.user_owner_cat, False)
 
 
 class TestRoleAssignmentDeleteView(TaskflowbackendTestBase):

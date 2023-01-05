@@ -35,17 +35,15 @@ class TestLandingZonePermissions(
 
     def setUp(self):
         super().setUp()
-
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-
         # Create LandingZone for project owner
         self.landing_zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
-            user=self.owner_as.user,
+            user=self.user_owner,
             assay=self.assay,
             description=ZONE_DESC,
             configuration=None,
@@ -59,11 +57,12 @@ class TestLandingZonePermissions(
         )
         good_users = [
             self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
+            self.user_owner_cat,  # Inherited owner
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
         ]
-        bad_users = [self.guest_as.user, self.user_no_roles]
+        bad_users = [self.user_guest, self.user_no_roles]
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 403)
         self.assert_response(url, [self.anonymous], 401)
@@ -74,10 +73,15 @@ class TestLandingZonePermissions(
             'landingzones:api_retrieve',
             kwargs={'landingzone': self.landing_zone.sodar_uuid},
         )
-        good_users = [self.superuser, self.owner_as.user, self.delegate_as.user]
+        good_users = [
+            self.superuser,
+            self.user_owner_cat,
+            self.user_owner,
+            self.delegate_as.user,
+        ]
         bad_users = [
-            self.contributor_as.user,
-            self.guest_as.user,
+            self.user_contributor,
+            self.user_guest,
             self.user_no_roles,
         ]
         self.assert_response(url, good_users, 200)

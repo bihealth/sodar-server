@@ -207,7 +207,7 @@ class TaskflowbackendTestBase(
         self.role_guest = Role.objects.get_or_create(name=PROJECT_ROLE_GUEST)[0]
 
         # Init users
-        self.user_cat = self.make_user('user_cat')
+        self.user_owner_cat = self.make_user('user_owner_cat')
         self.user = self.make_user('superuser')
         self.user.is_staff = True
         self.user.is_superuser = True
@@ -218,7 +218,7 @@ class TaskflowbackendTestBase(
             'TestCategory', PROJECT_TYPE_CATEGORY, None
         )
         self.as_cat_owner = self._make_assignment(
-            self.category, self.user_cat, self.role_owner
+            self.category, self.user_owner_cat, self.role_owner
         )
 
     def tearDown(self):
@@ -261,7 +261,6 @@ class TestTaskflowAPIBase(
             media_type=CORE_API_MEDIA_TYPE,
             version=CORE_API_DEFAULT_VERSION,
         )
-
         # Assert response and object status
         self.assertEqual(response.status_code, 201, msg=response.content)
         project = Project.objects.get(title=title)
@@ -310,15 +309,14 @@ class TestTaskflowAPIBase(
         self.user.is_staff = True
         self.user.is_superuser = True
         self.user.save()
+        # Get knox token for self.user
+        self.knox_token = self.get_token(self.user)
 
         # Create category locally (categories are not handled with taskflow)
         self.category = self._make_project(
             'TestCategory', PROJECT_TYPE_CATEGORY, None
         )
         self._make_assignment(self.category, self.user, self.role_owner)
-
-        # Get knox token for self.user
-        self.knox_token = self.get_token(self.user)
 
     def tearDown(self):
         self.taskflow.cleanup()

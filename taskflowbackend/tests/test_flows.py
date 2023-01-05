@@ -942,7 +942,7 @@ class TestProjectCreate(TaskflowbackendTestBase):
 
         flow_data = {
             'owner': self.user.username,
-            'users_add': [self.user_cat.username],
+            'users_add': [self.user_owner_cat.username],
         }
         flow = self.taskflow.get_flow(
             irods_backend=self.irods_backend,
@@ -981,9 +981,9 @@ class TestProjectCreate(TaskflowbackendTestBase):
         )
         # Assert inherited category owner status
         self.assertIsInstance(
-            self.irods.users.get(self.user_cat.username), iRODSUser
+            self.irods.users.get(self.user_owner_cat.username), iRODSUser
         )
-        self.assert_group_member(project, self.user_cat, True)
+        self.assert_group_member(project, self.user_owner_cat, True)
 
 
 class TestProjectUpdate(TaskflowbackendTestBase):
@@ -1041,7 +1041,7 @@ class TestProjectUpdate(TaskflowbackendTestBase):
             self.project, user_contrib, self.role_contributor
         )
         self.assert_group_member(self.project, self.user, True)
-        self.assert_group_member(self.project, self.user_cat, True)
+        self.assert_group_member(self.project, self.user_owner_cat, True)
         self.assert_group_member(self.project, user_contrib, True)
         self.assert_group_member(self.project, user_cat_new, False)
         project_coll = self.irods.collections.get(self.project_path)
@@ -1059,7 +1059,7 @@ class TestProjectUpdate(TaskflowbackendTestBase):
 
         flow_data = {
             'users_add': [user_cat_new.username],
-            'users_delete': [self.user_cat.username],
+            'users_delete': [self.user_owner_cat.username],
         }
         flow = self.taskflow.get_flow(
             irods_backend=self.irods_backend,
@@ -1071,7 +1071,7 @@ class TestProjectUpdate(TaskflowbackendTestBase):
         flow.run()
 
         self.assert_group_member(self.project, self.user, True)
-        self.assert_group_member(self.project, self.user_cat, False)
+        self.assert_group_member(self.project, self.user_owner_cat, False)
         self.assert_group_member(self.project, user_contrib, True)
         self.assert_group_member(self.project, user_cat_new, True)
         project_coll = self.irods.collections.get(self.project_path)

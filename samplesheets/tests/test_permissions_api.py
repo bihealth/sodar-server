@@ -42,10 +42,11 @@ class TestInvestigationRetrieveAPIView(
         )
         good_users = [
             self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
-            self.guest_as.user,
+            self.user_owner_cat,  # Inherited owner
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
         ]
         self.assert_response_api(url, good_users, 200)
         self.assert_response_api(url, self.user_no_roles, 403)
@@ -76,7 +77,6 @@ class TestSampleSheetImportAPIView(
 
     def setUp(self):
         super().setUp()
-
         self.zip_file = open(SHEET_PATH, 'rb')
         self.post_data = {'file': self.zip_file}
 
@@ -92,12 +92,13 @@ class TestSampleSheetImportAPIView(
         )
         good_users = [
             self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
+            self.user_owner_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
         ]
         bad_users = [
-            self.guest_as.user,
+            self.user_guest,
             self.user_no_roles,
         ]
 
@@ -192,10 +193,11 @@ class TestSampleSheetISAExportAPIView(
         )
         good_users = [
             self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
-            self.guest_as.user,
+            self.user_owner_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
         ]
         bad_users = [self.user_no_roles]
         self.assert_response_api(url, good_users, 200)
@@ -226,10 +228,11 @@ class TestSampleDataFileExistsAPIView(TestProjectAPIPermissionBase):
         request_data = {'checksum': ''}
         good_users = [
             self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
-            self.guest_as.user,
+            self.user_owner_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
             self.user_no_roles,
         ]
         # No iRODS so good users get 500 -> still ok for auth :)
@@ -250,10 +253,8 @@ class TestRemoteSheetGetAPIView(
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-
         # No user
         self.anonymous = None
-
         # Create remote site
         self.target_site = self._make_site(
             name=REMOTE_SITE_NAME,
@@ -265,14 +266,12 @@ class TestRemoteSheetGetAPIView(
 
     def test_view(self):
         """Test RemoteSheetGetAPIView with correct access"""
-
         # Create remote project
         self._make_remote_project(
             project_uuid=self.project.sodar_uuid,
             site=self.target_site,
             level=SODAR_CONSTANTS['REMOTE_LEVEL_READ_ROLES'],
         )
-
         url = reverse(
             'samplesheets:api_remote_get',
             kwargs={
@@ -284,14 +283,11 @@ class TestRemoteSheetGetAPIView(
 
     def test_view_invalid_access(self):
         """Test RemoteSheetGetAPIView with invalid access level"""
-
-        # Create remote project
         self._make_remote_project(
             project_uuid=self.project.sodar_uuid,
             site=self.target_site,
             level=SODAR_CONSTANTS['REMOTE_LEVEL_VIEW_AVAIL'],
         )
-
         url = reverse(
             'samplesheets:api_remote_get',
             kwargs={
@@ -303,7 +299,6 @@ class TestRemoteSheetGetAPIView(
 
     def test_view_no_access(self):
         """Test RemoteSheetGetAPIView with no remote access rights"""
-
         url = reverse(
             'samplesheets:api_remote_get',
             kwargs={
@@ -315,14 +310,11 @@ class TestRemoteSheetGetAPIView(
 
     def test_view_invalid_secret(self):
         """Test RemoteSheetGetAPIView with invalid remote site secret"""
-
-        # Create remote project
         self._make_remote_project(
             project_uuid=self.project.sodar_uuid,
             site=self.target_site,
             level=SODAR_CONSTANTS['REMOTE_LEVEL_VIEW_AVAIL'],
         )
-
         url = reverse(
             'samplesheets:api_remote_get',
             kwargs={

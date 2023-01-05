@@ -98,7 +98,7 @@ class TestIrodsDataRequestBase(
             status=self.status,
             path=self.path,
             description=self.description,
-            user=self.user_cat,
+            user=self.user_owner_cat,
         )
 
     def tearDown(self):
@@ -142,7 +142,7 @@ class TestIrodsDataRequest(TestIrodsDataRequestBase):
             'id': self.irods_data_request.pk,
             'project': self.project.pk,
             'path': self.path,
-            'user': self.user_cat.pk,
+            'user': self.user_owner_cat.pk,
             'action': self.action,
             'status': self.status,
             'target_path': '',
@@ -170,7 +170,7 @@ class TestIrodsDataRequest(TestIrodsDataRequestBase):
                 self.irods_data_request.get_assay_name(),
                 self.action,
                 self.path,
-                self.user_cat.username,
+                self.user_owner_cat.username,
             ),
         )
 

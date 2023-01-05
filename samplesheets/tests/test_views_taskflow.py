@@ -1234,7 +1234,7 @@ class TestIrodsRequestAcceptView(TestIrodsRequestViewsBase):
     def test_accept_no_request(self):
         """Test accepting a delete request that doesn't exist"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
-        with self.login(self.user_cat):
+        with self.login(self.user_owner_cat):
             response = self.client.post(
                 reverse(
                     'samplesheets:irods_request_accept',
@@ -1302,7 +1302,7 @@ class TestIrodsRequestAcceptView(TestIrodsRequestViewsBase):
         self._assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
         self._assert_alert_count(ACCEPT_ALERT, self.user_contrib, 0)
 
-        with self.login(self.user_cat):
+        with self.login(self.user_owner_cat):
             response = self.client.post(
                 reverse(
                     'samplesheets:irods_request_accept',
@@ -1565,7 +1565,7 @@ class TestIrodsRequestRejectView(TestIrodsRequestViewsBase):
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         obj = IrodsDataRequest.objects.first()
 
-        with self.login(self.user_cat):
+        with self.login(self.user_owner_cat):
             response = self.client.get(
                 reverse(
                     'samplesheets:irods_request_reject',
@@ -1719,7 +1719,7 @@ class TestIrodsRequestRejectView(TestIrodsRequestViewsBase):
         """Test rejecting delete request that doesn't exist"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
 
-        with self.login(self.user_cat):
+        with self.login(self.user_owner_cat):
             response = self.client.get(
                 reverse(
                     'samplesheets:irods_request_reject',

@@ -14,9 +14,15 @@ class TestLandingZoneAjaxPermissions(TestLandingZonePermissionsBase):
             'landingzones:ajax_status',
             kwargs={'landingzone': self.landing_zone.sodar_uuid},
         )
-        good_users = [self.superuser, self.owner_as.user, self.delegate_as.user]
+        good_users = [
+            self.superuser,
+            self.user_owner_cat,  # Inherited owner
+            self.user_owner,
+            self.user_delegate,
+        ]
         bad_users = [
-            self.contributor_as.user,  # NOTE: not the owner of the zone
+            self.user_contributor,  # NOTE: not the owner of the zone
+            self.user_guest,
             self.user_no_roles,
             self.anonymous,
         ]

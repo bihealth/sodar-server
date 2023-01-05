@@ -43,10 +43,11 @@ class TestSampleSheetsAjaxPermissions(
         )
         good_users = [
             self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
-            self.guest_as.user,
+            self.user_owner_cat,  # Inherited owner
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
         ]
         bad_users = [self.user_no_roles, self.anonymous]
         self.assert_response(url, good_users, 200)
@@ -74,10 +75,11 @@ class TestSampleSheetsAjaxPermissions(
         )
         good_users = [
             self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
-            self.guest_as.user,
+            self.user_owner_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
         ]
         bad_users = [self.user_no_roles, self.anonymous]
         self.assert_response(url, good_users, 200)
@@ -108,11 +110,12 @@ class TestSampleSheetsAjaxPermissions(
         get_data = {'edit': 1}
         good_users = [
             self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
+            self.user_owner_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
         ]
-        bad_users = [self.guest_as.user, self.user_no_roles, self.anonymous]
+        bad_users = [self.user_guest, self.user_no_roles, self.anonymous]
         self.assert_response(url, good_users, 200, data=get_data)
         self.assert_response(url, bad_users, 403, data=get_data)
         self.project.set_public()
@@ -144,10 +147,11 @@ class TestSampleSheetsAjaxPermissions(
         get_data = {'edit': 1}
         users = [
             self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
-            self.guest_as.user,
+            self.user_owner_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
             self.user_no_roles,
             self.anonymous,
         ]
@@ -163,10 +167,11 @@ class TestSampleSheetsAjaxPermissions(
         )
         good_users = [
             self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
-            self.guest_as.user,
+            self.user_owner_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
         ]
         bad_users = [self.user_no_roles, self.anonymous]
         self.assert_response(url, good_users, 404)  # No plugin
@@ -180,10 +185,11 @@ class TestSampleSheetsAjaxPermissions(
         )
         good_users = [
             self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
-            self.guest_as.user,
+            self.user_owner_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
         ]
         bad_users = [self.user_no_roles, self.anonymous]
         self.assert_response(url, good_users, 200)
@@ -210,11 +216,12 @@ class TestSampleSheetsAjaxPermissions(
         )
         good_users = [
             self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
+            self.user_owner_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
         ]
-        bad_users = [self.guest_as.user, self.user_no_roles, self.anonymous]
+        bad_users = [self.user_guest, self.user_no_roles, self.anonymous]
         self.assert_response(url, good_users, 200, method='POST')
         self.assert_response(url, bad_users, 403, method='POST')
         self.project.set_public()
@@ -238,11 +245,12 @@ class TestSampleSheetsAjaxPermissions(
         )
         good_users = [
             self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
+            self.user_owner_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
         ]
-        bad_users = [self.guest_as.user, self.user_no_roles, self.anonymous]
+        bad_users = [self.user_guest, self.user_no_roles, self.anonymous]
         self.assert_response(url, good_users, 200, method='POST')
         self.assert_response(url, bad_users, 403, method='POST')
         self.project.set_public()
@@ -266,11 +274,12 @@ class TestSampleSheetsAjaxPermissions(
         )
         good_users = [
             self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
+            self.user_owner_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
         ]
-        bad_users = [self.guest_as.user, self.user_no_roles, self.anonymous]
+        bad_users = [self.user_guest, self.user_no_roles, self.anonymous]
         self.assert_response(url, good_users, 200, method='POST')
         self.assert_response(url, bad_users, 403, method='POST')
         self.project.set_public()
@@ -294,11 +303,12 @@ class TestSampleSheetsAjaxPermissions(
         )
         good_users = [
             self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
+            self.user_owner_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
         ]
-        bad_users = [self.guest_as.user, self.user_no_roles, self.anonymous]
+        bad_users = [self.user_guest, self.user_no_roles, self.anonymous]
         self.assert_response(url, good_users, 200, method='POST')
         self.assert_response(url, bad_users, 403, method='POST')
         self.project.set_public()
@@ -322,11 +332,12 @@ class TestSampleSheetsAjaxPermissions(
         )
         good_users = [
             self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
+            self.user_owner_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
         ]
-        bad_users = [self.guest_as.user, self.user_no_roles, self.anonymous]
+        bad_users = [self.user_guest, self.user_no_roles, self.anonymous]
         self.assert_response(url, good_users, 200, method='POST')
         self.assert_response(url, bad_users, 403, method='POST')
         self.project.set_public()
@@ -351,11 +362,12 @@ class TestSampleSheetsAjaxPermissions(
         # TODO: Set up request data
         good_users = [
             self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
+            self.user_owner_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
         ]
-        bad_users = [self.guest_as.user, self.user_no_roles, self.anonymous]
+        bad_users = [self.user_guest, self.user_no_roles, self.anonymous]
         self.assert_response(url, good_users, 400, method='POST')  # No fields
         self.assert_response(url, bad_users, 403, method='POST')
         self.project.set_public()
@@ -380,16 +392,17 @@ class TestSampleSheetsAjaxPermissions(
         # TODO: Set up request data
         good_users = [
             self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
-            self.guest_as.user,
+            self.user_owner_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
         ]
         bad_users = [self.user_no_roles, self.anonymous]
         self.assert_response(url, good_users, 400, method='POST')  # No config
         self.assert_response(url, bad_users, 403, method='POST')
         self.project.set_public()
-        self.assert_response(url, self.guest_as.user, 400, method='POST')
+        self.assert_response(url, self.user_guest, 400, method='POST')
         self.assert_response(url, self.anonymous, 403, method='POST')
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
@@ -419,12 +432,13 @@ class TestSampleSheetsAjaxPermissions(
         )
         good_users = [
             self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
+            self.user_owner_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
         ]
         bad_users = [
-            self.guest_as.user,
+            self.user_guest,
             self.user_no_roles,
             self.anonymous,
         ]

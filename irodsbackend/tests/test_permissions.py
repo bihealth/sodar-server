@@ -83,7 +83,7 @@ class TestIrodsbackendPermissions(
         )
         good_users = [
             self.superuser,
-            self.user_cat,  # Inherited owner
+            self.user_owner_cat,  # Inherited owner
             self.user_owner,
             self.user_delegate,
             self.user_contributor,
@@ -121,7 +121,7 @@ class TestIrodsbackendPermissions(
         )
         bad_users = [
             self.superuser,
-            self.user_cat,
+            self.user_owner_cat,
             self.user_owner,
             self.user_delegate,
             self.user_contributor,
@@ -141,7 +141,7 @@ class TestIrodsbackendPermissions(
         )
         good_users = [
             self.superuser,
-            self.user_cat,
+            self.user_owner_cat,
             self.as_owner.user,
             self.as_delegate.user,
         ]
@@ -166,7 +166,7 @@ class TestIrodsbackendPermissions(
 
         good_users = [
             self.superuser,
-            self.user_cat,
+            self.user_owner_cat,
             self.user_owner,
             self.user_delegate,
             self.user_contributor,
@@ -185,7 +185,7 @@ class TestIrodsbackendPermissions(
         )
         good_users = [
             self.superuser,
-            self.user_cat,
+            self.user_owner_cat,
             self.user_owner,
             self.user_delegate,
             self.user_contributor,
@@ -223,7 +223,7 @@ class TestIrodsbackendPermissions(
         )
         bad_users = [
             self.superuser,
-            self.user_cat,
+            self.user_owner_cat,
             self.user_owner,
             self.user_delegate,
             self.user_contributor,
@@ -243,7 +243,7 @@ class TestIrodsbackendPermissions(
         )
         good_users = [
             self.superuser,
-            self.user_cat,
+            self.user_owner_cat,
             self.user_owner,
             self.user_delegate,
         ]
