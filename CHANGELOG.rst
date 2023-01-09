@@ -35,7 +35,7 @@ Changed
     - Update backend iRODS connection handling (#909, #1542)
     - Rename ``IrodsAPI.get_child_colls()``
 - **Samplesheets**
-    - Upgrade ``loader-utils`` in Vue app (#1527)
+    - Upgrade critical Vue app dependencies (#1527, #1571)
     - Remove redundant node UUIDs from render tables (#708)
 
 Fixed
