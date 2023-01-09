@@ -581,8 +581,8 @@ class ProjectAppPlugin(
 
         # Submit flow
         logger.info(
-            'Setting project public access status for "{}" ({}) to: {} '.format(
-                project.title, project.sodar_uuid, project.public_guest_access
+            'Setting project public access status for {} to: {} '.format(
+                project.get_log_title(), project.public_guest_access
             )
         )
         self._update_public_access(project, taskflow, irods_backend)

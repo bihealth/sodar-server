@@ -279,8 +279,8 @@ class SheetImportAPIView(SheetImportMixin, SODARAPIBaseProjectMixin, APIView):
             isa_version=isa_version,
         )
         ret_data = {
-            'detail': 'Sample sheets {}d for project "{}" ({})'.format(
-                action, project.title, project.sodar_uuid
+            'detail': 'Sample sheets {}d for project {}'.format(
+                action, project.get_log_title()
             )
         }
         no_plugin_assays = self.get_assays_without_plugins(investigation)

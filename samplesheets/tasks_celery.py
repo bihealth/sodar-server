@@ -60,8 +60,8 @@ def update_project_cache_task(
         )
 
     logger.info(
-        'Updating cache asynchronously for project "{}" ({})'.format(
-            project.title, project.sodar_uuid
+        'Updating cache asynchronously for project {}'.format(
+            project.get_log_title()
         )
     )
     app_plugin = get_app_plugin(APP_NAME)
@@ -75,9 +75,7 @@ def update_project_cache_task(
         if alert_msg:
             app_msg += ': {}'.format(alert_msg)
         logger.info(
-            'Cache update OK for project "{}" ({})'.format(
-                project.title, project.sodar_uuid
-            )
+            'Cache update OK for project {}'.format(project.get_log_title())
         )
     except Exception as ex:
         tl_status_type = 'FAILED'
@@ -85,8 +83,8 @@ def update_project_cache_task(
         app_level = 'DANGER'
         app_msg = 'Sample sheet iRODS cache update failed: {}'.format(ex)
         logger.error(
-            'Cache update failed for project "{}" ({}): {}'.format(
-                project.title, project.sodar_uuid, ex
+            'Cache update failed for project {}: {}'.format(
+                project.get_log_title(), ex
             )
         )
 

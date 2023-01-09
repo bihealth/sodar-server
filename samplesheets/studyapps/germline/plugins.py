@@ -415,8 +415,8 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             if investigation.get_configuration() != self.config_name:
                 continue
             logger.debug(
-                'Updating cache for project "{}" ({})..'.format(
-                    project.title, project.sodar_uuid
+                'Updating cache for project {}..'.format(
+                    project.get_log_title()
                 )
             )
             # If a name is given, only update that specific CacheItem

@@ -28,6 +28,7 @@ Changed
 -------
 
 - **General**
+    - Upgrade to django-sodar-core v0.11.1 (#1567)
     - Use default Gunicorn worker class in production (#1536)
     - Upgrade to fastobo v0.12.2 (#1561)
 - **Irodsbackend**

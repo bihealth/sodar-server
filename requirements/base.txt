@@ -1,9 +1,9 @@
 # Wheel
 # NOTE: For best results wheel should be installed separately before other deps
-wheel==0.37.1
+wheel==0.38.4
 
 # Setuptools
-setuptools==65.3.0
+setuptools==65.6.3
 
 # Django
 django>=3.2.16, <3.3
@@ -72,7 +72,7 @@ mistune==2.0.4
 -e git+https://github.com/mikkonie/django-plugins.git@42e86e7904e5c09f1da32173862b26843eda5dd8#egg=django-plugins
 
 # SODAR Core
-django-sodar-core==0.11.0
+django-sodar-core==0.11.1
 # -e git+https://github.com/bihealth/sodar-core.git@888d594d342984ab430e5e2d624c0cfda68d2eaa#egg=django-sodar-core
 
 # Celery

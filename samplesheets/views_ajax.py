@@ -541,8 +541,8 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
                 inv_tables, sheet_config
             )
             logger.debug(
-                'Setting default display config for project "{}" ({})'.format(
-                    project.title, project.sodar_uuid
+                'Setting default display config for project {}'.format(
+                    project.get_log_title()
                 )
             )
             app_settings.set_app_setting(
@@ -554,8 +554,9 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
 
         if not user_config_found:
             logger.debug(
-                'Setting display config for user "{}" in project "{}" '
-                '({})'.format(user.username, project.title, project.sodar_uuid)
+                'Setting display config for user "{}" in project {} '.format(
+                    user.username, project.get_log_title()
+                )
             )
             app_settings.set_app_setting(
                 APP_NAME,

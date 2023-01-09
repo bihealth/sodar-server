@@ -30,11 +30,6 @@ class Command(BaseCommand):
     help = 'Syncs study render tables in sodarcache for optimized rendering'
 
     @classmethod
-    def _get_log_project(cls, project):
-        """Return logging-friendly project title"""
-        return '"{}" ({})'.format(project.title, project.sodar_uuid)
-
-    @classmethod
     def _get_log_study(cls, study):
         """Return logging-friendly project title"""
         return '"{}" ({})'.format(study.get_title(), study.sodar_uuid)
@@ -68,9 +63,7 @@ class Command(BaseCommand):
         if options.get('project'):
             project = projects.first()
             logger.info(
-                'Limiting sync to project {}'.format(
-                    self._get_log_project(project)
-                )
+                'Limiting sync to project {}'.format(project.get_log_title())
             )
 
         for project in projects:
@@ -82,13 +75,13 @@ class Command(BaseCommand):
             except Investigation.DoesNotExist:
                 logger.debug(
                     'No investigation found, skipping for project {}'.format(
-                        self._get_log_project(project)
+                        project.get_log_title()
                     )
                 )
                 continue
             logger.debug(
                 'Building study render tables for project {}..'.format(
-                    self._get_log_project(project)
+                    project.get_log_title()
                 )
             )
             for study in investigation.studies.all():
@@ -125,7 +118,7 @@ class Command(BaseCommand):
                 'Built {} study table{} for project {}'.format(
                     study_count,
                     's' if study_count != 1 else '',
-                    self._get_log_project(project),
+                    project.get_log_title(),
                 )
             )
         logger.info('Study table cache sync done')

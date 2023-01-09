@@ -908,9 +908,7 @@ class SheetRemoteSyncAPI(SheetImportMixin):
         :user: User performing the action
         """
         logger.debug(
-            'Sync sample sheets for project "{}" ({})'.format(
-                project.title, project.sodar_uuid
-            )
+            'Sync sample sheets for project {}'.format(project.get_log_title())
         )
         # Check input
         url = app_settings.get_app_setting(
@@ -1003,8 +1001,9 @@ class SheetRemoteSyncAPI(SheetImportMixin):
             )
 
         logger.info(
-            'Sample sheet sync OK for project "{}" '
-            '({})'.format(project.title, project.sodar_uuid)
+            'Sample sheet sync OK for project {}'.format(
+                project.get_log_title()
+            )
         )
         return True
 
