@@ -6,7 +6,7 @@ import logging
 from projectroles.plugins import get_backend_api
 
 from samplesheets.models import GenericMaterial
-from samplesheets.studyapps.utils import FILE_TYPE_SUFFIXES
+from samplesheets.studyapps.utils import FILE_TYPE_SUFFIXES, FILE_TYPE_BLACKLISTED_SUFFIXES
 from samplesheets.utils import get_index_by_header
 
 
@@ -79,7 +79,10 @@ def get_pedigree_file_path(file_type, source, study_tables):
                 # NOTE: We no longer expect the SAMPLE name in filenames
                 if obj['path'].startswith(query_path + '/') and obj[
                     'name'
-                ].lower().endswith(FILE_TYPE_SUFFIXES[file_type]):
+                ].lower().endswith(FILE_TYPE_SUFFIXES[file_type]) and not any(
+                    obj['name'].lower().endswith(suf)
+                    for suf in FILE_TYPE_BLACKLISTED_SUFFIXES
+                ):
                     file_paths.append(obj['path'])
                     logger.debug('Added path: {}'.format(obj['path']))
     if not file_paths:

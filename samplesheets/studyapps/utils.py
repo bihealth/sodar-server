@@ -10,6 +10,11 @@ from django.urls import reverse
 IGV_URL_BASE = 'http://127.0.0.1:60151'
 FILE_TYPE_SUFFIXES = {'bam': '.bam', 'vcf': '.vcf.gz'}
 
+FILE_TYPE_BLACKLISTED_SUFFIXES = {
+    'bam': ('dragen_evidence.bam',),
+    'vcf': ('cnv.vcf.gz', 'ploidy.vcf.gz', 'sv.vcf.gz'),
+}
+
 
 def get_igv_session_url(source, app_name, merge=False):
     """
