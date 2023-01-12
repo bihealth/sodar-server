@@ -347,6 +347,74 @@ class TestGermlinePlugin(
         self.assertEqual(len(sl['data']['bam']['files']), 0)
         self.assertEqual(len(sl['data']['vcf']['files']), 0)
 
+    def test_get_shortcut_links_files_omit(self):
+        """Test get_shortcut_links() with omittable files in iRODS"""
+        self.irods.collections.create(self.source_path)
+        bam_path = os.path.join(
+            self.source_path, '{}_test.bam'.format(SAMPLE_ID)
+        )
+        bam_path_omit = os.path.join(
+            self.source_path, '{}_dragen_evidence.bam'.format(SAMPLE_ID)
+        )
+        vcf_path = os.path.join(
+            self.source_path, '{}_test.vcf.gz'.format(FAMILY_ID)
+        )
+        vcf_path_omit = os.path.join(
+            self.source_path, '{}_cnv.vcf.gz'.format(FAMILY_ID)
+        )
+        self.irods.data_objects.create(bam_path)
+        self.irods.data_objects.create(bam_path_omit)
+        self.irods.data_objects.create(vcf_path)
+        self.irods.data_objects.create(vcf_path_omit)
+
+        self.plugin.update_cache(self.cache_name, self.project)
+        study_tables = self.tb.build_study_tables(self.study)
+        sl = self.plugin.get_shortcut_links(
+            self.study, study_tables, family=[FAMILY_ID]
+        )
+
+        self.assertEqual(len(sl['data']['session']['files']), 1)
+        self.assertEqual(len(sl['data']['bam']['files']), 1)
+        self.assertEqual(len(sl['data']['vcf']['files']), 1)
+        self.assertEqual(
+            sl['data']['session']['files'][0]['url'],
+            reverse(
+                'samplesheets.studyapps.germline:igv',
+                kwargs={'genericmaterial': self.source.sodar_uuid},
+            ),
+        )
+        self.assertEqual(
+            sl['data']['bam']['files'][0]['url'],
+            settings.IRODS_WEBDAV_URL
+            + get_pedigree_file_path('bam', self.source, study_tables),
+        )
+        self.assertEqual(
+            sl['data']['vcf']['files'][0]['url'],
+            settings.IRODS_WEBDAV_URL
+            + get_pedigree_file_path('vcf', self.source, study_tables),
+        )
+
+    def test_get_shortcut_links_files_omit_only(self):
+        """Test get_shortcut_links() with only omittable files in iRODS"""
+        self.irods.collections.create(self.source_path)
+        bam_path_omit = os.path.join(
+            self.source_path, '{}_dragen_evidence.bam'.format(SAMPLE_ID)
+        )
+        vcf_path_omit = os.path.join(
+            self.source_path, '{}_cnv.vcf.gz'.format(FAMILY_ID)
+        )
+        self.irods.data_objects.create(bam_path_omit)
+        self.irods.data_objects.create(vcf_path_omit)
+
+        self.plugin.update_cache(self.cache_name, self.project)
+        study_tables = self.tb.build_study_tables(self.study)
+        sl = self.plugin.get_shortcut_links(
+            self.study, study_tables, family=[FAMILY_ID]
+        )
+        self.assertEqual(len(sl['data']['session']['files']), 0)
+        self.assertEqual(len(sl['data']['bam']['files']), 0)
+        self.assertEqual(len(sl['data']['vcf']['files']), 0)
+
     def test_update_cache(self):
         """Test update_cache()"""
         self.plugin.update_cache(self.cache_name, self.project)
@@ -377,3 +445,50 @@ class TestGermlinePlugin(
         self.assertEqual(ci['bam'][self.source.name], bam_path)
         self.assertEqual(ci['vcf'][FAMILY_ID], vcf_path)
         self.assertIsNone(ci['vcf'][FAMILY_ID2])
+
+    def test_update_cache_files_omit(self):
+        """Test update_cache() with omittable files in iRODS"""
+        self.irods.collections.create(self.source_path)
+        # Create omittable files which come before real ones alphabetically
+        bam_path = os.path.join(
+            self.source_path, '{}_test.bam'.format(SAMPLE_ID)
+        )
+        bam_path_omit = os.path.join(
+            self.source_path, '{}_dragen_evidence.bam'.format(SAMPLE_ID)
+        )
+        vcf_path = os.path.join(
+            self.source_path, '{}_test.vcf.gz'.format(FAMILY_ID)
+        )
+        vcf_path_omit = os.path.join(
+            self.source_path, '{}_cnv.vcf.gz'.format(FAMILY_ID)
+        )
+        self.irods.data_objects.create(bam_path)
+        self.irods.data_objects.create(bam_path_omit)
+        self.irods.data_objects.create(vcf_path)
+        self.irods.data_objects.create(vcf_path_omit)
+        self.plugin.update_cache(self.cache_name, self.project)
+        ci = self.cache_backend.get_cache_item(
+            APP_NAME, self.cache_name, self.project
+        ).data
+        # Omitted files should not be returned
+        self.assertEqual(ci['bam'][self.source.name], bam_path)
+        self.assertEqual(ci['vcf'][FAMILY_ID], vcf_path)
+
+    def test_update_cache_files_omit_only(self):
+        """Test update_cache() with only omittable files in iRODS"""
+        self.irods.collections.create(self.source_path)
+        bam_path_omit = os.path.join(
+            self.source_path, '{}_dragen_evidence.bam'.format(SAMPLE_ID)
+        )
+        vcf_path_omit = os.path.join(
+            self.source_path, '{}_cnv.vcf.gz'.format(FAMILY_ID)
+        )
+        self.irods.data_objects.create(bam_path_omit)
+        self.irods.data_objects.create(vcf_path_omit)
+        self.plugin.update_cache(self.cache_name, self.project)
+        ci = self.cache_backend.get_cache_item(
+            APP_NAME, self.cache_name, self.project
+        ).data
+        # Omitted files should not be returned
+        self.assertIsNone(ci['bam'][self.source.name])
+        self.assertIsNone(ci['vcf'][FAMILY_ID])

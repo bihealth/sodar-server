@@ -181,6 +181,12 @@ Sample Sheets Settings
     URL pattern in form of ``https://example.com/{id}``.
 ``SHEETS_SYNC_INTERVAL``
     Interval for remote sheet synchronization in minutes (integer).
+``SHEETS_IGV_OMIT_BAM``
+    BAM file name suffixes to omit from study shortcuts and IGV session
+    generation.
+``SHEETS_IGV_OMIT_VCF``
+    VCF file name suffixes to omit from study shortcuts and IGV session
+    generation.
 
 Landing Zones Settings
 ----------------------

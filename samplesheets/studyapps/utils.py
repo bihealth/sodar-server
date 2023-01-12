@@ -11,6 +11,22 @@ IGV_URL_BASE = 'http://127.0.0.1:60151'
 FILE_TYPE_SUFFIXES = {'bam': '.bam', 'vcf': '.vcf.gz'}
 
 
+def check_igv_file_name(file_name, file_type):
+    """
+    Check if file is acceptable for IGV session inclusion. Returns False if
+    suffix is found in env vars of omittable files.
+
+    :param file_name: String
+    :param file_type: String ("bam" or "vcf")
+    :raise: ValueError if file_type is incorrect
+    :return: Boolean (True if name is OK)
+    """
+    if file_type.lower() not in ['bam', 'vcf']:
+        raise ValueError('Invalid value for file_type')
+    ol = getattr(settings, 'SHEETS_IGV_OMIT_' + file_type.upper(), [])
+    return not any([s.lower() for s in ol if file_name.lower().endswith(s)])
+
+
 def get_igv_session_url(source, app_name, merge=False):
     """
     Return URL for opening a generated session file in IGV.

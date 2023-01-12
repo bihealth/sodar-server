@@ -13,7 +13,11 @@ from projectroles.plugins import get_backend_api
 from samplesheets.models import Investigation, Study, GenericMaterial
 from samplesheets.plugins import SampleSheetStudyPluginPoint
 from samplesheets.rendering import SampleSheetTableBuilder
-from samplesheets.studyapps.utils import get_igv_session_url, get_igv_irods_url
+from samplesheets.studyapps.utils import (
+    check_igv_file_name,
+    get_igv_session_url,
+    get_igv_irods_url,
+)
 from samplesheets.utils import get_index_by_header
 
 from samplesheets.studyapps.germline.utils import (
@@ -344,6 +348,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                         for o in study_objs['irods_data']
                         if o['path'].startswith(path + '/')
                         and o['name'].lower().endswith('bam')
+                        and check_igv_file_name(o['name'], 'bam')
                     ]
                 row_fam = row[fam_idx]['value']
                 # Add VCF objects
@@ -359,6 +364,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                         for o in study_objs['irods_data']
                         if o['path'].startswith(path + '/')
                         and o['name'].lower().endswith('vcf.gz')
+                        and check_igv_file_name(o['name'], 'vcf')
                     ]
 
         # Update data
