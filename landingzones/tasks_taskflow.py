@@ -296,7 +296,7 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
                     )
 
         # Create alerts and send emails to other project members on move
-        member_notify = app_settings.get_app_setting(
+        member_notify = app_settings.get(
             APP_NAME, 'member_notify_move', project=zone.project
         )
         if member_notify and zone.status == 'MOVED' and file_count > 0:

@@ -58,18 +58,16 @@ class TestUtilsBase(
     def setUp(self):
         # Make owner user
         self.user_owner = self.make_user('owner')
-
         # Init project, role and assignment
-        self.project = self._make_project(
+        self.project = self.make_project(
             'TestProject', SODAR_CONSTANTS['PROJECT_TYPE_PROJECT'], None
         )
         self.role_owner = Role.objects.get_or_create(
             name=SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
         )[0]
-        self.assignment_owner = self._make_assignment(
+        self.assignment_owner = self.make_assignment(
             self.project, self.user_owner, self.role_owner
         )
-
         # Import investigation
         self.investigation = self.import_isa_from_file(
             SHEET_PATH_SMALL2, self.project
@@ -233,7 +231,7 @@ class TestGetWebdavUrl(TestUtilsBase):
         # Mock public project update
         self.project.public_guest_access = True
         self.project.save()
-        app_settings.set_app_setting(
+        app_settings.set(
             'samplesheets',
             'public_access_ticket',
             IRODS_TICKET_STR,
@@ -250,7 +248,7 @@ class TestGetWebdavUrl(TestUtilsBase):
         """Test get_webdav_url() with anonymous user without anon access"""
         # Mock public project update
         self.project.set_public()
-        app_settings.set_app_setting(
+        app_settings.set(
             'samplesheets',
             'public_access_ticket',
             IRODS_TICKET_STR,

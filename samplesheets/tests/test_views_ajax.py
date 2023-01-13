@@ -228,10 +228,10 @@ class TestSheetContextAjaxView(TestViewsBase):
             'table_height': settings.SHEETS_TABLE_HEIGHT,
             'min_col_width': settings.SHEETS_MIN_COLUMN_WIDTH,
             'max_col_width': settings.SHEETS_MAX_COLUMN_WIDTH,
-            'allow_editing': app_settings.get_default_setting(
+            'allow_editing': app_settings.get_default(
                 APP_NAME, 'allow_editing'
             ),
-            'sheet_sync_enabled': app_settings.get_default_setting(
+            'sheet_sync_enabled': app_settings.get_default(
                 APP_NAME, 'sheet_sync_enable'
             ),
             'alerts': [],
@@ -331,10 +331,10 @@ class TestSheetContextAjaxView(TestViewsBase):
             'table_height': settings.SHEETS_TABLE_HEIGHT,
             'min_col_width': settings.SHEETS_MIN_COLUMN_WIDTH,
             'max_col_width': settings.SHEETS_MAX_COLUMN_WIDTH,
-            'allow_editing': app_settings.get_default_setting(
+            'allow_editing': app_settings.get_default(
                 APP_NAME, 'allow_editing'
             ),
-            'sheet_sync_enabled': app_settings.get_default_setting(
+            'sheet_sync_enabled': app_settings.get_default(
                 APP_NAME, 'sheet_sync_enable'
             ),
             'alerts': [],
@@ -359,7 +359,7 @@ class TestSheetContextAjaxView(TestViewsBase):
 
     def test_delegate_min_owner(self):
         """Test GET as delegate with owner minimum role"""
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'edit_config_min_role',
             SODAR_CONSTANTS['PROJECT_ROLE_OWNER'],
@@ -377,7 +377,7 @@ class TestSheetContextAjaxView(TestViewsBase):
 
     def test_delegate_min_delegate(self):
         """Test GET as delegate with delegate minimum role"""
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'edit_config_min_role',
             SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE'],
@@ -436,7 +436,7 @@ class TestSheetContextAjaxView(TestViewsBase):
             user=self.user,
         )
         contrib_user = self.make_user('user_contributor')
-        self._make_assignment(self.project, contrib_user, self.role_contributor)
+        self.make_assignment(self.project, contrib_user, self.role_contributor)
 
         with self.login(contrib_user):
             response = self.client.get(
@@ -454,7 +454,7 @@ class TestSheetContextAjaxView(TestViewsBase):
         """Test GET as inherited owner"""
         # Set up category owner
         user_cat = self.make_user('user_cat')
-        self._make_assignment(self.category, user_cat, self.role_owner)
+        self.make_assignment(self.category, user_cat, self.role_owner)
         with self.login(user_cat):
             response = self.client.get(
                 reverse(
@@ -479,9 +479,7 @@ class TestStudyTablesAjaxView(IrodsAccessTicketMixin, TestViewsBase):
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
         # Allow sample sheet editing in project
-        app_settings.set_app_setting(
-            APP_NAME, 'allow_editing', True, project=self.project
-        )
+        app_settings.set(APP_NAME, 'allow_editing', True, project=self.project)
         # Set up helpers
         self.cache_backend = get_backend_api('sodar_cache')
         self.cache_name = STUDY_TABLE_CACHE_ITEM.format(
@@ -1316,7 +1314,7 @@ class TestSheetRowInsertAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         # Set up UUIDs and default config
         self.update_uuids(self.investigation, CONFIG_DATA_DEFAULT)
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'sheet_config',
             self.build_sheet_config(self.investigation),
@@ -1531,7 +1529,7 @@ class TestSheetRowDeleteAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
         )
         # Set up UUIDs and default config
         self.update_uuids(self.investigation, CONFIG_DATA_DEFAULT)
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'sheet_config',
             self.build_sheet_config(self.investigation),
@@ -1735,19 +1733,19 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
         super().setUp()
         # Set up category owner
         self.user_cat = self.make_user('user_cat')
-        self._make_assignment(self.category, self.user_cat, self.role_owner)
+        self.make_assignment(self.category, self.user_cat, self.role_owner)
 
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         # Set up UUIDs and default config
         self.update_uuids(self.investigation, CONFIG_DATA_DEFAULT)
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'sheet_config',
             self.build_sheet_config(self.investigation),
             project=self.project,
         )
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'edit_config_min_role',
             SODAR_CONSTANTS['PROJECT_ROLE_OWNER'],
@@ -1788,7 +1786,7 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
 
     def test_update_study_column(self):
         """Test posting a study column update"""
-        sheet_config = app_settings.get_app_setting(
+        sheet_config = app_settings.get(
             APP_NAME, 'sheet_config', project=self.project
         )
         self.assertEqual(sheet_config, CONFIG_DATA_DEFAULT)
@@ -1812,7 +1810,7 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
             )
         self.assertEqual(response.status_code, 200)
 
-        sheet_config = app_settings.get_app_setting(
+        sheet_config = app_settings.get(
             APP_NAME, 'sheet_config', project=self.project
         )
         expected = {
@@ -1840,7 +1838,7 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
 
     def test_superuser_min_owner(self):
         """Test updating as superuser with minimum role of owner"""
-        edit_config_min_role = app_settings.get_app_setting(
+        edit_config_min_role = app_settings.get(
             APP_NAME, 'edit_config_min_role', project=self.project
         )
         self.assertEqual(
@@ -1859,7 +1857,7 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
 
     def test_owner_min_owner(self):
         """Test updating as owner with minimum=owner"""
-        edit_config_min_role = app_settings.get_app_setting(
+        edit_config_min_role = app_settings.get(
             APP_NAME, 'edit_config_min_role', project=self.project
         )
         self.assertEqual(
@@ -1878,7 +1876,7 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
 
     def test_delegate_min_owner(self):
         """Test updating as delegate with minimum=owner (should fail)"""
-        edit_config_min_role = app_settings.get_app_setting(
+        edit_config_min_role = app_settings.get(
             APP_NAME, 'edit_config_min_role', project=self.project
         )
         self.assertEqual(
@@ -1901,7 +1899,7 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
 
     def test_contributor_min_owner(self):
         """Test updating as contributor with minimum=owner (should fail)"""
-        edit_config_min_role = app_settings.get_app_setting(
+        edit_config_min_role = app_settings.get(
             APP_NAME, 'edit_config_min_role', project=self.project
         )
         self.assertEqual(
@@ -1981,13 +1979,13 @@ class TestStudyDisplayConfigAjaxView(SheetConfigMixin, TestViewsBase):
         self.display_config = conf_api.build_display_config(
             inv_tables, self.sheet_config
         )
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'display_config_default',
             project=self.project,
             value=self.display_config,
         )
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'display_config',
             project=self.project,
@@ -2016,7 +2014,7 @@ class TestStudyDisplayConfigAjaxView(SheetConfigMixin, TestViewsBase):
             )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['detail'], 'ok')
-        updated_config = app_settings.get_app_setting(
+        updated_config = app_settings.get(
             APP_NAME, 'display_config', project=self.project, user=self.user
         )
         self.assertEqual(
@@ -2047,10 +2045,10 @@ class TestStudyDisplayConfigAjaxView(SheetConfigMixin, TestViewsBase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['detail'], 'ok')
-        updated_config = app_settings.get_app_setting(
+        updated_config = app_settings.get(
             APP_NAME, 'display_config', project=self.project, user=self.user
         )
-        default_config = app_settings.get_app_setting(
+        default_config = app_settings.get(
             APP_NAME, 'display_config_default', project=self.project
         )
         self.assertEqual(
@@ -2076,7 +2074,7 @@ class TestStudyDisplayConfigAjaxView(SheetConfigMixin, TestViewsBase):
             )
         self.assertEqual(response.status_code, 200)
         self.assertNotEqual(response.data['detail'], 'ok')
-        updated_config = app_settings.get_app_setting(
+        updated_config = app_settings.get(
             APP_NAME, 'display_config', project=self.project, user=self.user
         )
         self.assertEqual(

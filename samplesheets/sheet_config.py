@@ -89,7 +89,7 @@ class SheetConfigAPI:
         :param inv_tables: Render tables for investigation (optional)
         :return: Dict
         """
-        sheet_config = app_settings.get_app_setting(
+        sheet_config = app_settings.get(
             APP_NAME, 'sheet_config', project=investigation.project
         )
         sheet_ok = False
@@ -111,7 +111,7 @@ class SheetConfigAPI:
                     investigation, use_config=False
                 )
             sheet_config = self.build_sheet_config(investigation, inv_tables)
-            app_settings.set_app_setting(
+            app_settings.set(
                 APP_NAME,
                 'sheet_config',
                 sheet_config,
@@ -249,7 +249,7 @@ class SheetConfigAPI:
                     sheet_config['studies'][s_uuid]['assays'][a_uuid],
                     start_idx=len(study_tables['study']['field_header']),
                 )
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'sheet_config',
             sheet_config,

@@ -256,7 +256,7 @@ class TestRemoteSheetGetAPIView(
         # No user
         self.anonymous = None
         # Create remote site
-        self.target_site = self._make_site(
+        self.target_site = self.make_site(
             name=REMOTE_SITE_NAME,
             url=REMOTE_SITE_URL,
             mode=SODAR_CONSTANTS['SITE_MODE_TARGET'],
@@ -267,7 +267,7 @@ class TestRemoteSheetGetAPIView(
     def test_view(self):
         """Test RemoteSheetGetAPIView with correct access"""
         # Create remote project
-        self._make_remote_project(
+        self.make_remote_project(
             project_uuid=self.project.sodar_uuid,
             site=self.target_site,
             level=SODAR_CONSTANTS['REMOTE_LEVEL_READ_ROLES'],
@@ -283,7 +283,7 @@ class TestRemoteSheetGetAPIView(
 
     def test_view_invalid_access(self):
         """Test RemoteSheetGetAPIView with invalid access level"""
-        self._make_remote_project(
+        self.make_remote_project(
             project_uuid=self.project.sodar_uuid,
             site=self.target_site,
             level=SODAR_CONSTANTS['REMOTE_LEVEL_VIEW_AVAIL'],
@@ -310,7 +310,7 @@ class TestRemoteSheetGetAPIView(
 
     def test_view_invalid_secret(self):
         """Test RemoteSheetGetAPIView with invalid remote site secret"""
-        self._make_remote_project(
+        self.make_remote_project(
             project_uuid=self.project.sodar_uuid,
             site=self.target_site,
             level=SODAR_CONSTANTS['REMOTE_LEVEL_VIEW_AVAIL'],

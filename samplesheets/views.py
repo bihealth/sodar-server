@@ -376,12 +376,10 @@ class SheetImportMixin:
         if action == 'replace':
             if self.replace_configs:
                 logger.debug('Deleting existing user display configurations..')
-                app_settings.delete_setting(
-                    APP_NAME, 'display_config', project=project
-                )
+                app_settings.delete(APP_NAME, 'display_config', project=project)
             else:
                 logger.debug('Keeping existing configurations')
-                sheet_config = app_settings.get_app_setting(
+                sheet_config = app_settings.get(
                     APP_NAME, 'sheet_config', project=project
                 )
                 inv_tables = table_builder.build_inv_tables(
@@ -390,7 +388,7 @@ class SheetImportMixin:
                 conf_api.restore_sheet_config(
                     investigation, inv_tables, sheet_config
                 )
-                display_config = app_settings.get_app_setting(
+                display_config = app_settings.get(
                     APP_NAME, 'display_config_default', project=project
                 )
 
@@ -442,10 +440,10 @@ class SheetImportMixin:
             isa_version.save()
             logger.info('Sheet configurations added into ISA-Tab version')
 
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME, 'sheet_config', sheet_config, project=project
         )
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'display_config_default',
             display_config,
@@ -665,9 +663,7 @@ class SheetCreateImportAccessMixin:
 
     def dispatch(self, *args, **kwargs):
         project = self.get_project()
-        if app_settings.get_app_setting(
-            APP_NAME, 'sheet_sync_enable', project=project
-        ):
+        if app_settings.get(APP_NAME, 'sheet_sync_enable', project=project):
             messages.error(
                 self.request,
                 'Sheet synchronization enabled in project: import and '
@@ -714,9 +710,7 @@ class IrodsCollsCreateViewMixin:
             )
 
         # NOTE: Getting ticket setting in case of perform_project_sync()
-        ticket_str = app_settings.get_app_setting(
-            APP_NAME, 'public_access_ticket', project
-        )
+        ticket_str = app_settings.get(APP_NAME, 'public_access_ticket', project)
         if (
             not ticket_str
             and project.public_guest_access
@@ -733,7 +727,7 @@ class IrodsCollsCreateViewMixin:
             flow_name='sheet_colls_create',
             flow_data=flow_data,
         )
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'public_access_ticket',
             ticket_str,
@@ -911,12 +905,8 @@ class SheetRemoteSyncAPI(SheetImportMixin):
             'Sync sample sheets for project {}'.format(project.get_log_title())
         )
         # Check input
-        url = app_settings.get_app_setting(
-            APP_NAME, 'sheet_sync_url', project=project
-        )
-        token = app_settings.get_app_setting(
-            APP_NAME, 'sheet_sync_token', project=project
-        )
+        url = app_settings.get(APP_NAME, 'sheet_sync_url', project=project)
+        token = app_settings.get(APP_NAME, 'sheet_sync_token', project=project)
         if not url:
             raise ValueError(SYNC_FAIL_UNSET_URL)
         url_prefix = '/'.join(
@@ -1543,16 +1533,12 @@ class SheetDeleteView(
                 )
             )
             # Delete sheet configuration
-            app_settings.set_app_setting(
-                APP_NAME, 'sheet_config', {}, project=project
-            )
+            app_settings.set(APP_NAME, 'sheet_config', {}, project=project)
             # Delete display configurations
-            app_settings.set_app_setting(
+            app_settings.set(
                 APP_NAME, 'display_config_default', {}, project=project
             )
-            app_settings.delete_setting(
-                APP_NAME, 'display_config', project=project
-            )
+            app_settings.delete(APP_NAME, 'display_config', project=project)
             messages.success(self.request, 'Sample sheets deleted.')
         return redirect(redirect_url)
 
@@ -2577,7 +2563,7 @@ class SheetRemoteSyncView(
         tl_add = False
         tl_status_type = 'OK'
         tl_status_desc = 'Sync OK'
-        sheet_sync_enable = app_settings.get_app_setting(
+        sheet_sync_enable = app_settings.get(
             APP_NAME, 'sheet_sync_enable', project=project
         )
 
@@ -2603,7 +2589,7 @@ class SheetRemoteSyncView(
             tl_add = True  # Add timeline event
 
         if timeline and tl_add:
-            sheet_sync_url = app_settings.get_app_setting(
+            sheet_sync_url = app_settings.get(
                 APP_NAME, 'sheet_sync_url', project=project
             )
             timeline.add_event(

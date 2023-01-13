@@ -107,7 +107,7 @@ class TestSampleSheetsPermissions(
 
     def test_sheet_import_sync(self):
         """Test sheet import view with sync enabled"""
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME, 'sheet_sync_enable', True, project=self.project
         )
         url = reverse(
@@ -159,7 +159,7 @@ class TestSampleSheetsPermissions(
 
     def test_sheet_template_select_sync(self):
         """Test sheet template select view with sync enabled"""
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME, 'sheet_sync_enable', True, project=self.project
         )
         url = reverse(
@@ -221,7 +221,7 @@ class TestSampleSheetsPermissions(
 
     def test_sheet_template_create_sync(self):
         """Test sheet template create view with sync enabled"""
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME, 'sheet_sync_enable', True, project=self.project
         )
         url = (

@@ -60,7 +60,7 @@ class TestProjectSheetsVueAppBase(
         if config_data:
             # Set up UUIDs and default config
             self.update_uuids(self.investigation, config_data)
-            app_settings.set_app_setting(
+            app_settings.set(
                 'samplesheets',
                 'sheet_config',
                 config_data,

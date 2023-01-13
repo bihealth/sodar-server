@@ -930,10 +930,10 @@ class TestProjectCreate(TaskflowbackendTestBase):
     def test_create(self):
         """Test project_create for creating a project"""
         # Create project without taskflow
-        project = self._make_project(
+        project = self.make_project(
             'NewProject', PROJECT_TYPE_PROJECT, self.category
         )
-        self._make_assignment(project, self.user, self.role_owner)
+        self.make_assignment(project, self.user, self.role_owner)
         group_name = self.irods_backend.get_user_group_name(project)
 
         self.assert_irods_coll(project, expected=False)
@@ -1050,10 +1050,10 @@ class TestProjectUpdate(TaskflowbackendTestBase):
             str(self.category.sodar_uuid),
         )
 
-        new_category = self._make_project(
+        new_category = self.make_project(
             'NewCategory', PROJECT_TYPE_CATEGORY, None
         )
-        self._make_assignment(new_category, user_cat_new, self.role_owner)
+        self.make_assignment(new_category, user_cat_new, self.role_owner)
         self.project.parent = new_category
         self.project.save()
 
@@ -1299,7 +1299,7 @@ class TestRoleUpdate(TaskflowbackendTestBase):
     def test_update(self):
         """Test role_update for creating a role assignment"""
         user_new = self.make_user('user_new')
-        self._make_assignment(self.project, user_new, self.role_contributor)
+        self.make_assignment(self.project, user_new, self.role_contributor)
         self.assert_group_member(self.project, user_new, False)
 
         flow_data = {'username': user_new.username}

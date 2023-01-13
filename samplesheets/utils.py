@@ -353,7 +353,7 @@ def get_webdav_url(project, user):
         and project.public_guest_access
     ):
         app_settings = AppSettingAPI()
-        ticket = app_settings.get_app_setting(
+        ticket = app_settings.get(
             'samplesheets', 'public_access_ticket', project=project
         )
         if not ticket:

@@ -41,13 +41,13 @@ class TestRenderingBase(
         # Make owner user
         self.user_owner = self.make_user('owner')
         # Init project, role and assignment
-        self.project = self._make_project(
+        self.project = self.make_project(
             'TestProject', SODAR_CONSTANTS['PROJECT_TYPE_PROJECT'], None
         )
         self.role_owner = Role.objects.get_or_create(
             name=SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
         )[0]
-        self.assignment_owner = self._make_assignment(
+        self.assignment_owner = self.make_assignment(
             self.project, self.user_owner, self.role_owner
         )
         # Import investigation
@@ -151,7 +151,7 @@ class TestTableBuilder(SheetConfigMixin, TestRenderingBase):
         sheet_config['studies'][str(self.study.sodar_uuid)]['nodes'][1][
             'fields'
         ][1] = c_field
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME, 'sheet_config', sheet_config, project=self.project
         )
 

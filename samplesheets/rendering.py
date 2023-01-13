@@ -756,7 +756,7 @@ class SampleSheetTableBuilder:
         )
         # Get study config for column type detection
         if use_config:
-            self._sheet_config = app_settings.get_app_setting(
+            self._sheet_config = app_settings.get(
                 'samplesheets', 'sheet_config', project=study.get_project()
             )
         # HACK: In case of deletion from database bypassing the database,

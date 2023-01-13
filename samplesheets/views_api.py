@@ -198,7 +198,7 @@ class SheetImportAPIView(SheetImportMixin, SODARAPIBaseProjectMixin, APIView):
     def post(self, request, *args, **kwargs):
         """Handle POST request for submitting"""
         project = self.get_project()
-        if app_settings.get_app_setting(APP_NAME, 'sheet_sync_enable', project):
+        if app_settings.get(APP_NAME, 'sheet_sync_enable', project):
             raise ValidationError(
                 'Sheet synchronization enabled in project: import not allowed'
             )

@@ -615,7 +615,7 @@ class TestIrodsObjectListAjaxView(TestIrodsRequestViewsBase):
     def test_get_no_access(self):
         """Test GET request for listing with no acces for the iRODS folder"""
         new_user = self.make_user('new_user')
-        self._make_assignment(
+        self.make_assignment(
             self.project, new_user, self.role_contributor
         )  # No taskflow
         with self.login(new_user):

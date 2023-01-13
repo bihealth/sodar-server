@@ -238,7 +238,7 @@ class EditConfigMixin:
     def can_edit_config(cls, user, project):
         if user.is_superuser:
             return True
-        edit_config_min_role = app_settings.get_app_setting(
+        edit_config_min_role = app_settings.get(
             APP_NAME, 'edit_config_min_role', project=project
         )
         if project.is_owner(user):  # Local or inherited owner
@@ -278,7 +278,7 @@ class SheetVersionMixin:
         project = investigation.project
         isa_data = sheet_io.export_isa(investigation)
         # Save sheet config with ISA-Tab version
-        isa_data['sheet_config'] = app_settings.get_app_setting(
+        isa_data['sheet_config'] = app_settings.get(
             APP_NAME, 'sheet_config', project=project
         )
         isa_version = sheet_io.save_isa(
@@ -321,7 +321,7 @@ class SheetContextAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
             'table_height': settings.SHEETS_TABLE_HEIGHT,
             'min_col_width': settings.SHEETS_MIN_COLUMN_WIDTH,
             'max_col_width': settings.SHEETS_MAX_COLUMN_WIDTH,
-            'allow_editing': app_settings.get_app_setting(
+            'allow_editing': app_settings.get(
                 APP_NAME, 'allow_editing', project=project
             ),
             'alerts': [],
@@ -330,7 +330,7 @@ class SheetContextAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
             'user_uuid': str(request.user.sodar_uuid)
             if hasattr(request.user, 'sodar_uuid')
             else None,
-            'sheet_sync_enabled': app_settings.get_app_setting(
+            'sheet_sync_enabled': app_settings.get(
                 APP_NAME, 'sheet_sync_enable', project=project
             ),
         }
@@ -511,7 +511,7 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
         user_config_found = True
 
         # Get user display config
-        display_config = app_settings.get_app_setting(
+        display_config = app_settings.get(
             APP_NAME, 'display_config', project=project, user=user
         )
         # Get default configuration if user config is not found
@@ -521,7 +521,7 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
                 'No display configuration found for user "{}", '
                 'using default..'.format(user.username)
             )
-            display_config = app_settings.get_app_setting(
+            display_config = app_settings.get(
                 APP_NAME,
                 'display_config_default',
                 project=project,
@@ -545,7 +545,7 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
                     project.get_log_title()
                 )
             )
-            app_settings.set_app_setting(
+            app_settings.set(
                 APP_NAME,
                 'display_config_default',
                 display_config,
@@ -558,7 +558,7 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
                     user.username, project.get_log_title()
                 )
             )
-            app_settings.set_app_setting(
+            app_settings.set(
                 APP_NAME,
                 'display_config',
                 display_config,
@@ -586,7 +586,7 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
         project = inv.project
         # Return extra edit mode data
         edit = bool(request.GET.get('edit'))
-        allow_editing = app_settings.get_app_setting(
+        allow_editing = app_settings.get(
             APP_NAME, 'allow_editing', project=project
         )
         if edit and not allow_editing:
@@ -1645,7 +1645,7 @@ class SheetEditConfigAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
             return Response({'detail': 'No fields provided'}, status=400)
         timeline = get_backend_api('timeline_backend')
         project = self.get_project()
-        sheet_config = app_settings.get_app_setting(
+        sheet_config = app_settings.get(
             APP_NAME, 'sheet_config', project=project
         )
         if not self.can_edit_config(request.user, project):
@@ -1718,7 +1718,7 @@ class SheetEditConfigAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
                     f_idx
                 ] = c
 
-            app_settings.set_app_setting(
+            app_settings.set(
                 APP_NAME, 'sheet_config', sheet_config, project=project
             )
             logger.info(
@@ -1780,11 +1780,11 @@ class StudyDisplayConfigAjaxView(SODARBaseProjectAjaxView):
         ret_default = False
 
         if set_default:
-            default_config = app_settings.get_app_setting(
+            default_config = app_settings.get(
                 APP_NAME, 'display_config_default', project=project
             )
             default_config['studies'][study_uuid] = study_config
-            ret_default = app_settings.set_app_setting(
+            ret_default = app_settings.set(
                 APP_NAME,
                 'display_config_default',
                 project=project,
@@ -1805,11 +1805,11 @@ class StudyDisplayConfigAjaxView(SODARBaseProjectAjaxView):
                 )
 
         # Get user display config
-        display_config = app_settings.get_app_setting(
+        display_config = app_settings.get(
             APP_NAME, 'display_config', project=project, user=request.user
         )
         display_config['studies'][study_uuid] = study_config
-        ret = app_settings.set_app_setting(
+        ret = app_settings.set(
             APP_NAME,
             'display_config',
             project=project,

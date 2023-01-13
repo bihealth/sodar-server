@@ -100,7 +100,7 @@ class TestSampleSheetsAjaxPermissions(
 
     def test_study_tables_edit(self):
         """Test StudyTablesAjaxView with edit mode enabled"""
-        app_settings.set_app_setting(
+        app_settings.set(
             'samplesheets', 'allow_editing', True, project=self.project
         )
         url = reverse(
@@ -124,7 +124,7 @@ class TestSampleSheetsAjaxPermissions(
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_study_tables_edit_anon(self):
         """Test StudyTablesAjaxView with edit mode enabled and anon access"""
-        app_settings.set_app_setting(
+        app_settings.set(
             'samplesheets', 'allow_editing', True, project=self.project
         )
         url = reverse(
@@ -137,7 +137,7 @@ class TestSampleSheetsAjaxPermissions(
 
     def test_study_tables_not_allowed(self):
         """Test StudyTablesAjaxView with edit mode enabled but disallowed"""
-        app_settings.set_app_setting(
+        app_settings.set(
             'samplesheets', 'allow_editing', False, project=self.project
         )
         url = reverse(

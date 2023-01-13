@@ -120,7 +120,7 @@ def sheet_sync_task(_self):
     tl_status_desc = 'Sync OK'
 
     for project in Project.objects.filter(type=PROJECT_TYPE_PROJECT):
-        sheet_sync_enable = app_settings.get_app_setting(
+        sheet_sync_enable = app_settings.get(
             APP_NAME, 'sheet_sync_enable', project=project
         )
         if not sheet_sync_enable:

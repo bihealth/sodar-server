@@ -66,10 +66,10 @@ class TestViewsBase(ProjectMixin, RoleAssignmentMixin, TestCase):
         self.user.save()
 
         # Init project with owner
-        self.project = self._make_project(
+        self.project = self.make_project(
             'TestProject', PROJECT_TYPE_PROJECT, None
         )
-        self.as_owner = self._make_assignment(
+        self.as_owner = self.make_assignment(
             self.project, self.user, self.role_owner
         )
 
@@ -167,7 +167,7 @@ class TestIrodsStatisticsAjaxView(TestViewsBase):
     def test_get_no_access(self):
         """Test GET for stats with no access for the iRODS folder"""
         new_user = self.make_user('new_user')
-        self._make_assignment(
+        self.make_assignment(
             self.project, new_user, self.role_contributor
         )  # No taskflow
 
@@ -305,7 +305,7 @@ class TestIrodsObjectListAjaxView(TestViewsBase):
     def test_get_no_access(self):
         """Test GET for listing with no acces for the iRODS folder"""
         new_user = self.make_user('new_user')
-        self._make_assignment(
+        self.make_assignment(
             self.project, new_user, self.role_contributor
         )  # No taskflow
 
@@ -450,7 +450,7 @@ class TestIrodsBatchStatisticsAjaxView(TestViewsBase):
     def test_post_no_access(self):
         """Test POST for batch stats with no access for the iRODS collections"""
         new_user = self.make_user('new_user')
-        self._make_assignment(
+        self.make_assignment(
             self.project, new_user, self.role_contributor
         )  # No taskflow
         post_data = {

@@ -19,7 +19,6 @@ from test_plus.test import TestCase
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import Role, AppSetting, SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
-from projectroles.tests.taskflow_testcase import TestCase as TransactionTestCase
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
 from projectroles.tests.test_views_api import SODARAPIViewTestMixin
 from projectroles.utils import build_secret
@@ -45,6 +44,11 @@ from samplesheets.tests.test_io import (
 )
 from samplesheets.tests.test_models import SampleSheetModelMixin
 from samplesheets.tests.test_sheet_config import CONFIG_PATH_DEFAULT
+
+# TODO: This should not be required (see issue #1578)
+from samplesheets.tests.transaction_testcase import (
+    TestCase as TransactionTestCase,
+)
 from samplesheets.utils import clean_sheet_dir_name
 from samplesheets.views import (
     SheetImportMixin,
@@ -139,22 +143,22 @@ class TestViewsBase(
         self.user_no_roles = self.make_user('user_no_roles')
 
         # Init projects
-        self.category = self._make_project(
+        self.category = self.make_project(
             'TestCategory', PROJECT_TYPE_CATEGORY, None
         )
-        self.project = self._make_project(
+        self.project = self.make_project(
             'TestProject', PROJECT_TYPE_PROJECT, self.category
         )
-        self.owner_as = self._make_assignment(
+        self.owner_as = self.make_assignment(
             self.project, self.user_owner, self.role_owner
         )
-        self.delegate_as = self._make_assignment(
+        self.delegate_as = self.make_assignment(
             self.project, self.user_delegate, self.role_delegate
         )
-        self.contributor_as = self._make_assignment(
+        self.contributor_as = self.make_assignment(
             self.project, self.user_contributor, self.role_contributor
         )
-        self.guest_as = self._make_assignment(
+        self.guest_as = self.make_assignment(
             self.project, self.user_guest, self.role_guest
         )
 
@@ -245,7 +249,7 @@ class TestSheetImportView(SheetImportMixin, LandingZoneMixin, TestViewsBase):
         """Test replacing an existing investigation by posting"""
         inv = self.import_isa_from_file(SHEET_PATH, self.project)
         uuid = inv.sodar_uuid
-        app_settings.set_app_setting(
+        app_settings.set(
             'samplesheets',
             'display_config',
             {},
@@ -313,7 +317,7 @@ class TestSheetImportView(SheetImportMixin, LandingZoneMixin, TestViewsBase):
         }
         sheet_config = conf_api.get_sheet_config(inv)
         sheet_config['studies'][s_uuid]['nodes'][0]['fields'][2] = edited_field
-        app_settings.set_app_setting(
+        app_settings.set(
             'samplesheets', 'sheet_config', sheet_config, project=self.project
         )
 
@@ -329,7 +333,7 @@ class TestSheetImportView(SheetImportMixin, LandingZoneMixin, TestViewsBase):
                 )
 
         self.assertEqual(response.status_code, 302)
-        sheet_config = app_settings.get_app_setting(
+        sheet_config = app_settings.get(
             'samplesheets', 'sheet_config', project=self.project
         )
         version_config = (
@@ -374,7 +378,7 @@ class TestSheetImportView(SheetImportMixin, LandingZoneMixin, TestViewsBase):
         inv.irods_status = True
         inv.save()
         uuid = inv.sodar_uuid
-        app_settings.set_app_setting(
+        app_settings.set(
             'samplesheets',
             'display_config',
             {},
@@ -918,7 +922,7 @@ class TestSheetDeleteView(TestViewsBase):
 
     def test_delete(self):
         """Test deleting the project sample sheets"""
-        app_settings.set_app_setting(
+        app_settings.set(
             'samplesheets',
             'display_config',
             {},
@@ -1549,27 +1553,26 @@ class TestSheetRemoteSyncBase(
         self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
         self.user = self.make_user('user')
         self.user.save()
-
-        self.category = self._make_project(
+        self.category = self.make_project(
             title='TestCategory',
             type=PROJECT_TYPE_CATEGORY,
             parent=None,
         )
-        self._make_assignment(self.category, self.user, self.role_owner)
-        self.project_source = self._make_project(
+        self.make_assignment(self.category, self.user, self.role_owner)
+        self.project_source = self.make_project(
             title='TestProjectSource',
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
         )
-        self.owner_as_source = self._make_assignment(
+        self.owner_as_source = self.make_assignment(
             self.project_source, self.user, self.role_owner
         )
-        self.project_target = self._make_project(
+        self.project_target = self.make_project(
             title='TestProjectTarget',
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
         )
-        self.owner_as_target = self._make_assignment(
+        self.owner_as_target = self.make_assignment(
             self.project_target, self.user, self.role_owner
         )
 
@@ -1578,10 +1581,10 @@ class TestSheetRemoteSyncBase(
             SHEET_PATH, self.project_source
         )
         # Allow sheet sync in project
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME, 'sheet_sync_enable', True, project=self.project_target
         )
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'sheet_sync_url',
             self.live_server_url
@@ -1591,7 +1594,7 @@ class TestSheetRemoteSyncBase(
             ),
             project=self.project_target,
         )
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'sheet_sync_token',
             self.get_token(self.user),
@@ -1628,7 +1631,7 @@ class TestSheetRemoteSyncView(TestSheetRemoteSyncBase):
 
     def test_sync_disabled(self):
         """Test sync sheets with sync disabled"""
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'sheet_sync_enable',
             False,
@@ -1658,7 +1661,7 @@ class TestSheetRemoteSyncView(TestSheetRemoteSyncBase):
 
     def test_sync_invalid_token(self):
         """Test sync sheets with invalid token"""
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'sheet_sync_token',
             'WRONGTOKEN',
@@ -1688,7 +1691,7 @@ class TestSheetRemoteSyncView(TestSheetRemoteSyncBase):
 
     def test_sync_no_token(self):
         """Test sync sheets with no token"""
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'sheet_sync_token',
             '',
@@ -1718,7 +1721,7 @@ class TestSheetRemoteSyncView(TestSheetRemoteSyncBase):
 
     def test_sync_no_url(self):
         """Test sync sheets with no URL"""
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'sheet_sync_url',
             '',
@@ -1748,7 +1751,7 @@ class TestSheetRemoteSyncView(TestSheetRemoteSyncBase):
     def test_sync_invalid_url(self):
         """Test sync sheets with invalid URL"""
         url = 'https://alsdjfasdkjfasdgfli.com'
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'sheet_sync_url',
             url,
@@ -1782,7 +1785,7 @@ class TestSheetRemoteSyncView(TestSheetRemoteSyncBase):
             'samplesheets:api_export_json',
             kwargs={'project': self.project_target.sodar_uuid},
         )
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'sheet_sync_url',
             url,
@@ -1811,7 +1814,7 @@ class TestSheetRemoteSyncView(TestSheetRemoteSyncBase):
 
     def test_sync_no_sheet(self):
         """Test sync with non-existing sheets"""
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'sheet_sync_url',
             self.live_server_url

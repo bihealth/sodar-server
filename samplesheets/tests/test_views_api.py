@@ -193,7 +193,7 @@ class TestSheetImportAPIView(
     def test_replace(self):
         """Test replacing sheets"""
         investigation = self.import_isa_from_file(SHEET_PATH, self.project)
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'sheet_config',
             conf_api.get_sheet_config(investigation),
@@ -231,17 +231,17 @@ class TestSheetImportAPIView(
         investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         inv_tables = table_builder.build_inv_tables(investigation)
         sheet_config = self.build_sheet_config(investigation, inv_tables)
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME, 'sheet_config', sheet_config, project=self.project
         )
         display_config = conf_api.build_display_config(inv_tables, sheet_config)
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'display_config_default',
             display_config,
             project=self.project,
         )
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'display_config',
             display_config,
@@ -249,7 +249,7 @@ class TestSheetImportAPIView(
             user=self.user,
         )
         self.assertEqual(
-            app_settings.get_app_setting(
+            app_settings.get(
                 APP_NAME,
                 'display_config',
                 project=self.project,
@@ -269,7 +269,7 @@ class TestSheetImportAPIView(
             )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
-            app_settings.get_app_setting(
+            app_settings.get(
                 APP_NAME,
                 'display_config',
                 project=self.project,
@@ -283,17 +283,17 @@ class TestSheetImportAPIView(
         investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         inv_tables = table_builder.build_inv_tables(investigation)
         sheet_config = self.build_sheet_config(investigation, inv_tables)
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME, 'sheet_config', sheet_config, project=self.project
         )
         display_config = conf_api.build_display_config(inv_tables, sheet_config)
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'display_config_default',
             display_config,
             project=self.project,
         )
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'display_config',
             display_config,
@@ -301,7 +301,7 @@ class TestSheetImportAPIView(
             user=self.user,
         )
         self.assertEqual(
-            app_settings.get_app_setting(
+            app_settings.get(
                 APP_NAME,
                 'display_config',
                 project=self.project,
@@ -321,7 +321,7 @@ class TestSheetImportAPIView(
             )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
-            app_settings.get_app_setting(
+            app_settings.get(
                 APP_NAME,
                 'display_config',
                 project=self.project,
@@ -333,7 +333,7 @@ class TestSheetImportAPIView(
     def test_replace_alt_sheet(self):
         """Test replacing with an alternative sheet and irods_status=False"""
         investigation = self.import_isa_from_file(SHEET_PATH, self.project)
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'sheet_config',
             conf_api.get_sheet_config(investigation),
@@ -401,7 +401,7 @@ class TestSheetImportAPIView(
             assay,
             status='FAILED',
         )
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'sheet_config',
             conf_api.get_sheet_config(investigation),
@@ -547,7 +547,7 @@ class TestSheetImportAPIView(
 
     def test_post_sync(self):
         """Test post() with sheet sync enabled (should fail)"""
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME, 'sheet_sync_enable', True, project=self.project
         )
         self.assertEqual(
@@ -631,7 +631,7 @@ class TestRemoteSheetGetAPIView(
     def setUp(self):
         super().setUp()
         # Create target site
-        self.target_site = self._make_site(
+        self.target_site = self.make_site(
             name=REMOTE_SITE_NAME,
             url=REMOTE_SITE_URL,
             mode=SODAR_CONSTANTS['SITE_MODE_TARGET'],
@@ -639,7 +639,7 @@ class TestRemoteSheetGetAPIView(
             secret=REMOTE_SITE_SECRET,
         )
         # Create target project
-        self.target_project = self._make_remote_project(
+        self.target_project = self.make_remote_project(
             project_uuid=self.project.sodar_uuid,
             site=self.target_site,
             level=SODAR_CONSTANTS['REMOTE_LEVEL_READ_ROLES'],

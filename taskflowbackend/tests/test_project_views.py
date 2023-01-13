@@ -79,6 +79,7 @@ class TestProjectCreateView(TaskflowbackendTestBase):
             'parent': self.category.pk,
             'description': 'description',
             'public_guest_access': False,
+            'archive': False,
             'full_title': self.category.title + ' / TestProject',
             'has_public_children': False,
             'sodar_uuid': project.sodar_uuid,
@@ -166,7 +167,7 @@ class TestProjectUpdateView(TaskflowbackendTestBase):
             }
         )
         request_data.update(
-            app_settings.get_all_settings(project=self.project, post_safe=True)
+            app_settings.get_all(project=self.project, post_safe=True)
         )  # Add default settings
         with self.login(self.user):
             response = self.client.post(
@@ -193,6 +194,7 @@ class TestProjectUpdateView(TaskflowbackendTestBase):
             'parent': self.category.pk,
             'description': 'updated description',
             'public_guest_access': True,
+            'archive': False,
             'full_title': self.category.title + ' / updated title',
             'has_public_children': False,
             'sodar_uuid': self.project.sodar_uuid,
@@ -219,10 +221,10 @@ class TestProjectUpdateView(TaskflowbackendTestBase):
 
     def test_move_project(self):
         """Test moving Project under another category with taskflow"""
-        new_category = self._make_project(
+        new_category = self.make_project(
             'NewCategory', PROJECT_TYPE_CATEGORY, None
         )
-        self._make_assignment(new_category, self.user, self.role_owner)
+        self.make_assignment(new_category, self.user, self.role_owner)
         self.assertEqual(Project.objects.count(), 3)
 
         request_data = model_to_dict(self.project)
@@ -237,7 +239,7 @@ class TestProjectUpdateView(TaskflowbackendTestBase):
             }
         )
         request_data.update(
-            app_settings.get_all_settings(project=self.project, post_safe=True)
+            app_settings.get_all(project=self.project, post_safe=True)
         )  # Add default settings
         with self.login(self.user):
             response = self.client.post(
@@ -541,7 +543,7 @@ class TestProjectInviteAcceptView(ProjectInviteMixin, TaskflowbackendTestBase):
     def test_accept_invite_ldap(self):
         """Test LDAP user accepting an invite with taskflow"""
         # Init invite
-        invite = self._make_invite(
+        invite = self.make_invite(
             email=INVITE_EMAIL,
             project=self.project,
             role=self.role_contributor,
@@ -595,7 +597,7 @@ class TestProjectInviteAcceptView(ProjectInviteMixin, TaskflowbackendTestBase):
     @override_settings(ENABLE_LDAP=True)
     def test_accept_invite_ldap_category(self):
         """Test LDAP user accepting an invite with taskflow for a category"""
-        invite = self._make_invite(
+        invite = self.make_invite(
             email=INVITE_EMAIL,
             project=self.category,
             role=self.role_contributor,
@@ -642,7 +644,7 @@ class TestProjectInviteAcceptView(ProjectInviteMixin, TaskflowbackendTestBase):
 
     def test_accept_invite_local(self):
         """Test local user accepting an invite with taskflow"""
-        invite = self._make_invite(
+        invite = self.make_invite(
             email=INVITE_EMAIL,
             project=self.project,
             role=self.role_contributor,
@@ -677,7 +679,7 @@ class TestProjectInviteAcceptView(ProjectInviteMixin, TaskflowbackendTestBase):
 
     def test_accept_invite_local_category(self):
         """Test local user accepting an invite with taskflow for a category"""
-        invite = self._make_invite(
+        invite = self.make_invite(
             email=INVITE_EMAIL,
             project=self.category,
             role=self.role_contributor,

@@ -429,9 +429,7 @@ class ProjectAppPlugin(
                 )
             elif user.has_perm(
                 'samplesheets.edit_sheet', project
-            ) and not app_settings.get_app_setting(
-                APP_NAME, 'sheet_sync_enable', project
-            ):
+            ) and not app_settings.get(APP_NAME, 'sheet_sync_enable', project):
                 return (
                     '<a href="{}" title="Import sample sheet into project">'
                     # 'data-toggle="tooltip" data-placement="top">'
@@ -492,7 +490,7 @@ class ProjectAppPlugin(
         :raise: Exception if DEBUG==True and a taskflow error is encountered
         """
         sample_path = irods_backend.get_sample_path(project)
-        ticket_str = app_settings.get_app_setting(
+        ticket_str = app_settings.get(
             APP_NAME, 'public_access_ticket', project=project
         )
         if (
@@ -523,14 +521,14 @@ class ProjectAppPlugin(
             project.public_guest_access
             and settings.PROJECTROLES_ALLOW_ANONYMOUS
         ):
-            app_settings.set_app_setting(
+            app_settings.set(
                 APP_NAME,
                 'public_access_ticket',
                 ticket_str,
                 project=project,
             )
         else:
-            app_settings.delete_setting(
+            app_settings.delete(
                 APP_NAME, 'public_access_ticket', project=project
             )
 

@@ -437,5 +437,5 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         self.perform_project_modify(
             project=project,
             action=PROJECT_ACTION_CREATE,
-            project_settings=app_settings.get_all_settings(project),
+            project_settings=app_settings.get_all(project),
         )

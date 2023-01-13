@@ -44,7 +44,7 @@ class TestLandingZoneAPIViewsBase(
 
         # Init contributor user and assignment
         self.user_contrib = self.make_user('user_contrib')
-        self.contrib_as = self._make_assignment(
+        self.contrib_as = self.make_assignment(
             self.project, self.user_contrib, self.role_contributor
         )
 

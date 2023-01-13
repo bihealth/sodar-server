@@ -56,7 +56,7 @@ class TestSamplesheetsModifyAPIMixin:
                            app settings.
         """
         if not ticket_str:
-            ticket_str = app_settings.get_app_setting(
+            ticket_str = app_settings.get(
                 APP_NAME, 'public_access_ticket', project=project
             )
         ticket = self.irods_backend.get_ticket(self.irods, ticket_str)
@@ -112,7 +112,7 @@ class TestPerformProjectModify(
         self.plugin.perform_project_modify(
             project=self.project,
             action=PROJECT_ACTION_UPDATE,
-            project_settings=app_settings.get_all_settings(self.project),
+            project_settings=app_settings.get_all(self.project),
             old_data={'parent': self.category},
             request=self.request,
         )
@@ -130,7 +130,7 @@ class TestPerformProjectModify(
         self.plugin.perform_project_modify(
             project=self.project,
             action=PROJECT_ACTION_UPDATE,
-            project_settings=app_settings.get_all_settings(self.project),
+            project_settings=app_settings.get_all(self.project),
             old_data={'parent': self.category},
             request=self.request,
         )
@@ -148,7 +148,7 @@ class TestPerformProjectModify(
         self.plugin.perform_project_modify(
             project=self.project,
             action=PROJECT_ACTION_UPDATE,
-            project_settings=app_settings.get_all_settings(self.project),
+            project_settings=app_settings.get_all(self.project),
             old_data={'parent': self.category},
             request=self.request,
         )
@@ -156,7 +156,7 @@ class TestPerformProjectModify(
             IRODS_GROUP_PUBLIC, self.sample_path, IRODS_ACCESS_READ
         )
         self.assert_ticket_access(self.project, True)
-        ticket_str = app_settings.get_app_setting(
+        ticket_str = app_settings.get(
             APP_NAME, 'public_access_ticket', project=self.project
         )
 
@@ -165,7 +165,7 @@ class TestPerformProjectModify(
         self.plugin.perform_project_modify(
             project=self.project,
             action=PROJECT_ACTION_UPDATE,
-            project_settings=app_settings.get_all_settings(self.project),
+            project_settings=app_settings.get_all(self.project),
             old_data={'parent': self.category},
             old_settings={
                 'settings.samplesheets.public_access_ticket': ticket_str
@@ -184,7 +184,7 @@ class TestPerformProjectModify(
             self.plugin.perform_project_modify(
                 project=self.project,
                 action=PROJECT_ACTION_UPDATE,
-                project_settings=app_settings.get_all_settings(self.project),
+                project_settings=app_settings.get_all(self.project),
                 old_data={'parent': self.category},
                 request=self.request,
             )
@@ -192,14 +192,14 @@ class TestPerformProjectModify(
             IRODS_GROUP_PUBLIC, self.sample_path, IRODS_ACCESS_READ
         )
         self.assert_ticket_access(self.project, True)
-        ticket_str = app_settings.get_app_setting(
+        ticket_str = app_settings.get(
             APP_NAME, 'public_access_ticket', project=self.project
         )
 
         self.plugin.perform_project_modify(
             project=self.project,
             action=PROJECT_ACTION_UPDATE,
-            project_settings=app_settings.get_all_settings(self.project),
+            project_settings=app_settings.get_all(self.project),
             old_data={'parent': self.category},
             old_settings={
                 'settings.samplesheets.public_access_ticket': ticket_str
@@ -238,17 +238,13 @@ class TestPerformProjectSync(
         """Test perform_project_sync()"""
         self.assertEqual(self.irods.collections.exists(self.sample_path), False)
         self.assertEqual(
-            app_settings.get_app_setting(
-                APP_NAME, 'public_access_ticket', self.project
-            ),
+            app_settings.get(APP_NAME, 'public_access_ticket', self.project),
             '',
         )
         self.plugin.perform_project_sync(self.project)
         self.assertEqual(self.irods.collections.exists(self.sample_path), False)
         self.assertEqual(
-            app_settings.get_app_setting(
-                APP_NAME, 'public_access_ticket', self.project
-            ),
+            app_settings.get(APP_NAME, 'public_access_ticket', self.project),
             '',
         )
 
@@ -256,9 +252,7 @@ class TestPerformProjectSync(
         """Test perform_project_sync() with iRODS collections"""
         self.assertEqual(self.irods.collections.exists(self.sample_path), False)
         self.assertEqual(
-            app_settings.get_app_setting(
-                APP_NAME, 'public_access_ticket', self.project
-            ),
+            app_settings.get(APP_NAME, 'public_access_ticket', self.project),
             '',
         )
 
@@ -270,9 +264,7 @@ class TestPerformProjectSync(
 
         self.assertEqual(self.irods.collections.exists(self.sample_path), True)
         self.assertEqual(
-            app_settings.get_app_setting(
-                APP_NAME, 'public_access_ticket', self.project
-            ),
+            app_settings.get(APP_NAME, 'public_access_ticket', self.project),
             '',
         )
 
@@ -281,9 +273,7 @@ class TestPerformProjectSync(
         self.project.public_guest_access = True
         self.project.save()
         self.assertEqual(
-            app_settings.get_app_setting(
-                APP_NAME, 'public_access_ticket', self.project
-            ),
+            app_settings.get(APP_NAME, 'public_access_ticket', self.project),
             '',
         )
 
@@ -296,9 +286,7 @@ class TestPerformProjectSync(
             IRODS_GROUP_PUBLIC, self.sample_path, IRODS_ACCESS_READ
         )
         self.assertEqual(
-            app_settings.get_app_setting(
-                APP_NAME, 'public_access_ticket', self.project
-            ),
+            app_settings.get(APP_NAME, 'public_access_ticket', self.project),
             '',
         )
 
@@ -306,9 +294,7 @@ class TestPerformProjectSync(
     def test_sync_public_access_anon(self):
         """Test sync with public access and anon site access enabled"""
         self.assertEqual(
-            app_settings.get_app_setting(
-                APP_NAME, 'public_access_ticket', self.project
-            ),
+            app_settings.get(APP_NAME, 'public_access_ticket', self.project),
             '',
         )
 
@@ -322,7 +308,7 @@ class TestPerformProjectSync(
         self.assert_irods_access(
             IRODS_GROUP_PUBLIC, self.sample_path, IRODS_ACCESS_READ
         )
-        ticket_str = app_settings.get_app_setting(
+        ticket_str = app_settings.get(
             APP_NAME, 'public_access_ticket', self.project
         )
         self.assertNotEqual(ticket_str, '')
@@ -332,9 +318,7 @@ class TestPerformProjectSync(
     def test_sync_public_access_anon_revoke(self):
         """Test revoking public access with anon site access enabled"""
         self.assertEqual(
-            app_settings.get_app_setting(
-                APP_NAME, 'public_access_ticket', self.project
-            ),
+            app_settings.get(APP_NAME, 'public_access_ticket', self.project),
             '',
         )
 
@@ -345,16 +329,14 @@ class TestPerformProjectSync(
             self.irods, 'read', self.sample_path
         )
         ticket_str = ticket_new.string
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME, 'public_access_ticket', ticket_str, self.project
         )
         self.plugin.perform_project_sync(self.project)
 
         self.assert_irods_access(IRODS_GROUP_PUBLIC, self.sample_path, None)
         self.assertEqual(
-            app_settings.get_app_setting(
-                APP_NAME, 'public_access_ticket', self.project
-            ),
+            app_settings.get(APP_NAME, 'public_access_ticket', self.project),
             '',
         )
         self.assert_ticket_access(self.project, False, ticket_str)

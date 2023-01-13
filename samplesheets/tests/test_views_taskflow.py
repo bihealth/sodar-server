@@ -178,7 +178,7 @@ class TestIrodsCollsCreateView(
         self.assert_irods_coll(self.assay)
         # Assert app setting status (should be unset)
         self.assertEqual(
-            app_settings.get_app_setting(
+            app_settings.get(
                 APP_NAME, 'public_access_ticket', project=self.project
             ),
             '',
@@ -190,7 +190,7 @@ class TestIrodsCollsCreateView(
         self.set_public_access(True)
         self.assertEqual(self.investigation.irods_status, False)
         self.assertEqual(
-            app_settings.get_app_setting(
+            app_settings.get(
                 APP_NAME, 'public_access_ticket', project=self.project
             ),
             '',
@@ -218,7 +218,7 @@ class TestIrodsCollsCreateView(
         self.assert_irods_coll(self.assay)
         # Assert app setting status (should be set)
         self.assertNotEqual(
-            app_settings.get_app_setting(
+            app_settings.get(
                 APP_NAME, 'public_access_ticket', project=self.project
             ),
             '',

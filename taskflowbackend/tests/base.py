@@ -138,9 +138,7 @@ class TaskflowbackendTestBase(
             'public_guest_access': public_guest_access,
         }
         post_data.update(
-            app_settings.get_all_defaults(
-                APP_SETTING_SCOPE_PROJECT, post_safe=True
-            )
+            app_settings.get_defaults(APP_SETTING_SCOPE_PROJECT, post_safe=True)
         )  # Add default settings
         post_kwargs = {'project': parent.sodar_uuid} if parent else {}
 
@@ -214,10 +212,10 @@ class TaskflowbackendTestBase(
         self.user.save()
 
         # Create category locally
-        self.category = self._make_project(
+        self.category = self.make_project(
             'TestCategory', PROJECT_TYPE_CATEGORY, None
         )
-        self.as_cat_owner = self._make_assignment(
+        self.as_cat_owner = self.make_assignment(
             self.category, self.user_owner_cat, self.role_owner
         )
 
@@ -313,10 +311,10 @@ class TestTaskflowAPIBase(
         self.knox_token = self.get_token(self.user)
 
         # Create category locally (categories are not handled with taskflow)
-        self.category = self._make_project(
+        self.category = self.make_project(
             'TestCategory', PROJECT_TYPE_CATEGORY, None
         )
-        self._make_assignment(self.category, self.user, self.role_owner)
+        self.make_assignment(self.category, self.user, self.role_owner)
 
     def tearDown(self):
         self.taskflow.cleanup()

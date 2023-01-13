@@ -287,7 +287,7 @@ class TestSheetRemoteSyncTask(TestSheetRemoteSyncBase):
 
     def test_sync_wrong_token(self):
         """Test sync with wrong token"""
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'sheet_sync_token',
             'WRONGTOKEN',
@@ -298,7 +298,7 @@ class TestSheetRemoteSyncTask(TestSheetRemoteSyncBase):
 
     def test_sync_enabled_missing_token(self):
         """Test sync with missing token"""
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'sheet_sync_token',
             '',
@@ -309,7 +309,7 @@ class TestSheetRemoteSyncTask(TestSheetRemoteSyncBase):
 
     def test_sync_enabled_wrong_url(self):
         """Test sync with wrong url"""
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'sheet_sync_url',
             'https://qazxdfjajsrd.com',
@@ -320,7 +320,7 @@ class TestSheetRemoteSyncTask(TestSheetRemoteSyncBase):
 
     def test_sync_enabled_url_to_nonexisting_sheet(self):
         """Test sync with url to nonexisting sheet"""
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'sheet_sync_url',
             self.live_server_url
@@ -335,7 +335,7 @@ class TestSheetRemoteSyncTask(TestSheetRemoteSyncBase):
 
     def test_sync_enabled_missing_url(self):
         """Test sync with missing url"""
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'sheet_sync_url',
             '',
@@ -346,7 +346,7 @@ class TestSheetRemoteSyncTask(TestSheetRemoteSyncBase):
 
     def test_sync_disabled(self):
         """Test sync with sync disabled"""
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'sheet_sync_enable',
             False,

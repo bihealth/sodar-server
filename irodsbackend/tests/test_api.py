@@ -66,10 +66,10 @@ class TestIrodsbackendAPI(
         self.role_guest = Role.objects.get_or_create(name=PROJECT_ROLE_GUEST)[0]
 
         # Init project with owner
-        self.project = self._make_project(
+        self.project = self.make_project(
             'TestProject', PROJECT_TYPE_PROJECT, None
         )
-        self.as_owner = self._make_assignment(
+        self.as_owner = self.make_assignment(
             self.project, self.user, self.role_owner
         )
 

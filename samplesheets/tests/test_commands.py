@@ -41,13 +41,13 @@ class TestSyncnamesCommand(
         # Make owner user
         self.user_owner = self.make_user('owner')
         # Init project, role and assignment
-        self.project = self._make_project(
+        self.project = self.make_project(
             'TestProject', SODAR_CONSTANTS['PROJECT_TYPE_PROJECT'], None
         )
         self.role_owner = Role.objects.get_or_create(
             name=SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
         )[0]
-        self.owner_as = self._make_assignment(
+        self.owner_as = self.make_assignment(
             self.project, self.user_owner, self.role_owner
         )
         # Import investigation
@@ -80,20 +80,20 @@ class TestSyncstudytablesCommand(
         )[0]
 
         # Init project
-        self.project = self._make_project(
+        self.project = self.make_project(
             'TestProject', SODAR_CONSTANTS['PROJECT_TYPE_PROJECT'], None
         )
-        self.owner_as = self._make_assignment(
+        self.owner_as = self.make_assignment(
             self.project, self.user_owner, self.role_owner
         )
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
 
         # Init second project
-        self.project2 = self._make_project(
+        self.project2 = self.make_project(
             'TestProject2', SODAR_CONSTANTS['PROJECT_TYPE_PROJECT'], None
         )
-        self.owner_as2 = self._make_assignment(
+        self.owner_as2 = self.make_assignment(
             self.project2, self.user_owner, self.role_owner
         )
         self.investigation2 = self.import_isa_from_file(
