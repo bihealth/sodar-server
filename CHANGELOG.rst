@@ -15,6 +15,7 @@ Added
     - Create iRODS user accounts at login for users with LDAP/SODAR auth (#1315)
 - **Landingzones**
     - Optional zone write access restriction to created collections (#1050, #1540)
+    - Project archiving support (#1573)
 - **Samplesheets**
     - Mac keyboard shortcut support for multi-cell copying (#1531)
     - Study render table caching (#1509)
@@ -26,6 +27,7 @@ Added
     - Omit IGV session files by file name suffix (#1575)
     - ``SHEETS_IGV_OMIT_BAM`` and ``SHEETS_IGV_OMIT_VCF`` Django settings (#1575)
     - ``check_igv_file_name()`` in study app utils (#1575)
+    - Project archiving support (#1572)
 
 Changed
 -------
@@ -37,6 +39,8 @@ Changed
 - **Irodsbackend**
     - Update backend iRODS connection handling (#909, #1542)
     - Rename ``IrodsAPI.get_child_colls()``
+- **Landingzones**
+    - Refactor permissions (#1573)
 - **Samplesheets**
     - Upgrade critical Vue app dependencies (#1527, #1571)
     - Remove redundant node UUIDs from render tables (#708)

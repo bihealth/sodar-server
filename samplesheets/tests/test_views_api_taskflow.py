@@ -13,7 +13,7 @@ from django.urls import reverse
 from projectroles.models import SODAR_CONSTANTS
 
 # Taskflowbackend dependency
-from taskflowbackend.tests.base import TestTaskflowAPIBase
+from taskflowbackend.tests.base import TaskflowAPIViewTestBase
 
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
@@ -32,7 +32,7 @@ IRODS_FILE_MD5 = '0b26e313ed4a7ca6904b0e9369e5b957'
 
 
 class TestSampleSheetAPITaskflowBase(
-    SampleSheetIOMixin, SampleSheetTaskflowMixin, TestTaskflowAPIBase
+    SampleSheetIOMixin, SampleSheetTaskflowMixin, TaskflowAPIViewTestBase
 ):
     """Base samplesheets API view test class with Taskflow enabled"""
 

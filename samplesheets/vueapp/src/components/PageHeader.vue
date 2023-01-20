@@ -147,7 +147,7 @@
         <b-dropdown-item
             v-if="app.sheetsAvailable &&
                   app.sodarContext.irods_status &&
-                  app.sodarContext.perms.edit_sheet"
+                  app.sodarContext.perms.update_cache"
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-cache"
             :href="'cache/update/' + app.projectUuid">

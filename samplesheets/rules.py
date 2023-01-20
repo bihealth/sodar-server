@@ -31,15 +31,19 @@ rules.add_perm(
 # Allow creating, importing or modifying the project's sample sheet
 rules.add_perm(
     'samplesheets.edit_sheet',
-    pr_rules.is_project_owner
-    | pr_rules.is_project_delegate
-    | pr_rules.is_project_contributor,
+    pr_rules.can_modify_project_data
+    & (
+        pr_rules.is_project_owner
+        | pr_rules.is_project_delegate
+        | pr_rules.is_project_contributor
+    ),
 )
 
 # Allow managing sample sheet configuration and editing
 rules.add_perm(
     'samplesheets.manage_sheet',
-    pr_rules.is_project_owner | pr_rules.is_project_delegate,
+    pr_rules.can_modify_project_data
+    & (pr_rules.is_project_owner | pr_rules.is_project_delegate),
 )
 
 # Allow exporting a sample sheet from project
@@ -63,6 +67,17 @@ rules.add_perm(
 # Allow creating collection structure in iRODS
 rules.add_perm(
     'samplesheets.create_colls',
+    pr_rules.can_modify_project_data
+    & (
+        pr_rules.is_project_owner
+        | pr_rules.is_project_delegate
+        | pr_rules.is_project_contributor
+    ),
+)
+
+# Allow updating sheet cache (also allowed for archived projects)
+rules.add_perm(
+    'samplesheets.update_cache',
     pr_rules.is_project_owner
     | pr_rules.is_project_delegate
     | pr_rules.is_project_contributor,
@@ -71,6 +86,18 @@ rules.add_perm(
 # Allow deleting the project sample sheet
 rules.add_perm(
     'samplesheets.delete_sheet',
+    pr_rules.can_modify_project_data
+    & (
+        pr_rules.is_project_owner
+        | pr_rules.is_project_delegate
+        | pr_rules.is_project_contributor
+    ),
+)
+
+# Allow creating, updating or deleting iRODS access tickets
+# NOTE: We allow this for archived projects
+rules.add_perm(
+    'samplesheets.edit_ticket',
     pr_rules.is_project_owner
     | pr_rules.is_project_delegate
     | pr_rules.is_project_contributor,

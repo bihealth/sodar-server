@@ -15,7 +15,7 @@ from projectroles.models import Project, RoleAssignment, SODAR_CONSTANTS
 # from projectroles.tests.taskflow_testcase import TestCase
 from projectroles.views_api import CORE_API_MEDIA_TYPE, CORE_API_DEFAULT_VERSION
 
-from taskflowbackend.tests.base import TestTaskflowAPIBase
+from taskflowbackend.tests.base import TaskflowAPIViewTestBase
 from taskflowbackend.tests.test_project_views import IRODS_ACCESS_READ
 
 
@@ -45,7 +45,7 @@ UPDATED_README = 'Updated readme'
 # Tests with Taskflow ----------------------------------------------------------
 
 
-class TestCoreTaskflowAPIBase(TestTaskflowAPIBase):
+class TestCoreTaskflowAPIBase(TaskflowAPIViewTestBase):
     """Override of TestTaskflowAPIBase for SODAR Core API views"""
 
     media_type = CORE_API_MEDIA_TYPE

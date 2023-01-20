@@ -63,6 +63,7 @@
     "delete_sheet": true,
     "view_versions": true,
     "edit_config": true,
+    "update_cache": true,
     "is_superuser": true
   },
   "sheet_stats": {

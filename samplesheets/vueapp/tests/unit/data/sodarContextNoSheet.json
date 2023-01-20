@@ -24,6 +24,7 @@
     "export_sheet": true,
     "delete_sheet": true,
     "edit_config": true,
+    "update_cache": true,
     "is_superuser": true
   },
   "sheet_stats": {}

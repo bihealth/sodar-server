@@ -1190,8 +1190,7 @@ class SheetTemplateSelectView(
         return super().render_to_response(self.get_context_data())
 
 
-# TODO: Prevent access if sheet sync is enabled, add tests
-class SheetTemplateCreateFormView(
+class SheetTemplateCreateView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
@@ -1552,7 +1551,7 @@ class SheetCacheUpdateView(
 ):
     """Sample sheet manual cache update view"""
 
-    permission_required = 'samplesheets.edit_sheet'
+    permission_required = 'samplesheets.update_cache'
 
     def get(self, request, *args, **kwargs):
         project = self.get_project()
@@ -1975,7 +1974,7 @@ class IrodsAccessTicketListView(
     """Sample Sheet version list view"""
 
     model = IrodsAccessTicket
-    permission_required = 'samplesheets.edit_sheet'
+    permission_required = 'samplesheets.edit_ticket'
     template_name = 'samplesheets/irods_access_tickets.html'
     paginate_by = settings.SHEETS_IRODS_TICKET_PAGINATION
 
@@ -2016,7 +2015,7 @@ class IrodsAccessTicketCreateView(
 ):
     """Sample Sheet version restoring view"""
 
-    permission_required = 'samplesheets.edit_sheet'
+    permission_required = 'samplesheets.edit_ticket'
     template_name = 'samplesheets/irodsaccessticket_form.html'
     form_class = IrodsAccessTicketForm
 
@@ -2068,7 +2067,7 @@ class IrodsAccessTicketUpdateView(
 ):
     """Sample sheet version deletion view"""
 
-    permission_required = 'samplesheets.edit_sheet'
+    permission_required = 'samplesheets.edit_ticket'
     model = IrodsAccessTicket
     form_class = IrodsAccessTicketForm
     template_name = 'samplesheets/irodsaccessticket_form.html'
@@ -2101,7 +2100,7 @@ class IrodsAccessTicketDeleteView(
 ):
     """iRODS access ticket deletion view"""
 
-    permission_required = 'samplesheets.delete_sheet'
+    permission_required = 'samplesheets.edit_ticket'
     template_name = 'samplesheets/irodsaccessticket_confirm_delete.html'
     model = IrodsAccessTicket
     slug_url_kwarg = 'irodsaccessticket'

@@ -465,6 +465,9 @@ class SheetContextAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
                 'samplesheets.view_versions', project
             ),
             'edit_config': self.can_edit_config(request.user, project),
+            'update_cache': request.user.has_perm(
+                'samplesheets.update_cache', project
+            ),
             'is_superuser': request.user.is_superuser,
         }
 
@@ -1934,7 +1937,7 @@ class IrodsObjectListAjaxView(BaseIrodsAjaxView):
 class SheetVersionCompareAjaxView(SODARBaseProjectAjaxView):
     """View for listing data objects in iRODS recursively"""
 
-    permission_required = 'samplesheets.edit_sheet'
+    permission_required = 'samplesheets.view_sheet'
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

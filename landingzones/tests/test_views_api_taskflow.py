@@ -20,7 +20,7 @@ from samplesheets.views import RESULTS_COLL, MISC_FILES_COLL
 
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import (
-    TestTaskflowAPIBase,
+    TaskflowAPIViewTestBase,
     IRODS_ACCESS_READ,
     IRODS_ACCESS_OWN,
 )
@@ -58,7 +58,7 @@ class TestLandingZoneAPITaskflowBase(
     SampleSheetTaskflowMixin,
     LandingZoneMixin,
     LandingZoneTaskflowMixin,
-    TestTaskflowAPIBase,
+    TaskflowAPIViewTestBase,
 ):
     """Base landing zone API view test class with Taskflow enabled"""
 

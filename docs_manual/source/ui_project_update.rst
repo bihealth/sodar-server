@@ -16,6 +16,10 @@ project, the role of owner or delegate is required.
 
     Project creation and update view
 
+
+Project Metadata
+================
+
 The following project metadata and settings are available for updating:
 
 Title
@@ -64,3 +68,34 @@ Owner
 
     After modifying any fields, make sure to click the :guilabel:`Update` button
     to apply the changes.
+
+
+Project Archiving
+=================
+
+From the :guilabel:`Archive` button in the top right corner of the view, it is
+possible to archive or unarchive a project. This will set the project data into
+a read-only mode for all users, including owners and delegates. The
+
+- Sample sheets can no longer be edited.
+- Restoring of sample sheet versions is disabled.
+- No iRODS requests for deleting sample data from iRODS can be added.
+- No new data from landing zones can be uploaded into the sample data
+  repository.
+
+Some editing functionality will remain active when a project is archived:
+
+- Project metadata such as readme and description can still be modified.
+- iRODS access tickets for sample sheets can be modified.
+- Sample sheet cache can be updated.
+- Existing landing zones can be accessed and deleted.
+- User membership can be altered, but only read-only access is granted while the
+  project is archived.
+
+Unarchiving the project will restore write access to data according to current
+member roles.
+:guilabel:`Unarchive`.
+
+.. note::
+
+    Archiving categories is not currently supported.

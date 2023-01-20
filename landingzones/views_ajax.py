@@ -8,7 +8,7 @@ from projectroles.views_ajax import SODARBaseProjectAjaxView
 from landingzones.models import LandingZone
 
 
-class LandingZoneStatusRetrieveAjaxView(SODARBaseProjectAjaxView):
+class ZoneStatusRetrieveAjaxView(SODARBaseProjectAjaxView):
     """Ajax API view for returning the landing zone status"""
 
     def get_permission_required(self):
@@ -16,9 +16,9 @@ class LandingZoneStatusRetrieveAjaxView(SODARBaseProjectAjaxView):
             sodar_uuid=self.kwargs['landingzone']
         ).first()
         return (
-            'landingzones.view_zones_own'
+            'landingzones.view_zone_own'
             if zone.user == self.request.user
-            else 'landingzones.view_zones_all'
+            else 'landingzones.view_zone_all'
         )
 
     def get(self, *args, **kwargs):

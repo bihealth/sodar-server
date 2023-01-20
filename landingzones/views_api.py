@@ -11,15 +11,15 @@ from rest_framework import status
 from rest_framework.serializers import ValidationError
 from rest_framework.views import APIView
 
-# Samplesheets dependency
-from samplesheets.models import Investigation
-
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
 from projectroles.views_api import (
     SODARAPIBaseProjectMixin,
     SODARAPIGenericProjectMixin,
 )
+
+# Samplesheets dependency
+from samplesheets.models import Investigation
 
 from landingzones.models import (
     LandingZone,
@@ -28,7 +28,7 @@ from landingzones.models import (
 )
 from landingzones.serializers import LandingZoneSerializer
 from landingzones.views import (
-    ZoneUpdateRequiredPermissionMixin,
+    ZoneModifyPermissionMixin,
     ZoneCreateMixin,
     ZoneDeleteMixin,
     ZoneMoveMixin,
@@ -38,15 +38,14 @@ from landingzones.views import (
 from sodar.users.auth import fallback_to_auth_basic
 
 
-# Get logger
 logger = logging.getLogger(__name__)
 
 
 # Mixins and Base Views --------------------------------------------------------
 
 
-class LandingZoneSubmitBaseAPIView(
-    ZoneUpdateRequiredPermissionMixin, SODARAPIBaseProjectMixin, APIView
+class ZoneSubmitBaseAPIView(
+    ZoneModifyPermissionMixin, SODARAPIBaseProjectMixin, APIView
 ):
     """
     Base API view for initiating LandingZone operations via SODAR Taskflow.
@@ -81,7 +80,7 @@ class LandingZoneSubmitBaseAPIView(
 # API Views --------------------------------------------------------------------
 
 
-class LandingZoneListAPIView(SODARAPIGenericProjectMixin, ListAPIView):
+class ZoneListAPIView(SODARAPIGenericProjectMixin, ListAPIView):
     """
     List the landing zones in a project.
 
@@ -98,10 +97,10 @@ class LandingZoneListAPIView(SODARAPIGenericProjectMixin, ListAPIView):
 
     - ``finished``: Include finished zones if 1 (integer)
 
-    **Returns:** List of landing zone details (see ``LandingZoneRetrieveAPIView``)
+    **Returns:** List of landing zone details (see ``ZoneRetrieveAPIView``)
     """
 
-    permission_required = 'landingzones.view_zones_own'
+    permission_required = 'landingzones.view_zone_own'
     serializer_class = LandingZoneSerializer
 
     def get_queryset(self):
@@ -115,13 +114,13 @@ class LandingZoneListAPIView(SODARAPIGenericProjectMixin, ListAPIView):
         if include_finished != 1:
             ret = ret.exclude(status__in=STATUS_FINISHED)
         if not self.request.user.has_perm(
-            'landingzones.view_zones_all', project
+            'landingzones.view_zone_all', project
         ):
             return ret.filter(user=self.request.user)
         return ret
 
 
-class LandingZoneRetrieveAPIView(SODARAPIGenericProjectMixin, RetrieveAPIView):
+class ZoneRetrieveAPIView(SODARAPIGenericProjectMixin, RetrieveAPIView):
     """
     Retrieve the details of a landing zone.
 
@@ -159,11 +158,11 @@ class LandingZoneRetrieveAPIView(SODARAPIGenericProjectMixin, RetrieveAPIView):
         if not obj:
             return False
         if obj.user == self.request.user:
-            return 'landingzones.update_zones_own'
-        return 'landingzones.update_zones_all'
+            return 'landingzones.view_zone_own'
+        return 'landingzones.view_zone_all'
 
 
-class LandingZoneCreateAPIView(
+class ZoneCreateAPIView(
     ZoneCreateMixin, SODARAPIGenericProjectMixin, CreateAPIView
 ):
     """
@@ -184,12 +183,12 @@ class LandingZoneCreateAPIView(
     - ``create_colls``: Create expected collections (boolean, optional)
     - ``restrict_colls``: Restrict access to created collections (boolean, optional)
 
-    **Returns:** Landing zone details (see ``LandingZoneRetrieveAPIView``)
+    **Returns:** Landing zone details (see ``ZoneRetrieveAPIView``)
     """
 
     lookup_field = 'sodar_uuid'
     lookup_url_kwarg = 'project'
-    permission_required = 'landingzones.add_zones'
+    permission_required = 'landingzones.create_zone'
     serializer_class = LandingZoneSerializer
 
     def perform_create(self, serializer):
@@ -197,7 +196,6 @@ class LandingZoneCreateAPIView(
         Override perform_create() to add timeline event and initiate taskflow.
         """
         ex_msg = 'Creating landing zone failed: '
-
         # Check taskflow status
         if not get_backend_api('taskflow'):
             raise APIException('{}Taskflow not enabled'.format(ex_msg))
@@ -232,19 +230,19 @@ class LandingZoneCreateAPIView(
             raise APIException('{}{}'.format(ex_msg, ex))
 
 
-class LandingZoneSubmitDeleteAPIView(
-    ZoneDeleteMixin, LandingZoneSubmitBaseAPIView
-):
+class ZoneSubmitDeleteAPIView(ZoneDeleteMixin, ZoneSubmitBaseAPIView):
     """
     Initiate landing zone deletion.
 
     Initiates an asynchronous operation. The zone status can be queried using
-    ``LandingZoneRetrieveAPIView`` with the returned ``sodar_uuid``.
+    ``ZoneRetrieveAPIView`` with the returned ``sodar_uuid``.
 
     **URL:** ``/landingzones/api/submit/delete/{LandingZone.sodar_uuid}``
 
     **Methods:** ``POST``
     """
+
+    zone_action = 'delete'
 
     def post(self, request, *args, **kwargs):
         """POST request for initiating landing zone deletion"""
@@ -267,12 +265,12 @@ class LandingZoneSubmitDeleteAPIView(
         )
 
 
-class LandingZoneSubmitMoveAPIView(ZoneMoveMixin, LandingZoneSubmitBaseAPIView):
+class ZoneSubmitMoveAPIView(ZoneMoveMixin, ZoneSubmitBaseAPIView):
     """
     Initiate landing zone validation and/or moving.
 
     Initiates an asynchronous operation. The zone status can be queried using
-    ``LandingZoneRetrieveAPIView`` with the returned ``sodar_uuid``.
+    ``ZoneRetrieveAPIView`` with the returned ``sodar_uuid``.
 
     For validating data without moving it to the sample repository, this view
     should be called with ``submit/validate``.
@@ -283,6 +281,8 @@ class LandingZoneSubmitMoveAPIView(ZoneMoveMixin, LandingZoneSubmitBaseAPIView):
 
     **Methods:** ``POST``
     """
+
+    zone_action = 'move'
 
     def post(self, request, *args, **kwargs):
         """POST request for initiating landing zone validation/moving"""
@@ -302,7 +302,6 @@ class LandingZoneSubmitMoveAPIView(ZoneMoveMixin, LandingZoneSubmitBaseAPIView):
             validate_only = False
             action_obj = 'move'
             action_msg = 'moving'
-
         self._validate_zone_obj(zone, STATUS_ALLOW_UPDATE, action_obj)
 
         try:
@@ -356,5 +355,4 @@ class LandingZoneOldListAPIView(APIView):
                         ret_data[str(zone.sodar_uuid)][
                             field
                         ] = zone.config_data[field]
-
         return Response(ret_data, status=200)

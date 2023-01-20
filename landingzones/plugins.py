@@ -77,7 +77,7 @@ class ProjectAppPlugin(
     description = 'Management of sample data landing zones in iRODS'
 
     #: Required permission for accessing the app
-    app_permission = 'landingzones.view_zones_own'
+    app_permission = 'landingzones.view_zone_own'
 
     #: Enable or disable general search from project title bar
     search_enable = False  # TODO: Enable once implemented
@@ -187,7 +187,7 @@ class ProjectAppPlugin(
         elif (
             investigation
             and investigation.irods_status
-            and user.has_perm('landingzones.add_zones', project)
+            and user.has_perm('landingzones.create_zone', project)
         ):
             return (
                 '<a href="{}" title="Create landing zone in project">'

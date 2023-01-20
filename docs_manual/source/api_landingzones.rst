@@ -11,15 +11,15 @@ API Views
 
 .. currentmodule:: landingzones.views_api
 
-.. autoclass:: LandingZoneListAPIView
+.. autoclass:: ZoneListAPIView
 
-.. autoclass:: LandingZoneRetrieveAPIView
+.. autoclass:: ZoneRetrieveAPIView
 
-.. autoclass:: LandingZoneCreateAPIView
+.. autoclass:: ZoneCreateAPIView
 
-.. autoclass:: LandingZoneSubmitDeleteAPIView
+.. autoclass:: ZoneSubmitDeleteAPIView
 
-.. autoclass:: LandingZoneSubmitMoveAPIView
+.. autoclass:: ZoneSubmitMoveAPIView
 
 
 Versioning

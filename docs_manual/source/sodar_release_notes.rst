@@ -13,6 +13,7 @@ v0.13.0 (WIP)
 
 Major feature update.
 
+- Add project archiving support
 - Add iRODS file check for material renaming in editor
 - Add optional landing zone write access restriction to created collections
 - Add study render table caching for sample sheets

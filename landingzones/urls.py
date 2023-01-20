@@ -37,32 +37,32 @@ urls_ui = [
 urls_api = [
     url(
         regex=r'^api/list/(?P<project>[0-9a-f-]+)',
-        view=views_api.LandingZoneListAPIView.as_view(),
+        view=views_api.ZoneListAPIView.as_view(),
         name='api_list',
     ),
     url(
         regex=r'^api/retrieve/(?P<landingzone>[0-9a-f-]+)',
-        view=views_api.LandingZoneRetrieveAPIView.as_view(),
+        view=views_api.ZoneRetrieveAPIView.as_view(),
         name='api_retrieve',
     ),
     url(
         regex=r'^api/create/(?P<project>[0-9a-f-]+)',
-        view=views_api.LandingZoneCreateAPIView.as_view(),
+        view=views_api.ZoneCreateAPIView.as_view(),
         name='api_create',
     ),
     url(
         regex=r'^api/submit/delete/(?P<landingzone>[0-9a-f-]+)',
-        view=views_api.LandingZoneSubmitDeleteAPIView.as_view(),
+        view=views_api.ZoneSubmitDeleteAPIView.as_view(),
         name='api_submit_delete',
     ),
     url(
         regex=r'^api/submit/validate/(?P<landingzone>[0-9a-f-]+)',
-        view=views_api.LandingZoneSubmitMoveAPIView.as_view(),
+        view=views_api.ZoneSubmitMoveAPIView.as_view(),
         name='api_submit_validate',
     ),
     url(
         regex=r'^api/submit/move/(?P<landingzone>[0-9a-f-]+)',
-        view=views_api.LandingZoneSubmitMoveAPIView.as_view(),
+        view=views_api.ZoneSubmitMoveAPIView.as_view(),
         name='api_submit_move',
     ),
     url(
@@ -76,7 +76,7 @@ urls_api = [
 urls_ajax = [
     url(
         regex=r'^ajax/status/retrieve/(?P<landingzone>[0-9a-f-]+)$',
-        view=views_ajax.LandingZoneStatusRetrieveAjaxView.as_view(),
+        view=views_ajax.ZoneStatusRetrieveAjaxView.as_view(),
         name='ajax_status',
     )
 ]

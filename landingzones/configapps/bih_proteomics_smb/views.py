@@ -37,7 +37,7 @@ class ZoneTicketGetView(
 
     http_method_names = ['get', 'post']
     template_name = 'landingzones_config_bih_proteomics_smb/ticket_get.html'
-    permission_required = 'landingzones.update_zones_own'
+    permission_required = 'landingzones.update_zone_own'
 
     def get_context_data(self, *args, **kwargs):
         """Override get_context_data() for ticket information"""

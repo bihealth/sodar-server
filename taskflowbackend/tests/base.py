@@ -18,6 +18,7 @@ from projectroles.app_settings import AppSettingAPI
 from projectroles.models import Project, RoleAssignment, Role, SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
+from projectroles.tests.test_permissions_api import SODARAPIPermissionTestMixin
 from projectroles.tests.test_views_api import SODARAPIViewTestMixin
 from projectroles.views_api import CORE_API_MEDIA_TYPE, CORE_API_DEFAULT_VERSION
 
@@ -114,10 +115,8 @@ class TaskflowTestMixin:
         self.assertEqual(self.irods.data_objects.exists(path), expected)
 
 
-class TaskflowbackendTestBase(
-    ProjectMixin, RoleAssignmentMixin, TaskflowTestMixin, TestCase
-):
-    """Base class for testing UI views with taskflow"""
+class TaskflowProjectTestMixin:
+    """Helpers for UI/Ajax view project management with Taskflow"""
 
     def make_project_taskflow(
         self,
@@ -129,6 +128,7 @@ class TaskflowbackendTestBase(
         public_guest_access=False,
     ):
         """Make Project with taskflow for UI view tests"""
+
         post_data = {
             'title': title,
             'type': type,
@@ -141,8 +141,7 @@ class TaskflowbackendTestBase(
             app_settings.get_defaults(APP_SETTING_SCOPE_PROJECT, post_safe=True)
         )  # Add default settings
         post_kwargs = {'project': parent.sodar_uuid} if parent else {}
-
-        with self.login(self.user):
+        with self.login(self.user):  # TODO: Replace with owner
             response = self.client.post(
                 reverse('projectroles:create', kwargs=post_kwargs), post_data
             )
@@ -155,7 +154,6 @@ class TaskflowbackendTestBase(
                     kwargs={'project': project.sodar_uuid},
                 ),
             )
-
         owner_as = project.get_owner()
         return project, owner_as
 
@@ -166,7 +164,7 @@ class TaskflowbackendTestBase(
             'user': user.sodar_uuid,
             'role': role.pk,
         }
-        with self.login(self.user):
+        with self.login(self.user):  # TODO: Use project owner instead
             response = self.client.post(
                 reverse(
                     'projectroles:role_create',
@@ -182,6 +180,61 @@ class TaskflowbackendTestBase(
                 ),
             )
         return role_as
+
+
+class TaskflowAPIProjectTestMixin:
+    """Helpers for API view project management with Taskflow"""
+
+    def make_project_taskflow(
+        self, title, type, parent, owner, description='', readme=''
+    ):
+        """Make Project with taskflow for API view tests."""
+        post_data = {
+            'title': title,
+            'type': type,
+            'parent': parent.sodar_uuid if parent else None,
+            'owner': owner.sodar_uuid,
+            'description': description,
+            'readme': readme,
+        }
+        response = self.request_knox(
+            reverse('projectroles:api_project_create'),
+            method='POST',
+            data=post_data,
+            media_type=CORE_API_MEDIA_TYPE,
+            version=CORE_API_DEFAULT_VERSION,
+        )
+        # Assert response and object status
+        self.assertEqual(response.status_code, 201, msg=response.content)
+        project = Project.objects.get(title=title)
+        return project, project.get_owner()
+
+    def make_assignment_taskflow(self, project, user, role):
+        """Make RoleAssignment with taskflow for API view tests."""
+        url = reverse(
+            'projectroles:api_role_create',
+            kwargs={'project': project.sodar_uuid},
+        )
+        request_data = {'role': role.name, 'user': str(user.sodar_uuid)}
+        response = self.request_knox(
+            url,
+            method='POST',
+            data=request_data,
+            media_type=CORE_API_MEDIA_TYPE,
+            version=CORE_API_DEFAULT_VERSION,
+        )
+        self.assertEqual(response.status_code, 201, msg=response.content)
+        return RoleAssignment.objects.get(project=project, user=user, role=role)
+
+
+class TaskflowbackendTestBase(
+    ProjectMixin,
+    RoleAssignmentMixin,
+    TaskflowTestMixin,
+    TaskflowProjectTestMixin,
+    TestCase,
+):
+    """Base class for testing with taskflow"""
 
     def setUp(self):
         # Ensure TASKFLOW_TEST_MODE is True to avoid data loss
@@ -230,56 +283,16 @@ class TaskflowbackendTestBase(
         self.irods.cleanup()
 
 
-class TestTaskflowAPIBase(
+class TaskflowAPIViewTestBase(
     ProjectMixin,
     RoleAssignmentMixin,
     SODARAPIViewTestMixin,
     TaskflowTestMixin,
+    TaskflowAPIProjectTestMixin,
     APILiveServerTestCase,
     TestCase,
 ):
     """Base class for testing API views with taskflow"""
-
-    def make_project_taskflow(
-        self, title, type, parent, owner, description='', readme=''
-    ):
-        """Make Project with taskflow for API view tests."""
-        post_data = {
-            'title': title,
-            'type': type,
-            'parent': parent.sodar_uuid if parent else None,
-            'owner': owner.sodar_uuid,
-            'description': description,
-            'readme': readme,
-        }
-        response = self.request_knox(
-            reverse('projectroles:api_project_create'),
-            method='POST',
-            data=post_data,
-            media_type=CORE_API_MEDIA_TYPE,
-            version=CORE_API_DEFAULT_VERSION,
-        )
-        # Assert response and object status
-        self.assertEqual(response.status_code, 201, msg=response.content)
-        project = Project.objects.get(title=title)
-        return project, project.get_owner()
-
-    def make_assignment_taskflow(self, project, user, role):
-        """Make RoleAssignment with taskflow for API view tests."""
-        url = reverse(
-            'projectroles:api_role_create',
-            kwargs={'project': project.sodar_uuid},
-        )
-        request_data = {'role': role.name, 'user': str(user.sodar_uuid)}
-        response = self.request_knox(
-            url,
-            method='POST',
-            data=request_data,
-            media_type=CORE_API_MEDIA_TYPE,
-            version=CORE_API_DEFAULT_VERSION,
-        )
-        self.assertEqual(response.status_code, 201, msg=response.content)
-        return RoleAssignment.objects.get(project=project, user=user, role=role)
 
     def setUp(self):
         # Ensure TASKFLOW_TEST_MODE is True to avoid data loss
@@ -319,3 +332,82 @@ class TestTaskflowAPIBase(
     def tearDown(self):
         self.taskflow.cleanup()
         self.irods.cleanup()
+
+
+class TaskflowAPIPermissionTestBase(
+    ProjectMixin,
+    RoleAssignmentMixin,
+    TaskflowAPIProjectTestMixin,
+    SODARAPIPermissionTestMixin,
+    TestCase,
+):
+    """Base class for testing API view permissions with taskflow"""
+
+    def setUp(self):
+        # Ensure TASKFLOW_TEST_MODE is True to avoid data loss
+        if not settings.TASKFLOW_TEST_MODE:
+            raise ImproperlyConfigured(
+                'TASKFLOW_TEST_MODE not True, testing with SODAR Taskflow '
+                'disabled'
+            )
+        # Init roles
+        self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
+        self.role_delegate = Role.objects.get_or_create(
+            name=PROJECT_ROLE_DELEGATE
+        )[0]
+        self.role_contributor = Role.objects.get_or_create(
+            name=PROJECT_ROLE_CONTRIBUTOR
+        )[0]
+        self.role_guest = Role.objects.get_or_create(name=PROJECT_ROLE_GUEST)[0]
+
+        # Init users
+        # Superuser
+        self.superuser = self.make_user('superuser')
+        self.superuser.is_staff = True
+        self.superuser.is_superuser = True
+        self.superuser.save()
+        self.knox_token = self.get_token(self.superuser)
+        # No user
+        self.anonymous = None
+        # Users with role assignments
+        self.user_owner_cat = self.make_user('user_owner_cat')
+        self.user_owner = self.make_user('user_owner')
+        self.user_delegate = self.make_user('user_delegate')
+        self.user_contributor = self.make_user('user_contributor')
+        self.user_guest = self.make_user('user_guest')
+        # User without role assignments
+        self.user_no_roles = self.make_user('user_no_roles')
+
+        # Make category and owner locally
+        self.category = self.make_project(
+            title='TestCategoryTop', type=PROJECT_TYPE_CATEGORY, parent=None
+        )
+        self.owner_as_cat = self.make_assignment(
+            self.category, self.user_owner_cat, self.role_owner
+        )
+        # Make project and roles with Taskflow
+        self.project, self.owner_as = self.make_project_taskflow(
+            title='TestProject',
+            type=PROJECT_TYPE_PROJECT,
+            parent=self.category,
+            owner=self.user_owner,
+            description='description',
+        )
+        self.delegate_as = self.make_assignment_taskflow(
+            self.project, self.user_delegate, self.role_delegate
+        )
+        self.contributor_as = self.make_assignment_taskflow(
+            self.project, self.user_contributor, self.role_contributor
+        )
+        self.guest_as = self.make_assignment_taskflow(
+            self.project, self.user_guest, self.role_guest
+        )
+
+        # Init taskflow and iRODS backend
+        self.taskflow = get_backend_api('taskflow')
+        self.irods_backend = get_backend_api('omics_irods')
+        self.irods = self.irods_backend.get_session_obj()
+
+    def tearDown(self):
+        self.irods.cleanup()
+        super().tearDown()

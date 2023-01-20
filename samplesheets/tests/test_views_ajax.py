@@ -277,6 +277,7 @@ class TestSheetContextAjaxView(TestViewsBase):
                 'delete_sheet': True,
                 'view_versions': True,
                 'edit_config': True,
+                'update_cache': True,
                 'is_superuser': True,
             },
             'sheet_stats': {
@@ -349,6 +350,7 @@ class TestSheetContextAjaxView(TestViewsBase):
                 'delete_sheet': True,
                 'view_versions': True,
                 'edit_config': True,
+                'update_cache': True,
                 'is_superuser': True,
             },
             'sheet_stats': {},
@@ -2161,27 +2163,8 @@ class TestSheetVersionCompareAjaxView(SheetImportMixin, TestViewsBase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), expected)
 
-    def test_get_no_permission(self):
-        """Test GET without permission"""
-        expected = {
-            'detail': 'You do not have permission to perform this action.'
-        }
-        with self.login(self.user_guest):
-            response = self.client.get(
-                '{}?source={}&target={}'.format(
-                    reverse(
-                        'samplesheets:ajax_version_compare',
-                        kwargs={'project': self.project.sodar_uuid},
-                    ),
-                    str(self.isa1.sodar_uuid),
-                    str(self.isa2.sodar_uuid),
-                )
-            )
-        self.assertEqual(response.status_code, 403)
-        self.assertEqual(response.json(), expected)
-
     def test_get_no_sheets(self):
-        """Test GET without permission"""
+        """Test GET with no sheets"""
         expected = {'detail': 'Sample sheet version(s) not found.'}
         with self.login(self.user):
             response = self.client.get(
