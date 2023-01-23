@@ -6,7 +6,11 @@ import logging
 from projectroles.plugins import get_backend_api
 
 from samplesheets.models import GenericMaterial
-from samplesheets.studyapps.utils import check_igv_file_name, FILE_TYPE_SUFFIXES
+from samplesheets.studyapps.utils import (
+    get_igv_omit_override,
+    check_igv_file_name,
+    FILE_TYPE_SUFFIXES,
+)
 from samplesheets.utils import get_index_by_header
 
 
@@ -28,6 +32,7 @@ def get_pedigree_file_path(file_type, source, study_tables):
         raise Exception('iRODS Backend not available')
 
     query_paths = []
+    override = get_igv_omit_override(source.study.get_project(), file_type)
 
     def _get_val_by_index(row, idx):
         return row[idx]['value'] if idx else None
@@ -82,7 +87,7 @@ def get_pedigree_file_path(file_type, source, study_tables):
                     and obj['name']
                     .lower()
                     .endswith(FILE_TYPE_SUFFIXES[file_type])
-                    and check_igv_file_name(obj['name'], file_type)
+                    and check_igv_file_name(obj['name'], file_type, override)
                 ):
                     file_paths.append(obj['path'])
                     logger.debug('Added path: {}'.format(obj['path']))

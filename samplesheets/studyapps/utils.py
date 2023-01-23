@@ -6,25 +6,58 @@ from lxml import etree as ET
 from django.conf import settings
 from django.urls import reverse
 
+# Projectroles dependency
+from projectroles.app_settings import AppSettingAPI
+
+
+app_settings = AppSettingAPI()
+
+
 # Constants
 IGV_URL_BASE = 'http://127.0.0.1:60151'
 FILE_TYPE_SUFFIXES = {'bam': '.bam', 'vcf': '.vcf.gz'}
+INVALID_TYPE_MSG = 'Invalid value for file_type'
 
 
-def check_igv_file_name(file_name, file_type):
+def get_igv_omit_override(project, file_type):
+    """
+    Get IGV omit override setting for a project. NOTE: Added as a separate
+    method to avoid redundant database queries.
+
+    :param project: Project object
+    :param file_type: String ("bam" or "vcf")
+    :return: List or None
+    """
+    ft = file_type.lower()
+    if ft not in ['bam', 'vcf']:
+        raise ValueError(INVALID_TYPE_MSG)
+    setting = app_settings.get(
+        'samplesheets', 'igv_omit_{}'.format(ft), project=project
+    )
+    if setting:
+        return [s.strip() for s in setting.split(',')]
+    return None
+
+
+def check_igv_file_name(file_name, file_type, override=None):
     """
     Check if file is acceptable for IGV session inclusion. Returns False if
     suffix is found in env vars of omittable files.
 
     :param file_name: String
     :param file_type: String ("bam" or "vcf")
+    :param override: File suffixes to override site-wide setting (list or None)
     :raise: ValueError if file_type is incorrect
     :return: Boolean (True if name is OK)
     """
-    if file_type.lower() not in ['bam', 'vcf']:
-        raise ValueError('Invalid value for file_type')
+    ft = file_type.lower()
+    if ft not in ['bam', 'vcf']:
+        raise ValueError(INVALID_TYPE_MSG)
+    fn = file_name.lower()
+    if override:
+        return not any([s.lower() for s in override if fn.endswith(s)])
     ol = getattr(settings, 'SHEETS_IGV_OMIT_' + file_type.upper(), [])
-    return not any([s.lower() for s in ol if file_name.lower().endswith(s)])
+    return not any([s.lower() for s in ol if fn.endswith(s)])
 
 
 def get_igv_session_url(source, app_name, merge=False):

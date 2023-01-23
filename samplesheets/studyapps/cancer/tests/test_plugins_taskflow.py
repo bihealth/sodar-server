@@ -6,6 +6,7 @@ from django.conf import settings
 from django.urls import reverse
 
 # Projectroles dependency
+from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 
@@ -19,6 +20,10 @@ from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 from samplesheets.plugins import SampleSheetStudyPluginPoint
 from samplesheets.studyapps.germline.utils import get_pedigree_file_path
 from samplesheets.studyapps.utils import get_igv_session_url
+
+
+app_settings = AppSettingAPI()
+
 
 # SODAR constants
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
@@ -355,6 +360,39 @@ class TestCancerPlugin(
         self.assertEqual(len(sl['data']['bam']['files']), 0)
         self.assertEqual(len(sl['data']['vcf']['files']), 0)
 
+    def test_get_shortcut_links_files_omit_override(self):
+        """Test get_shortcut_links() with project-specific omit override"""
+        app_settings.set(
+            'samplesheets',
+            'igv_omit_bam',
+            'test.bam, xxx.bam',
+            project=self.project,
+        )
+        app_settings.set(
+            'samplesheets',
+            'igv_omit_vcf',
+            'test.vcf.gz, yyy.vcf.gz',
+            project=self.project,
+        )
+        self.irods.collections.create(self.source_path)
+        bam_path = os.path.join(
+            self.source_path, '{}_test.bam'.format(SAMPLE_ID_NORMAL)
+        )
+        vcf_path = os.path.join(
+            self.source_path, '{}_test.vcf.gz'.format(SAMPLE_ID_NORMAL)
+        )
+        self.irods.data_objects.create(bam_path)
+        self.irods.data_objects.create(vcf_path)
+
+        self.plugin.update_cache(self.cache_name, self.project)
+        study_tables = self.tb.build_study_tables(self.study)
+        sl = self.plugin.get_shortcut_links(
+            self.study, study_tables, case=[SOURCE_ID_NORMAL]
+        )
+        self.assertEqual(len(sl['data']['session']['files']), 0)
+        self.assertEqual(len(sl['data']['bam']['files']), 0)
+        self.assertEqual(len(sl['data']['vcf']['files']), 0)
+
     def test_update_cache(self):
         """Test update_cache()"""
         self.plugin.update_cache(self.cache_name, self.project)
@@ -434,5 +472,47 @@ class TestCancerPlugin(
             APP_NAME, self.cache_name, self.project
         ).data
         for i in range(0, len(CASE_IDS) - 1):
+            self.assertEqual(ci['bam'][CASE_IDS[i]], None)
+            self.assertEqual(ci['vcf'][CASE_IDS[i]], None)
+
+    def test_update_cache_files_omit_override(self):
+        """Test update_cache() with project-specific omit override"""
+        app_settings.set(
+            'samplesheets',
+            'igv_omit_bam',
+            'test.bam, xxx.bam',
+            project=self.project,
+        )
+        app_settings.set(
+            'samplesheets',
+            'igv_omit_vcf',
+            'test.vcf.gz, yyy.vcf.gz',
+            project=self.project,
+        )
+        self.irods.collections.create(self.source_path)
+        # Create omittable files which come before real ones alphabetically
+        bam_path = os.path.join(
+            self.source_path, '{}_test.bam'.format(SAMPLE_ID_NORMAL)
+        )
+        bam_path_omit = os.path.join(
+            self.source_path, '{}_dragen_evidence.bam'.format(SAMPLE_ID_NORMAL)
+        )
+        vcf_path = os.path.join(
+            self.source_path, '{}_test.vcf.gz'.format(SAMPLE_ID_NORMAL)
+        )
+        vcf_path_omit = os.path.join(
+            self.source_path, '{}_cnv.vcf.gz'.format(SAMPLE_ID_NORMAL)
+        )
+        self.irods.data_objects.create(bam_path)
+        self.irods.data_objects.create(bam_path_omit)
+        self.irods.data_objects.create(vcf_path)
+        self.irods.data_objects.create(vcf_path_omit)
+        self.plugin.update_cache(self.cache_name, self.project)
+        ci = self.cache_backend.get_cache_item(
+            APP_NAME, self.cache_name, self.project
+        ).data
+        self.assertEqual(ci['bam'][CASE_IDS[0]], bam_path_omit)
+        self.assertEqual(ci['vcf'][CASE_IDS[0]], vcf_path_omit)
+        for i in range(1, len(CASE_IDS) - 1):
             self.assertEqual(ci['bam'][CASE_IDS[i]], None)
             self.assertEqual(ci['vcf'][CASE_IDS[i]], None)

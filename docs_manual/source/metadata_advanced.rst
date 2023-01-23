@@ -35,9 +35,11 @@ SODAR currently supports the following study configurations:
 If the configuration is not specified or is not known to SODAR, the shortcut
 column will not be visible.
 
-If there is need to exclude BAM or VCF files with certain suffixes from IGV
-sessions, site administrators can define the file name suffixes in Django
-settings as ``SHEETS_IGV_OMIT_BAM`` and ``SHEETS_IGV_OMIT_VCF``.
+If there is need to omit BAM or VCF files with certain suffixes from IGV
+sessions, file name suffixes can be defined in the
+:ref:`project update view <ui_project_update>`. Administrators can also define
+site-wide IGV omission suffixes in Django settings as ``SHEETS_IGV_OMIT_BAM``
+and ``SHEETS_IGV_OMIT_VCF``.
 
 
 Assay iRODS Data Linking

@@ -50,6 +50,12 @@ URL for Sheet Synchronization
     REST API URL of remote project for sample sheet synchronization.
 Token for Sheet Synchronization
     Token string for sample sheet synchronization.
+BAM files to omit from IGV sessions
+    Comma separated list of BAM file suffixes to omit from IGV sessions.
+    Overrides site-wide setting.
+VCF files to omit from IGV sessions
+    Comma separated list of VCF file suffixes to omit from IGV sessions.
+    Overrides site-wide setting.
 IP Restrict
     Restrict project access to specific IP addresses if this is set.
 IP Allow List

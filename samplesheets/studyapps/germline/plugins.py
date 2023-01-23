@@ -14,6 +14,7 @@ from samplesheets.models import Investigation, Study, GenericMaterial
 from samplesheets.plugins import SampleSheetStudyPluginPoint
 from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.studyapps.utils import (
+    get_igv_omit_override,
     check_igv_file_name,
     get_igv_session_url,
     get_igv_irods_url,
@@ -25,6 +26,7 @@ from samplesheets.studyapps.germline.utils import (
     get_families,
     get_family_sources,
 )
+
 
 logger = logging.getLogger(__name__)
 table_builder = SampleSheetTableBuilder()
@@ -321,6 +323,10 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         except Exception as ex:
             logger.error('Error querying for study objects: {}'.format(ex))
 
+        project = study.get_project()
+        bam_override = get_igv_omit_override(project, 'bam')
+        vcf_override = get_igv_omit_override(project, 'vcf')
+
         for assay in study.assays.all():
             assay_plugin = assay.get_plugin()
             if not assay_plugin:
@@ -348,7 +354,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                         for o in study_objs['irods_data']
                         if o['path'].startswith(path + '/')
                         and o['name'].lower().endswith('bam')
-                        and check_igv_file_name(o['name'], 'bam')
+                        and check_igv_file_name(o['name'], 'bam', bam_override)
                     ]
                 row_fam = row[fam_idx]['value']
                 # Add VCF objects
@@ -364,7 +370,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                         for o in study_objs['irods_data']
                         if o['path'].startswith(path + '/')
                         and o['name'].lower().endswith('vcf.gz')
-                        and check_igv_file_name(o['name'], 'vcf')
+                        and check_igv_file_name(o['name'], 'vcf', vcf_override)
                     ]
 
         # Update data

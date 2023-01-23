@@ -2,7 +2,11 @@
 
 import os
 
-from samplesheets.studyapps.utils import check_igv_file_name, FILE_TYPE_SUFFIXES
+from samplesheets.studyapps.utils import (
+    get_igv_omit_override,
+    check_igv_file_name,
+    FILE_TYPE_SUFFIXES,
+)
 from samplesheets.utils import get_latest_file_path
 
 
@@ -21,12 +25,13 @@ def get_library_file_path(assay, library_name, file_type, irods_backend, irods):
     assay_path = irods_backend.get_path(assay)
     query_path = os.path.join(assay_path, library_name)
     file_paths = []
+    override = get_igv_omit_override(assay.get_project(), file_type)
     try:
         obj_list = irods_backend.get_objects(irods, query_path)
         for obj in obj_list['irods_data']:
             if obj['name'].lower().endswith(
                 FILE_TYPE_SUFFIXES[file_type]
-            ) and check_igv_file_name(obj['name'], file_type):
+            ) and check_igv_file_name(obj['name'], file_type, override):
                 file_paths.append(obj['path'])
     except Exception:
         pass

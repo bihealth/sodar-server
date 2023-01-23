@@ -24,10 +24,11 @@ Added
     - ``get_latest_file_path()`` helper (#1554)
     - "Not found" element for iRODS modal filter (#1562)
     - Existing iRODS file check in material name editing (#1494)
-    - Omit IGV session files by file name suffix (#1575)
+    - Omit IGV session files by file name suffix (#1575, #1577)
     - ``SHEETS_IGV_OMIT_BAM`` and ``SHEETS_IGV_OMIT_VCF`` Django settings (#1575)
-    - ``check_igv_file_name()`` in study app utils (#1575)
+    - ``get_igv_omit_override()`` and ``check_igv_file_name()`` in study app utils (#1575, #1577)
     - Project archiving support (#1572)
+    - ``igv_omit_bam`` and ``igv_omit_vcf`` project settings (#1577)
 
 Changed
 -------
