@@ -61,6 +61,7 @@ Fixed
     - Cancer shortcut caching with identical library names in study (#1560, #1564)
     - iRODS modal filter input not cleared on modal re-open (#1555)
     - Column config editing access for inherited owners (#1568)
+    - iRODS delete request accept view crash with collection request (#1584)
 
 Removed
 -------

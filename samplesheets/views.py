@@ -2283,7 +2283,7 @@ class IrodsRequestAcceptView(
                     ] += irods_backend.get_objs_recursively(irods, coll)
                     context_data[
                         'affected_collections'
-                    ] += irods_backend.get_colls_recursively(irods, coll)
+                    ] += irods_backend.get_colls_recursively(coll)
         return context_data
 
     def form_valid(self, request, *args, **kwargs):

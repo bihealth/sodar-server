@@ -1181,10 +1181,61 @@ class TestIrodsRequestDeleteView(TestIrodsRequestViewsBase):
 class TestIrodsRequestAcceptView(TestIrodsRequestViewsBase):
     """Tests for IrodsRequestAcceptView"""
 
+    def test_render(self):
+        """Test rendering IrodsRequestAcceptView"""
+        self.assert_irods_obj(self.path)
+        with self.login(self.user_contrib):
+            self.client.post(
+                reverse(
+                    'samplesheets:irods_request_create',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                self.post_data,
+            )
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        obj = IrodsDataRequest.objects.first()
+
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:irods_request_accept',
+                    kwargs={'irodsdatarequest': obj.sodar_uuid},
+                ),
+                {'confirm': True},
+            )
+        self.assertEqual(response.context['irods_request'], obj)
+
+    def test_render_coll(self):
+        """Test rendering IrodsRequestAcceptView with a collection request"""
+        coll_path = os.path.join(self.assay_path, 'request_coll')
+        self.irods.collections.create(coll_path)
+        self.assertEqual(self.irods.collections.exists(coll_path), True)
+        self.post_data['path'] = coll_path
+
+        with self.login(self.user_contrib):
+            self.client.post(
+                reverse(
+                    'samplesheets:irods_request_create',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                self.post_data,
+            )
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        obj = IrodsDataRequest.objects.first()
+
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:irods_request_accept',
+                    kwargs={'irodsdatarequest': obj.sodar_uuid},
+                ),
+                {'confirm': True},
+            )
+        self.assertEqual(response.context['irods_request'], obj)
+
     def test_accept(self):
         """Test accepting a delete request"""
         self.assert_irods_obj(self.path)
-
         with self.login(self.user_contrib):
             self.client.post(
                 reverse(
