@@ -37,6 +37,7 @@ Changed
     - Upgrade to django-sodar-core v0.12.0-WIP (#1567, #1576)
     - Use default Gunicorn worker class in production (#1536)
     - Upgrade to fastobo v0.12.2 (#1561)
+    - Update ``.coveragerc`` (#1582)
 - **Irodsbackend**
     - Update backend iRODS connection handling (#909, #1542)
     - Rename ``IrodsAPI.get_child_colls()``
