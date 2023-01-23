@@ -68,6 +68,8 @@ Removed
     - Backend API ``conn`` argument (#909)
     - ``IrodsAPI.collection_exists()`` helper (#1546)
     - ``IrodsAPI.get_coll_by_path()`` helper
+- **Landingzones**
+    - Legacy ``LandingZoneOldListAPIView`` (#1580)
 - **Samplesheets**
     - Unused ``config_set`` and ``num_col`` header parameters (#1551)
     - ``get_sample_libraries()`` helper (#1554)

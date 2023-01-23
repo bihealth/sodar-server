@@ -34,9 +34,6 @@ from landingzones.views import (
     ZoneMoveMixin,
 )
 
-# Local helper for authenticating with auth basic
-from sodar.users.auth import fallback_to_auth_basic
-
 
 logger = logging.getLogger(__name__)
 
@@ -317,42 +314,3 @@ class ZoneSubmitMoveAPIView(ZoneMoveMixin, ZoneSubmitBaseAPIView):
             },
             status=status.HTTP_200_OK,
         )
-
-
-# TODO: Remove once Metabolomics are using the new view
-@fallback_to_auth_basic
-class LandingZoneOldListAPIView(APIView):
-    """View for returning a landing zone list based on its configuration"""
-
-    # TODO: TBD: Do we also need this to work without a configuration param?
-
-    def get(self, *args, **kwargs):
-        from landingzones.plugins import get_zone_config_plugin
-
-        irods_backend = get_backend_api('omics_irods')
-        if not irods_backend:
-            return Response('iRODS backend not enabled', status=500)
-
-        zone_config = self.kwargs['configuration']
-        zones = LandingZone.objects.filter(configuration=zone_config)
-        if zones.count() == 0:
-            return Response('LandingZone not found', status=404)
-        config_plugin = get_zone_config_plugin(zones.first())
-        ret_data = {}
-
-        for zone in zones:
-            ret_data[str(zone.sodar_uuid)] = {
-                'title': zone.title,
-                'assay': zone.assay.get_name(),
-                'user': zone.user.username,
-                'status': zone.status,
-                'configuration': zone.configuration,
-                'irods_path': irods_backend.get_path(zone),
-            }
-            if config_plugin:
-                for field in config_plugin.api_config_data:
-                    if field in zone.config_data:
-                        ret_data[str(zone.sodar_uuid)][
-                            field
-                        ] = zone.config_data[field]
-        return Response(ret_data, status=200)

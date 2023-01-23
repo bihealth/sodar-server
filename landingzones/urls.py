@@ -65,11 +65,6 @@ urls_api = [
         view=views_api.ZoneSubmitMoveAPIView.as_view(),
         name='api_submit_move',
     ),
-    url(
-        regex=r'^api/legacy/list/(?P<configuration>[\w\-_/]+)$',
-        view=views_api.LandingZoneOldListAPIView.as_view(),
-        name='api_list_old',
-    ),
 ]
 
 # Ajax API views
