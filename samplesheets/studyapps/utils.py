@@ -275,7 +275,7 @@ def get_igv_xml(project, bam_urls, vcf_urls, vcf_title, request, string=True):
             'displayMode': 'COLLAPSED',
             'featureVisibilityWindow': '-1',
             'fontSize': '10',
-            'id': 'genes',
+            'id': '{}_genes'.format(genome_id),
             'name': 'Gene',
             'renderer': 'BASIC_FEATURE',
             'sortable': 'false',
