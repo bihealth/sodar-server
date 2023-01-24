@@ -83,6 +83,8 @@ class IGVSessionFileRenderView(BaseGermlineConfigView):
         vcf_urls = {}
         bam_urls = {}
         webdav_url = settings.IRODS_WEBDAV_URL
+        study = self.source.study
+        project = study.get_project()
 
         # Get resource URLs
         # Get URLs to all latest bam files for all sources in family
@@ -92,7 +94,7 @@ class IGVSessionFileRenderView(BaseGermlineConfigView):
         # Family defined
         if fam_id:
             fam_sources = GenericMaterial.objects.filter(
-                study=self.source.study,
+                study=study,
                 item_type='SOURCE',
                 characteristics__Family__value=fam_id,
             ).order_by('name')
@@ -126,12 +128,12 @@ class IGVSessionFileRenderView(BaseGermlineConfigView):
             vcf_urls[fam_id] = webdav_url + vcf_path
         # Build IGV session XML file
         xml_str = get_igv_xml(
+            project=project,
             bam_urls=bam_urls,
             vcf_urls=vcf_urls,
             vcf_title='Pedigree',
             request=request,
         )
-
         # Serve XML
         file_name = fam_id + '.pedigree.igv.xml'
         response = HttpResponse(xml_str, content_type='text/xml')

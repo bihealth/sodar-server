@@ -14,11 +14,12 @@ v0.13.0 (WIP)
 Major feature update.
 
 - Add project archiving support
+- Add genome selecting for IGV sessions
+- Add omitting IGV session BAM/VCF files by file suffix
 - Add iRODS file check for material renaming in editor
 - Add optional landing zone write access restriction to created collections
 - Add study render table caching for sample sheets
 - Add iRODS user account creation at login for users with LDAP/SODAR auth
-- Add omitting IGV session files by file suffix blacklist
 - Update cancer study shortcut generating
 - Fix iRODS connection handling issues
 

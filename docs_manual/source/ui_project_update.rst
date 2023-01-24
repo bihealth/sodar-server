@@ -50,12 +50,15 @@ URL for Sheet Synchronization
     REST API URL of remote project for sample sheet synchronization.
 Token for Sheet Synchronization
     Token string for sample sheet synchronization.
+IGV session genome
+    Genome used in generating IGV session files for the project. The name needs
+    to be in a format accepted by IGV. Affects cancer and germline projects.
 BAM files to omit from IGV sessions
     Comma separated list of BAM file suffixes to omit from IGV sessions.
-    Overrides site-wide setting.
+    Overrides site-wide setting, affects cancer and germline projects.
 VCF files to omit from IGV sessions
     Comma separated list of VCF file suffixes to omit from IGV sessions.
-    Overrides site-wide setting.
+    Overrides site-wide setting, affects cancer and germline projects.
 IP Restrict
     Restrict project access to specific IP addresses if this is set.
 IP Allow List

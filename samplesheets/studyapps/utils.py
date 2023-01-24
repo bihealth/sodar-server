@@ -1,6 +1,7 @@
 """General utility functions for samplesheets study apps"""
 
 import hashlib
+
 from lxml import etree as ET
 
 from django.conf import settings
@@ -77,9 +78,8 @@ def get_igv_session_url(source, app_name, merge=False):
     file_url = reverse(
         '{}:igv'.format(app_name), kwargs={'genericmaterial': source.sodar_uuid}
     )
-    return '{}/load?{}merge={}&file={}{}.xml'.format(
+    return '{}/load?merge={}&file={}{}.xml'.format(
         IGV_URL_BASE,
-        'genome=b37&' if not merge else '',
         str(merge).lower(),
         file_prefix,
         file_url,
@@ -99,21 +99,24 @@ def get_igv_irods_url(irods_path, merge=True):
     )
 
 
-def get_igv_xml(bam_urls, vcf_urls, vcf_title, request):
+def get_igv_xml(project, bam_urls, vcf_urls, vcf_title, request, string=True):
     """
     Build IGV session XML file.
 
+    :param project: Project object
     :param bam_urls: BAM file URLs (dict {name: url})
     :param vcf_urls: VCF file URLs (dict {name: url})
     :param vcf_title: VCF title to prefix to VCF title strings (string)
     :param request: Django request
+    :param string: Convert result to string (bool, default=True)
     :return: String (contains XML)
     """
+    genome_id = app_settings.get('samplesheets', 'igv_genome', project=project)
     # Session
     xml_session = ET.Element(
         'Session',
         attrib={
-            'genome': 'b37',
+            'genome': genome_id,
             'hasGeneTrack': 'true',
             'hasSequenceTrack': 'true',
             'locus': 'All',
@@ -121,18 +124,14 @@ def get_igv_xml(bam_urls, vcf_urls, vcf_title, request):
             'version': '8',
         },
     )
-
     # Resources
     xml_resources = ET.SubElement(xml_session, 'Resources')
-
     # VCF resource
     for vcf_name, vcf_url in vcf_urls.items():
         ET.SubElement(xml_resources, 'Resource', attrib={'path': vcf_url})
-
     # BAM resources
     for bam_name, bam_url in bam_urls.items():
         ET.SubElement(xml_resources, 'Resource', attrib={'path': bam_url})
-
     # VCF panel (under Session)
     for vcf_name, vcf_url in vcf_urls.items():
         xml_vcf_panel = ET.SubElement(
@@ -165,7 +164,6 @@ def get_igv_xml(bam_urls, vcf_urls, vcf_title, request):
                 'windowFunction': 'count',
             },
         )
-
     # BAM panels
     for bam_name, bam_url in bam_urls.items():
         # Generating unique panel name with hashlib
@@ -179,7 +177,6 @@ def get_igv_xml(bam_urls, vcf_urls, vcf_title, request):
                 'width': '1129',
             },
         )
-
         xml_bam_panel_track_coverage = ET.SubElement(
             xml_bam_panel,
             'Track',
@@ -198,7 +195,6 @@ def get_igv_xml(bam_urls, vcf_urls, vcf_title, request):
                 'visible': 'true',
             },
         )
-
         # xml_bam_panel_track_datarange
         ET.SubElement(
             xml_bam_panel_track_coverage,
@@ -212,7 +208,6 @@ def get_igv_xml(bam_urls, vcf_urls, vcf_title, request):
                 'type': 'LINEAR',
             },
         )
-
         xml_bam_panel_track = ET.SubElement(
             xml_bam_panel,
             'Track',
@@ -229,7 +224,6 @@ def get_igv_xml(bam_urls, vcf_urls, vcf_title, request):
                 'visible': 'true',
             },
         )
-
         # xml_bam_panel_track_renderoptions
         ET.SubElement(
             xml_bam_panel_track,
@@ -247,13 +241,11 @@ def get_igv_xml(bam_urls, vcf_urls, vcf_title, request):
                 'sortByTag': '',
             },
         )
-
     xml_feature_panel = ET.SubElement(
         xml_session,
         'Panel',
         attrib={'height': '40', 'name': 'FeaturePanel', 'width': '1129'},
     )
-
     # xml_feature_panel_track
     ET.SubElement(
         xml_feature_panel,
@@ -271,7 +263,6 @@ def get_igv_xml(bam_urls, vcf_urls, vcf_title, request):
             'visible': 'true',
         },
     )
-
     xml_feature_panel_track2 = ET.SubElement(
         xml_feature_panel,
         'Track',
@@ -284,7 +275,7 @@ def get_igv_xml(bam_urls, vcf_urls, vcf_title, request):
             'displayMode': 'COLLAPSED',
             'featureVisibilityWindow': '-1',
             'fontSize': '10',
-            'id': 'b37_genes',
+            'id': 'genes',
             'name': 'Gene',
             'renderer': 'BASIC_FEATURE',
             'sortable': 'false',
@@ -292,7 +283,6 @@ def get_igv_xml(bam_urls, vcf_urls, vcf_title, request):
             'windowFunction': 'count',
         },
     )
-
     # xml_feature_panel_track2_datarange
     ET.SubElement(
         xml_feature_panel_track2,
@@ -306,7 +296,6 @@ def get_igv_xml(bam_urls, vcf_urls, vcf_title, request):
             'type': 'LINEAR',
         },
     )
-
     # xml_panel_layout
     ET.SubElement(
         xml_session,
@@ -316,12 +305,12 @@ def get_igv_xml(bam_urls, vcf_urls, vcf_title, request):
             '0.6595744680851063,0.9273049645390071'
         },
     )
-
     xml_hidden_attrs = ET.SubElement(xml_session, 'HiddenAttributes')
     ET.SubElement(xml_hidden_attrs, 'Attribute', attrib={'name': 'DATA FILE'})
     ET.SubElement(xml_hidden_attrs, 'Attribute', attrib={'name': 'DATA TYPE'})
     ET.SubElement(xml_hidden_attrs, 'Attribute', attrib={'name': 'NAME'})
-
+    if not string:
+        return xml_session
     xml_str = ET.tostring(
         xml_session,
         encoding='utf-8',

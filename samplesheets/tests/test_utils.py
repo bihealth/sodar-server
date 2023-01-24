@@ -53,7 +53,7 @@ EXT_LINK_PATH_INVALID = '/tmp/NON_EXISTING_EXT_LINK_FILE.json'
 class TestUtilsBase(
     ProjectMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase
 ):
-    """Class for samplesheets utils tests"""
+    """Base class for samplesheets utils tests"""
 
     def setUp(self):
         # Make owner user

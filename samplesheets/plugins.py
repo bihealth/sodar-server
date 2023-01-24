@@ -177,14 +177,25 @@ class ProjectAppPlugin(
             'access, used with projects allowing public guest access',
             'user_modifiable': False,
         },
+        'igv_genome': {
+            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'type': 'STRING',
+            'label': 'IGV session genome',
+            'default': 'b37',
+            'description': 'Genome used in generating IGV session files for '
+            'the project. The name needs to be in a format accepted by IGV. '
+            'Affects cancer and germline projects.',
+            'user_modifiable': True,
+        },
         'igv_omit_bam': {
             'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
             'type': 'STRING',
             'label': 'BAM files to omit from IGV sessions',
             'default': '',
+            'placeholder': ', '.join(settings.SHEETS_IGV_OMIT_BAM),
             'description': 'Comma separated list of BAM file suffixes to omit '
-            'from generated IGV sessions. Overrides site-wide '
-            'setting.',
+            'from generated IGV sessions. Overrides site-wide setting, affects '
+            'cancer and germline projects.',
             'user_modifiable': True,
         },
         'igv_omit_vcf': {
@@ -192,9 +203,10 @@ class ProjectAppPlugin(
             'type': 'STRING',
             'label': 'VCF files to omit from IGV sessions',
             'default': '',
+            'placeholder': ', '.join(settings.SHEETS_IGV_OMIT_VCF),
             'description': 'Comma separated list of VCF file suffixes to omit '
-            'from generated IGV sessions. Overrides site-wide '
-            'setting.',
+            'from generated IGV sessions. Overrides site-wide setting, affects '
+            'cancer and germline projects.',
             'user_modifiable': True,
         },
     }

@@ -78,13 +78,14 @@ class IGVSessionFileRenderView(BaseCancerConfigView):
         cache_backend = get_backend_api('sodar_cache')
         webdav_url = settings.IRODS_WEBDAV_URL
         study = self.material.study
+        project = study.get_project()
 
         cache_item = None
         if cache_backend:
             cache_item = cache_backend.get_cache_item(
                 app_name=APP_NAME,
                 name='irods/{}'.format(study.sodar_uuid),
-                project=study.get_project(),
+                project=project,
             )
         bam_urls = {}
         vcf_urls = {}
@@ -110,6 +111,7 @@ class IGVSessionFileRenderView(BaseCancerConfigView):
 
         # Build IGV session XML file
         xml_str = get_igv_xml(
+            project=project,
             bam_urls=bam_urls,
             vcf_urls=vcf_urls,
             vcf_title='Library',

@@ -28,7 +28,8 @@ Added
     - ``SHEETS_IGV_OMIT_BAM`` and ``SHEETS_IGV_OMIT_VCF`` Django settings (#1575)
     - ``get_igv_omit_override()`` and ``check_igv_file_name()`` in study app utils (#1575, #1577)
     - Project archiving support (#1572)
-    - ``igv_omit_bam`` and ``igv_omit_vcf`` project settings (#1577)
+    - ``igv_omit_bam``, ``igv_omit_vcf`` and ``igv_genome`` project settings (#1478, #1577)
+    - Project-wide genome selecting for IGV session generation (#1478)
 
 Changed
 -------
@@ -46,6 +47,7 @@ Changed
 - **Samplesheets**
     - Upgrade critical Vue app dependencies (#1527, #1571)
     - Remove redundant node UUIDs from render tables (#708)
+    - Improve IGV session file XML generating (#1585)
 
 Fixed
 -----
