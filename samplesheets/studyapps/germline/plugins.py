@@ -135,10 +135,8 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             # Set initial state based on URL and cache
             if not igv_url or (
                 cache_item
-                and source_id in cache_item.data['bam']
-                and not cache_item.data['bam'][source_id]
-                and ped_id in cache_item.data['vcf']
-                and not cache_item.data['vcf'][ped_id]
+                and not cache_item.data['bam'].get(source_id)
+                and not cache_item.data['vcf'].get(ped_id)
             ):
                 enabled = False
             ret['data'].append(

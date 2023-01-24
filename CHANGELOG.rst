@@ -65,6 +65,7 @@ Fixed
     - iRODS modal filter input not cleared on modal re-open (#1555)
     - Column config editing access for inherited owners (#1568)
     - iRODS delete request accept view crash with collection request (#1584)
+    - Germline study shortcuts enabled if sample not found in assay (#1579)
 
 Removed
 -------
