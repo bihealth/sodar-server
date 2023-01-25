@@ -48,6 +48,7 @@ Changed
     - Upgrade critical Vue app dependencies (#1527, #1571)
     - Remove redundant node UUIDs from render tables (#708)
     - Improve IGV session file XML generating (#1585)
+    - Do not create ``sheet_edit_start`` timeline events (#1570)
 
 Fixed
 -----

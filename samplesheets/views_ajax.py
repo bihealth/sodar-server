@@ -573,7 +573,6 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
     def get(self, request, *args, **kwargs):
         from samplesheets.plugins import get_irods_content
 
-        timeline = get_backend_api('timeline_backend')
         irods_backend = get_backend_api('omics_irods')
         study = Study.objects.filter(sodar_uuid=self.kwargs['study']).first()
         if not study:
@@ -671,16 +670,6 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
             ):
                 ret_data['edit_context']['protocols'].append(
                     {'uuid': str(protocol.sodar_uuid), 'name': protocol.name}
-                )
-
-            if timeline:
-                timeline.add_event(
-                    project=project,
-                    app_name=APP_NAME,
-                    user=request.user,
-                    event_name='sheet_edit_start',
-                    description='start editing sheets',
-                    status_type='OK',
                 )
         return Response(ret_data, status=200)
 
