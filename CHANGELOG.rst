@@ -12,7 +12,7 @@ Added
 -----
 
 - **Irodsbackend**
-    - Create iRODS user accounts at login for users with LDAP/SODAR auth (#1315)
+    - Create iRODS user accounts at login for users with LDAP/SODAR auth (#1315, #1587)
 - **Landingzones**
     - Optional zone write access restriction to created collections (#1050, #1540)
     - Project archiving support (#1573)

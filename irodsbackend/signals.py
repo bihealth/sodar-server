@@ -41,40 +41,47 @@ def create_irods_user(sender, user, **kwargs):
     else:
         user_name = user.username
 
-    with irods_backend.get_session() as irods:
-        try:
-            irods.users.get(user_name)
-            logger.debug(
-                'Skipping iRODS user creation, user "{}" already exists'.format(
-                    user_name
-                )
-            )
-        except UserDoesNotExist:
-            logger.info('Creating user "{}" in iRODS..'.format(user_name))
-            # Create user
+    try:
+        with irods_backend.get_session() as irods:
             try:
-                irods.users.create(
-                    user_name=user_name,
-                    user_type='rodsuser',
-                    user_zone=settings.IRODS_ZONE,
+                irods.users.get(user_name)
+                logger.debug(
+                    'Skipping iRODS user creation, user "{}" already '
+                    'exists'.format(user_name)
                 )
-            except Exception as ex:
-                logger.error('Exception creating user in iRODS: {}'.format(ex))
-                return
-            # Add user alert
-            app_alerts = get_backend_api('appalerts_backend')
-            if app_alerts:
-                app_alerts.add_alert(
-                    app_name=APP_NAME,
-                    alert_name='irods_user_create',
-                    user=user,
-                    message='User account "{}" created in iRODS. You can log '
-                    'in with the same password you use for SODAR.'.format(
-                        user_name
-                    ),
-                    url=reverse('irodsinfo:info'),
-                )
-            logger.info('User creation OK')
+            except UserDoesNotExist:
+                logger.info('Creating user "{}" in iRODS..'.format(user_name))
+                # Create user
+                try:
+                    irods.users.create(
+                        user_name=user_name,
+                        user_type='rodsuser',
+                        user_zone=settings.IRODS_ZONE,
+                    )
+                except Exception as ex:
+                    logger.error(
+                        'Exception creating user in iRODS: {}'.format(ex)
+                    )
+                    return
+                # Add user alert
+                app_alerts = get_backend_api('appalerts_backend')
+                if app_alerts:
+                    app_alerts.add_alert(
+                        app_name=APP_NAME,
+                        alert_name='irods_user_create',
+                        user=user,
+                        message='User account "{}" created in iRODS. You can '
+                        'log in with the same password you use for '
+                        'SODAR.'.format(user_name),
+                        url=reverse('irodsinfo:info'),
+                    )
+                logger.info('User creation OK')
+    except Exception as ex:
+        # NOTE: Logging warning because this does not actually prevent login
+        logger.warning(
+            'Unable to update user in iRODS, exception in opening session: '
+            '{}'.format(ex)
+        )
 
 
 # Connect signal
