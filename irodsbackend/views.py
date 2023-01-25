@@ -88,6 +88,7 @@ class BaseIrodsAjaxView(SODARBaseProjectAjaxView):
 
     def dispatch(self, request, *args, **kwargs):
         """Perform required checks before processing a request"""
+        self.project = self.get_project()
         path = request.GET.get('path') if request.method == 'GET' else None
         if request.method == 'GET' and not path:
             return JsonResponse(self._get_detail('Path not set'), status=400)
@@ -100,15 +101,17 @@ class BaseIrodsAjaxView(SODARBaseProjectAjaxView):
 
         # Collection checks
         # NOTE: If supplying multiple paths via POST, implement these in request
-        self.project = self.get_project()
-        if path:
-            if (
-                self.project
-                and self.irods_backend.get_path(self.project) not in path
-            ):
-                return JsonResponse(
-                    self._get_detail(ERROR_NOT_IN_PROJECT), status=400
-                )
+        if not path:
+            return super().dispatch(request, *args, **kwargs)
+        if (
+            self.project
+            and self.irods_backend.get_path(self.project) not in path
+        ):
+            return JsonResponse(
+                self._get_detail(ERROR_NOT_IN_PROJECT), status=400
+            )
+
+        try:
             with self.irods_backend.get_session() as irods:
                 if not irods.collections.exists(path):
                     return JsonResponse(
@@ -123,6 +126,8 @@ class BaseIrodsAjaxView(SODARBaseProjectAjaxView):
                     return JsonResponse(
                         self._get_detail(ERROR_NO_AUTH), status=403
                     )
+        except Exception as ex:
+            return JsonResponse(self._get_detail(ex), status=500)
         self.path = path
         return super().dispatch(request, *args, **kwargs)
 
@@ -142,35 +147,36 @@ class IrodsStatisticsAjaxView(BaseIrodsAjaxView):
         data = {'coll_objects': []}
         q_dict = request.POST
         project_path = self.irods_backend.get_path(self.project)
-
-        with self.irods_backend.get_session() as irods:
-            for path in q_dict.getlist('paths'):
-                if project_path not in path:
+        try:
+            irods = self.irods_backend.get_session_obj()
+        except Exception as ex:
+            return JsonResponse(self._get_detail(ex), status=500)
+        for path in q_dict.getlist('paths'):
+            if project_path not in path:
+                data['coll_objects'].append(
+                    {'path': path, 'status': '400', 'stats': {}}
+                )
+                break
+            if not self._check_collection_perm(path, request.user, irods):
+                data['coll_objects'].append(
+                    {'path': path, 'status': '403', 'stats': {}}
+                )
+                break
+            try:
+                if not irods.collections.exists(path):
                     data['coll_objects'].append(
-                        {'path': path, 'status': '400', 'stats': {}}
+                        {'path': path, 'status': '404', 'stats': {}}
                     )
-                    break
-                if not self._check_collection_perm(path, request.user, irods):
+                else:
+                    ret_data = self.irods_backend.get_object_stats(irods, path)
                     data['coll_objects'].append(
-                        {'path': path, 'status': '403', 'stats': {}}
+                        {'path': path, 'status': '200', 'stats': ret_data}
                     )
-                    break
-                try:
-                    if not irods.collections.exists(path):
-                        data['coll_objects'].append(
-                            {'path': path, 'status': '404', 'stats': {}}
-                        )
-                    else:
-                        ret_data = self.irods_backend.get_object_stats(
-                            irods, path
-                        )
-                        data['coll_objects'].append(
-                            {'path': path, 'status': '200', 'stats': ret_data}
-                        )
-                except Exception:
-                    data['coll_objects'].append(
-                        {'path': path, 'status': '500', 'stats': {}}
-                    )
+            except Exception:
+                data['coll_objects'].append(
+                    {'path': path, 'status': '500', 'stats': {}}
+                )
+        irods.cleanup()
         return Response(data, status=200)
 
 

@@ -40,7 +40,7 @@ Changed
     - Upgrade to fastobo v0.12.2 (#1561)
     - Update ``.coveragerc`` (#1582)
 - **Irodsbackend**
-    - Update backend iRODS connection handling (#909, #1542)
+    - Update backend iRODS connection handling (#909, #1542, #1545)
     - Rename ``IrodsAPI.get_child_colls()``
 - **Landingzones**
     - Refactor permissions (#1573)

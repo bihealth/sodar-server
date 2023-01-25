@@ -335,27 +335,33 @@ class SampleDataFileExistsAPIView(SODARAPIBaseMixin, APIView):
         )
         # print('QUERY: {}'.format(sql))  # DEBUG
         columns = [DataObject.name]
-        with irods_backend.get_session() as irods:
-            query = irods_backend.get_query(irods, sql, columns)
-            try:
-                results = query.get_results()
-                if sum(1 for _ in results) > 0:
-                    ret['detail'] = 'File exists'
-                    ret['status'] = True
-            except CAT_NO_ROWS_FOUND:
-                pass  # No results, this is OK
-            except Exception as ex:
-                logger.error(
-                    '{} iRODS query exception: {}'.format(
-                        self.__class__.__name__, ex
+        try:
+            with irods_backend.get_session() as irods:
+                query = irods_backend.get_query(irods, sql, columns)
+                try:
+                    results = query.get_results()
+                    if sum(1 for _ in results) > 0:
+                        ret['detail'] = 'File exists'
+                        ret['status'] = True
+                except CAT_NO_ROWS_FOUND:
+                    pass  # No results, this is OK
+                except Exception as ex:
+                    logger.error(
+                        '{} iRODS query exception: {}'.format(
+                            self.__class__.__name__, ex
+                        )
                     )
-                )
-                raise APIException(
-                    'iRODS query exception, please contact an admin if issue '
-                    'persists'
-                )
-            finally:
-                query.remove()
+                    raise APIException(
+                        'iRODS query exception, please contact an admin if '
+                        'issue persists'
+                    )
+                finally:
+                    query.remove()
+        except Exception as ex:
+            return Response(
+                {'detail': 'Unable to connect to iRODS: {}'.format(ex)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         return Response(ret, status=status.HTTP_200_OK)
 
 

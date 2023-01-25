@@ -1426,8 +1426,9 @@ class SheetDeleteView(
         irods_backend = get_backend_api('omics_irods')
         if not irods_backend:
             return context
+        project = self.get_project()
+        # NOTE: We handle a possible crash in get()
         with irods_backend.get_session() as irods:
-            project = self.get_project()
             try:
                 context['irods_sample_stats'] = irods_backend.get_object_stats(
                     irods, irods_backend.get_sample_path(project)
@@ -1435,6 +1436,18 @@ class SheetDeleteView(
             except FileNotFoundError:
                 pass
         return context
+
+    def get(self, request, *args, **kwargs):
+        try:
+            return super().render_to_response(self.get_context_data())
+        except Exception as ex:
+            messages.error(request, str(ex))
+            return redirect(
+                reverse(
+                    'samplesheets:project_sheets',
+                    kwargs={'project': self.get_project().sodar_uuid},
+                )
+            )
 
     def post(self, request, *args, **kwargs):
         timeline = get_backend_api('timeline_backend')
@@ -2004,6 +2017,20 @@ class IrodsAccessTicketListView(
             )
         return context
 
+    def get(self, request, *args, **kwargs):
+        self.object_list = self.get_queryset()
+        try:
+            context = self.get_context_data()
+            return super().render_to_response(context)
+        except Exception as ex:
+            messages.error(request, str(ex))
+            return redirect(
+                reverse(
+                    'samplesheets:project_sheets',
+                    kwargs={'project': self.get_project().sodar_uuid},
+                )
+            )
+
 
 class IrodsAccessTicketCreateView(
     LoginRequiredMixin,
@@ -2285,6 +2312,18 @@ class IrodsRequestAcceptView(
                         'affected_collections'
                     ] += irods_backend.get_colls_recursively(coll)
         return context_data
+
+    def get(self, request, *args, **kwargs):
+        try:
+            return super().render_to_response(self.get_context_data())
+        except Exception as ex:
+            messages.error(request, str(ex))
+            return redirect(
+                reverse(
+                    'samplesheets:irods_requests',
+                    kwargs={'project': self.get_project().sodar_uuid},
+                )
+            )
 
     def form_valid(self, request, *args, **kwargs):
         timeline = get_backend_api('timeline_backend')
