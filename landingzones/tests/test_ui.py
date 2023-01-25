@@ -201,6 +201,48 @@ class TestProjectZoneView(
             zones[1].get_attribute('data-zone-uuid'),
             str(contrib_zone.sodar_uuid),
         )
+        self._assert_element(By.CLASS_NAME, 'sodar-lz-zone-warn-access', False)
+
+    def test_render_other_user_guest_access(self):
+        """Test ProjectZoneView with guest access for other user"""
+        self._setup_investigation()
+        self.investigation.irods_status = True
+        self.investigation.save()
+        self.make_landing_zone(
+            'owner_zone', self.project, self.user_owner, self.assay
+        )
+        self.make_landing_zone(
+            'contrib_zone', self.project, self.user_contributor, self.assay
+        )
+        # Update contributor's access to guest
+        self.contributor_as.role = self.role_guest
+        self.contributor_as.save()
+        self.login_and_redirect(self.user_owner, self.url)
+        zones = self.selenium.find_elements(
+            By.CLASS_NAME, 'sodar-lz-zone-tr-existing'
+        )
+        self.assertEqual(len(zones), 2)
+        self._assert_element(By.CLASS_NAME, 'sodar-lz-zone-warn-access', True)
+
+    def test_render_other_user_no_access(self):
+        """Test ProjectZoneView with no project access for other user"""
+        self._setup_investigation()
+        self.investigation.irods_status = True
+        self.investigation.save()
+        self.make_landing_zone(
+            'owner_zone', self.project, self.user_owner, self.assay
+        )
+        self.make_landing_zone(
+            'contrib_zone', self.project, self.user_contributor, self.assay
+        )
+        # Remove contributor's access
+        self.contributor_as.delete()
+        self.login_and_redirect(self.user_owner, self.url)
+        zones = self.selenium.find_elements(
+            By.CLASS_NAME, 'sodar-lz-zone-tr-existing'
+        )
+        self.assertEqual(len(zones), 2)
+        self._assert_element(By.CLASS_NAME, 'sodar-lz-zone-warn-access', True)
 
     def test_zone_buttons(self):
         """Test ProjectZoneView zone buttons"""

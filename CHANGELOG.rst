@@ -16,6 +16,7 @@ Added
 - **Landingzones**
     - Optional zone write access restriction to created collections (#1050, #1540)
     - Project archiving support (#1573)
+    - UI warning for user without access for zone updating (#1581)
 - **Samplesheets**
     - Mac keyboard shortcut support for multi-cell copying (#1531)
     - Study render table caching (#1509)
