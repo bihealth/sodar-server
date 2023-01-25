@@ -17,7 +17,7 @@ class Flow(BaseLinearFlow):
         self.supported_modes = ['sync', 'async']
         return super().validate()
 
-    def _build(self, force_fail):
+    def build(self, force_fail=False):
         project_group = self.irods_backend.get_user_group_name(self.project)
         zone_root = self.irods_backend.get_zone_path(self.project)
         zone = LandingZone.objects.get(sodar_uuid=self.flow_data['zone_uuid'])
@@ -181,13 +181,3 @@ class Flow(BaseLinearFlow):
                 force_fail=force_fail,
             )
         )
-
-    def build(self, force_fail=False):
-        try:
-            self._build(force_fail)
-        except Exception as ex:
-            zone = LandingZone.objects.get(
-                sodar_uuid=self.flow_data['zone_uuid']
-            )
-            zone.set_status('NOT CREATED', str(ex))
-            raise ex

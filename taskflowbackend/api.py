@@ -54,7 +54,8 @@ class TaskflowAPI:
             tl_event.set_status('FAILED', ex_msg)
         # Update landing zone
         if zone:
-            zone.set_status('FAILED', ex_msg)
+            status = 'NOT CREATED' if zone.status == 'CREATING' else 'FAILED'
+            zone.set_status(status, ex_msg)
         # TODO: Create app alert for failure if async (see #1499)
         raise cls.FlowSubmitException(ex_msg)
 

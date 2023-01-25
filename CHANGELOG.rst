@@ -50,6 +50,8 @@ Changed
     - Remove redundant node UUIDs from render tables (#708)
     - Improve IGV session file XML generating (#1585)
     - Do not create ``sheet_edit_start`` timeline events (#1570)
+- **Taskflowbackend**
+    - Remove legacy ``landing_zone_create`` build error handling (#1530)
 
 Fixed
 -----
