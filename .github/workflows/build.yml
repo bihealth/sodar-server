@@ -56,11 +56,11 @@ jobs:
           sudo apt install -qq build-essential zlib1g-dev libtiff5-dev libjpeg8-dev libfreetype6-dev
           sudo apt install -qq liblcms2-dev libwebp-dev libpq-dev graphviz-dev
       - name: Install Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Install project Python dependencies
         run: |
           pip install wheel==0.37.1
