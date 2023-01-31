@@ -16,7 +16,7 @@ from rest_framework.response import Response
 
 # Projectroles dependency
 from projectroles.constants import SODAR_CONSTANTS
-from projectroles.models import RoleAssignment
+from projectroles.models import Role, RoleAssignment
 from projectroles.plugins import get_backend_api
 from projectroles.views_ajax import SODARBaseProjectAjaxView
 
@@ -238,26 +238,23 @@ class EditConfigMixin:
     def can_edit_config(cls, user, project):
         if user.is_superuser:
             return True
-        edit_config_min_role = app_settings.get(
+        min_role_set = app_settings.get(
             APP_NAME, 'edit_config_min_role', project=project
         )
+        min_role = Role.objects.filter(name=min_role_set).first()
+        if not min_role:
+            logger.error('Role "{}" not found'.format(min_role_set))
+            return False
         if project.is_owner(user):  # Local or inherited owner
-            as_name = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
+            user_role = Role.objects.filter(
+                name=SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
+            ).first()
         else:
             role_as = RoleAssignment.objects.get_assignment(user, project)
             if not role_as:
                 return False
-            as_name = role_as.role.name
-        # TODO: Update this to use role ranking once using SODAR Core v0.12
-        role_order = [
-            SODAR_CONSTANTS['PROJECT_ROLE_OWNER'],
-            SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE'],
-            SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR'],
-            SODAR_CONSTANTS['PROJECT_ROLE_GUEST'],
-        ]
-        return role_order.index(as_name) <= role_order.index(
-            edit_config_min_role
-        )
+            user_role = role_as.role
+        return user_role.rank <= min_role.rank
 
 
 class SheetVersionMixin:
