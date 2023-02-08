@@ -58,6 +58,8 @@ Changed
 Fixed
 -----
 
+- **General**
+    - Missing ``LDAP_ALT_DOMAINS`` Django setting (#1594)
 - **Irodsbackend**
     - Unhandled backend init exception in ``IrodsStatisticsAjaxView`` (#1539)
     - iRODS session disconnection issues (#909, #1542)

@@ -345,6 +345,9 @@ REST_FRAMEWORK = {
 ENABLE_LDAP = env.bool('ENABLE_LDAP', False)
 ENABLE_LDAP_SECONDARY = env.bool('ENABLE_LDAP_SECONDARY', False)
 
+# Alternative domains for detecting LDAP access by email address
+LDAP_ALT_DOMAINS = env.list('LDAP_ALT_DOMAINS', None, default=[])
+
 if ENABLE_LDAP:
     import itertools
     import ldap
