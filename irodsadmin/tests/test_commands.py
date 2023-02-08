@@ -44,21 +44,18 @@ class TestIrodsOrphans(
 
     def setUp(self):
         super().setUp()
-
         # Init super user
         self.user = self.make_user('user')
         self.user.is_superuser = True
         self.user.is_staff = True
         self.user.save()
-
         # Init roles
         self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
-
         # Init project with owner
         self.project = self.make_project(
             'TestProject', PROJECT_TYPE_PROJECT, None
         )
-        self.as_owner = self.make_assignment(
+        self.owner_as = self.make_assignment(
             self.project, self.user, self.role_owner
         )
 
@@ -75,7 +72,7 @@ class TestIrodsOrphans(
         self.landing_zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
-            user=self.as_owner.user,
+            user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
             configuration=None,

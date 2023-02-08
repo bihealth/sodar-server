@@ -268,7 +268,7 @@ class TaskflowbackendTestBase(
         self.category = self.make_project(
             'TestCategory', PROJECT_TYPE_CATEGORY, None
         )
-        self.as_cat_owner = self.make_assignment(
+        self.owner_as_cat = self.make_assignment(
             self.category, self.user_owner_cat, self.role_owner
         )
 

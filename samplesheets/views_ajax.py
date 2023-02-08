@@ -1830,7 +1830,6 @@ class IrodsRequestCreateAjaxView(
             return Response(
                 {'detail': 'active request for path already exists'}, status=400
             )
-
         irods_request = IrodsDataRequest.objects.create(
             path=path,
             user=request.user,
@@ -1967,11 +1966,8 @@ class SheetVersionCompareAjaxView(SODARBaseProjectAjaxView):
         # If filename and/or category are missing, generate diff for
         # the whole samplesheet
         categories = ('studies', 'assays')
-
         for category in categories:
             ret_data[category] = {}
-
-        for category in categories:
             for filename, data in source.data.get(category, {}).items():
                 ret_data[category][filename] = [
                     [
@@ -1987,7 +1983,6 @@ class SheetVersionCompareAjaxView(SODARBaseProjectAjaxView):
                         .split('\n')
                     ],
                 ]
-
         for category in categories:
             for filename, data in target.data.get(category, {}).items():
                 if filename not in ret_data[category]:

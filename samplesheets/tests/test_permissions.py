@@ -781,7 +781,7 @@ class TestSampleSheetsPermissions(
             self.superuser,
             self.user_owner_cat,
             self.user_owner,
-            self.delegate_as.user,
+            self.user_delegate,
         ]
         bad_users = [
             self.user_contributor,
@@ -821,7 +821,7 @@ class TestSampleSheetsPermissions(
         bad_users = [
             self.user_owner_cat,
             self.user_owner,
-            self.delegate_as.user,
+            self.user_delegate,
             self.user_contributor,
             self.user_guest,
             self.user_no_roles,
@@ -845,7 +845,7 @@ class TestSampleSheetsPermissions(
             self.superuser,
             self.user_owner_cat,
             self.user_owner,
-            self.delegate_as.user,
+            self.user_delegate,
         ]
         bad_users = [
             self.user_contributor,
@@ -885,7 +885,7 @@ class TestSampleSheetsPermissions(
         bad_users = [
             self.user_owner_cat,
             self.user_owner,
-            self.delegate_as.user,
+            self.user_delegate,
             self.user_contributor,
             self.user_guest,
             self.user_no_roles,
@@ -909,7 +909,7 @@ class TestSampleSheetsPermissions(
             self.superuser,
             self.user_owner_cat,
             self.user_owner,
-            self.delegate_as.user,
+            self.user_delegate,
         ]
         bad_users = [
             self.user_contributor,
@@ -949,7 +949,7 @@ class TestSampleSheetsPermissions(
         bad_users = [
             self.user_owner_cat,
             self.user_owner,
-            self.delegate_as.user,
+            self.user_delegate,
             self.user_contributor,
             self.user_guest,
             self.user_no_roles,
@@ -974,7 +974,7 @@ class TestSampleSheetsPermissions(
             self.superuser,
             self.user_owner_cat,
             self.user_owner,
-            self.delegate_as.user,
+            self.user_delegate,
         ]
         bad_users = [
             self.user_contributor,
@@ -1016,7 +1016,7 @@ class TestSampleSheetsPermissions(
         bad_users = [
             self.user_owner_cat,
             self.user_owner,
-            self.delegate_as.user,
+            self.user_delegate,
             self.user_contributor,
             self.user_guest,
             self.user_no_roles,

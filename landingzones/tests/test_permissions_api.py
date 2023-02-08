@@ -95,7 +95,7 @@ class TestLandingZonePermissions(
             self.superuser,
             self.user_owner_cat,
             self.user_owner,
-            self.delegate_as.user,
+            self.user_delegate,
         ]
         bad_users = [
             self.user_contributor,
@@ -117,7 +117,7 @@ class TestLandingZonePermissions(
             self.superuser,
             self.user_owner_cat,
             self.user_owner,
-            self.delegate_as.user,
+            self.user_delegate,
         ]
         bad_users = [
             self.user_contributor,

@@ -69,7 +69,7 @@ class TestViewsBase(ProjectMixin, RoleAssignmentMixin, TestCase):
         self.project = self.make_project(
             'TestProject', PROJECT_TYPE_PROJECT, None
         )
-        self.as_owner = self.make_assignment(
+        self.owner_as = self.make_assignment(
             self.project, self.user, self.role_owner
         )
 

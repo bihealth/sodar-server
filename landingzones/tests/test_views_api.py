@@ -57,7 +57,7 @@ class TestLandingZoneAPIViewsBase(
         self.landing_zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
-            user=self.owner_as.user,
+            user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
             status='ACTIVE',
@@ -114,7 +114,7 @@ class TestLandingZoneListAPIView(TestLandingZoneAPIViewsBase):
         self.make_landing_zone(
             title=ZONE_TITLE + '_moved',
             project=self.project,
-            user=self.owner_as.user,
+            user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
             status='MOVED',
@@ -135,7 +135,7 @@ class TestLandingZoneListAPIView(TestLandingZoneAPIViewsBase):
         self.make_landing_zone(
             title=ZONE_TITLE + '_moved',
             project=self.project,
-            user=self.owner_as.user,
+            user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
             status='MOVED',
@@ -160,7 +160,7 @@ class TestLandingZoneListAPIView(TestLandingZoneAPIViewsBase):
         self.make_landing_zone(
             title=ZONE_TITLE + '_moved',
             project=self.project,
-            user=self.owner_as.user,
+            user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
             status='MOVED',

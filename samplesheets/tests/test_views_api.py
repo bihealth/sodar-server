@@ -56,7 +56,6 @@ SHEET_TSV_DIR = SHEET_DIR + 'i_small2/'
 SHEET_PATH = SHEET_DIR + 'i_small2.zip'
 SHEET_PATH_EDITED = SHEET_DIR + 'i_small2_edited.zip'
 SHEET_NAME_ALT = 'i_small.zip'
-SHEET_PATH_ALT = SHEET_DIR + SHEET_NAME_ALT
 SHEET_PATH_ALT = SHEET_DIR + 'i_small2_alt.zip'
 SHEET_PATH_NO_PLUGIN_ASSAY = SHEET_DIR_SPECIAL + 'i_small_assay_no_plugin.zip'
 IRODS_FILE_MD5 = '0b26e313ed4a7ca6904b0e9369e5b957'

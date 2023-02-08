@@ -525,7 +525,7 @@ class TestLandingZoneSubmitMoveAPIView(TestLandingZoneAPITaskflowBase):
         zone = self.make_landing_zone(
             title=ZONE_TITLE + '_new',
             project=self.project,
-            user=self.owner_as.user,
+            user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
             status='CREATING',

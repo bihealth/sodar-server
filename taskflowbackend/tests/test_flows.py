@@ -76,12 +76,21 @@ UPDATED_DESC = 'updated description'
 SCRIPT_USER_NAME = 'script_user'
 
 
-class TestDataDelete(TaskflowbackendTestBase):
+class TaskflowbackendFlowTestBase(TaskflowbackendTestBase):
+    """Base class for flow tests"""
+
+    def _build_and_run(self, flow, force_fail=False):
+        """Build and run flow"""
+        flow.build(force_fail)
+        flow.run()
+
+
+class TestDataDelete(TaskflowbackendFlowTestBase):
     """Tests for the data_delete flow"""
 
     def setUp(self):
         super().setUp()
-        self.project, self.as_owner = self.make_project_taskflow(
+        self.project, self.owner_as = self.make_project_taskflow(
             'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
         )
         self.project_path = self.irods_backend.get_path(self.project)
@@ -104,8 +113,7 @@ class TestDataDelete(TaskflowbackendTestBase):
             flow_data=flow_data,
         )
         self.assertEqual(type(flow), DataDeleteFlow)
-        flow.build()
-        flow.run()
+        self._build_and_run(flow)
 
         self.assertEqual(self.irods.collections.exists(self.coll_path), False)
         self.assertEqual(self.irods.data_objects.exists(self.obj_path), False)
@@ -127,8 +135,7 @@ class TestDataDelete(TaskflowbackendTestBase):
             flow_name='data_delete',
             flow_data=flow_data,
         )
-        flow.build()
-        flow.run()
+        self._build_and_run(flow)
 
         self.assertEqual(self.irods.collections.exists(self.coll_path), False)
         self.assertEqual(self.irods.data_objects.exists(new_obj_path), False)
@@ -141,13 +148,13 @@ class TestLandingZoneCreate(
     LandingZoneTaskflowMixin,
     SampleSheetIOMixin,
     SampleSheetTaskflowMixin,
-    TaskflowbackendTestBase,
+    TaskflowbackendFlowTestBase,
 ):
     """Tests for the landing_zone_create flow"""
 
     def setUp(self):
         super().setUp()
-        self.project, self.as_owner = self.make_project_taskflow(
+        self.project, self.owner_as = self.make_project_taskflow(
             'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
         )
         self.group_name = self.irods_backend.get_user_group_name(self.project)
@@ -162,7 +169,7 @@ class TestLandingZoneCreate(
         self.zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
-            user=self.as_owner.user,
+            user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
             status='CREATING',
@@ -186,8 +193,7 @@ class TestLandingZoneCreate(
             flow_data=flow_data,
         )
         self.assertEqual(type(flow), LandingZoneCreateFlow)
-        flow.build()
-        flow.run()
+        self._build_and_run(flow)
 
         self.zone.refresh_from_db()
         self.assertEqual(self.zone.status, 'ACTIVE')
@@ -218,8 +224,7 @@ class TestLandingZoneCreate(
             flow_data=flow_data,
         )
         self.assertEqual(type(flow), LandingZoneCreateFlow)
-        flow.build(force_fail=True)
-        flow.run()
+        self._build_and_run(flow, force_fail=True)
 
         self.zone.refresh_from_db()
         self.assertEqual(self.zone.status, 'NOT CREATED')
@@ -244,8 +249,7 @@ class TestLandingZoneCreate(
             flow_data=flow_data,
         )
         self.assertEqual(type(flow), LandingZoneCreateFlow)
-        flow.build()
-        flow.run()
+        self._build_and_run(flow)
 
         self.zone.refresh_from_db()
         self.assertEqual(self.zone.status, 'ACTIVE')
@@ -279,8 +283,7 @@ class TestLandingZoneCreate(
             flow_data=flow_data,
         )
         self.assertEqual(type(flow), LandingZoneCreateFlow)
-        flow.build()
-        flow.run()
+        self._build_and_run(flow)
 
         self.zone.refresh_from_db()
         self.assertEqual(self.zone.status, 'ACTIVE')
@@ -322,8 +325,7 @@ class TestLandingZoneCreate(
             flow_data=flow_data,
         )
         self.assertEqual(type(flow), LandingZoneCreateFlow)
-        flow.build(force_fail=True)
-        flow.run()
+        self._build_and_run(flow, force_fail=True)
 
         self.zone.refresh_from_db()
         self.assertEqual(self.zone.status, 'NOT CREATED')
@@ -351,8 +353,7 @@ class TestLandingZoneCreate(
             flow_data=flow_data,
         )
         self.assertEqual(type(flow), LandingZoneCreateFlow)
-        flow.build()
-        flow.run()
+        self._build_and_run(flow)
 
         self.zone.refresh_from_db()
         self.assertEqual(self.zone.status, 'ACTIVE')
@@ -415,8 +416,7 @@ class TestLandingZoneCreate(
             flow_data=flow_data,
         )
         self.assertEqual(type(flow), LandingZoneCreateFlow)
-        flow.build(force_fail=True)
-        flow.run()
+        self._build_and_run(flow, force_fail=True)
 
         self.zone.refresh_from_db()
         self.assertEqual(self.zone.status, 'NOT CREATED')
@@ -428,13 +428,13 @@ class TestLandingZoneDelete(
     LandingZoneTaskflowMixin,
     SampleSheetIOMixin,
     SampleSheetTaskflowMixin,
-    TaskflowbackendTestBase,
+    TaskflowbackendFlowTestBase,
 ):
     """Tests for the landing_zone_delete flow"""
 
     def setUp(self):
         super().setUp()
-        self.project, self.as_owner = self.make_project_taskflow(
+        self.project, self.owner_as = self.make_project_taskflow(
             'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
         )
         self.group_name = self.irods_backend.get_user_group_name(self.project)
@@ -451,7 +451,7 @@ class TestLandingZoneDelete(
         zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
-            user=self.as_owner.user,
+            user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
             status='CREATING',
@@ -469,8 +469,7 @@ class TestLandingZoneDelete(
             flow_data=flow_data,
         )
         self.assertEqual(type(flow), LandingZoneDeleteFlow)
-        flow.build()
-        flow.run()
+        self._build_and_run(flow)
 
         zone.refresh_from_db()
         self.assertEqual(zone.status, 'DELETED')
@@ -481,7 +480,7 @@ class TestLandingZoneDelete(
         zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
-            user=self.as_owner.user,
+            user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
             status='CREATING',
@@ -504,8 +503,7 @@ class TestLandingZoneDelete(
             flow_name='landing_zone_delete',
             flow_data=flow_data,
         )
-        flow.build()
-        flow.run()
+        self._build_and_run(flow)
 
         zone.refresh_from_db()
         self.assertEqual(zone.status, 'DELETED')
@@ -518,7 +516,7 @@ class TestLandingZoneDelete(
         zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
-            user=self.as_owner.user,
+            user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
             status='CREATING',
@@ -548,8 +546,7 @@ class TestLandingZoneDelete(
             flow_name='landing_zone_delete',
             flow_data=flow_data,
         )
-        flow.build()
-        flow.run()
+        self._build_and_run(flow)
 
         zone.refresh_from_db()
         self.assertEqual(zone.status, 'DELETED')
@@ -563,13 +560,13 @@ class TestLandingZoneMove(
     LandingZoneTaskflowMixin,
     SampleSheetIOMixin,
     SampleSheetTaskflowMixin,
-    TaskflowbackendTestBase,
+    TaskflowbackendFlowTestBase,
 ):
     """Tests for the landing_zone_move flow"""
 
     def setUp(self):
         super().setUp()
-        self.project, self.as_owner = self.make_project_taskflow(
+        self.project, self.owner_as = self.make_project_taskflow(
             'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
         )
         self.group_name = self.irods_backend.get_user_group_name(self.project)
@@ -584,7 +581,7 @@ class TestLandingZoneMove(
         self.zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
-            user=self.as_owner.user,
+            user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
             status='CREATING',
@@ -629,8 +626,7 @@ class TestLandingZoneMove(
             flow_data=flow_data,
         )
         self.assertEqual(type(flow), LandingZoneMoveFlow)
-        flow.build()
-        flow.run()
+        self._build_and_run(flow)
 
         self.zone.refresh_from_db()
         self.assertEqual(self.zone.status, 'MOVED')
@@ -714,8 +710,7 @@ class TestLandingZoneMove(
             flow_name='landing_zone_move',
             flow_data=flow_data,
         )
-        flow.build()
-        flow.run()
+        self._build_and_run(flow)
 
         self.zone.refresh_from_db()
         self.assertEqual(self.zone.status, 'MOVED')
@@ -789,8 +784,7 @@ class TestLandingZoneMove(
             flow_name='landing_zone_move',
             flow_data=flow_data,
         )
-        flow.build()
-        flow.run()
+        self._build_and_run(flow)
 
         self.zone.refresh_from_db()
         self.assertEqual(self.zone.status, 'ACTIVE')
@@ -822,8 +816,7 @@ class TestLandingZoneMove(
             flow_name='landing_zone_move',
             flow_data=flow_data,
         )
-        flow.build(force_fail=True)
-        flow.run()
+        self._build_and_run(flow, force_fail=True)
 
         self.zone.refresh_from_db()
         self.assertEqual(self.zone.status, 'FAILED')
@@ -848,7 +841,7 @@ class TestLandingZoneMove(
         new_zone = self.make_landing_zone(
             title=ZONE_TITLE + '_new',
             project=self.project,
-            user=self.as_owner.user,
+            user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
             status='CREATING',
@@ -894,8 +887,7 @@ class TestLandingZoneMove(
             flow_name='landing_zone_move',
             flow_data=flow_data,
         )
-        flow.build()
-        flow.run()
+        self._build_and_run(flow)
 
         new_zone.refresh_from_db()
         self.assertEqual(new_zone.status, 'MOVED')
@@ -924,7 +916,7 @@ class TestLandingZoneMove(
         )
 
 
-class TestProjectCreate(TaskflowbackendTestBase):
+class TestProjectCreate(TaskflowbackendFlowTestBase):
     """Tests for the project_create flow"""
 
     def test_create(self):
@@ -951,8 +943,7 @@ class TestProjectCreate(TaskflowbackendTestBase):
             flow_data=flow_data,
         )
         self.assertEqual(type(flow), ProjectCreateFlow)
-        flow.build()
-        flow.run()
+        self._build_and_run(flow)
 
         self.assert_irods_coll(project, expected=True)
         group = self.irods.user_groups.get(group_name)
@@ -986,12 +977,12 @@ class TestProjectCreate(TaskflowbackendTestBase):
         self.assert_group_member(project, self.user_owner_cat, True)
 
 
-class TestProjectUpdate(TaskflowbackendTestBase):
+class TestProjectUpdate(TaskflowbackendFlowTestBase):
     """Tests for the project_update flow"""
 
     def setUp(self):
         super().setUp()
-        self.project, self.as_owner = self.make_project_taskflow(
+        self.project, self.owner_as = self.make_project_taskflow(
             'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
         )
         self.project_path = self.irods_backend.get_path(self.project)
@@ -1020,8 +1011,7 @@ class TestProjectUpdate(TaskflowbackendTestBase):
             flow_data={},
         )
         self.assertEqual(type(flow), ProjectUpdateFlow)
-        flow.build()
-        flow.run()
+        self._build_and_run(flow)
 
         project_coll = self.irods.collections.get(self.project_path)
         self.assertEqual(
@@ -1067,8 +1057,7 @@ class TestProjectUpdate(TaskflowbackendTestBase):
             flow_name='project_update',
             flow_data=flow_data,
         )
-        flow.build()
-        flow.run()
+        self._build_and_run(flow)
 
         self.assert_group_member(self.project, self.user, True)
         self.assert_group_member(self.project, self.user_owner_cat, False)
@@ -1084,13 +1073,13 @@ class TestProjectUpdate(TaskflowbackendTestBase):
 class TestPublicAccessUpdate(
     SampleSheetIOMixin,
     SampleSheetTaskflowMixin,
-    TaskflowbackendTestBase,
+    TaskflowbackendFlowTestBase,
 ):
     """Tests for the public_access_update flow"""
 
     def setUp(self):
         super().setUp()
-        self.project, self.as_owner = self.make_project_taskflow(
+        self.project, self.owner_as = self.make_project_taskflow(
             'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
         )
         self.group_name = self.irods_backend.get_user_group_name(self.project)
@@ -1117,8 +1106,7 @@ class TestPublicAccessUpdate(
             flow_data=flow_data,
         )
         self.assertEqual(type(flow), PublicAccessUpdateFlow)
-        flow.build()
-        flow.run()
+        self._build_and_run(flow)
 
         self.assert_irods_access(
             self.group_name, self.sample_path, IRODS_ACCESS_READ
@@ -1148,8 +1136,7 @@ class TestPublicAccessUpdate(
             flow_name='public_access_update',
             flow_data=flow_data,
         )
-        flow.build()
-        flow.run()
+        self._build_and_run(flow)
 
         self.assert_irods_access(
             self.group_name, self.sample_path, IRODS_ACCESS_READ
@@ -1173,8 +1160,7 @@ class TestPublicAccessUpdate(
             flow_data=flow_data,
         )
         self.assertEqual(type(flow), PublicAccessUpdateFlow)
-        flow.build(force_fail=True)
-        flow.run()
+        self._build_and_run(flow, force_fail=True)
 
         self.assert_irods_access(
             self.group_name, self.sample_path, IRODS_ACCESS_READ
@@ -1204,8 +1190,7 @@ class TestPublicAccessUpdate(
         )
         self.assertEqual(type(flow), PublicAccessUpdateFlow)
         with override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True):
-            flow.build()
-            flow.run()
+            self._build_and_run(flow)
 
         self.assert_irods_access(
             self.group_name, self.sample_path, IRODS_ACCESS_READ
@@ -1246,8 +1231,7 @@ class TestPublicAccessUpdate(
             flow_name='public_access_update',
             flow_data=flow_data,
         )
-        flow.build()
-        flow.run()
+        self._build_and_run(flow)
 
         self.assert_irods_access(
             self.group_name, self.sample_path, IRODS_ACCESS_READ
@@ -1256,12 +1240,12 @@ class TestPublicAccessUpdate(
         self.assertIsNone(self.irods_backend.get_ticket(self.irods, TICKET_STR))
 
 
-class TestRoleDelete(TaskflowbackendTestBase):
+class TestRoleDelete(TaskflowbackendFlowTestBase):
     """Tests for the role_delete flow"""
 
     def setUp(self):
         super().setUp()
-        self.project, self.as_owner = self.make_project_taskflow(
+        self.project, self.owner_as = self.make_project_taskflow(
             'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
         )
         self.user_new = self.make_user('user_new')
@@ -1281,17 +1265,16 @@ class TestRoleDelete(TaskflowbackendTestBase):
             flow_data=flow_data,
         )
         self.assertEqual(type(flow), RoleDeleteFlow)
-        flow.build()
-        flow.run()
+        self._build_and_run(flow)
         self.assert_group_member(self.project, self.user_new, False)
 
 
-class TestRoleUpdate(TaskflowbackendTestBase):
+class TestRoleUpdate(TaskflowbackendFlowTestBase):
     """Tests for the role_update flow"""
 
     def setUp(self):
         super().setUp()
-        self.project, self.as_owner = self.make_project_taskflow(
+        self.project, self.owner_as = self.make_project_taskflow(
             'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
         )
         self.project_path = self.irods_backend.get_path(self.project)
@@ -1301,7 +1284,6 @@ class TestRoleUpdate(TaskflowbackendTestBase):
         user_new = self.make_user('user_new')
         self.make_assignment(self.project, user_new, self.role_contributor)
         self.assert_group_member(self.project, user_new, False)
-
         flow_data = {'username': user_new.username}
         flow = self.taskflow.get_flow(
             irods_backend=self.irods_backend,
@@ -1310,18 +1292,16 @@ class TestRoleUpdate(TaskflowbackendTestBase):
             flow_data=flow_data,
         )
         self.assertEqual(type(flow), RoleUpdateFlow)
-        flow.build()
-        flow.run()
-
+        self._build_and_run(flow)
         self.assert_group_member(self.project, user_new, True)
 
 
-class TestRoleUpdateIrodsBatch(TaskflowbackendTestBase):
+class TestRoleUpdateIrodsBatch(TaskflowbackendFlowTestBase):
     """Tests for the role_update_irods_batch flow"""
 
     def setUp(self):
         super().setUp()
-        self.project, self.as_owner = self.make_project_taskflow(
+        self.project, self.owner_as = self.make_project_taskflow(
             'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
         )
         # self.project_path = self.irods_backend.get_path(self.project)
@@ -1355,8 +1335,7 @@ class TestRoleUpdateIrodsBatch(TaskflowbackendTestBase):
             flow_data=flow_data,
         )
         self.assertEqual(type(flow), RoleUpdateIrodsBatchFlow)
-        flow.build()
-        flow.run()
+        self._build_and_run(flow)
 
         self.assert_group_member(self.project, self.user_new1, True)
         self.assert_group_member(self.project, self.user_new2, True)
@@ -1391,8 +1370,7 @@ class TestRoleUpdateIrodsBatch(TaskflowbackendTestBase):
             flow_name='role_update_irods_batch',
             flow_data=flow_data,
         )
-        flow.build()
-        flow.run()
+        self._build_and_run(flow)
 
         self.assert_group_member(self.project, self.user_new1, True)
         self.assert_group_member(self.project, self.user_new2, False)
@@ -1432,8 +1410,7 @@ class TestRoleUpdateIrodsBatch(TaskflowbackendTestBase):
             flow_name='role_update_irods_batch',
             flow_data=flow_data,
         )
-        flow.build()
-        flow.run()
+        self._build_and_run(flow)
 
         self.assert_group_member(self.project, self.user_new1, False)
         self.assert_group_member(self.project, self.user_new2, False)
@@ -1442,13 +1419,13 @@ class TestRoleUpdateIrodsBatch(TaskflowbackendTestBase):
 class TestSheetCollsCreate(
     SampleSheetIOMixin,
     SampleSheetTaskflowMixin,
-    TaskflowbackendTestBase,
+    TaskflowbackendFlowTestBase,
 ):
     """Tests for the sheet_colls_create flow"""
 
     def setUp(self):
         super().setUp()
-        self.project, self.as_owner = self.make_project_taskflow(
+        self.project, self.owner_as = self.make_project_taskflow(
             'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
         )
         self.group_name = self.irods_backend.get_user_group_name(self.project)
@@ -1470,8 +1447,7 @@ class TestSheetCollsCreate(
             flow_data=flow_data,
         )
         self.assertEqual(type(flow), SheetCollsCreateFlow)
-        flow.build()
-        flow.run()
+        self._build_and_run(flow)
 
         self.investigation.refresh_from_db()
         self.assertEqual(self.investigation.irods_status, True)
@@ -1502,8 +1478,7 @@ class TestSheetCollsCreate(
             flow_name='sheet_colls_create',
             flow_data=flow_data,
         )
-        flow.build()
-        flow.run()
+        self._build_and_run(flow)
 
         self.assertEqual(self.irods.collections.exists(self.sample_path), True)
         self.assert_irods_access(
@@ -1531,8 +1506,7 @@ class TestSheetCollsCreate(
             flow_name='sheet_colls_create',
             flow_data=flow_data,
         )
-        flow.build()
-        flow.run()
+        self._build_and_run(flow)
 
         self.assertEqual(self.irods.collections.exists(self.sample_path), True)
         self.assert_irods_access(
@@ -1557,8 +1531,7 @@ class TestSheetCollsCreate(
             flow_name='sheet_colls_create',
             flow_data=flow_data,
         )
-        flow.build(force_fail=True)
-        flow.run()
+        self._build_and_run(flow, force_fail=True)
 
         self.investigation.refresh_from_db()
         self.assertEqual(self.investigation.irods_status, False)
@@ -1581,8 +1554,7 @@ class TestSheetCollsCreate(
             flow_name='sheet_colls_create',
             flow_data=flow_data,
         )
-        flow.build(force_fail=True)
-        flow.run()
+        self._build_and_run(flow, force_fail=True)
 
         self.investigation.refresh_from_db()
         self.assertEqual(self.investigation.irods_status, False)
@@ -1595,13 +1567,13 @@ class TestSheetDelete(
     LandingZoneTaskflowMixin,
     SampleSheetIOMixin,
     SampleSheetTaskflowMixin,
-    TaskflowbackendTestBase,
+    TaskflowbackendFlowTestBase,
 ):
     """Tests for the sheet_delete flow"""
 
     def setUp(self):
         super().setUp()
-        self.project, self.as_owner = self.make_project_taskflow(
+        self.project, self.owner_as = self.make_project_taskflow(
             'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
         )
         self.group_name = self.irods_backend.get_user_group_name(self.project)
@@ -1619,7 +1591,6 @@ class TestSheetDelete(
                 project=self.project, active=True
             ).first()
         )
-
         flow_data = {}
         flow = self.taskflow.get_flow(
             irods_backend=self.irods_backend,
@@ -1628,9 +1599,7 @@ class TestSheetDelete(
             flow_data=flow_data,
         )
         self.assertEqual(type(flow), SheetDeleteFlow)
-        flow.build()
-        flow.run()
-
+        self._build_and_run(flow)
         self.assertIsNone(
             Investigation.objects.filter(
                 project=self.project, active=True
@@ -1655,8 +1624,7 @@ class TestSheetDelete(
             flow_data=flow_data,
         )
         self.assertEqual(type(flow), SheetDeleteFlow)
-        flow.build()
-        flow.run()
+        self._build_and_run(flow)
 
         self.assertIsNone(
             Investigation.objects.filter(
@@ -1678,7 +1646,7 @@ class TestSheetDelete(
         zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
-            user=self.as_owner.user,
+            user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
             status='CREATING',
@@ -1695,8 +1663,7 @@ class TestSheetDelete(
             flow_data=flow_data,
         )
         self.assertEqual(type(flow), SheetDeleteFlow)
-        flow.build()
-        flow.run()
+        self._build_and_run(flow)
 
         self.assertIsNone(
             Investigation.objects.filter(

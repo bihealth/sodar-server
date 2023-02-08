@@ -90,13 +90,13 @@ class TestInvestigationRetrieveAPIView(
         self.assert_response_api(url, self.anonymous, 401)
 
 
-class TestSampleSheetImportAPIView(
+class TestSheetImportAPIView(
     SampleSheetIOMixin,
     RemoteSiteMixin,
     RemoteProjectMixin,
     TestProjectAPIPermissionBase,
 ):
-    """Tests for SampleSheetImportAPIView permissions"""
+    """Tests for SheetImportAPIView permissions"""
 
     def _cleanup_import(self):
         self.zip_file.seek(0)
@@ -256,13 +256,13 @@ class TestSampleSheetImportAPIView(
         )
 
 
-class TestSampleSheetISAExportAPIView(
+class TestSheetISAExportAPIView(
     SampleSheetIOMixin,
     RemoteSiteMixin,
     RemoteProjectMixin,
     TestProjectAPIPermissionBase,
 ):
-    """Tests for SampleSheetISAExportAPIView permissions"""
+    """Tests for SheetISAExportAPIView permissions"""
 
     def setUp(self):
         super().setUp()

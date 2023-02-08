@@ -54,7 +54,6 @@ class TestIrodsbackendAPI(
         # Init user
         self.user = self.make_user('user')
         self.user.save()
-
         # Init roles
         self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
         self.role_delegate = Role.objects.get_or_create(
@@ -64,12 +63,11 @@ class TestIrodsbackendAPI(
             name=PROJECT_ROLE_CONTRIBUTOR
         )[0]
         self.role_guest = Role.objects.get_or_create(name=PROJECT_ROLE_GUEST)[0]
-
         # Init project with owner
         self.project = self.make_project(
             'TestProject', PROJECT_TYPE_PROJECT, None
         )
-        self.as_owner = self.make_assignment(
+        self.owner_as = self.make_assignment(
             self.project, self.user, self.role_owner
         )
 
@@ -82,7 +80,7 @@ class TestIrodsbackendAPI(
         self.landing_zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
-            user=self.as_owner.user,
+            user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
             configuration=None,

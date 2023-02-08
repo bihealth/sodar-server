@@ -48,7 +48,7 @@ class TestIrodsbackendPermissions(
         self.user_no_roles = self.make_user('user_no_roles')
 
         # Set up project with taskflow
-        self.project, self.as_owner = self.make_project_taskflow(
+        self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
@@ -57,13 +57,13 @@ class TestIrodsbackendPermissions(
         )
 
         # Set up assignments with taskflow
-        self.as_delegate = self.make_assignment_taskflow(
+        self.delegate_as = self.make_assignment_taskflow(
             self.project, self.user_delegate, self.role_delegate
         )
-        self.as_contributor = self.make_assignment_taskflow(
+        self.contributor_as = self.make_assignment_taskflow(
             self.project, self.user_contributor, self.role_contributor
         )
-        self.as_guest = self.make_assignment_taskflow(
+        self.guest_as = self.make_assignment_taskflow(
             self.project, self.user_guest, self.role_guest
         )
 
@@ -142,8 +142,8 @@ class TestIrodsbackendPermissions(
         good_users = [
             self.superuser,
             self.user_owner_cat,
-            self.as_owner.user,
-            self.as_delegate.user,
+            self.user_owner,
+            self.user_delegate,
         ]
         bad_users = [
             self.user_contributor,

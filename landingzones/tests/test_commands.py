@@ -64,7 +64,7 @@ class TestCommandBase(
         self.project = self.make_project(
             'TestProject', PROJECT_TYPE_PROJECT, None
         )
-        self.as_owner = self.make_assignment(
+        self.owner_as = self.make_assignment(
             self.project, self.user, self.role_owner
         )
 
@@ -87,7 +87,7 @@ class TestInactiveZones(TestCommandBase):
             self.zone = self.make_landing_zone(
                 title=ZONE1_TITLE,
                 project=self.project,
-                user=self.as_owner.user,
+                user=self.user,
                 assay=self.assay,
                 description=ZONE_DESC,
                 configuration=None,
@@ -97,7 +97,7 @@ class TestInactiveZones(TestCommandBase):
             self.zone3 = self.make_landing_zone(
                 title=ZONE3_TITLE,
                 project=self.project,
-                user=self.as_owner.user,
+                user=self.user,
                 assay=self.assay,
                 description=ZONE_DESC,
                 configuration=None,
@@ -108,7 +108,7 @@ class TestInactiveZones(TestCommandBase):
             self.zone4 = self.make_landing_zone(
                 title=ZONE4_TITLE,
                 project=self.project,
-                user=self.as_owner.user,
+                user=self.user,
                 assay=self.assay,
                 description=ZONE_DESC,
                 configuration=None,
@@ -120,7 +120,7 @@ class TestInactiveZones(TestCommandBase):
             self.zone2 = self.make_landing_zone(
                 title=ZONE2_TITLE,
                 project=self.project,
-                user=self.as_owner.user,
+                user=self.user,
                 assay=self.assay,
                 description=ZONE_DESC,
                 configuration=None,
@@ -185,7 +185,7 @@ class TestBusyZones(TestCommandBase):
         self.zone = self.make_landing_zone(
             title=ZONE1_TITLE,
             project=self.project,
-            user=self.as_owner.user,
+            user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
             configuration=None,
@@ -195,7 +195,7 @@ class TestBusyZones(TestCommandBase):
         self.zone2 = self.make_landing_zone(
             title=ZONE2_TITLE,
             project=self.project,
-            user=self.as_owner.user,
+            user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
             configuration=None,

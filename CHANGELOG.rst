@@ -5,8 +5,8 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
-Unreleased
-==========
+v0.13.0 (2023-02-08)
+====================
 
 Added
 -----
@@ -36,7 +36,7 @@ Changed
 -------
 
 - **General**
-    - Upgrade to django-sodar-core v0.12.0-WIP (#1567, #1576)
+    - Upgrade to django-sodar-core v0.12.0 (#1567, #1576)
     - Use default Gunicorn worker class in production (#1536)
     - Upgrade to fastobo v0.12.2 (#1561)
     - Update ``.coveragerc`` (#1582)
@@ -153,7 +153,7 @@ Added
     - ``get_zone_path()`` helper (#1399)
     - ``get_user_group_name()`` helper (#1397)
     - ``get_ticket()`` method
-- **Landingzones***
+- **Landingzones**
     - ``LandingZone.can_display_files()`` helper (#1401)
 - **Samplesheets**
     - Statistics badge in iRODS dir modal (#1434)
