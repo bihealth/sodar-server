@@ -35,6 +35,21 @@ SODAR currently supports the following study configurations:
 If the configuration is not specified or is not known to SODAR, the shortcut
 column will not be visible.
 
+Study plugins will search for the "latest" BAM and VCF files for shortcuts and
+IGV session generation. This is determined by file name: in case of multiple
+files, the last file sorted by file name is returned. Hence to ensure the most
+recent file is returned, it is recommended to use dates in the file names.
+
+Placement of files in subcollections under the library collection does not
+affect study shortcuts or IGV session inclusion. This also means files can be
+freely organized within desired subcollections.
+
+If there is need to omit BAM or VCF files with certain file name patterns from
+shortcuts and IGV sessions, file name suffixes can be defined in the
+:ref:`project update view <ui_project_update>`. Administrators can also define
+site-wide file suffixes to omit via :ref:`Django settings <admin_settings>`
+under ``SHEETS_IGV_OMIT_BAM`` and ``SHEETS_IGV_OMIT_VCF``.
+
 
 Assay iRODS Data Linking
 ========================

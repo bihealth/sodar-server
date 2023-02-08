@@ -10,25 +10,27 @@ from django.urls import reverse
 from projectroles.models import Project, SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 
-from samplesheets.models import Investigation, Study, GenericMaterial
+from samplesheets.models import Investigation, Study, Assay, GenericMaterial
 from samplesheets.plugins import SampleSheetStudyPluginPoint
 from samplesheets.rendering import SampleSheetTableBuilder
-from samplesheets.studyapps.cancer.utils import get_library_file_path
+from samplesheets.studyapps.cancer.utils import (
+    get_library_file_path,
+    get_latest_file_path,
+)
 from samplesheets.studyapps.utils import get_igv_session_url, get_igv_irods_url
 from samplesheets.utils import (
-    get_sample_libraries,
-    get_study_libraries,
     get_isa_field_name,
+    get_last_material_index,
 )
 
 
 logger = logging.getLogger(__name__)
+table_builder = SampleSheetTableBuilder()
 User = auth.get_user_model()
 
 
 # SODAR constants
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
-
 # Local constants
 APP_NAME = 'samplesheets.studyapps.cancer'
 
@@ -60,19 +62,6 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 return False
         return True
 
-    @classmethod
-    def _source_files_exist(cls, cache, prefix, item_type):
-        """Return true if source files exist"""
-        files = [
-            v
-            for k, v in cache.data[item_type].items()
-            if prefix in k and k.index(prefix) == 0
-        ]
-        vals = list(set(files))
-        if len(vals) == 0 or (len(vals) == 1 and not vals[0]):
-            return False
-        return True
-
     def get_shortcut_column(self, study, study_tables):
         """
         Return structure containing links for an extra study table links column.
@@ -85,16 +74,6 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         if self._has_only_ms_assays(study):
             logger.debug('Skipping for MS-only study')
             return None
-
-        # Get iRODS URLs from cache if it's available
-        cache_backend = get_backend_api('sodar_cache')
-        cache_item = None
-        if cache_backend:
-            cache_item = cache_backend.get_cache_item(
-                app_name=APP_NAME,
-                name='irods/{}'.format(study.sodar_uuid),
-                project=study.get_project(),
-            )
 
         ret = {
             'schema': {
@@ -112,7 +91,6 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             },
             'data': [],
         }
-
         igv_urls = {}
         for source in study.get_sources():
             igv_urls[source.name] = get_igv_session_url(source, APP_NAME)
@@ -121,26 +99,46 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             return ret
 
         logger.debug('Set shortcut column data..')
+        # Get iRODS URLs from cache
+        cache_backend = get_backend_api('sodar_cache')
+        cache_item = None
+        if cache_backend:
+            cache_item = cache_backend.get_cache_item(
+                app_name=APP_NAME,
+                name='irods/{}'.format(study.sodar_uuid),
+                project=study.get_project(),
+            )
+        # Get source libraries
+        source_libs = {}
+        for k, assay_table in study_tables['assays'].items():
+            lib_idx = get_last_material_index(assay_table)
+            for row in assay_table['table_data']:
+                source_name = row[0]['value'].strip()
+                lib_name = row[lib_idx]['value'].strip()
+                if source_name not in source_libs:
+                    source_libs[source_name] = [lib_name]
+                elif lib_name not in source_libs[source_name]:
+                    source_libs[source_name].append(lib_name)
+
+        # Set links
         for row in study_tables['study']['table_data']:
-            source_id = row[0]['value']
-            source_prefix = source_id + '-'
-            enabled = True
-            # Set initial state based on cache
-            if (
-                cache_item
-                and not self._source_files_exist(
-                    cache_item, source_prefix, 'bam'
-                )
-                and not self._source_files_exist(
-                    cache_item, source_prefix, 'vcf'
-                )
-            ):
-                enabled = False
+            source_name = row[0]['value'].strip()
+            enabled = False
+            if cache_item and source_name in source_libs:
+                for lib in source_libs[source_name]:
+                    if (
+                        cache_item.data['bam'][lib]
+                        or cache_item.data['vcf'][lib]
+                    ):
+                        enabled = True
+                        break
+            elif not cache_item:
+                enabled = True
             ret['data'].append(
                 {
-                    'igv': {'url': igv_urls[source_id], 'enabled': enabled},
+                    'igv': {'url': igv_urls[source_name], 'enabled': enabled},
                     'files': {
-                        'query': {'key': 'case', 'value': source_id},
+                        'query': {'key': 'case', 'value': source_name},
                         'enabled': enabled,
                     },
                 }
@@ -156,13 +154,20 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         :return: Dict or None
         """
         cache_backend = get_backend_api('sodar_cache')
-        cache_item = None
         case_id = kwargs['case'][0]
         source = GenericMaterial.objects.filter(
             study=study, name=case_id
         ).first()
         if not case_id or not source:  # This should not happen..
             return None
+
+        cache_item = None
+        if cache_backend:
+            cache_item = cache_backend.get_cache_item(
+                app_name=APP_NAME,
+                name='irods/{}'.format(study.sodar_uuid),
+                project=study.get_project(),
+            )
         webdav_url = settings.IRODS_WEBDAV_URL
         ret = {
             'title': 'Case-Wise Links for {}'.format(case_id),
@@ -173,26 +178,14 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             },
         }
 
-        if cache_backend:
-            cache_item = cache_backend.get_cache_item(
-                app_name=APP_NAME,
-                name='irods/{}'.format(study.sodar_uuid),
-                project=study.get_project(),
-            )
-
-        def _add_lib_path(library, file_type):
-            # Get iRODS URLs from cache if it's available
-            if cache_item and library.name in cache_item.data[file_type]:
-                path = cache_item.data[file_type][library.name.strip()]
-            # Else query iRODS
-            else:
-                path = get_library_file_path(
-                    file_type=file_type, library=library
-                )
+        def _add_lib_path(library_name, file_type):
+            path = None
+            if cache_item and library_name in cache_item.data[file_type]:
+                path = cache_item.data[file_type][library_name]
             if path:
                 ret['data'][file_type]['files'].append(
                     {
-                        'label': library.name.strip(),
+                        'label': library_name,
                         'url': webdav_url + path,
                         'title': 'Download {} file'.format(file_type.upper()),
                         'extra_links': [
@@ -207,16 +200,16 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                     }
                 )
 
-        samples = source.get_samples()
-        if not samples:
-            return ret
-
-        libraries = []
-        for sample in source.get_samples():
-            libraries += get_sample_libraries(sample, study_tables)
-        for library in libraries:
-            _add_lib_path(library, 'bam')
-            _add_lib_path(library, 'vcf')
+        # Add paths of libraries related to source
+        libs = []
+        for k, assay_table in study_tables['assays'].items():
+            lib_idx = get_last_material_index(assay_table)
+            for row in assay_table['table_data']:
+                lib_name = row[lib_idx]['value'].strip()
+                if row[0]['value'].strip() == case_id and lib_name not in libs:
+                    _add_lib_path(lib_name, 'bam')
+                    _add_lib_path(lib_name, 'vcf')
+                    libs.append(lib_name)
 
         # Session file link (only make available if other files exist)
         if (
@@ -252,6 +245,64 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             )
         return ret
 
+    @classmethod
+    def _update_study_cache(cls, study, user, cache_backend):
+        """
+        Update cancer study app cache for a single study.
+
+        :param study: Study object
+        :param user: User object or None
+        :param cache_backend: Sodarcache backend object
+        """
+        irods_backend = get_backend_api('omics_irods')
+        item_name = 'irods/{}'.format(study.sodar_uuid)
+        bam_paths = {}
+        vcf_paths = {}
+        # Get/build render tables
+        study_tables = table_builder.get_study_tables(study)
+
+        # Get libraries and library file paths
+        for k, assay_table in study_tables['assays'].items():
+            libs = []
+            lib_idx = get_last_material_index(assay_table)
+            for row in assay_table['table_data']:
+                lib_name = row[lib_idx]['value'].strip()
+                if lib_name not in libs:
+                    libs.append(lib_name)
+            assay = Assay.objects.get(sodar_uuid=k)
+            with irods_backend.get_session() as irods:
+                # NOTE: If multiple libraries with the same name are found, they
+                #       are treated as one with only the latest file returned
+                for lib in libs:
+                    bam_path = get_library_file_path(
+                        assay, lib, 'bam', irods_backend, irods
+                    )
+                    if bam_path and bam_paths.get(lib):
+                        bam_paths[lib] = get_latest_file_path(
+                            [bam_paths[lib], bam_path]
+                        )
+                    elif not bam_paths.get(lib):
+                        bam_paths[lib] = bam_path
+                    vcf_path = get_library_file_path(
+                        assay, lib, 'vcf', irods_backend, irods
+                    )
+                    if vcf_path and vcf_paths.get(lib):
+                        vcf_paths[lib] = get_latest_file_path(
+                            [vcf_paths[lib], vcf_path]
+                        )
+                    elif not vcf_paths.get(lib):
+                        vcf_paths[lib] = vcf_path
+
+        updated_data = {'bam': bam_paths, 'vcf': vcf_paths}
+        logger.debug('Set cache item "{}": {}'.format(item_name, updated_data))
+        cache_backend.set_cache_item(
+            name=item_name,
+            app_name=APP_NAME,
+            user=user,
+            data=updated_data,
+            project=study.investigation.project,
+        )
+
     def update_cache(self, name=None, project=None, user=None):
         """
         Update cached data for this app, limitable to item ID and/or project.
@@ -267,14 +318,11 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         cache_backend = get_backend_api('sodar_cache')
         if not cache_backend:
             return
-
-        tb = SampleSheetTableBuilder()
         projects = (
             [project]
             if project
             else Project.objects.filter(type=PROJECT_TYPE_PROJECT)
         )
-
         for project in projects:
             try:
                 investigation = Investigation.objects.get(
@@ -285,41 +333,13 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             # Only apply for investigations with the correct configuration
             if investigation.get_configuration() != self.config_name:
                 continue
-
             # If a name is given, only update that specific CacheItem
             if name:
                 study_uuid = name.split('/')[-1]
                 studies = Study.objects.filter(sodar_uuid=study_uuid)
             else:
                 studies = Study.objects.filter(investigation=investigation)
-
             for study in studies:
                 if self._has_only_ms_assays(study):
                     continue
-                item_name = 'irods/{}'.format(study.sodar_uuid)
-                bam_paths = {}
-                vcf_paths = {}
-
-                # Build render table
-                study_tables = tb.build_study_tables(study, ui=False)
-                for library in get_study_libraries(study, study_tables):
-                    if not library.assay:
-                        continue
-                    bam_path = get_library_file_path(
-                        file_type='bam', library=library
-                    )
-                    bam_paths[library.name.strip()] = bam_path
-
-                    bam_path = get_library_file_path(
-                        file_type='vcf', library=library
-                    )
-                    vcf_paths[library.name.strip()] = bam_path
-
-                updated_data = {'bam': bam_paths, 'vcf': vcf_paths}
-                cache_backend.set_cache_item(
-                    name=item_name,
-                    app_name=APP_NAME,
-                    user=user,
-                    data=updated_data,
-                    project=project,
-                )
+                self._update_study_cache(study, user, cache_backend)

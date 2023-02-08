@@ -44,7 +44,7 @@ class TestLandingZoneAPIViewsBase(
 
         # Init contributor user and assignment
         self.user_contrib = self.make_user('user_contrib')
-        self.contrib_as = self._make_assignment(
+        self.contrib_as = self.make_assignment(
             self.project, self.user_contrib, self.role_contributor
         )
 
@@ -57,7 +57,7 @@ class TestLandingZoneAPIViewsBase(
         self.landing_zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
-            user=self.owner_as.user,
+            user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
             status='ACTIVE',
@@ -69,7 +69,7 @@ class TestLandingZoneListAPIView(TestLandingZoneAPIViewsBase):
 
     def test_get_owner(self):
         """Test LandingZoneListAPIView get() as project owner"""
-        irods_backend = get_backend_api('omics_irods', conn=False)
+        irods_backend = get_backend_api('omics_irods')
         url = reverse(
             'landingzones:api_list', kwargs={'project': self.project.sodar_uuid}
         )
@@ -114,7 +114,7 @@ class TestLandingZoneListAPIView(TestLandingZoneAPIViewsBase):
         self.make_landing_zone(
             title=ZONE_TITLE + '_moved',
             project=self.project,
-            user=self.owner_as.user,
+            user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
             status='MOVED',
@@ -135,7 +135,7 @@ class TestLandingZoneListAPIView(TestLandingZoneAPIViewsBase):
         self.make_landing_zone(
             title=ZONE_TITLE + '_moved',
             project=self.project,
-            user=self.owner_as.user,
+            user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
             status='MOVED',
@@ -160,7 +160,7 @@ class TestLandingZoneListAPIView(TestLandingZoneAPIViewsBase):
         self.make_landing_zone(
             title=ZONE_TITLE + '_moved',
             project=self.project,
-            user=self.owner_as.user,
+            user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
             status='MOVED',
@@ -182,7 +182,7 @@ class TestLandingZoneRetrieveAPIView(TestLandingZoneAPIViewsBase):
 
     def test_get(self):
         """Test LandingZoneRetrieveAPIView get() as zone owner"""
-        irods_backend = get_backend_api('omics_irods', conn=False)
+        irods_backend = get_backend_api('omics_irods')
         url = reverse(
             'landingzones:api_retrieve',
             kwargs={'landingzone': self.landing_zone.sodar_uuid},

@@ -97,7 +97,10 @@ Node Names
     hyperlinks supported. Note that editing the name cell of an existing node
     will rename the existing node. Changing the row to contain a different
     existing node in case of splitting/pooling is not currently supported by the
-    editor.
+    editor. If iRODS collections have been created, SODAR will check for
+    existing files under the name of the material. If fles exist, the UI will
+    alert the user and prompt for confirmation, in order to avoid generating
+    orphaned files.
 Contacts
     Contact cells act as string cells with the following expected syntax:
     ``Contact Name <contact@email.org>``. The email can be omitted.

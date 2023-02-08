@@ -5,12 +5,13 @@ import io
 import json
 import logging
 import os
+import pytz
 import requests
 import zipfile
-from packaging import version
 
-import pytz
 from cubi_tk.isa_tpl import _TEMPLATES as TK_TEMPLATES
+from irods.exception import CollectionDoesNotExist
+from packaging import version
 
 from django.conf import settings
 from django.contrib import messages
@@ -89,6 +90,7 @@ from samplesheets.utils import (
 logger = logging.getLogger(__name__)
 app_settings = AppSettingAPI()
 conf_api = SheetConfigAPI()
+table_builder = SampleSheetTableBuilder()
 
 
 # SODAR constants
@@ -194,7 +196,6 @@ class SheetImportMixin:
 
     def handle_replace(self, investigation, old_inv, tl_event=None):
         project = investigation.project
-        tb = SampleSheetTableBuilder()
         old_study_uuids = {}
         old_assay_uuids = {}
         old_study_count = old_inv.studies.count()
@@ -208,7 +209,6 @@ class SheetImportMixin:
 
         # Ensure existing studies and assays are found in new inv
         compare_ok = compare_inv_replace(old_inv, investigation)
-
         try:
             if old_inv.irods_status and not compare_ok:
                 raise ValueError(
@@ -229,7 +229,8 @@ class SheetImportMixin:
 
             # Check if we can keep existing configurations
             if (
-                tb.get_headers(investigation) == tb.get_headers(old_inv)
+                table_builder.get_headers(investigation)
+                == table_builder.get_headers(old_inv)
                 and compare_ok
                 and old_study_count == new_study_count
                 and old_assay_count == new_assay_count
@@ -242,6 +243,10 @@ class SheetImportMixin:
                 zone.assay = new_assays[zone.assay.get_name()]
                 zone.save()
 
+            # If replacing with alt sheet, clear study cache (force delete)
+            if not compare_ok:
+                for study in old_inv.studies.all():
+                    table_builder.clear_study_cache(study, delete=True)
             # Delete old investigation
             old_inv.delete()
 
@@ -280,7 +285,6 @@ class SheetImportMixin:
                     if assay.get_name() in old_assay_uuids:
                         assay.sodar_uuid = old_assay_uuids[assay.get_name()]
                         assay.save()
-
         return investigation
 
     def handle_import_exception(self, ex, tl_event=None, ui_mode=True):
@@ -307,7 +311,6 @@ class SheetImportMixin:
                 for k, v in ex.args[1]['assays'].items():
                     ex_msg = _add_crits(k, v, ex_msg)
                 ex_msg += '</ul>'
-
             if ui_mode:
                 messages.error(self.request, mark_safe(ex_msg))
 
@@ -367,21 +370,25 @@ class SheetImportMixin:
         sheet_config = None
         display_config = None
         sheet_config_valid = True
+        inv_tables = None  # Ensure we only build render tables once
 
         # If replacing, delete old user display configurations
         if action == 'replace':
             if self.replace_configs:
                 logger.debug('Deleting existing user display configurations..')
-                app_settings.delete_setting(
-                    APP_NAME, 'display_config', project=project
-                )
+                app_settings.delete(APP_NAME, 'display_config', project=project)
             else:
                 logger.debug('Keeping existing configurations')
-                sheet_config = app_settings.get_app_setting(
+                sheet_config = app_settings.get(
                     APP_NAME, 'sheet_config', project=project
                 )
-                conf_api.restore_sheet_config(investigation, sheet_config)
-                display_config = app_settings.get_app_setting(
+                inv_tables = table_builder.build_inv_tables(
+                    investigation, use_config=False
+                )
+                conf_api.restore_sheet_config(
+                    investigation, inv_tables, sheet_config
+                )
+                display_config = app_settings.get(
                     APP_NAME, 'display_config_default', project=project
                 )
 
@@ -389,21 +396,34 @@ class SheetImportMixin:
             logger.debug('Restoring previous edit and display configurations')
             sheet_config = isa_version.data.get('sheet_config')
             display_config = isa_version.data.get('display_config')
-
+            if not inv_tables:
+                inv_tables = table_builder.build_inv_tables(
+                    investigation, use_config=False
+                )
             try:
                 conf_api.validate_sheet_config(sheet_config)
-                conf_api.restore_sheet_config(investigation, sheet_config)
+                conf_api.restore_sheet_config(
+                    investigation, inv_tables, sheet_config
+                )
             except ValueError:
                 sheet_config_valid = False
 
-        if not sheet_config or not sheet_config_valid:
-            logger.debug('Building new sheet configuration')
-            sheet_config = conf_api.build_sheet_config(investigation)
-        if not display_config:
-            logger.debug('Building new display configuration')
-            display_config = conf_api.build_display_config(
-                investigation, sheet_config
-            )
+        if not sheet_config or not sheet_config_valid or not display_config:
+            if not inv_tables:
+                inv_tables = table_builder.build_inv_tables(
+                    investigation, use_config=False
+                )
+            if not sheet_config or not sheet_config_valid:
+                logger.debug('Building new sheet configuration')
+                sheet_config = conf_api.build_sheet_config(
+                    investigation, inv_tables
+                )
+                # TODO: Delete possible cached sheets here
+            if not display_config:
+                logger.debug('Building new display configuration')
+                display_config = conf_api.build_display_config(
+                    inv_tables, sheet_config
+                )
 
         # Save configs to isa version if we are creating the sheet
         # (or if the version is missing these configs for some reason)
@@ -420,16 +440,22 @@ class SheetImportMixin:
             isa_version.save()
             logger.info('Sheet configurations added into ISA-Tab version')
 
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME, 'sheet_config', sheet_config, project=project
         )
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'display_config_default',
             display_config,
             project=project,
         )
         logger.info('Sheet configurations updated')
+
+        # Clear cached study tables
+        if action in ['replace', 'restore']:
+            for study in investigation.studies.all():
+                study.refresh_from_db()
+                table_builder.clear_study_cache(study)
 
         # Update project cache if replacing sheets and iRODS collections exists
         if (
@@ -439,6 +465,7 @@ class SheetImportMixin:
         ):
             from samplesheets.tasks_celery import update_project_cache_task
 
+            # Update iRODS cache
             update_project_cache_task.delay(
                 project_uuid=str(project.sodar_uuid),
                 user_uuid=str(self.request.user.sodar_uuid),
@@ -533,7 +560,6 @@ class SheetISAExportMixin:
             if isa_version
             else investigation.archive_name
         )
-
         if archive_name:
             file_name = archive_name.split('.zip')[0]
         else:
@@ -637,9 +663,7 @@ class SheetCreateImportAccessMixin:
 
     def dispatch(self, *args, **kwargs):
         project = self.get_project()
-        if app_settings.get_app_setting(
-            APP_NAME, 'sheet_sync_enable', project=project
-        ):
+        if app_settings.get(APP_NAME, 'sheet_sync_enable', project=project):
             messages.error(
                 self.request,
                 'Sheet synchronization enabled in project: import and '
@@ -686,9 +710,7 @@ class IrodsCollsCreateViewMixin:
             )
 
         # NOTE: Getting ticket setting in case of perform_project_sync()
-        ticket_str = app_settings.get_app_setting(
-            APP_NAME, 'public_access_ticket', project
-        )
+        ticket_str = app_settings.get(APP_NAME, 'public_access_ticket', project)
         if (
             not ticket_str
             and project.public_guest_access
@@ -705,7 +727,7 @@ class IrodsCollsCreateViewMixin:
             flow_name='sheet_colls_create',
             flow_data=flow_data,
         )
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'public_access_ticket',
             ticket_str,
@@ -880,18 +902,11 @@ class SheetRemoteSyncAPI(SheetImportMixin):
         :user: User performing the action
         """
         logger.debug(
-            'Sync sample sheets for project "{}" ({})'.format(
-                project.title, project.sodar_uuid
-            )
+            'Sync sample sheets for project {}'.format(project.get_log_title())
         )
-
         # Check input
-        url = app_settings.get_app_setting(
-            APP_NAME, 'sheet_sync_url', project=project
-        )
-        token = app_settings.get_app_setting(
-            APP_NAME, 'sheet_sync_token', project=project
-        )
+        url = app_settings.get(APP_NAME, 'sheet_sync_url', project=project)
+        token = app_settings.get(APP_NAME, 'sheet_sync_token', project=project)
         if not url:
             raise ValueError(SYNC_FAIL_UNSET_URL)
         url_prefix = '/'.join(
@@ -920,7 +935,6 @@ class SheetRemoteSyncAPI(SheetImportMixin):
                     response.status_code
                 )
             )
-
         try:
             source_data = response.json()
         except json.JSONDecodeError as ex:
@@ -935,7 +949,6 @@ class SheetRemoteSyncAPI(SheetImportMixin):
         ).replace(tzinfo=pytz.UTC)
         old_inv = project.investigations.first()
         replace = bool(old_inv)
-
         if old_inv and source_date < old_inv.date_modified:
             logger.debug('No updates detected, skipping sync')
             return False
@@ -955,12 +968,14 @@ class SheetRemoteSyncAPI(SheetImportMixin):
                 old_inv=old_inv,
                 tl_event=None,
             )
-
         # Activate investigation
         investigation.active = True
         investigation.save()
+        # Clear cached study tables
+        for study in investigation.studies.all():
+            table_builder.clear_study_cache(study)
 
-        # Update project cache if replacing sheets and iRODS collections exists
+        # Update project cache if replacing sheets and iRODS collections exist
         if (
             replace
             and investigation.irods_status
@@ -976,8 +991,9 @@ class SheetRemoteSyncAPI(SheetImportMixin):
             )
 
         logger.info(
-            'Sample sheet sync OK for project "{}" '
-            '({})'.format(project.title, project.sodar_uuid)
+            'Sample sheet sync OK for project {}'.format(
+                project.get_log_title()
+            )
         )
         return True
 
@@ -999,7 +1015,6 @@ class ProjectSheetsView(
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-
         studies = Study.objects.filter(
             investigation=context['investigation']
         ).order_by('pk')
@@ -1014,7 +1029,6 @@ class ProjectSheetsView(
                 )
             ),
         }
-
         if 'study' in self.kwargs:
             app_context['initial_study'] = self.kwargs['study']
         elif studies.count() > 0:
@@ -1124,7 +1138,6 @@ class SheetImportView(
             # Display warnings if assay plugins are not found
             for a in self.get_assays_without_plugins(self.object):
                 messages.warning(self.request, self.get_assay_plugin_warning(a))
-
         return redirect(redirect_url)
 
 
@@ -1177,8 +1190,7 @@ class SheetTemplateSelectView(
         return super().render_to_response(self.get_context_data())
 
 
-# TODO: Prevent access if sheet sync is enabled, add tests
-class SheetTemplateCreateFormView(
+class SheetTemplateCreateView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
@@ -1250,11 +1262,9 @@ class SheetTemplateCreateFormView(
                 tl_event=tl_event,
                 isa_version=isa_version,
             )
-
             # Display warnings if assay plugins are not found
             for a in self.get_assays_without_plugins(self.object):
                 messages.warning(self.request, self.get_assay_plugin_warning(a))
-
         return redirect(redirect_url)
 
     def get(self, request, *args, **kwargs):
@@ -1307,10 +1317,9 @@ class SheetExcelExportView(
             )
             return redirect(redirect_url)
 
-        # Build study tables
-        tb = SampleSheetTableBuilder()
+        # Get/build study tables
         try:
-            tables = tb.build_study_tables(study, ui=False)
+            tables = table_builder.get_study_tables(study)
         except Exception as ex:
             messages.error(
                 self.request, 'Unable to render table for export: {}'.format(ex)
@@ -1333,7 +1342,6 @@ class SheetExcelExportView(
         ] = 'attachment; filename="{}.xlsx"'.format(
             input_name.split('.')[0]
         )  # TODO: TBD: Output file name?
-
         # Build Excel file
         write_excel_table(table, response, display_name)
 
@@ -1362,8 +1370,6 @@ class SheetExcelExportView(
                 tl_event.add_object(
                     obj=study, label='study', name=study.get_display_name()
                 )
-
-        # Return file
         return response
 
 
@@ -1418,15 +1424,30 @@ class SheetDeleteView(
         """Override get_context_data() to check for data objects in iRODS"""
         context = super().get_context_data(*args, **kwargs)
         irods_backend = get_backend_api('omics_irods')
-        if irods_backend:
-            project = self.get_project()
+        if not irods_backend:
+            return context
+        project = self.get_project()
+        # NOTE: We handle a possible crash in get()
+        with irods_backend.get_session() as irods:
             try:
                 context['irods_sample_stats'] = irods_backend.get_object_stats(
-                    irods_backend.get_sample_path(project)
+                    irods, irods_backend.get_sample_path(project)
                 )
             except FileNotFoundError:
                 pass
         return context
+
+    def get(self, request, *args, **kwargs):
+        try:
+            return super().render_to_response(self.get_context_data())
+        except Exception as ex:
+            messages.error(request, str(ex))
+            return redirect(
+                reverse(
+                    'samplesheets:project_sheets',
+                    kwargs={'project': self.get_project().sodar_uuid},
+                )
+            )
 
     def post(self, request, *args, **kwargs):
         timeline = get_backend_api('timeline_backend')
@@ -1444,7 +1465,6 @@ class SheetDeleteView(
             if 'irods_sample_stats' in context
             else 0
         )
-
         if (
             file_count > 0
             and not self.request.user.is_superuser
@@ -1492,7 +1512,6 @@ class SheetDeleteView(
             return redirect(redirect_url)
 
         delete_success = True
-
         if taskflow and investigation.irods_status:
             if tl_event:
                 tl_event.set_status('SUBMIT')
@@ -1509,6 +1528,9 @@ class SheetDeleteView(
                     'Failed to delete sample sheets: {}'.format(ex),
                 )
         else:
+            # Clear cached study tables (force delete)
+            for study in investigation.studies.all():
+                table_builder.clear_study_cache(study, delete=True)
             investigation.delete()
             tl_event.set_status('OK')
 
@@ -1523,18 +1545,13 @@ class SheetDeleteView(
                 )
             )
             # Delete sheet configuration
-            app_settings.set_app_setting(
-                APP_NAME, 'sheet_config', {}, project=project
-            )
+            app_settings.set(APP_NAME, 'sheet_config', {}, project=project)
             # Delete display configurations
-            app_settings.set_app_setting(
+            app_settings.set(
                 APP_NAME, 'display_config_default', {}, project=project
             )
-            app_settings.delete_setting(
-                APP_NAME, 'display_config', project=project
-            )
+            app_settings.delete(APP_NAME, 'display_config', project=project)
             messages.success(self.request, 'Sample sheets deleted.')
-
         return redirect(redirect_url)
 
 
@@ -1547,7 +1564,7 @@ class SheetCacheUpdateView(
 ):
     """Sample sheet manual cache update view"""
 
-    permission_required = 'samplesheets.edit_sheet'
+    permission_required = 'samplesheets.update_cache'
 
     def get(self, request, *args, **kwargs):
         project = self.get_project()
@@ -1608,7 +1625,6 @@ class IrodsCollsCreateView(
                 ),
             )
             return redirect(redirect_url)
-
         # Else go on with the creation
         try:
             self.create_colls(investigation, request)
@@ -1621,7 +1637,6 @@ class IrodsCollsCreateView(
             messages.success(self.request, success_msg)
         except taskflow.FlowSubmitException as ex:
             messages.error(self.request, str(ex))
-
         return redirect(redirect_url)
 
     def get(self, request, *args, **kwargs):
@@ -1972,7 +1987,7 @@ class IrodsAccessTicketListView(
     """Sample Sheet version list view"""
 
     model = IrodsAccessTicket
-    permission_required = 'samplesheets.edit_sheet'
+    permission_required = 'samplesheets.edit_ticket'
     template_name = 'samplesheets/irods_access_tickets.html'
     paginate_by = settings.SHEETS_IRODS_TICKET_PAGINATION
 
@@ -1987,16 +2002,34 @@ class IrodsAccessTicketListView(
         assays = Assay.objects.filter(
             study__investigation__project__sodar_uuid=self.kwargs['project']
         )
-        context['track_hubs_available'] = bool(
-            [
-                track_hub
-                for assay in assays
-                for track_hub in irods_backend.get_child_colls_by_path(
-                    irods_backend.get_path(assay) + '/' + TRACK_HUBS_COLL
-                )
-            ]
-        )
+        with irods_backend.get_session() as irods:
+            context['track_hubs_available'] = bool(
+                [
+                    track_hub
+                    for assay in assays
+                    for track_hub in irods_backend.get_child_colls(
+                        irods,
+                        os.path.join(
+                            irods_backend.get_path(assay), TRACK_HUBS_COLL
+                        ),
+                    )
+                ]
+            )
         return context
+
+    def get(self, request, *args, **kwargs):
+        self.object_list = self.get_queryset()
+        try:
+            context = self.get_context_data()
+            return super().render_to_response(context)
+        except Exception as ex:
+            messages.error(request, str(ex))
+            return redirect(
+                reverse(
+                    'samplesheets:project_sheets',
+                    kwargs={'project': self.get_project().sodar_uuid},
+                )
+            )
 
 
 class IrodsAccessTicketCreateView(
@@ -2009,7 +2042,7 @@ class IrodsAccessTicketCreateView(
 ):
     """Sample Sheet version restoring view"""
 
-    permission_required = 'samplesheets.edit_sheet'
+    permission_required = 'samplesheets.edit_ticket'
     template_name = 'samplesheets/irodsaccessticket_form.html'
     form_class = IrodsAccessTicketForm
 
@@ -2017,14 +2050,26 @@ class IrodsAccessTicketCreateView(
         return {'project': self.get_project()}
 
     def form_valid(self, form):
-        # Create iRODS ticket
-        irods_backend = get_backend_api('omics_irods')
-        ticket = irods_backend.issue_ticket(
-            'read',
-            form.cleaned_data['path'],
-            ticket_str=build_secret(16),
-            expiry_date=form.cleaned_data.get('date_expires'),
+        redirect_url = reverse(
+            'samplesheets:irods_tickets',
+            kwargs={'project': self.kwargs['project']},
         )
+        irods_backend = get_backend_api('omics_irods')
+        try:
+            with irods_backend.get_session() as irods:
+                ticket = irods_backend.issue_ticket(
+                    irods,
+                    'read',
+                    form.cleaned_data['path'],
+                    ticket_str=build_secret(16),
+                    expiry_date=form.cleaned_data.get('date_expires'),
+                )
+        except Exception as ex:
+            messages.error(
+                self.request,
+                'Exception issuing iRODS access ticket: {}'.format(ex),
+            )
+            return redirect(redirect_url)
         # Create database object
         obj = form.save(commit=False)
         obj.project = self.get_project()
@@ -2037,12 +2082,7 @@ class IrodsAccessTicketCreateView(
             self.request,
             'iRODS access ticket "{}" created.'.format(obj.get_display_name()),
         )
-        return redirect(
-            reverse(
-                'samplesheets:irods_tickets',
-                kwargs={'project': self.kwargs['project']},
-            )
-        )
+        return redirect(redirect_url)
 
 
 class IrodsAccessTicketUpdateView(
@@ -2054,7 +2094,7 @@ class IrodsAccessTicketUpdateView(
 ):
     """Sample sheet version deletion view"""
 
-    permission_required = 'samplesheets.edit_sheet'
+    permission_required = 'samplesheets.edit_ticket'
     model = IrodsAccessTicket
     form_class = IrodsAccessTicketForm
     template_name = 'samplesheets/irodsaccessticket_form.html'
@@ -2087,7 +2127,7 @@ class IrodsAccessTicketDeleteView(
 ):
     """iRODS access ticket deletion view"""
 
-    permission_required = 'samplesheets.delete_sheet'
+    permission_required = 'samplesheets.edit_ticket'
     template_name = 'samplesheets/irodsaccessticket_confirm_delete.html'
     model = IrodsAccessTicket
     slug_url_kwarg = 'irodsaccessticket'
@@ -2103,15 +2143,18 @@ class IrodsAccessTicketDeleteView(
         obj = self.get_object()
         irods_backend = get_backend_api('omics_irods')
         try:
-            irods_backend.delete_ticket(obj.ticket)
+            with irods_backend.get_session() as irods:
+                irods_backend.delete_ticket(irods, obj.ticket)
             messages.success(
                 request,
                 'iRODS access ticket "{}" deleted.'.format(
                     obj.get_display_name()
                 ),
             )
-        except Exception as e:
-            messages.error(request, '%s. Maybe it didn\'t exist.' % e)
+        except Exception as ex:
+            messages.error(
+                request, 'Error deleting iRODS access ticket: {}'.format(ex)
+            )
         return super().delete(request, *args, **kwargs)
 
 
@@ -2254,16 +2297,33 @@ class IrodsRequestAcceptView(
         context_data['affected_collections'] = []
         context_data['is_collection'] = obj.is_collection()
         if context_data['is_collection']:
-            coll = irods_backend.get_coll_by_path(
-                context_data['irods_request'].path
-            )
-            context_data[
-                'affected_objects'
-            ] += irods_backend.get_objs_recursively(coll)
-            context_data[
-                'affected_collections'
-            ] += irods_backend.get_colls_recursively(coll)
+            with irods_backend.get_session() as irods:
+                try:
+                    coll = irods.collections.get(
+                        context_data['irods_request'].path
+                    )
+                except CollectionDoesNotExist:
+                    coll = None
+                if coll:
+                    context_data[
+                        'affected_objects'
+                    ] += irods_backend.get_objs_recursively(irods, coll)
+                    context_data[
+                        'affected_collections'
+                    ] += irods_backend.get_colls_recursively(coll)
         return context_data
+
+    def get(self, request, *args, **kwargs):
+        try:
+            return super().render_to_response(self.get_context_data())
+        except Exception as ex:
+            messages.error(request, str(ex))
+            return redirect(
+                reverse(
+                    'samplesheets:irods_requests',
+                    kwargs={'project': self.get_project().sodar_uuid},
+                )
+            )
 
     def form_valid(self, request, *args, **kwargs):
         timeline = get_backend_api('timeline_backend')
@@ -2541,7 +2601,7 @@ class SheetRemoteSyncView(
         tl_add = False
         tl_status_type = 'OK'
         tl_status_desc = 'Sync OK'
-        sheet_sync_enable = app_settings.get_app_setting(
+        sheet_sync_enable = app_settings.get(
             APP_NAME, 'sheet_sync_enable', project=project
         )
 
@@ -2567,7 +2627,7 @@ class SheetRemoteSyncView(
             tl_add = True  # Add timeline event
 
         if timeline and tl_add:
-            sheet_sync_url = app_settings.get_app_setting(
+            sheet_sync_url = app_settings.get(
                 APP_NAME, 'sheet_sync_url', project=project
             )
             timeline.add_event(

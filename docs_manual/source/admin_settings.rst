@@ -181,6 +181,12 @@ Sample Sheets Settings
     URL pattern in form of ``https://example.com/{id}``.
 ``SHEETS_SYNC_INTERVAL``
     Interval for remote sheet synchronization in minutes (integer).
+``SHEETS_IGV_OMIT_BAM``
+    BAM file name suffixes to omit from study shortcuts and IGV session
+    generation.
+``SHEETS_IGV_OMIT_VCF``
+    VCF file name suffixes to omit from study shortcuts and IGV session
+    generation.
 
 Landing Zones Settings
 ----------------------
@@ -189,7 +195,7 @@ Landing Zones Settings
     Zone status query interval in seconds (integer).
 ``LANDINGZONES_TRIGGER_ENABLE``
     Enable automated move triggering (boolean).
-``LANDINGZONES_TRIGGER_MOVE_INVERVAL``
+``LANDINGZONES_TRIGGER_MOVE_INTERVAL``
     Automated move file check interval in seconds (integer).
 ``LANDINGZONES_TRIGGER_FILE``
     File name for automated move triggering (string,

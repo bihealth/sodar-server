@@ -345,6 +345,9 @@ REST_FRAMEWORK = {
 ENABLE_LDAP = env.bool('ENABLE_LDAP', False)
 ENABLE_LDAP_SECONDARY = env.bool('ENABLE_LDAP_SECONDARY', False)
 
+# Alternative domains for detecting LDAP access by email address
+LDAP_ALT_DOMAINS = env.list('LDAP_ALT_DOMAINS', None, default=[])
+
 if ENABLE_LDAP:
     import itertools
     import ldap
@@ -583,7 +586,7 @@ SITE_INSTANCE_TITLE = env.str('SITE_INSTANCE_TITLE', 'CUBI SODAR')
 
 
 # General API settings
-SODAR_API_DEFAULT_VERSION = '0.12.1'
+SODAR_API_DEFAULT_VERSION = '0.13.0'
 SODAR_API_ALLOWED_VERSIONS = [
     '0.7.0',
     '0.7.1',
@@ -597,6 +600,7 @@ SODAR_API_ALLOWED_VERSIONS = [
     '0.11.3',
     '0.12.0',
     '0.12.1',
+    '0.13.0',
 ]
 SODAR_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar+json'
 SODAR_API_DEFAULT_HOST = env.url(
@@ -780,6 +784,14 @@ SHEETS_ENABLED_TEMPLATES = [
 # Remote sample sheet sync interval in minutes
 SHEETS_SYNC_INTERVAL = env.int('SHEETS_SYNC_INTERVAL', 5)
 
+# BAM file name suffixes to omit from study shortcuts and IGV session generation
+SHEETS_IGV_OMIT_BAM = env.list(
+    'SHEETS_IGV_OMIT_BAM', default=['dragen_evidence.bam']
+)
+# VCF file name suffixes to omit from study shortcuts and IGV session generation
+SHEETS_IGV_OMIT_VCF = env.list(
+    'SHEETS_IGV_OMIT_VCF', default=['cnv.vcf.gz', 'ploidy.vcf.gz', 'sv.vcf.gz']
+)
 
 # Landingzones app settings
 # Status query interval in seconds
@@ -787,7 +799,7 @@ LANDINGZONES_STATUS_INTERVAL = env.int('LANDINGZONES_STATUS_INTERVAL', 3)
 # Enable automated move triggering based on touched file
 LANDINGZONES_TRIGGER_ENABLE = env.bool('LANDINGZONES_TRIGGER_ENABLE', True)
 # Automatic move triggering check interval in seconds
-LANDINGZONES_TRIGGER_MOVE_INVERVAL = env.int(
+LANDINGZONES_TRIGGER_MOVE_INTERVAL = env.int(
     'LANDINGZONES_TRIGGER_MOVE_INTERVAL', 30
 )
 # File name for automated move triggering

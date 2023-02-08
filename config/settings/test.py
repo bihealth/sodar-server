@@ -101,10 +101,11 @@ SHEETS_ENABLE_CACHE = False  # Temporarily disabled to fix CI, see issue #556
 SHEETS_EXTERNAL_LINK_PATH = os.path.join(
     ROOT_DIR, 'samplesheets/tests/config/ext_links.json'
 )
+SHEETS_IGV_OMIT_BAM = ['dragen_evidence.bam']
+SHEETS_IGV_OMIT_VCF = ['cnv.vcf.gz', 'ploidy.vcf.gz', 'sv.vcf.gz']
 
 # Landingzones app settings
 LANDINGZONES_TRIGGER_ENABLE = True
-
 
 # iRODS settings shared by iRODS using apps
 ENABLE_IRODS = True

@@ -597,17 +597,16 @@ export default {
 
     /* Editing -------------------------------------------------------------- */
 
-    handleCellEdit (upDataArr, refreshCells) {
+    handleCellEdit (upDataArr, refreshCells, verify) {
       // TODO: Add timeout / retrying
       // TODO: Cleanup unnecessary fields from JSON
       // TODO: In the future, add edited info in a queue and save periodically
-      if (!Array.isArray(upDataArr)) {
-        upDataArr = [upDataArr]
-      }
+      if (!Array.isArray(upDataArr)) upDataArr = [upDataArr]
+      if (verify === undefined) verify = true
 
       fetch('/samplesheets/ajax/edit/cell/' + this.projectUuid, {
         method: 'POST',
-        body: JSON.stringify({ updated_cells: upDataArr }),
+        body: JSON.stringify({ updated_cells: upDataArr, verify: verify }),
         credentials: 'same-origin',
         headers: {
           Accept: 'application/json',
@@ -617,17 +616,29 @@ export default {
       }).then(data => data.json())
         .then(
           data => {
+            const gridUuids = this.getStudyGridUuids()
             if (data.detail === 'ok') {
               this.showNotification('Saved', 'success', 1000)
               this.editDataUpdated = true
               this.versionSaved = false
-
               // Update other occurrences of cell in UI
-              const gridUuids = this.getStudyGridUuids()
               for (let i = 0; i < gridUuids.length; i++) {
                 this.updateCellUIValues(
                   this.getGridOptionsByUuid(
-                    gridUuids[i]).api, upDataArr, refreshCells)
+                    gridUuids[i]).api, upDataArr, refreshCells, false)
+              }
+            } else if (data.detail === 'alert') {
+              // Handle verification alert from server
+              if (confirm(data.alert_msg)) {
+                // Call edit again
+                this.handleCellEdit(upDataArr, refreshCells, false)
+              } else {
+                // Revert values in UI
+                for (let i = 0; i < gridUuids.length; i++) {
+                  this.updateCellUIValues(
+                    this.getGridOptionsByUuid(
+                      gridUuids[i]).api, upDataArr, refreshCells, true)
+                }
               }
             } else {
               console.log('Save status: ' + data.detail) // DEBUG
@@ -640,20 +651,19 @@ export default {
         })
     },
 
-    updateCellUIValues (gridApi, upDataArr, refreshCells) {
+    updateCellUIValues (gridApi, upDataArr, refreshCells, revert) {
       for (let i = 0; i < upDataArr.length; i++) {
         const upData = upDataArr[i]
         const fieldId = upData.header_field
-
         gridApi.forEachNode(function (rowNode) {
           const value = rowNode.data[fieldId]
           if (value && value.uuid === upData.uuid) {
-            value.value = upData.value
-            value.unit = upData.unit
+            if (revert) value.value = upData.og_value
+            else value.value = upData.value
+            value.unit = upData.unit // TODO: Add support for reverting unit
             rowNode.setDataValue(fieldId, value)
           }
         })
-
         if (refreshCells) {
           gridApi.refreshCells({ columns: [fieldId], force: true })
         }

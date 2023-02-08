@@ -16,6 +16,7 @@
           size="sm"
           placeholder="Filter"
           class="ml-auto"
+          v-model="filterInput"
           @update="onFilterUpdate">
       </b-input>
       <button
@@ -34,7 +35,7 @@
             <th>File</th>
             <th>Size</th>
             <th>Modified</th>
-            <th></th>
+            <th>iRODS</th>
           </tr>
         </thead>
         <tbody>
@@ -76,6 +77,13 @@
                   v-b-tooltip.hover.d300>
                 <img src="/icons/mdi/delete.svg?color=%23fff" />
               </b-button>
+            </td>
+          </tr>
+          <tr v-if="objectList.length > 0 && visCount === 0"
+              id="sodar-ss-irods-filter-empty">
+            <td colspan="4"
+                class="text-muted text-center font-italic">
+              No files found with current filter.
             </td>
           </tr>
         </tbody>
@@ -125,16 +133,21 @@ export default {
       dirPath: null,
       dirPathLength: null,
       fileCount: 0,
-      fileSize: 0
+      fileSize: 0,
+      filterInput: null,
+      visCount: null
     }
   },
   methods: {
     onFilterUpdate (event) {
+      let visCount = 0
       for (let i = 0; i < this.objectList.length; i++) {
         const vis = event === '' ||
           this.objectList[i].displayPath.toLowerCase().includes(event)
         this.$set(this.objectList[i], 'visibleInList', vis)
+        if (vis === true) visCount += 1
       }
+      this.visCount = visCount
       this.$forceUpdate()
     },
     setTitle (title) {
@@ -170,7 +183,6 @@ export default {
         if (response.irods_data.length > 0) {
           this.objectList = response.irods_data
           this.fileCount = response.irods_data.length
-
           for (let i = 0; i < this.objectList.length; i++) {
             this.objectList[i].visibleInList = true
             this.objectList[i].displayPath =
@@ -178,6 +190,7 @@ export default {
                 this.objectList[i].name
             this.fileSize += this.objectList[i].size
           }
+          this.visCount = this.fileCount
         } else {
           this.message = 'Empty collection'
           this.empty = true
@@ -244,7 +257,6 @@ export default {
     },
     showModal (path) {
       const modalElement = this.$refs.irodsDirModal
-
       // Clear previous data
       this.empty = false
       this.message = null
@@ -253,11 +265,11 @@ export default {
       this.dirPathLength = this.dirPath.split('/').length
       this.fileCount = 0
       this.fileSize = 0
-
+      this.filterInput = ''
+      this.visCount = null
       this.getObjList(path)
       modalElement.show()
     },
-
     hideModal () {
       this.$refs.irodsDirModal.hide()
     }
@@ -266,9 +278,15 @@ export default {
 </script>
 
 <style scoped>
-/* Size column */
-table.sodar-irods-obj-table thead tr th:nth-child(2) {
-  min-width: 60px;
+
+table.sodar-irods-obj-table thead tr th:nth-child(1),
+table.sodar-irods-obj-table tbody tr td:nth-child(1) {
+  width: 100%;
+}
+
+table.sodar-irods-obj-table thead tr th:nth-child(2),
+table.sodar-irods-obj-table tbody tr td:nth-child(2) {
+  width: 60px;
   text-align: right;
 }
 
@@ -277,19 +295,15 @@ table.sodar-irods-obj-table tbody tr td:nth-child(2) {
   white-space: nowrap;
 }
 
-/* Date column */
+table.sodar-irods-obj-table thead tr th:nth-child(3),
 table.sodar-irods-obj-table tbody tr td:nth-child(3) {
-  width: 5%;
+  min-width: 160px;
   white-space: nowrap;
 }
 
-/* MD5 column */
-table.sodar-irods-obj-table thead tr th:nth-child(4) {
-  width: 40px;
-}
-
+table.sodar-irods-obj-table thead tr th:nth-child(4),
 table.sodar-irods-obj-table tbody tr td:nth-child(4) {
-  width: 40px;
+  width: 60px;
   text-align: right;
 }
 
@@ -304,5 +318,4 @@ input#sodar-ss-irods-filter {
 .sodar-ss-req-btn {
   padding-top: 0 !important;
 }
-
 </style>

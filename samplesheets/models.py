@@ -844,19 +844,6 @@ class GenericMaterial(NodeMixin, BaseSampleSheet):
             study=self.study, arcs__contains=[self.unique_name]
         ).order_by('file_name')
 
-    def get_samples(self):
-        """Return samples for the current material"""
-        # TODO: Add tests
-        # NOTE: Only works for SOURCE type materials for now
-        if self.item_type != 'SOURCE':
-            return None
-        # HACK: Only works if our naming scheme is followed
-        return GenericMaterial.objects.filter(
-            item_type='SAMPLE',
-            study=self.study,
-            name__startswith='{}-'.format(self.name),
-        )
-
 
 # Process ----------------------------------------------------------------------
 
@@ -1376,14 +1363,14 @@ class IrodsDataRequest(models.Model):
     def is_data_object(self):
         """Return True if data object exists for the object path"""
         irods_backend = get_backend_api('omics_irods')
-        irods_session = irods_backend.get_session()
-        return irods_session.data_objects.exists(self.path)
+        with irods_backend.get_session() as irods:
+            return irods.data_objects.exists(self.path)
 
     def is_collection(self):
         """Return True if iRODS collection exists for the object path"""
         irods_backend = get_backend_api('omics_irods')
-        irods_session = irods_backend.get_session()
-        return irods_session.collections.exists(self.path)
+        with irods_backend.get_session() as irods:
+            return irods.collections.exists(self.path)
 
     def get_short_path(self):
         """Return shortened layout-friendly path"""

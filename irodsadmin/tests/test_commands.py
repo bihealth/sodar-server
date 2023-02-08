@@ -44,21 +44,18 @@ class TestIrodsOrphans(
 
     def setUp(self):
         super().setUp()
-
         # Init super user
         self.user = self.make_user('user')
         self.user.is_superuser = True
         self.user.is_staff = True
         self.user.save()
-
         # Init roles
         self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
-
         # Init project with owner
-        self.project = self._make_project(
+        self.project = self.make_project(
             'TestProject', PROJECT_TYPE_PROJECT, None
         )
-        self.as_owner = self._make_assignment(
+        self.owner_as = self.make_assignment(
             self.project, self.user, self.role_owner
         )
 
@@ -75,14 +72,14 @@ class TestIrodsOrphans(
         self.landing_zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
-            user=self.as_owner.user,
+            user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
             configuration=None,
             config_data={},
         )
         self.irods_backend = get_backend_api('omics_irods')
-        self.irods = self.irods_backend.get_session()
+        self.irods = self.irods_backend.get_session_obj()
 
         # Create the actual assay, study and landing zone in the irods session
         self.irods.collections.create(self.irods_backend.get_path(self.assay))
@@ -109,6 +106,7 @@ class TestIrodsOrphans(
             self.irods_backend.get_projects_path()
         ).remove(force=True)
         self.irods.cleanup()
+        super().tearDown()
 
     def test_get_assay_collections(self):
         """Test get_assay_collections()"""
@@ -314,7 +312,7 @@ class TestIrodsOrphans(
             [self.assay],
         )
         self.assertListEqual(
-            irodsorphans.get_output(orphans, self.irods_backend),
+            irodsorphans.get_output(orphans, self.irods_backend, self.irods),
             [
                 '{};{};{};0;0 bytes'.format(
                     str(self.project.sodar_uuid),
@@ -343,7 +341,7 @@ class TestIrodsOrphans(
             [self.assay],
         )
         self.assertListEqual(
-            irodsorphans.get_output(orphans, self.irods_backend),
+            irodsorphans.get_output(orphans, self.irods_backend, self.irods),
             [
                 '{};<DELETED>;{};0;0 bytes'.format(
                     project_uuid,

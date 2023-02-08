@@ -48,8 +48,6 @@
           "name": "Name",
           "obj_cls": "GenericMaterial",
           "item_type": "SOURCE",
-          "num_col": false,
-          "config_set": false,
           "col_type": "NAME",
           "type": "name",
           "max_value_len": 5
@@ -59,8 +57,6 @@
           "name": "organism",
           "obj_cls": "GenericMaterial",
           "item_type": "SOURCE",
-          "num_col": false,
-          "config_set": false,
           "col_type": "ONTOLOGY",
           "type": "characteristics",
           "max_value_len": 26
@@ -70,8 +66,6 @@
           "name": "age",
           "obj_cls": "GenericMaterial",
           "item_type": "SOURCE",
-          "num_col": false,
-          "config_set": false,
           "col_type": "UNIT",
           "type": "characteristics",
           "max_value_len": 7
@@ -81,8 +75,6 @@
           "name": "Protocol",
           "obj_cls": "Process",
           "item_type": null,
-          "num_col": false,
-          "config_set": false,
           "col_type": "PROTOCOL",
           "type": "protocol",
           "max_value_len": 16
@@ -92,8 +84,6 @@
           "name": "instrument",
           "obj_cls": "Process",
           "item_type": null,
-          "num_col": false,
-          "config_set": false,
           "col_type": null,
           "type": "parameter_values",
           "max_value_len": 29
@@ -103,8 +93,6 @@
           "name": "Performer",
           "obj_cls": "Process",
           "item_type": null,
-          "num_col": false,
-          "config_set": false,
           "col_type": "CONTACT",
           "type": "performer",
           "max_value_len": 9
@@ -114,8 +102,6 @@
           "name": "Perform Date",
           "obj_cls": "Process",
           "item_type": null,
-          "num_col": false,
-          "config_set": false,
           "col_type": "DATE",
           "type": "perform_date",
           "max_value_len": 12
@@ -125,8 +111,6 @@
           "name": "Name",
           "obj_cls": "GenericMaterial",
           "item_type": "SAMPLE",
-          "num_col": false,
-          "config_set": false,
           "col_type": "NAME",
           "type": "name",
           "max_value_len": 8
@@ -136,8 +120,6 @@
           "name": "status",
           "obj_cls": "GenericMaterial",
           "item_type": "SAMPLE",
-          "num_col": false,
-          "config_set": false,
           "col_type": "NUMERIC",
           "type": "characteristics",
           "max_value_len": 6
@@ -147,8 +129,6 @@
           "name": "treatment",
           "obj_cls": "GenericMaterial",
           "item_type": "SAMPLE",
-          "num_col": false,
-          "config_set": false,
           "col_type": null,
           "type": "factor_values",
           "max_value_len": 8
@@ -172,13 +152,11 @@
                 "accession": "http://purl.bioontology.org/ontology/NCBITAXON/9606",
                 "ontology_name": "NCBITAXON"
               }
-            ],
-            "uuid": "fd93b0d1-a6f8-4204-8951-cd94be5a20fe"
+            ]
           },
           {
             "value": "90",
-            "unit": "day",
-            "uuid": "fd93b0d1-a6f8-4204-8951-cd94be5a20fe"
+            "unit": "day"
           },
           {
             "value": "sample collection",
@@ -186,34 +164,28 @@
             "uuid_ref": "48ae08c2-4fcf-4d92-934c-1c596d42a1a1"
           },
           {
-            "value": "scalpel",
-            "uuid": "f4993303-7506-4c0f-abbb-a53bef523c70"
+            "value": "scalpel"
           },
           {
-            "value": "John Doe",
-            "uuid": "f4993303-7506-4c0f-abbb-a53bef523c70"
+            "value": "John Doe"
           },
           {
-            "value": "2018-02-02",
-            "uuid": "f4993303-7506-4c0f-abbb-a53bef523c70"
+            "value": "2018-02-02"
           },
           {
             "value": "0814-N1",
             "uuid": "ad389965-8fee-4d6f-bc32-96631eab75d6"
           },
           {
-            "value": "0",
-            "uuid": "ad389965-8fee-4d6f-bc32-96631eab75d6"
+            "value": "0"
           },
           {
-            "value": "yes",
-            "uuid": "ad389965-8fee-4d6f-bc32-96631eab75d6"
+            "value": "yes"
           }
         ],
         [
           {
-            "value": "0815",
-            "uuid": "20469c00-c8d2-43bd-a02d-8d877eda253c"
+            "value": "0815"
           },
           {
             "value": [
@@ -222,13 +194,11 @@
                 "accession": "http://purl.bioontology.org/ontology/NCBITAXON/10090",
                 "ontology_name": "NCBITAXON"
               }
-            ],
-            "uuid": "20469c00-c8d2-43bd-a02d-8d877eda253c"
+            ]
           },
           {
             "value": "90",
-            "unit": "day",
-            "uuid": "20469c00-c8d2-43bd-a02d-8d877eda253c"
+            "unit": "day"
           },
           {
             "value": "sample collection",
@@ -236,28 +206,23 @@
             "uuid_ref": "48ae08c2-4fcf-4d92-934c-1c596d42a1a1"
           },
           {
-            "value": "scalpel",
-            "uuid": "4f9dde67-252d-4945-80af-1f8b1eba957c"
+            "value": "scalpel"
           },
           {
-            "value": "John Doe",
-            "uuid": "4f9dde67-252d-4945-80af-1f8b1eba957c"
+            "value": "John Doe"
           },
           {
-            "value": "2018-02-02",
-            "uuid": "4f9dde67-252d-4945-80af-1f8b1eba957c"
+            "value": "2018-02-02"
           },
           {
             "value": "0815-N1",
             "uuid": "55127c53-bc7b-4eb1-9de5-be319173ffab"
           },
           {
-            "value": "0",
-            "uuid": "55127c53-bc7b-4eb1-9de5-be319173ffab"
+            "value": "0"
           },
           {
-            "value": "yes",
-            "uuid": "55127c53-bc7b-4eb1-9de5-be319173ffab"
+            "value": "yes"
           }
         ],
         [
@@ -272,13 +237,11 @@
                 "accession": "http://purl.bioontology.org/ontology/NCBITAXON/10090",
                 "ontology_name": "NCBITAXON"
               }
-            ],
-            "uuid": "20469c00-c8d2-43bd-a02d-8d877eda253c"
+            ]
           },
           {
             "value": "90",
-            "unit": "day",
-            "uuid": "20469c00-c8d2-43bd-a02d-8d877eda253c"
+            "unit": "day"
           },
           {
             "value": "sample collection",
@@ -289,28 +252,23 @@
             "value": [
               "scalpel type A",
               "scalpel type B"
-            ],
-            "uuid": "94fc3037-1bac-459c-9056-58c8a4b3b506"
+            ]
           },
           {
-            "value": "John Doe",
-            "uuid": "94fc3037-1bac-459c-9056-58c8a4b3b506"
+            "value": "John Doe"
           },
           {
-            "value": "2018-02-02",
-            "uuid": "94fc3037-1bac-459c-9056-58c8a4b3b506"
+            "value": "2018-02-02"
           },
           {
             "value": "0815-T1",
             "uuid": "8d4d43aa-f97f-4583-b197-ee2d0fd95aa0"
           },
           {
-            "value": "2",
-            "uuid": "8d4d43aa-f97f-4583-b197-ee2d0fd95aa0"
+            "value": "2"
           },
           {
-            "value": "",
-            "uuid": "8d4d43aa-f97f-4583-b197-ee2d0fd95aa0"
+            "value": ""
           }
         ],
         [
@@ -325,13 +283,11 @@
                 "accession": null,
                 "ontology_name": null
               }
-            ],
-            "uuid": "654959de-478f-448b-8b10-cb5c2718f0b1"
+            ]
           },
           {
             "value": "",
-            "unit": "day",
-            "uuid": "654959de-478f-448b-8b10-cb5c2718f0b1"
+            "unit": "day"
           },
           {
             "value": "sample collection",
@@ -339,28 +295,23 @@
             "uuid_ref": "48ae08c2-4fcf-4d92-934c-1c596d42a1a1"
           },
           {
-            "value": "scalpel",
-            "uuid": "f4596327-6251-4a72-96ca-5c5d932559c8"
+            "value": "scalpel"
           },
           {
-            "value": "John Doe",
-            "uuid": "f4596327-6251-4a72-96ca-5c5d932559c8"
+            "value": "John Doe"
           },
           {
-            "value": "2018-02-02",
-            "uuid": "f4596327-6251-4a72-96ca-5c5d932559c8"
+            "value": "2018-02-02"
           },
           {
             "value": "0816-T1",
             "uuid": "55a1c903-a02d-47b6-8520-e082a8d2fb54"
           },
           {
-            "value": "1",
-            "uuid": "55a1c903-a02d-47b6-8520-e082a8d2fb54"
+            "value": "1"
           },
           {
-            "value": "yes",
-            "uuid": "55a1c903-a02d-47b6-8520-e082a8d2fb54"
+            "value": "yes"
           }
         ],
         [
@@ -369,13 +320,11 @@
             "uuid": "eccb8a64-d93f-4bc8-afc6-30fc12c2e417"
           },
           {
-            "value": "",
-            "uuid": "eccb8a64-d93f-4bc8-afc6-30fc12c2e417"
+            "value": ""
           },
           {
             "value": "150",
-            "unit": "day",
-            "uuid": "eccb8a64-d93f-4bc8-afc6-30fc12c2e417"
+            "unit": "day"
           },
           {
             "value": "sample collection",
@@ -383,28 +332,23 @@
             "uuid_ref": "48ae08c2-4fcf-4d92-934c-1c596d42a1a1"
           },
           {
-            "value": "scalpel",
-            "uuid": "544eb9f9-9ac7-475a-9052-f224657744b4"
+            "value": "scalpel"
           },
           {
-            "value": "John Doe",
-            "uuid": "544eb9f9-9ac7-475a-9052-f224657744b4"
+            "value": "John Doe"
           },
           {
-            "value": "2018-02-02",
-            "uuid": "544eb9f9-9ac7-475a-9052-f224657744b4"
+            "value": "2018-02-02"
           },
           {
             "value": "",
             "uuid": "fdcdadb0-af8a-4f1b-9621-d563465252a3"
           },
           {
-            "value": "",
-            "uuid": "fdcdadb0-af8a-4f1b-9621-d563465252a3"
+            "value": ""
           },
           {
-            "value": "",
-            "uuid": "fdcdadb0-af8a-4f1b-9621-d563465252a3"
+            "value": ""
           }
         ]
       ],
@@ -525,8 +469,6 @@
             "name": "Name",
             "obj_cls": "GenericMaterial",
             "item_type": "SOURCE",
-            "num_col": false,
-            "config_set": false,
             "col_type": "NAME",
             "type": "name",
             "max_value_len": 5
@@ -536,8 +478,6 @@
             "name": "organism",
             "obj_cls": "GenericMaterial",
             "item_type": "SOURCE",
-            "num_col": false,
-            "config_set": false,
             "col_type": "ONTOLOGY",
             "type": "characteristics",
             "max_value_len": 13
@@ -547,8 +487,6 @@
             "name": "age",
             "obj_cls": "GenericMaterial",
             "item_type": "SOURCE",
-            "num_col": false,
-            "config_set": false,
             "col_type": "UNIT",
             "type": "characteristics",
             "max_value_len": 6
@@ -558,8 +496,6 @@
             "name": "Protocol",
             "obj_cls": "Process",
             "item_type": null,
-            "num_col": false,
-            "config_set": false,
             "col_type": "PROTOCOL",
             "type": "protocol",
             "max_value_len": 16
@@ -569,8 +505,6 @@
             "name": "instrument",
             "obj_cls": "Process",
             "item_type": null,
-            "num_col": false,
-            "config_set": false,
             "col_type": null,
             "type": "parameter_values",
             "max_value_len": 29
@@ -580,8 +514,6 @@
             "name": "Performer",
             "obj_cls": "Process",
             "item_type": null,
-            "num_col": false,
-            "config_set": false,
             "col_type": "CONTACT",
             "type": "performer",
             "max_value_len": 9
@@ -591,8 +523,6 @@
             "name": "Perform Date",
             "obj_cls": "Process",
             "item_type": null,
-            "num_col": false,
-            "config_set": false,
             "col_type": "DATE",
             "type": "perform_date",
             "max_value_len": 12
@@ -602,8 +532,6 @@
             "name": "Name",
             "obj_cls": "GenericMaterial",
             "item_type": "SAMPLE",
-            "num_col": false,
-            "config_set": false,
             "col_type": "NAME",
             "type": "name",
             "max_value_len": 8
@@ -613,8 +541,6 @@
             "name": "status",
             "obj_cls": "GenericMaterial",
             "item_type": "SAMPLE",
-            "num_col": false,
-            "config_set": false,
             "col_type": "NUMERIC",
             "type": "characteristics",
             "max_value_len": 6
@@ -624,8 +550,6 @@
             "name": "treatment",
             "obj_cls": "GenericMaterial",
             "item_type": "SAMPLE",
-            "num_col": false,
-            "config_set": false,
             "col_type": null,
             "type": "factor_values",
             "max_value_len": 8
@@ -635,8 +559,6 @@
             "name": "Protocol",
             "obj_cls": "Process",
             "item_type": null,
-            "num_col": false,
-            "config_set": false,
             "col_type": "PROTOCOL",
             "type": "protocol",
             "max_value_len": 18
@@ -646,8 +568,6 @@
             "name": "Name",
             "obj_cls": "GenericMaterial",
             "item_type": "MATERIAL",
-            "num_col": false,
-            "config_set": false,
             "col_type": "NAME",
             "type": "name",
             "max_value_len": 14
@@ -657,8 +577,6 @@
             "name": "Protocol",
             "obj_cls": "Process",
             "item_type": null,
-            "num_col": false,
-            "config_set": false,
             "col_type": "PROTOCOL",
             "type": "protocol",
             "max_value_len": 22
@@ -668,8 +586,6 @@
             "name": "Assay Name",
             "obj_cls": "Process",
             "item_type": null,
-            "num_col": false,
-            "config_set": false,
             "col_type": "NAME",
             "type": "process_name",
             "max_value_len": 20
@@ -679,8 +595,6 @@
             "name": "Name",
             "obj_cls": "GenericMaterial",
             "item_type": "DATA",
-            "num_col": false,
-            "config_set": false,
             "col_type": "LINK_FILE",
             "type": "name",
             "max_value_len": 41
@@ -690,8 +604,6 @@
             "name": "Name",
             "obj_cls": "GenericMaterial",
             "item_type": "DATA",
-            "num_col": false,
-            "config_set": false,
             "col_type": "LINK_FILE",
             "type": "name",
             "max_value_len": 41
@@ -701,8 +613,6 @@
             "name": "Data Transformation Name",
             "obj_cls": "Process",
             "item_type": null,
-            "num_col": false,
-            "config_set": false,
             "col_type": "NAME",
             "type": "process_name",
             "max_value_len": 23
@@ -712,8 +622,6 @@
             "name": "Name",
             "obj_cls": "GenericMaterial",
             "item_type": "DATA",
-            "num_col": false,
-            "config_set": false,
             "col_type": "LINK_FILE",
             "type": "name",
             "max_value_len": 18
@@ -732,13 +640,11 @@
                   "accession": "http://purl.bioontology.org/ontology/NCBITAXON/10090",
                   "ontology_name": "NCBITAXON"
                 }
-              ],
-              "uuid": "20469c00-c8d2-43bd-a02d-8d877eda253c"
+              ]
             },
             {
               "value": "90",
-              "unit": "day",
-              "uuid": "20469c00-c8d2-43bd-a02d-8d877eda253c"
+              "unit": "day"
             },
             {
               "value": "sample collection",
@@ -746,28 +652,23 @@
               "uuid_ref": "48ae08c2-4fcf-4d92-934c-1c596d42a1a1"
             },
             {
-              "value": "scalpel",
-              "uuid": "4f9dde67-252d-4945-80af-1f8b1eba957c"
+              "value": "scalpel"
             },
             {
-              "value": "John Doe",
-              "uuid": "4f9dde67-252d-4945-80af-1f8b1eba957c"
+              "value": "John Doe"
             },
             {
-              "value": "2018-02-02",
-              "uuid": "4f9dde67-252d-4945-80af-1f8b1eba957c"
+              "value": "2018-02-02"
             },
             {
               "value": "0815-N1",
               "uuid": "55127c53-bc7b-4eb1-9de5-be319173ffab"
             },
             {
-              "value": "0",
-              "uuid": "55127c53-bc7b-4eb1-9de5-be319173ffab"
+              "value": "0"
             },
             {
-              "value": "yes",
-              "uuid": "55127c53-bc7b-4eb1-9de5-be319173ffab"
+              "value": "yes"
             },
             {
               "value": "library preparation",
@@ -816,13 +717,11 @@
                   "accession": "http://purl.bioontology.org/ontology/NCBITAXON/10090",
                   "ontology_name": "NCBITAXON"
                 }
-              ],
-              "uuid": "20469c00-c8d2-43bd-a02d-8d877eda253c"
+              ]
             },
             {
               "value": "90",
-              "unit": "day",
-              "uuid": "20469c00-c8d2-43bd-a02d-8d877eda253c"
+              "unit": "day"
             },
             {
               "value": "sample collection",
@@ -833,28 +732,23 @@
               "value": [
                 "scalpel type A",
                 "scalpel type B"
-              ],
-              "uuid": "94fc3037-1bac-459c-9056-58c8a4b3b506"
+              ]
             },
             {
-              "value": "John Doe",
-              "uuid": "94fc3037-1bac-459c-9056-58c8a4b3b506"
+              "value": "John Doe"
             },
             {
-              "value": "2018-02-02",
-              "uuid": "94fc3037-1bac-459c-9056-58c8a4b3b506"
+              "value": "2018-02-02"
             },
             {
               "value": "0815-T1",
               "uuid": "8d4d43aa-f97f-4583-b197-ee2d0fd95aa0"
             },
             {
-              "value": "2",
-              "uuid": "8d4d43aa-f97f-4583-b197-ee2d0fd95aa0"
+              "value": "2"
             },
             {
-              "value": "",
-              "uuid": "8d4d43aa-f97f-4583-b197-ee2d0fd95aa0"
+              "value": ""
             },
             {
               "value": "library preparation",

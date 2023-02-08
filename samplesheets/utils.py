@@ -10,7 +10,6 @@ from openpyxl import Workbook
 from openpyxl.workbook.child import INVALID_TITLE_REGEX
 
 from django.conf import settings
-from django.db.models import QuerySet
 from django.urls import reverse
 
 # Projectroles dependency
@@ -48,7 +47,7 @@ def get_sample_colls(investigation):
     :return: List
     """
     ret = []
-    irods_backend = get_backend_api('omics_irods', conn=False)
+    irods_backend = get_backend_api('omics_irods')
     if irods_backend:
         for study in investigation.studies.all():
             ret.append(irods_backend.get_sub_path(study))
@@ -101,6 +100,23 @@ def get_index_by_header(
     return None
 
 
+# TODO: Add tests
+def get_last_material_index(table):
+    """Return index of the last non-DATA material in a table row"""
+    row = table['table_data'][0]
+    for i in range(len(row) - 1, -1, -1):
+        cell = row[i]
+        header = table['field_header'][i]
+        if (
+            header['obj_cls'] == 'GenericMaterial'
+            and header['item_type'] != 'DATA'
+            and header['value'].lower() == 'name'
+            and cell['value']
+        ):
+            return i
+    return None
+
+
 def get_last_material_name(row, table):
     """Return name of the last non-DATA material in a table row"""
     name = None
@@ -115,52 +131,6 @@ def get_last_material_name(row, table):
         ):
             name = cell['value']
     return name
-
-
-def get_sample_libraries(samples, study_tables):
-    """
-    Return libraries for samples.
-
-    :param samples: Sample object or a list of Sample objects within a study
-    :param study_tables: Rendered study tables
-    :return: GenericMaterial queryset
-    """
-    from samplesheets.models import GenericMaterial
-
-    if type(samples) not in [list, QuerySet]:
-        samples = [samples]
-    sample_names = [s.name for s in samples]
-    study = samples[0].study
-    library_names = []
-
-    for k, assay_table in study_tables['assays'].items():
-        sample_idx = get_index_by_header(
-            assay_table, 'name', obj_cls=GenericMaterial, item_type='SAMPLE'
-        )
-        for row in assay_table['table_data']:
-            if row[sample_idx]['value'] in sample_names:
-                last_name = get_last_material_name(row, assay_table)
-                if last_name not in library_names:
-                    library_names.append(last_name)
-
-    return GenericMaterial.objects.filter(
-        study=study, name__in=library_names
-    ).order_by('name')
-
-
-def get_study_libraries(study, study_tables):
-    """
-    Return sample libraries for an entire study.
-
-    :param study: Study object
-    :param study_tables: Rendered study tables from samplesheets.rendering
-    :return: List of GenericMaterial objects
-    """
-    ret = []
-    for source in study.get_sources():
-        for sample in source.get_samples():
-            ret += get_sample_libraries(sample, study_tables)
-    return ret
 
 
 def get_isa_field_name(field):
@@ -383,7 +353,7 @@ def get_webdav_url(project, user):
         and project.public_guest_access
     ):
         app_settings = AppSettingAPI()
-        ticket = app_settings.get_app_setting(
+        ticket = app_settings.get(
             'samplesheets', 'public_access_ticket', project=project
         )
         if not ticket:
@@ -405,3 +375,12 @@ def get_ext_link_labels():
         with open(ext_path, 'r') as f:
             return json.load(f)
     return DEFAULT_EXTERNAL_LINK_LABELS
+
+
+def get_latest_file_path(paths):
+    """
+    Return last file by file name.
+
+    :param paths: List of strings
+    """
+    return sorted(paths, key=lambda x: x.split('/')[-1], reverse=True)[0]

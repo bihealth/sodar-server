@@ -366,8 +366,6 @@ describe('DataCellRenderer.vue', () => {
       name: 'External links',
       obj_cls: 'GenericMaterial',
       item_type: 'SOURCE',
-      num_col: false,
-      config_set: false,
       col_type: 'EXTERNAL_LINKS',
       max_value_len: 2
     }
@@ -394,8 +392,6 @@ describe('DataCellRenderer.vue', () => {
       name: 'External links',
       obj_cls: 'GenericMaterial',
       item_type: 'SOURCE',
-      num_col: false,
-      config_set: false,
       col_type: 'EXTERNAL_LINKS',
       max_value_len: 2
     }
@@ -424,8 +420,6 @@ describe('DataCellRenderer.vue', () => {
       name: 'HPO terms',
       obj_cls: 'GenericMaterial',
       item_type: 'SOURCE',
-      num_col: false,
-      config_set: false,
       col_type: 'ONTOLOGY',
       max_value_len: 171
     }
@@ -463,8 +457,6 @@ describe('DataCellRenderer.vue', () => {
       name: 'HPO terms',
       obj_cls: 'GenericMaterial',
       item_type: 'SOURCE',
-      num_col: false,
-      config_set: false,
       col_type: 'ONTOLOGY',
       type: 'characteristics',
       max_value_len: 171
@@ -506,8 +498,6 @@ describe('DataCellRenderer.vue', () => {
       name: 'Name',
       obj_cls: 'GenericMaterial',
       item_type: 'DATA',
-      num_col: false,
-      config_set: false,
       col_type: 'LINK_FILE',
       max_value_len: 13
     }

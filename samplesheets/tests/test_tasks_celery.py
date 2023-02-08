@@ -21,7 +21,11 @@ from taskflowbackend.tests.base import TaskflowbackendTestBase
 from timeline.models import ProjectEvent
 
 from samplesheets.models import ISATab
-from samplesheets.tasks_celery import update_project_cache_task, sheet_sync_task
+from samplesheets.tasks_celery import (
+    update_project_cache_task,
+    sheet_sync_task,
+    CACHE_UPDATE_EVENT,
+)
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_views import TestSheetRemoteSyncBase
 from samplesheets.tests.test_views_taskflow import (
@@ -72,7 +76,9 @@ class TestUpdateProjectCacheTask(
         self.assertEqual(
             JSONCacheItem.objects.filter(project=self.project).count(), 0
         )
-        self.assertEqual(AppAlert.objects.count(), 1)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name=CACHE_UPDATE_EVENT).count(), 0
+        )
         self.assertEqual(ProjectEvent.objects.count(), 2)
 
         update_project_cache_task(
@@ -98,7 +104,9 @@ class TestUpdateProjectCacheTask(
             }
         }
         self.assertEqual(cache_item.data, expected_data)
-        self.assertEqual(AppAlert.objects.count(), 2)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name=CACHE_UPDATE_EVENT).count(), 1
+        )
         alert = AppAlert.objects.order_by('-pk').first()
         self.assertTrue(alert.message.endswith(CACHE_ALERT_MESSAGE))
         self.assertEqual(ProjectEvent.objects.count(), 3)
@@ -108,7 +116,9 @@ class TestUpdateProjectCacheTask(
         self.assertEqual(
             JSONCacheItem.objects.filter(project=self.project).count(), 0
         )
-        self.assertEqual(AppAlert.objects.count(), 1)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name=CACHE_UPDATE_EVENT).count(), 0
+        )
         self.assertEqual(ProjectEvent.objects.count(), 2)
 
         update_project_cache_task(
@@ -118,7 +128,9 @@ class TestUpdateProjectCacheTask(
         self.assertEqual(
             JSONCacheItem.objects.filter(project=self.project).count(), 1
         )
-        self.assertEqual(AppAlert.objects.count(), 1)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name=CACHE_UPDATE_EVENT).count(), 0
+        )
         self.assertEqual(ProjectEvent.objects.count(), 3)
 
     def test_update_cache_no_user(self):
@@ -126,7 +138,9 @@ class TestUpdateProjectCacheTask(
         self.assertEqual(
             JSONCacheItem.objects.filter(project=self.project).count(), 0
         )
-        self.assertEqual(AppAlert.objects.count(), 1)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name=CACHE_UPDATE_EVENT).count(), 0
+        )
         self.assertEqual(ProjectEvent.objects.count(), 2)
 
         update_project_cache_task(self.project.sodar_uuid, None, add_alert=True)
@@ -134,7 +148,9 @@ class TestUpdateProjectCacheTask(
         self.assertEqual(
             JSONCacheItem.objects.filter(project=self.project).count(), 1
         )
-        self.assertEqual(AppAlert.objects.count(), 1)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name=CACHE_UPDATE_EVENT).count(), 0
+        )
         self.assertEqual(ProjectEvent.objects.count(), 3)
 
 
@@ -271,7 +287,7 @@ class TestSheetRemoteSyncTask(TestSheetRemoteSyncBase):
 
     def test_sync_wrong_token(self):
         """Test sync with wrong token"""
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'sheet_sync_token',
             'WRONGTOKEN',
@@ -282,7 +298,7 @@ class TestSheetRemoteSyncTask(TestSheetRemoteSyncBase):
 
     def test_sync_enabled_missing_token(self):
         """Test sync with missing token"""
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'sheet_sync_token',
             '',
@@ -293,7 +309,7 @@ class TestSheetRemoteSyncTask(TestSheetRemoteSyncBase):
 
     def test_sync_enabled_wrong_url(self):
         """Test sync with wrong url"""
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'sheet_sync_url',
             'https://qazxdfjajsrd.com',
@@ -304,7 +320,7 @@ class TestSheetRemoteSyncTask(TestSheetRemoteSyncBase):
 
     def test_sync_enabled_url_to_nonexisting_sheet(self):
         """Test sync with url to nonexisting sheet"""
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'sheet_sync_url',
             self.live_server_url
@@ -319,7 +335,7 @@ class TestSheetRemoteSyncTask(TestSheetRemoteSyncBase):
 
     def test_sync_enabled_missing_url(self):
         """Test sync with missing url"""
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'sheet_sync_url',
             '',
@@ -330,7 +346,7 @@ class TestSheetRemoteSyncTask(TestSheetRemoteSyncBase):
 
     def test_sync_disabled(self):
         """Test sync with sync disabled"""
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'sheet_sync_enable',
             False,

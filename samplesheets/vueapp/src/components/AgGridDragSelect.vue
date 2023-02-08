@@ -2,7 +2,8 @@
   <div class="ag-grid-drag-select"
        :id="'agds-' + _uid"
        @mousedown="onMouseDown"
-       @keyup.ctrl.67="onCopy">
+       @keyup.ctrl.67="onCopy"
+       @keydown.meta.67="onCopy">
     <slot :selectedItems="selectedItems" />
     <div v-if="mouseDown" class="ag-grid-drag-select-box"></div>
   </div>

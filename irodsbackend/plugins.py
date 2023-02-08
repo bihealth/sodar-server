@@ -59,7 +59,7 @@ class BackendPlugin(BackendPluginPoint):
     def get_api(self, **kwargs):
         """Return API entry point object."""
         # Only init API if iRODS is enabled or in no connection mode
-        if settings.ENABLE_IRODS or kwargs.get('conn') is False:
+        if settings.ENABLE_IRODS:
             try:
                 return IrodsAPI(**kwargs)
             except Exception:
@@ -72,11 +72,12 @@ class BackendPlugin(BackendPluginPoint):
         ):
             return {}
 
-        irods_api = IrodsAPI()
+        irods_backend = IrodsAPI()
         try:
-            project_stats = irods_api.get_object_stats(
-                irods_api.get_projects_path()
-            )
+            with irods_backend.get_session() as irods:
+                project_stats = irods_backend.get_object_stats(
+                    irods, irods_backend.get_projects_path()
+                )
         except Exception:
             return {}
         return {

@@ -24,6 +24,7 @@ class LandingZoneSerializer(SODARProjectModelSerializer):
     assay = serializers.CharField(source='assay.sodar_uuid')
     status_locked = serializers.SerializerMethodField(read_only=True)
     create_colls = serializers.BooleanField(write_only=True, default=False)
+    restrict_colls = serializers.BooleanField(write_only=True, default=False)
     irods_path = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
@@ -40,19 +41,20 @@ class LandingZoneSerializer(SODARProjectModelSerializer):
             'description',
             'user_message',
             'create_colls',
+            'restrict_colls',
             'configuration',
             'config_data',
             'irods_path',
             'sodar_uuid',
         ]
         read_only_fields = ['status', 'status_info']
-        write_only_fields = ['create_colls']
+        write_only_fields = ['create_colls', 'restrict_colls']
 
     def get_status_locked(self, obj):
         return obj.is_locked()
 
     def get_irods_path(self, obj):
-        irods_backend = get_backend_api('omics_irods', conn=False)
+        irods_backend = get_backend_api('omics_irods')
         if irods_backend and obj.status not in [
             'MOVED',
             'DELETED',

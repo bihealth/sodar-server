@@ -11,15 +11,15 @@ API Views
 
 .. currentmodule:: landingzones.views_api
 
-.. autoclass:: LandingZoneListAPIView
+.. autoclass:: ZoneListAPIView
 
-.. autoclass:: LandingZoneRetrieveAPIView
+.. autoclass:: ZoneRetrieveAPIView
 
-.. autoclass:: LandingZoneCreateAPIView
+.. autoclass:: ZoneCreateAPIView
 
-.. autoclass:: LandingZoneSubmitDeleteAPIView
+.. autoclass:: ZoneSubmitDeleteAPIView
 
-.. autoclass:: LandingZoneSubmitMoveAPIView
+.. autoclass:: ZoneSubmitMoveAPIView
 
 
 Versioning
@@ -30,4 +30,4 @@ SODAR version:
 
 .. code-block:: console
 
-    Accept: application/vnd.bihealth.sodar+json; version=0.12.1
+    Accept: application/vnd.bihealth.sodar+json; version=0.13.0

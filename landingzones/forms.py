@@ -27,6 +27,14 @@ class LandingZoneForm(forms.ModelForm):
         help_text='Create empty collections as defined by assay plugin',
     )
 
+    #: Limit write access to created collectionss
+    restrict_colls = forms.BooleanField(
+        initial=True,
+        required=False,
+        label='Restrict collections',
+        help_text='Restrict write access to created collections (recommended)',
+    )
+
     class Meta:
         model = LandingZone
         fields = [
@@ -35,6 +43,7 @@ class LandingZoneForm(forms.ModelForm):
             'description',
             'user_message',
             'create_colls',
+            'restrict_colls',
             'configuration',
         ]
 
@@ -47,7 +56,6 @@ class LandingZoneForm(forms.ModelForm):
         from landingzones.plugins import LandingZoneConfigPluginPoint
 
         config_plugins = LandingZoneConfigPluginPoint.get_plugins()
-
         self.current_user = current_user
         if project:
             self.project = Project.objects.filter(sodar_uuid=project).first()
@@ -55,10 +63,8 @@ class LandingZoneForm(forms.ModelForm):
             self.assay = Assay.objects.filter(sodar_uuid=assay).first()
 
         # Form modifications
-
         # Modify ModelChoiceFields to use sodar_uuid
         self.fields['assay'].to_field_name = 'sodar_uuid'
-
         # Set suffix
         self.fields['title_suffix'].label = 'Title suffix'
         self.fields[
@@ -69,7 +75,6 @@ class LandingZoneForm(forms.ModelForm):
         # Get options for configuration
         self.fields['configuration'].widget = forms.Select()
         self.fields['configuration'].widget.choices = [(None, '--------------')]
-
         for plugin in config_plugins:
             self.fields['configuration'].widget.choices.append(
                 (plugin.config_name, plugin.config_display_name)
@@ -79,28 +84,27 @@ class LandingZoneForm(forms.ModelForm):
         if not self.instance.pk:
             self.fields['assay'].choices = []
             # Only show choices for assays which are in iRODS
-            for assay in Assay.objects.filter(
-                study__investigation__project=self.project,
-                study__investigation__active=True,
-            ):
-                if not irods_backend or irods_backend.collection_exists(
-                    irods_backend.get_path(assay)
+            with irods_backend.get_session() as irods:
+                for assay in Assay.objects.filter(
+                    study__investigation__project=self.project,
+                    study__investigation__active=True,
                 ):
-                    self.fields['assay'].choices.append(
-                        (
-                            assay.sodar_uuid,
-                            '{} / {}'.format(
-                                assay.study.get_display_name(),
-                                assay.get_display_name(),
-                            ),
+                    if irods.collections.exists(irods_backend.get_path(assay)):
+                        self.fields['assay'].choices.append(
+                            (
+                                assay.sodar_uuid,
+                                '{} / {}'.format(
+                                    assay.study.get_display_name(),
+                                    assay.get_display_name(),
+                                ),
+                            )
                         )
-                    )
-
         # Updating
         else:
             # Don't allow modifying certain fields
             self.fields['title_suffix'].disabled = True
             self.fields['create_colls'].disabled = True
+            self.fields['restrict_colls'].disabled = True
             # TODO: Don't allow modifying the assay
 
     def clean(self):
@@ -116,7 +120,6 @@ class LandingZoneForm(forms.ModelForm):
         """Override of form saving function"""
         obj = super().save(commit=False)
         obj.title = self.cleaned_data['title']
-
         # Updating
         if self.instance.pk:
             obj.user = self.instance.user
@@ -125,6 +128,5 @@ class LandingZoneForm(forms.ModelForm):
         else:
             obj.user = self.current_user
             obj.project = self.project
-
         obj.save()
         return obj

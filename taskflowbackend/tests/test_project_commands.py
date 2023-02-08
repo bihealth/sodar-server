@@ -71,7 +71,7 @@ class TestBatchUpdateRoles(BatchUpdateRolesMixin, TaskflowbackendTestBase):
             1,
         )
 
-        self._write_file([p_uuid, email, PROJECT_ROLE_CONTRIBUTOR])
+        self.write_file([p_uuid, email, PROJECT_ROLE_CONTRIBUTOR])
         self.command.handle(
             **{'file': self.file.name, 'issuer': self.user.username}
         )

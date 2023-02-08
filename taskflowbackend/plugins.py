@@ -143,24 +143,25 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
             return  # Reverting an update is not needed as no other app can fail
 
         irods_backend = get_backend_api('omics_irods')
-        irods_session = irods_backend.get_session()
         timeline = get_backend_api('timeline_backend')
         project_path = irods_backend.get_path(project)
         reverted = False
 
-        if irods_session.collections.exists(project_path):
-            logger.debug('Removing project collection: {}'.format(project_path))
-            irods_session.collections.remove(project_path)
-            reverted = True
-        group_name = irods_backend.get_user_group_name(project)
-
-        try:
-            irods_session.user_groups.get(group_name)
-            logger.debug('Removing user group: {}'.format(group_name))
-            irods_session.user_groups.remove(group_name)
-            reverted = True
-        except UserGroupDoesNotExist:
-            pass
+        with irods_backend.get_session() as irods:
+            if irods.collections.exists(project_path):
+                logger.debug(
+                    'Removing project collection: {}'.format(project_path)
+                )
+                irods.collections.remove(project_path)
+                reverted = True
+            group_name = irods_backend.get_user_group_name(project)
+            try:
+                irods.user_groups.get(group_name)
+                logger.debug('Removing user group: {}'.format(group_name))
+                irods.user_groups.remove(group_name)
+                reverted = True
+            except UserGroupDoesNotExist:
+                pass
 
         if timeline and reverted:
             tl_event = timeline.add_event(
@@ -233,25 +234,27 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
             return  # No action needed for update
 
         irods_backend = get_backend_api('omics_irods')
-        irods_session = irods_backend.get_session()
         timeline = get_backend_api('timeline_backend')
         group_name = irods_backend.get_user_group_name(role_as.project)
         user_name = role_as.user.username
         reverted = False
 
-        try:
-            group = irods_session.user_groups.get(group_name)
-            logger.debug(
-                'Removing user {} from group {}'.format(user_name, group_name)
-            )
-            if group.hasmember(user_name):
-                group.removemember(
-                    user_name=user_name, user_zone=irods_session.zone
+        with irods_backend.get_session() as irods:
+            try:
+                group = irods.user_groups.get(group_name)
+                logger.debug(
+                    'Removing user {} from group {}'.format(
+                        user_name, group_name
+                    )
                 )
-                reverted = True
-        except Exception as ex:
-            logger.error('Error removing member: {}'.format(ex))
-            return
+                if group.hasmember(user_name):
+                    group.removemember(
+                        user_name=user_name, user_zone=irods.zone
+                    )
+                    reverted = True
+            except Exception as ex:
+                logger.error('Error removing member: {}'.format(ex))
+                return
 
         if timeline and reverted:
             tl_event = timeline.add_event(
@@ -314,25 +317,23 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         :param request: Request object or None
         """
         irods_backend = get_backend_api('omics_irods')
-        irods_session = irods_backend.get_session()
         timeline = get_backend_api('timeline_backend')
         group_name = irods_backend.get_user_group_name(role_as.project)
         user_name = role_as.user.username
         reverted = False
 
-        try:
-            group = irods_session.user_groups.get(group_name)
-            logger.debug(
-                'Adding user {} to group {}'.format(user_name, group_name)
-            )
-            if not group.hasmember(user_name):
-                group.addmember(
-                    user_name=user_name, user_zone=irods_session.zone
+        with irods_backend.get_session() as irods:
+            try:
+                group = irods.user_groups.get(group_name)
+                logger.debug(
+                    'Adding user {} to group {}'.format(user_name, group_name)
                 )
-                reverted = True
-        except Exception as ex:
-            logger.error('Error adding member: {}'.format(ex))
-            return
+                if not group.hasmember(user_name):
+                    group.addmember(user_name=user_name, user_zone=irods.zone)
+                    reverted = True
+            except Exception as ex:
+                logger.error('Error adding member: {}'.format(ex))
+                return
 
         if timeline and reverted:
             tl_event = timeline.add_event(
@@ -436,5 +437,5 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         self.perform_project_modify(
             project=project,
             action=PROJECT_ACTION_CREATE,
-            project_settings=app_settings.get_all_settings(project),
+            project_settings=app_settings.get_all(project),
         )

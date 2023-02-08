@@ -15,7 +15,7 @@ from projectroles.models import Project, RoleAssignment, SODAR_CONSTANTS
 # from projectroles.tests.taskflow_testcase import TestCase
 from projectroles.views_api import CORE_API_MEDIA_TYPE, CORE_API_DEFAULT_VERSION
 
-from taskflowbackend.tests.base import TestTaskflowAPIBase
+from taskflowbackend.tests.base import TaskflowAPIViewTestBase
 from taskflowbackend.tests.test_project_views import IRODS_ACCESS_READ
 
 
@@ -45,7 +45,7 @@ UPDATED_README = 'Updated readme'
 # Tests with Taskflow ----------------------------------------------------------
 
 
-class TestCoreTaskflowAPIBase(TestTaskflowAPIBase):
+class TestCoreTaskflowAPIBase(TaskflowAPIViewTestBase):
     """Override of TestTaskflowAPIBase for SODAR Core API views"""
 
     media_type = CORE_API_MEDIA_TYPE
@@ -138,6 +138,7 @@ class TestProjectUpdateAPIView(TestCoreTaskflowAPIBase):
             'description': UPDATED_DESC,
             'readme': UPDATED_README,
             'public_guest_access': False,
+            'archive': False,
             'full_title': UPDATED_TITLE,
             'has_public_children': False,
             'sodar_uuid': self.category.sodar_uuid,
@@ -181,6 +182,7 @@ class TestProjectUpdateAPIView(TestCoreTaskflowAPIBase):
             'description': UPDATED_DESC,
             'readme': UPDATED_README,
             'public_guest_access': True,
+            'archive': False,
             'full_title': self.category.title + ' / ' + UPDATED_TITLE,
             'has_public_children': False,
             'sodar_uuid': self.project.sodar_uuid,
@@ -232,6 +234,7 @@ class TestProjectUpdateAPIView(TestCoreTaskflowAPIBase):
             'description': UPDATED_DESC,
             'readme': UPDATED_README,
             'public_guest_access': False,
+            'archive': False,
             'full_title': UPDATED_TITLE,
             'has_public_children': False,
             'sodar_uuid': self.category.sodar_uuid,
@@ -268,6 +271,7 @@ class TestProjectUpdateAPIView(TestCoreTaskflowAPIBase):
             'description': UPDATED_DESC,
             'readme': UPDATED_README,
             'public_guest_access': False,
+            'archive': False,
             'full_title': self.category.title + ' / ' + UPDATED_TITLE,
             'has_public_children': False,
             'sodar_uuid': self.project.sodar_uuid,
@@ -287,10 +291,10 @@ class TestProjectUpdateAPIView(TestCoreTaskflowAPIBase):
 
     def test_patch_project_move(self):
         """Test patch() for moving project under a different category"""
-        new_category = self._make_project(
+        new_category = self.make_project(
             'NewCategory', PROJECT_TYPE_CATEGORY, None
         )
-        self._make_assignment(new_category, self.user, self.role_owner)
+        self.make_assignment(new_category, self.user, self.role_owner)
 
         url = reverse(
             'projectroles:api_project_update',

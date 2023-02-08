@@ -50,6 +50,7 @@ from samplesheets.views import (
 
 app_settings = AppSettingAPI()
 logger = logging.getLogger(__name__)
+table_builder = SampleSheetTableBuilder()
 
 
 # SODAR constants
@@ -71,6 +72,8 @@ SHEETS_INFO_SETTINGS = [
     'SHEETS_SYNC_INTERVAL',
     'SHEETS_TABLE_HEIGHT',
     'SHEETS_VERSION_PAGINATION',
+    'SHEETS_IGV_OMIT_BAM',
+    'SHEETS_IGV_OMIT_VCF',
 ]
 MATERIAL_SEARCH_TYPES = ['source', 'sample']
 
@@ -175,6 +178,38 @@ class ProjectAppPlugin(
             'description': 'iRODS ticket for read-only anonymous sample data '
             'access, used with projects allowing public guest access',
             'user_modifiable': False,
+        },
+        'igv_genome': {
+            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'type': 'STRING',
+            'label': 'IGV session genome',
+            'default': 'b37',
+            'description': 'Genome used in generating IGV session files for '
+            'the project. The name needs to be in a format accepted by IGV. '
+            'Affects cancer and germline projects.',
+            'user_modifiable': True,
+        },
+        'igv_omit_bam': {
+            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'type': 'STRING',
+            'label': 'BAM files to omit from IGV sessions',
+            'default': '',
+            'placeholder': ', '.join(settings.SHEETS_IGV_OMIT_BAM),
+            'description': 'Comma separated list of BAM file suffixes to omit '
+            'from generated IGV sessions. Overrides site-wide setting, affects '
+            'cancer and germline projects.',
+            'user_modifiable': True,
+        },
+        'igv_omit_vcf': {
+            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'type': 'STRING',
+            'label': 'VCF files to omit from IGV sessions',
+            'default': '',
+            'placeholder': ', '.join(settings.SHEETS_IGV_OMIT_VCF),
+            'description': 'Comma separated list of VCF file suffixes to omit '
+            'from generated IGV sessions. Overrides site-wide setting, affects '
+            'cancer and germline projects.',
+            'user_modifiable': True,
         },
     }
 
@@ -298,11 +333,13 @@ class ProjectAppPlugin(
         """Return iRODS files for search results"""
         ret = []
         try:
-            obj_data = irods_backend.get_objects(
-                path=irods_backend.get_projects_path(),
-                name_like=search_terms,
-                limit=settings.SHEETS_IRODS_LIMIT,
-            )
+            with irods_backend.get_session() as irods:
+                obj_data = irods_backend.get_objects(
+                    irods=irods,
+                    path=irods_backend.get_projects_path(),
+                    name_like=search_terms,
+                    limit=settings.SHEETS_IRODS_LIMIT,
+                )
         # Skip rest if no data objects were found or iRODS is unreachable
         except (FileNotFoundError, NetworkException):
             return ret
@@ -426,9 +463,7 @@ class ProjectAppPlugin(
                 )
             elif user.has_perm(
                 'samplesheets.edit_sheet', project
-            ) and not app_settings.get_app_setting(
-                APP_NAME, 'sheet_sync_enable', project
-            ):
+            ) and not app_settings.get(APP_NAME, 'sheet_sync_enable', project):
                 return (
                     '<a href="{}" title="Import sample sheet into project">'
                     # 'data-toggle="tooltip" data-placement="top">'
@@ -448,7 +483,7 @@ class ProjectAppPlugin(
                 )
 
         elif column_id == 'files':
-            irods_backend = get_backend_api('omics_irods', conn=False)
+            irods_backend = get_backend_api('omics_irods')
             if (
                 irods_backend
                 and investigation
@@ -489,7 +524,7 @@ class ProjectAppPlugin(
         :raise: Exception if DEBUG==True and a taskflow error is encountered
         """
         sample_path = irods_backend.get_sample_path(project)
-        ticket_str = app_settings.get_app_setting(
+        ticket_str = app_settings.get(
             APP_NAME, 'public_access_ticket', project=project
         )
         if (
@@ -520,14 +555,14 @@ class ProjectAppPlugin(
             project.public_guest_access
             and settings.PROJECTROLES_ALLOW_ANONYMOUS
         ):
-            app_settings.set_app_setting(
+            app_settings.set(
                 APP_NAME,
                 'public_access_ticket',
                 ticket_str,
                 project=project,
             )
         else:
-            app_settings.delete_setting(
+            app_settings.delete(
                 APP_NAME, 'public_access_ticket', project=project
             )
 
@@ -551,7 +586,7 @@ class ProjectAppPlugin(
         :param request: Request object or None
         """
         taskflow = get_backend_api('taskflow')
-        irods_backend = get_backend_api('omics_irods')  # Need conn for ticket
+        irods_backend = get_backend_api('omics_irods')
 
         # Check for conditions and skip if not met
         def _skip(msg):
@@ -578,8 +613,8 @@ class ProjectAppPlugin(
 
         # Submit flow
         logger.info(
-            'Setting project public access status for "{}" ({}) to: {} '.format(
-                project.title, project.sodar_uuid, project.public_guest_access
+            'Setting project public access status for {} to: {} '.format(
+                project.get_log_title(), project.public_guest_access
             )
         )
         self._update_public_access(project, taskflow, irods_backend)
@@ -623,6 +658,9 @@ class ProjectAppPlugin(
         :raise: Exception if required backends (sodar_cache and omics_irods)
                 are not found.
         """
+        # NOTE: This will not sync cached study render tables, they are created
+        #       synchronously upon access if not up-to-date. To sync the cache
+        #       for all study tables, use the syncstudytables command.
         cache_backend = get_backend_api('sodar_cache')
         irods_backend = get_backend_api('omics_irods')
         if not cache_backend or not irods_backend:
@@ -651,44 +689,42 @@ class ProjectAppPlugin(
             study__investigation__irods_status=True,
         )
 
-        for assay in assays:
-            item_name = 'irods/shortcuts/assay/{}'.format(assay.sodar_uuid)
-            assay_path = irods_backend.get_path(assay)
-            assay_plugin = assay.get_plugin()
-
-            # Default assay shortcuts
-            cache_data = {
-                'shortcuts': {
-                    'results_reports': irods_backend.collection_exists(
-                        assay_path + '/' + RESULTS_COLL
-                    ),
-                    'misc_files': irods_backend.collection_exists(
-                        assay_path + '/' + MISC_FILES_COLL
-                    ),
+        with irods_backend.get_session() as irods:
+            for assay in assays:
+                item_name = 'irods/shortcuts/assay/{}'.format(assay.sodar_uuid)
+                assay_path = irods_backend.get_path(assay)
+                assay_plugin = assay.get_plugin()
+                # Default assay shortcuts
+                cache_data = {
+                    'shortcuts': {
+                        'results_reports': irods.collections.exists(
+                            assay_path + '/' + RESULTS_COLL
+                        ),
+                        'misc_files': irods.collections.exists(
+                            assay_path + '/' + MISC_FILES_COLL
+                        ),
+                    }
                 }
-            }
-
-            # Plugin assay shortcuts
-            if assay_plugin:
-                plugin_shortcuts = assay_plugin.get_shortcuts(assay) or []
-                for sc in plugin_shortcuts:
-                    cache_data['shortcuts'][
-                        sc['id']
-                    ] = irods_backend.collection_exists(sc['path'])
-
-            cache_data['shortcuts']['track_hubs'] = [
-                track_hub_coll.path
-                for track_hub_coll in irods_backend.get_child_colls_by_path(
-                    assay_path + '/' + TRACK_HUBS_COLL
+                # Plugin assay shortcuts
+                if assay_plugin:
+                    plugin_shortcuts = assay_plugin.get_shortcuts(assay) or []
+                    for sc in plugin_shortcuts:
+                        cache_data['shortcuts'][
+                            sc['id']
+                        ] = irods.collections.exists(sc['path'])
+                cache_data['shortcuts']['track_hubs'] = [
+                    c.path
+                    for c in irods_backend.get_child_colls(
+                        irods, os.path.join(assay_path, TRACK_HUBS_COLL)
+                    )
+                ]
+                cache_backend.set_cache_item(
+                    name=item_name,
+                    app_name='samplesheets',
+                    user=user,
+                    data=cache_data,
+                    project=assay.get_project(),
                 )
-            ]
-            cache_backend.set_cache_item(
-                name=item_name,
-                app_name='samplesheets',
-                user=user,
-                data=cache_data,
-                project=assay.get_project(),
-            )
 
         # Assay sub-app plugins
         for assay_plugin in SampleSheetAssayPluginPoint.get_plugins():
@@ -817,7 +853,7 @@ class SampleSheetAssayPluginPoint(PluginPoint):
         :param assay: Assay object
         :return: Full iRODS path for the assay
         """
-        irods_backend = get_backend_api('omics_irods', conn=False)
+        irods_backend = get_backend_api('omics_irods')
         if not irods_backend:
             return None
         return irods_backend.get_path(assay)
@@ -893,7 +929,6 @@ class SampleSheetAssayPluginPoint(PluginPoint):
         if not cache_backend or not irods_backend:
             return
 
-        tb = SampleSheetTableBuilder()
         projects = (
             [project]
             if project
@@ -919,8 +954,7 @@ class SampleSheetAssayPluginPoint(PluginPoint):
 
         # Get assay paths
         for study in studies:
-            study_tables = tb.build_study_tables(study, ui=False)
-
+            study_tables = table_builder.get_study_tables(study)
             for assay in [a for a in study.assays.all() if a in config_assays]:
                 assay_table = study_tables['assays'][str(assay.sodar_uuid)]
                 assay_path = irods_backend.get_path(assay)
@@ -936,15 +970,14 @@ class SampleSheetAssayPluginPoint(PluginPoint):
 
                 # Build cache for paths
                 cache_data = {'paths': {}}
-
-                for path in row_paths:
-                    try:
-                        cache_data['paths'][
-                            path
-                        ] = irods_backend.get_object_stats(path)
-                    except FileNotFoundError:
-                        cache_data['paths'][path] = None
-
+                with irods_backend.get_session() as irods:
+                    for path in row_paths:
+                        try:
+                            cache_data['paths'][
+                                path
+                            ] = irods_backend.get_object_stats(irods, path)
+                        except FileNotFoundError:
+                            cache_data['paths'][path] = None
                 cache_backend.set_cache_item(
                     name=item_name,
                     app_name=app_name,

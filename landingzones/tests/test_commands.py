@@ -61,10 +61,10 @@ class TestCommandBase(
         # Init roles
         self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
         # Init project with owner
-        self.project = self._make_project(
+        self.project = self.make_project(
             'TestProject', PROJECT_TYPE_PROJECT, None
         )
-        self.as_owner = self._make_assignment(
+        self.owner_as = self.make_assignment(
             self.project, self.user, self.role_owner
         )
 
@@ -78,7 +78,6 @@ class TestInactiveZones(TestCommandBase):
 
     def setUp(self):
         super().setUp()
-
         testtime1 = localtime() - timedelta(weeks=3)
         testtime2 = localtime() - timedelta(weeks=1)
 
@@ -88,7 +87,7 @@ class TestInactiveZones(TestCommandBase):
             self.zone = self.make_landing_zone(
                 title=ZONE1_TITLE,
                 project=self.project,
-                user=self.as_owner.user,
+                user=self.user,
                 assay=self.assay,
                 description=ZONE_DESC,
                 configuration=None,
@@ -98,7 +97,7 @@ class TestInactiveZones(TestCommandBase):
             self.zone3 = self.make_landing_zone(
                 title=ZONE3_TITLE,
                 project=self.project,
-                user=self.as_owner.user,
+                user=self.user,
                 assay=self.assay,
                 description=ZONE_DESC,
                 configuration=None,
@@ -109,7 +108,7 @@ class TestInactiveZones(TestCommandBase):
             self.zone4 = self.make_landing_zone(
                 title=ZONE4_TITLE,
                 project=self.project,
-                user=self.as_owner.user,
+                user=self.user,
                 assay=self.assay,
                 description=ZONE_DESC,
                 configuration=None,
@@ -121,7 +120,7 @@ class TestInactiveZones(TestCommandBase):
             self.zone2 = self.make_landing_zone(
                 title=ZONE2_TITLE,
                 project=self.project,
-                user=self.as_owner.user,
+                user=self.user,
                 assay=self.assay,
                 description=ZONE_DESC,
                 configuration=None,
@@ -129,7 +128,7 @@ class TestInactiveZones(TestCommandBase):
             )
 
         self.irods_backend = get_backend_api('omics_irods')
-        self.irods = self.irods_backend.get_session()
+        self.irods = self.irods_backend.get_session_obj()
 
         # Create the irods collections
         self.irods.collections.create(self.irods_backend.get_path(self.zone))
@@ -139,6 +138,7 @@ class TestInactiveZones(TestCommandBase):
 
     def tearDown(self):
         self.irods.collections.get('/sodarZone/projects').remove(force=True)
+        self.irods.cleanup()
 
     def test_get_inactive_zones(self):
         """Test get_inactive_zones()"""
@@ -149,7 +149,7 @@ class TestInactiveZones(TestCommandBase):
         """Test get_output()"""
         zones = get_inactive_zones()
         self.assertListEqual(
-            get_output(zones, self.irods_backend),
+            get_output(zones, self.irods_backend, self.irods),
             [
                 '{};{};{};{};0;0 bytes'.format(
                     str(self.project.sodar_uuid),
@@ -185,7 +185,7 @@ class TestBusyZones(TestCommandBase):
         self.zone = self.make_landing_zone(
             title=ZONE1_TITLE,
             project=self.project,
-            user=self.as_owner.user,
+            user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
             configuration=None,
@@ -195,7 +195,7 @@ class TestBusyZones(TestCommandBase):
         self.zone2 = self.make_landing_zone(
             title=ZONE2_TITLE,
             project=self.project,
-            user=self.as_owner.user,
+            user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
             configuration=None,

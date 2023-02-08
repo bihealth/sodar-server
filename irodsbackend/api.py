@@ -7,6 +7,8 @@ import re
 import string
 import uuid
 
+from contextlib import contextmanager
+
 import pytz
 
 from irods.api_number import api_number
@@ -56,20 +58,21 @@ USER_GROUP_PREFIX = 'omics_project_'
 class IrodsAPI:
     """iRODS API to be used by Django apps"""
 
-    #: iRODS session or None if not initialized
-    irods = None
-
     class IrodsQueryException(Exception):
         """iRODS query exception"""
 
-    def __init__(self, conn=True, user_name=None, user_pass=None):
-        if not conn:
-            return
-        if not user_name:
-            user_name = settings.IRODS_USER
-        if not user_pass:
-            user_pass = settings.IRODS_PASS
+    def __init__(self, user_name=None, user_pass=None):
+        self.user_name = user_name if user_name else settings.IRODS_USER
+        self.user_pass = user_pass if user_pass else settings.IRODS_PASS
 
+    # Internal functions -------------------------------------------------------
+
+    def _init_irods(self):
+        """
+        Initialize an iRODS connection.
+
+        :return: iRODSSession object
+        """
         # Set up additional iRODS environment variables
         irods_env = dict(settings.IRODS_ENV_DEFAULT)
         if settings.IRODS_CERT_PATH:
@@ -80,20 +83,20 @@ class IrodsAPI:
         # HACK: Clean up environment to avoid python-irodsclient crash
         irods_env = self.format_env(irods_env)
         # logger.debug('iRODS environment: {}'.format(irods_env))
-
         try:
-            self.irods = iRODSSession(
+            irods = iRODSSession(
                 host=settings.IRODS_HOST,
                 port=settings.IRODS_PORT,
-                user=user_name,
-                password=user_pass,
+                user=self.user_name,
+                password=self.user_pass,
                 zone=settings.IRODS_ZONE,
                 **irods_env,
             )
             # Ensure we have a connection
-            self.irods.collections.exists(
-                '/{}/home/{}'.format(settings.IRODS_ZONE, user_name)
+            irods.collections.exists(
+                '/{}/home/{}'.format(settings.IRODS_ZONE, self.user_name)
             )
+            return irods
         except Exception as ex:
             logger.error(
                 'Unable to connect to iRODS (host={}, port={}): {} ({})'.format(
@@ -104,12 +107,6 @@ class IrodsAPI:
                 )
             )
             raise ex
-
-    def __del__(self):
-        if self.irods:
-            self.irods.cleanup()
-
-    # Internal functions -------------------------------------------------------
 
     @classmethod
     def _get_datetime(cls, naive_dt):
@@ -148,22 +145,23 @@ class IrodsAPI:
                 path = path[:-1]
         return path
 
-    def _send_request(self, api_id, *args):
+    @classmethod
+    def _send_request(cls, irods, api_id, *args):
         """
         Temporary function for sending a raw API request using
         python-irodsclient.
 
+        :param irods: iRODS connection object
+        :param api_id: iRODS API ID
         :param *args: Arguments for the request body
         :return: Response
         :raise: Exception if iRODS is not initialized
         """
-        if not self.irods:
-            raise Exception('iRODS session not initialized')
-        msg_body = TicketAdminRequest(self.irods)(*args)
+        msg_body = TicketAdminRequest(irods)(*args)
         msg = iRODSMessage(
             'RODS_API_REQ', msg=msg_body, int_info=api_number[api_id]
         )
-        with self.irods.pool.get_connection() as conn:
+        with irods.pool.get_connection() as conn:
             conn.send(msg)
             response = conn.recv()
         return response
@@ -436,18 +434,36 @@ class IrodsAPI:
 
     # iRODS Operations ---------------------------------------------------------
 
+    @contextmanager
     def get_session(self):
         """
-        Return the iRODS session object for direct API access.
+        Return the iRODS session object for direct API access as a generator.
+        Use with the "with" keyword to ensure connection cleanup.
 
-        :return: iRODSSession object (already initialized)
+        :return: iRODSSession object wrapped as a generator
         """
-        return self.irods
+        irods = self._init_irods()
+        try:
+            yield irods
+        finally:
+            irods.cleanup()
 
-    def get_info(self):
+    def get_session_obj(self):
+        """
+        Return the iRODS session object for direct API access.
+        NOTE: Connection needs to be manually closed with cleanup()! If
+        possible, use get_session() instead.
+
+        :return: iRODSSession object
+        """
+        return self._init_irods()
+
+    @classmethod
+    def get_info(cls, irods):
         """
         Return iRODS server info.
 
+        :param irods: iRODSSession object
         :return: Dict
         :raise: NetworkException if iRODS is unreachable
         :raise: CAT_INVALID_AUTHENTICATION if iRODS authentication is invalid
@@ -456,23 +472,24 @@ class IrodsAPI:
         return {
             'server_ok': True,
             'server_status': 'Available',
-            'server_host': self.irods.host,
-            'server_port': self.irods.port,
-            'server_zone': self.irods.zone,
+            'server_host': irods.host,
+            'server_port': irods.port,
+            'server_zone': irods.zone,
             'server_version': '.'.join(
-                str(x) for x in self.irods.pool.get_connection().server_version
+                str(x) for x in irods.pool.get_connection().server_version
             ),
         }
 
-    def get_object_stats(self, path):
+    def get_object_stats(self, irods, path):
         """
         Return file count and total file size for all files within a path.
 
+        :param irods: iRODSSession object
         :param path: Full path to iRODS collection
         :return: Dict
         """
         try:
-            coll = self.irods.collections.get(self._sanitize_coll_path(path))
+            coll = irods.collections.get(self._sanitize_coll_path(path))
         except CollectionDoesNotExist:
             raise FileNotFoundError('iRODS collection not found')
 
@@ -490,7 +507,7 @@ class IrodsAPI:
             )
         )
         # logger.debug('Object stats query = "{}"'.format(sql))
-        query = self.get_query(sql)
+        query = self.get_query(irods, sql)
 
         try:
             result = next(query.get_results())
@@ -500,23 +517,12 @@ class IrodsAPI:
             pass
         except Exception as ex:
             logger.error(
-                'iRODS exception in get_object_stats(): {}; SQL = "{}"'.format(
-                    ex.__class__.__name__, sql
-                )
+                'iRODS exception in get_object_stats(): {}; '
+                'SQL = "{}"'.format(ex.__class__.__name__, sql)
             )
         finally:
             query.remove()
-
         return ret
-
-    def collection_exists(self, path):
-        """
-        Return True/False depending if the collection defined in path exists
-
-        :param path: Full path to iRODS collection
-        :return: Boolean
-        """
-        return self.irods.collections.exists(self._sanitize_coll_path(path))
 
     @classmethod
     def get_colls_recursively(cls, coll):
@@ -532,12 +538,15 @@ class IrodsAPI:
         )
         return [iRODSCollection(coll.manager, row) for row in query]
 
-    def get_objs_recursively(self, coll, md5=False, name_like=None, limit=None):
+    def get_objs_recursively(
+        self, irods, coll, md5=False, name_like=None, limit=None
+    ):
         """
         Return objects below a coll recursively. Replacement for the
         non-scalable walk() function in the API. Also gets around the query
         length limitation in iRODS.
 
+        :param irods: iRODSSession object
         :param coll: Collection object
         :param md5: if True, return .md5 files, otherwise anything but them
         :param name_like: Filtering of file names (string or list of strings)
@@ -549,7 +558,7 @@ class IrodsAPI:
         path_lookup = []
         q_count = 1
 
-        def _do_query(nl=None):
+        def _do_query(irods, nl=None):
             sql = (
                 'SELECT DISTINCT ON (data_id) data_name, data_size, '
                 'r_data_main.modify_ts as modify_ts, coll_name '
@@ -579,7 +588,7 @@ class IrodsAPI:
                 DataObject.modify_time,
                 Collection.name,
             ]
-            query = self.get_query(sql, columns)
+            query = self.get_query(irods, sql, columns)
 
             try:
                 results = query.get_results()
@@ -604,7 +613,7 @@ class IrodsAPI:
                 pass
             except Exception as ex:
                 logger.error(
-                    'iRODS exception in _get_objs_recursively(): {}'.format(
+                    'iRODS exception in get_objs_recursively(): {}'.format(
                         ex.__class__.__name__
                     )
                 )
@@ -618,14 +627,15 @@ class IrodsAPI:
             q_len = math.ceil(len(name_like) / q_count)
             q_idx = 0
             for i in range(q_count):
-                _do_query(name_like[q_idx : q_idx + q_len])
+                _do_query(irods, name_like[q_idx : q_idx + q_len])
                 q_idx = q_idx + q_len
         else:  # Single query
-            _do_query(name_like)
+            _do_query(irods, name_like)
         return sorted(ret, key=lambda x: x['path'])
 
     def get_objects(
         self,
+        irods,
         path,
         check_md5=False,
         include_colls=False,
@@ -635,6 +645,7 @@ class IrodsAPI:
         """
         Return an iRODS object list.
 
+        :param irods: iRODSSession object
         :param path: Full path to iRODS collection
         :param check_md5: Whether to add md5 checksum file info (bool)
         :param include_colls: Include collections (bool)
@@ -644,7 +655,7 @@ class IrodsAPI:
         :raise: FileNotFoundError if collection is not found
         """
         try:
-            coll = self.irods.collections.get(self._sanitize_coll_path(path))
+            coll = irods.collections.get(self._sanitize_coll_path(path))
         except CollectionDoesNotExist:
             raise FileNotFoundError('iRODS collection not found')
 
@@ -656,13 +667,13 @@ class IrodsAPI:
         md5_paths = None
 
         data_objs = self.get_objs_recursively(
-            coll, name_like=name_like, limit=limit
+            irods, coll, name_like=name_like, limit=limit
         )
         if data_objs and check_md5:
             md5_paths = [
                 o['path']
                 for o in self.get_objs_recursively(
-                    coll, md5=True, name_like=name_like
+                    irods, coll, md5=True, name_like=name_like
                 )
             ]
 
@@ -689,68 +700,86 @@ class IrodsAPI:
             ret['irods_data'] = sorted(
                 ret['irods_data'], key=lambda x: x['path']
             )
-
         return ret
 
-    def get_coll_by_path(self, path):
+    @classmethod
+    def get_child_colls(cls, irods, path):
+        """
+        Return child collections for a collection by path. Does not return
+        children recursively.
+
+        :param irods: iRODSSession object
+        :param path: Full path to iRODS collection
+        :return: List
+        """
         try:
-            return self.irods.collections.get(path)
-        except CollectionDoesNotExist:
-            return None
-
-    def get_child_colls_by_path(self, path):
-        coll = self.get_coll_by_path(path)
-        if coll:
+            coll = irods.collections.get(cls._sanitize_coll_path(path))
             return coll.subcollections
-        return []
+        except CollectionDoesNotExist:
+            return []
 
-    def get_query(self, sql, columns=None, register=True):
+    def get_query(self, irods, sql, columns=None, register=True):
         """
         Return a SpecificQuery object with a standard query alias. If
         registered, should be removed with remove() after use.
 
+        :param irods: iRODSSession object
         :param sql: SQL (string)
         :param columns: List of columns to return (optional)
         :param register: Register query before returning (bool, default=True)
         :return: SpecificQuery
         """
-        query = SpecificQuery(self.irods, sql, self._get_query_alias(), columns)
+        query = SpecificQuery(irods, sql, self._get_query_alias(), columns)
         if register:
             query.register()
         return query
 
-    def issue_ticket(self, mode, path, ticket_str=None, expiry_date=None):
+    def issue_ticket(
+        self, irods, mode, path, ticket_str=None, expiry_date=None
+    ):
         """
         Issue ticket for a specific iRODS collection.
 
+        :param irods: iRODSSession object
         :param mode: "read" or "write"
         :param path: iRODS path for creating the ticket
         :param ticket_str: String to use as the ticket
         :param expiry_date: Expiry date (DateTime object, optional)
         :return: irods client Ticket object
         """
-        ticket = Ticket(self.irods, ticket=ticket_str)
+        ticket = Ticket(irods, ticket=ticket_str)
         ticket.issue(mode, self._sanitize_coll_path(path))
         # Remove default file writing limitation
         self._send_request(
-            'TICKET_ADMIN_AN', 'mod', ticket._ticket, 'write-file', '0'
+            irods,
+            'TICKET_ADMIN_AN',
+            'mod',
+            ticket._ticket,
+            'write-file',
+            '0',
         )
         # Set expiration
         if expiry_date:
             exp_str = expiry_date.strftime('%Y-%m-%d.%H:%M:%S')
             self._send_request(
-                'TICKET_ADMIN_AN', 'mod', ticket._ticket, 'expire', exp_str
+                irods,
+                'TICKET_ADMIN_AN',
+                'mod',
+                ticket._ticket,
+                'expire',
+                exp_str,
             )
         return ticket
 
-    def get_ticket(self, ticket_str):
+    def get_ticket(self, irods, ticket_str):
         """
         Get ticket from iRODS.
 
+        :param irods: iRODSSession object
         :param ticket_str: String
         :return: Ticket object or None
         """
-        ticket_query = self.irods.query(TicketQuery.Ticket).filter(
+        ticket_query = irods.query(TicketQuery.Ticket).filter(
             TicketQuery.Ticket.string == ticket_str
         )
         ticket_res = list(ticket_query)
@@ -758,14 +787,15 @@ class IrodsAPI:
             return Ticket(ticket_res[0])
         return None
 
-    def delete_ticket(self, ticket_str):
+    def delete_ticket(self, irods, ticket_str):
         """
         Delete ticket.
 
+        :param irods: iRODSSession object
         :param ticket_str: String
         """
         try:
-            self._send_request('TICKET_ADMIN_AN', 'delete', ticket_str)
+            self._send_request(irods, 'TICKET_ADMIN_AN', 'delete', ticket_str)
         except Exception:
             raise Exception(
                 'Failed to delete iRODS ticket {}'.format(ticket_str)

@@ -16,7 +16,6 @@ from projectroles.tests.test_models import (
 from irodsbackend.templatetags import irodsbackend_tags as tags
 
 
-# App settings API
 app_settings = AppSettingAPI()
 
 
@@ -40,20 +39,20 @@ class TestTemplatetags(
         # Init users
         self.user = self.make_user('user_owner')
         # Init category
-        self.category = self._make_project(
+        self.category = self.make_project(
             title='TestCategoryTop', type=PROJECT_TYPE_CATEGORY, parent=None
         )
         # Init project under category
-        self.project = self._make_project(
+        self.project = self.make_project(
             title='TestProjectSub',
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
         )
         # Init role assignments
-        self.owner_as_cat = self._make_assignment(
+        self.owner_as_cat = self.make_assignment(
             self.category, self.user, self.role_owner
         )
-        self.owner_as = self._make_assignment(
+        self.owner_as = self.make_assignment(
             self.project, self.user, self.role_owner
         )
 
@@ -69,7 +68,7 @@ class TestTemplatetags(
         # Mock public project update
         self.project.public_guest_access = True
         self.project.save()
-        app_settings.set_app_setting(
+        app_settings.set(
             'samplesheets',
             'public_access_ticket',
             IRODS_TICKET_STR,

@@ -4,7 +4,6 @@ from django.test import override_settings
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
 from projectroles.tests.test_permissions import TestPermissionMixin
 
 # Samplesheets dependency
@@ -39,7 +38,6 @@ class TestIrodsbackendPermissions(
 
     def setUp(self):
         super().setUp()
-
         # Init users
         self.superuser = self.user  # HACK
         self.anonymous = None
@@ -50,7 +48,7 @@ class TestIrodsbackendPermissions(
         self.user_no_roles = self.make_user('user_no_roles')
 
         # Set up project with taskflow
-        self.project, self.as_owner = self.make_project_taskflow(
+        self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
@@ -59,13 +57,13 @@ class TestIrodsbackendPermissions(
         )
 
         # Set up assignments with taskflow
-        self.as_delegate = self.make_assignment_taskflow(
+        self.delegate_as = self.make_assignment_taskflow(
             self.project, self.user_delegate, self.role_delegate
         )
-        self.as_contributor = self.make_assignment_taskflow(
+        self.contributor_as = self.make_assignment_taskflow(
             self.project, self.user_contributor, self.role_contributor
         )
-        self.as_guest = self.make_assignment_taskflow(
+        self.guest_as = self.make_assignment_taskflow(
             self.project, self.user_guest, self.role_guest
         )
 
@@ -74,18 +72,9 @@ class TestIrodsbackendPermissions(
         # Create iRODS collections
         self.make_irods_colls(self.investigation)
 
-        # Set up irodsbackend
-        self.irods_backend = get_backend_api('omics_irods')
-        self.irods = self.irods_backend.get_session()
-
         # Set up test paths
         self.project_path = self.irods_backend.get_path(self.project)
         self.sample_path = self.irods_backend.get_sample_path(self.project)
-
-    def tearDown(self):
-        if self.irods:
-            self.irods.cleanup()
-        super().tearDown()
 
     def test_stats_get(self):
         """Test stats API view GET"""
@@ -94,10 +83,11 @@ class TestIrodsbackendPermissions(
         )
         good_users = [
             self.superuser,
-            self.as_owner.user,
-            self.as_delegate.user,
-            self.as_contributor.user,
-            self.as_guest.user,
+            self.user_owner_cat,  # Inherited owner
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
         ]
         bad_users = [self.user_no_roles, self.anonymous]
         self.assert_response(url, good_users, 200)
@@ -131,10 +121,11 @@ class TestIrodsbackendPermissions(
         )
         bad_users = [
             self.superuser,
-            self.as_owner.user,
-            self.as_delegate.user,
-            self.as_contributor.user,
-            self.as_guest.user,
+            self.user_owner_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
             self.user_no_roles,
             self.anonymous,
         ]
@@ -148,10 +139,15 @@ class TestIrodsbackendPermissions(
         url = self.irods_backend.get_url(
             view='stats', project=self.project, path=test_path
         )
-        good_users = [self.superuser, self.as_owner.user, self.as_delegate.user]
+        good_users = [
+            self.superuser,
+            self.user_owner_cat,
+            self.user_owner,
+            self.user_delegate,
+        ]
         bad_users = [
-            self.as_contributor.user,
-            self.as_guest.user,
+            self.user_contributor,
+            self.user_guest,
             self.user_no_roles,
             self.anonymous,
         ]
@@ -170,10 +166,11 @@ class TestIrodsbackendPermissions(
 
         good_users = [
             self.superuser,
-            self.as_owner.user,
-            self.as_delegate.user,
-            self.as_contributor.user,
-            self.as_guest.user,
+            self.user_owner_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
         ]
         bad_users = [self.user_no_roles, self.anonymous]
         self.assert_response(
@@ -188,10 +185,11 @@ class TestIrodsbackendPermissions(
         )
         good_users = [
             self.superuser,
-            self.as_owner.user,
-            self.as_delegate.user,
-            self.as_contributor.user,
-            self.as_guest.user,
+            self.user_owner_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
         ]
         bad_users = [self.user_no_roles, self.anonymous]
         self.assert_response(url, good_users, 200)
@@ -225,10 +223,11 @@ class TestIrodsbackendPermissions(
         )
         bad_users = [
             self.superuser,
-            self.as_owner.user,
-            self.as_delegate.user,
-            self.as_contributor.user,
-            self.as_guest.user,
+            self.user_owner_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
             self.user_no_roles,
             self.anonymous,
         ]
@@ -242,10 +241,15 @@ class TestIrodsbackendPermissions(
         url = self.irods_backend.get_url(
             view='list', project=self.project, path=test_path, md5=0
         )
-        good_users = [self.superuser, self.as_owner.user, self.as_delegate.user]
+        good_users = [
+            self.superuser,
+            self.user_owner_cat,
+            self.user_owner,
+            self.user_delegate,
+        ]
         bad_users = [
-            self.as_contributor.user,
-            self.as_guest.user,
+            self.user_contributor,
+            self.user_guest,
             self.user_no_roles,
             self.anonymous,
         ]

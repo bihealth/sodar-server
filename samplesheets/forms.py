@@ -279,16 +279,22 @@ class IrodsAccessTicketForm(forms.ModelForm):
             study__investigation__project=kwargs['initial']['project']
         )
         if irods_backend:
-            choices = [
-                (
-                    track_hub.path,
-                    "{} / {}".format(assay.get_display_name(), track_hub.name),
-                )
-                for assay in assays
-                for track_hub in irods_backend.get_child_colls_by_path(
-                    irods_backend.get_path(assay) + '/' + TRACK_HUBS_COLL
-                )
-            ]
+            with irods_backend.get_session() as irods:
+                choices = [
+                    (
+                        track_hub.path,
+                        "{} / {}".format(
+                            assay.get_display_name(), track_hub.name
+                        ),
+                    )
+                    for assay in assays
+                    for track_hub in irods_backend.get_child_colls(
+                        irods,
+                        os.path.join(
+                            irods_backend.get_path(assay), TRACK_HUBS_COLL
+                        ),
+                    )
+                ]
         else:
             choices = []
 
@@ -379,7 +385,6 @@ class IrodsRequestForm(forms.ModelForm):
                 )
             except Project.DoesNotExist:
                 self.add_error('path', 'Project not found')
-
             try:
                 Study.objects.get(
                     sodar_uuid=match.group('study_uuid'),
@@ -389,7 +394,6 @@ class IrodsRequestForm(forms.ModelForm):
                 )
             except Study.DoesNotExist:
                 self.add_error('path', 'Study not found in project with UUID')
-
             try:
                 Assay.objects.get(
                     sodar_uuid=match.group('assay_uuid'),
@@ -400,16 +404,15 @@ class IrodsRequestForm(forms.ModelForm):
                     'path', 'Assay not found in this project with UUID'
                 )
 
-        irods_session = irods_backend.get_session()
-        if 'path' in cleaned_data and not (
-            irods_session.data_objects.exists(cleaned_data['path'])
-            or irods_session.collections.exists(cleaned_data['path'])
-        ):
-            self.add_error(
-                'path',
-                'Path to collection or data object doesn\'t exist in iRODS',
-            )
-
+        with irods_backend.get_session() as irods:
+            if 'path' in cleaned_data and not (
+                irods.data_objects.exists(cleaned_data['path'])
+                or irods.collections.exists(cleaned_data['path'])
+            ):
+                self.add_error(
+                    'path',
+                    'Path to collection or data object doesn\'t exist in iRODS',
+                )
         return cleaned_data
 
 

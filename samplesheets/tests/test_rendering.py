@@ -3,24 +3,35 @@
 from test_plus.test import TestCase
 
 # Projectroles dependency
+from projectroles.app_settings import AppSettingAPI
 from projectroles.models import Role, SODAR_CONSTANTS
+from projectroles.plugins import get_backend_api
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
 
 from samplesheets.models import GenericMaterial
-from samplesheets.rendering import SampleSheetTableBuilder
+from samplesheets.rendering import (
+    SampleSheetTableBuilder,
+    STUDY_TABLE_CACHE_ITEM,
+)
 from samplesheets.tests.test_io import (
     SampleSheetIOMixin,
     SHEET_DIR,
     SHEET_DIR_SPECIAL,
 )
+from samplesheets.tests.test_sheet_config import SheetConfigMixin
+
+
+app_settings = AppSettingAPI()
 
 
 # Local constants
+APP_NAME = 'samplesheets'
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 SHEET_PATH_INSERTED = SHEET_DIR_SPECIAL + 'i_small_insert.zip'
 SHEET_PATH_ALT = SHEET_DIR + 'i_small2.zip'
 
 
+# TODO: Unify with TestTableBuilder if no other classes are needed
 class TestRenderingBase(
     ProjectMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase
 ):
@@ -30,77 +41,39 @@ class TestRenderingBase(
         # Make owner user
         self.user_owner = self.make_user('owner')
         # Init project, role and assignment
-        self.project = self._make_project(
+        self.project = self.make_project(
             'TestProject', SODAR_CONSTANTS['PROJECT_TYPE_PROJECT'], None
         )
         self.role_owner = Role.objects.get_or_create(
             name=SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
         )[0]
-        self.assignment_owner = self._make_assignment(
+        self.assignment_owner = self.make_assignment(
             self.project, self.user_owner, self.role_owner
         )
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.tb = SampleSheetTableBuilder()
+        # Set up helpers
+        self.cache_backend = get_backend_api('sodar_cache')
+        self.cache_name = STUDY_TABLE_CACHE_ITEM.format(
+            study=self.study.sodar_uuid
+        )
+        self.cache_args = [APP_NAME, self.cache_name, self.project]
 
 
-class TestTableBuilder(TestRenderingBase):
+class TestTableBuilder(SheetConfigMixin, TestRenderingBase):
     """Tests for SampleSheetTableBuilder"""
 
-    def test_build_study(self):
-        """Test building tables for a study"""
+    def _assert_row_length(self, table):
+        """Assert uniform row length"""
+        row_lengths = set([len(r) for r in table['table_data']])
+        self.assertEqual(len(row_lengths), 1)
 
-        def assert_row_length(table):
-            """Assert uniform row length"""
-            row_lengths = set([len(r) for r in table['table_data']])
-            self.assertEqual(len(row_lengths), 1)
-
-        def get_column_set(table, pos):
-            """Return set of distinct values for a column at pos"""
-            return set([r[pos]['value'] for r in table['table_data']])
-
-        tables = self.tb.build_study_tables(self.study)
-        self.assertIsNotNone(tables)
-
-        # Assert tables
-        self.assertIn('study', tables)
-        self.assertIn('assays', tables)
-        self.assertEqual(len(tables['assays']), self.study.assays.count())
-
-        # Test study table
-        assert_row_length(tables['study'])
-
-        # Sources
-        table_sources = get_column_set(tables['study'], 0)
-        db_sources = set(
-            GenericMaterial.objects.filter(
-                study=self.study, item_type='SOURCE'
-            ).values_list('name', flat=True)
-        )
-        self.assertEqual(table_sources, db_sources)
-
-        # Samples
-        sample_pos = 0
-
-        for c in tables['study']['top_header']:
-            if c['value'] == 'Sample':
-                break
-
-            else:
-                sample_pos += c['colspan']
-
-        table_samples = get_column_set(tables['study'], sample_pos)
-        db_samples = set(
-            GenericMaterial.objects.filter(
-                study=self.study, item_type='SAMPLE'
-            ).values_list('name', flat=True)
-        )
-        self.assertEqual(table_samples, db_samples)
-
-        # Test assay tables
-        for k, assay_table in tables['assays'].items():
-            assert_row_length(assay_table)
+    @classmethod
+    def _get_column_set(cls, table, pos):
+        """Return set of distinct values for a column at pos"""
+        return set([r[pos]['value'] for r in table['table_data']])
 
     def test_get_headers(self):
         """Test get_headers()"""
@@ -126,3 +99,141 @@ class TestTableBuilder(TestRenderingBase):
         h2 = self.tb.get_headers(investigation2)
         self.assertIsNotNone(h2)
         self.assertNotEqual(h1, h2)
+
+    def test_build_study_tables(self):
+        """Test build_study_tables()"""
+        tables = self.tb.build_study_tables(self.study)
+        self.assertIsNotNone(tables)
+        # Assert tables
+        self.assertIn('study', tables)
+        self.assertIn('assays', tables)
+        self.assertEqual(len(tables['assays']), self.study.assays.count())
+        # Study table
+        self._assert_row_length(tables['study'])
+        # Sources
+        table_sources = self._get_column_set(tables['study'], 0)
+        db_sources = set(
+            GenericMaterial.objects.filter(
+                study=self.study, item_type='SOURCE'
+            ).values_list('name', flat=True)
+        )
+        self.assertEqual(table_sources, db_sources)
+        # Samples
+        sample_pos = 0
+        for c in tables['study']['top_header']:
+            if c['value'] == 'Sample':
+                break
+            else:
+                sample_pos += c['colspan']
+        table_samples = self._get_column_set(tables['study'], sample_pos)
+        db_samples = set(
+            GenericMaterial.objects.filter(
+                study=self.study, item_type='SAMPLE'
+            ).values_list('name', flat=True)
+        )
+        self.assertEqual(table_samples, db_samples)
+        # Aassay tables
+        for k, assay_table in tables['assays'].items():
+            self._assert_row_length(assay_table)
+
+    def test_build_study_tables_config(self):
+        """Test build_study_tables() with sheet config"""
+        tables = self.tb.build_study_tables(self.study)
+        t_field = tables['study']['field_header'][4]
+        self.assertEqual(t_field['col_type'], None)
+
+        sheet_config = self.build_sheet_config(self.investigation)
+        c_field = sheet_config['studies'][str(self.study.sodar_uuid)]['nodes'][
+            1
+        ]['fields'][1]
+        self.assertEqual(c_field.get('format'), None)
+        c_field['format'] = 'integer'
+        sheet_config['studies'][str(self.study.sodar_uuid)]['nodes'][1][
+            'fields'
+        ][1] = c_field
+        app_settings.set(
+            APP_NAME, 'sheet_config', sheet_config, project=self.project
+        )
+
+        tables = self.tb.build_study_tables(self.study)
+        t_field = tables['study']['field_header'][4]
+        self.assertEqual(t_field['col_type'], 'NUMERIC')
+
+    def test_build_inv_tables(self):
+        """Test build_inv_tables()"""
+        inv_tables = self.tb.build_inv_tables(self.investigation)
+        self.assertEqual(len(inv_tables.keys()), 1)
+        for study, study_tables in inv_tables.items():
+            self.assertEqual(
+                study_tables, self.tb.build_study_tables(study, use_config=True)
+            )
+
+    def test_build_inv_tables_no_config(self):
+        """Test build_inv_tables() with use_config=False"""
+        inv_tables = self.tb.build_inv_tables(
+            self.investigation, use_config=False
+        )
+        self.assertEqual(len(inv_tables.keys()), 1)
+        for study, study_tables in inv_tables.items():
+            self.assertEqual(
+                study_tables,
+                self.tb.build_study_tables(study, use_config=False),
+            )
+
+    def test_get_study_tables(self):
+        """Test get_study_tables()"""
+        self.assertIsNone(self.cache_backend.get_cache_item(*self.cache_args))
+        study_tables = self.tb.get_study_tables(self.study)
+        cache_item = self.cache_backend.get_cache_item(*self.cache_args)
+        self.assertEqual(study_tables, cache_item.data)
+
+    def test_get_study_tables_cache(self):
+        """Test get_study_tables() with existing cache item"""
+        study_tables = self.tb.build_study_tables(self.study)
+        cache_item = self.cache_backend.set_cache_item(
+            APP_NAME, self.cache_name, study_tables, 'json', self.project
+        )
+        self.assertIsNotNone(
+            self.cache_backend.get_cache_item(*self.cache_args)
+        )
+        study_tables = self.tb.get_study_tables(self.study)
+        self.assertEqual(study_tables, cache_item.data)
+
+    def test_clear_study_cache(self):
+        """Test clear_study_cache()"""
+        study_tables = self.tb.build_study_tables(self.study)
+        self.cache_backend.set_cache_item(
+            APP_NAME, self.cache_name, study_tables, 'json', self.project
+        )
+        self.assertIsNotNone(
+            self.cache_backend.get_cache_item(*self.cache_args)
+        )
+        self.tb.clear_study_cache(self.study)
+        # NOTE: We still have the item, but it's empty
+        cache_item = self.cache_backend.get_cache_item(*self.cache_args)
+        self.assertEqual(cache_item.data, {})
+
+    def test_clear_study_cache_no_item(self):
+        """Test clear_study_cache() without existing item"""
+        self.assertIsNone(self.cache_backend.get_cache_item(*self.cache_args))
+        self.tb.clear_study_cache(self.study)
+        self.assertIsNone(self.cache_backend.get_cache_item(*self.cache_args))
+
+    def test_clear_study_cache_delete(self):
+        """Test clear_study_cache() with delete=True"""
+        study_tables = self.tb.build_study_tables(self.study)
+        self.cache_backend.set_cache_item(
+            APP_NAME, self.cache_name, study_tables, 'json', self.project
+        )
+        self.assertIsNotNone(
+            self.cache_backend.get_cache_item(*self.cache_args)
+        )
+        self.tb.clear_study_cache(self.study, delete=True)
+        cache_item = self.cache_backend.get_cache_item(*self.cache_args)
+        self.assertIsNone(cache_item)
+
+    def test_clear_study_cache_delete_no_item(self):
+        """Test clear_study_cache() with delete=True and no existing item"""
+        self.assertIsNone(self.cache_backend.get_cache_item(*self.cache_args))
+        self.tb.clear_study_cache(self.study, delete=True)
+        self.assertIsNone(self.cache_backend.get_cache_item(*self.cache_args))

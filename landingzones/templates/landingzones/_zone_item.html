@@ -1,3 +1,4 @@
+{% load rules %}
 {% load landingzones_tags %}
 
 {# Projectroles dependency #}
@@ -39,6 +40,16 @@
       {% endif %}
       {% if zone.configuration %}
         <span class="badge badge-pill badge-success">{% get_config_legend zone %}</span>
+      {% endif %}
+      {% if zone.user != request.user %}
+        {% has_perm 'landingzones.update_zone_own' zone.user project as zone_user_perm %}
+        {% if not zone_user_perm %}
+          <span title="User lacks permissions to update their zone"
+                data-tooltip="tooltip" data-placement="top"
+                class="sodar-lz-zone-warn-access">
+            <i class="iconify text-danger" data-icon="mdi:account-circle"></i>
+          </span>
+        {% endif %}
       {% endif %}
     </div>
   </td>

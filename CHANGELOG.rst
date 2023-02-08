@@ -5,6 +5,92 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+v0.13.0 (2023-02-08)
+====================
+
+Added
+-----
+
+- **Irodsbackend**
+    - Create iRODS user accounts at login for users with LDAP/SODAR auth (#1315, #1587)
+- **Landingzones**
+    - Optional zone write access restriction to created collections (#1050, #1540)
+    - Project archiving support (#1573)
+    - UI warning for user without access for zone updating (#1581)
+- **Samplesheets**
+    - Mac keyboard shortcut support for multi-cell copying (#1531)
+    - Study render table caching (#1509)
+    - ``syncstudytables`` management command (#1509)
+    - ``get_last_material_index()`` helper (#1554)
+    - ``get_latest_file_path()`` helper (#1554)
+    - "Not found" element for iRODS modal filter (#1562)
+    - Existing iRODS file check in material name editing (#1494)
+    - Omit IGV session files by file name suffix (#1575, #1577)
+    - ``SHEETS_IGV_OMIT_BAM`` and ``SHEETS_IGV_OMIT_VCF`` Django settings (#1575, #1595)
+    - ``get_igv_omit_override()`` and ``check_igv_file_name()`` in study app utils (#1575, #1577)
+    - Project archiving support (#1572)
+    - ``igv_omit_bam``, ``igv_omit_vcf`` and ``igv_genome`` project settings (#1478, #1577)
+    - Project-wide genome selecting for IGV session generation (#1478)
+
+Changed
+-------
+
+- **General**
+    - Upgrade to django-sodar-core v0.12.0 (#1567, #1576)
+    - Use default Gunicorn worker class in production (#1536)
+    - Upgrade to fastobo v0.12.2 (#1561)
+    - Update ``.coveragerc`` (#1582)
+    - Upgrade ``checkout`` and ``setup-python`` GitHub actions (#1591)
+- **Irodsbackend**
+    - Update backend iRODS connection handling (#909, #1542, #1545)
+    - Rename ``IrodsAPI.get_child_colls()``
+- **Landingzones**
+    - Refactor permissions (#1573)
+- **Samplesheets**
+    - Upgrade critical Vue app dependencies (#1527, #1571)
+    - Remove redundant node UUIDs from render tables (#708)
+    - Improve IGV session file XML generating (#1585)
+    - Do not create ``sheet_edit_start`` timeline events (#1570)
+    - Use role ranking in ``EditConfigMixin`` (#1589)
+- **Taskflowbackend**
+    - Remove legacy ``landing_zone_create`` build error handling (#1530)
+
+Fixed
+-----
+
+- **General**
+    - Missing ``LDAP_ALT_DOMAINS`` Django setting (#1594)
+- **Irodsbackend**
+    - Unhandled backend init exception in ``IrodsStatisticsAjaxView`` (#1539)
+    - iRODS session disconnection issues (#909, #1542)
+    - Ajax view access for inherited owners (#1566)
+- **Landingzones**
+    - Typo in ``LANDINGZONES_TRIGGER_MOVE_INTERVAL`` (#1541)
+- **Samplesheets**
+    - Crash from incompatibility with ``packaging==0.22`` (#1550)
+    - Cancer shortcuts expecting specific naming convention (#1554, #1563)
+    - Cancer shortcut caching with identical library names in study (#1560, #1564)
+    - iRODS modal filter input not cleared on modal re-open (#1555)
+    - Column config editing access for inherited owners (#1568)
+    - iRODS delete request accept view crash with collection request (#1584)
+    - Germline study shortcuts enabled if sample not found in assay (#1579)
+
+Removed
+-------
+
+- **Irodsbackend**
+    - Backend API ``conn`` argument (#909)
+    - ``IrodsAPI.collection_exists()`` helper (#1546)
+    - ``IrodsAPI.get_coll_by_path()`` helper
+- **Landingzones**
+    - Legacy ``LandingZoneOldListAPIView`` (#1580)
+- **Samplesheets**
+    - Unused ``config_set`` and ``num_col`` header parameters (#1551)
+    - ``get_sample_libraries()`` helper (#1554)
+    - ``get_study_libraries()`` helper (#1554)
+    - ``GenericMaterial.get_samples()`` (#1557)
+
+
 v0.12.1 (2022-11-09)
 ====================
 
@@ -69,7 +155,7 @@ Added
     - ``get_zone_path()`` helper (#1399)
     - ``get_user_group_name()`` helper (#1397)
     - ``get_ticket()`` method
-- **Landingzones***
+- **Landingzones**
     - ``LandingZone.can_display_files()`` helper (#1401)
 - **Samplesheets**
     - Statistics badge in iRODS dir modal (#1434)

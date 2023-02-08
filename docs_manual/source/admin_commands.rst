@@ -56,3 +56,8 @@ operations regarding sample sheets, landing zones, iRODS data and ontologies.
     Find orphans in iRODS project collections.
 ``syncnames``
     Synchronize alternative names for sample sheet material search.
+``syncstudytables``
+    Build study render tables in cache for all study tables. These will be
+    automatically built when accessing sample sheets if existing  cache is not
+    up-to-date, but this can be used to e.g. regenerate the cache if something
+    has been changed in study table rendering.

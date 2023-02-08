@@ -37,25 +37,21 @@ class ZoneTicketGetView(
 
     http_method_names = ['get', 'post']
     template_name = 'landingzones_config_bih_proteomics_smb/ticket_get.html'
-    permission_required = 'landingzones.update_zones_own'
+    permission_required = 'landingzones.update_zone_own'
 
     def get_context_data(self, *args, **kwargs):
         """Override get_context_data() for ticket information"""
         context = super().get_context_data()
-
         if context['zone']:
             zone = context['zone']
-
             if 'ticket' in zone.config_data:
                 context['ticket'] = zone.config_data['ticket']
                 expire_date = dt.strptime(
                     zone.config_data['ticket_expire_date'], TICKET_DATE_FORMAT
                 )
                 context['ticket_expire_date'] = expire_date
-
                 if expire_date < dt.now():
                     context['ticket_expired'] = True
-
         return context
 
     def post(self, *args, **kwargs):
@@ -72,28 +68,30 @@ class ZoneTicketGetView(
         # Delete existing ticket
         if 'ticket' in zone.config_data and zone.config_data['ticket']:
             try:
-                irods_backend.delete_ticket(zone.config_data['ticket'])
-
+                with irods_backend.get_session() as irods:
+                    irods_backend.delete_ticket(
+                        irods, zone.config_data['ticket']
+                    )
             except Exception as ex:
                 error = True
                 ex_msg = str(ex)
 
         if not error:
             expiry_date = dt.now() + timedelta(days=expiry_days)
-
             try:
-                ticket = irods_backend.issue_ticket(
-                    mode='write',
-                    path=irods_backend.get_path(zone),
-                    ticket_str=build_secret(16),
-                    expiry_date=expiry_date,
-                )
+                with irods_backend.get_session() as irods:
+                    ticket = irods_backend.issue_ticket(
+                        irods=irods,
+                        mode='write',
+                        path=irods_backend.get_path(zone),
+                        ticket_str=build_secret(16),
+                        expiry_date=expiry_date,
+                    )
                 zone.config_data['ticket'] = ticket._ticket
                 zone.config_data['ticket_expire_date'] = expiry_date.strftime(
                     TICKET_DATE_FORMAT
                 )
                 zone.save()
-
                 messages.success(
                     self.request,
                     'Ticket "{}" created for zone "{}", expires on {}'.format(
@@ -102,7 +100,6 @@ class ZoneTicketGetView(
                         expiry_date.strftime('%Y-%m-%d %H:%M'),
                     ),
                 )
-
             except Exception as ex:
                 error = True
                 ex_msg = str(ex)
@@ -111,5 +108,4 @@ class ZoneTicketGetView(
             messages.error(
                 self.request, 'Error modifying ticket: {}'.format(ex_msg)
             )
-
         return redirect(redirect_url)

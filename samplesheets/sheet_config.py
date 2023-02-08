@@ -1,6 +1,7 @@
 """Sample sheet edit and display configuration management"""
 
 import logging
+
 from packaging import version
 
 from django.conf import settings
@@ -12,11 +13,9 @@ from samplesheets.models import Protocol
 from samplesheets.rendering import SampleSheetTableBuilder
 
 
-# Get logger
-logger = logging.getLogger(__name__)
-
-# App settings API
 app_settings = AppSettingAPI()
+logger = logging.getLogger(__name__)
+table_builder = SampleSheetTableBuilder()
 
 
 # Local constants
@@ -44,7 +43,6 @@ class SheetConfigAPI:
         p_name = None
         p_found = False
         protocol = None
-
         for row in render_table['table_data']:
             if not p_name and row[idx]['value']:
                 p_name = row[idx]['value']
@@ -52,7 +50,6 @@ class SheetConfigAPI:
             elif p_name and row[idx]['value'] != p_name:
                 p_found = False
                 break
-
         if p_found:
             protocol = Protocol.objects.filter(
                 study__investigation=investigation,
@@ -84,19 +81,19 @@ class SheetConfigAPI:
                 i += 1
         return config_table
 
-    def get_sheet_config(self, investigation, restore=False):
+    def get_sheet_config(self, investigation, inv_tables=None):
         """
         Get or build a sheet edit configuration for an investigation.
 
         :param investigation: Investigation object
-        :param restore: Process config for restore if true (bool)
+        :param inv_tables: Render tables for investigation (optional)
         :return: Dict
         """
-        sheet_config = app_settings.get_app_setting(
+        sheet_config = app_settings.get(
             APP_NAME, 'sheet_config', project=investigation.project
         )
         sheet_ok = False
-
+        msg = None
         if sheet_config:
             try:
                 self.validate_sheet_config(sheet_config)
@@ -109,8 +106,12 @@ class SheetConfigAPI:
 
         if not sheet_ok:
             logger.info(msg)
-            sheet_config = self.build_sheet_config(investigation)
-            app_settings.set_app_setting(
+            if not inv_tables:
+                inv_tables = table_builder.build_inv_tables(
+                    investigation, use_config=False
+                )
+            sheet_config = self.build_sheet_config(investigation, inv_tables)
+            app_settings.set(
                 APP_NAME,
                 'sheet_config',
                 sheet_config,
@@ -121,19 +122,18 @@ class SheetConfigAPI:
                     investigation.sodar_uuid
                 )
             )
-
         return sheet_config
 
     @classmethod
-    def build_sheet_config(cls, investigation):
+    def build_sheet_config(cls, investigation, inv_tables):
         """
         Build sample sheet edit configuration.
         NOTE: Will be built from configuration template(s) eventually
 
         :param investigation: Investigation object
+        :param inv_tables: Render tables for investigation studies and assays
         :return: Dict
         """
-        tb = SampleSheetTableBuilder()
         ret = {
             'version': settings.SHEETS_CONFIG_VERSION,
             'investigation': {},
@@ -144,12 +144,10 @@ class SheetConfigAPI:
             nodes = []
             sample_found = False
             ti = 0
-
             if not assay_uuid:
                 table = study_tables['study']
             else:
                 table = study_tables['assays'][assay_uuid]
-
             for th in table['top_header']:
                 if not assay_uuid or sample_found:
                     node = {'header': th['value'], 'fields': []}
@@ -178,20 +176,15 @@ class SheetConfigAPI:
                             f['format'] = 'external_links'
                         node['fields'].append(f)
                     nodes.append(node)
-
                 # Leave out study columns for assays
                 if assay_uuid and th['value'] == 'Sample':
                     sample_found = True
                 ti += th['colspan']
-
             return nodes
 
         # Add studies
-        for study in investigation.studies.all().order_by('pk'):
+        for study, study_tables in inv_tables.items():
             # Build tables (disable use_config in case we are replacing sheets)
-            study_tables = tb.build_study_tables(
-                study, edit=True, use_config=False, ui=False
-            )
             study_data = {
                 'display_name': study.get_display_name(),
                 # For human readability
@@ -206,7 +199,6 @@ class SheetConfigAPI:
                     'nodes': _build_nodes(study_tables, assay_uuid),
                 }
             ret['studies'][str(study.sodar_uuid)] = study_data
-
         return ret
 
     @classmethod
@@ -231,19 +223,16 @@ class SheetConfigAPI:
             )
 
     @classmethod
-    def restore_sheet_config(cls, investigation, sheet_config):
+    def restore_sheet_config(cls, investigation, inv_tables, sheet_config):
         """
         Update sheet config on sample sheet restore.
 
         :param investigation: Investigation object
+        :param inv_tables: Render tables for investigation studies and assays
         :param sheet_config: Sheet editing configuration (dict)
         """
         logger.info('Updating restored sheet config..')
-        tb = SampleSheetTableBuilder()
-        for study in investigation.studies.all():
-            study_tables = tb.build_study_tables(
-                study, edit=True, use_config=False, ui=False
-            )
+        for study, study_tables in inv_tables.items():
             s_uuid = str(study.sodar_uuid)
             sheet_config['studies'][s_uuid] = cls._restore_config_table(
                 investigation,
@@ -260,7 +249,7 @@ class SheetConfigAPI:
                     sheet_config['studies'][s_uuid]['assays'][a_uuid],
                     start_idx=len(study_tables['study']['field_header']),
                 )
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'sheet_config',
             sheet_config,
@@ -269,15 +258,14 @@ class SheetConfigAPI:
         logger.info('Restored sheet config updated')
 
     @classmethod
-    def build_display_config(cls, investigation, sheet_config):
+    def build_display_config(cls, inv_tables, sheet_config):
         """
         Build default display config for project sample sheet columns.
 
-        :param investigation: Investigation object
+        :param inv_tables: Render tables for investigation studies and assays
         :param sheet_config: Sheet editing configuration (dict)
         :return: Dict
         """
-        tb = SampleSheetTableBuilder()
         ret = {'investigation': {}, 'studies': {}}
 
         def _build_node(config_node, table, idx, assay_mode=False):
@@ -299,11 +287,8 @@ class SheetConfigAPI:
             return display_node, idx
 
         # Add studies
-        for study in investigation.studies.all().order_by('pk'):
+        for study, study_tables in inv_tables.items():
             study_uuid = str(study.sodar_uuid)
-            study_tables = tb.build_study_tables(
-                study, edit=False, use_config=False, ui=False
-            )
             h_idx = 0
             study_data = {'nodes': [], 'assays': {}}
 
@@ -338,7 +323,5 @@ class SheetConfigAPI:
                     assay_data['nodes'].append(node)
 
                 study_data['assays'][assay_uuid] = assay_data
-
             ret['studies'][study_uuid] = study_data
-
         return ret

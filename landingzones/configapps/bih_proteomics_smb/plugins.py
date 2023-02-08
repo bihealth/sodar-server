@@ -1,11 +1,15 @@
+import logging
+
 from datetime import datetime as dt
 
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
 
+from landingzones.configapps.bih_proteomics_smb.urls import urlpatterns
 from landingzones.plugins import LandingZoneConfigPluginPoint
 
-from landingzones.configapps.bih_proteomics_smb.urls import urlpatterns
+
+logger = logging.getLogger(__name__)
 
 
 # Local constants
@@ -70,10 +74,8 @@ class LandingZoneConfigPlugin(LandingZoneConfigPluginPoint):
         :param zone: LandingZone object
         """
         irods_backend = get_backend_api('omics_irods')
-
         if not irods_backend:
             return
-
         if (
             'ticket' in zone.config_data
             and dt.strptime(
@@ -81,4 +83,14 @@ class LandingZoneConfigPlugin(LandingZoneConfigPluginPoint):
             )
             > dt.now()
         ):
-            irods_backend.delete_ticket(zone.config_data['ticket'])
+            try:
+                with irods_backend.get_session() as irods:
+                    irods_backend.delete_ticket(
+                        irods, zone.config_data['ticket']
+                    )
+            except Exception as ex:
+                logger.error(
+                    'Error deleting ticket "{}": {}'.format(
+                        zone.config_data['ticket'], ex
+                    )
+                )

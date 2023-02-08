@@ -135,6 +135,48 @@ describe('IrodsDirModal.vue', () => {
     expect(wrapper.findAll('.sodar-ss-irods-obj').at(1).isVisible()).toBe(true)
   })
 
+  it('clears filter input on modal re-open', async () => {
+    fetchMock.mock(listAjaxUrl, objList)
+    const wrapper = mount(IrodsDirModal, {
+      localVue, propsData: propsData
+    })
+    wrapper.vm.showModal(rootIrodsPath)
+    await waitNT(wrapper.vm)
+    await waitRAF()
+
+    expect(wrapper.find('#sodar-ss-irods-filter').element.value).toBe('')
+    await wrapper.find('#sodar-ss-irods-filter').setValue('test2')
+    expect(wrapper.find('#sodar-ss-irods-filter').element.value).toBe('test2')
+    expect(wrapper.find('.sodar-irods-obj-table').exists()).toBe(true)
+    wrapper.vm.hideModal()
+    await waitNT(wrapper.vm)
+    await waitRAF()
+
+    wrapper.vm.showModal(rootIrodsPath)
+    await waitNT(wrapper.vm)
+    await waitRAF()
+    expect(wrapper.find('#sodar-ss-irods-filter').element.value).toBe('')
+  })
+
+  it('displays no results row for filtering', async () => {
+    fetchMock.mock(listAjaxUrl, objList)
+    const wrapper = mount(IrodsDirModal, {
+      localVue, propsData: propsData
+    })
+    wrapper.vm.showModal(rootIrodsPath)
+    await waitNT(wrapper.vm)
+    await waitRAF()
+
+    expect(wrapper.find('#sodar-ss-irods-filter-empty').exists()).toBe(false)
+    expect(wrapper.findAll('.sodar-ss-irods-obj').length).toBe(2)
+    expect(wrapper.findAll('.sodar-ss-irods-obj').at(0).isVisible()).toBe(true)
+    expect(wrapper.findAll('.sodar-ss-irods-obj').at(1).isVisible()).toBe(true)
+    await wrapper.vm.onFilterUpdate('jee8ITh2')
+    expect(wrapper.find('#sodar-ss-irods-filter-empty').exists()).toBe(true)
+    expect(wrapper.findAll('.sodar-ss-irods-obj').at(0).isVisible()).toBe(false)
+    expect(wrapper.findAll('.sodar-ss-irods-obj').at(1).isVisible()).toBe(false)
+  })
+
   it('updates modal title on setTitle()', async () => {
     fetchMock.mock(listAjaxUrl, objList)
     const updatedTitle = 'Updated title'

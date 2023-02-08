@@ -47,7 +47,7 @@ class TestViewsBase(ProjectMixin, RoleAssignmentMixin, TestCase):
         self.irods_backend = get_backend_api('omics_irods')
         self.assertIsNotNone(self.irods_backend)
         # Get iRODS session
-        self.irods = self.irods_backend.get_session()
+        self.irods = self.irods_backend.get_session_obj()
 
         # Init roles
         self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
@@ -66,10 +66,10 @@ class TestViewsBase(ProjectMixin, RoleAssignmentMixin, TestCase):
         self.user.save()
 
         # Init project with owner
-        self.project = self._make_project(
+        self.project = self.make_project(
             'TestProject', PROJECT_TYPE_PROJECT, None
         )
-        self.as_owner = self._make_assignment(
+        self.owner_as = self.make_assignment(
             self.project, self.user, self.role_owner
         )
 
@@ -82,6 +82,7 @@ class TestViewsBase(ProjectMixin, RoleAssignmentMixin, TestCase):
     def tearDown(self):
         if self.irods.collections.exists(self.project_path):
             self.irods.collections.get(self.project_path).remove(force=True)
+        self.irods.cleanup()
 
 
 class TestIrodsStatisticsAjaxView(TestViewsBase):
@@ -166,7 +167,7 @@ class TestIrodsStatisticsAjaxView(TestViewsBase):
     def test_get_no_access(self):
         """Test GET for stats with no access for the iRODS folder"""
         new_user = self.make_user('new_user')
-        self._make_assignment(
+        self.make_assignment(
             self.project, new_user, self.role_contributor
         )  # No taskflow
 
@@ -184,12 +185,10 @@ class TestIrodsObjectListAjaxView(TestViewsBase):
 
     def setUp(self):
         super().setUp()
-
         # Build path for test collection
         self.irods_path = (
             self.irods_backend.get_path(self.project) + '/' + IRODS_TEMP_COLL
         )
-
         # Create test collection in iRODS
         self.irods_coll = self.irods.collections.create(self.irods_path)
 
@@ -306,7 +305,7 @@ class TestIrodsObjectListAjaxView(TestViewsBase):
     def test_get_no_access(self):
         """Test GET for listing with no acces for the iRODS folder"""
         new_user = self.make_user('new_user')
-        self._make_assignment(
+        self.make_assignment(
             self.project, new_user, self.role_contributor
         )  # No taskflow
 
@@ -451,7 +450,7 @@ class TestIrodsBatchStatisticsAjaxView(TestViewsBase):
     def test_post_no_access(self):
         """Test POST for batch stats with no access for the iRODS collections"""
         new_user = self.make_user('new_user')
-        self._make_assignment(
+        self.make_assignment(
             self.project, new_user, self.role_contributor
         )  # No taskflow
         post_data = {

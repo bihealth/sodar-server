@@ -31,7 +31,7 @@ urls_ui = [
     ),
     url(
         regex=r'^template/create/(?P<project>[0-9a-f-]+)$',
-        view=views.SheetTemplateCreateFormView.as_view(),
+        view=views.SheetTemplateCreateView.as_view(),
         name='template_create',
     ),
     url(

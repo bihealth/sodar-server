@@ -1,10 +1,15 @@
 {% load rules %}
 {% load landingzones_tags %}
 
-{% has_perm 'landingzones.update_zones_own' request.user project as can_update_own %}
-{% has_perm 'landingzones.update_zones_all' request.user project as can_update_all %}
+{% has_perm 'landingzones.update_zone_own' request.user project as can_update_own %}
+{% has_perm 'landingzones.update_zone_all' request.user project as can_update_all %}
+{% has_perm 'landingzones.move_zone_own' request.user project as can_move_own %}
+{% has_perm 'landingzones.move_zone_all' request.user project as can_move_all %}
+{% has_perm 'landingzones.delete_zone_own' request.user project as can_delete_own %}
+{% has_perm 'landingzones.delete_zone_all' request.user project as can_delete_all %}
 
-<div class="btn-group sodar-list-btn-group" id="sodar-lz-zone-buttons-{{ zone.sodar_uuid }}">
+<div class="btn-group sodar-list-btn-group sodar-lz-zone-buttons"
+     id="sodar-lz-zone-buttons-{{ zone.sodar_uuid }}">
   <button class="btn btn-secondary dropdown-toggle sodar-list-dropdown
       {% if not zone_enabled %} disabled{% endif %}"
       type="button" data-toggle="dropdown"
@@ -12,50 +17,51 @@
     <i class="iconify" data-icon="mdi:cog"></i>
   </button>
   <div class="dropdown-menu dropdown-menu-right">
-    {% if can_update_all or zone.user == request.user and can_update_own %}
+    {# Landing zone config plugin links #}
+    {% get_config_plugin zone as zone_plugin %}
+    {% if zone_plugin %}
+      {% for zone_link in zone_plugin.menu_items %}
+        <a class="dropdown-item" href="{% get_config_link_url zone zone_link.url_name %}">
+          <i class="iconify" data-icon="{{ zone_link.icon }}"></i>
+          {{ zone_link.label }}
+        </a>
+      {% endfor %}
+    {% endif %}
 
-      {# Landing zone config plugin links #}
-      {% get_config_plugin zone as zone_plugin %}
-      {% if zone_plugin %}
-        {% for zone_link in zone_plugin.menu_items %}
-          <a class="dropdown-item" href="{% get_config_link_url zone zone_link.url_name %}">
-            <i class="iconify" data-icon="{{ zone_link.icon }}"></i>
-            {{ zone_link.label }}
-          </a>
-        {% endfor %}
-      {% endif %}
+    {# Normal links #}
+    {% if zone.status != 'MOVED' and can_move_all or zone.user == request.user and can_move_own %}
+      <a class="dropdown-item sodar-lz-zone-btn-validate"
+         href="{% url 'landingzones:validate' landingzone=zone.sodar_uuid %}">
+    {% else %}
+      <a class="dropdown-item disabled sodar-lz-zone-btn-validate" href="#">
+    {% endif %}
+      <i class="iconify" data-icon="mdi:check-thick"></i>
+      Validate Files
+    </a>
 
-      {# Normal links #}
-      {% if zone.status != 'MOVED' %}
-        <a class="dropdown-item" href="{% url 'landingzones:validate' landingzone=zone.sodar_uuid %}">
-      {% else %}
-        <a class="dropdown-item disabled" href="#">
-      {% endif %}
-        <i class="iconify" data-icon="mdi:check-thick"></i>
-        Validate Files
-      </a>
+    {% if zone.status != 'MOVED' and can_move_all or zone.user == request.user and can_move_own %}
+      <a class="dropdown-item sodar-lz-zone-btn-move"
+         href="{% url 'landingzones:move' landingzone=zone.sodar_uuid %}">
+    {% else %}
+      <a class="dropdown-item disabled sodar-lz-zone-btn-move" href="#">
+    {% endif %}
+      <i class="iconify" data-icon="mdi:arrow-right-bold-hexagon-outline"></i>
+      Validate and Move
+    </a>
 
-      {% if zone.status != 'MOVED' %}
-        <a class="dropdown-item" href="{% url 'landingzones:move' landingzone=zone.sodar_uuid %}">
-      {% else %}
-        <a class="dropdown-item disabled" href="#">
-      {% endif %}
-        <i class="iconify" data-icon="mdi:arrow-right-bold-hexagon-outline"></i>
-        Validate and Move
-      </a>
+    <a class="dropdown-item sodar-lz-zone-btn-copy"
+       href="#"
+       data-clipboard-text="{{ zone.sodar_uuid }}">
+      <i class="iconify" data-icon="mdi:clipboard-text-multiple"></i>
+      Copy Zone UUID
+    </a>
 
-      <a class="dropdown-item sodar-lz-zone-btn-copy"
-         href="#"
-         data-clipboard-text="{{ zone.sodar_uuid }}">
-        <i class="iconify" data-icon="mdi:clipboard-text-multiple"></i>
-        Copy Zone UUID
-      </a>
-
-      <a class="dropdown-item text-danger" href="{% url 'landingzones:delete' landingzone=zone.sodar_uuid %}">
+    {% if zone.status != 'MOVED' and can_delete_all or zone.user == request.user and can_delete_own %}
+      <a class="dropdown-item text-danger sodar-lz-zone-btn-delete"
+         href="{% url 'landingzones:delete' landingzone=zone.sodar_uuid %}">
         <i class="iconify" data-icon="mdi:close-thick"></i>
         Delete Zone
       </a>
-
     {% endif %}
   </div>
 </div>

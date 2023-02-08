@@ -46,6 +46,7 @@ from samplesheets.views import (
 
 app_settings = AppSettingAPI()
 logger = logging.getLogger(__name__)
+table_builder = SampleSheetTableBuilder()
 
 
 MD5_RE = re.compile(r'([a-fA-F\d]{32})')
@@ -109,7 +110,7 @@ class IrodsCollsCreateAPIView(
 
     def post(self, request, *args, **kwargs):
         """POST request for creating iRODS collections"""
-        irods_backend = get_backend_api('omics_irods', conn=False)
+        irods_backend = get_backend_api('omics_irods')
         ex_msg = 'Creating iRODS collections failed: '
         investigation = Investigation.objects.filter(
             project__sodar_uuid=self.kwargs.get('project'), active=True
@@ -126,7 +127,6 @@ class IrodsCollsCreateAPIView(
             self.create_colls(investigation, request)
         except Exception as ex:
             raise APIException('{}{}'.format(ex_msg, ex))
-
         return Response(
             {
                 'detail': 'iRODS collections created',
@@ -198,17 +198,14 @@ class SheetImportAPIView(SheetImportMixin, SODARAPIBaseProjectMixin, APIView):
     def post(self, request, *args, **kwargs):
         """Handle POST request for submitting"""
         project = self.get_project()
-
-        if app_settings.get_app_setting(APP_NAME, 'sheet_sync_enable', project):
+        if app_settings.get(APP_NAME, 'sheet_sync_enable', project):
             raise ValidationError(
                 'Sheet synchronization enabled in project: import not allowed'
             )
-
         sheet_io = SampleSheetIO()
         old_inv = Investigation.objects.filter(
             project=project, active=True
         ).first()
-
         zip_file = None
         if len(request.FILES) == 0:
             raise ParseError('No files provided')
@@ -221,7 +218,6 @@ class SheetImportAPIView(SheetImportMixin, SODARAPIBaseProjectMixin, APIView):
             except OSError as ex:
                 raise ParseError('Failed to parse zip archive: {}'.format(ex))
             isa_data = sheet_io.get_isa_from_zip(zip_file)
-
         # Multi-file handling
         else:
             try:
@@ -232,7 +228,6 @@ class SheetImportAPIView(SheetImportMixin, SODARAPIBaseProjectMixin, APIView):
         # Handle import
         action = 'replace' if old_inv else 'create'
         tl_event = self.create_timeline_event(project=project, action=action)
-
         try:
             investigation = sheet_io.import_isa(
                 isa_data=isa_data,
@@ -283,10 +278,9 @@ class SheetImportAPIView(SheetImportMixin, SODARAPIBaseProjectMixin, APIView):
             tl_event=tl_event,
             isa_version=isa_version,
         )
-
         ret_data = {
-            'detail': 'Sample sheets {}d for project "{}" ({})'.format(
-                action, project.title, project.sodar_uuid
+            'detail': 'Sample sheets {}d for project {}'.format(
+                action, project.get_log_title()
             )
         }
         no_plugin_assays = self.get_assays_without_plugins(investigation)
@@ -326,7 +320,6 @@ class SampleDataFileExistsAPIView(SODARAPIBaseMixin, APIView):
         if not irods_backend:
             raise APIException('iRODS backend not enabled')
         c = request.query_params.get('checksum')
-
         if not c or not re.match(MD5_RE, c):
             raise ParseError('Invalid MD5 checksum: "{}"'.format(c))
 
@@ -342,28 +335,33 @@ class SampleDataFileExistsAPIView(SODARAPIBaseMixin, APIView):
         )
         # print('QUERY: {}'.format(sql))  # DEBUG
         columns = [DataObject.name]
-        query = irods_backend.get_query(sql, columns)
-
         try:
-            results = query.get_results()
-            if sum(1 for _ in results) > 0:
-                ret['detail'] = 'File exists'
-                ret['status'] = True
-        except CAT_NO_ROWS_FOUND:
-            pass  # No results, this is OK
+            with irods_backend.get_session() as irods:
+                query = irods_backend.get_query(irods, sql, columns)
+                try:
+                    results = query.get_results()
+                    if sum(1 for _ in results) > 0:
+                        ret['detail'] = 'File exists'
+                        ret['status'] = True
+                except CAT_NO_ROWS_FOUND:
+                    pass  # No results, this is OK
+                except Exception as ex:
+                    logger.error(
+                        '{} iRODS query exception: {}'.format(
+                            self.__class__.__name__, ex
+                        )
+                    )
+                    raise APIException(
+                        'iRODS query exception, please contact an admin if '
+                        'issue persists'
+                    )
+                finally:
+                    query.remove()
         except Exception as ex:
-            logger.error(
-                '{} iRODS query exception: {}'.format(
-                    self.__class__.__name__, ex
-                )
+            return Response(
+                {'detail': 'Unable to connect to iRODS: {}'.format(ex)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-            raise APIException(
-                'iRODS query exception, please contact an admin if issue '
-                'persists'
-            )
-        finally:
-            query.remove()
-
         return Response(ret, status=status.HTTP_200_OK)
 
 
@@ -378,19 +376,15 @@ class RemoteSheetGetAPIView(APIView):
 
     def get(self, request, **kwargs):
         secret = kwargs['secret']
-        isa = request.GET.get('isa')
-
         try:
             target_site = RemoteSite.objects.get(
                 mode=SITE_MODE_TARGET, secret=secret
             )
         except RemoteSite.DoesNotExist:
             return Response('Remote site not found, unauthorized', status=401)
-
         target_project = target_site.projects.filter(
             project_uuid=kwargs['project']
         ).first()
-
         if (
             not target_project
             or target_project.level != REMOTE_LEVEL_READ_ROLES
@@ -398,7 +392,6 @@ class RemoteSheetGetAPIView(APIView):
             return Response(
                 'No project access for remote site, unauthorized', status=401
             )
-
         try:
             investigation = Investigation.objects.get(
                 project=target_project.get_project(), active=True
@@ -409,19 +402,17 @@ class RemoteSheetGetAPIView(APIView):
             )
 
         # All OK so far, return data
+        isa = request.GET.get('isa')
         # Rendered tables
         if not isa or int(isa) != 1:
             ret = {'studies': {}}
-            tb = SampleSheetTableBuilder()
-
-            # Build study tables
+            # Get/build study tables
             for study in investigation.studies.all():
                 try:
-                    tables = tb.build_study_tables(study, ui=False)
+                    tables = table_builder.get_study_tables(study)
                 except Exception as ex:
                     return Response(str(ex), status=500)
                 ret['studies'][str(study.sodar_uuid)] = tables
-
         # Original ISA-Tab
         else:
             sheet_io = SampleSheetIO()
@@ -429,5 +420,4 @@ class RemoteSheetGetAPIView(APIView):
                 ret = sheet_io.export_isa(investigation)
             except Exception as ex:
                 return Response(str(ex), status=500)
-
         return Response(ret, status=200)

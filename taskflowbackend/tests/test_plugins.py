@@ -50,10 +50,10 @@ class TestPerformProjectModify(TestModifyAPIBase):
     def test_create(self):
         """Test project creation in iRODS"""
         # Create project (note: without taskflow)
-        project = self._make_project(
+        project = self.make_project(
             'NewProject', PROJECT_TYPE_PROJECT, self.category
         )
-        self._make_assignment(project, self.user, self.role_owner)
+        self.make_assignment(project, self.user, self.role_owner)
         group_name = self.irods_backend.get_user_group_name(project)
 
         self.assert_irods_coll(project, expected=False)
@@ -63,7 +63,7 @@ class TestPerformProjectModify(TestModifyAPIBase):
         self.plugin.perform_project_modify(
             project=project,
             action=PROJECT_ACTION_CREATE,
-            project_settings=app_settings.get_all_settings(project),
+            project_settings=app_settings.get_all(project),
             request=self.request,
         )
 
@@ -86,9 +86,9 @@ class TestPerformProjectModify(TestModifyAPIBase):
         )
         # Assert inherited category owner status
         self.assertIsInstance(
-            self.irods.users.get(self.user_cat.username), iRODSUser
+            self.irods.users.get(self.user_owner_cat.username), iRODSUser
         )
-        self.assert_group_member(project, self.user_cat, True)
+        self.assert_group_member(project, self.user_owner_cat, True)
         tl_events = ProjectEvent.objects.filter(
             project=project,
             plugin='taskflow',
@@ -100,10 +100,10 @@ class TestPerformProjectModify(TestModifyAPIBase):
 
     def test_create_category(self):
         """Test category creation in iRODS (should not be created)"""
-        category = self._make_project(
+        category = self.make_project(
             'SubCategory', PROJECT_TYPE_CATEGORY, self.category
         )
-        self._make_assignment(category, self.user, self.role_owner)
+        self.make_assignment(category, self.user, self.role_owner)
         group_name = '{}{}'.format(USER_GROUP_PREFIX, category.sodar_uuid)
 
         self.assert_irods_coll(category, expected=False)
@@ -113,7 +113,7 @@ class TestPerformProjectModify(TestModifyAPIBase):
         self.plugin.perform_project_modify(
             project=category,
             action=PROJECT_ACTION_CREATE,
-            project_settings=app_settings.get_all_settings(category),
+            project_settings=app_settings.get_all(category),
             request=self.request,
         )
 
@@ -143,7 +143,7 @@ class TestPerformProjectModify(TestModifyAPIBase):
         project_path = self.irods_backend.get_path(project)
 
         self.assert_group_member(project, self.user, True)
-        self.assert_group_member(project, self.user_cat, True)
+        self.assert_group_member(project, self.user_owner_cat, True)
         self.assert_group_member(project, user_contrib, True)
         self.assert_group_member(project, user_cat_new, False)
         project_coll = self.irods.collections.get(project_path)
@@ -152,22 +152,22 @@ class TestPerformProjectModify(TestModifyAPIBase):
             str(self.category.sodar_uuid),
         )
 
-        new_category = self._make_project(
+        new_category = self.make_project(
             'NewCategory', PROJECT_TYPE_CATEGORY, None
         )
-        self._make_assignment(new_category, user_cat_new, self.role_owner)
+        self.make_assignment(new_category, user_cat_new, self.role_owner)
         project.parent = new_category
         project.save()
         self.plugin.perform_project_modify(
             project=project,
             action=PROJECT_ACTION_UPDATE,
-            project_settings=app_settings.get_all_settings(project),
+            project_settings=app_settings.get_all(project),
             old_data={'parent': self.category},
             request=self.request,
         )
 
         self.assert_group_member(project, self.user, True)
-        self.assert_group_member(project, self.user_cat, False)
+        self.assert_group_member(project, self.user_owner_cat, False)
         self.assert_group_member(project, user_contrib, True)
         self.assert_group_member(project, user_cat_new, True)
         project_coll = self.irods.collections.get(project_path)
@@ -200,7 +200,7 @@ class TestRevertProjectModify(TestModifyAPIBase):
         self.plugin.revert_project_modify(
             project=self.project,
             action=PROJECT_ACTION_CREATE,
-            project_settings=app_settings.get_all_settings(self.project),
+            project_settings=app_settings.get_all(self.project),
             request=self.request,
         )
 
@@ -234,7 +234,7 @@ class TestPerformRoleModify(TestModifyAPIBase):
     def test_create(self):
         """Test creating a role assignment in iRODS"""
         user_new = self.make_user('user_new')
-        role_as = self._make_assignment(
+        role_as = self.make_assignment(
             self.project, user_new, self.role_contributor
         )
         self.assert_group_member(self.project, user_new, False)
@@ -412,12 +412,12 @@ class TestPerformOwnerTransfer(TestModifyAPIBase):
         """Test category owner transfer in iRODS"""
         self.assert_group_member(self.project, self.user, True)
         self.assert_group_member(self.project, self.user_new, True)
-        self.assert_group_member(self.project, self.user_cat, True)
+        self.assert_group_member(self.project, self.user_owner_cat, True)
 
         self.plugin.perform_owner_transfer(
             project=self.category,
             new_owner=self.user,
-            old_owner=self.user_cat,
+            old_owner=self.user_owner_cat,
             old_owner_role=self.role_contributor,
             request=self.request,
         )
@@ -425,7 +425,7 @@ class TestPerformOwnerTransfer(TestModifyAPIBase):
         self.assert_group_member(self.project, self.user, True)
         self.assert_group_member(self.project, self.user_new, True)
         # Former category owner should no longer have roles in inherited project
-        self.assert_group_member(self.project, self.user_cat, False)
+        self.assert_group_member(self.project, self.user_owner_cat, False)
         tl_events = ProjectEvent.objects.filter(
             project=self.category,
             plugin='taskflow',
@@ -437,47 +437,50 @@ class TestPerformOwnerTransfer(TestModifyAPIBase):
 
     def test_transfer_category_child(self):
         """Test owner transfer in iRODS with child category and project"""
-        sub_category = self._make_project(
+        sub_category = self.make_project(
             'sub_category', PROJECT_TYPE_CATEGORY, self.category
         )
-        self._make_assignment(sub_category, self.user_cat, self.role_owner)
+        self.make_assignment(sub_category, self.user_owner_cat, self.role_owner)
         sub_project, _ = self.make_project_taskflow(
-            'sub_project', PROJECT_TYPE_PROJECT, sub_category, self.user_cat
+            'sub_project',
+            PROJECT_TYPE_PROJECT,
+            sub_category,
+            self.user_owner_cat,
         )
         # No roles for self.user
         self.assert_group_member(sub_project, self.user, False)
         self.assert_group_member(sub_project, self.user_new, False)
-        self.assert_group_member(sub_project, self.user_cat, True)
+        self.assert_group_member(sub_project, self.user_owner_cat, True)
 
         self.plugin.perform_owner_transfer(
             project=sub_category,
             new_owner=self.user,
-            old_owner=self.user_cat,
+            old_owner=self.user_owner_cat,
             old_owner_role=self.role_contributor,
             request=self.request,
         )
 
         self.assert_group_member(sub_project, self.user, True)
         self.assert_group_member(sub_project, self.user_new, False)
-        self.assert_group_member(sub_project, self.user_cat, True)
+        self.assert_group_member(sub_project, self.user_owner_cat, True)
 
     def test_transfer_project(self):
         """Test project owner transfer in iRODS (should not do anything)"""
         self.assert_group_member(self.project, self.user, True)
         self.assert_group_member(self.project, self.user_new, True)
-        self.assert_group_member(self.project, self.user_cat, True)
+        self.assert_group_member(self.project, self.user_owner_cat, True)
 
         self.plugin.perform_owner_transfer(
             project=self.project,
             new_owner=self.user,
-            old_owner=self.user_cat,
+            old_owner=self.user_owner_cat,
             old_owner_role=self.role_contributor,
             request=self.request,
         )
 
         self.assert_group_member(self.project, self.user, True)
         self.assert_group_member(self.project, self.user_new, True)
-        self.assert_group_member(self.project, self.user_cat, True)
+        self.assert_group_member(self.project, self.user_owner_cat, True)
         self.assertEqual(
             ProjectEvent.objects.filter(
                 project=self.category,
@@ -495,10 +498,10 @@ class TestPerformProjectSync(TestModifyAPIBase):
     def test_sync(self):
         """Test project sync in iRODS"""
         # NOTE: Should be identical to test_create() in TestPerformProjectModify
-        project = self._make_project(
+        project = self.make_project(
             'NewProject', PROJECT_TYPE_PROJECT, self.category
         )
-        self._make_assignment(project, self.user, self.role_owner)
+        self.make_assignment(project, self.user, self.role_owner)
         group_name = self.irods_backend.get_user_group_name(project)
 
         self.assert_irods_coll(project, expected=False)
@@ -508,7 +511,7 @@ class TestPerformProjectSync(TestModifyAPIBase):
         self.plugin.perform_project_modify(
             project=project,
             action=PROJECT_ACTION_CREATE,
-            project_settings=app_settings.get_all_settings(project),
+            project_settings=app_settings.get_all(project),
             request=self.request,
         )
 
@@ -531,9 +534,9 @@ class TestPerformProjectSync(TestModifyAPIBase):
         )
         # Assert inherited category owner status
         self.assertIsInstance(
-            self.irods.users.get(self.user_cat.username), iRODSUser
+            self.irods.users.get(self.user_owner_cat.username), iRODSUser
         )
-        self.assert_group_member(project, self.user_cat, True)
+        self.assert_group_member(project, self.user_owner_cat, True)
         tl_events = ProjectEvent.objects.filter(
             project=project,
             plugin='taskflow',
@@ -564,7 +567,7 @@ class TestPerformProjectSync(TestModifyAPIBase):
         self.plugin.perform_project_modify(
             project=project,
             action=PROJECT_ACTION_CREATE,
-            project_settings=app_settings.get_all_settings(project),
+            project_settings=app_settings.get_all(project),
             request=self.request,
         )
 
@@ -574,9 +577,9 @@ class TestPerformProjectSync(TestModifyAPIBase):
         )
         self.assert_group_member(project, self.user, True)
         self.assertIsInstance(
-            self.irods.users.get(self.user_cat.username), iRODSUser
+            self.irods.users.get(self.user_owner_cat.username), iRODSUser
         )
-        self.assert_group_member(project, self.user_cat, True)
+        self.assert_group_member(project, self.user_owner_cat, True)
         tl_events = ProjectEvent.objects.filter(
             project=project,
             plugin='taskflow',

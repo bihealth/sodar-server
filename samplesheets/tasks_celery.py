@@ -20,8 +20,11 @@ logger = logging.getLogger(__name__)
 User = auth.get_user_model()
 
 
+# SODAR constants
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
+# Local constants
 APP_NAME = 'samplesheets'
+CACHE_UPDATE_EVENT = 'sheet_cache_update'
 
 
 @app.task(bind=True)
@@ -29,7 +32,7 @@ def update_project_cache_task(
     _self, project_uuid, user_uuid, add_alert=False, alert_msg=None
 ):
     """
-    Update project cache asynchronously.
+    Update project iRODS cache asynchronously.
 
     :param project_uuid: Project UUID for cache item
     :param user_uuid: User UUID or None
@@ -50,15 +53,15 @@ def update_project_cache_task(
             project=project,
             app_name=APP_NAME,
             user=user,
-            event_name='sheet_cache_update',
+            event_name=CACHE_UPDATE_EVENT,
             description='update cache for project sheets',
             status_type='SUBMIT',
             status_desc='Asynchronous update started',
         )
 
     logger.info(
-        'Updating cache asynchronously for project "{}" ({})'.format(
-            project.title, project.sodar_uuid
+        'Updating cache asynchronously for project {}'.format(
+            project.get_log_title()
         )
     )
     app_plugin = get_app_plugin(APP_NAME)
@@ -72,9 +75,7 @@ def update_project_cache_task(
         if alert_msg:
             app_msg += ': {}'.format(alert_msg)
         logger.info(
-            'Cache update OK for project "{}" ({})'.format(
-                project.title, project.sodar_uuid
-            )
+            'Cache update OK for project {}'.format(project.get_log_title())
         )
     except Exception as ex:
         tl_status_type = 'FAILED'
@@ -82,8 +83,8 @@ def update_project_cache_task(
         app_level = 'DANGER'
         app_msg = 'Sample sheet iRODS cache update failed: {}'.format(ex)
         logger.error(
-            'Cache update failed for project "{}" ({}): {}'.format(
-                project.title, project.sodar_uuid, ex
+            'Cache update failed for project {}: {}'.format(
+                project.get_log_title(), ex
             )
         )
 
@@ -96,7 +97,7 @@ def update_project_cache_task(
         if app_alerts:
             app_alerts.add_alert(
                 app_name=APP_NAME,
-                alert_name='sheet_cache_update',
+                alert_name=CACHE_UPDATE_EVENT,
                 user=user,
                 message=app_msg,
                 level=app_level,
@@ -119,7 +120,7 @@ def sheet_sync_task(_self):
     tl_status_desc = 'Sync OK'
 
     for project in Project.objects.filter(type=PROJECT_TYPE_PROJECT):
-        sheet_sync_enable = app_settings.get_app_setting(
+        sheet_sync_enable = app_settings.get(
             APP_NAME, 'sheet_sync_enable', project=project
         )
         if not sheet_sync_enable:

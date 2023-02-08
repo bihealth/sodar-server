@@ -13,7 +13,12 @@ from projectroles.plugins import get_backend_api
 from samplesheets.models import Investigation, Study, GenericMaterial
 from samplesheets.plugins import SampleSheetStudyPluginPoint
 from samplesheets.rendering import SampleSheetTableBuilder
-from samplesheets.studyapps.utils import get_igv_session_url, get_igv_irods_url
+from samplesheets.studyapps.utils import (
+    get_igv_omit_override,
+    check_igv_file_name,
+    get_igv_session_url,
+    get_igv_irods_url,
+)
 from samplesheets.utils import get_index_by_header
 
 from samplesheets.studyapps.germline.utils import (
@@ -22,7 +27,9 @@ from samplesheets.studyapps.germline.utils import (
     get_family_sources,
 )
 
+
 logger = logging.getLogger(__name__)
+table_builder = SampleSheetTableBuilder()
 User = auth.get_user_model()
 
 
@@ -128,10 +135,8 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             # Set initial state based on URL and cache
             if not igv_url or (
                 cache_item
-                and source_id in cache_item.data['bam']
-                and not cache_item.data['bam'][source_id]
-                and ped_id in cache_item.data['vcf']
-                and not cache_item.data['vcf'][ped_id]
+                and not cache_item.data['bam'].get(source_id)
+                and not cache_item.data['vcf'].get(ped_id)
             ):
                 enabled = False
             ret['data'].append(
@@ -293,17 +298,18 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         item_name = 'irods/{}'.format(study.sodar_uuid)
         bam_paths = {}
         vcf_paths = {}
-        # Build render table
-        tb = SampleSheetTableBuilder()
-        study_tables = tb.build_study_tables(study, ui=False)
+        # Get/build render tables
+        study_tables = table_builder.get_study_tables(study)
 
         # Pre-fetch study objects to eliminate redundant queries
         obj_len = 0
+        study_objs = None
         try:
             logger.debug('Querying for study objects in iRODS..')
-            study_objs = irods_backend.get_objects(
-                irods_backend.get_path(study)
-            )
+            with irods_backend.get_session() as irods:
+                study_objs = irods_backend.get_objects(
+                    irods, irods_backend.get_path(study)
+                )
             obj_len = len(study_objs['irods_data'])
             logger.debug(
                 'Query returned {} data object{}'.format(
@@ -311,8 +317,13 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 )
             )
         except FileNotFoundError:
-            study_objs = None
             logger.debug('No data objects found')
+        except Exception as ex:
+            logger.error('Error querying for study objects: {}'.format(ex))
+
+        project = study.get_project()
+        bam_override = get_igv_omit_override(project, 'bam')
+        vcf_override = get_igv_omit_override(project, 'vcf')
 
         for assay in study.assays.all():
             assay_plugin = assay.get_plugin()
@@ -341,6 +352,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                         for o in study_objs['irods_data']
                         if o['path'].startswith(path + '/')
                         and o['name'].lower().endswith('bam')
+                        and check_igv_file_name(o['name'], 'bam', bam_override)
                     ]
                 row_fam = row[fam_idx]['value']
                 # Add VCF objects
@@ -356,6 +368,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                         for o in study_objs['irods_data']
                         if o['path'].startswith(path + '/')
                         and o['name'].lower().endswith('vcf.gz')
+                        and check_igv_file_name(o['name'], 'vcf', vcf_override)
                     ]
 
         # Update data
@@ -412,8 +425,8 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             if investigation.get_configuration() != self.config_name:
                 continue
             logger.debug(
-                'Updating cache for project "{}" ({})..'.format(
-                    project.title, project.sodar_uuid
+                'Updating cache for project {}..'.format(
+                    project.get_log_title()
                 )
             )
             # If a name is given, only update that specific CacheItem

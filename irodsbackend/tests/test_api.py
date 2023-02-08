@@ -41,36 +41,6 @@ IRODS_ENV = {
 }
 
 
-class TestIrodsbackendAPIInit(
-    ProjectMixin,
-    RoleAssignmentMixin,
-    SampleSheetIOMixin,
-    LandingZoneMixin,
-    TestCase,
-):
-    """Tests for initializing the irodsbackend app"""
-
-    def test_init(self):
-        """Test initialization valid settings"""
-        self.assertIsInstance(IrodsAPI(), IrodsAPI)
-
-    @override_settings(IRODS_PASS='Iequ4QueOchai2ro')
-    def test_init_no_auth(self):
-        """Test initialization with invalid authentication"""
-        with self.assertRaises(Exception):
-            IrodsAPI()
-
-    @override_settings(IRODS_ENV_BACKEND=IRODS_ENV)
-    def test_init_env(self):
-        """Test initialization with an iRODS environment file"""
-        self.assertIsInstance(IrodsAPI(), IrodsAPI)
-
-    def test_init_no_conn(self):
-        """Test initialization with disabled connection"""
-        irods_backend = IrodsAPI(conn=False)
-        self.assertEqual(irods_backend.irods, None)
-
-
 class TestIrodsbackendAPI(
     ProjectMixin,
     RoleAssignmentMixin,
@@ -84,7 +54,6 @@ class TestIrodsbackendAPI(
         # Init user
         self.user = self.make_user('user')
         self.user.save()
-
         # Init roles
         self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
         self.role_delegate = Role.objects.get_or_create(
@@ -94,12 +63,11 @@ class TestIrodsbackendAPI(
             name=PROJECT_ROLE_CONTRIBUTOR
         )[0]
         self.role_guest = Role.objects.get_or_create(name=PROJECT_ROLE_GUEST)[0]
-
         # Init project with owner
-        self.project = self._make_project(
+        self.project = self.make_project(
             'TestProject', PROJECT_TYPE_PROJECT, None
         )
-        self.as_owner = self._make_assignment(
+        self.owner_as = self.make_assignment(
             self.project, self.user, self.role_owner
         )
 
@@ -112,14 +80,14 @@ class TestIrodsbackendAPI(
         self.landing_zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
-            user=self.as_owner.user,
+            user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
             configuration=None,
             config_data={},
         )
 
-        self.irods_backend = IrodsAPI(conn=False)
+        self.irods_backend = IrodsAPI()
 
     def test_format_env(self):
         """Test format_env() to ensure correct formatting"""

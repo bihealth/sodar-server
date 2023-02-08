@@ -65,16 +65,16 @@ class TestViewsBase(
         self.user.save()
 
         # Init project with owner
-        self.project = self._make_project(
+        self.project = self.make_project(
             'TestProject', PROJECT_TYPE_PROJECT, None
         )
-        self.as_owner = self._make_assignment(
+        self.owner_as = self.make_assignment(
             self.project, self.user, self.role_owner
         )
 
         # Init contributor user and assignment
         self.user_contrib = self.make_user('user_contrib')
-        self.as_contrib = self._make_assignment(
+        self.contrib_as = self.make_assignment(
             self.project, self.user_contrib, self.role_contributor
         )
 
@@ -87,7 +87,7 @@ class TestViewsBase(
         self.landing_zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
-            user=self.as_owner.user,
+            user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
             status='ACTIVE',

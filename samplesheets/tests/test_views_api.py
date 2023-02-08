@@ -8,8 +8,12 @@ from django.urls import reverse
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
+from projectroles.plugins import get_backend_api
 from projectroles.tests.test_models import RemoteSiteMixin, RemoteProjectMixin
 from projectroles.tests.test_views_api import TestAPIViewsBase
+
+# Sodarcache dependency
+from sodarcache.models import JSONCacheItem
 
 # Landingzones dependency
 from landingzones.models import LandingZone
@@ -17,13 +21,17 @@ from landingzones.tests.test_models import LandingZoneMixin
 
 from samplesheets.io import SampleSheetIO
 from samplesheets.models import Investigation, Assay, GenericMaterial, ISATab
-from samplesheets.rendering import SampleSheetTableBuilder
+from samplesheets.rendering import (
+    SampleSheetTableBuilder,
+    STUDY_TABLE_CACHE_ITEM,
+)
 from samplesheets.sheet_config import SheetConfigAPI
 from samplesheets.tests.test_io import (
     SampleSheetIOMixin,
     SHEET_DIR,
     SHEET_DIR_SPECIAL,
 )
+from samplesheets.tests.test_sheet_config import SheetConfigMixin
 from samplesheets.tests.test_views import (
     TestViewsBase,
     REMOTE_SITE_NAME,
@@ -36,6 +44,7 @@ from samplesheets.views import SheetImportMixin
 
 app_settings = AppSettingAPI()
 conf_api = SheetConfigAPI()
+table_builder = SampleSheetTableBuilder()
 
 
 # SODAR constants
@@ -46,9 +55,13 @@ APP_NAME = 'samplesheets'
 SHEET_TSV_DIR = SHEET_DIR + 'i_small2/'
 SHEET_PATH = SHEET_DIR + 'i_small2.zip'
 SHEET_PATH_EDITED = SHEET_DIR + 'i_small2_edited.zip'
+SHEET_NAME_ALT = 'i_small.zip'
 SHEET_PATH_ALT = SHEET_DIR + 'i_small2_alt.zip'
 SHEET_PATH_NO_PLUGIN_ASSAY = SHEET_DIR_SPECIAL + 'i_small_assay_no_plugin.zip'
 IRODS_FILE_MD5 = '0b26e313ed4a7ca6904b0e9369e5b957'
+
+
+# TODO: Add testing for study table cache updates
 
 
 class TestSampleSheetAPIBase(SampleSheetIOMixin, TestAPIViewsBase):
@@ -113,15 +126,16 @@ class TestInvestigationRetrieveAPIView(TestSampleSheetAPIBase):
 
 
 class TestSheetImportAPIView(
-    SheetImportMixin, LandingZoneMixin, TestSampleSheetAPIBase
+    SheetImportMixin, SheetConfigMixin, LandingZoneMixin, TestSampleSheetAPIBase
 ):
     """Tests for SampleSheetImportAPIView"""
 
     def setUp(self):
         super().setUp()
+        self.cache_backend = get_backend_api('sodar_cache')
 
-    def test_post_zip(self):
-        """Test SampleSheetImportAPIView post() with a zip archive"""
+    def test_import_zip(self):
+        """Test importing sheets as zip archive"""
         self.assertEqual(
             Investigation.objects.filter(project=self.project).count(), 0
         )
@@ -131,7 +145,6 @@ class TestSheetImportAPIView(
             'samplesheets:api_import',
             kwargs={'project': self.project.sodar_uuid},
         )
-
         with open(SHEET_PATH, 'rb') as file:
             post_data = {'file': file}
             response = self.request_knox(
@@ -144,8 +157,8 @@ class TestSheetImportAPIView(
         )
         self.assertEqual(ISATab.objects.filter(project=self.project).count(), 1)
 
-    def test_post_tsv(self):
-        """Test SampleSheetImportAPIView post() with ISA-Tab tsv files"""
+    def test_import_tsv(self):
+        """Test Test importing sheets as ISA-Tab tsv files"""
         self.assertEqual(
             Investigation.objects.filter(project=self.project).count(), 0
         )
@@ -176,13 +189,13 @@ class TestSheetImportAPIView(
         )
         self.assertEqual(ISATab.objects.filter(project=self.project).count(), 1)
 
-    def test_post_replace(self):
+    def test_replace(self):
         """Test replacing sheets"""
-        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
-        app_settings.set_app_setting(
+        investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        app_settings.set(
             APP_NAME,
             'sheet_config',
-            conf_api.get_sheet_config(self.investigation),
+            conf_api.get_sheet_config(investigation),
             project=self.project,
         )
 
@@ -212,32 +225,30 @@ class TestSheetImportAPIView(
             GenericMaterial.objects.filter(name='0816').first()
         )
 
-    def test_post_replace_display_config_keep(self):
+    def test_replace_display_config_keep(self):
         """Test replacing sheets and ensure user display configs are kept"""
-        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
-        sheet_config = conf_api.build_sheet_config(self.investigation)
-        app_settings.set_app_setting(
+        investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        inv_tables = table_builder.build_inv_tables(investigation)
+        sheet_config = self.build_sheet_config(investigation, inv_tables)
+        app_settings.set(
             APP_NAME, 'sheet_config', sheet_config, project=self.project
         )
-        display_config = conf_api.build_display_config(
-            self.investigation, sheet_config
-        )
-        app_settings.set_app_setting(
+        display_config = conf_api.build_display_config(inv_tables, sheet_config)
+        app_settings.set(
             APP_NAME,
             'display_config_default',
             display_config,
             project=self.project,
         )
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'display_config',
             display_config,
             project=self.project,
             user=self.user,
         )
-
         self.assertEqual(
-            app_settings.get_app_setting(
+            app_settings.get(
                 APP_NAME,
                 'display_config',
                 project=self.project,
@@ -255,10 +266,9 @@ class TestSheetImportAPIView(
             response = self.request_knox(
                 url, method='POST', format='multipart', data=post_data
             )
-
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
-            app_settings.get_app_setting(
+            app_settings.get(
                 APP_NAME,
                 'display_config',
                 project=self.project,
@@ -267,32 +277,30 @@ class TestSheetImportAPIView(
             display_config,
         )
 
-    def test_post_replace_display_config_delete(self):
+    def test_replace_display_config_delete(self):
         """Test replacing sheets and ensure user display configs are deleted"""
-        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
-        sheet_config = conf_api.build_sheet_config(self.investigation)
-        app_settings.set_app_setting(
+        investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        inv_tables = table_builder.build_inv_tables(investigation)
+        sheet_config = self.build_sheet_config(investigation, inv_tables)
+        app_settings.set(
             APP_NAME, 'sheet_config', sheet_config, project=self.project
         )
-        display_config = conf_api.build_display_config(
-            self.investigation, sheet_config
-        )
-        app_settings.set_app_setting(
+        display_config = conf_api.build_display_config(inv_tables, sheet_config)
+        app_settings.set(
             APP_NAME,
             'display_config_default',
             display_config,
             project=self.project,
         )
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'display_config',
             display_config,
             project=self.project,
             user=self.user,
         )
-
         self.assertEqual(
-            app_settings.get_app_setting(
+            app_settings.get(
                 APP_NAME,
                 'display_config',
                 project=self.project,
@@ -310,10 +318,9 @@ class TestSheetImportAPIView(
             response = self.request_knox(
                 url, method='POST', format='multipart', data=post_data
             )
-
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
-            app_settings.get_app_setting(
+            app_settings.get(
                 APP_NAME,
                 'display_config',
                 project=self.project,
@@ -322,13 +329,13 @@ class TestSheetImportAPIView(
             {},
         )
 
-    def test_post_replace_alt_sheet(self):
+    def test_replace_alt_sheet(self):
         """Test replacing with an alternative sheet and irods_status=False"""
-        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
-        app_settings.set_app_setting(
+        investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        app_settings.set(
             APP_NAME,
             'sheet_config',
-            conf_api.get_sheet_config(self.investigation),
+            conf_api.get_sheet_config(investigation),
             project=self.project,
         )
 
@@ -353,11 +360,11 @@ class TestSheetImportAPIView(
         )
         self.assertEqual(ISATab.objects.filter(project=self.project).count(), 2)
 
-    def test_post_replace_alt_sheet_irods(self):
+    def test_replace_alt_sheet_irods(self):
         """Test replacing with alternative sheet and irods (should fail)"""
-        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
-        self.investigation.irods_status = True  # fake irods status
-        self.investigation.save()
+        investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        investigation.irods_status = True  # fake irods status
+        investigation.save()
 
         self.assertEqual(
             Investigation.objects.filter(project=self.project).count(), 1
@@ -380,14 +387,12 @@ class TestSheetImportAPIView(
         )
         self.assertEqual(ISATab.objects.filter(project=self.project).count(), 1)
 
-    def test_post_replace_zone(self):
+    def test_replace_zone(self):
         """Test replacing sheets with exising landing zone"""
-        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
-        self.investigation.irods_status = True
-        self.investigation.save()
-        assay = Assay.objects.filter(
-            study__investigation=self.investigation
-        ).first()
+        investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        investigation.irods_status = True
+        investigation.save()
+        assay = Assay.objects.filter(study__investigation=investigation).first()
         zone = self.make_landing_zone(
             'new_zone',
             self.project,
@@ -395,13 +400,12 @@ class TestSheetImportAPIView(
             assay,
             status='FAILED',
         )
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'sheet_config',
-            conf_api.get_sheet_config(self.investigation),
+            conf_api.get_sheet_config(investigation),
             project=self.project,
         )
-
         self.assertEqual(
             Investigation.objects.filter(project=self.project).count(), 1
         )
@@ -444,12 +448,84 @@ class TestSheetImportAPIView(
             ).first(),
         )
 
-    def test_post_no_plugin_assay(self):
+    def test_replace_study_cache(self):
+        """Test replacing sheets with existing study table cache"""
+        investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        conf_api.get_sheet_config(investigation)
+        study = investigation.studies.first()
+        study_uuid = str(study.sodar_uuid)
+
+        # Build study tables and cache item
+        study_tables = table_builder.build_study_tables(study)
+        cache_name = STUDY_TABLE_CACHE_ITEM.format(study=study_uuid)
+        self.cache_backend.set_cache_item(
+            APP_NAME, cache_name, study_tables, 'json', self.project
+        )
+        cache_args = [APP_NAME, cache_name, self.project]
+        cache_item = self.cache_backend.get_cache_item(*cache_args)
+        self.assertEqual(cache_item.data, study_tables)
+        self.assertEqual(JSONCacheItem.objects.count(), 1)
+
+        url = reverse(
+            'samplesheets:api_import',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        with open(SHEET_PATH_EDITED, 'rb') as file:
+            post_data = {'file': file}
+            response = self.request_knox(
+                url, method='POST', format='multipart', data=post_data
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            Investigation.objects.filter(project=self.project).count(), 1
+        )
+        self.assertEqual(ISATab.objects.filter(project=self.project).count(), 2)
+        cache_item = self.cache_backend.get_cache_item(*cache_args)
+        self.assertEqual(cache_item.data, {})
+        self.assertEqual(JSONCacheItem.objects.count(), 1)
+
+    def test_replace_study_cache_new_sheet(self):
+        """Test replacing with study table cache and different sheet"""
+        investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        conf_api.get_sheet_config(investigation)
+        study = investigation.studies.first()
+        study_uuid = str(study.sodar_uuid)
+
+        study_tables = table_builder.build_study_tables(study)
+        cache_name = STUDY_TABLE_CACHE_ITEM.format(study=study_uuid)
+        self.cache_backend.set_cache_item(
+            APP_NAME, cache_name, study_tables, 'json', self.project
+        )
+        cache_args = [APP_NAME, cache_name, self.project]
+        cache_item = self.cache_backend.get_cache_item(*cache_args)
+        self.assertEqual(cache_item.data, study_tables)
+        self.assertEqual(JSONCacheItem.objects.count(), 1)
+
+        url = reverse(
+            'samplesheets:api_import',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        with open(SHEET_PATH_ALT, 'rb') as file:
+            post_data = {'file': file}
+            response = self.request_knox(
+                url, method='POST', format='multipart', data=post_data
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            Investigation.objects.filter(project=self.project).count(), 1
+        )
+        self.assertEqual(ISATab.objects.filter(project=self.project).count(), 2)
+        cache_item = self.cache_backend.get_cache_item(*cache_args)
+        self.assertIsNone(cache_item)
+        self.assertEqual(JSONCacheItem.objects.count(), 0)
+
+    def test_import_no_plugin_assay(self):
         """Test post() with an assay without plugin"""
         self.assertEqual(
             Investigation.objects.filter(project=self.project).count(), 0
         )
-
         url = reverse(
             'samplesheets:api_import',
             kwargs={'project': self.project.sodar_uuid},
@@ -459,7 +535,6 @@ class TestSheetImportAPIView(
             response = self.request_knox(
                 url, method='POST', format='multipart', data=post_data
             )
-
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             Investigation.objects.filter(project=self.project).count(), 1
@@ -471,7 +546,7 @@ class TestSheetImportAPIView(
 
     def test_post_sync(self):
         """Test post() with sheet sync enabled (should fail)"""
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME, 'sheet_sync_enable', True, project=self.project
         )
         self.assertEqual(
@@ -483,7 +558,6 @@ class TestSheetImportAPIView(
             'samplesheets:api_import',
             kwargs={'project': self.project.sodar_uuid},
         )
-
         with open(SHEET_PATH, 'rb') as file:
             post_data = {'file': file}
             response = self.request_knox(
@@ -523,15 +597,15 @@ class TestSheetISAExportAPIView(TestSampleSheetAPIBase):
 
     def test_get_json(self):
         """Test json export  in SampleSheetISAExportAPIView"""
-        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         url = reverse(
             'samplesheets:api_export_json',
             kwargs={'project': self.project.sodar_uuid},
         )
         response = self.request_knox(url)
         sheet_io = SampleSheetIO()
-        expected = sheet_io.export_isa(self.investigation)
-        expected['date_modified'] = str(self.investigation.date_modified)
+        expected = sheet_io.export_isa(investigation)
+        expected['date_modified'] = str(investigation.date_modified)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data, expected)
 
@@ -555,23 +629,20 @@ class TestRemoteSheetGetAPIView(
 
     def setUp(self):
         super().setUp()
-
         # Create target site
-        self.target_site = self._make_site(
+        self.target_site = self.make_site(
             name=REMOTE_SITE_NAME,
             url=REMOTE_SITE_URL,
             mode=SODAR_CONSTANTS['SITE_MODE_TARGET'],
             description=REMOTE_SITE_DESC,
             secret=REMOTE_SITE_SECRET,
         )
-
         # Create target project
-        self.target_project = self._make_remote_project(
+        self.target_project = self.make_remote_project(
             project_uuid=self.project.sodar_uuid,
             site=self.target_site,
             level=SODAR_CONSTANTS['REMOTE_LEVEL_READ_ROLES'],
         )
-
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
@@ -587,11 +658,10 @@ class TestRemoteSheetGetAPIView(
                 },
             )
         )
-        tb = SampleSheetTableBuilder()
         expected = {
             'studies': {
-                str(self.study.sodar_uuid): tb.build_study_tables(
-                    self.study, ui=False
+                str(self.study.sodar_uuid): table_builder.build_study_tables(
+                    self.study
                 )
             }
         }

@@ -6,6 +6,7 @@ from django.conf import settings
 from django.contrib import auth
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import ImproperlyConfigured
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.views.generic import TemplateView, CreateView
@@ -35,17 +36,15 @@ from landingzones.models import (
 )
 
 
-# Access Django user model
-User = auth.get_user_model()
-
-# Get logger
 logger = logging.getLogger(__name__)
+User = auth.get_user_model()
 
 
 # Local constants
 APP_NAME = 'landingzones'
 SAMPLESHEETS_APP_NAME = 'samplesheets'
 ZONE_MOVE_INVALID_STATUS = 'Zone not in active state, unable to trigger action.'
+ZONE_UPDATE_ACTIONS = ['update', 'move', 'delete']
 
 
 # Mixins -----------------------------------------------------------------------
@@ -62,18 +61,29 @@ class ZoneContextMixin:
         return context
 
 
-class ZoneUpdateRequiredPermissionMixin:
+class ZoneModifyPermissionMixin:
     """Required permission override for landing zone updating views"""
+
+    #: Action for zone modification
+    zone_action = None
 
     def get_permission_required(self):
         """Override to return the correct landing zone permission"""
+        if not hasattr(self, 'zone_action'):
+            raise ImproperlyConfigured('Attribute "zone_action" not set')
+        if self.zone_action.lower() not in ZONE_UPDATE_ACTIONS:
+            raise ImproperlyConfigured(
+                'Invalid value "{}" for zone_action. Valid values: {}'.format(
+                    self.zone_action, ', '.join(ZONE_UPDATE_ACTIONS)
+                )
+            )
         zone = LandingZone.objects.filter(
             sodar_uuid=self.kwargs['landingzone']
         ).first()
         # NOTE: UI views with PermissionRequiredMixin expect an iterable
         if zone and zone.user == self.request.user:
-            return ['landingzones.update_zones_own']
-        return ['landingzones.update_zones_all']
+            return ['landingzones.{}_zone_own'.format(self.zone_action.lower())]
+        return ['landingzones.{}_zone_all'.format(self.zone_action.lower())]
 
 
 class ZoneConfigPluginMixin:
@@ -104,19 +114,22 @@ class ZoneConfigPluginMixin:
 class ZoneCreateMixin(ZoneConfigPluginMixin):
     """Mixin to be used in zone creation in UI and REST API views"""
 
-    def submit_create(self, zone, create_colls=False, request=None):
+    def submit_create(
+        self, zone, create_colls=False, restrict_colls=False, request=None
+    ):
         """
         Handle timeline updating and taskflow initialization after a LandingZone
         object has been created.
 
         :param zone: LandingZone object
         :param create_colls: Auto-create expected collections (boolean)
+        :param restrict_colls: Restrict access to created collections (boolean)
         :param request: HTTPRequest object or None
         :raise: taskflow.FlowSubmitException if taskflow submit fails
         """
         taskflow = get_backend_api('taskflow')
         timeline = get_backend_api('timeline_backend')
-        irods_backend = get_backend_api('omics_irods', conn=False)
+        irods_backend = get_backend_api('omics_irods')
         project = zone.project
         tl_event = None
         config_str = (
@@ -180,6 +193,7 @@ class ZoneCreateMixin(ZoneConfigPluginMixin):
             {
                 'zone_uuid': str(zone.sodar_uuid),
                 'colls': list(set(colls)),
+                'restrict_colls': restrict_colls,
             },
         )
         try:
@@ -325,7 +339,7 @@ class ProjectZoneView(
 ):
     """View for displaying user landing zones for a project"""
 
-    permission_required = 'landingzones.view_zones_own'
+    permission_required = 'landingzones.view_zone_own'
     template_name = 'landingzones/project_zones.html'
 
     def get_context_data(self, *args, **kwargs):
@@ -336,7 +350,7 @@ class ProjectZoneView(
         )
         # iRODS backend
         context['irods_backend_enabled'] = (
-            True if get_backend_api('omics_irods', conn=False) else False
+            True if get_backend_api('omics_irods') else False
         )
         # iRODS WebDAV
         context['irods_webdav_enabled'] = int(settings.IRODS_WEBDAV_ENABLED)
@@ -353,7 +367,7 @@ class ProjectZoneView(
         # Other zones
         # TODO: Add individual zone perm check if/when we implement issue #57
         if self.request.user.has_perm(
-            'landingzones.view_zones_all', context['project']
+            'landingzones.view_zone_all', context['project']
         ):
             context['zones_other'] = (
                 LandingZone.objects.filter(project=context['project'])
@@ -379,7 +393,7 @@ class ZoneCreateView(
 
     model = LandingZone
     form_class = LandingZoneForm
-    permission_required = 'landingzones.add_zones'
+    permission_required = 'landingzones.create_zone'
 
     def get_form_kwargs(self):
         """Pass project to form"""
@@ -419,7 +433,10 @@ class ZoneCreateView(
         try:
             # Create timeline event and initialize taskflow
             self.submit_create(
-                zone, form.cleaned_data.get('create_colls'), self.request
+                zone=zone,
+                create_colls=form.cleaned_data.get('create_colls'),
+                restrict_colls=form.cleaned_data.get('restrict_colls'),
+                request=self.request,
             )
             config_str = (
                 ' with configuration "{}"'.format(zone.configuration)
@@ -449,7 +466,7 @@ class ZoneDeleteView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     ProjectContextMixin,
-    ZoneUpdateRequiredPermissionMixin,
+    ZoneModifyPermissionMixin,
     ProjectPermissionMixin,
     CurrentUserFormMixin,
     ZoneDeleteMixin,
@@ -460,6 +477,7 @@ class ZoneDeleteView(
     # NOTE: Not using DeleteView here as we don't delete the object in async
     http_method_names = ['get', 'post']
     template_name = 'landingzones/landingzone_confirm_delete.html'
+    zone_action = 'delete'
     # NOTE: permission_required comes from ZoneUpdateRequiredPermissionMixin
 
     def get_context_data(self, *args, **kwargs):
@@ -497,7 +515,6 @@ class ZoneDeleteView(
                 self.request, 'Taskflow not enabled, unable to modify zone!'
             )
             return redirect(redirect_url)
-
         try:
             self._submit_delete(zone)
             messages.warning(
@@ -518,7 +535,7 @@ class ZoneMoveView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     ProjectContextMixin,
-    ZoneUpdateRequiredPermissionMixin,
+    ZoneModifyPermissionMixin,
     ProjectPermissionMixin,
     ZoneMoveMixin,
     TemplateView,
@@ -527,6 +544,7 @@ class ZoneMoveView(
 
     http_method_names = ['get', 'post']
     template_name = 'landingzones/landingzone_confirm_move.html'
+    zone_action = 'move'
     # NOTE: permission_required comes from ZoneUpdateRequiredPermissionMixin
 
     def get_context_data(self, *args, **kwargs):
@@ -562,7 +580,7 @@ class ZoneMoveView(
 
     def post(self, request, **kwargs):
         taskflow = get_backend_api('taskflow')
-        irods_backend = get_backend_api('omics_irods', conn=False)
+        irods_backend = get_backend_api('omics_irods')
         zone = LandingZone.objects.get(sodar_uuid=self.kwargs['landingzone'])
         project = zone.project
         redirect_url = reverse(

@@ -86,13 +86,13 @@
 {% endblock css %}
 
 {% block projectroles_extend %}
-{% has_perm 'landingzones.update_zones_own' request.user project as can_update_zones_own %}
-{% has_perm 'landingzones.update_zones_all' request.user project as can_update_zones_all %}
-{% has_perm 'landingzones.add_zones' request.user project as can_add_zones %}
+{% has_perm 'landingzones.update_zone_own' request.user project as can_update_zone_own %}
+{% has_perm 'landingzones.update_zone_all' request.user project as can_update_zone_all %}
+{% has_perm 'landingzones.create_zone' request.user project as can_create_zone %}
 
 <div class="row sodar-subtitle-container bg-white sticky-top">
   <h3><i class="iconify" data-icon="mdi:briefcase-upload"></i> Landing Zones</h3>
-  {% if investigation and can_add_zones %}
+  {% if investigation and can_create_zone %}
     <div class="ml-auto">
       <a href="{% url 'landingzones:create' project=project.sodar_uuid %}"
          class="btn btn-primary"
@@ -104,20 +104,27 @@
 </div>
 
 <div class="container-fluid sodar-page-container"> {# Main container #}
+  {% if project.archive %}
+    <div class="alert alert-warning" id="sodar-lz-alert-archive">
+      <i class="iconify" data-icon="mdi:archive"></i> Accessing and deleting
+      existing landing zones is permitted. Creating new landing zones and moving
+      files into iRODS are not allowed for archived projects.
+    </div>
+  {% endif %}
 
   {% if not investigation %}
-    <div class="alert alert-danger" role="alert" id="sodar-lz-alert-no-zones">
-      <strong>Note:</strong> No sample sheets are currently available for this project.
-      To create landing zones, a person with sufficient project permissions must
-      import an ISA-Tab investigation and create the sample collections in iRODS
-      using the <a href="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}">Sample Sheets</a> app.
+    <div class="alert alert-danger" role="alert" id="sodar-lz-alert-no-sheets">
+      No sample sheets are currently available for this project. To create
+      landing zones, a person with sufficient project permissions must import an
+      ISA-Tab investigation and create the sample collections in iRODS using the
+      <a href="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}">Sample Sheets</a> app.
     </div>
 
   {% elif investigation and not investigation.irods_status %}
-    <div class="alert alert-danger" role="alert" id="sodar-lz-alert-no-zones">
-      <strong>Note:</strong> The iRODS collections for the project sample
-      sheets are not available. A user authorized for sample sheet editing must
-      enable iRODS access by selecting <cite>"Create in iRODS"</cite> in the
+    <div class="alert alert-danger" role="alert" id="sodar-lz-alert-no-colls">
+      The iRODS collections for the project sample sheets are not available. A
+      user authorized for sample sheet editing must enable iRODS access by
+      selecting <cite>"Create in iRODS"</cite> in the
       <a href="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}">Sample Sheets</a> app.
       After that landing zones can be created for the project.
     </div>

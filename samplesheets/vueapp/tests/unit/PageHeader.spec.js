@@ -100,6 +100,7 @@ describe('PageHeader.vue', () => {
       delete_sheet: false,
       view_versions: true,
       edit_config: false,
+      update_cache: false,
       is_superuser: false
     }
     const wrapper = mount(PageHeader, { localVue, propsData: propsData })

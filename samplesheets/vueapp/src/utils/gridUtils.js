@@ -490,13 +490,38 @@ export function buildRowData (params) {
   for (let i = 0; i < params.table.table_data.length; i++) {
     const rowCells = params.table.table_data[i]
     const row = { rowNum: i + 1 }
+    let nodeUuid = null
     for (let j = 0; j < rowCells.length; j++) {
       const cellVal = rowCells[j]
+
+      // Set node UUID
+      if ('uuid' in cellVal && cellVal.uuid) {
+        nodeUuid = cellVal.uuid // Get node UUID from first node cell
+      } else cellVal.uuid = nodeUuid // Set node UUID to other cells
+
       // Copy col_type info to each cell (comparator can't access colDef)
       cellVal.colType = params.table.field_header[j].col_type
+
+      // Set user friendly ontology accession URL
+      if (params.sodarContext.ontology_url_template &&
+          !params.editMode &&
+          cellVal.colType === 'ONTOLOGY') {
+        for (const term of cellVal.value) {
+          if (term.accession &&
+              !params.sodarContext.ontology_url_skip.some(
+                x => term.accession.includes(x))) {
+            let ontologyName = term.ontology_name
+            // HACK for mislabeled HP terms
+            if (ontologyName === 'HPO') ontologyName = 'HP'
+            let url = params.sodarContext.ontology_url_template
+            url = url.replace('{ontology_name}', ontologyName)
+            url = url.replace('{accession}', term.accession)
+            term.accession = url
+          }
+        }
+      }
       row['col' + j.toString()] = cellVal
     }
-
     // Add study shortcut field
     if (!params.editMode &&
         !params.assayMode &&
@@ -504,7 +529,6 @@ export function buildRowData (params) {
         params.table.shortcuts) {
       row.shortcutLinks = params.table.shortcuts.data[i]
     }
-
     // Add iRODS field
     if (!params.editMode &&
         params.sodarContext.irods_status &&
@@ -512,7 +536,6 @@ export function buildRowData (params) {
         params.table.irods_paths.length > 0) {
       row.irodsLinks = params.table.irods_paths[i]
     }
-
     rowData.push(row)
   }
   return rowData

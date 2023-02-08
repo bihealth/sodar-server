@@ -1,9 +1,9 @@
 """Tests for Ajax API views in the samplesheets app"""
 
+import fastobo
 import json
 import os
 
-import fastobo
 from altamisa.constants import table_headers as th
 
 from django.conf import settings
@@ -13,13 +13,16 @@ from django.urls import reverse
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 
+# Sodarcache dependency
+from sodarcache.models import JSONCacheItem
+
+# Timeline dependency
+from timeline.models import ProjectEvent
+
 # Ontologyaccess dependency
 from ontologyaccess.io import OBOFormatOntologyIO
 from ontologyaccess.models import DEFAULT_TERM_URL
 from ontologyaccess.tests.test_io import OBO_PATH, OBO_NAME
-
-# Timeline dependency
-from timeline.models import ProjectEvent
 
 from samplesheets.models import (
     Study,
@@ -30,6 +33,10 @@ from samplesheets.models import (
     ISATab,
     IrodsAccessTicket,
     IrodsDataRequest,
+)
+from samplesheets.rendering import (
+    SampleSheetTableBuilder,
+    STUDY_TABLE_CACHE_ITEM,
 )
 from samplesheets.sheet_config import SheetConfigAPI
 from samplesheets.tests.test_sheet_config import (
@@ -52,6 +59,7 @@ from samplesheets.views_ajax import ALERT_ACTIVE_REQS
 
 
 conf_api = SheetConfigAPI()
+table_builder = SampleSheetTableBuilder()
 
 
 # SODAR constants
@@ -176,7 +184,7 @@ class IrodsAccessTicketMixin:
         return obj
 
 
-class TestContextAjaxView(TestViewsBase):
+class TestSheetContextAjaxView(TestViewsBase):
     """Tests for SheetContextAjaxView"""
 
     # TODO: Test with realistic ISA-Tab examples using BIH configs (see #434)
@@ -215,13 +223,15 @@ class TestContextAjaxView(TestViewsBase):
             'irods_webdav_enabled': settings.IRODS_WEBDAV_ENABLED,
             'irods_webdav_url': settings.IRODS_WEBDAV_URL,
             'external_link_labels': get_ext_link_labels(),
+            'ontology_url_template': settings.SHEETS_ONTOLOGY_URL_TEMPLATE,
+            'ontology_url_skip': settings.SHEETS_ONTOLOGY_URL_SKIP,
             'table_height': settings.SHEETS_TABLE_HEIGHT,
             'min_col_width': settings.SHEETS_MIN_COLUMN_WIDTH,
             'max_col_width': settings.SHEETS_MAX_COLUMN_WIDTH,
-            'allow_editing': app_settings.get_default_setting(
+            'allow_editing': app_settings.get_default(
                 APP_NAME, 'allow_editing'
             ),
-            'sheet_sync_enabled': app_settings.get_default_setting(
+            'sheet_sync_enabled': app_settings.get_default(
                 APP_NAME, 'sheet_sync_enable'
             ),
             'alerts': [],
@@ -267,6 +277,7 @@ class TestContextAjaxView(TestViewsBase):
                 'delete_sheet': True,
                 'view_versions': True,
                 'edit_config': True,
+                'update_cache': True,
                 'is_superuser': True,
             },
             'sheet_stats': {
@@ -292,8 +303,8 @@ class TestContextAjaxView(TestViewsBase):
         }
         self.assertEqual(response_data, expected)
 
-    def test_get_no_sheets(self):
-        """Test GET for context retrieval without sample sheets"""
+    def test_no_sheets(self):
+        """Test context retrieval without sample sheets"""
         self.investigation.active = False
         self.investigation.save()
 
@@ -321,10 +332,10 @@ class TestContextAjaxView(TestViewsBase):
             'table_height': settings.SHEETS_TABLE_HEIGHT,
             'min_col_width': settings.SHEETS_MIN_COLUMN_WIDTH,
             'max_col_width': settings.SHEETS_MAX_COLUMN_WIDTH,
-            'allow_editing': app_settings.get_default_setting(
+            'allow_editing': app_settings.get_default(
                 APP_NAME, 'allow_editing'
             ),
-            'sheet_sync_enabled': app_settings.get_default_setting(
+            'sheet_sync_enabled': app_settings.get_default(
                 APP_NAME, 'sheet_sync_enable'
             ),
             'alerts': [],
@@ -339,6 +350,7 @@ class TestContextAjaxView(TestViewsBase):
                 'delete_sheet': True,
                 'view_versions': True,
                 'edit_config': True,
+                'update_cache': True,
                 'is_superuser': True,
             },
             'sheet_stats': {},
@@ -347,9 +359,9 @@ class TestContextAjaxView(TestViewsBase):
 
     # TODO: Test anonymous request and irods_webdav_enabled
 
-    def test_get_as_delegate_min_owner(self):
+    def test_delegate_min_owner(self):
         """Test GET as delegate with owner minimum role"""
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'edit_config_min_role',
             SODAR_CONSTANTS['PROJECT_ROLE_OWNER'],
@@ -365,9 +377,9 @@ class TestContextAjaxView(TestViewsBase):
         self.assertEqual(response.status_code, 200)
         self.assertFalse(json.loads(response.json())['perms']['edit_config'])
 
-    def test_get_as_delegate_min_delegate(self):
+    def test_delegate_min_delegate(self):
         """Test GET as delegate with delegate minimum role"""
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'edit_config_min_role',
             SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE'],
@@ -383,7 +395,7 @@ class TestContextAjaxView(TestViewsBase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(json.loads(response.json())['perms']['edit_config'])
 
-    def test_get_irods_request_alert_owner(self):
+    def test_irods_request_alert_owner(self):
         """Test GET with active iRODS request alert as owner"""
         self.investigation.irods_status = True
         self.investigation.save()
@@ -415,7 +427,7 @@ class TestContextAjaxView(TestViewsBase):
             ),
         )
 
-    def test_get_irods_request_alert_contributor(self):
+    def test_irods_request_alert_contributor(self):
         """Test GET with active iRODS request alert as contributor"""
         self.investigation.irods_status = True
         self.investigation.save()
@@ -426,7 +438,7 @@ class TestContextAjaxView(TestViewsBase):
             user=self.user,
         )
         contrib_user = self.make_user('user_contributor')
-        self._make_assignment(self.project, contrib_user, self.role_contributor)
+        self.make_assignment(self.project, contrib_user, self.role_contributor)
 
         with self.login(contrib_user):
             response = self.client.get(
@@ -440,6 +452,22 @@ class TestContextAjaxView(TestViewsBase):
         response_data = json.loads(response.data)
         self.assertEqual(len(response_data['alerts']), 0)
 
+    def test_inherited_owner(self):
+        """Test GET as inherited owner"""
+        # Set up category owner
+        user_cat = self.make_user('user_cat')
+        self.make_assignment(self.category, user_cat, self.role_owner)
+        with self.login(user_cat):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:ajax_context',
+                    kwargs={'project': self.project.sodar_uuid},
+                )
+            )
+        self.assertEqual(response.status_code, 200)
+        response_data = json.loads(response.data)
+        self.assertEqual(response_data['perms']['edit_config'], True)
+
 
 class TestStudyTablesAjaxView(IrodsAccessTicketMixin, TestViewsBase):
     """Tests for StudyTablesAjaxView"""
@@ -448,16 +476,18 @@ class TestStudyTablesAjaxView(IrodsAccessTicketMixin, TestViewsBase):
 
     def setUp(self):
         super().setUp()
-
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-
         # Allow sample sheet editing in project
-        app_settings.set_app_setting(
-            APP_NAME, 'allow_editing', True, project=self.project
+        app_settings.set(APP_NAME, 'allow_editing', True, project=self.project)
+        # Set up helpers
+        self.cache_backend = get_backend_api('sodar_cache')
+        self.cache_name = STUDY_TABLE_CACHE_ITEM.format(
+            study=self.study.sodar_uuid
         )
+        self.cache_args = [APP_NAME, self.cache_name, self.project]
 
     def test_get(self):
         """Test study tables retrieval"""
@@ -476,9 +506,7 @@ class TestStudyTablesAjaxView(IrodsAccessTicketMixin, TestViewsBase):
         self.assertNotIn('render_error', ret_data)
         self.assertNotIn('shortcuts', ret_data['tables']['study'])
         self.assertEqual(len(ret_data['tables']['assays']), 1)
-        self.assertNotIn(
-            'uuid', ret_data['tables']['study']['table_data'][0][0]
-        )
+        self.assertIn('uuid', ret_data['tables']['study']['table_data'][0][0])
         self.assertIn('display_config', ret_data)
         self.assertNotIn('edit_context', ret_data)
 
@@ -531,6 +559,47 @@ class TestStudyTablesAjaxView(IrodsAccessTicketMixin, TestViewsBase):
         self.assertEqual(response.status_code, 200)
         # TODO fill out ... assays are not yet tested, as well as shortcuts
 
+    def test_get_study_cache(self):
+        """Test cached study table creation on retrieval"""
+        self.assertIsNone(self.cache_backend.get_cache_item(*self.cache_args))
+        self.assertEqual(JSONCacheItem.objects.count(), 0)
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:ajax_study_tables',
+                    kwargs={'study': self.study.sodar_uuid},
+                )
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNotNone(
+            self.cache_backend.get_cache_item(*self.cache_args)
+        )
+        self.assertEqual(JSONCacheItem.objects.count(), 1)
+
+    def test_get_study_cache_existing(self):
+        """Test retrieval with existing cached study tables"""
+        study_tables = table_builder.build_study_tables(self.study)
+        cache_name = STUDY_TABLE_CACHE_ITEM.format(study=self.study.sodar_uuid)
+        self.cache_backend.set_cache_item(
+            APP_NAME, cache_name, study_tables, 'json', self.project
+        )
+        self.assertIsNotNone(
+            self.cache_backend.get_cache_item(*self.cache_args)
+        )
+        self.assertEqual(JSONCacheItem.objects.count(), 1)
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:ajax_study_tables',
+                    kwargs={'study': self.study.sodar_uuid},
+                )
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNotNone(
+            self.cache_backend.get_cache_item(*self.cache_args)
+        )
+        self.assertEqual(JSONCacheItem.objects.count(), 1)
+
 
 class TestStudyLinksAjaxView(TestViewsBase):
     """Tests for StudyLinksAjaxView"""
@@ -539,7 +608,6 @@ class TestStudyLinksAjaxView(TestViewsBase):
 
     def setUp(self):
         super().setUp()
-
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
@@ -585,6 +653,20 @@ class TestSheetWarningsAjaxView(TestViewsBase):
 class TestSheetCellEditAjaxView(TestViewsBase):
     """Tests for SheetCellEditAjaxView"""
 
+    def setUp(self):
+        super().setUp()
+        # Import investigation
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        # Set up POST data
+        self.values = {'updated_cells': []}
+        # Set up helpers
+        self.cache_backend = get_backend_api('sodar_cache')
+        self.cache_name = STUDY_TABLE_CACHE_ITEM.format(
+            study=self.study.sodar_uuid
+        )
+        self.cache_args = [APP_NAME, self.cache_name, self.project]
+
     @classmethod
     def _convert_ontology_value(cls, value):
         """
@@ -600,16 +682,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
             value['unit'] = None
         return value
 
-    def setUp(self):
-        super().setUp()
-
-        # Import investigation
-        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
-        self.study = self.investigation.studies.first()
-
-        # Set up POST data
-        self.values = {'updated_cells': []}
-
     def test_edit_name(self):
         """Test editing the name of a material"""
         obj = GenericMaterial.objects.get(study=self.study, name='0816')
@@ -623,7 +695,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
                 'value': new_name,
             }
         )
-
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -649,7 +720,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
                 'value': '',
             }
         )
-
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -676,7 +746,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
                 'value': value,
             }
         )
-
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -703,7 +772,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
                 'value': value,
             }
         )
-
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -730,7 +798,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
                 'value': value,
             }
         )
-
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -758,7 +825,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
                 'value': value,
             }
         )
-
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -1151,19 +1217,60 @@ class TestSheetCellEditAjaxView(TestViewsBase):
         }
         self.assertEqual(ref, expected)
 
+    def test_edit_study_cache(self):
+        """Test editing with cached study tables"""
+        # Create cache item
+        study_tables = table_builder.build_study_tables(self.study)
+        cache_name = STUDY_TABLE_CACHE_ITEM.format(study=self.study.sodar_uuid)
+        self.cache_backend.set_cache_item(
+            APP_NAME, cache_name, study_tables, 'json', self.project
+        )
+        self.assertIsNotNone(
+            self.cache_backend.get_cache_item(*self.cache_args)
+        )
+        self.assertEqual(JSONCacheItem.objects.count(), 1)
+
+        obj = GenericMaterial.objects.get(study=self.study, name='0816')
+        new_name = '0816aaa'
+        self.values['updated_cells'].append(
+            {
+                'uuid': str(obj.sodar_uuid),
+                'header_name': 'name',
+                'header_type': 'name',
+                'obj_cls': 'GenericMaterial',
+                'value': new_name,
+            }
+        )
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:ajax_edit_cell',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps(self.values),
+                content_type='application/json',
+            )
+        self.assertEqual(response.status_code, 200)
+        obj.refresh_from_db()
+        self.assertEqual(obj.name, new_name)
+
+        # We should have the cache item but without data
+        cache_item = self.cache_backend.get_cache_item(*self.cache_args)
+        self.assertEqual(cache_item.data, {})
+        self.assertEqual(JSONCacheItem.objects.count(), 1)
+
 
 class TestSheetCellEditAjaxViewSpecial(TestViewsBase):
     """Tests for SheetCellEditAjaxView with special columns"""
 
     def setUp(self):
         super().setUp()
-
         # Import investigation
         self.investigation = self.import_isa_from_file(
             SHEET_PATH_SMALL2, self.project
         )
         self.study = self.investigation.studies.first()
-
         # Set up POST data
         self.values = {'updated_cells': []}
 
@@ -1205,19 +1312,24 @@ class TestSheetRowInsertAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
 
     def setUp(self):
         super().setUp()
-
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         # Set up UUIDs and default config
-        self._update_uuids(self.investigation, CONFIG_DATA_DEFAULT)
-        app_settings.set_app_setting(
+        self.update_uuids(self.investigation, CONFIG_DATA_DEFAULT)
+        app_settings.set(
             APP_NAME,
             'sheet_config',
-            conf_api.build_sheet_config(self.investigation),
+            self.build_sheet_config(self.investigation),
             project=self.project,
         )
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
+        # Set up helpers
+        self.cache_backend = get_backend_api('sodar_cache')
+        self.cache_name = STUDY_TABLE_CACHE_ITEM.format(
+            study=self.study.sodar_uuid
+        )
+        self.cache_args = [APP_NAME, self.cache_name, self.project]
 
     def test_insert_study_row(self):
         """Test inserting a new row into a study"""
@@ -1226,7 +1338,6 @@ class TestSheetRowInsertAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
                 study=self.study, name='0818'
             ).first()
         )
-
         process_pks = [
             p.pk for p in Process.objects.filter(study=self.study, assay=None)
         ]
@@ -1297,8 +1408,6 @@ class TestSheetRowInsertAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
         mat_count = GenericMaterial.objects.filter(assay=self.assay).count()
         proc_count = Process.objects.filter(assay=self.assay).count()
         arc_count = len(self.assay.arcs)
-
-        # Insert assay row
         response = self.insert_row(path=ASSAY_INSERT_PATH)
 
         self.assertEqual(response.status_code, 200)
@@ -1351,8 +1460,6 @@ class TestSheetRowInsertAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
         mat_count = GenericMaterial.objects.filter(assay=self.assay).count()
         proc_count = Process.objects.filter(assay=self.assay).count()
         arc_count = len(self.assay.arcs)
-
-        # Insert new row
         response = self.insert_row(path=ASSAY_INSERT_SPLIT_PATH)
 
         self.assertEqual(response.status_code, 200)
@@ -1380,8 +1487,6 @@ class TestSheetRowInsertAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
         mat_count = GenericMaterial.objects.filter(assay=self.assay).count()
         proc_count = Process.objects.filter(assay=self.assay).count()
         arc_count = len(self.assay.arcs)
-
-        # Insert new row
         response = self.insert_row(path=ASSAY_INSERT_POOL_PATH)
 
         self.assertEqual(response.status_code, 200)
@@ -1397,23 +1502,39 @@ class TestSheetRowInsertAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
 
     # TODO: Test ontology ref updating
 
+    def test_insert_study_cache(self):
+        """Test inserting new row with cached study tables"""
+        study_tables = table_builder.build_study_tables(self.study)
+        cache_name = STUDY_TABLE_CACHE_ITEM.format(study=self.study.sodar_uuid)
+        self.cache_backend.set_cache_item(
+            APP_NAME, cache_name, study_tables, 'json', self.project
+        )
+        self.assertIsNotNone(
+            self.cache_backend.get_cache_item(*self.cache_args)
+        )
+        self.assertEqual(JSONCacheItem.objects.count(), 1)
+        response = self.insert_row(path=STUDY_INSERT_PATH)
+        self.assertEqual(response.status_code, 200)
+        cache_item = self.cache_backend.get_cache_item(*self.cache_args)
+        self.assertEqual(cache_item.data, {})
+        self.assertEqual(JSONCacheItem.objects.count(), 1)
+
 
 class TestSheetRowDeleteAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
     """Tests for SheetRowDeleteAjaxView"""
 
     def setUp(self):
         super().setUp()
-
         # Import investigation where extra rows have been inserted
         self.investigation = self.import_isa_from_file(
             SHEET_PATH_INSERTED, self.project
         )
         # Set up UUIDs and default config
-        self._update_uuids(self.investigation, CONFIG_DATA_DEFAULT)
-        app_settings.set_app_setting(
+        self.update_uuids(self.investigation, CONFIG_DATA_DEFAULT)
+        app_settings.set(
             APP_NAME,
             'sheet_config',
-            conf_api.build_sheet_config(self.investigation),
+            self.build_sheet_config(self.investigation),
             project=self.project,
         )
         self.study = self.investigation.studies.first()
@@ -1425,7 +1546,6 @@ class TestSheetRowDeleteAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
         )
         source.sodar_uuid = EDIT_SOURCE_UUID
         source.save()
-
         proc = (
             Process.objects.filter(
                 study=self.study, assay=None, protocol__name='sample collection'
@@ -1435,9 +1555,15 @@ class TestSheetRowDeleteAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
         )
         proc.sodar_uuid = EDIT_STUDY_PROC_UUID
         proc.save()
-
         # Update UUIDs in assay
         self.update_assay_row_uuids()
+
+        # Set up helpers
+        self.cache_backend = get_backend_api('sodar_cache')
+        self.cache_name = STUDY_TABLE_CACHE_ITEM.format(
+            study=self.study.sodar_uuid
+        )
+        self.cache_args = [APP_NAME, self.cache_name, self.project]
 
     def test_delete_assay_row(self):
         """Test row deletion from assay"""
@@ -1501,6 +1627,23 @@ class TestSheetRowDeleteAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
         )
 
     # TODO: Test deletion with splitting/pooling
+
+    def test_delete_assay_row_study_cache(self):
+        """Test row deletion from assay with cached study tables"""
+        study_tables = table_builder.build_study_tables(self.study)
+        cache_name = STUDY_TABLE_CACHE_ITEM.format(study=self.study.sodar_uuid)
+        self.cache_backend.set_cache_item(
+            APP_NAME, cache_name, study_tables, 'json', self.project
+        )
+        self.assertIsNotNone(
+            self.cache_backend.get_cache_item(*self.cache_args)
+        )
+        self.assertEqual(JSONCacheItem.objects.count(), 1)
+        response = self.delete_row(ASSAY_DELETE_PATH)
+        self.assertEqual(response.status_code, 200)
+        cache_item = self.cache_backend.get_cache_item(*self.cache_args)
+        self.assertEqual(cache_item.data, {})
+        self.assertEqual(JSONCacheItem.objects.count(), 1)
 
 
 class TestSheetVersionSaveAjaxView(TestViewsBase):
@@ -1590,18 +1733,21 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
 
     def setUp(self):
         super().setUp()
+        # Set up category owner
+        self.user_cat = self.make_user('user_cat')
+        self.make_assignment(self.category, self.user_cat, self.role_owner)
 
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         # Set up UUIDs and default config
-        self._update_uuids(self.investigation, CONFIG_DATA_DEFAULT)
-        app_settings.set_app_setting(
+        self.update_uuids(self.investigation, CONFIG_DATA_DEFAULT)
+        app_settings.set(
             APP_NAME,
             'sheet_config',
-            conf_api.build_sheet_config(self.investigation),
+            self.build_sheet_config(self.investigation),
             project=self.project,
         )
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'edit_config_min_role',
             SODAR_CONSTANTS['PROJECT_ROLE_OWNER'],
@@ -1609,6 +1755,7 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
         )
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
+
         self.post_values = {
             'fields': [
                 {
@@ -1632,9 +1779,16 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
             ]
         }
 
+        # Set up helpers
+        self.cache_backend = get_backend_api('sodar_cache')
+        self.cache_name = STUDY_TABLE_CACHE_ITEM.format(
+            study=self.study.sodar_uuid
+        )
+        self.cache_args = [APP_NAME, self.cache_name, self.project]
+
     def test_update_study_column(self):
         """Test posting a study column update"""
-        sheet_config = app_settings.get_app_setting(
+        sheet_config = app_settings.get(
             APP_NAME, 'sheet_config', project=self.project
         )
         self.assertEqual(sheet_config, CONFIG_DATA_DEFAULT)
@@ -1658,7 +1812,7 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
             )
         self.assertEqual(response.status_code, 200)
 
-        sheet_config = app_settings.get_app_setting(
+        sheet_config = app_settings.get(
             APP_NAME, 'sheet_config', project=self.project
         )
         expected = {
@@ -1684,9 +1838,9 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
             1,
         )
 
-    def test_update_as_superuser_min_owner(self):
+    def test_superuser_min_owner(self):
         """Test updating as superuser with minimum role of owner"""
-        edit_config_min_role = app_settings.get_app_setting(
+        edit_config_min_role = app_settings.get(
             APP_NAME, 'edit_config_min_role', project=self.project
         )
         self.assertEqual(
@@ -1703,9 +1857,9 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
             )
         self.assertEqual(response.status_code, 200)
 
-    def test_update_as_owner_min_owner(self):
-        """Test updating as owner with minimum role of owner"""
-        edit_config_min_role = app_settings.get_app_setting(
+    def test_owner_min_owner(self):
+        """Test updating as owner with minimum=owner"""
+        edit_config_min_role = app_settings.get(
             APP_NAME, 'edit_config_min_role', project=self.project
         )
         self.assertEqual(
@@ -1722,9 +1876,9 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
             )
         self.assertEqual(response.status_code, 200)
 
-    def test_update_as_delegate_min_owner(self):
-        """Test updating as delegate with minimum role of owner (should fail)"""
-        edit_config_min_role = app_settings.get_app_setting(
+    def test_delegate_min_owner(self):
+        """Test updating as delegate with minimum=owner (should fail)"""
+        edit_config_min_role = app_settings.get(
             APP_NAME, 'edit_config_min_role', project=self.project
         )
         self.assertEqual(
@@ -1745,9 +1899,9 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
             'User not allowed to modify column config',
         )
 
-    def test_update_as_contributor_min_owner(self):
-        """Test updating as contributor with minimum role of owner (should fail)"""
-        edit_config_min_role = app_settings.get_app_setting(
+    def test_contributor_min_owner(self):
+        """Test updating as contributor with minimum=owner (should fail)"""
+        edit_config_min_role = app_settings.get(
             APP_NAME, 'edit_config_min_role', project=self.project
         )
         self.assertEqual(
@@ -1768,13 +1922,52 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
             'User not allowed to modify column config',
         )
 
+    def test_inherited_owner(self):
+        """Test updating as inherited owner"""
+        with self.login(self.user_cat):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:ajax_config_update',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps(self.post_values),
+                content_type='application/json',
+            )
+        self.assertEqual(response.status_code, 200)
 
-class TestStudyDisplayConfigAjaxView(TestViewsBase):
+    def test_update_study_cache(self):
+        """Test posting a study column update with cached study tables"""
+        study_tables = table_builder.build_study_tables(self.study)
+        cache_name = STUDY_TABLE_CACHE_ITEM.format(study=self.study.sodar_uuid)
+        self.cache_backend.set_cache_item(
+            APP_NAME, cache_name, study_tables, 'json', self.project
+        )
+        self.assertIsNotNone(
+            self.cache_backend.get_cache_item(*self.cache_args)
+        )
+        self.assertEqual(JSONCacheItem.objects.count(), 1)
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:ajax_config_update',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps(self.post_values),
+                content_type='application/json',
+            )
+        self.assertEqual(response.status_code, 200)
+
+        cache_item = self.cache_backend.get_cache_item(*self.cache_args)
+        self.assertEqual(cache_item.data, {})
+        self.assertEqual(JSONCacheItem.objects.count(), 1)
+
+
+class TestStudyDisplayConfigAjaxView(SheetConfigMixin, TestViewsBase):
     """Tests for StudyDisplayConfigAjaxView"""
 
     def setUp(self):
         super().setUp()
-
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
@@ -1783,17 +1976,18 @@ class TestStudyDisplayConfigAjaxView(TestViewsBase):
             self.investigation.studies.first().assays.first().sodar_uuid
         )
         # Build sheet config and default display config
-        self.sheet_config = conf_api.build_sheet_config(self.investigation)
+        inv_tables = table_builder.build_inv_tables(self.investigation)
+        self.sheet_config = self.build_sheet_config(self.investigation)
         self.display_config = conf_api.build_display_config(
-            self.investigation, self.sheet_config
+            inv_tables, self.sheet_config
         )
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'display_config_default',
             project=self.project,
             value=self.display_config,
         )
-        app_settings.set_app_setting(
+        app_settings.set(
             APP_NAME,
             'display_config',
             project=self.project,
@@ -1822,7 +2016,7 @@ class TestStudyDisplayConfigAjaxView(TestViewsBase):
             )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['detail'], 'ok')
-        updated_config = app_settings.get_app_setting(
+        updated_config = app_settings.get(
             APP_NAME, 'display_config', project=self.project, user=self.user
         )
         self.assertEqual(
@@ -1853,10 +2047,10 @@ class TestStudyDisplayConfigAjaxView(TestViewsBase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['detail'], 'ok')
-        updated_config = app_settings.get_app_setting(
+        updated_config = app_settings.get(
             APP_NAME, 'display_config', project=self.project, user=self.user
         )
-        default_config = app_settings.get_app_setting(
+        default_config = app_settings.get(
             APP_NAME, 'display_config_default', project=self.project
         )
         self.assertEqual(
@@ -1882,7 +2076,7 @@ class TestStudyDisplayConfigAjaxView(TestViewsBase):
             )
         self.assertEqual(response.status_code, 200)
         self.assertNotEqual(response.data['detail'], 'ok')
-        updated_config = app_settings.get_app_setting(
+        updated_config = app_settings.get(
             APP_NAME, 'display_config', project=self.project, user=self.user
         )
         self.assertEqual(
@@ -1969,27 +2163,8 @@ class TestSheetVersionCompareAjaxView(SheetImportMixin, TestViewsBase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), expected)
 
-    def test_get_no_permission(self):
-        """Test GET without permission"""
-        expected = {
-            'detail': 'You do not have permission to perform this action.'
-        }
-        with self.login(self.user_guest):
-            response = self.client.get(
-                '{}?source={}&target={}'.format(
-                    reverse(
-                        'samplesheets:ajax_version_compare',
-                        kwargs={'project': self.project.sodar_uuid},
-                    ),
-                    str(self.isa1.sodar_uuid),
-                    str(self.isa2.sodar_uuid),
-                )
-            )
-        self.assertEqual(response.status_code, 403)
-        self.assertEqual(response.json(), expected)
-
     def test_get_no_sheets(self):
-        """Test GET without permission"""
+        """Test GET with no sheets"""
         expected = {'detail': 'Sample sheet version(s) not found.'}
         with self.login(self.user):
             response = self.client.get(

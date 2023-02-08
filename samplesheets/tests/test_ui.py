@@ -36,7 +36,6 @@ from samplesheets.tests.test_views import (
 from samplesheets.views_ajax import ALERT_ACTIVE_REQS
 
 
-# App settings API
 app_settings = AppSettingAPI()
 
 
@@ -59,8 +58,8 @@ class TestProjectSheetsVueAppBase(
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         if config_data:
             # Set up UUIDs and default config
-            self._update_uuids(self.investigation, config_data)
-            app_settings.set_app_setting(
+            self.update_uuids(self.investigation, config_data)
+            app_settings.set(
                 'samplesheets',
                 'sheet_config',
                 config_data,
@@ -157,7 +156,7 @@ class TestProjectSheetsVueAppBase(
 
     def setUp(self):
         super().setUp()
-        self.default_user = self.contributor_as.user
+        self.default_user = self.user_contributor
 
 
 class TestProjectSheetsView(TestProjectSheetsVueAppBase):
@@ -168,15 +167,14 @@ class TestProjectSheetsView(TestProjectSheetsVueAppBase):
         self._setup_investigation()
 
     def test_render(self):
-        """Test rendering the view with study and assay grids"""
+        """Test rendering view with study and assay grids"""
         users = [
             self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
-            self.guest_as.user,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
         ]
-
         for user in users:
             self._login_and_render(user=user, wait_elem='sodar-ss-grid-study')
             # Ensure assay grid is found (we already know study is there)
@@ -191,16 +189,15 @@ class TestProjectSheetsView(TestProjectSheetsVueAppBase):
                 self.selenium.find_element(By.ID, 'sodar-ss-alert-error')
 
     def test_render_no_sheet(self):
-        """Test rendering the view with no sheet"""
+        """Test rendering view with no sheet"""
         self.investigation.delete()
         users = [
             self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
-            self.guest_as.user,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
         ]
-
         for user in users:
             self._login_and_render(user)
             # Ensure alert is shown
@@ -215,31 +212,30 @@ class TestProjectSheetsView(TestProjectSheetsVueAppBase):
                 )
 
     def test_render_alert(self):
-        """Test rendering an alert retrieved from SODAR context"""
+        """Test rendering alert retrieved from SODAR context"""
         # NOTE: Testing here as we don't (yet) have vue tests for entire app
-        irods_backend = get_backend_api('omics_irods', conn=False)
+        irods_backend = get_backend_api('omics_irods')
         self.investigation.irods_status = True
         self.investigation.save()
         # TODO: Use model helper instead (see #1088)
         IrodsDataRequest.objects.create(
             project=self.project,
             path=irods_backend.get_path(self.assay) + '/test/xxx.bam',
-            user=self.contributor_as.user,
+            user=self.user_contributor,
         )
         users = [
             self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
-            self.guest_as.user,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
         ]
-
         for user in users:
             self._login_and_render(user=user, wait_elem='sodar-ss-grid-study')
             if user in [
                 self.superuser,
-                self.owner_as.user,
-                self.delegate_as.user,
+                self.user_owner,
+                self.user_delegate,
             ]:
                 self.assertIsNotNone(
                     self.selenium.find_element(By.CLASS_NAME, 'sodar-ss-alert')
@@ -321,10 +317,10 @@ class TestSheetVersionListView(TestProjectSheetsVueAppBase):
         """Test list button rendering"""
         expected = [
             (self.superuser, 1),
-            (self.owner_as.user, 1),
-            (self.delegate_as.user, 1),
-            (self.contributor_as.user, 0),
-            (self.guest_as.user, 0),
+            (self.user_owner, 1),
+            (self.user_delegate, 1),
+            (self.user_contributor, 0),
+            (self.user_guest, 0),
         ]
         self.assert_element_count(
             expected, self.url, 'sodar-ss-version-btn-group', 'class'
@@ -342,7 +338,7 @@ class TestIrodsRequestCreateView(TestProjectSheetsVueAppBase):
         )
 
     def test_render_form(self):
-        """Test UI rendering for form"""
+        """Test UI rendering for iRODS request create view"""
         self.assert_element_exists(
             [self.default_user], self.url, 'sodar-ss-btn-import-submit', True
         )
@@ -371,7 +367,7 @@ class TestIrodsRequestUpdateView(TestProjectSheetsVueAppBase):
         )
 
     def test_render_form(self):
-        """Test UI rendering for form"""
+        """Test UI rendering for iRODS request update view"""
         self.assert_element_exists(
             [self.default_user], self.url, 'sodar-ss-btn-import-submit', True
         )
@@ -400,8 +396,8 @@ class TestIrodsRequestDeleteView(TestProjectSheetsVueAppBase):
         )
 
     def test_render(self):
-        """Test UI rendering for form"""
-
+        """Test UI rendering for iRODS request delete view"""
+        """Test UI rendering for iRODS request delete view"""
         self.assert_element_exists(
             [self.default_user], self.url, 'sodar-ss-btn-confirm-delete', True
         )
@@ -430,8 +426,7 @@ class TestIrodsRequestAcceptView(TestProjectSheetsVueAppBase):
         )
 
     def test_render(self):
-        """Test UI rendering for confirm accept page"""
-
+        """Test UI rendering for iRODS request accept view"""
         self.assert_element_exists(
             [self.superuser], self.url, 'sodar-ss-btn-delete-submit', True
         )
@@ -476,7 +471,6 @@ class TestSheetVersionCompareView(
         self.import_isa_from_file(SHEET_PATH_SMALL2, self.project)
         self.assertEqual(Investigation.objects.count(), 1)
         self.assertEqual(ISATab.objects.count(), 1)
-
         self.isa1 = ISATab.objects.first()
         self.url = '{}?source={}&target={}'.format(
             reverse(
@@ -515,7 +509,6 @@ class TestSheetVersionCompareFileView(
         self.import_isa_from_file(SHEET_PATH_SMALL2, self.project)
         self.assertEqual(Investigation.objects.count(), 1)
         self.assertEqual(ISATab.objects.count(), 1)
-
         self.isa1 = ISATab.objects.first()
         self.url_study_file = (
             reverse(

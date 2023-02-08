@@ -6,7 +6,6 @@ from django.test import RequestFactory
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
 
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
@@ -52,12 +51,6 @@ class TestTriggerZoneMoveTask(
 
     def setUp(self):
         super().setUp()
-
-        # Get iRODS backend for session access
-        self.irods_backend = get_backend_api('omics_irods')
-        self.assertIsNotNone(self.irods_backend)
-        self.irods = self.irods_backend.get_session()
-
         # Init project
         # Make project with owner in Taskflow and Django
         self.project, self.owner_as = self.make_project_taskflow(
@@ -97,10 +90,6 @@ class TestTriggerZoneMoveTask(
 
         self.req_factory = RequestFactory()
         self.task = TriggerZoneMoveTask()
-
-    def tearDown(self):
-        self.irods.cleanup()
-        super().tearDown()
 
     def test_trigger(self):
         """Test triggering automated zone validation and moving"""

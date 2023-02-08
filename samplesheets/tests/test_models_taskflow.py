@@ -7,7 +7,6 @@ from django.utils.timezone import localtime
 
 # Projectroles dependency
 from projectroles.constants import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
 
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import TaskflowbackendTestBase
@@ -45,10 +44,6 @@ class TestIrodsDataRequestBase(
 
     def setUp(self):
         super().setUp()
-
-        self.irods_backend = get_backend_api('omics_irods')
-        self.irods = self.irods_backend.get_session()
-
         self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
@@ -103,11 +98,12 @@ class TestIrodsDataRequestBase(
             status=self.status,
             path=self.path,
             description=self.description,
-            user=self.user_cat,
+            user=self.user_owner_cat,
         )
 
     def tearDown(self):
         self.irods.collections.get('/sodarZone/projects').remove(force=True)
+        super().tearDown()
 
     @classmethod
     def _make_irods_data_request(
@@ -146,7 +142,7 @@ class TestIrodsDataRequest(TestIrodsDataRequestBase):
             'id': self.irods_data_request.pk,
             'project': self.project.pk,
             'path': self.path,
-            'user': self.user_cat.pk,
+            'user': self.user_owner_cat.pk,
             'action': self.action,
             'status': self.status,
             'target_path': '',
@@ -174,7 +170,7 @@ class TestIrodsDataRequest(TestIrodsDataRequestBase):
                 self.irods_data_request.get_assay_name(),
                 self.action,
                 self.path,
-                self.user_cat.username,
+                self.user_owner_cat.username,
             ),
         )
 
