@@ -22,6 +22,7 @@ Major feature update.
 - Add iRODS user account creation at login for users with LDAP/SODAR auth
 - Update cancer study shortcut generating
 - Fix iRODS connection handling issues
+- Upgrade to SODAR Core v0.12.0
 
 
 v0.12.1 (2022-11-09)
