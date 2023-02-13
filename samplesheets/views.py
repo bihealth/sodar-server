@@ -536,12 +536,7 @@ class SheetISAExportMixin:
             isa_version = ISATab.objects.get(
                 project=project, sodar_uuid=version_uuid
             )
-            investigation = Investigation.objects.get(
-                sodar_uuid=isa_version.investigation_uuid
-            )
-        else:
-            investigation = Investigation.objects.get(project=project)
-
+        investigation = Investigation.objects.get(project=project, active=True)
         if not isa_version and (
             not investigation.parser_version
             or version.parse(investigation.parser_version)
