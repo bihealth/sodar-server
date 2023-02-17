@@ -19,6 +19,7 @@ Fixed
 
 - **Samplesheets**
     - Sheet version export crash with certain old projects (#1596)
+    - Cancer app ``get_shortcut_column()`` crash if library name not in cache (#1599)
 
 
 v0.13.0 (2023-02-08)
