@@ -8,6 +8,12 @@ Changelog for the SODAR project. Loosely follows the
 Unreleased
 ==========
 
+Added
+-----
+
+- **General**
+    - API examples in manual (#1600)
+
 Changed
 -------
 

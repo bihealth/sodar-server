@@ -13,6 +13,9 @@ v0.13.1 (WIP)
 
 Maintenance and bug fix release.
 
+- Add API examples to manual
+- Minor updates and bug fixes
+
 
 v0.13.0 (2023-02-08)
 ====================
