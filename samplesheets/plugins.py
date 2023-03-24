@@ -30,6 +30,7 @@ from samplesheets.models import (
     ISATab,
     IrodsAccessTicket,
     IrodsDataRequest,
+    ISA_META_ASSAY_PLUGIN,
 )
 from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.urls import urlpatterns
@@ -940,13 +941,16 @@ class SampleSheetAssayPluginPoint(PluginPoint):
         )
         config_assays = []
 
-        # Filter assays by measurement and technology type
+        # Filter assays by measurement and technology type, or plugin override
         for assay in all_assays:
             search_fields = {
                 'measurement_type': get_isa_field_name(assay.measurement_type),
                 'technology_type': get_isa_field_name(assay.technology_type),
             }
-            if search_fields in self.assay_fields:
+            if (
+                assay.comments.get(ISA_META_ASSAY_PLUGIN) == self.name
+                or search_fields in self.assay_fields
+            ):
                 config_assays.append(assay)
 
         # Iterate through studies so we don't have to rebuild too many tables

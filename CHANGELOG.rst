@@ -26,6 +26,7 @@ Fixed
 - **Samplesheets**
     - Sheet version export crash with certain old projects (#1596)
     - Cancer app ``get_shortcut_column()`` crash if library name not in cache (#1599)
+    - Assay plugin override ignored in ``_update_cache_rows()`` (#1603, #1610)
 
 
 v0.13.0 (2023-02-08)
