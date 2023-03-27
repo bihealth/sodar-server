@@ -2,7 +2,7 @@
 -r base.txt
 
 django-extensions==3.2.0
-Werkzeug==2.2.2
+Werkzeug==2.2.3
 django-debug-toolbar==3.6.0
 
 # improved REPL

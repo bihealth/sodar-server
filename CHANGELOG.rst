@@ -19,10 +19,12 @@ Added
 Changed
 -------
 
+- **General**
+    - Upgrade critical Python dependencies (#1604)
 - **Landingzones**
     - Enable zone deletion if zone root collection is not found (#1606)
 - **Samplesheets**
-    - Upgrade Vue app dependencies (#1597)
+    - Upgrade Vue app dependencies (#1597, #1604)
     - Enable sheet deletion with data for delegates (#1605)
 
 Fixed
