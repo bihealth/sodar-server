@@ -38,6 +38,9 @@ DEFAULT_STATUS_INFO = {
     'DELETING': 'Deleting landing zone',
     'DELETED': 'Landing zone deleted',
 }
+STATUS_INFO_DELETE_NO_COLL = (
+    'No iRODS collection for zone found, marked as deleted'
+)
 
 STATUS_STYLES = {
     'CREATING': 'bg-warning',

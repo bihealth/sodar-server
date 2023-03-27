@@ -947,3 +947,33 @@ class TestLandingZoneDeleteView(
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_delete').count(), 1
         )
+
+    def test_delete_zone_no_coll(self):
+        """Test landingzones deletion with no zone root collection in iRODS"""
+        zone = self.make_landing_zone(
+            title=ZONE_TITLE,
+            project=self.project,
+            user=self.user,
+            assay=self.assay,
+            description=ZONE_DESC,
+            configuration=None,
+            config_data={},
+        )
+        self.make_zone_taskflow(zone)
+        self.assertEqual(LandingZone.objects.count(), 1)
+        zone_path = self.irods_backend.get_path(zone)
+        self.assertTrue(self.irods.collections.exists(zone_path))
+        # Remove collection
+        self.irods.collections.remove(zone_path)
+        self.assertFalse(self.irods.collections.exists(zone_path))
+
+        with self.login(self.user):
+            self.client.post(
+                reverse(
+                    'landingzones:delete',
+                    kwargs={'landingzone': zone.sodar_uuid},
+                ),
+            )
+        self.assert_zone_count(1)
+        zone.refresh_from_db()
+        self.assert_zone_status(zone, 'DELETED')

@@ -248,7 +248,7 @@ class ZoneSubmitDeleteAPIView(ZoneDeleteMixin, ZoneSubmitBaseAPIView):
         ).first()
         self._validate_zone_obj(zone, STATUS_ALLOW_UPDATE, 'delete')
         try:
-            self._submit_delete(zone)
+            self.submit_delete(zone)
         except Exception as ex:
             raise APIException(
                 'Initiating landing zone deletion failed: {}'.format(ex)

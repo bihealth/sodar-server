@@ -385,12 +385,33 @@ class TestLandingZoneSubmitDeleteAPIView(TestLandingZoneAPITaskflowBase):
         self.assertEqual(LandingZone.objects.count(), 1)
 
     def test_post_restrict(self):
-        """Test LandingZoneSubmitDeleteAPIView post() on restricted collections"""
+        """Test post() on restricted collections"""
         self.make_zone_taskflow(
             zone=self.landing_zone,
             colls=[MISC_FILES_COLL, RESULTS_COLL],
             restrict_colls=True,
         )
+        url = reverse(
+            'landingzones:api_submit_delete',
+            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+        )
+        response = self.request_knox(url, method='POST')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.data['sodar_uuid'], str(self.landing_zone.sodar_uuid)
+        )
+        self.assertEqual(LandingZone.objects.count(), 1)
+        zone = LandingZone.objects.first()
+        self.assert_zone_status(zone, 'DELETED')
+
+    def test_post_no_coll(self):
+        """Test post() with no zone root collection in iRODS"""
+        self.make_zone_taskflow(self.landing_zone)
+        zone_path = self.irods_backend.get_path(self.landing_zone)
+        self.assertTrue(self.irods.collections.exists(zone_path))
+        # Remove collection
+        self.irods.collections.remove(zone_path)
+        self.assertFalse(self.irods.collections.exists(zone_path))
         url = reverse(
             'landingzones:api_submit_delete',
             kwargs={'landingzone': self.landing_zone.sodar_uuid},

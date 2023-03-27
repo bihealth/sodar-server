@@ -33,6 +33,7 @@ from landingzones.models import (
     LandingZone,
     STATUS_ALLOW_UPDATE,
     STATUS_FINISHED,
+    STATUS_INFO_DELETE_NO_COLL,
 )
 
 
@@ -223,16 +224,18 @@ class ZoneCreateMixin(ZoneConfigPluginMixin):
 class ZoneDeleteMixin(ZoneConfigPluginMixin):
     """Mixin to be used in zone creation"""
 
-    def _submit_delete(self, zone):
+    def submit_delete(self, zone):
         """
         Handle timeline updating and initialize taskflow operation for
-        LandingZone deletion.
+        LandingZone deletion, or delete zone directly if no iRODS collection is
+        found.
 
         :param zone: LandingZone object
         :raise: taskflow.FlowSubmitException if taskflow submit fails
         """
-        timeline = get_backend_api('timeline_backend')
+        irods_backend = get_backend_api('omics_irods')
         taskflow = get_backend_api('taskflow')
+        timeline = get_backend_api('timeline_backend')
         tl_event = None
         project = zone.project
 
@@ -257,22 +260,29 @@ class ZoneDeleteMixin(ZoneConfigPluginMixin):
             )
             tl_event.set_status('SUBMIT')
 
-        # Submit with taskflow
-        flow_name = 'landing_zone_delete'
-        flow_data = self.get_flow_data(
-            zone,
-            flow_name,
-            {
-                'zone_uuid': str(zone.sodar_uuid),
-            },
-        )
-        taskflow.submit(
-            project=project,
-            flow_name=flow_name,
-            flow_data=flow_data,
-            async_mode=True,
-            tl_event=tl_event if tl_event else None,
-        )
+        # Check zone root collection status
+        zone_path = irods_backend.get_path(zone)
+        with irods_backend.get_session() as irods:
+            zone_exists = irods.collections.exists(zone_path)
+
+        if zone_exists:  # Submit with taskflow
+            flow_name = 'landing_zone_delete'
+            flow_data = self.get_flow_data(
+                zone,
+                flow_name,
+                {
+                    'zone_uuid': str(zone.sodar_uuid),
+                },
+            )
+            taskflow.submit(
+                project=project,
+                flow_name=flow_name,
+                flow_data=flow_data,
+                async_mode=True,
+                tl_event=tl_event if tl_event else None,
+            )
+        else:  # Delete locally
+            zone.set_status('DELETED', STATUS_INFO_DELETE_NO_COLL)
         self.object = None
 
 
@@ -527,7 +537,7 @@ class ZoneDeleteView(
             )
             return redirect(redirect_url)
         try:
-            self._submit_delete(zone)
+            self.submit_delete(zone)
             messages.warning(
                 self.request,
                 'Landing zone deletion initiated for "{}/{}" in '

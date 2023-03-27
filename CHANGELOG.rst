@@ -19,6 +19,8 @@ Added
 Changed
 -------
 
+- **Landingzones**
+    - Enable zone deletion if zone root collection is not found (#1606)
 - **Samplesheets**
     - Upgrade Vue app dependencies (#1597)
 
