@@ -202,6 +202,9 @@ class TestLandingZoneCreateView(
     def test_create_zone(self):
         """Test landingzones creation with taskflow"""
         self.assertEqual(LandingZone.objects.count(), 0)
+        self.assertEqual(
+            ProjectEvent.objects.filter(event_name='zone_create').count(), 0
+        )
         self.assertEqual(len(mail.outbox), 1)
 
         values = {
@@ -234,6 +237,18 @@ class TestLandingZoneCreateView(
         self.assert_irods_coll(zone)
         for c in ZONE_BASE_COLLS:
             self.assert_irods_coll(zone, c, False)
+        tl_event = ProjectEvent.objects.filter(event_name='zone_create').first()
+        expected_extra = {
+            'title': zone.title,
+            'assay': str(zone.assay.sodar_uuid),
+            'description': ZONE_DESC,
+            'create_colls': False,
+            'restrict_colls': False,
+            'user_message': '',
+            'configuration': None,
+            'config_data': {},
+        }
+        self.assertEqual(tl_event.extra_data, expected_extra)
         self.assertEqual(len(mail.outbox), 1)
         zone_path = self.irods_backend.get_path(zone)
         zone_coll = self.irods.collections.get(zone_path)
@@ -272,6 +287,9 @@ class TestLandingZoneCreateView(
         self.assert_zone_count(1)
         zone = LandingZone.objects.first()
         self.assert_zone_status(zone, 'ACTIVE')
+        tl_event = ProjectEvent.objects.filter(event_name='zone_create').first()
+        self.assertEqual(tl_event.extra_data['create_colls'], True)
+        self.assertEqual(tl_event.extra_data['restrict_colls'], False)
         self.assert_irods_coll(zone)
         for c in ZONE_BASE_COLLS:
             self.assert_irods_coll(zone, c, True)

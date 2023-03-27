@@ -13,6 +13,8 @@ Added
 
 - **General**
     - API examples in manual (#1600)
+- **Landingzone**
+    - Save zone creation metadata as timeline event extra data (#1609)
 
 Changed
 -------

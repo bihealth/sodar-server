@@ -140,6 +140,16 @@ class ZoneCreateMixin(ZoneConfigPluginMixin):
 
         # Add event in Timeline
         if timeline:
+            tl_extra = {
+                'title': zone.title,
+                'assay': str(zone.assay.sodar_uuid),
+                'description': zone.description,
+                'create_colls': create_colls,
+                'restrict_colls': restrict_colls,
+                'user_message': zone.user_message,
+                'configuration': zone.configuration,
+                'config_data': zone.config_data,
+            }
             tl_event = timeline.add_event(
                 project=project,
                 app_name=APP_NAME,
@@ -148,6 +158,7 @@ class ZoneCreateMixin(ZoneConfigPluginMixin):
                 description='create landing zone {{{}}}{} for {{{}}} in '
                 '{{{}}}'.format('zone', config_str, 'user', 'assay'),
                 status_type='SUBMIT',
+                extra_data=tl_extra,
             )
             tl_event.add_object(obj=zone, label='zone', name=zone.title)
             tl_event.add_object(
