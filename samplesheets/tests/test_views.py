@@ -919,6 +919,8 @@ class TestSheetDeleteView(TestViewsBase):
                 )
             )
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['irods_file_count'], 0)
+        self.assertEqual(response.context['can_delete_sheets'], True)
 
     def test_delete(self):
         """Test deleting the project sample sheets"""

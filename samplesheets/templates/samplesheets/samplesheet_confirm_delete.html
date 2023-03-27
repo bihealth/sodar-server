@@ -12,20 +12,24 @@
 </div>
 
 <div class="container-fluid sodar-page-container">
-  <div class="alert alert-warning" role="alert">
-    Do you really want to delete all sample sheet data from the project
-    "{{ project.title }}"?
-  </div>
+  {% if can_delete_sheets %}
+    <div class="alert alert-warning" role="alert">
+      Do you really want to delete all sample sheet data from the project
+      "{{ project.title }}"?
+    </div>
+  {% endif %}
 
-  {% if irods_sample_stats.file_count > 0 %}
+  {% if irods_file_count > 0 %}
     <div class="alert alert-danger" role="alert">
-      {% if request.user.is_superuser or request.user == project.get_owner.user %}
-        The sample data repository in iRODS contains {{ irods_sample_stats.file_count }}
-        files which will be permanently deleted along with the sample sheet!
-        Please proceed with caution!
+      {% if can_delete_sheets %}
+        The sample data repository in iRODS contains {{ irods_file_count }}
+        file{% if irods_file_count != 1 %}s{% endif %} which will be permanently
+        deleted along with the sample sheet. Please proceed with caution.
       {% else %}
-        The sample data repository in iRODS contains files. Only the project
-        owner or a superuser is allowed to proceed with deletion.
+        The sample data repository in iRODS contains files. Only a project
+        owner, delegate or a superuser is allowed to proceed with deletion. To
+        delete files from iRODS, submit iRODS delete requests in the Sample
+        Sheets app UI.
       {% endif %}
     </div>
   {% endif %}
@@ -33,17 +37,19 @@
   <form method="post">
     {% csrf_token %}
     <div class="row">
-      <input class="form-control mb-3"
-             name="delete_host_confirm"
-             autocomplete="off"
-             required="true"
-             placeholder="Type the host name of this server (e.g. &quot;sodar.yoursite.org&quot;) here to confirm deletion" />
+      {% if can_delete_sheets %}
+        <input class="form-control mb-3"
+               name="delete_host_confirm"
+               autocomplete="off"
+               required="true"
+               placeholder="Type the host name of this server (e.g. &quot;sodar.yoursite.org&quot;) here to confirm deletion" />
+      {% endif %}
       <div class="btn-group ml-auto">
         <a role="button" class="btn btn-secondary"
             href="{{ request.session.real_referer }}">
           <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Cancel
         </a>
-        {% if not irods_sample_stats.file_count or irods_sample_stats.file_count == 0 or request.user.is_superuser or request.user == project.get_owner.user %}
+        {% if can_delete_sheets %}
           <button type="submit" class="btn btn-danger">
             <i class="iconify" data-icon="mdi:close-thick"></i> Delete
           </button>

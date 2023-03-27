@@ -225,10 +225,21 @@ class TestIrodsCollsCreateView(
         )
 
 
-class TestSampleSheetDeleteView(
+class TestSheetDeleteView(
     SampleSheetIOMixin, SampleSheetTaskflowMixin, TaskflowbackendTestBase
 ):
     """Tests for sample sheet deletion with taskflow"""
+
+    def _setup_files(self):
+        """Setup file(s) in iRODS"""
+        self.make_irods_colls(self.investigation)
+        self.assert_irods_coll(self.irods_backend.get_sample_path(self.project))
+        self.assert_irods_coll(self.study)
+        self.assert_irods_coll(self.assay)
+        self.assay_path = self.irods_backend.get_path(self.assay)
+        self.file_path = self.assay_path + '/' + TEST_FILE_NAME
+        self.irods.data_objects.create(self.file_path)
+        self.assertEqual(self.irods.data_objects.exists(self.file_path), True)
 
     def setUp(self):
         super().setUp()
@@ -246,10 +257,39 @@ class TestSampleSheetDeleteView(
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
+    def test_render_files_owner(self):
+        """Test rendering with files as owner"""
+        self._setup_files()
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:delete',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
+        self.assertEqual(response.context['irods_file_count'], 1)
+        self.assertEqual(response.context['can_delete_sheets'], True)
+
+    def test_render_files_contributor(self):
+        """Test rendering with files as contributor"""
+        # Create contributor user
+        user_contributor = self.make_user('user_contributor')
+        self.make_assignment_taskflow(
+            self.project, user_contributor, self.role_contributor
+        )
+        self._setup_files()
+        with self.login(user_contributor):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:delete',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
+        self.assertEqual(response.context['can_delete_sheets'], False)
+
     def test_delete(self):
         """Test sample sheet deleting with taskflow"""
         self.assertIsNotNone(self.investigation)
-
         values = {'delete_host_confirm': 'testserver'}
         with self.login(self.user):
             response = self.client.post(
@@ -266,7 +306,6 @@ class TestSampleSheetDeleteView(
                     kwargs={'project': self.project.sodar_uuid},
                 ),
             )
-
         # Assert investigation status
         with self.assertRaises(Investigation.DoesNotExist):
             Investigation.objects.get(
@@ -274,18 +313,8 @@ class TestSampleSheetDeleteView(
             )
 
     def test_delete_files_owner(self):
-        """Test sample sheet deleting with files in iRODS as owner"""
-        # Create collections and file in iRODS
-        self.make_irods_colls(self.investigation)
-        self.assert_irods_coll(self.irods_backend.get_sample_path(self.project))
-        self.assert_irods_coll(self.study)
-        self.assert_irods_coll(self.assay)
-
-        assay_path = self.irods_backend.get_path(self.assay)
-        file_path = assay_path + '/' + TEST_FILE_NAME
-        self.irods.data_objects.create(file_path)
-        self.assertEqual(self.irods.data_objects.exists(file_path), True)
-
+        """Test sheet deleting with files as owner"""
+        self._setup_files()
         values = {'delete_host_confirm': 'testserver'}
         with self.login(self.user):
             response = self.client.post(
@@ -308,7 +337,7 @@ class TestSampleSheetDeleteView(
                 project__sodar_uuid=self.project.sodar_uuid
             )
         # Assert file status
-        self.assertEqual(self.irods.data_objects.exists(file_path), False)
+        self.assertEqual(self.irods.data_objects.exists(self.file_path), False)
         # Assert collection status
         self.assert_irods_coll(
             self.irods_backend.get_sample_path(self.project), expected=False
@@ -316,23 +345,68 @@ class TestSampleSheetDeleteView(
         self.assert_irods_coll(self.study, expected=False)
         self.assert_irods_coll(self.assay, expected=False)
 
+    def test_delete_files_owner_inherited(self):
+        """Test sheet deleting with files as inherited owner"""
+        self._setup_files()
+        values = {'delete_host_confirm': 'testserver'}
+        with self.login(self.user_owner_cat):
+            self.client.post(
+                reverse(
+                    'samplesheets:delete',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                values,
+            )
+
+        with self.assertRaises(Investigation.DoesNotExist):
+            Investigation.objects.get(
+                project__sodar_uuid=self.project.sodar_uuid
+            )
+        self.assertEqual(self.irods.data_objects.exists(self.file_path), False)
+        self.assert_irods_coll(
+            self.irods_backend.get_sample_path(self.project), expected=False
+        )
+        self.assert_irods_coll(self.study, expected=False)
+        self.assert_irods_coll(self.assay, expected=False)
+
+    def test_delete_files_delegate(self):
+        """Test sheet deleting with files as delegate"""
+        # Create and assign delegate user
+        user_delegate = self.make_user('user_delegate')
+        self.make_assignment_taskflow(
+            self.project, user_delegate, self.role_delegate
+        )
+        self._setup_files()
+
+        values = {'delete_host_confirm': 'testserver'}
+        with self.login(user_delegate):
+            self.client.post(
+                reverse(
+                    'samplesheets:delete',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                values,
+            )
+
+        with self.assertRaises(Investigation.DoesNotExist):
+            Investigation.objects.get(
+                project__sodar_uuid=self.project.sodar_uuid
+            )
+        self.assertEqual(self.irods.data_objects.exists(self.file_path), False)
+        self.assert_irods_coll(
+            self.irods_backend.get_sample_path(self.project), expected=False
+        )
+        self.assert_irods_coll(self.study, expected=False)
+        self.assert_irods_coll(self.assay, expected=False)
+
     def test_delete_files_contributor(self):
-        """Test sample sheet deleting with files in iRODS as contributor"""
+        """Test sheet deleting with files as contributor (should fail)"""
         # Create contributor user
         user_contributor = self.make_user('user_contributor')
         self.make_assignment_taskflow(
             self.project, user_contributor, self.role_contributor
         )
-
-        self.make_irods_colls(self.investigation)
-        self.assert_irods_coll(self.irods_backend.get_sample_path(self.project))
-        self.assert_irods_coll(self.study)
-        self.assert_irods_coll(self.assay)
-
-        assay_path = self.irods_backend.get_path(self.assay)
-        file_path = assay_path + '/' + TEST_FILE_NAME
-        self.irods.data_objects.create(file_path)
-        self.assertEqual(self.irods.data_objects.exists(file_path), True)
+        self._setup_files()
 
         values = {'delete_host_confirm': 'testserver'}
         with self.login(user_contributor):
@@ -361,7 +435,7 @@ class TestSampleSheetDeleteView(
         self.assert_irods_coll(self.irods_backend.get_sample_path(self.project))
         self.assert_irods_coll(self.study)
         self.assert_irods_coll(self.assay)
-        self.assertEqual(self.irods.data_objects.exists(file_path), True)
+        self.assertEqual(self.irods.data_objects.exists(self.file_path), True)
 
 
 class TestIrodsAccessTicketListView(
