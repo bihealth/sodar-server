@@ -1438,7 +1438,7 @@ class SheetDeleteView(
             )
         else:
             context['can_delete_sheets'] = self.request.user.has_perm(
-                'samplesheets.delete.sheet', project
+                'samplesheets.delete_sheet', project
             )
         return context
 

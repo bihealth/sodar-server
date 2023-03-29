@@ -257,6 +257,35 @@ class TestSheetDeleteView(
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
+    def test_render_no_files_owner(self):
+        """Test rendering without files as owner"""
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:delete',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
+        self.assertEqual(response.context['irods_file_count'], 0)
+        self.assertEqual(response.context['can_delete_sheets'], True)
+
+    def test_render_no_files_contributor(self):
+        """Test rendering without files as contributor"""
+        # Create contributor user
+        user_contributor = self.make_user('user_contributor')
+        self.make_assignment_taskflow(
+            self.project, user_contributor, self.role_contributor
+        )
+        with self.login(user_contributor):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:delete',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
+        self.assertEqual(response.context['irods_file_count'], 0)
+        self.assertEqual(response.context['can_delete_sheets'], True)
+
     def test_render_files_owner(self):
         """Test rendering with files as owner"""
         self._setup_files()
@@ -272,7 +301,6 @@ class TestSheetDeleteView(
 
     def test_render_files_contributor(self):
         """Test rendering with files as contributor"""
-        # Create contributor user
         user_contributor = self.make_user('user_contributor')
         self.make_assignment_taskflow(
             self.project, user_contributor, self.role_contributor
