@@ -1,5 +1,6 @@
 """Tests for UI view permissions in the landingzones app"""
 
+from django.test import override_settings
 from django.urls import reverse
 
 # Projectroles dependency
@@ -88,6 +89,23 @@ class TestLandingZonePermissions(TestLandingZonePermissionsBase):
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 302)
 
+    @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
+    def test_zone_list_disable(self):
+        """Test ProjectZoneView with disabled non-superuser access"""
+        url = reverse(
+            'landingzones:list', kwargs={'project': self.project.sodar_uuid}
+        )
+        good_users = [
+            self.superuser,
+            self.user_owner_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+        ]
+        bad_users = [self.user_guest, self.anonymous, self.user_no_roles]
+        self.assert_response(url, good_users, 200)
+        self.assert_response(url, bad_users, 302)
+
     def test_zone_create(self):
         """Test ZoneCreateView permissions"""
         url = reverse(
@@ -107,6 +125,25 @@ class TestLandingZonePermissions(TestLandingZonePermissionsBase):
     def test_zone_create_archive(self):
         """Test ZoneCreateView with archived project"""
         self.project.set_archive()
+        url = reverse(
+            'landingzones:create', kwargs={'project': self.project.sodar_uuid}
+        )
+        good_users = [self.superuser]
+        bad_users = [
+            self.user_owner_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
+            self.anonymous,
+            self.user_no_roles,
+        ]
+        self.assert_response(url, good_users, 200)
+        self.assert_response(url, bad_users, 302)
+
+    @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
+    def test_zone_create_disable(self):
+        """Test ZoneCreateView with disabled non-superuser access"""
         url = reverse(
             'landingzones:create', kwargs={'project': self.project.sodar_uuid}
         )
@@ -166,6 +203,28 @@ class TestLandingZonePermissions(TestLandingZonePermissionsBase):
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 302)
 
+    @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
+    def test_zone_delete_disable(self):
+        """Test ZoneDeleteView with disabled non-superuser access"""
+        url = reverse(
+            'landingzones:delete',
+            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+        )
+        good_users = [
+            self.superuser,
+        ]
+        bad_users = [
+            self.user_owner_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
+            self.anonymous,
+            self.user_no_roles,
+        ]
+        self.assert_response(url, good_users, 200)
+        self.assert_response(url, bad_users, 302)
+
     def test_zone_move(self):
         """Test ZoneMoveView permissions"""
         url = reverse(
@@ -207,6 +266,26 @@ class TestLandingZonePermissions(TestLandingZonePermissionsBase):
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 302)
 
+    @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
+    def test_zone_move_disable(self):
+        """Test ZoneMoveView with disabled non-superuser access"""
+        url = reverse(
+            'landingzones:move',
+            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+        )
+        good_users = [self.superuser]
+        bad_users = [
+            self.user_owner_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
+            self.anonymous,
+            self.user_no_roles,
+        ]
+        self.assert_response(url, good_users, 200)
+        self.assert_response(url, bad_users, 302)
+
     def test_zone_validate(self):
         """Test ZoneMoveView for zone validation"""
         url = reverse(
@@ -231,6 +310,26 @@ class TestLandingZonePermissions(TestLandingZonePermissionsBase):
     def test_zone_validate_archive(self):
         """Test ZoneMoveView for zone validation with archived project"""
         self.project.set_archive()
+        url = reverse(
+            'landingzones:validate',
+            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+        )
+        good_users = [self.superuser]
+        bad_users = [
+            self.user_owner_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
+            self.anonymous,
+            self.user_no_roles,
+        ]
+        self.assert_response(url, good_users, 200)
+        self.assert_response(url, bad_users, 302)
+
+    @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
+    def test_zone_validate_disable(self):
+        """Test ZoneMoveView for zone validation with disabled non-superuser access"""
         url = reverse(
             'landingzones:validate',
             kwargs={'landingzone': self.landing_zone.sodar_uuid},

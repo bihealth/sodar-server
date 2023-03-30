@@ -15,6 +15,8 @@ Added
     - API examples in manual (#1600)
 - **Landingzone**
     - Save zone creation metadata as timeline event extra data (#1609)
+    - Allow disabling landing zone operations from non-superusers (#1616)
+    - ``LANDINGZONES_DISABLE_FOR_USERS`` setting (#1616)
 
 Changed
 -------

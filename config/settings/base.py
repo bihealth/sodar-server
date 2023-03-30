@@ -806,6 +806,10 @@ LANDINGZONES_TRIGGER_MOVE_INTERVAL = env.int(
 LANDINGZONES_TRIGGER_FILE = env.str(
     'LANDINGZONES_TRIGGER_FILE', '.sodar_validate_and_move'
 )
+# Disable non-superuser uploads via landing zones, useful for e.g. demo servers
+LANDINGZONES_DISABLE_FOR_USERS = env.bool(
+    'LANDINGZONES_DISABLE_FOR_USERS', False
+)
 
 # Landingzones configapp plugin settings
 LZ_BIH_PROTEOMICS_SMB_EXPIRY_DAYS = env.int(

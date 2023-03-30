@@ -13,6 +13,7 @@ v0.13.1 (WIP)
 
 Maintenance and bug fix release.
 
+- Allow restricting landing zone write access
 - Add API examples to manual
 - Minor updates and bug fixes
 
