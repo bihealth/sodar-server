@@ -586,7 +586,7 @@ SITE_INSTANCE_TITLE = env.str('SITE_INSTANCE_TITLE', 'CUBI SODAR')
 
 
 # General API settings
-SODAR_API_DEFAULT_VERSION = '0.13.0'
+SODAR_API_DEFAULT_VERSION = '0.13.1'
 SODAR_API_ALLOWED_VERSIONS = [
     '0.7.0',
     '0.7.1',
@@ -601,6 +601,7 @@ SODAR_API_ALLOWED_VERSIONS = [
     '0.12.0',
     '0.12.1',
     '0.13.0',
+    '0.13.1',
 ]
 SODAR_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar+json'
 SODAR_API_DEFAULT_HOST = env.url(
