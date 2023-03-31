@@ -106,6 +106,7 @@ SHEETS_IGV_OMIT_VCF = ['cnv.vcf.gz', 'ploidy.vcf.gz', 'sv.vcf.gz']
 
 # Landingzones app settings
 LANDINGZONES_TRIGGER_ENABLE = True
+LANDINGZONES_DISABLE_FOR_USERS = False
 
 # iRODS settings shared by iRODS using apps
 ENABLE_IRODS = True

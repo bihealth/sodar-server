@@ -1,5 +1,6 @@
 """UI tests for the landingzones app"""
 
+from django.test import override_settings
 from django.urls import reverse
 
 from selenium.common.exceptions import NoSuchElementException
@@ -79,6 +80,7 @@ class TestProjectZoneView(
         # NOTE: Only testing with owner as this doesn't depend on user
         self.login_and_redirect(self.user_owner, self.url)
         self._assert_element(By.ID, 'sodar-lz-alert-archive', False)
+        self._assert_element(By.ID, 'sodar-lz-alert-disable', False)
         self._assert_element(By.ID, 'sodar-lz-alert-no-sheets', True)
         self._assert_element(By.ID, 'sodar-lz-alert-no-colls', False)
         self._assert_element(By.ID, 'sodar-lz-alert-no-zones', False)
@@ -90,6 +92,7 @@ class TestProjectZoneView(
         self._setup_investigation()
         self.assertIsNotNone(self.investigation)
         self.login_and_redirect(self.user_owner, self.url)
+        self._assert_element(By.ID, 'sodar-lz-alert-disable', False)
         self._assert_element(By.ID, 'sodar-lz-alert-no-sheets', False)
         self._assert_element(By.ID, 'sodar-lz-alert-no-colls', True)
         self._assert_element(By.ID, 'sodar-lz-alert-no-zones', False)
@@ -102,9 +105,24 @@ class TestProjectZoneView(
         self.investigation.irods_status = True
         self.investigation.save()
         self.login_and_redirect(self.user_owner, self.url)
+        self._assert_element(By.ID, 'sodar-lz-alert-disable', False)
         self._assert_element(By.ID, 'sodar-lz-alert-no-sheets', False)
         self._assert_element(By.ID, 'sodar-lz-alert-no-colls', False)
         self._assert_element(By.ID, 'sodar-lz-alert-no-zones', True)
+        self._assert_element(By.ID, 'sodar-lz-zone-list-own', False)
+        self._assert_element(By.ID, 'sodar-lz-zone-list-other', False)
+
+    @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
+    def test_render_disable(self):
+        """Test ProjectZoneView with LANDINGZONES_DISABLE_FOR_USERS"""
+        self._setup_investigation()
+        self.investigation.irods_status = True
+        self.investigation.save()
+        self.login_and_redirect(self.user_owner, self.url)
+        self._assert_element(By.ID, 'sodar-lz-alert-disable', True)
+        self._assert_element(By.ID, 'sodar-lz-alert-no-sheets', False)
+        self._assert_element(By.ID, 'sodar-lz-alert-no-colls', False)
+        self._assert_element(By.ID, 'sodar-lz-alert-no-zones', False)
         self._assert_element(By.ID, 'sodar-lz-zone-list-own', False)
         self._assert_element(By.ID, 'sodar-lz-zone-list-other', False)
 
@@ -117,6 +135,7 @@ class TestProjectZoneView(
             'contrib_zone', self.project, self.user_contributor, self.assay
         )
         self.login_and_redirect(self.user_contributor, self.url)
+        self._assert_element(By.ID, 'sodar-lz-alert-disable', False)
         self._assert_element(By.ID, 'sodar-lz-alert-no-sheets', False)
         self._assert_element(By.ID, 'sodar-lz-alert-no-colls', False)
         self._assert_element(By.ID, 'sodar-lz-alert-no-zones', False)

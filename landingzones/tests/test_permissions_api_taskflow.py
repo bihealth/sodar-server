@@ -159,6 +159,48 @@ class TestZoneCreateAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
             data=self._get_post_data(),
         )
 
+    @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
+    def test_create_disable(self):
+        """Test ZoneCreateAPIView with disabled non-superuser access"""
+        good_users = [self.superuser]
+        bad_users = [
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
+            self.user_no_roles,
+        ]
+        self.assert_response_api(
+            self.url, good_users, 201, method='POST', data=self._get_post_data()
+        )
+        self.assert_response_api(
+            self.url, bad_users, 403, method='POST', data=self._get_post_data()
+        )
+        self.assert_response_api(
+            self.url,
+            self.anonymous,
+            401,
+            method='POST',
+            data=self._get_post_data(),
+        )
+        self.assert_response_api(
+            self.url,
+            good_users,
+            201,
+            method='POST',
+            data=self._get_post_data(),
+            knox=True,
+        )
+        # Test public project
+        self.project.set_public()
+        self.assert_response_api(
+            self.url,
+            self.user_no_roles,
+            403,
+            method='POST',
+            data=self._get_post_data(),
+        )
+
 
 class TestZoneSubmitDeleteAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
     """Tests for ZoneSubmitDeleteAPIView permissions with Taskflow"""
@@ -246,6 +288,55 @@ class TestZoneSubmitDeleteAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
             self.user_contributor,
         ]
         bad_users = [self.user_guest, self.user_no_roles]
+        self.assert_response_api(
+            self.url,
+            good_users,
+            200,
+            method='POST',
+            cleanup_method=self._cleanup,
+        )
+        self.assert_response_api(
+            self.url,
+            bad_users,
+            403,
+            method='POST',
+        )
+        self.assert_response_api(
+            self.url,
+            self.anonymous,
+            401,
+            method='POST',
+        )
+        self.assert_response_api(
+            self.url,
+            good_users,
+            200,
+            method='POST',
+            cleanup_method=self._cleanup,
+            knox=True,
+        )
+        # Test public project
+        self.project.set_public()
+        self.assert_response_api(
+            self.url,
+            self.user_no_roles,
+            403,
+            method='POST',
+        )
+
+    @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
+    def test_submit_delete_disable(self):
+        """Test ZoneSubmitDeleteAPIView with disabled non-superuser access"""
+        good_users = [
+            self.superuser,
+        ]
+        bad_users = [
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
+            self.user_no_roles,
+        ]
         self.assert_response_api(
             self.url,
             good_users,
@@ -375,6 +466,53 @@ class TestZoneSubmitMoveAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
         """Test ZoneSubmitMoveAPIView with archived project"""
         # NOTE: We don't allow move OR validate for archived projects
         self.project.set_archive()
+        good_users = [self.superuser]
+        bad_users = [
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
+            self.user_no_roles,
+        ]
+        self.assert_response_api(
+            self.url,
+            good_users,
+            200,
+            method='POST',
+            cleanup_method=self._cleanup,
+        )
+        self.assert_response_api(
+            self.url,
+            bad_users,
+            403,
+            method='POST',
+        )
+        self.assert_response_api(
+            self.url,
+            self.anonymous,
+            401,
+            method='POST',
+        )
+        self.assert_response_api(
+            self.url,
+            good_users,
+            200,
+            method='POST',
+            cleanup_method=self._cleanup,
+            knox=True,
+        )
+        # Test public project
+        self.project.set_public()
+        self.assert_response_api(
+            self.url,
+            self.user_no_roles,
+            403,
+            method='POST',
+        )
+
+    @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
+    def test_submit_validate_disable(self):
+        """Test ZoneSubmitMoveAPIView with disabled non-superuser access"""
         good_users = [self.superuser]
         bad_users = [
             self.user_owner,

@@ -30,7 +30,7 @@ awesome-slugify==1.6.5
 pytz==2022.2.1
 
 # Redis support
-redis==4.3.4
+redis==4.3.6
 
 # Profiling
 django-cprofile-middleware==1.0.5

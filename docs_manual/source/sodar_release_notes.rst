@@ -8,6 +8,16 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v0.13.1 (2023-03-31)
+====================
+
+Release for minor updates, maintenance and bug fixes.
+
+- Allow restricting landing zone write access
+- Add API examples to manual
+- Minor updates and bug fixes
+
+
 v0.13.0 (2023-02-08)
 ====================
 

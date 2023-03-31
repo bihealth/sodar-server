@@ -536,12 +536,7 @@ class SheetISAExportMixin:
             isa_version = ISATab.objects.get(
                 project=project, sodar_uuid=version_uuid
             )
-            investigation = Investigation.objects.get(
-                sodar_uuid=isa_version.investigation_uuid
-            )
-        else:
-            investigation = Investigation.objects.get(project=project)
-
+        investigation = Investigation.objects.get(project=project, active=True)
         if not isa_version and (
             not investigation.parser_version
             or version.parse(investigation.parser_version)
@@ -1430,11 +1425,21 @@ class SheetDeleteView(
         # NOTE: We handle a possible crash in get()
         with irods_backend.get_session() as irods:
             try:
-                context['irods_sample_stats'] = irods_backend.get_object_stats(
+                context['irods_file_count'] = irods_backend.get_object_stats(
                     irods, irods_backend.get_sample_path(project)
-                )
+                ).get('file_count')
             except FileNotFoundError:
-                pass
+                context['irods_file_count'] = 0
+        if context['irods_file_count'] > 0:
+            context[
+                'can_delete_sheets'
+            ] = self.request.user.is_superuser or project.is_owner_or_delegate(
+                self.request.user
+            )
+        else:
+            context['can_delete_sheets'] = self.request.user.has_perm(
+                'samplesheets.delete_sheet', project
+            )
         return context
 
     def get(self, request, *args, **kwargs):
@@ -1458,22 +1463,17 @@ class SheetDeleteView(
         redirect_url = get_sheets_url(project)
 
         # Don't allow deletion for everybody if files exist in iRODS
-        # HACK for issue #424: This could also be implemented in rules..
         context = self.get_context_data(*args, **kwargs)
-        file_count = (
-            context['irods_sample_stats']['file_count']
-            if 'irods_sample_stats' in context
-            else 0
-        )
+        file_count = context.get('irods_file_count', 0)
         if (
             file_count > 0
             and not self.request.user.is_superuser
-            and self.request.user != context['project'].get_owner().user
+            and not project.is_owner_or_delegate(self.request.user)
         ):
             messages.warning(
                 self.request,
-                '{} file{} for project in iRODS, deletion only allowed '
-                'for project owner or superuser'.format(
+                '{} file{} for project exist in iRODS: deletion only allowed '
+                'for project owner, delegate or superuser'.format(
                     file_count, 's' if int(file_count) != 1 else ''
                 ),
             )

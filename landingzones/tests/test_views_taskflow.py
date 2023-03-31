@@ -202,6 +202,9 @@ class TestLandingZoneCreateView(
     def test_create_zone(self):
         """Test landingzones creation with taskflow"""
         self.assertEqual(LandingZone.objects.count(), 0)
+        self.assertEqual(
+            ProjectEvent.objects.filter(event_name='zone_create').count(), 0
+        )
         self.assertEqual(len(mail.outbox), 1)
 
         values = {
@@ -234,6 +237,18 @@ class TestLandingZoneCreateView(
         self.assert_irods_coll(zone)
         for c in ZONE_BASE_COLLS:
             self.assert_irods_coll(zone, c, False)
+        tl_event = ProjectEvent.objects.filter(event_name='zone_create').first()
+        expected_extra = {
+            'title': zone.title,
+            'assay': str(zone.assay.sodar_uuid),
+            'description': ZONE_DESC,
+            'create_colls': False,
+            'restrict_colls': False,
+            'user_message': '',
+            'configuration': None,
+            'config_data': {},
+        }
+        self.assertEqual(tl_event.extra_data, expected_extra)
         self.assertEqual(len(mail.outbox), 1)
         zone_path = self.irods_backend.get_path(zone)
         zone_coll = self.irods.collections.get(zone_path)
@@ -272,6 +287,9 @@ class TestLandingZoneCreateView(
         self.assert_zone_count(1)
         zone = LandingZone.objects.first()
         self.assert_zone_status(zone, 'ACTIVE')
+        tl_event = ProjectEvent.objects.filter(event_name='zone_create').first()
+        self.assertEqual(tl_event.extra_data['create_colls'], True)
+        self.assertEqual(tl_event.extra_data['restrict_colls'], False)
         self.assert_irods_coll(zone)
         for c in ZONE_BASE_COLLS:
             self.assert_irods_coll(zone, c, True)
@@ -929,3 +947,33 @@ class TestLandingZoneDeleteView(
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_delete').count(), 1
         )
+
+    def test_delete_zone_no_coll(self):
+        """Test landingzones deletion with no zone root collection in iRODS"""
+        zone = self.make_landing_zone(
+            title=ZONE_TITLE,
+            project=self.project,
+            user=self.user,
+            assay=self.assay,
+            description=ZONE_DESC,
+            configuration=None,
+            config_data={},
+        )
+        self.make_zone_taskflow(zone)
+        self.assertEqual(LandingZone.objects.count(), 1)
+        zone_path = self.irods_backend.get_path(zone)
+        self.assertTrue(self.irods.collections.exists(zone_path))
+        # Remove collection
+        self.irods.collections.remove(zone_path)
+        self.assertFalse(self.irods.collections.exists(zone_path))
+
+        with self.login(self.user):
+            self.client.post(
+                reverse(
+                    'landingzones:delete',
+                    kwargs={'landingzone': zone.sodar_uuid},
+                ),
+            )
+        self.assert_zone_count(1)
+        zone.refresh_from_db()
+        self.assert_zone_status(zone, 'DELETED')

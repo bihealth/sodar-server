@@ -126,10 +126,9 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             enabled = False
             if cache_item and source_name in source_libs:
                 for lib in source_libs[source_name]:
-                    if (
-                        cache_item.data['bam'][lib]
-                        or cache_item.data['vcf'][lib]
-                    ):
+                    if cache_item.data['bam'].get(lib) or cache_item.data[
+                        'vcf'
+                    ].get(lib):
                         enabled = True
                         break
             elif not cache_item:

@@ -200,6 +200,9 @@ Landing Zones Settings
 ``LANDINGZONES_TRIGGER_FILE``
     File name for automated move triggering (string,
     default: ``.sodar_validate_and_move``).
+``LANDINGZONES_DISABLE_FOR_USERS``
+    Disable non-superuser uploads via landing zones, useful for e.g. demo
+    instances (boolean).
 ``LZ_BIH_PROTEOMICS_SMB_EXPIRY_DAYS``
     BIH proteomics configuration SMB expiry days (integer).
 ``LZ_BIH_PROTEOMICS_SMB_USER``

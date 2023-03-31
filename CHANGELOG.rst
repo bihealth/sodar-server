@@ -5,6 +5,40 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+v0.13.1 (2023-03-31)
+====================
+
+Added
+-----
+
+- **General**
+    - API examples in manual (#1600)
+- **Landingzone**
+    - Save zone creation metadata as timeline event extra data (#1609)
+    - Allow disabling landing zone operations from non-superusers (#1616)
+    - ``LANDINGZONES_DISABLE_FOR_USERS`` setting (#1616)
+
+Changed
+-------
+
+- **General**
+    - Upgrade critical Python dependencies (#1604)
+- **Landingzones**
+    - Enable zone deletion if zone root collection is not found (#1606)
+- **Samplesheets**
+    - Upgrade Vue app dependencies (#1597, #1604)
+    - Enable sheet deletion with data for delegates (#1605)
+
+Fixed
+-----
+
+- **Samplesheets**
+    - Sheet version export crash with certain old projects (#1596)
+    - Cancer app ``get_shortcut_column()`` crash if library name not in cache (#1599)
+    - Assay plugin override ignored in ``_update_cache_rows()`` (#1603, #1610)
+    - Inherited owners unable to delete sheets with data (#1605)
+
+
 v0.13.0 (2023-02-08)
 ====================
 
