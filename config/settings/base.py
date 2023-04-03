@@ -101,6 +101,7 @@ LOCAL_APPS = [
     'samplesheets.assayapps.meta_ms.apps.MetaMsConfig',
     'samplesheets.assayapps.microarray.apps.MicroarrayConfig',
     'samplesheets.assayapps.pep_ms.apps.PepMsConfig',
+    'samplesheets.assayapps.cytof.apps.CytofConfig',
     # Landingzones config sub-apps
     'landingzones.configapps.bih_proteomics_smb.apps.BihProteomicsSmbConfig',
     # Admin apps
