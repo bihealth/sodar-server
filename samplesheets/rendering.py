@@ -481,7 +481,7 @@ class SampleSheetTableBuilder:
                 elif isinstance(value[0], str):
                     value = '; '.join(value)
             # Simple link or contact
-            elif '<' in value:
+            else:
                 link_groups = re.findall(link_re, value)
                 if link_groups:
                     value = link_groups[0][0]
