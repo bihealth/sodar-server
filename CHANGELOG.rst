@@ -12,6 +12,7 @@ Changed
 -------
 
 - **General**
+    - Upgrade Python dependencies (#1620)
     - Minor manual updates (#1622)
 
 
