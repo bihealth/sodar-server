@@ -15,6 +15,12 @@ Changed
     - Upgrade Python dependencies (#1620)
     - Minor manual updates (#1622)
 
+Fixed
+-----
+
+- **Samplesheets**
+    - Cell width estimation for simple links and contact columns (#1621)
+
 
 v0.13.1 (2023-03-31)
 ====================
