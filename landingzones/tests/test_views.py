@@ -111,6 +111,7 @@ class TestProjectZonesView(TestViewsBase):
         self.assertEqual(response.context['zones_own'].count(), 1)
         self.assertEqual(response.context['zones_other'].count(), 0)
         self.assertEqual(response.context['zones_own'][0], self.landing_zone)
+        self.assertEqual(response.context['zone_access_disabled'], False)
 
     def test_render_contrib(self):
         """Test rendering of project zones view as project contributor"""
@@ -126,6 +127,7 @@ class TestProjectZonesView(TestViewsBase):
         # This user should have no zones
         self.assertEqual(response.context['zones_own'].count(), 0)
         self.assertNotIn('zones_other', response.context)
+        self.assertEqual(response.context['zone_access_disabled'], False)
 
 
 class TestLandingZoneCreateView(TestViewsBase):

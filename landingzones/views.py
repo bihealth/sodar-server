@@ -398,6 +398,11 @@ class ProjectZoneView(
             )
         # Status query interval
         context['zone_status_interval'] = settings.LANDINGZONES_STATUS_INTERVAL
+        # Disable status
+        context['zone_access_disabled'] = (
+            settings.LANDINGZONES_DISABLE_FOR_USERS
+            and not self.request.user.is_superuser
+        )
         return context
 
 

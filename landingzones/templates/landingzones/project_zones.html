@@ -89,11 +89,10 @@
 {% has_perm 'landingzones.update_zone_own' request.user project as can_update_zone_own %}
 {% has_perm 'landingzones.update_zone_all' request.user project as can_update_zone_all %}
 {% has_perm 'landingzones.create_zone' request.user project as can_create_zone %}
-{% get_django_setting 'LANDINGZONES_DISABLE_FOR_USERS' as disable_for_users %}
 
 <div class="row sodar-subtitle-container bg-white sticky-top">
   <h3><i class="iconify" data-icon="mdi:briefcase-upload"></i> Landing Zones</h3>
-  {% if not disable_for_users and investigation and can_create_zone %}
+  {% if not zone_access_disabled and investigation and can_create_zone %}
     <div class="ml-auto">
       <a href="{% url 'landingzones:create' project=project.sodar_uuid %}"
          class="btn btn-primary"
@@ -113,7 +112,7 @@
     </div>
   {% endif %}
 
-  {% if disable_for_users %}
+  {% if zone_access_disabled %}
     <div class="alert alert-info" role="alert" id="sodar-lz-alert-disable">
       Landing zone operations are disabled for non-superusers on this site.
     </div>
@@ -276,6 +275,5 @@
             showCancelLink: true
         });
     }
-
   </script>
 {% endblock javascript %}

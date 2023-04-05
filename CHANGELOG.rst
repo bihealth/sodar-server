@@ -18,6 +18,8 @@ Changed
 Fixed
 -----
 
+- **Landingzones**
+    - Zone list content with user access disabled not displayed for superuser (#1623)
 - **Samplesheets**
     - Cell width estimation for simple links and contact columns (#1621)
 
