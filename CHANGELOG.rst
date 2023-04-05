@@ -20,6 +20,7 @@ Fixed
 
 - **Landingzones**
     - Zone list content with user access disabled not displayed for superuser (#1623)
+    - Incorrect "saving version failed" message in ``sheet_edit_finish`` (#1628)
 - **Samplesheets**
     - Cell width estimation for simple links and contact columns (#1621)
 

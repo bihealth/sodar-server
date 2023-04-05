@@ -1587,13 +1587,9 @@ class SheetEditFinishAjaxView(SheetVersionMixin, SODARBaseProjectAjaxView):
 
         if timeline:
             tl_status = 'FAILED' if export_ex else 'OK'
-            tl_desc = 'finish editing sheets '
-            if not updated:
-                tl_desc += '(no updates)'
-            elif not export_ex and isa_version:
-                tl_desc += 'and save version as {isatab}'
-            else:
-                tl_desc += '(saving version failed)'
+            tl_desc = 'finish editing sheets'
+            if not export_ex and isa_version:
+                tl_desc += ' and save version as {isatab}'
             tl_event = timeline.add_event(
                 project=project,
                 app_name=APP_NAME,
