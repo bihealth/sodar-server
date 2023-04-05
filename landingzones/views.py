@@ -365,18 +365,10 @@ class ProjectZoneView(
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-        # Add flag for taskflow
-        context['taskflow_enabled'] = (
-            True if get_backend_api('taskflow') else False
-        )
         # iRODS backend
         context['irods_backend_enabled'] = (
             True if get_backend_api('omics_irods') else False
         )
-        # iRODS WebDAV
-        context['irods_webdav_enabled'] = int(settings.IRODS_WEBDAV_ENABLED)
-        if settings.IRODS_WEBDAV_ENABLED:
-            context['irods_webdav_url'] = settings.IRODS_WEBDAV_URL.rstrip('/')
         # User zones
         context['zones_own'] = (
             LandingZone.objects.filter(

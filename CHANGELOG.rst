@@ -23,6 +23,12 @@ Fixed
 - **Samplesheets**
     - Cell width estimation for simple links and contact columns (#1621)
 
+Removed
+-------
+
+- **Landingzones**
+    - Unused ``ProjectZoneView`` context items (#1624)
+
 
 v0.13.1 (2023-03-31)
 ====================
