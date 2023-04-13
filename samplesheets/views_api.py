@@ -421,3 +421,51 @@ class RemoteSheetGetAPIView(APIView):
             except Exception as ex:
                 return Response(str(ex), status=500)
         return Response(ret, status=200)
+
+
+class ProjectIrodsFileListAPIView(SODARAPIBaseMixin, APIView):
+    """
+    Return a list of files in the project iRODS collection.
+
+    **URL:** ``/samplesheets/api/project/irods/files/``
+
+    **Methods:** ``GET``
+
+    **Parameters:**
+
+    - ``project``: SODAR project UUID (string)
+
+    **Returns:**
+
+    - ``files``: List of file names (string)
+    """
+
+    http_method_names = ['get']
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, *args, **kwargs):
+        if not settings.ENABLE_IRODS:
+            raise APIException('iRODS not enabled')
+        irods_backend = get_backend_api('omics_irods')
+        if not irods_backend:
+            raise APIException('iRODS backend not enabled')
+        project = self.get_project(request, lookup='project')
+        if not project:
+            raise ParseError('Invalid project')
+        try:
+            with irods_backend.get_session() as irods:
+                coll = irods_backend.get_collection(
+                    irods, settings.IRODS_SAMPLE_COLL
+                )
+                files = [
+                    f.name
+                    for f in irods_backend.get_data_objects(
+                        irods, coll, recursive=True
+                    )
+                ]
+        except Exception as ex:
+            return Response(
+                {'detail': 'Unable to connect to iRODS: {}'.format(ex)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        return Response({'files': files}, status=status.HTTP_200_OK)
