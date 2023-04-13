@@ -97,6 +97,7 @@ Once generated, ensure your ``.crt`` and ``.key`` files are placed under the
 
     $ cp yourcert.crt config/traefik/tls/server.crt
     $ cp yourcert.key config/traefik/tls/server.key
+    $ chmod +r config/traefik/tls/server.key
 
 To generate the ``dhparams.pem`` file for Diffie-Hellman key exchange, you can
 use OpenSSL as demonstrated below. Ensure the file is placed under
