@@ -98,6 +98,7 @@ flamegraph.pl
 
 # Celery
 celerybeat-schedule
+celerybeat-schedule.db
 celerybeat.pid
 
 # iRODS files
