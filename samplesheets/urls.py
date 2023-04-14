@@ -193,6 +193,11 @@ urls_api = [
         view=samplesheets.views_api.RemoteSheetGetAPIView.as_view(),
         name='api_remote_get',
     ),
+    url(
+        regex=r'^api/irods/files/(?P<project>[0-9a-f-]+)',
+        view=samplesheets.views_api.ProjectIrodsFileListAPIView.as_view(),
+        name='api_irods_files',
+    ),
 ]
 
 # Ajax API views

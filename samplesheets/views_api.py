@@ -1,6 +1,7 @@
 """REST API views for the samplesheets app"""
 
 import logging
+import os
 import re
 
 from irods.exception import CAT_NO_ROWS_FOUND
@@ -423,25 +424,27 @@ class RemoteSheetGetAPIView(APIView):
         return Response(ret, status=200)
 
 
-class ProjectIrodsFileListAPIView(SODARAPIBaseMixin, APIView):
+class ProjectIrodsFileListAPIView(
+    SODARAPIBaseProjectMixin, SODARAPIBaseMixin, APIView
+):
     """
-    Return a list of files in the project iRODS collection.
+    Return a list of files in the project's sample data repository.
 
-    **URL:** ``/samplesheets/api/project/irods/files/``
+    **URL:** ``/samplesheets/api/irods/files/<project>``
 
     **Methods:** ``GET``
 
     **Parameters:**
 
-    - ``project``: SODAR project UUID (string)
+    - ``path``: Path to list (string, optional)
 
     **Returns:**
 
-    - ``files``: List of file names (string)
+    - ``irods_data``: List of iRODS data objects
     """
 
     http_method_names = ['get']
-    permission_classes = (IsAuthenticated,)
+    permission_required = 'samplesheets.view_sheet'
 
     def get(self, request, *args, **kwargs):
         if not settings.ENABLE_IRODS:
@@ -449,23 +452,21 @@ class ProjectIrodsFileListAPIView(SODARAPIBaseMixin, APIView):
         irods_backend = get_backend_api('omics_irods')
         if not irods_backend:
             raise APIException('iRODS backend not enabled')
-        project = self.get_project(request, lookup='project')
-        if not project:
-            raise ParseError('Invalid project')
+        project = self.get_project(request=request, kwargs=kwargs)
+        self.check_object_permissions(request, project)
+        path = request.query_params.get('path')
+        if not path:
+            path = irods_backend.get_sample_path(project)
+        else:
+            path = os.path.join(irods_backend.get_sample_path(project), path)
         try:
             with irods_backend.get_session() as irods:
-                coll = irods_backend.get_collection(
-                    irods, settings.IRODS_SAMPLE_COLL
+                irods_data = irods_backend.get_objects(
+                    irods, path, include_colls=True
                 )
-                files = [
-                    f.name
-                    for f in irods_backend.get_data_objects(
-                        irods, coll, recursive=True
-                    )
-                ]
         except Exception as ex:
             return Response(
                 {'detail': 'Unable to connect to iRODS: {}'.format(ex)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-        return Response({'files': files}, status=status.HTTP_200_OK)
+        return Response({'irods_data': irods_data}, status=status.HTTP_200_OK)
