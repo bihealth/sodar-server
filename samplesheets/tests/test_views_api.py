@@ -17,7 +17,11 @@ from sodarcache.models import JSONCacheItem
 
 # Landingzones dependency
 from landingzones.models import LandingZone
-from landingzones.tests.test_models import LandingZoneMixin
+from landingzones.tests.test_models import (
+    LandingZoneMixin,
+    ZONE_TITLE,
+    ZONE_DESC,
+)
 
 from samplesheets.io import SampleSheetIO
 from samplesheets.models import Investigation, Assay, GenericMaterial, ISATab
@@ -684,3 +688,50 @@ class TestRemoteSheetGetAPIView(
         expected = sheet_io.export_isa(self.investigation)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data, expected)
+
+
+class TestProjectIrodsFileListAPIView(TestSampleSheetAPIBase, LandingZoneMixin):
+    """Tests for ProjectIrodsFileListAPIView"""
+
+    def setUp(self):
+        super().setUp()
+        # Import investigation
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+
+        # Create LandingZone
+        self.landing_zone = self.make_landing_zone(
+            title=ZONE_TITLE,
+            project=self.project,
+            user=self.user,
+            assay=self.assay,
+            description=ZONE_DESC,
+            configuration=None,
+            config_data={},
+        )
+
+    def test_get_no_collection(self):
+        """Test GET request in ProjectIrodsFileListAPIView without collection"""
+        url = reverse(
+            'samplesheets:api_irods_files',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        with self.login(self.user):
+            response = self.client.get(url)
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(
+            response.data['detail'],
+            'Unable to connect to iRODS: iRODS collection not found',
+        )
+
+    # def test_get(self):
+    #     """Test GET request in ProjectIrodsFileListAPIView"""
+    #     url = reverse(
+    #         'samplesheets:api_irods_files',
+    #         kwargs={'project': self.project.sodar_uuid},
+    #     )
+    #     with self.login(self.user):
+    #         response = self.client.get(url)
+    #     self.assertEqual(response.status_code, 200)
+    #     self.assertEqual(response.data, [])

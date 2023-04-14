@@ -430,13 +430,13 @@ class ProjectIrodsFileListAPIView(
     """
     Return a list of files in the project's sample data repository.
 
-    **URL:** ``/samplesheets/api/irods/files/<project>``
+    **URL:** ``/samplesheets/api/irods/files/{Project.sodar_uuid}``
 
     **Methods:** ``GET``
 
     **Parameters:**
 
-    - ``path``: Path to list (string, optional)
+    - ``project``: Project SODAR UUID
 
     **Returns:**
 
@@ -461,9 +461,7 @@ class ProjectIrodsFileListAPIView(
             path = os.path.join(irods_backend.get_sample_path(project), path)
         try:
             with irods_backend.get_session() as irods:
-                irods_data = irods_backend.get_objects(
-                    irods, path, include_colls=True
-                )
+                irods_data = irods_backend.get_objects(irods, path)
         except Exception as ex:
             return Response(
                 {'detail': 'Unable to connect to iRODS: {}'.format(ex)},
