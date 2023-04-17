@@ -1,7 +1,6 @@
 """REST API views for the samplesheets app"""
 
 import logging
-import os
 import re
 
 from irods.exception import CAT_NO_ROWS_FOUND
@@ -424,9 +423,7 @@ class RemoteSheetGetAPIView(APIView):
         return Response(ret, status=200)
 
 
-class ProjectIrodsFileListAPIView(
-    SODARAPIBaseProjectMixin, SODARAPIBaseMixin, APIView
-):
+class ProjectIrodsFileListAPIView(SODARAPIBaseProjectMixin, APIView):
     """
     Return a list of files in the project's sample data repository.
 
@@ -450,21 +447,14 @@ class ProjectIrodsFileListAPIView(
         if not settings.ENABLE_IRODS:
             raise APIException('iRODS not enabled')
         irods_backend = get_backend_api('omics_irods')
-        if not irods_backend:
-            raise APIException('iRODS backend not enabled')
-        project = self.get_project(request=request, kwargs=kwargs)
-        self.check_object_permissions(request, project)
-        path = request.query_params.get('path')
-        if not path:
-            path = irods_backend.get_sample_path(project)
-        else:
-            path = os.path.join(irods_backend.get_sample_path(project), path)
+        project = self.get_project()
+        path = irods_backend.get_sample_path(project)
         try:
             with irods_backend.get_session() as irods:
                 irods_data = irods_backend.get_objects(irods, path)
         except Exception as ex:
             return Response(
-                {'detail': 'Unable to connect to iRODS: {}'.format(ex)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                {'detail': 'Exception queried iRODS objects: {}'.format(ex)},
+                status=status.HTTP_404_NOT_FOUND,
             )
         return Response(irods_data, status=status.HTTP_200_OK)
