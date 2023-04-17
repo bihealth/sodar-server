@@ -21,6 +21,8 @@ API Views
 
 .. autoclass:: SampleDataFileExistsAPIView
 
+.. autoclass:: ProjectIrodsFileListAPIView
+
 
 Versioning
 ==========
