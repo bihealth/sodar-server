@@ -467,4 +467,4 @@ class ProjectIrodsFileListAPIView(
                 {'detail': 'Unable to connect to iRODS: {}'.format(ex)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-        return Response({'irods_data': irods_data}, status=status.HTTP_200_OK)
+        return Response(irods_data, status=status.HTTP_200_OK)

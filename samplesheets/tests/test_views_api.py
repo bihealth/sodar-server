@@ -19,8 +19,6 @@ from sodarcache.models import JSONCacheItem
 from landingzones.models import LandingZone
 from landingzones.tests.test_models import (
     LandingZoneMixin,
-    ZONE_TITLE,
-    ZONE_DESC,
 )
 
 from samplesheets.io import SampleSheetIO
@@ -43,7 +41,12 @@ from samplesheets.tests.test_views import (
     REMOTE_SITE_DESC,
     REMOTE_SITE_SECRET,
 )
+from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 from samplesheets.views import SheetImportMixin
+
+from taskflowbackend.tests.base import (
+    TaskflowAPIProjectTestMixin,
+)
 
 
 app_settings = AppSettingAPI()
@@ -53,6 +56,8 @@ table_builder = SampleSheetTableBuilder()
 
 # SODAR constants
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
+PROJECT_TYPE_CATEGORY = SODAR_CONSTANTS['PROJECT_TYPE_CATEGORY']
+PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
 
 # Local constants
 APP_NAME = 'samplesheets'
@@ -690,26 +695,32 @@ class TestRemoteSheetGetAPIView(
         self.assertEqual(response.data, expected)
 
 
-class TestProjectIrodsFileListAPIView(TestSampleSheetAPIBase, LandingZoneMixin):
+class TestProjectIrodsFileListAPIView(
+    TestSampleSheetAPIBase,
+    TaskflowAPIProjectTestMixin,
+    SampleSheetTaskflowMixin,
+):
     """Tests for ProjectIrodsFileListAPIView"""
 
     def setUp(self):
         super().setUp()
+
+        self.taskflow = get_backend_api('taskflow', force=True)
+        self.irods_backend = get_backend_api('omics_irods')
+        self.irods = self.irods_backend.get_session_obj()
+
+        # Make project with owner in Taskflow and Django
+        self.project, self.owner_as = self.make_project_taskflow(
+            title='TaskProject',
+            type=PROJECT_TYPE_PROJECT,
+            parent=self.category,
+            owner=self.user,
+            description='description',
+        )
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-
-        # Create LandingZone
-        self.landing_zone = self.make_landing_zone(
-            title=ZONE_TITLE,
-            project=self.project,
-            user=self.user,
-            assay=self.assay,
-            description=ZONE_DESC,
-            configuration=None,
-            config_data={},
-        )
 
     def test_get_no_collection(self):
         """Test GET request in ProjectIrodsFileListAPIView without collection"""
@@ -725,13 +736,15 @@ class TestProjectIrodsFileListAPIView(TestSampleSheetAPIBase, LandingZoneMixin):
             'Unable to connect to iRODS: iRODS collection not found',
         )
 
-    # def test_get(self):
-    #     """Test GET request in ProjectIrodsFileListAPIView"""
-    #     url = reverse(
-    #         'samplesheets:api_irods_files',
-    #         kwargs={'project': self.project.sodar_uuid},
-    #     )
-    #     with self.login(self.user):
-    #         response = self.client.get(url)
-    #     self.assertEqual(response.status_code, 200)
-    #     self.assertEqual(response.data, [])
+    def test_get(self):
+        """Test GET request in ProjectIrodsFileListAPIView"""
+        # Set up iRODS collections
+        self.make_irods_colls(self.investigation)
+        url = reverse(
+            'samplesheets:api_irods_files',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        with self.login(self.user):
+            response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['irods_data'], [])
