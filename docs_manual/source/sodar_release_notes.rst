@@ -8,6 +8,12 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v0.14.0 (WIP)
+=============
+
+TODO
+
+
 v0.13.2 (2023-04-18)
 ====================
 

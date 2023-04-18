@@ -5,6 +5,12 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+Unreleased
+==========
+
+TODO
+
+
 v0.13.2 (2023-04-18)
 ====================
 
