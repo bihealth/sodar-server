@@ -36,6 +36,7 @@ logger = logging.getLogger(__name__)
 
 # SODAR constants
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
+
 # Local constants
 ACCEPTED_PATH_TYPES = [
     'Assay',
@@ -53,6 +54,9 @@ ENV_INT_PARAMS = [
     'irods_port',
 ]
 USER_GROUP_PREFIX = 'omics_project_'
+PATH_PARENT_SUBSTRING = '/..'
+ERROR_PATH_PARENT = 'Use of parent not allowed in path'
+ERROR_PATH_UNSET = 'Path is not set'
 
 
 class IrodsAPI:
@@ -131,21 +135,6 @@ class IrodsAPI:
         )
 
     @classmethod
-    def _sanitize_coll_path(cls, path):
-        """
-        Return sanitized version of iRODS collection path.
-
-        :param path: iRODS collection path (string)
-        :return: String
-        """
-        if path:
-            if path[0] != '/':
-                path = '/' + path
-            if path[-1] == '/':
-                path = path[:-1]
-        return path
-
-    @classmethod
     def _send_request(cls, irods, api_id, *args):
         """
         Temporary function for sending a raw API request using
@@ -197,6 +186,25 @@ class IrodsAPI:
             if k in ENV_INT_PARAMS:
                 env[k] = int(env[k])
         return env
+
+    @classmethod
+    def sanitize_path(cls, path):
+        """
+        Validate and sanitize iRODS path.
+
+        :param path: iRODS collection or data object path (string)
+        :raise: ValueError if iRODS path is invalid or unacceptable
+        :return: Sanitized iRODS path (string)
+        """
+        if not path:
+            raise ValueError(ERROR_PATH_UNSET)
+        if path[0] != '/':
+            path = '/' + path
+        if PATH_PARENT_SUBSTRING in path:
+            raise ValueError(ERROR_PATH_PARENT)
+        if path[-1] == '/':
+            path = path[:-1]
+        return path
 
     @classmethod
     def get_sub_path(cls, obj, landing_zone=False, include_parent=True):
@@ -368,7 +376,7 @@ class IrodsAPI:
             raise ValueError(
                 'Invalid argument for obj_type "{}"'.format(obj_type)
             )
-        s = re.search(path_regex[obj_type], cls._sanitize_coll_path(path))
+        s = re.search(path_regex[obj_type], cls.sanitize_path(path))
         if s:
             return s.group(1)
 
@@ -423,7 +431,7 @@ class IrodsAPI:
         rev_url = reverse('irodsbackend:{}'.format(view), kwargs=url_kwargs)
 
         if method == 'GET':
-            query_string = {'path': cls._sanitize_coll_path(path)}
+            query_string = {'path': cls.sanitize_path(path)}
             if view == 'list':
                 query_string['md5'] = int(md5)
                 query_string['colls'] = int(colls)
@@ -489,7 +497,7 @@ class IrodsAPI:
         :return: Dict
         """
         try:
-            coll = irods.collections.get(self._sanitize_coll_path(path))
+            coll = irods.collections.get(self.sanitize_path(path))
         except CollectionDoesNotExist:
             raise FileNotFoundError('iRODS collection not found')
 
@@ -655,7 +663,7 @@ class IrodsAPI:
         :raise: FileNotFoundError if collection is not found
         """
         try:
-            coll = irods.collections.get(self._sanitize_coll_path(path))
+            coll = irods.collections.get(self.sanitize_path(path))
         except CollectionDoesNotExist:
             raise FileNotFoundError('iRODS collection not found')
 
@@ -713,7 +721,7 @@ class IrodsAPI:
         :return: List
         """
         try:
-            coll = irods.collections.get(cls._sanitize_coll_path(path))
+            coll = irods.collections.get(cls.sanitize_path(path))
             return coll.subcollections
         except CollectionDoesNotExist:
             return []
@@ -748,7 +756,7 @@ class IrodsAPI:
         :return: irods client Ticket object
         """
         ticket = Ticket(irods, ticket=ticket_str)
-        ticket.issue(mode, self._sanitize_coll_path(path))
+        ticket.issue(mode, self.sanitize_path(path))
         # Remove default file writing limitation
         self._send_request(
             irods,

@@ -15,7 +15,12 @@ from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 # Landingzones dependency
 from landingzones.tests.test_models import LandingZoneMixin
 
-from irodsbackend.api import IrodsAPI, USER_GROUP_PREFIX
+from irodsbackend.api import (
+    IrodsAPI,
+    USER_GROUP_PREFIX,
+    ERROR_PATH_PARENT,
+    ERROR_PATH_UNSET,
+)
 
 
 # Global constants
@@ -110,6 +115,26 @@ class TestIrodsbackendAPI(
         self.assertEqual(env['irods_encryption_num_hash_rounds'], 16)
         self.assertEqual(env['irods_encryption_salt_size'], 8)
         self.assertEqual(env['irods_port'], 1247)
+
+    def test_sanitize_path(self):
+        """Test sanitize_path()"""
+        self.assertEqual(
+            self.irods_backend.sanitize_path('/sodarZone/projects'),
+            '/sodarZone/projects',
+        )
+        self.assertEqual(
+            self.irods_backend.sanitize_path('sodarZone/projects/'),
+            '/sodarZone/projects',
+        )
+        with self.assertRaises(ValueError) as ex:
+            self.irods_backend.sanitize_path('')
+            self.assertEqual(ex, ERROR_PATH_UNSET)
+        with self.assertRaises(ValueError) as ex:
+            self.irods_backend.sanitize_path('/sodarZone/projects/..')
+            self.assertEqual(ex, ERROR_PATH_PARENT)
+        with self.assertRaises(ValueError) as ex:
+            self.irods_backend.sanitize_path('../home')
+            self.assertEqual(ex, ERROR_PATH_PARENT)
 
     def test_get_path_project(self):
         """Test get_irods_path() with a Project object"""

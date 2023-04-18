@@ -14,6 +14,11 @@ Changed
 - **General**
     - Upgrade Python dependencies (#1620)
     - Minor manual updates (#1622)
+- **Irodsbackend**
+    - Refactor ``IrodsAPI._sanitize_coll_path()`` into ``sanitize_path()`` (#1632)
+    - Handle unwanted parent strings in iRODS paths (#1632)
+- **Samplesheets**
+    - Refactor iRODS access ticket tests
 
 Fixed
 -----

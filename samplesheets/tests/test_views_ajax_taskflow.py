@@ -518,42 +518,10 @@ class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
 class TestIrodsObjectListAjaxView(TestIrodsRequestViewsBase):
     """Tests for IrodsObjectListAjaxView"""
 
-    def test_get_coll_obj_with_delete_request(self):
-        """Test listing collection with data object with delete request"""
-        # Create request
-        with self.login(self.user_contrib):
-            self.client.post(
-                reverse(
-                    'samplesheets:ajax_irods_request_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                data={'path': self.path},
-            )
-
-        self.assertEqual(IrodsDataRequest.objects.count(), 1)
-
-        with self.login(self.user_contrib):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:ajax_irods_objects',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                data={'path': self.assay_path},
-            )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()['irods_data'][0]['name'], 'test1')
-        self.assertEqual(response.json()['irods_data'][0]['path'], self.path)
-        self.assertEqual(
-            response.json()['irods_data'][0]['irods_request_status'],
-            'ACTIVE',
-        )
-
     def test_get_empty_coll(self):
         """Test GET request for listing an empty collection in iRODS"""
         self.irods.data_objects.get(self.path).unlink(force=True)
         self.irods.data_objects.get(self.path_md5).unlink(force=True)
-
         with self.login(self.user):
             response = self.client.get(
                 reverse(
@@ -582,6 +550,18 @@ class TestIrodsObjectListAjaxView(TestIrodsRequestViewsBase):
         self.assertEqual(self.file_obj.name, list_obj['name'])
         self.assertEqual(self.file_obj.path, list_obj['path'])
         self.assertEqual(self.file_obj.size, 0)
+
+    def test_get_invalid_path(self):
+        """Test GET request with invalid path"""
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:ajax_irods_objects',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                data={'path': self.assay_path + '/..'},
+            )
+        self.assertEqual(response.status_code, 400)
 
     def test_get_coll_not_found(self):
         """Test GET request for listing a collection which doesn't exist"""
@@ -627,3 +607,33 @@ class TestIrodsObjectListAjaxView(TestIrodsRequestViewsBase):
                 data={'path': self.assay_path},
             )
         self.assertEqual(response.status_code, 403)
+
+    def test_get_coll_obj_delete_request(self):
+        """Test listing collection with data object and delete request"""
+        # Create request
+        with self.login(self.user_contrib):
+            self.client.post(
+                reverse(
+                    'samplesheets:ajax_irods_request_create',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                data={'path': self.path},
+            )
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+
+        with self.login(self.user_contrib):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:ajax_irods_objects',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                data={'path': self.assay_path},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['irods_data'][0]['name'], 'test1')
+        self.assertEqual(response.json()['irods_data'][0]['path'], self.path)
+        self.assertEqual(
+            response.json()['irods_data'][0]['irods_request_status'],
+            'ACTIVE',
+        )

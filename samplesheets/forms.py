@@ -111,7 +111,6 @@ class SheetImportForm(forms.Form):
                     'file_upload', 'Study file not found among uploaded files'
                 )
                 return self.cleaned_data
-
         return self.cleaned_data
 
     def save(self, *args, **kwargs):
@@ -201,7 +200,6 @@ class SheetTemplateCreateForm(forms.Form):
         self.cleaned_data['i_dir_name'] = clean_sheet_dir_name(
             self.cleaned_data['i_dir_name']
         )
-
         # Validate JSON
         for k in self.json_fields:
             if not isinstance(self.cleaned_data[k], dict):
@@ -209,7 +207,6 @@ class SheetTemplateCreateForm(forms.Form):
                     json.loads(self.cleaned_data[k])
                 except Exception as ex:
                     self.add_error(k, 'Invalid JSON: {}'.format(ex))
-
         return self.cleaned_data
 
     def save(self):
@@ -312,32 +309,38 @@ class IrodsAccessTicketForm(forms.ModelForm):
         )
 
     def clean(self):
-        cleaned_data = super().clean()
-
+        irods_backend = get_backend_api('omics_irods')
         # Check if expiry date is in the past
         if (
-            cleaned_data.get('date_expires')
-            and cleaned_data.get('date_expires') <= timezone.now()
+            self.cleaned_data.get('date_expires')
+            and self.cleaned_data.get('date_expires') <= timezone.now()
         ):
             self.add_error(
-                'date_expires', 'Expiry date should not lie in the past'
+                'date_expires', 'Expiry date in the past not allowed'
             )
-
+        # Check path validity
+        try:
+            self.cleaned_data['path'] = irods_backend.sanitize_path(
+                self.cleaned_data['path']
+            )
+        except Exception as ex:
+            self.add_error('path', 'Invalid iRODS path: {}'.format(ex))
+            return self.cleaned_data
+        # Check if path corresponds to a track hub path
         match = re.search(
             r'/assay_([0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12})/',
-            cleaned_data['path'],
+            self.cleaned_data['path'],
         )
         if not match:
-            self.add_error('path', 'No valid TrackHubs path')
+            self.add_error('path', 'Not a valid TrackHubs path')
         else:
             try:
-                cleaned_data['assay'] = Assay.objects.get(
+                self.cleaned_data['assay'] = Assay.objects.get(
                     sodar_uuid=match.group(1)
                 )
             except ObjectDoesNotExist:
                 self.add_error('path', 'Assay not found')
-
-        return cleaned_data
+        return self.cleaned_data
 
 
 class IrodsRequestForm(forms.ModelForm):

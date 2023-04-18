@@ -89,15 +89,19 @@ class BaseIrodsAjaxView(SODARBaseProjectAjaxView):
     def dispatch(self, request, *args, **kwargs):
         """Perform required checks before processing a request"""
         self.project = self.get_project()
-        path = request.GET.get('path') if request.method == 'GET' else None
-        if request.method == 'GET' and not path:
-            return JsonResponse(self._get_detail('Path not set'), status=400)
         try:
             self.irods_backend = get_backend_api('omics_irods')
         except Exception as ex:
             return JsonResponse(self._get_detail(ex), status=500)
         if not self.irods_backend:
             return JsonResponse(self._get_detail(ERROR_NO_BACKEND), status=500)
+
+        path = request.GET.get('path') if request.method == 'GET' else None
+        if path:
+            try:
+                path = self.irods_backend.sanitize_path(path)
+            except Exception as ex:
+                return JsonResponse(self._get_detail(str(ex)), status=400)
 
         # Collection checks
         # NOTE: If supplying multiple paths via POST, implement these in request
