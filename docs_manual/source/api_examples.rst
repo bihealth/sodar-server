@@ -43,7 +43,7 @@ the SODAR API:
     # Use core_headers for project management API endpoints
     core_headers = {**auth_header, 'Accept': 'application/vnd.bihealth.sodar-core+json; version=0.12.0'}
     # Use sodar_headers for sample sheet and landing zone API endpoints
-    sodar_headers = {**auth_header, 'Accept': 'application/vnd.bihealth.sodar+json; version=0.13.1'}
+    sodar_headers = {**auth_header, 'Accept': 'application/vnd.bihealth.sodar+json; version=0.13.2'}
 
 .. note::
 
