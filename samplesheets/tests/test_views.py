@@ -1248,7 +1248,7 @@ class TestSheetVersionDeleteBatchView(SampleSheetModelMixin, TestViewsBase):
             investigation_uuid=self.investigation.sodar_uuid
         )
         # Mock a second version
-        self.isatab2 = self._make_isatab(
+        self.isatab2 = self.make_isatab(
             project=self.project,
             data=self.isatab.data,
             investigation_uuid=self.investigation.sodar_uuid,

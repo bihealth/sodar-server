@@ -123,7 +123,7 @@ class SampleSheetModelMixin:
     """Helpers for samplesheets models creation"""
 
     @classmethod
-    def _make_investigation(
+    def make_investigation(
         cls,
         identifier,
         file_name,
@@ -167,7 +167,7 @@ class SampleSheetModelMixin:
         return obj
 
     @classmethod
-    def _make_study(
+    def make_study(
         cls,
         identifier,
         file_name,
@@ -202,7 +202,7 @@ class SampleSheetModelMixin:
         return obj
 
     @classmethod
-    def _make_protocol(
+    def make_protocol(
         cls,
         name,
         study,
@@ -235,7 +235,7 @@ class SampleSheetModelMixin:
         return obj
 
     @classmethod
-    def _make_assay(
+    def make_assay(
         cls,
         file_name,
         study,
@@ -264,7 +264,7 @@ class SampleSheetModelMixin:
         return obj
 
     @classmethod
-    def _make_material(
+    def make_material(
         cls,
         item_type,
         name,
@@ -301,7 +301,7 @@ class SampleSheetModelMixin:
         return obj
 
     @classmethod
-    def _make_process(
+    def make_process(
         cls,
         name,
         unique_name,
@@ -340,7 +340,7 @@ class SampleSheetModelMixin:
         return obj
 
     @classmethod
-    def _set_configuration(cls, investigation, config_name):
+    def set_configuration(cls, investigation, config_name):
         """Set the configuration for an investigation"""
         investigation.comments[CONFIG_LABEL_CREATE] = {
             'unit': None,
@@ -350,7 +350,7 @@ class SampleSheetModelMixin:
         return investigation
 
     @classmethod
-    def _make_isatab(
+    def make_isatab(
         cls,
         project,
         data,
@@ -378,8 +378,12 @@ class SampleSheetModelMixin:
         obj.save()
         return obj
 
+
+class IrodsAccessTicketMixin:
+    """Helpers for IrodsAccessTicket model creation"""
+
     @classmethod
-    def _make_irods_access_ticket(
+    def make_irods_access_ticket(
         cls,
         project,
         study,
@@ -430,7 +434,7 @@ class TestSampleSheetBase(
         )
 
         # Set up Investigation
-        self.investigation = self._make_investigation(
+        self.investigation = self.make_investigation(
             identifier=INV_IDENTIFIER,
             file_name=INV_FILE_NAME,
             project=self.project,
@@ -441,7 +445,7 @@ class TestSampleSheetBase(
         )
 
         # Set up Study
-        self.study = self._make_study(
+        self.study = self.make_study(
             identifier=STUDY_IDENTIFIER,
             file_name=STUDY_FILE_NAME,
             investigation=self.investigation,
@@ -451,7 +455,7 @@ class TestSampleSheetBase(
         )
 
         # Set up Assay
-        self.assay = self._make_assay(
+        self.assay = self.make_assay(
             file_name=ASSAY_FILE_NAME,
             study=self.study,
             tech_platform=ASSAY_TECH_PLATFORM,
@@ -576,7 +580,7 @@ class TestProtocol(TestSampleSheetBase):
         super().setUp()
 
         # Set up Protocol
-        self.protocol = self._make_protocol(
+        self.protocol = self.make_protocol(
             name=PROTOCOL_NAME,
             study=self.study,
             protocol_type=PROTOCOL_TYPE,
@@ -730,7 +734,7 @@ class TestSource(TestSampleSheetBase):
         super().setUp()
 
         # Set up SOURCE GenericMaterial
-        self.material = self._make_material(
+        self.material = self.make_material(
             item_type='SOURCE',
             name=SOURCE_NAME,
             unique_name=SOURCE_UNIQUE_NAME,
@@ -811,7 +815,7 @@ class TestSample(TestSampleSheetBase):
         super().setUp()
 
         # Set up SAMPLE GenericMaterial
-        self.material = self._make_material(
+        self.material = self.make_material(
             item_type='SAMPLE',
             name=SAMPLE_NAME,
             unique_name=SAMPLE_UNIQUE_NAME,
@@ -890,7 +894,7 @@ class TestMaterial(TestSampleSheetBase):
         super().setUp()
 
         # Set up MATERIAL GenericMaterial
-        self.material = self._make_material(
+        self.material = self.make_material(
             item_type='MATERIAL',
             name=MATERIAL_NAME,
             unique_name=MATERIAL_UNIQUE_NAME,
@@ -969,7 +973,7 @@ class TestDataFile(TestSampleSheetBase):
         super().setUp()
 
         # Set up DATA GenericMaterial
-        self.material = self._make_material(
+        self.material = self.make_material(
             item_type='DATA',
             name=DATA_NAME,
             unique_name=DATA_UNIQUE_NAME,
@@ -1048,7 +1052,7 @@ class TestGenericMaterialManager(TestSampleSheetBase):
         super().setUp()
 
         # Set up SOURCE GenericMaterial
-        self.source = self._make_material(
+        self.source = self.make_material(
             item_type='SOURCE',
             name=SOURCE_NAME,
             unique_name=SOURCE_UNIQUE_NAME,
@@ -1063,7 +1067,7 @@ class TestGenericMaterialManager(TestSampleSheetBase):
         )
 
         # Set up SAMPLE GenericMaterial
-        self.sample = self._make_material(
+        self.sample = self.make_material(
             item_type='SAMPLE',
             name=SAMPLE_NAME,
             unique_name=SAMPLE_UNIQUE_NAME,
@@ -1168,9 +1172,8 @@ class TestProcess(TestSampleSheetBase):
 
     def setUp(self):
         super().setUp()
-
         # Set up Protocol
-        self.protocol = self._make_protocol(
+        self.protocol = self.make_protocol(
             name=PROTOCOL_NAME,
             study=self.study,
             protocol_type=PROTOCOL_TYPE,
@@ -1181,9 +1184,8 @@ class TestProcess(TestSampleSheetBase):
             components=PROTOCOL_COMPONENTS,
             comments=DEFAULT_COMMENTS,
         )
-
         # Set up Process
-        self.process = self._make_process(
+        self.process = self.make_process(
             name=PROCESS_NAME,
             unique_name=PROCESS_UNIQUE_NAME,
             name_type=PROCESS_NAME_TYPE,
@@ -1260,7 +1262,7 @@ class TestISATab(TestSampleSheetBase):
 
     def setUp(self):
         super().setUp()
-        self.isatab = self._make_isatab(
+        self.isatab = self.make_isatab(
             project=self.project,
             data=ISATAB_DATA,
             investigation_uuid=self.investigation.sodar_uuid,
@@ -1347,20 +1349,20 @@ class TestISATab(TestSampleSheetBase):
         self.assertEqual(self.isatab.get_full_name(), expected)
 
 
-class TestIrodsAccessTicket(TestSampleSheetBase):
+class TestIrodsAccessTicket(IrodsAccessTicketMixin, TestSampleSheetBase):
     """Tests for the IrodsAccessTicket model"""
 
     def setUp(self):
         super().setUp()
         self.path = '/path/to/some/trackhub'
         self.label = 'Some Ticket'
-        self.ticket = 'abcdef'
+        self.ticket_str = 'abcdef'
         self.date_expires = None
-        self.irods_access_ticket = self._make_irods_access_ticket(
+        self.ticket = self.make_irods_access_ticket(
             project=self.project,
             study=self.study,
             assay=self.assay,
-            ticket=self.ticket,
+            ticket=self.ticket_str,
             path=self.path,
             label=self.label,
             user=self.user_owner,
@@ -1377,28 +1379,28 @@ class TestIrodsAccessTicket(TestSampleSheetBase):
     def test_initialization(self):
         """Test IrodsAccessTicket initialization"""
         expected = {
-            'id': self.irods_access_ticket.pk,
+            'id': self.ticket.pk,
             'project': self.project.pk,
             'study': self.study.pk,
             'assay': self.assay.pk,
             'label': self.label,
-            'ticket': self.ticket,
+            'ticket': self.ticket_str,
             'path': self.path,
             'user': self.user_owner.pk,
-            'sodar_uuid': self.irods_access_ticket.sodar_uuid,
+            'sodar_uuid': self.ticket.sodar_uuid,
             'date_expires': self.date_expires,
         }
-        self.assertEqual(model_to_dict(self.irods_access_ticket), expected)
+        self.assertEqual(model_to_dict(self.ticket), expected)
 
     def test__str__(self):
         """Test IrodsAccessTicket __str__()"""
         expected = '{} / {} / {} / {}'.format(
-            self.irods_access_ticket.project.title,
-            self.irods_access_ticket.assay.get_display_name(),
-            self.irods_access_ticket.get_track_hub_name(),
-            self.irods_access_ticket.get_label(),
+            self.ticket.project.title,
+            self.ticket.assay.get_display_name(),
+            self.ticket.get_track_hub_name(),
+            self.ticket.get_label(),
         )
-        self.assertEqual(str(self.irods_access_ticket), expected)
+        self.assertEqual(str(self.ticket), expected)
 
     def test__repr__(self):
         """Test IrodsAccessTicket __repr__()"""
@@ -1406,26 +1408,26 @@ class TestIrodsAccessTicket(TestSampleSheetBase):
             ', '.join(
                 repr(v)
                 for v in [
-                    self.irods_access_ticket.project.title,
-                    self.irods_access_ticket.assay.get_display_name(),
-                    self.irods_access_ticket.get_track_hub_name(),
-                    self.irods_access_ticket.get_label(),
+                    self.ticket.project.title,
+                    self.ticket.assay.get_display_name(),
+                    self.ticket.get_track_hub_name(),
+                    self.ticket.get_label(),
                 ]
             )
         )
-        self.assertEqual(repr(self.irods_access_ticket), expected)
+        self.assertEqual(repr(self.ticket), expected)
 
     def test_get_display_name_one_assay(self):
         """Test get_display_name()"""
         expected = '{} / {}'.format(
-            self.irods_access_ticket.get_track_hub_name(),
-            self.irods_access_ticket.get_label(),
+            self.ticket.get_track_hub_name(),
+            self.ticket.get_label(),
         )
-        self.assertEqual(self.irods_access_ticket.get_display_name(), expected)
+        self.assertEqual(self.ticket.get_display_name(), expected)
 
     def test_get_display_name_two_assays(self):
         """Test get_display_name()"""
-        self._make_assay(
+        self.make_assay(
             file_name=ASSAY2_FILE_NAME,
             study=self.study,
             tech_platform=ASSAY2_TECH_PLATFORM,
@@ -1435,11 +1437,11 @@ class TestIrodsAccessTicket(TestSampleSheetBase):
             comments=DEFAULT_COMMENTS,
         )
         expected = '{} / {} / {}'.format(
-            self.irods_access_ticket.assay.get_display_name(),
-            self.irods_access_ticket.get_track_hub_name(),
-            self.irods_access_ticket.get_label(),
+            self.ticket.assay.get_display_name(),
+            self.ticket.get_track_hub_name(),
+            self.ticket.get_label(),
         )
-        self.assertEqual(self.irods_access_ticket.get_display_name(), expected)
+        self.assertEqual(self.ticket.get_display_name(), expected)
 
     def test_get_webdav_link(self):
         """Test get_webdav_link()"""
@@ -1450,78 +1452,70 @@ class TestIrodsAccessTicket(TestSampleSheetBase):
             m.group(1)
             + settings.IRODS_WEBDAV_USER_ANON
             + ':'
-            + self.ticket
+            + self.ticket_str
             + '@'
             + url
             + self.path
         )
-        self.assertEqual(self.irods_access_ticket.get_webdav_link(), expected)
+        self.assertEqual(self.ticket.get_webdav_link(), expected)
 
     def test_is_active_no_expiry_date(self):
         """Test is_active()"""
-        self.irods_access_ticket.date_expires = None
-        self.irods_access_ticket.save()
-        self.assertTrue(self.irods_access_ticket.is_active())
+        self.ticket.date_expires = None
+        self.ticket.save()
+        self.assertTrue(self.ticket.is_active())
 
     def test_is_active_expired(self):
         """Test is_active()"""
-        self.irods_access_ticket.date_expires = (
-            self._get_expiry_today() - timedelta(days=1)
-        )
-        self.irods_access_ticket.save()
-        self.assertFalse(self.irods_access_ticket.is_active())
+        self.ticket.date_expires = self._get_expiry_today() - timedelta(days=1)
+        self.ticket.save()
+        self.assertFalse(self.ticket.is_active())
 
     def test_is_active_expires_today(self):
         """Test is_active()"""
         # Ugly timezone conversion
-        self.irods_access_ticket.date_expires = self._get_expiry_today()
-        self.irods_access_ticket.save()
-        self.assertFalse(self.irods_access_ticket.is_active())
+        self.ticket.date_expires = self._get_expiry_today()
+        self.ticket.save()
+        self.assertFalse(self.ticket.is_active())
 
     def test_is_active_expires_tomorrow(self):
         """Test is_active()"""
-        self.irods_access_ticket.date_expires = (
-            self._get_expiry_today() + timedelta(days=1)
-        )
-        self.irods_access_ticket.save()
-        self.assertTrue(self.irods_access_ticket.is_active())
+        self.ticket.date_expires = self._get_expiry_today() + timedelta(days=1)
+        self.ticket.save()
+        self.assertTrue(self.ticket.is_active())
 
     def test_get_track_hub_name(self):
         """Test get_track_hub_name()"""
         self.assertEqual(
-            self.irods_access_ticket.get_track_hub_name(),
+            self.ticket.get_track_hub_name(),
             self.path.split('/')[-1],
         )
 
     def test_get_label(self):
         """Test get_label()"""
-        self.assertEqual(self.irods_access_ticket.get_label(), self.label)
+        self.assertEqual(self.ticket.get_label(), self.label)
 
     def test_get_label_none(self):
         """Test get_label()"""
-        self.irods_access_ticket.label = None
-        self.irods_access_ticket.save()
+        self.ticket.label = None
+        self.ticket.save()
         self.assertEqual(
-            self.irods_access_ticket.get_label(),
-            self.irods_access_ticket.get_date_created(),
+            self.ticket.get_label(),
+            self.ticket.get_date_created(),
         )
 
     def test_get_date_created(self):
         """Test get_date_created()"""
         self.assertEqual(
-            self.irods_access_ticket.get_date_created(),
-            localtime(self.irods_access_ticket.date_created).strftime(
-                '%Y-%m-%d %H:%M'
-            ),
+            self.ticket.get_date_created(),
+            localtime(self.ticket.date_created).strftime('%Y-%m-%d %H:%M'),
         )
 
     def test_get_date_expires(self):
         """Test get_date_expires()"""
-        self.irods_access_ticket.date_expires = self._get_expiry_today()
-        self.irods_access_ticket.save()
+        self.ticket.date_expires = self._get_expiry_today()
+        self.ticket.save()
         self.assertEqual(
-            self.irods_access_ticket.get_date_expires(),
-            localtime(self.irods_access_ticket.date_expires).strftime(
-                '%Y-%m-%d'
-            ),
+            self.ticket.get_date_expires(),
+            localtime(self.ticket.date_expires).strftime('%Y-%m-%d'),
         )

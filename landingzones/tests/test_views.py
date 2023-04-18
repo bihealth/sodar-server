@@ -1,6 +1,7 @@
 """Tests for UI views in the landingzones app"""
 
 from django.conf import settings
+from django.test import override_settings
 from django.urls import reverse
 
 from test_plus.test import TestCase
@@ -60,10 +61,8 @@ class TestViewsBase(
 
         # Init superuser
         self.user = self.make_user('superuser')
-        self.user.is_staff = True
         self.user.is_superuser = True
         self.user.save()
-
         # Init project with owner
         self.project = self.make_project(
             'TestProject', PROJECT_TYPE_PROJECT, None
@@ -71,7 +70,6 @@ class TestViewsBase(
         self.owner_as = self.make_assignment(
             self.project, self.user, self.role_owner
         )
-
         # Init contributor user and assignment
         self.user_contrib = self.make_user('user_contrib')
         self.contrib_as = self.make_assignment(
@@ -82,7 +80,6 @@ class TestViewsBase(
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-
         # Create LandingZone
         self.landing_zone = self.make_landing_zone(
             title=ZONE_TITLE,
@@ -111,6 +108,7 @@ class TestProjectZonesView(TestViewsBase):
         self.assertEqual(response.context['zones_own'].count(), 1)
         self.assertEqual(response.context['zones_other'].count(), 0)
         self.assertEqual(response.context['zones_own'][0], self.landing_zone)
+        self.assertEqual(response.context['zone_access_disabled'], False)
 
     def test_render_contrib(self):
         """Test rendering of project zones view as project contributor"""
@@ -126,6 +124,31 @@ class TestProjectZonesView(TestViewsBase):
         # This user should have no zones
         self.assertEqual(response.context['zones_own'].count(), 0)
         self.assertNotIn('zones_other', response.context)
+        self.assertEqual(response.context['zone_access_disabled'], False)
+
+    @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
+    def test_render_disable(self):
+        """Test rendering with user access disabled"""
+        with self.login(self.user_contrib):
+            response = self.client.get(
+                reverse(
+                    'landingzones:list',
+                    kwargs={'project': self.project.sodar_uuid},
+                )
+            )
+        self.assertEqual(response.context['zone_access_disabled'], True)
+
+    @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
+    def test_render_disable_superuser(self):
+        """Test rendering with user access disabled as superuser"""
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'landingzones:list',
+                    kwargs={'project': self.project.sodar_uuid},
+                )
+            )
+        self.assertEqual(response.context['zone_access_disabled'], False)
 
 
 class TestLandingZoneCreateView(TestViewsBase):

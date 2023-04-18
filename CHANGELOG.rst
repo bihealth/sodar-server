@@ -5,6 +5,37 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+v0.13.2 (2023-04-18)
+====================
+
+Changed
+-------
+
+- **General**
+    - Upgrade Python dependencies (#1620)
+    - Minor manual updates (#1622)
+- **Irodsbackend**
+    - Refactor ``IrodsAPI._sanitize_coll_path()`` into ``sanitize_path()`` (#1632)
+    - Handle unwanted parent strings in iRODS paths (#1632)
+- **Samplesheets**
+    - Refactor iRODS access ticket tests
+
+Fixed
+-----
+
+- **Landingzones**
+    - Zone list content with user access disabled not displayed for superuser (#1623)
+    - Incorrect "saving version failed" message in ``sheet_edit_finish`` (#1628)
+- **Samplesheets**
+    - Cell width estimation for simple links and contact columns (#1621)
+
+Removed
+-------
+
+- **Landingzones**
+    - Unused ``ProjectZoneView`` context items (#1624)
+
+
 v0.13.1 (2023-03-31)
 ====================
 

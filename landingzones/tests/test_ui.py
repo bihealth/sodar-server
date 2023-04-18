@@ -126,6 +126,23 @@ class TestProjectZoneView(
         self._assert_element(By.ID, 'sodar-lz-zone-list-own', False)
         self._assert_element(By.ID, 'sodar-lz-zone-list-other', False)
 
+    @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
+    def test_render_disable_superuser(self):
+        """Test ProjectZoneView with LANDINGZONES_DISABLE_FOR_USERS as superuser"""
+        self._setup_investigation()
+        self.investigation.irods_status = True
+        self.investigation.save()
+        self.make_landing_zone(
+            'superuser_zone', self.project, self.superuser, self.assay
+        )
+        self.login_and_redirect(self.superuser, self.url)
+        self._assert_element(By.ID, 'sodar-lz-alert-disable', False)
+        self._assert_element(By.ID, 'sodar-lz-alert-no-sheets', False)
+        self._assert_element(By.ID, 'sodar-lz-alert-no-colls', False)
+        self._assert_element(By.ID, 'sodar-lz-alert-no-zones', False)
+        self._assert_element(By.ID, 'sodar-lz-zone-list-own', True)
+        self._assert_element(By.ID, 'sodar-lz-zone-list-other', False)
+
     def test_render_own_zone(self):
         """Test ProjectZoneView as contributor with own zone"""
         self._setup_investigation()

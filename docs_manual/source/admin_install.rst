@@ -117,6 +117,7 @@ certificates can be used for evaluation and testing.
 
     $ cp yourcert.crt config/traefik/tls/server.crt
     $ cp yourcert.key config/traefik/tls/server.key
+    $ chmod +r config/traefik/tls/server.key
 
 iRODS also excepts a ``dhparams.pem`` file for Diffie-Hellman key exchange. You
 can generate the file using OpenSSL as demonstrated below.

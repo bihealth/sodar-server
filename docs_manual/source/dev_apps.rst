@@ -30,6 +30,24 @@ apps need to be raised and implemented in the separate
 `SODAR Core repository <https://github.com/bihealth/sodar-core>`_ and introduced
 to SODAR via the ``django-sodar-core`` dependency.
 
+
+General App Development Guidelines
+==================================
+
+This documentation assumes you are familiar in the way Django apps are set up.
+General conventions apply unless otherwise noted.
+
+SODAR apps define *plugins*. In addition to the typical Django app setup, apps
+with plugins need to be registered into the database before they can be run on
+your development site. This can be done with the following command:
+
+.. code-block:: console
+
+    $ ./manage.py syncplugins
+
+The command is also run automatically together with ``./manage.py migrate``.
+
+
 Samplesheets
 ============
 

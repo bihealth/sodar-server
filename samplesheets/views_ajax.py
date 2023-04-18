@@ -1587,13 +1587,9 @@ class SheetEditFinishAjaxView(SheetVersionMixin, SODARBaseProjectAjaxView):
 
         if timeline:
             tl_status = 'FAILED' if export_ex else 'OK'
-            tl_desc = 'finish editing sheets '
-            if not updated:
-                tl_desc += '(no updates)'
-            elif not export_ex and isa_version:
-                tl_desc += 'and save version as {isatab}'
-            else:
-                tl_desc += '(saving version failed)'
+            tl_desc = 'finish editing sheets'
+            if not export_ex and isa_version:
+                tl_desc += ' and save version as {isatab}'
             tl_event = timeline.add_event(
                 project=project,
                 app_name=APP_NAME,
@@ -1819,8 +1815,9 @@ class IrodsRequestCreateAjaxView(
     permission_required = 'samplesheets.edit_sheet'
 
     def post(self, request, *args, **kwargs):
+        irods_backend = get_backend_api('omics_irods')
+        path = irods_backend.sanitize_path(request.data.get('path'))
         project = self.get_project()
-        path = request.data.get('path')
 
         # Create database object
         old_request = IrodsDataRequest.objects.filter(
@@ -1859,9 +1856,11 @@ class IrodsRequestDeleteAjaxView(
     permission_required = 'samplesheets.edit_sheet'
 
     def post(self, request, *args, **kwargs):
+        irods_backend = get_backend_api('omics_irods')
+        path = irods_backend.sanitize_path(request.data.get('path'))
         # Delete database object
         irods_request = IrodsDataRequest.objects.filter(
-            path=request.data.get('path'),
+            path=path,
             status__in=['ACTIVE', 'FAILED'],
         ).first()
         if not irods_request:
@@ -1927,7 +1926,6 @@ class SheetVersionCompareAjaxView(SODARBaseProjectAjaxView):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.project = None
-        self.path = None
 
     def get(self, request, *args, **kwargs):
         category = request.GET.get('category')

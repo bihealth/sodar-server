@@ -8,6 +8,15 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v0.13.2 (2023-04-18)
+====================
+
+Maintenance and bug fix release.
+
+- Improve iRODS path validation
+- Minor updates and bug fixes
+
+
 v0.13.1 (2023-03-31)
 ====================
 

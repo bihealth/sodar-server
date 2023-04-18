@@ -23,8 +23,10 @@ from samplesheets.models import Process, GenericMaterial
 from samplesheets.utils import get_node_obj
 
 
+# Regex for headers
 header_re = re.compile(r'^([a-zA-Z\s]+)[\[](.+)[\]]$')
-contact_re = re.compile(r'(.+?)\s?(?:[<|[])(.+?)(?:[>\]])')
+# Rexex for simple links and contacts
+link_re = re.compile(r'(.+?)\s?(?:[<|[])(.+?)(?:[>\]])')
 logger = logging.getLogger(__name__)
 app_settings = AppSettingAPI()
 
@@ -478,6 +480,12 @@ class SampleSheetTableBuilder:
                     value = '; '.join([x[0] for x in value])
                 elif isinstance(value[0], str):
                     value = '; '.join(value)
+            # Simple link or contact
+            else:
+                link_groups = re.findall(link_re, value)
+                if link_groups:
+                    value = link_groups[0][0]
+
             # Very unscientific and font-specific, don't try this at home
             nc = sum([value.count(c) for c in NARROW_CHARS])
             wc = sum([value.count(c) for c in WIDE_CHARS])
@@ -532,9 +540,9 @@ class SampleSheetTableBuilder:
                     [
                         (
                             _get_length(
-                                re.findall(contact_re, x[i]['value'])[0][0]
+                                re.findall(link_re, x[i]['value'])[0][0]
                             )
-                            if re.findall(contact_re, x[i].get('value'))
+                            if re.findall(link_re, x[i].get('value'))
                             else len(x[i].get('value') or '')
                         )
                         for x in self._table_data
