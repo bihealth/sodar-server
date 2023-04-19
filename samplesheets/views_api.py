@@ -432,10 +432,6 @@ class ProjectIrodsFileListAPIView(SODARAPIBaseProjectMixin, APIView):
 
     **Methods:** ``GET``
 
-    **Parameters:**
-
-    - ``project``: Project SODAR UUID
-
     **Returns:**
 
     - ``irods_data``: List of iRODS data objects

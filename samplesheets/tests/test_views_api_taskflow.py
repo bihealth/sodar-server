@@ -194,9 +194,7 @@ class TestSampleDataFileExistsAPIView(TestSampleSheetAPITaskflowBase):
         self.assertEqual(response.status_code, 400)
 
 
-class TestProjectIrodsFileListAPIView(
-    TestSampleSheetAPITaskflowBase,
-):
+class TestProjectIrodsFileListAPIView(TestSampleSheetAPITaskflowBase):
     """Tests for ProjectIrodsFileListAPIView"""
 
     def setUp(self):
