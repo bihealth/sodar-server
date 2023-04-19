@@ -88,17 +88,17 @@ if settings.DEBUG:
             view=default_views.bad_request,
             kwargs={'exception': Exception('Bad Request!')},
         ),
-        url(
+        path(
             route='403/',
             view=default_views.permission_denied,
             kwargs={'exception': Exception('Permission Denied')},
         ),
-        url(
+        path(
             route='404/',
             view=default_views.page_not_found,
             kwargs={'exception': Exception('Page not Found')},
         ),
-        url(route='500/', view=default_views.server_error),
+        path(route='500/', view=default_views.server_error),
     ]
 
     urlpatterns += staticfiles_urlpatterns()
