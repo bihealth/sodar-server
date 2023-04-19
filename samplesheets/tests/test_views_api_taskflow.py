@@ -16,13 +16,11 @@ from projectroles.plugins import get_backend_api
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import (
     TaskflowAPIViewTestBase,
-    TaskflowAPIProjectTestMixin,
 )
 
 # Samplesheets dependencies
 from samplesheets.views_api import IRODS_ERROR_MSG
 
-from samplesheets.tests.test_views_api import TestSampleSheetAPIBase
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 
@@ -197,9 +195,7 @@ class TestSampleDataFileExistsAPIView(TestSampleSheetAPITaskflowBase):
 
 
 class TestProjectIrodsFileListAPIView(
-    TestSampleSheetAPIBase,
-    TaskflowAPIProjectTestMixin,
-    SampleSheetTaskflowMixin,
+    TestSampleSheetAPITaskflowBase,
 ):
     """Tests for ProjectIrodsFileListAPIView"""
 
