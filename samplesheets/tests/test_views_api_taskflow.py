@@ -158,7 +158,7 @@ class TestSampleDataFileExistsAPIView(TestSampleSheetAPITaskflowBase):
         url = reverse('samplesheets:api_file_exists')
         response = self.request_knox(url, data={'checksum': IRODS_FILE_MD5})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(json.loads(response.content)['status'], True)
+        self.assertEqual(json.loads(response.content)['status'], False)
 
     def test_get_file(self):
         """Test getting file existence info with an uploaded file"""
