@@ -51,6 +51,7 @@ table_builder = SampleSheetTableBuilder()
 
 MD5_RE = re.compile(r'([a-fA-F\d]{32})')
 APP_NAME = 'samplesheets'
+IRODS_ERROR_MSG = 'Exception querying iRODS objects:'
 
 
 # API Views --------------------------------------------------------------------
@@ -427,7 +428,7 @@ class ProjectIrodsFileListAPIView(SODARAPIBaseProjectMixin, APIView):
     """
     Return a list of files in the project's sample data repository.
 
-    **URL:** ``/samplesheets/api/irods/files/{Project.sodar_uuid}``
+    **URL:** ``/samplesheets/api/file/list/{Project.sodar_uuid}``
 
     **Methods:** ``GET``
 
@@ -454,7 +455,7 @@ class ProjectIrodsFileListAPIView(SODARAPIBaseProjectMixin, APIView):
                 irods_data = irods_backend.get_objects(irods, path)
         except Exception as ex:
             return Response(
-                {'detail': 'Exception queried iRODS objects: {}'.format(ex)},
+                {'detail': '{} {}'.format(IRODS_ERROR_MSG, ex)},
                 status=status.HTTP_404_NOT_FOUND,
             )
         return Response(irods_data, status=status.HTTP_200_OK)

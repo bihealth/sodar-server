@@ -19,6 +19,9 @@ from taskflowbackend.tests.base import (
     TaskflowAPIProjectTestMixin,
 )
 
+# Samplesheets dependencies
+from samplesheets.views_api import IRODS_ERROR_MSG
+
 from samplesheets.tests.test_views_api import TestSampleSheetAPIBase
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
@@ -35,7 +38,6 @@ SHEET_PATH_ALT = SHEET_DIR + 'i_small2_alt.zip'
 IRODS_FILE_PATH = os.path.dirname(__file__) + '/irods/test1.txt'
 IRODS_FILE_NAME = 'test1.txt'
 IRODS_FILE_MD5 = '0b26e313ed4a7ca6904b0e9369e5b957'
-IRODS_ERROR_MSG = 'Exception queried iRODS objects: iRODS collection not found'
 
 
 class TestSampleSheetAPITaskflowBase(
@@ -224,7 +226,7 @@ class TestProjectIrodsFileListAPIView(
     def test_get_no_collection(self):
         """Test GET request in ProjectIrodsFileListAPIView without collection"""
         url = reverse(
-            'samplesheets:api_irods_files',
+            'samplesheets:api_file_list',
             kwargs={'project': self.project.sodar_uuid},
         )
         with self.login(self.user):
@@ -232,7 +234,10 @@ class TestProjectIrodsFileListAPIView(
         self.assertEqual(response.status_code, 404)
         self.assertEqual(
             response.data['detail'],
-            IRODS_ERROR_MSG,
+            '{} {}'.format(
+                IRODS_ERROR_MSG,
+                'iRODS collection not found',
+            ),
         )
 
     def test_get_empty_collection(self):
@@ -240,7 +245,7 @@ class TestProjectIrodsFileListAPIView(
         # Set up iRODS collections
         self.make_irods_colls(self.investigation)
         url = reverse(
-            'samplesheets:api_irods_files',
+            'samplesheets:api_file_list',
             kwargs={'project': self.project.sodar_uuid},
         )
         with self.login(self.user):
@@ -257,7 +262,7 @@ class TestProjectIrodsFileListAPIView(
             IRODS_FILE_PATH, coll_path, **{REG_CHKSUM_KW: ''}
         )
         url = reverse(
-            'samplesheets:api_irods_files',
+            'samplesheets:api_file_list',
             kwargs={'project': self.project.sodar_uuid},
         )
         with self.login(self.user):

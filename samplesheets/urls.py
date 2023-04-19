@@ -194,9 +194,9 @@ urls_api = [
         name='api_remote_get',
     ),
     url(
-        regex=r'^api/irods/files/(?P<project>[0-9a-f-]+)',
+        regex=r'^api/file/list/(?P<project>[0-9a-f-]+)',
         view=samplesheets.views_api.ProjectIrodsFileListAPIView.as_view(),
-        name='api_irods_files',
+        name='api_file_list',
     ),
 ]
 
