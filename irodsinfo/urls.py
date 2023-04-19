@@ -1,10 +1,18 @@
-from django.conf.urls import url
+from django.urls import path
 
 from . import views
 
 app_name = 'irodsinfo'
 
 urlpatterns = [
-    url(regex=r'^info$', view=views.IrodsInfoView.as_view(), name='info'),
-    url(regex=r'^config$', view=views.IrodsConfigView.as_view(), name='config'),
+    path(
+        route='info',
+        view=views.IrodsInfoView.as_view(),
+        name='info',
+    ),
+    path(
+        route='config',
+        view=views.IrodsConfigView.as_view(),
+        name='config',
+    ),
 ]

@@ -1,11 +1,15 @@
-from django.conf.urls import url
+from django.urls import path
 
 from . import views
 
 urlpatterns = [
-    url(regex=r'^$', view=views.UserListView.as_view(), name='user_list'),
-    url(
-        regex=r'^(?P<username>[\w.@+-]+)/$',
+    path(
+        route='',
+        view=views.UserListView.as_view(),
+        name='user_list',
+    ),
+    path(
+        route='<str:username>/',
         view=views.UserDetailView.as_view(),
         name='user_detail',
     ),
