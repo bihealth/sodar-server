@@ -6,7 +6,6 @@ from django.contrib.auth import views as auth_views
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.shortcuts import render
 from django.views import defaults as default_views
-from django.views.generic import TemplateView
 from django.urls import path
 
 from projectroles.views import HomeView

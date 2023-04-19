@@ -248,7 +248,7 @@ urls_ajax = [
         name='ajax_config_update',
     ),
     path(
-        route='ajax/display/update/<uuid:study>',
+        route='ajax/display/update/<str:study>',
         view=samplesheets.views_ajax.StudyDisplayConfigAjaxView.as_view(),
         name='ajax_display_update',
     ),
