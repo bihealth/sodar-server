@@ -1,6 +1,6 @@
 """URL patterns for the ontologyaccess app"""
 
-from django.conf.urls import url
+from django.urls import path
 
 from ontologyaccess import views, views_ajax
 
@@ -9,28 +9,28 @@ app_name = 'ontologyaccess'
 
 # UI views
 urls_ui = [
-    url(
-        regex=r'^list$',
+    path(
+        route='list',
         view=views.OBOFormatOntologyListView.as_view(),
         name='list',
     ),
-    url(
-        regex=r'^obo/detail/(?P<oboformatontology>[0-9a-f-]+)$',
+    path(
+        route='obo/detail/<uuid:oboformatontology>',
         view=views.OBOFormatOntologyDetailView.as_view(),
         name='obo_detail',
     ),
-    url(
-        regex=r'^obo/import$',
+    path(
+        route='obo/import',
         view=views.OBOFormatOntologyImportView.as_view(),
         name='obo_import',
     ),
-    url(
-        regex=r'^obo/update/(?P<oboformatontology>[0-9a-f-]+)$',
+    path(
+        route='obo/update/<uuid:oboformatontology>',
         view=views.OBOFormatOntologyUpdateView.as_view(),
         name='obo_update',
     ),
-    url(
-        regex=r'^obo/delete/(?P<oboformatontology>[0-9a-f-]+)$',
+    path(
+        route='obo/delete/<uuid:oboformatontology>',
         view=views.OBOFormatOntologyDeleteView.as_view(),
         name='obo_delete',
     ),
@@ -38,18 +38,18 @@ urls_ui = [
 
 # Ajax API views
 urls_ajax = [
-    url(
-        regex=r'^ajax/obo/list$',
+    path(
+        route='ajax/obo/list',
         view=views_ajax.OBOOntologyListAjaxView.as_view(),
         name='ajax_obo_list',
     ),
-    url(
-        regex=r'^ajax/obo/term/query$',
+    path(
+        route='ajax/obo/term/query',
         view=views_ajax.OBOTermQueryAjaxView.as_view(),
         name='ajax_obo_term_query',
     ),
-    url(
-        regex=r'^ajax/obo/term/list$',
+    path(
+        route='ajax/obo/term/list',
         view=views_ajax.OBOTermListAjaxView.as_view(),
         name='ajax_obo_term_list',
     ),
