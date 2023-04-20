@@ -193,8 +193,8 @@ urls_api = [
         view=samplesheets.views_api.RemoteSheetGetAPIView.as_view(),
         name='api_remote_get',
     ),
-    url(
-        regex=r'^api/file/list/(?P<project>[0-9a-f-]+)',
+    path(
+        route='api/file/list/<uuid:project>',
         view=samplesheets.views_api.ProjectIrodsFileListAPIView.as_view(),
         name='api_file_list',
     ),
