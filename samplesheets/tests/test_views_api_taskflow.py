@@ -11,9 +11,15 @@ from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
+from projectroles.plugins import get_backend_api
 
 # Taskflowbackend dependency
-from taskflowbackend.tests.base import TaskflowAPIViewTestBase
+from taskflowbackend.tests.base import (
+    TaskflowAPIViewTestBase,
+)
+
+# Samplesheets dependencies
+from samplesheets.views_api import IRODS_ERROR_MSG
 
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
@@ -28,6 +34,7 @@ SHEET_PATH = SHEET_DIR + 'i_small2.zip'
 SHEET_PATH_EDITED = SHEET_DIR + 'i_small2_edited.zip'
 SHEET_PATH_ALT = SHEET_DIR + 'i_small2_alt.zip'
 IRODS_FILE_PATH = os.path.dirname(__file__) + '/irods/test1.txt'
+IRODS_FILE_NAME = 'test1.txt'
 IRODS_FILE_MD5 = '0b26e313ed4a7ca6904b0e9369e5b957'
 
 
@@ -185,3 +192,78 @@ class TestSampleDataFileExistsAPIView(TestSampleSheetAPITaskflowBase):
         url = reverse('samplesheets:api_file_exists')
         response = self.request_knox(url, data={'checksum': 'Notvalid MD5!'})
         self.assertEqual(response.status_code, 400)
+
+
+class TestProjectIrodsFileListAPIView(TestSampleSheetAPITaskflowBase):
+    """Tests for ProjectIrodsFileListAPIView"""
+
+    def setUp(self):
+        super().setUp()
+
+        self.taskflow = get_backend_api('taskflow', force=True)
+        self.irods_backend = get_backend_api('omics_irods')
+        self.irods = self.irods_backend.get_session_obj()
+
+        # Make project with owner in Taskflow and Django
+        self.project, self.owner_as = self.make_project_taskflow(
+            title='TaskProject',
+            type=PROJECT_TYPE_PROJECT,
+            parent=self.category,
+            owner=self.user,
+            description='description',
+        )
+        # Import investigation
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+
+    def test_get_no_collection(self):
+        """Test GET request in ProjectIrodsFileListAPIView without collection"""
+        url = reverse(
+            'samplesheets:api_file_list',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        with self.login(self.user):
+            response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(
+            response.data['detail'],
+            '{} {}'.format(
+                IRODS_ERROR_MSG,
+                'iRODS collection not found',
+            ),
+        )
+
+    def test_get_empty_collection(self):
+        """Test GET request in ProjectIrodsFileListAPIView"""
+        # Set up iRODS collections
+        self.make_irods_colls(self.investigation)
+        url = reverse(
+            'samplesheets:api_file_list',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        with self.login(self.user):
+            response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['irods_data'], [])
+
+    def test_get_collection_with_files(self):
+        """Test GET request in ProjectIrodsFileListAPIView"""
+        # Set up iRODS collections
+        self.make_irods_colls(self.investigation)
+        coll_path = self.irods_backend.get_sample_path(self.project) + '/'
+        self.irods.data_objects.put(
+            IRODS_FILE_PATH, coll_path, **{REG_CHKSUM_KW: ''}
+        )
+        url = reverse(
+            'samplesheets:api_file_list',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        with self.login(self.user):
+            response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data['irods_data']), 1)
+        self.assertEqual(
+            response.data['irods_data'][0]['name'], IRODS_FILE_NAME
+        )
+        self.assertEqual(response.data['irods_data'][0]['type'], 'obj')
