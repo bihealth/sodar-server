@@ -100,8 +100,12 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                 and row[i]['value']
             ):
                 row[i]['value'] = SIMPLE_LINK_TEMPLATE.format(
-                    label = row[i]['value'],
-                    url = base_url + '/' + MISC_FILES_COLL + '/' + row[i]['value'],
+                    label=row[i]['value'],
+                    url=base_url
+                    + '/'
+                    + MISC_FILES_COLL
+                    + '/'
+                    + row[i]['value'],
                 )
 
             # Report file links within processes
@@ -111,8 +115,12 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                 and row[i]['value']
             ):
                 row[i]['value'] = SIMPLE_LINK_TEMPLATE.format(
-                    label = row[i]['value'],
-                    url = base_url + '/' + last_material_name + '/' + row[i]['value'],
+                    label=row[i]['value'],
+                    url=base_url
+                    + '/'
+                    + last_material_name
+                    + '/'
+                    + row[i]['value'],
                 )
 
         return row
