@@ -6,6 +6,7 @@ from django.conf import settings
 from samplesheets.plugins import SampleSheetAssayPluginPoint
 from samplesheets.utils import get_last_material_name
 from samplesheets.views import MISC_FILES_COLL
+from samplesheets.rendering import SIMPLE_LINK_TEMPLATE
 
 # Local constants
 APP_NAME = 'samplesheets.assayapps.cytof'
@@ -98,8 +99,9 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                 )
                 and row[i]['value']
             ):
-                row[i]['link'] = (
-                    base_url + '/' + MISC_FILES_COLL + '/' + row[i]['value']
+                row[i]['value'] = SIMPLE_LINK_TEMPLATE.format(
+                    label = row[i]['value'],
+                    url = base_url + '/' + MISC_FILES_COLL + '/' + row[i]['value'],
                 )
 
             # Report file links within processes
@@ -108,8 +110,9 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                 and header['value'].lower() == 'report file'
                 and row[i]['value']
             ):
-                row[i]['link'] = (
-                    base_url + '/' + last_material_name + '/' + row[i]['value']
+                row[i]['value'] = SIMPLE_LINK_TEMPLATE.format(
+                    label = row[i]['value'],
+                    url = base_url + '/' + last_material_name + '/' + row[i]['value'],
                 )
 
         return row
