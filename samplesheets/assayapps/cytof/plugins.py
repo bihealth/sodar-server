@@ -19,7 +19,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
     name = 'samplesheets_assay_cytof'
 
     #: Title
-    title = 'Mass Cytometry Assay plugin'
+    title = 'Mass Cytometry Assay Plugin'
 
     #: App name for dynamic reference to app in e.g. caching
     app_name = APP_NAME
