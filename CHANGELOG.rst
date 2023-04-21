@@ -8,7 +8,26 @@ Changelog for the SODAR project. Loosely follows the
 Unreleased
 ==========
 
-TODO
+Added
+-----
+
+- **Samplesheets**
+    - ``ProjectIrodsFileListAPIView`` in REST API (#1619)
+    - ``SIMPLE_LINK_TEMPLATE`` helper for simple link creation
+
+Changed
+-------
+
+- **General**
+    - Update URL patterns to use path (#1631)
+- **Samplesheets**
+    - Refactor ``meta_ms`` to remove ``SPECIAL_FILE_LINK_HEADERS`` use (#1641)
+
+Removed
+-------
+
+- **Samplesheets**
+    - ``SPECIAL_FILE_LINK_HEADERS`` hack (#817, #1641)
 
 
 v0.13.2 (2023-04-18)

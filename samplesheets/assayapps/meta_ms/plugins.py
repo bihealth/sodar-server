@@ -4,6 +4,7 @@ from django.conf import settings
 
 # from samplesheets.models import GenericMaterial, Process
 from samplesheets.plugins import SampleSheetAssayPluginPoint
+from samplesheets.rendering import SIMPLE_LINK_TEMPLATE
 from samplesheets.utils import get_top_header
 from samplesheets.views import MISC_FILES_COLL, RESULTS_COLL
 
@@ -87,7 +88,6 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             if not top_header or i >= th_colspan:
                 top_header = get_top_header(table, i)
                 th_colspan += top_header['colspan']
-
             # Data files
             if (
                 header['obj_cls'] == 'GenericMaterial'
@@ -103,16 +103,15 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                 row[i]['link'] = (
                     base_url + '/' + coll_name + '/' + row[i]['value']
                 )
-
             # Report file links within processes
             elif (
                 header['obj_cls'] == 'Process'
                 and header['value'].lower() == 'report file'
             ):
-                row[i]['link'] = (
-                    base_url + '/' + RESULTS_COLL + '/' + row[i]['value']
+                row[i]['value'] = SIMPLE_LINK_TEMPLATE.format(
+                    label=row[i]['value'],
+                    url=base_url + '/' + RESULTS_COLL + '/' + row[i]['value'],
                 )
-
         return row
 
     def get_shortcuts(self, assay):
