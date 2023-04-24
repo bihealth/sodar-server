@@ -8,7 +8,7 @@
            data-icon="mdi:folder-table"></i>
         <i v-else class="iconify" data-icon="mdi:table-large"></i>
         {{ gridName }}: {{ tableContext.display_name }}
-        <span v-if="params.sodarContext.perms.is_superuser &&
+        <span v-if="params.sodarContext.perms.edit_sheet===true &&
                     tableContext.plugin"
               class="sodar-ss-table-plugin">
           <i :class="'iconify ml-1 ' + getTitleTextClass()"
