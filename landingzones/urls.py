@@ -19,6 +19,11 @@ urls_ui = [
         name='create',
     ),
     path(
+        route='update/<uuid:landingzone>',
+        view=views.ZoneUpdateView.as_view(),
+        name='update',
+    ),
+    path(
         route='move/<uuid:landingzone>',
         view=views.ZoneMoveView.as_view(),
         name='move',

@@ -3,13 +3,14 @@
 import logging
 
 from django.conf import settings
+from django.http import HttpResponseForbidden
 from django.contrib import auth
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ImproperlyConfigured
 from django.shortcuts import redirect
 from django.urls import reverse
-from django.views.generic import TemplateView, CreateView
+from django.views.generic import TemplateView, CreateView, UpdateView
 
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
@@ -46,6 +47,7 @@ APP_NAME = 'landingzones'
 SAMPLESHEETS_APP_NAME = 'samplesheets'
 ZONE_MOVE_INVALID_STATUS = 'Zone not in active state, unable to trigger action.'
 ZONE_UPDATE_ACTIONS = ['update', 'move', 'delete']
+ZONE_UPDATE_FIELDS = ['description']
 
 
 # Mixins -----------------------------------------------------------------------
@@ -413,6 +415,12 @@ class ZoneCreateView(
     form_class = LandingZoneForm
     permission_required = 'landingzones.create_zone'
 
+    def get_context_data(self, *args, **kwargs):
+        """Add action to context"""
+        context = super().get_context_data(*args, **kwargs)
+        context['action'] = 'create'
+        return context
+
     def get_form_kwargs(self):
         """Pass project to form"""
         kwargs = super().get_form_kwargs()
@@ -478,6 +486,56 @@ class ZoneCreateView(
         return redirect(
             reverse('landingzones:list', kwargs={'project': project.sodar_uuid})
         )
+
+
+class ZoneUpdateView(
+    LoginRequiredMixin,
+    InvestigationContextMixin,
+    CurrentUserFormMixin,
+    ZoneCreateMixin,
+    UpdateView,
+):
+    """LandingZone update view"""
+
+    model = LandingZone
+    form_class = LandingZoneForm
+    slug_url_kwarg = 'landingzone'
+    slug_field = 'sodar_uuid'
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        context['zone'] = LandingZone.objects.get(
+            sodar_uuid=self.kwargs['landingzone']
+        )
+        context['action'] = 'update'
+        return context
+
+    def get_permission_required(self):
+        """Override to use custom permission"""
+        context = self.get_context_data()
+        if self.request.user == context['user']:
+            return 'landingzones.update_zone_own'
+        else:
+            return 'landingzones.update_zone_all'
+
+    def form_valid(self, form):
+        zone = LandingZone.objects.get(sodar_uuid=self.kwargs['landingzone'])
+        if not self.request.user.has_perm(self.get_permission_required(), zone):
+            return HttpResponseForbidden()
+        print('Changed data:', form.changed_data)
+        print('Cleaned data:', form.cleaned_data)
+        redirect_url = reverse(
+            'landingzones:list', kwargs={'project': zone.project.sodar_uuid}
+        )
+        if set(form.changed_data) - set(ZONE_UPDATE_FIELDS):
+            messages.error(
+                self.request,
+                "You can only update the following fields: {}".format(
+                    ', '.join(ZONE_UPDATE_FIELDS)
+                ),
+            )
+            return redirect(redirect_url)
+        return super().form_valid(form)
 
 
 class ZoneDeleteView(

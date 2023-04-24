@@ -105,7 +105,9 @@ class LandingZoneForm(forms.ModelForm):
             self.fields['title_suffix'].disabled = True
             self.fields['create_colls'].disabled = True
             self.fields['restrict_colls'].disabled = True
-            # TODO: Don't allow modifying the assay
+            self.fields['assay'].disabled = True
+            self.fields['configuration'].disabled = True
+            self.fields['user_message'].disabled = True
 
     def clean(self):
         # Creation
@@ -114,6 +116,12 @@ class LandingZoneForm(forms.ModelForm):
             self.cleaned_data['title'] = get_zone_title(
                 self.cleaned_data.get('title_suffix')
             )
+        # Updating
+        else:
+            self.cleaned_data['title'] = self.instance.title
+            self.cleaned_data['assay'] = self.instance.assay
+            self.cleaned_data['configuration'] = self.instance.configuration
+            self.cleaned_data['user_message'] = self.instance.user_message
         return self.cleaned_data
 
     def save(self, *args, **kwargs):
