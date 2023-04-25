@@ -101,6 +101,9 @@ class LandingZoneForm(forms.ModelForm):
                         )
         # Updating
         else:
+            # Set initial assay value
+            self.initial['assay'] = self.instance.assay.sodar_uuid
+
             # Don't allow modifying certain fields
             self.fields['title_suffix'].disabled = True
             self.fields['create_colls'].disabled = True
