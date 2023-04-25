@@ -160,6 +160,79 @@ class TestLandingZonePermissions(TestLandingZonePermissionsBase):
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 302)
 
+    def test_zone_update(self):
+        """Test ZoneUpdateView permissions"""
+        url = reverse(
+            'landingzones:update',
+            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+        )
+        good_users = [
+            self.superuser,
+            self.user_owner_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+        ]
+        # bad_users = [
+        #     self.user_guest,
+        #     self.anonymous,
+        #     self.user_no_roles,
+        # ]
+        self.assert_response(url, good_users, 200)
+        # self.assert_response(url, bad_users, 302)
+
+    def test_zone_update_archive(self):
+        """Test ZoneUpdateView with archived project"""
+        self.project.set_archive()
+        url = reverse(
+            'landingzones:update',
+            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+        )
+        # root_url = reverse('home')
+        good_users = [
+            self.superuser,
+        ]
+        # bad_users_project = [
+        #     self.user_owner_cat,
+        #     self.user_owner,
+        #     self.user_delegate,
+        #     self.user_contributor,
+        # ]
+        # bad_users_no_project = [
+        #     self.user_guest,
+        #     self.anonymous,
+        #     self.user_no_roles,
+        # ]
+        self.assert_response(url, good_users, 200)
+        # self.assert_response(root_url, bad_users_project, 302)
+        # self.assert_response(root_url, bad_users_no_project, 302)
+
+    @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
+    def test_zone_update_disable(self):
+        """Test ZoneUpdateView with disabled non-superuser access"""
+        url = reverse(
+            'landingzones:update',
+            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+        )
+        # root_url = reverse('home')
+        good_users = [
+            self.superuser,
+        ]
+        # bad_users_project = [
+        #     self.user_owner_cat,
+        #     self.user_owner,
+        #     self.user_delegate,
+        #     self.user_contributor,
+        # ]
+        # bad_users_no_project = [
+        #     self.user_guest,
+        #     self.anonymous,
+        #     self.user_no_roles,
+        # ]
+        self.assert_response(url, good_users, 200)
+        # self.assert_response(root_url, bad_users_project, 302)
+        # self.assert_response(root_url, bad_users_no_project, 302)
+
     def test_zone_delete(self):
         """Test ZoneDeleteView permissions"""
         url = reverse(

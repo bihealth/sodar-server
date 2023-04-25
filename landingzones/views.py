@@ -580,6 +580,30 @@ class ZoneUpdateView(
         else:
             return 'landingzones.update_zone_all'
 
+    def get(self, request, *args, **kwargs):
+        """Override get() to ensure the zone status"""
+        zone = LandingZone.objects.get(sodar_uuid=self.kwargs['landingzone'])
+        redirect_url = reverse(
+            'landingzones:list', kwargs={'project': zone.project.sodar_uuid}
+        )
+        # Check permissions
+        if not self.request.user.has_perm(
+            self.get_permission_required(zone.user), zone.project
+        ):
+            msg = 'You do not have permission to update this landing zone.'
+            messages.error(request, msg)
+            return redirect(redirect_url)
+
+        if zone.status not in STATUS_ALLOW_UPDATE:
+            messages.error(
+                request,
+                'Unable to update a landing zone with the '
+                'status of "{}".'.format(zone.status),
+            )
+            return redirect(redirect_url)
+
+        return super().get(request, *args, **kwargs)
+
     def form_valid(self, form):
         zone = LandingZone.objects.get(sodar_uuid=self.kwargs['landingzone'])
         project = zone.project
