@@ -3,7 +3,6 @@
 import logging
 
 from django.conf import settings
-from django.http import HttpResponseForbidden
 from django.contrib import auth
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -234,7 +233,7 @@ class ZoneUpdateMixin(ZoneConfigPluginMixin):
         :param zone: LandingZone object
         :raise: taskflow.FlowSubmitException if taskflow submit fails
         """
-        taskflow = get_backend_api('taskflow')
+        # taskflow = get_backend_api('taskflow')
         timeline = get_backend_api('timeline_backend')
         tl_event = None
         user = request.user if request else None
@@ -266,25 +265,25 @@ class ZoneUpdateMixin(ZoneConfigPluginMixin):
                 obj=zone.assay, label='assay', name=zone.assay.get_name()
             )
 
-        # Taskflow
-        flow_name = 'landing_zone_update'
-        flow_data = self.get_flow_data(
-            zone,
-            flow_name,
-            {
-                'zone_uuid': str(zone.sodar_uuid),
-            },
-        )
-        try:
-            taskflow.submit(
-                project=zone.project,
-                flow_name=flow_name,
-                flow_data=flow_data,
-                async_mode=True,
-                tl_event=tl_event,
-            )
-        except taskflow.FlowSubmitException as ex:
-            raise ex
+        # # Taskflow
+        # flow_name = 'landing_zone_update'
+        # flow_data = self.get_flow_data(
+        #     zone,
+        #     flow_name,
+        #     {
+        #         'zone_uuid': str(zone.sodar_uuid),
+        #     },
+        # )
+        # try:
+        #     taskflow.submit(
+        #         project=zone.project,
+        #         flow_name=flow_name,
+        #         flow_data=flow_data,
+        #         async_mode=True,
+        #         tl_event=tl_event,
+        #     )
+        # except taskflow.FlowSubmitException as ex:
+        #     raise ex
 
 
 class ZoneDeleteMixin(ZoneConfigPluginMixin):
@@ -594,6 +593,7 @@ class ZoneUpdateView(
             messages.error(request, msg)
             return redirect(redirect_url)
 
+        # Check status
         if zone.status not in STATUS_ALLOW_UPDATE:
             messages.error(
                 request,
@@ -615,7 +615,11 @@ class ZoneUpdateView(
         if not self.request.user.has_perm(
             self.get_permission_required(zone.user), project
         ):
-            return HttpResponseForbidden()
+            messages.error(
+                self.request,
+                'You do not have permission to update this landing zone.',
+            )
+            return redirect_url
 
         # Double check that only allowed fields are updated
         if set(form.changed_data) - set(ZONE_UPDATE_FIELDS):
@@ -626,27 +630,40 @@ class ZoneUpdateView(
                 ),
             )
             return redirect(redirect_url)
+        self.submit_update(
+            zone=zone,
+            request=self.request,
+        )
+        msg = 'Landing zone "{}" was updated.'.format(zone.title)
+        messages.warning(self.request, msg)
 
-        taskflow = get_backend_api('taskflow')
-        if not taskflow:
-            messages.error(
-                self.request, 'Unable to update zone: Taskflow not enabled.'
-            )
-            return redirect(redirect_url)
-        try:
-            # Create timeline event and initialize taskflow
-            self.submit_update(
-                zone=zone,
-                request=self.request,
-            )
-            msg = (
-                'Landing zone "{}" update initiated: '
-                'see the zone list for the update status.'.format(zone.title)
-            )
-            messages.warning(self.request, msg)
-        except taskflow.FlowSubmitException as ex:
-            messages.error(self.request, str(ex))
-        return redirect(redirect_url)
+        # taskflow = get_backend_api('taskflow')
+        # if not taskflow:
+        #     messages.error(
+        #         self.request, 'Unable to update zone: Taskflow not enabled.'
+        #     )
+        #     return redirect(redirect_url)
+        # try:
+        #     # Create timeline event and initialize taskflow
+        #     self.submit_update(
+        #         zone=zone,
+        #         request=self.request,
+        #     )
+        #     msg = (
+        #         'Landing zone "{}" update initiated: '
+        #         'see the zone list for the update status.'.format(zone.title)
+        #     )
+        #     messages.warning(self.request, msg)
+        # except taskflow.FlowSubmitException as ex:
+        #     messages.error(self.request, str(ex))
+
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse(
+            'landingzones:list',
+            kwargs={'project': self.object.project.sodar_uuid},
+        )
 
 
 class ZoneDeleteView(
