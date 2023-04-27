@@ -69,5 +69,15 @@ Once you have filled out the form, clicking :guilabel:`Create` will start the
 zone creation process and redirect you to the landing zone list, where you can
 see the zone status and move further with file uploads.
 
+
+Landing Zone Update
+^^^^^^^^^^^^^^^^^^^
+
+Landing zones can be updated by clicking the :guilabel:`Update Zone` button on the
+dropdown menu on the right hand side of the zone list. This opens up the same
+form as in the creation process, with the fields pre-filled with the current
+values. Currently the only field that can be updated is the description. Once
+you have made your changes, click :guilabel:`Update` to save the changes.
+
 The next sections will provide instructions on browsing your landing zones and
 how to proceed with your file uploads.
