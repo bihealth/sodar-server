@@ -146,4 +146,28 @@ describe('SheetTableHeader.vue', () => {
     expect(wrapper.find('.sodar-irods-copy-path-btn')
       .attributes().disabled).toBe('disabled')
   })
+
+  it('renders study plugin icon with edit_sheet false', async () => {
+    const propsData = getPropsData({ assayMode: true })
+    propsData.params.sodarContext.perms.edit_sheet = false
+    const wrapper = mount(SheetTableHeader, {
+      localVue,
+      propsData: propsData,
+      stubs: getStubs()
+    })
+
+    expect(wrapper.find('.sodar-ss-table-plugin').exists()).toBe(false)
+  })
+
+  it('renders study plugin icon with edit_sheet true', async () => {
+    const propsData = getPropsData({ assayMode: true })
+    propsData.params.sodarContext.perms.edit_sheet = true
+    const wrapper = mount(SheetTableHeader, {
+      localVue,
+      propsData: propsData,
+      stubs: getStubs()
+    })
+
+    expect(wrapper.find('.sodar-ss-table-plugin').exists()).toBe(true)
+  })
 })
