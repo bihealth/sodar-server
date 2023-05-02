@@ -5,6 +5,7 @@ from django.urls import reverse
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.tests.test_permissions import TestProjectPermissionBase
+from projectroles.tests.test_permissions_api import SODARAPIPermissionTestMixin
 
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
@@ -29,7 +30,7 @@ SHEET_PATH = SHEET_DIR + 'i_small.zip'
 
 
 class TestLandingZonePermissions(
-    LandingZoneMixin, SampleSheetIOMixin, TestProjectPermissionBase
+    LandingZoneMixin, SampleSheetIOMixin, TestProjectPermissionBase, SODARAPIPermissionTestMixin
 ):
     """Tests for landingzones REST API view permissions"""
 
@@ -127,3 +128,34 @@ class TestLandingZonePermissions(
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 403)
         self.assert_response(url, [self.anonymous], 401)
+
+    def _get_post_data(self):
+        return {
+            'assay': str(self.assay.sodar_uuid),
+            'description': 'Test description updated',
+        }
+
+    def test_update(self):
+        """Test LandingZoneUpdateAPIView permissions"""
+        url = reverse(
+            'landingzones:api_update',
+            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+        )
+        good_users = [
+            self.superuser,
+            self.user_owner_cat,
+            self.user_owner,
+            self.user_delegate,
+        ]
+        bad_users = [
+            self.user_contributor,
+            self.user_guest,
+            self.user_no_roles,
+        ]
+        # TODO: Update test after SODAR core issue #1220 is merged
+        # try:
+        self.assert_response_api(url, good_users, 200, method='PATCH', data=self._get_post_data(), knox=True)
+        self.assert_response_api(url, bad_users, 403, method='PATCH', data=self._get_post_data(), knox=True)
+        self.assert_response_api(url, [self.anonymous], 401, method='PATCH', data=self._get_post_data(), knox=True)
+        # except AssertionError:
+        #     pass
