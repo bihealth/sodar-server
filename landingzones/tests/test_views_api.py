@@ -245,3 +245,13 @@ class TestLandingZoneUpdateAPIView(TestLandingZoneAPIViewsBase):
         self.assertEqual(
             json.loads(response.content)['user_message'], 'New user message'
         )
+
+    def test_patch_title(self):
+        """Test updating title with patch() (should fail)"""
+        url = reverse(
+            'landingzones:api_update',
+            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+        )
+        data = {'assay': str(self.assay.sodar_uuid), 'title': 'New title'}
+        response = self.request_knox(url, method='PATCH', data=data)
+        self.assertEqual(response.status_code, 500)
