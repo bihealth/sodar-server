@@ -173,20 +173,17 @@ class TestLandingZonePermissions(TestLandingZonePermissionsBase):
             self.user_delegate,
             self.user_contributor,
         ]
-        # bad_users = [
-        #     self.user_guest,
-        #     self.anonymous,
-        #     self.user_no_roles,
-        # ]
+        bad_users = [
+            self.user_guest,
+            self.anonymous,
+            self.user_no_roles,
+        ]
         self.assert_response(url, good_users, 200)
-        # for user in bad_users:
-        #     with self.login(user):
-        #         response = self.client.get(url)
-        #         self.assertEqual(response.status_code, 302)
-        # try:
-        #     self.assert_response(url, bad_users, 302)
-        # except AssertionError:
-        #     pass  # In some cases, the redirect is not properly followed
+        # TODO: Update test after SODAR core issue #1220 is merged
+        try:
+            self.assert_response(url, bad_users, 302)
+        except AssertionError:
+            pass  # In some cases, the redirect is not properly followed
 
     def test_zone_update_archive(self):
         """Test ZoneUpdateView with archived project"""
@@ -208,6 +205,7 @@ class TestLandingZonePermissions(TestLandingZonePermissionsBase):
             self.user_no_roles,
         ]
         self.assert_response(url, good_users, 200)
+        # TODO: Update test after SODAR core issue #1220 is merged
         try:
             self.assert_response(url, bad_users, 302)
         except AssertionError:
@@ -233,6 +231,7 @@ class TestLandingZonePermissions(TestLandingZonePermissionsBase):
             self.user_no_roles,
         ]
         self.assert_response(url, good_users, 200)
+        # TODO: Update test after SODAR core issue #1220 is merged
         try:
             self.assert_response(url, bad_users, 302)
         except AssertionError:
