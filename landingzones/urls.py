@@ -58,6 +58,11 @@ urls_api = [
         name='api_create',
     ),
     path(
+        route='api/update/<uuid:landingzone>',
+        view=views_api.ZoneUpdateAPIView.as_view(),
+        name='api_update',
+    ),
+    path(
         route='api/submit/delete/<uuid:landingzone>',
         view=views_api.ZoneSubmitDeleteAPIView.as_view(),
         name='api_submit_delete',
