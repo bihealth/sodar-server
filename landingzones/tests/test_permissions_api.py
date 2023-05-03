@@ -205,7 +205,7 @@ class TestLandingZonePermissions(
             self.user_guest,
             self.user_no_roles,
         ]
-        # TODO: Update test after SODAR core issue #1221 is merged
+        # TODO: Fix tests
         try:
             self.assert_response_api(
                 url,
