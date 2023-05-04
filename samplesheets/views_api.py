@@ -32,11 +32,14 @@ from projectroles.views_api import (
 )
 
 from samplesheets.io import SampleSheetIO
-from samplesheets.models import Investigation, ISATab
+from samplesheets.models import Investigation, ISATab, IrodsDataRequest
 from samplesheets.rendering import SampleSheetTableBuilder
-from samplesheets.serializers import InvestigationSerializer
+from samplesheets.serializers import (
+    InvestigationSerializer,
+)
 from samplesheets.views import (
     IrodsCollsCreateViewMixin,
+    IrodsRequestModifyMixin,
     SheetImportMixin,
     SheetISAExportMixin,
     SITE_MODE_TARGET,
@@ -132,6 +135,215 @@ class IrodsCollsCreateAPIView(
             {
                 'detail': 'iRODS collections created',
                 'path': irods_backend.get_sample_path(investigation.project),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class IrodsDataRequestListAPIView(
+    IrodsRequestModifyMixin, SODARAPIBaseProjectMixin, APIView
+):
+    """
+    List iRODS data requests for a project.
+
+    **URL:** ``/samplesheets/api/irods/requests/{Project.sodar_uuid}``
+
+    **Methods:** ``GET``
+    """
+
+    http_method_names = ['get']
+    permission_required = 'samplesheets.edit_sheet'
+
+    def get(self, request, *args, **kwargs):
+        """GET request for listing iRODS data requests"""
+        irods_backend = get_backend_api('omics_irods')
+        ex_msg = 'Listing iRODS data requests failed: '
+        investigation = Investigation.objects.filter(
+            project__sodar_uuid=self.kwargs.get('project'), active=True
+        ).first()
+        if not investigation:
+            raise ValidationError('{}Investigation not found'.format(ex_msg))
+        try:
+            requests = irods_backend.get_data_requests(investigation.project)
+        except Exception as ex:
+            raise APIException('{}{}'.format(ex_msg, ex))
+        return Response(
+            {
+                'detail': 'iRODS data requests listed',
+                'requests': requests,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class IrodsRequestCreateAPIView(
+    IrodsRequestModifyMixin, SODARAPIBaseProjectMixin, APIView
+):
+    """
+    Create an iRODS data request for a project.
+
+    **URL:** ``/samplesheets/api/irods/request/create/{Project.sodar_uuid}``
+
+    **Methods:** ``POST``
+    """
+
+    http_method_names = ['post']
+    permission_required = 'samplesheets.edit_sheet'
+
+    def post(self, request, *args, **kwargs):
+        """POST request for creating an iRODS data request"""
+        ex_msg = 'Creating iRODS data request failed: '
+        investigation = Investigation.objects.filter(
+            project__sodar_uuid=self.kwargs.get('project'), active=True
+        ).first()
+        if not investigation:
+            raise ValidationError('{}Investigation not found'.format(ex_msg))
+        try:
+            self.create_request(investigation, request)
+        except Exception as ex:
+            raise APIException('{}{}'.format(ex_msg, ex))
+        return Response(
+            {
+                'detail': 'iRODS data request created',
+                'request': request,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class IrodsRequestUpdateAPIView(
+    IrodsRequestModifyMixin, SODARAPIBaseProjectMixin, APIView
+):
+    """
+    Update an iRODS data request for a project.
+
+    **URL:** ``/samplesheets/api/irods/request/update/{IrodsDataRequest.sodar_uuid}``
+
+    **Methods:** ``POST``
+    """
+
+    http_method_names = ['post']
+    permission_required = 'samplesheets.edit_sheet'
+
+    def post(self, request, *args, **kwargs):
+        """POST request for updating an iRODS data request"""
+        ex_msg = 'Updating iRODS data request failed: '
+        request = IrodsDataRequest.objects.filter(
+            sodar_uuid=self.kwargs.get('irodsdatarequest')
+        ).first()
+        if not request:
+            raise ValidationError('{}Request not found'.format(ex_msg))
+        try:
+            self.update_request(request, request)
+        except Exception as ex:
+            raise APIException('{}{}'.format(ex_msg, ex))
+        return Response(
+            {
+                'detail': 'iRODS data request updated',
+                'request': request,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class IrodsRequestDeleteAPIView(
+    IrodsRequestModifyMixin, SODARAPIBaseProjectMixin, APIView
+):
+    """
+    Delete an iRODS data request for a project.
+
+    **URL:** ``/samplesheets/api/irods/request/delete/{IrodsDataRequest.sodar_uuid}``
+
+    **Methods:** ``DELETE``
+    """
+
+    http_method_names = ['delete']
+    permission_required = 'samplesheets.delete_sheet'
+
+    def delete(self, request, *args, **kwargs):
+        """DELETE request for deleting an iRODS data request"""
+        ex_msg = 'Deleting iRODS data request failed: '
+        request = IrodsDataRequest.objects.filter(
+            sodar_uuid=self.kwargs.get('irodsdatarequest')
+        ).first()
+        if not request:
+            raise ValidationError('{}Request not found'.format(ex_msg))
+        try:
+            self.delete_request(request, request)
+        except Exception as ex:
+            raise APIException('{}{}'.format(ex_msg, ex))
+        return Response(
+            {
+                'detail': 'iRODS data request deleted',
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class IrodsRequestAcceptAPIView(
+    IrodsRequestModifyMixin, SODARAPIBaseProjectMixin, APIView
+):
+    """
+    Accept an iRODS data request for a project.
+
+    **URL:** ``/samplesheets/api/irods/request/accept/{IrodsDataRequest.sodar_uuid}``
+
+    **Methods:** ``POST``
+    """
+
+    http_method_names = ['post']
+    permission_required = 'samplesheets.manage_sheet'
+
+    def post(self, request, *args, **kwargs):
+        """POST request for accepting an iRODS data request"""
+        ex_msg = 'Accepting iRODS data request failed: '
+        request = IrodsDataRequest.objects.filter(
+            sodar_uuid=self.kwargs.get('irodsdatarequest')
+        ).first()
+        if not request:
+            raise ValidationError('{}Request not found'.format(ex_msg))
+        try:
+            self.accept_request(request, request)
+        except Exception as ex:
+            raise APIException('{}{}'.format(ex_msg, ex))
+        return Response(
+            {
+                'detail': 'iRODS data request accepted',
+                'paths': request.paths,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class IrodsRequestRejectAPIView(
+    IrodsRequestModifyMixin, SODARAPIBaseProjectMixin, APIView
+):
+    """
+    Reject an iRODS data request for a project.
+
+    **URL:** ``/samplesheets/api/irods/request/reject/{IrodsDataRequest.sodar_uuid}``
+
+    **Methods:** ``POST``
+    """
+
+    http_method_names = ['post']
+    permission_required = 'samplesheets.manage_sheet'
+
+    def post(self, request, *args, **kwargs):
+        """POST request for rejecting an iRODS data request"""
+        ex_msg = 'Rejecting iRODS data request failed: '
+        request = IrodsDataRequest.objects.filter(
+            sodar_uuid=self.kwargs.get('irodsdatarequest')
+        ).first()
+        if not request:
+            raise ValidationError('{}Request not found'.format(ex_msg))
+        try:
+            self.reject_request(request, request)
+        except Exception as ex:
+            raise APIException('{}{}'.format(ex_msg, ex))
+        return Response(
+            {
+                'detail': 'iRODS data request rejected',
             },
             status=status.HTTP_200_OK,
         )

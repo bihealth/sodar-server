@@ -9,7 +9,7 @@ from projectroles.serializers import (
     SODARNestedListSerializer,
 )
 
-from samplesheets.models import Investigation, Study, Assay
+from samplesheets.models import Investigation, Study, Assay, IrodsDataRequest
 
 
 class AssaySerializer(SODARNestedListSerializer):
@@ -83,6 +83,26 @@ class InvestigationSerializer(SODARProjectModelSerializer):
             'archive_name',
             'comments',
             'studies',
+            'sodar_uuid',
+        ]
+        read_only_fields = fields
+
+
+class IrodsRequestSerializer(SODARProjectModelSerializer):
+    """Serializer for the IrodsDataRequest model"""
+
+    class Meta:
+        model = IrodsDataRequest
+        fields = [
+            'project',
+            'action',
+            'target_path',
+            'path',
+            'user',
+            'status',
+            'status_info',
+            'description',
+            'date_created',
             'sodar_uuid',
         ]
         read_only_fields = fields
