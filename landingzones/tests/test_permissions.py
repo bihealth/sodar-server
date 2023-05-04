@@ -179,11 +179,11 @@ class TestLandingZonePermissions(TestLandingZonePermissionsBase):
             self.user_no_roles,
         ]
         self.assert_response(url, good_users, 200)
-        # TODO: Update test after SODAR core issue #1220 is merged
-        try:
-            self.assert_response(url, bad_users, 302)
-        except AssertionError:
-            pass  # In some cases, the redirect is not properly followed
+        redirect_url = reverse(
+            'landingzones:list',
+            kwargs={'project': self.landing_zone.project.sodar_uuid},
+        )
+        self.assert_response(url, bad_users, 302, redirect_user=redirect_url)
 
     def test_zone_update_archive(self):
         """Test ZoneUpdateView with archived project"""
@@ -205,11 +205,11 @@ class TestLandingZonePermissions(TestLandingZonePermissionsBase):
             self.user_no_roles,
         ]
         self.assert_response(url, good_users, 200)
-        # TODO: Update test after SODAR core issue #1220 is merged
-        try:
-            self.assert_response(url, bad_users, 302)
-        except AssertionError:
-            pass  # In some cases, the redirect is not properly followed
+        redirect_url = reverse(
+            'landingzones:list',
+            kwargs={'project': self.landing_zone.project.sodar_uuid},
+        )
+        self.assert_response(url, bad_users, 302, redirect_user=redirect_url)
 
     @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
     def test_zone_update_disable(self):
@@ -231,11 +231,11 @@ class TestLandingZonePermissions(TestLandingZonePermissionsBase):
             self.user_no_roles,
         ]
         self.assert_response(url, good_users, 200)
-        # TODO: Update test after SODAR core issue #1220 is merged
-        try:
-            self.assert_response(url, bad_users, 302)
-        except AssertionError:
-            pass  # In some cases, the redirect is not properly followed
+        redirect_url = reverse(
+            'landingzones:list',
+            kwargs={'project': self.landing_zone.project.sodar_uuid},
+        )
+        self.assert_response(url, bad_users, 302, redirect_user=redirect_url)
 
     def test_zone_delete(self):
         """Test ZoneDeleteView permissions"""
