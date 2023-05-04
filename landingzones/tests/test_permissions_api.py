@@ -1,4 +1,5 @@
 """Tests for REST API view permissions in the landingzones app"""
+import json
 
 from django.urls import reverse
 
@@ -133,10 +134,12 @@ class TestLandingZonePermissions(
         self.assert_response(url, [self.anonymous], 401)
 
     def _get_post_data(self):
-        return {
-            'assay': str(self.assay.sodar_uuid),
-            'description': 'Test description updated',
-        }
+        return json.dumps(
+            {
+                'assay': str(self.assay.sodar_uuid),
+                'description': 'Test description updated',
+            }
+        )
 
     def test_update(self):
         """Test LandingZoneUpdateAPIView permissions"""
@@ -155,37 +158,32 @@ class TestLandingZonePermissions(
             self.user_guest,
             self.user_no_roles,
         ]
-        # TODO: Update test after SODAR core issue #1221 is merged
-        try:
-            self.assert_response_api(
-                url,
-                good_users,
-                200,
-                method='PATCH',
-                data=self._get_post_data(),
-                media_type='application/json',
-                knox=True,
-            )
-            self.assert_response_api(
-                url,
-                bad_users,
-                403,
-                method='PATCH',
-                data=self._get_post_data(),
-                media_type='application/json',
-                knox=True,
-            )
-            self.assert_response_api(
-                url,
-                [self.anonymous],
-                401,
-                method='PATCH',
-                data=self._get_post_data(),
-                media_type='application/json',
-                knox=True,
-            )
-        except AssertionError:
-            pass
+        self.assert_response_api(
+            url,
+            good_users,
+            200,
+            method='PATCH',
+            data=self._get_post_data(),
+            knox=True,
+            req_kwargs={'CONTENT_TYPE': 'application/json'},
+        )
+        self.assert_response_api(
+            url,
+            bad_users,
+            403,
+            method='PATCH',
+            data=self._get_post_data(),
+            knox=True,
+            req_kwargs={'CONTENT_TYPE': 'application/json'},
+        )
+        self.assert_response_api(
+            url,
+            [self.anonymous],
+            401,
+            method='PATCH',
+            data=self._get_post_data(),
+            req_kwargs={'CONTENT_TYPE': 'application/json'},
+        )
 
     def test_update_archive(self):
         """Test LandingZoneUpdateAPIView with archived project"""
@@ -196,43 +194,39 @@ class TestLandingZonePermissions(
         )
         good_users = [
             self.superuser,
+        ]
+        bad_users = [
             self.user_owner_cat,
             self.user_owner,
             self.user_delegate,
-        ]
-        bad_users = [
             self.user_contributor,
             self.user_guest,
             self.user_no_roles,
         ]
-        # TODO: Fix tests
-        try:
-            self.assert_response_api(
-                url,
-                good_users,
-                200,
-                method='PATCH',
-                data=self._get_post_data(),
-                media_type='application/json',
-                knox=True,
-            )
-            self.assert_response_api(
-                url,
-                bad_users,
-                403,
-                method='PATCH',
-                data=self._get_post_data(),
-                media_type='application/json',
-                knox=True,
-            )
-            self.assert_response_api(
-                url,
-                [self.anonymous],
-                401,
-                method='PATCH',
-                data=self._get_post_data(),
-                media_type='application/json',
-                knox=True,
-            )
-        except AssertionError:
-            pass
+        self.assert_response_api(
+            url,
+            good_users,
+            200,
+            method='PATCH',
+            data=self._get_post_data(),
+            # media_type='application/json',
+            knox=True,
+            req_kwargs={'CONTENT_TYPE': 'application/json'},
+        )
+        self.assert_response_api(
+            url,
+            bad_users,
+            403,
+            method='PATCH',
+            data=self._get_post_data(),
+            knox=True,
+            req_kwargs={'CONTENT_TYPE': 'application/json'},
+        )
+        self.assert_response_api(
+            url,
+            [self.anonymous],
+            401,
+            method='PATCH',
+            data=self._get_post_data(),
+            req_kwargs={'CONTENT_TYPE': 'application/json'},
+        )

@@ -258,7 +258,7 @@ class ZoneUpdateAPIView(
 
     lookup_field = 'sodar_uuid'
     lookup_url_kwarg = 'landingzone'
-    permission_required = 'landingzones.update_zone'
+    permission_required = 'landingzones.update_zone_all'
     serializer_class = LandingZoneSerializer
 
     def _validate_update_fields(self, serializer):
