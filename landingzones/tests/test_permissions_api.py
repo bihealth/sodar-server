@@ -1,12 +1,10 @@
 """Tests for REST API view permissions in the landingzones app"""
 
-import json
 from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.tests.test_permissions import TestProjectPermissionBase
-from projectroles.tests.test_permissions_api import SODARAPIPermissionTestMixin
+from projectroles.tests.test_permissions_api import TestProjectAPIPermissionBase
 
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
@@ -33,10 +31,15 @@ SHEET_PATH = SHEET_DIR + 'i_small.zip'
 class TestLandingZonePermissions(
     LandingZoneMixin,
     SampleSheetIOMixin,
-    TestProjectPermissionBase,
-    SODARAPIPermissionTestMixin,
+    TestProjectAPIPermissionBase,
 ):
     """Tests for landingzones REST API view permissions"""
+
+    def _get_update_post_data(self):
+        return {
+            'assay': str(self.assay.sodar_uuid),
+            'description': 'Test description updated',
+        }
 
     def setUp(self):
         super().setUp()
@@ -133,14 +136,6 @@ class TestLandingZonePermissions(
         self.assert_response(url, bad_users, 403)
         self.assert_response(url, [self.anonymous], 401)
 
-    def _get_post_data(self):
-        return json.dumps(
-            {
-                'assay': str(self.assay.sodar_uuid),
-                'description': 'Test description updated',
-            }
-        )
-
     def test_update(self):
         """Test LandingZoneUpdateAPIView permissions"""
         url = reverse(
@@ -163,26 +158,23 @@ class TestLandingZonePermissions(
             good_users,
             200,
             method='PATCH',
-            data=self._get_post_data(),
+            data=self._get_update_post_data(),
             knox=True,
-            req_kwargs={'CONTENT_TYPE': 'application/json'},
         )
         self.assert_response_api(
             url,
             bad_users,
             403,
             method='PATCH',
-            data=self._get_post_data(),
+            data=self._get_update_post_data(),
             knox=True,
-            req_kwargs={'CONTENT_TYPE': 'application/json'},
         )
         self.assert_response_api(
             url,
             [self.anonymous],
             401,
             method='PATCH',
-            data=self._get_post_data(),
-            req_kwargs={'CONTENT_TYPE': 'application/json'},
+            data=self._get_update_post_data(),
         )
 
     def test_update_archive(self):
@@ -208,25 +200,21 @@ class TestLandingZonePermissions(
             good_users,
             200,
             method='PATCH',
-            data=self._get_post_data(),
-            # media_type='application/json',
+            data=self._get_update_post_data(),
             knox=True,
-            req_kwargs={'CONTENT_TYPE': 'application/json'},
         )
         self.assert_response_api(
             url,
             bad_users,
             403,
             method='PATCH',
-            data=self._get_post_data(),
+            data=self._get_update_post_data(),
             knox=True,
-            req_kwargs={'CONTENT_TYPE': 'application/json'},
         )
         self.assert_response_api(
             url,
             [self.anonymous],
             401,
             method='PATCH',
-            data=self._get_post_data(),
-            req_kwargs={'CONTENT_TYPE': 'application/json'},
+            data=self._get_update_post_data(),
         )
