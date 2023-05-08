@@ -23,6 +23,8 @@ from taskflowbackend.tests.base import (
 # Samplesheets dependencies
 from samplesheets.views import (
     IRODS_REQ_CREATE_ALERT as CREATE_ALERT,
+    IRODS_REQ_ACCEPT_ALERT as ACCEPT_ALERT,
+    # IRODS_REQ_REJECT_ALERT as REJECT_ALERT,
 )
 from samplesheets.views_api import IRODS_ERROR_MSG
 
@@ -326,6 +328,291 @@ class TestIrodsRequestCreateAPIView(TestIrodsRequestAPIViewBase):
         self.assertEqual(IrodsDataRequest.objects.count(), 2)
         self._assert_alert_count(CREATE_ALERT, self.user, 1)
         self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
+
+
+class TestIrodsRequestUpdateAPIView(TestIrodsRequestAPIViewBase):
+    """Tests for IrodsRequestUpdateAPIView"""
+
+    def test_update(self):
+        """Test updating a request"""
+        update_data = {'path': self.path, 'description': 'Updated'}
+
+        with self.login(self.user_contrib):
+            self.client.post(
+                reverse(
+                    'samplesheets:api_irods_request_create',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                self.post_data,
+            )
+            self.assertEqual(IrodsDataRequest.objects.count(), 1)
+            obj = IrodsDataRequest.objects.first()
+            response = self.client.post(
+                reverse(
+                    'samplesheets:api_irods_request_update',
+                    kwargs={'irodsdatarequest': obj.sodar_uuid},
+                ),
+                update_data,
+            )
+            self.assertEqual(response.status_code, 200)
+
+        obj.refresh_from_db()
+        self.assertEqual(obj.description, 'Updated')
+        self.assertEqual(obj.path, self.path)
+
+    def test_update_invalid_data(self):
+        """Test updating a request with invalid data"""
+        update_data = {'path': '/doesnt/exist', 'description': 'Updated'}
+
+        with self.login(self.user_contrib):
+            self.client.post(
+                reverse(
+                    'samplesheets:api_irods_request_create',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                self.post_data,
+            )
+            self.assertEqual(IrodsDataRequest.objects.count(), 1)
+            obj = IrodsDataRequest.objects.first()
+            response = self.client.post(
+                reverse(
+                    'samplesheets:api_irods_request_update',
+                    kwargs={'irodsdatarequest': obj.sodar_uuid},
+                ),
+                update_data,
+            )
+            self.assertEqual(response.status_code, 400)
+
+        obj.refresh_from_db()
+        self.assertEqual(obj.description, 'bla')
+        self.assertEqual(obj.path, self.path)
+
+
+class TestIrodsRequestDeleteAPIView(TestIrodsRequestAPIViewBase):
+    """Tests for IrodsRequestDeleteAPIView"""
+
+    def test_delete(self):
+        """Test deleting a request"""
+        with self.login(self.user_contrib):
+            self.client.post(
+                reverse(
+                    'samplesheets:api_irods_request_create',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                self.post_data,
+            )
+            self.assertEqual(IrodsDataRequest.objects.count(), 1)
+            self._assert_alert_count(CREATE_ALERT, self.user, 1)
+            self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
+            obj = IrodsDataRequest.objects.first()
+
+            response = self.client.delete(
+                reverse(
+                    'samplesheets:api_irods_request_delete',
+                    kwargs={'irodsdatarequest': obj.sodar_uuid},
+                )
+            )
+            self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+        self._assert_alert_count(CREATE_ALERT, self.user, 0)
+        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
+
+    def test_delete_one_of_multiple(self):
+        """Test deleting one of multiple requests"""
+        path2 = os.path.join(self.assay_path, TEST_FILE_NAME + '_2')
+        path2_md5 = os.path.join(self.assay_path, TEST_FILE_NAME + '_2.md5')
+        self.irods.data_objects.create(path2)
+        self.irods.data_objects.create(path2_md5)
+        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+
+        with self.login(self.user_contrib):
+            self.client.post(
+                reverse(
+                    'samplesheets:api_irods_request_create',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                self.post_data,
+            )
+            self.post_data['path'] = path2
+            self.client.post(
+                reverse(
+                    'samplesheets:api_irods_request_create',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                self.post_data,
+            )
+            self.assertEqual(IrodsDataRequest.objects.count(), 2)
+            self._assert_alert_count(CREATE_ALERT, self.user, 1)
+            self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
+            obj = IrodsDataRequest.objects.first()
+            # NOTE: Still should only have one request for both
+            self._assert_alert_count(CREATE_ALERT, self.user, 1)
+            self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
+
+            response = self.client.delete(
+                reverse(
+                    'samplesheets:api_irods_request_delete',
+                    kwargs={'irodsdatarequest': obj.sodar_uuid},
+                )
+            )
+            self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        self._assert_alert_count(CREATE_ALERT, self.user, 1)
+        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
+
+
+class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
+    """Tests for IrodsRequestAcceptAPIView"""
+
+    def test_accept(self):
+        """Test accepting a request"""
+        with self.login(self.user_contrib):
+            self.client.post(
+                reverse(
+                    'samplesheets:api_irods_request_create',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                self.post_data,
+            )
+
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        obj = IrodsDataRequest.objects.first()
+        self._assert_alert_count(CREATE_ALERT, self.user, 1)
+        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
+        self._assert_alert_count(ACCEPT_ALERT, self.user, 0)
+        self._assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:api_irods_request_accept',
+                    kwargs={'irodsdatarequest': obj.sodar_uuid},
+                ),
+                {'confirm': True},
+            )
+            self.assertEqual(response.status_code, 200)
+
+        obj.refresh_from_db()
+        self.assertEqual(obj.status, 'ACCEPTED')
+        self._assert_alert_count(CREATE_ALERT, self.user, 0)
+        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
+        self._assert_alert_count(ACCEPT_ALERT, self.user, 0)
+        self._assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
+        self.assert_irods_obj(self.path, False)
+
+    def test_accept_no_request(self):
+        """Test accepting a non-existing request"""
+        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:api_irods_request_accept',
+                    kwargs={'irodsdatarequest': 'invalid_uuid'},
+                ),
+                {'confirm': True},
+            )
+            self.assertEqual(response.status_code, 404)
+
+    def test_accept_invalid_data(self):
+        """Test accepting a request with invalid data"""
+        with self.login(self.user_contrib):
+            self.client.post(
+                reverse(
+                    'samplesheets:api_irods_request_create',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                self.post_data,
+            )
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        obj = IrodsDataRequest.objects.first()
+        self._assert_alert_count(CREATE_ALERT, self.user, 1)
+        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
+        self._assert_alert_count(ACCEPT_ALERT, self.user, 0)
+        self._assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:api_irods_request_accept',
+                    kwargs={'irodsdatarequest': obj.sodar_uuid},
+                ),
+                {'confirm': False},
+            )
+            self.assertEqual(response.status_code, 200)
+
+        obj.refresh_from_db()
+        self._assert_alert_count(CREATE_ALERT, self.user, 1)
+        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
+        self._assert_alert_count(ACCEPT_ALERT, self.user, 0)
+        self._assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
+        self.assert_irods_obj(self.path)
+
+    def test_accept_owner(self):
+        pass
+
+    def test_accept_delegate(self):
+        pass
+
+    def test_accept_contributor(self):
+        pass
+
+    def test_accept_one_of_multiple(self):
+        """Test accepting one of multiple requests"""
+        path2 = os.path.join(self.assay_path, TEST_FILE_NAME + '_2')
+        path2_md5 = os.path.join(self.assay_path, TEST_FILE_NAME + '_2.md5')
+        self.irods.data_objects.create(path2)
+        self.irods.data_objects.create(path2_md5)
+        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+
+        with self.login(self.user_contrib):
+            self.client.post(
+                reverse(
+                    'samplesheets:api_irods_request_create',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                self.post_data,
+            )
+            self.post_data['path'] = path2
+            self.client.post(
+                reverse(
+                    'samplesheets:api_irods_request_create',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                self.post_data,
+            )
+
+        self.assertEqual(IrodsDataRequest.objects.count(), 2)
+        self._assert_alert_count(CREATE_ALERT, self.user, 1)
+        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
+        obj = IrodsDataRequest.objects.first()
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:api_irods_request_accept',
+                    kwargs={'irodsdatarequest': obj.sodar_uuid},
+                ),
+                {'confirm': True},
+            )
+            self.assertEqual(response.status_code, 200)
+
+        obj.refresh_from_db()
+        self.assertEqual(obj.status, 'ACCEPTED')
+        self.assertEqual(
+            IrodsDataRequest.objects.filter(status='ACTIVE').count(), 1
+        )
+        self._assert_alert_count(CREATE_ALERT, self.user, 1)
+        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
+
+    # @override_settings(REDIS_URL=INVALID_REDIS_URL)
+    # def test_accept_lock_failure(self):
+    #     pass
+
+
+class TestIrodsRequestRejectAPIView(TestIrodsRequestAPIViewBase):
+    pass
 
 
 class TestSampleDataFileExistsAPIView(TestSampleSheetAPITaskflowBase):
