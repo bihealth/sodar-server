@@ -3,13 +3,13 @@
 {% load crispy_forms_filters %}
 
 {% block title %}
-  Create Landing Zone in {{ project.title }}
+  {% if action == 'create' %}Create{% else %}Update{% endif %} Landing ababab Zone in {{ project.title }}
 {% endblock title %}
 
 {% block projectroles_extend %}
 
 <div class="container-fluid sodar-subtitle-container">
-  <h3>Create Landing Zone</h3>
+  <h3>{% if action == 'create' %}Create{% else %}Update{% endif %} Landing Zone</h3>
 </div>
 
 <div class="container-fluid sodar-page-container">
@@ -23,7 +23,11 @@
           <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Cancel
         </a>
         <button type="submit" class="btn btn-primary">
-          <i class="iconify" data-icon="mdi:plus-thick"></i> Create
+          {% if action == 'create' %}
+            <i class="iconify" data-icon="mdi:plus-thick"></i> Create
+          {% else %}
+            <i class="iconify" data-icon="mdi:check-bold"></i> Update
+          {% endif %}
         </button>
       </div>
     </div>

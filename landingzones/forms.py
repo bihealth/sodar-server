@@ -101,11 +101,18 @@ class LandingZoneForm(forms.ModelForm):
                         )
         # Updating
         else:
+            # Set initial assay value
+            self.initial['assay'] = self.instance.assay.sodar_uuid
+            self.initial['configuration'] = self.instance.configuration
+            self.initial['user_message'] = self.instance.user_message
+            self.initial['description'] = self.instance.description
+
             # Don't allow modifying certain fields
-            self.fields['title_suffix'].disabled = True
-            self.fields['create_colls'].disabled = True
-            self.fields['restrict_colls'].disabled = True
-            # TODO: Don't allow modifying the assay
+            self.fields['title_suffix'].widget = forms.HiddenInput()
+            self.fields['create_colls'].widget = forms.HiddenInput()
+            self.fields['restrict_colls'].widget = forms.HiddenInput()
+            self.fields['assay'].widget = forms.HiddenInput()
+            self.fields['configuration'].widget = forms.HiddenInput()
 
     def clean(self):
         # Creation
@@ -114,6 +121,9 @@ class LandingZoneForm(forms.ModelForm):
             self.cleaned_data['title'] = get_zone_title(
                 self.cleaned_data.get('title_suffix')
             )
+        # Updating
+        else:
+            self.cleaned_data['title'] = self.instance.title
         return self.cleaned_data
 
     def save(self, *args, **kwargs):

@@ -173,6 +173,40 @@ class TestLandingZoneCreateView(TestViewsBase):
         self.assertIsNotNone(form.fields['configuration'])
 
 
+class TestLandingZoneUpdateView(TestViewsBase):
+    """Tests for the landing zone update view"""
+
+    def test_render(self):
+        """Test rendering of the landing zone update view"""
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'landingzones:update',
+                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
+                )
+            )
+        self.assertEqual(response.status_code, 200)
+        # Assert form
+        form = response.context['form']
+        self.assertIsNotNone(form)
+        self.assertIsNotNone(form.fields['assay'])
+        self.assertIsNotNone(form.fields['description'])
+
+    def test_render_invalid_status(self):
+        """Test rendering with an invalid zone status"""
+        self.landing_zone.status = 'DELETED'
+        self.landing_zone.save()
+
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'landingzones:update',
+                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
+                )
+            )
+        self.assertEqual(response.status_code, 302)
+
+
 class TestLandingZoneMoveView(TestViewsBase):
     """Tests for the landing zone validation and moving view"""
 
