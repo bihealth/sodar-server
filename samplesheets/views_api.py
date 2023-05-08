@@ -16,14 +16,18 @@ from rest_framework.exceptions import (
     ValidationError,
     NotFound,
 )
-from rest_framework.generics import RetrieveAPIView
+from rest_framework.generics import (
+    RetrieveAPIView,
+    CreateAPIView,
+    UpdateAPIView,
+)
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.models import RemoteSite
+from projectroles.models import RemoteSite, Project
 from projectroles.plugins import get_backend_api
 from projectroles.views_api import (
     SODARAPIBaseMixin,
@@ -34,7 +38,10 @@ from projectroles.views_api import (
 from samplesheets.io import SampleSheetIO
 from samplesheets.models import Investigation, ISATab, IrodsDataRequest
 from samplesheets.rendering import SampleSheetTableBuilder
-from samplesheets.serializers import InvestigationSerializer
+from samplesheets.serializers import (
+    InvestigationSerializer,
+    IrodsRequestSerializer,
+)
 from samplesheets.views import (
     IrodsCollsCreateViewMixin,
     IrodsRequestModifyMixin,
@@ -53,6 +60,7 @@ table_builder = SampleSheetTableBuilder()
 MD5_RE = re.compile(r'([a-fA-F\d]{32})')
 APP_NAME = 'samplesheets'
 IRODS_ERROR_MSG = 'Exception querying iRODS objects:'
+IRODS_EX_MSG = ' iRODS data request failed: '
 
 
 # API Views --------------------------------------------------------------------
@@ -143,7 +151,9 @@ class IrodsDataRequestListAPIView(
 ):
     """
     List iRODS data requests for a project.
+
     **URL:** ``/samplesheets/api/irods/requests/{Project.sodar_uuid}``
+
     **Methods:** ``GET``
     """
 
@@ -152,17 +162,31 @@ class IrodsDataRequestListAPIView(
 
     def get(self, request, *args, **kwargs):
         """GET request for listing iRODS data requests"""
-        irods_backend = get_backend_api('omics_irods')
-        ex_msg = 'Listing iRODS data requests failed: '
-        investigation = Investigation.objects.filter(
-            project__sodar_uuid=self.kwargs.get('project'), active=True
+        project = Project.objects.filter(
+            sodar_uuid=self.kwargs.get('project')
         ).first()
-        if not investigation:
-            raise ValidationError('{}Investigation not found'.format(ex_msg))
-        try:
-            requests = irods_backend.get_data_requests(investigation.project)
-        except Exception as ex:
-            raise APIException('{}{}'.format(ex_msg, ex))
+        irods_requests = IrodsDataRequest.objects.filter(project=project)
+
+        # For superusers, owners and delegates,
+        # display active/failed requests from all users
+        if (
+            self.request.user.is_superuser
+            or project.is_delegate(self.request.user)
+            or project.is_owner(self.request.user)
+        ):
+            requests = irods_requests.filter(status__in=['ACTIVE', 'FAILED'])
+        else:
+            # For regular users, dispaly their own requests regardless of status
+            requests = irods_requests.filter(user=self.request.user)
+
+        if not requests:
+            return Response(
+                {
+                    'detail': 'No iRODS data requests found',
+                },
+                status=status.HTTP_200_OK,
+            )
+
         return Response(
             {
                 'detail': 'iRODS data requests listed',
@@ -173,44 +197,57 @@ class IrodsDataRequestListAPIView(
 
 
 class IrodsRequestCreateAPIView(
-    IrodsRequestModifyMixin, SODARAPIBaseProjectMixin, APIView
+    IrodsRequestModifyMixin, SODARAPIBaseProjectMixin, CreateAPIView
 ):
     """
     Create an iRODS data request for a project.
+
     **URL:** ``/samplesheets/api/irods/request/create/{Project.sodar_uuid}``
+
     **Methods:** ``POST``
     """
 
     http_method_names = ['post']
     permission_required = 'samplesheets.edit_sheet'
+    serializer_class = IrodsRequestSerializer
 
     def post(self, request, *args, **kwargs):
         """POST request for creating an iRODS data request"""
-        ex_msg = 'Creating iRODS data request failed: '
-        investigation = Investigation.objects.filter(
-            project__sodar_uuid=self.kwargs.get('project'), active=True
+        project = self.get_project()
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(
+                project=project,
+                user=self.request.user,
+            )
+        else:
+            raise ValidationError('Invalid data: {}'.format(serializer.errors))
+
+        irods_request = IrodsDataRequest.objects.filter(
+            sodar_uuid=serializer.data.get('sodar_uuid')
         ).first()
-        if not investigation:
-            raise ValidationError('{}Investigation not found'.format(ex_msg))
-        try:
-            self.create_request(investigation, request)
-        except Exception as ex:
-            raise APIException('{}{}'.format(ex_msg, ex))
+        # Create timeline event
+        self.add_tl_create(irods_request)
+        # Add app alerts to owners/delegates
+        self.add_alerts_create(project)
+
         return Response(
             {
                 'detail': 'iRODS data request created',
-                'request': request,
+                'request': irods_request,
             },
             status=status.HTTP_200_OK,
         )
 
 
 class IrodsRequestUpdateAPIView(
-    IrodsRequestModifyMixin, SODARAPIBaseProjectMixin, APIView
+    IrodsRequestModifyMixin, SODARAPIBaseProjectMixin, UpdateAPIView
 ):
     """
     Update an iRODS data request for a project.
+
     **URL:** ``/samplesheets/api/irods/request/update/{IrodsDataRequest.sodar_uuid}``
+
     **Methods:** ``POST``
     """
 
@@ -219,20 +256,30 @@ class IrodsRequestUpdateAPIView(
 
     def post(self, request, *args, **kwargs):
         """POST request for updating an iRODS data request"""
-        ex_msg = 'Updating iRODS data request failed: '
-        request = IrodsDataRequest.objects.filter(
+        ex_msg = 'Updating' + IRODS_EX_MSG
+        irods_request = IrodsDataRequest.objects.filter(
             sodar_uuid=self.kwargs.get('irodsdatarequest')
         ).first()
-        if not request:
+        if not irods_request:
             raise ValidationError('{}Request not found'.format(ex_msg))
-        try:
-            self.update_request(request, request)
-        except Exception as ex:
-            raise APIException('{}{}'.format(ex_msg, ex))
+        serializer = IrodsRequestSerializer(
+            irods_request, data=request.data, partial=True
+        )
+        if serializer.is_valid():
+            serializer.save()
+        else:
+            raise ValidationError('Invalid data: {}'.format(serializer.errors))
+
+        irods_request = IrodsDataRequest.objects.filter(
+            sodar_uuid=serializer.data.get('sodar_uuid')
+        ).first()
+        # Create timeline event
+        self.add_tl_update(irods_request)
+
         return Response(
             {
                 'detail': 'iRODS data request updated',
-                'request': request,
+                'request': irods_request,
             },
             status=status.HTTP_200_OK,
         )
@@ -243,7 +290,9 @@ class IrodsRequestDeleteAPIView(
 ):
     """
     Delete an iRODS data request for a project.
+
     **URL:** ``/samplesheets/api/irods/request/delete/{IrodsDataRequest.sodar_uuid}``
+
     **Methods:** ``DELETE``
     """
 
@@ -252,16 +301,21 @@ class IrodsRequestDeleteAPIView(
 
     def delete(self, request, *args, **kwargs):
         """DELETE request for deleting an iRODS data request"""
-        ex_msg = 'Deleting iRODS data request failed: '
-        request = IrodsDataRequest.objects.filter(
+        ex_msg = 'Deleting' + IRODS_EX_MSG
+        irods_request = IrodsDataRequest.objects.filter(
             sodar_uuid=self.kwargs.get('irodsdatarequest')
         ).first()
         if not request:
             raise ValidationError('{}Request not found'.format(ex_msg))
         try:
-            self.delete_request(request, request)
+            irods_request.delete()
         except Exception as ex:
             raise APIException('{}{}'.format(ex_msg, ex))
+
+        # Add timeline event
+        self.add_tl_delete(irods_request)
+        # Handle project alerts
+        self.handle_alerts_deactivate(irods_request)
         return Response(
             {
                 'detail': 'iRODS data request deleted',
@@ -275,7 +329,9 @@ class IrodsRequestAcceptAPIView(
 ):
     """
     Accept an iRODS data request for a project.
+
     **URL:** ``/samplesheets/api/irods/request/accept/{IrodsDataRequest.sodar_uuid}``
+
     **Methods:** ``POST``
     """
 
@@ -284,20 +340,48 @@ class IrodsRequestAcceptAPIView(
 
     def post(self, request, *args, **kwargs):
         """POST request for accepting an iRODS data request"""
-        ex_msg = 'Accepting iRODS data request failed: '
-        request = IrodsDataRequest.objects.filter(
+        timeline = get_backend_api('timeline_backend')
+        taskflow = get_backend_api('taskflow')
+        app_alerts = get_backend_api('appalerts_backend')
+        project = self.get_project()
+        tl_event = None
+        ex_msg = 'Accepting' + IRODS_EX_MSG
+
+        irods_request = IrodsDataRequest.objects.filter(
             sodar_uuid=self.kwargs.get('irodsdatarequest')
         ).first()
+
+        if timeline:
+            tl_event = timeline.add_event(
+                project=project,
+                app_name=APP_NAME,
+                user=self.request.user,
+                event_name='irods_request_accept',
+                description='accept iRODS data request {irods_request}',
+                status_type='OK',
+            )
+            tl_event.add_object(
+                obj=irods_request,
+                label='irods_request',
+                name=irods_request.get_display_name(),
+            )
         if not request:
             raise ValidationError('{}Request not found'.format(ex_msg))
         try:
-            self.accept_request(request, request)
+            self.accept_request(
+                irods_request,
+                project,
+                self.request,
+                timeline=timeline,
+                taskflow=taskflow,
+                app_alerts=app_alerts,
+            )
         except Exception as ex:
             raise APIException('{}{}'.format(ex_msg, ex))
         return Response(
             {
                 'detail': 'iRODS data request accepted',
-                'paths': request.paths,
+                'path': irods_request.path,
             },
             status=status.HTTP_200_OK,
         )
@@ -308,7 +392,9 @@ class IrodsRequestRejectAPIView(
 ):
     """
     Reject an iRODS data request for a project.
+
     **URL:** ``/samplesheets/api/irods/request/reject/{IrodsDataRequest.sodar_uuid}``
+
     **Methods:** ``POST``
     """
 
@@ -317,16 +403,27 @@ class IrodsRequestRejectAPIView(
 
     def post(self, request, *args, **kwargs):
         """POST request for rejecting an iRODS data request"""
-        ex_msg = 'Rejecting iRODS data request failed: '
-        request = IrodsDataRequest.objects.filter(
+        ex_msg = 'Rejecting' + IRODS_EX_MSG
+        timeline = get_backend_api('timeline_backend')
+        app_alerts = get_backend_api('appalerts_backend')
+        project = self.get_project()
+        irods_request = IrodsDataRequest.objects.filter(
             sodar_uuid=self.kwargs.get('irodsdatarequest')
         ).first()
         if not request:
             raise ValidationError('{}Request not found'.format(ex_msg))
+
         try:
-            self.reject_request(request, request)
+            self.reject_request(
+                irods_request,
+                project,
+                self.request,
+                timeline=timeline,
+                app_alerts=app_alerts,
+            )
         except Exception as ex:
             raise APIException('{}{}'.format(ex_msg, ex))
+
         return Response(
             {
                 'detail': 'iRODS data request rejected',
