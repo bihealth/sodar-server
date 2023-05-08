@@ -234,7 +234,7 @@ class IrodsRequestCreateAPIView(
         return Response(
             {
                 'detail': 'iRODS data request created',
-                'request': irods_request,
+                'request': irods_request.sodar_uuid,
             },
             status=status.HTTP_200_OK,
         )

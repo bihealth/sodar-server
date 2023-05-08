@@ -961,8 +961,7 @@ class IrodsRequestModifyMixin:
         except taskflow.FlowSubmitException as ex:
             irods_request.status = 'FAILED'
             irods_request.save()
-            if settings.DEBUG:
-                raise ex
+            raise ex
 
         # Update cache
         if settings.SHEETS_ENABLE_CACHE:
@@ -2545,40 +2544,6 @@ class IrodsRequestAcceptView(
                 )
             )
 
-        # if timeline:
-        #     tl_event = timeline.add_event(
-        #         project=project,
-        #         app_name=APP_NAME,
-        #         user=self.request.user,
-        #         event_name='irods_request_accept',
-        #         description='accept iRODS data request {irods_request}',
-        #         status_type='OK',
-        #     )
-        #     tl_event.add_object(
-        #         obj=obj, label='irods_request', name=obj.get_display_name()
-        #     )
-        #
-        # flow_name = 'data_delete'
-        # flow_data = {'paths': [obj.path]}
-        # if obj.is_data_object():
-        #     flow_data['paths'].append(obj.path + '.md5')
-        #
-        # try:
-        #     taskflow.submit(
-        #         project=project,
-        #         flow_name=flow_name,
-        #         flow_data=flow_data,
-        #         tl_event=tl_event,
-        #         async_mode=False,
-        #     )
-        #     obj.status = 'ACCEPTED'
-        #     obj.save()
-        # except taskflow.FlowSubmitException as ex:
-        #     obj.status = 'FAILED'
-        #     obj.save()
-        #     if settings.DEBUG:
-        #         raise ex
-
         try:
             self.accept_request(
                 obj,
@@ -2589,6 +2554,8 @@ class IrodsRequestAcceptView(
                 app_alerts=app_alerts,
             )
         except Exception as ex:
+            if settings.DEBUG:
+                raise ex
             messages.error(
                 self.request,
                 'Accepting iRODS data request "{}" failed: {}'.format(
@@ -2596,47 +2563,6 @@ class IrodsRequestAcceptView(
                 ),
             )
             return redirect(redirect_url)
-
-        # # Update cache
-        # if settings.SHEETS_ENABLE_CACHE:
-        #     from samplesheets.tasks_celery import update_project_cache_task
-        #
-        #     update_project_cache_task.delay(
-        #         project_uuid=str(project.sodar_uuid),
-        #         user_uuid=str(self.request.user.sodar_uuid),
-        #     )
-        #
-        # # Prepare and send notification email
-        # if settings.PROJECTROLES_SEND_EMAIL and obj.user != self.request.user:
-        #     subject_body = 'iRODS delete request accepted'
-        #     message_body = EMAIL_DELETE_REQUEST_ACCEPT.format(
-        #         project=obj.project.title,
-        #         user=obj.user.username,
-        #         user_email=obj.user.email,
-        #         path=obj.path,
-        #     )
-        #     send_generic_mail(
-        #         subject_body, message_body, [obj.user.email], request
-        #     )
-        #
-        # # Create app alert
-        # if app_alerts and obj.user != self.request.user:
-        #     app_alerts.add_alert(
-        #         app_name=APP_NAME,
-        #         alert_name=IRODS_REQ_ACCEPT_ALERT,
-        #         user=obj.user,
-        #         message='iRODS delete request accepted by {}: "{}"'.format(
-        #             self.request.user.username, obj.get_short_path()
-        #         ),
-        #         level='SUCCESS',
-        #         url=reverse(
-        #             'samplesheets:project_sheets',
-        #             kwargs={'project': project.sodar_uuid},
-        #         ),
-        #         project=project,
-        #     )
-        #     # Handle project alerts
-        #     self.handle_alerts_deactivate(obj, app_alerts)
 
         messages.success(
             self.request,

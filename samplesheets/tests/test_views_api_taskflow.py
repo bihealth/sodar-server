@@ -13,17 +13,24 @@ from django.urls import reverse
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 
+from samplesheets.models import IrodsDataRequest
+
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import (
     TaskflowAPIViewTestBase,
 )
 
 # Samplesheets dependencies
+from samplesheets.views import (
+    IRODS_REQ_CREATE_ALERT as CREATE_ALERT,
+)
 from samplesheets.views_api import IRODS_ERROR_MSG
 
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
-from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
-
+from samplesheets.tests.test_views_taskflow import (
+    SampleSheetTaskflowMixin,
+    TEST_FILE_NAME,
+)
 
 # SODAR constants
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
@@ -57,6 +64,88 @@ class TestSampleSheetAPITaskflowBase(
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
+
+
+class TestIrodsRequestAPIViewBase(
+    SampleSheetIOMixin, SampleSheetTaskflowMixin, TaskflowAPIViewTestBase
+):
+    """Base samplesheets API view test class for iRODS delete requests"""
+
+    def _assert_alert_count(self, alert_name, user, count, project=None):
+        """
+        Assert expected app alert count. If project is not specified, default to
+        self.project.
+
+        :param alert_name: String
+        :param user: User object
+        :param count: Expected count
+        :param project: Project object or None
+        """
+        if not project:
+            project = self.project
+        self.assertEqual(
+            self.app_alert_model.objects.filter(
+                alert_name=alert_name,
+                active=True,
+                project=project,
+                user=user,
+            ).count(),
+            count,
+        )
+
+    def setUp(self):
+        super().setUp()
+        self.project, self.owner_as = self.make_project_taskflow(
+            title='TestProject',
+            type=PROJECT_TYPE_PROJECT,
+            parent=self.category,
+            owner=self.user,
+            description='description',
+        )
+
+        # Import investigation
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+
+        # Set up iRODS data
+        self.make_irods_colls(self.investigation)
+        self.assay_path = self.irods_backend.get_path(self.assay)
+        self.path = os.path.join(self.assay_path, TEST_FILE_NAME)
+        self.path_md5 = os.path.join(self.assay_path, f'{TEST_FILE_NAME}.md5')
+        # Create objects
+        self.file_obj = self.irods.data_objects.create(self.path)
+        self.md5_obj = self.irods.data_objects.create(self.path_md5)
+
+        # Init users (owner = user_cat, superuser = user)
+        self.user_delegate = self.make_user('user_delegate')
+        self.user_contrib = self.make_user('user_contrib')
+        self.user_contrib2 = self.make_user('user_contrib2')
+        self.user_guest = self.make_user('user_guest')
+
+        self.make_assignment_taskflow(
+            self.project, self.user_delegate, self.role_delegate
+        )
+        self.make_assignment_taskflow(
+            self.project, self.user_contrib, self.role_contributor
+        )
+        self.make_assignment_taskflow(
+            self.project, self.user_contrib2, self.role_contributor
+        )
+        self.make_assignment_taskflow(
+            self.project, self.user_guest, self.role_guest
+        )
+
+        # Get appalerts API and model
+        self.app_alerts = get_backend_api('appalerts_backend')
+        self.app_alert_model = self.app_alerts.get_model()
+
+        # Set default POST data
+        self.post_data = {'path': self.path, 'description': 'bla'}
+
+    def tearDown(self):
+        self.irods.collections.get('/sodarZone/projects').remove(force=True)
+        super().tearDown()
 
 
 class TestInvestigationRetrieveAPIView(TestSampleSheetAPITaskflowBase):
@@ -142,6 +231,101 @@ class TestIrodsCollsCreateAPIView(TestSampleSheetAPITaskflowBase):
         )
         response = self.request_knox(url, method='POST')
         self.assertEqual(response.status_code, 400)
+
+
+class TestIrodsRequestCreateAPIView(TestIrodsRequestAPIViewBase):
+    """Tests for IrodsRequestCreateAPIView"""
+
+    def test_create(self):
+        """Test post() in IrodsRequestCreateAPIView"""
+        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+        self._assert_alert_count(CREATE_ALERT, self.user, 0)
+        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
+        url = reverse(
+            'samplesheets:api_irods_request_create',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        with self.login(self.user_contrib):
+            response = self.client.post(url, self.post_data)
+            self.assertEqual(response.status_code, 200)
+
+        obj = IrodsDataRequest.objects.first()
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        self.assertEqual(obj.path, self.path)
+        self.assertEqual(obj.description, 'bla')
+        self._assert_alert_count(CREATE_ALERT, self.user, 1)
+        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
+
+    def test_create_trailing_slash(self):
+        """Test creating a request with a trailing slash in path"""
+        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+        post_data = {'path': self.path + '/', 'description': 'bla'}
+        url = reverse(
+            'samplesheets:api_irods_request_create',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+
+        with self.login(self.user_contrib):
+            response = self.client.post(url, post_data)
+            self.assertEqual(response.status_code, 200)
+
+        obj = IrodsDataRequest.objects.first()
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        self.assertEqual(obj.path, self.path + '/')
+        self.assertEqual(obj.description, 'bla')
+
+    def test_create_invalid_data(self):
+        """Test creating a request with invalid data"""
+        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+        self._assert_alert_count(CREATE_ALERT, self.user, 0)
+        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
+        post_data = {'path': '/doesnt/exist', 'description': 'bla'}
+        url = reverse(
+            'samplesheets:api_irods_request_create',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        with self.login(self.user_contrib):
+            response = self.client.post(url, post_data)
+            self.assertEqual(response.status_code, 400)
+        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+
+    def test_create_invalid_path_assay_collection(self):
+        """Test creating a request with assay path (should fail)"""
+        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+        post_data = {'path': self.assay_path, 'description': 'bla'}
+        url = reverse(
+            'samplesheets:api_irods_request_create',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        with self.login(self.user_contrib):
+            response = self.client.post(url, post_data)
+            self.assertEqual(response.status_code, 400)
+        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+
+    def test_create_multiple(self):
+        """Test creating multiple requests"""
+        path2 = os.path.join(self.assay_path, TEST_FILE_NAME + '_2')
+        path2_md5 = os.path.join(self.assay_path, TEST_FILE_NAME + '_2.md5')
+        self.irods.data_objects.create(path2)
+        self.irods.data_objects.create(path2_md5)
+
+        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+        self._assert_alert_count(CREATE_ALERT, self.user, 0)
+        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
+        url = reverse(
+            'samplesheets:api_irods_request_create',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        with self.login(self.user_contrib):
+            response = self.client.post(url, self.post_data)
+            self.assertEqual(response.status_code, 200)
+            self.post_data['path'] = path2
+            response = self.client.post(url, self.post_data)
+            self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(IrodsDataRequest.objects.count(), 2)
+        self._assert_alert_count(CREATE_ALERT, self.user, 1)
+        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
 
 
 class TestSampleDataFileExistsAPIView(TestSampleSheetAPITaskflowBase):
