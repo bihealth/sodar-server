@@ -161,7 +161,7 @@ class TestLandingZonePermissions(TestLandingZonePermissionsBase):
         self.assert_response(url, bad_users, 302)
 
     def test_zone_update(self):
-        """Test ZoneUpdateView permissions"""
+        """Test ZoneUpdateView default permissions"""
         url = reverse(
             'landingzones:update',
             kwargs={'landingzone': self.landing_zone.sodar_uuid},
