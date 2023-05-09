@@ -3,7 +3,7 @@
 {% load crispy_forms_filters %}
 
 {% block title %}
-  {% if action == 'create' %}Create Landing Zone in {{ project.title }}
+  {% if not object.pk %}Create Landing Zone in {{ project.title }}
   {% else %}Update Landing Zone {% if request.user.username == zone.user.username %}{{ zone.title }}{% else %}{{ zone.user.username }} / {{ zone.title }}{% endif %}
   {% endif %}
 {% endblock title %}
@@ -11,7 +11,7 @@
 {% block projectroles_extend %}
 
 <div class="container-fluid sodar-subtitle-container">
-  <h3>{% if action == 'create' %}Create Landing Zone in {{ project.title }}
+  <h3>{% if not object.pk %}Create Landing Zone in {{ project.title }}
   {% else %}Update Landing Zone {% if request.user.username == zone.user.username %}{{ zone.title }}{% else %}{{ zone.user.username }} / {{ zone.title }}{% endif %}
   {% endif %}</h3>
 </div>

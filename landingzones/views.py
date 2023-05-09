@@ -453,12 +453,6 @@ class ZoneCreateView(
     form_class = LandingZoneForm
     permission_required = 'landingzones.create_zone'
 
-    def get_context_data(self, *args, **kwargs):
-        """Add action to context"""
-        context = super().get_context_data(*args, **kwargs)
-        context['action'] = 'create'
-        return context
-
     def get_form_kwargs(self):
         """Pass project to form"""
         kwargs = super().get_form_kwargs()
@@ -544,7 +538,6 @@ class ZoneUpdateView(
         context['zone'] = LandingZone.objects.get(
             sodar_uuid=self.kwargs['landingzone']
         )
-        context['action'] = 'update'
         return context
 
     def get_permission_required(self, user):
