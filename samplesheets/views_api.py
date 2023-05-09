@@ -344,29 +344,14 @@ class IrodsRequestAcceptAPIView(
         taskflow = get_backend_api('taskflow')
         app_alerts = get_backend_api('appalerts_backend')
         project = self.get_project()
-        tl_event = None
         ex_msg = 'Accepting' + IRODS_EX_MSG
 
         irods_request = IrodsDataRequest.objects.filter(
             sodar_uuid=self.kwargs.get('irodsdatarequest')
         ).first()
-
-        if timeline:
-            tl_event = timeline.add_event(
-                project=project,
-                app_name=APP_NAME,
-                user=self.request.user,
-                event_name='irods_request_accept',
-                description='accept iRODS data request {irods_request}',
-                status_type='OK',
-            )
-            tl_event.add_object(
-                obj=irods_request,
-                label='irods_request',
-                name=irods_request.get_display_name(),
-            )
-        if not request:
+        if not irods_request:
             raise ValidationError('{}Request not found'.format(ex_msg))
+
         try:
             self.accept_request(
                 irods_request,
@@ -395,13 +380,13 @@ class IrodsRequestRejectAPIView(
 
     **URL:** ``/samplesheets/api/irods/request/reject/{IrodsDataRequest.sodar_uuid}``
 
-    **Methods:** ``POST``
+    **Methods:** ``GET``
     """
 
-    http_method_names = ['post']
+    http_method_names = ['get']
     permission_required = 'samplesheets.manage_sheet'
 
-    def post(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
         """POST request for rejecting an iRODS data request"""
         ex_msg = 'Rejecting' + IRODS_EX_MSG
         timeline = get_backend_api('timeline_backend')
@@ -410,8 +395,11 @@ class IrodsRequestRejectAPIView(
         irods_request = IrodsDataRequest.objects.filter(
             sodar_uuid=self.kwargs.get('irodsdatarequest')
         ).first()
-        if not request:
+        if not irods_request:
             raise ValidationError('{}Request not found'.format(ex_msg))
+
+        irods_request.status = 'REJECTED'
+        irods_request.save()
 
         try:
             self.reject_request(

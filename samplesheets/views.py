@@ -2409,18 +2409,6 @@ class IrodsRequestUpdateView(
         obj.project = self.get_project()
         obj.save()
 
-        # if timeline:
-        #     tl_event = timeline.add_event(
-        #         project=self.get_project(),
-        #         app_name=APP_NAME,
-        #         user=self.request.user,
-        #         event_name='irods_request_update',
-        #         description='update iRODS data request {irods_request}',
-        #         status_type='OK',
-        #     )
-        #     tl_event.add_object(
-        #         obj=obj, label='irods_request', name=obj.get_display_name()
-        #     )
         self.add_tl_update(obj, timeline=timeline)
 
         messages.success(
@@ -2607,19 +2595,6 @@ class IrodsRequestRejectView(
         obj.status = 'REJECTED'
         obj.save()
 
-        # if timeline:
-        #     tl_event = timeline.add_event(
-        #         project=project,
-        #         app_name=APP_NAME,
-        #         user=self.request.user,
-        #         event_name='irods_request_reject',
-        #         description='reject data iRODS request {irods_request}',
-        #         status_type='OK',
-        #     )
-        #     tl_event.add_object(
-        #         obj=obj, label='irods_request', name=obj.get_display_name()
-        #     )
-
         try:
             self.reject_request(
                 obj,
@@ -2639,38 +2614,6 @@ class IrodsRequestRejectView(
             self.request,
             'iRODS data request "{}" rejected.'.format(obj.get_display_name()),
         )
-
-        # # Prepare and send notification email
-        # if settings.PROJECTROLES_SEND_EMAIL and obj.user != self.request.user:
-        #     subject_body = 'iRODS delete request rejected'
-        #     message_body = EMAIL_DELETE_REQUEST_REJECT.format(
-        #         project=obj.project.title,
-        #         user=obj.user.username,
-        #         user_email=obj.user.email,
-        #         path=obj.path,
-        #     )
-        #     send_generic_mail(
-        #         subject_body, message_body, [obj.user.email], request
-        #     )
-        #
-        # # Create app alert
-        # if app_alerts and obj.user != self.request.user:
-        #     app_alerts.add_alert(
-        #         app_name=APP_NAME,
-        #         alert_name=IRODS_REQ_REJECT_ALERT,
-        #         user=obj.user,
-        #         message='iRODS delete request rejected by {}: "{}"'.format(
-        #             self.request.user.username, obj.get_short_path()
-        #         ),
-        #         level='WARNING',
-        #         url=reverse(
-        #             'samplesheets:project_sheets',
-        #             kwargs={'project': project.sodar_uuid},
-        #         ),
-        #         project=project,
-        #     )
-        #     # Handle project alerts
-        #     self.handle_alerts_deactivate(obj, app_alerts)
 
         return redirect(
             reverse(

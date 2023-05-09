@@ -8,6 +8,7 @@ import os
 from irods.keywords import REG_CHKSUM_KW
 
 from django.urls import reverse
+from django.test import override_settings
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
@@ -24,7 +25,7 @@ from taskflowbackend.tests.base import (
 from samplesheets.views import (
     IRODS_REQ_CREATE_ALERT as CREATE_ALERT,
     IRODS_REQ_ACCEPT_ALERT as ACCEPT_ALERT,
-    # IRODS_REQ_REJECT_ALERT as REJECT_ALERT,
+    IRODS_REQ_REJECT_ALERT as REJECT_ALERT,
 )
 from samplesheets.views_api import IRODS_ERROR_MSG
 
@@ -32,6 +33,7 @@ from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_views_taskflow import (
     SampleSheetTaskflowMixin,
     TEST_FILE_NAME,
+    INVALID_REDIS_URL,
 )
 
 # SODAR constants
@@ -665,13 +667,212 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
         self._assert_alert_count(CREATE_ALERT, self.user, 1)
         self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
 
-    # @override_settings(REDIS_URL=INVALID_REDIS_URL)
-    # def test_accept_lock_failure(self):
-    #     pass
+    @override_settings(REDIS_URL=INVALID_REDIS_URL)
+    def test_accept_lock_failure(self):
+        """Test accepting a request with project lock failure"""
+        self.assert_irods_obj(self.path)
+
+        with self.login(self.user_contrib):
+            self.client.post(
+                reverse(
+                    'samplesheets:api_irods_request_create',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                self.post_data,
+            )
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        obj = IrodsDataRequest.objects.first()
+        self._assert_alert_count(CREATE_ALERT, self.user, 1)
+        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:api_irods_request_accept',
+                    kwargs={'irodsdatarequest': obj.sodar_uuid},
+                ),
+                {'confirm': True},
+            )
+            self.assertEqual(response.status_code, 500)
+
+        obj.refresh_from_db()
+        self.assertEqual(obj.status, 'FAILED')
+        self.assert_irods_obj(self.path, True)
+        self._assert_alert_count(ACCEPT_ALERT, self.user, 0)
+        self._assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
+        self._assert_alert_count(ACCEPT_ALERT, self.user_contrib, 0)
+        self._assert_alert_count(CREATE_ALERT, self.user, 1)
+        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
+        self.assert_irods_obj(self.path, True)
 
 
 class TestIrodsRequestRejectAPIView(TestIrodsRequestAPIViewBase):
-    pass
+    """Tests for IrodsRequestRejectAPIView"""
+
+    def test_reject_admin(self):
+        """Test rejecting a request as admin"""
+        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+        self._assert_alert_count(REJECT_ALERT, self.user, 0)
+        self._assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
+        self._assert_alert_count(REJECT_ALERT, self.user_contrib, 0)
+
+        with self.login(self.user_contrib):
+            self.client.post(
+                reverse(
+                    'samplesheets:api_irods_request_create',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                self.post_data,
+            )
+
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        obj = IrodsDataRequest.objects.first()
+
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:api_irods_request_reject',
+                    kwargs={'irodsdatarequest': obj.sodar_uuid},
+                ),
+            )
+            self.assertEqual(response.status_code, 200)
+
+        obj.refresh_from_db()
+        self.assertEqual(obj.status, 'REJECTED')
+        self._assert_alert_count(REJECT_ALERT, self.user, 0)
+        self._assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
+        self._assert_alert_count(REJECT_ALERT, self.user_contrib, 1)
+
+    def test_reject_delegate(self):
+        """Test rejecting a request as delegate"""
+        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+        self._assert_alert_count(REJECT_ALERT, self.user, 0)
+        self._assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
+        self._assert_alert_count(REJECT_ALERT, self.user_contrib, 0)
+
+        with self.login(self.user_contrib):
+            self.client.post(
+                reverse(
+                    'samplesheets:api_irods_request_create',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                self.post_data,
+            )
+
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        obj = IrodsDataRequest.objects.first()
+
+        with self.login(self.user_delegate):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:api_irods_request_reject',
+                    kwargs={'irodsdatarequest': obj.sodar_uuid},
+                ),
+            )
+            self.assertEqual(response.status_code, 200)
+
+        obj.refresh_from_db()
+        self.assertEqual(obj.status, 'REJECTED')
+        self._assert_alert_count(REJECT_ALERT, self.user, 0)
+        self._assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
+        self._assert_alert_count(REJECT_ALERT, self.user_contrib, 1)
+
+    def test_reject_contributor(self):
+        """Test rejecting a request as contributor"""
+        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+        self._assert_alert_count(REJECT_ALERT, self.user, 0)
+        self._assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
+        self._assert_alert_count(REJECT_ALERT, self.user_contrib, 0)
+
+        with self.login(self.user_contrib):
+            self.client.post(
+                reverse(
+                    'samplesheets:api_irods_request_create',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                self.post_data,
+            )
+
+            self.assertEqual(IrodsDataRequest.objects.count(), 1)
+            obj = IrodsDataRequest.objects.first()
+
+            response = self.client.get(
+                reverse(
+                    'samplesheets:api_irods_request_reject',
+                    kwargs={'irodsdatarequest': obj.sodar_uuid},
+                ),
+            )
+            self.assertEqual(response.status_code, 403)
+
+        obj.refresh_from_db()
+        self.assertEqual(obj.status, 'ACTIVE')
+        self._assert_alert_count(REJECT_ALERT, self.user, 0)
+        self._assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
+        self._assert_alert_count(REJECT_ALERT, self.user_contrib, 0)
+
+    def test_reject_one_of_multiple(self):
+        """Test rejecting one of multipe requests"""
+        path2 = os.path.join(self.assay_path, TEST_FILE_NAME + '_2')
+        path2_md5 = os.path.join(self.assay_path, TEST_FILE_NAME + '_2.md5')
+        self.irods.data_objects.create(path2)
+        self.irods.data_objects.create(path2_md5)
+        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+
+        with self.login(self.user_contrib):
+            self.client.post(
+                reverse(
+                    'samplesheets:api_irods_request_create',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                self.post_data,
+            )
+
+            self.post_data['path'] = path2
+            self.client.post(
+                reverse(
+                    'samplesheets:api_irods_request_create',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                self.post_data,
+            )
+
+            self.assertEqual(IrodsDataRequest.objects.count(), 2)
+        obj = IrodsDataRequest.objects.first()
+        self._assert_alert_count(CREATE_ALERT, self.user, 1)
+        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
+
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:api_irods_request_reject',
+                    kwargs={'irodsdatarequest': obj.sodar_uuid},
+                ),
+            )
+            self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(
+            IrodsDataRequest.objects.filter(status='ACTIVE').count(), 1
+        )
+        obj.refresh_from_db()
+        self.assertEqual(obj.status, 'REJECTED')
+        self._assert_alert_count(CREATE_ALERT, self.user, 1)
+        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
+        self._assert_alert_count(REJECT_ALERT, self.user, 0)
+        self._assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
+        self._assert_alert_count(REJECT_ALERT, self.user_contrib, 1)
+
+    def test_reject_no_request(self):
+        """Test rejecting request, that doesn't exist"""
+        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:api_irods_request_reject',
+                    kwargs={'irodsdatarequest': self.category.sodar_uuid},
+                ),
+            )
+            self.assertEqual(response.status_code, 404)
 
 
 class TestSampleDataFileExistsAPIView(TestSampleSheetAPITaskflowBase):
