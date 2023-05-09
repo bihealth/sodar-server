@@ -79,5 +79,5 @@ Landing Zone Update
 Landing zones can be updated by clicking the :guilabel:`Update Zone` button on the
 dropdown menu on the right hand side of the zone list. This opens up the same
 form as in the creation process, with the fields pre-filled with the current
-values. Currently the only field that can be updated is the description. Once
-you have made your changes, click :guilabel:`Update` to save the changes.
+values. Currently the only fields that can be updated are description and user message.
+Once you have made your changes, click :guilabel:`Update` to save them.

@@ -254,4 +254,34 @@ class TestLandingZoneUpdateAPIView(TestLandingZoneAPIViewsBase):
         )
         data = {'assay': str(self.assay.sodar_uuid), 'title': 'New title'}
         response = self.request_knox(url, method='PATCH', data=data)
-        self.assertEqual(response.status_code, 500)
+        self.assertEqual(response.status_code, 400)
+
+    def test_put(self):
+        """Test LandingZoneUpdateAPIView put() as zone owner"""
+        url = reverse(
+            'landingzones:api_update',
+            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+        )
+        data = {
+            'assay': str(self.assay.sodar_uuid),
+            'description': 'New description',
+            'user_message': 'New user message',
+        }
+        response = self.request_knox(url, method='PUT', data=data)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            json.loads(response.content)['description'], 'New description'
+        )
+        self.assertEqual(
+            json.loads(response.content)['user_message'], 'New user message'
+        )
+
+    def test_put_title(self):
+        """Test updating title with put() (should fail)"""
+        url = reverse(
+            'landingzones:api_update',
+            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+        )
+        data = {'assay': str(self.assay.sodar_uuid), 'title': 'New title'}
+        response = self.request_knox(url, method='PUT', data=data)
+        self.assertEqual(response.status_code, 400)

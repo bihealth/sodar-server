@@ -113,7 +113,7 @@ class ZoneConfigPluginMixin:
         return data
 
 
-class ZoneCreateMixin(ZoneConfigPluginMixin):
+class ZoneModifyMixin(ZoneConfigPluginMixin):
     """Mixin to be used in zone creation in UI and REST API views"""
 
     def submit_create(
@@ -220,10 +220,6 @@ class ZoneCreateMixin(ZoneConfigPluginMixin):
         except taskflow.FlowSubmitException as ex:
             zone.delete()
             raise ex
-
-
-class ZoneUpdateMixin(ZoneConfigPluginMixin):
-    """Mixin to be used in zone update in UI and REST API views"""
 
     def update_zone(self, zone, request=None):
         """
@@ -448,7 +444,7 @@ class ZoneCreateView(
     ProjectPermissionMixin,
     InvestigationContextMixin,
     CurrentUserFormMixin,
-    ZoneCreateMixin,
+    ZoneModifyMixin,
     CreateView,
 ):
     """LandingZone creation view"""
@@ -533,7 +529,7 @@ class ZoneCreateView(
 class ZoneUpdateView(
     LoginRequiredMixin,
     InvestigationContextMixin,
-    ZoneUpdateMixin,
+    ZoneModifyMixin,
     UpdateView,
 ):
     """LandingZone update view"""
@@ -584,15 +580,17 @@ class ZoneUpdateView(
         return super().get(request, *args, **kwargs)
 
     def form_valid(self, form):
-        self.zone = form.save()
-        project = self.zone.project
+        self.zone = LandingZone.objects.get(
+            sodar_uuid=self.kwargs['landingzone']
+        )
         redirect_url = reverse(
-            'landingzones:list', kwargs={'project': project.sodar_uuid}
+            'landingzones:list',
+            kwargs={'project': self.zone.project.sodar_uuid},
         )
 
         # Check permissions
         if not self.request.user.has_perm(
-            self.get_permission_required(self.zone.user), project
+            self.get_permission_required(self.zone.user), self.zone.project
         ):
             messages.error(
                 self.request,
@@ -601,7 +599,13 @@ class ZoneUpdateView(
             return redirect_url
 
         # Double check that only allowed fields are updated
-        if set(form.changed_data) - set(ZONE_UPDATE_FIELDS):
+        # Remove create_colls and restrict_colls from changed_data
+        # as they are passed to the form automatically
+        if (
+            set(form.changed_data)
+            - {'create_colls', 'restrict_colls'}
+            - set(ZONE_UPDATE_FIELDS)
+        ):
             messages.error(
                 self.request,
                 "You can only update the following fields: {}".format(
@@ -610,6 +614,8 @@ class ZoneUpdateView(
             )
             return redirect(redirect_url)
 
+        # Update zone
+        self.zone = form.save()
         self.update_zone(
             zone=self.zone,
             request=self.request,
