@@ -27,7 +27,7 @@
           <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Cancel
         </a>
         <button type="submit" class="btn btn-primary">
-          {% if action == 'create' %}
+          {% if not object.pk %}
             <i class="iconify" data-icon="mdi:plus-thick"></i> Create
           {% else %}
             <i class="iconify" data-icon="mdi:check-bold"></i> Update
