@@ -509,7 +509,7 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
             response = self.client.post(
                 reverse(
                     'samplesheets:api_irods_request_accept',
-                    kwargs={'irodsdatarequest': 'invalid_uuid'},
+                    kwargs={'irodsdatarequest': self.category.sodar_uuid},
                 ),
                 {'confirm': True},
             )
@@ -543,20 +543,79 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
             self.assertEqual(response.status_code, 200)
 
         obj.refresh_from_db()
-        self._assert_alert_count(CREATE_ALERT, self.user, 1)
-        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
         self._assert_alert_count(ACCEPT_ALERT, self.user, 0)
         self._assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
-        self.assert_irods_obj(self.path)
-
-    def test_accept_owner(self):
-        pass
+        self.assert_irods_obj(self.path, False)
 
     def test_accept_delegate(self):
-        pass
+        """Test accepting a request as delegate"""
+        self.assert_irods_obj(self.path)
+
+        with self.login(self.user_contrib):
+            self.client.post(
+                reverse(
+                    'samplesheets:api_irods_request_create',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                self.post_data,
+            )
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        obj = IrodsDataRequest.objects.first()
+        self._assert_alert_count(ACCEPT_ALERT, self.user, 0)
+        self._assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
+        self._assert_alert_count(ACCEPT_ALERT, self.user_contrib, 0)
+
+        with self.login(self.user_delegate):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:api_irods_request_accept',
+                    kwargs={'irodsdatarequest': obj.sodar_uuid},
+                ),
+                {'confirm': True},
+            )
+            self.assertEqual(response.status_code, 200)
+
+        obj.refresh_from_db()
+        self.assertEqual(obj.status, 'ACCEPTED')
+        self.assert_irods_obj(self.path, False)
+        self._assert_alert_count(ACCEPT_ALERT, self.user, 0)
+        self._assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
+        self._assert_alert_count(ACCEPT_ALERT, self.user_contrib, 1)
 
     def test_accept_contributor(self):
-        pass
+        """Test accepting a request as contributor"""
+        self.assert_irods_obj(self.path)
+
+        with self.login(self.user_contrib):
+            self.client.post(
+                reverse(
+                    'samplesheets:api_irods_request_create',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                self.post_data,
+            )
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        obj = IrodsDataRequest.objects.first()
+        self._assert_alert_count(ACCEPT_ALERT, self.user, 0)
+        self._assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
+        self._assert_alert_count(ACCEPT_ALERT, self.user_contrib, 0)
+
+        with self.login(self.user_contrib):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:api_irods_request_accept',
+                    kwargs={'irodsdatarequest': obj.sodar_uuid},
+                ),
+                {'confirm': True},
+            )
+            self.assertEqual(response.status_code, 403)
+
+        obj.refresh_from_db()
+        self.assertEqual(obj.status, 'ACTIVE')
+        self.assert_irods_obj(self.path, True)
+        self._assert_alert_count(ACCEPT_ALERT, self.user, 0)
+        self._assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
+        self._assert_alert_count(ACCEPT_ALERT, self.user_contrib, 0)
 
     def test_accept_one_of_multiple(self):
         """Test accepting one of multiple requests"""
