@@ -51,6 +51,7 @@ table_builder = SampleSheetTableBuilder()
 
 MD5_RE = re.compile(r'([a-fA-F\d]{32})')
 APP_NAME = 'samplesheets'
+IRODS_QUERY_ERROR_MSG = 'Exception querying iRODS objects'
 
 
 # API Views --------------------------------------------------------------------
@@ -421,3 +422,36 @@ class RemoteSheetGetAPIView(APIView):
             except Exception as ex:
                 return Response(str(ex), status=500)
         return Response(ret, status=200)
+
+
+class ProjectIrodsFileListAPIView(SODARAPIBaseProjectMixin, APIView):
+    """
+    Return a list of files in the project sample data repository.
+
+    **URL:** ``/samplesheets/api/file/list/{Project.sodar_uuid}``
+
+    **Methods:** ``GET``
+
+    **Returns:**
+
+    - ``irods_data``: List of iRODS data objects
+    """
+
+    http_method_names = ['get']
+    permission_required = 'samplesheets.view_sheet'
+
+    def get(self, request, *args, **kwargs):
+        if not settings.ENABLE_IRODS:
+            raise APIException('iRODS not enabled')
+        irods_backend = get_backend_api('omics_irods')
+        project = self.get_project()
+        path = irods_backend.get_sample_path(project)
+        try:
+            with irods_backend.get_session() as irods:
+                irods_data = irods_backend.get_objects(irods, path)
+        except Exception as ex:
+            return Response(
+                {'detail': '{}: {}'.format(IRODS_QUERY_ERROR_MSG, ex)},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        return Response(irods_data, status=status.HTTP_200_OK)

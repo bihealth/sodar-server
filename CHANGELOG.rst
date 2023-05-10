@@ -5,6 +5,42 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+v0.13.3 (2023-05-10)
+====================
+
+Added
+-----
+
+- **Samplesheets**
+    - ``ProjectIrodsFileListAPIView`` in REST API (#1619)
+    - ``SIMPLE_LINK_TEMPLATE`` helper for simple link creation
+
+Changed
+-------
+
+- **General**
+    - Upgrade to Django v3.2.19 (#1646, #1652)
+    - Upgrade Vue app dependencies (#1646)
+    - Update URL patterns to use path (#1631)
+- **Samplesheets**
+    - Refactor ``meta_ms`` to remove ``SPECIAL_FILE_LINK_HEADERS`` use (#1641)
+    - Display study and assay plugin icons to contributors and above (#1354)
+
+Fixed
+-----
+
+- **Samplesheets**
+    - Crash from ``ClearableFileInput`` with Django v3.2.19+ (#1652)
+
+Removed
+-------
+
+- **General**
+    - Unused ``sodar.users`` views and URLs (#1663)
+- **Samplesheets**
+    - ``SPECIAL_FILE_LINK_HEADERS`` hack (#817, #1641)
+
+
 v0.13.2 (2023-04-18)
 ====================
 

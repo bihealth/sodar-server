@@ -476,7 +476,7 @@ class SheetImportMixin:
                 success_msg += ', initiated iRODS cache update'
 
         if ui_mode:
-            messages.success(self.request, mark_safe(success_msg))
+            messages.success(self.request, mark_safe(success_msg + '.'))
         logger.info('Sample sheet {} OK'.format(action))
         return investigation
 
@@ -495,7 +495,7 @@ class SheetImportMixin:
         """Return warning message for missing assay plugin"""
         return (
             'No plugin found for assay "{}": measurement_type="{}", '
-            'technology_type="{}"'.format(
+            'technology_type="{}".'.format(
                 assay.get_display_name(),
                 get_isa_field_name(assay.measurement_type),
                 get_isa_field_name(assay.technology_type),
@@ -1174,7 +1174,8 @@ class SheetTemplateSelectView(
         investigation = Investigation.objects.filter(project=project).first()
         if investigation:
             messages.error(
-                request, 'Sheets already exist in project, creation not allowed'
+                request,
+                'Sheets already exist in project, creation not allowed.',
             )
             return redirect(
                 reverse(
@@ -1308,7 +1309,7 @@ class SheetExcelExportView(
             ).first()
         if not study:
             messages.error(
-                self.request, 'Study not found, unable to render an Excel file'
+                self.request, 'Study not found, unable to render Excel file.'
             )
             return redirect(redirect_url)
 
@@ -1473,7 +1474,7 @@ class SheetDeleteView(
             messages.warning(
                 self.request,
                 '{} file{} for project exist in iRODS: deletion only allowed '
-                'for project owner, delegate or superuser'.format(
+                'for project owner, delegate or superuser.'.format(
                     file_count, 's' if int(file_count) != 1 else ''
                 ),
             )
@@ -1620,7 +1621,7 @@ class IrodsCollsCreateView(
         if not taskflow:
             messages.error(
                 self.request,
-                'Unable to {} collections: taskflow not enabled!'.format(
+                'Unable to {} collections: taskflow not enabled.'.format(
                     action
                 ),
             )
@@ -1764,7 +1765,7 @@ class SheetVersionRestoreView(
         if not old_inv:
             # This shouldn't happen, but just in case
             messages.error(
-                request, 'Existing sheet not found, unable to restore'
+                request, 'Existing sheet not found, unable to restore.'
             )
             return redirect(redirect_url)
 
@@ -1773,7 +1774,7 @@ class SheetVersionRestoreView(
         ).first()
         if not isa_version:
             messages.error(
-                request, 'ISA-Tab version not found, unable to restore'
+                request, 'ISA-Tab version not found, unable to restore.'
             )
             return redirect(redirect_url)
 
@@ -2618,7 +2619,7 @@ class SheetRemoteSyncView(
                 tl_add = True
             else:
                 messages.info(
-                    request, 'Sample sheet sync skipped, no changes detected'
+                    request, 'Sample sheet sync skipped, no changes detected.'
                 )
         except Exception as ex:
             tl_status_type = 'FAILED'

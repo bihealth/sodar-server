@@ -1,4 +1,6 @@
-from django.conf.urls import url
+"""URL patterns for the landingzones app"""
+
+from django.urls import path
 
 from landingzones import views, views_api, views_ajax
 
@@ -6,28 +8,28 @@ app_name = 'landingzones'
 
 # UI views
 urls_ui = [
-    url(
-        regex=r'^(?P<project>[0-9a-f-]+)$',
+    path(
+        route='<uuid:project>',
         view=views.ProjectZoneView.as_view(),
         name='list',
     ),
-    url(
-        regex=r'^create/(?P<project>[0-9a-f-]+)$',
+    path(
+        route='create/<uuid:project>',
         view=views.ZoneCreateView.as_view(),
         name='create',
     ),
-    url(
-        regex=r'^move/(?P<landingzone>[0-9a-f-]+)$',
+    path(
+        route='move/<uuid:landingzone>',
         view=views.ZoneMoveView.as_view(),
         name='move',
     ),
-    url(
-        regex=r'^validate/(?P<landingzone>[0-9a-f-]+)$',
+    path(
+        route='validate/<uuid:landingzone>',
         view=views.ZoneMoveView.as_view(),
         name='validate',
     ),
-    url(
-        regex=r'^delete/(?P<landingzone>[0-9a-f-]+)$',
+    path(
+        route='delete/<uuid:landingzone>',
         view=views.ZoneDeleteView.as_view(),
         name='delete',
     ),
@@ -35,33 +37,33 @@ urls_ui = [
 
 # REST API views
 urls_api = [
-    url(
-        regex=r'^api/list/(?P<project>[0-9a-f-]+)',
+    path(
+        route='api/list/<uuid:project>',
         view=views_api.ZoneListAPIView.as_view(),
         name='api_list',
     ),
-    url(
-        regex=r'^api/retrieve/(?P<landingzone>[0-9a-f-]+)',
+    path(
+        route='api/retrieve/<uuid:landingzone>',
         view=views_api.ZoneRetrieveAPIView.as_view(),
         name='api_retrieve',
     ),
-    url(
-        regex=r'^api/create/(?P<project>[0-9a-f-]+)',
+    path(
+        route='api/create/<uuid:project>',
         view=views_api.ZoneCreateAPIView.as_view(),
         name='api_create',
     ),
-    url(
-        regex=r'^api/submit/delete/(?P<landingzone>[0-9a-f-]+)',
+    path(
+        route='api/submit/delete/<uuid:landingzone>',
         view=views_api.ZoneSubmitDeleteAPIView.as_view(),
         name='api_submit_delete',
     ),
-    url(
-        regex=r'^api/submit/validate/(?P<landingzone>[0-9a-f-]+)',
+    path(
+        route='api/submit/validate/<uuid:landingzone>',
         view=views_api.ZoneSubmitMoveAPIView.as_view(),
         name='api_submit_validate',
     ),
-    url(
-        regex=r'^api/submit/move/(?P<landingzone>[0-9a-f-]+)',
+    path(
+        route='api/submit/move/<uuid:landingzone>',
         view=views_api.ZoneSubmitMoveAPIView.as_view(),
         name='api_submit_move',
     ),
@@ -69,8 +71,8 @@ urls_api = [
 
 # Ajax API views
 urls_ajax = [
-    url(
-        regex=r'^ajax/status/retrieve/(?P<landingzone>[0-9a-f-]+)$',
+    path(
+        route='ajax/status/retrieve/<uuid:landingzone>',
         view=views_ajax.ZoneStatusRetrieveAjaxView.as_view(),
         name='ajax_status',
     )

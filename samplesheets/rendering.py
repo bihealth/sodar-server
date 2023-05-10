@@ -80,9 +80,8 @@ MODEL_JSON_ATTRS = [
     'factor_values',
     'parameter_values',
 ]
-# HACK: Special cases for inline file linking (see issue #817)
-SPECIAL_FILE_LINK_HEADERS = ['report file']
 STUDY_TABLE_CACHE_ITEM = 'sheet/tables/study/{study}'
+SIMPLE_LINK_TEMPLATE = '{label} <{url}>'
 
 
 # Table building ---------------------------------------------------------------
@@ -222,9 +221,7 @@ class SampleSheetTableBuilder:
             header['col_type'] = 'DATE'
         elif name.lower() == 'external links':
             header['col_type'] = 'EXTERNAL_LINKS'
-        elif (
-            name.lower() == 'name' and header['item_type'] == 'DATA'
-        ) or name.lower() in SPECIAL_FILE_LINK_HEADERS:  # HACK for issue #817
+        elif name.lower() == 'name' and header['item_type'] == 'DATA':
             header['col_type'] = 'LINK_FILE'
         # Recognize ONTOLOGY by headers
         elif obj.is_ontology_field(name, header_type):

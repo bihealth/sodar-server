@@ -43,7 +43,9 @@ class SheetImportForm(forms.Form):
     file_upload = forms.FileField(
         allow_empty_file=False,
         help_text='Zip archive or ISA-Tab files for a single investigation',
-        widget=forms.ClearableFileInput(attrs={'multiple': True}),
+        widget=forms.ClearableFileInput(
+            attrs={'allow_multiple_selected': True}
+        ),
     )
 
     class Meta:
