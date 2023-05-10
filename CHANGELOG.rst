@@ -20,6 +20,7 @@ Changed
 
 - **General**
     - Upgrade to Django v3.2.19 (#1646, #1652)
+    - Upgrade Vue app dependencies (#1646)
     - Update URL patterns to use path (#1631)
 - **Samplesheets**
     - Refactor ``meta_ms`` to remove ``SPECIAL_FILE_LINK_HEADERS`` use (#1641)
