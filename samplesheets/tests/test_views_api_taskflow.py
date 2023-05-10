@@ -19,7 +19,7 @@ from taskflowbackend.tests.base import (
 )
 
 # Samplesheets dependencies
-from samplesheets.views_api import IRODS_ERROR_MSG
+from samplesheets.views_api import IRODS_QUERY_ERROR_MSG
 
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
@@ -228,9 +228,8 @@ class TestProjectIrodsFileListAPIView(TestSampleSheetAPITaskflowBase):
         self.assertEqual(response.status_code, 404)
         self.assertEqual(
             response.data['detail'],
-            '{} {}'.format(
-                IRODS_ERROR_MSG,
-                'iRODS collection not found',
+            '{}: {}'.format(
+                IRODS_QUERY_ERROR_MSG, 'iRODS collection not found'
             ),
         )
 

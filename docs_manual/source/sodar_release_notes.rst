@@ -8,10 +8,16 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
-v0.14.0 (WIP)
-=============
+v0.13.3 (2023-05-10)
+====================
 
-TODO
+Release for minor updates, maintenance and bug fixes.
+
+- Add ``ProjectIrodsFileListAPIView`` API endpoint
+- Display study and assay plugin icons to contributors and above
+- Remove ``SPECIAL_FILE_LINK_HEADERS`` hack
+- Update URL patterns
+- Upgrade dependencies, fix site for Django v3.2.19+
 
 
 v0.13.2 (2023-04-18)

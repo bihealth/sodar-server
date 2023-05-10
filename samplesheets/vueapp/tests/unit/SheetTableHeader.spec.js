@@ -155,7 +155,6 @@ describe('SheetTableHeader.vue', () => {
       propsData: propsData,
       stubs: getStubs()
     })
-
     expect(wrapper.find('.sodar-ss-table-plugin').exists()).toBe(false)
   })
 
@@ -167,7 +166,6 @@ describe('SheetTableHeader.vue', () => {
       propsData: propsData,
       stubs: getStubs()
     })
-
     expect(wrapper.find('.sodar-ss-table-plugin').exists()).toBe(true)
   })
 })

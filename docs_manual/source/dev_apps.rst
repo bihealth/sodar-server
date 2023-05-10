@@ -194,7 +194,7 @@ An example of expected output for ``get_shortcut_links()``:
                 'title': 'Printable title for item type',
                 'files': [
                     {
-                        'label': 'Link label (e.g. related library name)',
+                        'label': 'Link label (e.g. related extract name)',
                         'url': some_url,
                         'title': 'Mouseover title'
                         'extra_links': {  # Additional links for the same item

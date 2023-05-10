@@ -30,4 +30,4 @@ SODAR version:
 
 .. code-block:: console
 
-    Accept: application/vnd.bihealth.sodar+json; version=0.13.2
+    Accept: application/vnd.bihealth.sodar+json; version=0.13.3

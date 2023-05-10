@@ -5,8 +5,8 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.shortcuts import render
-from django.views import defaults as default_views
 from django.urls import path
+from django.views import defaults as default_views
 
 from projectroles.views import HomeView
 

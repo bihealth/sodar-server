@@ -5,8 +5,8 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
-Unreleased
-==========
+v0.13.3 (2023-05-10)
+====================
 
 Added
 -----
@@ -24,6 +24,7 @@ Changed
     - Update URL patterns to use path (#1631)
 - **Samplesheets**
     - Refactor ``meta_ms`` to remove ``SPECIAL_FILE_LINK_HEADERS`` use (#1641)
+    - Display study and assay plugin icons to contributors and above (#1354)
 
 Fixed
 -----
@@ -34,6 +35,8 @@ Fixed
 Removed
 -------
 
+- **General**
+    - Unused ``sodar.users`` views and URLs (#1663)
 - **Samplesheets**
     - ``SPECIAL_FILE_LINK_HEADERS`` hack (#817, #1641)
 

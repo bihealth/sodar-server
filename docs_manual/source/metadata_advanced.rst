@@ -40,7 +40,7 @@ IGV session generation. This is determined by file name: in case of multiple
 files, the last file sorted by file name is returned. Hence to ensure the most
 recent file is returned, it is recommended to use dates in the file names.
 
-Placement of files in subcollections under the library collection does not
+Placement of files in subcollections under the row-specific collection does not
 affect study shortcuts or IGV session inclusion. This also means files can be
 freely organized within desired subcollections.
 
