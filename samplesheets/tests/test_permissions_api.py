@@ -10,7 +10,9 @@ from projectroles.tests.test_permissions import TestProjectPermissionBase
 from projectroles.tests.test_permissions_api import TestProjectAPIPermissionBase
 
 from samplesheets.models import Investigation
+from samplesheets.views import IrodsRequestModifyMixin
 from samplesheets.tests.test_io import SampleSheetIOMixin
+from samplesheets.tests.test_views_api_taskflow import TestIrodsRequestAPIViewBase
 from samplesheets.tests.test_permissions import (
     SHEET_PATH,
     REMOTE_SITE_NAME,
@@ -88,6 +90,67 @@ class TestInvestigationRetrieveAPIView(
         self.project.set_public()
         self.assert_response_api(url, self.user_no_roles, 200)
         self.assert_response_api(url, self.anonymous, 401)
+
+
+class TestIrodsRequestCreateAPIView(
+    IrodsRequestModifyMixin,
+    TestIrodsRequestAPIViewBase,
+):
+    """Tests for IrodsRequestCreateAPIView permissions"""
+
+    def setUp(self):
+        super().setUp()
+
+    def test_create(self):
+        """Test post() in IrodsRequestCreateAPIView"""
+        url = reverse(
+            'samplesheets:api_irods_request_create',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        good_users = [
+            self.superuser,
+            self.user_owner_cat,  # Inherited owner
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+        ]
+        bad_users = [
+            self.user_guest,
+            self.user_no_roles,
+        ]
+        self.assert_response_api(
+            url,
+            good_users,
+            status_code=201,
+            method='POST',
+            format='json',
+            data=self.post_data,
+        )
+        self.assert_response_api(
+            url,
+            bad_users,
+            status_code=403,
+            method='POST',
+            format='json',
+            data=self.post_data,
+        )
+        self.assert_response_api(
+            url,
+            self.anonymous,
+            status_code=401,
+            method='POST',
+            format='json',
+            data=self.post_data,
+        )
+        self.project.set_public()
+        self.assert_response_api(
+            url,
+            bad_users,
+            status_code=403,
+            method='POST',
+            format='json',
+            data=self.post_data,
+        )
 
 
 class TestSheetImportAPIView(

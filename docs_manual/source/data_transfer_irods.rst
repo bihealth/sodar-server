@@ -29,7 +29,7 @@ information.
 
 .. note::
 
-    On Ubuntu 20.04, installing iCommands is not officially supported at the
+    On Ubuntu 22.04, installing iCommands is not officially supported at the
     time of writing. For workarounds,
     `see this discussion <https://github.com/irods/irods/issues/4883>`_.
 
