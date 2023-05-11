@@ -62,6 +62,17 @@ class TestRenderingBase(
         self.cache_args = [APP_NAME, self.cache_name, self.project]
 
 
+# Add SHEETS_ENABLE_STUDY_TABLE_CACHE Django setting
+# Boolean, get from env, default=True
+# Force True in test config
+# Force True in production config
+# Use setting in get_study_tables()
+# IF setting==False
+# THEN skip cache reading and rebuild tables
+# AND log a debug message saying reading from cache is skipped due to this setting
+# AND write rebuilt tables into cache
+# We still want the most recent cache item to be there once the setting gets reset
+# Assert setting effects cache item creation in TestTableBuilder
 class TestTableBuilder(SheetConfigMixin, TestRenderingBase):
     """Tests for SampleSheetTableBuilder"""
 
@@ -198,6 +209,25 @@ class TestTableBuilder(SheetConfigMixin, TestRenderingBase):
         )
         study_tables = self.tb.get_study_tables(self.study)
         self.assertEqual(study_tables, cache_item.data)
+
+    def test_get_study_tables_config(self):
+        """Test get_study_tables() with sheet config"""
+        sheet_config = self.build_sheet_config(self.investigation)
+        c_field = sheet_config['studies'][str(self.study.sodar_uuid)]['nodes'][
+            1
+        ]['fields'][1]
+        self.assertEqual(c_field.get('format'), None)
+        c_field['format'] = 'integer'
+        sheet_config['studies'][str(self.study.sodar_uuid)]['nodes'][1][
+            'fields'
+        ][1] = c_field
+        app_settings.set(
+            APP_NAME, 'sheet_config', sheet_config, project=self.project
+        )
+
+        study_tables = self.tb.get_study_tables(self.study)
+        t_field = study_tables['study']['field_header'][4]
+        self.assertEqual(t_field['col_type'], 'NUMERIC')
 
     def test_clear_study_cache(self):
         """Test clear_study_cache()"""

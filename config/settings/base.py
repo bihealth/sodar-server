@@ -739,6 +739,10 @@ IRODS_QUERY_BATCH_SIZE = env.int('IRODS_QUERY_BATCH_SIZE', 24)
 SHEETS_ALLOW_CRITICAL = env.bool('SHEETS_ALLOW_CRITICAL', False)
 # Temporary, see issue #556
 SHEETS_ENABLE_CACHE = True
+# Enable study table cache
+SHEETS_ENABLE_STUDY_TABLE_CACHE = env.bool(
+    'SHEETS_ENABLE_STUDY_TABLE_CACHE', True
+)
 # iRODS file query limit
 SHEETS_IRODS_LIMIT = env.int('SHEETS_IRODS_LIMIT', 50)
 # Study/assay table height
