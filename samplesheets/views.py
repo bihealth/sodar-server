@@ -2560,6 +2560,7 @@ class IrodsDataRequestListView(
             role__name=SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR'],
         )
         context_data['is_contributor'] = bool(assign)
+        context_data['irods_webdav_enabled'] = settings.IRODS_WEBDAV_ENABLED
         return context_data
 
     def get_queryset(self):
@@ -2575,6 +2576,26 @@ class IrodsDataRequestListView(
             return queryset.filter(status__in=['ACTIVE', 'FAILED'])
         # For regular users, dispaly their own requests regardless of status
         return queryset.filter(user=self.request.user)
+
+    def build_webdav_url(self, item):
+        return f"{settings.IRODS_WEBDAV_URL}{item.path}"
+
+    def get_extra_item_data(self, item):
+        if settings.IRODS_WEBDAV_ENABLED:
+            item.webdav_url = self.build_webdav_url(item)
+            item.webdav_tooltip = "Open collection/file in WebDAV"
+        else:
+            item.webdav_url = None
+            item.webdav_tooltip = None
+
+    def get(self, request, *args, **kwargs):
+        response = super().get(request, *args, **kwargs)
+
+        if settings.IRODS_WEBDAV_ENABLED:
+            for item in response.context_data['object_list']:
+                self.get_extra_item_data(item)
+
+        return response
 
 
 class SheetRemoteSyncView(

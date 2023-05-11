@@ -460,6 +460,12 @@ class TestIrodsDataRequestListView(TestProjectSheetsVueAppBase):
             [self.default_user], self.url, 'sodar-ss-request-table', True
         )
 
+    def test_render_davrods(self):
+        """Test UI rendering of davrods link button"""
+        self.assert_element_exists(
+            [self.default_user], self.url, 'sodar-ss-davrods-link', True
+        )
+
 
 class TestSheetVersionCompareView(
     SampleSheetIOMixin, SheetConfigMixin, TestUIBase

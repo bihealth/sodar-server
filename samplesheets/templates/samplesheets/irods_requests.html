@@ -92,6 +92,9 @@
             <th>Created</th>
             <th>Status</th>
             <th></th>
+            {% if irods_webdav_enabled %}
+              <th></th>
+            {% endif %}
           </tr>
         </thead>
         <tbody>
@@ -153,6 +156,17 @@
                   {% endif %}
                 </div>
               </td>
+              {% if irods_webdav_enabled %}
+                <td class="text-right" id="sodar-ss-davrods-link">
+                  <a href="{{ irods_request.webdav_url }}"
+                     class="btn btn-secondary sodar-list-btn sodar-davrods-btn"
+                     target="_blank" role="button"
+                     data-toggle="tooltip" data-placement="top"
+                     title="Open collection/file in WebDAV">
+                    <i class="iconify" data-icon="mdi:open-in-new"></i>
+                  </a>
+                </td>
+              {% endif %}
             </tr>
           {% endfor %}
         </tbody>
