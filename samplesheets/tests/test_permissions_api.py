@@ -12,7 +12,9 @@ from projectroles.tests.test_permissions_api import TestProjectAPIPermissionBase
 from samplesheets.models import Investigation
 from samplesheets.views import IrodsRequestModifyMixin
 from samplesheets.tests.test_io import SampleSheetIOMixin
-from samplesheets.tests.test_views_api_taskflow import TestIrodsRequestAPIViewBase
+from samplesheets.tests.test_views_api_taskflow import (
+    TestIrodsRequestAPIViewBase,
+)
 from samplesheets.tests.test_permissions import (
     SHEET_PATH,
     REMOTE_SITE_NAME,
