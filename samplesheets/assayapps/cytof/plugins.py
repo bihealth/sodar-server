@@ -4,7 +4,7 @@ from django.conf import settings
 
 # Projectroles dependency
 from samplesheets.plugins import SampleSheetAssayPluginPoint
-from samplesheets.utils import get_last_material_name
+from samplesheets.utils import get_top_header
 from samplesheets.views import MISC_FILES_COLL
 from samplesheets.rendering import SIMPLE_LINK_TEMPLATE
 
@@ -45,6 +45,26 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
     #: Toggle displaying of row-based iRODS links in the assay table
     display_row_links = True
 
+    def __get_mc_assay_name(self, row, table):
+        """Return value of last Assay Name column in mass cytometry process"""
+        name = None
+        span_end = len(row)
+        for i in range(len(row)):
+            cell = row[i]
+            header = table['field_header'][i]
+            if (
+                header['obj_cls'] == 'Process'
+                and header['value'].lower() == 'protocol'
+                and cell['value'].lower() == 'mass cytometry'
+            ):
+                top_header = get_top_header(table, i)
+                span_end = i + top_header['colspan']
+
+            # consider only columns of mass cytometry process
+            if i < span_end and header['value'].lower() == 'assay name':
+                name = cell['value']
+        return name
+
     def get_row_path(self, row, table, assay, assay_path):
         """
         Return iRODS path for an assay row in a sample sheet. If None,
@@ -57,10 +77,11 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         :param assay_path: Root path for assay
         :return: String with full iRODS path or None
         """
-        # Get the name of the last material
-        last_material_name = get_last_material_name(row, table)
-        if last_material_name:
-            return assay_path + '/' + last_material_name
+        # Get the value of Mass cytometry Assay Name column
+        mc_assay_name = self.__get_mc_assay_name(row, table)
+        if mc_assay_name:
+            return assay_path + '/' + mc_assay_name
+
         return None
 
     def update_row(self, row, table, assay):
@@ -80,9 +101,10 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         if not assay_path:
             return row
 
-        # Get the name of the last material
-        last_material_name = get_last_material_name(row, table)
-        if not last_material_name:
+        # Get the value of Mass cytometry Assay Name column
+        mc_assay_name = self.__get_mc_assay_name(row, table)
+
+        if not mc_assay_name:
             return row
 
         base_url = settings.IRODS_WEBDAV_URL + assay_path
@@ -101,11 +123,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             ):
                 row[i]['value'] = SIMPLE_LINK_TEMPLATE.format(
                     label=row[i]['value'],
-                    url=base_url
-                    + '/'
-                    + MISC_FILES_COLL
-                    + '/'
-                    + row[i]['value'],
+                    url=f"{base_url}/{MISC_FILES_COLL}/{row[i]['value']}",
                 )
 
             # Report file links within processes
@@ -116,11 +134,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             ):
                 row[i]['value'] = SIMPLE_LINK_TEMPLATE.format(
                     label=row[i]['value'],
-                    url=base_url
-                    + '/'
-                    + last_material_name
-                    + '/'
-                    + row[i]['value'],
+                    url=f"{base_url}/{mc_assay_name}/{row[i]['value']}",
                 )
 
         return row
