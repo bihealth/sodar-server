@@ -8,6 +8,14 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v0.13.4 (WIP)
+=============
+
+Release for minor updates, maintenance and bug fixes.
+
+- Fix django-autocomplete-light Docker build crash
+
+
 v0.13.3 (2023-05-10)
 ====================
 

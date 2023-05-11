@@ -71,6 +71,10 @@ mistune==2.0.4
 # Django-plugins (with Django v3.0+ support)
 -e git+https://github.com/mikkonie/django-plugins.git@42e86e7904e5c09f1da32173862b26843eda5dd8#egg=django-plugins
 
+# Pin to avoid issue with v3.9.5
+# See issue #166 and bihealth/sodar-core#1225
+django-autocomplete-light==3.9.4
+
 # SODAR Core
 django-sodar-core==0.12.0
 # -e git+https://github.com/bihealth/sodar-core.git@55d46268e5da4ef8a26913ce3b2c584d794d275c#egg=django-sodar-core

@@ -5,6 +5,16 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+Unreleased
+==========
+
+Fixed
+-----
+
+- **General**
+    - Docker build crash from ``django-autocomplete-light==3.9.5`` and ``whitenoise`` (#1666)
+
+
 v0.13.3 (2023-05-10)
 ====================
 
