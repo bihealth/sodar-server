@@ -3,7 +3,7 @@
 import json
 import os
 
-from cubi_tk.isa_tpl import _TEMPLATES as TK_TEMPLATES
+from cubi_isa_templates import _TEMPLATES as ISA_TEMPLATES
 from urllib.parse import urlencode
 from zipfile import ZipFile
 
@@ -30,6 +30,7 @@ from sodarcache.models import JSONCacheItem
 from landingzones.models import LandingZone
 from landingzones.tests.test_models import LandingZoneMixin
 
+from samplesheets.forms import TPL_DIR_FIELD
 from samplesheets.io import SampleSheetIO
 from samplesheets.models import Investigation, Assay, ISATab
 from samplesheets.rendering import (
@@ -753,15 +754,15 @@ class TestSheetTemplateCreateFormView(TestViewsBase):
         """Test POST request with supported templates and default values"""
         templates = {
             t.name: t
-            for t in TK_TEMPLATES
+            for t in ISA_TEMPLATES
             if t.name in settings.SHEETS_ENABLED_TEMPLATES
         }
-
         for t in settings.SHEETS_ENABLED_TEMPLATES:
             self.assertIsNone(self.project.investigations.first())
-
             sheet_tpl = templates[t]
-            post_data = {'i_dir_name': clean_sheet_dir_name(self.project.title)}
+            post_data = {
+                TPL_DIR_FIELD: clean_sheet_dir_name(self.project.title)
+            }
             for k, v in sheet_tpl.configuration.items():
                 if isinstance(v, str):
                     if '{{' in v or '{%' in v:
@@ -771,7 +772,6 @@ class TestSheetTemplateCreateFormView(TestViewsBase):
                     post_data[k] = v[0]
                 elif isinstance(v, dict):
                     post_data[k] = json.dumps(v)
-
             with self.login(self.user):
                 response = self.client.post(
                     reverse(

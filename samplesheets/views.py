@@ -9,7 +9,7 @@ import pytz
 import requests
 import zipfile
 
-from cubi_tk.isa_tpl import _TEMPLATES as TK_TEMPLATES
+from cubi_isa_templates import _TEMPLATES as ISA_TEMPLATES
 from irods.exception import CollectionDoesNotExist
 from packaging import version
 
@@ -1155,7 +1155,7 @@ class SheetTemplateSelectView(
         # HACK: Skip non-working templates in cubi-tk
         for t in [
             t
-            for t in TK_TEMPLATES
+            for t in ISA_TEMPLATES
             if t.name in settings.SHEETS_ENABLED_TEMPLATES
         ]:
             templates.append(
@@ -1204,7 +1204,7 @@ class SheetTemplateCreateView(
 
     def _get_sheet_template(self):
         t_name = self.request.GET.get('sheet_tpl')
-        return {t.name: t for t in TK_TEMPLATES}[t_name]
+        return {t.name: t for t in ISA_TEMPLATES}[t_name]
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)

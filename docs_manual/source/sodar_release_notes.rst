@@ -13,6 +13,7 @@ v0.13.4 (WIP)
 
 Release for minor updates, maintenance and bug fixes.
 
+- Update ISA-Tab template dependency to ``cubi-isa-templates``
 - Fix django-autocomplete-light Docker build crash
 
 

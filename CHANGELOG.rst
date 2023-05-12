@@ -8,11 +8,17 @@ Changelog for the SODAR project. Loosely follows the
 Unreleased
 ==========
 
+Changed
+-------
+
+- **Samplesheets**
+    - Update ISA-Tab template dependency to ``cubi-isa-templates`` (#1667)
+
 Fixed
 -----
 
 - **General**
-    - Docker build crash from ``django-autocomplete-light==3.9.5`` and ``whitenoise`` (#1666)
+    - ``django-autocomplete-light`` Docker build crash with ``whitenoise`` (#1666)
 
 
 v0.13.3 (2023-05-10)

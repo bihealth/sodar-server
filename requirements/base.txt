@@ -106,8 +106,9 @@ django-webpack-loader==1.6.0
 fastobo==0.12.2
 pronto==2.5.0  # For OWL conversion
 
-# CUBI-TK for sheet templates
--e git+https://github.com/bihealth/cubi-tk.git@0c0250cdfd546eaac1e0364df62213ad3c97ef7c#egg=cubi-tk
+# CUBI ISA-Tab templates
+cookiecutter==2.1.1
+-e git+https://github.com/bihealth/cubi-isa-templates.git@13ec5a83c9f7871d64064bbae658a0009d4bf113#egg=cubi-isa-templates
 
 # Taskflow requirements
 tooz==3.0.0
