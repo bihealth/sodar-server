@@ -35,18 +35,33 @@ ERROR_MSG_EXISTING = 'An active request already exists for this path'
 TPL_DIR_FIELD = '__output_dir'
 
 
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class MultipleFileField(forms.FileField):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('widget', MultipleFileInput())
+        super().__init__(*args, **kwargs)
+
+    def clean(self, data, initial=None):
+        single_file_clean = super().clean
+        if isinstance(data, (list, tuple)):
+            result = [single_file_clean(d, initial) for d in data]
+        else:
+            result = single_file_clean(data, initial)
+        return result
+
+
 class SheetImportForm(forms.Form):
     """
     Form for importing an ISA investigation from an ISA-Tab archive or
     directory.
     """
 
-    file_upload = forms.FileField(
+    file_upload = MultipleFileField(
         allow_empty_file=False,
         help_text='Zip archive or ISA-Tab files for a single investigation',
-        widget=forms.ClearableFileInput(
-            attrs={'allow_multiple_selected': True}
-        ),
     )
 
     class Meta:
@@ -69,21 +84,18 @@ class SheetImportForm(forms.Form):
 
     def clean(self):
         files = self.files.getlist('file_upload')
-
         # Zip archive upload
         if len(files) == 1:
-            file = self.cleaned_data.get('file_upload')
+            file = self.cleaned_data.get('file_upload')[0]
             try:
                 self.isa_zip = self.sheet_io.get_zip_file(file)
             except OSError as ex:
                 self.add_error('file_upload', str(ex))
                 return self.cleaned_data
-
         # Multi-file checkup
         else:
             inv_found = False
             study_found = False
-
             for file in files:
                 if file.content_type in ARCHIVE_TYPES:
                     self.add_error(
@@ -101,14 +113,12 @@ class SheetImportForm(forms.Form):
                     inv_found = True
                 elif file.name.startswith('s_'):
                     study_found = True
-
             if not inv_found:
                 self.add_error(
                     'file_upload',
                     'Investigation file not found among uploaded files',
                 )
                 return self.cleaned_data
-
             if not study_found:
                 self.add_error(
                     'file_upload', 'Study file not found among uploaded files'
