@@ -21,6 +21,7 @@ Fixed
     - ``django-autocomplete-light`` Docker build crash with ``whitenoise`` (#1666)
 - **Samplesheets**
     - Multi-file upload not working (#1670)
+    - Template create form allowing multiple ISA-Tabs per project (#1672)
 
 
 v0.13.3 (2023-05-10)

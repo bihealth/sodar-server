@@ -212,6 +212,11 @@ class SheetTemplateCreateForm(forms.Form):
                 self.fields[k].widget = forms.widgets.HiddenInput()
 
     def clean(self):
+        # Do not allow creating multiple investigations
+        inv = Investigation.objects.filter(project=self.project).first()
+        if inv:
+            self.add_error(None, 'Sample sheets already exist in project')
+            return self.cleaned_data
         # Force regex for dir name
         self.cleaned_data[TPL_DIR_FIELD] = clean_sheet_dir_name(
             self.cleaned_data[TPL_DIR_FIELD]
