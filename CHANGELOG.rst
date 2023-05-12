@@ -20,7 +20,7 @@ Fixed
 - **General**
     - ``django-autocomplete-light`` Docker build crash with ``whitenoise`` (#1666)
 - **Samplesheets**
-    - Multi-file upload not working (#
+    - Multi-file upload not working (#1670)
 
 
 v0.13.3 (2023-05-10)
