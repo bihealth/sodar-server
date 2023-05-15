@@ -62,17 +62,6 @@ class TestRenderingBase(
         self.cache_args = [APP_NAME, self.cache_name, self.project]
 
 
-# Add SHEETS_ENABLE_STUDY_TABLE_CACHE Django setting
-# Boolean, get from env, default=True
-# Force True in test config
-# Force True in production config
-# Use setting in get_study_tables()
-# IF setting==False
-# THEN skip cache reading and rebuild tables
-# AND log a debug message saying reading from cache is skipped due to this setting
-# AND write rebuilt tables into cache
-# We still want the most recent cache item to be there once the setting gets reset
-# Assert setting effects cache item creation in TestTableBuilder
 class TestTableBuilder(SheetConfigMixin, TestRenderingBase):
     """Tests for SampleSheetTableBuilder"""
 
