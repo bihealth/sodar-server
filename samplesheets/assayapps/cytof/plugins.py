@@ -46,7 +46,14 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
     display_row_links = True
 
     def __get_mc_assay_name(self, row, table):
-        """Return value of last Assay Name column in mass cytometry process"""
+        """
+        Return assay name of last mass cytometry process.
+        Also works when there are consecutive processes of the same name.
+
+        :param row: List of dicts (a row returned by SampleSheetTableBuilder)
+        :param table: Full table with headers (dict returned by
+                      SampleSheetTableBuilder)
+        """
         name = None
         span_end = len(row)
         for i in range(len(row)):
@@ -112,7 +119,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         for i in range(len(row)):
             header = table['field_header'][i]
 
-            # Barcode key & antibody panel link within processes
+            # Create barcode key & antibody panel links in processes
             if (
                 header['obj_cls'] == 'Process'
                 and (
@@ -126,7 +133,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                     url=f"{base_url}/{MISC_FILES_COLL}/{row[i]['value']}",
                 )
 
-            # Report file links within processes
+            # Create report file links in processes
             elif (
                 header['obj_cls'] == 'Process'
                 and header['value'].lower() == 'report file'
