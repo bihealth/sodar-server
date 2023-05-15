@@ -71,10 +71,11 @@
          class="btn btn-secondary mr-1" role="button">
         <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Project Sheets
       </a>
-      <a href="{% url 'samplesheets:irods_request_create' project=project.sodar_uuid %}"
-         class="btn btn-primary" role="button">
-       <i class="iconify" data-icon="mdi:plus-thick"></i> Create Request
-      </a>
+{#      <a href="{% url 'samplesheets:irods_request_create' project=project.sodar_uuid %}"#}
+{#         class="btn btn-primary" role="button">#}
+{#       <i class="iconify" data-icon="mdi:plus-thick"></i> Create Request#}
+{#      </a>#}
+        {% include 'samplesheets/_list_buttons.html' with project=project folder=folder up=False %}
     </div>
 </div>
 
@@ -95,6 +96,13 @@
             {% if irods_webdav_enabled %}
               <th></th>
             {% endif %}
+            <th id="sodar-ss-list-header-select">
+{#              {% if can_update_own or can_update_all %}#}
+                <input class="sodar-checkbox" type="checkbox"
+                       onchange="checkAll(this)" name="check_all"
+                       id="sodar-ss-check-all" title="Check/uncheck all" />
+{#              {% endif %}#}
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -167,6 +175,13 @@
                   </a>
                 </td>
               {% endif %}
+            <td>
+{#              {% if can_update_all or item.owner == request.user and can_update_own %}#}
+                <input class="sodar-checkbox sodar-ss-checkbox-item" type="checkbox"
+                       id="sodar-ss-checkbox-item-{{ item.sodar_uuid }}"
+                       name="batch_item_item_{{ item.sodar_uuid }}" value="1" />
+{#              {% endif %}#}
+            </td>
             </tr>
           {% endfor %}
         </tbody>
@@ -191,6 +206,8 @@
 
 {% block javascript %}
   {{ block.super }}
+
+  <script type="text/javascript" src="{% static 'samplesheets/js/irods_request.js' %}"></script>
 
   {# Tour content #}
   <script type="text/javascript">
