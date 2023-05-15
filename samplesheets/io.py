@@ -51,7 +51,6 @@ ARCHIVE_TYPES = ['application/zip', 'application/x-zip-compressed']
 ISATAB_TYPES = ['text/plain', 'text/tab-separated-values']
 
 ALTAMISA_MATERIAL_TYPE_SAMPLE = 'Sample Name'
-
 MATERIAL_TYPE_MAP = {
     'Source Name': 'SOURCE',
     'Sample Name': 'SAMPLE',
@@ -74,12 +73,15 @@ MATERIAL_TYPE_MAP = {
     'Metabolite Assignment File': 'DATA',
     'Array Data Matrix File': 'DATA',
 }
-
 # For old ISA-Tabs where this field was not always filled out
 MATERIAL_TYPE_EXPORT_MAP = {'SOURCE': 'Source Name', 'SAMPLE': 'Sample Name'}
 
 SAMPLE_SEARCH_SUBSTR = '-sample-'
 PROTOCOL_UNKNOWN_NAME = 'Unknown'
+EMPTY_TABLE_ERR_MSG = (
+    'No {items} in {class_name} "{file_name}": Importing sheets with empty '
+    'tables is currently not supported.'
+)
 
 
 class SampleSheetIO:
@@ -390,15 +392,6 @@ class SampleSheetIO:
         material_vals = []
         study = cls._get_study(db_parent)
 
-        # Fail if attempting to import an empty table
-        if len(materials.values()) == 0:
-            raise SampleSheetImportException(
-                'No materials in {} "{}": Importing sheets with tables '
-                'containing zero lines is currently not supported.'.format(
-                    db_parent.__class__.__name__.lower(), db_parent.file_name
-                )
-            )
-
         for m in materials.values():
             item_type = MATERIAL_TYPE_MAP[m.type]
             # Common values
@@ -549,7 +542,6 @@ class SampleSheetIO:
                 else ''
             )
         )
-
         input_name = isa_data['investigation']['path'].split('/')[-1]
         input_file = io.StringIO(isa_data['investigation']['tsv'])
 
@@ -689,20 +681,25 @@ class SampleSheetIO:
                 )
             )
 
+            if len(s.materials.values()) == 0:
+                raise SampleSheetImportException(
+                    EMPTY_TABLE_ERR_MSG.format(
+                        items='materials',
+                        class_name=db_study.__class__.__name__.lower(),
+                        file_name=db_study.file_name,
+                    )
+                )
             # Create study materials
             self._import_materials(s.materials, db_study, obj_lookup)
-
             # Create study processes
             self._import_processes(
                 s.processes, db_study, obj_lookup, protocol_lookup
             )
-
             # Create study arcs
             self._import_arcs(s.arcs, db_study)
 
             assay_count = 0
             assay_paths = sorted([a.path for a in isa_study.assays])
-
             for assay_path in assay_paths:
                 isa_assay = next(
                     (a_i for a_i in isa_study.assays if a_i.path == assay_path),
@@ -738,7 +735,6 @@ class SampleSheetIO:
                         )
                         logger.error(ex_msg)
                         raise Exception(ex_msg)
-
                 logger.debug('altamISA assay import OK')
 
                 values = {
@@ -770,17 +766,25 @@ class SampleSheetIO:
                     if MATERIAL_TYPE_MAP[a.materials[k].type]
                     not in ['SOURCE', 'SAMPLE']
                 }
+                if (
+                    len(assay_materials.values()) == 0
+                    and len(a.processes.values()) == 0
+                ):
+                    raise SampleSheetImportException(
+                        EMPTY_TABLE_ERR_MSG.format(
+                            items='materials or processes',
+                            class_name=db_assay.__class__.__name__.lower(),
+                            file_name=db_assay.file_name,
+                        )
+                    )
                 self._import_materials(assay_materials, db_assay, obj_lookup)
-
                 # Create assay processes
                 self._import_processes(
                     a.processes, db_assay, obj_lookup, protocol_lookup
                 )
-
                 # Create assay arcs
                 self._import_arcs(a.arcs, db_assay)
                 assay_count += 1
-
             study_count += 1
 
         # Raise exception if we got criticals and don't accept them

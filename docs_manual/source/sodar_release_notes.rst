@@ -11,9 +11,11 @@ list of changes in current and previous releases, see the
 v0.13.4 (WIP)
 =============
 
-Release for minor updates, maintenance and bug fixes.
+Release for minor sample sheet updates, maintenance and bug fixes.
 
 - Update ISA-Tab template dependency to ``cubi-isa-templates``
+- Allow assay tables with no materials after sample
+- Fix sample sheet creation form resubmit handling
 - Fix django-autocomplete-light Docker build crash
 
 

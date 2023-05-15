@@ -13,6 +13,7 @@ Changed
 
 - **Samplesheets**
     - Update ISA-Tab template dependency to ``cubi-isa-templates`` (#1667)
+    - Allow assay tables with no materials after sample (#1676)
 
 Fixed
 -----
