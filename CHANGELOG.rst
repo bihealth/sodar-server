@@ -5,6 +5,27 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+v0.13.4 (2023-05-15)
+====================
+
+Changed
+-------
+
+- **Samplesheets**
+    - Update ISA-Tab template dependency to ``cubi-isa-templates`` (#1667)
+    - Allow assay tables with no materials after sample (#1676)
+
+Fixed
+-----
+
+- **General**
+    - ``django-autocomplete-light`` Docker build crash with ``whitenoise`` (#1666)
+    - Chrome install script issues (#1677)
+- **Samplesheets**
+    - Multi-file upload not working (#1670)
+    - Template create form allowing multiple ISA-Tabs per project (#1672)
+
+
 v0.13.3 (2023-05-10)
 ====================
 

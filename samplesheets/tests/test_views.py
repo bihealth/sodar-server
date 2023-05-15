@@ -3,7 +3,7 @@
 import json
 import os
 
-from cubi_tk.isa_tpl import _TEMPLATES as TK_TEMPLATES
+from cubi_isa_templates import _TEMPLATES as ISA_TEMPLATES
 from urllib.parse import urlencode
 from zipfile import ZipFile
 
@@ -30,6 +30,7 @@ from sodarcache.models import JSONCacheItem
 from landingzones.models import LandingZone
 from landingzones.tests.test_models import LandingZoneMixin
 
+from samplesheets.forms import TPL_DIR_FIELD
 from samplesheets.io import SampleSheetIO
 from samplesheets.models import Investigation, Assay, ISATab
 from samplesheets.rendering import (
@@ -698,6 +699,31 @@ class TestSheetTemplateSelectView(TestViewsBase):
 class TestSheetTemplateCreateFormView(TestViewsBase):
     """Tests for SheetTemplateCreateFormView"""
 
+    def _get_post_data(self, tpl_name):
+        """
+        Return POST data for creation from template
+
+        :param tpl_name: Template name (string)
+        :return: Dict
+        """
+        templates = {
+            t.name: t
+            for t in ISA_TEMPLATES
+            if t.name in settings.SHEETS_ENABLED_TEMPLATES
+        }
+        sheet_tpl = templates[tpl_name]
+        ret = {TPL_DIR_FIELD: clean_sheet_dir_name(self.project.title)}
+        for k, v in sheet_tpl.configuration.items():
+            if isinstance(v, str):
+                if '{{' in v or '{%' in v:
+                    continue
+                ret[k] = v
+            elif isinstance(v, list):
+                ret[k] = v[0]
+            elif isinstance(v, dict):
+                ret[k] = json.dumps(v)
+        return ret
+
     def test_render_batch(self):
         """Test rendering the view with supported templates"""
         for t in settings.SHEETS_ENABLED_TEMPLATES:
@@ -751,27 +777,10 @@ class TestSheetTemplateCreateFormView(TestViewsBase):
 
     def test_post_batch(self):
         """Test POST request with supported templates and default values"""
-        templates = {
-            t.name: t
-            for t in TK_TEMPLATES
-            if t.name in settings.SHEETS_ENABLED_TEMPLATES
-        }
 
         for t in settings.SHEETS_ENABLED_TEMPLATES:
             self.assertIsNone(self.project.investigations.first())
-
-            sheet_tpl = templates[t]
-            post_data = {'i_dir_name': clean_sheet_dir_name(self.project.title)}
-            for k, v in sheet_tpl.configuration.items():
-                if isinstance(v, str):
-                    if '{{' in v or '{%' in v:
-                        continue
-                    post_data[k] = v
-                elif isinstance(v, list):
-                    post_data[k] = v[0]
-                elif isinstance(v, dict):
-                    post_data[k] = json.dumps(v)
-
+            post_data = self._get_post_data(t)
             with self.login(self.user):
                 response = self.client.post(
                     reverse(
@@ -785,6 +794,23 @@ class TestSheetTemplateCreateFormView(TestViewsBase):
             self.assertEqual(response.status_code, 302, msg=t)
             self.assertIsNotNone(self.project.investigations.first())
             self.project.investigations.first().delete()
+
+    def test_post_multiple(self):
+        """Test multiple requests to add multiple sample sheets (should fail)"""
+        tpl_name = settings.SHEETS_ENABLED_TEMPLATES[0]
+        url = reverse(
+            'samplesheets:template_create',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        url += '?sheet_tpl=' + tpl_name
+        post_data = self._get_post_data(tpl_name)
+        with self.login(self.user):
+            response = self.client.post(url, data=post_data)
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(self.project.investigations.count(), 1)
+            response = self.client.post(url, data=post_data)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(self.project.investigations.count(), 1)
 
 
 class TestSheetExcelExportView(TestViewsBase):

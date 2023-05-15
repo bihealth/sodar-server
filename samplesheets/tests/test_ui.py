@@ -2,7 +2,7 @@
 
 import json
 
-from cubi_tk.isa_tpl import _TEMPLATES as TK_TEMPLATES
+from cubi_isa_templates import _TEMPLATES as ISA_TEMPLATES
 
 from django.urls import reverse
 from django.utils.http import urlencode
@@ -264,7 +264,7 @@ class TestSheetTemplateCreateFormView(TestProjectSheetsVueAppBase):
 
     def test_render_hidden_fields(self):
         """Test rendering hidden fields in the sheet template form"""
-        for t in TK_TEMPLATES:
+        for t in ISA_TEMPLATES:
             url = (
                 reverse(
                     'samplesheets:template_create',

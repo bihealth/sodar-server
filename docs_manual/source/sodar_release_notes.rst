@@ -8,6 +8,17 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v0.13.4 (2023-05-15)
+====================
+
+Release for minor sample sheet updates, maintenance and bug fixes.
+
+- Update ISA-Tab template dependency to ``cubi-isa-templates``
+- Allow assay tables with no materials after sample
+- Fix sample sheet creation form resubmit handling
+- Fix django-autocomplete-light Docker build crash
+
+
 v0.13.3 (2023-05-10)
 ====================
 
