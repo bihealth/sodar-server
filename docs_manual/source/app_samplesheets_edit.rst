@@ -222,7 +222,7 @@ Names of all nodes must be filled out before the row can be saved into the
 database. Exceptions for this include unnamed processes, which will be
 autofilled, as well as *File* type materials which can remain unnamed.
 Characteristics, factor values and other metadata fields can be filled or left
-empty at tihs point. Their values can be edited freely just like any other cell
+empty at this point. Their values can be edited freely just like any other cell
 after saving the row.
 
 .. hint::

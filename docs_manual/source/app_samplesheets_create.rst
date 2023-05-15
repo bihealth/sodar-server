@@ -47,6 +47,11 @@ In case of a successful import, you will be redirected to the main sample sheets
 view, where you should see the study and assay tables for your imported sample
 sheets.
 
+.. note::
+
+    Importing ISA-Tab files with empty study or assay tables is not allowed.
+    Study tables must also contain source and sample materials.
+
 Parser Warnings
 ---------------
 
