@@ -2578,15 +2578,13 @@ class IrodsDataRequestListView(
         return queryset.filter(user=self.request.user)
 
     def build_webdav_url(self, item):
-        return f"{settings.IRODS_WEBDAV_URL}{item.path}"
+        return f"{settings.IRODS_WEBDAV_URL}/{item.path}"
 
     def get_extra_item_data(self, item):
         if settings.IRODS_WEBDAV_ENABLED:
             item.webdav_url = self.build_webdav_url(item)
-            item.webdav_tooltip = "Open collection/file in WebDAV"
         else:
             item.webdav_url = None
-            item.webdav_tooltip = None
 
     def get(self, request, *args, **kwargs):
         response = super().get(request, *args, **kwargs)
