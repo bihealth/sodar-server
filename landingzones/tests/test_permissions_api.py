@@ -4,7 +4,7 @@ from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.tests.test_permissions import TestProjectPermissionBase
+from projectroles.tests.test_permissions import TestProjectAPIPermissionBase
 
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
@@ -29,9 +29,17 @@ SHEET_PATH = SHEET_DIR + 'i_small.zip'
 
 
 class TestLandingZonePermissions(
-    LandingZoneMixin, SampleSheetIOMixin, TestProjectPermissionBase
+    LandingZoneMixin,
+    SampleSheetIOMixin,
+    TestProjectAPIPermissionBase,
 ):
     """Tests for landingzones REST API view permissions"""
+
+    def _get_update_post_data(self):
+        return {
+            'assay': str(self.assay.sodar_uuid),
+            'description': 'Test description updated',
+        }
 
     def setUp(self):
         super().setUp()
@@ -127,3 +135,86 @@ class TestLandingZonePermissions(
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 403)
         self.assert_response(url, [self.anonymous], 401)
+
+    def test_update(self):
+        """Test LandingZoneUpdateAPIView permissions"""
+        url = reverse(
+            'landingzones:api_update',
+            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+        )
+        good_users = [
+            self.superuser,
+            self.user_owner_cat,
+            self.user_owner,
+            self.user_delegate,
+        ]
+        bad_users = [
+            self.user_contributor,
+            self.user_guest,
+            self.user_no_roles,
+        ]
+        self.assert_response_api(
+            url,
+            good_users,
+            200,
+            method='PATCH',
+            data=self._get_update_post_data(),
+            knox=True,
+        )
+        self.assert_response_api(
+            url,
+            bad_users,
+            403,
+            method='PATCH',
+            data=self._get_update_post_data(),
+            knox=True,
+        )
+        self.assert_response_api(
+            url,
+            [self.anonymous],
+            401,
+            method='PATCH',
+            data=self._get_update_post_data(),
+        )
+
+    def test_update_archive(self):
+        """Test LandingZoneUpdateAPIView with archived project"""
+        self.project.set_archive()
+        url = reverse(
+            'landingzones:api_update',
+            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+        )
+        good_users = [
+            self.superuser,
+        ]
+        bad_users = [
+            self.user_owner_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
+            self.user_no_roles,
+        ]
+        self.assert_response_api(
+            url,
+            good_users,
+            200,
+            method='PATCH',
+            data=self._get_update_post_data(),
+            knox=True,
+        )
+        self.assert_response_api(
+            url,
+            bad_users,
+            403,
+            method='PATCH',
+            data=self._get_update_post_data(),
+            knox=True,
+        )
+        self.assert_response_api(
+            url,
+            [self.anonymous],
+            401,
+            method='PATCH',
+            data=self._get_update_post_data(),
+        )

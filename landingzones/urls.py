@@ -19,6 +19,11 @@ urls_ui = [
         name='create',
     ),
     path(
+        route='update/<uuid:landingzone>',
+        view=views.ZoneUpdateView.as_view(),
+        name='update',
+    ),
+    path(
         route='move/<uuid:landingzone>',
         view=views.ZoneMoveView.as_view(),
         name='move',
@@ -51,6 +56,11 @@ urls_api = [
         route='api/create/<uuid:project>',
         view=views_api.ZoneCreateAPIView.as_view(),
         name='api_create',
+    ),
+    path(
+        route='api/update/<uuid:landingzone>',
+        view=views_api.ZoneUpdateAPIView.as_view(),
+        name='api_update',
     ),
     path(
         route='api/submit/delete/<uuid:landingzone>',

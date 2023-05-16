@@ -5,7 +5,12 @@ import logging
 from django.urls import reverse
 
 from rest_framework.exceptions import APIException, NotFound
-from rest_framework.generics import ListAPIView, RetrieveAPIView, CreateAPIView
+from rest_framework.generics import (
+    ListAPIView,
+    RetrieveAPIView,
+    CreateAPIView,
+    UpdateAPIView,
+)
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.serializers import ValidationError
@@ -29,9 +34,10 @@ from landingzones.models import (
 from landingzones.serializers import LandingZoneSerializer
 from landingzones.views import (
     ZoneModifyPermissionMixin,
-    ZoneCreateMixin,
+    ZoneModifyMixin,
     ZoneDeleteMixin,
     ZoneMoveMixin,
+    ZONE_UPDATE_FIELDS,
 )
 
 
@@ -160,7 +166,7 @@ class ZoneRetrieveAPIView(SODARAPIGenericProjectMixin, RetrieveAPIView):
 
 
 class ZoneCreateAPIView(
-    ZoneCreateMixin, SODARAPIGenericProjectMixin, CreateAPIView
+    ZoneModifyMixin, SODARAPIGenericProjectMixin, CreateAPIView
 ):
     """
     Create a landing zone.
@@ -223,6 +229,58 @@ class ZoneCreateAPIView(
                 restrict_colls=restrict_colls,
                 request=self.request,
             )
+        except Exception as ex:
+            raise APIException('{}{}'.format(ex_msg, ex))
+
+
+class ZoneUpdateAPIView(
+    ZoneModifyMixin, SODARAPIGenericProjectMixin, UpdateAPIView
+):
+    """
+    Update a landing zone description and user message.
+    **URL:** ``/landingzones/api/update/{LandingZone.sodar_uuid}``
+    **Methods:** ``PATCH``, ``PUT``
+    **Parameters:**
+    - ``assay``: Assay UUID (string)
+    - ``description``: Landing zone description (string, optional)
+    - ``user_message``: Message displayed to users on successful moving of zone (string, optional)
+    **Returns:** Landing zone details (see ``ZoneRetrieveAPIView``)
+    """
+
+    lookup_field = 'sodar_uuid'
+    lookup_url_kwarg = 'landingzone'
+    permission_required = 'landingzones.update_zone_all'
+    serializer_class = LandingZoneSerializer
+
+    def put(self, request, *args, **kwargs):
+        return self.partial_update(request, *args, **kwargs)
+
+    def _validate_update_fields(self, serializer):
+        """
+        Validate that only allowed fields are updated.
+        """
+        # Add assay to allowed fields, as it's necessary field for update
+        allowed_fields = ZONE_UPDATE_FIELDS + ['assay']
+        for field in serializer.validated_data.keys():
+            if field not in allowed_fields:
+                return False
+        return True
+
+    def perform_update(self, serializer):
+        """
+        Override perform_update() to add timeline event and initiate taskflow.
+        """
+        ex_msg = 'Updating landing zone failed: '
+        # Check that only allowed fields are updated
+        if not self._validate_update_fields(serializer):
+            # Should raise 400 Bad Request
+            raise ValidationError('{}Invalid update fields'.format(ex_msg))
+            # raise APIException('{}Invalid update fields'.format(ex_msg))
+
+        # If all is OK, go forward with object update and taskflow submission
+        super().perform_update(serializer)
+        try:
+            self.update_zone(zone=serializer.instance, request=self.request)
         except Exception as ex:
             raise APIException('{}{}'.format(ex_msg, ex))
 

@@ -160,6 +160,83 @@ class TestLandingZonePermissions(TestLandingZonePermissionsBase):
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 302)
 
+    def test_zone_update(self):
+        """Test ZoneUpdateView permissions"""
+        url = reverse(
+            'landingzones:update',
+            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+        )
+        good_users = [
+            self.superuser,
+            self.user_owner_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+        ]
+        bad_users = [
+            self.user_guest,
+            self.anonymous,
+            self.user_no_roles,
+        ]
+        self.assert_response(url, good_users, 200)
+        redirect_url = reverse(
+            'landingzones:list',
+            kwargs={'project': self.landing_zone.project.sodar_uuid},
+        )
+        self.assert_response(url, bad_users, 302, redirect_user=redirect_url)
+
+    def test_zone_update_archive(self):
+        """Test ZoneUpdateView with archived project"""
+        self.project.set_archive()
+        url = reverse(
+            'landingzones:update',
+            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+        )
+        good_users = [
+            self.superuser,
+        ]
+        bad_users = [
+            self.user_owner_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
+            self.anonymous,
+            self.user_no_roles,
+        ]
+        self.assert_response(url, good_users, 200)
+        redirect_url = reverse(
+            'landingzones:list',
+            kwargs={'project': self.landing_zone.project.sodar_uuid},
+        )
+        self.assert_response(url, bad_users, 302, redirect_user=redirect_url)
+
+    @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
+    def test_zone_update_disable(self):
+        """Test ZoneUpdateView with disabled non-superuser access"""
+        url = reverse(
+            'landingzones:update',
+            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+        )
+        good_users = [
+            self.superuser,
+        ]
+        bad_users = [
+            self.user_owner_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
+            self.anonymous,
+            self.user_no_roles,
+        ]
+        self.assert_response(url, good_users, 200)
+        redirect_url = reverse(
+            'landingzones:list',
+            kwargs={'project': self.landing_zone.project.sodar_uuid},
+        )
+        self.assert_response(url, bad_users, 302, redirect_user=redirect_url)
+
     def test_zone_delete(self):
         """Test ZoneDeleteView permissions"""
         url = reverse(

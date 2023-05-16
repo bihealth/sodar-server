@@ -82,3 +82,12 @@ class LandingZoneSerializer(SODARProjectModelSerializer):
             sodar_uuid=validated_data['assay']['sodar_uuid']
         )
         return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        validated_data['title'] = get_zone_title(validated_data.get('title'))
+        validated_data['project'] = self.context['project']
+        validated_data['user'] = self.context['request'].user
+        validated_data['assay'] = Assay.objects.get(
+            sodar_uuid=validated_data['assay']['sodar_uuid']
+        )
+        return super().update(instance, validated_data)
