@@ -144,6 +144,9 @@ EMAIL_HOST_PASSWORD = EMAIL_URL['EMAIL_HOST_PASSWORD']
 # ------------------------------------------------------------------------------
 
 
+# SampleSheets
+SHEETS_ENABLE_STUDY_TABLE_CACHE = True
+
 # Plugin settings
 ENABLED_BACKEND_PLUGINS = env.list(
     'ENABLED_BACKEND_PLUGINS',

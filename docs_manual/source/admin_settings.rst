@@ -154,6 +154,8 @@ Sample Sheets Settings
     Allow critical altamISA warnings on import (boolean).
 ``SHEETS_IRODS_LIMIT``
     iRODS file query limit (integer).
+``SHEETS_ENABLE_STUDY_TABLE_CACHE``
+    Enable caching of study tables unless set false (boolean).
 ``SHEETS_TABLE_HEIGHT``
     Default study/assay table height.
 ``SHEETS_MIN_COLUMN_WIDTH``
