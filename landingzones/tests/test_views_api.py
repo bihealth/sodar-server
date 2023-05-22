@@ -233,7 +233,6 @@ class TestLandingZoneUpdateAPIView(TestLandingZoneAPIViewsBase):
             kwargs={'landingzone': self.landing_zone.sodar_uuid},
         )
         data = {
-            'assay': str(self.assay.sodar_uuid),
             'description': 'New description',
             'user_message': 'New user message',
         }
@@ -263,7 +262,6 @@ class TestLandingZoneUpdateAPIView(TestLandingZoneAPIViewsBase):
             kwargs={'landingzone': self.landing_zone.sodar_uuid},
         )
         data = {
-            'assay': str(self.assay.sodar_uuid),
             'description': 'New description',
             'user_message': 'New user message',
         }

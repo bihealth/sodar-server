@@ -234,6 +234,7 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
 
         # Add event in Timeline
         if timeline:
+            description = ('update landing zone {zone} for {user} in {assay}',)
             tl_extra = {
                 'title': zone.title,
                 'assay': str(zone.assay.sodar_uuid),
@@ -245,8 +246,7 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
                 app_name=APP_NAME,
                 user=user,
                 event_name='zone_update',
-                description='update landing zone {{{}}} for {{{}}} in '
-                '{{{}}}'.format('zone', 'user', 'assay'),
+                description=description,
                 status_type='OK',
                 extra_data=tl_extra,
             )
@@ -535,9 +535,6 @@ class ZoneUpdateView(
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-        context['zone'] = LandingZone.objects.get(
-            sodar_uuid=self.kwargs['landingzone']
-        )
         return context
 
     def get_permission_required(self, user):
@@ -569,7 +566,6 @@ class ZoneUpdateView(
                 'status of "{}".'.format(zone.status),
             )
             return redirect(redirect_url)
-
         return super().get(request, *args, **kwargs)
 
     def form_valid(self, form):

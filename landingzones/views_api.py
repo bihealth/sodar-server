@@ -241,7 +241,6 @@ class ZoneUpdateAPIView(
     **URL:** ``/landingzones/api/update/{LandingZone.sodar_uuid}``
     **Methods:** ``PATCH``, ``PUT``
     **Parameters:**
-    - ``assay``: Assay UUID (string)
     - ``description``: Landing zone description (string, optional)
     - ``user_message``: Message displayed to users on successful moving of zone (string, optional)
     **Returns:** Landing zone details (see ``ZoneRetrieveAPIView``)
@@ -252,6 +251,12 @@ class ZoneUpdateAPIView(
     permission_required = 'landingzones.update_zone_all'
     serializer_class = LandingZoneSerializer
 
+    def get_serializer_context(self, *args, **kwargs):
+        context = super().get_serializer_context(*args, **kwargs)
+        landing_zone = self.get_object()
+        context['assay'] = landing_zone.assay.sodar_uuid
+        return context
+
     def put(self, request, *args, **kwargs):
         return self.partial_update(request, *args, **kwargs)
 
@@ -260,7 +265,7 @@ class ZoneUpdateAPIView(
         Validate that only allowed fields are updated.
         """
         # Add assay to allowed fields, as it's necessary field for update
-        allowed_fields = ZONE_UPDATE_FIELDS + ['assay']
+        allowed_fields = ZONE_UPDATE_FIELDS
         for field in serializer.validated_data.keys():
             if field not in allowed_fields:
                 return False

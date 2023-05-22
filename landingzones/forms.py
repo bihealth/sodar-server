@@ -103,9 +103,6 @@ class LandingZoneForm(forms.ModelForm):
         else:
             # Set initial assay value
             self.initial['assay'] = self.instance.assay.sodar_uuid
-            self.initial['configuration'] = self.instance.configuration
-            self.initial['user_message'] = self.instance.user_message
-            self.initial['description'] = self.instance.description
 
             # Don't allow modifying certain fields
             self.fields['title_suffix'].widget = forms.HiddenInput()

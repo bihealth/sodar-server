@@ -63,9 +63,7 @@ class LandingZoneSerializer(SODARProjectModelSerializer):
             return irods_backend.get_path(obj)
 
     def validate(self, attrs):
-        assay = Assay.objects.filter(
-            sodar_uuid=attrs['assay']['sodar_uuid']
-        ).first()
+        assay = Assay.objects.get(sodar_uuid=self.context['assay'])
         if not assay:
             raise serializers.ValidationError('Assay not found')
         if assay.get_project() != self.context['project']:
@@ -88,6 +86,9 @@ class LandingZoneSerializer(SODARProjectModelSerializer):
         validated_data['project'] = self.context['project']
         validated_data['user'] = self.context['request'].user
         validated_data['assay'] = Assay.objects.get(
-            sodar_uuid=validated_data['assay']['sodar_uuid']
+            sodar_uuid=self.context['assay']
         )
+        # validated_data['assay'] = Assay.objects.get(
+        #     sodar_uuid=validated_data['assay']['sodar_uuid']
+        # )
         return super().update(instance, validated_data)

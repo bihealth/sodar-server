@@ -3,17 +3,33 @@
 {% load crispy_forms_filters %}
 
 {% block title %}
-  {% if not object.pk %}Create Landing Zone in {{ project.title }}
-  {% else %}Update Landing Zone {% if request.user.username == zone.user.username %}{{ zone.title }}{% else %}{{ zone.user.username }} / {{ zone.title }}{% endif %}
+  {% if not object.pk %}
+    Create Landing Zone in {{ project.title }}
+  {% else %}
+    Update Landing Zone
+    {% if request.user.username == zone.user.username %}
+      {{ object.title }}
+    {% else %}
+      {{ object.user.username }} / {{ object.title }}
+    {% endif %}
   {% endif %}
 {% endblock title %}
 
 {% block projectroles_extend %}
 
 <div class="container-fluid sodar-subtitle-container">
-  <h3>{% if not object.pk %}Create Landing Zone in {{ project.title }}
-  {% else %}Update Landing Zone {% if request.user.username == zone.user.username %}{{ zone.title }}{% else %}{{ zone.user.username }} / {{ zone.title }}{% endif %}
-  {% endif %}</h3>
+  <h3>
+    {% if not object.pk %}
+      Create Landing Zone in {{ project.title }}
+    {% else %}
+      Update Landing Zone
+      {% if request.user.username == object.user.username %}
+        {{ object.title }}
+      {% else %}
+        {{ object.user.username }} / {{ object.title }}
+      {% endif %}
+    {% endif %}
+  </h3>
 </div>
 
 <div class="container-fluid sodar-page-container">
