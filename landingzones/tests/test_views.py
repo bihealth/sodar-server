@@ -223,7 +223,6 @@ class TestLandingZoneUpdateView(TestViewsBase):
                     kwargs={'landingzone': self.landing_zone.sodar_uuid},
                 ),
                 data={
-                    'assay': self.assay.sodar_uuid,
                     'description': 'test description updated',
                     'user_message': 'test user message',
                 },
@@ -254,7 +253,6 @@ class TestLandingZoneUpdateView(TestViewsBase):
                     kwargs={'landingzone': self.landing_zone.sodar_uuid},
                 ),
                 data={
-                    'assay': self.assay.sodar_uuid,
                     'description': 'test description updated',
                     'title_suffix': 'test suffix',
                 },

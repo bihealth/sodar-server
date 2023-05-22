@@ -37,7 +37,6 @@ class TestLandingZonePermissions(
 
     def _get_update_post_data(self):
         return {
-            'assay': str(self.assay.sodar_uuid),
             'description': 'Test description updated',
         }
 

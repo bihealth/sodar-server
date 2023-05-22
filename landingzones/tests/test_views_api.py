@@ -251,7 +251,7 @@ class TestLandingZoneUpdateAPIView(TestLandingZoneAPIViewsBase):
             'landingzones:api_update',
             kwargs={'landingzone': self.landing_zone.sodar_uuid},
         )
-        data = {'assay': str(self.assay.sodar_uuid), 'title': 'New title'}
+        data = {'title': 'New title'}
         response = self.request_knox(url, method='PATCH', data=data)
         self.assertEqual(response.status_code, 400)
 
@@ -280,6 +280,6 @@ class TestLandingZoneUpdateAPIView(TestLandingZoneAPIViewsBase):
             'landingzones:api_update',
             kwargs={'landingzone': self.landing_zone.sodar_uuid},
         )
-        data = {'assay': str(self.assay.sodar_uuid), 'title': 'New title'}
+        data = {'title': 'New title'}
         response = self.request_knox(url, method='PUT', data=data)
         self.assertEqual(response.status_code, 400)
