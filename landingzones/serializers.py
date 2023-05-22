@@ -68,12 +68,12 @@ class LandingZoneSerializer(SODARProjectModelSerializer):
                 assay = Assay.objects.get(
                     sodar_uuid=attrs['assay']['sodar_uuid']
                 )
-            else:
+            elif 'assay' in self.context:
                 assay = Assay.objects.get(sodar_uuid=self.context['assay'])
+            else:
+                raise serializers.ValidationError('Assay not found')
         except Exception as ex:
             raise serializers.ValidationError('Assay not found') from ex
-        if not assay:
-            raise serializers.ValidationError('Assay not found')
         if assay.get_project() != self.context['project']:
             raise serializers.ValidationError(
                 'Assay does not belong to project'

@@ -533,10 +533,6 @@ class ZoneUpdateView(
     slug_url_kwarg = 'landingzone'
     slug_field = 'sodar_uuid'
 
-    def get_context_data(self, *args, **kwargs):
-        context = super().get_context_data(*args, **kwargs)
-        return context
-
     def get_permission_required(self, user):
         """Get custom permission for user"""
         if self.request.user == user:

@@ -264,10 +264,8 @@ class ZoneUpdateAPIView(
         """
         Validate that only allowed fields are updated.
         """
-        # Add assay to allowed fields, as it's necessary field for update
-        allowed_fields = ZONE_UPDATE_FIELDS
         for field in serializer.validated_data.keys():
-            if field not in allowed_fields:
+            if field not in ZONE_UPDATE_FIELDS:
                 return False
         return True
 
