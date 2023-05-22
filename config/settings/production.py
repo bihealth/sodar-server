@@ -144,7 +144,7 @@ EMAIL_HOST_PASSWORD = EMAIL_URL['EMAIL_HOST_PASSWORD']
 # ------------------------------------------------------------------------------
 
 
-# SampleSheets
+# Samplesheets app settings
 SHEETS_ENABLE_STUDY_TABLE_CACHE = True
 
 # Plugin settings

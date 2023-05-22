@@ -870,7 +870,8 @@ class SampleSheetTableBuilder:
                 logger.debug('Cache item "{}" not set'.format(item_name))
         else:
             logger.debug(
-                'Study table cache disabled in settings. See STUDY_TABLE_CACHE_ITEM in settings.py. Returning new tables.'
+                'Study table cache disabled in settings. See '
+                'STUDY_TABLE_CACHE_ITEM in settings.py. Returning new tables.'
             )
 
         # If not found in cache, build and save tables
