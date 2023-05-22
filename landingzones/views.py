@@ -611,7 +611,6 @@ class ZoneUpdateView(
         )
         msg = 'Landing zone "{}" was updated.'.format(self.zone.title)
         messages.success(self.request, msg)
-
         return super().form_valid(form)
 
     def get_success_url(self):
