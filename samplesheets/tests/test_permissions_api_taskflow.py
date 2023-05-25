@@ -66,7 +66,7 @@ class TestIrodsRequestCreateAPIView(TestIrodsRequestAPIViewBase):
             self.user_delegate,
             self.user_contributor,
         ]
-        bad_users = [self.user_guest, self.user_no_roles, self.user_no_roles]
+        bad_users = [self.user_guest, self.user_no_roles]
 
         self.assert_response_api(
             self.url, good_users, 200, method='POST', data=self.post_data
@@ -111,7 +111,7 @@ class TestIrodsRequestUpdateAPIView(TestIrodsRequestAPIViewBase):
             self.user_delegate,
             self.user_contributor,
         ]
-        bad_users = [self.user_guest, self.user_no_roles, self.user_no_roles]
+        bad_users = [self.user_guest, self.user_no_roles]
 
         with self.login(self.superuser):
             self.client.post(self.url_create, self.post_data)
@@ -171,7 +171,7 @@ class TestIrodsRequestDeleteAPIView(TestIrodsRequestAPIViewBase):
             self.user_delegate,
             self.user_contributor,
         ]
-        bad_users = [self.user_guest, self.user_no_roles, self.user_no_roles]
+        bad_users = [self.user_guest, self.user_no_roles]
 
         for user in good_users:
             with self.login(self.superuser):
@@ -239,13 +239,7 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
             self.user_owner,
             self.user_delegate,
         ]
-        bad_users = [
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-            self.user_no_roles,
-        ]
-
+        bad_users = [self.user_contributor, self.user_guest, self.user_no_roles]
         with self.login(self.superuser):
             self.client.post(self.url_create, self.post_data)
             obj = IrodsDataRequest.objects.first()
@@ -312,12 +306,7 @@ class TestIrodsRequestRejectAPIView(TestIrodsRequestAPIViewBase):
             self.user_owner,
             self.user_delegate,
         ]
-        bad_users = [
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-            self.user_no_roles,
-        ]
+        bad_users = [self.user_contributor, self.user_guest, self.user_no_roles]
 
         with self.login(self.superuser):
             self.client.post(self.url_create, self.post_data)

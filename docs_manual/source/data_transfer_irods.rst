@@ -27,12 +27,6 @@ access the data from elsewhere on the network, you need to install the
 `official installation instructions <https://irods.org/download/>`_ for more
 information.
 
-.. note::
-
-    On Ubuntu 22.04, installing iCommands is not officially supported at the
-    time of writing. For workarounds,
-    `see this discussion <https://github.com/irods/irods/issues/4883>`_.
-
 To configure your iCommands connection, open the
 :ref:`ui_irods_info` application. In the app, click the
 :guilabel:`Download Configuration` button to download a configuration file

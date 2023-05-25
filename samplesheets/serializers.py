@@ -1,11 +1,11 @@
 """API view model serializers for the samplesheets app"""
 
 import re
-from django.conf import settings
-from projectroles.models import Project
+
 from rest_framework import serializers
 
 # Projectroles dependency
+from projectroles.models import Project
 from projectroles.plugins import get_backend_api
 from projectroles.serializers import (
     SODARProjectModelSerializer,
@@ -14,6 +14,7 @@ from projectroles.serializers import (
 
 from samplesheets.forms import ERROR_MSG_EXISTING, ERROR_MSG_INVALID_PATH
 from samplesheets.models import Investigation, Study, Assay, IrodsDataRequest
+from samplesheets.constants import path_re
 
 
 class AssaySerializer(SODARNestedListSerializer):
@@ -103,7 +104,8 @@ class IrodsRequestSerializer(SODARProjectModelSerializer):
         irods_backend = get_backend_api('omics_irods')
         # Remove trailing slashes as irodspython client does not recognize
         # this as a collection
-        path = value.rstrip('/')
+        # path = value.rstrip('/')
+        path = irods_backend.sanitize_path(value)
 
         old_request = IrodsDataRequest.objects.filter(
             path=path, status__in=['ACTIVE', 'FAILED']
@@ -111,13 +113,6 @@ class IrodsRequestSerializer(SODARProjectModelSerializer):
         if old_request and old_request != self.instance:
             raise serializers.ValidationError(ERROR_MSG_EXISTING)
 
-        path_re = re.compile(
-            '^' + irods_backend.get_projects_path() + '/[0-9a-f]{2}/'
-            '(?P<project_uuid>[0-9a-f-]{36})/'
-            + settings.IRODS_SAMPLE_COLL
-            + '/study_(?P<study_uuid>[0-9a-f-]{36})/'
-            'assay_(?P<assay_uuid>[0-9a-f-]{36})/.+$'
-        )
         match = re.search(
             path_re,
             path,

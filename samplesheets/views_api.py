@@ -60,7 +60,7 @@ table_builder = SampleSheetTableBuilder()
 MD5_RE = re.compile(r'([a-fA-F\d]{32})')
 APP_NAME = 'samplesheets'
 IRODS_QUERY_ERROR_MSG = 'Exception querying iRODS objects'
-IRODS_EX_MSG = ' iRODS data request failed: '
+IRODS_EX_MSG = ' iRODS data request failed:'
 
 
 # API Views --------------------------------------------------------------------
@@ -151,7 +151,9 @@ class IrodsDataRequestListAPIView(
 ):
     """
     List iRODS data requests for a project.
+
     **URL:** ``/samplesheets/api/irods/requests/{Project.sodar_uuid}``
+
     **Methods:** ``GET``
     """
 
@@ -199,7 +201,9 @@ class IrodsRequestCreateAPIView(
 ):
     """
     Create an iRODS data request for a project.
+
     **URL:** ``/samplesheets/api/irods/request/create/{Project.sodar_uuid}``
+
     **Methods:** ``POST``
     """
 
@@ -241,7 +245,9 @@ class IrodsRequestUpdateAPIView(
 ):
     """
     Update an iRODS data request for a project.
+
     **URL:** ``/samplesheets/api/irods/request/update/{IrodsDataRequest.sodar_uuid}``
+
     **Methods:** ``POST``
     """
 
@@ -250,12 +256,9 @@ class IrodsRequestUpdateAPIView(
 
     def post(self, request, *args, **kwargs):
         """POST request for updating an iRODS data request"""
-        ex_msg = 'Updating' + IRODS_EX_MSG
         irods_request = IrodsDataRequest.objects.filter(
             sodar_uuid=self.kwargs.get('irodsdatarequest')
         ).first()
-        if not irods_request:
-            raise ValidationError('{}Request not found'.format(ex_msg))
         serializer = IrodsRequestSerializer(
             irods_request, data=request.data, partial=True
         )
@@ -284,7 +287,9 @@ class IrodsRequestDeleteAPIView(
 ):
     """
     Delete an iRODS data request for a project.
+
     **URL:** ``/samplesheets/api/irods/request/delete/{IrodsDataRequest.sodar_uuid}``
+
     **Methods:** ``DELETE``
     """
 
@@ -297,12 +302,10 @@ class IrodsRequestDeleteAPIView(
         irods_request = IrodsDataRequest.objects.filter(
             sodar_uuid=self.kwargs.get('irodsdatarequest')
         ).first()
-        if not request:
-            raise ValidationError('{}Request not found'.format(ex_msg))
         try:
             irods_request.delete()
         except Exception as ex:
-            raise APIException('{}{}'.format(ex_msg, ex))
+            raise APIException('{} {}'.format(ex_msg, ex))
 
         # Add timeline event
         self.add_tl_delete(irods_request)
@@ -321,7 +324,9 @@ class IrodsRequestAcceptAPIView(
 ):
     """
     Accept an iRODS data request for a project.
+
     **URL:** ``/samplesheets/api/irods/request/accept/{IrodsDataRequest.sodar_uuid}``
+
     **Methods:** ``POST``
     """
 
@@ -339,8 +344,6 @@ class IrodsRequestAcceptAPIView(
         irods_request = IrodsDataRequest.objects.filter(
             sodar_uuid=self.kwargs.get('irodsdatarequest')
         ).first()
-        if not irods_request:
-            raise ValidationError('{}Request not found'.format(ex_msg))
 
         try:
             self.accept_request(
@@ -352,7 +355,7 @@ class IrodsRequestAcceptAPIView(
                 app_alerts=app_alerts,
             )
         except Exception as ex:
-            raise APIException('{}{}'.format(ex_msg, ex))
+            raise APIException('{} {}'.format(ex_msg, ex))
         return Response(
             {
                 'detail': 'iRODS data request accepted',
@@ -367,7 +370,9 @@ class IrodsRequestRejectAPIView(
 ):
     """
     Reject an iRODS data request for a project.
+
     **URL:** ``/samplesheets/api/irods/request/reject/{IrodsDataRequest.sodar_uuid}``
+
     **Methods:** ``GET``
     """
 
@@ -383,8 +388,6 @@ class IrodsRequestRejectAPIView(
         irods_request = IrodsDataRequest.objects.filter(
             sodar_uuid=self.kwargs.get('irodsdatarequest')
         ).first()
-        if not irods_request:
-            raise ValidationError('{}Request not found'.format(ex_msg))
 
         irods_request.status = 'REJECTED'
         irods_request.save()
@@ -398,7 +401,7 @@ class IrodsRequestRejectAPIView(
                 app_alerts=app_alerts,
             )
         except Exception as ex:
-            raise APIException('{}{}'.format(ex_msg, ex))
+            raise APIException('{} {}'.format(ex_msg, ex))
 
         return Response(
             {

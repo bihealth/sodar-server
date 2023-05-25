@@ -775,6 +775,7 @@ class IrodsRequestModifyMixin:
     def add_tl_update(cls, irods_request, timeline=None):
         """
         Create timeline event for iRODS data request update.
+
         :param irods_request: IrodsDataRequest object
         :param timeline: TimelineAPI instance or None
         """
@@ -917,13 +918,14 @@ class IrodsRequestModifyMixin:
     ):
         """
         Accept an iRODS accept request.
+
         :param irods_request: IrodsDataRequest object
         :param project: Project object
         :param request: Request object
-        :param timeline: Timeline API or None
-        :param taskflow: Taskflow API or None
-        :param app_alerts: Appalerts API or None
-        :raise: ValueError if request is not in ACCEPTABLE_STATUSES
+        :param timeline: TimelineAPI instance or None
+        :param taskflow: TaskflowAPI instance or None
+        :param app_alerts: AppalertsAPI instance or None
+        :raise: FlowSubmitException if taskflow submission fails
         """
         tl_event = None
         if timeline:
@@ -1011,6 +1013,7 @@ class IrodsRequestModifyMixin:
     ):
         """
         Reject an iRODS delete request.
+
         :param irods_request: IrodsDataRequest object
         :param project: Project object
         :param request: Request object
