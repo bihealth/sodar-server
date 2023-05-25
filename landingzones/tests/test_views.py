@@ -214,20 +214,27 @@ class TestLandingZoneUpdateView(TestViewsBase):
             )
         self.assertEqual(response.status_code, 302)
 
-    def test_put(self):
-        """Test PUT request to the landing zone update view"""
+    def test_post(self):
+        """Test POST request to the landing zone update view"""
         with self.login(self.user):
-            response = self.client.put(
+            response = self.client.post(
                 reverse(
                     'landingzones:update',
                     kwargs={'landingzone': self.landing_zone.sodar_uuid},
                 ),
                 data={
+                    'assay': self.assay.sodar_uuid,
                     'description': 'test description updated',
                     'user_message': 'test user message',
                 },
             )
-        self.assertEqual(response.status_code, 302)
+            self.assertRedirects(
+                response,
+                reverse(
+                    'landingzones:list',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
         landing_zone = LandingZone.objects.get(
             sodar_uuid=self.landing_zone.sodar_uuid
         )
@@ -244,15 +251,16 @@ class TestLandingZoneUpdateView(TestViewsBase):
             'test user message',
         )
 
-    def test_put_invalid_data(self):
-        """Test PUT request with invalid data"""
+    def test_post_invalid_data(self):
+        """Test POST request with invalid data"""
         with self.login(self.user):
-            response = self.client.put(
+            response = self.client.post(
                 reverse(
                     'landingzones:update',
                     kwargs={'landingzone': self.landing_zone.sodar_uuid},
                 ),
                 data={
+                    'assay': self.assay.sodar_uuid,
                     'description': 'test description updated',
                     'title_suffix': 'test suffix',
                 },
