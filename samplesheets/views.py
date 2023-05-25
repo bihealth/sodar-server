@@ -2288,7 +2288,9 @@ class IrodsRequestAcceptView(
     form_class = IrodsRequestAcceptForm
 
     def get_irods_request_objects(self):
-        if self.request.GET.kwargs.get('irodsdatarequest') or self.request.POST.kwargs.get('irodsdatarequest'):
+        if self.request.GET.kwargs.get(
+            'irodsdatarequest'
+        ) or self.request.POST.kwargs.get('irodsdatarequest'):
             request_ids = [self.request.GET.get('irodsdatarequest')]
         else:
             request_ids = self.request.POST.getlist('request_ids', [])
@@ -2301,9 +2303,11 @@ class IrodsRequestAcceptView(
         if not kwargs.get('single', False):
             batch = self.get_irods_request_objects()
         else:
-            batch = [IrodsDataRequest.objects.filter(
-                        sodar_uuid=self.kwargs['irodsdatarequest']
-                    ).first()]
+            batch = [
+                IrodsDataRequest.objects.filter(
+                    sodar_uuid=self.kwargs['irodsdatarequest']
+                ).first()
+            ]
         context_data['irods_requests'] = batch
 
         for obj in batch:
@@ -2324,17 +2328,23 @@ class IrodsRequestAcceptView(
                         context_data[
                             'affected_collections'
                         ] += irods_backend.get_colls_recursively(coll)
-            context_data['irods_request_data'].append({
-                'obj': context_data['irods_request'],
-                'is_collection': context_data['is_collection'],
-                'affected_objects': context_data['affected_objects'],
-                'affected_collections': context_data['affected_collections'],
-            })
+            context_data['irods_request_data'].append(
+                {
+                    'obj': context_data['irods_request'],
+                    'is_collection': context_data['is_collection'],
+                    'affected_objects': context_data['affected_objects'],
+                    'affected_collections': context_data[
+                        'affected_collections'
+                    ],
+                }
+            )
         return context_data
 
     def get(self, request, *args, **kwargs):
         try:
-            return super().render_to_response(self.get_context_data(single=True))
+            return super().render_to_response(
+                self.get_context_data(single=True)
+            )
         except Exception as ex:
             messages.error(request, str(ex))
             return redirect(
@@ -2644,29 +2654,49 @@ class IrodsRequestRejectView(
         request_ids = self.request.POST.getlist('request_ids[]', [])
         return IrodsDataRequest.objects.filter(sodar_uuid__in=request_ids)
 
+    def get(self, request, *args, **kwargs):
+        try:
+            irods_request = IrodsDataRequest.objects.get(
+                sodar_uuid=self.kwargs['irodsdatarequest']
+            )
+            self.process_single_request(irods_request)
+            messages.success(
+                self.request,
+                'iRODS data request "{}" rejected.'.format(
+                    irods_request.get_display_name()
+                ),
+            )
+            return redirect(
+                reverse(
+                    'samplesheets:irods_requests',
+                    kwargs={'project': self.get_project().sodar_uuid},
+                )
+            )
+        except Exception as ex:
+            messages.error(request, str(ex))
+            return redirect(
+                reverse(
+                    'samplesheets:irods_requests',
+                    kwargs={'project': self.get_project().sodar_uuid},
+                )
+            )
+
     def post(self, request, *args, **kwargs):
         batch = self.get_irods_request_objects()
-        response_data = []
 
         for obj in batch:
             response = self.process_single_request(obj)
-            response_data.append(response)
+            messages.success(self.request, response)
 
-        return JsonResponse(response_data, safe=False)
+        return redirect(
+            'samplesheets:irods_requests',
+            kwargs={'project': self.get_project().sodar_uuid},
+        )
 
     def process_single_request(self, obj):
         timeline = get_backend_api('timeline_backend')
         app_alerts = get_backend_api('appalerts_backend')
         project = self.get_project()
-
-        try:
-            obj = IrodsDataRequest.objects.get(sodar_uuid=obj.sodar_uuid)
-        except IrodsDataRequest.DoesNotExist:
-            return {
-                'error': 'iRODS data request "{}" does not exist.'.format(
-                    obj.sodar_uuid
-                )
-            }
 
         obj.status = 'REJECTED'
         obj.save()
@@ -2684,7 +2714,6 @@ class IrodsRequestRejectView(
                 obj=obj, label='irods_request', name=obj.get_display_name()
             )
 
-        # Prepare and send notification email
         if settings.PROJECTROLES_SEND_EMAIL and obj.user != self.request.user:
             subject_body = 'iRODS delete request rejected'
             message_body = EMAIL_DELETE_REQUEST_REJECT.format(

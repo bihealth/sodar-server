@@ -51,11 +51,13 @@ function sendRequest(url) {
     var data = {
         request_ids: selectedRequests
     };
-
+    var csrftoken = getCookie('csrftoken');  // Retrieve the CSRF token from the cookie
+    // console.log(csrftoken);
     fetch(url, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken  // Include the CSRF token in the headers
         },
         body: JSON.stringify(data)
     })
@@ -67,4 +69,19 @@ function sendRequest(url) {
         // Handle any errors that occurred during the request
         // e.g., display an error message or log the error
     });
+}
+
+function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
 }

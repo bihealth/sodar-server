@@ -1,4 +1,5 @@
 <div class="btn-group ml-auto" id="sodar-ff-buttons-list">
+  {% csrf_token %}
   <button class="btn btn-primary dropdown-toggle"
           type="button" data-toggle="dropdown"
           aria-haspopup="true" aria-expanded="false">
@@ -13,16 +14,16 @@
     </a>
 
     {# Accept Selected #}
-    <a class="dropdown-item"
+    <a class="dropdown-item" id="sodar-ss-accept-selected"
        href="javascript:{}"
-       onclick="sendRequest({% url 'samplesheets:irods_request_accept_batch' %}); return false;">
+       onclick="sendRequest('{% url 'samplesheets:irods_request_accept_batch' %}'); return false;">
       <i class="iconify" data-icon="mdi:arrow-right-thick"></i> Accept Selected
     </a>
 
     {# Reject Selected #}
-    <a class="dropdown-item"
+    <a class="dropdown-item" id="sodar-ss-reject-selected"
        href="javascript:{}"
-       onclick="sendRequest({% url 'samplesheets:irods_request_reject_batch' %}); return false;">
+       onclick="sendRequest('{% url 'samplesheets:irods_request_reject_batch' %}');">
       <i class="iconify" data-icon="mdi:close-thick"></i> Reject Selected
     </a>
 
