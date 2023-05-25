@@ -16,7 +16,7 @@ from django.utils import timezone
 from projectroles.models import Project
 from projectroles.plugins import get_backend_api
 
-from samplesheets.constants import HIDDEN_SHEET_TEMPLATE_FIELDS, path_re
+from samplesheets.constants import HIDDEN_SHEET_TEMPLATE_FIELDS
 from samplesheets.io import SampleSheetIO, ARCHIVE_TYPES
 from samplesheets.utils import clean_sheet_dir_name
 from samplesheets.models import (
@@ -384,6 +384,14 @@ class IrodsRequestForm(forms.ModelForm):
         if old_request and old_request != self.instance:
             self.add_error('path', ERROR_MSG_EXISTING)
             return cleaned_data
+
+        path_re = re.compile(
+            '^' + irods_backend.get_projects_path() + '/[0-9a-f]{2}/'
+            '(?P<project_uuid>[0-9a-f-]{36})/'
+            + settings.IRODS_SAMPLE_COLL
+            + '/study_(?P<study_uuid>[0-9a-f-]{36})/'
+            'assay_(?P<assay_uuid>[0-9a-f-]{36})/.+$'
+        )
 
         match = re.search(
             path_re,

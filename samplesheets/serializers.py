@@ -2,6 +2,8 @@
 
 import re
 
+from django.conf import settings
+
 from rest_framework import serializers
 
 # Projectroles dependency
@@ -14,7 +16,6 @@ from projectroles.serializers import (
 
 from samplesheets.forms import ERROR_MSG_EXISTING, ERROR_MSG_INVALID_PATH
 from samplesheets.models import Investigation, Study, Assay, IrodsDataRequest
-from samplesheets.constants import path_re
 
 
 class AssaySerializer(SODARNestedListSerializer):
@@ -106,6 +107,13 @@ class IrodsRequestSerializer(SODARProjectModelSerializer):
         # this as a collection
         # path = value.rstrip('/')
         path = irods_backend.sanitize_path(value)
+        path_re = re.compile(
+            '^' + irods_backend.get_projects_path() + '/[0-9a-f]{2}/'
+            '(?P<project_uuid>[0-9a-f-]{36})/'
+            + settings.IRODS_SAMPLE_COLL
+            + '/study_(?P<study_uuid>[0-9a-f-]{36})/'
+            'assay_(?P<assay_uuid>[0-9a-f-]{36})/.+$'
+        )
 
         old_request = IrodsDataRequest.objects.filter(
             path=path, status__in=['ACTIVE', 'FAILED']
