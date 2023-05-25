@@ -204,19 +204,30 @@ class TestTableBuilder(SheetConfigMixin, TestRenderingBase):
     def test_get_study_tables_config(self):
         """Test get_study_tables() with SHEETS_ENABLE_STUDY_TABLE_CACHE=False"""
         tables = self.tb.get_study_tables(self.study)
-        t_field = tables['study']['field_header'][2]
-        self.assertEqual(t_field['value'], 'Age')
+        t_field = tables['study']['top_header'][0]
+        self.assertEqual(t_field['value'], 'Source')
 
         sheet_config = self.build_sheet_config(self.investigation)
         c_field = sheet_config['studies'][str(self.study.sodar_uuid)]['nodes'][
             0
-        ]['fields'][2]
-        self.assertEqual(c_field['name'], 'age')
-        # TODO: Change the field in database model
+        ]
+        self.assertEqual(c_field['header'], 'Source')
+        # Change name in a model
+        characteristics = (
+            GenericMaterial.objects.filter(study=self.study, item_type='SOURCE')
+            .first()
+            .characteristics
+        )
+        characteristics['age']['value'] = '70'
+        GenericMaterial.objects.filter(
+            study=self.study, item_type='SOURCE'
+        ).update(characteristics=characteristics)
 
         tables = self.tb.get_study_tables(self.study)
-        t_field = tables['study']['field_header'][2]
-        self.assertEqual(t_field['value'], 'Age')
+        t_field = tables['study']['top_header'][0]
+        self.assertEqual(t_field['value'], 'Source')
+        val_field = tables['study']['table_data'][2]
+        self.assertEqual(val_field[2]['value'], '70')
 
     def test_clear_study_cache(self):
         """Test clear_study_cache()"""
