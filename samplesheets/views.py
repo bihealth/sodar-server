@@ -2288,7 +2288,10 @@ class IrodsRequestAcceptView(
     form_class = IrodsRequestAcceptForm
 
     def get_irods_request_objects(self):
-        request_ids = self.request.POST.getlist('request_ids[]', [])
+        if self.request.GET.kwargs.get('irodsdatarequest') or self.request.POST.kwargs.get('irodsdatarequest'):
+            request_ids = [self.request.GET.get('irodsdatarequest')]
+        else:
+            request_ids = self.request.POST.getlist('request_ids', [])
         return IrodsDataRequest.objects.filter(sodar_uuid__in=request_ids)
 
     def get_context_data(self, *args, **kwargs):
@@ -2317,6 +2320,18 @@ class IrodsRequestAcceptView(
                         ] += irods_backend.get_colls_recursively(coll)
 
         return context_data
+
+    def get(self, request, *args, **kwargs):
+        try:
+            return super().render_to_response(self.get_context_data())
+        except Exception as ex:
+            messages.error(request, str(ex))
+            return redirect(
+                reverse(
+                    'samplesheets:irods_requests',
+                    kwargs={'project': self.get_project().sodar_uuid},
+                )
+            )
 
     def post(self, request, *args, **kwargs):
         batch = self.get_irods_request_objects()

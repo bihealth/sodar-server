@@ -34,3 +34,37 @@ function checkAll(elem) {
         }
     });
 }
+
+/*****************
+ * Accept or reject selected
+ *****************/
+function sendRequest(url) {
+    var checkboxes = document.querySelectorAll('.sodar-checkbox');
+    var selectedRequests = [];
+
+    checkboxes.forEach(function(checkbox) {
+        if (checkbox.checked) {
+            selectedRequests.push(checkbox.value);
+        }
+    });
+
+    var data = {
+        request_ids: selectedRequests
+    };
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(function(response) {
+        // Handle the response from the server
+        // e.g., display a success message or perform further actions
+    })
+    .catch(function(error) {
+        // Handle any errors that occurred during the request
+        // e.g., display an error message or log the error
+    });
+}

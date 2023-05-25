@@ -13,23 +13,18 @@
     </a>
 
     {# Accept Selected #}
-    <a class="dropdown-item" id="sodar-ss-accept-selected"
+    <a class="dropdown-item"
        href="javascript:{}"
-       onclick="
-         document.getElementById('sodar-ss-batch-form-action').value = 'accept';
-         document.getElementById('sodar-ss-batch-form').submit();
-         return false;">
+       onclick="sendRequest({% url 'samplesheets:irods_request_accept_batch' %}); return false;">
       <i class="iconify" data-icon="mdi:arrow-right-thick"></i> Accept Selected
     </a>
 
     {# Reject Selected #}
-    <a class="dropdown-item" id="sodar-ss-reject-selected"
+    <a class="dropdown-item"
        href="javascript:{}"
-       onclick="
-         document.getElementById('sodar-ss-batch-form-action').value = 'reject';
-         document.getElementById('sodar-ss-batch-form').submit();
-         return false;">
+       onclick="sendRequest({% url 'samplesheets:irods_request_reject_batch' %}); return false;">
       <i class="iconify" data-icon="mdi:close-thick"></i> Reject Selected
     </a>
+
   </div>
 </div>
