@@ -109,9 +109,8 @@ class TestIrodsRequestUpdateAPIView(TestIrodsRequestAPIViewBase):
             self.user_owner_cat,  # Inherited owner
             self.user_owner,
             self.user_delegate,
-            self.user_contributor,
         ]
-        bad_users = [self.user_guest, self.user_no_roles]
+        bad_users = [self.user_guest, self.user_no_roles, self.user_contributor]
 
         with self.login(self.superuser):
             self.client.post(self.url_create, self.post_data)
@@ -169,9 +168,8 @@ class TestIrodsRequestDeleteAPIView(TestIrodsRequestAPIViewBase):
             self.user_owner_cat,  # Inherited owner
             self.user_owner,
             self.user_delegate,
-            self.user_contributor,
         ]
-        bad_users = [self.user_guest, self.user_no_roles]
+        bad_users = [self.user_guest, self.user_no_roles, self.user_contributor]
 
         for user in good_users:
             with self.login(self.superuser):

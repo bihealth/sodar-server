@@ -253,18 +253,27 @@ class IrodsRequestUpdateAPIView(
     """
 
     http_method_names = ['post']
+    # permission_required = 'samplesheets.edit_sheet'
+    permission_classes = (IsAuthenticated,)
 
     def check_irods_permissions(self, request):
         """Override to allow POST requests without CSRF token"""
-        if request.user.is_superuser:
-            return True
-        if request.user == self.get_project().owner:
-            return True
-        if request.user.has_perm('samplesheets.manage_sheet'):
-            return True
-        if request.user == self.get_object().user:
+        if (
+            request.user.is_superuser
+            or self.get_project().is_owner(request.user)
+            or request.user.has_perm(
+                'samplesheets.manage_sheet', self.get_object().project
+            )
+            or request.user == self.get_object().user
+        ):
             return True
         return False
+
+    def get_object(self):
+        """Override to allow POST requests"""
+        return IrodsDataRequest.objects.get(
+            sodar_uuid=self.kwargs.get('irodsdatarequest')
+        )
 
     def post(self, request, *args, **kwargs):
         """POST request for updating an iRODS data request"""
@@ -309,17 +318,25 @@ class IrodsRequestDeleteAPIView(
     """
 
     http_method_names = ['delete']
-    permission_required = 'samplesheets.delete_sheet'
+    # permission_required = 'samplesheets.edit_sheet'
+    permission_classes = (IsAuthenticated,)
+
+    def get_object(self):
+        """Override to allow POST requests"""
+        return IrodsDataRequest.objects.get(
+            sodar_uuid=self.kwargs.get('irodsdatarequest')
+        )
 
     def check_irods_permissions(self, request):
         """Override to allow POST requests without CSRF token"""
-        if request.user.is_superuser:
-            return True
-        if request.user == self.get_project().owner:
-            return True
-        if request.user.has_perm('samplesheets.manage_sheet'):
-            return True
-        if request.user == self.get_object().user:
+        if (
+            request.user.is_superuser
+            or self.get_project().is_owner(request.user)
+            or request.user.has_perm(
+                'samplesheets.manage_sheet', self.get_object().project
+            )
+            or request.user == self.get_object().user
+        ):
             return True
         return False
 
