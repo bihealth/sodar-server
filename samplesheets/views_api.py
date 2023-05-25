@@ -15,6 +15,7 @@ from rest_framework.exceptions import (
     ParseError,
     ValidationError,
     NotFound,
+    PermissionDenied,
 )
 from rest_framework.generics import (
     RetrieveAPIView,
@@ -252,10 +253,24 @@ class IrodsRequestUpdateAPIView(
     """
 
     http_method_names = ['post']
-    permission_required = 'samplesheets.edit_sheet'
+
+    def check_irods_permissions(self, request):
+        """Override to allow POST requests without CSRF token"""
+        if request.user.is_superuser:
+            return True
+        if request.user == self.get_project().owner:
+            return True
+        if request.user.has_perm('samplesheets.manage_sheet'):
+            return True
+        if request.user == self.get_object().user:
+            return True
+        return False
 
     def post(self, request, *args, **kwargs):
         """POST request for updating an iRODS data request"""
+        if not self.check_irods_permissions(request):
+            raise PermissionDenied('Insufficient permissions')
+
         irods_request = IrodsDataRequest.objects.filter(
             sodar_uuid=self.kwargs.get('irodsdatarequest')
         ).first()
@@ -296,8 +311,23 @@ class IrodsRequestDeleteAPIView(
     http_method_names = ['delete']
     permission_required = 'samplesheets.delete_sheet'
 
+    def check_irods_permissions(self, request):
+        """Override to allow POST requests without CSRF token"""
+        if request.user.is_superuser:
+            return True
+        if request.user == self.get_project().owner:
+            return True
+        if request.user.has_perm('samplesheets.manage_sheet'):
+            return True
+        if request.user == self.get_object().user:
+            return True
+        return False
+
     def delete(self, request, *args, **kwargs):
         """DELETE request for deleting an iRODS data request"""
+        if not self.check_irods_permissions(request):
+            raise PermissionDenied('Insufficient permissions')
+
         ex_msg = 'Deleting' + IRODS_EX_MSG
         irods_request = IrodsDataRequest.objects.filter(
             sodar_uuid=self.kwargs.get('irodsdatarequest')
