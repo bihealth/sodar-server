@@ -17,35 +17,37 @@
 </div>
 
 <div class="container-fluid sodar-page-container">
-  <div class="alert alert-danger">
-    <strong>Warning:</strong> Accepting the request will delete the associated
-    {% if is_collection %}collection{% else %}data object{% endif %} from iRODS.
-    This can <strong>not</strong> be undone without administrator assistance!
-  </div>
-  <div class="alert alert-danger">
-    The following {% if is_collection %}collection{% else %}data object{% endif %} will be deleted: <br />
-    <code class="text-danger">{{ irods_request.path }}</code>
-    {% if affected_objects %}
-      <div class="mt-3 mb-0">
-        The collection to be deleted contains the following data objects:
-        <ul class="mb-0">
-          {% for o in affected_objects %}
-            <li><code class="text-danger">{{ o.path|trim_base_path:irods_request.path }}</code></li>
-          {% endfor %}
-        </ul>
-      </div>
-    {% endif %}
-    {% if affected_collections %}
-      <div class="mt-3 mb-0">
-        The collection to be deleted comprises the following subcollections:
-        <ul class="mb-0">
-          {% for o in affected_collections %}
-            <li><code class="text-danger">{{ o.path|trim_base_path:irods_request.path }}/</code></li>
-          {% endfor %}
-        </ul>
-      </div>
-    {% endif %}
-  </div>
+  {% for irods_request in irods_request_data %}
+    <div class="alert alert-danger">
+      <strong>Warning:</strong> Accepting the request will delete the associated
+      {% if irods_request.is_collection %}collection{% else %}data object{% endif %} from iRODS.
+      This can <strong>not</strong> be undone without administrator assistance!
+    </div>
+    <div class="alert alert-danger">
+      The following {% if irods_request.is_collection %}collection{% else %}data object{% endif %} will be deleted: <br />
+      <code class="text-danger">{{ irods_request.obj.path }}</code>
+      {% if irods_request.affected_objects %}
+        <div class="mt-3 mb-0">
+          The collection to be deleted contains the following data objects:
+          <ul class="mb-0">
+            {% for o in irods_request.affected_objects %}
+              <li><code class="text-danger">{{ o.path|trim_base_path:irods_request.path }}</code></li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+      {% if irods_request.affected_collections %}
+        <div class="mt-3 mb-0">
+          The collection to be deleted comprises the following subcollections:
+          <ul class="mb-0">
+            {% for o in irods_request.affected_collections %}
+              <li><code class="text-danger">{{ o.path|trim_base_path:irods_request.path }}/</code></li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+    </div>
+  {% endfor %}
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {{ form | crispy }}

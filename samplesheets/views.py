@@ -2296,14 +2296,20 @@ class IrodsRequestAcceptView(
 
     def get_context_data(self, *args, **kwargs):
         context_data = super().get_context_data(*args, **kwargs)
+        context_data['irods_request_data'] = []
         irods_backend = get_backend_api('omics_irods')
-
-        batch = self.get_irods_request_objects()
+        if not kwargs.get('single', False):
+            batch = self.get_irods_request_objects()
+        else:
+            batch = [IrodsDataRequest.objects.filter(
+                        sodar_uuid=self.kwargs['irodsdatarequest']
+                    ).first()]
         context_data['irods_requests'] = batch
-        context_data['affected_objects'] = []
-        context_data['affected_collections'] = []
 
         for obj in batch:
+            context_data['irods_request'] = obj
+            context_data['affected_objects'] = []
+            context_data['affected_collections'] = []
             context_data['is_collection'] = obj.is_collection()
             if context_data['is_collection']:
                 with irods_backend.get_session() as irods:
@@ -2318,12 +2324,17 @@ class IrodsRequestAcceptView(
                         context_data[
                             'affected_collections'
                         ] += irods_backend.get_colls_recursively(coll)
-
+            context_data['irods_request_data'].append({
+                'obj': context_data['irods_request'],
+                'is_collection': context_data['is_collection'],
+                'affected_objects': context_data['affected_objects'],
+                'affected_collections': context_data['affected_collections'],
+            })
         return context_data
 
     def get(self, request, *args, **kwargs):
         try:
-            return super().render_to_response(self.get_context_data())
+            return super().render_to_response(self.get_context_data(single=True))
         except Exception as ex:
             messages.error(request, str(ex))
             return redirect(
