@@ -58,36 +58,30 @@ function sendRequest(url, redirect_url) {
         request_ids: selectedRequests,
         confirm: true
     };
-    console.log(data);
     var csrftoken = getCookie('csrftoken');  // Retrieve the CSRF token from the cookie
-    console.log(csrftoken);
-    fetch(url, {
-        method: 'POST',
+
+    $.ajax({
+        url: url,
+        credentials: 'same-origin',
+        type: 'PATCH',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRFToken': csrftoken  // Include the CSRF token in the headers
+            'X-CSRFToken': csrftoken
         },
-        body: JSON.stringify(data),
-        redirect: 'follow',
-    })
-    .then(function(response) {
-        // Handle the response from the server
-        // e.g., display a success message or perform further actions
+        data: JSON.stringify(data),
+        dataType: 'json',
+    }).done(function(response) {
         console.log(response);
 
-        // Redirect to the specified URL
         if (response.redirected && redirect_url) {
             window.location.href = redirect_url;
         }
-    })
-    .catch(function(error) {
-        // Handle any errors that occurred during the request
-        // e.g., display an error message or log the error
+    }).fail(function(error) {
         console.log(error);
 
-        if (redirect_url) {
-            window.location.href = redirect_url;
-        }
+        // if (response.redirected && redirect_url) {
+        //     window.location.href = redirect_url;
+        // }
     });
 }
 

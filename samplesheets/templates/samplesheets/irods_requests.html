@@ -97,11 +97,11 @@
               <th></th>
             {% endif %}
             <th id="sodar-ss-list-header-select">
-{#              {% if can_update_own or can_update_all %}#}
+              {% if can_manage_request %}
                 <input class="sodar-checkbox" type="checkbox"
                        onchange="checkAll(this)" name="check_all"
                        id="sodar-ss-check-all" title="Check/uncheck all" />
-{#              {% endif %}#}
+              {% endif %}
             </th>
           </tr>
         </thead>
@@ -176,11 +176,11 @@
                   </td>
                 {% endif %}
               <td>
-  {#              {% if can_update_all or item.owner == request.user and can_update_own %}#}
+                {% if can_manage_request %}
                   <input class="sodar-checkbox sodar-ss-checkbox-item" type="checkbox"
                          id="sodar-ss-checkbox-item-{{ irods_request.sodar_uuid }}"
                          name="batch_item_{{ irods_request.sodar_uuid }}" value="{{ irods_request.sodar_uuid }}" />
-  {#              {% endif %}#}
+                {% endif %}
               </td>
             </tr>
           {% endfor %}
