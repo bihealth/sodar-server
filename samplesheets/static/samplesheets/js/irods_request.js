@@ -55,7 +55,8 @@ function sendRequest(url, redirect_url) {
     });
 
     var data = {
-        request_ids: selectedRequests
+        request_ids: selectedRequests,
+        confirm: true
     };
     console.log(data);
     var csrftoken = getCookie('csrftoken');  // Retrieve the CSRF token from the cookie

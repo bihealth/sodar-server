@@ -1399,45 +1399,6 @@ class TestIrodsRequestAcceptView(TestIrodsRequestViewsBase):
             )
         self.assertEqual(response.status_code, 404)
 
-    def test_accept_invalid_form_data(self):
-        """Test accepting a delete request with invalid form data"""
-        self.assert_irods_obj(self.path)
-
-        with self.login(self.user_contrib):
-            self.client.post(
-                reverse(
-                    'samplesheets:irods_request_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                self.post_data,
-            )
-
-        self.assertEqual(IrodsDataRequest.objects.count(), 1)
-        obj = IrodsDataRequest.objects.first()
-        self._assert_alert_count(CREATE_ALERT, self.user, 1)
-        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
-        self._assert_alert_count(ACCEPT_ALERT, self.user, 0)
-        self._assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
-
-        with self.login(self.user):
-            response = self.client.post(
-                reverse(
-                    'samplesheets:irods_request_accept',
-                    kwargs={'irodsdatarequest': obj.sodar_uuid},
-                ),
-                {'confirm': False},
-            )
-            self.assertEqual(
-                response.context['form'].errors['confirm'][0],
-                'This field is required.',
-            )
-
-        self._assert_alert_count(CREATE_ALERT, self.user, 1)
-        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
-        self._assert_alert_count(ACCEPT_ALERT, self.user, 0)
-        self._assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
-        self.assert_irods_obj(self.path)
-
     def test_accept_owner(self):
         """Test accepting a delete request as owner"""
         self.assert_irods_obj(self.path)

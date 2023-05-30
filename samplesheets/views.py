@@ -2353,7 +2353,6 @@ class IrodsRequestAcceptView(
             )
 
     def post(self, request, *args, **kwargs):
-        print('ARGHHHHHHH!!!!')
         batch = self.get_irods_request_objects()
 
         for obj in batch:
@@ -2688,7 +2687,6 @@ class IrodsRequestRejectView(
             )
 
     def post(self, request, *args, **kwargs):
-        print('ARGHHHHHHH!!!!')
         batch = self.get_irods_request_objects()
 
         for obj in batch:
