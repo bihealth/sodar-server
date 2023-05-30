@@ -178,8 +178,8 @@
               <td>
   {#              {% if can_update_all or item.owner == request.user and can_update_own %}#}
                   <input class="sodar-checkbox sodar-ss-checkbox-item" type="checkbox"
-                         id="sodar-ss-checkbox-item-{{ item.sodar_uuid }}"
-                         name="batch_item_{{ item.sodar_uuid }}" value="{{ item.sodar_uuid }}" />
+                         id="sodar-ss-checkbox-item-{{ irods_request.sodar_uuid }}"
+                         name="batch_item_{{ irods_request.sodar_uuid }}" value="{{ irods_request.sodar_uuid }}" />
   {#              {% endif %}#}
               </td>
             </tr>

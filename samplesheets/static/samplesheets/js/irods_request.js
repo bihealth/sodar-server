@@ -14,6 +14,12 @@ $(document).ready(function () {
             $('#sodar-ss-accept-selected').hide();
             $('#sodar-ss-reject-selected').hide();
         }
+        // Uncheck "Select All" if any checkbox is unchecked
+        if ($('.sodar-ss-checkbox-item:checked').length < $('.sodar-ss-checkbox-item').length) {
+            $('#sodar-ss-check-all').prop('checked', false);
+        } else {
+            $('#sodar-ss-check-all').prop('checked', true);
+        }
     });
 });
 
@@ -38,7 +44,7 @@ function checkAll(elem) {
 /*****************
  * Accept or reject selected
  *****************/
-function sendRequest(url) {
+function sendRequest(url, redirect_url) {
     var checkboxes = document.querySelectorAll('.sodar-checkbox');
     var selectedRequests = [];
 
@@ -51,23 +57,36 @@ function sendRequest(url) {
     var data = {
         request_ids: selectedRequests
     };
+    console.log(data);
     var csrftoken = getCookie('csrftoken');  // Retrieve the CSRF token from the cookie
-    // console.log(csrftoken);
+    console.log(csrftoken);
     fetch(url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken': csrftoken  // Include the CSRF token in the headers
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
+        redirect: 'follow',
     })
     .then(function(response) {
         // Handle the response from the server
         // e.g., display a success message or perform further actions
+        console.log(response);
+
+        // Redirect to the specified URL
+        if (response.redirected && redirect_url) {
+            window.location.href = redirect_url;
+        }
     })
     .catch(function(error) {
         // Handle any errors that occurred during the request
         // e.g., display an error message or log the error
+        console.log(error);
+
+        if (redirect_url) {
+            window.location.href = redirect_url;
+        }
     });
 }
 

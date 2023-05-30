@@ -16,7 +16,7 @@ from packaging import version
 from django.conf import settings
 from django.contrib import messages
 from django.db.models.functions import Now
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.safestring import mark_safe
@@ -2288,10 +2288,8 @@ class IrodsRequestAcceptView(
     form_class = IrodsRequestAcceptForm
 
     def get_irods_request_objects(self):
-        if self.request.GET.kwargs.get(
-            'irodsdatarequest'
-        ) or self.request.POST.kwargs.get('irodsdatarequest'):
-            request_ids = [self.request.GET.get('irodsdatarequest')]
+        if self.kwargs.get('irodsdatarequest', None):
+            request_ids = [str(self.kwargs['irodsdatarequest'])]
         else:
             request_ids = self.request.POST.getlist('request_ids', [])
         return IrodsDataRequest.objects.filter(sodar_uuid__in=request_ids)
@@ -2355,14 +2353,22 @@ class IrodsRequestAcceptView(
             )
 
     def post(self, request, *args, **kwargs):
+        print('ARGHHHHHHH!!!!')
         batch = self.get_irods_request_objects()
-        response_data = []
 
         for obj in batch:
             response = self.process_single_request(obj)
-            response_data.append(response)
+            if response.get('error'):
+                messages.error(self.request, response['error'])
+            elif response.get('message'):
+                messages.success(self.request, response['message'])
 
-        return JsonResponse(response_data, safe=False)
+        return redirect(
+            reverse(
+                'samplesheets:irods_requests',
+                kwargs={'project': self.get_project().sodar_uuid},
+            )
+        )
 
     def process_single_request(self, obj):
         timeline = get_backend_api('timeline_backend')
@@ -2682,6 +2688,7 @@ class IrodsRequestRejectView(
             )
 
     def post(self, request, *args, **kwargs):
+        print('ARGHHHHHHH!!!!')
         batch = self.get_irods_request_objects()
 
         for obj in batch:
