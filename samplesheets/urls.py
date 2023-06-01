@@ -150,7 +150,7 @@ urls_ui = [
         name='irods_request_accept',
     ),
     path(
-        route='irods/request/accept/batch',
+        route='irods/request/accept/',
         view=views.IrodsRequestAcceptView.as_view(),
         name='irods_request_accept_batch',
     ),
@@ -160,7 +160,7 @@ urls_ui = [
         name='irods_request_reject',
     ),
     path(
-        route='irods/request/reject/batch',
+        route='irods/request/reject/',
         view=views.IrodsRequestRejectView.as_view(),
         name='irods_request_reject_batch',
     ),

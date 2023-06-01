@@ -2288,10 +2288,8 @@ class IrodsRequestAcceptView(
     form_class = IrodsRequestAcceptForm
 
     def get_irods_request_objects(self):
-        if self.kwargs.get('irodsdatarequest', None):
-            request_ids = [str(self.kwargs['irodsdatarequest'])]
-        else:
-            request_ids = self.request.GET.get('irodsdatarequests').split(',')
+        request_ids = [str(self.kwargs['irodsdatarequest'])]
+        request_ids += self.request.GET.get('irodsdatarequests').split(',')
         return IrodsDataRequest.objects.filter(sodar_uuid__in=request_ids)
 
     def get_context_data(self, *args, **kwargs):
@@ -2476,10 +2474,8 @@ class IrodsRequestRejectView(
     permission_required = 'samplesheets.manage_sheet'
 
     def get_irods_request_objects(self):
-        if self.kwargs.get('irodsdatarequest', None):
-            request_ids = [str(self.kwargs['irodsdatarequest'])]
-        else:
-            request_ids = self.request.GET.get('irodsdatarequests').split(',')
+        request_ids = [str(self.kwargs['irodsdatarequest'])]
+        request_ids += self.request.GET.get('irodsdatarequests').split(',')
         return IrodsDataRequest.objects.filter(sodar_uuid__in=request_ids)
 
     def get(self, request, *args, **kwargs):

@@ -49,13 +49,13 @@ function sendRequest(url, redirect_url) {
     var selectedRequests = [];
 
     checkboxes.forEach(function(checkbox) {
-        if (checkbox.checked) {
+        if (checkbox.checked && checkbox.value !== 'on') {
             selectedRequests.push(checkbox.value);
         }
     });
 
     // Add params to URL
-    var urlParams = url + '?irodsdatarequests=' + encodeURIComponent(selectedRequests.join(','));
+    var urlParams = url + selectedRequests[0] + '?irodsdatarequests=' + encodeURIComponent(selectedRequests.join(','));
 
     // Redirect to URL
     window.location.href = urlParams;
