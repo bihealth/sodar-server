@@ -52,6 +52,9 @@
     <form method="post" enctype="multipart/form-data">
       {% csrf_token %}
       {{ form | crispy }}
+      {% if irods_request_data|length %}
+        <input type="hidden" name="irodsdatarequests" id="irodsdatarequests" value="{{ irods_request_uuids }}"/>
+      {% endif %}
       <div class="row">
         <div class="btn-group ml-auto">
           <a role="button" class="btn btn-secondary"
@@ -66,16 +69,16 @@
     </form>
   {% else %}
     <div class="row">
+      <div class="alert alert-danger">
+        <strong>Error:</strong> No iRODS delete request found with the given UUID.
+      </div>
+    </div>
+    <div class="row">
       <div class="ml-auto btn-group">
         <a role="button" class="btn btn-secondary"
            href="{{ request.session.real_referer }}">
           <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Cancel
         </a>
-      </div>
-    </div>
-    <div class="row">
-      <div class="alert alert-danger">
-        <strong>Error:</strong> No iRODS delete request found with the given UUID.
       </div>
     </div>
   {% endif %}

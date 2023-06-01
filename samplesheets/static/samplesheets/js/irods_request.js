@@ -54,9 +54,27 @@ function sendRequest(url) {
         }
     });
 
-    // Add params to URL
-    var urlParams = url + selectedRequests[0] + '?irodsdatarequests=' + encodeURIComponent(selectedRequests.join(','));
+    // Create a form to send the POST request
+    var form = document.createElement('form');
+    form.setAttribute('method', 'post');
+    form.setAttribute('action', url);
 
-    // Redirect to URL
-    window.location.href = urlParams;
+    // Create a CSRF token input field
+    var csrfToken = jQuery("[name=csrfmiddlewaretoken]").val();
+    var csrfField = document.createElement('input');
+    csrfField.setAttribute('type', 'hidden');
+    csrfField.setAttribute('name', 'csrfmiddlewaretoken');
+    csrfField.setAttribute('value', csrfToken);
+    form.appendChild(csrfField);
+
+    // Add the data to the form
+    var hiddenField = document.createElement('input');
+    hiddenField.setAttribute('type', 'hidden');
+    hiddenField.setAttribute('name', 'irodsdatarequests');
+    hiddenField.setAttribute('value', selectedRequests.join(','));
+    form.appendChild(hiddenField);
+    document.body.appendChild(form);
+
+    // Submit the form
+    form.submit();
 }
