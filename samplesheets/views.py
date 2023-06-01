@@ -2507,21 +2507,6 @@ class IrodsRequestRejectView(
                 )
             )
 
-    def post(self, request, *args, **kwargs):
-        batch = self.get_irods_request_objects()
-
-        for obj in batch:
-            response = self.process_single_request(obj)
-            if response.get('error'):
-                messages.error(self.request, response['error'])
-            elif response.get('message'):
-                messages.success(self.request, response['message'])
-
-        return redirect(
-            'samplesheets:irods_requests',
-            kwargs={'project': self.get_project().sodar_uuid},
-        )
-
     def process_single_request(self, obj):
         timeline = get_backend_api('timeline_backend')
         app_alerts = get_backend_api('appalerts_backend')
