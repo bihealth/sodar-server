@@ -44,7 +44,7 @@ function checkAll(elem) {
 /*****************
  * Accept or reject selected
  *****************/
-function sendRequest(url, redirect_url) {
+function sendRequest(url) {
     var checkboxes = document.querySelectorAll('.sodar-checkbox');
     var selectedRequests = [];
 

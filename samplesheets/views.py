@@ -2475,7 +2475,8 @@ class IrodsRequestRejectView(
 
     def get_irods_request_objects(self):
         request_ids = [str(self.kwargs['irodsdatarequest'])]
-        request_ids += self.request.GET.get('irodsdatarequests').split(',')
+        if self.request.GET.get('irodsdatarequests'):
+            request_ids += self.request.GET.get('irodsdatarequests').split(',')
         return IrodsDataRequest.objects.filter(sodar_uuid__in=request_ids)
 
     def get(self, request, *args, **kwargs):

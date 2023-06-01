@@ -16,16 +16,14 @@
     {# Accept Selected #}
     <a class="dropdown-item" id="sodar-ss-accept-selected"
        href="javascript:{}"
-       onclick="sendRequest('{% url 'samplesheets:irods_request_accept_batch' %}',
-         '{% url 'samplesheets:irods_requests' project=project.sodar_uuid %}');">
+       onclick="sendRequest('{% url 'samplesheets:irods_request_accept_batch' %}');">
       <i class="iconify" data-icon="mdi:arrow-right-thick"></i> Accept Selected
     </a>
 
     {# Reject Selected #}
     <a class="dropdown-item" id="sodar-ss-reject-selected"
        href="javascript:{}"
-       onclick="sendRequest('{% url 'samplesheets:irods_request_reject_batch' %}',
-         '{% url 'samplesheets:irods_requests' project=project.sodar_uuid %}');">
+       onclick="sendRequest('{% url 'samplesheets:irods_request_reject_batch' %}');">
       <i class="iconify" data-icon="mdi:close-thick"></i> Reject Selected
     </a>
 
