@@ -884,9 +884,21 @@ class IrodsRequestModifyMixin:
 
     # API Helpers --------------------------------------------------------------
 
+    @classmethod
     def process_single_accept_request(
         self, request, obj, timeline, taskflow, app_alerts, project
     ):
+        """
+        Process a single iRODS data request acceptance.
+
+        :param request: Request object
+        :param obj: IrodsDataRequest object
+        :param timeline: Timeline API
+        :param taskflow: Taskflow API
+        :param app_alerts: Appalerts API
+        :param project: Project object
+        :return: Dict with error or success message
+        """
         tl_event = None
 
         try:
@@ -984,10 +996,20 @@ class IrodsRequestModifyMixin:
             )
         }
 
+    @classmethod
     def process_single_reject_request(
         self, request, obj, timeline, app_alerts, project
     ):
+        """
+        Process a single iRODS data request rejection.
 
+        :param request: Request object
+        :param obj: IrodsDataRequest object
+        :param timeline: Timeline API
+        :param app_alerts: Appalerts API
+        :param project: Project object
+        :return: Dict with error or success message
+        """
         try:
             obj = IrodsDataRequest.objects.get(sodar_uuid=obj.sodar_uuid)
         except IrodsDataRequest.DoesNotExist:
