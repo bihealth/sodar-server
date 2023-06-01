@@ -38,16 +38,11 @@ class TestOntologyAccessAPI(OBOFormatOntologyModelMixin, TestCase):
         # Create users
         self.superuser = self.make_user('superuser')
         self.superuser.is_superuser = True
-        self.superuser.is_staff = True
         self.superuser.save()
-
         self.regular_user = self.make_user('regular_user')
-
-        # No user
         self.anonymous = None
-
         # Create Ontology and term
-        self.ontology = self._make_obo_ontology(
+        self.ontology = self.make_obo_ontology(
             name=OBO_NAME,
             file=OBO_FILE,
             ontology_id=OBO_ONTOLOGY_ID,
@@ -58,7 +53,7 @@ class TestOntologyAccessAPI(OBOFormatOntologyModelMixin, TestCase):
             default_namespace=OBO_DEFAULT_NAMESPACE,
             term_url=DEFAULT_TERM_URL,
         )
-        self.term = self._make_obo_term(
+        self.term = self.make_obo_term(
             ontology=self.ontology,
             term_id=OBO_TERM_ID,
             name=OBO_TERM_NAME,
@@ -68,7 +63,6 @@ class TestOntologyAccessAPI(OBOFormatOntologyModelMixin, TestCase):
             namespace=OBO_TERM_NAMESPACE,
             comment=OBO_TERM_COMMENT,
         )
-
         # Get API
         self.ontology_api = get_backend_api('ontologyaccess_backend')
 

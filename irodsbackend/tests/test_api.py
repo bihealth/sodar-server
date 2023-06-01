@@ -6,8 +6,12 @@ from django.test import override_settings
 from test_plus.test import TestCase
 
 # Projectroles dependency
-from projectroles.models import Role, SODAR_CONSTANTS
-from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
+from projectroles.models import SODAR_CONSTANTS
+from projectroles.tests.test_models import (
+    ProjectMixin,
+    RoleMixin,
+    RoleAssignmentMixin,
+)
 
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
@@ -47,10 +51,11 @@ IRODS_ENV = {
 
 
 class TestIrodsbackendAPI(
-    ProjectMixin,
-    RoleAssignmentMixin,
     SampleSheetIOMixin,
     LandingZoneMixin,
+    ProjectMixin,
+    RoleMixin,
+    RoleAssignmentMixin,
     TestCase,
 ):
     """Tests for the API in the irodsbackend app"""
@@ -60,14 +65,7 @@ class TestIrodsbackendAPI(
         self.user = self.make_user('user')
         self.user.save()
         # Init roles
-        self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
-        self.role_delegate = Role.objects.get_or_create(
-            name=PROJECT_ROLE_DELEGATE
-        )[0]
-        self.role_contributor = Role.objects.get_or_create(
-            name=PROJECT_ROLE_CONTRIBUTOR
-        )[0]
-        self.role_guest = Role.objects.get_or_create(name=PROJECT_ROLE_GUEST)[0]
+        self.init_roles()
         # Init project with owner
         self.project = self.make_project(
             'TestProject', PROJECT_TYPE_PROJECT, None
@@ -75,12 +73,10 @@ class TestIrodsbackendAPI(
         self.owner_as = self.make_assignment(
             self.project, self.user, self.role_owner
         )
-
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-
         # Create LandingZone
         self.landing_zone = self.make_landing_zone(
             title=ZONE_TITLE,
@@ -91,7 +87,6 @@ class TestIrodsbackendAPI(
             configuration=None,
             config_data={},
         )
-
         self.irods_backend = IrodsAPI()
 
     def test_format_env(self):
@@ -137,7 +132,7 @@ class TestIrodsbackendAPI(
             self.assertEqual(ex, ERROR_PATH_PARENT)
 
     def test_get_path_project(self):
-        """Test get_irods_path() with a Project object"""
+        """Test get_irods_path() with Project object"""
         expected = '/{zone}/projects/{uuid_prefix}/{uuid}'.format(
             zone=IRODS_ZONE,
             uuid_prefix=str(self.project.sodar_uuid)[:2],
@@ -148,7 +143,7 @@ class TestIrodsbackendAPI(
 
     @override_settings(IRODS_ROOT_PATH=IRODS_ROOT_PATH)
     def test_get_path_project_root_path(self):
-        """Test get_irods_path() with a Project object and root path"""
+        """Test get_irods_path() with Project object and root path"""
         expected = '/{zone}/projects/{root_path}/{uuid_prefix}/{uuid}'.format(
             zone=IRODS_ZONE,
             root_path=IRODS_ROOT_PATH,
@@ -159,7 +154,7 @@ class TestIrodsbackendAPI(
         self.assertEqual(expected, path)
 
     def test_get_path_study(self):
-        """Test get_irods_path() with a Study object"""
+        """Test get_irods_path() with Study object"""
         expected = (
             '/{zone}/projects/{uuid_prefix}/{uuid}/{sample_coll}'
             '/{study}'.format(
@@ -174,7 +169,7 @@ class TestIrodsbackendAPI(
         self.assertEqual(expected, path)
 
     def test_get_path_assay(self):
-        """Test get_irods_path() with an Assay object"""
+        """Test get_irods_path() with Assay object"""
         expected = (
             '/{zone}/projects/{uuid_prefix}/{uuid}/{sample_coll}'
             '/{study}/{assay}'.format(
@@ -190,7 +185,7 @@ class TestIrodsbackendAPI(
         self.assertEqual(expected, path)
 
     def test_get_path_zone(self):
-        """Test get_irods_path() with a LandingZone object"""
+        """Test get_irods_path() with LandingZone object"""
         expected = (
             '/{zone}/projects/{uuid_prefix}/{uuid}/{zone_dir}'
             '/{user}/{study_assay}/{zone_title}'.format(
@@ -209,7 +204,7 @@ class TestIrodsbackendAPI(
         self.assertEqual(expected, path)
 
     def test_get_sample_path(self):
-        """Test get_sample_path() with a Project object"""
+        """Test get_sample_path() with Project object"""
         expected = '/{zone}/projects/{uuid_prefix}/{uuid}/{sample_coll}'.format(
             zone=IRODS_ZONE,
             uuid_prefix=str(self.project.sodar_uuid)[:2],
@@ -220,7 +215,7 @@ class TestIrodsbackendAPI(
         self.assertEqual(expected, path)
 
     def test_get_sample_path_no_project(self):
-        """Test get_sample_path() with a wrong type of object (should fail)"""
+        """Test get_sample_path() with wrong object type (should fail)"""
         with self.assertRaises(ValueError):
             self.irods_backend.get_sample_path(self.study)
 
@@ -247,26 +242,26 @@ class TestIrodsbackendAPI(
         self.assertEqual(self.irods_backend.get_projects_path(), expected)
 
     def test_get_uuid_from_path_assay(self):
-        """Test get_uuid_from_path() with an assay path"""
+        """Test get_uuid_from_path() with assay path"""
         path = self.irods_backend.get_path(self.assay)
         uuid = self.irods_backend.get_uuid_from_path(path, 'assay')
         self.assertEqual(uuid, str(self.assay.sodar_uuid))
 
     def test_get_uuid_from_path_project(self):
-        """Test get_uuid_from_path() for project UUID with an assay path"""
+        """Test get_uuid_from_path() for project UUID with assay path"""
         path = self.irods_backend.get_path(self.assay)
         uuid = self.irods_backend.get_uuid_from_path(path, 'project')
         self.assertEqual(uuid, str(self.project.sodar_uuid))
 
     def test_get_uuid_from_path_wrong_type(self):
-        """Test get_uuid_from_path() with an invalid type (should fail)"""
+        """Test get_uuid_from_path() with invalid type (should fail)"""
         path = self.irods_backend.get_path(self.study)
 
         with self.assertRaises(ValueError):
             self.irods_backend.get_uuid_from_path(path, 'investigation')
 
     def test_get_uuid_from_path_wrong_path(self):
-        """Test get_uuid_from_path() with a path not containing the uuid (should fail)"""
+        """Test get_uuid_from_path() on path without uuid (should fail)"""
         path = self.irods_backend.get_path(self.project)
         uuid = self.irods_backend.get_uuid_from_path(path, 'study')
         self.assertIsNone(uuid)
@@ -279,21 +274,21 @@ class TestIrodsbackendAPI(
         self.assertEqual(uuid, str(self.assay.sodar_uuid))
 
     def test_get_user_group_name(self):
-        """Test get_user_group_name() with a Project object"""
+        """Test get_user_group_name() with Project object"""
         self.assertEqual(
             self.irods_backend.get_user_group_name(self.project),
             '{}{}'.format(USER_GROUP_PREFIX, self.project.sodar_uuid),
         )
 
     def test_get_user_group_name_uuid(self):
-        """Test get_user_group_name() with an UUID object"""
+        """Test get_user_group_name() with UUID object"""
         self.assertEqual(
             self.irods_backend.get_user_group_name(self.project.sodar_uuid),
             '{}{}'.format(USER_GROUP_PREFIX, self.project.sodar_uuid),
         )
 
     def test_get_user_group_name_uuid_str(self):
-        """Test get_user_group_name() with an UUID string"""
+        """Test get_user_group_name() with UUID string"""
         self.assertEqual(
             self.irods_backend.get_user_group_name(
                 str(self.project.sodar_uuid)

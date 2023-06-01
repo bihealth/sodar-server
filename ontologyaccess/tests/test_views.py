@@ -44,14 +44,10 @@ class TestOntologyAccessViewBase(OBOFormatOntologyModelMixin, TestCase):
         self.superuser.is_superuser = True
         self.superuser.is_staff = True
         self.superuser.save()
-
         self.regular_user = self.make_user('regular_user')
-
-        # No user
         self.anonymous = None
-
         # Create Ontology and term
-        self.ontology = self._make_obo_ontology(
+        self.ontology = self.make_obo_ontology(
             name=OBO_NAME,
             file=OBO_FILE,
             ontology_id=OBO_ONTOLOGY_ID,
@@ -62,7 +58,7 @@ class TestOntologyAccessViewBase(OBOFormatOntologyModelMixin, TestCase):
             default_namespace=OBO_DEFAULT_NAMESPACE,
             term_url=DEFAULT_TERM_URL,
         )
-        self.term = self._make_obo_term(
+        self.term = self.make_obo_term(
             ontology=self.ontology,
             term_id=OBO_TERM_ID,
             name=OBO_TERM_NAME,
@@ -128,9 +124,7 @@ class TestOBOFormatOntologyImportView(TestOntologyAccessViewBase):
 
     def test_import(self):
         """Test importing an ontology"""
-        # Assert precondition
         self.assertEqual(OBOFormatOntology.objects.count(), 1)
-
         with open(OBO_PATH) as file:
             post_data = {
                 'file_upload': file,
@@ -142,11 +136,8 @@ class TestOBOFormatOntologyImportView(TestOntologyAccessViewBase):
                 response = self.client.post(
                     reverse('ontologyaccess:obo_import'), post_data
                 )
-
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse('ontologyaccess:list'))
-
-        # Assert postconditions
         self.assertEqual(OBOFormatOntology.objects.count(), 2)
 
     # TODO: Add test for OWL import
@@ -168,15 +159,12 @@ class TestOBOFormatOntologyUpdateView(TestOntologyAccessViewBase):
 
     def test_update(self):
         """Test updating an ontology"""
-        # Assert precondition
         self.assertEqual(OBOFormatOntology.objects.count(), 1)
-
         post_data = {
             'name': OBO_NAME,
             'title': OBO_TITLE_UPDATED,
             'term_url': OBO_TERM_URL_ALT,
         }
-
         with self.login(self.superuser):
             response = self.client.post(
                 reverse(
@@ -185,11 +173,8 @@ class TestOBOFormatOntologyUpdateView(TestOntologyAccessViewBase):
                 ),
                 post_data,
             )
-
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse('ontologyaccess:list'))
-
-        # Assert postconditions
         self.assertEqual(OBOFormatOntology.objects.count(), 1)
         self.ontology.refresh_from_db()
         self.assertEqual(self.ontology.title, OBO_TITLE_UPDATED)
@@ -212,9 +197,7 @@ class TestOBOFormatOntologyDeleteView(TestOntologyAccessViewBase):
 
     def test_delete(self):
         """Test deleting an ontology"""
-        # Assert precondition
         self.assertEqual(OBOFormatOntology.objects.count(), 1)
-
         with self.login(self.superuser):
             response = self.client.post(
                 reverse(
@@ -222,9 +205,7 @@ class TestOBOFormatOntologyDeleteView(TestOntologyAccessViewBase):
                     kwargs={'oboformatontology': self.ontology.sodar_uuid},
                 )
             )
-
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse('ontologyaccess:list'))
-        # Assert postconditions
         self.assertEqual(OBOFormatOntology.objects.count(), 0)
         self.assertEqual(OBOFormatOntologyTerm.objects.count(), 0)

@@ -17,9 +17,13 @@ from test_plus.test import TestCase
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.models import Role, AppSetting, SODAR_CONSTANTS
+from projectroles.models import AppSetting, SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
-from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
+from projectroles.tests.test_models import (
+    ProjectMixin,
+    RoleMixin,
+    RoleAssignmentMixin,
+)
 from projectroles.tests.test_views_api import SODARAPIViewTestMixin
 from projectroles.utils import build_secret
 
@@ -117,22 +121,14 @@ IRODS_BACKEND_SKIP_MSG = 'iRODS backend not enabled in settings'
 
 
 class TestViewsBase(
-    ProjectMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase
+    ProjectMixin, RoleMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase
 ):
     """Base view for samplesheets views tests"""
 
     def setUp(self):
         # Init roles
-        self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
-        self.role_delegate = Role.objects.get_or_create(
-            name=PROJECT_ROLE_DELEGATE
-        )[0]
-        self.role_contributor = Role.objects.get_or_create(
-            name=PROJECT_ROLE_CONTRIBUTOR
-        )[0]
-        self.role_guest = Role.objects.get_or_create(name=PROJECT_ROLE_GUEST)[0]
-
-        # Init suusers
+        self.init_roles()
+        # Init users
         self.user = self.make_user('superuser')
         self.user.is_staff = True
         self.user.is_superuser = True
@@ -142,7 +138,6 @@ class TestViewsBase(
         self.user_contributor = self.make_user('contributor')
         self.user_guest = self.make_user('guest')
         self.user_no_roles = self.make_user('user_no_roles')
-
         # Init projects
         self.category = self.make_project(
             'TestCategory', PROJECT_TYPE_CATEGORY, None
@@ -1088,7 +1083,6 @@ class TestSheetVersionListView(TestViewsBase):
                 )
             )
         self.assertEqual(response.status_code, 200)
-        # Assert context data
         self.assertEqual(response.context['object_list'].count(), 0)
         self.assertIsNone(response.context['current_version'])
 
@@ -1329,8 +1323,8 @@ class TestSheetVersionDeleteBatchView(SampleSheetModelMixin, TestViewsBase):
         self.assertEqual(ISATab.objects.count(), 0)
 
 
-class TestProjectSearchView(TestViewsBase):
-    """Tests for the search results view with sample sheet input"""
+class TestProjectSearchResultsView(TestViewsBase):
+    """Tests for ProjectSearchResultsView view with sample sheet input"""
 
     def _get_items(self, response):
         return response.context['app_results'][0]['results']['materials'][
@@ -1427,11 +1421,10 @@ class TestProjectSearchView(TestViewsBase):
 
     def test_search_multi(self):
         """Test simple search with multiple terms"""
+        post_data = {'m': self.source.name + '\r\n' + self.sample.name}
         with self.login(self.user):
-            response = self.client.get(
-                reverse('projectroles:search')
-                + '?'
-                + urlencode({'m': self.source.name + '\r\n' + self.sample.name})
+            response = self.client.post(
+                reverse('projectroles:search'), data=post_data
             )
         self.assertEqual(response.status_code, 200)
         items = self._get_items(response)
@@ -1444,7 +1437,6 @@ class TestSheetVersionCompareView(TestViewsBase):
     def setUp(self):
         super().setUp()
         self.import_isa_from_file(SHEET_PATH_SMALL2, self.project)
-
         with open(SHEET_PATH_SMALL2_ALT, 'rb') as file, self.login(self.user):
             values = {'file_upload': file}
             self.client.post(
@@ -1454,7 +1446,6 @@ class TestSheetVersionCompareView(TestViewsBase):
                 ),
                 values,
             )
-
         self.isa1 = ISATab.objects.first()
         self.isa2 = ISATab.objects.last()
         self.isa2.data['studies']['s_small2.txt'] = self.isa2.data[
@@ -1505,7 +1496,6 @@ class TestSheetVersionCompareFileView(TestViewsBase):
     def setUp(self):
         super().setUp()
         self.import_isa_from_file(SHEET_PATH_SMALL2, self.project)
-
         with open(SHEET_PATH_SMALL2_ALT, 'rb') as file, self.login(self.user):
             values = {'file_upload': file}
             self.client.post(
@@ -1515,7 +1505,6 @@ class TestSheetVersionCompareFileView(TestViewsBase):
                 ),
                 values,
             )
-
         self.isa1 = ISATab.objects.first()
         self.isa2 = ISATab.objects.last()
         self.isa2.data['studies']['s_small2.txt'] = self.isa2.data[
@@ -1568,6 +1557,7 @@ class TestSheetVersionCompareFileView(TestViewsBase):
 
 class TestSheetRemoteSyncBase(
     ProjectMixin,
+    RoleMixin,
     RoleAssignmentMixin,
     SODARAPIViewTestMixin,
     SampleSheetIOMixin,
@@ -1578,7 +1568,7 @@ class TestSheetRemoteSyncBase(
 
     def setUp(self):
         super().setUp()
-        self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
+        self.init_roles()
         self.user = self.make_user('user')
         self.user.save()
         self.category = self.make_project(
@@ -1665,7 +1655,6 @@ class TestSheetRemoteSyncView(TestSheetRemoteSyncBase):
             False,
             project=self.project_target,
         )
-
         with self.login(self.user):
             response = self.client.get(
                 reverse(
@@ -1695,7 +1684,6 @@ class TestSheetRemoteSyncView(TestSheetRemoteSyncBase):
             'WRONGTOKEN',
             project=self.project_target,
         )
-
         with self.login(self.user):
             response = self.client.get(
                 reverse(
@@ -1725,7 +1713,6 @@ class TestSheetRemoteSyncView(TestSheetRemoteSyncBase):
             '',
             project=self.project_target,
         )
-
         with self.login(self.user):
             response = self.client.get(
                 reverse(

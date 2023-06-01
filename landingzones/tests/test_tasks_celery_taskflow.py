@@ -1,4 +1,4 @@
-"""Celery task tests for the landingzones app"""
+"""Celery task tests for the landingzones app with taskflow enabled"""
 
 from django.conf import settings
 from django.contrib import auth

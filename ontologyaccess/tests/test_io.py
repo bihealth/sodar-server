@@ -2,6 +2,7 @@
 
 import fastobo
 import os
+
 from urllib.request import urlopen
 
 from test_plus.test import TestCase
@@ -29,10 +30,10 @@ OBO_BATCH_URLS = [
     # 'http://purl.obolibrary.org/obo/cl.obo',  # TODO: Fix (see #1064)
     # TODO: Also see issue #944
 ]
-
 OWL_BATCH_URLS = [
     'http://purl.obolibrary.org/obo/duo.owl',
-    'http://data.bioontology.org/ontologies/ROLEO/submissions/3/download?apikey=8b5b7825-538d-40e0-9e9e-5ab9274a9aeb',
+    'http://data.bioontology.org/ontologies/ROLEO/submissions/3/download?'
+    'apikey=8b5b7825-538d-40e0-9e9e-5ab9274a9aeb',
 ]
 
 
@@ -44,8 +45,6 @@ class TestOBOFormatOntologyIO(TestCase):
 
     def test_import(self):
         """Test importing an example ontology"""
-
-        # Assert preconditions
         self.assertEqual(OBOFormatOntology.objects.count(), 0)
         self.assertEqual(OBOFormatOntologyTerm.objects.count(), 0)
 
@@ -54,7 +53,6 @@ class TestOBOFormatOntologyIO(TestCase):
             obo_doc=obo_doc, name=OBO_NAME, file=OBO_PATH
         )
 
-        # Assert postconditions
         self.assertEqual(OBOFormatOntology.objects.count(), 1)
         self.assertEqual(OBOFormatOntologyTerm.objects.count(), 7)
 
@@ -63,29 +61,22 @@ class TestOBOFormatOntologyIO(TestCase):
         self.assertEqual(
             term.synonyms[0], 'First synonym for example term 0000002'
         )
-
         term = ontology.get_term_by_id(EX_OBO_TERM_IDS['alt_ids'])
         self.assertEqual(len(term.alt_ids), 2)
         self.assertEqual(term.alt_ids[0], 'EX:8888883')
-
         term = ontology.get_term_by_id(EX_OBO_TERM_IDS['comment'])
         self.assertIsNotNone(term.comment)
-
         term = ontology.get_term_by_id(EX_OBO_TERM_IDS['namespace'])
         self.assertIsNotNone(term.namespace)
-
         term = ontology.get_term_by_id(EX_OBO_TERM_IDS['is_obsolete'])
         self.assertTrue(term.is_obsolete)
         self.assertEqual(term.replaced_by, 'EX:0000005')
-
         term = ontology.get_term_by_id(EX_OBO_TERM_IDS['no_def'])
         self.assertIsNone(term.definition)
 
     def test_import_batch(self):
         """Test importing ontologies in a batch (this may take a while)"""
-
         for url in OBO_BATCH_URLS:
-            # Assert preconditions
             self.assertEqual(OBOFormatOntology.objects.count(), 0)
             self.assertEqual(OBOFormatOntologyTerm.objects.count(), 0)
 
@@ -95,7 +86,6 @@ class TestOBOFormatOntologyIO(TestCase):
                 obo_doc=obo_doc, name=file_name.split('.')[0].upper(), file=url
             )
 
-            # Assert postconditions
             self.assertIsNotNone(ontology, msg=file_name)
             self.assertEqual(
                 OBOFormatOntology.objects.count(), 1, msg=file_name
@@ -106,10 +96,8 @@ class TestOBOFormatOntologyIO(TestCase):
             ontology.delete()
 
     def test_import_batch_owl(self):
-        """Test converting and importing OWL ontologies in a batch (this may take a while)"""
-
+        """Test importing OWL ontologies in batch (this may take a while)"""
         for url in OWL_BATCH_URLS:
-            # Assert preconditions
             self.assertEqual(OBOFormatOntology.objects.count(), 0)
             self.assertEqual(OBOFormatOntologyTerm.objects.count(), 0)
 
@@ -120,7 +108,6 @@ class TestOBOFormatOntologyIO(TestCase):
                 obo_doc=obo_doc, name=file_name.split('.')[0].upper(), file=url
             )
 
-            # Assert postconditions
             self.assertIsNotNone(ontology, msg=file_name)
             self.assertEqual(
                 OBOFormatOntology.objects.count(), 1, msg=file_name

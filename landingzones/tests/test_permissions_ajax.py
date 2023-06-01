@@ -16,12 +16,16 @@ class TestZoneStatusRetrieveAjaxViewPermissions(TestLandingZonePermissionsBase):
         )
         good_users = [
             self.superuser,
-            self.user_owner_cat,  # Inherited owner
+            self.user_owner_cat,  # Inherited
+            self.user_delegate_cat,  # Inherited
             self.user_owner,
             self.user_delegate,
             self.user_contributor,  # Zone owner
         ]
         bad_users = [
+            self.user_contributor_cat,  # Inherited
+            self.user_guest_cat,  # Inherited
+            self.user_finder_cat,  # Inherited
             self.user_guest,
             self.user_no_roles,
             self.anonymous,
@@ -39,11 +43,15 @@ class TestZoneStatusRetrieveAjaxViewPermissions(TestLandingZonePermissionsBase):
         good_users = [
             self.superuser,
             self.user_owner_cat,
+            self.user_delegate_cat,
             self.user_owner,
             self.user_delegate,
             self.user_contributor,
         ]
         bad_users = [
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_finder_cat,
             self.user_guest,
             self.user_no_roles,
             self.anonymous,

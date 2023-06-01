@@ -10,9 +10,12 @@ from test_plus.test import TestCase
 
 # Projectroles dependency
 from projectroles.constants import SODAR_CONSTANTS
-from projectroles.models import Role
 from projectroles.plugins import get_backend_api
-from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
+from projectroles.tests.test_models import (
+    ProjectMixin,
+    RoleMixin,
+    RoleAssignmentMixin,
+)
 
 # Landingzones dependency
 from landingzones.tests.test_models import LandingZoneMixin
@@ -25,6 +28,7 @@ from irodsadmin.management.commands import irodsorphans
 
 # SODAR constants
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
+PROJECT_TYPE_CATEGORY = SODAR_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 # Local constants
@@ -34,26 +38,28 @@ ZONE_DESC = 'description'
 
 
 class TestIrodsOrphans(
-    ProjectMixin,
     SampleSheetIOMixin,
-    RoleAssignmentMixin,
     LandingZoneMixin,
+    RoleAssignmentMixin,
+    ProjectMixin,
+    RoleMixin,
     TestCase,
 ):
     """Tests for the irodsorphans management command"""
 
     def setUp(self):
-        super().setUp()
+        # Init roles
+        self.init_roles()
         # Init super user
         self.user = self.make_user('user')
         self.user.is_superuser = True
         self.user.is_staff = True
         self.user.save()
-        # Init roles
-        self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
         # Init project with owner
         self.project = self.make_project(
-            'TestProject', PROJECT_TYPE_PROJECT, None
+            'TestProject',
+            PROJECT_TYPE_PROJECT,
+            None,
         )
         self.owner_as = self.make_assignment(
             self.project, self.user, self.role_owner
