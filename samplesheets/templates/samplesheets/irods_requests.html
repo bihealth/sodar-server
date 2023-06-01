@@ -71,11 +71,7 @@
          class="btn btn-secondary mr-1" role="button">
         <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Project Sheets
       </a>
-      {#      <a href="{% url 'samplesheets:irods_request_create' project=project.sodar_uuid %}"#}
-{#         class="btn btn-primary" role="button">#}
-{#       <i class="iconify" data-icon="mdi:plus-thick"></i> Create Request#}
-{#      </a>#}
-        {% include 'samplesheets/_list_buttons.html' with project=project folder=folder up=False %}
+      {% include 'samplesheets/_list_buttons.html' with project=project folder=folder up=False %}
     </div>
 </div>
 

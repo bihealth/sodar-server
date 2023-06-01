@@ -54,48 +54,9 @@ function sendRequest(url, redirect_url) {
         }
     });
 
-    var data = {
-        request_ids: selectedRequests,
-        confirm: true
-    };
-    var csrftoken = getCookie('csrftoken');  // Retrieve the CSRF token from the cookie
+    // Add params to URL
+    var urlParams = url + '?irodsdatarequests=' + encodeURIComponent(selectedRequests.join(','));
 
-    $.ajax({
-        url: url,
-        credentials: 'same-origin',
-        type: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrftoken
-        },
-        data: JSON.stringify(data),
-        dataType: 'json',
-    }).done(function(response) {
-        console.log(response);
-
-        if (response.redirected && redirect_url) {
-            window.location.href = redirect_url;
-        }
-    }).fail(function(error) {
-        console.log(error);
-
-        // if (response.redirected && redirect_url) {
-        //     window.location.href = redirect_url;
-        // }
-    });
-}
-
-function getCookie(name) {
-    var cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        var cookies = document.cookie.split(';');
-        for (var i = 0; i < cookies.length; i++) {
-            var cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
+    // Redirect to URL
+    window.location.href = urlParams;
 }
