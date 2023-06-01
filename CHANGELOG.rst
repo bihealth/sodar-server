@@ -13,6 +13,7 @@ Changed
 
 - **General**
     - Upgrade to django-sodar-core v0.13.0 (#1617)
+    - Upgrade to python-irodsclient v1.1.8 (#1538)
 
 Fixed
 -----
