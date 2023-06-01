@@ -55,9 +55,10 @@ requests in the project as a project owner or delegate, open the
     iRODS delete request list
 
 The list provides a button for copying the iRODS path into the clipboard, status
-information for the requests as well as dropdowns allowing you to either update
-or delete your requests. On the top of the page you can see a *Create Request*
-link for manual creation.
+information for the requests, WebDAV link as well as dropdowns allowing you to
+either update or delete your requests. On the top of the page you can see a
+*Request Operations* dropdown with *Create Request* link for manual creation of
+delete requests.
 
 
 Manual Request Creation
@@ -99,3 +100,15 @@ user will be informed of rejection.
     Accepting delete requests will delete the associated file(s) from iRODS with
     no possibility for undoing the action! Each request should be reviewed
     carefully.
+
+
+Multiple Requests Accepting and Rejecting
+=========================================
+
+In addition to accepting or rejecting requests one by one, you can also accept
+or reject multiple requests at once. This is done by selecting the requests you
+want to accept or reject by clicking the checkboxes on the leftmost column of
+the request list. Once you have selected the requests, click the
+:guilabel:`Request Operations` dropdown and select either
+:guilabel:`Accept Selected` or :guilabel:`Reject Selected`.
+
