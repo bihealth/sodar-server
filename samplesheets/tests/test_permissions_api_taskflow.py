@@ -13,7 +13,7 @@ from samplesheets.models import IrodsDataRequest
 from taskflowbackend.tests.base import TaskflowAPIPermissionTestBase
 
 # Samplesheets dependency
-from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
+from samplesheets.tests.test_io import SampleSheetIOMixin
 from samplesheets.tests.test_permissions import SHEET_PATH
 from samplesheets.tests.test_views_api_taskflow import (
     IRODS_FILE_PATH,
@@ -23,10 +23,6 @@ from samplesheets.tests.test_views_taskflow import (
     SampleSheetTaskflowMixin,
     TEST_FILE_NAME,
 )
-
-
-# Local constants
-SHEET_PATH = SHEET_DIR + 'i_small2.zip'
 
 
 class TestSampleDataFileExistsAPIView(
