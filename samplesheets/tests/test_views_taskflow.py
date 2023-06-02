@@ -1307,7 +1307,7 @@ class TestIrodsRequestAcceptView(TestIrodsRequestViewsBase):
                 ),
                 {'confirm': True},
             )
-        self.assertEqual(response.context['irods_request'], obj)
+        self.assertEqual(response.context['irods_request_data'][0]['obj'], obj)
 
     def test_render_coll(self):
         """Test rendering IrodsRequestAcceptView with a collection request"""
@@ -1335,7 +1335,7 @@ class TestIrodsRequestAcceptView(TestIrodsRequestViewsBase):
                 ),
                 {'confirm': True},
             )
-        self.assertEqual(response.context['irods_request'], obj)
+        self.assertEqual(response.context['irods_request_data'][0]['obj'], obj)
 
     def test_accept(self):
         """Test accepting a delete request"""
