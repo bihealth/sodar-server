@@ -7,9 +7,13 @@ from django.core.management import call_command
 from test_plus.test import TestCase
 
 # Projectroles dependency
-from projectroles.models import Role, SODAR_CONSTANTS
+from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
-from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
+from projectroles.tests.test_models import (
+    ProjectMixin,
+    RoleMixin,
+    RoleAssignmentMixin,
+)
 
 # Sodarcache dependency
 from sodarcache.models import JSONCacheItem
@@ -33,20 +37,19 @@ ALT_NAMES_INVALID = ['XXX', 'YYY', 'ZZZ']
 
 
 class TestSyncnamesCommand(
-    ProjectMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase
+    ProjectMixin, RoleMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase
 ):
     """Tests for the syncnames command"""
 
     def setUp(self):
+        # Init roles
+        self.init_roles()
         # Make owner user
         self.user_owner = self.make_user('owner')
-        # Init project, role and assignment
+        # Init project and assignment
         self.project = self.make_project(
             'TestProject', SODAR_CONSTANTS['PROJECT_TYPE_PROJECT'], None
         )
-        self.role_owner = Role.objects.get_or_create(
-            name=SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
-        )[0]
         self.owner_as = self.make_assignment(
             self.project, self.user_owner, self.role_owner
         )
@@ -68,18 +71,16 @@ class TestSyncnamesCommand(
 
 
 class TestSyncstudytablesCommand(
-    ProjectMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase
+    ProjectMixin, RoleMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase
 ):
     """Tests for the syncstudytables command"""
 
     def setUp(self):
-        # Init user and role
+        # Init roles
+        self.init_roles()
+        # Init user
         self.user_owner = self.make_user('owner')
-        self.role_owner = Role.objects.get_or_create(
-            name=SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
-        )[0]
-
-        # Init project
+        # Init project and assignment
         self.project = self.make_project(
             'TestProject', SODAR_CONSTANTS['PROJECT_TYPE_PROJECT'], None
         )
@@ -132,7 +133,6 @@ class TestSyncstudytablesCommand(
         self.cache_backend.set_cache_item(
             APP_NAME, self.cache_name2, {}, project=self.project2
         )
-
         self.assertEqual(JSONCacheItem.objects.count(), 2)
         call_command('syncstudytables')
         self.assertEqual(JSONCacheItem.objects.count(), 2)

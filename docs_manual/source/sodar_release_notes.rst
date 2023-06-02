@@ -8,6 +8,14 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v0.14.0 (WIP)
+=============
+
+Major feature update.
+
+- Upgrade to SODAR Core v0.13.0
+
+
 v0.13.4 (2023-05-15)
 ====================
 

@@ -15,9 +15,13 @@ from test_plus import TestCase
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.models import Project, RoleAssignment, Role, SODAR_CONSTANTS
+from projectroles.models import Project, RoleAssignment, SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
-from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
+from projectroles.tests.test_models import (
+    ProjectMixin,
+    RoleMixin,
+    RoleAssignmentMixin,
+)
 from projectroles.tests.test_permissions_api import SODARAPIPermissionTestMixin
 from projectroles.tests.test_views_api import SODARAPIViewTestMixin
 from projectroles.views_api import CORE_API_MEDIA_TYPE, CORE_API_DEFAULT_VERSION
@@ -42,6 +46,9 @@ IRODS_ACCESS_WRITE = 'modify object'
 IRODS_ACCESS_NULL = 'null'
 IRODS_GROUP_PUBLIC = 'public'
 TICKET_STR = 'ei8iomuDoazeiD2z'
+TEST_MODE_ERR_MSG = (
+    'TASKFLOW_TEST_MODE not True, testing with SODAR Taskflow disabled'
+)
 
 
 class TaskflowTestMixin:
@@ -228,10 +235,11 @@ class TaskflowAPIProjectTestMixin:
 
 
 class TaskflowbackendTestBase(
-    ProjectMixin,
-    RoleAssignmentMixin,
     TaskflowTestMixin,
     TaskflowProjectTestMixin,
+    ProjectMixin,
+    RoleMixin,
+    RoleAssignmentMixin,
     TestCase,
 ):
     """Base class for testing with taskflow"""
@@ -248,22 +256,13 @@ class TaskflowbackendTestBase(
         self.irods = self.irods_backend.get_session_obj()
 
         # Init roles
-        self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
-        self.role_delegate = Role.objects.get_or_create(
-            name=PROJECT_ROLE_DELEGATE
-        )[0]
-        self.role_contributor = Role.objects.get_or_create(
-            name=PROJECT_ROLE_CONTRIBUTOR
-        )[0]
-        self.role_guest = Role.objects.get_or_create(name=PROJECT_ROLE_GUEST)[0]
-
+        self.init_roles()
         # Init users
         self.user_owner_cat = self.make_user('user_owner_cat')
         self.user = self.make_user('superuser')
         self.user.is_staff = True
         self.user.is_superuser = True
         self.user.save()
-
         # Create category locally
         self.category = self.make_project(
             'TestCategory', PROJECT_TYPE_CATEGORY, None
@@ -285,6 +284,7 @@ class TaskflowbackendTestBase(
 
 class TaskflowAPIViewTestBase(
     ProjectMixin,
+    RoleMixin,
     RoleAssignmentMixin,
     SODARAPIViewTestMixin,
     TaskflowTestMixin,
@@ -297,33 +297,19 @@ class TaskflowAPIViewTestBase(
     def setUp(self):
         # Ensure TASKFLOW_TEST_MODE is True to avoid data loss
         if not settings.TASKFLOW_TEST_MODE:
-            raise ImproperlyConfigured(
-                'TASKFLOW_TEST_MODE not True, '
-                'testing with SODAR Taskflow disabled'
-            )
+            raise ImproperlyConfigured(TEST_MODE_ERR_MSG)
         self.taskflow = get_backend_api('taskflow', force=True)
         self.irods_backend = get_backend_api('omics_irods')
         self.irods = self.irods_backend.get_session_obj()
-
         # Init roles
-        self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
-        self.role_delegate = Role.objects.get_or_create(
-            name=PROJECT_ROLE_DELEGATE
-        )[0]
-        self.role_contributor = Role.objects.get_or_create(
-            name=PROJECT_ROLE_CONTRIBUTOR
-        )[0]
-        self.role_guest = Role.objects.get_or_create(name=PROJECT_ROLE_GUEST)[0]
-
-        # Init user
+        self.init_roles()
+        # Init superuser
         self.user = self.make_user('superuser')
-        self.user.is_staff = True
         self.user.is_superuser = True
         self.user.save()
         # Get knox token for self.user
         self.knox_token = self.get_token(self.user)
-
-        # Create category locally (categories are not handled with taskflow)
+        # Create category locally (creation is not handled with taskflow)
         self.category = self.make_project(
             'TestCategory', PROJECT_TYPE_CATEGORY, None
         )
@@ -336,6 +322,7 @@ class TaskflowAPIViewTestBase(
 
 class TaskflowAPIPermissionTestBase(
     ProjectMixin,
+    RoleMixin,
     RoleAssignmentMixin,
     TaskflowAPIProjectTestMixin,
     SODARAPIPermissionTestMixin,
@@ -346,24 +333,12 @@ class TaskflowAPIPermissionTestBase(
     def setUp(self):
         # Ensure TASKFLOW_TEST_MODE is True to avoid data loss
         if not settings.TASKFLOW_TEST_MODE:
-            raise ImproperlyConfigured(
-                'TASKFLOW_TEST_MODE not True, testing with SODAR Taskflow '
-                'disabled'
-            )
+            raise ImproperlyConfigured(TEST_MODE_ERR_MSG)
         # Init roles
-        self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
-        self.role_delegate = Role.objects.get_or_create(
-            name=PROJECT_ROLE_DELEGATE
-        )[0]
-        self.role_contributor = Role.objects.get_or_create(
-            name=PROJECT_ROLE_CONTRIBUTOR
-        )[0]
-        self.role_guest = Role.objects.get_or_create(name=PROJECT_ROLE_GUEST)[0]
-
+        self.init_roles()
         # Init users
         # Superuser
         self.superuser = self.make_user('superuser')
-        self.superuser.is_staff = True
         self.superuser.is_superuser = True
         self.superuser.save()
         self.knox_token = self.get_token(self.superuser)
@@ -371,6 +346,10 @@ class TaskflowAPIPermissionTestBase(
         self.anonymous = None
         # Users with role assignments
         self.user_owner_cat = self.make_user('user_owner_cat')
+        self.user_delegate_cat = self.make_user('user_delegate_cat')
+        self.user_contributor_cat = self.make_user('user_contributor_cat')
+        self.user_guest_cat = self.make_user('user_guest_cat')
+        self.user_finder_cat = self.make_user('user_finder_cat')
         self.user_owner = self.make_user('user_owner')
         self.user_delegate = self.make_user('user_delegate')
         self.user_contributor = self.make_user('user_contributor')
@@ -378,12 +357,24 @@ class TaskflowAPIPermissionTestBase(
         # User without role assignments
         self.user_no_roles = self.make_user('user_no_roles')
 
-        # Make category and owner locally
+        # Make category and category users locally
         self.category = self.make_project(
             title='TestCategoryTop', type=PROJECT_TYPE_CATEGORY, parent=None
         )
         self.owner_as_cat = self.make_assignment(
             self.category, self.user_owner_cat, self.role_owner
+        )
+        self.delegate_as_cat = self.make_assignment(
+            self.category, self.user_delegate_cat, self.role_delegate
+        )
+        self.contributor_as_cat = self.make_assignment(
+            self.category, self.user_contributor_cat, self.role_contributor
+        )
+        self.guest_as_cat = self.make_assignment(
+            self.category, self.user_guest_cat, self.role_guest
+        )
+        self.finder_as_cat = self.make_assignment(
+            self.category, self.user_finder_cat, self.role_finder
         )
         # Make project and roles with Taskflow
         self.project, self.owner_as = self.make_project_taskflow(

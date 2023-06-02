@@ -170,6 +170,10 @@ class TestProjectSheetsView(TestProjectSheetsVueAppBase):
         """Test rendering view with study and assay grids"""
         users = [
             self.superuser,
+            self.user_owner_cat,  # Inherited
+            self.user_delegate_cat,  # Inherited
+            self.user_contributor_cat,  # Inherited
+            self.user_guest_cat,  # Inherited
             self.user_owner,
             self.user_delegate,
             self.user_contributor,
@@ -193,6 +197,10 @@ class TestProjectSheetsView(TestProjectSheetsVueAppBase):
         self.investigation.delete()
         users = [
             self.superuser,
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
+            self.user_guest_cat,
             self.user_owner,
             self.user_delegate,
             self.user_contributor,
@@ -225,6 +233,10 @@ class TestProjectSheetsView(TestProjectSheetsVueAppBase):
         )
         users = [
             self.superuser,
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
+            self.user_guest_cat,
             self.user_owner,
             self.user_delegate,
             self.user_contributor,
@@ -234,6 +246,8 @@ class TestProjectSheetsView(TestProjectSheetsVueAppBase):
             self._login_and_render(user=user, wait_elem='sodar-ss-grid-study')
             if user in [
                 self.superuser,
+                self.user_owner_cat,
+                self.user_delegate_cat,
                 self.user_owner,
                 self.user_delegate,
             ]:
@@ -317,6 +331,10 @@ class TestSheetVersionListView(TestProjectSheetsVueAppBase):
         """Test list button rendering"""
         expected = [
             (self.superuser, 1),
+            (self.user_owner_cat, 1),
+            (self.user_delegate_cat, 1),
+            (self.user_contributor_cat, 0),
+            (self.user_guest_cat, 0),
             (self.user_owner, 1),
             (self.user_delegate, 1),
             (self.user_contributor, 0),

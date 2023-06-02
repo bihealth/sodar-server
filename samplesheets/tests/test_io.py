@@ -17,7 +17,11 @@ from test_plus.test import TestCase
 
 # Projectroles dependency
 from projectroles.models import Role, SODAR_CONSTANTS
-from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
+from projectroles.tests.test_models import (
+    ProjectMixin,
+    RoleMixin,
+    RoleAssignmentMixin,
+)
 
 from samplesheets.models import Investigation, ISATab
 from samplesheets.io import SampleSheetIO
@@ -71,7 +75,6 @@ class SampleSheetIOMixin:
 
         # Read investigation
         input_file = sheet_io.get_import_file(zf, inv_file_path)
-
         with warnings.catch_warnings(record=True):
             isa_inv = InvestigationReader.from_stream(
                 input_file=input_file
@@ -82,11 +85,8 @@ class SampleSheetIOMixin:
         isa_assays = {}
         study_count = 0
         assay_count = 0
-
-        # Read studies
         for study_info in isa_inv.studies:
             study_id = 'p{}-s{}'.format(project.pk, study_count)
-
             with warnings.catch_warnings(record=True):
                 isa_studies[
                     str(study_info.info.path)
@@ -97,10 +97,8 @@ class SampleSheetIOMixin:
                     ),
                     study_id=study_id,
                 ).read()
-
-            # Read studies for assay
+            # Read assays for study
             assay_paths = sorted([a.path for a in study_info.assays])
-
             for assay_path in assay_paths:
                 isa_assay = next(
                     (
@@ -111,7 +109,6 @@ class SampleSheetIOMixin:
                     None,
                 )
                 assay_id = 'a{}'.format(assay_count)
-
                 with warnings.catch_warnings(record=True):
                     isa_assays[str(assay_path)] = AssayReader.from_stream(
                         study_id=study_id,
@@ -120,11 +117,8 @@ class SampleSheetIOMixin:
                             zf, sheet_io._get_zip_path(inv_dir, isa_assay.path)
                         ),
                     ).read()
-
                 assay_count += 1
-
             study_count += 1
-
         return isa_inv, isa_studies, isa_assays
 
     @classmethod
@@ -148,13 +142,14 @@ class SampleSheetIOMixin:
 
 
 class TestSampleSheetIOBase(
-    ProjectMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase
+    ProjectMixin, RoleMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase
 ):
     def setUp(self):
+        # Init roles
+        self.init_roles()
         # Make owner user
         self.user_owner = self.make_user('owner')
-
-        # Init project, role and assignment
+        # Init project and assignment
         self.project = self.make_project(
             'TestProject', SODAR_CONSTANTS['PROJECT_TYPE_PROJECT'], None
         )
@@ -190,17 +185,14 @@ class TestSampleSheetIOBatch(TestSampleSheetIOBase):
 
         for zip_name, zip_file in self.get_isatab_files().items():
             msg = 'file={}'.format(zip_name)
-
             try:
                 investigation = self.import_isa_from_file(
                     zip_file.path, self.project
                 )
             except Exception as ex:
                 return self.fail_isa(zip_name, ex)
-
             self.assertEqual(Investigation.objects.count(), 1, msg=msg)
             self.assertEqual(ISATab.objects.count(), 1, msg=msg)
-
             investigation.delete()
             ISATab.objects.first().delete()
             self.assertEqual(Investigation.objects.count(), 0, msg=msg)
@@ -214,14 +206,12 @@ class TestSampleSheetIOBatch(TestSampleSheetIOBase):
             investigation = self.import_isa_from_file(
                 zip_file.path, self.project
             )
-
             try:
                 export_data = self._get_flat_export_data(
                     sheet_io.export_isa(investigation)
                 )
             except Exception as ex:
                 return self.fail_isa(zip_name, ex)
-
             zf = ZipFile(zip_file.path, 'r')
 
             for isa_path in [n for n in zf.namelist() if not n.endswith('/')]:
@@ -252,7 +242,6 @@ class TestSampleSheetIOBatch(TestSampleSheetIOBase):
                 # Compare row and column lengths
                 self.assertEqual(import_rows, export_rows, msg=msg)
                 self.assertEqual(import_cols, export_cols, msg=msg)
-
                 # Compare headers
                 for i in range(len(import_headers)):
                     self.assertEqual(
@@ -268,7 +257,6 @@ class TestSampleSheetIOBatch(TestSampleSheetIOBase):
                         and not row[len(row) - 1]
                     ):
                         return sorted(row[: len(row) - 1])
-
                     return sorted(row)
 
                 ib.seek(0)
@@ -283,10 +271,8 @@ class TestSampleSheetIOBatch(TestSampleSheetIOBase):
 
                 for i in range(len(import_cmp)):
                     self.assertIn(import_cmp[i], export_cmp, msg=msg)
-
                 for i in range(len(export_cmp)):
                     self.assertIn(export_cmp[i], import_cmp, msg=msg)
-
             investigation.delete()
 
     def test_isa_saving_batch(self):
@@ -298,7 +284,6 @@ class TestSampleSheetIOBatch(TestSampleSheetIOBase):
                 )
             except Exception as ex:
                 return self.fail_isa(zip_name, ex)
-
             saved_isatab = ISATab.objects.first()
             zf = ZipFile(zip_file.path)
 
@@ -306,7 +291,6 @@ class TestSampleSheetIOBatch(TestSampleSheetIOBase):
                 msg = 'zip={}, file={}'.format(zip_name, f.filename)
                 zip_data = zf.open(f.filename).read().decode('utf-8')
                 file_name = f.filename.split('/')[-1]
-
                 if file_name.startswith('i_'):
                     self.assertEqual(
                         saved_isatab.data['investigation']['tsv'], zip_data, msg
@@ -323,7 +307,6 @@ class TestSampleSheetIOBatch(TestSampleSheetIOBase):
                         zip_data,
                         msg,
                     )
-
             investigation.delete()
             ISATab.objects.first().delete()
 
@@ -341,7 +324,6 @@ class TestSampleSheetIOImport(TestSampleSheetIOBase):
 
     def test_import_ref_val(self):
         """Test _import_ref_val()"""
-
         # Ontology value
         in_data = (
             self.isa_studies['s_BII-S-1.txt']
@@ -371,7 +353,6 @@ class TestSampleSheetIOImport(TestSampleSheetIOBase):
 
     def test_import_multi_val(self):
         """Test _import_multi_val()"""
-
         # List with a single ontology value (should return just a single dict)
         in_data = (
             self.isa_studies['s_BII-S-1.txt']
@@ -479,10 +460,8 @@ class TestSampleSheetIOExport(TestSampleSheetIOBase):
 
     def test_export_value(self):
         """Test _export_value()"""
-
         # TODO: String value (see issue #434)
         # TODO: List value (see issue #434)
-
         # Dict value (ontology term reference)
         in_data = self.investigation.studies.first().study_design[0]['type']
         out_data = self.sheet_io._export_val(in_data)
