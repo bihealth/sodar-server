@@ -38,8 +38,9 @@ from projectroles.app_settings import AppSettingAPI
 from projectroles.email import send_generic_mail
 from projectroles.models import (
     Project,
-    SODAR_CONSTANTS,
     RoleAssignment,
+    SODAR_CONSTANTS,
+    ROLE_RANKING,
 )
 from projectroles.plugins import get_backend_api
 from projectroles.utils import build_secret
@@ -94,6 +95,7 @@ table_builder = SampleSheetTableBuilder()
 
 
 # SODAR constants
+PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
 SITE_MODE_TARGET = SODAR_CONSTANTS['SITE_MODE_TARGET']
 REMOTE_LEVEL_READ_ROLES = SODAR_CONSTANTS['REMOTE_LEVEL_READ_ROLES']
 
@@ -836,11 +838,12 @@ class IrodsRequestModifyMixin:
             return
 
         AppAlert = app_alerts.get_model()
-        # TODO: Use get_all_roles() instead
-        od_users = set(
-            [a.user for a in project.get_owners()]
-            + [a.user for a in project.get_delegates()]
-        )
+        od_users = [
+            a.user
+            for a in project.get_roles(
+                max_rank=ROLE_RANKING[PROJECT_ROLE_DELEGATE]
+            )
+        ]
         # logger.debug('od_users={}'.format(od_users))  # DEBUG
         for u in od_users:
             if u == self.request.user:

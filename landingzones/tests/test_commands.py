@@ -5,7 +5,6 @@ import io
 from datetime import timedelta
 from unittest import mock
 
-from django.conf import settings
 from django.core.management import call_command
 from django.utils.timezone import localtime
 
@@ -13,9 +12,12 @@ from test_plus.test import TestCase
 
 # Projectroles dependency
 from projectroles.constants import SODAR_CONSTANTS
-from projectroles.models import Role
 from projectroles.plugins import get_backend_api
-from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
+from projectroles.tests.test_models import (
+    ProjectMixin,
+    RoleMixin,
+    RoleAssignmentMixin,
+)
 
 from landingzones.management.commands.inactivezones import (
     get_inactive_zones,
@@ -33,33 +35,27 @@ ZONE_DESC = 'description'
 ZONE2_TITLE = '20201123_143323_test_zone'
 ZONE3_TITLE = '20201218_172740_test_zone_moved'
 ZONE4_TITLE = '20201218_172743_test_zone_deleted'
-IRODS_BACKEND_ENABLED = (
-    True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
-)
-IRODS_BACKEND_SKIP_MSG = 'iRODS backend not enabled in settings'
 LOGGER_BUSY_ZONES = 'landingzones.management.commands.busyzones'
 
 
 class TestCommandBase(
     ProjectMixin,
-    SampleSheetIOMixin,
+    RoleMixin,
     RoleAssignmentMixin,
+    SampleSheetIOMixin,
     LandingZoneMixin,
     TestCase,
 ):
     """Base class for command tests"""
 
     def setUp(self):
-        super().setUp()
-
+        # Init roles
+        self.init_roles()
         # Init superuser
         self.user = self.make_user('user')
         self.user.is_superuser = True
         self.user.is_staff = True
         self.user.save()
-
-        # Init roles
-        self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
         # Init project with owner
         self.project = self.make_project(
             'TestProject', PROJECT_TYPE_PROJECT, None
@@ -67,7 +63,6 @@ class TestCommandBase(
         self.owner_as = self.make_assignment(
             self.project, self.user, self.role_owner
         )
-
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
@@ -130,7 +125,7 @@ class TestInactiveZones(TestCommandBase):
         self.irods_backend = get_backend_api('omics_irods')
         self.irods = self.irods_backend.get_session_obj()
 
-        # Create the irods collections
+        # Create iRODS collections
         self.irods.collections.create(self.irods_backend.get_path(self.zone))
         self.irods.collections.create(self.irods_backend.get_path(self.zone2))
         self.irods.collections.create(self.irods_backend.get_path(self.zone3))
@@ -180,8 +175,7 @@ class TestBusyZones(TestCommandBase):
 
     def setUp(self):
         super().setUp()
-
-        # Create LandingZone 1 from 3 weeks ago
+        # Create zones
         self.zone = self.make_landing_zone(
             title=ZONE1_TITLE,
             project=self.project,

@@ -146,7 +146,7 @@ class IrodsAPI:
         :return: Response
         :raise: Exception if iRODS is not initialized
         """
-        msg_body = TicketAdminRequest(irods)(*args)
+        msg_body = TicketAdminRequest(*args)
         msg = iRODSMessage(
             'RODS_API_REQ', msg=msg_body, int_info=api_number[api_id]
         )

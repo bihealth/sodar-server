@@ -18,9 +18,7 @@ from projectroles.models import (
     ProjectInvite,
     SODAR_CONSTANTS,
 )
-from projectroles.tests.test_models import (
-    ProjectInviteMixin,
-)
+from projectroles.tests.test_models import ProjectInviteMixin
 
 from taskflowbackend.tests.base import (
     TaskflowbackendTestBase,
@@ -150,10 +148,13 @@ class TestProjectUpdateView(TaskflowbackendTestBase):
             owner=self.user,
             description='description',
         )
+        self.user_new = self.make_user('user_new')
 
-    def test_update_project(self):
-        """Test Project updating with taskflow"""
+    def test_update(self):
+        """Test project update with taskflow"""
         self.assertEqual(Project.objects.count(), 2)
+        self.assert_group_member(self.project, self.user, True)
+        self.assert_group_member(self.project, self.user_owner_cat, True)
 
         request_data = model_to_dict(self.project)
         request_data.update(
@@ -218,14 +219,19 @@ class TestProjectUpdateView(TaskflowbackendTestBase):
             project_coll.metadata.get_one('parent_uuid').value,
             str(self.category.sodar_uuid),
         )
+        self.assert_group_member(self.project, self.user, True)
+        self.assert_group_member(self.project, self.user_owner_cat, True)
 
-    def test_move_project(self):
-        """Test moving Project under another category with taskflow"""
+    def test_update_parent(self):
+        """Test project update with changed parent"""
         new_category = self.make_project(
             'NewCategory', PROJECT_TYPE_CATEGORY, None
         )
-        self.make_assignment(new_category, self.user, self.role_owner)
+        self.make_assignment(new_category, self.user_new, self.role_owner)
         self.assertEqual(Project.objects.count(), 3)
+        self.assert_group_member(self.project, self.user, True)
+        self.assert_group_member(self.project, self.user_owner_cat, True)
+        self.assert_group_member(self.project, self.user_new, False)
 
         request_data = model_to_dict(self.project)
         request_data.update(
@@ -267,6 +273,9 @@ class TestProjectUpdateView(TaskflowbackendTestBase):
             project_coll.metadata.get_one('parent_uuid').value,
             str(new_category.sodar_uuid),
         )
+        self.assert_group_member(self.project, self.user, True)
+        self.assert_group_member(self.project, self.user_owner_cat, False)
+        self.assert_group_member(self.project, self.user_new, True)
 
 
 class TestRoleAssignmentCreateView(TaskflowbackendTestBase):
@@ -281,12 +290,12 @@ class TestRoleAssignmentCreateView(TaskflowbackendTestBase):
             owner=self.user,
             description='description',
         )
-        self.user_new = self.make_user('guest')
+        self.user_new = self.make_user('user_new')
         self.irods_user_group = self.irods.user_groups.get(
             self.irods_backend.get_user_group_name(self.project)
         )
 
-    def test_create_assignment(self):
+    def test_create(self):
         """Test RoleAssignment creation with taskflow"""
         self.assertEqual(RoleAssignment.objects.count(), 2)
         self.assert_group_member(self.project, self.user_new, False)
@@ -327,6 +336,47 @@ class TestRoleAssignmentCreateView(TaskflowbackendTestBase):
         self.assertEqual(model_to_dict(role_as), expected)
         self.assert_group_member(self.project, self.user_new, True)
 
+    def test_create_parent(self):
+        """Test RoleAssignment creation in parent with member role"""
+        self.assertEqual(RoleAssignment.objects.count(), 2)
+        self.assert_group_member(self.project, self.user_new, False)
+        request_data = {
+            'project': self.category.sodar_uuid,
+            'user': self.user_new.sodar_uuid,
+            'role': self.role_guest.pk,
+        }
+        with self.login(self.user):
+            self.client.post(
+                reverse(
+                    'projectroles:role_create',
+                    kwargs={'project': self.category.sodar_uuid},
+                ),
+                request_data,
+            )
+        self.assertEqual(RoleAssignment.objects.count(), 3)
+        self.assert_group_member(self.project, self.user_new, True)
+
+    def test_create_parent_finder(self):
+        """Test RoleAssignment creation in parent with finder role"""
+        self.assertEqual(RoleAssignment.objects.count(), 2)
+        self.assert_group_member(self.project, self.user_new, False)
+        request_data = {
+            'project': self.category.sodar_uuid,
+            'user': self.user_new.sodar_uuid,
+            'role': self.role_finder.pk,
+        }
+        with self.login(self.user):
+            self.client.post(
+                reverse(
+                    'projectroles:role_create',
+                    kwargs={'project': self.category.sodar_uuid},
+                ),
+                request_data,
+            )
+        self.assertEqual(RoleAssignment.objects.count(), 3)
+        # iRODS access should not be granted
+        self.assert_group_member(self.project, self.user_new, False)
+
 
 class TestRoleAssignmentUpdateView(TaskflowbackendTestBase):
     """Tests for RoleAssignment update view with taskflow"""
@@ -341,19 +391,19 @@ class TestRoleAssignmentUpdateView(TaskflowbackendTestBase):
             description='description',
         )
         # Create guest user and role
-        self.user_new = self.make_user('newuser')
+        self.user_update = self.make_user('user_update')
         self.role_as = self.make_assignment_taskflow(
-            self.project, self.user_new, self.role_guest
+            self.project, self.user_update, self.role_guest
         )
 
-    def test_update_assignment(self):
+    def test_update(self):
         """Test RoleAssignment updating with taskflow"""
         self.assertEqual(RoleAssignment.objects.count(), 3)
-        self.assert_group_member(self.project, self.user_new, True)
+        self.assert_group_member(self.project, self.user_update, True)
 
         request_data = {
             'project': self.project.sodar_uuid,
-            'user': self.user_new.sodar_uuid,
+            'user': self.user_update.sodar_uuid,
             'role': self.role_contributor.pk,
         }
         with self.login(self.user):
@@ -374,18 +424,66 @@ class TestRoleAssignmentUpdateView(TaskflowbackendTestBase):
 
         self.assertEqual(RoleAssignment.objects.count(), 3)
         role_as = RoleAssignment.objects.get(
-            project=self.project, user=self.user_new
+            project=self.project, user=self.user_update
         )
         self.assertIsNotNone(role_as)
         expected = {
             'id': role_as.pk,
             'project': self.project.pk,
-            'user': self.user_new.pk,
+            'user': self.user_update.pk,
             'role': self.role_contributor.pk,
             'sodar_uuid': role_as.sodar_uuid,
         }
         self.assertEqual(model_to_dict(role_as), expected)
-        self.assert_group_member(self.project, self.user_new, True)
+        self.assert_group_member(self.project, self.user_update, True)
+
+    def test_update_parent_from_finder(self):
+        """Test RoleAssignment updating from finder role in parent"""
+        user_new = self.make_user('user_new')
+        role_as = self.make_assignment_taskflow(
+            self.category, user_new, self.role_finder
+        )
+        self.assertEqual(RoleAssignment.objects.count(), 4)
+        self.assert_group_member(self.project, user_new, False)
+        request_data = {
+            'project': self.category.sodar_uuid,
+            'user': user_new.sodar_uuid,
+            'role': self.role_guest.pk,
+        }
+        with self.login(self.user):
+            self.client.post(
+                reverse(
+                    'projectroles:role_update',
+                    kwargs={'roleassignment': role_as.sodar_uuid},
+                ),
+                request_data,
+            )
+        self.assertEqual(RoleAssignment.objects.count(), 4)
+        self.assert_group_member(self.project, user_new, True)
+
+    def test_update_parent_to_finder(self):
+        """Test RoleAssignment updating to finder role in parent"""
+        user_new = self.make_user('user_new')
+        role_as = self.make_assignment_taskflow(
+            self.category, user_new, self.role_guest
+        )
+        self.assertEqual(RoleAssignment.objects.count(), 4)
+        self.assert_group_member(self.project, user_new, True)
+        request_data = {
+            'project': self.category.sodar_uuid,
+            'user': user_new.sodar_uuid,
+            'role': self.role_finder.pk,
+        }
+        with self.login(self.user):
+            self.client.post(
+                reverse(
+                    'projectroles:role_update',
+                    kwargs={'roleassignment': role_as.sodar_uuid},
+                ),
+                request_data,
+            )
+        self.assertEqual(RoleAssignment.objects.count(), 4)
+        self.assert_group_member(self.project, user_new, False)
 
 
 class TestRoleAssignmentOwnerTransferView(TaskflowbackendTestBase):
@@ -458,7 +556,30 @@ class TestRoleAssignmentOwnerTransferView(TaskflowbackendTestBase):
 
         self.assertEqual(RoleAssignment.objects.count(), 4)
         self.assert_group_member(self.project, self.user, True)
-        self.assert_group_member(self.project, self.user_owner_cat, False)
+        self.assert_group_member(self.project, self.user_owner_cat, True)
+
+    def test_transfer_category_finder(self):
+        """Test ownership transfer with category into finder role"""
+        self.assertEqual(RoleAssignment.objects.count(), 3)
+        self.assert_group_member(self.project, self.user, True)
+        self.assert_group_member(self.project, self.user_owner_cat, True)
+
+        with self.login(self.user):
+            self.client.post(
+                reverse(
+                    'projectroles:role_owner_transfer',
+                    kwargs={'project': self.category.sodar_uuid},
+                ),
+                data={
+                    'project': self.category.sodar_uuid,
+                    'old_owner_role': self.role_finder.pk,
+                    'new_owner': self.user.sodar_uuid,
+                },
+            )
+
+        self.assertEqual(RoleAssignment.objects.count(), 3)
+        self.assert_group_member(self.project, self.user, True)
+        self.assert_group_member(self.project, self.user_owner_cat, True)
 
 
 class TestRoleAssignmentDeleteView(TaskflowbackendTestBase):
@@ -499,27 +620,83 @@ class TestRoleAssignmentDeleteView(TaskflowbackendTestBase):
         self.assertEqual(RoleAssignment.objects.count(), 2)
         self.assert_group_member(self.project, self.user_new, False)
 
-    def test_delete_role_category(self):
-        """Test RoleAssignment deleting with taskflow and category"""
+    def test_delete_inherited(self):
+        """Test deleting inherited role with no local role"""
         role_as = self.make_assignment_taskflow(
             self.category, self.user_new, self.role_guest
         )
         self.assertEqual(RoleAssignment.objects.count(), 3)
+        self.assert_group_member(self.project, self.user_new, True)
         with self.login(self.user):
-            response = self.client.post(
+            self.client.post(
                 reverse(
                     'projectroles:role_delete',
                     kwargs={'roleassignment': role_as.sodar_uuid},
                 ),
             )
-            self.assertRedirects(
-                response,
+        self.assertEqual(RoleAssignment.objects.count(), 2)
+        self.assert_group_member(self.project, self.user_new, False)
+
+    def test_delete_inherited_with_local(self):
+        """Test deleting inherited role with local role"""
+        role_as = self.make_assignment_taskflow(
+            self.category, self.user_new, self.role_guest
+        )
+        self.make_assignment_taskflow(
+            self.project, self.user_new, self.role_guest
+        )
+        self.assertEqual(RoleAssignment.objects.count(), 4)
+        self.assert_group_member(self.project, self.user_new, True)
+        with self.login(self.user):
+            self.client.post(
                 reverse(
-                    'projectroles:roles',
-                    kwargs={'project': self.category.sodar_uuid},
+                    'projectroles:role_delete',
+                    kwargs={'roleassignment': role_as.sodar_uuid},
                 ),
             )
-        self.assertEqual(RoleAssignment.objects.count(), 2)
+        self.assertEqual(RoleAssignment.objects.count(), 3)
+        # Access should remain due to local guest role
+        self.assert_group_member(self.project, self.user_new, True)
+
+    def test_delete_local_with_inherited(self):
+        """Test deleting local role with inherited role"""
+        self.make_assignment_taskflow(
+            self.category, self.user_new, self.role_guest
+        )
+        role_as = self.make_assignment_taskflow(
+            self.project, self.user_new, self.role_guest
+        )
+        self.assertEqual(RoleAssignment.objects.count(), 4)
+        self.assert_group_member(self.project, self.user_new, True)
+        with self.login(self.user):
+            self.client.post(
+                reverse(
+                    'projectroles:role_delete',
+                    kwargs={'roleassignment': role_as.sodar_uuid},
+                ),
+            )
+        self.assertEqual(RoleAssignment.objects.count(), 3)
+        self.assert_group_member(self.project, self.user_new, True)
+
+    def test_delete_local_with_inherited_finder(self):
+        """Test deleting local role with inherited finder role"""
+        self.make_assignment_taskflow(
+            self.category, self.user_new, self.role_finder
+        )
+        role_as = self.make_assignment_taskflow(
+            self.project, self.user_new, self.role_guest
+        )
+        self.assertEqual(RoleAssignment.objects.count(), 4)
+        self.assert_group_member(self.project, self.user_new, True)
+        with self.login(self.user):
+            self.client.post(
+                reverse(
+                    'projectroles:role_delete',
+                    kwargs={'roleassignment': role_as.sodar_uuid},
+                ),
+            )
+        self.assertEqual(RoleAssignment.objects.count(), 3)
+        self.assert_group_member(self.project, self.user_new, False)
 
 
 class TestProjectInviteAcceptView(ProjectInviteMixin, TaskflowbackendTestBase):
@@ -588,7 +765,6 @@ class TestProjectInviteAcceptView(ProjectInviteMixin, TaskflowbackendTestBase):
                     ),
                 ],
             )
-
         self.assert_group_member(self.project, self.user_new, True)
 
     @override_settings(PROJECTROLES_ALLOW_LOCAL_USERS=True)
@@ -674,7 +850,6 @@ class TestProjectInviteAcceptView(ProjectInviteMixin, TaskflowbackendTestBase):
                     (reverse('home'), 302),
                 ],
             )
-
         self.assertEqual(ProjectInvite.objects.filter(active=True).count(), 1)
 
     def test_accept_invite_local_category(self):
@@ -717,5 +892,4 @@ class TestProjectInviteAcceptView(ProjectInviteMixin, TaskflowbackendTestBase):
                     (reverse('home'), 302),
                 ],
             )
-
         self.assertEqual(ProjectInvite.objects.filter(active=True).count(), 1)

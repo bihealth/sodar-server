@@ -16,7 +16,7 @@ from rest_framework.response import Response
 
 # Projectroles dependency
 from projectroles.constants import SODAR_CONSTANTS
-from projectroles.models import Role, RoleAssignment
+from projectroles.models import Role
 from projectroles.plugins import get_backend_api
 from projectroles.views_ajax import SODARBaseProjectAjaxView
 
@@ -250,7 +250,7 @@ class EditConfigMixin:
                 name=SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
             ).first()
         else:
-            role_as = RoleAssignment.objects.get_assignment(user, project)
+            role_as = project.get_role(user)
             if not role_as:
                 return False
             user_role = role_as.role

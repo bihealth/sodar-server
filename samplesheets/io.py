@@ -888,6 +888,7 @@ class SampleSheetIO:
         :param comments: Dict from a comments JSONField
         :return: Tuple of Comment NamedTuples
         """
+
         # TODO: Remove once reimporting sample sheets (#629, #631)
         def _get_comment_val(v):
             if isinstance(v, dict):
