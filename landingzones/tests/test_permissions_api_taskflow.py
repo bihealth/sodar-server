@@ -69,11 +69,19 @@ class TestZoneCreateAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
         """Test ZoneCreateAPIView permissions"""
         good_users = [
             self.superuser,
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
             self.user_owner,
             self.user_delegate,
             self.user_contributor,
         ]
-        bad_users = [self.user_guest, self.user_no_roles]
+        bad_users = [
+            self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_guest,
+            self.user_no_roles,
+        ]
         self.assert_response_api(
             self.url, good_users, 201, method='POST', data=self._get_post_data()
         )
@@ -122,6 +130,11 @@ class TestZoneCreateAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
         self.project.set_archive()
         good_users = [self.superuser]
         bad_users = [
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_finder_cat,
             self.user_owner,
             self.user_delegate,
             self.user_contributor,
@@ -164,6 +177,11 @@ class TestZoneCreateAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
         """Test ZoneCreateAPIView with disabled non-superuser access"""
         good_users = [self.superuser]
         bad_users = [
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_finder_cat,
             self.user_owner,
             self.user_delegate,
             self.user_contributor,
@@ -230,11 +248,19 @@ class TestZoneSubmitDeleteAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
         """Test ZoneSubmitDeleteAPIView permissions"""
         good_users = [
             self.superuser,
+            self.user_owner_cat,
+            self.user_delegate_cat,
             self.user_owner,
             self.user_delegate,
             self.user_contributor,
         ]
-        bad_users = [self.user_guest, self.user_no_roles]
+        bad_users = [
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_guest,
+            self.user_no_roles,
+        ]
         self.assert_response_api(
             self.url,
             good_users,
@@ -283,11 +309,19 @@ class TestZoneSubmitDeleteAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
         self.project.set_archive()
         good_users = [
             self.superuser,
+            self.user_owner_cat,
+            self.user_delegate_cat,
             self.user_owner,
             self.user_delegate,
             self.user_contributor,
         ]
-        bad_users = [self.user_guest, self.user_no_roles]
+        bad_users = [
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_guest,
+            self.user_no_roles,
+        ]
         self.assert_response_api(
             self.url,
             good_users,
@@ -331,6 +365,11 @@ class TestZoneSubmitDeleteAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
             self.superuser,
         ]
         bad_users = [
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_finder_cat,
             self.user_owner,
             self.user_delegate,
             self.user_contributor,
@@ -415,11 +454,19 @@ class TestZoneSubmitMoveAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
         """Test ZoneSubmitMoveAPIView permissions"""
         good_users = [
             self.superuser,
+            self.user_owner_cat,
+            self.user_delegate_cat,
             self.user_owner,
             self.user_delegate,
             self.user_contributor,
         ]
-        bad_users = [self.user_guest, self.user_no_roles]
+        bad_users = [
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_guest,
+            self.user_no_roles,
+        ]
         self.assert_response_api(
             self.url,
             good_users,
@@ -468,6 +515,11 @@ class TestZoneSubmitMoveAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
         self.project.set_archive()
         good_users = [self.superuser]
         bad_users = [
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_finder_cat,
             self.user_owner,
             self.user_delegate,
             self.user_contributor,
@@ -515,6 +567,11 @@ class TestZoneSubmitMoveAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
         """Test ZoneSubmitMoveAPIView with disabled non-superuser access"""
         good_users = [self.superuser]
         bad_users = [
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_finder_cat,
             self.user_owner,
             self.user_delegate,
             self.user_contributor,

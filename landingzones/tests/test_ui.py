@@ -8,7 +8,6 @@ from selenium.webdriver.common.by import By
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.models import RoleAssignment
 from projectroles.tests.test_ui import TestUIBase
 
 # Samplesheets dependency
@@ -19,6 +18,7 @@ from landingzones.tests.test_models import LandingZoneMixin
 
 
 app_settings = AppSettingAPI()
+
 
 # Local constants
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
@@ -56,16 +56,11 @@ class TestProjectZoneView(
 
     def setUp(self):
         super().setUp()
-        # NOTE: Temp inherited owner override, see bihealth/sodar-core#1103
-        self.user_owner_cat = self.make_user('user_owner_cat')
-        self.owner_as_cat = RoleAssignment.objects.get(
-            project=self.category, role=self.role_owner
-        )
-        self.owner_as_cat.user = self.user_owner_cat
-        self.owner_as_cat.save()
         # Users with access to landing zones
         self.zone_users = [
             self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
             self.user_owner,
             self.user_delegate,
             self.user_contributor,

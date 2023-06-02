@@ -42,18 +42,25 @@ class TestInvestigationRetrieveAPIView(
         )
         good_users = [
             self.superuser,
-            self.user_owner_cat,  # Inherited owner
+            self.user_owner_cat,  # Inherited
+            self.user_delegate_cat,  # Inherited
+            self.user_contributor_cat,  # Inherited
+            self.user_guest_cat,  # Inherited
             self.user_owner,
             self.user_delegate,
             self.user_contributor,
             self.user_guest,
         ]
         self.assert_response_api(url, good_users, 200)
-        self.assert_response_api(url, self.user_no_roles, 403)
+        self.assert_response_api(
+            url, [self.user_finder_cat, self.user_no_roles], 403
+        )
         self.assert_response_api(url, self.anonymous, 401)
         # Test public project
         self.project.set_public()
-        self.assert_response_api(url, self.user_no_roles, 200)
+        self.assert_response_api(
+            url, [self.user_finder_cat, self.user_no_roles], 200
+        )
         self.assert_response_api(url, self.anonymous, 401)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
@@ -76,17 +83,24 @@ class TestInvestigationRetrieveAPIView(
         good_users = [
             self.superuser,
             self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
+            self.user_guest_cat,
             self.user_owner,
             self.user_delegate,
             self.user_contributor,
             self.user_guest,
         ]
         self.assert_response_api(url, good_users, 200)
-        self.assert_response_api(url, self.user_no_roles, 403)
+        self.assert_response_api(
+            url, [self.user_finder_cat, self.user_no_roles], 403
+        )
         self.assert_response_api(url, self.anonymous, 401)
         # Test public project
         self.project.set_public()
-        self.assert_response_api(url, self.user_no_roles, 200)
+        self.assert_response_api(
+            url, [self.user_finder_cat, self.user_no_roles], 200
+        )
         self.assert_response_api(url, self.anonymous, 401)
 
 
@@ -120,11 +134,15 @@ class TestSheetImportAPIView(
         good_users = [
             self.superuser,
             self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
             self.user_owner,
             self.user_delegate,
             self.user_contributor,
         ]
         bad_users = [
+            self.user_guest_cat,
+            self.user_finder_cat,
             self.user_guest,
             self.user_no_roles,
         ]
@@ -202,6 +220,10 @@ class TestSheetImportAPIView(
         good_users = [self.superuser]
         bad_users = [
             self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_finder_cat,
             self.user_owner,
             self.user_delegate,
             self.user_contributor,
@@ -279,12 +301,15 @@ class TestSheetISAExportAPIView(
         good_users = [
             self.superuser,
             self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
+            self.user_guest_cat,
             self.user_owner,
             self.user_delegate,
             self.user_contributor,
             self.user_guest,
         ]
-        bad_users = [self.user_no_roles]
+        bad_users = [self.user_finder_cat, self.user_no_roles]
         self.assert_response_api(url, good_users, 200)
         self.assert_response_api(url, bad_users, 403)
         self.assert_response_api(url, self.anonymous, 401)
@@ -312,58 +337,21 @@ class TestSheetISAExportAPIView(
         good_users = [
             self.superuser,
             self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
+            self.user_guest_cat,
             self.user_owner,
             self.user_delegate,
             self.user_contributor,
             self.user_guest,
         ]
-        bad_users = [self.user_no_roles]
+        bad_users = [self.user_finder_cat, self.user_no_roles]
         self.assert_response_api(url, good_users, 200)
         self.assert_response_api(url, bad_users, 403)
         self.assert_response_api(url, self.anonymous, 401)
         self.project.set_public()
         self.assert_response_api(url, bad_users, 200)
         self.assert_response_api(url, self.anonymous, 401)
-
-
-# TODO: Test this with iRODS enabled
-@override_settings(ENABLE_IRODS=False)
-class TestSampleDataFileExistsAPIView(TestProjectAPIPermissionBase):
-    """Tests for SampleDataFileExistsAPIView permissions"""
-
-    def test_get(self):
-        """Test get() in SampleDataFileExistsAPIView"""
-        url = reverse('samplesheets:api_file_exists')
-        request_data = {'checksum': ''}
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-        ]
-        # No iRODS so good users get 500 -> still ok for auth :)
-        self.assert_response_api(url, good_users, 500, data=request_data)
-        self.assert_response_api(url, self.anonymous, 401, data=request_data)
-
-    def test_get_archive(self):
-        """Test get() with archived project"""
-        self.project.set_archive()
-        url = reverse('samplesheets:api_file_exists')
-        request_data = {'checksum': ''}
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-        ]
-        self.assert_response_api(url, good_users, 500, data=request_data)
-        self.assert_response_api(url, self.anonymous, 401, data=request_data)
 
 
 class TestRemoteSheetGetAPIView(

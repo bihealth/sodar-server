@@ -78,6 +78,8 @@ SHEETS_INFO_SETTINGS = [
     'SHEETS_IGV_OMIT_VCF',
 ]
 MATERIAL_SEARCH_TYPES = ['source', 'sample']
+SKIP_MSG_NO_INV = 'No investigation for project'
+SKIP_MSG_NO_COLLS = 'Investigation collections not created in iRODS'
 
 
 # Samplesheets project app plugin ----------------------------------------------
@@ -609,9 +611,9 @@ class ProjectAppPlugin(
             project=project, active=True
         ).first()
         if not investigation:
-            return _skip('Investigation not found')
+            return _skip(SKIP_MSG_NO_INV)
         if not investigation.irods_status:
-            return _skip('Investigation collections not created in iRODS')
+            return _skip(SKIP_MSG_NO_COLLS)
 
         # Submit flow
         logger.info(
@@ -641,13 +643,16 @@ class ProjectAppPlugin(
             project=project, active=True
         ).first()
         if not investigation:
-            logger.debug('Skipping: No investigation for project')
+            logger.debug('Skipping: {}'.format(SKIP_MSG_NO_INV))
             return
         if investigation.irods_status:
             logger.info('Creating iRODS collections..')
             self.create_colls(investigation)
 
         # Sync public guest access
+        if not investigation.irods_status:
+            logger.debug('Skipping: {}'.format(SKIP_MSG_NO_COLLS))
+            return
         self._update_public_access(project, taskflow, irods_backend)
 
     def update_cache(self, name=None, project=None, user=None):

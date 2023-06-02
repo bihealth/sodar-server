@@ -18,8 +18,12 @@ from django.utils.timezone import localtime
 from test_plus.test import TestCase
 
 # Projectroles dependency
-from projectroles.models import Role, SODAR_CONSTANTS
-from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
+from projectroles.models import SODAR_CONSTANTS
+from projectroles.tests.test_models import (
+    ProjectMixin,
+    RoleMixin,
+    RoleAssignmentMixin,
+)
 
 from samplesheets.models import (
     Investigation,
@@ -115,6 +119,7 @@ ISATAB_DESC = 'description'
 
 PLUGIN_NAME_DNA_SEQ = 'samplesheets_assay_dna_sequencing'
 PLUGIN_NAME_GENERIC_RAW = 'samplesheets_assay_generic_raw'
+
 
 # Helper mixins ----------------------------------------------------------------
 
@@ -414,25 +419,26 @@ class IrodsAccessTicketMixin:
 
 
 class TestSampleSheetBase(
-    ProjectMixin, RoleAssignmentMixin, SampleSheetModelMixin, TestCase
+    ProjectMixin,
+    RoleMixin,
+    RoleAssignmentMixin,
+    SampleSheetModelMixin,
+    TestCase,
 ):
     """Base class for Samplesheets tests"""
 
     def setUp(self):
+        # Init roles
+        self.init_roles()
         # Make owner user
         self.user_owner = self.make_user('owner')
-
-        # Init project, role and assignment
+        # Init project and assignment
         self.project = self.make_project(
             'TestProject', SODAR_CONSTANTS['PROJECT_TYPE_PROJECT'], None
         )
-        self.role_owner = Role.objects.get_or_create(
-            name=SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
-        )[0]
-        self.assignment_owner = self.make_assignment(
+        self.owner_as = self.make_assignment(
             self.project, self.user_owner, self.role_owner
         )
-
         # Set up Investigation
         self.investigation = self.make_investigation(
             identifier=INV_IDENTIFIER,
@@ -443,7 +449,6 @@ class TestSampleSheetBase(
             comments=DEFAULT_COMMENTS,
             archive_name=INV_ARCHIVE_NAME,
         )
-
         # Set up Study
         self.study = self.make_study(
             identifier=STUDY_IDENTIFIER,
@@ -453,7 +458,6 @@ class TestSampleSheetBase(
             description=DEFAULT_DESCRIPTION,
             comments=DEFAULT_COMMENTS,
         )
-
         # Set up Assay
         self.assay = self.make_assay(
             file_name=ASSAY_FILE_NAME,
@@ -578,7 +582,6 @@ class TestProtocol(TestSampleSheetBase):
 
     def setUp(self):
         super().setUp()
-
         # Set up Protocol
         self.protocol = self.make_protocol(
             name=PROTOCOL_NAME,
@@ -732,7 +735,6 @@ class TestSource(TestSampleSheetBase):
 
     def setUp(self):
         super().setUp()
-
         # Set up SOURCE GenericMaterial
         self.material = self.make_material(
             item_type='SOURCE',
@@ -813,7 +815,6 @@ class TestSample(TestSampleSheetBase):
 
     def setUp(self):
         super().setUp()
-
         # Set up SAMPLE GenericMaterial
         self.material = self.make_material(
             item_type='SAMPLE',
@@ -892,7 +893,6 @@ class TestMaterial(TestSampleSheetBase):
 
     def setUp(self):
         super().setUp()
-
         # Set up MATERIAL GenericMaterial
         self.material = self.make_material(
             item_type='MATERIAL',
@@ -1050,7 +1050,6 @@ class TestGenericMaterialManager(TestSampleSheetBase):
 
     def setUp(self):
         super().setUp()
-
         # Set up SOURCE GenericMaterial
         self.source = self.make_material(
             item_type='SOURCE',
@@ -1065,7 +1064,6 @@ class TestGenericMaterialManager(TestSampleSheetBase):
             extract_label={},
             comments=DEFAULT_COMMENTS,
         )
-
         # Set up SAMPLE GenericMaterial
         self.sample = self.make_material(
             item_type='SAMPLE',
@@ -1352,6 +1350,13 @@ class TestISATab(TestSampleSheetBase):
 class TestIrodsAccessTicket(IrodsAccessTicketMixin, TestSampleSheetBase):
     """Tests for the IrodsAccessTicket model"""
 
+    def _get_expiry_today(self):
+        return (
+            datetime.now()
+            .replace(hour=0, minute=0, second=0, microsecond=0)
+            .astimezone(pytz.utc)
+        )
+
     def setUp(self):
         super().setUp()
         self.path = '/path/to/some/trackhub'
@@ -1367,13 +1372,6 @@ class TestIrodsAccessTicket(IrodsAccessTicketMixin, TestSampleSheetBase):
             label=self.label,
             user=self.user_owner,
             date_expires=self.date_expires,
-        )
-
-    def _get_expiry_today(self):
-        return (
-            datetime.now()
-            .replace(hour=0, minute=0, second=0, microsecond=0)
-            .astimezone(pytz.utc)
         )
 
     def test_initialization(self):

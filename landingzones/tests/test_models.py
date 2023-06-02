@@ -5,8 +5,12 @@ from django.forms.models import model_to_dict
 from test_plus.test import TestCase
 
 # Projectroles dependency
-from projectroles.models import Role, SODAR_CONSTANTS
-from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
+from projectroles.models import SODAR_CONSTANTS
+from projectroles.tests.test_models import (
+    ProjectMixin,
+    RoleMixin,
+    RoleAssignmentMixin,
+)
 
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
@@ -14,7 +18,7 @@ from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from landingzones.models import LandingZone, DEFAULT_STATUS_INFO
 
 
-# Global constants
+# SODAR constants
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
 PROJECT_ROLE_CONTRIBUTOR = SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR']
@@ -70,29 +74,28 @@ class TestLandingZoneBase(
     LandingZoneMixin,
     SampleSheetIOMixin,
     ProjectMixin,
+    RoleMixin,
     RoleAssignmentMixin,
     TestCase,
 ):
     """Base tests for LandingZone"""
 
     def setUp(self):
+        # Init roles
+        self.init_roles()
         # Make owner user
         self.user_owner = self.make_user('owner')
-
-        # Init project, role and assignment
+        # Init project and assignment
         self.project = self.make_project(
             'TestProject', PROJECT_TYPE_PROJECT, None
         )
-        self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
-        self.assignment_owner = self.make_assignment(
+        self.owner_as = self.make_assignment(
             self.project, self.user_owner, self.role_owner
         )
-
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-
         # Create LandingZone
         self.landing_zone = self.make_landing_zone(
             title=ZONE_TITLE,
@@ -128,7 +131,6 @@ class TestLandingZone(TestLandingZoneBase):
             'status_info': ZONE_STATUS_INFO_INIT,
             'sodar_uuid': self.landing_zone.sodar_uuid,
         }
-
         self.assertEqual(model_to_dict(self.landing_zone), expected)
 
     def test__str__(self):
@@ -152,15 +154,10 @@ class TestLandingZone(TestLandingZoneBase):
         """Test set_status() with status and status_info"""
         status = 'ACTIVE'
         status_info = 'ok'
-
-        # Assert preconditions
         self.assertNotEqual(self.landing_zone.status, status)
         self.assertNotEqual(self.landing_zone.status_info, status_info)
-
         self.landing_zone.set_status(status, status_info)
         self.landing_zone.refresh_from_db()
-
-        # Assert postconditions
         self.assertEqual(self.landing_zone.status, status)
         self.assertEqual(self.landing_zone.status_info, status_info)
 
@@ -168,15 +165,10 @@ class TestLandingZone(TestLandingZoneBase):
         """Test set_status() without status_info"""
         status = 'ACTIVE'
         status_info = DEFAULT_STATUS_INFO[status]
-
-        # Assert preconditions
         self.assertNotEqual(self.landing_zone.status, status)
         self.assertNotEqual(self.landing_zone.status_info, status_info)
-
         self.landing_zone.set_status(status)
         self.landing_zone.refresh_from_db()
-
-        # Assert postconditions
         self.assertEqual(self.landing_zone.status, status)
         self.assertEqual(self.landing_zone.status_info, status_info)
 

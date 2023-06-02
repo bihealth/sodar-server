@@ -9,8 +9,12 @@ from test_plus.test import TestCase
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.models import Role, SODAR_CONSTANTS
-from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
+from projectroles.models import SODAR_CONSTANTS
+from projectroles.tests.test_models import (
+    ProjectMixin,
+    RoleMixin,
+    RoleAssignmentMixin,
+)
 
 from samplesheets.models import Study, Assay, Protocol
 from samplesheets.rendering import SampleSheetTableBuilder
@@ -37,10 +41,6 @@ CONFIG_PATH_DEFAULT = CONFIG_DIR + 'i_small_default.json'
 CONFIG_PATH_UPDATED = CONFIG_DIR + 'i_small_updated.json'
 with open(CONFIG_PATH_DEFAULT) as fp:
     CONFIG_DATA_DEFAULT = json.load(fp)
-IRODS_BACKEND_ENABLED = (
-    True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
-)
-IRODS_BACKEND_SKIP_MSG = 'iRODS backend not enabled in settings'
 
 
 class SheetConfigMixin:
@@ -144,6 +144,7 @@ class SheetConfigMixin:
 
 class TestSheetConfig(
     ProjectMixin,
+    RoleMixin,
     RoleAssignmentMixin,
     SampleSheetIOMixin,
     SheetConfigMixin,
@@ -155,16 +156,15 @@ class TestSheetConfig(
     """
 
     def setUp(self):
+        # Init roles
+        self.init_roles()
         # Make owner user
         self.user_owner = self.make_user('owner')
-        # Init project, role and assignment
+        # Init project and assignment
         self.project = self.make_project(
             'TestProject', SODAR_CONSTANTS['PROJECT_TYPE_PROJECT'], None
         )
-        self.role_owner = Role.objects.get_or_create(
-            name=SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
-        )[0]
-        self.assignment_owner = self.make_assignment(
+        self.owner_as = self.make_assignment(
             self.project, self.user_owner, self.role_owner
         )
         # Build investigation
@@ -288,6 +288,7 @@ class TestSheetConfig(
 
 class TestDisplayConfig(
     ProjectMixin,
+    RoleMixin,
     RoleAssignmentMixin,
     SampleSheetIOMixin,
     SheetConfigMixin,
@@ -299,14 +300,12 @@ class TestDisplayConfig(
     """
 
     def setUp(self):
+        self.init_roles()
         self.user_owner = self.make_user('owner')
         self.project = self.make_project(
             'TestProject', SODAR_CONSTANTS['PROJECT_TYPE_PROJECT'], None
         )
-        self.role_owner = Role.objects.get_or_create(
-            name=SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
-        )[0]
-        self.assignment_owner = self.make_assignment(
+        self.owner_as = self.make_assignment(
             self.project, self.user_owner, self.role_owner
         )
 

@@ -53,6 +53,7 @@ DJANGO_APPS = [
 ]
 THIRD_PARTY_APPS = [
     'crispy_forms',  # Form layouts
+    'crispy_bootstrap4',  # Bootstrap4 theme for Crispy
     'rules.apps.AutodiscoverRulesConfig',  # Django rules engine
     'djangoplugins',  # Django plugins
     'pagedown',  # For markdown
@@ -212,6 +213,7 @@ TEMPLATES = [
                 'projectroles.context_processors.urls_processor',
                 'projectroles.context_processors.site_app_processor',
                 'projectroles.context_processors.app_alerts_processor',
+                'projectroles.context_processors.sidebar_processor',
             ],
         },
     }
@@ -614,6 +616,10 @@ SODAR_API_DEFAULT_HOST = env.url(
 
 # Projectroles app settings
 PROJECTROLES_SITE_MODE = env.str('PROJECTROLES_SITE_MODE', 'SOURCE')
+PROJECTROLES_TEMPLATE_INCLUDE_PATH = env.path(
+    'PROJECTROLES_TEMPLATE_INCLUDE_PATH',
+    os.path.join(APPS_DIR, 'templates', 'include'),
+)
 PROJECTROLES_SECRET_LENGTH = env.int('PROJECTROLES_SECRET_LENGTH', 32)
 PROJECTROLES_INVITE_EXPIRY_DAYS = env.int('PROJECTROLES_INVITE_EXPIRY_DAYS', 14)
 PROJECTROLES_SEND_EMAIL = env.bool('PROJECTROLES_SEND_EMAIL', False)
