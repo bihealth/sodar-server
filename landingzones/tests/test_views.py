@@ -1,6 +1,5 @@
 """Tests for UI views in the landingzones app"""
 
-from django.conf import settings
 from django.forms import HiddenInput
 from django.test import override_settings
 from django.urls import reverse
