@@ -8,8 +8,12 @@ from django.urls import reverse
 from test_plus.test import TestCase
 
 # Projectroles dependency
-from projectroles.models import Role, SODAR_CONSTANTS
-from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
+from projectroles.models import SODAR_CONSTANTS
+from projectroles.tests.test_models import (
+    ProjectMixin,
+    RoleMixin,
+    RoleAssignmentMixin,
+)
 
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
@@ -21,7 +25,8 @@ from landingzones.tests.test_models import (
     ZONE_DESC,
 )
 
-# Global constants
+
+# SODAR constants
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
 PROJECT_ROLE_CONTRIBUTOR = SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR']
@@ -35,32 +40,19 @@ ZONE_STATUS = 'VALIDATING'
 ZONE_STATUS_INFO = 'Testing'
 
 
-IRODS_BACKEND_ENABLED = (
-    True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
-)
-IRODS_BACKEND_SKIP_MSG = 'iRODS backend not enabled in settings'
-
-
 class TestViewsBase(
-    LandingZoneMixin,
-    SampleSheetIOMixin,
     ProjectMixin,
+    RoleMixin,
     RoleAssignmentMixin,
+    SampleSheetIOMixin,
+    LandingZoneMixin,
     TestCase,
 ):
     """Base class for view testing"""
 
     def setUp(self):
         # Init roles
-        self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
-        self.role_delegate = Role.objects.get_or_create(
-            name=PROJECT_ROLE_DELEGATE
-        )[0]
-        self.role_contributor = Role.objects.get_or_create(
-            name=PROJECT_ROLE_CONTRIBUTOR
-        )[0]
-        self.role_guest = Role.objects.get_or_create(name=PROJECT_ROLE_GUEST)[0]
-
+        self.init_roles()
         # Init superuser
         self.user = self.make_user('superuser')
         self.user.is_superuser = True
@@ -77,7 +69,6 @@ class TestViewsBase(
         self.contrib_as = self.make_assignment(
             self.project, self.user_contrib, self.role_contributor
         )
-
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()

@@ -4,9 +4,13 @@ from test_plus.test import TestCase
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.models import Role, SODAR_CONSTANTS
+from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
-from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
+from projectroles.tests.test_models import (
+    ProjectMixin,
+    RoleMixin,
+    RoleAssignmentMixin,
+)
 
 from samplesheets.models import GenericMaterial
 from samplesheets.rendering import (
@@ -33,20 +37,19 @@ SHEET_PATH_ALT = SHEET_DIR + 'i_small2.zip'
 
 # TODO: Unify with TestTableBuilder if no other classes are needed
 class TestRenderingBase(
-    ProjectMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase
+    ProjectMixin, RoleMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase
 ):
     """Base class for rendering tests"""
 
     def setUp(self):
+        # Init roles
+        self.init_roles()
         # Make owner user
         self.user_owner = self.make_user('owner')
-        # Init project, role and assignment
+        # Init project and assignment
         self.project = self.make_project(
             'TestProject', SODAR_CONSTANTS['PROJECT_TYPE_PROJECT'], None
         )
-        self.role_owner = Role.objects.get_or_create(
-            name=SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
-        )[0]
         self.assignment_owner = self.make_assignment(
             self.project, self.user_owner, self.role_owner
         )

@@ -18,7 +18,6 @@ class TestLandingZoneStatusGetAjaxView(TestViewsBase):
                 )
             )
         self.assertEqual(response.status_code, 200)
-
         expected = {
             'status': self.landing_zone.status,
             'status_info': self.landing_zone.status_info,

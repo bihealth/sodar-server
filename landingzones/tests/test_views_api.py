@@ -13,13 +13,10 @@ from projectroles.tests.test_views_api import TestAPIViewsBase
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
 from landingzones.tests.test_models import LandingZoneMixin
-from landingzones.tests.test_views_taskflow import (
-    ZONE_TITLE,
-    ZONE_DESC,
-)
+from landingzones.tests.test_views_taskflow import ZONE_TITLE, ZONE_DESC
 
 
-# Global constants
+# SODAR constants
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
 PROJECT_ROLE_CONTRIBUTOR = SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR']
@@ -41,18 +38,15 @@ class TestLandingZoneAPIViewsBase(
 
     def setUp(self):
         super().setUp()
-
         # Init contributor user and assignment
         self.user_contrib = self.make_user('user_contrib')
         self.contrib_as = self.make_assignment(
             self.project, self.user_contrib, self.role_contributor
         )
-
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-
         # Create LandingZone
         self.landing_zone = self.make_landing_zone(
             title=ZONE_TITLE,
@@ -110,7 +104,7 @@ class TestLandingZoneListAPIView(TestLandingZoneAPIViewsBase):
         self.assertEqual(len(response.data), 0)
 
     def test_get_finished_default(self):
-        """Test get() with a finished zone and no finished parameter"""
+        """Test get() with finished zone and no finished parameter"""
         self.make_landing_zone(
             title=ZONE_TITLE + '_moved',
             project=self.project,
@@ -131,7 +125,7 @@ class TestLandingZoneListAPIView(TestLandingZoneAPIViewsBase):
         )
 
     def test_get_finished_false(self):
-        """Test get() with a finished zone and finished=0"""
+        """Test get() with finished zone and finished=0"""
         self.make_landing_zone(
             title=ZONE_TITLE + '_moved',
             project=self.project,
@@ -156,7 +150,7 @@ class TestLandingZoneListAPIView(TestLandingZoneAPIViewsBase):
         )
 
     def test_get_finished_true(self):
-        """Test get() with a finished zone and finished=1"""
+        """Test get() with finished zone and finished=1"""
         self.make_landing_zone(
             title=ZONE_TITLE + '_moved',
             project=self.project,

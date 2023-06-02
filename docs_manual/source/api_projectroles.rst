@@ -23,4 +23,4 @@ in the current SODAR version:
 
 .. code-block:: console
 
-    Accept: application/vnd.bihealth.sodar-core+json; version=0.12.0
+    Accept: application/vnd.bihealth.sodar-core+json; version=0.13.0

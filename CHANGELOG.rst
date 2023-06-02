@@ -5,6 +5,23 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+Unreleased
+==========
+
+Changed
+-------
+
+- **General**
+    - Upgrade to django-sodar-core v0.13.0 (#1617)
+    - Upgrade to python-irodsclient v1.1.8 (#1538)
+
+Fixed
+-----
+
+- **Samplesheets**
+    - ``perform_project_sync()`` crash with no iRODS collections created (#1687)
+
+
 v0.13.4 (2023-05-15)
 ====================
 

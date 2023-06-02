@@ -304,7 +304,7 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
                 set(
                     [
                         r.user
-                        for r in zone.project.get_all_roles()
+                        for r in zone.project.get_roles()
                         if r.user != zone.user
                     ]
                 )

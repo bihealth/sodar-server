@@ -1,4 +1,4 @@
-"""Tests for Celery tasks for the samplesheets app"""
+"""Tests for Celery tasks for the samplesheets app with taskflow enabled"""
 
 from django.contrib import auth
 from django.urls import reverse

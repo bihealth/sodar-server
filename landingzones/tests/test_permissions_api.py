@@ -16,7 +16,7 @@ from landingzones.tests.test_models import (
 )
 
 
-# Global constants
+# SODAR constants
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
 PROJECT_ROLE_CONTRIBUTOR = SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR']
@@ -64,12 +64,19 @@ class TestLandingZonePermissions(
         )
         good_users = [
             self.superuser,
-            self.user_owner_cat,  # Inherited owner
+            self.user_owner_cat,  # Inherited
+            self.user_delegate_cat,  # Inherited
+            self.user_contributor_cat,  # Inherited
             self.user_owner,
             self.user_delegate,
             self.user_contributor,
         ]
-        bad_users = [self.user_guest, self.user_no_roles]
+        bad_users = [
+            self.user_guest_cat,  # Inherited
+            self.user_finder_cat,  # Inherited
+            self.user_guest,
+            self.user_no_roles,
+        ]
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 403)
         self.assert_response(url, [self.anonymous], 401)
@@ -83,11 +90,18 @@ class TestLandingZonePermissions(
         good_users = [
             self.superuser,
             self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
             self.user_owner,
             self.user_delegate,
             self.user_contributor,
         ]
-        bad_users = [self.user_guest, self.user_no_roles]
+        bad_users = [
+            self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_guest,
+            self.user_no_roles,
+        ]
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 403)
         self.assert_response(url, [self.anonymous], 401)
@@ -101,10 +115,14 @@ class TestLandingZonePermissions(
         good_users = [
             self.superuser,
             self.user_owner_cat,
+            self.user_delegate_cat,
             self.user_owner,
             self.user_delegate,
         ]
         bad_users = [
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_finder_cat,
             self.user_contributor,
             self.user_guest,
             self.user_no_roles,
@@ -123,10 +141,14 @@ class TestLandingZonePermissions(
         good_users = [
             self.superuser,
             self.user_owner_cat,
+            self.user_delegate_cat,
             self.user_owner,
             self.user_delegate,
         ]
         bad_users = [
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_finder_cat,
             self.user_contributor,
             self.user_guest,
             self.user_no_roles,

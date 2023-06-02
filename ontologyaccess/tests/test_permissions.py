@@ -43,7 +43,7 @@ class TestOntologyAccessPermissionBase(
         # No user
         self.anonymous = None
         # Create Ontology and term
-        self.ontology = self._make_obo_ontology(
+        self.ontology = self.make_obo_ontology(
             name=OBO_NAME,
             file=OBO_FILE,
             ontology_id=OBO_ONTOLOGY_ID,
@@ -54,7 +54,7 @@ class TestOntologyAccessPermissionBase(
             default_namespace=OBO_DEFAULT_NAMESPACE,
             term_url=DEFAULT_TERM_URL,
         )
-        self.term = self._make_obo_term(
+        self.term = self.make_obo_term(
             ontology=self.ontology,
             term_id=OBO_TERM_ID,
             name=OBO_TERM_NAME,

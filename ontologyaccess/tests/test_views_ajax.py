@@ -10,6 +10,7 @@ from ontologyaccess.tests.test_views import (
 )
 
 
+# Local constants
 OBO_ONTOLOGY_ID_ALT = 'alt.obo'
 OBO_ONTOLOGY_NAME_ALT = 'ALT'
 OBO_ONTOLOGY_FILE_ALT = 'alt.obo'
@@ -25,7 +26,6 @@ class TestOBOOntologyListAjaxView(TestOntologyAccessViewBase):
         """Test listing ontologies"""
         with self.login(self.superuser):
             response = self.client.get(reverse('ontologyaccess:ajax_obo_list'))
-
         self.assertEqual(response.status_code, 200)
         response_data = json.loads(response.content)
         expected = {
@@ -49,15 +49,14 @@ class TestOBOTermQueryAjaxView(TestOntologyAccessViewBase):
 
     def setUp(self):
         super().setUp()
-
         # Create second ontology and term
-        self.ontology2 = self._make_obo_ontology(
+        self.ontology2 = self.make_obo_ontology(
             name=OBO_ONTOLOGY_NAME_ALT,
             file=OBO_ONTOLOGY_FILE_ALT,
             ontology_id=OBO_ONTOLOGY_ID_ALT,
             title=OBO_ONTOLOGY_TITLE_ALT,
         )
-        self.term2 = self._make_obo_term(
+        self.term2 = self.make_obo_term(
             ontology=self.ontology2,
             term_id=OBO_TERM_ID_ALT,
             name=OBO_TERM_NAME_ALT,
@@ -103,7 +102,6 @@ class TestOBOTermQueryAjaxView(TestOntologyAccessViewBase):
                 reverse('ontologyaccess:ajax_obo_term_query'),
                 data=query_data,
             )
-
         self.assertEqual(response.status_code, 200)
         response_data = json.loads(response.content)
         self.assertEqual(len(response_data['terms']), 1)
@@ -196,15 +194,14 @@ class TestOBOTermListAjaxView(TestOntologyAccessViewBase):
 
     def setUp(self):
         super().setUp()
-
         # Create second ontology and term
-        self.ontology2 = self._make_obo_ontology(
+        self.ontology2 = self.make_obo_ontology(
             name=OBO_ONTOLOGY_NAME_ALT,
             file=OBO_ONTOLOGY_FILE_ALT,
             ontology_id=OBO_ONTOLOGY_ID_ALT,
             title=OBO_ONTOLOGY_TITLE_ALT,
         )
-        self.term2 = self._make_obo_term(
+        self.term2 = self.make_obo_term(
             ontology=self.ontology2,
             term_id=OBO_TERM_ID_ALT,
             name=OBO_TERM_NAME_ALT,
