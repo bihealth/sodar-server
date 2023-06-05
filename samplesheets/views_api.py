@@ -61,7 +61,7 @@ table_builder = SampleSheetTableBuilder()
 MD5_RE = re.compile(r'([a-fA-F\d]{32})')
 APP_NAME = 'samplesheets'
 IRODS_QUERY_ERROR_MSG = 'Exception querying iRODS objects'
-IRODS_EX_MSG = ' iRODS data request failed:'
+IRODS_EX_MSG = ' iRODS data request failed'
 
 
 # API Views --------------------------------------------------------------------
@@ -170,10 +170,8 @@ class IrodsDataRequestListAPIView(
 
         # For superusers, owners and delegates,
         # display active/failed requests from all users
-        if (
-            self.request.user.is_superuser
-            or project.is_delegate(self.request.user)
-            or project.is_owner(self.request.user)
+        if self.request.user.is_superuser or project.is_owner_or_delegate(
+            self.request.user
         ):
             requests = irods_requests.filter(status__in=['ACTIVE', 'FAILED'])
         else:
@@ -249,25 +247,11 @@ class IrodsRequestUpdateAPIView(
 
     **URL:** ``/samplesheets/api/irods/request/update/{IrodsDataRequest.sodar_uuid}``
 
-    **Methods:** ``POST``
+    **Methods:** ``PUT``, ``PATCH``
     """
 
-    http_method_names = ['post']
-    # permission_required = 'samplesheets.edit_sheet'
+    http_method_names = ['put', 'patch']
     permission_classes = (IsAuthenticated,)
-
-    def check_irods_permissions(self, request):
-        """Override to allow POST requests without CSRF token"""
-        if (
-            request.user.is_superuser
-            or self.get_project().is_owner(request.user)
-            or request.user.has_perm(
-                'samplesheets.manage_sheet', self.get_object().project
-            )
-            or request.user == self.get_object().user
-        ):
-            return True
-        return False
 
     def get_object(self):
         """Override to allow POST requests"""
@@ -275,9 +259,10 @@ class IrodsRequestUpdateAPIView(
             sodar_uuid=self.kwargs.get('irodsdatarequest')
         )
 
-    def post(self, request, *args, **kwargs):
-        """POST request for updating an iRODS data request"""
-        if not self.check_irods_permissions(request):
+    def put(self, request, *args, **kwargs):
+        """PUT request for updating an iRODS data request"""
+        obj = self.get_object()
+        if not self.check_irods_permissions(request, obj):
             raise PermissionDenied('Insufficient permissions')
 
         irods_request = IrodsDataRequest.objects.filter(
@@ -327,25 +312,13 @@ class IrodsRequestDeleteAPIView(
             sodar_uuid=self.kwargs.get('irodsdatarequest')
         )
 
-    def check_irods_permissions(self, request):
-        """Override to allow POST requests without CSRF token"""
-        if (
-            request.user.is_superuser
-            or self.get_project().is_owner(request.user)
-            or request.user.has_perm(
-                'samplesheets.manage_sheet', self.get_object().project
-            )
-            or request.user == self.get_object().user
-        ):
-            return True
-        return False
-
     def delete(self, request, *args, **kwargs):
         """DELETE request for deleting an iRODS data request"""
-        if not self.check_irods_permissions(request):
+        obj = self.get_object()
+        if not self.check_irods_permissions(request, obj):
             raise PermissionDenied('Insufficient permissions')
 
-        ex_msg = 'Deleting' + IRODS_EX_MSG
+        ex_msg = 'Deleting' + IRODS_EX_MSG + ':'
         irods_request = IrodsDataRequest.objects.filter(
             sodar_uuid=self.kwargs.get('irodsdatarequest')
         ).first()
@@ -359,9 +332,7 @@ class IrodsRequestDeleteAPIView(
         # Handle project alerts
         self.handle_alerts_deactivate(irods_request)
         return Response(
-            {
-                'detail': 'iRODS data request deleted',
-            },
+            {'detail': 'iRODS data request deleted'},
             status=status.HTTP_200_OK,
         )
 
@@ -386,7 +357,7 @@ class IrodsRequestAcceptAPIView(
         taskflow = get_backend_api('taskflow')
         app_alerts = get_backend_api('appalerts_backend')
         project = self.get_project()
-        ex_msg = 'Accepting' + IRODS_EX_MSG
+        ex_msg = 'Accepting' + IRODS_EX_MSG + ':'
 
         irods_request = IrodsDataRequest.objects.filter(
             sodar_uuid=self.kwargs.get('irodsdatarequest')
@@ -428,7 +399,7 @@ class IrodsRequestRejectAPIView(
 
     def get(self, request, *args, **kwargs):
         """POST request for rejecting an iRODS data request"""
-        ex_msg = 'Rejecting' + IRODS_EX_MSG
+        ex_msg = 'Rejecting' + IRODS_EX_MSG + ':'
         timeline = get_backend_api('timeline_backend')
         app_alerts = get_backend_api('appalerts_backend')
         project = self.get_project()

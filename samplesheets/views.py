@@ -931,20 +931,30 @@ class IrodsRequestModifyMixin:
         :raise: FlowSubmitException if taskflow submission fails
         """
         tl_event = None
+        description = 'accept iRODS data request {irods_request}'
+        status = 'OK'
+        if irods_request.status == 'ACCEPTED':
+            description = (
+                'iRODS data request {irods_request} is already ' 'accepted'
+            )
+            status = 'FAILED'
         if timeline:
             tl_event = timeline.add_event(
                 project=project,
                 app_name=APP_NAME,
                 user=request.user,
                 event_name='irods_request_accept',
-                description='accept iRODS data request {irods_request}',
-                status_type='OK',
+                description=description,
+                status_type=status,
             )
             tl_event.add_object(
                 obj=irods_request,
                 label='irods_request',
                 name=irods_request.get_display_name(),
             )
+
+        if irods_request.status == 'ACCEPTED':
+            raise IrodsDataRequest.DoesNotExist('Request is already accepted')
 
         flow_name = 'data_delete'
         flow_data = {'paths': [irods_request.path]}
@@ -1022,7 +1032,6 @@ class IrodsRequestModifyMixin:
         :param request: Request object
         :param timeline: Timeline API or None
         :param app_alerts: Appalerts API or None
-        :raise: ValueError if request is not in ACCEPTABLE_STATUSES
         """
         if timeline:
             tl_event = timeline.add_event(
@@ -1073,6 +1082,16 @@ class IrodsRequestModifyMixin:
             )
             # Handle project alerts
             cls.handle_alerts_deactivate(irods_request, app_alerts)
+
+    def check_irods_permissions(self, request, obj):
+        """Check permissions to a project"""
+        if (
+            request.user.is_superuser
+            or request.user.has_perm('samplesheets.manage_sheet', obj.project)
+            or request.user == obj.user
+        ):
+            return True
+        return False
 
 
 class SheetRemoteSyncAPI(SheetImportMixin):

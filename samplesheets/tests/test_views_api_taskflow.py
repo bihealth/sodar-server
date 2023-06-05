@@ -20,13 +20,13 @@ from taskflowbackend.tests.base import (
 )
 
 # Samplesheets dependencies
+from samplesheets.models import IrodsDataRequest
 from samplesheets.views import (
     IRODS_REQ_CREATE_ALERT as CREATE_ALERT,
     IRODS_REQ_ACCEPT_ALERT as ACCEPT_ALERT,
     IRODS_REQ_REJECT_ALERT as REJECT_ALERT,
 )
 from samplesheets.views_api import IRODS_QUERY_ERROR_MSG
-from samplesheets.models import IrodsDataRequest
 
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_views_taskflow import (
@@ -78,6 +78,7 @@ class TestIrodsRequestAPIViewBase(
         """
         Assert expected app alert count. If project is not specified, default to
         self.project.
+
         :param alert_name: String
         :param user: User object
         :param count: Expected count
@@ -257,6 +258,8 @@ class TestIrodsRequestCreateAPIView(TestIrodsRequestAPIViewBase):
         self.assertEqual(obj.description, 'bla')
         self._assert_alert_count(CREATE_ALERT, self.user, 1)
         self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
+        self._assert_alert_count(CREATE_ALERT, self.user_contrib, 0)
+        self._assert_alert_count(CREATE_ALERT, self.user_guest, 0)
 
     def test_create_trailing_slash(self):
         """Test creating a request with a trailing slash in path"""
@@ -347,7 +350,7 @@ class TestIrodsRequestUpdateAPIView(TestIrodsRequestAPIViewBase):
             )
             self.assertEqual(IrodsDataRequest.objects.count(), 1)
             obj = IrodsDataRequest.objects.first()
-            response = self.client.post(
+            response = self.client.put(
                 reverse(
                     'samplesheets:api_irods_request_update',
                     kwargs={'irodsdatarequest': obj.sodar_uuid},
@@ -374,7 +377,7 @@ class TestIrodsRequestUpdateAPIView(TestIrodsRequestAPIViewBase):
             )
             self.assertEqual(IrodsDataRequest.objects.count(), 1)
             obj = IrodsDataRequest.objects.first()
-            response = self.client.post(
+            response = self.client.put(
                 reverse(
                     'samplesheets:api_irods_request_update',
                     kwargs={'irodsdatarequest': obj.sodar_uuid},

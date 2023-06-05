@@ -105,7 +105,6 @@ class IrodsRequestSerializer(SODARProjectModelSerializer):
         irods_backend = get_backend_api('omics_irods')
         # Remove trailing slashes as irodspython client does not recognize
         # this as a collection
-        # path = value.rstrip('/')
         path = irods_backend.sanitize_path(value)
         path_re = re.compile(
             '^' + irods_backend.get_projects_path() + '/[0-9a-f]{2}/'
@@ -121,10 +120,7 @@ class IrodsRequestSerializer(SODARProjectModelSerializer):
         if old_request and old_request != self.instance:
             raise serializers.ValidationError(ERROR_MSG_EXISTING)
 
-        match = re.search(
-            path_re,
-            path,
-        )
+        match = re.search(path_re, path)
         if not match:
             raise serializers.ValidationError(ERROR_MSG_INVALID_PATH)
         try:
