@@ -227,7 +227,6 @@ class TestTableBuilder(SheetConfigMixin, TestRenderingBase):
         val_field = tables['study']['table_data'][2]
         self.assertEqual(val_field[2]['value'], '70')
 
-    # Now, make sure to also add another test where we do the same modification, but with the cache enabled, and ensure the cached value is returned instead of our modification.
     def test_get_study_tables_update_cache(self):
         """Test get_study_tables() with SHEETS_ENABLE_STUDY_TABLE_CACHE=True"""
         tables = self.tb.get_study_tables(self.study)
@@ -245,7 +244,7 @@ class TestTableBuilder(SheetConfigMixin, TestRenderingBase):
         characteristics['age']['value'] = '70'
         GenericMaterial.objects.filter(
             study=self.study, item_type='SOURCE'
-        ).update(characteristics=characteristics)
+        ).first().characteristics = characteristics
 
         tables = self.tb.get_study_tables(self.study)
         val_field = tables['study']['table_data'][2]
