@@ -8,18 +8,33 @@ Changelog for the SODAR project. Loosely follows the
 Unreleased
 ==========
 
+Added
+-----
+
+- **Samplesheets**
+    User setting for study and assay table height (#1283)
+
 Changed
 -------
 
 - **General**
     - Upgrade to django-sodar-core v0.13.0 (#1617)
     - Upgrade to python-irodsclient v1.1.8 (#1538)
+- **Samplesheets**
+    - Sample sheet table viewport background color (#1692)
+    - Contract sheet table height to fit content (#1693)
 
 Fixed
 -----
 
 - **Samplesheets**
     - ``perform_project_sync()`` crash with no iRODS collections created (#1687)
+
+Removed
+-------
+
+- **Samplesheets**
+    - ``SHEETS_TABLE_HEIGHT`` Django setting (#1283)
 
 
 v0.13.4 (2023-05-15)
