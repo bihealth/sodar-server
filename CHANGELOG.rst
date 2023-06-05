@@ -27,6 +27,8 @@ Changed
 Fixed
 -----
 
+- **Ontologyaccess**
+    - Batch import tests failing from forbidden obolibrary access (#1694)
 - **Samplesheets**
     - ``perform_project_sync()`` crash with no iRODS collections created (#1687)
 
