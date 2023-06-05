@@ -204,33 +204,52 @@ class TestTableBuilder(SheetConfigMixin, TestRenderingBase):
         self.assertEqual(study_tables, cache_item.data)
 
     @override_settings(SHEETS_ENABLE_STUDY_TABLE_CACHE=False)
-    def test_get_study_tables_config(self):
+    def test_get_study_tables_update_no_cache(self):
         """Test get_study_tables() with SHEETS_ENABLE_STUDY_TABLE_CACHE=False"""
         tables = self.tb.get_study_tables(self.study)
-        t_field = tables['study']['top_header'][0]
-        self.assertEqual(t_field['value'], 'Source')
+        t_field = tables['study']['field_header'][2]
+        self.assertEqual(t_field['value'], 'Age')
+        self.sheet_config = self.build_sheet_config(self.investigation)
 
-        sheet_config = self.build_sheet_config(self.investigation)
-        c_field = sheet_config['studies'][str(self.study.sodar_uuid)]['nodes'][
-            0
-        ]
-        self.assertEqual(c_field['header'], 'Source')
         # Change name in a model
         characteristics = (
             GenericMaterial.objects.filter(study=self.study, item_type='SOURCE')
             .first()
             .characteristics
         )
+        self.assertEqual(characteristics['age']['value'], '90')
         characteristics['age']['value'] = '70'
         GenericMaterial.objects.filter(
             study=self.study, item_type='SOURCE'
         ).update(characteristics=characteristics)
 
         tables = self.tb.get_study_tables(self.study)
-        t_field = tables['study']['top_header'][0]
-        self.assertEqual(t_field['value'], 'Source')
         val_field = tables['study']['table_data'][2]
         self.assertEqual(val_field[2]['value'], '70')
+
+    # Now, make sure to also add another test where we do the same modification, but with the cache enabled, and ensure the cached value is returned instead of our modification.
+    def test_get_study_tables_update_cache(self):
+        """Test get_study_tables() with SHEETS_ENABLE_STUDY_TABLE_CACHE=True"""
+        tables = self.tb.get_study_tables(self.study)
+        t_field = tables['study']['field_header'][2]
+        self.assertEqual(t_field['value'], 'Age')
+        self.sheet_config = self.build_sheet_config(self.investigation)
+
+        # Change name in a model
+        characteristics = (
+            GenericMaterial.objects.filter(study=self.study, item_type='SOURCE')
+            .first()
+            .characteristics
+        )
+        self.assertEqual(characteristics['age']['value'], '90')
+        characteristics['age']['value'] = '70'
+        GenericMaterial.objects.filter(
+            study=self.study, item_type='SOURCE'
+        ).update(characteristics=characteristics)
+
+        tables = self.tb.get_study_tables(self.study)
+        val_field = tables['study']['table_data'][2]
+        self.assertEqual(val_field[2]['value'], '90')
 
     def test_clear_study_cache(self):
         """Test clear_study_cache()"""
