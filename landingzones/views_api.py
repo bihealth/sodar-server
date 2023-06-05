@@ -238,11 +238,16 @@ class ZoneUpdateAPIView(
 ):
     """
     Update a landing zone description and user message.
+
     **URL:** ``/landingzones/api/update/{LandingZone.sodar_uuid}``
+
     **Methods:** ``PATCH``, ``PUT``
+
     **Parameters:**
+
     - ``description``: Landing zone description (string, optional)
     - ``user_message``: Message displayed to users on successful moving of zone (string, optional)
+
     **Returns:** Landing zone details (see ``ZoneRetrieveAPIView``)
     """
 

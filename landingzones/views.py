@@ -234,7 +234,7 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
 
         # Add event in Timeline
         if timeline:
-            description = ('update landing zone {zone} for {user} in {assay}',)
+            description = 'update landing zone {zone} for {user} in {assay}'
             tl_extra = {
                 'title': zone.title,
                 'assay': str(zone.assay.sodar_uuid),
@@ -601,10 +601,7 @@ class ZoneUpdateView(
 
         # Update zone
         self.zone = form.save()
-        self.update_zone(
-            zone=self.zone,
-            request=self.request,
-        )
+        self.update_zone(zone=self.zone, request=self.request)
         msg = 'Landing zone "{}" was updated.'.format(self.zone.title)
         messages.success(self.request, msg)
         return super().form_valid(form)

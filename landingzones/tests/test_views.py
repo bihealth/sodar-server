@@ -183,7 +183,8 @@ class TestLandingZoneUpdateView(TestViewsBase):
         self.assertIsNotNone(form)
         self.assertIsNotNone(form.fields['assay'])
         self.assertIsNotNone(form.fields['description'])
-        # Make sure to also assert the expected fields are hidden with the HiddenInput widget.
+        # Make sure to also assert the expected fields
+        # are hidden with the HiddenInput widget.
         self.assertIsInstance(form.fields['title_suffix'].widget, HiddenInput)
         self.assertIsInstance(form.fields['configuration'].widget, HiddenInput)
         self.assertIsInstance(form.fields['create_colls'].widget, HiddenInput)
@@ -228,18 +229,9 @@ class TestLandingZoneUpdateView(TestViewsBase):
         landing_zone = LandingZone.objects.get(
             sodar_uuid=self.landing_zone.sodar_uuid
         )
-        self.assertEqual(
-            landing_zone.assay,
-            self.assay,
-        )
-        self.assertEqual(
-            landing_zone.description,
-            'test description updated',
-        )
-        self.assertEqual(
-            landing_zone.user_message,
-            'test user message',
-        )
+        self.assertEqual(landing_zone.assay, self.assay)
+        self.assertEqual(landing_zone.description, 'test description updated')
+        self.assertEqual(landing_zone.user_message, 'test user message')
 
     def test_post_invalid_data(self):
         """Test POST request with invalid data"""
@@ -259,14 +251,8 @@ class TestLandingZoneUpdateView(TestViewsBase):
         landing_zone = LandingZone.objects.get(
             sodar_uuid=self.landing_zone.sodar_uuid
         )
-        self.assertEqual(
-            landing_zone.assay,
-            self.assay,
-        )
-        self.assertEqual(
-            landing_zone.description,
-            'description',
-        )
+        self.assertEqual(landing_zone.assay, self.assay)
+        self.assertEqual(landing_zone.description, 'description')
 
 
 class TestLandingZoneMoveView(TestViewsBase):

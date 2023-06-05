@@ -36,9 +36,7 @@ class TestLandingZonePermissions(
     """Tests for landingzones REST API view permissions"""
 
     def _get_update_post_data(self):
-        return {
-            'description': 'Test description updated',
-        }
+        return {'description': 'Test description updated'}
 
     def setUp(self):
         super().setUp()
