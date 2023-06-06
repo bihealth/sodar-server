@@ -175,7 +175,7 @@ class TestLandingZoneMoveView(TestViewsBase):
                     kwargs={'landingzone': self.landing_zone.sodar_uuid},
                 )
             )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
 
     def test_render_invalid_status(self):
         """Test rendering with an invalid zone status"""
