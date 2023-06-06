@@ -752,8 +752,6 @@ SHEETS_ENABLE_STUDY_TABLE_CACHE = env.bool(
 )
 # iRODS file query limit
 SHEETS_IRODS_LIMIT = env.int('SHEETS_IRODS_LIMIT', 50)
-# Study/assay table height
-SHEETS_TABLE_HEIGHT = env.int('SHEETS_TABLE_HEIGHT', 400)
 # Minimum edit config version
 SHEETS_CONFIG_VERSION = '0.8.0'
 # Min default column width

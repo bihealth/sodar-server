@@ -72,7 +72,6 @@ SHEETS_INFO_SETTINGS = [
     'SHEETS_MAX_COLUMN_WIDTH',
     'SHEETS_MIN_COLUMN_WIDTH',
     'SHEETS_SYNC_INTERVAL',
-    'SHEETS_TABLE_HEIGHT',
     'SHEETS_VERSION_PAGINATION',
     'SHEETS_IGV_OMIT_BAM',
     'SHEETS_IGV_OMIT_VCF',
@@ -172,6 +171,16 @@ class ProjectAppPlugin(
             'default': '',
             'description': 'Access token for sheet synchronization in the '
             'source project',
+            'user_modifiable': True,
+        },
+        'sheet_table_height': {
+            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_USER'],
+            'type': 'INTEGER',
+            'label': 'Sample sheet table height',
+            'options': [250, 400, 600, 800],
+            'default': 400,
+            'description': 'Maximum display height for study and assay tables '
+            'in pixels',
             'user_modifiable': True,
         },
         'public_access_ticket': {

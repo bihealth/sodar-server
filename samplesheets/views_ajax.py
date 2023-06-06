@@ -69,6 +69,10 @@ EDIT_FIELD_MAP = {
     'label': 'extract_label',
     'performer': 'performer',
 }
+# Approximate magic numbers for header/row height
+RENDER_HEIGHT_HEADERS = 79
+RENDER_HEIGHT_ROW = 39
+RENDER_HEIGHT_SCROLLBAR = 12
 
 ALERT_ACTIVE_REQS = (
     'Active iRODS delete requests in this project require your attention. '
@@ -315,7 +319,6 @@ class SheetContextAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
             'irods_webdav_enabled': settings.IRODS_WEBDAV_ENABLED,
             'irods_webdav_url': get_webdav_url(project, request.user),
             'external_link_labels': None,
-            'table_height': settings.SHEETS_TABLE_HEIGHT,
             'min_col_width': settings.SHEETS_MIN_COLUMN_WIDTH,
             'max_col_width': settings.SHEETS_MAX_COLUMN_WIDTH,
             'allow_editing': app_settings.get(
@@ -498,12 +501,27 @@ class SheetContextAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
 class StudyTablesAjaxView(SODARBaseProjectAjaxView):
     """View to retrieve study tables built from the sample sheet graph"""
 
-    def get_permission_required(self):
-        """Override get_permisson_required() to provide the approrpiate perm"""
-        if bool(self.request.GET.get('edit')):
-            return 'samplesheets.edit_sheet'
+    def _get_table_height(self, table, user, edit):
+        """
+        Return table height in pixels.
 
-        return 'samplesheets.view_sheet'
+        :param table: Study or assay render table
+        :param user: User object making the request
+        :param edit: Edit mode enabled (boolean)
+        :return: Integer
+        """
+        default_height = app_settings.get(
+            APP_NAME, 'sheet_table_height', user=user
+        )
+        if edit:  # When editing we always set tables to fixed user setting
+            return default_height
+        # Else limit return value to user setting
+        return min(
+            RENDER_HEIGHT_HEADERS
+            + RENDER_HEIGHT_SCROLLBAR
+            + len(table['table_data']) * RENDER_HEIGHT_ROW,
+            default_height,
+        )
 
     def _get_display_config(self, investigation, user, sheet_config=None):
         """Get or create display configuration for an investigation"""
@@ -567,6 +585,12 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
             )
         return display_config
 
+    def get_permission_required(self):
+        """Override get_permisson_required() to provide the approrpiate perm"""
+        if bool(self.request.GET.get('edit')):
+            return 'samplesheets.edit_sheet'
+        return 'samplesheets.view_sheet'
+
     def get(self, request, *args, **kwargs):
         from samplesheets.plugins import get_irods_content
 
@@ -608,6 +632,19 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
             ret_data['render_error'] = str(ex)
             return Response(ret_data, status=200)
 
+        # Add table heights
+        ret_data['table_heights'] = {
+            'study': self._get_table_height(
+                ret_data['tables']['study'], request.user, edit
+            ),
+            'assays': {},
+        }
+        for k, v in ret_data['tables']['assays'].items():
+            ret_data['table_heights']['assays'][k] = self._get_table_height(
+                v, request.user, edit
+            )
+        # logger.debug('Table heights = {}'.format(ret_data['table_heights']))
+
         # Get iRODS content if NOT editing and collections have been created
         if not edit:
             logger.debug('Retrieving iRODS content for study..')
@@ -639,7 +676,6 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
                 'samples': {},
                 'protocols': [],
             }
-
             # Add sample info
             s_assays = {}
             for assay in study.assays.all().order_by('pk'):
@@ -660,7 +696,6 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
                     if sample.unique_name in s_assays
                     else [],
                 }
-
             # Add Protocol info
             for protocol in Protocol.objects.filter(study=study).order_by(
                 'name'
