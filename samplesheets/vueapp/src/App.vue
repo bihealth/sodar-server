@@ -50,6 +50,7 @@
             :grid-options="gridOptions.study"
             :grid-uuid="currentStudyUuid"
             :row-data="rowData.study"
+            :table-height="tableHeights.study"
             :initial-filter="initialFilter">
         </sheet-table>
 
@@ -80,6 +81,7 @@
               :grid-options="gridOptions.assays[assayUuid]"
               :grid-uuid="assayUuid"
               :row-data="rowData.assays[assayUuid]"
+              :table-height="tableHeights.assays[assayUuid]"
               :initial-filter="initialFilter">
           </sheet-table>
         </span>
@@ -271,6 +273,7 @@ export default {
       sampleColId: null,
       sampleIdx: null,
       sourceColSpan: null,
+      tableHeights: null,
       unsavedRow: null, // Info of currently unsaved row, or null if none
       updatingRow: false, // Row update in progress (bool)
       unsavedData: false, // Other updated data (bool)
@@ -415,15 +418,15 @@ export default {
         if (this.editMode && 'study_config' in data) {
           this.editStudyConfig = data.study_config
         }
-
         // Editing: Get edit context
         if (this.editMode && 'edit_context' in data) {
           this.editContext = data.edit_context
         }
 
+        // Get table heights
+        this.tableHeights = data.table_heights
         // Get display config
         this.studyDisplayConfig = data.display_config
-
         // Store colspan
         this.sourceColSpan = data.tables.study.top_header[0].colspan
 
@@ -1312,6 +1315,10 @@ export default {
 
 .ag-root {
   border: 0 !important;
+}
+
+.ag-body-viewport {
+  background-color: #eee;
 }
 
 .ag-header-group-cell {
