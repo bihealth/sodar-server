@@ -209,17 +209,17 @@ class TestLandingZonePermissions(TestLandingZonePermissionsBase):
         good_users = [
             self.superuser,
             self.user_owner_cat,
-            self.user_owner,
             self.user_delegate_cat,
+            self.user_owner,
             self.user_delegate,
             self.user_contributor,
         ]
         bad_users = [
             self.user_contributor_cat,
             self.user_guest_cat,
+            self.user_finder_cat,
             self.user_guest,
             self.user_no_roles,
-            self.user_finder_cat,
             self.anonymous,
         ]
         self.assert_response(url, good_users, 200)
@@ -241,15 +241,15 @@ class TestLandingZonePermissions(TestLandingZonePermissionsBase):
         ]
         bad_users = [
             self.user_owner_cat,
-            self.user_owner,
             self.user_delegate_cat,
-            self.user_delegate,
             self.user_contributor_cat,
-            self.user_contributor,
             self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
             self.user_guest,
             self.user_no_roles,
-            self.user_finder_cat,
             self.anonymous,
         ]
         self.assert_response(url, good_users, 200)
@@ -271,15 +271,15 @@ class TestLandingZonePermissions(TestLandingZonePermissionsBase):
         ]
         bad_users = [
             self.user_owner_cat,
-            self.user_owner,
             self.user_delegate_cat,
-            self.user_delegate,
             self.user_contributor_cat,
-            self.user_contributor,
             self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
             self.user_guest,
             self.user_no_roles,
-            self.user_finder_cat,
             self.anonymous,
         ]
         self.assert_response(url, good_users, 200)

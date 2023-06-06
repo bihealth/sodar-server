@@ -224,11 +224,11 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
     def update_zone(self, zone, request=None):
         """
         Handle timeline updating after a LandingZone object has been updated.
+
         :param zone: LandingZone object
         :param form: LandingZoneForm object
         :raise: taskflow.FlowSubmitException if taskflow submit fails
         """
-
         timeline = get_backend_api('timeline_backend')
         user = request.user if request else None
 
