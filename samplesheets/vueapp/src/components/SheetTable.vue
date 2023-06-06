@@ -76,6 +76,7 @@ export default {
     'gridOptions',
     'gridUuid',
     'rowData',
+    'tableHeight',
     'initialFilter'
   ],
   data () {
@@ -109,7 +110,7 @@ export default {
   },
   beforeMount () {
     this.cardClass = 'card sodar-ss-data-card sodar-ss-data-card-'
-    this.gridStyle = 'height: ' + this.app.sodarContext.table_height + 'px;'
+    this.gridStyle = 'height: ' + this.tableHeight + 'px;'
     if (!this.assayMode) {
       this.cardClass += 'study'
       this.gridName = 'Study'

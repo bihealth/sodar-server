@@ -55,7 +55,12 @@ from samplesheets.tests.test_views import (
 )
 from samplesheets.utils import get_node_obj, get_ext_link_labels
 from samplesheets.views import SheetImportMixin
-from samplesheets.views_ajax import ALERT_ACTIVE_REQS
+from samplesheets.views_ajax import (
+    ALERT_ACTIVE_REQS,
+    RENDER_HEIGHT_HEADERS,
+    RENDER_HEIGHT_ROW,
+    RENDER_HEIGHT_SCROLLBAR,
+)
 
 
 conf_api = SheetConfigAPI()
@@ -225,7 +230,6 @@ class TestSheetContextAjaxView(TestViewsBase):
             'external_link_labels': get_ext_link_labels(),
             'ontology_url_template': settings.SHEETS_ONTOLOGY_URL_TEMPLATE,
             'ontology_url_skip': settings.SHEETS_ONTOLOGY_URL_SKIP,
-            'table_height': settings.SHEETS_TABLE_HEIGHT,
             'min_col_width': settings.SHEETS_MIN_COLUMN_WIDTH,
             'max_col_width': settings.SHEETS_MAX_COLUMN_WIDTH,
             'allow_editing': app_settings.get_default(
@@ -329,7 +333,6 @@ class TestSheetContextAjaxView(TestViewsBase):
             'irods_webdav_enabled': settings.IRODS_WEBDAV_ENABLED,
             'irods_webdav_url': settings.IRODS_WEBDAV_URL,
             'external_link_labels': None,
-            'table_height': settings.SHEETS_TABLE_HEIGHT,
             'min_col_width': settings.SHEETS_MIN_COLUMN_WIDTH,
             'max_col_width': settings.SHEETS_MAX_COLUMN_WIDTH,
             'allow_editing': app_settings.get_default(
@@ -507,6 +510,21 @@ class TestStudyTablesAjaxView(IrodsAccessTicketMixin, TestViewsBase):
         self.assertNotIn('shortcuts', ret_data['tables']['study'])
         self.assertEqual(len(ret_data['tables']['assays']), 1)
         self.assertIn('uuid', ret_data['tables']['study']['table_data'][0][0])
+        self.assertIn('table_heights', ret_data)
+        self.assertEqual(
+            ret_data['table_heights']['study'],
+            RENDER_HEIGHT_HEADERS
+            + len(ret_data['tables']['study']['table_data']) * RENDER_HEIGHT_ROW
+            + RENDER_HEIGHT_SCROLLBAR,
+        )
+        a_uuid = str(self.assay.sodar_uuid)
+        self.assertEqual(
+            ret_data['table_heights']['assays'][a_uuid],
+            RENDER_HEIGHT_HEADERS
+            + len(ret_data['tables']['assays'][a_uuid]['table_data'])
+            * RENDER_HEIGHT_ROW
+            + RENDER_HEIGHT_SCROLLBAR,
+        )
         self.assertIn('display_config', ret_data)
         self.assertNotIn('edit_context', ret_data)
 
@@ -530,6 +548,15 @@ class TestStudyTablesAjaxView(IrodsAccessTicketMixin, TestViewsBase):
         self.assertNotIn('shortcuts', ret_data['tables']['study'])
         self.assertEqual(len(ret_data['tables']['assays']), 1)
         self.assertIn('uuid', ret_data['tables']['study']['table_data'][0][0])
+        self.assertIn('table_heights', ret_data)
+        default_height = app_settings.get(
+            APP_NAME, 'sheet_table_height', user=self.user
+        )
+        self.assertEqual(ret_data['table_heights']['study'], default_height)
+        a_uuid = str(self.assay.sodar_uuid)
+        self.assertEqual(
+            ret_data['table_heights']['assays'][a_uuid], default_height
+        )
         self.assertIn('display_config', ret_data)
         self.assertIn('study_config', ret_data)
         self.assertIn('edit_context', ret_data)
@@ -557,7 +584,7 @@ class TestStudyTablesAjaxView(IrodsAccessTicketMixin, TestViewsBase):
                 )
             )
         self.assertEqual(response.status_code, 200)
-        # TODO fill out ... assays are not yet tested, as well as shortcuts
+        # TODO: Assert track hub data
 
     def test_get_study_cache(self):
         """Test cached study table creation on retrieval"""
