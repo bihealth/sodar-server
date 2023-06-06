@@ -17,6 +17,8 @@ API Views
 
 .. autoclass:: ZoneCreateAPIView
 
+.. autoclass:: ZoneUpdateAPIView
+
 .. autoclass:: ZoneSubmitDeleteAPIView
 
 .. autoclass:: ZoneSubmitMoveAPIView
