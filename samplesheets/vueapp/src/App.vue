@@ -1317,7 +1317,7 @@ export default {
   border: 0 !important;
 }
 
-.ag-body-viewport {
+.ag-body-viewport, .ag-header-viewport {
   background-color: #eee;
 }
 
