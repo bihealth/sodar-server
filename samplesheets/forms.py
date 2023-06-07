@@ -207,8 +207,10 @@ class SheetTemplateCreateForm(forms.Form):
                 self.fields[k] = forms.CharField(**field_kwargs)
                 self.initial[k] = json.dumps(v)
                 self.json_fields.append(k)
-            # Hide fields not intended to be edited (see issue #1443)
-            if k in HIDDEN_SHEET_TEMPLATE_FIELDS:
+            # Hide fields not intended to be edited (see #1443, #1698)
+            if k in HIDDEN_SHEET_TEMPLATE_FIELDS or (
+                k.startswith('__') and k != TPL_DIR_FIELD
+            ):
                 self.fields[k].widget = forms.widgets.HiddenInput()
 
     def clean(self):

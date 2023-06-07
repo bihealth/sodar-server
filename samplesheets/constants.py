@@ -10,6 +10,7 @@ DEFAULT_EXTERNAL_LINK_LABELS = {
 
 # Hide template fields listed here from the template UI (see issue #1443)
 HIDDEN_SHEET_TEMPLATE_FIELDS = [
+    '_library_types',
     'a_measurement_types',
     'a_technology_types',
     'assay_technology_types',

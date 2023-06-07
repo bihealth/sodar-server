@@ -11,8 +11,17 @@ Unreleased
 Added
 -----
 
+- **Landingzones**
+    - Landing zone updating (#1267)
 - **Samplesheets**
-    User setting for study and assay table height (#1283)
+    - User setting for study and assay table height (#1283)
+    - Study table cache disabling (#1639)
+    - ``SHEETS_ENABLE_STUDY_TABLE_CACHE`` setting (#1639)
+    - ``cytof`` assay plugin (#1642)
+    - Enable ``mass_cytometry`` ISA-Tab template (#1697)
+    - Enable ``stem_cell_core_bulk`` ISA-Tab template (#1697)
+    - Enable ``stem_cell_core_sc`` ISA-Tab template (#1697)
+    - Enable ``tumor_normal_dna`` ISA-Tab template (#1697)
 
 Changed
 -------
@@ -23,6 +32,7 @@ Changed
 - **Samplesheets**
     - Sample sheet table viewport background color (#1692)
     - Contract sheet table height to fit content (#1693)
+    - Hide additional internal fields from ISA-Tab templates (#1698)
 
 Fixed
 -----

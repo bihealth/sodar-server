@@ -788,9 +788,13 @@ SHEETS_ENABLED_TEMPLATES = [
     'bulk_rnaseq',
     'generic',
     'germline',
+    'mass_cytometry',
     'microarray',
     'ms_meta_biocrates',
     'single_cell_rnaseq',
+    'stem_cell_core_bulk',
+    'stem_cell_core_sc',
+    'tumor_normal_dna',
     'tumor_normal_triplets',
 ]
 
