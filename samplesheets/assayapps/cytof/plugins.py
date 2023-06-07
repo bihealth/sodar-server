@@ -2,11 +2,11 @@
 
 from django.conf import settings
 
-# Projectroles dependency
 from samplesheets.plugins import SampleSheetAssayPluginPoint
 from samplesheets.utils import get_top_header
 from samplesheets.views import MISC_FILES_COLL
 from samplesheets.rendering import SIMPLE_LINK_TEMPLATE
+
 
 # Local constants
 APP_NAME = 'samplesheets.assayapps.cytof'
@@ -89,8 +89,6 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         if mc_assay_name:
             return assay_path + '/' + mc_assay_name
 
-        return None
-
     def update_row(self, row, table, assay):
         """
         Update render table row with e.g. links. Return the modified row.
@@ -100,7 +98,6 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         :param assay: Assay object
         :return: List of dicts
         """
-
         if not settings.IRODS_WEBDAV_ENABLED or not assay:
             return row
 
@@ -130,7 +127,11 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             ):
                 row[i]['value'] = SIMPLE_LINK_TEMPLATE.format(
                     label=row[i]['value'],
-                    url=f"{base_url}/{MISC_FILES_COLL}/{row[i]['value']}",
+                    url=base_url
+                    + '/'
+                    + MISC_FILES_COLL
+                    + '/'
+                    + row[i]['value'],
                 )
 
             # Create report file links in processes
@@ -141,7 +142,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             ):
                 row[i]['value'] = SIMPLE_LINK_TEMPLATE.format(
                     label=row[i]['value'],
-                    url=f"{base_url}/{mc_assay_name}/{row[i]['value']}",
+                    url=base_url + '/' + mc_assay_name + '/' + row[i]['value'],
                 )
 
         return row
