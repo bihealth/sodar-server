@@ -931,13 +931,14 @@ class IrodsRequestModifyMixin:
         :raise: FlowSubmitException if taskflow submission fails
         """
         tl_event = None
-        description = 'accept iRODS data request {irods_request}'
-        status = 'OK'
         if irods_request.status == 'ACCEPTED':
             description = (
-                'iRODS data request {irods_request} is already ' 'accepted'
+                'iRODS data request {irods_request} is already accepted'
             )
             status = 'FAILED'
+        else:
+            description = 'accept iRODS data request {irods_request}'
+            status = 'OK'
         if timeline:
             tl_event = timeline.add_event(
                 project=project,
@@ -1083,12 +1084,12 @@ class IrodsRequestModifyMixin:
             # Handle project alerts
             cls.handle_alerts_deactivate(irods_request, app_alerts)
 
-    def check_irods_permissions(self, request, obj):
-        """Check permissions to a project"""
+    def get_zone_permissions(self, request, zone):
+        """Check permissions for a landing zone."""
         if (
             request.user.is_superuser
-            or request.user.has_perm('samplesheets.manage_sheet', obj.project)
-            or request.user == obj.user
+            or request.user.has_perm('samplesheets.manage_sheet', zone.project)
+            or request.user == zone.user
         ):
             return True
         return False

@@ -7,12 +7,10 @@ from irods.keywords import REG_CHKSUM_KW
 from django.test import override_settings
 from django.urls import reverse
 
-from samplesheets.models import IrodsDataRequest
-
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import TaskflowAPIPermissionTestBase
 
-# Samplesheets dependency
+from samplesheets.models import IrodsDataRequest
 from samplesheets.tests.test_io import SampleSheetIOMixin
 from samplesheets.tests.test_permissions import SHEET_PATH
 from samplesheets.tests.test_views_api_taskflow import (
@@ -137,18 +135,18 @@ class TestIrodsRequestCreateAPIView(TestIrodsRequestAPIViewBase):
         """Test post() in IrodsRequestCreateAPIView"""
         good_users = [
             self.superuser,
-            self.user_owner_cat,  # Inherited owner
-            self.user_owner,
+            self.user_owner_cat,
             self.user_delegate_cat,
-            self.user_delegate,
             self.user_contributor_cat,
+            self.user_owner,
+            self.user_delegate,
             self.user_contributor,
         ]
         bad_users = [
             self.user_guest_cat,
+            self.user_finder_cat,
             self.user_guest,
             self.user_no_roles,
-            self.user_finder_cat,
         ]
 
         self.assert_response_api(
@@ -178,16 +176,16 @@ class TestIrodsRequestCreateAPIView(TestIrodsRequestAPIViewBase):
         self.project.set_archive()
         good_users = [self.superuser]
         bad_users = [
-            self.user_owner_cat,  # Inherited owner
-            self.user_owner,
+            self.user_owner_cat,
             self.user_delegate_cat,
-            self.user_delegate,
             self.user_contributor_cat,
-            self.user_contributor,
             self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
             self.user_guest,
             self.user_no_roles,
-            self.user_finder_cat,
         ]
 
         self.assert_response_api(
@@ -212,18 +210,18 @@ class TestIrodsRequestUpdateAPIView(TestIrodsRequestAPIViewBase):
         """Test post() in IrodsRequestUpdateAPIView"""
         good_users = [
             self.superuser,
-            self.user_owner_cat,  # Inherited owner
-            self.user_owner,
+            self.user_owner_cat,
             self.user_delegate_cat,
+            self.user_owner,
             self.user_delegate,
         ]
         bad_users = [
             self.user_contributor_cat,
-            self.user_contributor,
             self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_contributor,
             self.user_guest,
             self.user_no_roles,
-            self.user_finder_cat,
         ]
 
         obj = self.create_request()
@@ -265,15 +263,15 @@ class TestIrodsRequestUpdateAPIView(TestIrodsRequestAPIViewBase):
         good_users = [self.superuser]
         bad_users = [
             self.user_owner_cat,
-            self.user_owner,
             self.user_delegate_cat,
-            self.user_delegate,
             self.user_contributor_cat,
-            self.user_contributor,
             self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
             self.user_guest,
             self.user_no_roles,
-            self.user_finder_cat,
         ]
         self.assert_response_api(
             self.url, good_users, 200, method='PUT', data=self.update_data
@@ -293,18 +291,18 @@ class TestIrodsRequestDeleteAPIView(TestIrodsRequestAPIViewBase):
         """Test delete() in IrodsRequestDeleteAPIView"""
         good_users = [
             self.superuser,
-            self.user_owner_cat,  # Inherited owner
-            self.user_owner,
+            self.user_owner_cat,
             self.user_delegate_cat,
+            self.user_owner,
             self.user_delegate,
         ]
         bad_users = [
             self.user_contributor_cat,
-            self.user_contributor,
             self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_contributor,
             self.user_guest,
             self.user_no_roles,
-            self.user_finder_cat,
         ]
 
         for user in good_users:
@@ -346,18 +344,18 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
         """Test post() in IrodsRequestAcceptAPIView"""
         good_users = [
             self.superuser,
-            self.user_owner_cat,  # Inherited owner
-            self.user_owner,
+            self.user_owner_cat,
             self.user_delegate_cat,
+            self.user_owner,
             self.user_delegate,
         ]
         bad_users = [
             self.user_contributor_cat,
-            self.user_contributor,
             self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_contributor,
             self.user_guest,
             self.user_no_roles,
-            self.user_finder_cat,
         ]
         for user in good_users:
             obj = self.create_request()
@@ -422,15 +420,15 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
         good_users = [self.superuser]
         bad_users = [
             self.user_owner_cat,
-            self.user_owner,
             self.user_delegate_cat,
-            self.user_delegate,
             self.user_contributor_cat,
-            self.user_contributor,
             self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
             self.user_guest,
             self.user_no_roles,
-            self.user_finder_cat,
         ]
         for user in good_users:
             obj = self.create_request()
@@ -481,18 +479,18 @@ class TestIrodsRequestRejectAPIView(TestIrodsRequestAPIViewBase):
         """Test get() in IrodsRequestRejectAPIView"""
         good_users = [
             self.superuser,
-            self.user_owner_cat,  # Inherited owner
-            self.user_owner,
+            self.user_owner_cat,
             self.user_delegate_cat,
+            self.user_owner,
             self.user_delegate,
         ]
         bad_users = [
             self.user_contributor_cat,
-            self.user_contributor,
             self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_contributor,
             self.user_guest,
             self.user_no_roles,
-            self.user_finder_cat,
         ]
         for user in good_users:
             obj = self.create_request()
@@ -553,15 +551,15 @@ class TestIrodsRequestRejectAPIView(TestIrodsRequestAPIViewBase):
         good_users = [self.superuser]
         bad_users = [
             self.user_owner_cat,
-            self.user_owner,
             self.user_delegate_cat,
-            self.user_delegate,
             self.user_contributor_cat,
-            self.user_contributor,
             self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
             self.user_guest,
             self.user_no_roles,
-            self.user_finder_cat,
         ]
         obj = self.create_request()
         self.url_reject = reverse(

@@ -19,7 +19,6 @@ from taskflowbackend.tests.base import (
     TaskflowAPIViewTestBase,
 )
 
-# Samplesheets dependencies
 from samplesheets.models import IrodsDataRequest
 from samplesheets.views import (
     IRODS_REQ_CREATE_ALERT as CREATE_ALERT,

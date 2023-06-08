@@ -28,7 +28,7 @@ from rest_framework.views import APIView
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.models import RemoteSite, Project
+from projectroles.models import RemoteSite
 from projectroles.plugins import get_backend_api
 from projectroles.views_api import (
     SODARAPIBaseMixin,
@@ -61,7 +61,7 @@ table_builder = SampleSheetTableBuilder()
 MD5_RE = re.compile(r'([a-fA-F\d]{32})')
 APP_NAME = 'samplesheets'
 IRODS_QUERY_ERROR_MSG = 'Exception querying iRODS objects'
-IRODS_EX_MSG = ' iRODS data request failed'
+IRODS_EX_MSG = 'iRODS data request failed'
 
 
 # API Views --------------------------------------------------------------------
@@ -163,9 +163,7 @@ class IrodsDataRequestListAPIView(
 
     def get(self, request, *args, **kwargs):
         """GET request for listing iRODS data requests"""
-        project = Project.objects.filter(
-            sodar_uuid=self.kwargs.get('project')
-        ).first()
+        project = self.get_project()
         irods_requests = IrodsDataRequest.objects.filter(project=project)
 
         # For superusers, owners and delegates,
@@ -262,7 +260,7 @@ class IrodsRequestUpdateAPIView(
     def put(self, request, *args, **kwargs):
         """PUT request for updating an iRODS data request"""
         obj = self.get_object()
-        if not self.check_irods_permissions(request, obj):
+        if not self.get_zone_permissions(request, obj):
             raise PermissionDenied('Insufficient permissions')
 
         irods_request = IrodsDataRequest.objects.filter(
@@ -315,17 +313,18 @@ class IrodsRequestDeleteAPIView(
     def delete(self, request, *args, **kwargs):
         """DELETE request for deleting an iRODS data request"""
         obj = self.get_object()
-        if not self.check_irods_permissions(request, obj):
+        if not self.get_zone_permissions(request, obj):
             raise PermissionDenied('Insufficient permissions')
 
-        ex_msg = 'Deleting' + IRODS_EX_MSG + ':'
         irods_request = IrodsDataRequest.objects.filter(
             sodar_uuid=self.kwargs.get('irodsdatarequest')
         ).first()
         try:
             irods_request.delete()
         except Exception as ex:
-            raise APIException('{} {}'.format(ex_msg, ex))
+            raise APIException(
+                '{} {}'.format('Deleting ' + IRODS_EX_MSG + ':', ex)
+            )
 
         # Add timeline event
         self.add_tl_delete(irods_request)
@@ -357,7 +356,6 @@ class IrodsRequestAcceptAPIView(
         taskflow = get_backend_api('taskflow')
         app_alerts = get_backend_api('appalerts_backend')
         project = self.get_project()
-        ex_msg = 'Accepting' + IRODS_EX_MSG + ':'
 
         irods_request = IrodsDataRequest.objects.filter(
             sodar_uuid=self.kwargs.get('irodsdatarequest')
@@ -373,7 +371,9 @@ class IrodsRequestAcceptAPIView(
                 app_alerts=app_alerts,
             )
         except Exception as ex:
-            raise APIException('{} {}'.format(ex_msg, ex))
+            raise APIException(
+                '{} {}'.format('Accepting ' + IRODS_EX_MSG + ':', ex)
+            )
         return Response(
             {
                 'detail': 'iRODS data request accepted',
@@ -399,7 +399,6 @@ class IrodsRequestRejectAPIView(
 
     def get(self, request, *args, **kwargs):
         """POST request for rejecting an iRODS data request"""
-        ex_msg = 'Rejecting' + IRODS_EX_MSG + ':'
         timeline = get_backend_api('timeline_backend')
         app_alerts = get_backend_api('appalerts_backend')
         project = self.get_project()
@@ -419,7 +418,9 @@ class IrodsRequestRejectAPIView(
                 app_alerts=app_alerts,
             )
         except Exception as ex:
-            raise APIException('{} {}'.format(ex_msg, ex))
+            raise APIException(
+                '{} {}'.format('Rejecting ' + IRODS_EX_MSG + ':', ex)
+            )
 
         return Response(
             {
