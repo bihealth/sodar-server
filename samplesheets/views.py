@@ -2485,16 +2485,20 @@ class IrodsRequestAcceptView(
     template_name = 'samplesheets/irods_request_accept_form.html'
     form_class = IrodsRequestAcceptForm
 
+    def get_form_kwargs(self):
+        "Override to pass number of requests to form"
+        kwargs = super().get_form_kwargs()
+        kwargs['num_requests'] = 1
+        return kwargs
+
     def get_context_data(self, *args, **kwargs):
         context_data = super().get_context_data(*args, **kwargs)
         obj = IrodsDataRequest.objects.filter(
             sodar_uuid=self.kwargs['irodsdatarequest']
         ).first()
         context_data['irods_request_data'] = []
+        affected_object_paths = [obj.path]
         irods_backend = get_backend_api('omics_irods')
-        context_data['irods_requests'] = [str(obj.sodar_uuid)]
-        affected_objects = []
-        affected_collections = []
         is_collection = obj.is_collection()
         if is_collection:
             with irods_backend.get_session() as irods:
@@ -2503,19 +2507,13 @@ class IrodsRequestAcceptView(
                 except CollectionDoesNotExist:
                     coll = None
                 if coll:
-                    affected_objects += irods_backend.get_objs_recursively(
+                    affected_objects = irods_backend.get_objs_recursively(
                         irods, coll
                     )
-                    affected_collections += irods_backend.get_colls_recursively(
-                        coll
-                    )
-        context_data['irods_request_data'].append(
-            {
-                'obj': obj,
-                'is_collection': is_collection,
-                'affected_objects': affected_objects,
-                'affected_collections': affected_collections,
-            }
+                    affected_object_paths += [o.path for o in affected_objects]
+        context_data['irods_request_data'].append(obj)
+        context_data['affected_object_paths'] = sorted(
+            list(set(affected_object_paths))
         )
         return context_data
 
@@ -2568,18 +2566,24 @@ class IrodsRequestAcceptBatchView(
     permission_required = 'samplesheets.manage_sheet'
     form_class = IrodsRequestAcceptForm
 
+    def get_form_kwargs(self):
+        "Override to pass number of requests to form"
+        kwargs = super().get_form_kwargs()
+        kwargs['num_requests'] = len(self.get_irods_request_objects())
+        return kwargs
+
     def get_context_data(self, *args, **kwargs):
         context_data = super().get_context_data(*args, **kwargs)
         context_data['irods_request_data'] = []
         context_data['irods_request_uuids'] = ''
         irods_backend = get_backend_api('omics_irods')
         batch = self.get_irods_request_objects()
+        affected_object_paths = []
         context_data['irods_requests'] = batch
 
         for obj in batch:
+            affected_object_paths += [obj.path]
             context_data['irods_request_uuids'] += str(obj.sodar_uuid) + ','
-            affected_objects = []
-            affected_collections = []
             is_collection = obj.is_collection()
             if is_collection:
                 with irods_backend.get_session() as irods:
@@ -2588,20 +2592,16 @@ class IrodsRequestAcceptBatchView(
                     except CollectionDoesNotExist:
                         coll = None
                     if coll:
-                        affected_objects += irods_backend.get_objs_recursively(
+                        affected_objects = irods_backend.get_objs_recursively(
                             irods, coll
                         )
-                        affected_collections += (
-                            irods_backend.get_colls_recursively(coll)
-                        )
-            context_data['irods_request_data'].append(
-                {
-                    'obj': obj,
-                    'is_collection': is_collection,
-                    'affected_objects': affected_objects,
-                    'affected_collections': affected_collections,
-                }
-            )
+                        affected_object_paths += [
+                            o.path for o in affected_objects
+                        ]
+            context_data['irods_request_data'].append(obj)
+        context_data['affected_object_paths'] = sorted(
+            list(set(affected_object_paths))
+        )
         return context_data
 
     def post(self, request, *args, **kwargs):

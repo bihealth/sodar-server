@@ -58,6 +58,10 @@
         display: none;
       }
     }
+
+    .sodar-davrods-btn {
+      margin-left: 5px;
+    }
   </style>
 {% endblock css %}
 
@@ -88,7 +92,6 @@
             <th>User</th>
             <th>Created</th>
             <th>Status</th>
-            <th></th>
             {% if irods_webdav_enabled %}
               <th></th>
             {% endif %}
@@ -112,6 +115,15 @@
                 {% if irods_request.description %}
                   {% get_info_link irods_request.description as info_link %}
                   {{ info_link | safe }}
+                {% endif %}
+                {% if irods_webdav_enabled %}
+                  <a href="{{ irods_request.webdav_url }}" id="sodar-ss-davrods-link"
+                     class="btn btn-secondary sodar-list-btn sodar-davrods-btn pull-right"
+                     target="_blank" role="button"
+                     data-toggle="tooltip" data-placement="top"
+                     title="Open collection/file in WebDAV">
+                    <i class="iconify" data-icon="mdi:open-in-new"></i>
+                  </a>
                 {% endif %}
                 <button
                     role="submit"
@@ -160,17 +172,6 @@
                   {% endif %}
                 </div>
               </td>
-              {% if irods_webdav_enabled %}
-                  <td class="text-right" id="sodar-ss-davrods-link">
-                    <a href="{{ irods_request.webdav_url }}"
-                       class="btn btn-secondary sodar-list-btn sodar-davrods-btn"
-                       target="_blank" role="button"
-                       data-toggle="tooltip" data-placement="top"
-                       title="Open collection/file in WebDAV">
-                      <i class="iconify" data-icon="mdi:open-in-new"></i>
-                    </a>
-                  </td>
-                {% endif %}
               <td>
                 {% if can_manage_request %}
                   <input class="sodar-checkbox sodar-ss-checkbox-item" type="checkbox"

@@ -13,42 +13,30 @@
 
 
 <div class="container-fluid sodar-subtitle-container">
+  {% if irods_request_data|length == 1 %}
   <h3>Accept iRODS Delete Request</h3>
+  {% else %}
+  <h3>Accept {{ irods_request_data|length }} iRODS Delete Requests</h3>
+  {% endif %}
 </div>
 
 <div class="container-fluid sodar-page-container">
   {% if irods_request_data %}
     <div class="alert alert-danger">
-      <strong>Warning:</strong> Accepting the request will delete the associated
-      {% if irods_request.is_collection %}collection{% else %}data object{% endif %} from iRODS.
+      <strong>Warning:</strong> Accepting {% if irods_request_data|length == 1 %}a request{% else %}requests{% endif %}
+      will delete the associated data objects from iRODS.
       This can <strong>not</strong> be undone without administrator assistance!
     </div>
-    {% for irods_request in irods_request_data %}
-      <div class="alert alert-danger">
-        The following {% if irods_request.is_collection %}collection{% else %}data object{% endif %} will be deleted: <br />
-        <code class="text-danger">{{ irods_request.obj.path }}</code>
-        {% if irods_request.affected_objects %}
-          <div class="mt-3 mb-0">
-            The collection to be deleted contains the following data objects:
-            <ul class="mb-0">
-              {% for o in irods_request.affected_objects %}
-                <li><code class="text-danger">{{ o.path|trim_base_path:irods_request.path }}</code></li>
-              {% endfor %}
-            </ul>
-          </div>
-        {% endif %}
-        {% if irods_request.affected_collections %}
-          <div class="mt-3 mb-0">
-            The collection to be deleted comprises the following subcollections:
-            <ul class="mb-0">
-              {% for o in irods_request.affected_collections %}
-                <li><code class="text-danger">{{ o.path|trim_base_path:irods_request.path }}/</code></li>
-              {% endfor %}
-            </ul>
-          </div>
-        {% endif %}
-      </div>
-    {% endfor %}
+    <div class="alert alert-danger">
+      <strong>Info:</strong> The following {% if affected_object_paths|length > 1 %}
+      {{ affected_object_paths|length }} data objects
+      {% else %}data object{% endif %} will be deleted:
+      <ul class="mb-0">
+        {% for path in affected_object_paths %}
+          <li><code class="text-danger">{{ path }}</code></li>
+        {% endfor %}
+      </ul>
+    </div>
     <form method="post" enctype="multipart/form-data">
       {% csrf_token %}
       {{ form | crispy }}
@@ -61,7 +49,7 @@
              href="{{ request.session.real_referer }}">
             <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Cancel
           </a>
-          <button type="submit" class="btn btn-primary" id="sodar-ss-btn-delete-submit">
+          <button type="submit" class="btn btn-danger" id="sodar-ss-btn-delete-submit">
             <i class="iconify" data-icon="mdi:check-bold"></i> Accept
           </button>
         </div>

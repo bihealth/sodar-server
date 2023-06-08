@@ -1,18 +1,18 @@
 // JS for iRODS request page
 $(document).ready(function () {
     // Disable "Accept Selected" and "Reject Selected" options by default
-    $('#sodar-ss-accept-selected').hide();
-    $('#sodar-ss-reject-selected').hide();
+    $('#sodar-ss-accept-selected').addClass('disabled');
+    $('#sodar-ss-reject-selected').addClass('disabled');
 
     // Enable "Accept Selected" and "Reject Selected" options if at least one
     // checkbox is checked or if the "Select All" checkbox is checked
     $('.sodar-ss-checkbox-item').change(function () {
         if ($('.sodar-ss-checkbox-item:checked').length > 0) {
-            $('#sodar-ss-accept-selected').show();
-            $('#sodar-ss-reject-selected').show();
+            $('#sodar-ss-accept-selected').removeClass('disabled');
+            $('#sodar-ss-reject-selected').removeClass('disabled');
         } else {
-            $('#sodar-ss-accept-selected').hide();
-            $('#sodar-ss-reject-selected').hide();
+            $('#sodar-ss-accept-selected').addClass('disabled');
+            $('#sodar-ss-reject-selected').addClass('disabled');
         }
         // Uncheck "Select All" if any checkbox is unchecked
         if ($('.sodar-ss-checkbox-item:checked').length < $('.sodar-ss-checkbox-item').length) {
@@ -31,12 +31,12 @@ function checkAll(elem) {
     $('.sodar-ss-checkbox-item').each(function () {
         $(this).prop('checked', elem.checked);
         if (elem.checked) {
-            $('#sodar-ss-accept-selected').show();
-            $('#sodar-ss-reject-selected').show();
+            $('#sodar-ss-accept-selected').removeClass('disabled');
+            $('#sodar-ss-reject-selected').removeClass('disabled');
         }
         else {
-            $('#sodar-ss-accept-selected').hide();
-            $('#sodar-ss-reject-selected').hide();
+            $('#sodar-ss-accept-selected').addClass('disabled');
+            $('#sodar-ss-reject-selected').addClass('disabled');
         }
     });
 }
