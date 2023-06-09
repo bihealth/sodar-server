@@ -1,11 +1,9 @@
 """View tests in the landingzones app with taskflow"""
 
-import hashlib
 import os
 import time
 
 from irods.test.helpers import make_object
-from irods.keywords import REG_CHKSUM_KW
 
 from django.contrib import auth
 from django.contrib.messages import get_messages
@@ -112,33 +110,6 @@ class LandingZoneTaskflowMixin:
 
         self.assert_zone_status(zone, 'ACTIVE')
         return zone
-
-    def make_object(self, coll, obj_name, content=None, content_length=1024):
-        """
-        Create and put a data object into iRODS.
-
-        :param coll: iRODSCollection object
-        :param obj_name: String
-        :param content: Content data (optional)
-        :param content_length: Random content length (if content not specified)
-        :return: iRODSDataObject object
-        """
-        if not content:
-            content = ''.join('x' for _ in range(content_length))
-        obj_path = os.path.join(coll.path, obj_name)
-        return make_object(self.irods, obj_path, content, **{REG_CHKSUM_KW: ''})
-
-    def make_md5_object(self, obj):
-        """
-        Create and put an MD5 checksum object for an existing object in iRODS.
-
-        :param obj: iRODSDataObject
-        :return: iRODSDataObject
-        """
-        md5_path = obj.path + '.md5'
-        with obj.open() as obj_fp:
-            md5_content = hashlib.md5(obj_fp.read()).hexdigest()
-        return make_object(self.irods, md5_path, md5_content)
 
     def assert_zone_status(self, zone, status='ACTIVE'):
         """
@@ -423,7 +394,7 @@ class TestLandingZoneMoveView(
     SampleSheetTaskflowMixin,
     TaskflowbackendTestBase,
 ):
-    """Tests for the landingzones move/validate view with Taskflow and iRODS"""
+    """Tests for landingzones move/validate view with Taskflow and iRODS"""
 
     def setUp(self):
         super().setUp()
@@ -464,9 +435,9 @@ class TestLandingZoneMoveView(
         self.group_name = self.irods_backend.get_user_group_name(self.project)
 
     def test_move(self):
-        """Test validating and moving a landing zone with objects"""
-        irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
-        self.make_md5_object(irods_obj)
+        """Test validating and moving landing zone with objects"""
+        irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
+        self.make_irods_md5_object(irods_obj)
         zone = LandingZone.objects.first()
         self.assertEqual(zone.status, 'ACTIVE')
         self.assertEqual(len(self.zone_coll.data_objects), 2)
@@ -501,7 +472,7 @@ class TestLandingZoneMoveView(
 
     def test_move_invalid_md5(self):
         """Test validating and moving with invalid checksum (should fail)"""
-        irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
+        irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         make_object(self.irods, irods_obj.path + '.md5', INVALID_MD5)
         zone = LandingZone.objects.first()
         self.assertEqual(zone.status, 'ACTIVE')
@@ -537,7 +508,7 @@ class TestLandingZoneMoveView(
 
     def test_move_no_md5(self):
         """Test validating and moving without checksum (should fail)"""
-        self.make_object(self.zone_coll, TEST_OBJ_NAME)
+        self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         # No md5
         zone = LandingZone.objects.first()
         self.assertEqual(zone.status, 'ACTIVE')
@@ -570,9 +541,9 @@ class TestLandingZoneMoveView(
         )
 
     def test_validate(self):
-        """Test validating a landing zone with objects without moving"""
-        irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
-        self.make_md5_object(irods_obj)
+        """Test validating landing zone with objects without moving"""
+        irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
+        self.make_irods_md5_object(irods_obj)
         zone = LandingZone.objects.first()
         self.assertEqual(zone.status, 'ACTIVE')
         self.assertEqual(len(self.zone_coll.data_objects), 2)
@@ -606,8 +577,8 @@ class TestLandingZoneMoveView(
         )
 
     def test_validate_invalid_md5(self):
-        """Test validating a landing zone without checksum (should fail)"""
-        irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
+        """Test validating with invalid checksum file (should fail)"""
+        irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         make_object(self.irods, irods_obj.path + '.md5', INVALID_MD5)
         zone = LandingZone.objects.first()
         self.assertEqual(zone.status, 'ACTIVE')
@@ -636,8 +607,8 @@ class TestLandingZoneMoveView(
         )
 
     def test_validate_no_md5(self):
-        """Test validating a landing zone without checksum (should fail)"""
-        self.make_object(self.zone_coll, TEST_OBJ_NAME)
+        """Test validating without checksum file (should fail)"""
+        self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         # No md5
         zone = LandingZone.objects.first()
         self.assertEqual(zone.status, 'ACTIVE')
@@ -659,8 +630,8 @@ class TestLandingZoneMoveView(
 
     def test_validate_md5_only(self):
         """Test validating zone with no file for MD5 file (should fail)"""
-        irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
-        self.md5_obj = self.make_md5_object(irods_obj)
+        irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
+        self.md5_obj = self.make_irods_md5_object(irods_obj)
         irods_obj.unlink(force=True)
         zone = LandingZone.objects.first()
         self.assertEqual(zone.status, 'ACTIVE')
@@ -682,8 +653,8 @@ class TestLandingZoneMoveView(
 
     def test_move_invalid_status(self):
         """Test validating and moving with invalid zone status (should fail)"""
-        irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
-        self.make_md5_object(irods_obj)
+        irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
+        self.make_irods_md5_object(irods_obj)
         zone = LandingZone.objects.first()
         zone.status = 'VALIDATING'
         zone.save()
@@ -729,8 +700,8 @@ class TestLandingZoneMoveView(
     @override_settings(REDIS_URL=INVALID_REDIS_URL)
     def test_move_lock_failure(self):
         """Test validating and moving with project lock failure"""
-        irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
-        self.make_md5_object(irods_obj)
+        irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
+        self.make_irods_md5_object(irods_obj)
         zone = LandingZone.objects.first()
         self.assertEqual(zone.status, 'ACTIVE')
         self.assertEqual(len(self.zone_coll.data_objects), 2)
@@ -790,8 +761,8 @@ class TestLandingZoneMoveView(
         zone_results_coll = self.irods.collections.get(
             os.path.join(new_zone_path, RESULTS_COLL)
         )
-        irods_obj = self.make_object(zone_results_coll, TEST_OBJ_NAME)
-        self.make_md5_object(irods_obj)
+        irods_obj = self.make_irods_object(zone_results_coll, TEST_OBJ_NAME)
+        self.make_irods_md5_object(irods_obj)
         self.assertEqual(zone.status, 'ACTIVE')
         self.assertEqual(len(zone_results_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
@@ -844,7 +815,7 @@ class TestLandingZoneDeleteView(
     SampleSheetTaskflowMixin,
     TaskflowbackendTestBase,
 ):
-    """Tests for the landingzones delete view with Taskflow and iRODS"""
+    """Tests for landingzones delete view with Taskflow and iRODS"""
 
     def setUp(self):
         super().setUp()

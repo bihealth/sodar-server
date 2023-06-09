@@ -15,6 +15,7 @@ Major feature update.
 
 - Add support for additional sample sheet templates
 - Add landing zone updating
+- Add automated checksum calculation in landing zone validation and moving
 - Add user setting for maximum sample sheet table height
 - Contract sample sheet table height to fit content in browsing mode
 - Upgrade to SODAR Core v0.13.0

@@ -3,8 +3,13 @@ Base test classes and mixins for the taskflowbackend and other apps testing
 against it.
 """
 
+import hashlib
+import os
+
 from irods.exception import CollectionDoesNotExist
+from irods.keywords import REG_CHKSUM_KW
 from irods.models import UserGroup
+from irods.test.helpers import make_object
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
@@ -58,6 +63,46 @@ class TaskflowTestMixin:
     irods_backend = None
     #: iRODS session object
     irods = None
+
+    def make_irods_object(
+        self, coll, obj_name, content=None, content_length=1024, checksum=True
+    ):
+        """
+        Create and put a data object into iRODS.
+
+        :param coll: iRODSCollection object
+        :param obj_name: String
+        :param content: Content data (optional)
+        :param content_length: Random content length (if content not specified)
+        :param checksum: Calculate checksum if True (bool)
+        :return: iRODSDataObject object
+        """
+        if not content:
+            content = ''.join('x' for _ in range(content_length))
+        obj_path = os.path.join(coll.path, obj_name)
+        obj_kwargs = {REG_CHKSUM_KW: ''} if checksum else {}
+        return make_object(self.irods, obj_path, content, **obj_kwargs)
+
+    def make_irods_md5_object(self, obj):
+        """
+        Create and put an MD5 checksum object for an existing object in iRODS.
+
+        :param obj: iRODSDataObject
+        :return: iRODSDataObject
+        """
+        md5_path = obj.path + '.md5'
+        md5_content = self.get_md5_checksum(obj)
+        return make_object(self.irods, md5_path, md5_content)
+
+    def get_md5_checksum(self, obj):
+        """
+        Return the md5 checksum for an iRODS object.
+
+        :param obj: iRODSDataObject
+        :return: String
+        """
+        with obj.open() as obj_fp:
+            return hashlib.md5(obj_fp.read()).hexdigest()
 
     def assert_irods_access(self, user_name, target, expected):
         """

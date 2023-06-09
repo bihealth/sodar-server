@@ -96,7 +96,9 @@ class TestTriggerZoneMoveTask(
         self.assertEqual(self.landing_zone.status, 'ACTIVE')
 
         # Create file and fake request
-        self.make_object(self.zone_coll, settings.LANDINGZONES_TRIGGER_FILE)
+        self.make_irods_object(
+            self.zone_coll, settings.LANDINGZONES_TRIGGER_FILE
+        )
         request = self.req_factory.post('/')
         request.user = self.user
 

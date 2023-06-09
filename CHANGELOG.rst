@@ -22,6 +22,9 @@ Added
     - Enable ``stem_cell_core_bulk`` ISA-Tab template (#1697)
     - Enable ``stem_cell_core_sc`` ISA-Tab template (#1697)
     - Enable ``tumor_normal_dna`` ISA-Tab template (#1697)
+- **Taskflowbackend**
+    - ``BatchCalculateChecksumTask`` iRODS task (#1634)
+    - Automated generation of missing checksums in ``zone_move`` flow (#1634)
 
 Changed
 -------
@@ -29,10 +32,14 @@ Changed
 - **General**
     - Upgrade to django-sodar-core v0.13.0 (#1617)
     - Upgrade to python-irodsclient v1.1.8 (#1538)
+- **Landingzones**
+    - Move iRODS object helpers to ``TaskflowTestMixin`` (#1699)
 - **Samplesheets**
     - Sample sheet table viewport background color (#1692)
     - Contract sheet table height to fit content (#1693)
     - Hide additional internal fields from ISA-Tab templates (#1698)
+- **Taskflowbackend**
+    - Move iRODS object helpers from ``LandingZoneTaskflowMixin`` (#1699)
 
 Fixed
 -----
