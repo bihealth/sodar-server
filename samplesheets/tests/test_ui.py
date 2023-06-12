@@ -480,8 +480,13 @@ class TestIrodsDataRequestListView(TestProjectSheetsVueAppBase):
 
     def test_render_davrods_button(self):
         """Test UI rendering of davrods link button"""
-        self.assert_element_exists(
-            [self.default_user], self.url, 'sodar-ss-davrods-link', True
+        self.login_and_redirect(
+            user=self.default_user,
+            url=self.url,
+            wait_elem='sodar-ss-request-table',
+        )
+        self.assertIsNotNone(
+            self.selenium.find_element(By.CLASS_NAME, 'sodar-ss-davrods-link')
         )
 
 
