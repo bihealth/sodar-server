@@ -110,6 +110,7 @@ RESULTS_COLL_ID = 'results_reports'
 RESULTS_COLL = 'ResultsReports'
 IRODS_REQ_CREATE_ALERT = 'irods_request_create'
 IRODS_REQ_ACCEPT_ALERT = 'irods_request_accept'
+IRODS_NO_REQ_MSG = 'No iRODS data requests found for the given UUIDs'
 IRODS_REQ_REJECT_ALERT = 'irods_request_reject'
 SYNC_SUCCESS_MSG = 'Sample sheet sync successful'
 SYNC_FAIL_DISABLED = 'Sample sheet sync disabled'
@@ -1078,7 +1079,9 @@ class IrodsRequestModifyMixin:
     def get_irods_request_objects(self):
         # Get uuids from POST data
         request_ids = self.request.POST.get('irodsdatarequests').split(',')
-        if request_ids == ['']:
+        # Drop '' from the list
+        request_ids = [x for x in request_ids if x]
+        if not request_ids:
             return IrodsDataRequest.objects.none()
         return IrodsDataRequest.objects.filter(sodar_uuid__in=request_ids)
 
@@ -2540,6 +2543,10 @@ class IrodsRequestAcceptView(
         obj = IrodsDataRequest.objects.filter(
             sodar_uuid=self.kwargs['irodsdatarequest']
         ).first()
+        # Check if form is valid
+        form = self.get_form()
+        if not form.is_valid():
+            return self.render_to_response(self.get_context_data())
         response = self.process_single_accept_request(
             request, obj, timeline, taskflow, app_alerts, project
         )
@@ -2602,7 +2609,7 @@ class IrodsRequestAcceptBatchView(
                         ]
             context_data['irods_request_data'].append(obj)
         context_data['affected_object_paths'] = sorted(
-            list(set(affected_object_paths))
+            set(affected_object_paths)
         )
         return context_data
 
@@ -2614,10 +2621,18 @@ class IrodsRequestAcceptBatchView(
             taskflow = get_backend_api('taskflow')
             app_alerts = get_backend_api('appalerts_backend')
             project = self.get_project()
-            request_ids = self.request.POST.get('irodsdatarequests').split(',')[
-                :-1
-            ]
-            batch = IrodsDataRequest.objects.filter(sodar_uuid__in=request_ids)
+            batch = self.get_irods_request_objects()
+            if not batch:
+                messages.error(
+                    self.request,
+                    IRODS_NO_REQ_MSG,
+                )
+                return redirect(
+                    reverse(
+                        'samplesheets:irods_requests',
+                        kwargs={'project': self.get_project().sodar_uuid},
+                    )
+                )
 
             for obj in batch:
                 response = self.process_single_accept_request(
@@ -2710,6 +2725,17 @@ class IrodsRequestRejectBatchView(
         project = self.get_project()
         try:
             batch = self.get_irods_request_objects()
+            if not batch:
+                messages.error(
+                    self.request,
+                    IRODS_NO_REQ_MSG,
+                )
+                return redirect(
+                    reverse(
+                        'samplesheets:irods_requests',
+                        kwargs={'project': self.get_project().sodar_uuid},
+                    )
+                )
             for obj in batch:
                 response = self.process_single_reject_request(
                     self.request, obj, timeline, app_alerts, project
