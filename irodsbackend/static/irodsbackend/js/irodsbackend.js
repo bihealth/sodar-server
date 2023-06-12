@@ -254,11 +254,18 @@ $(document).ready(function() {
                         colSpan = '4';
                         icon = 'mdi:folder-open';
                         toolTip = 'Collection';
+
+                        var copyButton = $('<button>')
+                            .addClass('btn btn-secondary sodar-list-btn sodar-irods-copy-btn sodar-lz-copy-btn')
+                            .append($('<i>').addClass('iconify').attr('data-icon', 'mdi:console-line'))
+                            .attr('title', 'Copy iRODS path into clipboard')
+                            .attr('data-clipboard-text', obj['path']);
                     }
                     var iconHtml = '<i class="iconify mr-1" data-icon="'+ icon +'"' +
                         'title="'+ toolTip +'"></i>';
 
-                    body += '<tr><td colspan="' + colSpan + '">' + iconHtml + objLink + '</td>';
+                    body += '<tr><td colspan="' + colSpan + '">' + iconHtml + objLink +
+                        copyButton.prop('outerHTML') + '</td>';
                     if (obj['type'] === 'obj') {
                         body += '<td>' + humanFileSize(obj['size'], true) + '</td>';
                         body += '<td>' + obj['modify_time'] + '</td><td>';
