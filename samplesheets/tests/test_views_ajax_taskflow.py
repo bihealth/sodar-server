@@ -531,7 +531,7 @@ class TestIrodsObjectListAjaxView(TestIrodsRequestViewsBase):
                 data={'path': self.assay_path},
             )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data['irods_data']), 0)
+        self.assertEqual(len(response.data['irods_data']), 1)
 
     def test_get_coll_obj(self):
         """Test GET request for listing a collection with a data object"""
@@ -544,7 +544,7 @@ class TestIrodsObjectListAjaxView(TestIrodsRequestViewsBase):
                 data={'path': self.assay_path},
             )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data['irods_data']), 1)
+        self.assertEqual(len(response.data['irods_data']), 2)
         list_obj = response.data['irods_data'][0]
         self.assertNotIn('md5_file', list_obj)
         self.assertEqual(self.file_obj.name, list_obj['name'])
