@@ -1078,6 +1078,8 @@ class IrodsRequestModifyMixin:
     def get_irods_request_objects(self):
         # Get uuids from POST data
         request_ids = self.request.POST.get('irodsdatarequests').split(',')
+        if request_ids == ['']:
+            return IrodsDataRequest.objects.none()
         return IrodsDataRequest.objects.filter(sodar_uuid__in=request_ids)
 
 
@@ -2612,11 +2614,10 @@ class IrodsRequestAcceptBatchView(
             taskflow = get_backend_api('taskflow')
             app_alerts = get_backend_api('appalerts_backend')
             project = self.get_project()
-            batch = IrodsDataRequest.objects.filter(
-                sodar_uuid__in=self.request.POST.get('irodsdatarequests').split(
-                    ','
-                )[:-1]
-            )
+            request_ids = self.request.POST.get('irodsdatarequests').split(',')[
+                :-1
+            ]
+            batch = IrodsDataRequest.objects.filter(sodar_uuid__in=request_ids)
 
             for obj in batch:
                 response = self.process_single_accept_request(
@@ -2776,18 +2777,34 @@ class IrodsDataRequestListView(
     def build_webdav_url(self, item):
         return f"{settings.IRODS_WEBDAV_URL}/{item.path}"
 
-    def get_extra_item_data(self, item):
+    def get_extra_item_data(self, irods, item):
+        # Add webdav URL to the item
         if settings.IRODS_WEBDAV_ENABLED:
             item.webdav_url = self.build_webdav_url(item)
         else:
             item.webdav_url = None
+        # Check if the item is a collection
+        with irods.get_session() as session:
+            item.is_collection = session.collections.exists(item.path)
 
     def get(self, request, *args, **kwargs):
         response = super().get(request, *args, **kwargs)
+        irods_backend = get_backend_api('omics_irods')
+        if not irods_backend:
+            messages.error(
+                request,
+                'iRODS backend not enabled',
+            )
+            return redirect(
+                reverse(
+                    'samplesheets:project_sheets',
+                    kwargs={'project': self.get_project().sodar_uuid},
+                )
+            )
 
         if settings.IRODS_WEBDAV_ENABLED:
             for item in response.context_data['object_list']:
-                self.get_extra_item_data(item)
+                self.get_extra_item_data(irods_backend, item)
 
         return response
 

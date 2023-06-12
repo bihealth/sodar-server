@@ -7,7 +7,8 @@ $(document).ready(function () {
     // Enable "Accept Selected" and "Reject Selected" options if at least one
     // checkbox is checked or if the "Select All" checkbox is checked
     $('.sodar-ss-checkbox-item').change(function () {
-        if ($('.sodar-ss-checkbox-item:checked').length > 0) {
+        var checkedCheckboxes = $('.sodar-ss-checkbox-item:checked');
+        if (checkedCheckboxes.length > 0) {
             $('#sodar-ss-accept-selected').removeClass('disabled');
             $('#sodar-ss-reject-selected').removeClass('disabled');
         } else {
@@ -15,7 +16,7 @@ $(document).ready(function () {
             $('#sodar-ss-reject-selected').addClass('disabled');
         }
         // Uncheck "Select All" if any checkbox is unchecked
-        if ($('.sodar-ss-checkbox-item:checked').length < $('.sodar-ss-checkbox-item').length) {
+        if (checkedCheckboxes.length < $('.sodar-ss-checkbox-item').length) {
             $('#sodar-ss-check-all').prop('checked', false);
         } else {
             $('#sodar-ss-check-all').prop('checked', true);
@@ -28,17 +29,17 @@ $(document).ready(function () {
  *****************/
 function checkAll(elem) {
     // Enable if unchecked and disable if checked and show/hide buttons
-    $('.sodar-ss-checkbox-item').each(function () {
+    $('.sodar-ss-checkbox-item').not(':disabled').each(function () {
         $(this).prop('checked', elem.checked);
-        if (elem.checked) {
-            $('#sodar-ss-accept-selected').removeClass('disabled');
-            $('#sodar-ss-reject-selected').removeClass('disabled');
-        }
-        else {
-            $('#sodar-ss-accept-selected').addClass('disabled');
-            $('#sodar-ss-reject-selected').addClass('disabled');
-        }
     });
+    if (elem.checked) {
+        $('#sodar-ss-accept-selected').removeClass('disabled');
+        $('#sodar-ss-reject-selected').removeClass('disabled');
+    }
+    else {
+        $('#sodar-ss-accept-selected').addClass('disabled');
+        $('#sodar-ss-reject-selected').addClass('disabled');
+    }
 }
 
 /*****************

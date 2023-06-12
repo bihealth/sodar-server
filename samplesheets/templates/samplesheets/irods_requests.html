@@ -176,7 +176,8 @@
                 {% if can_manage_request %}
                   <input class="sodar-checkbox sodar-ss-checkbox-item" type="checkbox"
                          id="sodar-ss-checkbox-item-{{ irods_request.sodar_uuid }}"
-                         name="batch_item_{{ irods_request.sodar_uuid }}" value="{{ irods_request.sodar_uuid }}" />
+                         name="batch_item_{{ irods_request.sodar_uuid }}" value="{{ irods_request.sodar_uuid }}"
+                         {% if irods_request.is_collection %}disabled{% endif %} />
                 {% endif %}
               </td>
             </tr>
