@@ -5,7 +5,11 @@ from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.tests.test_permissions import TestProjectPermissionBase
+from projectroles.tests.test_permissions import (
+    TestPermissionMixin,
+)
+
+from landingzones.tests.test_views_taskflow import LandingZoneTaskflowMixin
 
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
@@ -15,7 +19,9 @@ from landingzones.tests.test_models import (
     ZONE_TITLE,
     ZONE_DESC,
 )
-
+from taskflowbackend.tests.base import (
+    TaskflowAPIPermissionTestBase,
+)
 
 # SODAR constants
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
@@ -27,10 +33,15 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 # Local constants
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
+TEST_OBJ_NAME = 'test1.txt'
 
 
 class TestLandingZonePermissionsBase(
-    LandingZoneMixin, SampleSheetIOMixin, TestProjectPermissionBase
+    LandingZoneMixin,
+    LandingZoneTaskflowMixin,
+    SampleSheetIOMixin,
+    TestPermissionMixin,
+    TaskflowAPIPermissionTestBase,
 ):
     """Base view for landingzones permissions tests"""
 
@@ -47,10 +58,19 @@ class TestLandingZonePermissionsBase(
             user=self.user_contributor,  # NOTE: Zone owner = user_contributor
             assay=self.assay,
             description=ZONE_DESC,
-            status='ACTIVE',
+            # status='ACTIVE',
             configuration=None,
             config_data={},
         )
+        # Create zone in taskflow
+        self.make_zone_taskflow(self.landing_zone)
+        # Get collections
+        self.zone_coll = self.irods.collections.get(
+            self.irods_backend.get_path(self.landing_zone)
+        )
+        # Add files to zone
+        self.irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
+        self.make_md5_object(self.irods_obj)
 
 
 class TestLandingZonePermissions(TestLandingZonePermissionsBase):

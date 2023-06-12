@@ -501,8 +501,6 @@ class TestLandingZoneMoveView(
 
     def test_move_no_files(self):
         """Test validating and moving a landing zone without objects"""
-        # irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
-        # self.make_md5_object(irods_obj)
         zone = LandingZone.objects.first()
         self.assertEqual(zone.status, 'ACTIVE')
         self.assertEqual(len(self.zone_coll.data_objects), 0)
