@@ -146,12 +146,13 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                     url=base_url + '/' + mc_assay_name + '/' + row[i]['value'],
                 )
 
-            # Create derived data file links
+            # Create data file links
             elif (
                 header['obj_cls'] == 'GenericMaterial'
                 and header['item_type'] == 'DATA'
                 and header['value'].lower() == 'name'
-                and top_header['value'].lower() == 'derived data file'
+                and top_header['value'].lower()
+                in ['raw data file', 'derived data file']
             ):
                 row[i]['link'] = (
                     base_url + '/' + mc_assay_name + '/' + row[i]['value']
