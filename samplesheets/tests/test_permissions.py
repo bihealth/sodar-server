@@ -12,7 +12,7 @@ from projectroles.utils import build_secret
 
 from samplesheets.models import ISATab
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
-from samplesheets.tests.test_views_ajax import IrodsAccessTicketMixin
+from samplesheets.tests.test_models import IrodsAccessTicketMixin
 
 
 app_settings = AppSettingAPI()
@@ -30,20 +30,13 @@ INVALID_SECRET = build_secret()
 class TestSampleSheetsPermissions(
     SampleSheetIOMixin, IrodsAccessTicketMixin, TestProjectPermissionBase
 ):
-    """Tests for samplesheets view permissions"""
+    """Tests for general samplesheets view permissions"""
 
     def setUp(self):
         super().setUp()
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-        self.ticket = self.make_ticket(
-            project=self.project,
-            path='/some/path',
-            study=self.study,
-            assay=self.assay,
-            user=self.user_owner,
-        )
 
     def test_project_sheets(self):
         """Test ProjectSheetsView permissions"""
@@ -1181,6 +1174,27 @@ class TestSampleSheetsPermissions(
         self.project.set_public()
         self.assert_response(url, bad_users, 302, method='POST', data=data)
 
+
+class TestIrodsAccessTicketPermissions(
+    SampleSheetIOMixin, IrodsAccessTicketMixin, TestProjectPermissionBase
+):
+    """Tests for iRORDS access ticket view permissions"""
+
+    def _make_ticket(self):
+        """Make iRODS access ticket for testing"""
+        self.ticket = self.make_irods_ticket(
+            path='/sodarZone/some/path',
+            study=self.study,
+            assay=self.assay,
+            user=self.user_owner,
+        )
+
+    def setUp(self):
+        super().setUp()
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+
     def test_ticket_list(self):
         """Test IrodsAccessTicketListView permissions"""
         url = reverse(
@@ -1314,6 +1328,7 @@ class TestSampleSheetsPermissions(
 
     def test_ticket_update(self):
         """Test IrodsAccessTicketUpdateView permissions"""
+        self._make_ticket()
         url = reverse(
             'samplesheets:irods_ticket_update',
             kwargs={'irodsaccessticket': self.ticket.sodar_uuid},
@@ -1342,6 +1357,7 @@ class TestSampleSheetsPermissions(
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_ticket_update_anon(self):
         """Test IrodsAccessTicketUpdateView with anonymous guest access"""
+        self._make_ticket()
         url = reverse(
             'samplesheets:irods_ticket_update',
             kwargs={'irodsaccessticket': self.ticket.sodar_uuid},
@@ -1351,6 +1367,7 @@ class TestSampleSheetsPermissions(
 
     def test_ticket_update_archive(self):
         """Test IrodsAccessTicketUpdateView with archived project"""
+        self._make_ticket()
         self.project.set_archive()
         url = reverse(
             'samplesheets:irods_ticket_update',
@@ -1379,6 +1396,7 @@ class TestSampleSheetsPermissions(
 
     def test_ticket_delete(self):
         """Test IrodsAccessTicketDeleteView permissions"""
+        self._make_ticket()
         url = reverse(
             'samplesheets:irods_ticket_delete',
             kwargs={'irodsaccessticket': self.ticket.sodar_uuid},
@@ -1399,7 +1417,9 @@ class TestSampleSheetsPermissions(
             self.user_no_roles,
             self.anonymous,
         ]
-        self.assert_response(url, good_users, 200)
+        self.assert_response(
+            url, good_users, 200, cleanup_method=self._make_ticket
+        )
         self.assert_response(url, bad_users, 302)
         self.project.set_public()
         self.assert_response(url, bad_users, 302)
@@ -1407,6 +1427,7 @@ class TestSampleSheetsPermissions(
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_ticket_delete_anon(self):
         """Test IrodsAccessTicketDeleteView with anonymous guest access"""
+        self._make_ticket()
         url = reverse(
             'samplesheets:irods_ticket_delete',
             kwargs={'irodsaccessticket': self.ticket.sodar_uuid},
@@ -1416,6 +1437,7 @@ class TestSampleSheetsPermissions(
 
     def test_ticket_delete_archive(self):
         """Test IrodsAccessTicketDeleteView with archived project"""
+        self._make_ticket()
         self.project.set_archive()
         url = reverse(
             'samplesheets:irods_ticket_delete',
@@ -1437,7 +1459,9 @@ class TestSampleSheetsPermissions(
             self.user_no_roles,
             self.anonymous,
         ]
-        self.assert_response(url, good_users, 200)
+        self.assert_response(
+            url, good_users, 200, cleanup_method=self._make_ticket
+        )
         self.assert_response(url, bad_users, 302)
         self.project.set_public()
         self.assert_response(url, bad_users, 302)

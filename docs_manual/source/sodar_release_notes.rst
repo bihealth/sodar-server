@@ -13,6 +13,7 @@ v0.14.0 (WIP)
 
 Major feature update.
 
+- Add general read-only iRODS access tickets for assay collections
 - Add support for additional sample sheet templates
 - Add landing zone updating
 - Add automated checksum calculation in landing zone validation and moving

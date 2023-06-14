@@ -22,6 +22,7 @@ Added
     - Enable ``stem_cell_core_bulk`` ISA-Tab template (#1697)
     - Enable ``stem_cell_core_sc`` ISA-Tab template (#1697)
     - Enable ``tumor_normal_dna`` ISA-Tab template (#1697)
+    - General iRODS access ticket management for assay collections (#804)
 - **Taskflowbackend**
     - ``BatchCalculateChecksumTask`` iRODS task (#1634)
     - Automated generation of missing checksums in ``zone_move`` flow (#1634)
@@ -54,6 +55,7 @@ Removed
 
 - **Samplesheets**
     - ``SHEETS_TABLE_HEIGHT`` Django setting (#1283)
+    - Duplicate ``IrodsAccessTicketMixin`` from ``test_views_ajax`` (#1703)
 
 
 v0.13.4 (2023-05-15)
