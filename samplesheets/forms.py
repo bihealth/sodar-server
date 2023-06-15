@@ -192,13 +192,13 @@ class SheetTemplateCreateForm(forms.Form):
                 self.initial[k] = clean_sheet_dir_name(project.title)
             elif isinstance(v, str):
                 if not v:  # Allow empty value if default is not set
-                    field_kwargs = {'required': False}
+                    field_kwargs['required'] = False
                 self.fields[k] = forms.CharField(**field_kwargs)
                 self.initial[k] = v
             elif isinstance(v, list):
                 field_kwargs['choices'] = [(x, x) for x in v]
                 if not all(v):  # Allow empty value if in options
-                    field_kwargs = {'required': False}
+                    field_kwargs['required'] = False
                 self.fields[k] = forms.ChoiceField(**field_kwargs)
             elif isinstance(v, dict):
                 field_kwargs['widget'] = forms.Textarea(
