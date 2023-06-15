@@ -159,6 +159,29 @@ var updateButtons = function() {
 };
 
 
+/******************
+ Copy path function
+ ******************/
+function copy_path(path, id) {
+    // Copy the text inside the text field
+    navigator.clipboard.writeText(path);
+
+    // Note of copy
+    var elem = $('#' + id);
+    elem.addClass('text-warning');
+    if (elem.attr('data-table') !== '1') {
+        var realTitle = elem.tooltip().attr('data-original-title');
+        elem.attr('title', 'Copied!')
+            .tooltip('_fixTitle')
+            .tooltip('show')
+            .attr('title', realTitle)
+            .tooltip('_fixTitle');
+    }
+    elem.delay(250).queue(function() {
+        elem.removeClass('text-warning').dequeue();
+    });
+}
+
 
 $(document).ready(function() {
     /***************
@@ -256,12 +279,13 @@ $(document).ready(function() {
                         toolTip = 'Collection';
 
                         var copyButton = $('<button>')
-                            .addClass('btn btn-secondary sodar-list-btn sodar-irods-copy-btn pull-right')
-                            .append($('<i>').addClass('iconify').attr('data-icon', 'mdi:console-line'))
+                            .addClass('btn btn-secondary sodar-list-btn pull-right')
+                            .attr('id', 'sodar-irods-copy-btn-' + obj['name'])
                             .attr('title', 'Copy iRODS path into clipboard')
                             .attr('data-tooltip', 'tooltip')
                             .attr('data-placement', 'top')
-                            .attr('data-clipboard-text', obj['path']);
+                            .attr('onclick', 'copy_path("' + obj['path'] + '", "sodar-irods-copy-btn-' + obj['name'] + '")')
+                            .append($('<i>').addClass('iconify').attr('data-icon', 'mdi:console-line'));
                     }
                     var iconHtml = '<i class="iconify mr-1" data-icon="'+ icon +'"' +
                         'title="'+ toolTip +'"></i>';
