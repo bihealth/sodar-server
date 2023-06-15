@@ -158,47 +158,13 @@ var updateButtons = function() {
     }
 };
 
-// function copytext(text) {
-//     var textField = document.createElement('textarea');
-//     textField.innerText = text;
-//     document.body.appendChild(textField);
-//     textField.select();
-//     document.execCommand('copy');
-//     textField.remove();
-//     console.log('should have copied ' + text); // but it refuses to do so when a modal is used!
-// }
+
 
 $(document).ready(function() {
-    // $(document).on('click','.sodar-irods-copy-btn', function(){
-    //     $(this).addClass('text-warning');
-    //     if ($(this).attr('data-table') !== '1') {
-    //         var realTitle = $(this).tooltip().attr('data-original-title');
-    //         $(this).attr('title', 'Copied!')
-    //             .tooltip('_fixTitle')
-    //             .tooltip('show')
-    //             .attr('title', realTitle)
-    //             .tooltip('_fixTitle');
-    //     }
-    //     $(this).delay(250).queue(function() {
-    //         $(this).removeClass('text-warning').dequeue();
-    //     });
-    //     // var copyText = $(this).attr('data-clipboard-text');
-    //     // copytext(copyText);
-    //
-    // })
     /***************
      Init Clipboards
      ***************/
-    var clipboard = new ClipboardJS('.sodar-irods-copy-btn');
-
-    clipboard.on('success', function(e) {
-        console.log(e)
-    });
-    clipboard.on('error', function(e) {
-        console.error('Action:', e.action);
-        console.error('Trigger:', e.trigger);
-    });
-
+    new ClipboardJS('.sodar-irods-copy-btn');
 
     /******************
      Copy link handling
@@ -290,9 +256,11 @@ $(document).ready(function() {
                         toolTip = 'Collection';
 
                         var copyButton = $('<button>')
-                            .addClass('btn btn-secondary sodar-list-btn sodar-irods-copy-btn sodar-lz-copy-btn')
+                            .addClass('btn btn-secondary sodar-list-btn sodar-irods-copy-btn pull-right')
                             .append($('<i>').addClass('iconify').attr('data-icon', 'mdi:console-line'))
                             .attr('title', 'Copy iRODS path into clipboard')
+                            .attr('data-tooltip', 'tooltip')
+                            .attr('data-placement', 'top')
                             .attr('data-clipboard-text', obj['path']);
                     }
                     var iconHtml = '<i class="iconify mr-1" data-icon="'+ icon +'"' +
@@ -324,7 +292,6 @@ $(document).ready(function() {
             $('.modal-body').html(body);
             $('#sodar-modal-wait').modal('hide');
             $('#sodar-modal').modal('show');
-            new ClipboardJS('.sodar-irods-copy-btn');
         }).fail(function (response) {
             // Set failure content and toggle modal
             if (response.status === 404) {
