@@ -161,6 +161,11 @@
     window.irodsShowChecksumCol = true;
   </script>
 
+  <!-- Superuser status variable -->
+  <script>
+    var isSuperuser = {{ superuser|lower }};
+  </script>
+
   <!-- Landingzones Javascript -->
   <script type="text/javascript" src="{% static 'landingzones/js/landingzones.js' %}"></script>
 

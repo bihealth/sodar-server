@@ -56,7 +56,8 @@ var updateZoneStatus = function() {
                     }
 
                     // Button modification
-                    if (data['status'] !== 'ACTIVE' && data['status'] !== 'FAILED') {
+                    if (data['status'] !== 'ACTIVE' && data['status'] !== 'FAILED' && isSuperuser) {}
+                    else if (data['status'] !== 'ACTIVE' && data['status'] !== 'FAILED') {
                         zoneTr.find('td.sodar-lz-zone-title').addClass('text-muted');
                         zoneTr.find('td.sodar-lz-zone-assay').addClass('text-muted');
                         zoneTr.find('td.sodar-lz-zone-status-info').addClass('text-muted');

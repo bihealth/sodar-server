@@ -333,3 +333,54 @@ class TestProjectZoneView(
             zone.find_element(By.CLASS_NAME, 'sodar-lz-zone-btn-delete'),
             True,
         )
+
+    def test_zone_locked_buttons_superuser(self):
+        """Test ProjectZoneView zone buttons for locked zone as superuser"""
+        self._setup_investigation()
+        self.investigation.irods_status = True
+        self.investigation.save()
+        zone = self.make_landing_zone(
+            'contrib_zone', self.project, self.user_contributor, self.assay
+        )
+        # Set zone status to CREATING
+        zone.status = 'CREATING'
+        self.login_and_redirect(self.superuser, self.url)
+        zone = self.selenium.find_elements(
+            By.CLASS_NAME, 'sodar-lz-zone-tr-existing'
+        )[0]
+        dropdown_div = zone.find_element(By.CLASS_NAME, 'sodar-lz-zone-buttons')
+        try:
+            attr = dropdown_div.find_element(
+                By.CLASS_NAME, 'sodar-list-dropdown'
+            ).get_attribute('disabled')
+        except AssertionError:
+            attr = None
+        self.assertIsNone(attr)
+        self.assertNotIn(
+            'text-muted',
+            zone.find_element(
+                By.CLASS_NAME, 'sodar-lz-zone-title'
+            ).get_attribute('class'),
+        )
+        self.assertNotIn(
+            'text-muted',
+            zone.find_element(
+                By.CLASS_NAME, 'sodar-lz-zone-status-info'
+            ).get_attribute('class'),
+        )
+        self._assert_btn_enabled(
+            zone.find_element(By.CLASS_NAME, 'sodar-lz-zone-btn-validate'),
+            True,
+        )
+        self._assert_btn_enabled(
+            zone.find_element(By.CLASS_NAME, 'sodar-lz-zone-btn-move'),
+            True,
+        )
+        self._assert_btn_enabled(
+            zone.find_element(By.CLASS_NAME, 'sodar-lz-zone-btn-copy'),
+            True,
+        )
+        self._assert_btn_enabled(
+            zone.find_element(By.CLASS_NAME, 'sodar-lz-zone-btn-delete'),
+            True,
+        )
