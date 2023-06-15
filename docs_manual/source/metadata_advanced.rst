@@ -91,6 +91,7 @@ SODAR currently supports the following assay plugins:
 - **Metabolite Profiling / Mass Spectrometry**
 - **Microarray**
 - **Protein Expression Profiling / Mass Spectrometry**
+- **Protein Expression Profiling / Mass Cytometry**
 
 Common links as well as plugin specific links are detailed below.
 
@@ -182,3 +183,18 @@ Protein Expression Profiling / Mass Spectrometry Plugin
     * Files are linked to ``RawData`` under the assay.
 - Used with measurement type / technology type
     * protein expression profiling / mass spectrometry
+
+Protein Expression Profiling / Mass Cytometry Plugin
+-------------------------------------------------------
+
+- Internal name: ``samplesheets_assay_cytof``
+- Additional assay shortcuts
+    * N/A
+- Row-specific links
+    * Each row links to the **Assay Name** of the **mass cytometry** process node of that row.
+- Inline links
+    * *Barcode key* and *Antibody panel* parameter values of processes are linked to ``MiscFiles``
+    * *Report file* comment values of processes are linked to the row-specific ``"Assay Name"``
+    * *Raw Data Files* and *Derived Data Files* are linked to the row-specific ``"Assay Name"``
+- Used with measurement type / technology type
+    * protein expression profiling / mass cytometry
