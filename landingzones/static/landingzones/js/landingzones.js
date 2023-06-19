@@ -1,3 +1,6 @@
+// Init global variable
+var isSuperuser = false;
+
 /*****************************
  Zone status updating function
  *****************************/
@@ -93,6 +96,20 @@ var updateZoneStatus = function() {
 };
 
 $(document).ready(function() {
+    /*********************
+     Get superuser status
+     *********************/
+    $.ajax({
+        url: currentUserURL,
+        method: "GET",
+        success: function(response) {
+            isSuperuser = response.is_superuser;
+        },
+        error: function(response) {
+            isSuperuser = false;
+        }
+    });
+
     /******************
      Update zone status
      ******************/
