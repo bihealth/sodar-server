@@ -21,6 +21,7 @@ from landingzones.tests.test_models import (
 )
 from taskflowbackend.tests.base import (
     TaskflowAPIPermissionTestBase,
+    TaskflowTestMixin,
 )
 
 # SODAR constants
@@ -41,6 +42,7 @@ class TestLandingZonePermissionTaskflowBase(
     LandingZoneTaskflowMixin,
     SampleSheetIOMixin,
     TestPermissionMixin,
+    TaskflowTestMixin,
     TaskflowAPIPermissionTestBase,
 ):
     """Base view for landingzones permissions tests"""
@@ -68,8 +70,8 @@ class TestLandingZonePermissionTaskflowBase(
             self.irods_backend.get_path(self.landing_zone)
         )
         # Add files to zone
-        self.irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
-        self.make_md5_object(self.irods_obj)
+        self.irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
+        self.make_irods_md5_object(self.irods_obj)
 
 
 class TestLandingZonePermissions(TestLandingZonePermissionTaskflowBase):
