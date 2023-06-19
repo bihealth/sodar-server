@@ -405,8 +405,6 @@ class ProjectZoneView(
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-        # # Superuser status
-        context['superuser'] = self.request.user.is_superuser
         # iRODS backend
         context['irods_backend_enabled'] = (
             True if get_backend_api('omics_irods') else False

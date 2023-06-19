@@ -163,7 +163,7 @@
 
   <!-- Superuser status variable -->
   <script>
-    var isSuperuser = {{ superuser|lower }};
+    var isSuperuser = {{ request.user.is_superuser }};
   </script>
 
   <!-- Landingzones Javascript -->
