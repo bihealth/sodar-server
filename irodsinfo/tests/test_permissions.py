@@ -3,25 +3,28 @@
 from django.urls import reverse
 
 # Projectroles dependency
-from projectroles.tests.test_permissions import TestPermissionBase
+from projectroles.tests.test_permissions import TestProjectPermissionBase
 
 
-class TestIrodsinfoPermissions(TestPermissionBase):
+class TestIrodsinfoPermissions(TestProjectPermissionBase):
     """Tests for irodsinfo UI view permissions"""
-
-    def setUp(self):
-        # Create users
-        self.superuser = self.make_user('superuser')
-        self.superuser.is_superuser = True
-        self.superuser.save()
-        self.regular_user = self.make_user('regular_user')
-        # No user
-        self.anonymous = None
 
     def test_irods_info(self):
         """Test permissions for IrodsInfoView"""
         url = reverse('irodsinfo:info')
-        good_users = [self.superuser, self.regular_user]
+        good_users = [
+            self.superuser,
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
+            self.user_no_roles,
+        ]
         bad_users = [self.anonymous]
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 302)
@@ -29,7 +32,19 @@ class TestIrodsinfoPermissions(TestPermissionBase):
     def test_irods_config(self):
         """Test permissions for IrodsConfigView"""
         url = reverse('irodsinfo:config')
-        good_users = [self.superuser, self.regular_user]
+        good_users = [
+            self.superuser,
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
+            self.user_no_roles,
+        ]
         bad_users = [self.anonymous]
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 302)
