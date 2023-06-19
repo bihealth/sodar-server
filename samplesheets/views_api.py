@@ -360,7 +360,7 @@ class IrodsRequestAcceptAPIView(
                 app_alerts=app_alerts,
             )
         except Exception as ex:
-            raise APIException(
+            raise ValidationError(
                 '{} {}'.format('Accepting ' + IRODS_EX_MSG + ':', ex)
             )
         return Response(

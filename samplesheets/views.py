@@ -996,7 +996,7 @@ class IrodsRequestModifyMixin:
         app_alerts=None,
     ):
         """
-        Accept an iRODS accept request.
+        Accept an iRODS data request.
 
         :param irods_request: IrodsDataRequest object
         :param project: Project object

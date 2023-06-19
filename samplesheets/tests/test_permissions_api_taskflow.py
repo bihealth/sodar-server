@@ -86,7 +86,7 @@ class TestSampleDataFileExistsAPIView(
 class TestIrodsRequestAPIViewBase(
     SampleSheetIOMixin, SampleSheetTaskflowMixin, TaskflowAPIPermissionTestBase
 ):
-    """Helper mixin for IrodsRequestAPIView tests"""
+    """Base test class for IrodsRequestAPIView tests"""
 
     def create_request(self):
         """Helper function to create a request"""

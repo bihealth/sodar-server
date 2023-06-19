@@ -35,8 +35,6 @@ API Views
 
 .. autoclass:: ProjectIrodsFileListAPIView
 
-.. autoclass:: RemoteSheetGetAPIView
-
 
 Versioning
 ==========

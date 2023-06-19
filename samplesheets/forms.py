@@ -402,7 +402,6 @@ class IrodsRequestForm(forms.ModelForm):
             + '/study_(?P<study_uuid>[0-9a-f-]{36})/'
             'assay_(?P<assay_uuid>[0-9a-f-]{36})/.+$'
         )
-
         match = re.search(
             path_re,
             cleaned_data['path'],

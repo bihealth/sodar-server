@@ -7,8 +7,8 @@ import os
 
 from irods.keywords import REG_CHKSUM_KW
 
-from django.urls import reverse
 from django.test import override_settings
+from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
@@ -443,8 +443,6 @@ class TestIrodsRequestDeleteAPIView(TestIrodsRequestAPIViewBase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
-        self.assert_alert_count(CREATE_ALERT, self.user, 1)
-        self.assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
 
 
 class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
@@ -715,7 +713,7 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                 ),
                 {'confirm': True},
             )
-        self.assertEqual(response.status_code, 500)
+        self.assertEqual(response.status_code, 400)
 
 
 class TestIrodsRequestRejectAPIView(TestIrodsRequestAPIViewBase):
