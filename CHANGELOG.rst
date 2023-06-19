@@ -11,8 +11,21 @@ Unreleased
 Added
 -----
 
+- **Landingzones**
+    - Landing zone updating (#1267)
 - **Samplesheets**
-    User setting for study and assay table height (#1283)
+    - User setting for study and assay table height (#1283)
+    - Study table cache disabling (#1639)
+    - ``SHEETS_ENABLE_STUDY_TABLE_CACHE`` setting (#1639)
+    - ``cytof`` assay plugin (#1642)
+    - Enable ``mass_cytometry`` ISA-Tab template (#1697)
+    - Enable ``stem_cell_core_bulk`` ISA-Tab template (#1697)
+    - Enable ``stem_cell_core_sc`` ISA-Tab template (#1697)
+    - Enable ``tumor_normal_dna`` ISA-Tab template (#1697)
+    - General iRODS access ticket management for assay collections (#804)
+- **Taskflowbackend**
+    - ``BatchCalculateChecksumTask`` iRODS task (#1634)
+    - Automated generation of missing checksums in ``zone_move`` flow (#1634)
 
 Changed
 -------
@@ -20,9 +33,14 @@ Changed
 - **General**
     - Upgrade to django-sodar-core v0.13.0 (#1617)
     - Upgrade to python-irodsclient v1.1.8 (#1538)
+- **Landingzones**
+    - Move iRODS object helpers to ``TaskflowTestMixin`` (#1699)
 - **Samplesheets**
     - Sample sheet table viewport background color (#1692)
     - Contract sheet table height to fit content (#1693)
+    - Hide additional internal fields from ISA-Tab templates (#1698)
+- **Taskflowbackend**
+    - Move iRODS object helpers from ``LandingZoneTaskflowMixin`` (#1699)
 
 Fixed
 -----
@@ -37,6 +55,7 @@ Removed
 
 - **Samplesheets**
     - ``SHEETS_TABLE_HEIGHT`` Django setting (#1283)
+    - Duplicate ``IrodsAccessTicketMixin`` from ``test_views_ajax`` (#1703)
 
 
 v0.13.4 (2023-05-15)

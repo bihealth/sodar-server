@@ -24,6 +24,7 @@ from projectroles.tests.test_models import (
     RoleMixin,
     RoleAssignmentMixin,
 )
+from projectroles.utils import build_secret
 
 from samplesheets.models import (
     Investigation,
@@ -34,6 +35,7 @@ from samplesheets.models import (
     GenericMaterial,
     ISATab,
     IrodsAccessTicket,
+    IrodsDataRequest,
     NOT_AVAILABLE_STR,
     CONFIG_LABEL_CREATE,
     ISA_META_ASSAY_PLUGIN,
@@ -388,20 +390,20 @@ class IrodsAccessTicketMixin:
     """Helpers for IrodsAccessTicket model creation"""
 
     @classmethod
-    def make_irods_access_ticket(
+    def make_irods_ticket(
         cls,
-        project,
         study,
         assay,
-        ticket,
         path,
-        label=None,
         user=None,
+        label=None,
+        ticket=None,
         date_expires=None,  # never expires
     ):
-        """Create an iRODS access ticket object in the database"""
+        """Create an IrodsAccessTicket object in the database"""
+        if not ticket:
+            ticket = build_secret(16)
         values = {
-            'project': project,
             'study': study,
             'assay': assay,
             'ticket': ticket,
@@ -411,6 +413,37 @@ class IrodsAccessTicketMixin:
             'date_expires': date_expires,
         }
         obj = IrodsAccessTicket(**values)
+        obj.save()
+        return obj
+
+
+class IrodsDataRequestMixin:
+    """Helpers for IrodsDataRequest model creation"""
+
+    @classmethod
+    def make_irods_data_request(
+        cls,
+        project,
+        action,
+        path,
+        status,
+        target_path='',
+        status_info='',
+        description='',
+        user=None,
+    ):
+        """Create an iRODS data request object in the database"""
+        values = {
+            'project': project,
+            'action': action,
+            'path': path,
+            'status': status,
+            'target_path': target_path,
+            'status_info': status_info,
+            'user': user,
+            'description': description,
+        }
+        obj = IrodsDataRequest(**values)
         obj.save()
         return obj
 
@@ -1363,8 +1396,7 @@ class TestIrodsAccessTicket(IrodsAccessTicketMixin, TestSampleSheetBase):
         self.label = 'Some Ticket'
         self.ticket_str = 'abcdef'
         self.date_expires = None
-        self.ticket = self.make_irods_access_ticket(
-            project=self.project,
+        self.ticket = self.make_irods_ticket(
             study=self.study,
             assay=self.assay,
             ticket=self.ticket_str,
@@ -1378,7 +1410,6 @@ class TestIrodsAccessTicket(IrodsAccessTicketMixin, TestSampleSheetBase):
         """Test IrodsAccessTicket initialization"""
         expected = {
             'id': self.ticket.pk,
-            'project': self.project.pk,
             'study': self.study.pk,
             'assay': self.assay.pk,
             'label': self.label,
@@ -1393,9 +1424,9 @@ class TestIrodsAccessTicket(IrodsAccessTicketMixin, TestSampleSheetBase):
     def test__str__(self):
         """Test IrodsAccessTicket __str__()"""
         expected = '{} / {} / {} / {}'.format(
-            self.ticket.project.title,
+            self.ticket.get_project().title,
             self.ticket.assay.get_display_name(),
-            self.ticket.get_track_hub_name(),
+            self.ticket.get_coll_name(),
             self.ticket.get_label(),
         )
         self.assertEqual(str(self.ticket), expected)
@@ -1406,9 +1437,9 @@ class TestIrodsAccessTicket(IrodsAccessTicketMixin, TestSampleSheetBase):
             ', '.join(
                 repr(v)
                 for v in [
-                    self.ticket.project.title,
+                    self.ticket.get_project().title,
                     self.ticket.assay.get_display_name(),
-                    self.ticket.get_track_hub_name(),
+                    self.ticket.get_coll_name(),
                     self.ticket.get_label(),
                 ]
             )
@@ -1418,7 +1449,7 @@ class TestIrodsAccessTicket(IrodsAccessTicketMixin, TestSampleSheetBase):
     def test_get_display_name_one_assay(self):
         """Test get_display_name()"""
         expected = '{} / {}'.format(
-            self.ticket.get_track_hub_name(),
+            self.ticket.get_coll_name(),
             self.ticket.get_label(),
         )
         self.assertEqual(self.ticket.get_display_name(), expected)
@@ -1436,7 +1467,7 @@ class TestIrodsAccessTicket(IrodsAccessTicketMixin, TestSampleSheetBase):
         )
         expected = '{} / {} / {}'.format(
             self.ticket.assay.get_display_name(),
-            self.ticket.get_track_hub_name(),
+            self.ticket.get_coll_name(),
             self.ticket.get_label(),
         )
         self.assertEqual(self.ticket.get_display_name(), expected)
@@ -1482,10 +1513,10 @@ class TestIrodsAccessTicket(IrodsAccessTicketMixin, TestSampleSheetBase):
         self.ticket.save()
         self.assertTrue(self.ticket.is_active())
 
-    def test_get_track_hub_name(self):
-        """Test get_track_hub_name()"""
+    def test_get_coll_name(self):
+        """Test get_coll_name()"""
         self.assertEqual(
-            self.ticket.get_track_hub_name(),
+            self.ticket.get_coll_name(),
             self.path.split('/')[-1],
         )
 
@@ -1517,3 +1548,6 @@ class TestIrodsAccessTicket(IrodsAccessTicketMixin, TestSampleSheetBase):
             self.ticket.get_date_expires(),
             localtime(self.ticket.date_expires).strftime('%Y-%m-%d'),
         )
+
+
+# TODO: Add IrodsDataRequest tests

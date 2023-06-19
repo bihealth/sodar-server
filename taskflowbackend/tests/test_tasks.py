@@ -29,6 +29,7 @@ DEFAULT_USER_GROUP = USER_PREFIX + 'group1'
 GROUP_USER = USER_PREFIX + 'user1'
 GROUPLESS_USER = USER_PREFIX + 'user2'
 
+# TODO: Refactor these so we don't have leading slashes in constants
 TEST_COLL_NAME = '/test'
 NEW_COLL_NAME = '/test_new'
 NEW_COLL2_NAME = '/test_new2'
@@ -50,13 +51,14 @@ TEST_ACCESS_WRITE_IN = 'write'
 TEST_ACCESS_WRITE_OUT = 'modify object'
 TEST_ACCESS_NULL = 'null'
 
+# TODO: Refactor these so we don't have leading slashes in constants
 BATCH_SRC_NAME = '/batch_src'
 BATCH_DEST_NAME = '/batch_dest'
 BATCH_OBJ_NAME = '/batch_obj'
 BATCH_OBJ2_NAME = '/batch_obj2'
 
 
-class IRODSTestBase(TaskflowbackendTestBase):
+class IRODSTaskTestBase(TaskflowbackendTestBase):
     """Base test class for iRODS tasks"""
 
     def _run_flow(self):
@@ -100,7 +102,6 @@ class IRODSTestBase(TaskflowbackendTestBase):
             owner=self.user,
             description='description',
         )
-
         # Init vars and iRODS collections
         self.project_path = self.irods_backend.get_path(self.project)
         self.test_coll = self.irods.collections.create(
@@ -108,12 +109,11 @@ class IRODSTestBase(TaskflowbackendTestBase):
         )
         self.test_coll_path = self.test_coll.path
         self.new_coll_path = self.project_path + NEW_COLL_NAME
-
         # Init flow
         self.flow = self._init_flow()
 
 
-class TestCreateCollectionTask(IRODSTestBase):
+class TestCreateCollectionTask(IRODSTaskTestBase):
     """Tests for CreateCollectionTask"""
 
     def test_execute(self):
@@ -284,7 +284,7 @@ class TestCreateCollectionTask(IRODSTestBase):
         )
 
 
-class TestRemoveCollectionTask(IRODSTestBase):
+class TestRemoveCollectionTask(IRODSTaskTestBase):
     """Tests for RemoveCollectionTask"""
 
     def test_execute(self):
@@ -368,7 +368,7 @@ class TestRemoveCollectionTask(IRODSTestBase):
         )
 
 
-class TestRemoveDataObjectTask(IRODSTestBase):
+class TestRemoveDataObjectTask(IRODSTaskTestBase):
     """Tests for RemoveDataObjectTask"""
 
     def setUp(self):
@@ -447,7 +447,7 @@ class TestRemoveDataObjectTask(IRODSTestBase):
             self.irods.data_objects.get(obj_path2)
 
 
-class TestSetCollectionMetadataTask(IRODSTestBase):
+class TestSetCollectionMetadataTask(IRODSTaskTestBase):
     """Tests for SetCollectionMetadataTask"""
 
     def test_execute(self):
@@ -619,7 +619,7 @@ class TestSetCollectionMetadataTask(IRODSTestBase):
         self.assertEqual(meta_item.units, TEST_UNITS)
 
 
-class TestCreateUserGroupTask(IRODSTestBase):
+class TestCreateUserGroupTask(IRODSTaskTestBase):
     """Tests for CreateUserGroupTask"""
 
     def test_execute(self):
@@ -703,7 +703,7 @@ class TestCreateUserGroupTask(IRODSTestBase):
         self.assertIsInstance(group, iRODSUserGroup)
 
 
-class TestSetAccessTask(IRODSTestBase):
+class TestSetAccessTask(IRODSTaskTestBase):
     """Tests for SetAccessTask"""
 
     def setUp(self):
@@ -970,7 +970,7 @@ class TestSetAccessTask(IRODSTestBase):
         self.assertEqual(user_access, None)
 
 
-class TestIssueTicketTask(IRODSTestBase):
+class TestIssueTicketTask(IRODSTaskTestBase):
     """Tests for IssueTicketTask"""
 
     def setUp(self):
@@ -1074,7 +1074,7 @@ class TestIssueTicketTask(IRODSTestBase):
         )
 
 
-class TestDeleteTicketTask(IRODSTestBase):
+class TestDeleteTicketTask(IRODSTaskTestBase):
     """Tests for DeleteTicketTask"""
 
     def test_execute(self):
@@ -1180,7 +1180,7 @@ class TestDeleteTicketTask(IRODSTestBase):
         self.assertIsNone(self.irods_backend.get_ticket(self.irods, TICKET_STR))
 
 
-class TestSetDataObjAccessTask(IRODSTestBase):
+class TestSetDataObjAccessTask(IRODSTaskTestBase):
     """Tests for SetDataObjAccessTask"""
 
     def _get_test_obj(self):
@@ -1375,7 +1375,7 @@ class TestSetDataObjAccessTask(IRODSTestBase):
         self.assertEqual(user_access.access_name, TEST_ACCESS_READ_OUT)
 
 
-class TestCreateUserTask(IRODSTestBase):
+class TestCreateUserTask(IRODSTaskTestBase):
     """Tests for CreateUserTask"""
 
     def test_execute(self):
@@ -1451,7 +1451,7 @@ class TestCreateUserTask(IRODSTestBase):
         self.assertIsInstance(user, iRODSUser)
 
 
-class TestAddUserToGroupTask(IRODSTestBase):
+class TestAddUserToGroupTask(IRODSTaskTestBase):
     """Tests for AddUserToGroupTask"""
 
     def setUp(self):
@@ -1561,7 +1561,7 @@ class TestAddUserToGroupTask(IRODSTestBase):
         self.assertEqual(group.hasmember(GROUPLESS_USER), True)
 
 
-class TestRemoveUserFromGroupTask(IRODSTestBase):
+class TestRemoveUserFromGroupTask(IRODSTaskTestBase):
     """Tests for RemoveUserFromGroupTask"""
 
     def setUp(self):
@@ -1648,7 +1648,7 @@ class TestRemoveUserFromGroupTask(IRODSTestBase):
         self.assertEqual(group.hasmember(GROUP_USER), False)
 
 
-class TestMoveDataObjectTask(IRODSTestBase):
+class TestMoveDataObjectTask(IRODSTaskTestBase):
     """Tests for MoveDataObjectTask"""
 
     def setUp(self):
@@ -1734,7 +1734,7 @@ class TestMoveDataObjectTask(IRODSTestBase):
 # TODO: Test Checksum verifying
 
 
-class TestBatchCreateCollectionsTask(IRODSTestBase):
+class TestBatchCreateCollectionsTask(IRODSTaskTestBase):
     """Tests for BatchCreateCollectionsTask"""
 
     def setUp(self):
@@ -1941,7 +1941,7 @@ class TestBatchCreateCollectionsTask(IRODSTestBase):
         )
 
 
-class TestBatchMoveDataObjectsTask(IRODSTestBase):
+class TestBatchMoveDataObjectsTask(IRODSTaskTestBase):
     """Tests for BatchMoveDataObjectsTask"""
 
     def setUp(self):
@@ -2124,3 +2124,48 @@ class TestBatchMoveDataObjectsTask(IRODSTestBase):
         self.assertEqual(self.batch_obj.checksum, move_obj.checksum)
         existing_obj = self.irods.data_objects.get(new_obj_path)
         self.assertEqual(new_obj.checksum, existing_obj.checksum)
+
+
+class TestBatchCalculateChecksumTask(IRODSTaskTestBase):
+    """Tests for BatchCalculateChecksumTask"""
+
+    def setUp(self):
+        super().setUp()
+        self.obj_name = 'test1.txt'
+        self.obj_path = os.path.join(self.test_coll_path, self.obj_name)
+
+    def test_calculate(self):
+        """Test calculating checksum for a data object"""
+        obj = self.make_irods_object(
+            self.test_coll, self.obj_name, checksum=False
+        )
+        self.assertIsNone(obj.replicas[0].checksum)
+
+        self._add_task(
+            cls=BatchCalculateChecksumTask,
+            name='Calculate checksums',
+            inject={'file_paths': [self.obj_path], 'force': False},
+        )
+        self._run_flow()
+
+        # Object must be reloaded to refresh replica info
+        obj = self.irods.data_objects.get(self.obj_path)
+        self.assertIsNotNone(obj.replicas[0].checksum)
+        self.assertEqual(obj.replicas[0].checksum, self.get_md5_checksum(obj))
+
+    def test_calculate_twice(self):
+        """Test calculating with existing checksum"""
+        obj = self.make_irods_object(self.test_coll, self.obj_name)
+        self.assertIsNotNone(obj.replicas[0].checksum)
+        self.assertEqual(obj.replicas[0].checksum, self.get_md5_checksum(obj))
+
+        self._add_task(
+            cls=BatchCalculateChecksumTask,
+            name='Calculate checksums',
+            inject={'file_paths': [self.obj_path], 'force': False},
+        )
+        self._run_flow()
+
+        obj = self.irods.data_objects.get(self.obj_path)
+        self.assertIsNotNone(obj.replicas[0].checksum)
+        self.assertEqual(obj.replicas[0].checksum, self.get_md5_checksum(obj))

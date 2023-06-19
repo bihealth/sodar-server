@@ -192,13 +192,13 @@ class SheetTemplateCreateForm(forms.Form):
                 self.initial[k] = clean_sheet_dir_name(project.title)
             elif isinstance(v, str):
                 if not v:  # Allow empty value if default is not set
-                    field_kwargs = {'required': False}
+                    field_kwargs['required'] = False
                 self.fields[k] = forms.CharField(**field_kwargs)
                 self.initial[k] = v
             elif isinstance(v, list):
                 field_kwargs['choices'] = [(x, x) for x in v]
                 if not all(v):  # Allow empty value if in options
-                    field_kwargs = {'required': False}
+                    field_kwargs['required'] = False
                 self.fields[k] = forms.ChoiceField(**field_kwargs)
             elif isinstance(v, dict):
                 field_kwargs['widget'] = forms.Textarea(
@@ -207,8 +207,10 @@ class SheetTemplateCreateForm(forms.Form):
                 self.fields[k] = forms.CharField(**field_kwargs)
                 self.initial[k] = json.dumps(v)
                 self.json_fields.append(k)
-            # Hide fields not intended to be edited (see issue #1443)
-            if k in HIDDEN_SHEET_TEMPLATE_FIELDS:
+            # Hide fields not intended to be edited (see #1443, #1698)
+            if k in HIDDEN_SHEET_TEMPLATE_FIELDS or (
+                k.startswith('__') and k != TPL_DIR_FIELD
+            ):
                 self.fields[k].widget = forms.widgets.HiddenInput()
 
     def clean(self):
@@ -277,48 +279,24 @@ class SheetTemplateCreateForm(forms.Form):
 
 
 class IrodsAccessTicketForm(forms.ModelForm):
-    """Form for the irods access ticket creation and editing."""
+    """Form for the irods access ticket creation and editing"""
 
     class Meta:
         model = IrodsAccessTicket
         fields = ('path', 'label', 'date_expires')
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, project=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        from samplesheets.views import TRACK_HUBS_COLL
-
-        # Add selection to path field
-        irods_backend = get_backend_api('omics_irods')
-        assays = Assay.objects.filter(
-            study__investigation__project=kwargs['initial']['project']
-        )
-        if irods_backend:
-            with irods_backend.get_session() as irods:
-                choices = [
-                    (
-                        track_hub.path,
-                        "{} / {}".format(
-                            assay.get_display_name(), track_hub.name
-                        ),
-                    )
-                    for assay in assays
-                    for track_hub in irods_backend.get_child_colls(
-                        irods,
-                        os.path.join(
-                            irods_backend.get_path(assay), TRACK_HUBS_COLL
-                        ),
-                    )
-                ]
+        if self.instance.pk:
+            self.project = self.instance.get_project()
         else:
-            choices = []
-
-        # Hide path in update or make it a dropdown with available track hubs
-        # on creation
+            self.project = project
+        # Update path help and hide in update
+        path_help = 'Full path to iRODS collection within an assay'
+        self.fields['path'].help_text = path_help
         if self.instance.path:
             self.fields['path'].widget = forms.widgets.HiddenInput()
-        else:
-            self.fields['path'].widget = forms.widgets.Select(choices=choices)
-
+            self.fields['path'].required = False
         # Add date input widget to expiry date field
         self.fields['date_expires'].label = 'Expiry date'
         self.fields['date_expires'].widget = forms.widgets.DateInput(
@@ -327,6 +305,51 @@ class IrodsAccessTicketForm(forms.ModelForm):
 
     def clean(self):
         irods_backend = get_backend_api('omics_irods')
+        # Validate path (only if creating)
+        if not self.instance.pk:
+            try:
+                self.cleaned_data['path'] = irods_backend.sanitize_path(
+                    self.cleaned_data['path']
+                )
+            except Exception as ex:
+                self.add_error('path', 'Invalid iRODS path: {}'.format(ex))
+                return self.cleaned_data
+            # Ensure path is within project
+            if not self.cleaned_data['path'].startswith(
+                irods_backend.get_path(self.project)
+            ):
+                self.add_error('path', 'Path is not within the project')
+                return self.cleaned_data
+            # Ensure path is within a project assay
+            match = re.search(
+                r'/assay_([0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12})',
+                self.cleaned_data['path'],
+            )
+            if not match:
+                self.add_error('path', 'Not a valid assay path')
+                return self.cleaned_data
+            else:
+                try:
+                    # Set assay if successful
+                    self.cleaned_data['assay'] = Assay.objects.get(
+                        study__investigation__project=self.project,
+                        sodar_uuid=match.group(1),
+                    )
+                except ObjectDoesNotExist:
+                    self.add_error('path', 'Assay not found in project')
+                    return self.cleaned_data
+            # Ensure path is a collection
+            with irods_backend.get_session() as irods:
+                if not irods.collections.exists(self.cleaned_data['path']):
+                    self.add_error(
+                        'path',
+                        'Path does not point to a collection or the collection '
+                        'doesn\'t exist',
+                    )
+                    return self.cleaned_data
+        else:  # Do not allow editing path
+            self.cleaned_data['path'] = self.instance.path
+
         # Check if expiry date is in the past
         if (
             self.cleaned_data.get('date_expires')
@@ -335,28 +358,15 @@ class IrodsAccessTicketForm(forms.ModelForm):
             self.add_error(
                 'date_expires', 'Expiry date in the past not allowed'
             )
-        # Check path validity
-        try:
-            self.cleaned_data['path'] = irods_backend.sanitize_path(
-                self.cleaned_data['path']
-            )
-        except Exception as ex:
-            self.add_error('path', 'Invalid iRODS path: {}'.format(ex))
-            return self.cleaned_data
-        # Check if path corresponds to a track hub path
-        match = re.search(
-            r'/assay_([0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12})/',
-            self.cleaned_data['path'],
-        )
-        if not match:
-            self.add_error('path', 'Not a valid TrackHubs path')
-        else:
-            try:
-                self.cleaned_data['assay'] = Assay.objects.get(
-                    sodar_uuid=match.group(1)
-                )
-            except ObjectDoesNotExist:
-                self.add_error('path', 'Assay not found')
+
+        # Check if unexpired ticket already exists for path
+        if (
+            not self.instance.pk
+            and IrodsAccessTicket.objects.filter(
+                path=self.cleaned_data['path']
+            ).first()
+        ):
+            self.add_error('path', 'Ticket for path already exists')
         return self.cleaned_data
 
 

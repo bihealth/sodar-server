@@ -9,7 +9,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ImproperlyConfigured
 from django.shortcuts import redirect
 from django.urls import reverse
-from django.views.generic import TemplateView, CreateView
+from django.views.generic import TemplateView, CreateView, UpdateView
 
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
@@ -47,6 +47,7 @@ SAMPLESHEETS_APP_NAME = 'samplesheets'
 ZONE_MOVE_INVALID_STATUS = 'Zone not in active state, unable to trigger action.'
 ZONE_MOVE_NO_FILES = 'No files in landing zone, nothing to do.'
 ZONE_UPDATE_ACTIONS = ['update', 'move', 'delete']
+ZONE_UPDATE_FIELDS = ['description', 'user_message']
 
 
 # Mixins -----------------------------------------------------------------------
@@ -113,7 +114,7 @@ class ZoneConfigPluginMixin:
         return data
 
 
-class ZoneCreateMixin(ZoneConfigPluginMixin):
+class ZoneModifyMixin(ZoneConfigPluginMixin):
     """Mixin to be used in zone creation in UI and REST API views"""
 
     def submit_create(
@@ -220,6 +221,45 @@ class ZoneCreateMixin(ZoneConfigPluginMixin):
         except taskflow.FlowSubmitException as ex:
             zone.delete()
             raise ex
+
+    def update_zone(self, zone, request=None):
+        """
+        Handle timeline updating after a LandingZone object has been updated.
+
+        :param zone: LandingZone object
+        :param form: LandingZoneForm object
+        :raise: taskflow.FlowSubmitException if taskflow submit fails
+        """
+        timeline = get_backend_api('timeline_backend')
+        user = request.user if request else None
+
+        # Add event in Timeline
+        if timeline:
+            description = 'update landing zone {zone} for {user} in {assay}'
+            tl_extra = {
+                'title': zone.title,
+                'assay': str(zone.assay.sodar_uuid),
+                'description': zone.description,
+                'user_message': zone.user_message,
+            }
+            tl_event = timeline.add_event(
+                project=zone.project,
+                app_name=APP_NAME,
+                user=user,
+                event_name='zone_update',
+                description=description,
+                status_type='OK',
+                extra_data=tl_extra,
+            )
+            tl_event.add_object(obj=zone, label='zone', name=zone.title)
+            tl_event.add_object(
+                obj=user,
+                label='user',
+                name=user.username,
+            )
+            tl_event.add_object(
+                obj=zone.assay, label='assay', name=zone.assay.get_name()
+            )
 
 
 class ZoneDeleteMixin(ZoneConfigPluginMixin):
@@ -405,7 +445,7 @@ class ZoneCreateView(
     ProjectPermissionMixin,
     InvestigationContextMixin,
     CurrentUserFormMixin,
-    ZoneCreateMixin,
+    ZoneModifyMixin,
     CreateView,
 ):
     """LandingZone creation view"""
@@ -478,6 +518,99 @@ class ZoneCreateView(
             messages.error(self.request, str(ex))
         return redirect(
             reverse('landingzones:list', kwargs={'project': project.sodar_uuid})
+        )
+
+
+class ZoneUpdateView(
+    LoginRequiredMixin,
+    InvestigationContextMixin,
+    ZoneModifyMixin,
+    UpdateView,
+):
+    """LandingZone update view"""
+
+    model = LandingZone
+    form_class = LandingZoneForm
+    slug_url_kwarg = 'landingzone'
+    slug_field = 'sodar_uuid'
+
+    def get_permission_required(self, user):
+        """Get custom permission for user"""
+        if self.request.user == user:
+            return 'landingzones.update_zone_own'
+        else:
+            return 'landingzones.update_zone_all'
+
+    def get(self, request, *args, **kwargs):
+        """Override get() to ensure the zone status"""
+        zone = LandingZone.objects.get(sodar_uuid=self.kwargs['landingzone'])
+        redirect_url = reverse(
+            'landingzones:list', kwargs={'project': zone.project.sodar_uuid}
+        )
+        # Check permissions
+        if not self.request.user.has_perm(
+            self.get_permission_required(zone.user), zone.project
+        ):
+            msg = 'You do not have permission to update this landing zone.'
+            messages.error(request, msg)
+            return redirect(redirect_url)
+
+        # Check status
+        if zone.status not in STATUS_ALLOW_UPDATE:
+            messages.error(
+                request,
+                'Unable to update a landing zone with the '
+                'status of "{}".'.format(zone.status),
+            )
+            return redirect(redirect_url)
+        return super().get(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        self.zone = LandingZone.objects.get(
+            sodar_uuid=self.kwargs['landingzone']
+        )
+        redirect_url = reverse(
+            'landingzones:list',
+            kwargs={'project': self.zone.project.sodar_uuid},
+        )
+
+        # Check permissions
+        if not self.request.user.has_perm(
+            self.get_permission_required(self.zone.user), self.zone.project
+        ):
+            messages.error(
+                self.request,
+                'You do not have permission to update this landing zone.',
+            )
+            return redirect_url
+
+        # Double check that only allowed fields are updated
+        # Remove create_colls and restrict_colls from changed_data
+        # as they are passed to the form automatically
+        if (
+            set(form.changed_data)
+            - {'create_colls', 'restrict_colls'}
+            - set(ZONE_UPDATE_FIELDS)
+        ):
+            messages.error(
+                self.request,
+                "You can only update the following fields: {}".format(
+                    ', '.join(ZONE_UPDATE_FIELDS)
+                ),
+            )
+            return redirect(redirect_url)
+
+        # Update zone
+        self.zone = form.save()
+        self.update_zone(zone=self.zone, request=self.request)
+        msg = 'Landing zone "{}" was updated.'.format(self.zone.title)
+        messages.success(self.request, msg)
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse(
+            'landingzones:list',
+            kwargs={'project': self.object.project.sodar_uuid},
         )
 
 

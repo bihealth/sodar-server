@@ -5,6 +5,7 @@ import {
   getSheetTablePropsData,
   waitRAF,
   waitAG,
+  waitNT,
   waitSelector
 } from '../testUtils.js'
 import { initGridOptions } from '@/utils/gridUtils.js'
@@ -56,6 +57,7 @@ describe('IrodsButtonsRenderer.vue', () => {
     await waitSelector(wrapper, '.sodar-ss-data-links-cell', 2)
 
     expect(wrapper.findAll('.sodar-ss-data-links-cell').length).toBe(2)
+    await waitNT(wrapper.vm)
     await waitRAF()
     expect(wrapper.findAll('.sodar-ss-irods-links').length).toBe(2)
   })
