@@ -286,12 +286,15 @@ $(document).ready(function() {
                             .attr('data-placement', 'top')
                             .attr('onclick', 'copy_path("' + obj['path'] + '", "sodar-irods-copy-btn-' + obj['name'] + '")')
                             .append($('<i>').addClass('iconify').attr('data-icon', 'mdi:console-line'));
-                    }
-                    var iconHtml = '<i class="iconify mr-1" data-icon="'+ icon +'"' +
-                        'title="'+ toolTip +'"></i>';
 
-                    body += '<tr><td colspan="' + colSpan + '">' + iconHtml + objLink +
-                        copyButton.prop('outerHTML') + '</td>';
+                        // Append copyButton only when it is defined
+                        objLink += copyButton.prop('outerHTML');
+                    }
+
+                    var iconHtml = '<i class="iconify mr-1" data-icon="' + icon + '"' +
+                        'title="' + toolTip + '"></i>';
+                    body += '<tr><td colspan="' + colSpan + '">' + iconHtml + objLink + '</td>';
+
                     if (obj['type'] === 'obj') {
                         body += '<td>' + humanFileSize(obj['size'], true) + '</td>';
                         body += '<td>' + obj['modify_time'] + '</td><td>';
