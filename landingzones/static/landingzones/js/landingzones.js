@@ -40,7 +40,7 @@ var updateZoneStatus = function() {
                     statusTd.removeClass();
                     statusTd.addClass(statusStyles[data['status']] + ' text-white');
                     statusInfoSpan.text(data['status_info']);
-                    if (['PREPARING', 'VALIDATING', 'MOVING'].includes(data['status'])) {
+                    if (['PREPARING', 'VALIDATING', 'MOVING', 'DELETING'].includes(data['status'])) {
                         statusTd.append(
                             '<span class="pull-right"><i class="iconify" data-icon="mdi:lock"></i></span>')
                     }
