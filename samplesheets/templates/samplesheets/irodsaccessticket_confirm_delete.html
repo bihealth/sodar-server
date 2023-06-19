@@ -17,15 +17,16 @@
 <div class="container-fluid sodar-page-container">
   <div class="alert alert-warning" role="alert">
     <p>
-      <strong>Warning:</strong> Are you sure you want to
-      delete this iRODS access ticket?
-      This can <strong>not</strong> be undone!
+      Are you sure you want the delete this iRODS access ticket? This will cause
+      users with the ticket being unable to access the associated collection in
+      iRODS. This action can not be undone.
     </p>
     <p class="mb-0">
       The selected ticket was created on
-      <strong>{{ object.date_created | date:'Y-m-d H:i:s' }}</strong>
+      {{ object.date_created | date:'Y-m-d H:i:s' }}
       {% if object.user %}
-        by user {% get_user_html object.user as user_html %}{{ user_html | safe }}
+        {% get_user_html object.user as user_html %}
+        by user {{ user_html | safe }}.
       {% endif %}
     </p>
   </div>

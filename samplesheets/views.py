@@ -744,6 +744,82 @@ class IrodsCollsCreateViewMixin:
             )
 
 
+class IrodsAccessTicketModifyMixin:
+    """iRODS access ticket modification helpers and overrides"""
+
+    @classmethod
+    def create_timeline_event(cls, ticket, action):
+        """
+        Create timeline event for ticket modification.
+
+        :param ticket: IrodsAccessTicket object
+        :param action: "create", "delete" or "update" (string)
+        """
+        timeline = get_backend_api('timeline_backend')
+        if not timeline:
+            return
+        tl_desc = action + ' iRODS access ticket {ticket} '
+        tl_desc += 'from ' if action == 'delete' else 'in '
+        tl_desc += '{assay}'
+        extra_data = {}
+        if action != 'delete':
+            extra_data = {
+                'label': ticket.label,
+                'path': ticket.path,
+                'ticket': ticket.ticket,
+                'date_expires': ticket.get_date_expires(),
+            }
+        tl_event = timeline.add_event(
+            project=ticket.get_project(),
+            app_name=APP_NAME,
+            user=ticket.user,
+            event_name='irods_ticket_{}'.format(action),
+            description=tl_desc,
+            extra_data=extra_data,
+            status_type='OK',
+        )
+        tl_event.add_object(ticket, 'ticket', ticket.get_display_name())
+        tl_event.add_object(
+            ticket.assay, 'assay', ticket.assay.get_display_name()
+        )
+
+    @classmethod
+    def create_app_alerts(cls, ticket, action, user):
+        """
+        Create app alerts for project owners and delegates on ticket
+        modification.
+
+        :param ticket: IrodsAccessTicket object
+        :param action: "create", "delete" or "update" (string)
+        :param user: SODARUser object for user performing the modification
+        """
+        app_alerts = get_backend_api('appalerts_backend')
+        if not app_alerts:
+            return
+        project = ticket.get_project()
+        # Get owners and delegates, omit user if present
+        users = [
+            a.user
+            for a in project.get_roles(
+                max_rank=ROLE_RANKING[PROJECT_ROLE_DELEGATE]
+            )
+            if a.user != user
+        ]
+        app_alerts.add_alerts(
+            app_name=APP_NAME,
+            alert_name='irods_ticket_' + action,
+            users=users,
+            message='iRODS access ticket {} {}d by {}.'.format(
+                ticket.get_display_name(), action, ticket.user.username
+            ),
+            url=reverse(
+                'samplesheets:irods_tickets',
+                kwargs={'project': project.sodar_uuid},
+            ),
+            project=project,
+        )
+
+
 class IrodsRequestModifyMixin:
     """iRODS data request helpers"""
 
@@ -2199,52 +2275,12 @@ class IrodsAccessTicketListView(
     InvestigationContextMixin,
     ListView,
 ):
-    """Sample Sheet version list view"""
+    """iRODS access ticket list view"""
 
     model = IrodsAccessTicket
     permission_required = 'samplesheets.edit_ticket'
     template_name = 'samplesheets/irods_access_tickets.html'
     paginate_by = settings.SHEETS_IRODS_TICKET_PAGINATION
-
-    def get_queryset(self):
-        return self.model.objects.filter(
-            project__sodar_uuid=self.kwargs['project']
-        )
-
-    def get_context_data(self, *args, **kwargs):
-        context = super().get_context_data(*args, **kwargs)
-        irods_backend = get_backend_api('omics_irods')
-        assays = Assay.objects.filter(
-            study__investigation__project__sodar_uuid=self.kwargs['project']
-        )
-        with irods_backend.get_session() as irods:
-            context['track_hubs_available'] = bool(
-                [
-                    track_hub
-                    for assay in assays
-                    for track_hub in irods_backend.get_child_colls(
-                        irods,
-                        os.path.join(
-                            irods_backend.get_path(assay), TRACK_HUBS_COLL
-                        ),
-                    )
-                ]
-            )
-        return context
-
-    def get(self, request, *args, **kwargs):
-        self.object_list = self.get_queryset()
-        try:
-            context = self.get_context_data()
-            return super().render_to_response(context)
-        except Exception as ex:
-            messages.error(request, str(ex))
-            return redirect(
-                reverse(
-                    'samplesheets:project_sheets',
-                    kwargs={'project': self.get_project().sodar_uuid},
-                )
-            )
 
 
 class IrodsAccessTicketCreateView(
@@ -2252,24 +2288,29 @@ class IrodsAccessTicketCreateView(
     LoggedInPermissionMixin,
     InvestigationContextMixin,
     ProjectPermissionMixin,
-    SheetImportMixin,
+    IrodsAccessTicketModifyMixin,
     FormView,
 ):
-    """Sample Sheet version restoring view"""
+    """iRODS access ticket create view"""
 
     permission_required = 'samplesheets.edit_ticket'
     template_name = 'samplesheets/irodsaccessticket_form.html'
     form_class = IrodsAccessTicketForm
 
-    def get_initial(self):
-        return {'project': self.get_project()}
+    def get_form_kwargs(self):
+        """Pass kwargs to form (only to be used in UI view)"""
+        kwargs = super().get_form_kwargs()
+        kwargs['project'] = self.get_project()
+        return kwargs
 
     def form_valid(self, form):
+        irods_backend = get_backend_api('omics_irods')
+        project = self.get_project()
         redirect_url = reverse(
             'samplesheets:irods_tickets',
-            kwargs={'project': self.kwargs['project']},
+            kwargs={'project': project.sodar_uuid},
         )
-        irods_backend = get_backend_api('omics_irods')
+
         try:
             with irods_backend.get_session() as irods:
                 ticket = irods_backend.issue_ticket(
@@ -2285,14 +2326,18 @@ class IrodsAccessTicketCreateView(
                 'Exception issuing iRODS access ticket: {}'.format(ex),
             )
             return redirect(redirect_url)
+
         # Create database object
         obj = form.save(commit=False)
-        obj.project = self.get_project()
         obj.assay = form.cleaned_data['assay']
         obj.study = obj.assay.study
         obj.user = self.request.user
         obj.ticket = ticket.ticket
         obj.save()
+
+        # Create timeline event and app alerts
+        self.create_timeline_event(obj, 'create')
+        self.create_app_alerts(obj, 'create', self.request.user)
         messages.success(
             self.request,
             'iRODS access ticket "{}" created.'.format(obj.get_display_name()),
@@ -2304,10 +2349,11 @@ class IrodsAccessTicketUpdateView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
-    InvestigationContextMixin,
+    ProjectContextMixin,
+    IrodsAccessTicketModifyMixin,
     UpdateView,
 ):
-    """Sample sheet version deletion view"""
+    """iRODS access ticket update view"""
 
     permission_required = 'samplesheets.edit_ticket'
     model = IrodsAccessTicket
@@ -2316,11 +2362,10 @@ class IrodsAccessTicketUpdateView(
     slug_url_kwarg = 'irodsaccessticket'
     slug_field = 'sodar_uuid'
 
-    def get_initial(self):
-        return {'project': self.get_project()}
-
     def form_valid(self, form):
         obj = form.save()
+        self.create_timeline_event(obj, 'update')
+        self.create_app_alerts(obj, 'update', self.request.user)
         messages.success(
             self.request,
             'iRODS access ticket "{}" updated.'.format(obj.get_display_name()),
@@ -2338,6 +2383,7 @@ class IrodsAccessTicketDeleteView(
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     InvestigationContextMixin,
+    IrodsAccessTicketModifyMixin,
     DeleteView,
 ):
     """iRODS access ticket deletion view"""
@@ -2351,7 +2397,7 @@ class IrodsAccessTicketDeleteView(
     def get_success_url(self):
         return reverse(
             'samplesheets:irods_tickets',
-            kwargs={'project': self.object.project.sodar_uuid},
+            kwargs={'project': self.object.get_project().sodar_uuid},
         )
 
     def delete(self, request, *args, **kwargs):
@@ -2360,16 +2406,23 @@ class IrodsAccessTicketDeleteView(
         try:
             with irods_backend.get_session() as irods:
                 irods_backend.delete_ticket(irods, obj.ticket)
-            messages.success(
-                request,
-                'iRODS access ticket "{}" deleted.'.format(
-                    obj.get_display_name()
-                ),
-            )
         except Exception as ex:
             messages.error(
                 request, 'Error deleting iRODS access ticket: {}'.format(ex)
             )
+            return redirect(
+                reverse(
+                    'samplesheets:irods_tickets',
+                    kwargs={'project': obj.get_project().sodar_uuid},
+                )
+            )
+
+        self.create_timeline_event(obj, 'delete')
+        self.create_app_alerts(obj, 'delete', request.user)
+        messages.success(
+            request,
+            'iRODS access ticket "{}" deleted.'.format(obj.get_display_name()),
+        )
         return super().delete(request, *args, **kwargs)
 
 

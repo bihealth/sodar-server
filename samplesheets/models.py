@@ -1116,44 +1116,23 @@ class IrodsAccessTicketActiveManager(models.Manager):
 
 
 class IrodsAccessTicket(models.Model):
-    """
-    Model for managing tickets in irods
-    """
-
-    class Meta:
-        ordering = ['-date_created']
-
-    objects = models.Manager()
-    active_objects = IrodsAccessTicketActiveManager()
-
-    #: Internal UUID for the object
-    sodar_uuid = models.UUIDField(
-        default=uuid.uuid4, unique=True, help_text='SODAR UUID for the object'
-    )
-
-    #: Project the ticket belongs to
-    project = models.ForeignKey(
-        Project,
-        related_name='irods_access_ticket',
-        help_text='Project the ticket belongs to',
-        on_delete=models.CASCADE,
-    )
+    """Model for managing access tickets in iRODS"""
 
     #: Study the ticket belongs to
     study = models.ForeignKey(
         Study,
-        related_name='irods_access_ticket',
-        help_text='Study the ticket belongs to',
+        related_name='irods_access_tickets',
+        help_text='Study in which the ticket belongs',
         on_delete=models.CASCADE,
     )
 
     #: Assay the ticket belongs to (optional)
     assay = models.ForeignKey(
         Assay,
-        related_name='irods_access_ticket',
+        related_name='irods_access_tickets',
         null=True,
         blank=True,
-        help_text='Assay the ticket belongs to (optional)',
+        help_text='Assay in which the ticket belongs (optional)',
         on_delete=models.CASCADE,
     )
 
@@ -1178,7 +1157,7 @@ class IrodsAccessTicket(models.Model):
     #: User that created the ticket
     user = models.ForeignKey(
         AUTH_USER_MODEL,
-        related_name='irods_access_ticket',
+        related_name='irods_access_tickets',
         null=True,
         help_text='User that created the ticket',
         on_delete=models.CASCADE,
@@ -1193,11 +1172,50 @@ class IrodsAccessTicket(models.Model):
     date_expires = models.DateTimeField(
         null=True,
         blank=True,
-        help_text='DateTime of ticket expiration (leave unset to never '
-        'expire; click x on righthand-side of field to unset)',
+        help_text='DateTime of ticket expiration (leave unset to never expire)',
     )
 
-    def get_track_hub_name(self):
+    #: SODAR UUID for the object
+    sodar_uuid = models.UUIDField(
+        default=uuid.uuid4, unique=True, help_text='SODAR UUID for the object'
+    )
+
+    #: Standard manager
+    objects = models.Manager()
+
+    #: Active objects manager
+    active_objects = IrodsAccessTicketActiveManager()
+
+    class Meta:
+        ordering = ['-date_created']
+
+    def __str__(self):
+        return '{} / {} / {} / {}'.format(
+            self.study.investigation.project.title,
+            self.assay.get_display_name(),
+            self.get_coll_name(),
+            self.get_label(),
+        )
+
+    def __repr__(self):
+        values = (
+            self.study.investigation.project.title,
+            self.assay.get_display_name(),
+            self.get_coll_name(),
+            self.get_label(),
+        )
+        return 'IrodsAccessTicket({})'.format(
+            ', '.join(repr(v) for v in values)
+        )
+
+    def get_project(self):
+        return self.study.investigation.project
+
+    @classmethod
+    def get_project_filter_key(cls):
+        return 'study__investigation__project'
+
+    def get_coll_name(self):
         return os.path.basename(self.path)
 
     def get_date_created(self):
@@ -1215,13 +1233,13 @@ class IrodsAccessTicket(models.Model):
         assay_name = ''
         if (
             Assay.objects.filter(
-                study__investigation__project=self.project
+                study__investigation__project=self.study.investigation.project
             ).count()
             > 1
         ):
             assay_name = '{} / '.format(self.assay.get_display_name())
         return '{}{} / {}'.format(
-            assay_name, self.get_track_hub_name(), self.get_label()
+            assay_name, self.get_coll_name(), self.get_label()
         )
 
     def get_webdav_link(self):
@@ -1233,25 +1251,6 @@ class IrodsAccessTicket(models.Model):
 
     def is_active(self):
         return self.date_expires is None or self.date_expires >= timezone.now()
-
-    def __str__(self):
-        return '{} / {} / {} / {}'.format(
-            self.project.title,
-            self.assay.get_display_name(),
-            self.get_track_hub_name(),
-            self.get_label(),
-        )
-
-    def __repr__(self):
-        values = (
-            self.project.title,
-            self.assay.get_display_name(),
-            self.get_track_hub_name(),
-            self.get_label(),
-        )
-        return 'IrodsAccessTicket({})'.format(
-            ', '.join(repr(v) for v in values)
-        )
 
 
 class IrodsDataRequest(models.Model):

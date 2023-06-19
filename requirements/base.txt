@@ -109,7 +109,7 @@ pronto==2.5.0  # For OWL conversion
 
 # CUBI ISA-Tab templates
 cookiecutter==2.1.1
--e git+https://github.com/bihealth/cubi-isa-templates.git@13ec5a83c9f7871d64064bbae658a0009d4bf113#egg=cubi-isa-templates
+-e git+https://github.com/bihealth/cubi-isa-templates.git@b2e9f8500eac7b314fce91f910f7f197dac09aa5#egg=cubi-isa-templates
 
 # Taskflow requirements
 tooz==3.0.0

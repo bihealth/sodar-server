@@ -118,6 +118,16 @@ class Flow(BaseLinearFlow):
         # If "validate_only" is set, return without moving and set status
         if validate_only:
             self.add_task(
+                irods_tasks.BatchCalculateChecksumTask(
+                    name='Batch calculate missing checksums in iRODS',
+                    irods=self.irods,
+                    inject={
+                        'file_paths': zone_objects_nomd5,
+                        'force': False,
+                    },
+                )
+            )
+            self.add_task(
                 irods_tasks.BatchCheckFilesTask(
                     name='Batch check file and MD5 checksum file existence for '
                     'zone data objects',
@@ -210,6 +220,16 @@ class Flow(BaseLinearFlow):
                     },
                 )
             )
+        self.add_task(
+            irods_tasks.BatchCalculateChecksumTask(
+                name='Batch calculate missing checksums in iRODS',
+                irods=self.irods,
+                inject={
+                    'file_paths': zone_objects_nomd5,
+                    'force': False,
+                },
+            )
+        )
         self.add_task(
             irods_tasks.BatchCheckFilesTask(
                 name='Batch check file and MD5 checksum file existence for '

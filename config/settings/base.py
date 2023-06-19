@@ -101,6 +101,7 @@ LOCAL_APPS = [
     'samplesheets.assayapps.meta_ms.apps.MetaMsConfig',
     'samplesheets.assayapps.microarray.apps.MicroarrayConfig',
     'samplesheets.assayapps.pep_ms.apps.PepMsConfig',
+    'samplesheets.assayapps.cytof.apps.CytofConfig',
     # Landingzones config sub-apps
     'landingzones.configapps.bih_proteomics_smb.apps.BihProteomicsSmbConfig',
     # Admin apps
@@ -746,6 +747,10 @@ IRODS_QUERY_BATCH_SIZE = env.int('IRODS_QUERY_BATCH_SIZE', 24)
 SHEETS_ALLOW_CRITICAL = env.bool('SHEETS_ALLOW_CRITICAL', False)
 # Temporary, see issue #556
 SHEETS_ENABLE_CACHE = True
+# Enable study table cache
+SHEETS_ENABLE_STUDY_TABLE_CACHE = env.bool(
+    'SHEETS_ENABLE_STUDY_TABLE_CACHE', True
+)
 # iRODS file query limit
 SHEETS_IRODS_LIMIT = env.int('SHEETS_IRODS_LIMIT', 50)
 # Minimum edit config version
@@ -783,9 +788,13 @@ SHEETS_ENABLED_TEMPLATES = [
     'bulk_rnaseq',
     'generic',
     'germline',
+    'mass_cytometry',
     'microarray',
     'ms_meta_biocrates',
     'single_cell_rnaseq',
+    'stem_cell_core_bulk',
+    'stem_cell_core_sc',
+    'tumor_normal_dna',
     'tumor_normal_triplets',
 ]
 

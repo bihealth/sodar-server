@@ -1,5 +1,6 @@
 """Tests for UI views in the landingzones app"""
 
+from django.forms import HiddenInput
 from django.test import override_settings
 from django.urls import reverse
 
@@ -16,6 +17,7 @@ from projectroles.tests.test_models import (
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
+from landingzones.models import LandingZone
 from landingzones.tests.test_models import (
     LandingZoneMixin,
     ZONE_TITLE,
@@ -161,6 +163,96 @@ class TestLandingZoneCreateView(TestViewsBase):
         self.assertIsNotNone(form.fields['assay'])
         self.assertIsNotNone(form.fields['description'])
         self.assertIsNotNone(form.fields['configuration'])
+
+
+class TestLandingZoneUpdateView(TestViewsBase):
+    """Tests for the landing zone update view"""
+
+    def test_render(self):
+        """Test rendering of the landing zone update view"""
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'landingzones:update',
+                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
+                )
+            )
+        self.assertEqual(response.status_code, 200)
+        # Assert form
+        form = response.context['form']
+        self.assertIsNotNone(form)
+        self.assertIsNotNone(form.fields['assay'])
+        self.assertIsNotNone(form.fields['description'])
+        # Make sure to also assert the expected fields
+        # are hidden with the HiddenInput widget.
+        self.assertIsInstance(form.fields['title_suffix'].widget, HiddenInput)
+        self.assertIsInstance(form.fields['configuration'].widget, HiddenInput)
+        self.assertIsInstance(form.fields['create_colls'].widget, HiddenInput)
+        self.assertIsInstance(form.fields['restrict_colls'].widget, HiddenInput)
+        self.assertIsInstance(form.fields['assay'].widget, HiddenInput)
+
+    def test_render_invalid_status(self):
+        """Test rendering with an invalid zone status"""
+        self.landing_zone.status = 'DELETED'
+        self.landing_zone.save()
+
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'landingzones:update',
+                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
+                )
+            )
+        self.assertEqual(response.status_code, 302)
+
+    def test_post(self):
+        """Test POST request to the landing zone update view"""
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'landingzones:update',
+                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
+                ),
+                data={
+                    'assay': self.assay.sodar_uuid,
+                    'description': 'test description updated',
+                    'user_message': 'test user message',
+                },
+            )
+            self.assertRedirects(
+                response,
+                reverse(
+                    'landingzones:list',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
+        landing_zone = LandingZone.objects.get(
+            sodar_uuid=self.landing_zone.sodar_uuid
+        )
+        self.assertEqual(landing_zone.assay, self.assay)
+        self.assertEqual(landing_zone.description, 'test description updated')
+        self.assertEqual(landing_zone.user_message, 'test user message')
+
+    def test_post_invalid_data(self):
+        """Test POST request with invalid data"""
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'landingzones:update',
+                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
+                ),
+                data={
+                    'assay': self.assay.sodar_uuid,
+                    'description': 'test description updated',
+                    'title_suffix': 'test suffix',
+                },
+            )
+        self.assertEqual(response.status_code, 302)
+        landing_zone = LandingZone.objects.get(
+            sodar_uuid=self.landing_zone.sodar_uuid
+        )
+        self.assertEqual(landing_zone.assay, self.assay)
+        self.assertEqual(landing_zone.description, 'description')
 
 
 class TestLandingZoneMoveView(TestViewsBase):
