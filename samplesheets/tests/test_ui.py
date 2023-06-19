@@ -544,7 +544,7 @@ class TestIrodsRequestListView(IrodsDataRequestMixin, TestProjectSheetsUIBase):
     def test_render_davrods_button(self):
         """Test UI rendering of davrods link button"""
         self.login_and_redirect(
-            user=self.default_user,
+            user=self.user_contributor,
             url=self.url,
             wait_elem='sodar-ss-request-table',
         )
