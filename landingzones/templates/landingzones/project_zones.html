@@ -160,6 +160,8 @@
     window.statusInterval = {{ zone_status_interval }} * 1000;
     window.irodsShowChecksumCol = true;
     var zoneStatusUrl = "{% url 'landingzones:ajax_status' project=project.sodar_uuid %}";
+    <!-- Superuser status variable -->
+    var currentUserURL = "{% url 'projectroles:ajax_user_current' %}";
   </script>
 
   <!-- Landingzones Javascript -->

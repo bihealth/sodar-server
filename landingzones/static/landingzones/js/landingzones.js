@@ -1,3 +1,6 @@
+// Init global variable
+var isSuperuser = false;
+
 /*****************************
  Zone status updating function
  *****************************/
@@ -56,7 +59,7 @@ var updateZoneStatus = function() {
                     statusTd.addClass(statusStyles[zoneStatus] + ' text-white');
                     statusInfoSpan.text(zoneStatusInfo);
 
-                    if (['PREPARING', 'VALIDATING', 'MOVING'].includes(zoneStatus)) {
+                    if (['PREPARING', 'VALIDATING', 'MOVING', 'DELETING'].includes(zoneStatus)) {
                         statusTd.append(
                             '<span class="pull-right"><i class="iconify" data-icon="mdi:lock"></i></span>'
                         );
@@ -80,7 +83,8 @@ var updateZoneStatus = function() {
                     }
 
                     // Button modification
-                    if (zoneStatus !== 'ACTIVE' && zoneStatus !== 'FAILED') {
+                    if (zoneStatus !== 'ACTIVE' && zoneStatus !== 'FAILED' && isSuperuser) {}
+                    else if (zoneStatus !== 'ACTIVE' && zoneStatus !== 'FAILED') {
                         zoneTr.find('td.sodar-lz-zone-title').addClass('text-muted');
                         zoneTr.find('td.sodar-lz-zone-assay').addClass('text-muted');
                         zoneTr.find('td.sodar-lz-zone-status-info').addClass('text-muted');
@@ -114,6 +118,20 @@ var updateZoneStatus = function() {
 };
 
 $(document).ready(function() {
+    /*********************
+     Get superuser status
+     *********************/
+    $.ajax({
+        url: currentUserURL,
+        method: "GET",
+        success: function(response) {
+            isSuperuser = response.is_superuser;
+        },
+        error: function(response) {
+            isSuperuser = false;
+        }
+    });
+
     /******************
      Update zone status
      ******************/
