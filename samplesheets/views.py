@@ -1084,12 +1084,14 @@ class IrodsRequestModifyMixin:
             # Handle project alerts
             cls.handle_alerts_deactivate(irods_request, app_alerts)
 
-    def get_zone_permissions(self, request, zone):
+    def has_irods_request_perms(self, request, irods_request):
         """Check permissions for a landing zone."""
         if (
             request.user.is_superuser
-            or request.user.has_perm('samplesheets.manage_sheet', zone.project)
-            or request.user == zone.user
+            or request.user.has_perm(
+                'samplesheets.manage_sheet', irods_request.project
+            )
+            or request.user == irods_request.user
         ):
             return True
         return False

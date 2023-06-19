@@ -165,6 +165,7 @@ class IrodsDataRequestListAPIView(
         """GET request for listing iRODS data requests"""
         project = self.get_project()
         irods_requests = IrodsDataRequest.objects.filter(project=project)
+        content = {'detail': 'No iRODS data requests found'}
 
         # For superusers, owners and delegates,
         # display active/failed requests from all users
@@ -175,22 +176,10 @@ class IrodsDataRequestListAPIView(
         else:
             # For regular users, dispaly their own requests regardless of status
             requests = irods_requests.filter(user=self.request.user)
-
-        if not requests:
-            return Response(
-                {
-                    'detail': 'No iRODS data requests found',
-                },
-                status=status.HTTP_200_OK,
-            )
-
-        return Response(
-            {
-                'detail': 'iRODS data requests listed',
-                'requests': requests,
-            },
-            status=status.HTTP_200_OK,
-        )
+        if requests:
+            content['requests'] = requests
+            content['detail'] = 'iRODS data requests listed'
+        return Response(content, status=status.HTTP_200_OK)
 
 
 class IrodsRequestCreateAPIView(
@@ -260,7 +249,7 @@ class IrodsRequestUpdateAPIView(
     def put(self, request, *args, **kwargs):
         """PUT request for updating an iRODS data request"""
         obj = self.get_object()
-        if not self.get_zone_permissions(request, obj):
+        if not self.has_irods_request_perms(request, obj):
             raise PermissionDenied('Insufficient permissions')
 
         irods_request = IrodsDataRequest.objects.filter(
@@ -313,7 +302,7 @@ class IrodsRequestDeleteAPIView(
     def delete(self, request, *args, **kwargs):
         """DELETE request for deleting an iRODS data request"""
         obj = self.get_object()
-        if not self.get_zone_permissions(request, obj):
+        if not self.has_irods_request_perms(request, obj):
             raise PermissionDenied('Insufficient permissions')
 
         irods_request = IrodsDataRequest.objects.filter(
@@ -423,10 +412,7 @@ class IrodsRequestRejectAPIView(
             )
 
         return Response(
-            {
-                'detail': 'iRODS data request rejected',
-            },
-            status=status.HTTP_200_OK,
+            {'detail': 'iRODS data request rejected'}, status=status.HTTP_200_OK
         )
 
 
