@@ -88,6 +88,19 @@ class TestIrodsRequestAPIViewBase(
 ):
     """Helper mixin for IrodsRequestAPIView tests"""
 
+    def create_request(self):
+        """Helper function to create a request"""
+        url = reverse(
+            'samplesheets:api_irods_request_create',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        # Set up post data
+        post_data = {'path': self.path + '/', 'description': 'bla'}
+        with self.login(self.superuser):
+            self.client.post(url, post_data)
+            obj = IrodsDataRequest.objects.first()
+        return obj
+
     def setUp(self):
         super().setUp()
         # Import investigation
@@ -103,19 +116,6 @@ class TestIrodsRequestAPIViewBase(
         # Create objects
         self.file_obj = self.irods.data_objects.create(self.path)
         self.md5_obj = self.irods.data_objects.create(self.path_md5)
-
-    def create_request(self):
-        """Helper function to create a request"""
-        url = reverse(
-            'samplesheets:api_irods_request_create',
-            kwargs={'project': self.project.sodar_uuid},
-        )
-        # Set up post data
-        post_data = {'path': self.path + '/', 'description': 'bla'}
-        with self.login(self.superuser):
-            self.client.post(url, post_data)
-            obj = IrodsDataRequest.objects.first()
-        return obj
 
 
 class TestIrodsRequestCreateAPIView(TestIrodsRequestAPIViewBase):
@@ -315,15 +315,14 @@ class TestIrodsRequestDeleteAPIView(TestIrodsRequestAPIViewBase):
                 self.url_delete, user, 200, method='DELETE'
             )
 
-        for user in bad_users:
-            obj = self.create_request()
-            self.url_delete = reverse(
-                'samplesheets:api_irods_request_delete',
-                kwargs={'irodsdatarequest': obj.sodar_uuid},
-            )
-            self.assert_response_api(
-                self.url_delete, user, 403, method='DELETE'
-            )
+        obj = self.create_request()
+        self.url_delete = reverse(
+            'samplesheets:api_irods_request_delete',
+            kwargs={'irodsdatarequest': obj.sodar_uuid},
+        )
+        self.assert_response_api(
+            self.url_delete, bad_users, 403, method='DELETE'
+        )
 
         # Test with anonymous access
         with self.login(self.superuser):
@@ -371,19 +370,18 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                 data={'confirm': True},
             )
 
-        for user in bad_users:
-            obj = self.create_request()
-            self.url_accept = reverse(
-                'samplesheets:api_irods_request_accept',
-                kwargs={'irodsdatarequest': obj.sodar_uuid},
-            )
-            self.assert_response_api(
-                self.url_accept,
-                user,
-                403,
-                method='POST',
-                data={'confirm': True},
-            )
+        obj = self.create_request()
+        self.url_accept = reverse(
+            'samplesheets:api_irods_request_accept',
+            kwargs={'irodsdatarequest': obj.sodar_uuid},
+        )
+        self.assert_response_api(
+            self.url_accept,
+            bad_users,
+            403,
+            method='POST',
+            data={'confirm': True},
+        )
 
         obj = self.create_request()
         self.url_accept = reverse(
@@ -444,19 +442,18 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                 data={'confirm': True},
             )
 
-        for user in bad_users:
-            obj = self.create_request()
-            self.url_accept = reverse(
-                'samplesheets:api_irods_request_accept',
-                kwargs={'irodsdatarequest': obj.sodar_uuid},
-            )
-            self.assert_response_api(
-                self.url_accept,
-                user,
-                403,
-                method='POST',
-                data={'confirm': True},
-            )
+        obj = self.create_request()
+        self.url_accept = reverse(
+            'samplesheets:api_irods_request_accept',
+            kwargs={'irodsdatarequest': obj.sodar_uuid},
+        )
+        self.assert_response_api(
+            self.url_accept,
+            bad_users,
+            403,
+            method='POST',
+            data={'confirm': True},
+        )
 
         obj = self.create_request()
         self.url_accept = reverse(
@@ -505,18 +502,17 @@ class TestIrodsRequestRejectAPIView(TestIrodsRequestAPIViewBase):
                 method='GET',
             )
 
-        for user in bad_users:
-            obj = self.create_request()
-            self.url_reject = reverse(
-                'samplesheets:api_irods_request_reject',
-                kwargs={'irodsdatarequest': obj.sodar_uuid},
-            )
-            self.assert_response_api(
-                self.url_reject,
-                user,
-                403,
-                method='GET',
-            )
+        obj = self.create_request()
+        self.url_reject = reverse(
+            'samplesheets:api_irods_request_reject',
+            kwargs={'irodsdatarequest': obj.sodar_uuid},
+        )
+        self.assert_response_api(
+            self.url_reject,
+            bad_users,
+            403,
+            method='GET',
+        )
 
         obj = self.create_request()
         self.url_reject = reverse(

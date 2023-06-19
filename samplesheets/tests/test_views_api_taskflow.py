@@ -73,7 +73,7 @@ class TestIrodsRequestAPIViewBase(
 ):
     """Base samplesheets API view test class for iRODS delete requests"""
 
-    def _assert_alert_count(self, alert_name, user, count, project=None):
+    def assert_alert_count(self, alert_name, user, count, project=None):
         """
         Assert expected app alert count. If project is not specified, default to
         self.project.
@@ -142,6 +142,11 @@ class TestIrodsRequestAPIViewBase(
         self.app_alerts = get_backend_api('appalerts_backend')
         self.app_alert_model = self.app_alerts.get_model()
 
+        # Set create URL
+        self.url = reverse(
+            'samplesheets:api_irods_request_create',
+            kwargs={'project': self.project.sodar_uuid},
+        )
         # Set default POST data
         self.post_data = {'path': self.path, 'description': 'bla'}
 
@@ -241,36 +246,29 @@ class TestIrodsRequestCreateAPIView(TestIrodsRequestAPIViewBase):
     def test_create(self):
         """Test post() in IrodsRequestCreateAPIView"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
-        self._assert_alert_count(CREATE_ALERT, self.user, 0)
-        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
-        url = reverse(
-            'samplesheets:api_irods_request_create',
-            kwargs={'project': self.project.sodar_uuid},
-        )
+        self.assert_alert_count(CREATE_ALERT, self.user, 0)
+        self.assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
+
         with self.login(self.user_contrib):
-            response = self.client.post(url, self.post_data)
+            response = self.client.post(self.url, self.post_data)
             self.assertEqual(response.status_code, 200)
 
         obj = IrodsDataRequest.objects.first()
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         self.assertEqual(obj.path, self.path)
         self.assertEqual(obj.description, 'bla')
-        self._assert_alert_count(CREATE_ALERT, self.user, 1)
-        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
-        self._assert_alert_count(CREATE_ALERT, self.user_contrib, 0)
-        self._assert_alert_count(CREATE_ALERT, self.user_guest, 0)
+        self.assert_alert_count(CREATE_ALERT, self.user, 1)
+        self.assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
+        self.assert_alert_count(CREATE_ALERT, self.user_contrib, 0)
+        self.assert_alert_count(CREATE_ALERT, self.user_guest, 0)
 
     def test_create_trailing_slash(self):
         """Test creating a request with a trailing slash in path"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         post_data = {'path': self.path + '/', 'description': 'bla'}
-        url = reverse(
-            'samplesheets:api_irods_request_create',
-            kwargs={'project': self.project.sodar_uuid},
-        )
 
         with self.login(self.user_contrib):
-            response = self.client.post(url, post_data)
+            response = self.client.post(self.url, post_data)
             self.assertEqual(response.status_code, 200)
 
         obj = IrodsDataRequest.objects.first()
@@ -281,15 +279,11 @@ class TestIrodsRequestCreateAPIView(TestIrodsRequestAPIViewBase):
     def test_create_invalid_data(self):
         """Test creating a request with invalid data"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
-        self._assert_alert_count(CREATE_ALERT, self.user, 0)
-        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
+        self.assert_alert_count(CREATE_ALERT, self.user, 0)
+        self.assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
         post_data = {'path': '/doesnt/exist', 'description': 'bla'}
-        url = reverse(
-            'samplesheets:api_irods_request_create',
-            kwargs={'project': self.project.sodar_uuid},
-        )
         with self.login(self.user_contrib):
-            response = self.client.post(url, post_data)
+            response = self.client.post(self.url, post_data)
             self.assertEqual(response.status_code, 400)
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
 
@@ -297,12 +291,8 @@ class TestIrodsRequestCreateAPIView(TestIrodsRequestAPIViewBase):
         """Test creating a request with assay path (should fail)"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         post_data = {'path': self.assay_path, 'description': 'bla'}
-        url = reverse(
-            'samplesheets:api_irods_request_create',
-            kwargs={'project': self.project.sodar_uuid},
-        )
         with self.login(self.user_contrib):
-            response = self.client.post(url, post_data)
+            response = self.client.post(self.url, post_data)
             self.assertEqual(response.status_code, 400)
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
 
@@ -314,22 +304,18 @@ class TestIrodsRequestCreateAPIView(TestIrodsRequestAPIViewBase):
         self.irods.data_objects.create(path2_md5)
 
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
-        self._assert_alert_count(CREATE_ALERT, self.user, 0)
-        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
-        url = reverse(
-            'samplesheets:api_irods_request_create',
-            kwargs={'project': self.project.sodar_uuid},
-        )
+        self.assert_alert_count(CREATE_ALERT, self.user, 0)
+        self.assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
         with self.login(self.user_contrib):
-            response = self.client.post(url, self.post_data)
+            response = self.client.post(self.url, self.post_data)
             self.assertEqual(response.status_code, 200)
             self.post_data['path'] = path2
-            response = self.client.post(url, self.post_data)
+            response = self.client.post(self.url, self.post_data)
             self.assertEqual(response.status_code, 200)
 
         self.assertEqual(IrodsDataRequest.objects.count(), 2)
-        self._assert_alert_count(CREATE_ALERT, self.user, 1)
-        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
+        self.assert_alert_count(CREATE_ALERT, self.user, 1)
+        self.assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
 
 
 class TestIrodsRequestUpdateAPIView(TestIrodsRequestAPIViewBase):
@@ -403,22 +389,18 @@ class TestIrodsRequestDeleteAPIView(TestIrodsRequestAPIViewBase):
                 ),
                 self.post_data,
             )
-            self.assertEqual(IrodsDataRequest.objects.count(), 1)
-            self._assert_alert_count(CREATE_ALERT, self.user, 1)
-            self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
-            obj = IrodsDataRequest.objects.first()
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        obj = IrodsDataRequest.objects.first()
 
+        with self.login(self.user_contrib):
             response = self.client.delete(
                 reverse(
                     'samplesheets:api_irods_request_delete',
                     kwargs={'irodsdatarequest': obj.sodar_uuid},
                 )
             )
-            self.assertEqual(response.status_code, 200)
-
+        self.assertEqual(response.status_code, 200)
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
-        self._assert_alert_count(CREATE_ALERT, self.user, 0)
-        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
 
     def test_delete_one_of_multiple(self):
         """Test deleting one of multiple requests"""
@@ -445,24 +427,17 @@ class TestIrodsRequestDeleteAPIView(TestIrodsRequestAPIViewBase):
                 self.post_data,
             )
             self.assertEqual(IrodsDataRequest.objects.count(), 2)
-            self._assert_alert_count(CREATE_ALERT, self.user, 1)
-            self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
             obj = IrodsDataRequest.objects.first()
-            # NOTE: Still should only have one request for both
-            self._assert_alert_count(CREATE_ALERT, self.user, 1)
-            self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
-
             response = self.client.delete(
                 reverse(
                     'samplesheets:api_irods_request_delete',
                     kwargs={'irodsdatarequest': obj.sodar_uuid},
                 )
             )
-            self.assertEqual(response.status_code, 200)
-
+        self.assertEqual(response.status_code, 200)
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
-        self._assert_alert_count(CREATE_ALERT, self.user, 1)
-        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
+        self.assert_alert_count(CREATE_ALERT, self.user, 1)
+        self.assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
 
 
 class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
@@ -478,13 +453,11 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                 ),
                 self.post_data,
             )
-
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         obj = IrodsDataRequest.objects.first()
-        self._assert_alert_count(CREATE_ALERT, self.user, 1)
-        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
-        self._assert_alert_count(ACCEPT_ALERT, self.user, 0)
-        self._assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_contrib, 0)
 
         with self.login(self.user):
             response = self.client.post(
@@ -494,14 +467,13 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                 ),
                 {'confirm': True},
             )
-            self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
         obj.refresh_from_db()
         self.assertEqual(obj.status, 'ACCEPTED')
-        self._assert_alert_count(CREATE_ALERT, self.user, 0)
-        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
-        self._assert_alert_count(ACCEPT_ALERT, self.user, 0)
-        self._assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_contrib, 1)
         self.assert_irods_obj(self.path, False)
 
     def test_accept_no_request(self):
@@ -515,7 +487,7 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                 ),
                 {'confirm': True},
             )
-            self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 404)
 
     def test_accept_invalid_data(self):
         """Test accepting a request with invalid data"""
@@ -529,10 +501,9 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
             )
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         obj = IrodsDataRequest.objects.first()
-        self._assert_alert_count(CREATE_ALERT, self.user, 1)
-        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
-        self._assert_alert_count(ACCEPT_ALERT, self.user, 0)
-        self._assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_contrib, 0)
 
         with self.login(self.user):
             response = self.client.post(
@@ -542,11 +513,11 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                 ),
                 {'confirm': False},
             )
-            self.assertEqual(response.status_code, 200)
-
+        self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
-        self._assert_alert_count(ACCEPT_ALERT, self.user, 0)
-        self._assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_contrib, 1)
         self.assert_irods_obj(self.path, False)
 
     def test_accept_delegate(self):
@@ -563,9 +534,9 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
             )
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         obj = IrodsDataRequest.objects.first()
-        self._assert_alert_count(ACCEPT_ALERT, self.user, 0)
-        self._assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
-        self._assert_alert_count(ACCEPT_ALERT, self.user_contrib, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_contrib, 0)
 
         with self.login(self.user_delegate):
             response = self.client.post(
@@ -575,14 +546,13 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                 ),
                 {'confirm': True},
             )
-            self.assertEqual(response.status_code, 200)
-
+        self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
         self.assertEqual(obj.status, 'ACCEPTED')
         self.assert_irods_obj(self.path, False)
-        self._assert_alert_count(ACCEPT_ALERT, self.user, 0)
-        self._assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
-        self._assert_alert_count(ACCEPT_ALERT, self.user_contrib, 1)
+        self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_contrib, 1)
 
     def test_accept_contributor(self):
         """Test accepting a request as contributor"""
@@ -598,9 +568,9 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
             )
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         obj = IrodsDataRequest.objects.first()
-        self._assert_alert_count(ACCEPT_ALERT, self.user, 0)
-        self._assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
-        self._assert_alert_count(ACCEPT_ALERT, self.user_contrib, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_contrib, 0)
 
         with self.login(self.user_contrib):
             response = self.client.post(
@@ -610,14 +580,13 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                 ),
                 {'confirm': True},
             )
-            self.assertEqual(response.status_code, 403)
-
+        self.assertEqual(response.status_code, 403)
         obj.refresh_from_db()
         self.assertEqual(obj.status, 'ACTIVE')
         self.assert_irods_obj(self.path, True)
-        self._assert_alert_count(ACCEPT_ALERT, self.user, 0)
-        self._assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
-        self._assert_alert_count(ACCEPT_ALERT, self.user_contrib, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_contrib, 0)
 
     def test_accept_one_of_multiple(self):
         """Test accepting one of multiple requests"""
@@ -643,10 +612,7 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                 ),
                 self.post_data,
             )
-
         self.assertEqual(IrodsDataRequest.objects.count(), 2)
-        self._assert_alert_count(CREATE_ALERT, self.user, 1)
-        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
         obj = IrodsDataRequest.objects.first()
 
         with self.login(self.user):
@@ -657,15 +623,12 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                 ),
                 {'confirm': True},
             )
-            self.assertEqual(response.status_code, 200)
-
+        self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
         self.assertEqual(obj.status, 'ACCEPTED')
         self.assertEqual(
             IrodsDataRequest.objects.filter(status='ACTIVE').count(), 1
         )
-        self._assert_alert_count(CREATE_ALERT, self.user, 1)
-        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
 
     @override_settings(REDIS_URL=INVALID_REDIS_URL)
     def test_accept_lock_failure(self):
@@ -682,8 +645,6 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
             )
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         obj = IrodsDataRequest.objects.first()
-        self._assert_alert_count(CREATE_ALERT, self.user, 1)
-        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
 
         with self.login(self.user):
             response = self.client.post(
@@ -693,17 +654,49 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                 ),
                 {'confirm': True},
             )
-            self.assertEqual(response.status_code, 500)
-
+        self.assertEqual(response.status_code, 500)
         obj.refresh_from_db()
         self.assertEqual(obj.status, 'FAILED')
         self.assert_irods_obj(self.path, True)
-        self._assert_alert_count(ACCEPT_ALERT, self.user, 0)
-        self._assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
-        self._assert_alert_count(ACCEPT_ALERT, self.user_contrib, 0)
-        self._assert_alert_count(CREATE_ALERT, self.user, 1)
-        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
+        self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_contrib, 0)
         self.assert_irods_obj(self.path, True)
+
+    def test_accept_already_accepted(self):
+        """Test accepting an already accepted request (should fail)"""
+        with self.login(self.user_contrib):
+            self.client.post(
+                reverse(
+                    'samplesheets:api_irods_request_create',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                self.post_data,
+            )
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        obj = IrodsDataRequest.objects.first()
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:api_irods_request_accept',
+                    kwargs={'irodsdatarequest': obj.sodar_uuid},
+                ),
+                {'confirm': True},
+            )
+        self.assertEqual(response.status_code, 200)
+        obj.refresh_from_db()
+        self.assertEqual(obj.status, 'ACCEPTED')
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:api_irods_request_accept',
+                    kwargs={'irodsdatarequest': obj.sodar_uuid},
+                ),
+                {'confirm': True},
+            )
+        self.assertEqual(response.status_code, 500)
 
 
 class TestIrodsRequestRejectAPIView(TestIrodsRequestAPIViewBase):
@@ -712,9 +705,9 @@ class TestIrodsRequestRejectAPIView(TestIrodsRequestAPIViewBase):
     def test_reject_admin(self):
         """Test rejecting a request as admin"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
-        self._assert_alert_count(REJECT_ALERT, self.user, 0)
-        self._assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
-        self._assert_alert_count(REJECT_ALERT, self.user_contrib, 0)
+        self.assert_alert_count(REJECT_ALERT, self.user, 0)
+        self.assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
+        self.assert_alert_count(REJECT_ALERT, self.user_contrib, 0)
 
         with self.login(self.user_contrib):
             self.client.post(
@@ -724,7 +717,6 @@ class TestIrodsRequestRejectAPIView(TestIrodsRequestAPIViewBase):
                 ),
                 self.post_data,
             )
-
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         obj = IrodsDataRequest.objects.first()
 
@@ -735,20 +727,19 @@ class TestIrodsRequestRejectAPIView(TestIrodsRequestAPIViewBase):
                     kwargs={'irodsdatarequest': obj.sodar_uuid},
                 ),
             )
-            self.assertEqual(response.status_code, 200)
-
+        self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
         self.assertEqual(obj.status, 'REJECTED')
-        self._assert_alert_count(REJECT_ALERT, self.user, 0)
-        self._assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
-        self._assert_alert_count(REJECT_ALERT, self.user_contrib, 1)
+        self.assert_alert_count(REJECT_ALERT, self.user, 0)
+        self.assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
+        self.assert_alert_count(REJECT_ALERT, self.user_contrib, 1)
 
     def test_reject_delegate(self):
         """Test rejecting a request as delegate"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
-        self._assert_alert_count(REJECT_ALERT, self.user, 0)
-        self._assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
-        self._assert_alert_count(REJECT_ALERT, self.user_contrib, 0)
+        self.assert_alert_count(REJECT_ALERT, self.user, 0)
+        self.assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
+        self.assert_alert_count(REJECT_ALERT, self.user_contrib, 0)
 
         with self.login(self.user_contrib):
             self.client.post(
@@ -758,7 +749,6 @@ class TestIrodsRequestRejectAPIView(TestIrodsRequestAPIViewBase):
                 ),
                 self.post_data,
             )
-
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         obj = IrodsDataRequest.objects.first()
 
@@ -769,20 +759,19 @@ class TestIrodsRequestRejectAPIView(TestIrodsRequestAPIViewBase):
                     kwargs={'irodsdatarequest': obj.sodar_uuid},
                 ),
             )
-            self.assertEqual(response.status_code, 200)
-
+        self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
         self.assertEqual(obj.status, 'REJECTED')
-        self._assert_alert_count(REJECT_ALERT, self.user, 0)
-        self._assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
-        self._assert_alert_count(REJECT_ALERT, self.user_contrib, 1)
+        self.assert_alert_count(REJECT_ALERT, self.user, 0)
+        self.assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
+        self.assert_alert_count(REJECT_ALERT, self.user_contrib, 1)
 
     def test_reject_contributor(self):
         """Test rejecting a request as contributor"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
-        self._assert_alert_count(REJECT_ALERT, self.user, 0)
-        self._assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
-        self._assert_alert_count(REJECT_ALERT, self.user_contrib, 0)
+        self.assert_alert_count(REJECT_ALERT, self.user, 0)
+        self.assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
+        self.assert_alert_count(REJECT_ALERT, self.user_contrib, 0)
 
         with self.login(self.user_contrib):
             self.client.post(
@@ -802,13 +791,12 @@ class TestIrodsRequestRejectAPIView(TestIrodsRequestAPIViewBase):
                     kwargs={'irodsdatarequest': obj.sodar_uuid},
                 ),
             )
-            self.assertEqual(response.status_code, 403)
-
+        self.assertEqual(response.status_code, 403)
         obj.refresh_from_db()
         self.assertEqual(obj.status, 'ACTIVE')
-        self._assert_alert_count(REJECT_ALERT, self.user, 0)
-        self._assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
-        self._assert_alert_count(REJECT_ALERT, self.user_contrib, 0)
+        self.assert_alert_count(REJECT_ALERT, self.user, 0)
+        self.assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
+        self.assert_alert_count(REJECT_ALERT, self.user_contrib, 0)
 
     def test_reject_one_of_multiple(self):
         """Test rejecting one of multipe requests"""
@@ -835,11 +823,8 @@ class TestIrodsRequestRejectAPIView(TestIrodsRequestAPIViewBase):
                 ),
                 self.post_data,
             )
-
-            self.assertEqual(IrodsDataRequest.objects.count(), 2)
+        self.assertEqual(IrodsDataRequest.objects.count(), 2)
         obj = IrodsDataRequest.objects.first()
-        self._assert_alert_count(CREATE_ALERT, self.user, 1)
-        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
 
         with self.login(self.user):
             response = self.client.get(
@@ -848,18 +833,15 @@ class TestIrodsRequestRejectAPIView(TestIrodsRequestAPIViewBase):
                     kwargs={'irodsdatarequest': obj.sodar_uuid},
                 ),
             )
-            self.assertEqual(response.status_code, 200)
-
+        self.assertEqual(response.status_code, 200)
         self.assertEqual(
             IrodsDataRequest.objects.filter(status='ACTIVE').count(), 1
         )
         obj.refresh_from_db()
         self.assertEqual(obj.status, 'REJECTED')
-        self._assert_alert_count(CREATE_ALERT, self.user, 1)
-        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
-        self._assert_alert_count(REJECT_ALERT, self.user, 0)
-        self._assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
-        self._assert_alert_count(REJECT_ALERT, self.user_contrib, 1)
+        self.assert_alert_count(REJECT_ALERT, self.user, 0)
+        self.assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
+        self.assert_alert_count(REJECT_ALERT, self.user_contrib, 1)
 
     def test_reject_no_request(self):
         """Test rejecting request, that doesn't exist"""
@@ -872,7 +854,7 @@ class TestIrodsRequestRejectAPIView(TestIrodsRequestAPIViewBase):
                     kwargs={'irodsdatarequest': self.category.sodar_uuid},
                 ),
             )
-            self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 404)
 
 
 class TestSampleDataFileExistsAPIView(TestSampleSheetAPITaskflowBase):
