@@ -14,11 +14,15 @@ class ZoneStatusRetrieveAjaxView(SODARBaseProjectAjaxView):
     permission_required = 'landingzones.view_zone_own'
 
     def check_zone_permission(self, zone, user):
-        permission = 'landingzones.view_zone_own' if zone.user == self.request.user else 'landingzones.view_zone_all'
-        return user.has_perm(permission, obj=zone)
+        permission = (
+            'landingzones.view_zone_own'
+            if zone.user == self.request.user
+            else 'landingzones.view_zone_all'
+        )
+        return user.has_perm(permission, obj=zone.project)
 
     def post(self, request, *args, **kwargs):
-        zone_uuids = request.data.get('zone_uuids', [])
+        zone_uuids = request.data.getlist('zone_uuids[]')
         project = self.get_project()
 
         # Filter landing zones based on UUIDs and project
@@ -32,10 +36,9 @@ class ZoneStatusRetrieveAjaxView(SODARBaseProjectAjaxView):
             if not self.check_zone_permission(zone, self.request.user):
                 continue
 
-            status_dict[zone.sodar_uuid] = {
+            status_dict[str(zone.sodar_uuid)] = {
                 'status': zone.status,
-                'status_info': zone.status_info
+                'status_info': zone.status_info,
             }
 
         return Response(status_dict, status=200)
-
