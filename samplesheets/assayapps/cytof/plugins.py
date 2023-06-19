@@ -115,6 +115,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
 
         for i in range(len(row)):
             header = table['field_header'][i]
+            top_header = get_top_header(table, i)
 
             # Create barcode key & antibody panel links in processes
             if (
@@ -143,6 +144,18 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                 row[i]['value'] = SIMPLE_LINK_TEMPLATE.format(
                     label=row[i]['value'],
                     url=base_url + '/' + mc_assay_name + '/' + row[i]['value'],
+                )
+
+            # Create data file links
+            elif (
+                header['obj_cls'] == 'GenericMaterial'
+                and header['item_type'] == 'DATA'
+                and header['value'].lower() == 'name'
+                and top_header['value'].lower()
+                in ['raw data file', 'derived data file']
+            ):
+                row[i]['link'] = (
+                    base_url + '/' + mc_assay_name + '/' + row[i]['value']
                 )
 
         return row

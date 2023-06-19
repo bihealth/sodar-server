@@ -293,26 +293,33 @@ class ProjectAppPlugin(
         :return: Dict or None if not found
         """
         obj = self.get_object(eval(model_str), uuid)
-        if obj and obj.__class__ in [Investigation, Study, Assay]:
+        if not obj:
+            return None
+        if obj.__class__ == IrodsAccessTicket:
+            return {
+                'url': reverse(
+                    'samplesheets:irods_tickets',
+                    kwargs={'project': obj.get_project().sodar_uuid},
+                ),
+                'label': obj.get_display_name(),
+            }
+        if obj.__class__ in [Investigation, Study, Assay]:
             return {
                 'url': get_sheets_url(obj),
                 'label': obj.title
                 if obj.__class__ == Investigation
                 else obj.get_display_name(),
             }
-        elif obj and obj.__class__ == ISATab:
+        url_kwargs = {'project': obj.project.sodar_uuid}
+        if obj.__class__ == ISATab:
             return {
-                'url': reverse(
-                    'samplesheets:versions',
-                    kwargs={'project': obj.project.sodar_uuid},
-                ),
+                'url': reverse('samplesheets:versions', kwargs=url_kwargs),
                 'label': obj.get_full_name(),
             }
-        elif obj and obj.__class__ == IrodsDataRequest:
+        elif obj.__class__ == IrodsDataRequest:
             return {
                 'url': reverse(
-                    'samplesheets:irods_requests',
-                    kwargs={'project': obj.project.sodar_uuid},
+                    'samplesheets:irods_requests', kwargs=url_kwargs
                 ),
                 'label': obj.get_display_name(),
             }
