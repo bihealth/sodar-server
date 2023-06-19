@@ -58,7 +58,6 @@ class TestLandingZonePermissionsBase(
             user=self.user_contributor,  # NOTE: Zone owner = user_contributor
             assay=self.assay,
             description=ZONE_DESC,
-            # status='ACTIVE',
             configuration=None,
             config_data={},
         )
