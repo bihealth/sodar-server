@@ -31,7 +31,6 @@ from samplesheets.models import (
     Process,
     GenericMaterial,
     ISATab,
-    IrodsAccessTicket,
     IrodsDataRequest,
 )
 from samplesheets.rendering import (
@@ -39,6 +38,7 @@ from samplesheets.rendering import (
     STUDY_TABLE_CACHE_ITEM,
 )
 from samplesheets.sheet_config import SheetConfigAPI
+from samplesheets.tests.test_models import IrodsAccessTicketMixin
 from samplesheets.tests.test_sheet_config import (
     SheetConfigMixin,
     CONFIG_STUDY_UUID,
@@ -167,26 +167,6 @@ class RowEditMixin:
                         self.row_names.append(a[1])
                         break
                 n_uuid = self.row_uuids[i]
-
-
-class IrodsAccessTicketMixin:
-    """Helpers for creating IrodsAccessTicket object"""
-
-    @classmethod
-    def make_ticket(
-        cls, path, user, project, assay, study, label=None, date_expires=None
-    ):
-        obj = IrodsAccessTicket(
-            path=path,
-            project=project,
-            user=user,
-            assay=assay,
-            study=study,
-            label=label,
-            date_expires=date_expires,
-        )
-        obj.save()
-        return obj
 
 
 class TestSheetContextAjaxView(TestViewsBase):
@@ -563,28 +543,6 @@ class TestStudyTablesAjaxView(IrodsAccessTicketMixin, TestViewsBase):
         self.assertIn('sodar_ontologies', ret_data['edit_context'])
         self.assertIsNotNone(ret_data['edit_context']['samples'])
         self.assertIsNotNone(ret_data['edit_context']['protocols'])
-
-    def test_get_track_hubs(self):
-        """Test study tables retrieval with track hubs"""
-        self.make_ticket(
-            path='/some/path',
-            project=self.project,
-            assay=self.assay,
-            study=self.study,
-            user=self.user,
-        )
-        self.investigation.irods_status = True
-        self.investigation.save()
-
-        with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:ajax_study_tables',
-                    kwargs={'study': self.study.sodar_uuid},
-                )
-            )
-        self.assertEqual(response.status_code, 200)
-        # TODO: Assert track hub data
 
     def test_get_study_cache(self):
         """Test cached study table creation on retrieval"""

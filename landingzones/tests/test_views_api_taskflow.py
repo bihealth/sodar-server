@@ -490,8 +490,8 @@ class TestLandingZoneSubmitMoveAPIView(TestLandingZoneAPITaskflowBase):
 
     def test_post_move(self):
         """Test post() for moving"""
-        irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
-        self.make_md5_object(irods_obj)
+        irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
+        self.make_irods_md5_object(irods_obj)
         self.assertEqual(self.landing_zone.status, 'ACTIVE')
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
@@ -560,8 +560,8 @@ class TestLandingZoneSubmitMoveAPIView(TestLandingZoneAPITaskflowBase):
         zone_results_coll = self.irods.collections.get(
             os.path.join(new_zone_path, RESULTS_COLL)
         )
-        irods_obj = self.make_object(zone_results_coll, TEST_OBJ_NAME)
-        self.make_md5_object(irods_obj)
+        irods_obj = self.make_irods_object(zone_results_coll, TEST_OBJ_NAME)
+        self.make_irods_md5_object(irods_obj)
         self.assertEqual(zone.status, 'ACTIVE')
         self.assertEqual(len(zone_results_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)

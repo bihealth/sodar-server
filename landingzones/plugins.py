@@ -19,7 +19,7 @@ from samplesheets.models import Investigation, Assay
 
 from landingzones.models import LandingZone, STATUS_ALLOW_UPDATE
 from landingzones.urls import urlpatterns
-from landingzones.views import ZoneCreateMixin
+from landingzones.views import ZoneModifyMixin
 
 
 logger = logging.getLogger(__name__)
@@ -38,7 +38,7 @@ LANDINGZONES_INFO_SETTINGS = [
 
 
 class ProjectAppPlugin(
-    ZoneCreateMixin, ProjectModifyPluginMixin, ProjectAppPluginPoint
+    ZoneModifyMixin, ProjectModifyPluginMixin, ProjectAppPluginPoint
 ):
     """Plugin for registering app with Projectroles"""
 

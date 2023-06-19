@@ -12,6 +12,8 @@ from packaging import version
 from altamisa.constants import table_headers as th
 from altamisa.isatab.write_assay_study import RefTableBuilder
 
+from django.conf import settings
+
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.plugins import get_backend_api
@@ -854,17 +856,24 @@ class SampleSheetTableBuilder:
         cache_backend = get_backend_api('sodar_cache')
         item_name = STUDY_TABLE_CACHE_ITEM.format(study=study.sodar_uuid)
         project = study.get_project()
-        # Get cached tables
-        if cache_backend:
-            item = cache_backend.get_cache_item(
-                app_name=APP_NAME,
-                name=item_name,
-                project=project,
+        if settings.SHEETS_ENABLE_STUDY_TABLE_CACHE:
+            # Get cached tables
+            if cache_backend:
+                item = cache_backend.get_cache_item(
+                    app_name=APP_NAME,
+                    name=item_name,
+                    project=project,
+                )
+                if item and item.data:
+                    logger.debug('Returning cached study tables')
+                    return item.data
+                logger.debug('Cache item "{}" not set'.format(item_name))
+        else:
+            logger.debug(
+                'Study table cache disabled in settings. See '
+                'STUDY_TABLE_CACHE_ITEM in settings.py. Returning new tables.'
             )
-            if item and item.data:
-                logger.debug('Returning cached study tables')
-                return item.data
-            logger.debug('Cache item "{}" not set'.format(item_name))
+
         # If not found in cache, build and save tables
         study_tables = self.build_study_tables(study, use_config=True)
         if cache_backend:
