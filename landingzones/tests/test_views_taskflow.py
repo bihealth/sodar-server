@@ -1,8 +1,10 @@
 """View tests in the landingzones app with taskflow"""
 
+import hashlib
 import os
 import time
 
+from irods.keywords import REG_CHKSUM_KW
 from irods.test.helpers import make_object
 
 from django.contrib import auth
@@ -110,6 +112,33 @@ class LandingZoneTaskflowMixin:
 
         self.assert_zone_status(zone, 'ACTIVE')
         return zone
+
+    def make_object(self, coll, obj_name, content=None, content_length=1024):
+        """
+        Create and put a data object into iRODS.
+
+        :param coll: iRODSCollection object
+        :param obj_name: String
+        :param content: Content data (optional)
+        :param content_length: Random content length (if content not specified)
+        :return: iRODSDataObject object
+        """
+        if not content:
+            content = ''.join('x' for _ in range(content_length))
+        obj_path = os.path.join(coll.path, obj_name)
+        return make_object(self.irods, obj_path, content, **{REG_CHKSUM_KW: ''})
+
+    def make_md5_object(self, obj):
+        """
+        Create and put an MD5 checksum object for an existing object in iRODS.
+
+        :param obj: iRODSDataObject
+        :return: iRODSDataObject
+        """
+        md5_path = obj.path + '.md5'
+        with obj.open() as obj_fp:
+            md5_content = hashlib.md5(obj_fp.read()).hexdigest()
+        return make_object(self.irods, md5_path, md5_content)
 
     def assert_zone_status(self, zone, status='ACTIVE'):
         """
