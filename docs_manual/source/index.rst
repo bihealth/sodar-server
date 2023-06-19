@@ -117,6 +117,7 @@ Table of Contents
     Project Management API <api_projectroles>
     Sample Sheets API <api_samplesheets>
     Landing Zones API <api_landingzones>
+    iRODS Info API <api_irodsinfo>
     api_examples
 
 .. toctree::
