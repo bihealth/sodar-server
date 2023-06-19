@@ -251,8 +251,8 @@ class TestIrodsRequestCreateAPIView(TestIrodsRequestAPIViewBase):
 
         with self.login(self.user_contrib):
             response = self.client.post(self.url, self.post_data)
-            self.assertEqual(response.status_code, 200)
 
+        self.assertEqual(response.status_code, 200)
         obj = IrodsDataRequest.objects.first()
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         self.assertEqual(obj.path, self.path)
@@ -269,8 +269,8 @@ class TestIrodsRequestCreateAPIView(TestIrodsRequestAPIViewBase):
 
         with self.login(self.user_contrib):
             response = self.client.post(self.url, post_data)
-            self.assertEqual(response.status_code, 200)
 
+        self.assertEqual(response.status_code, 200)
         obj = IrodsDataRequest.objects.first()
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         self.assertEqual(obj.path, self.path + '/')
@@ -282,18 +282,22 @@ class TestIrodsRequestCreateAPIView(TestIrodsRequestAPIViewBase):
         self.assert_alert_count(CREATE_ALERT, self.user, 0)
         self.assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
         post_data = {'path': '/doesnt/exist', 'description': 'bla'}
+
         with self.login(self.user_contrib):
             response = self.client.post(self.url, post_data)
-            self.assertEqual(response.status_code, 400)
+
+        self.assertEqual(response.status_code, 400)
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
 
     def test_create_invalid_path_assay_collection(self):
         """Test creating a request with assay path (should fail)"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         post_data = {'path': self.assay_path, 'description': 'bla'}
+
         with self.login(self.user_contrib):
             response = self.client.post(self.url, post_data)
-            self.assertEqual(response.status_code, 400)
+
+        self.assertEqual(response.status_code, 400)
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
 
     def test_create_multiple(self):
@@ -302,10 +306,10 @@ class TestIrodsRequestCreateAPIView(TestIrodsRequestAPIViewBase):
         path2_md5 = os.path.join(self.assay_path, TEST_FILE_NAME + '_2.md5')
         self.irods.data_objects.create(path2)
         self.irods.data_objects.create(path2_md5)
-
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         self.assert_alert_count(CREATE_ALERT, self.user, 0)
         self.assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
+
         with self.login(self.user_contrib):
             response = self.client.post(self.url, self.post_data)
             self.assertEqual(response.status_code, 200)
@@ -342,8 +346,8 @@ class TestIrodsRequestUpdateAPIView(TestIrodsRequestAPIViewBase):
                 ),
                 update_data,
             )
-            self.assertEqual(response.status_code, 200)
 
+        self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
         self.assertEqual(obj.description, 'Updated')
         self.assertEqual(obj.path, self.path)
@@ -369,8 +373,8 @@ class TestIrodsRequestUpdateAPIView(TestIrodsRequestAPIViewBase):
                 ),
                 update_data,
             )
-            self.assertEqual(response.status_code, 400)
 
+        self.assertEqual(response.status_code, 400)
         obj.refresh_from_db()
         self.assertEqual(obj.description, 'bla')
         self.assertEqual(obj.path, self.path)
@@ -389,6 +393,7 @@ class TestIrodsRequestDeleteAPIView(TestIrodsRequestAPIViewBase):
                 ),
                 self.post_data,
             )
+
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         obj = IrodsDataRequest.objects.first()
 
@@ -399,6 +404,7 @@ class TestIrodsRequestDeleteAPIView(TestIrodsRequestAPIViewBase):
                     kwargs={'irodsdatarequest': obj.sodar_uuid},
                 )
             )
+
         self.assertEqual(response.status_code, 200)
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
 
@@ -434,6 +440,7 @@ class TestIrodsRequestDeleteAPIView(TestIrodsRequestAPIViewBase):
                     kwargs={'irodsdatarequest': obj.sodar_uuid},
                 )
             )
+
         self.assertEqual(response.status_code, 200)
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         self.assert_alert_count(CREATE_ALERT, self.user, 1)
@@ -453,6 +460,7 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                 ),
                 self.post_data,
             )
+
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         obj = IrodsDataRequest.objects.first()
         self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
@@ -467,8 +475,8 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                 ),
                 {'confirm': True},
             )
-        self.assertEqual(response.status_code, 200)
 
+        self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
         self.assertEqual(obj.status, 'ACCEPTED')
         self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
@@ -499,6 +507,7 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                 ),
                 self.post_data,
             )
+
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         obj = IrodsDataRequest.objects.first()
         self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
@@ -513,6 +522,7 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                 ),
                 {'confirm': False},
             )
+
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
         self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
@@ -532,6 +542,7 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                 ),
                 self.post_data,
             )
+
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         obj = IrodsDataRequest.objects.first()
         self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
@@ -546,6 +557,7 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                 ),
                 {'confirm': True},
             )
+
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
         self.assertEqual(obj.status, 'ACCEPTED')
@@ -566,6 +578,7 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                 ),
                 self.post_data,
             )
+
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         obj = IrodsDataRequest.objects.first()
         self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
@@ -580,6 +593,7 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                 ),
                 {'confirm': True},
             )
+
         self.assertEqual(response.status_code, 403)
         obj.refresh_from_db()
         self.assertEqual(obj.status, 'ACTIVE')
@@ -612,6 +626,7 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                 ),
                 self.post_data,
             )
+
         self.assertEqual(IrodsDataRequest.objects.count(), 2)
         obj = IrodsDataRequest.objects.first()
 
@@ -643,6 +658,7 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                 ),
                 self.post_data,
             )
+
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         obj = IrodsDataRequest.objects.first()
 
@@ -654,6 +670,7 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                 ),
                 {'confirm': True},
             )
+
         self.assertEqual(response.status_code, 500)
         obj.refresh_from_db()
         self.assertEqual(obj.status, 'FAILED')
@@ -673,6 +690,7 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                 ),
                 self.post_data,
             )
+
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         obj = IrodsDataRequest.objects.first()
 
@@ -684,6 +702,7 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                 ),
                 {'confirm': True},
             )
+
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
         self.assertEqual(obj.status, 'ACCEPTED')
@@ -717,6 +736,7 @@ class TestIrodsRequestRejectAPIView(TestIrodsRequestAPIViewBase):
                 ),
                 self.post_data,
             )
+
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         obj = IrodsDataRequest.objects.first()
 
@@ -727,6 +747,7 @@ class TestIrodsRequestRejectAPIView(TestIrodsRequestAPIViewBase):
                     kwargs={'irodsdatarequest': obj.sodar_uuid},
                 ),
             )
+
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
         self.assertEqual(obj.status, 'REJECTED')
@@ -749,6 +770,7 @@ class TestIrodsRequestRejectAPIView(TestIrodsRequestAPIViewBase):
                 ),
                 self.post_data,
             )
+
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         obj = IrodsDataRequest.objects.first()
 
@@ -759,6 +781,7 @@ class TestIrodsRequestRejectAPIView(TestIrodsRequestAPIViewBase):
                     kwargs={'irodsdatarequest': obj.sodar_uuid},
                 ),
             )
+
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
         self.assertEqual(obj.status, 'REJECTED')
@@ -781,16 +804,15 @@ class TestIrodsRequestRejectAPIView(TestIrodsRequestAPIViewBase):
                 ),
                 self.post_data,
             )
-
             self.assertEqual(IrodsDataRequest.objects.count(), 1)
             obj = IrodsDataRequest.objects.first()
-
             response = self.client.get(
                 reverse(
                     'samplesheets:api_irods_request_reject',
                     kwargs={'irodsdatarequest': obj.sodar_uuid},
                 ),
             )
+
         self.assertEqual(response.status_code, 403)
         obj.refresh_from_db()
         self.assertEqual(obj.status, 'ACTIVE')
@@ -814,7 +836,6 @@ class TestIrodsRequestRejectAPIView(TestIrodsRequestAPIViewBase):
                 ),
                 self.post_data,
             )
-
             self.post_data['path'] = path2
             self.client.post(
                 reverse(
@@ -823,6 +844,7 @@ class TestIrodsRequestRejectAPIView(TestIrodsRequestAPIViewBase):
                 ),
                 self.post_data,
             )
+
         self.assertEqual(IrodsDataRequest.objects.count(), 2)
         obj = IrodsDataRequest.objects.first()
 
@@ -833,6 +855,7 @@ class TestIrodsRequestRejectAPIView(TestIrodsRequestAPIViewBase):
                     kwargs={'irodsdatarequest': obj.sodar_uuid},
                 ),
             )
+
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             IrodsDataRequest.objects.filter(status='ACTIVE').count(), 1
@@ -846,7 +869,6 @@ class TestIrodsRequestRejectAPIView(TestIrodsRequestAPIViewBase):
     def test_reject_no_request(self):
         """Test rejecting request, that doesn't exist"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
-
         with self.login(self.user):
             response = self.client.get(
                 reverse(
