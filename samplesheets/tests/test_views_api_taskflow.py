@@ -669,7 +669,7 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                 {'confirm': True},
             )
 
-        self.assertEqual(response.status_code, 500)
+        self.assertEqual(response.status_code, 400)
         obj.refresh_from_db()
         self.assertEqual(obj.status, 'FAILED')
         self.assert_irods_obj(self.path, True)
