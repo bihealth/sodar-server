@@ -220,6 +220,8 @@ within assays based on the assay type. They are placed under
 
 The following assay sub-apps currently exist:
 
+cytof
+    Protein expression profiling / mass cytometry assay app.
 dna_sequencing
     DNA sequencing assay app.
 generic_raw
@@ -231,8 +233,6 @@ microarray
     Microarray assay app.
 pep_ms
     Protein expression profiling / mass spectrometry assay app.
-cytof
-    Protein expression profiling / mass cytometry assay app.
 
 These apps consist of a plugin implementing certain methods. To create a new
 assay sub-app, you should first start a Django app under
