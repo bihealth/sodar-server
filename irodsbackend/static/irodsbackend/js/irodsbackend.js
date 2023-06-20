@@ -250,7 +250,7 @@ $(document).ready(function() {
                 method: 'GET',
                 dataType: 'json'
             }).done(function (data) {
-            // console.log(data);  // DEBUG
+            // console.log(data); // DEBUG
 
             if (data['irods_data'].length > 0) {
                 body += '<table class="table sodar-card-table sodar-irods-obj-table">';
@@ -270,30 +270,23 @@ $(document).ready(function() {
                     }
                     objLink += obj['name'] + '</a>';
 
-                    var colSpan = '1';
-                    var icon = 'mdi:file-document-outline';
-                    var toolTip = 'File';
+                    var colSpan = obj['type'] === 'coll' ? '1' : '4';
+                    var icon = obj['type'] === 'coll' ? 'mdi:folder-open' : 'mdi:file-document-outline';
+                    var toolTip = obj['type'] === 'coll' ? 'Collection' : 'File';
+
+                    var copyButton = '';
                     if (obj['type'] === 'coll') {
-                        colSpan = '4';
-                        icon = 'mdi:folder-open';
-                        toolTip = 'Collection';
-
-                        var copyButton = $('<button>')
-                            .addClass('btn btn-secondary sodar-list-btn pull-right')
-                            .attr('id', 'sodar-irods-copy-btn-' + obj['name'])
-                            .attr('title', 'Copy iRODS path into clipboard')
-                            .attr('data-tooltip', 'tooltip')
-                            .attr('data-placement', 'top')
-                            .attr('onclick', 'copy_path("' + obj['path'] + '", "sodar-irods-copy-btn-' + obj['name'] + '")')
-                            .append($('<i>').addClass('iconify').attr('data-icon', 'mdi:console-line'));
-
-                        // Append copyButton only when it is defined
-                        objLink += copyButton.prop('outerHTML');
+                        copyButton = '<button class="btn btn-secondary sodar-list-btn pull-right" ' +
+                            'id="sodar-irods-copy-btn-' + obj['name'] + '" ' +
+                            'title="Copy iRODS path into clipboard" data-tooltip="tooltip" ' +
+                            'data-placement="top" onclick="copy_path(\'' + obj['path'] + '\', \'sodar-irods-copy-btn-' + obj['name'] + '\')">' +
+                            '<i class="iconify" data-icon="mdi:clipboard-text-multiple"></i>' +
+                            '</button>';
                     }
 
                     var iconHtml = '<i class="iconify mr-1" data-icon="' + icon + '"' +
-                        'title="' + toolTip + '"></i>';
-                    body += '<tr><td colspan="' + colSpan + '">' + iconHtml + objLink + '</td>';
+                        ' title="' + toolTip + '"></i>';
+                    body += '<tr><td colspan="' + colSpan + '">' + iconHtml + objLink + copyButton + '</td>';
 
                     if (obj['type'] === 'obj') {
                         body += '<td>' + humanFileSize(obj['size'], true) + '</td>';
