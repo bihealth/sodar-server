@@ -82,7 +82,7 @@ urls_api = [
 # Ajax API views
 urls_ajax = [
     path(
-        route='ajax/status/retrieve/<uuid:landingzone>',
+        route='ajax/status/retrieve/<uuid:project>',
         view=views_ajax.ZoneStatusRetrieveAjaxView.as_view(),
         name='ajax_status',
     )
