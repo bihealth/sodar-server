@@ -191,12 +191,12 @@ Protein Expression Profiling / Mass Cytometry Plugin
 - Additional assay shortcuts
     * N/A
 - Row-specific links
-    * Rows with an **Assay Name** set in the **mass cytometry** process are 
+    * Rows with an **Assay Name** set in the **mass cytometry** process are
       linked to ``{Assay Name}`` to created one collection per measurement run.
 - Inline links
-    * *Barcode key* and *Antibody panel* process parameter values are linked 
+    * *Barcode key* and *Antibody panel* process parameter values are linked
       to ``MiscFiles``
-    * *Report file* process parameter/comment values are linked 
+    * *Report file* process parameter/comment values are linked
       to ``{Assay Name}``
     * *Raw Data Files* and *Derived Data Files* are linked to ``{Assay Name}``
 - Used with measurement type / technology type
