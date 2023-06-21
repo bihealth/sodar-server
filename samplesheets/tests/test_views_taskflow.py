@@ -778,7 +778,7 @@ class TestIrodsAccessTicketCreateView(
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
 
     def test_post_assay_root(self):
-        """Test POST with assay root path"""
+        """Test POST with assay root path (should fail)"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
         post_data = {
             'path': self.assay_path,
@@ -787,8 +787,8 @@ class TestIrodsAccessTicketCreateView(
         }
         with self.login(self.user):
             response = self.client.post(self.url, post_data)
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(IrodsAccessTicket.objects.count(), 0)
 
     def test_post_study_path(self):
         """Test POST with study path (should fail)"""
