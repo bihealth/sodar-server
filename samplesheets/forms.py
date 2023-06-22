@@ -457,10 +457,9 @@ class IrodsRequestAcceptForm(forms.Form):
         num_requests = kwargs.pop('num_requests', None)
         super().__init__(*args, **kwargs)
 
+        self.fields['confirm'].label = 'I accept the iRODS delete request'
         if num_requests > 1:
-            self.fields['confirm'].label = 'I accept the iRODS delete requests'
-        else:
-            self.fields['confirm'].label = 'I accept the iRODS delete request'
+            self.fields['confirm'].label += 's'
 
 
 class SheetVersionEditForm(forms.ModelForm):

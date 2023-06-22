@@ -2629,7 +2629,7 @@ class IrodsRequestAcceptBatchView(
     form_class = IrodsRequestAcceptForm
 
     def get_form_kwargs(self):
-        "Override to pass number of requests to form"
+        """Override to pass number of requests to form"""
         kwargs = super().get_form_kwargs()
         kwargs['num_requests'] = len(self.get_irods_request_objects())
         return kwargs
@@ -2830,6 +2830,11 @@ class IrodsDataRequestListView(
 
     def get_context_data(self, *args, **kwargs):
         context_data = super().get_context_data(*args, **kwargs)
+        irods = get_backend_api('omics_irods')
+        with irods.get_session() as irods_session:
+            if settings.IRODS_WEBDAV_ENABLED:
+                for item in context_data['object_list']:
+                    self.get_extra_item_data(irods_session, item)
         assign = RoleAssignment.objects.filter(
             project=self.get_project(),
             user=self.request.user,
@@ -2856,15 +2861,14 @@ class IrodsDataRequestListView(
     def build_webdav_url(self, item):
         return f"{settings.IRODS_WEBDAV_URL}/{item.path}"
 
-    def get_extra_item_data(self, irods, item):
+    def get_extra_item_data(self, irods_session, item):
         # Add webdav URL to the item
         if settings.IRODS_WEBDAV_ENABLED:
             item.webdav_url = self.build_webdav_url(item)
         else:
             item.webdav_url = None
         # Check if the item is a collection
-        with irods.get_session() as session:
-            item.is_collection = session.collections.exists(item.path)
+        item.is_collection = irods_session.collections.exists(item.path)
 
     def get(self, request, *args, **kwargs):
         response = super().get(request, *args, **kwargs)
@@ -2880,11 +2884,6 @@ class IrodsDataRequestListView(
                     kwargs={'project': self.get_project().sodar_uuid},
                 )
             )
-
-        if settings.IRODS_WEBDAV_ENABLED:
-            for item in response.context_data['object_list']:
-                self.get_extra_item_data(irods_backend, item)
-
         return response
 
 

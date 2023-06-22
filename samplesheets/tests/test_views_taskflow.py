@@ -1880,8 +1880,7 @@ class TestIrodsRequestAcceptBatchView(TestIrodsRequestViewsBase):
                     ),
                 },
             )
-            self.assertEqual(response.status_code, 200)
-
+        self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.context['affected_object_paths'],
             sorted(
@@ -1918,8 +1917,7 @@ class TestIrodsRequestAcceptBatchView(TestIrodsRequestViewsBase):
                 ),
                 self.post_data,
             )
-            self.assertEqual(IrodsDataRequest.objects.count(), 1)
-
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -1935,8 +1933,7 @@ class TestIrodsRequestAcceptBatchView(TestIrodsRequestViewsBase):
                     ),
                 },
             )
-            self.assertEqual(response.status_code, 200)
-
+        self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.context['irods_request_data'][0],
             IrodsDataRequest.objects.first(),
@@ -1998,20 +1995,19 @@ class TestIrodsRequestAcceptBatchView(TestIrodsRequestViewsBase):
                     kwargs={'project': self.project.sodar_uuid},
                 ),
             )
-            self.assertEqual(len(list(get_messages(response.wsgi_request))), 2)
-            self.assertEqual(
-                list(get_messages(response.wsgi_request))[-1].message,
-                'iRODS data request "{}" accepted.'.format(
-                    IrodsDataRequest.objects.first().get_display_name()
-                ),
-            )
-            self.assertEqual(
-                list(get_messages(response.wsgi_request))[-2].message,
-                'iRODS data request "{}" accepted.'.format(
-                    IrodsDataRequest.objects.last().get_display_name()
-                ),
-            )
-
+        self.assertEqual(len(list(get_messages(response.wsgi_request))), 2)
+        self.assertEqual(
+            list(get_messages(response.wsgi_request))[-1].message,
+            'iRODS data request "{}" accepted.'.format(
+                IrodsDataRequest.objects.first().get_display_name()
+            ),
+        )
+        self.assertEqual(
+            list(get_messages(response.wsgi_request))[-2].message,
+            'iRODS data request "{}" accepted.'.format(
+                IrodsDataRequest.objects.last().get_display_name()
+            ),
+        )
         obj = IrodsDataRequest.objects.first()
         obj.refresh_from_db()
         self.assertEqual(obj.status, 'ACCEPTED')
@@ -2039,11 +2035,11 @@ class TestIrodsRequestAcceptBatchView(TestIrodsRequestViewsBase):
                     'confirm': True,
                 },
             )
-            self.assertEqual(response.status_code, 302)
-            self.assertEqual(
-                list(get_messages(response.wsgi_request))[-1].message,
-                IRODS_NO_REQ_MSG,
-            )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(
+            list(get_messages(response.wsgi_request))[-1].message,
+            IRODS_NO_REQ_MSG,
+        )
 
     def test_accept_invalid_form_data(self):
         """Test accepting a delete request with invalid form data"""
@@ -2090,12 +2086,11 @@ class TestIrodsRequestAcceptBatchView(TestIrodsRequestViewsBase):
                     'confirm': False,
                 },
             )
-            self.assertEqual(response.status_code, 200)
-            self.assertEqual(
-                response.context['form'].errors['confirm'][0],
-                'This field is required.',
-            )
-
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.context['form'].errors['confirm'][0],
+            'This field is required.',
+        )
         self._assert_alert_count(CREATE_ALERT, self.user, 1)
         self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
         self._assert_alert_count(ACCEPT_ALERT, self.user, 0)
@@ -2156,7 +2151,6 @@ class TestIrodsRequestAcceptBatchView(TestIrodsRequestViewsBase):
                     kwargs={'project': self.project.sodar_uuid},
                 ),
             )
-
         obj = IrodsDataRequest.objects.first()
         obj.refresh_from_db()
         self.assertEqual(obj.status, 'FAILED')

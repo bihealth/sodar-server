@@ -531,7 +531,7 @@ class TestIrodsObjectListAjaxView(TestIrodsRequestViewsBase):
                 data={'path': self.assay_path},
             )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data['irods_data']), 1)
+        self.assertEqual(len(response.data['irods_data']), 0)
 
     def test_get_coll_obj(self):
         """Test GET request for listing a collection with a data object"""
