@@ -5,9 +5,7 @@ from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.tests.test_permissions import (
-    TestPermissionMixin,
-)
+from projectroles.tests.test_permissions import TestProjectPermissionBase
 
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
@@ -17,7 +15,6 @@ from landingzones.tests.test_models import (
     ZONE_TITLE,
     ZONE_DESC,
 )
-from taskflowbackend.tests.base import TaskflowAPIPermissionTestBase
 
 
 # SODAR constants
@@ -36,8 +33,7 @@ TEST_OBJ_NAME = 'test1.txt'
 class TestLandingZonePermissionsBase(
     LandingZoneMixin,
     SampleSheetIOMixin,
-    TestPermissionMixin,
-    TaskflowAPIPermissionTestBase,
+    TestProjectPermissionBase,
 ):
     """Base view for landingzones permissions tests"""
 
