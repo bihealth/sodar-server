@@ -471,7 +471,6 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                     'samplesheets:api_irods_request_accept',
                     kwargs={'irodsdatarequest': obj.sodar_uuid},
                 ),
-                {'confirm': True},
             )
 
         self.assertEqual(response.status_code, 200)
@@ -491,7 +490,6 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                     'samplesheets:api_irods_request_accept',
                     kwargs={'irodsdatarequest': self.category.sodar_uuid},
                 ),
-                {'confirm': True},
             )
         self.assertEqual(response.status_code, 404)
 
@@ -518,7 +516,7 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                     'samplesheets:api_irods_request_accept',
                     kwargs={'irodsdatarequest': obj.sodar_uuid},
                 ),
-                {'confirm': False},
+                # {'confirm': False},
             )
 
         self.assertEqual(response.status_code, 200)
@@ -553,7 +551,6 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                     'samplesheets:api_irods_request_accept',
                     kwargs={'irodsdatarequest': obj.sodar_uuid},
                 ),
-                {'confirm': True},
             )
 
         self.assertEqual(response.status_code, 200)
@@ -589,7 +586,6 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                     'samplesheets:api_irods_request_accept',
                     kwargs={'irodsdatarequest': obj.sodar_uuid},
                 ),
-                {'confirm': True},
             )
 
         self.assertEqual(response.status_code, 403)
@@ -634,7 +630,6 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                     'samplesheets:api_irods_request_accept',
                     kwargs={'irodsdatarequest': obj.sodar_uuid},
                 ),
-                {'confirm': True},
             )
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
@@ -666,7 +661,6 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                     'samplesheets:api_irods_request_accept',
                     kwargs={'irodsdatarequest': obj.sodar_uuid},
                 ),
-                {'confirm': True},
             )
 
         self.assertEqual(response.status_code, 400)
@@ -698,7 +692,6 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                     'samplesheets:api_irods_request_accept',
                     kwargs={'irodsdatarequest': obj.sodar_uuid},
                 ),
-                {'confirm': True},
             )
 
         self.assertEqual(response.status_code, 200)
@@ -711,7 +704,6 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                     'samplesheets:api_irods_request_accept',
                     kwargs={'irodsdatarequest': obj.sodar_uuid},
                 ),
-                {'confirm': True},
             )
         self.assertEqual(response.status_code, 400)
 

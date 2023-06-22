@@ -86,7 +86,7 @@ class TestSampleDataFileExistsAPIView(
 class TestIrodsRequestAPIViewBase(
     SampleSheetIOMixin, SampleSheetTaskflowMixin, TaskflowAPIPermissionTestBase
 ):
-    """Base test class for IrodsRequestAPIView tests"""
+    """Base test class for IrodsRequestAPIView permission tests"""
 
     def create_request(self):
         """Helper function to create a request"""
@@ -204,6 +204,11 @@ class TestIrodsRequestUpdateAPIView(TestIrodsRequestAPIViewBase):
 
     def setUp(self):
         super().setUp()
+        self.irods_request = self.create_request()
+        self.url = reverse(
+            'samplesheets:api_irods_request_update',
+            kwargs={'irodsdatarequest': self.irods_request.sodar_uuid},
+        )
         self.update_data = {'path': self.path, 'description': 'Updated'}
 
     def test_update(self):
@@ -223,12 +228,6 @@ class TestIrodsRequestUpdateAPIView(TestIrodsRequestAPIViewBase):
             self.user_guest,
             self.user_no_roles,
         ]
-
-        obj = self.create_request()
-        self.url = reverse(
-            'samplesheets:api_irods_request_update',
-            kwargs={'irodsdatarequest': obj.sodar_uuid},
-        )
         self.assert_response_api(
             self.url, good_users, 200, method='PUT', data=self.update_data
         )
@@ -243,11 +242,6 @@ class TestIrodsRequestUpdateAPIView(TestIrodsRequestAPIViewBase):
     def test_update_anon(self):
         """Test post() in IrodsRequestUpdateAPIView with anonymous access"""
         self.project.set_public()
-        obj = self.create_request()
-        self.url = reverse(
-            'samplesheets:api_irods_request_update',
-            kwargs={'irodsdatarequest': obj.sodar_uuid},
-        )
         self.assert_response_api(
             self.url, self.anonymous, 401, method='PUT', data=self.update_data
         )
@@ -255,11 +249,6 @@ class TestIrodsRequestUpdateAPIView(TestIrodsRequestAPIViewBase):
     def test_update_archived(self):
         """Test post() in IrodsRequestUpdateAPIView with archived project"""
         self.project.set_archive()
-        obj = self.create_request()
-        self.url = reverse(
-            'samplesheets:api_irods_request_update',
-            kwargs={'irodsdatarequest': obj.sodar_uuid},
-        )
         good_users = [self.superuser]
         bad_users = [
             self.user_owner_cat,
@@ -367,7 +356,7 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                 user,
                 200,
                 method='POST',
-                data={'confirm': True},
+                # data={'confirm': True},
             )
 
         obj = self.create_request()
@@ -380,7 +369,7 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
             bad_users,
             403,
             method='POST',
-            data={'confirm': True},
+            # data={'confirm': True},
         )
 
         obj = self.create_request()
@@ -393,7 +382,7 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
             self.anonymous,
             401,
             method='POST',
-            data={'confirm': True},
+            # data={'confirm': True},
         )
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
@@ -409,7 +398,7 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
             self.anonymous,
             401,
             method='POST',
-            data={'confirm': True},
+            # data={'confirm': True},
         )
 
     def test_accept_archived(self):
@@ -439,7 +428,7 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                 user,
                 200,
                 method='POST',
-                data={'confirm': True},
+                # data={'confirm': True},
             )
 
         obj = self.create_request()
@@ -452,7 +441,7 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
             bad_users,
             403,
             method='POST',
-            data={'confirm': True},
+            # data={'confirm': True},
         )
 
         obj = self.create_request()
@@ -465,7 +454,7 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
             self.anonymous,
             401,
             method='POST',
-            data={'confirm': True},
+            # data={'confirm': True},
         )
 
 

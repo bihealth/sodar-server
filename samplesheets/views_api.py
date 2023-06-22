@@ -156,6 +156,10 @@ class IrodsDataRequestListAPIView(
     **URL:** ``/samplesheets/api/irods/requests/{Project.sodar_uuid}``
 
     **Methods:** ``GET``
+
+    **Returns:**
+
+    - ``requests``: List of iRODS data requests (JSON)
     """
 
     http_method_names = ['get']
@@ -364,11 +368,7 @@ class IrodsRequestAcceptAPIView(
                 '{} {}'.format('Accepting ' + IRODS_EX_MSG + ':', ex)
             )
         return Response(
-            {
-                'detail': 'iRODS data request accepted',
-                'path': irods_request.path,
-            },
-            status=status.HTTP_200_OK,
+            {'detail': 'iRODS data request accepted'}, status=status.HTTP_200_OK
         )
 
 
@@ -410,7 +410,6 @@ class IrodsRequestRejectAPIView(
             raise APIException(
                 '{} {}'.format('Rejecting ' + IRODS_EX_MSG + ':', ex)
             )
-
         return Response(
             {'detail': 'iRODS data request rejected'}, status=status.HTTP_200_OK
         )
