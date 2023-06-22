@@ -20,7 +20,7 @@ class TestIrodsConfigRetrieveAPIView(TestPermissionBase):
 
     def test_irods_config(self):
         """Test permissions for IrodsConfigRetrieveAPIView"""
-        url = reverse('irodsinfo:api_config')
+        url = reverse('irodsinfo:api_env')
         good_users = [self.superuser, self.regular_user]
         bad_users = [self.anonymous]
         self.assert_response(url, good_users, 200)

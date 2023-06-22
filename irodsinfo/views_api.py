@@ -15,32 +15,31 @@ from irodsinfo.views import IrodsConfigMixin
 logger = logging.getLogger(__name__)
 
 
-class IrodsConfigRetrieveAPIView(IrodsConfigMixin, APIView):
-
+class IrodsEnvRetrieveAPIView(IrodsConfigMixin, APIView):
     """
-    Retrieve iRODS configuration file for the current user.
+    Retrieve iRODS environment file for the current user.
 
-    **URL:** ``/samplesheets/api/investigation/retrieve/{Project.sodar_uuid}``
+    **URL:** ``/irods/api/environment``
 
     **Methods:** ``GET``
 
     **Returns:**
 
-    - ``irods_environment``: Return user iRODS config (``json``)
+    - ``irods_environment``: iRODS client environment
     """
 
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        """Get iRODS config"""
+        """Get iRODS environment file"""
         try:
             irods_backend = get_backend_api('omics_irods')
             if not irods_backend:
                 return Response(
                     {'detail': 'iRODS backend not enabled'}, status=404
                 )
-            config = self.get_irods_client_env(request.user, irods_backend)
-            return Response({'irods_environment': config})
+            env = self.get_irods_client_env(request.user, irods_backend)
+            return Response({'irods_environment': env})
 
         except Exception as ex:
             logger.error('iRODS config retrieval failed: {}'.format(ex))

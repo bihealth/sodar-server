@@ -21,7 +21,7 @@ class TestIrodsConfigRetrieveAPIView(TestCase):
 
     def test_get_irods_config(self):
         """Test GET request to retrieve iRODS config"""
-        url = reverse('irodsinfo:api_config')
+        url = reverse('irodsinfo:api_env')
         with self.login(self.regular_user):
             response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -30,7 +30,7 @@ class TestIrodsConfigRetrieveAPIView(TestCase):
     @override_settings(ENABLED_BACKEND_PLUGINS=PLUGINS_DISABLE_IRODS)
     def test_get_irods_config_with_disabled_backend(self):
         """Test GET request to retrieve iRODS config with disabled backend"""
-        url = reverse('irodsinfo:api_config')
+        url = reverse('irodsinfo:api_env')
         with self.login(self.regular_user):
             response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

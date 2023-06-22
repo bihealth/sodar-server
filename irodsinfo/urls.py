@@ -23,9 +23,9 @@ urls_ui = [
 # REST API views
 urls_api = [
     path(
-        route='api/config',
-        view=views_api.IrodsConfigRetrieveAPIView.as_view(),
-        name='api_config',
+        route='api/environment',
+        view=views_api.IrodsEnvRetrieveAPIView.as_view(),
+        name='api_env',
     ),
 ]
 
