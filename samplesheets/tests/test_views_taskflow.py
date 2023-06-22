@@ -1126,7 +1126,6 @@ class TestIrodsRequestViewsBase(
         # Set default POST data
         self.post_data = {'path': self.path, 'description': 'bla'}
         self.post_data2 = {'path': self.path2, 'description': 'bla2'}
-        # self.post_data_md5 = {'path': self.path_md5, 'description': 'bla_md5'}
 
     def tearDown(self):
         self.irods.collections.get('/sodarZone/projects').remove(force=True)
