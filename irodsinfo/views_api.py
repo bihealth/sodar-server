@@ -39,7 +39,7 @@ class IrodsConfigRetrieveAPIView(IrodsConfigMixin, APIView):
                 return Response(
                     {'detail': 'iRODS backend not enabled'}, status=404
                 )
-            config = self.create_env_config(request.user, irods_backend)
+            config = self.get_irods_client_env(request.user, irods_backend)
             return Response({'irods_environment': config})
 
         except Exception as ex:

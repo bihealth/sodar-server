@@ -3,28 +3,25 @@
 from django.urls import reverse
 
 # Projectroles dependency
-from projectroles.tests.test_permissions_api import TestProjectAPIPermissionBase
+from projectroles.tests.test_permissions import TestPermissionBase
 
 
-class TestIrodsConfigRetrieveAPIView(TestProjectAPIPermissionBase):
+class TestIrodsConfigRetrieveAPIView(TestPermissionBase):
     """Tests for irodsinfo API"""
+
+    def setUp(self):
+        # Create users
+        self.superuser = self.make_user('superuser')
+        self.superuser.is_superuser = True
+        self.superuser.save()
+        self.regular_user = self.make_user('regular_user')
+        # No user
+        self.anonymous = None
 
     def test_irods_config(self):
         """Test permissions for IrodsConfigRetrieveAPIView"""
         url = reverse('irodsinfo:api_config')
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-        ]
+        good_users = [self.superuser, self.regular_user]
         bad_users = [self.anonymous]
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 401)

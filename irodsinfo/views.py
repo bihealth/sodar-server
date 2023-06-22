@@ -26,7 +26,7 @@ class IrodsConfigMixin:
     """Mixin for iRODS configuration views"""
 
     @staticmethod
-    def create_env_config(user, irods_backend) -> dict:
+    def get_irods_client_env(user, irods_backend):
         """
         Create iRODS configuration file for the current user.
         """
@@ -119,7 +119,7 @@ class IrodsConfigView(
             return redirect(reverse('irodsinfo:info'))
 
         # Create iRODS environment file
-        irods_env = self.create_env_config(request.user, irods_backend)
+        irods_env = self.get_irods_client_env(request.user, irods_backend)
         env_json = json.dumps(irods_env, indent=2)
 
         # Create zip archive
