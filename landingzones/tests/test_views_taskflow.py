@@ -434,6 +434,21 @@ class TestLandingZoneMoveView(
         self.sample_path = self.irods_backend.get_path(self.assay)
         self.group_name = self.irods_backend.get_user_group_name(self.project)
 
+    def test_render(self):
+        """Test rendering of the landing zone validation and moving view"""
+        irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
+        self.make_irods_md5_object(irods_obj)
+        zone = LandingZone.objects.first()
+        self.assertEqual(zone.status, 'ACTIVE')
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'landingzones:move',
+                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
+                )
+            )
+        self.assertEqual(response.status_code, 200)
+
     def test_move(self):
         """Test validating and moving landing zone with objects"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)

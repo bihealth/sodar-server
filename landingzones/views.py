@@ -722,10 +722,7 @@ class ZoneMoveView(
             with irods_backend.get_session() as irods:
                 stats = irods_backend.get_object_stats(irods, path)
                 if stats['file_count'] == 0:
-                    messages.info(
-                        request,
-                        ZONE_MOVE_NO_FILES,
-                    )
+                    messages.info(request, ZONE_MOVE_NO_FILES)
                     return redirect(
                         reverse(
                             'landingzones:list',
