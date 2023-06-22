@@ -965,7 +965,7 @@ class IrodsRequestModifyMixin:
     # API Helpers --------------------------------------------------------------
 
     @classmethod
-    def process_single_accept_request(
+    def accept_request(
         self, request, obj, timeline, taskflow, app_alerts, project
     ):
         """
@@ -1077,9 +1077,7 @@ class IrodsRequestModifyMixin:
         }
 
     @classmethod
-    def process_single_reject_request(
-        self, request, obj, timeline, app_alerts, project
-    ):
+    def reject_request(self, request, obj, timeline, app_alerts, project):
         """
         Process a single iRODS data request rejection.
 
@@ -2544,7 +2542,7 @@ class IrodsRequestAcceptView(
     form_class = IrodsRequestAcceptForm
 
     def get_form_kwargs(self):
-        "Override to pass number of requests to form"
+        """Override to pass number of requests to form"""
         kwargs = super().get_form_kwargs()
         kwargs['num_requests'] = 1
         return kwargs
@@ -2600,7 +2598,7 @@ class IrodsRequestAcceptView(
         form = self.get_form()
         if not form.is_valid():
             return self.render_to_response(self.get_context_data())
-        response = self.process_single_accept_request(
+        response = self.accept_request(
             request, obj, timeline, taskflow, app_alerts, project
         )
         if response.get('error'):
@@ -2688,7 +2686,7 @@ class IrodsRequestAcceptBatchView(
                 )
 
             for obj in batch:
-                response = self.process_single_accept_request(
+                response = self.accept_request(
                     request, obj, timeline, taskflow, app_alerts, project
                 )
                 if response.get('error'):
@@ -2736,7 +2734,7 @@ class IrodsRequestRejectView(
             obj = IrodsDataRequest.objects.filter(
                 sodar_uuid=self.kwargs['irodsdatarequest']
             ).first()
-            response = self.process_single_reject_request(
+            response = self.reject_request(
                 self.request, obj, timeline, app_alerts, project
             )
             if response.get('error'):
@@ -2790,7 +2788,7 @@ class IrodsRequestRejectBatchView(
                     )
                 )
             for obj in batch:
-                response = self.process_single_reject_request(
+                response = self.reject_request(
                     self.request, obj, timeline, app_alerts, project
                 )
                 if response.get('error'):
@@ -2859,7 +2857,7 @@ class IrodsDataRequestListView(
         return queryset.filter(user=self.request.user)
 
     def build_webdav_url(self, item):
-        return f"{settings.IRODS_WEBDAV_URL}/{item.path}"
+        return '{}/{}'.format(settings.IRODS_WEBDAV_URL, item.path)
 
     def get_extra_item_data(self, irods_session, item):
         # Add webdav URL to the item
@@ -2871,7 +2869,6 @@ class IrodsDataRequestListView(
         item.is_collection = irods_session.collections.exists(item.path)
 
     def get(self, request, *args, **kwargs):
-        response = super().get(request, *args, **kwargs)
         irods_backend = get_backend_api('omics_irods')
         if not irods_backend:
             messages.error(
@@ -2884,7 +2881,7 @@ class IrodsDataRequestListView(
                     kwargs={'project': self.get_project().sodar_uuid},
                 )
             )
-        return response
+        return super().get(request, *args, **kwargs)
 
 
 class SheetRemoteSyncView(
