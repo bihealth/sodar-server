@@ -516,7 +516,6 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                     'samplesheets:api_irods_request_accept',
                     kwargs={'irodsdatarequest': obj.sodar_uuid},
                 ),
-                # {'confirm': False},
             )
 
         self.assertEqual(response.status_code, 200)

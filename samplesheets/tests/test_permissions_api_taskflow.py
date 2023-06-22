@@ -356,7 +356,6 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                 user,
                 200,
                 method='POST',
-                # data={'confirm': True},
             )
 
         obj = self.create_request()
@@ -369,7 +368,6 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
             bad_users,
             403,
             method='POST',
-            # data={'confirm': True},
         )
 
         obj = self.create_request()
@@ -382,7 +380,6 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
             self.anonymous,
             401,
             method='POST',
-            # data={'confirm': True},
         )
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
@@ -398,7 +395,6 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
             self.anonymous,
             401,
             method='POST',
-            # data={'confirm': True},
         )
 
     def test_accept_archived(self):
@@ -428,7 +424,6 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
                 user,
                 200,
                 method='POST',
-                # data={'confirm': True},
             )
 
         obj = self.create_request()
@@ -441,7 +436,6 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
             bad_users,
             403,
             method='POST',
-            # data={'confirm': True},
         )
 
         obj = self.create_request()
@@ -454,7 +448,6 @@ class TestIrodsRequestAcceptAPIView(TestIrodsRequestAPIViewBase):
             self.anonymous,
             401,
             method='POST',
-            # data={'confirm': True},
         )
 
 
