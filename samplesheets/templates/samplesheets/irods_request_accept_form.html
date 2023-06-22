@@ -41,7 +41,7 @@
       {% csrf_token %}
       {{ form | crispy }}
       {% if irods_request_data|length %}
-        <input type="hidden" name="irodsdatarequests" id="irodsdatarequests" value="{{ irods_request_uuids }}"/>
+        <input type="hidden" name="irods_requests" id="irods_requests" value="{{ irods_request_uuids }}"/>
       {% endif %}
       <div class="row">
         <div class="btn-group ml-auto">

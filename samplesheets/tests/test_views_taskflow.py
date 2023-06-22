@@ -1872,7 +1872,8 @@ class TestIrodsRequestAcceptBatchView(TestIrodsRequestViewsBase):
                     kwargs={'project': self.project.sodar_uuid},
                 ),
                 {
-                    'irodsdatarequests': ','.join(
+                    # 'irodsdatarequests': ','.join(
+                    'irods_requests': ','.join(
                         [
                             str(irods_request.sodar_uuid)
                             for irods_request in IrodsDataRequest.objects.all()
@@ -1925,7 +1926,8 @@ class TestIrodsRequestAcceptBatchView(TestIrodsRequestViewsBase):
                     kwargs={'project': self.project.sodar_uuid},
                 ),
                 {
-                    'irodsdatarequests': ','.join(
+                    # 'irodsdatarequests': ','.join(
+                    'irods_requests': ','.join(
                         [
                             str(irods_request.sodar_uuid)
                             for irods_request in IrodsDataRequest.objects.all()
@@ -1978,7 +1980,8 @@ class TestIrodsRequestAcceptBatchView(TestIrodsRequestViewsBase):
                     kwargs={'project': self.project.sodar_uuid},
                 ),
                 {
-                    'irodsdatarequests': ','.join(
+                    # 'irodsdatarequests': ','.join(
+                    'irods_requests': ','.join(
                         [
                             str(irods_request.sodar_uuid)
                             for irods_request in IrodsDataRequest.objects.all()
@@ -2031,7 +2034,8 @@ class TestIrodsRequestAcceptBatchView(TestIrodsRequestViewsBase):
                     kwargs={'project': self.project.sodar_uuid},
                 ),
                 {
-                    'irodsdatarequests': DUMMY_UUID + ',',
+                    # 'irodsdatarequests': DUMMY_UUID + ',',
+                    'irods_requests': DUMMY_UUID + ',',
                     'confirm': True,
                 },
             )
@@ -2076,7 +2080,8 @@ class TestIrodsRequestAcceptBatchView(TestIrodsRequestViewsBase):
                     kwargs={'project': self.project.sodar_uuid},
                 ),
                 {
-                    'irodsdatarequests': ','.join(
+                    # 'irodsdatarequests': ','.join(
+                    'irods_requests': ','.join(
                         [
                             str(irods_request.sodar_uuid)
                             for irods_request in IrodsDataRequest.objects.all()
@@ -2134,7 +2139,8 @@ class TestIrodsRequestAcceptBatchView(TestIrodsRequestViewsBase):
                     kwargs={'project': self.project.sodar_uuid},
                 ),
                 {
-                    'irodsdatarequests': ','.join(
+                    # 'irodsdatarequests': ','.join(
+                    'irods_requests': ','.join(
                         [
                             str(irods_request.sodar_uuid)
                             for irods_request in IrodsDataRequest.objects.all()
@@ -2424,7 +2430,8 @@ class TestIrodsRequestRejectBatchView(TestIrodsRequestViewsBase):
                     kwargs={'project': self.project.sodar_uuid},
                 ),
                 {
-                    'irodsdatarequests': ','.join(
+                    # 'irodsdatarequests': ','.join(
+                    'irods_requests': ','.join(
                         [
                             str(irods_request.sodar_uuid)
                             for irods_request in IrodsDataRequest.objects.all()
@@ -2472,7 +2479,8 @@ class TestIrodsRequestRejectBatchView(TestIrodsRequestViewsBase):
                     'samplesheets:irods_request_reject_batch',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
-                {'irodsdatarequests': DUMMY_UUID + ','},
+                # {'irodsdatarequests': DUMMY_UUID + ','},
+                {'irods_requests': DUMMY_UUID + ','},
             )
         self.assertEqual(response.status_code, 302)
         self.assertEqual(

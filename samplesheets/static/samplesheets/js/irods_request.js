@@ -71,7 +71,7 @@ function sendRequest(url) {
     // Add the data to the form
     var hiddenField = document.createElement('input');
     hiddenField.setAttribute('type', 'hidden');
-    hiddenField.setAttribute('name', 'irodsdatarequests');
+    hiddenField.setAttribute('name', 'irods_requests');
     hiddenField.setAttribute('value', selectedRequests.join(','));
     form.appendChild(hiddenField);
     document.body.appendChild(form);

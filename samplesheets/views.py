@@ -1154,7 +1154,7 @@ class IrodsRequestModifyMixin:
 
     def get_irods_request_objects(self):
         # Get uuids from POST data
-        request_ids = self.request.POST.get('irodsdatarequests').split(',')
+        request_ids = self.request.POST.get('irods_requests').split(',')
         # Drop '' from the list
         request_ids = [x for x in request_ids if x]
         if not request_ids:
