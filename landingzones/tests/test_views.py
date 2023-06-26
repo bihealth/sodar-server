@@ -258,17 +258,6 @@ class TestLandingZoneUpdateView(TestViewsBase):
 class TestLandingZoneMoveView(TestViewsBase):
     """Tests for the landing zone validation and moving view"""
 
-    def test_render(self):
-        """Test rendering of the landing zone validation and moving view"""
-        with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'landingzones:move',
-                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
-                )
-            )
-        self.assertEqual(response.status_code, 200)
-
     def test_render_invalid_status(self):
         """Test rendering with an invalid zone status"""
         self.landing_zone.status = 'DELETED'

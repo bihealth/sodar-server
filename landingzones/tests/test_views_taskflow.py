@@ -434,6 +434,21 @@ class TestLandingZoneMoveView(
         self.sample_path = self.irods_backend.get_path(self.assay)
         self.group_name = self.irods_backend.get_user_group_name(self.project)
 
+    def test_render(self):
+        """Test rendering of the landing zone validation and moving view"""
+        irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
+        self.make_irods_md5_object(irods_obj)
+        zone = LandingZone.objects.first()
+        self.assertEqual(zone.status, 'ACTIVE')
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'landingzones:move',
+                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
+                )
+            )
+        self.assertEqual(response.status_code, 200)
+
     def test_move(self):
         """Test validating and moving landing zone with objects"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
@@ -468,6 +483,37 @@ class TestLandingZoneMoveView(
         self.assertEqual(len(mail.outbox), 3)  # Mails to owner & category owner
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_move').count(), 1
+        )
+
+    def test_move_no_files(self):
+        """Test validating and moving a landing zone without objects"""
+        zone = LandingZone.objects.first()
+        self.assertEqual(zone.status, 'ACTIVE')
+        self.assertEqual(len(self.zone_coll.data_objects), 0)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_move').count(), 0
+        )
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'landingzones:move',
+                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
+                ),
+            )
+            self.assertRedirects(
+                response,
+                reverse(
+                    'landingzones:list',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
+
+        self.assertEqual(len(self.zone_coll.data_objects), 0)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_move').count(), 0
         )
 
     def test_move_invalid_md5(self):
@@ -572,6 +618,38 @@ class TestLandingZoneMoveView(
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_validate').count(), 1
+        )
+
+    def test_validate_no_files(self):
+        """Test validation a landing zone without files"""
+        zone = LandingZone.objects.first()
+        self.assertEqual(zone.status, 'ACTIVE')
+        self.assertEqual(len(self.zone_coll.data_objects), 0)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_validate').count(), 0
+        )
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'landingzones:validate',
+                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
+                ),
+            )
+            self.assertRedirects(
+                response,
+                reverse(
+                    'landingzones:list',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
+
+        self.assert_zone_status(zone, 'ACTIVE')
+        self.assertEqual(len(self.zone_coll.data_objects), 0)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_validate').count(), 1
         )

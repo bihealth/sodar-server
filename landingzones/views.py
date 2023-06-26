@@ -45,6 +45,7 @@ User = auth.get_user_model()
 APP_NAME = 'landingzones'
 SAMPLESHEETS_APP_NAME = 'samplesheets'
 ZONE_MOVE_INVALID_STATUS = 'Zone not in active state, unable to trigger action.'
+ZONE_MOVE_NO_FILES = 'No files in landing zone, nothing to do.'
 ZONE_UPDATE_ACTIONS = ['update', 'move', 'delete']
 ZONE_UPDATE_FIELDS = ['description', 'user_message']
 
@@ -715,6 +716,28 @@ class ZoneMoveView(
     def get(self, request, *args, **kwargs):
         """Override get() to ensure the zone status"""
         zone = LandingZone.objects.get(sodar_uuid=self.kwargs['landingzone'])
+        try:
+            irods_backend = get_backend_api('omics_irods')
+            path = irods_backend.get_path(zone)
+            with irods_backend.get_session() as irods:
+                stats = irods_backend.get_object_stats(irods, path)
+                if stats['file_count'] == 0:
+                    messages.info(request, ZONE_MOVE_NO_FILES)
+                    return redirect(
+                        reverse(
+                            'landingzones:list',
+                            kwargs={'project': zone.project.sodar_uuid},
+                        )
+                    )
+        except Exception as ex:
+            messages.error(request, str(ex))
+            return redirect(
+                reverse(
+                    'landingzones:list',
+                    kwargs={'project': zone.project.sodar_uuid},
+                )
+            )
+
         if zone.status not in STATUS_ALLOW_UPDATE:
             messages.error(
                 request,
