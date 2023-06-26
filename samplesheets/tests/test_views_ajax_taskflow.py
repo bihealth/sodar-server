@@ -520,8 +520,14 @@ class TestIrodsObjectListAjaxView(TestIrodsRequestViewsBase):
 
     def test_get_empty_coll(self):
         """Test GET request for listing an empty collection in iRODS"""
-        self.irods.data_objects.get(self.path).unlink(force=True)
-        self.irods.data_objects.get(self.path_md5).unlink(force=True)
+        self.irods.data_objects.unlink(self.path, force=True)
+        self.irods.data_objects.unlink(self.path_md5, force=True)
+        self.irods.data_objects.unlink(self.path2, force=True)
+        self.irods.data_objects.unlink(self.path2_md5, force=True)
+        self.assertEqual(self.irods.data_objects.exists(self.path), False)
+        self.assertEqual(self.irods.data_objects.exists(self.path_md5), False)
+        self.assertEqual(self.irods.data_objects.exists(self.path2), False)
+        self.assertEqual(self.irods.data_objects.exists(self.path2_md5), False)
         with self.login(self.user):
             response = self.client.get(
                 reverse(
