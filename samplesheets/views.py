@@ -986,7 +986,6 @@ class IrodsRequestModifyMixin:
                 )
             )
 
-
     # API Helpers --------------------------------------------------------------
 
     @classmethod
@@ -2606,7 +2605,7 @@ class IrodsRequestAcceptView(
         taskflow = get_backend_api('taskflow')
         app_alerts = get_backend_api('appalerts_backend')
         project = self.get_project()
-        
+
         obj = IrodsDataRequest.objects.filter(
             sodar_uuid=self.kwargs['irodsdatarequest']
         ).first()
