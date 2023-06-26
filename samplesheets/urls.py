@@ -179,6 +179,36 @@ urls_api = [
         name='api_irods_colls_create',
     ),
     path(
+        route='api/irods/requests/<uuid:project>',
+        view=samplesheets.views_api.IrodsDataRequestListAPIView.as_view(),
+        name='api_irods_request_list',
+    ),
+    path(
+        route='api/irods/request/create/<uuid:project>',
+        view=samplesheets.views_api.IrodsRequestCreateAPIView.as_view(),
+        name='api_irods_request_create',
+    ),
+    path(
+        route='api/irods/request/update/<uuid:irodsdatarequest>',
+        view=samplesheets.views_api.IrodsRequestUpdateAPIView.as_view(),
+        name='api_irods_request_update',
+    ),
+    path(
+        route='api/irods/request/delete/<uuid:irodsdatarequest>',
+        view=samplesheets.views_api.IrodsRequestDeleteAPIView.as_view(),
+        name='api_irods_request_delete',
+    ),
+    path(
+        route='api/irods/request/accept/<uuid:irodsdatarequest>',
+        view=samplesheets.views_api.IrodsRequestAcceptAPIView.as_view(),
+        name='api_irods_request_accept',
+    ),
+    path(
+        route='api/irods/request/reject/<uuid:irodsdatarequest>',
+        view=samplesheets.views_api.IrodsRequestRejectAPIView.as_view(),
+        name='api_irods_request_reject',
+    ),
+    path(
         route='api/import/<uuid:project>',
         view=samplesheets.views_api.SheetImportAPIView.as_view(),
         name='api_import',

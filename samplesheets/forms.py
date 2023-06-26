@@ -320,6 +320,15 @@ class IrodsAccessTicketForm(forms.ModelForm):
             ):
                 self.add_error('path', 'Path is not within the project')
                 return self.cleaned_data
+            # Ensure path is a collection
+            with irods_backend.get_session() as irods:
+                if not irods.collections.exists(self.cleaned_data['path']):
+                    self.add_error(
+                        'path',
+                        'Path does not point to a collection or the collection '
+                        'doesn\'t exist',
+                    )
+                    return self.cleaned_data
             # Ensure path is within a project assay
             match = re.search(
                 r'/assay_([0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12})',
@@ -338,15 +347,14 @@ class IrodsAccessTicketForm(forms.ModelForm):
                 except ObjectDoesNotExist:
                     self.add_error('path', 'Assay not found in project')
                     return self.cleaned_data
-            # Ensure path is a collection
-            with irods_backend.get_session() as irods:
-                if not irods.collections.exists(self.cleaned_data['path']):
-                    self.add_error(
-                        'path',
-                        'Path does not point to a collection or the collection '
-                        'doesn\'t exist',
-                    )
-                    return self.cleaned_data
+            # Ensure path is not assay root
+            if self.cleaned_data['path'] == irods_backend.get_path(
+                self.cleaned_data['assay']
+            ):
+                self.add_error(
+                    'path', 'Ticket creation for assay root path is not allowed'
+                )
+                return self.cleaned_data
         else:  # Do not allow editing path
             self.cleaned_data['path'] = self.instance.path
 

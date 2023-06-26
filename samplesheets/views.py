@@ -851,6 +851,30 @@ class IrodsRequestModifyMixin:
         )
 
     @classmethod
+    def add_tl_update(cls, irods_request, timeline=None):
+        """
+        Create timeline event for iRODS data request update.
+
+        :param irods_request: IrodsDataRequest object
+        :param timeline: TimelineAPI instance or None
+        """
+        if not timeline:
+            return
+        tl_event = timeline.add_event(
+            project=irods_request.project,
+            app_name=APP_NAME,
+            user=irods_request.user,
+            event_name='irods_request_update',
+            description='update iRODS data request {irods_request}',
+            status_type='OK',
+        )
+        tl_event.add_object(
+            obj=irods_request,
+            label='irods_request',
+            name=irods_request.get_display_name(),
+        )
+
+    @classmethod
     def add_tl_delete(cls, irods_request):
         """
         Create timeline event for iRODS data request deletion.
@@ -962,51 +986,61 @@ class IrodsRequestModifyMixin:
                 )
             )
 
+
     # API Helpers --------------------------------------------------------------
 
     @classmethod
     def accept_request(
-        self, request, obj, timeline, taskflow, app_alerts, project
+        cls,
+        irods_request,
+        project,
+        request,
+        timeline=None,
+        taskflow=None,
+        app_alerts=None,
     ):
         """
-        Process a single iRODS data request acceptance.
+        Accept an iRODS data request.
 
-        :param request: Request object
-        :param obj: IrodsDataRequest object
-        :param timeline: Timeline API
-        :param taskflow: Taskflow API
-        :param app_alerts: Appalerts API
+        :param irods_request: IrodsDataRequest object
         :param project: Project object
-        :return: Dict with error or success message
+        :param request: Request object
+        :param timeline: TimelineAPI instance or None
+        :param taskflow: TaskflowAPI instance or None
+        :param app_alerts: AppalertsAPI instance or None
+        :raise: FlowSubmitException if taskflow submission fails
         """
         tl_event = None
-
-        try:
-            obj = IrodsDataRequest.objects.get(sodar_uuid=obj.sodar_uuid)
-        except IrodsDataRequest.DoesNotExist:
-            return {
-                'error': 'iRODS data request "{}" does not exist.'.format(
-                    obj.sodar_uuid
-                )
-            }
-
+        if irods_request.status == 'ACCEPTED':
+            description = (
+                'iRODS data request {irods_request} is already accepted'
+            )
+            status = 'FAILED'
+        else:
+            description = 'accept iRODS data request {irods_request}'
+            status = 'OK'
         if timeline:
             tl_event = timeline.add_event(
                 project=project,
                 app_name=APP_NAME,
                 user=request.user,
                 event_name='irods_request_accept',
-                description='accept iRODS data request {irods_request}',
-                status_type='OK',
+                description=description,
+                status_type=status,
             )
             tl_event.add_object(
-                obj=obj, label='irods_request', name=obj.get_display_name()
+                obj=irods_request,
+                label='irods_request',
+                name=irods_request.get_display_name(),
             )
 
+        if irods_request.status == 'ACCEPTED':
+            raise IrodsDataRequest.DoesNotExist('Request is already accepted')
+
         flow_name = 'data_delete'
-        flow_data = {'paths': [obj.path]}
-        if obj.is_data_object():
-            flow_data['paths'].append(obj.path + '.md5')
+        flow_data = {'paths': [irods_request.path]}
+        if irods_request.is_data_object():
+            flow_data['paths'].append(irods_request.path + '.md5')
 
         try:
             taskflow.submit(
@@ -1016,18 +1050,12 @@ class IrodsRequestModifyMixin:
                 tl_event=tl_event,
                 async_mode=False,
             )
-            obj.status = 'ACCEPTED'
-            obj.save()
+            irods_request.status = 'ACCEPTED'
+            irods_request.save()
         except taskflow.FlowSubmitException as ex:
-            obj.status = 'FAILED'
-            obj.save()
-            if settings.DEBUG:
-                raise ex
-            return {
-                'error': 'Accepting iRODS data request "{}" failed: {}'.format(
-                    obj.get_display_name(), ex
-                )
-            }
+            irods_request.status = 'FAILED'
+            irods_request.save()
+            raise ex
 
         # Update cache
         if settings.SHEETS_ENABLE_CACHE:
@@ -1039,26 +1067,29 @@ class IrodsRequestModifyMixin:
             )
 
         # Prepare and send notification email
-        if settings.PROJECTROLES_SEND_EMAIL and obj.user != request.user:
+        if (
+            settings.PROJECTROLES_SEND_EMAIL
+            and irods_request.user != request.user
+        ):
             subject_body = 'iRODS delete request accepted'
             message_body = EMAIL_DELETE_REQUEST_ACCEPT.format(
-                project=obj.project.title,
-                user=obj.user.username,
-                user_email=obj.user.email,
-                path=obj.path,
+                project=irods_request.project.title,
+                user=irods_request.user.username,
+                user_email=irods_request.user.email,
+                path=irods_request.path,
             )
             send_generic_mail(
-                subject_body, message_body, [obj.user.email], request
+                subject_body, message_body, [irods_request.user.email], request
             )
 
         # Create app alert
-        if app_alerts and obj.user != request.user:
+        if app_alerts and irods_request.user != request.user:
             app_alerts.add_alert(
                 app_name=APP_NAME,
                 alert_name=IRODS_REQ_ACCEPT_ALERT,
-                user=obj.user,
+                user=irods_request.user,
                 message='iRODS delete request accepted by {}: "{}"'.format(
-                    request.user.username, obj.get_short_path()
+                    request.user.username, irods_request.get_short_path()
                 ),
                 level='SUCCESS',
                 url=reverse(
@@ -1068,38 +1099,21 @@ class IrodsRequestModifyMixin:
                 project=project,
             )
             # Handle project alerts
-            self.handle_alerts_deactivate(obj, app_alerts)
-
-        return {
-            'message': 'iRODS data request "{}" accepted.'.format(
-                obj.get_display_name()
-            )
-        }
+            cls.handle_alerts_deactivate(irods_request, app_alerts)
 
     @classmethod
-    def reject_request(self, request, obj, timeline, app_alerts, project):
+    def reject_request(
+        cls, irods_request, project, request, timeline=None, app_alerts=None
+    ):
         """
-        Process a single iRODS data request rejection.
+        Reject an iRODS delete request.
 
-        :param request: Request object
-        :param obj: IrodsDataRequest object
-        :param timeline: Timeline API
-        :param app_alerts: Appalerts API
+        :param irods_request: IrodsDataRequest object
         :param project: Project object
-        :return: Dict with error or success message
+        :param request: Request object
+        :param timeline: Timeline API or None
+        :param app_alerts: Appalerts API or None
         """
-        try:
-            obj = IrodsDataRequest.objects.get(sodar_uuid=obj.sodar_uuid)
-        except IrodsDataRequest.DoesNotExist:
-            return {
-                'error': 'iRODS data request "{}" does not exist.'.format(
-                    obj.sodar_uuid
-                )
-            }
-
-        obj.status = 'REJECTED'
-        obj.save()
-
         if timeline:
             tl_event = timeline.add_event(
                 project=project,
@@ -1110,29 +1124,35 @@ class IrodsRequestModifyMixin:
                 status_type='OK',
             )
             tl_event.add_object(
-                obj=obj, label='irods_request', name=obj.get_display_name()
+                obj=irods_request,
+                label='irods_request',
+                name=irods_request.get_display_name(),
             )
 
-        if settings.PROJECTROLES_SEND_EMAIL and obj.user != request.user:
+        # Prepare and send notification email
+        if (
+            settings.PROJECTROLES_SEND_EMAIL
+            and irods_request.user != request.user
+        ):
             subject_body = 'iRODS delete request rejected'
             message_body = EMAIL_DELETE_REQUEST_REJECT.format(
-                project=obj.project.title,
-                user=obj.user.username,
-                user_email=obj.user.email,
-                path=obj.path,
+                project=irods_request.project.title,
+                user=irods_request.user.username,
+                user_email=irods_request.user.email,
+                path=irods_request.path,
             )
             send_generic_mail(
-                subject_body, message_body, [obj.user.email], request
+                subject_body, message_body, [irods_request.user.email], request
             )
 
         # Create app alert
-        if app_alerts and obj.user != request.user:
+        if app_alerts and irods_request.user != request.user:
             app_alerts.add_alert(
                 app_name=APP_NAME,
                 alert_name=IRODS_REQ_REJECT_ALERT,
-                user=obj.user,
+                user=irods_request.user,
                 message='iRODS delete request rejected by {}: "{}"'.format(
-                    request.user.username, obj.get_short_path()
+                    request.user.username, irods_request.get_short_path()
                 ),
                 level='WARNING',
                 url=reverse(
@@ -1142,13 +1162,19 @@ class IrodsRequestModifyMixin:
                 project=project,
             )
             # Handle project alerts
-            self.handle_alerts_deactivate(obj, app_alerts)
+            cls.handle_alerts_deactivate(irods_request, app_alerts)
 
-        return {
-            'message': 'iRODS data request "{}" rejected.'.format(
-                obj.get_display_name()
+    def has_irods_request_perms(self, request, irods_request):
+        """Check permissions for a landing zone."""
+        if (
+            request.user.is_superuser
+            or request.user.has_perm(
+                'samplesheets.manage_sheet', irods_request.project
             )
-        }
+            or request.user == irods_request.user
+        ):
+            return True
+        return False
 
     def get_irods_request_objects(self):
         # Get uuids from POST data
@@ -2455,6 +2481,7 @@ class IrodsRequestUpdateView(
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     InvestigationContextMixin,
+    IrodsRequestModifyMixin,
     UpdateView,
 ):
     """View for updating an iRODS data request"""
@@ -2474,18 +2501,7 @@ class IrodsRequestUpdateView(
         obj.project = self.get_project()
         obj.save()
 
-        if timeline:
-            tl_event = timeline.add_event(
-                project=self.get_project(),
-                app_name=APP_NAME,
-                user=self.request.user,
-                event_name='irods_request_update',
-                description='update iRODS data request {irods_request}',
-                status_type='OK',
-            )
-            tl_event.add_object(
-                obj=obj, label='irods_request', name=obj.get_display_name()
-            )
+        self.add_tl_update(obj, timeline=timeline)
 
         messages.success(
             self.request,
@@ -2590,7 +2606,7 @@ class IrodsRequestAcceptView(
         taskflow = get_backend_api('taskflow')
         app_alerts = get_backend_api('appalerts_backend')
         project = self.get_project()
-
+        
         obj = IrodsDataRequest.objects.filter(
             sodar_uuid=self.kwargs['irodsdatarequest']
         ).first()
@@ -2598,14 +2614,28 @@ class IrodsRequestAcceptView(
         form = self.get_form()
         if not form.is_valid():
             return self.render_to_response(self.get_context_data())
-        response = self.accept_request(
-            request, obj, timeline, taskflow, app_alerts, project
-        )
-        if response.get('error'):
-            messages.error(self.request, response['error'])
-        elif response.get('message'):
-            messages.success(self.request, response['message'])
-
+        try:
+            self.accept_request(
+                obj,
+                project,
+                request,
+                timeline=timeline,
+                taskflow=taskflow,
+                app_alerts=app_alerts,
+            )
+            messages.success(
+                self.request,
+                'iRODS data request "{}" rejected.'.format(
+                    obj.get_display_name()
+                ),
+            )
+        except Exception as ex:
+            messages.error(
+                self.request,
+                'Rejecting iRODS data request "{}" failed: {}'.format(
+                    obj.get_display_name(), ex
+                ),
+            )
         return redirect(
             reverse(
                 'samplesheets:irods_requests',
@@ -2686,13 +2716,28 @@ class IrodsRequestAcceptBatchView(
                 )
 
             for obj in batch:
-                response = self.accept_request(
-                    request, obj, timeline, taskflow, app_alerts, project
-                )
-                if response.get('error'):
-                    messages.error(self.request, response['error'])
-                elif response.get('message'):
-                    messages.success(self.request, response['message'])
+                try:
+                    self.accept_request(
+                        obj,
+                        project,
+                        request,
+                        timeline=timeline,
+                        taskflow=taskflow,
+                        app_alerts=app_alerts,
+                    )
+                    messages.success(
+                        self.request,
+                        'iRODS data request "{}" rejected.'.format(
+                            obj.get_display_name()
+                        ),
+                    )
+                except Exception as ex:
+                    messages.error(
+                        self.request,
+                        'Rejecting iRODS data request "{}" failed: {}'.format(
+                            obj.get_display_name(), ex
+                        ),
+                    )
 
             return redirect(
                 reverse(
@@ -2734,13 +2779,27 @@ class IrodsRequestRejectView(
             obj = IrodsDataRequest.objects.filter(
                 sodar_uuid=self.kwargs['irodsdatarequest']
             ).first()
-            response = self.reject_request(
-                self.request, obj, timeline, app_alerts, project
-            )
-            if response.get('error'):
-                messages.error(self.request, response['error'])
-            elif response.get('message'):
-                messages.success(self.request, response['message'])
+            try:
+                self.reject_request(
+                    obj,
+                    project,
+                    self.request,
+                    timeline=timeline,
+                    app_alerts=app_alerts,
+                )
+                messages.success(
+                    self.request,
+                    'iRODS data request "{}" rejected.'.format(
+                        obj.get_display_name()
+                    ),
+                )
+            except Exception as ex:
+                messages.error(
+                    self.request,
+                    'Rejecting iRODS data request "{}" failed: {}'.format(
+                        obj.get_display_name(), ex
+                    ),
+                )
 
             return redirect(
                 reverse(
@@ -2788,13 +2847,27 @@ class IrodsRequestRejectBatchView(
                     )
                 )
             for obj in batch:
-                response = self.reject_request(
-                    self.request, obj, timeline, app_alerts, project
-                )
-                if response.get('error'):
-                    messages.error(self.request, response['error'])
-                elif response.get('message'):
-                    messages.success(self.request, response['message'])
+                try:
+                    self.reject_request(
+                        obj,
+                        project,
+                        self.request,
+                        timeline=timeline,
+                        app_alerts=app_alerts,
+                    )
+                    messages.success(
+                        self.request,
+                        'iRODS data request "{}" rejected.'.format(
+                            obj.get_display_name()
+                        ),
+                    )
+                except Exception as ex:
+                    messages.error(
+                        self.request,
+                        'Rejecting iRODS data request "{}" failed: {}'.format(
+                            obj.get_display_name(), ex
+                        ),
+                    )
 
             return redirect(
                 reverse(
