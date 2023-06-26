@@ -15,6 +15,18 @@ API Views
 
 .. autoclass:: IrodsCollsCreateAPIView
 
+.. autoclass:: IrodsDataRequestListAPIView
+
+.. autoclass:: IrodsRequestCreateAPIView
+
+.. autoclass:: IrodsRequestUpdateAPIView
+
+.. autoclass:: IrodsRequestDeleteAPIView
+
+.. autoclass:: IrodsRequestAcceptAPIView
+
+.. autoclass:: IrodsRequestRejectAPIView
+
 .. autoclass:: SheetImportAPIView
 
 .. autoclass:: SheetISAExportAPIView

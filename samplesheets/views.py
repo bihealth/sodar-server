@@ -850,6 +850,30 @@ class IrodsRequestModifyMixin:
         )
 
     @classmethod
+    def add_tl_update(cls, irods_request, timeline=None):
+        """
+        Create timeline event for iRODS data request update.
+
+        :param irods_request: IrodsDataRequest object
+        :param timeline: TimelineAPI instance or None
+        """
+        if not timeline:
+            return
+        tl_event = timeline.add_event(
+            project=irods_request.project,
+            app_name=APP_NAME,
+            user=irods_request.user,
+            event_name='irods_request_update',
+            description='update iRODS data request {irods_request}',
+            status_type='OK',
+        )
+        tl_event.add_object(
+            obj=irods_request,
+            label='irods_request',
+            name=irods_request.get_display_name(),
+        )
+
+    @classmethod
     def add_tl_delete(cls, irods_request):
         """
         Create timeline event for iRODS data request deletion.
@@ -960,6 +984,193 @@ class IrodsRequestModifyMixin:
                     alert_count, 's' if alert_count != 1 else ''
                 )
             )
+
+    @classmethod
+    def accept_request(
+        cls,
+        irods_request,
+        project,
+        request,
+        timeline=None,
+        taskflow=None,
+        app_alerts=None,
+    ):
+        """
+        Accept an iRODS data request.
+
+        :param irods_request: IrodsDataRequest object
+        :param project: Project object
+        :param request: Request object
+        :param timeline: TimelineAPI instance or None
+        :param taskflow: TaskflowAPI instance or None
+        :param app_alerts: AppalertsAPI instance or None
+        :raise: FlowSubmitException if taskflow submission fails
+        """
+        tl_event = None
+        if irods_request.status == 'ACCEPTED':
+            description = (
+                'iRODS data request {irods_request} is already accepted'
+            )
+            status = 'FAILED'
+        else:
+            description = 'accept iRODS data request {irods_request}'
+            status = 'OK'
+        if timeline:
+            tl_event = timeline.add_event(
+                project=project,
+                app_name=APP_NAME,
+                user=request.user,
+                event_name='irods_request_accept',
+                description=description,
+                status_type=status,
+            )
+            tl_event.add_object(
+                obj=irods_request,
+                label='irods_request',
+                name=irods_request.get_display_name(),
+            )
+
+        if irods_request.status == 'ACCEPTED':
+            raise IrodsDataRequest.DoesNotExist('Request is already accepted')
+
+        flow_name = 'data_delete'
+        flow_data = {'paths': [irods_request.path]}
+        if irods_request.is_data_object():
+            flow_data['paths'].append(irods_request.path + '.md5')
+
+        try:
+            taskflow.submit(
+                project=project,
+                flow_name=flow_name,
+                flow_data=flow_data,
+                tl_event=tl_event,
+                async_mode=False,
+            )
+            irods_request.status = 'ACCEPTED'
+            irods_request.save()
+        except taskflow.FlowSubmitException as ex:
+            irods_request.status = 'FAILED'
+            irods_request.save()
+            raise ex
+
+        # Update cache
+        if settings.SHEETS_ENABLE_CACHE:
+            from samplesheets.tasks_celery import update_project_cache_task
+
+            update_project_cache_task.delay(
+                project_uuid=str(project.sodar_uuid),
+                user_uuid=str(request.user.sodar_uuid),
+            )
+
+        # Prepare and send notification email
+        if (
+            settings.PROJECTROLES_SEND_EMAIL
+            and irods_request.user != request.user
+        ):
+            subject_body = 'iRODS delete request accepted'
+            message_body = EMAIL_DELETE_REQUEST_ACCEPT.format(
+                project=irods_request.project.title,
+                user=irods_request.user.username,
+                user_email=irods_request.user.email,
+                path=irods_request.path,
+            )
+            send_generic_mail(
+                subject_body, message_body, [irods_request.user.email], request
+            )
+
+        # Create app alert
+        if app_alerts and irods_request.user != request.user:
+            app_alerts.add_alert(
+                app_name=APP_NAME,
+                alert_name=IRODS_REQ_ACCEPT_ALERT,
+                user=irods_request.user,
+                message='iRODS delete request accepted by {}: "{}"'.format(
+                    request.user.username, irods_request.get_short_path()
+                ),
+                level='SUCCESS',
+                url=reverse(
+                    'samplesheets:project_sheets',
+                    kwargs={'project': project.sodar_uuid},
+                ),
+                project=project,
+            )
+            # Handle project alerts
+            cls.handle_alerts_deactivate(irods_request, app_alerts)
+
+    @classmethod
+    def reject_request(
+        cls, irods_request, project, request, timeline=None, app_alerts=None
+    ):
+        """
+        Reject an iRODS delete request.
+
+        :param irods_request: IrodsDataRequest object
+        :param project: Project object
+        :param request: Request object
+        :param timeline: Timeline API or None
+        :param app_alerts: Appalerts API or None
+        """
+        if timeline:
+            tl_event = timeline.add_event(
+                project=project,
+                app_name=APP_NAME,
+                user=request.user,
+                event_name='irods_request_reject',
+                description='reject data iRODS request {irods_request}',
+                status_type='OK',
+            )
+            tl_event.add_object(
+                obj=irods_request,
+                label='irods_request',
+                name=irods_request.get_display_name(),
+            )
+
+        # Prepare and send notification email
+        if (
+            settings.PROJECTROLES_SEND_EMAIL
+            and irods_request.user != request.user
+        ):
+            subject_body = 'iRODS delete request rejected'
+            message_body = EMAIL_DELETE_REQUEST_REJECT.format(
+                project=irods_request.project.title,
+                user=irods_request.user.username,
+                user_email=irods_request.user.email,
+                path=irods_request.path,
+            )
+            send_generic_mail(
+                subject_body, message_body, [irods_request.user.email], request
+            )
+
+        # Create app alert
+        if app_alerts and irods_request.user != request.user:
+            app_alerts.add_alert(
+                app_name=APP_NAME,
+                alert_name=IRODS_REQ_REJECT_ALERT,
+                user=irods_request.user,
+                message='iRODS delete request rejected by {}: "{}"'.format(
+                    request.user.username, irods_request.get_short_path()
+                ),
+                level='WARNING',
+                url=reverse(
+                    'samplesheets:project_sheets',
+                    kwargs={'project': project.sodar_uuid},
+                ),
+                project=project,
+            )
+            # Handle project alerts
+            cls.handle_alerts_deactivate(irods_request, app_alerts)
+
+    def has_irods_request_perms(self, request, irods_request):
+        """Check permissions for a landing zone."""
+        if (
+            request.user.is_superuser
+            or request.user.has_perm(
+                'samplesheets.manage_sheet', irods_request.project
+            )
+            or request.user == irods_request.user
+        ):
+            return True
+        return False
 
 
 class SheetRemoteSyncAPI(SheetImportMixin):
@@ -2257,6 +2468,7 @@ class IrodsRequestUpdateView(
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     InvestigationContextMixin,
+    IrodsRequestModifyMixin,
     UpdateView,
 ):
     """View for updating an iRODS data request"""
@@ -2276,18 +2488,7 @@ class IrodsRequestUpdateView(
         obj.project = self.get_project()
         obj.save()
 
-        if timeline:
-            tl_event = timeline.add_event(
-                project=self.get_project(),
-                app_name=APP_NAME,
-                user=self.request.user,
-                event_name='irods_request_update',
-                description='update iRODS data request {irods_request}',
-                status_type='OK',
-            )
-            tl_event.add_object(
-                obj=obj, label='irods_request', name=obj.get_display_name()
-            )
+        self.add_tl_update(obj, timeline=timeline)
 
         messages.success(
             self.request,
@@ -2387,7 +2588,6 @@ class IrodsRequestAcceptView(
         taskflow = get_backend_api('taskflow')
         app_alerts = get_backend_api('appalerts_backend')
         project = self.get_project()
-        tl_event = None
         redirect_url = reverse(
             'samplesheets:irods_requests',
             kwargs={'project': project.sodar_uuid},
@@ -2411,37 +2611,16 @@ class IrodsRequestAcceptView(
                 )
             )
 
-        if timeline:
-            tl_event = timeline.add_event(
-                project=project,
-                app_name=APP_NAME,
-                user=self.request.user,
-                event_name='irods_request_accept',
-                description='accept iRODS data request {irods_request}',
-                status_type='OK',
-            )
-            tl_event.add_object(
-                obj=obj, label='irods_request', name=obj.get_display_name()
-            )
-
-        flow_name = 'data_delete'
-        flow_data = {'paths': [obj.path]}
-        if obj.is_data_object():
-            flow_data['paths'].append(obj.path + '.md5')
-
         try:
-            taskflow.submit(
-                project=project,
-                flow_name=flow_name,
-                flow_data=flow_data,
-                tl_event=tl_event,
-                async_mode=False,
+            self.accept_request(
+                obj,
+                project,
+                self.request,
+                timeline=timeline,
+                taskflow=taskflow,
+                app_alerts=app_alerts,
             )
-            obj.status = 'ACCEPTED'
-            obj.save()
-        except taskflow.FlowSubmitException as ex:
-            obj.status = 'FAILED'
-            obj.save()
+        except Exception as ex:
             if settings.DEBUG:
                 raise ex
             messages.error(
@@ -2451,47 +2630,6 @@ class IrodsRequestAcceptView(
                 ),
             )
             return redirect(redirect_url)
-
-        # Update cache
-        if settings.SHEETS_ENABLE_CACHE:
-            from samplesheets.tasks_celery import update_project_cache_task
-
-            update_project_cache_task.delay(
-                project_uuid=str(project.sodar_uuid),
-                user_uuid=str(self.request.user.sodar_uuid),
-            )
-
-        # Prepare and send notification email
-        if settings.PROJECTROLES_SEND_EMAIL and obj.user != self.request.user:
-            subject_body = 'iRODS delete request accepted'
-            message_body = EMAIL_DELETE_REQUEST_ACCEPT.format(
-                project=obj.project.title,
-                user=obj.user.username,
-                user_email=obj.user.email,
-                path=obj.path,
-            )
-            send_generic_mail(
-                subject_body, message_body, [obj.user.email], request
-            )
-
-        # Create app alert
-        if app_alerts and obj.user != self.request.user:
-            app_alerts.add_alert(
-                app_name=APP_NAME,
-                alert_name=IRODS_REQ_ACCEPT_ALERT,
-                user=obj.user,
-                message='iRODS delete request accepted by {}: "{}"'.format(
-                    self.request.user.username, obj.get_short_path()
-                ),
-                level='SUCCESS',
-                url=reverse(
-                    'samplesheets:project_sheets',
-                    kwargs={'project': project.sodar_uuid},
-                ),
-                project=project,
-            )
-            # Handle project alerts
-            self.handle_alerts_deactivate(obj, app_alerts)
 
         messages.success(
             self.request,
@@ -2536,55 +2674,26 @@ class IrodsRequestRejectView(
         obj.status = 'REJECTED'
         obj.save()
 
-        if timeline:
-            tl_event = timeline.add_event(
-                project=project,
-                app_name=APP_NAME,
-                user=self.request.user,
-                event_name='irods_request_reject',
-                description='reject data iRODS request {irods_request}',
-                status_type='OK',
+        try:
+            self.reject_request(
+                obj,
+                project,
+                self.request,
+                timeline=timeline,
+                app_alerts=app_alerts,
             )
-            tl_event.add_object(
-                obj=obj, label='irods_request', name=obj.get_display_name()
+        except Exception as ex:
+            messages.error(
+                self.request,
+                'Rejecting iRODS data request "{}" failed: {}'.format(
+                    obj.get_display_name(), ex
+                ),
             )
 
         messages.success(
             self.request,
             'iRODS data request "{}" rejected.'.format(obj.get_display_name()),
         )
-
-        # Prepare and send notification email
-        if settings.PROJECTROLES_SEND_EMAIL and obj.user != self.request.user:
-            subject_body = 'iRODS delete request rejected'
-            message_body = EMAIL_DELETE_REQUEST_REJECT.format(
-                project=obj.project.title,
-                user=obj.user.username,
-                user_email=obj.user.email,
-                path=obj.path,
-            )
-            send_generic_mail(
-                subject_body, message_body, [obj.user.email], request
-            )
-
-        # Create app alert
-        if app_alerts and obj.user != self.request.user:
-            app_alerts.add_alert(
-                app_name=APP_NAME,
-                alert_name=IRODS_REQ_REJECT_ALERT,
-                user=obj.user,
-                message='iRODS delete request rejected by {}: "{}"'.format(
-                    self.request.user.username, obj.get_short_path()
-                ),
-                level='WARNING',
-                url=reverse(
-                    'samplesheets:project_sheets',
-                    kwargs={'project': project.sodar_uuid},
-                ),
-                project=project,
-            )
-            # Handle project alerts
-            self.handle_alerts_deactivate(obj, app_alerts)
 
         return redirect(
             reverse(

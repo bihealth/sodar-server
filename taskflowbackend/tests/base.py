@@ -16,7 +16,7 @@ from django.core.exceptions import ImproperlyConfigured
 from django.urls import reverse
 
 from rest_framework.test import APILiveServerTestCase
-from test_plus import TestCase
+from test_plus import TestCase, APITestCase
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
@@ -371,7 +371,7 @@ class TaskflowAPIPermissionTestBase(
     RoleAssignmentMixin,
     TaskflowAPIProjectTestMixin,
     SODARAPIPermissionTestMixin,
-    TestCase,
+    APITestCase,
 ):
     """Base class for testing API view permissions with taskflow"""
 
