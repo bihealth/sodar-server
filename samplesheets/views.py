@@ -1113,14 +1113,25 @@ class IrodsRequestModifyMixin:
         :param timeline: Timeline API or None
         :param app_alerts: Appalerts API or None
         """
+        if irods_request.status == 'REJECTED':
+            description = (
+                'iRODS data request {irods_request} is already rejected'
+            )
+            status = 'FAILED'
+        else:
+            description = 'reject iRODS data request {irods_request}'
+            status = 'OK'
+            irods_request.status = 'REJECTED'
+            irods_request.save()
+
         if timeline:
             tl_event = timeline.add_event(
                 project=project,
                 app_name=APP_NAME,
                 user=request.user,
                 event_name='irods_request_reject',
-                description='reject data iRODS request {irods_request}',
-                status_type='OK',
+                description=description,
+                status_type=status,
             )
             tl_event.add_object(
                 obj=irods_request,
@@ -2624,14 +2635,14 @@ class IrodsRequestAcceptView(
             )
             messages.success(
                 self.request,
-                'iRODS data request "{}" rejected.'.format(
+                'iRODS data request "{}" accepted.'.format(
                     obj.get_display_name()
                 ),
             )
         except Exception as ex:
             messages.error(
                 self.request,
-                'Rejecting iRODS data request "{}" failed: {}'.format(
+                'Accepting iRODS data request "{}" failed: {}'.format(
                     obj.get_display_name(), ex
                 ),
             )
@@ -2726,14 +2737,14 @@ class IrodsRequestAcceptBatchView(
                     )
                     messages.success(
                         self.request,
-                        'iRODS data request "{}" rejected.'.format(
+                        'iRODS data request "{}" accepted.'.format(
                             obj.get_display_name()
                         ),
                     )
                 except Exception as ex:
                     messages.error(
                         self.request,
-                        'Rejecting iRODS data request "{}" failed: {}'.format(
+                        'Accepting iRODS data request "{}" failed: {}'.format(
                             obj.get_display_name(), ex
                         ),
                     )
