@@ -131,7 +131,6 @@ def get_orphans(irods, irods_backend, expected, assays):
     Return a list of orphans in a given irods session that are not in a given
     list of expected collections.
     """
-    orphans = []
     collections = irods.collections.get('/{}/projects'.format(irods.zone))
 
     for collection in irods_backend.get_colls_recursively(collections):
@@ -141,7 +140,7 @@ def get_orphans(irods, irods_backend, expected, assays):
             or is_project(collection)
         ):
             if collection.path not in expected:
-                orphans.append(collection.path)
+                log_orphan(collection.path, irods_backend, irods)
 
     for assay in assays:
         if not assay.get_plugin():
@@ -151,37 +150,33 @@ def get_orphans(irods, irods_backend, expected, assays):
                 irods, irods_backend.get_path(assay)
             ):
                 if collection.path not in expected:
-                    orphans.append(collection.path)
-    return orphans
+                    log_orphan(collection.path, irods_backend, irods)
 
 
-def get_output(orphans, irods_backend, irods):
-    lines = []
-    for orphan in orphans:
-        stats = irods_backend.get_object_stats(irods, orphan)
-        m = re.search(r'/projects/([^/]{2})/(\1[^/]+)', orphan)
-        if m:
-            uuid = m.group(2)
-            try:
-                project = Project.objects.get(sodar_uuid=uuid)
-                title = project.full_title
-            except Project.DoesNotExist:
-                title = '<DELETED>'
-        else:
-            uuid = '<ERROR>'
-            title = '<ERROR>'
-        lines.append(
-            ';'.join(
-                [
-                    uuid,
-                    title,
-                    orphan,
-                    str(stats['file_count']),
-                    filesizeformat(stats['total_size']).replace(u'\xa0', ' '),
-                ]
-            )
+def log_orphan(orphan, irods_backend, irods):
+    stats = irods_backend.get_object_stats(irods, orphan)
+    m = re.search(r'/projects/([^/]{2})/(\1[^/]+)', orphan)
+    if m:
+        uuid = m.group(2)
+        try:
+            project = Project.objects.get(sodar_uuid=uuid)
+            title = project.full_title
+        except Project.DoesNotExist:
+            title = '<DELETED>'
+    else:
+        uuid = '<ERROR>'
+        title = '<ERROR>'
+    logger.debug(
+        ';'.join(
+            [
+                uuid,
+                title,
+                orphan,
+                str(stats['file_count']),
+                filesizeformat(stats['total_size']).replace(u'\xa0', ' '),
+            ]
         )
-    return lines
+    )
 
 
 class Command(BaseCommand):
@@ -201,7 +196,4 @@ class Command(BaseCommand):
             *get_assay_subcollections(studies, irods_backend),
         )
         with irods_backend.get_session() as irods:
-            orphans = get_orphans(irods, irods_backend, expected, assays)
-            output = get_output(orphans, irods_backend, irods)
-            if output:
-                self.stdout.write('\n'.join(output))
+            get_orphans(irods, irods_backend, expected, assays)
