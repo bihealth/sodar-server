@@ -241,6 +241,12 @@ class TestIrodsbackendAPI(
         expected = '/{}/{}/projects'.format(IRODS_ZONE, IRODS_ROOT_PATH)
         self.assertEqual(self.irods_backend.get_projects_path(), expected)
 
+    def test_get_trash_pathg(self):
+        """Test get_trash_path()"""
+        self.assertEqual(
+            self.irods_backend.get_trash_path(), '/{}/trash'.format(IRODS_ZONE)
+        )
+
     def test_get_uuid_from_path_assay(self):
         """Test get_uuid_from_path() with assay path"""
         path = self.irods_backend.get_path(self.assay)

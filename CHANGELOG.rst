@@ -11,6 +11,9 @@ Unreleased
 Added
 -----
 
+- **Irodsbackend**
+    - ``get_trash_path()`` helper (#1658)
+    - iRODS trash statistics for siteinfo (#1658)
 - **Landingzones**
     - Landing zone updating (#1267)
 - **Samplesheets**
@@ -26,6 +29,7 @@ Added
 - **Taskflowbackend**
     - ``BatchCalculateChecksumTask`` iRODS task (#1634)
     - Automated generation of missing checksums in ``zone_move`` flow (#1634)
+    - Cleanup of trash collections in testing (#1658)
 
 Changed
 -------

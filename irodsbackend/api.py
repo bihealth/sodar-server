@@ -2,6 +2,7 @@
 
 import logging
 import math
+import os
 import random
 import re
 import string
@@ -54,6 +55,7 @@ ENV_INT_PARAMS = [
     'irods_port',
 ]
 USER_GROUP_PREFIX = 'omics_project_'
+TRASH_COLL_NAME = 'trash'
 PATH_PARENT_SUBSTRING = '/..'
 ERROR_PATH_PARENT = 'Use of parent not allowed in path'
 ERROR_PATH_UNSET = 'Path is not set'
@@ -349,6 +351,11 @@ class IrodsAPI:
     def get_projects_path(cls):
         """Return the SODAR projects collection path"""
         return cls.get_root_path() + '/projects'
+
+    @classmethod
+    def get_trash_path(cls):
+        """Return the trash path in the current zone"""
+        return '/' + os.path.join(settings.IRODS_ZONE, TRASH_COLL_NAME)
 
     @classmethod
     def get_uuid_from_path(cls, path, obj_type):

@@ -2,6 +2,7 @@
 
 import json
 import logging
+import os
 
 from irods.models import TicketQuery, UserGroup
 
@@ -267,8 +268,7 @@ class TaskflowAPI:
         permanent_users = getattr(
             settings, 'TASKFLOW_TEST_PERMANENT_USERS', DEFAULT_PERMANENT_USERS
         )
-        # TODO: Remove stuff from user folders
-        # TODO: Remove stuff from trash
+        # TODO: Remove stuff from user home collections
 
         with irods_backend.get_session() as irods:
             # Remove project folders
@@ -293,6 +293,28 @@ class TaskflowAPI:
                 ticket_str = ticket[TicketQuery.Ticket.string]
                 irods_backend.delete_ticket(irods, ticket_str)
                 logger.debug('Deleted ticket: {}'.format(ticket_str))
+
+            # Remove data objects and unneeded collections from trash
+            trash_path = irods_backend.get_trash_path()
+            trash_coll = irods.collections.get(trash_path)
+            # NOTE: We can't delete the home trash collection
+            trash_home_path = os.path.join(trash_path, 'home')
+            for coll in irods_backend.get_colls_recursively(trash_coll):
+                if irods.collections.exists(
+                    coll.path
+                ) and not coll.path.startswith(trash_home_path):
+                    irods.collections.remove(
+                        coll.path, recurse=True, force=True
+                    )
+            obj_paths = [
+                o['path']
+                for o in irods_backend.get_objs_recursively(irods, trash_coll)
+                + irods_backend.get_objs_recursively(
+                    irods, trash_coll, md5=True
+                )
+            ]
+            for path in obj_paths:
+                irods.data_objects.unlink(path, force=True)
 
     @classmethod
     def get_error_msg(cls, flow_name, submit_info):
