@@ -1487,7 +1487,7 @@ class TestIrodsRequestAcceptView(TestIrodsRequestViewsBase):
                 ),
                 {'confirm': True},
             )
-        self.assertEqual(response.context['irods_request_data'][0], obj)
+        self.assertEqual(response.context['request_objects'][0], obj)
 
     def test_render_coll(self):
         """Test rendering IrodsRequestAcceptView with a collection request"""
@@ -1515,7 +1515,7 @@ class TestIrodsRequestAcceptView(TestIrodsRequestViewsBase):
                 ),
                 {'confirm': True},
             )
-        self.assertEqual(response.context['irods_request_data'][0], obj)
+        self.assertEqual(response.context['request_objects'][0], obj)
 
     def test_accept(self):
         """Test accepting a delete request"""
@@ -1891,13 +1891,13 @@ class TestIrodsRequestAcceptBatchView(TestIrodsRequestViewsBase):
                 )
             ),
         )
-        self.assertEqual(len(response.context['irods_request_data']), 2)
+        self.assertEqual(len(response.context['request_objects']), 2)
         self.assertEqual(
-            response.context['irods_request_data'][0],
+            response.context['request_objects'][0],
             IrodsDataRequest.objects.first(),
         )
         self.assertEqual(
-            response.context['irods_request_data'][1],
+            response.context['request_objects'][1],
             IrodsDataRequest.objects.last(),
         )
 
@@ -1934,12 +1934,11 @@ class TestIrodsRequestAcceptBatchView(TestIrodsRequestViewsBase):
             )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
-            response.context['irods_request_data'][0],
+            response.context['request_objects'][0],
             IrodsDataRequest.objects.first(),
         )
         self.assertEqual(
-            response.context['affected_object_paths'][0],
-            coll_path,
+            response.context['affected_object_paths'][0], coll_path
         )
 
     def test_accept(self):

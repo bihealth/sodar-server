@@ -13,17 +13,17 @@
 
 
 <div class="container-fluid sodar-subtitle-container">
-  {% if irods_request_data|length == 1 %}
+  {% if request_objects|length == 1 %}
     <h3>Accept iRODS Delete Request</h3>
   {% else %}
-    <h3>Accept {{ irods_request_data|length }} iRODS Delete Requests</h3>
+    <h3>Accept {{ request_objects|length }} iRODS Delete Requests</h3>
   {% endif %}
 </div>
 
 <div class="container-fluid sodar-page-container">
-  {% if irods_request_data %}
+  {% if request_objects %}
     <div class="alert alert-danger">
-      <strong>Warning:</strong> Accepting {% if irods_request_data|length == 1 %}a request{% else %}requests{% endif %}
+      <strong>Warning:</strong> Accepting {% if request_objects|length == 1 %}a request{% else %}requests{% endif %}
       will delete the associated data objects from iRODS.
       This can <strong>not</strong> be undone without administrator assistance!
     </div>
@@ -40,20 +40,9 @@
     <form method="post" enctype="multipart/form-data">
       {% csrf_token %}
       {{ form | crispy }}
-      {% if irods_request_data|length %}
+      {% if request_objects|length %}
         <input type="hidden" name="irods_requests" id="irods_requests" value="{{ irods_request_uuids }}"/>
       {% endif %}
-      <div class="row">
-        <div class="btn-group ml-auto">
-          <a role="button" class="btn btn-secondary"
-              href="{% url 'samplesheets:irods_requests' project=project.sodar_uuid %}">
-            <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Cancel
-          </a>
-          <button type="submit" class="btn btn-danger" id="sodar-ss-btn-delete-submit">
-            <i class="iconify" data-icon="mdi:check-bold"></i> Accept
-          </button>
-        </div>
-      </div>
     </form>
   {% else %}
     <div class="row">
@@ -61,14 +50,19 @@
         <strong>Error:</strong> No iRODS delete request found with the given UUID.
       </div>
     </div>
-    <div class="row">
-      <div class="ml-auto btn-group">
-        <a role="button" class="btn btn-secondary"
-           href="{% url 'samplesheets:irods_requests' project=project.sodar_uuid %}">
-          <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Cancel
-        </a>
-      </div>
-    </div>
   {% endif %}
+  <div class="row">
+    <div class="ml-auto btn-group">
+      <a role="button" class="btn btn-secondary"
+         href="{% url 'samplesheets:irods_requests' project=project.sodar_uuid %}">
+        <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Cancel
+      </a>
+      {% if request_objects|length %}
+        <button type="submit" class="btn btn-danger" id="sodar-ss-btn-delete-submit">
+          <i class="iconify" data-icon="mdi:check-bold"></i> Accept
+        </button>
+      {% endif %}
+    </div>
+  </div>
 </div>
 {% endblock projectroles_extend %}

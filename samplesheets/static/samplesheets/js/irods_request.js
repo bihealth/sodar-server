@@ -17,9 +17,9 @@ $(document).ready(function () {
         }
         // Uncheck "Select All" if any checkbox is unchecked
         if (checkedCheckboxes.length < $('.sodar-ss-checkbox-item').length) {
-            $('#sodar-ss-check-all').prop('checked', false);
+            $('#sodar-ss-request-check-all').prop('checked', false);
         } else {
-            $('#sodar-ss-check-all').prop('checked', true);
+            $('#sodar-ss-request-check-all').prop('checked', true);
         }
     });
 });

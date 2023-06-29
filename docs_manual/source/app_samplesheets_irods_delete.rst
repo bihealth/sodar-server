@@ -102,7 +102,7 @@ user will be informed of rejection.
     carefully.
 
 
-Multiple Requests Accepting and Rejecting
+Accepting and Rejecting Multiple Requests
 =========================================
 
 In addition to accepting or rejecting requests one by one, you can also accept
@@ -112,3 +112,6 @@ the request list. Once you have selected the requests, click the
 :guilabel:`Request Operations` dropdown and select either
 :guilabel:`Accept Selected` or :guilabel:`Reject Selected`.
 
+.. warning::
+
+    The requests for entire collections must be accepted or rejected individually.

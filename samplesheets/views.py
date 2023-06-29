@@ -2578,7 +2578,7 @@ class IrodsRequestAcceptView(
         obj = IrodsDataRequest.objects.filter(
             sodar_uuid=self.kwargs['irodsdatarequest']
         ).first()
-        context_data['irods_request_data'] = []
+        context_data['request_objects'] = []
         affected_object_paths = [obj.path]
         irods_backend = get_backend_api('omics_irods')
         is_collection = obj.is_collection()
@@ -2593,7 +2593,7 @@ class IrodsRequestAcceptView(
                         irods, coll
                     )
                     affected_object_paths += [o.path for o in affected_objects]
-        context_data['irods_request_data'].append(obj)
+        context_data['request_objects'].append(obj)
         context_data['affected_object_paths'] = sorted(
             list(set(affected_object_paths))
         )
@@ -2674,7 +2674,7 @@ class IrodsRequestAcceptBatchView(
 
     def get_context_data(self, *args, **kwargs):
         context_data = super().get_context_data(*args, **kwargs)
-        context_data['irods_request_data'] = []
+        context_data['request_objects'] = []
         context_data['irods_request_uuids'] = ''
         irods_backend = get_backend_api('omics_irods')
         batch = self.get_irods_request_objects()
@@ -2698,7 +2698,7 @@ class IrodsRequestAcceptBatchView(
                         affected_object_paths += [
                             o.path for o in affected_objects
                         ]
-            context_data['irods_request_data'].append(obj)
+            context_data['request_objects'].append(obj)
         context_data['affected_object_paths'] = sorted(
             set(affected_object_paths)
         )
@@ -2714,10 +2714,7 @@ class IrodsRequestAcceptBatchView(
             project = self.get_project()
             batch = self.get_irods_request_objects()
             if not batch:
-                messages.error(
-                    self.request,
-                    IRODS_NO_REQ_MSG,
-                )
+                messages.error(self.request, IRODS_NO_REQ_MSG)
                 return redirect(
                     reverse(
                         'samplesheets:irods_requests',
@@ -2954,10 +2951,7 @@ class IrodsDataRequestListView(
     def get(self, request, *args, **kwargs):
         irods_backend = get_backend_api('omics_irods')
         if not irods_backend:
-            messages.error(
-                request,
-                'iRODS backend not enabled',
-            )
+            messages.error(request, 'iRODS backend not enabled')
             return redirect(
                 reverse(
                     'samplesheets:project_sheets',
