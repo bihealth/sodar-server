@@ -10,7 +10,7 @@ from projectroles.models import SODAR_CONSTANTS
 
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import (
-    TaskflowbackendTestBase,
+    TaskflowViewTestBase,
     IRODS_ACCESS_READ,
 )
 
@@ -28,7 +28,7 @@ SHEET_PATH = SHEET_DIR + 'i_small.zip'
 
 
 class TestSyncModifyAPI(
-    SampleSheetIOMixin, TestSamplesheetsModifyAPIMixin, TaskflowbackendTestBase
+    SampleSheetIOMixin, TestSamplesheetsModifyAPIMixin, TaskflowViewTestBase
 ):
     """Tests for the syncmofidyapi command"""
 

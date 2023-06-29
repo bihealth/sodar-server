@@ -17,7 +17,7 @@ from irodsbackend.api import USER_GROUP_PREFIX
 from timeline.models import ProjectEvent
 
 from taskflowbackend.tests.base import (
-    TaskflowbackendTestBase,
+    TaskflowViewTestBase,
     IRODS_ACCESS_READ,
 )
 
@@ -32,7 +32,7 @@ PROJECT_ACTION_CREATE = SODAR_CONSTANTS['PROJECT_ACTION_CREATE']
 PROJECT_ACTION_UPDATE = SODAR_CONSTANTS['PROJECT_ACTION_UPDATE']
 
 
-class TestModifyAPIBase(TaskflowbackendTestBase):
+class TestModifyAPIBase(TaskflowViewTestBase):
     """Base class for project modify API tests"""
 
     def _make_project_tf(self):

@@ -18,7 +18,7 @@ from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 
 # Taskflowbackend dependency
-from taskflowbackend.tests.base import TaskflowbackendTestBase
+from taskflowbackend.tests.base import TaskflowViewTestBase
 
 
 # SODAR constants
@@ -48,7 +48,7 @@ class TestIrodsBackendAPITaskflow(
     SampleSheetIOMixin,
     LandingZoneMixin,
     SampleSheetTaskflowMixin,
-    TaskflowbackendTestBase,
+    TaskflowViewTestBase,
 ):
     """Tests for the API in the irodsbackend app with Taskflow and iRODS"""
 

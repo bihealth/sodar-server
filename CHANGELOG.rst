@@ -31,6 +31,7 @@ Added
     - ``BatchCalculateChecksumTask`` iRODS task (#1634)
     - Automated generation of missing checksums in ``zone_move`` flow (#1634)
     - Cleanup of trash collections in testing (#1658)
+    - ``TaskflowPermissionTestBase`` base test class (#1718)
 
 Changed
 -------
@@ -46,6 +47,8 @@ Changed
     - Hide additional internal fields from ISA-Tab templates (#1698)
 - **Taskflowbackend**
     - Move iRODS object helpers from ``LandingZoneTaskflowMixin`` (#1699)
+    - Move iRODS test cleanup to ``TaskflowTestMixin.clear_irods_test_data()`` (#1722)
+    - Refactor base test classes (#1722)
 
 Fixed
 -----

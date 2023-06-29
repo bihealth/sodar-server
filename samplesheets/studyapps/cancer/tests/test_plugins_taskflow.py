@@ -11,7 +11,7 @@ from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 
 # Taskflowbackend dependency
-from taskflowbackend.tests.base import TaskflowbackendTestBase
+from taskflowbackend.tests.base import TaskflowViewTestBase
 
 from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
@@ -56,7 +56,7 @@ class TestCancerPlugin(
     SampleSheetModelMixin,
     SampleSheetIOMixin,
     SampleSheetTaskflowMixin,
-    TaskflowbackendTestBase,
+    TaskflowViewTestBase,
 ):
     """Class for testing the cancer studyapp plugin"""
 

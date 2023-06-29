@@ -21,7 +21,7 @@ from projectroles.models import (
 from projectroles.tests.test_models import ProjectInviteMixin
 
 from taskflowbackend.tests.base import (
-    TaskflowbackendTestBase,
+    TaskflowViewTestBase,
     IRODS_ACCESS_READ,
 )
 
@@ -49,7 +49,7 @@ TASKFLOW_TEST_MODE = getattr(settings, 'TASKFLOW_TEST_MODE', False)
 # Base Classes -----------------------------------------------------------------
 
 
-class TestProjectCreateView(TaskflowbackendTestBase):
+class TestProjectCreateView(TaskflowViewTestBase):
     """Tests for Project creation view with taskflow"""
 
     def test_create_project(self):
@@ -135,7 +135,7 @@ class TestProjectCreateView(TaskflowbackendTestBase):
         self.assertEqual(group.hasmember(self.user_owner_cat.username), True)
 
 
-class TestProjectUpdateView(TaskflowbackendTestBase):
+class TestProjectUpdateView(TaskflowViewTestBase):
     """Tests for Project updating view"""
 
     def setUp(self):
@@ -278,7 +278,7 @@ class TestProjectUpdateView(TaskflowbackendTestBase):
         self.assert_group_member(self.project, self.user_new, True)
 
 
-class TestRoleAssignmentCreateView(TaskflowbackendTestBase):
+class TestRoleAssignmentCreateView(TaskflowViewTestBase):
     """Tests for RoleAssignment creation view"""
 
     def setUp(self):
@@ -378,7 +378,7 @@ class TestRoleAssignmentCreateView(TaskflowbackendTestBase):
         self.assert_group_member(self.project, self.user_new, False)
 
 
-class TestRoleAssignmentUpdateView(TaskflowbackendTestBase):
+class TestRoleAssignmentUpdateView(TaskflowViewTestBase):
     """Tests for RoleAssignment update view with taskflow"""
 
     def setUp(self):
@@ -486,7 +486,7 @@ class TestRoleAssignmentUpdateView(TaskflowbackendTestBase):
         self.assert_group_member(self.project, user_new, False)
 
 
-class TestRoleAssignmentOwnerTransferView(TaskflowbackendTestBase):
+class TestRoleAssignmentOwnerTransferView(TaskflowViewTestBase):
     """Tests for ownership transfer view with taskflow"""
 
     def setUp(self):
@@ -582,7 +582,7 @@ class TestRoleAssignmentOwnerTransferView(TaskflowbackendTestBase):
         self.assert_group_member(self.project, self.user_owner_cat, True)
 
 
-class TestRoleAssignmentDeleteView(TaskflowbackendTestBase):
+class TestRoleAssignmentDeleteView(TaskflowViewTestBase):
     """Tests for RoleAssignment delete view"""
 
     def setUp(self):
@@ -699,7 +699,7 @@ class TestRoleAssignmentDeleteView(TaskflowbackendTestBase):
         self.assert_group_member(self.project, self.user_new, False)
 
 
-class TestProjectInviteAcceptView(ProjectInviteMixin, TaskflowbackendTestBase):
+class TestProjectInviteAcceptView(ProjectInviteMixin, TaskflowViewTestBase):
     """Tests for ProjectInvite accepting view with taskflow"""
 
     def setUp(self):

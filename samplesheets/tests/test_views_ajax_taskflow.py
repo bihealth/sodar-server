@@ -10,7 +10,7 @@ from django.urls import reverse
 from projectroles.models import SODAR_CONSTANTS
 
 # Taskflowbackend dependency
-from taskflowbackend.tests.base import TaskflowbackendTestBase
+from taskflowbackend.tests.base import TaskflowViewTestBase
 
 from samplesheets.models import GenericMaterial, IrodsDataRequest
 from samplesheets.rendering import SampleSheetTableBuilder
@@ -44,7 +44,7 @@ IRODS_FAIL_COLL = 'xeiJ1Vie'
 
 
 class TestSheetCellEditAjaxView(
-    SampleSheetIOMixin, SampleSheetTaskflowMixin, TaskflowbackendTestBase
+    SampleSheetIOMixin, SampleSheetTaskflowMixin, TaskflowViewTestBase
 ):
     """Tests for SheetCellEditAjaxView with iRODS and taskflow"""
 

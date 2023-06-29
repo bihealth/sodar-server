@@ -15,7 +15,7 @@ from django.conf import settings
 from projectroles.models import SODAR_CONSTANTS
 
 from taskflowbackend.flows.base_flow import BaseLinearFlow
-from taskflowbackend.tests.base import TaskflowbackendTestBase, TICKET_STR
+from taskflowbackend.tests.base import TaskflowViewTestBase, TICKET_STR
 from taskflowbackend.tasks.irods_tasks import *  # noqa
 
 
@@ -58,7 +58,7 @@ BATCH_OBJ_NAME = '/batch_obj'
 BATCH_OBJ2_NAME = '/batch_obj2'
 
 
-class IRODSTaskTestBase(TaskflowbackendTestBase):
+class IRODSTaskTestBase(TaskflowViewTestBase):
     """Base test class for iRODS tasks"""
 
     def _run_flow(self):

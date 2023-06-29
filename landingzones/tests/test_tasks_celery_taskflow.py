@@ -12,7 +12,7 @@ from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 
 # Taskflowbackend dependency
-from taskflowbackend.tests.base import TaskflowbackendTestBase
+from taskflowbackend.tests.base import TaskflowViewTestBase
 
 from landingzones.tasks_celery import TriggerZoneMoveTask
 from landingzones.tests.test_models import LandingZoneMixin
@@ -45,7 +45,7 @@ class TestTriggerZoneMoveTask(
     LandingZoneMixin,
     LandingZoneTaskflowMixin,
     SampleSheetTaskflowMixin,
-    TaskflowbackendTestBase,
+    TaskflowViewTestBase,
 ):
     """Tests for the automated zone move triggering task"""
 

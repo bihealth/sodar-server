@@ -69,7 +69,6 @@ class TestLandingZoneAPITaskflowBase(
         self.assertIsNotNone(self.irods_backend)
         self.irods = self.irods_backend.get_session_obj()
 
-        # Init project
         # Make project with owner in Taskflow and Django
         self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',

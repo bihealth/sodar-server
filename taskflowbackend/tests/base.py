@@ -1,14 +1,24 @@
 """
 Base test classes and mixins for the taskflowbackend and other apps testing
 against it.
+
+- TaskflowViewTestBase: Use for view tests of UI and Ajax views
+- TaskflowViewAPIBTestase: Use for view tests of REST API views
+- TaskflowPermissionTestBase: Use for permission tests of UI and Ajax views
+- TaskflowAPIPermissionTestBase: Use for permission tests of REST API views
+
+Test category is automatically created for each test. Project creation has to be
+done manually using make_project_taskflow() and make_assignment_taskflow().
 """
 
 import hashlib
+import logging
 import os
+
 
 from irods.exception import CollectionDoesNotExist
 from irods.keywords import REG_CHKSUM_KW
-from irods.models import UserGroup
+from irods.models import TicketQuery, UserGroup
 from irods.test.helpers import make_object
 
 from django.conf import settings
@@ -27,12 +37,14 @@ from projectroles.tests.test_models import (
     RoleMixin,
     RoleAssignmentMixin,
 )
+from projectroles.tests.test_permissions import TestPermissionMixin
 from projectroles.tests.test_permissions_api import SODARAPIPermissionTestMixin
 from projectroles.tests.test_views_api import SODARAPIViewTestMixin
 from projectroles.views_api import CORE_API_MEDIA_TYPE, CORE_API_DEFAULT_VERSION
 
 
 app_settings = AppSettingAPI()
+logger = logging.getLogger(__name__)
 
 
 # SODAR constants
@@ -54,10 +66,11 @@ TICKET_STR = 'ei8iomuDoazeiD2z'
 TEST_MODE_ERR_MSG = (
     'TASKFLOW_TEST_MODE not True, testing with SODAR Taskflow disabled'
 )
+DEFAULT_PERMANENT_USERS = ['client_user', 'rods', 'rodsadmin', 'public']
 
 
-class TaskflowTestMixin:
-    """Helpers for taskflow tests"""
+class TaskflowTestMixin(ProjectMixin, RoleMixin, RoleAssignmentMixin):
+    """Setup/teardown methods and helpers for taskflow tests"""
 
     #: iRODS backend object
     irods_backend = None
@@ -166,6 +179,161 @@ class TaskflowTestMixin:
         """
         self.assertEqual(self.irods.data_objects.exists(path), expected)
 
+    @classmethod
+    def clear_irods_test_data(cls):
+        """
+        Cleanup all data from an iRODS test server. Only allowed in test mode.
+        Should never be used on a dev/production server!
+
+        :return: Boolean
+        :raise: ImproperlyConfigured if TASKFLOW_TEST_MODE is not set True
+        :raise: Exception if iRODS cleanup fails
+        """
+        if not settings.TASKFLOW_TEST_MODE:
+            raise ImproperlyConfigured(
+                'TASKFLOW_TEST_MODE not True, cleanup command not allowed'
+            )
+        irods_backend = get_backend_api('omics_irods')
+        projects_root = irods_backend.get_projects_path()
+        permanent_users = getattr(
+            settings, 'TASKFLOW_TEST_PERMANENT_USERS', DEFAULT_PERMANENT_USERS
+        )
+        # TODO: Remove stuff from user home collections
+
+        with irods_backend.get_session() as irods:
+            # Remove project folders
+            try:
+                irods.collections.remove(
+                    projects_root, recurse=True, force=True
+                )
+                logger.debug('Removed projects root: {}'.format(projects_root))
+            except Exception:
+                pass  # This is OK, the root just wasn't there
+                # Remove created user groups and users
+
+            # NOTE: user_groups.remove does both
+            for g in irods.query(UserGroup).all():
+                if g[UserGroup.name] not in permanent_users:
+                    irods.user_groups.remove(user_name=g[UserGroup.name])
+                    logger.debug('Removed user: {}'.format(g[UserGroup.name]))
+
+            # Remove all tickets
+            ticket_query = irods.query(TicketQuery.Ticket).all()
+            for ticket in ticket_query:
+                ticket_str = ticket[TicketQuery.Ticket.string]
+                irods_backend.delete_ticket(irods, ticket_str)
+                logger.debug('Deleted ticket: {}'.format(ticket_str))
+
+            # Remove data objects and unneeded collections from trash
+            trash_path = irods_backend.get_trash_path()
+            trash_coll = irods.collections.get(trash_path)
+            # NOTE: We can't delete the home trash collection
+            trash_home_path = os.path.join(trash_path, 'home')
+            for coll in irods_backend.get_colls_recursively(trash_coll):
+                if irods.collections.exists(
+                    coll.path
+                ) and not coll.path.startswith(trash_home_path):
+                    irods.collections.remove(
+                        coll.path, recurse=True, force=True
+                    )
+            obj_paths = [
+                o['path']
+                for o in irods_backend.get_objs_recursively(irods, trash_coll)
+                + irods_backend.get_objs_recursively(
+                    irods, trash_coll, md5=True
+                )
+            ]
+            for path in obj_paths:
+                irods.data_objects.unlink(path, force=True)
+
+    def setUp(self):
+        # Ensure TASKFLOW_TEST_MODE is True to avoid data loss
+        if not settings.TASKFLOW_TEST_MODE:
+            raise ImproperlyConfigured(TEST_MODE_ERR_MSG)
+        self.taskflow = get_backend_api('taskflow', force=True)
+        self.irods_backend = get_backend_api('omics_irods')
+        self.irods = self.irods_backend.get_session_obj()
+
+        # Init roles
+        self.init_roles()
+        # Init users
+        self.user_owner_cat = self.make_user('user_owner_cat')
+        self.user = self.make_user('superuser')
+        self.user.is_staff = True
+        self.user.is_superuser = True
+        self.user.save()
+        # Create category locally
+        self.category = self.make_project(
+            'TestCategory', PROJECT_TYPE_CATEGORY, None
+        )
+        self.owner_as_cat = self.make_assignment(
+            self.category, self.user_owner_cat, self.role_owner
+        )
+
+    def tearDown(self):
+        self.clear_irods_test_data()
+        self.irods.cleanup()
+
+
+class TaskflowPermissionTestMixin(
+    SODARAPIPermissionTestMixin, TaskflowTestMixin
+):
+    """Setup method mixin for permission tests"""
+
+    def setUp(self):
+        super().setUp()
+        # Init users
+        # Superuser
+        self.superuser = self.user
+        # Get knox token for self.user
+        self.knox_token = self.get_token(self.superuser)
+        # No user
+        self.anonymous = None
+        # Users with role assignments
+        # NOTE: user_owner_cate created in super()
+        self.user_delegate_cat = self.make_user('user_delegate_cat')
+        self.user_contributor_cat = self.make_user('user_contributor_cat')
+        self.user_guest_cat = self.make_user('user_guest_cat')
+        self.user_finder_cat = self.make_user('user_finder_cat')
+        self.user_owner = self.make_user('user_owner')
+        self.user_delegate = self.make_user('user_delegate')
+        self.user_contributor = self.make_user('user_contributor')
+        self.user_guest = self.make_user('user_guest')
+        # User without role assignments
+        self.user_no_roles = self.make_user('user_no_roles')
+
+        # Make Category users locally
+        # NOTE: owner_as_cat created in super()
+        self.delegate_as_cat = self.make_assignment(
+            self.category, self.user_delegate_cat, self.role_delegate
+        )
+        self.contributor_as_cat = self.make_assignment(
+            self.category, self.user_contributor_cat, self.role_contributor
+        )
+        self.guest_as_cat = self.make_assignment(
+            self.category, self.user_guest_cat, self.role_guest
+        )
+        self.finder_as_cat = self.make_assignment(
+            self.category, self.user_finder_cat, self.role_finder
+        )
+        # Make project and roles with Taskflow
+        self.project, self.owner_as = self.make_project_taskflow(
+            title='TestProject',
+            type=PROJECT_TYPE_PROJECT,
+            parent=self.category,
+            owner=self.user_owner,
+            description='description',
+        )
+        self.delegate_as = self.make_assignment_taskflow(
+            self.project, self.user_delegate, self.role_delegate
+        )
+        self.contributor_as = self.make_assignment_taskflow(
+            self.project, self.user_contributor, self.role_contributor
+        )
+        self.guest_as = self.make_assignment_taskflow(
+            self.project, self.user_guest, self.role_guest
+        )
+
 
 class TaskflowProjectTestMixin:
     """Helpers for UI/Ajax view project management with Taskflow"""
@@ -240,7 +408,7 @@ class TaskflowAPIProjectTestMixin:
     def make_project_taskflow(
         self, title, type, parent, owner, description='', readme=''
     ):
-        """Make Project with taskflow for API view tests."""
+        """Make Project with taskflow for API view tests"""
         post_data = {
             'title': title,
             'type': type,
@@ -262,7 +430,7 @@ class TaskflowAPIProjectTestMixin:
         return project, project.get_owner()
 
     def make_assignment_taskflow(self, project, user, role):
-        """Make RoleAssignment with taskflow for API view tests."""
+        """Make RoleAssignment with taskflow for API view tests"""
         url = reverse(
             'projectroles:api_role_create',
             kwargs={'project': project.sodar_uuid},
@@ -279,58 +447,15 @@ class TaskflowAPIProjectTestMixin:
         return RoleAssignment.objects.get(project=project, user=user, role=role)
 
 
-class TaskflowbackendTestBase(
+class TaskflowViewTestBase(
     TaskflowTestMixin,
     TaskflowProjectTestMixin,
-    ProjectMixin,
-    RoleMixin,
-    RoleAssignmentMixin,
     TestCase,
 ):
     """Base class for testing with taskflow"""
 
-    def setUp(self):
-        # Ensure TASKFLOW_TEST_MODE is True to avoid data loss
-        if not settings.TASKFLOW_TEST_MODE:
-            raise ImproperlyConfigured(
-                'TASKFLOW_TEST_MODE not True, testing with SODAR Taskflow '
-                'disabled'
-            )
-        self.taskflow = get_backend_api('taskflow', force=True)
-        self.irods_backend = get_backend_api('omics_irods')
-        self.irods = self.irods_backend.get_session_obj()
-
-        # Init roles
-        self.init_roles()
-        # Init users
-        self.user_owner_cat = self.make_user('user_owner_cat')
-        self.user = self.make_user('superuser')
-        self.user.is_staff = True
-        self.user.is_superuser = True
-        self.user.save()
-        # Create category locally
-        self.category = self.make_project(
-            'TestCategory', PROJECT_TYPE_CATEGORY, None
-        )
-        self.owner_as_cat = self.make_assignment(
-            self.category, self.user_owner_cat, self.role_owner
-        )
-
-    def tearDown(self):
-        self.taskflow.cleanup()
-        with self.assertRaises(CollectionDoesNotExist):
-            self.irods.collections.get(self.irods_backend.get_projects_path())
-        for user in self.irods.query(UserGroup).all():
-            self.assertIn(
-                user[UserGroup.name], settings.TASKFLOW_TEST_PERMANENT_USERS
-            )
-        self.irods.cleanup()
-
 
 class TaskflowAPIViewTestBase(
-    ProjectMixin,
-    RoleMixin,
-    RoleAssignmentMixin,
     SODARAPIViewTestMixin,
     TaskflowTestMixin,
     TaskflowAPIProjectTestMixin,
@@ -340,110 +465,26 @@ class TaskflowAPIViewTestBase(
     """Base class for testing API views with taskflow"""
 
     def setUp(self):
-        # Ensure TASKFLOW_TEST_MODE is True to avoid data loss
-        if not settings.TASKFLOW_TEST_MODE:
-            raise ImproperlyConfigured(TEST_MODE_ERR_MSG)
-        self.taskflow = get_backend_api('taskflow', force=True)
-        self.irods_backend = get_backend_api('omics_irods')
-        self.irods = self.irods_backend.get_session_obj()
-        # Init roles
-        self.init_roles()
-        # Init superuser
-        self.user = self.make_user('superuser')
-        self.user.is_superuser = True
-        self.user.save()
+        super().setUp()
         # Get knox token for self.user
         self.knox_token = self.get_token(self.user)
-        # Create category locally (creation is not handled with taskflow)
-        self.category = self.make_project(
-            'TestCategory', PROJECT_TYPE_CATEGORY, None
-        )
-        self.make_assignment(self.category, self.user, self.role_owner)
 
-    def tearDown(self):
-        self.taskflow.cleanup()
-        self.irods.cleanup()
+
+class TaskflowPermissionTestBase(
+    TaskflowProjectTestMixin,
+    TaskflowPermissionTestMixin,
+    TestPermissionMixin,
+    TestCase,
+):
+    """Base class for testing UI and Ajax view permissions with taskflow"""
 
 
 class TaskflowAPIPermissionTestBase(
-    ProjectMixin,
-    RoleMixin,
-    RoleAssignmentMixin,
-    TaskflowAPIProjectTestMixin,
-    SODARAPIPermissionTestMixin,
-    APITestCase,
+    TaskflowAPIProjectTestMixin, TaskflowPermissionTestMixin, APITestCase
 ):
     """Base class for testing API view permissions with taskflow"""
 
     def setUp(self):
-        # Ensure TASKFLOW_TEST_MODE is True to avoid data loss
-        if not settings.TASKFLOW_TEST_MODE:
-            raise ImproperlyConfigured(TEST_MODE_ERR_MSG)
-        # Init roles
-        self.init_roles()
-        # Init users
-        # Superuser
-        self.superuser = self.make_user('superuser')
-        self.superuser.is_superuser = True
-        self.superuser.save()
+        super().setUp()
+        # Get knox token for self.user
         self.knox_token = self.get_token(self.superuser)
-        # No user
-        self.anonymous = None
-        # Users with role assignments
-        self.user_owner_cat = self.make_user('user_owner_cat')
-        self.user_delegate_cat = self.make_user('user_delegate_cat')
-        self.user_contributor_cat = self.make_user('user_contributor_cat')
-        self.user_guest_cat = self.make_user('user_guest_cat')
-        self.user_finder_cat = self.make_user('user_finder_cat')
-        self.user_owner = self.make_user('user_owner')
-        self.user_delegate = self.make_user('user_delegate')
-        self.user_contributor = self.make_user('user_contributor')
-        self.user_guest = self.make_user('user_guest')
-        # User without role assignments
-        self.user_no_roles = self.make_user('user_no_roles')
-
-        # Make category and category users locally
-        self.category = self.make_project(
-            title='TestCategoryTop', type=PROJECT_TYPE_CATEGORY, parent=None
-        )
-        self.owner_as_cat = self.make_assignment(
-            self.category, self.user_owner_cat, self.role_owner
-        )
-        self.delegate_as_cat = self.make_assignment(
-            self.category, self.user_delegate_cat, self.role_delegate
-        )
-        self.contributor_as_cat = self.make_assignment(
-            self.category, self.user_contributor_cat, self.role_contributor
-        )
-        self.guest_as_cat = self.make_assignment(
-            self.category, self.user_guest_cat, self.role_guest
-        )
-        self.finder_as_cat = self.make_assignment(
-            self.category, self.user_finder_cat, self.role_finder
-        )
-        # Make project and roles with Taskflow
-        self.project, self.owner_as = self.make_project_taskflow(
-            title='TestProject',
-            type=PROJECT_TYPE_PROJECT,
-            parent=self.category,
-            owner=self.user_owner,
-            description='description',
-        )
-        self.delegate_as = self.make_assignment_taskflow(
-            self.project, self.user_delegate, self.role_delegate
-        )
-        self.contributor_as = self.make_assignment_taskflow(
-            self.project, self.user_contributor, self.role_contributor
-        )
-        self.guest_as = self.make_assignment_taskflow(
-            self.project, self.user_guest, self.role_guest
-        )
-
-        # Init taskflow and iRODS backend
-        self.taskflow = get_backend_api('taskflow')
-        self.irods_backend = get_backend_api('omics_irods')
-        self.irods = self.irods_backend.get_session_obj()
-
-    def tearDown(self):
-        self.irods.cleanup()
-        super().tearDown()

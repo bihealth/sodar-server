@@ -16,7 +16,7 @@ from samplesheets.tests.test_views_taskflow import (
 )
 
 # Taskflowbackend dependency
-from taskflowbackend.tests.base import TaskflowbackendTestBase
+from taskflowbackend.tests.base import TaskflowViewTestBase
 
 from landingzones.tests.test_models import LandingZoneMixin
 from landingzones.tests.test_views_taskflow import LandingZoneTaskflowMixin
@@ -44,7 +44,7 @@ class TestPerformProjectSync(
     SampleSheetIOMixin,
     SampleSheetPublicAccessMixin,
     SampleSheetTaskflowMixin,
-    TaskflowbackendTestBase,
+    TaskflowViewTestBase,
 ):
     """Tests for perform_project_modify()"""
 

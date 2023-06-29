@@ -25,7 +25,7 @@ from samplesheets.views import RESULTS_COLL, MISC_FILES_COLL, TRACK_HUBS_COLL
 
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import (
-    TaskflowbackendTestBase,
+    TaskflowViewTestBase,
     IRODS_ACCESS_READ,
     IRODS_ACCESS_OWN,
 )
@@ -149,7 +149,7 @@ class TestLandingZoneCreateView(
     LandingZoneMixin,
     SampleSheetTaskflowMixin,
     LandingZoneTaskflowMixin,
-    TaskflowbackendTestBase,
+    TaskflowViewTestBase,
 ):
     """Tests for the landingzones create view with Taskflow and iRODS"""
 
@@ -392,7 +392,7 @@ class TestLandingZoneMoveView(
     LandingZoneMixin,
     LandingZoneTaskflowMixin,
     SampleSheetTaskflowMixin,
-    TaskflowbackendTestBase,
+    TaskflowViewTestBase,
 ):
     """Tests for landingzones move/validate view with Taskflow and iRODS"""
 
@@ -891,7 +891,7 @@ class TestLandingZoneDeleteView(
     LandingZoneMixin,
     LandingZoneTaskflowMixin,
     SampleSheetTaskflowMixin,
-    TaskflowbackendTestBase,
+    TaskflowViewTestBase,
 ):
     """Tests for landingzones delete view with Taskflow and iRODS"""
 

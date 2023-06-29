@@ -148,7 +148,7 @@ class TestProjectUpdateAPIView(TestCoreTaskflowAPIBase):
         self.assertEqual(
             RoleAssignment.objects.filter(project=self.category).count(), 1
         )
-        self.assertEqual(self.category.get_owner().user, self.user)
+        self.assertEqual(self.category.get_owner().user, self.user_owner_cat)
 
     def test_put_project(self):
         """Test put() for project updating"""
@@ -240,7 +240,7 @@ class TestProjectUpdateAPIView(TestCoreTaskflowAPIBase):
             'sodar_uuid': self.category.sodar_uuid,
         }
         self.assertEqual(model_dict, expected)
-        self.assertEqual(self.category.get_owner().user, self.user)
+        self.assertEqual(self.category.get_owner().user, self.user_owner_cat)
 
     def test_patch_project(self):
         """Test patch() for updating project metadata"""
@@ -521,7 +521,7 @@ class TestRoleAssignmentOwnerTransferAPIView(TestCoreTaskflowAPIBase):
         self.make_assignment_taskflow(
             self.category, self.user_new, self.role_contributor
         )
-        self.assertEqual(self.category.get_owner().user, self.user)
+        self.assertEqual(self.category.get_owner().user, self.user_owner_cat)
         self.assert_group_member(self.project, self.user_owner, True)
         self.assert_group_member(self.project, self.user_new, True)
 
@@ -538,7 +538,8 @@ class TestRoleAssignmentOwnerTransferAPIView(TestCoreTaskflowAPIBase):
         self.assertEqual(response.status_code, 200, msg=response.content)
         self.assertEqual(self.category.get_owner().user, self.user_new)
         self.assertEqual(
-            self.category.get_role(self.user).role, self.role_contributor
+            self.category.get_role(self.user_owner_cat).role,
+            self.role_contributor,
         )
         self.assert_group_member(self.project, self.user_owner, True)
         self.assert_group_member(self.project, self.user_new, True)
@@ -549,31 +550,33 @@ class TestRoleAssignmentOwnerTransferAPIView(TestCoreTaskflowAPIBase):
             self.project, self.user_new, self.role_contributor
         )
         self.assertEqual(self.project.get_owner().user, self.user_owner)
+        self.assert_group_member(self.project, self.user_owner_cat, True)
         self.assert_group_member(self.project, self.user_owner, True)
         self.assert_group_member(self.project, self.user_new, True)
-        self.assert_group_member(self.project, self.user, True)
+        self.assert_group_member(self.project, self.user, False)
 
         url = reverse(
             'projectroles:api_role_owner_transfer',
             kwargs={'project': self.project.sodar_uuid},
         )
         request_data = {
-            'new_owner': self.user.username,  # self.user = category owner
+            'new_owner': self.user_owner_cat.username,  # Category owner
             'old_owner_role': PROJECT_ROLE_CONTRIBUTOR,
         }
         response = self.request_knox(url, method='POST', data=request_data)
 
         self.assertEqual(response.status_code, 200, msg=response.content)
-        self.assertEqual(self.project.get_owner().user, self.user)
+        self.assertEqual(self.project.get_owner().user, self.user_owner_cat)
         self.assertEqual(
             RoleAssignment.objects.get(
                 project=self.project, user=self.user_owner
             ).role,
             self.role_contributor,
         )
+        self.assert_group_member(self.project, self.user_owner_cat, True)
         self.assert_group_member(self.project, self.user_owner, True)
         self.assert_group_member(self.project, self.user_new, True)
-        self.assert_group_member(self.project, self.user, True)
+        self.assert_group_member(self.project, self.user, False)
 
     def test_transfer_inherit_finder(self):
         """Test transferring with finder role set for old inherited owner"""
@@ -581,9 +584,10 @@ class TestRoleAssignmentOwnerTransferAPIView(TestCoreTaskflowAPIBase):
             self.category, self.user_new, self.role_finder
         )
         self.assertEqual(self.project.get_owner().user, self.user_owner)
+        self.assert_group_member(self.project, self.user_owner_cat, True)
         self.assert_group_member(self.project, self.user_owner, True)
         self.assert_group_member(self.project, self.user_new, False)
-        self.assert_group_member(self.project, self.user, True)
+        self.assert_group_member(self.project, self.user, False)
 
         url = reverse(
             'projectroles:api_role_owner_transfer',
@@ -599,6 +603,7 @@ class TestRoleAssignmentOwnerTransferAPIView(TestCoreTaskflowAPIBase):
         self.assertEqual(
             self.project.get_role(self.user_new).role, self.role_owner
         )
+        self.assert_group_member(self.project, self.user_owner, True)
         self.assert_group_member(self.project, self.user_owner, True)
         self.assert_group_member(self.project, self.user_new, True)
         self.assert_group_member(self.project, self.user, False)

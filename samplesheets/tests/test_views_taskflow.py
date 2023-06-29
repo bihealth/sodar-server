@@ -27,7 +27,7 @@ from appalerts.models import AppAlert
 from timeline.models import ProjectEvent
 
 # Taskflowbackend dependency
-from taskflowbackend.tests.base import TaskflowbackendTestBase
+from taskflowbackend.tests.base import TaskflowViewTestBase
 
 from samplesheets.forms import ERROR_MSG_INVALID_PATH
 from samplesheets.models import (
@@ -190,7 +190,7 @@ class IrodsAccessTicketViewTestMixin:
 
 
 class TestIrodsCollsCreateView(
-    SampleSheetIOMixin, SampleSheetPublicAccessMixin, TaskflowbackendTestBase
+    SampleSheetIOMixin, SampleSheetPublicAccessMixin, TaskflowViewTestBase
 ):
     """Tests for iRODS collection structure creation view with taskflow"""
 
@@ -285,7 +285,7 @@ class TestIrodsCollsCreateView(
 
 
 class TestSheetDeleteView(
-    SampleSheetIOMixin, SampleSheetTaskflowMixin, TaskflowbackendTestBase
+    SampleSheetIOMixin, SampleSheetTaskflowMixin, TaskflowViewTestBase
 ):
     """Tests for sample sheet deletion with taskflow"""
 
@@ -529,7 +529,7 @@ class TestIrodsAccessTicketListView(
     SampleSheetTaskflowMixin,
     SampleSheetIOMixin,
     IrodsAccessTicketMixin,
-    TaskflowbackendTestBase,
+    TaskflowViewTestBase,
 ):
     """Tests for the iRODS access ticket list view"""
 
@@ -595,7 +595,7 @@ class TestIrodsAccessTicketCreateView(
     SampleSheetIOMixin,
     IrodsAccessTicketMixin,
     IrodsAccessTicketViewTestMixin,
-    TaskflowbackendTestBase,
+    TaskflowViewTestBase,
 ):
     """Tests for iRODS access ticket create view"""
 
@@ -883,7 +883,7 @@ class TestIrodsAccessTicketUpdateView(
     SampleSheetIOMixin,
     IrodsAccessTicketMixin,
     IrodsAccessTicketViewTestMixin,
-    TaskflowbackendTestBase,
+    TaskflowViewTestBase,
 ):
     """Tests for the iRODS access ticket update view"""
 
@@ -964,7 +964,7 @@ class TestIrodsAccessTicketDeleteView(
     SampleSheetIOMixin,
     IrodsAccessTicketMixin,
     IrodsAccessTicketViewTestMixin,
-    TaskflowbackendTestBase,
+    TaskflowViewTestBase,
 ):
     """Tests for the iRODS access ticket delete view"""
 
@@ -1048,7 +1048,7 @@ class TestIrodsAccessTicketDeleteView(
 class TestIrodsRequestViewsBase(
     SampleSheetIOMixin,
     SampleSheetTaskflowMixin,
-    TaskflowbackendTestBase,
+    TaskflowViewTestBase,
 ):
     """Base test class for iRODS delete requests"""
 
@@ -2543,7 +2543,7 @@ class TestSampleDataPublicAccess(
     SampleSheetIOMixin,
     SampleSheetTaskflowMixin,
     SampleSheetPublicAccessMixin,
-    TaskflowbackendTestBase,
+    TaskflowViewTestBase,
 ):
     """Tests for granting/revoking public guest access for projects"""
 
@@ -2643,7 +2643,7 @@ class TestSampleDataPublicAccess(
 
 
 class TestProjectSearchView(
-    SampleSheetIOMixin, SampleSheetTaskflowMixin, TaskflowbackendTestBase
+    SampleSheetIOMixin, SampleSheetTaskflowMixin, TaskflowViewTestBase
 ):
     """Tests for project search with sample sheet items"""
 

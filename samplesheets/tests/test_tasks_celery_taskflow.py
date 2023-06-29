@@ -15,7 +15,7 @@ from appalerts.models import AppAlert
 from sodarcache.models import JSONCacheItem
 
 # Taskflowbackend dependency
-from taskflowbackend.tests.base import TaskflowbackendTestBase
+from taskflowbackend.tests.base import TaskflowViewTestBase
 
 # Timeline dependency
 from timeline.models import ProjectEvent
@@ -52,7 +52,7 @@ CACHE_ALERT_MESSAGE = 'Testing'
 
 
 class TestUpdateProjectCacheTask(
-    SampleSheetIOMixin, SampleSheetTaskflowMixin, TaskflowbackendTestBase
+    SampleSheetIOMixin, SampleSheetTaskflowMixin, TaskflowViewTestBase
 ):
     """Tests for project cache update task"""
 

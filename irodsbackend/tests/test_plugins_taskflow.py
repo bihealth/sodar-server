@@ -9,7 +9,7 @@ from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import BackendPluginPoint
 
 # Taskflowbackend dependency
-from taskflowbackend.tests.base import TaskflowbackendTestBase
+from taskflowbackend.tests.base import TaskflowViewTestBase
 
 
 # SODAR constants
@@ -20,7 +20,7 @@ TEST_COLL = 'test'
 TEST_FILE = 'test.txt'
 
 
-class TestGetStatistics(TaskflowbackendTestBase):
+class TestGetStatistics(TaskflowViewTestBase):
     """Tests for get_statistics()"""
 
     def setUp(self):

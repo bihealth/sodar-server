@@ -53,7 +53,7 @@ from taskflowbackend.flows.sheet_colls_create import (
 from taskflowbackend.flows.sheet_delete import Flow as SheetDeleteFlow
 from taskflowbackend.tasks.irods_tasks import META_EMPTY_VALUE
 from taskflowbackend.tests.base import (
-    TaskflowbackendTestBase,
+    TaskflowViewTestBase,
     IRODS_ACCESS_READ,
     IRODS_ACCESS_OWN,
     IRODS_ACCESS_WRITE,
@@ -76,7 +76,7 @@ UPDATED_DESC = 'updated description'
 SCRIPT_USER_NAME = 'script_user'
 
 
-class TaskflowbackendFlowTestBase(TaskflowbackendTestBase):
+class TaskflowbackendFlowTestBase(TaskflowViewTestBase):
     """Base class for flow tests"""
 
     def _build_and_run(self, flow, force_fail=False):

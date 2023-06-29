@@ -11,7 +11,7 @@ from projectroles.plugins import ProjectAppPluginPoint
 
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import (
-    TaskflowbackendTestBase,
+    TaskflowViewTestBase,
     IRODS_ACCESS_READ,
     IRODS_GROUP_PUBLIC,
 )
@@ -72,7 +72,7 @@ class TestPerformProjectModify(
     SampleSheetIOMixin,
     SampleSheetPublicAccessMixin,
     SampleSheetTaskflowMixin,
-    TaskflowbackendTestBase,
+    TaskflowViewTestBase,
 ):
     """Tests for perform_project_modify()"""
 
@@ -217,7 +217,7 @@ class TestPerformProjectSync(
     SampleSheetIOMixin,
     SampleSheetPublicAccessMixin,
     SampleSheetTaskflowMixin,
-    TaskflowbackendTestBase,
+    TaskflowViewTestBase,
 ):
     """Tests for perform_project_sync()"""
 

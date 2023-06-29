@@ -9,7 +9,7 @@ from django.utils.timezone import localtime
 from projectroles.constants import SODAR_CONSTANTS
 
 # Taskflowbackend dependency
-from taskflowbackend.tests.base import TaskflowbackendTestBase
+from taskflowbackend.tests.base import TaskflowViewTestBase
 
 from samplesheets.models import (
     IRODS_DATA_REQUEST_STATUS_CHOICES,
@@ -38,7 +38,7 @@ TEST_COLL_NAME = 'coll1'
 class TestIrodsDataRequestBase(
     SampleSheetIOMixin,
     SampleSheetTaskflowMixin,
-    TaskflowbackendTestBase,
+    TaskflowViewTestBase,
 ):
     """Base test class for iRODS delete requests"""
 

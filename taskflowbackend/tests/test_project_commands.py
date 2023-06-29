@@ -27,7 +27,7 @@ from projectroles.tests.test_commands import BatchUpdateRolesMixin
 
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import (
-    TaskflowbackendTestBase,
+    TaskflowViewTestBase,
     IRODS_ACCESS_READ,
 )
 
@@ -41,7 +41,7 @@ PROJECT_TYPE_CATEGORY = SODAR_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 
-class TestBatchUpdateRoles(BatchUpdateRolesMixin, TaskflowbackendTestBase):
+class TestBatchUpdateRoles(BatchUpdateRolesMixin, TaskflowViewTestBase):
     """Tests for the batchupdateroles command"""
 
     def setUp(self):
@@ -91,7 +91,7 @@ class TestBatchUpdateRoles(BatchUpdateRolesMixin, TaskflowbackendTestBase):
         self.assertEqual(role_as.role, self.role_contributor)
 
 
-class TestSyncModifyAPI(TaskflowbackendTestBase):
+class TestSyncModifyAPI(TaskflowViewTestBase):
     """Tests for the syncmofidyapi command"""
 
     def setUp(self):
