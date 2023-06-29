@@ -2592,7 +2592,9 @@ class IrodsRequestAcceptView(
                     affected_objects = irods_backend.get_objs_recursively(
                         irods, coll
                     )
-                    affected_object_paths += [o.path for o in affected_objects]
+                    affected_object_paths += [
+                        o['path'] for o in affected_objects
+                    ]
         context_data['request_objects'].append(obj)
         context_data['affected_object_paths'] = sorted(
             list(set(affected_object_paths))

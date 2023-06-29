@@ -37,7 +37,7 @@
         {% endfor %}
       </ul>
     </div>
-    <form method="post" enctype="multipart/form-data">
+    <form id="irods_requests_form" method="post" enctype="multipart/form-data">
       {% csrf_token %}
       {{ form | crispy }}
       {% if request_objects|length %}
@@ -58,7 +58,7 @@
         <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Cancel
       </a>
       {% if request_objects|length %}
-        <button type="submit" class="btn btn-danger" id="sodar-ss-btn-delete-submit">
+        <button form="irods_requests_form" type="submit" class="btn btn-danger" id="sodar-ss-btn-delete-submit">
           <i class="iconify" data-icon="mdi:check-bold"></i> Accept
         </button>
       {% endif %}
