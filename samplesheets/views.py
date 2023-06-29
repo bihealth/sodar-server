@@ -2583,6 +2583,7 @@ class IrodsRequestAcceptView(
         irods_backend = get_backend_api('omics_irods')
         is_collection = obj.is_collection()
         if is_collection:
+            affected_object_paths = []
             with irods_backend.get_session() as irods:
                 try:
                     coll = irods.collections.get(obj.path)

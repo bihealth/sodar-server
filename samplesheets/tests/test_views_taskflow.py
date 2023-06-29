@@ -1348,18 +1348,19 @@ class TestIrodsRequestUpdateView(TestIrodsRequestViewsBase):
 class TestIrodsRequestDeleteView(TestIrodsRequestViewsBase):
     """Tests for IrodsRequestUpdateView"""
 
+    def setUp(self):
+        super().setUp()
+        self.create_url = reverse(
+            'samplesheets:irods_request_create',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+
     def test_get_contributor(self):
         """Test GET request for deleting a request"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
 
         with self.login(self.user_contrib):
-            self.client.post(
-                reverse(
-                    'samplesheets:irods_request_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                self.post_data,
-            )
+            self.client.post(self.create_url, self.post_data)
 
             self.assertEqual(IrodsDataRequest.objects.count(), 1)
             obj = IrodsDataRequest.objects.first()
@@ -1383,13 +1384,7 @@ class TestIrodsRequestDeleteView(TestIrodsRequestViewsBase):
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
 
         with self.login(self.user_contrib):
-            self.client.post(
-                reverse(
-                    'samplesheets:irods_request_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                self.post_data,
-            )
+            self.client.post(self.create_url, self.post_data)
 
             self.assertEqual(IrodsDataRequest.objects.count(), 1)
             obj = IrodsDataRequest.objects.first()
@@ -1427,21 +1422,9 @@ class TestIrodsRequestDeleteView(TestIrodsRequestViewsBase):
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
 
         with self.login(self.user_contrib):
-            self.client.post(
-                reverse(
-                    'samplesheets:irods_request_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                self.post_data,
-            )
+            self.client.post(self.create_url, self.post_data)
             self.post_data['path'] = path2
-            self.client.post(
-                reverse(
-                    'samplesheets:irods_request_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                self.post_data,
-            )
+            self.client.post(self.create_url, self.post_data)
 
             self.assertEqual(IrodsDataRequest.objects.count(), 2)
             obj = IrodsDataRequest.objects.first()
@@ -1465,17 +1448,18 @@ class TestIrodsRequestDeleteView(TestIrodsRequestViewsBase):
 class TestIrodsRequestAcceptView(TestIrodsRequestViewsBase):
     """Tests for IrodsRequestAcceptView"""
 
+    def setUp(self):
+        super().setUp()
+        self.create_url = reverse(
+            'samplesheets:irods_request_create',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+
     def test_render(self):
         """Test rendering IrodsRequestAcceptView"""
         self.assert_irods_obj(self.path)
         with self.login(self.user_contrib):
-            self.client.post(
-                reverse(
-                    'samplesheets:irods_request_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                self.post_data,
-            )
+            self.client.post(self.create_url, self.post_data)
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         obj = IrodsDataRequest.objects.first()
 
@@ -1497,13 +1481,7 @@ class TestIrodsRequestAcceptView(TestIrodsRequestViewsBase):
         self.post_data['path'] = coll_path
 
         with self.login(self.user_contrib):
-            self.client.post(
-                reverse(
-                    'samplesheets:irods_request_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                self.post_data,
-            )
+            self.client.post(self.create_url, self.post_data)
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         obj = IrodsDataRequest.objects.first()
 
@@ -1521,14 +1499,7 @@ class TestIrodsRequestAcceptView(TestIrodsRequestViewsBase):
         """Test accepting a delete request"""
         self.assert_irods_obj(self.path)
         with self.login(self.user_contrib):
-            self.client.post(
-                reverse(
-                    'samplesheets:irods_request_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                self.post_data,
-            )
-
+            self.client.post(self.create_url, self.post_data)
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         obj = IrodsDataRequest.objects.first()
         self._assert_alert_count(CREATE_ALERT, self.user, 1)
@@ -1582,16 +1553,8 @@ class TestIrodsRequestAcceptView(TestIrodsRequestViewsBase):
     def test_accept_invalid_form_data(self):
         """Test accepting a delete request with invalid form data"""
         self.assert_irods_obj(self.path)
-
         with self.login(self.user_contrib):
-            self.client.post(
-                reverse(
-                    'samplesheets:irods_request_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                self.post_data,
-            )
-
+            self.client.post(self.create_url, self.post_data)
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         obj = IrodsDataRequest.objects.first()
         self._assert_alert_count(CREATE_ALERT, self.user, 1)
@@ -1622,16 +1585,8 @@ class TestIrodsRequestAcceptView(TestIrodsRequestViewsBase):
     def test_accept_owner(self):
         """Test accepting a delete request as owner"""
         self.assert_irods_obj(self.path)
-
         with self.login(self.user_contrib):
-            self.client.post(
-                reverse(
-                    'samplesheets:irods_request_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                self.post_data,
-            )
-
+            self.client.post(self.create_url, self.post_data)
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         obj = IrodsDataRequest.objects.first()
         self._assert_alert_count(ACCEPT_ALERT, self.user, 0)
@@ -1670,16 +1625,8 @@ class TestIrodsRequestAcceptView(TestIrodsRequestViewsBase):
     def test_accept_delegate(self):
         """Test accepting a delete request as delegate"""
         self.assert_irods_obj(self.path)
-
         with self.login(self.user_contrib):
-            self.client.post(
-                reverse(
-                    'samplesheets:irods_request_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                self.post_data,
-            )
-
+            self.client.post(self.create_url, self.post_data)
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         obj = IrodsDataRequest.objects.first()
         self._assert_alert_count(ACCEPT_ALERT, self.user, 0)
@@ -1718,16 +1665,8 @@ class TestIrodsRequestAcceptView(TestIrodsRequestViewsBase):
     def test_accept_contributor(self):
         """Test accepting a delete request as contributor"""
         self.assert_irods_obj(self.path)
-
         with self.login(self.user_contrib):
-            self.client.post(
-                reverse(
-                    'samplesheets:irods_request_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                self.post_data,
-            )
-
+            self.client.post(self.create_url, self.post_data)
             self.assertEqual(IrodsDataRequest.objects.count(), 1)
             obj = IrodsDataRequest.objects.first()
             self._assert_alert_count(ACCEPT_ALERT, self.user, 0)
@@ -1756,24 +1695,10 @@ class TestIrodsRequestAcceptView(TestIrodsRequestViewsBase):
         self.irods.data_objects.create(path2)
         self.irods.data_objects.create(path2_md5)
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
-
         with self.login(self.user_contrib):
-            self.client.post(
-                reverse(
-                    'samplesheets:irods_request_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                self.post_data,
-            )
+            self.client.post(self.create_url, self.post_data)
             self.post_data['path'] = path2
-            self.client.post(
-                reverse(
-                    'samplesheets:irods_request_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                self.post_data,
-            )
-
+            self.client.post(self.create_url, self.post_data)
         self.assertEqual(
             IrodsDataRequest.objects.filter(status='ACTIVE').count(), 2
         )
@@ -1800,16 +1725,8 @@ class TestIrodsRequestAcceptView(TestIrodsRequestViewsBase):
     def test_accept_lock_failure(self):
         """Test accepting a delete request with project lock failure"""
         self.assert_irods_obj(self.path)
-
         with self.login(self.user_contrib):
-            self.client.post(
-                reverse(
-                    'samplesheets:irods_request_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                self.post_data,
-            )
-
+            self.client.post(self.create_url, self.post_data)
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         obj = IrodsDataRequest.objects.first()
         self._assert_alert_count(CREATE_ALERT, self.user, 1)
@@ -1845,16 +1762,8 @@ class TestIrodsRequestAcceptView(TestIrodsRequestViewsBase):
         self.irods.data_objects.create(obj_path)
         self.assertEqual(self.irods.collections.exists(coll_path), True)
         self.post_data['path'] = coll_path
-
         with self.login(self.user_contrib):
-            self.client.post(
-                reverse(
-                    'samplesheets:irods_request_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                self.post_data,
-            )
-
+            self.client.post(self.create_url, self.post_data)
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         obj = IrodsDataRequest.objects.first()
         self._assert_alert_count(CREATE_ALERT, self.user, 1)
@@ -1890,12 +1799,23 @@ class TestIrodsRequestAcceptView(TestIrodsRequestViewsBase):
         self._assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
         self._assert_alert_count(ACCEPT_ALERT, self.user, 0)
         self._assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
-        self.assert_irods_obj(coll_path, False)
+        self.assertEqual(self.irods.collections.exists(coll_path), False)
         self.assert_irods_obj(obj_path, False)
 
 
 class TestIrodsRequestAcceptBatchView(TestIrodsRequestViewsBase):
     """Tests for IrodsRequestAcceptBatchView"""
+
+    def setUp(self):
+        super().setUp()
+        self.create_url = reverse(
+            'samplesheets:irods_request_create',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        self.accept_url = reverse(
+            'samplesheets:irods_request_accept_batch',
+            kwargs={'project': self.project.sodar_uuid},
+        )
 
     def test_render(self):
         """Test rendering IrodsRequestAcceptBatchView"""
@@ -1903,29 +1823,14 @@ class TestIrodsRequestAcceptBatchView(TestIrodsRequestViewsBase):
         self.assert_irods_obj(self.path_md5)
 
         with self.login(self.user_contrib):
-            self.client.post(
-                reverse(
-                    'samplesheets:irods_request_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                self.post_data,
-            )
+            self.client.post(self.create_url, self.post_data)
             self.assertEqual(IrodsDataRequest.objects.count(), 1)
-            self.client.post(
-                reverse(
-                    'samplesheets:irods_request_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                self.post_data2,
-            )
+            self.client.post(self.create_url, self.post_data2)
             self.assertEqual(IrodsDataRequest.objects.count(), 2)
 
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:irods_request_accept_batch',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
+                self.accept_url,
                 {
                     'irods_requests': ','.join(
                         [
@@ -1965,20 +1870,11 @@ class TestIrodsRequestAcceptBatchView(TestIrodsRequestViewsBase):
         self.post_data['path'] = coll_path
 
         with self.login(self.user_contrib):
-            self.client.post(
-                reverse(
-                    'samplesheets:irods_request_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                self.post_data,
-            )
+            self.client.post(self.create_url, self.post_data)
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:irods_request_accept_batch',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
+                self.accept_url,
                 {
                     'irods_requests': ','.join(
                         [
@@ -2003,13 +1899,7 @@ class TestIrodsRequestAcceptBatchView(TestIrodsRequestViewsBase):
         self.assert_irods_obj(self.path2)
 
         with self.login(self.user_contrib):
-            self.client.post(
-                reverse(
-                    'samplesheets:irods_request_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                self.post_data,
-            )
+            self.client.post(self.create_url, self.post_data)
             self.assertEqual(IrodsDataRequest.objects.count(), 1)
             self.client.post(
                 reverse(
@@ -2027,10 +1917,7 @@ class TestIrodsRequestAcceptBatchView(TestIrodsRequestViewsBase):
 
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:irods_request_accept_batch',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
+                self.accept_url,
                 {
                     'irods_requests': ','.join(
                         [
@@ -2080,10 +1967,7 @@ class TestIrodsRequestAcceptBatchView(TestIrodsRequestViewsBase):
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         with self.login(self.user_owner_cat):
             response = self.client.post(
-                reverse(
-                    'samplesheets:irods_request_accept_batch',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
+                self.accept_url,
                 {
                     'irods_requests': DUMMY_UUID + ',',
                     'confirm': True,
@@ -2101,21 +1985,9 @@ class TestIrodsRequestAcceptBatchView(TestIrodsRequestViewsBase):
         self.assert_irods_obj(self.path2)
 
         with self.login(self.user_contrib):
-            self.client.post(
-                reverse(
-                    'samplesheets:irods_request_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                self.post_data,
-            )
+            self.client.post(self.create_url, self.post_data)
             self.assertEqual(IrodsDataRequest.objects.count(), 1)
-            self.client.post(
-                reverse(
-                    'samplesheets:irods_request_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                self.post_data2,
-            )
+            self.client.post(self.create_url, self.post_data2)
             self.assertEqual(IrodsDataRequest.objects.count(), 2)
 
         self._assert_alert_count(CREATE_ALERT, self.user, 1)
@@ -2125,10 +1997,7 @@ class TestIrodsRequestAcceptBatchView(TestIrodsRequestViewsBase):
 
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:irods_request_accept_batch',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
+                self.accept_url,
                 {
                     'irods_requests': ','.join(
                         [
@@ -2159,21 +2028,9 @@ class TestIrodsRequestAcceptBatchView(TestIrodsRequestViewsBase):
         self.assert_irods_obj(self.path2)
 
         with self.login(self.user_contrib):
-            self.client.post(
-                reverse(
-                    'samplesheets:irods_request_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                self.post_data,
-            )
+            self.client.post(self.create_url, self.post_data)
             self.assertEqual(IrodsDataRequest.objects.count(), 1)
-            self.client.post(
-                reverse(
-                    'samplesheets:irods_request_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                self.post_data2,
-            )
+            self.client.post(self.create_url, self.post_data2)
             self.assertEqual(IrodsDataRequest.objects.count(), 2)
 
         self._assert_alert_count(CREATE_ALERT, self.user, 1)
@@ -2183,10 +2040,7 @@ class TestIrodsRequestAcceptBatchView(TestIrodsRequestViewsBase):
 
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:irods_request_accept_batch',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
+                self.accept_url,
                 {
                     'irods_requests': ','.join(
                         [
@@ -2220,22 +2074,21 @@ class TestIrodsRequestAcceptBatchView(TestIrodsRequestViewsBase):
 class TestIrodsRequestRejectView(TestIrodsRequestViewsBase):
     """Tests for IrodsRequestRejectView"""
 
+    def setUp(self):
+        super().setUp()
+        self.create_url = reverse(
+            'samplesheets:irods_request_create',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+
     def test_reject_admin(self):
         """Test rejecting delete request as admin"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         self._assert_alert_count(REJECT_ALERT, self.user, 0)
         self._assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
         self._assert_alert_count(REJECT_ALERT, self.user_contrib, 0)
-
         with self.login(self.user_contrib):
-            self.client.post(
-                reverse(
-                    'samplesheets:irods_request_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                self.post_data,
-            )
-
+            self.client.post(self.create_url, self.post_data)
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         obj = IrodsDataRequest.objects.first()
 
@@ -2267,16 +2120,8 @@ class TestIrodsRequestRejectView(TestIrodsRequestViewsBase):
     def test_reject_owner(self):
         """Test rejecting delete request as owner"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
-
         with self.login(self.user_contrib):
-            self.client.post(
-                reverse(
-                    'samplesheets:irods_request_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                self.post_data,
-            )
-
+            self.client.post(self.create_url, self.post_data)
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         obj = IrodsDataRequest.objects.first()
 
@@ -2309,16 +2154,8 @@ class TestIrodsRequestRejectView(TestIrodsRequestViewsBase):
     def test_reject_delegate(self):
         """Test rejecting delete request as delegate"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
-
         with self.login(self.user_contrib):
-            self.client.post(
-                reverse(
-                    'samplesheets:irods_request_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                self.post_data,
-            )
-
+            self.client.post(self.create_url, self.post_data)
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         obj = IrodsDataRequest.objects.first()
 
@@ -2351,16 +2188,8 @@ class TestIrodsRequestRejectView(TestIrodsRequestViewsBase):
     def test_reject_contributor(self):
         """Test rejecting delete request as contributor"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
-
         with self.login(self.user_contrib):
-            self.client.post(
-                reverse(
-                    'samplesheets:irods_request_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                self.post_data,
-            )
-
+            self.client.post(self.create_url, self.post_data)
             self.assertEqual(IrodsDataRequest.objects.count(), 1)
             obj = IrodsDataRequest.objects.first()
 
@@ -2388,24 +2217,10 @@ class TestIrodsRequestRejectView(TestIrodsRequestViewsBase):
         self.irods.data_objects.create(path2)
         self.irods.data_objects.create(path2_md5)
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
-
         with self.login(self.user_contrib):
-            self.client.post(
-                reverse(
-                    'samplesheets:irods_request_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                self.post_data,
-            )
+            self.client.post(self.create_url, self.post_data)
             self.post_data['path'] = path2
-            self.client.post(
-                reverse(
-                    'samplesheets:irods_request_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                self.post_data,
-            )
-
+            self.client.post(self.create_url, self.post_data)
         self.assertEqual(
             IrodsDataRequest.objects.filter(status='ACTIVE').count(), 2
         )
@@ -2447,6 +2262,17 @@ class TestIrodsRequestRejectView(TestIrodsRequestViewsBase):
 class TestIrodsRequestRejectBatchView(TestIrodsRequestViewsBase):
     """Tests for IrodsRequestRejectBatchView"""
 
+    def setUp(self):
+        super().setUp()
+        self.create_url = reverse(
+            'samplesheets:irods_request_create',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        self.reject_url = reverse(
+            'samplesheets:irods_request_reject_batch',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+
     def test_reject(self):
         """Test rejecting delete request"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
@@ -2455,28 +2281,13 @@ class TestIrodsRequestRejectBatchView(TestIrodsRequestViewsBase):
         self._assert_alert_count(REJECT_ALERT, self.user_contrib, 0)
 
         with self.login(self.user):
-            self.client.post(
-                reverse(
-                    'samplesheets:irods_request_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                self.post_data,
-            )
+            self.client.post(self.create_url, self.post_data)
             self.assertEqual(IrodsDataRequest.objects.count(), 1)
-            self.client.post(
-                reverse(
-                    'samplesheets:irods_request_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                self.post_data2,
-            )
+            self.client.post(self.create_url, self.post_data2)
             self.assertEqual(IrodsDataRequest.objects.count(), 2)
 
             response = self.client.post(
-                reverse(
-                    'samplesheets:irods_request_reject_batch',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
+                self.reject_url,
                 {
                     'irods_requests': ','.join(
                         [
@@ -2522,10 +2333,7 @@ class TestIrodsRequestRejectBatchView(TestIrodsRequestViewsBase):
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         with self.login(self.user_owner_cat):
             response = self.client.post(
-                reverse(
-                    'samplesheets:irods_request_reject_batch',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
+                self.reject_url,
                 {'irods_requests': DUMMY_UUID + ','},
             )
         self.assertEqual(response.status_code, 302)
