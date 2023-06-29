@@ -1837,6 +1837,62 @@ class TestIrodsRequestAcceptView(TestIrodsRequestViewsBase):
         self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
         self.assert_irods_obj(self.path, True)
 
+    def test_accept_collection(self):
+        """Test accepting a collection request with multiple objects inside"""
+        coll_path = os.path.join(self.assay_path, 'request_coll')
+        obj_path = os.path.join(coll_path, TEST_FILE_NAME)
+        self.irods.collections.create(coll_path)
+        self.irods.data_objects.create(obj_path)
+        self.assertEqual(self.irods.collections.exists(coll_path), True)
+        self.post_data['path'] = coll_path
+
+        with self.login(self.user_contrib):
+            self.client.post(
+                reverse(
+                    'samplesheets:irods_request_create',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                self.post_data,
+            )
+
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        obj = IrodsDataRequest.objects.first()
+        self._assert_alert_count(CREATE_ALERT, self.user, 1)
+        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
+        self._assert_alert_count(ACCEPT_ALERT, self.user, 0)
+        self._assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:irods_request_accept',
+                    kwargs={'irodsdatarequest': obj.sodar_uuid},
+                ),
+                {'confirm': True},
+            )
+            self.assertRedirects(
+                response,
+                reverse(
+                    'samplesheets:irods_requests',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
+            self.assertEqual(
+                list(get_messages(response.wsgi_request))[-1].message,
+                'iRODS data request "{}" accepted.'.format(
+                    obj.get_display_name()
+                ),
+            )
+
+        obj.refresh_from_db()
+        self.assertEqual(obj.status, 'ACCEPTED')
+        self._assert_alert_count(CREATE_ALERT, self.user, 0)
+        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
+        self._assert_alert_count(ACCEPT_ALERT, self.user, 0)
+        self._assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
+        self.assert_irods_obj(coll_path, False)
+        self.assert_irods_obj(obj_path, False)
+
 
 class TestIrodsRequestAcceptBatchView(TestIrodsRequestViewsBase):
     """Tests for IrodsRequestAcceptBatchView"""
