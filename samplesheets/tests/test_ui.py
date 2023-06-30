@@ -549,7 +549,7 @@ class TestIrodsRequestListView(IrodsDataRequestMixin, TestProjectSheetsUIBase):
             wait_elem='sodar-ss-request-table',
         )
         self.assertIsNotNone(
-            self.selenium.find_element(By.CLASS_NAME, 'sodar-ss-davrods-link')
+            self.selenium.find_element(By.ID, 'sodar-ss-davrods-link')
         )
 
 
