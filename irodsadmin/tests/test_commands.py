@@ -2,6 +2,7 @@
 
 import io
 import os
+import sys
 import uuid
 
 from django.core.management import call_command
@@ -46,6 +47,8 @@ class TestIrodsOrphans(
     TestCase,
 ):
     """Tests for the irodsorphans management command"""
+
+    maxDiff = None
 
     def setUp(self):
         # Init roles
@@ -206,15 +209,19 @@ class TestIrodsOrphans(
 
     def test_get_orphans_none(self):
         """Test get_orphans() with no orphans available"""
-        self.assertListEqual(
-            irodsorphans.get_orphans(
-                self.irods,
-                self.irods_backend,
-                self.expected_collections,
-                [self.assay],
-            ),
-            [],
+        # Capture stdout
+        out = io.StringIO()
+        sys.stdout = out
+        irodsorphans.get_orphans(
+            self.irods,
+            self.irods_backend,
+            self.expected_collections,
+            [self.assay],
         )
+        output = out.getvalue()
+        sys.stdout = sys.__stdout__
+
+        self.assertEqual('', output)
 
     def test_get_orphans_assay(self):
         """Test get_orphans() with orphan assay"""
@@ -222,15 +229,18 @@ class TestIrodsOrphans(
             self.irods_backend.get_path(self.study), str(uuid.uuid4())
         )
         self.irods.collections.create(orphan_path)
-        self.assertListEqual(
-            irodsorphans.get_orphans(
-                self.irods,
-                self.irods_backend,
-                self.expected_collections,
-                [self.assay],
-            ),
-            [orphan_path],
+        # Capture stdout
+        out = io.StringIO()
+        sys.stdout = out
+        irodsorphans.get_orphans(
+            self.irods,
+            self.irods_backend,
+            self.expected_collections,
+            [self.assay],
         )
+        output = out.getvalue()
+        sys.stdout = sys.__stdout__
+        self.assertIn(orphan_path, output)
 
     def test_get_orphans_study(self):
         """Test get_orphans() with orphan study"""
@@ -238,17 +248,20 @@ class TestIrodsOrphans(
             self.irods_backend.get_path(self.project), str(uuid.uuid4())
         )
         self.irods.collections.create(orphan_path)
-        self.assertListEqual(
-            irodsorphans.get_orphans(
-                self.irods,
-                self.irods_backend,
-                self.expected_collections,
-                [self.assay],
-            ),
-            [orphan_path],
+        # Capture stdout
+        out = io.StringIO()
+        sys.stdout = out
+        irodsorphans.get_orphans(
+            self.irods,
+            self.irods_backend,
+            self.expected_collections,
+            [self.assay],
         )
+        output = out.getvalue()
+        sys.stdout = sys.__stdout__
+        self.assertIn(orphan_path, output)
 
-    def test_get_orphans_zone(self):
+    def test_get_output_zone(self):
         """Test get_orphans() with orphan landing zone"""
         collection = '20201031_123456'
         orphan_path = '{}/landing_zones/{}/{}/{}'.format(
@@ -258,17 +271,22 @@ class TestIrodsOrphans(
             collection,
         )
         self.irods.collections.create(orphan_path)
-        self.assertListEqual(
-            irodsorphans.get_orphans(
-                self.irods,
-                self.irods_backend,
-                self.expected_collections,
-                [self.assay],
-            ),
-            [orphan_path],
-        )
 
-    def test_get_orphans_project(self):
+        # Capture stdout
+        out = io.StringIO()
+        sys.stdout = out
+        irodsorphans.get_orphans(
+            self.irods,
+            self.irods_backend,
+            self.expected_collections,
+            [self.assay],
+        )
+        output = out.getvalue()
+        sys.stdout = sys.__stdout__
+
+        self.assertIn(orphan_path, output)
+
+    def test_get_output_project(self):
         """Test get_orphans() with orphan project"""
         collection = 'aa/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
         orphan_path = '{}/{}'.format(
@@ -278,55 +296,42 @@ class TestIrodsOrphans(
             collection,
         )
         self.irods.collections.create(orphan_path)
-        self.assertListEqual(
-            irodsorphans.get_orphans(
-                self.irods,
-                self.irods_backend,
-                self.expected_collections,
-                [self.assay],
-            ),
-            [orphan_path],
-        )
 
-    def test_get_orphans_assay_subs(self):
+        # Capture stdout
+        out = io.StringIO()
+        sys.stdout = out
+        irodsorphans.get_orphans(
+            self.irods,
+            self.irods_backend,
+            self.expected_collections,
+            [self.assay],
+        )
+        output = out.getvalue()
+        sys.stdout = sys.__stdout__
+
+        self.assertIn(orphan_path, output)
+
+    def test_get_output_assay_subs(self):
         """Test get_orphans() with orphan assay subcollections"""
         collection = 'UnexpectedCollection'
         orphan_path = '{}/{}'.format(
             self.irods_backend.get_path(self.assay), collection
         )
         self.irods.collections.create(orphan_path)
-        self.assertListEqual(
-            irodsorphans.get_orphans(
-                self.irods,
-                self.irods_backend,
-                self.expected_collections,
-                [self.assay],
-            ),
-            [orphan_path],
-        )
 
-    def test_get_output(self):
-        """Test get_output()"""
-        orphan_path = '{}/assay_{}'.format(
-            self.irods_backend.get_path(self.study), str(uuid.uuid4())
-        )
-        self.irods.collections.create(orphan_path)
-        orphans = irodsorphans.get_orphans(
+        # Capture stdout
+        out = io.StringIO()
+        sys.stdout = out
+        irodsorphans.get_orphans(
             self.irods,
             self.irods_backend,
             self.expected_collections,
             [self.assay],
         )
-        self.assertListEqual(
-            irodsorphans.get_output(orphans, self.irods_backend, self.irods),
-            [
-                '{};{};{};0;0 bytes'.format(
-                    str(self.project.sodar_uuid),
-                    self.project.full_title,
-                    orphan_path,
-                )
-            ],
-        )
+        output = out.getvalue()
+        sys.stdout = sys.__stdout__
+
+        self.assertIn(orphan_path, output)
 
     def test_get_output_deleted_project(self):
         """Test get_output() with a deleted project"""
@@ -340,27 +345,34 @@ class TestIrodsOrphans(
         )
         self.irods.collections.create(orphan_path)
 
-        orphans = irodsorphans.get_orphans(
+        # Capture stdout
+        out = io.StringIO()
+        sys.stdout = out
+        irodsorphans.get_orphans(
             self.irods,
             self.irods_backend,
             self.expected_collections,
             [self.assay],
         )
-        self.assertListEqual(
-            irodsorphans.get_output(orphans, self.irods_backend, self.irods),
-            [
-                '{};<DELETED>;{};0;0 bytes'.format(
-                    project_uuid,
-                    orphan_path,
-                )
-            ],
+        output = out.getvalue()
+        sys.stdout = sys.__stdout__
+
+        self.assertIn(
+            '{};<DELETED>;{};0;0 bytes'.format(
+                project_uuid,
+                orphan_path,
+            ),
+            output,
         )
 
     def test_command_no_orphans(self):
         """Test command with no orphans"""
         out = io.StringIO()
+        sys.stdout = out
         call_command('irodsorphans', stdout=out)
-        self.assertEqual('', out.getvalue())
+        output = out.getvalue()
+        sys.stdout = sys.__stdout__
+        self.assertEqual('', output)
 
     def test_command_orphan_assay(self):
         """Test command with orphan assay"""
@@ -369,13 +381,17 @@ class TestIrodsOrphans(
         )
         self.irods.collections.create(orphan_path)
         out = io.StringIO()
+        sys.stdout = out
         call_command('irodsorphans', stdout=out)
+        output = out.getvalue()
+        sys.stdout = sys.__stdout__
+
         expected = '{};{};{};0;0 bytes\n'.format(
             str(self.project.sodar_uuid),
             self.project.full_title,
             orphan_path,
         )
-        self.assertEqual(expected, out.getvalue())
+        self.assertEqual(expected, output)
 
     def test_command_orphan_study(self):
         """Test command with orphan study"""
@@ -384,13 +400,17 @@ class TestIrodsOrphans(
         )
         self.irods.collections.create(orphan_path)
         out = io.StringIO()
+        sys.stdout = out
         call_command('irodsorphans', stdout=out)
+        output = out.getvalue()
+        sys.stdout = sys.__stdout__
+
         expected = '{};{};{};0;0 bytes\n'.format(
             str(self.project.sodar_uuid),
             self.project.full_title,
             orphan_path,
         )
-        self.assertEqual(expected, out.getvalue())
+        self.assertEqual(expected, output)
 
     def test_command_orphan_zone(self):
         """Test command with orphan landing zone"""
@@ -403,13 +423,17 @@ class TestIrodsOrphans(
         )
         self.irods.collections.create(orphan_path)
         out = io.StringIO()
+        sys.stdout = out
         call_command('irodsorphans', stdout=out)
+        output = out.getvalue()
+        sys.stdout = sys.__stdout__
+
         expected = '{};{};{};0;0 bytes\n'.format(
             str(self.project.sodar_uuid),
             self.project.full_title,
             orphan_path,
         )
-        self.assertEqual(expected, out.getvalue())
+        self.assertEqual(expected, output)
 
     def test_command_orphan_project(self):
         """Test command with orphan project"""
@@ -423,11 +447,15 @@ class TestIrodsOrphans(
         )
         self.irods.collections.create(orphan_path)
         out = io.StringIO()
+        sys.stdout = out
         call_command('irodsorphans', stdout=out)
+        output = out.getvalue()
+        sys.stdout = sys.__stdout__
+
         expected = '{};<DELETED>;{};0;0 bytes\n'.format(
             project_uuid, orphan_path
         )
-        self.assertEqual(expected, out.getvalue())
+        self.assertEqual(expected, output)
 
     def test_command_orphan_assay_sub(self):
         """Test command with orphan assay subcollection"""
@@ -437,13 +465,17 @@ class TestIrodsOrphans(
         )
         self.irods.collections.create(orphan_path)
         out = io.StringIO()
+        sys.stdout = out
         call_command('irodsorphans', stdout=out)
+        output = out.getvalue()
+        sys.stdout = sys.__stdout__
+
         expected = '{};{};{};0;0 bytes\n'.format(
             str(self.project.sodar_uuid),
             self.project.full_title,
             orphan_path,
         )
-        self.assertEqual(expected, out.getvalue())
+        self.assertEqual(expected, output)
 
     def test_command_multiple(self):
         """Test command with multiple orphans"""
@@ -460,7 +492,11 @@ class TestIrodsOrphans(
         )
         self.irods.collections.create(orphan_path2)
         out = io.StringIO()
+        sys.stdout = out
         call_command('irodsorphans', stdout=out)
+        output = out.getvalue()
+        sys.stdout = sys.__stdout__
+
         expected = '{};{};{};0;0 bytes\n'.format(
             str(self.project.sodar_uuid),
             self.project.full_title,
@@ -471,4 +507,4 @@ class TestIrodsOrphans(
             self.project.full_title,
             orphan_path,
         )
-        self.assertEqual(expected, out.getvalue())
+        self.assertEqual(expected, output)

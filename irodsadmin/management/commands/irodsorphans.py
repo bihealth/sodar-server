@@ -1,6 +1,7 @@
 """Irodsorphans management command"""
 
 import re
+import sys
 
 from django.core.management.base import BaseCommand
 from django.db.models import Q
@@ -166,7 +167,7 @@ def log_orphan(orphan, irods_backend, irods):
     else:
         uuid = '<ERROR>'
         title = '<ERROR>'
-    logger.debug(
+    sys.stdout.write(
         ';'.join(
             [
                 uuid,
@@ -176,6 +177,7 @@ def log_orphan(orphan, irods_backend, irods):
                 filesizeformat(stats['total_size']).replace(u'\xa0', ' '),
             ]
         )
+        + '\n'
     )
 
 
