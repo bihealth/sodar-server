@@ -48,8 +48,6 @@ class TestIrodsOrphans(
 ):
     """Tests for the irodsorphans management command"""
 
-    maxDiff = None
-
     def setUp(self):
         # Init roles
         self.init_roles()
