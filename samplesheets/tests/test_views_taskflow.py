@@ -2354,23 +2354,12 @@ class TestIrodsRequestRejectBatchView(
         self._assert_alert_count(REJECT_ALERT, self.user, 0)
         self._assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
         self._assert_alert_count(REJECT_ALERT, self.user_contrib, 0)
-        self.make_irods_data_request(
-            project=self.project,
-            action='delete',
-            path=self.obj_path,
-            status='ACTIVE',
-            user=self.user_contrib,
-        )
-        self.make_irods_data_request(
-            project=self.project,
-            action='delete',
-            path=self.obj_path2,
-            status='ACTIVE',
-            user=self.user_contrib,
-        )
-        self.assertEqual(IrodsDataRequest.objects.count(), 2)
-
         with self.login(self.user):
+            self.client.post(self.create_url, self.post_data)
+            self.assertEqual(IrodsDataRequest.objects.count(), 1)
+            self.client.post(self.create_url, self.post_data2)
+            self.assertEqual(IrodsDataRequest.objects.count(), 2)
+
             response = self.client.post(
                 self.reject_url,
                 {
