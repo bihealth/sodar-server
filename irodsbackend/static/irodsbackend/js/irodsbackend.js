@@ -270,17 +270,26 @@ $(document).ready(function() {
                     }
                     objLink += obj['name'] + '</a>';
 
-                    var colSpan = obj['type'] === 'coll' ? '1' : '4';
+                    var colSpan = obj['type'] === 'coll' ? '1' : '1';
                     var icon = obj['type'] === 'coll' ? 'mdi:folder-open' : 'mdi:file-document-outline';
                     var toolTip = obj['type'] === 'coll' ? 'Collection' : 'File';
 
-                    var copyButton = '';
+                    let copyButton;
                     if (obj['type'] === 'coll') {
                         copyButton = '<button class="btn btn-secondary sodar-list-btn pull-right" ' +
                             'id="sodar-irods-copy-btn-' + obj['name'] + '" ' +
                             'title="Copy iRODS path into clipboard" data-tooltip="tooltip" ' +
-                            'data-placement="top" onclick="copy_path(\'' + obj['path'] + '\', \'sodar-irods-copy-btn-' + obj['name'] + '\')">' +
+                            'data-placement="top" onclick="copy_path(\'' + obj['path'] +
+                            '\', \'sodar-irods-copy-btn-' + obj['name'] + '\')">' +
                             '<i class="iconify" data-icon="mdi:clipboard-text-multiple"></i>' +
+                            '</button>';
+                    } else {
+                        copyButton = '<button class="btn btn-secondary sodar-list-btn pull-right" ' +
+                            'id="sodar-irods-copy-btn-' + obj['name'] + '" ' +
+                            'title="Copy iRODS path into clipboard" data-tooltip="tooltip" ' +
+                            'data-placement="top" onclick="copy_path(\'' + obj['path'] +
+                            '\', \'sodar-irods-copy-btn-' + obj['name'] + '\')">' +
+                            '<i class="iconify" data-icon="mdi:clipboard-text"></i>' +
                             '</button>';
                     }
 
