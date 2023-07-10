@@ -270,7 +270,7 @@ $(document).ready(function() {
                     }
                     objLink += obj['name'] + '</a>';
 
-                    var colSpan = obj['type'] === 'coll' ? '1' : '1';
+                    var colSpan = '1';
                     var icon = obj['type'] === 'coll' ? 'mdi:folder-open' : 'mdi:file-document-outline';
                     var toolTip = obj['type'] === 'coll' ? 'Collection' : 'File';
 
@@ -310,6 +310,8 @@ $(document).ready(function() {
                             }
                         }
                         body += '</td>';
+                    } else {
+                        body += '<td colspan="3"></td>';
                     }
                     body += '</tr>';
                 });
