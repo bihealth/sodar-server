@@ -524,6 +524,8 @@ class TestIrodsAccessTicketRetrieveAPIView(TestIrodsAccessTicketAPIViewBase):
 class TestIrodsAccessTicketCreateAPIView(TestIrodsAccessTicketAPIViewBase):
     """Tests for IrodsAccessTicketCreateAPIView"""
 
+    maxDiff = None
+
     def setUp(self):
         super().setUp()
         self.path = self.coll.path
@@ -706,6 +708,7 @@ class TestIrodsAccessTicketCreateAPIView(TestIrodsAccessTicketAPIViewBase):
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         self.assertEqual(self.get_tl_event_count('create'), 0)
         self.assertEqual(self.get_app_alert_count('create'), 0)
+
 
 
 class TestIrodsAccessTicketUpdateAPIView(TestIrodsAccessTicketAPIViewBase):
