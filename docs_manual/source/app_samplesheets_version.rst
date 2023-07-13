@@ -29,6 +29,8 @@ Most Recent
     The most recently updated version.
 Import
     Version imported into SODAR from existing ISA-Tab files.
+Create
+    Version created from Template.
 Edit
     Version edited within the Sample Sheets app of SODAR.
 Restore
