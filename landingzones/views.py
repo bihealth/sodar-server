@@ -34,6 +34,8 @@ from landingzones.models import (
     STATUS_ALLOW_UPDATE,
     STATUS_FINISHED,
     STATUS_INFO_DELETE_NO_COLL,
+    ZONE_STATUS_OK,
+    ZONE_STATUS_DELETED,
 )
 
 
@@ -248,7 +250,7 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
                 user=user,
                 event_name='zone_update',
                 description=description,
-                status_type='OK',
+                status_type=ZONE_STATUS_OK,
                 extra_data=tl_extra,
             )
             tl_event.add_object(obj=zone, label='zone', name=zone.title)
@@ -323,7 +325,7 @@ class ZoneDeleteMixin(ZoneConfigPluginMixin):
                 tl_event=tl_event if tl_event else None,
             )
         else:  # Delete locally
-            zone.set_status('DELETED', STATUS_INFO_DELETE_NO_COLL)
+            zone.set_status(ZONE_STATUS_DELETED, STATUS_INFO_DELETE_NO_COLL)
         self.object = None
 
 

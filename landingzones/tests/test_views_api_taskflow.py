@@ -25,7 +25,15 @@ from taskflowbackend.tests.base import (
     IRODS_ACCESS_OWN,
 )
 
-from landingzones.models import LandingZone, DEFAULT_STATUS_INFO
+from landingzones.models import (
+    LandingZone,
+    DEFAULT_STATUS_INFO,
+    ZONE_STATUS_ACTIVE,
+    ZONE_STATUS_CREATING,
+    ZONE_STATUS_DELETED,
+    ZONE_STATUS_MOVED,
+    ZONE_STATUS_FAILED,
+)
 from landingzones.tests.test_models import LandingZoneMixin
 from landingzones.tests.test_views_taskflow import (
     LandingZoneTaskflowMixin,
@@ -49,7 +57,6 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 # Local constants
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
-ZONE_STATUS = 'VALIDATING'
 ZONE_STATUS_INFO = 'Testing'
 
 
@@ -118,7 +125,7 @@ class TestLandingZoneCreateAPIView(TestLandingZoneAPITaskflowBase):
         self.assertEqual(LandingZone.objects.count(), 1)
         # Assert status after taskflow has finished
         zone = LandingZone.objects.first()
-        self.assert_zone_status(zone, 'ACTIVE')
+        self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
 
         # Check result
         # NOTE: date_modified will be changend async, can't test
@@ -128,8 +135,8 @@ class TestLandingZoneCreateAPIView(TestLandingZoneAPITaskflowBase):
             'project': str(self.project.sodar_uuid),
             'user': self.get_serialized_user(self.user),
             'assay': str(self.assay.sodar_uuid),
-            'status': 'CREATING',
-            'status_info': DEFAULT_STATUS_INFO['CREATING'],
+            'status': ZONE_STATUS_CREATING,
+            'status_info': DEFAULT_STATUS_INFO[ZONE_STATUS_CREATING],
             'status_locked': False,
             'date_modified': response_data['date_modified'],
             'description': zone.description,
@@ -174,7 +181,7 @@ class TestLandingZoneCreateAPIView(TestLandingZoneAPITaskflowBase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(LandingZone.objects.count(), 1)
         zone = LandingZone.objects.first()
-        self.assert_zone_status(zone, 'ACTIVE')
+        self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
         self.assert_irods_coll(zone)
         for c in ZONE_BASE_COLLS:
             self.assert_irods_coll(zone, c, True)
@@ -222,7 +229,7 @@ class TestLandingZoneCreateAPIView(TestLandingZoneAPITaskflowBase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(LandingZone.objects.count(), 1)
         zone = LandingZone.objects.first()
-        self.assert_zone_status(zone, 'ACTIVE')
+        self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
         self.assert_irods_coll(zone)
         for c in ZONE_ALL_COLLS:
             self.assert_irods_coll(zone, c, True)
@@ -269,7 +276,7 @@ class TestLandingZoneCreateAPIView(TestLandingZoneAPITaskflowBase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(LandingZone.objects.count(), 1)
         zone = LandingZone.objects.first()
-        self.assert_zone_status(zone, 'ACTIVE')
+        self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
         self.assert_irods_coll(zone)
         for c in ZONE_ALL_COLLS:
             self.assert_irods_coll(zone, c, True)
@@ -355,12 +362,12 @@ class TestLandingZoneSubmitDeleteAPIView(TestLandingZoneAPITaskflowBase):
         )
         self.assertEqual(LandingZone.objects.count(), 1)
         zone = LandingZone.objects.first()
-        self.assert_zone_status(zone, 'DELETED')
+        self.assert_zone_status(zone, ZONE_STATUS_DELETED)
 
     def test_post_invalid_status(self):
         """Test post() with invalid zone status (should fail)"""
         self.make_zone_taskflow(self.landing_zone)
-        self.landing_zone.status = 'MOVED'
+        self.landing_zone.status = ZONE_STATUS_MOVED
         self.landing_zone.save()
 
         url = reverse(
@@ -370,7 +377,7 @@ class TestLandingZoneSubmitDeleteAPIView(TestLandingZoneAPITaskflowBase):
         response = self.request_knox(url, method='POST')
         self.assertEqual(response.status_code, 400)
         self.assertEqual(LandingZone.objects.count(), 1)
-        self.assertEqual(LandingZone.objects.first().status, 'MOVED')
+        self.assertEqual(LandingZone.objects.first().status, ZONE_STATUS_MOVED)
 
     def test_post_invalid_uuid(self):
         """Test post() with invalid zone UUID (should fail)"""
@@ -401,7 +408,7 @@ class TestLandingZoneSubmitDeleteAPIView(TestLandingZoneAPITaskflowBase):
         )
         self.assertEqual(LandingZone.objects.count(), 1)
         zone = LandingZone.objects.first()
-        self.assert_zone_status(zone, 'DELETED')
+        self.assert_zone_status(zone, ZONE_STATUS_DELETED)
 
     def test_post_no_coll(self):
         """Test post() with no zone root collection in iRODS"""
@@ -422,7 +429,7 @@ class TestLandingZoneSubmitDeleteAPIView(TestLandingZoneAPITaskflowBase):
         )
         self.assertEqual(LandingZone.objects.count(), 1)
         zone = LandingZone.objects.first()
-        self.assert_zone_status(zone, 'DELETED')
+        self.assert_zone_status(zone, ZONE_STATUS_DELETED)
 
 
 class TestLandingZoneSubmitMoveAPIView(TestLandingZoneAPITaskflowBase):
@@ -451,7 +458,9 @@ class TestLandingZoneSubmitMoveAPIView(TestLandingZoneAPITaskflowBase):
 
     def test_post_validate(self):
         """Test post() for validation"""
-        self.landing_zone.status = 'FAILED'  # Update to check status change
+        self.landing_zone.status = (
+            ZONE_STATUS_FAILED  # Update to check status change
+        )
         self.landing_zone.save()
 
         url = reverse(
@@ -466,7 +475,7 @@ class TestLandingZoneSubmitMoveAPIView(TestLandingZoneAPITaskflowBase):
         )
         self.assertEqual(LandingZone.objects.count(), 1)
         zone = LandingZone.objects.first()
-        self.assert_zone_status(zone, 'ACTIVE')
+        self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
         self.assertEqual(
             LandingZone.objects.first().status_info,
             'Successfully validated 0 files',
@@ -474,7 +483,7 @@ class TestLandingZoneSubmitMoveAPIView(TestLandingZoneAPITaskflowBase):
 
     def test_post_validate_invalid_status(self):
         """Test post() for validation with invalid zone status (should fail)"""
-        self.landing_zone.status = 'MOVED'
+        self.landing_zone.status = ZONE_STATUS_MOVED
         self.landing_zone.save()
 
         url = reverse(
@@ -485,13 +494,13 @@ class TestLandingZoneSubmitMoveAPIView(TestLandingZoneAPITaskflowBase):
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(LandingZone.objects.count(), 1)
-        self.assertEqual(LandingZone.objects.first().status, 'MOVED')
+        self.assertEqual(LandingZone.objects.first().status, ZONE_STATUS_MOVED)
 
     def test_post_move(self):
         """Test post() for moving"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         self.make_irods_md5_object(irods_obj)
-        self.assertEqual(self.landing_zone.status, 'ACTIVE')
+        self.assertEqual(self.landing_zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
 
@@ -507,13 +516,13 @@ class TestLandingZoneSubmitMoveAPIView(TestLandingZoneAPITaskflowBase):
         )
         self.assertEqual(LandingZone.objects.count(), 1)
         zone = LandingZone.objects.first()
-        self.assert_zone_status(zone, 'MOVED')
+        self.assert_zone_status(zone, ZONE_STATUS_MOVED)
         self.assertEqual(len(self.zone_coll.data_objects), 0)
         self.assertEqual(len(self.assay_coll.data_objects), 2)
 
     def test_post_move_invalid_status(self):
         """Test post() for moving with invalid zone status (should fail)"""
-        self.landing_zone.status = 'DELETED'
+        self.landing_zone.status = ZONE_STATUS_DELETED
         self.landing_zone.save()
 
         url = reverse(
@@ -524,7 +533,9 @@ class TestLandingZoneSubmitMoveAPIView(TestLandingZoneAPITaskflowBase):
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(LandingZone.objects.count(), 1)
-        self.assertEqual(LandingZone.objects.first().status, 'DELETED')
+        self.assertEqual(
+            LandingZone.objects.first().status, ZONE_STATUS_DELETED
+        )
 
     @override_settings(REDIS_URL=INVALID_REDIS_URL)
     def test_post_move_lock_failure(self):
@@ -538,7 +549,7 @@ class TestLandingZoneSubmitMoveAPIView(TestLandingZoneAPITaskflowBase):
         self.assertEqual(response.status_code, 500)
         self.assertEqual(LandingZone.objects.count(), 1)
         zone = LandingZone.objects.first()
-        self.assert_zone_status(zone, 'FAILED')
+        self.assert_zone_status(zone, ZONE_STATUS_FAILED)
 
     def test_post_move_restricted(self):
         """Test post() for moving with restricted collections"""
@@ -548,7 +559,7 @@ class TestLandingZoneSubmitMoveAPIView(TestLandingZoneAPITaskflowBase):
             user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
-            status='CREATING',
+            status=ZONE_STATUS_CREATING,
         )
         self.make_zone_taskflow(
             zone=zone,
@@ -561,7 +572,7 @@ class TestLandingZoneSubmitMoveAPIView(TestLandingZoneAPITaskflowBase):
         )
         irods_obj = self.make_irods_object(zone_results_coll, TEST_OBJ_NAME)
         self.make_irods_md5_object(irods_obj)
-        self.assertEqual(zone.status, 'ACTIVE')
+        self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(zone_results_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
 
@@ -573,7 +584,7 @@ class TestLandingZoneSubmitMoveAPIView(TestLandingZoneAPITaskflowBase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['sodar_uuid'], str(zone.sodar_uuid))
-        self.assert_zone_status(zone, 'MOVED')
+        self.assert_zone_status(zone, ZONE_STATUS_MOVED)
         self.assertEqual(len(zone_results_coll.data_objects), 0)
         assay_results_path = os.path.join(self.sample_path, RESULTS_COLL)
         assay_results_coll = self.irods.collections.get(assay_results_path)

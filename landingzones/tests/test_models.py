@@ -15,7 +15,13 @@ from projectroles.tests.test_models import (
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
-from landingzones.models import LandingZone, DEFAULT_STATUS_INFO
+from landingzones.models import (
+    LandingZone,
+    DEFAULT_STATUS_INFO,
+    ZONE_STATUS_CREATING,
+    ZONE_STATUS_ACTIVE,
+    ZONE_STATUS_MOVING,
+)
 
 
 # SODAR constants
@@ -31,7 +37,6 @@ SHEET_PATH = SHEET_DIR + 'i_small.zip'
 ZONE_TITLE = '20180503_1724_test_zone'
 ZONE_DESC = 'description'
 ZONE_MSG = 'user message'
-ZONE_STATUS_INIT = 'CREATING'
 ZONE_STATUS_INFO_INIT = DEFAULT_STATUS_INFO['CREATING']
 
 
@@ -50,7 +55,7 @@ class LandingZoneMixin:
         assay,
         description='',
         user_message='',
-        status='CREATING',
+        status=ZONE_STATUS_CREATING,
         configuration=None,
         config_data={},
     ):
@@ -127,7 +132,7 @@ class TestLandingZone(TestLandingZoneBase):
             'user_message': ZONE_MSG,
             'configuration': None,
             'config_data': {},
-            'status': ZONE_STATUS_INIT,
+            'status': ZONE_STATUS_CREATING,
             'status_info': ZONE_STATUS_INFO_INIT,
             'sodar_uuid': self.landing_zone.sodar_uuid,
         }
@@ -152,7 +157,7 @@ class TestLandingZone(TestLandingZoneBase):
 
     def test_set_status(self):
         """Test set_status() with status and status_info"""
-        status = 'ACTIVE'
+        status = ZONE_STATUS_ACTIVE
         status_info = 'ok'
         self.assertNotEqual(self.landing_zone.status, status)
         self.assertNotEqual(self.landing_zone.status_info, status_info)
@@ -163,7 +168,7 @@ class TestLandingZone(TestLandingZoneBase):
 
     def test_set_status_no_info(self):
         """Test set_status() without status_info"""
-        status = 'ACTIVE'
+        status = ZONE_STATUS_ACTIVE
         status_info = DEFAULT_STATUS_INFO[status]
         self.assertNotEqual(self.landing_zone.status, status)
         self.assertNotEqual(self.landing_zone.status_info, status_info)
@@ -184,15 +189,15 @@ class TestLandingZone(TestLandingZoneBase):
 
     def test_is_locked_true(self):
         """Test is_locked() with MOVING status"""
-        self.landing_zone.status = 'MOVING'
+        self.landing_zone.status = ZONE_STATUS_MOVING
         self.assertEqual(self.landing_zone.is_locked(), True)
 
     def test_can_display_files_true(self):
         """Test can_display_files() with a valid zone status"""
-        self.landing_zone.status = 'ACTIVE'
+        self.landing_zone.status = ZONE_STATUS_ACTIVE
         self.assertEqual(self.landing_zone.can_display_files(), True)
 
     def test_can_display_files_false(self):
         """Test display_files() with an invalid zone status"""
-        self.landing_zone.status = 'CREATING'
+        self.landing_zone.status = ZONE_STATUS_CREATING
         self.assertEqual(self.landing_zone.can_display_files(), False)

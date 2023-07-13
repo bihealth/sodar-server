@@ -23,6 +23,12 @@ from landingzones.management.commands.inactivezones import (
     get_inactive_zones,
     get_output,
 )
+from landingzones.models import (
+    ZONE_STATUS_MOVED,
+    ZONE_STATUS_DELETED,
+    ZONE_STATUS_ACTIVE,
+    ZONE_STATUS_MOVING,
+)
 from landingzones.tests.test_models import LandingZoneMixin
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
@@ -97,7 +103,7 @@ class TestInactiveZones(TestCommandBase):
                 description=ZONE_DESC,
                 configuration=None,
                 config_data={},
-                status='MOVED',
+                status=ZONE_STATUS_MOVED,
             )
             # Create landing zone 3 from 3 weeks ago but status DELETED
             self.zone4 = self.make_landing_zone(
@@ -108,7 +114,7 @@ class TestInactiveZones(TestCommandBase):
                 description=ZONE_DESC,
                 configuration=None,
                 config_data={},
-                status='DELETED',
+                status=ZONE_STATUS_DELETED,
             )
             mock_now.return_value = testtime2
             # Create landing zone 2 from 1 week ago
@@ -184,7 +190,7 @@ class TestBusyZones(TestCommandBase):
             description=ZONE_DESC,
             configuration=None,
             config_data={},
-            status='ACTIVE',
+            status=ZONE_STATUS_ACTIVE,
         )
         self.zone2 = self.make_landing_zone(
             title=ZONE2_TITLE,
@@ -194,7 +200,7 @@ class TestBusyZones(TestCommandBase):
             description=ZONE_DESC,
             configuration=None,
             config_data={},
-            status='ACTIVE',
+            status=ZONE_STATUS_ACTIVE,
         )
 
     def test_active_zones(self):
@@ -205,7 +211,7 @@ class TestBusyZones(TestCommandBase):
 
     def test_command(self):
         """Test command with a busy zone"""
-        self.zone2.status = 'MOVING'
+        self.zone2.status = ZONE_STATUS_MOVING
         self.zone2.save()
         with self.assertLogs(LOGGER_BUSY_ZONES, level='INFO') as cm:
             call_command('busyzones')

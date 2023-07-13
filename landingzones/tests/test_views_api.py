@@ -12,6 +12,11 @@ from projectroles.tests.test_views_api import TestAPIViewsBase
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
+from landingzones.models import (
+    ZONE_STATUS_ACTIVE,
+    ZONE_STATUS_MOVED,
+    ZONE_STATUS_MOVING,
+)
 from landingzones.tests.test_models import LandingZoneMixin
 from landingzones.tests.test_views_taskflow import ZONE_TITLE, ZONE_DESC
 
@@ -54,7 +59,7 @@ class TestLandingZoneAPIViewsBase(
             user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
-            status='ACTIVE',
+            status=ZONE_STATUS_ACTIVE,
         )
 
 
@@ -111,7 +116,7 @@ class TestLandingZoneListAPIView(TestLandingZoneAPIViewsBase):
             user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
-            status='MOVED',
+            status=ZONE_STATUS_MOVED,
         )
         url = reverse(
             'landingzones:api_list', kwargs={'project': self.project.sodar_uuid}
@@ -132,7 +137,7 @@ class TestLandingZoneListAPIView(TestLandingZoneAPIViewsBase):
             user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
-            status='MOVED',
+            status=ZONE_STATUS_MOVED,
         )
         url = (
             reverse(
@@ -157,7 +162,7 @@ class TestLandingZoneListAPIView(TestLandingZoneAPIViewsBase):
             user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
-            status='MOVED',
+            status=ZONE_STATUS_MOVED,
         )
         url = (
             reverse(
@@ -206,7 +211,7 @@ class TestLandingZoneRetrieveAPIView(TestLandingZoneAPIViewsBase):
 
     def test_get_locked(self):
         """Test get() with locked landing zone status"""
-        self.landing_zone.status = 'MOVING'
+        self.landing_zone.status = ZONE_STATUS_MOVING
         self.landing_zone.save()
         url = reverse(
             'landingzones:api_retrieve',

@@ -33,7 +33,15 @@ from taskflowbackend.tests.base import (
 # Timeline dependency
 from timeline.models import ProjectEvent
 
-from landingzones.models import LandingZone
+from landingzones.models import (
+    LandingZone,
+    ZONE_STATUS_CREATING,
+    ZONE_STATUS_ACTIVE,
+    ZONE_STATUS_MOVED,
+    ZONE_STATUS_FAILED,
+    ZONE_STATUS_VALIDATING,
+    ZONE_STATUS_DELETED,
+)
 from landingzones.tests.test_models import LandingZoneMixin
 from landingzones.views import ZONE_MOVE_INVALID_STATUS
 
@@ -82,7 +90,7 @@ class LandingZoneTaskflowMixin:
         """
         timeline = get_backend_api('timeline_backend')
         user = request.user if request else zone.user
-        self.assertEqual(zone.status, 'CREATING')
+        self.assertEqual(zone.status, ZONE_STATUS_CREATING)
 
         # Create timeline event to prevent taskflow failure
         tl_event = timeline.add_event(
@@ -108,10 +116,10 @@ class LandingZoneTaskflowMixin:
         }
         self.taskflow.submit(**values)
 
-        self.assert_zone_status(zone, 'ACTIVE')
+        self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
         return zone
 
-    def assert_zone_status(self, zone, status='ACTIVE'):
+    def assert_zone_status(self, zone, status=ZONE_STATUS_ACTIVE):
         """
         Assert status of landing zone(s) after waiting for async taskflow
         operation to finish.
@@ -204,7 +212,7 @@ class TestLandingZoneCreateView(
 
         self.assert_zone_count(1)
         zone = LandingZone.objects.first()
-        self.assert_zone_status(zone, 'ACTIVE')
+        self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
         self.assert_irods_coll(zone)
         for c in ZONE_BASE_COLLS:
             self.assert_irods_coll(zone, c, False)
@@ -257,7 +265,7 @@ class TestLandingZoneCreateView(
 
         self.assert_zone_count(1)
         zone = LandingZone.objects.first()
-        self.assert_zone_status(zone, 'ACTIVE')
+        self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
         tl_event = ProjectEvent.objects.filter(event_name='zone_create').first()
         self.assertEqual(tl_event.extra_data['create_colls'], True)
         self.assertEqual(tl_event.extra_data['restrict_colls'], False)
@@ -317,7 +325,7 @@ class TestLandingZoneCreateView(
 
         self.assert_zone_count(1)
         zone = LandingZone.objects.first()
-        self.assert_zone_status(zone, 'ACTIVE')
+        self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
         self.assert_irods_coll(zone)
         for c in ZONE_ALL_COLLS:
             self.assert_irods_coll(zone, c, True)
@@ -374,7 +382,7 @@ class TestLandingZoneCreateView(
 
         self.assert_zone_count(1)
         zone = LandingZone.objects.first()
-        self.assert_zone_status(zone, 'ACTIVE')
+        self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
         self.assert_irods_coll(zone)
         zone_path = self.irods_backend.get_path(zone)
         # Read access to root path
@@ -439,7 +447,7 @@ class TestLandingZoneMoveView(
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         self.make_irods_md5_object(irods_obj)
         zone = LandingZone.objects.first()
-        self.assertEqual(zone.status, 'ACTIVE')
+        self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
         with self.login(self.user):
             response = self.client.get(
                 reverse(
@@ -454,7 +462,7 @@ class TestLandingZoneMoveView(
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         self.make_irods_md5_object(irods_obj)
         zone = LandingZone.objects.first()
-        self.assertEqual(zone.status, 'ACTIVE')
+        self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(len(mail.outbox), 1)
@@ -477,7 +485,7 @@ class TestLandingZoneMoveView(
                 ),
             )
 
-        self.assert_zone_status(zone, 'MOVED')
+        self.assert_zone_status(zone, ZONE_STATUS_MOVED)
         self.assertEqual(len(self.zone_coll.data_objects), 0)
         self.assertEqual(len(self.assay_coll.data_objects), 2)
         self.assertEqual(len(mail.outbox), 3)  # Mails to owner & category owner
@@ -488,7 +496,7 @@ class TestLandingZoneMoveView(
     def test_move_no_files(self):
         """Test validating and moving a landing zone without objects"""
         zone = LandingZone.objects.first()
-        self.assertEqual(zone.status, 'ACTIVE')
+        self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 0)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(
@@ -521,7 +529,7 @@ class TestLandingZoneMoveView(
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         make_object(self.irods, irods_obj.path + '.md5', INVALID_MD5)
         zone = LandingZone.objects.first()
-        self.assertEqual(zone.status, 'ACTIVE')
+        self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(len(mail.outbox), 1)
@@ -544,7 +552,7 @@ class TestLandingZoneMoveView(
                 ),
             )
 
-        self.assert_zone_status(zone, 'FAILED')
+        self.assert_zone_status(zone, ZONE_STATUS_FAILED)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(len(mail.outbox), 2)
@@ -557,7 +565,7 @@ class TestLandingZoneMoveView(
         self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         # No md5
         zone = LandingZone.objects.first()
-        self.assertEqual(zone.status, 'ACTIVE')
+        self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 1)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(
@@ -579,7 +587,7 @@ class TestLandingZoneMoveView(
                 ),
             )
 
-        self.assert_zone_status(zone, 'FAILED')
+        self.assert_zone_status(zone, ZONE_STATUS_FAILED)
         self.assertEqual(len(self.zone_coll.data_objects), 1)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(
@@ -591,7 +599,7 @@ class TestLandingZoneMoveView(
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         self.make_irods_md5_object(irods_obj)
         zone = LandingZone.objects.first()
-        self.assertEqual(zone.status, 'ACTIVE')
+        self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(len(mail.outbox), 1)
@@ -614,7 +622,7 @@ class TestLandingZoneMoveView(
                 ),
             )
 
-        self.assert_zone_status(zone, 'ACTIVE')
+        self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(len(mail.outbox), 1)
@@ -625,7 +633,7 @@ class TestLandingZoneMoveView(
     def test_validate_no_files(self):
         """Test validation a landing zone without files"""
         zone = LandingZone.objects.first()
-        self.assertEqual(zone.status, 'ACTIVE')
+        self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 0)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(
@@ -647,7 +655,7 @@ class TestLandingZoneMoveView(
                 ),
             )
 
-        self.assert_zone_status(zone, 'ACTIVE')
+        self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 0)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(
@@ -659,7 +667,7 @@ class TestLandingZoneMoveView(
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         make_object(self.irods, irods_obj.path + '.md5', INVALID_MD5)
         zone = LandingZone.objects.first()
-        self.assertEqual(zone.status, 'ACTIVE')
+        self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(len(mail.outbox), 1)
@@ -675,7 +683,7 @@ class TestLandingZoneMoveView(
                 ),
             )
 
-        self.assert_zone_status(zone, 'FAILED')
+        self.assert_zone_status(zone, ZONE_STATUS_FAILED)
         self.assertTrue('BatchValidateChecksumsTask' in zone.status_info)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
@@ -689,7 +697,7 @@ class TestLandingZoneMoveView(
         self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         # No md5
         zone = LandingZone.objects.first()
-        self.assertEqual(zone.status, 'ACTIVE')
+        self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 1)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
 
@@ -701,7 +709,7 @@ class TestLandingZoneMoveView(
                 ),
             )
 
-        self.assert_zone_status(zone, 'FAILED')
+        self.assert_zone_status(zone, ZONE_STATUS_FAILED)
         self.assertTrue('BatchCheckFilesTask' in zone.status_info)
         self.assertEqual(len(self.zone_coll.data_objects), 1)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
@@ -712,7 +720,7 @@ class TestLandingZoneMoveView(
         self.md5_obj = self.make_irods_md5_object(irods_obj)
         irods_obj.unlink(force=True)
         zone = LandingZone.objects.first()
-        self.assertEqual(zone.status, 'ACTIVE')
+        self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 1)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
 
@@ -724,7 +732,7 @@ class TestLandingZoneMoveView(
                 ),
             )
 
-        self.assert_zone_status(zone, 'FAILED')
+        self.assert_zone_status(zone, ZONE_STATUS_FAILED)
         self.assertTrue('BatchCheckFilesTask' in zone.status_info)
         self.assertEqual(len(self.zone_coll.data_objects), 1)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
@@ -734,7 +742,7 @@ class TestLandingZoneMoveView(
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         self.make_irods_md5_object(irods_obj)
         zone = LandingZone.objects.first()
-        zone.status = 'VALIDATING'
+        zone.status = ZONE_STATUS_VALIDATING
         zone.save()
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
@@ -765,7 +773,7 @@ class TestLandingZoneMoveView(
             str(list(get_messages(response.wsgi_request))[0]),
             ZONE_MOVE_INVALID_STATUS,
         )
-        self.assert_zone_status(zone, 'VALIDATING')
+        self.assert_zone_status(zone, ZONE_STATUS_VALIDATING)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(len(mail.outbox), 1)
@@ -781,7 +789,7 @@ class TestLandingZoneMoveView(
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         self.make_irods_md5_object(irods_obj)
         zone = LandingZone.objects.first()
-        self.assertEqual(zone.status, 'ACTIVE')
+        self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(len(mail.outbox), 1)
@@ -807,13 +815,13 @@ class TestLandingZoneMoveView(
                 ),
             )
 
-        self.assert_zone_status(zone, 'FAILED')
+        self.assert_zone_status(zone, ZONE_STATUS_FAILED)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(len(mail.outbox), 1)  # TODO: Should this send email?
         tl_event = ProjectEvent.objects.filter(event_name='zone_move').first()
         self.assertIsInstance(tl_event, ProjectEvent)
-        self.assertEqual(tl_event.get_status().status_type, 'FAILED')
+        self.assertEqual(tl_event.get_status().status_type, ZONE_STATUS_FAILED)
         # TODO: Create app alerts for async failures (see #1499)
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_move').count(), 0
@@ -828,7 +836,7 @@ class TestLandingZoneMoveView(
             user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
-            status='CREATING',
+            status=ZONE_STATUS_CREATING,
         )
         self.make_zone_taskflow(
             zone=zone,
@@ -841,7 +849,7 @@ class TestLandingZoneMoveView(
         )
         irods_obj = self.make_irods_object(zone_results_coll, TEST_OBJ_NAME)
         self.make_irods_md5_object(irods_obj)
-        self.assertEqual(zone.status, 'ACTIVE')
+        self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(zone_results_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(len(mail.outbox), 1)
@@ -864,7 +872,7 @@ class TestLandingZoneMoveView(
                 ),
             )
 
-        self.assert_zone_status(zone, 'MOVED')
+        self.assert_zone_status(zone, ZONE_STATUS_MOVED)
         self.assertEqual(len(zone_results_coll.data_objects), 0)
         assay_results_path = os.path.join(self.sample_path, RESULTS_COLL)
         assay_results_coll = self.irods.collections.get(assay_results_path)
@@ -947,7 +955,7 @@ class TestLandingZoneDeleteView(
 
         self.assert_zone_count(1)
         zone.refresh_from_db()
-        self.assert_zone_status(zone, 'DELETED')
+        self.assert_zone_status(zone, ZONE_STATUS_DELETED)
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_delete').count(), 1
@@ -991,7 +999,7 @@ class TestLandingZoneDeleteView(
 
         self.assert_zone_count(1)
         zone.refresh_from_db()
-        self.assert_zone_status(zone, 'DELETED')
+        self.assert_zone_status(zone, ZONE_STATUS_DELETED)
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_delete').count(), 1
@@ -1025,4 +1033,4 @@ class TestLandingZoneDeleteView(
             )
         self.assert_zone_count(1)
         zone.refresh_from_db()
-        self.assert_zone_status(zone, 'DELETED')
+        self.assert_zone_status(zone, ZONE_STATUS_DELETED)

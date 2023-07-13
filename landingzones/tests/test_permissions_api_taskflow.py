@@ -15,6 +15,11 @@ from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import TaskflowAPIPermissionTestBase
 
+from landingzones.models import (
+    ZONE_STATUS_ACTIVE,
+    ZONE_STATUS_VALIDATING,
+    ZONE_STATUS_PREPARING,
+)
 from landingzones.tests.test_models import LandingZoneMixin
 from landingzones.tests.test_views_taskflow import (
     LandingZoneTaskflowMixin,
@@ -224,7 +229,7 @@ class TestZoneSubmitDeleteAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
     """Tests for ZoneSubmitDeleteAPIView permissions with Taskflow"""
 
     def _cleanup(self):
-        self.landing_zone.status = 'ACTIVE'
+        self.landing_zone.status = ZONE_STATUS_ACTIVE
         self.landing_zone.save()
 
     def setUp(self):
@@ -423,14 +428,15 @@ class TestZoneSubmitMoveAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
         retry_count = 0
         # Wait for async activity to finish
         while (
-            self.landing_zone.status in ['PREPARING', 'VALIDATING']
+            self.landing_zone.status
+            in [ZONE_STATUS_PREPARING, ZONE_STATUS_VALIDATING]
             and retry_count < 5
         ):
             time.sleep(1)
             self.landing_zone.refrsh_from_db()
             retry_count += 1
-        if self.landing_zone.status != 'ACTIVE':
-            self.landing_zone.status = 'ACTIVE'
+        if self.landing_zone.status != ZONE_STATUS_ACTIVE:
+            self.landing_zone.status = ZONE_STATUS_ACTIVE
             self.landing_zone.save()
 
     def setUp(self):

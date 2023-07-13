@@ -13,46 +13,59 @@ from samplesheets.models import Assay
 AUTH_USER_MODEL = getattr(settings, 'AUTH_USER_MODEL', 'auth.User')
 
 
+# Status types for landing zones
+ZONE_STATUS_OK = 'OK'
+ZONE_STATUS_CREATING = 'CREATING'
+ZONE_STATUS_NOT_CREATED = 'NOT CREATED'
+ZONE_STATUS_ACTIVE = 'ACTIVE'
+ZONE_STATUS_PREPARING = 'PREPARING'
+ZONE_STATUS_VALIDATING = 'VALIDATING'
+ZONE_STATUS_MOVING = 'MOVING'
+ZONE_STATUS_MOVED = 'MOVED'
+ZONE_STATUS_FAILED = 'FAILED'
+ZONE_STATUS_DELETING = 'DELETING'
+ZONE_STATUS_DELETED = 'DELETED'
+
 ZONE_STATUS_TYPES = [
-    'CREATING',
-    'NOT CREATED',
-    'ACTIVE',
-    'PREPARING',
-    'VALIDATING',
-    'MOVING',
-    'FAILED',
-    'MOVED',
-    'DELETING',
-    'DELETED',
+    ZONE_STATUS_CREATING,
+    ZONE_STATUS_NOT_CREATED,
+    ZONE_STATUS_ACTIVE,
+    ZONE_STATUS_PREPARING,
+    ZONE_STATUS_VALIDATING,
+    ZONE_STATUS_MOVING,
+    ZONE_STATUS_MOVED,
+    ZONE_STATUS_FAILED,
+    ZONE_STATUS_DELETING,
+    ZONE_STATUS_DELETED,
 ]
 
 DEFAULT_STATUS_INFO = {
-    'CREATING': 'Creating landing zone in iRODS',
-    'NOT CREATED': 'Creating landing zone in iRODS failed (unknown problem)',
-    'ACTIVE': 'Available with write access for user',
-    'PREPARING': 'Preparing transaction for validation and moving',
-    'VALIDATING': 'Validation in progress, write access disabled',
-    'MOVING': 'Validation OK, moving files into sample data repository',
-    'MOVED': 'Files moved successfully, landing zone removed',
-    'FAILED': 'Validation/moving failed (unknown problem)',
-    'DELETING': 'Deleting landing zone',
-    'DELETED': 'Landing zone deleted',
+    ZONE_STATUS_CREATING: 'Creating landing zone in iRODS',
+    ZONE_STATUS_NOT_CREATED: 'Creating landing zone in iRODS failed (unknown problem)',
+    ZONE_STATUS_ACTIVE: 'Available with write access for user',
+    ZONE_STATUS_PREPARING: 'Preparing transaction for validation and moving',
+    ZONE_STATUS_VALIDATING: 'Validation in progress, write access disabled',
+    ZONE_STATUS_MOVING: 'Validation OK, moving files into sample data repository',
+    ZONE_STATUS_MOVED: 'Files moved successfully, landing zone removed',
+    ZONE_STATUS_FAILED: 'Validation/moving failed (unknown problem)',
+    ZONE_STATUS_DELETING: 'Deleting landing zone',
+    ZONE_STATUS_DELETED: 'Landing zone deleted',
 }
 STATUS_INFO_DELETE_NO_COLL = (
     'No iRODS collection for zone found, marked as deleted'
 )
 
 STATUS_STYLES = {
-    'CREATING': 'bg-warning',
-    'NOT CREATED': 'bg-danger',
-    'ACTIVE': 'bg-info',
-    'PREPARING': 'bg-warning',
-    'VALIDATING': 'bg-warning',
-    'MOVING': 'bg-warning',
-    'MOVED': 'bg-success',
-    'FAILED': 'bg-danger',
-    'DELETING': 'bg-warning',
-    'DELETED': 'bg-secondary',
+    ZONE_STATUS_CREATING: 'bg-warning',
+    ZONE_STATUS_NOT_CREATED: 'bg-danger',
+    ZONE_STATUS_ACTIVE: 'bg-info',
+    ZONE_STATUS_PREPARING: 'bg-warning',
+    ZONE_STATUS_VALIDATING: 'bg-warning',
+    ZONE_STATUS_MOVING: 'bg-warning',
+    ZONE_STATUS_MOVED: 'bg-success',
+    ZONE_STATUS_FAILED: 'bg-danger',
+    ZONE_STATUS_DELETING: 'bg-warning',
+    ZONE_STATUS_DELETED: 'bg-secondary',
 }
 
 # Status types for which zone validation, moving and deletion are allowed
