@@ -458,9 +458,8 @@ class TestLandingZoneSubmitMoveAPIView(TestLandingZoneAPITaskflowBase):
 
     def test_post_validate(self):
         """Test post() for validation"""
-        self.landing_zone.status = (
-            ZONE_STATUS_FAILED  # Update to check status change
-        )
+        # Update to check status change
+        self.landing_zone.status = ZONE_STATUS_FAILED
         self.landing_zone.save()
 
         url = reverse(
