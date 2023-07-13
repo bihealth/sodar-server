@@ -347,6 +347,9 @@ class SheetContextAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
                 'configuration': inv.get_configuration(),
                 'inv_file_name': inv.file_name.split('/')[-1],
                 'irods_status': inv.irods_status,
+                'irods_path': irods_backend.get_path(project)
+                if irods_backend and inv.irods_status
+                else None,
                 'parser_version': inv.parser_version or 'LEGACY',
                 'parser_warnings': True
                 if inv.parser_warnings

@@ -200,6 +200,7 @@ class TestSheetContextAjaxView(ViewTestBase):
             'configuration': self.investigation.get_configuration(),
             'inv_file_name': self.investigation.file_name.split('/')[-1],
             'irods_status': False,
+            'irods_path': None,
             'irods_backend_enabled': True if self.irods_backend else False,
             'parser_version': self.investigation.parser_version,
             'parser_warnings': True
