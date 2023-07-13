@@ -118,7 +118,6 @@ import IrodsStatsBadge from './IrodsStatsBadge.vue'
 export default {
   name: 'Overview',
   components: { ListRow, IrodsStatsBadge },
-  // components: { ListRow },
   props: ['sodarContext']
 }
 </script>
