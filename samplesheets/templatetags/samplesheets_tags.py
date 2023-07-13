@@ -17,6 +17,7 @@ from samplesheets.models import (
 
 # Local constants
 TAG_COLORS = {
+    'CREATE': 'info',
     'IMPORT': 'info',
     'EDIT': 'warning',
     'REPLACE': 'danger',

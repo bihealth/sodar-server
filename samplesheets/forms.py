@@ -351,6 +351,7 @@ class SheetTemplateCreateForm(forms.Form):
                 project=self.project,
                 archive_name=None,
                 user=self.current_user,
+                from_template=True,
             )
 
 

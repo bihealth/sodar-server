@@ -205,7 +205,7 @@ class TestProjectSheetsView(IrodsDataRequestMixin, TestProjectSheetsUIBase):
     # NOTE: For further vue app tests, see samplesheets/vueapp/tests
 
 
-class TestSheetTemplateCreateFormView(TestProjectSheetsUIBase):
+class TestSheetTemplateCreateView(TestProjectSheetsUIBase):
     """Tests for the sheet template creation view UI"""
 
     def test_render_field_visibility(self):
