@@ -33,15 +33,12 @@
         <dl class="row pb-0">
           <dt class="col-md-3">iRODS Repository</dt>
           <dd class="col-md-9">
-            <span v-if="sodarContext.irods_status"
-                  class="badge badge-pill badge-success">
-              Available
+            <span v-if="sodarContext.irods_status">
+              <IrodsStatsBadge :projectUuid="sodarContext.project_uuid" :irodsStatus="sodarContext.irods_status" :irodsPath="sodarContext.irods_path" />
             </span>
-            <span v-else
-                  class="badge badge-pill badge-danger">
+            <span v-else class="badge badge-pill badge-danger">
               Not Created
             </span>
-            <!-- iRODS stats badge here -->
           </dd>
         </dl>
         <span v-for="(val, key, index) in
@@ -116,10 +113,12 @@
 
 <script>
 import ListRow from './ListRow.vue'
+import IrodsStatsBadge from './IrodsStatsBadge.vue'
 
 export default {
   name: 'Overview',
-  components: { ListRow },
+  components: { ListRow, IrodsStatsBadge },
+  // components: { ListRow },
   props: ['sodarContext']
 }
 </script>

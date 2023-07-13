@@ -13,7 +13,7 @@ let propsData
 describe('Overview.vue', () => {
   function getPropsData () {
     return {
-      sodarContext: JSON.parse(JSON.stringify(sodarContext)),
+      sodarContext: JSON.parse(JSON.stringify(sodarContext))
     }
   }
 
@@ -34,5 +34,8 @@ describe('Overview.vue', () => {
     expect(wrapper.find('#sodar-ss-overview-investigation').exists()).toBe(true)
     expect(wrapper.findAll('.sodar-ss-overview-study').length).toBe(1)
     expect(wrapper.find('#sodar-ss-overview-stats').exists()).toBe(true)
+
+    // IrodsStatsBadge
+    expect(wrapper.find('.sodar-ss-irods-stats').exists()).toBe(true)
   })
 })
