@@ -278,6 +278,11 @@ class TestSheetVersionListView(TestProjectSheetsUIBase):
         self.assert_element_exists(
             [self.user_contributor], self.url, 'sodar-ss-version-alert', False
         )
+        # Ensure badge is shown for current version
+        self.login_and_redirect(self.user_contributor, self.url)
+        self.assertIsNotNone(
+            self.selenium.find_element(By.CLASS_NAME, 'badge-info')
+        )
 
     def test_list_no_versions(self):
         """Test UI rendering for list items with no versions"""
