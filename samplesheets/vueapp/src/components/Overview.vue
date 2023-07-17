@@ -34,7 +34,11 @@
           <dt class="col-md-3">iRODS Repository</dt>
           <dd class="col-md-9">
             <span v-if="sodarContext.irods_status">
-              <IrodsStatsBadge :projectUuid="sodarContext.project_uuid" :irodsStatus="sodarContext.irods_status" :irodsPath="sodarContext.irods_path" />
+              <IrodsStatsBadge
+                :projectUuid="sodarContext.project_uuid"
+                :irodsStatus="sodarContext.irods_status"
+                :irodsPath="sodarContext.irods_path"
+              />
             </span>
             <span v-else class="badge badge-pill badge-danger">
               Not Created
