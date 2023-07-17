@@ -1,12 +1,12 @@
 """Tests for template tags in the samplesheets app"""
 
-from django.urls import reverse
 from django.conf import settings
+from django.urls import reverse
 
 from test_plus.test import TestCase
 
-from projectroles.plugins import get_backend_api
 from projectroles.models import SODAR_CONSTANTS
+from projectroles.plugins import get_backend_api
 from projectroles.tests.test_models import (
     ProjectMixin,
     RoleMixin,
@@ -14,7 +14,6 @@ from projectroles.tests.test_models import (
 )
 
 from samplesheets.models import GENERIC_MATERIAL_TYPES
-
 from samplesheets.templatetags import samplesheets_tags as s_tags
 from samplesheets.tests.test_models import (
     SampleSheetModelMixin,
@@ -90,7 +89,6 @@ class TestSamplesheetsTemplateTags(
             arcs=[],
             comments=DEFAULT_COMMENTS,
         )
-
         # Setup iRODS backend for the test
         self.irods_backend = get_backend_api("omics_irods")
 
