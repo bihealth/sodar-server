@@ -11,7 +11,7 @@ API Views
 
 .. currentmodule:: irodsinfo.views_api
 
-.. autoclass:: IrodsConfigRetrieveAPIView
+.. autoclass:: IrodsEnvRetrieveAPIView
 
 
 Versioning
