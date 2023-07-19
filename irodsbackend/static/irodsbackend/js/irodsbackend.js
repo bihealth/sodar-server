@@ -24,7 +24,7 @@ var updateCollectionStats = function() {
             method: 'POST',
             dataType: 'json',
             data: d,
-            contentType: "application/x-www-form-urlencoded; charset=UTF-8", //should be default
+            contentType: "application/x-www-form-urlencoded; charset=UTF-8",
             traditional: true
         }).done(function (data) {
             $('span.sodar-irods-stats').each(function () {
@@ -169,14 +169,12 @@ function copy_path(path, id) {
     // Note of copy
     var elem = $('#' + id);
     elem.addClass('text-warning');
-    if (elem.attr('data-table') !== '1') {
-        var realTitle = elem.tooltip().attr('data-original-title');
-        elem.attr('title', 'Copied!')
-            .tooltip('_fixTitle')
-            .tooltip('show')
-            .attr('title', realTitle)
-            .tooltip('_fixTitle');
-    }
+    var realTitle = elem.tooltip().attr('data-original-title');
+    elem.attr('title', 'Copied!')
+        .tooltip('_fixTitle')
+        .tooltip('show')
+        .attr('title', realTitle)
+        .tooltip('_fixTitle');
     elem.delay(250).queue(function() {
         elem.removeClass('text-warning').dequeue();
     });
@@ -194,14 +192,12 @@ $(document).ready(function() {
      ******************/
     $('.sodar-irods-copy-btn').click(function () {
         $(this).addClass('text-warning');
-        if ($(this).attr('data-table') !== '1') {
-            var realTitle = $(this).tooltip().attr('data-original-title');
-            $(this).attr('title', 'Copied!')
-                .tooltip('_fixTitle')
-                .tooltip('show')
-                .attr('title', realTitle)
-                .tooltip('_fixTitle');
-        }
+        var realTitle = $(this).tooltip().attr('data-original-title');
+        $(this).attr('title', 'Copied!')
+            .tooltip('_fixTitle')
+            .tooltip('show')
+            .attr('title', realTitle)
+            .tooltip('_fixTitle');
         $(this).delay(250).queue(function() {
             $(this).removeClass('text-warning').dequeue();
         });
@@ -220,7 +216,6 @@ $(document).ready(function() {
         statsSec = window.irodsbackendStatusInterval;
     }
     var statsInterval = statsSec * 1000;
-
     // Poll and update active collections
     setInterval(function () {
         if ($('table.sodar-lz-table').length === 0) {
@@ -238,26 +233,14 @@ $(document).ready(function() {
         var irodsPathLength = irodsPath.split('/').length;
         var webDavUrl = $(this).attr('data-webdav-url');
         var body = '';
-        var showChecksumCol = false;
-        if (typeof(window.irodsShowChecksumCol) !== 'undefined') {
-            showChecksumCol = window.irodsShowChecksumCol;
-        }
-
         $('.modal-title').text('Files in iRODS: ' + irodsPath.split('/').pop());
 
-        $.ajax({
-                url: listUrl,
-                method: 'GET',
-                dataType: 'json'
-            }).done(function (data) {
+        $.ajax({url: listUrl, method: 'GET', dataType: 'json'}).done(function (data) {
             // console.log(data); // DEBUG
-
             if (data['irods_data'].length > 0) {
                 body += '<table class="table sodar-card-table sodar-irods-obj-table">';
                 body += '<thead><th>File/Collection</th><th>Size</th><th>Modified</th>';
-                if (showChecksumCol === true) {
-                    body += '<th>MD5</th>';
-                }
+                body += '<th>MD5</th><th>iRODS</th>';
                 body += '</thead><tbody>';
 
                 $.each(data['irods_data'], function (i, obj) {
@@ -273,46 +256,32 @@ $(document).ready(function() {
                     var colSpan = '1';
                     var icon = obj['type'] === 'coll' ? 'mdi:folder-open' : 'mdi:file-document-outline';
                     var toolTip = obj['type'] === 'coll' ? 'Collection' : 'File';
-
-                    let copyButton;
-                    if (obj['type'] === 'coll') {
-                        copyButton = '<button class="btn btn-secondary sodar-list-btn pull-right" ' +
-                            'id="sodar-irods-copy-btn-' + obj['name'] + '" ' +
-                            'title="Copy iRODS path into clipboard" data-tooltip="tooltip" ' +
-                            'data-placement="top" onclick="copy_path(\'' + obj['path'] +
-                            '\', \'sodar-irods-copy-btn-' + obj['name'] + '\')">' +
-                            '<i class="iconify" data-icon="mdi:clipboard-text-multiple"></i>' +
-                            '</button>';
-                    } else {
-                        copyButton = '<button class="btn btn-secondary sodar-list-btn pull-right" ' +
-                            'id="sodar-irods-copy-btn-' + obj['name'] + '" ' +
-                            'title="Copy iRODS path into clipboard" data-tooltip="tooltip" ' +
-                            'data-placement="top" onclick="copy_path(\'' + obj['path'] +
-                            '\', \'sodar-irods-copy-btn-' + obj['name'] + '\')">' +
-                            '<i class="iconify" data-icon="mdi:clipboard-text"></i>' +
-                            '</button>';
-                    }
-
+                    var copyButton = '<button class="btn btn-secondary sodar-list-btn pull-right" ' +
+                        'id="sodar-irods-copy-btn-' + obj['name'] + '" ' +
+                        'title="Copy iRODS path into clipboard" data-tooltip="tooltip" ' +
+                        'data-placement="top" onclick="copy_path(\'' + obj['path'] +
+                        '\', \'sodar-irods-copy-btn-' + obj['name'] + '\')">' +
+                        '<i class="iconify" data-icon="mdi:clipboard-text-multiple"></i>' +
+                        '</button>';
                     var iconHtml = '<i class="iconify mr-1" data-icon="' + icon + '"' +
                         ' title="' + toolTip + '"></i>';
-                    body += '<tr><td colspan="' + colSpan + '">' + iconHtml + objLink + copyButton + '</td>';
+                    body += '<tr><td colspan="' + colSpan + '">' + iconHtml + objLink + '</td>';
 
                     if (obj['type'] === 'obj') {
                         body += '<td>' + humanFileSize(obj['size'], true) + '</td>';
                         body += '<td>' + obj['modify_time'] + '</td><td>';
-                        if (showChecksumCol === true) {
-                            if (obj['md5_file'] === true) {
-                                body += '<span class="text-muted">' +
-                                    '<i class="iconify" data-icon="mdi:check-bold"></i></span>';
-                            } else {
-                                body += '<span class="text-danger">' +
-                                    '<i class="iconify" data-icon="mdi:close-thick"></i></span>';
-                            }
+                        if (obj['md5_file'] === true) {
+                            body += '<span class="text-muted">' +
+                                '<i class="iconify" data-icon="mdi:check-bold"></i></span>';
+                        } else {
+                            body += '<span class="text-danger">' +
+                                '<i class="iconify" data-icon="mdi:close-thick"></i></span>';
                         }
                         body += '</td>';
                     } else {
                         body += '<td colspan="3"></td>';
                     }
+                    body += '<td>' + copyButton + '</td>';
                     body += '</tr>';
                 });
             } else {
@@ -336,7 +305,6 @@ $(document).ready(function() {
             $('#sodar-modal-wait').modal('hide');
             $('#sodar-modal').modal('show');
         });
-
         // Set waiting content and toggle modal
         $('#sodar-modal-wait').modal('show');
     });
