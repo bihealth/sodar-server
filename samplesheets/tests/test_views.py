@@ -30,9 +30,8 @@ from projectroles.utils import build_secret
 # Sodarcache dependency
 from sodarcache.models import JSONCacheItem
 
-from landingzones.constants import ZONE_STATUS_ACTIVE
-
 # Landingzones dependency
+from landingzones.constants import ZONE_STATUS_ACTIVE
 from landingzones.models import LandingZone
 from landingzones.tests.test_models import LandingZoneMixin
 
