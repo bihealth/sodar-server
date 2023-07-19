@@ -52,7 +52,6 @@ var updateCollectionStats = function() {
     }
 };
 
-
 /***************************************
  Toggling buttons in one row function
  ***************************************/
@@ -158,16 +157,10 @@ var updateButtons = function() {
     }
 };
 
-
-/******************
- Copy path function
- ******************/
-function copy_path(path, id) {
-    // Copy the text inside the text field
-    navigator.clipboard.writeText(path);
-
-    // Note of copy
-    var elem = $('#' + id);
+/************************
+ Copy path display method
+*************************/
+function displayCopyStatus(elem) {
     elem.addClass('text-warning');
     var realTitle = elem.tooltip().attr('data-original-title');
     elem.attr('title', 'Copied!')
@@ -180,32 +173,22 @@ function copy_path(path, id) {
     });
 }
 
+/**********************
+ Modal copy path method
+ **********************/
+function copyModalPath(path, id) {
+    navigator.clipboard.writeText(path);
+    displayCopyStatus($('#' + id));
+}
 
 $(document).ready(function() {
-    /***************
-     Init Clipboards
-     ***************/
+    // Init Clipboards
     new ClipboardJS('.sodar-irods-copy-btn');
-
-    /******************
-     Copy link handling
-     ******************/
+    // Add copy link handler
     $('.sodar-irods-copy-btn').click(function () {
-        $(this).addClass('text-warning');
-        var realTitle = $(this).tooltip().attr('data-original-title');
-        $(this).attr('title', 'Copied!')
-            .tooltip('_fixTitle')
-            .tooltip('show')
-            .attr('title', realTitle)
-            .tooltip('_fixTitle');
-        $(this).delay(250).queue(function() {
-            $(this).removeClass('text-warning').dequeue();
-        });
+        displayCopyStatus($(this));
     });
-
-    /***********************
-     Update collection stats
-     ***********************/
+    // Update collection stats
     updateCollectionStats();
     if ($('table.sodar-lz-table').length === 0) {
         updateButtons();
@@ -224,9 +207,7 @@ $(document).ready(function() {
         updateCollectionStats();
     }, statsInterval);
 
-    /***************
-     Link list Popup
-     ***************/
+    // Collection dir list modal
     $('.sodar-irods-popup-list-btn').click(function() {
         var listUrl = $(this).attr('data-list-url');
         var irodsPath = $(this).attr('data-irods-path');
@@ -259,7 +240,7 @@ $(document).ready(function() {
                     var copyButton = '<button class="btn btn-secondary sodar-list-btn pull-right" ' +
                         'id="sodar-irods-copy-btn-' + obj['name'] + '" ' +
                         'title="Copy iRODS path into clipboard" data-tooltip="tooltip" ' +
-                        'data-placement="top" onclick="copy_path(\'' + obj['path'] +
+                        'data-placement="top" onclick="copyModalPath(\'' + obj['path'] +
                         '\', \'sodar-irods-copy-btn-' + obj['name'] + '\')">' +
                         '<i class="iconify" data-icon="mdi:clipboard-text-multiple"></i>' +
                         '</button>';
