@@ -4,6 +4,7 @@ from taskflowbackend.flows.base_flow import BaseLinearFlow
 from taskflowbackend.tasks import irods_tasks
 
 # Landingzones dependency
+from landingzones.constants import ZONE_STATUS_NOT_CREATED, ZONE_STATUS_ACTIVE
 from landingzones.models import LandingZone
 import landingzones.tasks_taskflow as lz_tasks
 
@@ -33,7 +34,7 @@ class Flow(BaseLinearFlow):
                     'landing_zone': zone,
                     'flow_name': self.flow_name,
                     'info_prefix': 'Failed to create landing zone',
-                    'status': 'NOT CREATED',
+                    'status': ZONE_STATUS_NOT_CREATED,
                 },
             )
         )
@@ -175,7 +176,7 @@ class Flow(BaseLinearFlow):
                 inject={
                     'landing_zone': zone,
                     'flow_name': self.flow_name,
-                    'status': 'ACTIVE',
+                    'status': ZONE_STATUS_ACTIVE,
                     'status_info': 'Available with write access for user',
                 },
                 force_fail=force_fail,

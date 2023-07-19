@@ -6,7 +6,8 @@ from django.urls import reverse
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
 
-from landingzones.models import LandingZone, STATUS_STYLES, STATUS_FINISHED
+from landingzones.constants import STATUS_STYLES, STATUS_FINISHED
+from landingzones.models import LandingZone
 from landingzones.plugins import get_zone_config_plugin
 
 

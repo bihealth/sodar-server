@@ -15,7 +15,7 @@ from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import TaskflowAPIPermissionTestBase
 
-from landingzones.models import (
+from landingzones.constants import (
     ZONE_STATUS_ACTIVE,
     ZONE_STATUS_VALIDATING,
     ZONE_STATUS_PREPARING,

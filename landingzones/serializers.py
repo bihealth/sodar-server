@@ -12,12 +12,12 @@ from projectroles.serializers import (
 # Samplesheets dependency
 from samplesheets.models import Assay
 
-from landingzones.models import (
-    LandingZone,
+from landingzones.constants import (
     ZONE_STATUS_OK,
     ZONE_STATUS_DELETED,
     ZONE_STATUS_NOT_CREATED,
 )
+from landingzones.models import LandingZone
 from landingzones.utils import get_zone_title
 
 

@@ -17,7 +17,7 @@ from samplesheets.tasks_celery import update_project_cache_task
 # Taskflowbackend dependency
 from taskflowbackend.tasks.sodar_tasks import SODARBaseTask
 
-from landingzones.models import (
+from landingzones.constants import (
     STATUS_BUSY,
     ZONE_STATUS_FAILED,
     ZONE_STATUS_NOT_CREATED,

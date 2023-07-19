@@ -54,6 +54,7 @@ from projectroles.views import (
 )
 
 # Landingzones dependency
+from landingzones.constants import ZONE_STATUS_MOVED, ZONE_STATUS_DELETED
 from landingzones.models import LandingZone
 
 from samplesheets.forms import (
@@ -1386,7 +1387,7 @@ class SheetImportView(
             # TODO: Lock project and allow ACTIVE after taskflow integr. (#713)
             if (
                 old_inv.project.landing_zones.exclude(
-                    status__in=['MOVED', 'DELETED']
+                    status__in=[ZONE_STATUS_MOVED, ZONE_STATUS_DELETED]
                 ).count()
                 > 0
             ):

@@ -17,7 +17,12 @@ from projectroles.plugins import (
 # Samplesheets dependency
 from samplesheets.models import Investigation, Assay
 
-from landingzones.models import LandingZone, STATUS_ALLOW_UPDATE
+from landingzones.constants import (
+    STATUS_ALLOW_UPDATE,
+    ZONE_STATUS_MOVED,
+    ZONE_STATUS_DELETED,
+)
+from landingzones.models import LandingZone
 from landingzones.urls import urlpatterns
 from landingzones.views import ZoneModifyMixin
 
@@ -125,7 +130,7 @@ class ProjectAppPlugin(
         obj = self.get_object(eval(model_str), uuid)
         if not obj:
             return None
-        if obj.__class__ == LandingZone and obj.status != 'MOVED':
+        if obj.__class__ == LandingZone and obj.status != ZONE_STATUS_MOVED:
             return {
                 'url': reverse(
                     'landingzones:list',
@@ -166,7 +171,9 @@ class ProjectAppPlugin(
             zones = LandingZone.objects.filter(project=project)
         else:
             zones = LandingZone.objects.filter(project=project, user=user)
-        active_count = zones.exclude(status__in=['MOVED', 'DELETED']).count()
+        active_count = zones.exclude(
+            status__in=[ZONE_STATUS_MOVED, ZONE_STATUS_DELETED]
+        ).count()
 
         if investigation and investigation.irods_status and active_count > 0:
             return (

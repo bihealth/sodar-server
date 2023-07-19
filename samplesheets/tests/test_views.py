@@ -30,6 +30,8 @@ from projectroles.utils import build_secret
 # Sodarcache dependency
 from sodarcache.models import JSONCacheItem
 
+from landingzones.constants import ZONE_STATUS_ACTIVE
+
 # Landingzones dependency
 from landingzones.models import LandingZone
 from landingzones.tests.test_models import LandingZoneMixin
@@ -398,7 +400,7 @@ class TestSheetImportView(SheetImportMixin, LandingZoneMixin, ViewTestBase):
             self.project,
             self.user,
             inv.get_assays().first(),
-            status='ACTIVE',
+            status=ZONE_STATUS_ACTIVE,
         )
 
         self.assertEqual(Investigation.objects.count(), 1)

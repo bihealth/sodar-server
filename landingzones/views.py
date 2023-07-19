@@ -28,15 +28,15 @@ from samplesheets.views import (
     TRACK_HUBS_COLL,
 )
 
-from landingzones.forms import LandingZoneForm
-from landingzones.models import (
-    LandingZone,
+from landingzones.constants import (
     STATUS_ALLOW_UPDATE,
     STATUS_FINISHED,
     STATUS_INFO_DELETE_NO_COLL,
     ZONE_STATUS_OK,
     ZONE_STATUS_DELETED,
 )
+from landingzones.forms import LandingZoneForm
+from landingzones.models import LandingZone
 
 
 logger = logging.getLogger(__name__)

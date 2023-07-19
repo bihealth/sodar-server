@@ -23,7 +23,7 @@ from landingzones.management.commands.inactivezones import (
     get_inactive_zones,
     get_output,
 )
-from landingzones.models import (
+from landingzones.constants import (
     ZONE_STATUS_MOVED,
     ZONE_STATUS_DELETED,
     ZONE_STATUS_ACTIVE,

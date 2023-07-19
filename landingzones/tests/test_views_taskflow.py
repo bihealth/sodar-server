@@ -33,8 +33,7 @@ from taskflowbackend.tests.base import (
 # Timeline dependency
 from timeline.models import ProjectEvent
 
-from landingzones.models import (
-    LandingZone,
+from landingzones.constants import (
     ZONE_STATUS_CREATING,
     ZONE_STATUS_ACTIVE,
     ZONE_STATUS_MOVED,
@@ -42,6 +41,7 @@ from landingzones.models import (
     ZONE_STATUS_VALIDATING,
     ZONE_STATUS_DELETED,
 )
+from landingzones.models import LandingZone
 from landingzones.tests.test_models import LandingZoneMixin
 from landingzones.views import ZONE_MOVE_INVALID_STATUS
 

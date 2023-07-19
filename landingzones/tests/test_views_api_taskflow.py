@@ -25,8 +25,7 @@ from taskflowbackend.tests.base import (
     IRODS_ACCESS_OWN,
 )
 
-from landingzones.models import (
-    LandingZone,
+from landingzones.constants import (
     DEFAULT_STATUS_INFO,
     ZONE_STATUS_ACTIVE,
     ZONE_STATUS_CREATING,
@@ -34,6 +33,7 @@ from landingzones.models import (
     ZONE_STATUS_MOVED,
     ZONE_STATUS_FAILED,
 )
+from landingzones.models import LandingZone
 from landingzones.tests.test_models import LandingZoneMixin
 from landingzones.tests.test_views_taskflow import (
     LandingZoneTaskflowMixin,

@@ -18,7 +18,7 @@ from samplesheets.tests.test_views_taskflow import (
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import TaskflowViewTestBase
 
-from landingzones.models import ZONE_STATUS_ACTIVE, ZONE_STATUS_MOVED
+from landingzones.constants import ZONE_STATUS_ACTIVE, ZONE_STATUS_MOVED
 from landingzones.tests.test_models import LandingZoneMixin
 from landingzones.tests.test_views_taskflow import LandingZoneTaskflowMixin
 

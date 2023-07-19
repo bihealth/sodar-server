@@ -15,13 +15,13 @@ from projectroles.tests.test_models import (
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
-from landingzones.models import (
-    LandingZone,
+from landingzones.constants import (
     DEFAULT_STATUS_INFO,
     ZONE_STATUS_CREATING,
     ZONE_STATUS_ACTIVE,
     ZONE_STATUS_MOVING,
 )
+from landingzones.models import LandingZone
 
 
 # SODAR constants
@@ -37,7 +37,7 @@ SHEET_PATH = SHEET_DIR + 'i_small.zip'
 ZONE_TITLE = '20180503_1724_test_zone'
 ZONE_DESC = 'description'
 ZONE_MSG = 'user message'
-ZONE_STATUS_INFO_INIT = DEFAULT_STATUS_INFO['CREATING']
+ZONE_STATUS_INFO_INIT = DEFAULT_STATUS_INFO[ZONE_STATUS_CREATING]
 
 
 class LandingZoneMixin:

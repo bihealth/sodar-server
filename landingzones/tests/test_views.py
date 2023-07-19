@@ -17,11 +17,8 @@ from projectroles.tests.test_models import (
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
-from landingzones.models import (
-    LandingZone,
-    ZONE_STATUS_ACTIVE,
-    ZONE_STATUS_DELETED,
-)
+from landingzones.constants import ZONE_STATUS_ACTIVE, ZONE_STATUS_DELETED
+from landingzones.models import LandingZone
 from landingzones.tests.test_models import (
     LandingZoneMixin,
     ZONE_TITLE,

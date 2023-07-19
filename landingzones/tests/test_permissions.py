@@ -10,7 +10,7 @@ from projectroles.tests.test_permissions import TestProjectPermissionBase
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
-from landingzones.models import ZONE_STATUS_ACTIVE
+from landingzones.constants import ZONE_STATUS_ACTIVE
 from landingzones.tests.test_models import (
     LandingZoneMixin,
     ZONE_TITLE,

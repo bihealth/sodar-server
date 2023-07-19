@@ -12,10 +12,11 @@ from projectroles.tests.test_views_api import TestAPIViewsBase
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
-from landingzones.models import (
+from landingzones.constants import (
     ZONE_STATUS_ACTIVE,
     ZONE_STATUS_MOVED,
     ZONE_STATUS_MOVING,
+    ZONE_STATUS_VALIDATING,
 )
 from landingzones.tests.test_models import LandingZoneMixin
 from landingzones.tests.test_views_taskflow import ZONE_TITLE, ZONE_DESC
@@ -31,7 +32,7 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 # Local constants
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
-ZONE_STATUS = 'VALIDATING'
+ZONE_STATUS = ZONE_STATUS_VALIDATING
 ZONE_STATUS_INFO = 'Testing'
 INVALID_UUID = '11111111-1111-1111-1111-111111111111'
 
