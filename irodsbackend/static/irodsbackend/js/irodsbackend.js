@@ -237,11 +237,12 @@ $(document).ready(function() {
                     var colSpan = '1';
                     var icon = obj['type'] === 'coll' ? 'mdi:folder-open' : 'mdi:file-document-outline';
                     var toolTip = obj['type'] === 'coll' ? 'Collection' : 'File';
+                    var elemId = 'sodar-irods-copy-btn-' + i.toString();
                     var copyButton = '<button class="btn btn-secondary sodar-list-btn pull-right" ' +
-                        'id="sodar-irods-copy-btn-' + obj['name'] + '" ' +
+                        'id="' + elemId + '"' +
                         'title="Copy iRODS path into clipboard" data-tooltip="tooltip" ' +
                         'data-placement="top" onclick="copyModalPath(\'' + obj['path'] +
-                        '\', \'sodar-irods-copy-btn-' + obj['name'] + '\')">' +
+                        '\', \'' + elemId + '\')">' +
                         '<i class="iconify" data-icon="mdi:clipboard-text-multiple"></i>' +
                         '</button>';
                     var iconHtml = '<i class="iconify mr-1" data-icon="' + icon + '"' +
