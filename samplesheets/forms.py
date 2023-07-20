@@ -457,10 +457,14 @@ class IrodsRequestForm(forms.ModelForm):
 class IrodsRequestAcceptForm(forms.Form):
     """Form accepting an iRODS delete request."""
 
-    confirm = forms.BooleanField(
-        label='I accept the iRODS delete request',
-        required=True,
-    )
+    confirm = forms.BooleanField(required=True)
+
+    def __init__(self, *args, **kwargs):
+        num_requests = kwargs.pop('num_requests', None)
+        super().__init__(*args, **kwargs)
+        self.fields['confirm'].label = 'I accept the iRODS delete request'
+        if num_requests > 1:
+            self.fields['confirm'].label += 's'
 
 
 class SheetVersionEditForm(forms.ModelForm):

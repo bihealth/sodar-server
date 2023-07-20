@@ -541,6 +541,17 @@ class TestIrodsRequestListView(IrodsDataRequestMixin, TestProjectSheetsUIBase):
             [self.user_contributor], self.url, 'sodar-ss-request-table', True
         )
 
+    def test_render_davrods_button(self):
+        """Test UI rendering of davrods link button"""
+        self.login_and_redirect(
+            user=self.user_contributor,
+            url=self.url,
+            wait_elem='sodar-ss-request-table',
+        )
+        self.assertIsNotNone(
+            self.selenium.find_element(By.ID, 'sodar-ss-davrods-link')
+        )
+
 
 class TestSheetVersionCompareView(
     SampleSheetIOMixin, SheetConfigMixin, TestUIBase

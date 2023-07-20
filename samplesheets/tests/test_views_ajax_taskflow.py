@@ -233,7 +233,7 @@ class TestIrodsRequestCreateAjaxView(TestIrodsRequestViewsBase):
                     'samplesheets:ajax_irods_request_create',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
-                data={'path': self.path},
+                data={'path': self.obj_path},
             )
 
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
@@ -251,7 +251,7 @@ class TestIrodsRequestCreateAjaxView(TestIrodsRequestViewsBase):
                     'samplesheets:ajax_irods_request_create',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
-                data={'path': self.path},
+                data={'path': self.obj_path},
             )
 
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
@@ -264,7 +264,7 @@ class TestIrodsRequestCreateAjaxView(TestIrodsRequestViewsBase):
                     'samplesheets:ajax_irods_request_create',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
-                data={'path': self.path},
+                data={'path': self.obj_path},
             )
 
         self.assertEqual(response.status_code, 400)
@@ -282,7 +282,7 @@ class TestIrodsRequestCreateAjaxView(TestIrodsRequestViewsBase):
                     'samplesheets:ajax_irods_request_create',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
-                data={'path': self.path},
+                data={'path': self.obj_path},
             )
 
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
@@ -293,7 +293,7 @@ class TestIrodsRequestCreateAjaxView(TestIrodsRequestViewsBase):
                     'samplesheets:ajax_irods_request_create',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
-                data={'path': self.path},
+                data={'path': self.obj_path},
             )
 
         self.assertEqual(response.status_code, 400)
@@ -309,7 +309,7 @@ class TestIrodsRequestCreateAjaxView(TestIrodsRequestViewsBase):
                     'samplesheets:ajax_irods_request_create',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
-                data={'path': self.path},
+                data={'path': self.obj_path},
             )
 
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
@@ -320,7 +320,7 @@ class TestIrodsRequestCreateAjaxView(TestIrodsRequestViewsBase):
                     'samplesheets:ajax_irods_request_create',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
-                data={'path': self.path},
+                data={'path': self.obj_path},
             )
 
         self.assertEqual(response.status_code, 400)
@@ -345,7 +345,7 @@ class TestIrodsRequestCreateAjaxView(TestIrodsRequestViewsBase):
                     'samplesheets:ajax_irods_request_create',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
-                data={'path': self.path},
+                data={'path': self.obj_path},
             )
 
         with self.login(self.user):
@@ -374,7 +374,7 @@ class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
                     'samplesheets:ajax_irods_request_create',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
-                data={'path': self.path},
+                data={'path': self.obj_path},
             )
 
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
@@ -388,7 +388,7 @@ class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
                     'samplesheets:ajax_irods_request_delete',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
-                data={'path': self.path},
+                data={'path': self.obj_path},
             )
 
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
@@ -406,7 +406,7 @@ class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
                     'samplesheets:ajax_irods_request_create',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
-                data={'path': self.path},
+                data={'path': self.obj_path},
             )
 
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
@@ -418,7 +418,7 @@ class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
                     'samplesheets:ajax_irods_request_delete',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
-                data={'path': self.path},
+                data={'path': self.obj_path},
             )
 
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
@@ -434,7 +434,7 @@ class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
                     'samplesheets:ajax_irods_request_create',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
-                data={'path': self.path},
+                data={'path': self.obj_path},
             )
 
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
@@ -446,7 +446,7 @@ class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
                     'samplesheets:ajax_irods_request_delete',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
-                data={'path': self.path},
+                data={'path': self.obj_path},
             )
 
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
@@ -465,7 +465,7 @@ class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
                     'samplesheets:ajax_irods_request_delete',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
-                data={'path': self.path},
+                data={'path': self.obj_path},
             )
 
         self.assertEqual(response.status_code, 404)
@@ -488,7 +488,7 @@ class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
                     'samplesheets:ajax_irods_request_create',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
-                data={'path': self.path},
+                data={'path': self.obj_path},
             )
             self.client.post(
                 reverse(
@@ -507,7 +507,7 @@ class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
                     'samplesheets:ajax_irods_request_delete',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
-                data={'path': self.path},
+                data={'path': self.obj_path},
             )
 
             self.assertEqual(IrodsDataRequest.objects.count(), 1)
@@ -520,8 +520,18 @@ class TestIrodsObjectListAjaxView(TestIrodsRequestViewsBase):
 
     def test_get_empty_coll(self):
         """Test GET request for listing an empty collection in iRODS"""
-        self.irods.data_objects.get(self.path).unlink(force=True)
-        self.irods.data_objects.get(self.path_md5).unlink(force=True)
+        self.irods.data_objects.unlink(self.obj_path, force=True)
+        self.irods.data_objects.unlink(self.obj_path_md5, force=True)
+        self.irods.data_objects.unlink(self.obj_path2, force=True)
+        self.irods.data_objects.unlink(self.obj_path2_md5, force=True)
+        self.assertEqual(self.irods.data_objects.exists(self.obj_path), False)
+        self.assertEqual(
+            self.irods.data_objects.exists(self.obj_path_md5), False
+        )
+        self.assertEqual(self.irods.data_objects.exists(self.obj_path2), False)
+        self.assertEqual(
+            self.irods.data_objects.exists(self.obj_path2_md5), False
+        )
         with self.login(self.user):
             response = self.client.get(
                 reverse(
@@ -544,7 +554,7 @@ class TestIrodsObjectListAjaxView(TestIrodsRequestViewsBase):
                 data={'path': self.assay_path},
             )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data['irods_data']), 1)
+        self.assertEqual(len(response.data['irods_data']), 2)
         list_obj = response.data['irods_data'][0]
         self.assertNotIn('md5_file', list_obj)
         self.assertEqual(self.file_obj.name, list_obj['name'])
@@ -617,7 +627,7 @@ class TestIrodsObjectListAjaxView(TestIrodsRequestViewsBase):
                     'samplesheets:ajax_irods_request_create',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
-                data={'path': self.path},
+                data={'path': self.obj_path},
             )
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
 
@@ -632,7 +642,9 @@ class TestIrodsObjectListAjaxView(TestIrodsRequestViewsBase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()['irods_data'][0]['name'], 'test1')
-        self.assertEqual(response.json()['irods_data'][0]['path'], self.path)
+        self.assertEqual(
+            response.json()['irods_data'][0]['path'], self.obj_path
+        )
         self.assertEqual(
             response.json()['irods_data'][0]['irods_request_status'],
             'ACTIVE',

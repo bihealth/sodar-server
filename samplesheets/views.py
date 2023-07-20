@@ -110,6 +110,7 @@ RESULTS_COLL_ID = 'results_reports'
 RESULTS_COLL = 'ResultsReports'
 IRODS_REQ_CREATE_ALERT = 'irods_request_create'
 IRODS_REQ_ACCEPT_ALERT = 'irods_request_accept'
+IRODS_NO_REQ_MSG = 'No iRODS data requests found for the given UUIDs'
 IRODS_REQ_REJECT_ALERT = 'irods_request_reject'
 SYNC_SUCCESS_MSG = 'Sample sheet sync successful'
 SYNC_FAIL_DISABLED = 'Sample sheet sync disabled'
@@ -985,6 +986,8 @@ class IrodsRequestModifyMixin:
                 )
             )
 
+    # API Helpers --------------------------------------------------------------
+
     @classmethod
     def accept_request(
         cls,
@@ -1110,14 +1113,25 @@ class IrodsRequestModifyMixin:
         :param timeline: Timeline API or None
         :param app_alerts: Appalerts API or None
         """
+        if irods_request.status == 'REJECTED':
+            description = (
+                'iRODS data request {irods_request} is already rejected'
+            )
+            status = 'FAILED'
+        else:
+            description = 'reject iRODS data request {irods_request}'
+            status = 'OK'
+            irods_request.status = 'REJECTED'
+            irods_request.save()
+
         if timeline:
             tl_event = timeline.add_event(
                 project=project,
                 app_name=APP_NAME,
                 user=request.user,
                 event_name='irods_request_reject',
-                description='reject data iRODS request {irods_request}',
-                status_type='OK',
+                description=description,
+                status_type=status,
             )
             tl_event.add_object(
                 obj=irods_request,
@@ -1171,6 +1185,15 @@ class IrodsRequestModifyMixin:
         ):
             return True
         return False
+
+    def get_irods_request_objects(self):
+        # Get uuids from POST data
+        request_ids = self.request.POST.get('irods_requests').split(',')
+        # Drop '' from the list
+        request_ids = [x for x in request_ids if x]
+        if not request_ids:
+            return IrodsDataRequest.objects.none()
+        return IrodsDataRequest.objects.filter(sodar_uuid__in=request_ids)
 
 
 class SheetRemoteSyncAPI(SheetImportMixin):
@@ -2538,37 +2561,45 @@ class IrodsRequestAcceptView(
     IrodsRequestModifyMixin,
     FormView,
 ):
-    """View for accepting an iRODS data request"""
+    """View for accepting iRODS data requests"""
 
     permission_required = 'samplesheets.manage_sheet'
     template_name = 'samplesheets/irods_request_accept_form.html'
     form_class = IrodsRequestAcceptForm
+
+    def get_form_kwargs(self):
+        """Override to pass number of requests to form"""
+        kwargs = super().get_form_kwargs()
+        kwargs['num_requests'] = 1
+        return kwargs
 
     def get_context_data(self, *args, **kwargs):
         context_data = super().get_context_data(*args, **kwargs)
         obj = IrodsDataRequest.objects.filter(
             sodar_uuid=self.kwargs['irodsdatarequest']
         ).first()
+        context_data['request_objects'] = []
+        affected_object_paths = [obj.path]
         irods_backend = get_backend_api('omics_irods')
-        context_data['irods_request'] = obj
-        context_data['affected_objects'] = []
-        context_data['affected_collections'] = []
-        context_data['is_collection'] = obj.is_collection()
-        if context_data['is_collection']:
+        is_collection = obj.is_collection()
+        if is_collection:
+            affected_object_paths = []
             with irods_backend.get_session() as irods:
                 try:
-                    coll = irods.collections.get(
-                        context_data['irods_request'].path
-                    )
+                    coll = irods.collections.get(obj.path)
                 except CollectionDoesNotExist:
                     coll = None
                 if coll:
-                    context_data[
-                        'affected_objects'
-                    ] += irods_backend.get_objs_recursively(irods, coll)
-                    context_data[
-                        'affected_collections'
-                    ] += irods_backend.get_colls_recursively(coll)
+                    affected_objects = irods_backend.get_objs_recursively(
+                        irods, coll
+                    )
+                    affected_object_paths += [
+                        o['path'] for o in affected_objects
+                    ]
+        context_data['request_objects'].append(obj)
+        context_data['affected_object_paths'] = sorted(
+            list(set(affected_object_paths))
+        )
         return context_data
 
     def get(self, request, *args, **kwargs):
@@ -2583,59 +2614,159 @@ class IrodsRequestAcceptView(
                 )
             )
 
-    def form_valid(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         timeline = get_backend_api('timeline_backend')
         taskflow = get_backend_api('taskflow')
         app_alerts = get_backend_api('appalerts_backend')
         project = self.get_project()
-        redirect_url = reverse(
-            'samplesheets:irods_requests',
-            kwargs={'project': project.sodar_uuid},
-        )
 
-        try:
-            obj = IrodsDataRequest.objects.get(
-                sodar_uuid=self.kwargs['irodsdatarequest']
-            )
-        except IrodsDataRequest.DoesNotExist:
-            messages.error(
-                self.request,
-                'iRODS data request {} doesn\' exist.'.format(
-                    self.kwargs['irodsdatarequest']
-                ),
-            )
-            return redirect(
-                reverse(
-                    'samplesheets:irods_requests',
-                    kwargs={'project': project.sodar_uuid},
-                )
-            )
-
+        obj = IrodsDataRequest.objects.filter(
+            sodar_uuid=self.kwargs['irodsdatarequest']
+        ).first()
+        # Check if form is valid
+        form = self.get_form()
+        if not form.is_valid():
+            return self.render_to_response(self.get_context_data())
         try:
             self.accept_request(
                 obj,
                 project,
-                self.request,
+                request,
                 timeline=timeline,
                 taskflow=taskflow,
                 app_alerts=app_alerts,
             )
+            messages.success(
+                self.request,
+                'iRODS data request "{}" accepted.'.format(
+                    obj.get_display_name()
+                ),
+            )
         except Exception as ex:
-            if settings.DEBUG:
-                raise ex
             messages.error(
                 self.request,
                 'Accepting iRODS data request "{}" failed: {}'.format(
                     obj.get_display_name(), ex
                 ),
             )
-            return redirect(redirect_url)
-
-        messages.success(
-            self.request,
-            'iRODS data request "{}" accepted.'.format(obj.get_display_name()),
+        return redirect(
+            reverse(
+                'samplesheets:irods_requests',
+                kwargs={'project': self.get_project().sodar_uuid},
+            )
         )
-        return redirect(redirect_url)
+
+
+class IrodsRequestAcceptBatchView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    InvestigationContextMixin,
+    IrodsRequestModifyMixin,
+    FormView,
+):
+    template_name = 'samplesheets/irods_request_accept_form.html'
+    permission_required = 'samplesheets.manage_sheet'
+    form_class = IrodsRequestAcceptForm
+
+    def get_form_kwargs(self):
+        """Override to pass number of requests to form"""
+        kwargs = super().get_form_kwargs()
+        kwargs['num_requests'] = len(self.get_irods_request_objects())
+        return kwargs
+
+    def get_context_data(self, *args, **kwargs):
+        context_data = super().get_context_data(*args, **kwargs)
+        context_data['request_objects'] = []
+        context_data['irods_request_uuids'] = ''
+        irods_backend = get_backend_api('omics_irods')
+        batch = self.get_irods_request_objects()
+        affected_object_paths = []
+        context_data['irods_requests'] = batch
+
+        for obj in batch:
+            affected_object_paths += [obj.path]
+            context_data['irods_request_uuids'] += str(obj.sodar_uuid) + ','
+            is_collection = obj.is_collection()
+            if is_collection:
+                with irods_backend.get_session() as irods:
+                    try:
+                        coll = irods.collections.get(obj.path)
+                    except CollectionDoesNotExist:
+                        coll = None
+                    if coll:
+                        affected_objects = irods_backend.get_objs_recursively(
+                            irods, coll
+                        )
+                        affected_object_paths += [
+                            o.path for o in affected_objects
+                        ]
+            context_data['request_objects'].append(obj)
+        context_data['affected_object_paths'] = sorted(
+            set(affected_object_paths)
+        )
+        return context_data
+
+    def post(self, request, *args, **kwargs):
+        # Check if form is valid and then process requests
+        form = self.get_form()
+        if form.is_valid():
+            timeline = get_backend_api('timeline_backend')
+            taskflow = get_backend_api('taskflow')
+            app_alerts = get_backend_api('appalerts_backend')
+            project = self.get_project()
+            batch = self.get_irods_request_objects()
+            if not batch:
+                messages.error(self.request, IRODS_NO_REQ_MSG)
+                return redirect(
+                    reverse(
+                        'samplesheets:irods_requests',
+                        kwargs={'project': self.get_project().sodar_uuid},
+                    )
+                )
+
+            for obj in batch:
+                try:
+                    self.accept_request(
+                        obj,
+                        project,
+                        request,
+                        timeline=timeline,
+                        taskflow=taskflow,
+                        app_alerts=app_alerts,
+                    )
+                    messages.success(
+                        self.request,
+                        'iRODS data request "{}" accepted.'.format(
+                            obj.get_display_name()
+                        ),
+                    )
+                except Exception as ex:
+                    messages.error(
+                        self.request,
+                        'Accepting iRODS data request "{}" failed: {}'.format(
+                            obj.get_display_name(), ex
+                        ),
+                    )
+
+            return redirect(
+                reverse(
+                    'samplesheets:irods_requests',
+                    kwargs={'project': self.get_project().sodar_uuid},
+                )
+            )
+
+        # Render the confirmation form if the form is not valid
+        try:
+            return super().render_to_response(self.get_context_data())
+        except Exception as ex:
+            messages.error(request, str(ex))
+            return redirect(
+                reverse(
+                    'samplesheets:irods_requests',
+                    kwargs={'project': self.get_project().sodar_uuid},
+                )
+            )
 
 
 class IrodsRequestRejectView(
@@ -2646,7 +2777,7 @@ class IrodsRequestRejectView(
     IrodsRequestModifyMixin,
     View,
 ):
-    """View for rejecting an iRODS data request"""
+    """View for rejecting iRODS data requests"""
 
     permission_required = 'samplesheets.manage_sheet'
 
@@ -2655,52 +2786,113 @@ class IrodsRequestRejectView(
         app_alerts = get_backend_api('appalerts_backend')
         project = self.get_project()
         try:
-            obj = IrodsDataRequest.objects.get(
+            obj = IrodsDataRequest.objects.filter(
                 sodar_uuid=self.kwargs['irodsdatarequest']
-            )
-        except IrodsDataRequest.DoesNotExist:
-            messages.error(
-                self.request,
-                'iRODS data request "{}" doesn\'t exist.'.format(
-                    self.kwargs['irodsdatarequest']
-                ),
-            )
+            ).first()
+            try:
+                self.reject_request(
+                    obj,
+                    project,
+                    self.request,
+                    timeline=timeline,
+                    app_alerts=app_alerts,
+                )
+                messages.success(
+                    self.request,
+                    'iRODS data request "{}" rejected.'.format(
+                        obj.get_display_name()
+                    ),
+                )
+            except Exception as ex:
+                messages.error(
+                    self.request,
+                    'Rejecting iRODS data request "{}" failed: {}'.format(
+                        obj.get_display_name(), ex
+                    ),
+                )
+
             return redirect(
                 reverse(
                     'samplesheets:irods_requests',
-                    kwargs={'project': project.sodar_uuid},
+                    kwargs={'project': self.get_project().sodar_uuid},
                 )
             )
-        obj.status = 'REJECTED'
-        obj.save()
+        except Exception as ex:
+            messages.error(request, str(ex))
+            return redirect(
+                reverse(
+                    'samplesheets:irods_requests',
+                    kwargs={'project': self.get_project().sodar_uuid},
+                )
+            )
 
+
+class IrodsRequestRejectBatchView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    InvestigationContextMixin,
+    IrodsRequestModifyMixin,
+    View,
+):
+    """View for rejecting iRODS data requests"""
+
+    permission_required = 'samplesheets.manage_sheet'
+
+    def post(self, request, *args, **kwargs):
+        timeline = get_backend_api('timeline_backend')
+        app_alerts = get_backend_api('appalerts_backend')
+        project = self.get_project()
         try:
-            self.reject_request(
-                obj,
-                project,
-                self.request,
-                timeline=timeline,
-                app_alerts=app_alerts,
+            batch = self.get_irods_request_objects()
+            if not batch:
+                messages.error(
+                    self.request,
+                    IRODS_NO_REQ_MSG,
+                )
+                return redirect(
+                    reverse(
+                        'samplesheets:irods_requests',
+                        kwargs={'project': self.get_project().sodar_uuid},
+                    )
+                )
+            for obj in batch:
+                try:
+                    self.reject_request(
+                        obj,
+                        project,
+                        self.request,
+                        timeline=timeline,
+                        app_alerts=app_alerts,
+                    )
+                    messages.success(
+                        self.request,
+                        'iRODS data request "{}" rejected.'.format(
+                            obj.get_display_name()
+                        ),
+                    )
+                except Exception as ex:
+                    messages.error(
+                        self.request,
+                        'Rejecting iRODS data request "{}" failed: {}'.format(
+                            obj.get_display_name(), ex
+                        ),
+                    )
+
+            return redirect(
+                reverse(
+                    'samplesheets:irods_requests',
+                    kwargs={'project': self.get_project().sodar_uuid},
+                )
             )
         except Exception as ex:
-            messages.error(
-                self.request,
-                'Rejecting iRODS data request "{}" failed: {}'.format(
-                    obj.get_display_name(), ex
-                ),
+            messages.error(request, str(ex))
+            return redirect(
+                reverse(
+                    'samplesheets:irods_requests',
+                    kwargs={'project': self.get_project().sodar_uuid},
+                )
             )
-
-        messages.success(
-            self.request,
-            'iRODS data request "{}" rejected.'.format(obj.get_display_name()),
-        )
-
-        return redirect(
-            reverse(
-                'samplesheets:irods_requests',
-                kwargs={'project': project.sodar_uuid},
-            )
-        )
 
 
 class IrodsDataRequestListView(
@@ -2719,12 +2911,18 @@ class IrodsDataRequestListView(
 
     def get_context_data(self, *args, **kwargs):
         context_data = super().get_context_data(*args, **kwargs)
+        irods = get_backend_api('omics_irods')
+        with irods.get_session() as irods_session:
+            if settings.IRODS_WEBDAV_ENABLED:
+                for item in context_data['object_list']:
+                    self.get_extra_item_data(irods_session, item)
         assign = RoleAssignment.objects.filter(
             project=self.get_project(),
             user=self.request.user,
             role__name=SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR'],
         )
         context_data['is_contributor'] = bool(assign)
+        context_data['irods_webdav_enabled'] = settings.IRODS_WEBDAV_ENABLED
         return context_data
 
     def get_queryset(self):
@@ -2740,6 +2938,30 @@ class IrodsDataRequestListView(
             return queryset.filter(status__in=['ACTIVE', 'FAILED'])
         # For regular users, dispaly their own requests regardless of status
         return queryset.filter(user=self.request.user)
+
+    def build_webdav_url(self, item):
+        return '{}/{}'.format(settings.IRODS_WEBDAV_URL, item.path)
+
+    def get_extra_item_data(self, irods_session, item):
+        # Add webdav URL to the item
+        if settings.IRODS_WEBDAV_ENABLED:
+            item.webdav_url = self.build_webdav_url(item)
+        else:
+            item.webdav_url = None
+        # Check if the item is a collection
+        item.is_collection = irods_session.collections.exists(item.path)
+
+    def get(self, request, *args, **kwargs):
+        irods_backend = get_backend_api('omics_irods')
+        if not irods_backend:
+            messages.error(request, 'iRODS backend not enabled')
+            return redirect(
+                reverse(
+                    'samplesheets:project_sheets',
+                    kwargs={'project': self.get_project().sodar_uuid},
+                )
+            )
+        return super().get(request, *args, **kwargs)
 
 
 class SheetRemoteSyncView(

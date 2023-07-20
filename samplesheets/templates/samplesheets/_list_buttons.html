@@ -1,0 +1,30 @@
+<div class="btn-group ml-auto" id="sodar-ff-buttons-list">
+  {% csrf_token %}
+  <button class="btn btn-primary dropdown-toggle"
+          type="button" data-toggle="dropdown"
+          aria-haspopup="true" aria-expanded="false">
+    Request Operations
+  </button>
+  <div class="dropdown-menu dropdown-menu-right">
+
+    {# Create Request #}
+    <a href="{% url 'samplesheets:irods_request_create' project=project.sodar_uuid %}"
+         class="dropdown-item" role="button">
+       <i class="iconify" data-icon="mdi:plus-thick"></i> Create Request
+    </a>
+
+    {# Accept Selected #}
+    <a class="dropdown-item" id="sodar-ss-accept-selected"
+       href="javascript:{}"
+       onclick="sendRequest('{% url 'samplesheets:irods_request_accept_batch' project=project.sodar_uuid %}');">
+      <i class="iconify" data-icon="mdi:check-bold"></i> Accept Selected
+    </a>
+
+    {# Reject Selected #}
+    <a class="dropdown-item" id="sodar-ss-reject-selected"
+       href="javascript:{}"
+       onclick="sendRequest('{% url 'samplesheets:irods_request_reject_batch' project=project.sodar_uuid %}');">
+      <i class="iconify" data-icon="mdi:close-thick"></i> Reject Selected
+    </a>
+  </div>
+</div>

@@ -71,10 +71,7 @@
          class="btn btn-secondary mr-1" role="button">
         <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Project Sheets
       </a>
-      <a href="{% url 'samplesheets:irods_request_create' project=project.sodar_uuid %}"
-         class="btn btn-primary" role="button">
-       <i class="iconify" data-icon="mdi:plus-thick"></i> Create Request
-      </a>
+      {% include 'samplesheets/_list_buttons.html' with project=project folder=folder up=False %}
     </div>
 </div>
 
@@ -91,7 +88,16 @@
             <th>User</th>
             <th>Created</th>
             <th>Status</th>
-            <th></th>
+            {% if irods_webdav_enabled %}
+              <th></th>
+            {% endif %}
+            <th id="sodar-ss-request-header-select">
+              {% if can_manage_request %}
+                <input class="sodar-checkbox" type="checkbox"
+                       onchange="checkAll(this)" name="check_all"
+                       id="sodar-ss-request-check-all" title="Check/uncheck all" />
+              {% endif %}
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -105,6 +111,15 @@
                 {% if irods_request.description %}
                   {% get_info_link irods_request.description as info_link %}
                   {{ info_link | safe }}
+                {% endif %}
+                {% if irods_webdav_enabled %}
+                  <a href="{{ irods_request.webdav_url }}" id="sodar-ss-davrods-link"
+                     class="btn ml-1 btn-secondary sodar-list-btn pull-right"
+                     target="_blank" role="button"
+                     data-toggle="tooltip" data-placement="top"
+                     title="Open collection/file in WebDAV">
+                    <i class="iconify" data-icon="mdi:open-in-new"></i>
+                  </a>
                 {% endif %}
                 <button
                     role="submit"
@@ -153,6 +168,14 @@
                   {% endif %}
                 </div>
               </td>
+              <td>
+                {% if can_manage_request %}
+                  <input class="sodar-checkbox sodar-ss-checkbox-item" type="checkbox"
+                         id="sodar-ss-checkbox-item-{{ irods_request.sodar_uuid }}"
+                         name="batch_item_{{ irods_request.sodar_uuid }}" value="{{ irods_request.sodar_uuid }}"
+                         {% if irods_request.is_collection %}disabled{% endif %} />
+                {% endif %}
+              </td>
             </tr>
           {% endfor %}
         </tbody>
@@ -177,6 +200,8 @@
 
 {% block javascript %}
   {{ block.super }}
+
+  <script type="text/javascript" src="{% static 'samplesheets/js/irods_request.js' %}"></script>
 
   {# Tour content #}
   <script type="text/javascript">
