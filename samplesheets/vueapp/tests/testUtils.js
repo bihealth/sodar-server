@@ -96,7 +96,6 @@ export function getColDefParams (params = {}) {
 
   // Default SODAR context
   if (!ret.sodarContext) ret.sodarContext = copy(sodarContext)
-
   return ret
 }
 
@@ -120,7 +119,6 @@ export function getRowDataParams (params = {}) {
 
   // Default SODAR context
   if (!ret.sodarContext) ret.sodarContext = copy(sodarContext)
-
   return ret
 }
 

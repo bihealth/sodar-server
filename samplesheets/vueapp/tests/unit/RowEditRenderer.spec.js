@@ -15,6 +15,13 @@ import { initGridOptions } from '@/utils/gridUtils.js'
 import BootstrapVue from 'bootstrap-vue'
 import VueClipboard from 'vue-clipboard2'
 import SheetTable from '@/components/SheetTable.vue'
+import {
+  rowDeleteMsgAll,
+  rowDeleteMsgAssay,
+  rowDeleteMsgCancel,
+  rowDeleteMsgOk,
+  rowDeleteMsgUnsaved
+} from '@/components/renderers/RowEditRenderer.vue'
 import studyTablesEdit from './data/studyTablesEdit.json'
 import sheetEditConfigModified from './data/sheetEditConfigModified.json'
 
@@ -86,9 +93,15 @@ describe('RowEditRenderer.vue', () => {
     expect(wrapper.findAll('.sodar-ss-row-save-btn').length).toBe(0)
     for (let i = 0; i < buttonGroups.length; i++) {
       let disabled
-      if (i === 1 || i === 2) disabled = 'true' // Samples 0815* used in assay
+      let title = rowDeleteMsgOk
+      if (i === 1 || i === 2) { // Samples 0815* used in assay
+        disabled = 'true'
+        title = rowDeleteMsgAssay
+      }
       expect(buttonGroups.at(i).find(
         '.sodar-ss-row-delete-btn').attributes().disabled).toBe(disabled)
+      expect(buttonGroups.at(i).find(
+        '.sodar-ss-row-delete-btn').attributes().title).toBe(title)
     }
   })
 
@@ -105,9 +118,60 @@ describe('RowEditRenderer.vue', () => {
     for (let i = 0; i < buttonGroups.length; i++) {
       expect(buttonGroups.at(i).find(
         '.sodar-ss-row-delete-btn').attributes().disabled).toBe(undefined)
+      expect(buttonGroups.at(i).find(
+        '.sodar-ss-row-delete-btn').attributes().title).toBe(rowDeleteMsgOk)
     }
   })
 
+  it('renders row edit cells with unsaved row', async () => {
+    app.unsavedRow = {
+      gridUuid: '33333333-3333-3333-3333-333333333333',
+      rowId: 'row170'
+    }
+    const wrapper = mountSheetTable()
+    await waitAG(wrapper)
+    await waitRAF()
+    await waitSelector(wrapper, '.sodar-ss-row-edit-buttons', 5)
+
+    const buttonGroups = wrapper.findAll('.sodar-ss-row-edit-buttons')
+    for (let i = 0; i < buttonGroups.length; i++) {
+      expect(buttonGroups.at(i).find(
+        '.sodar-ss-row-delete-btn').attributes().disabled).toBe('true')
+      expect(buttonGroups.at(i).find(
+        '.sodar-ss-row-delete-btn').attributes().title).toBe(rowDeleteMsgUnsaved)
+    }
+  })
+
+  it('renders row edit cells with single row in table', async () => {
+    // Update assay table data to only contain the first row
+    const singleRowTable = copy(studyTablesEdit).tables.assays[assayUuid]
+    singleRowTable.table_data = [singleRowTable.table_data[0]]
+    const wrapper = mountSheetTable({ assayMode: true, table: singleRowTable })
+    await waitAG(wrapper)
+    await waitRAF()
+    await waitSelector(wrapper, '.sodar-ss-row-edit-buttons', 1)
+
+    const buttonGroup = wrapper.find('.sodar-ss-row-edit-buttons')
+    expect(buttonGroup.find(
+      '.sodar-ss-row-delete-btn').attributes().disabled).toBe('true')
+    expect(buttonGroup.find(
+      '.sodar-ss-row-delete-btn').attributes().title).toBe(rowDeleteMsgAll)
+  })
+
+  it('renders row edit cells with new row', async () => {
+    app.unsavedRow = { gridUuid: studyUuid, id: '4' }
+    const wrapper = mountSheetTable()
+    await waitAG(wrapper)
+    await waitRAF()
+    await waitSelector(wrapper, '.sodar-ss-row-edit-buttons', 5)
+
+    const buttonGroups = wrapper.findAll('.sodar-ss-row-edit-buttons')
+    expect(buttonGroups.at(4).find(
+      '.sodar-ss-row-delete-btn').attributes().disabled).toBe(undefined)
+    expect(buttonGroups.at(4).find(
+      '.sodar-ss-row-delete-btn').attributes().title).toBe(rowDeleteMsgCancel)
+  })
+
   // TODO: Test button status updating and event handling once edit helpers
-  // TODO: have been refactored (see #747)
+  //       have been refactored (see #747)
 })

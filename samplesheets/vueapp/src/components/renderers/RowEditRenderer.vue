@@ -26,6 +26,11 @@
 
 <script>
 import Vue from 'vue'
+export const rowDeleteMsgAll = 'Deleting all rows of a table is currently not supported'
+export const rowDeleteMsgAssay = 'Assay rows containing the sample must be first deleted'
+export const rowDeleteMsgCancel = 'Cancel row insertion'
+export const rowDeleteMsgOk = 'Delete row'
+export const rowDeleteMsgUnsaved = 'New row needs to be saved or cancelled'
 const nodeIdTypes = ['name', 'process_name', 'protocol']
 
 export default Vue.extend({
@@ -38,7 +43,8 @@ export default Vue.extend({
       rowNode: null,
       sampleColId: null,
       inserting: false,
-      deleting: false
+      deleting: false,
+      sampleUuid: null
     }
   },
   methods: {
@@ -103,7 +109,7 @@ export default Vue.extend({
         this.deleting = true
 
         if (this.assayMode && this.app.sodarContext.irods_status) {
-          msg += ' Note that If related sample data exists in iRODS, it ' +
+          msg += ' Note that if related sample data exists in iRODS, it ' +
             'may become unreachable.'
         }
 
@@ -188,16 +194,27 @@ export default Vue.extend({
       }
       let sampleOk = true
       if (!this.assayMode && !this.isNewRow()) {
-        const sampleUuid = this.rowNode.data[this.sampleColId].uuid
-        if (this.app.editContext.samples[sampleUuid].assays.length > 0) {
+        if (this.sampleUuid &&
+            this.app.editContext.samples[this.sampleUuid].assays.length > 0) {
           sampleOk = false
         }
       }
       return this.isNewRow() || sampleOk
     },
     getDeleteTitle () {
-      if (this.isNewRow()) return 'Cancel row insertion'
-      return 'Delete row'
+      if (this.app.updatingRow || this.app.unsavedRow) {
+        if (this.isNewRow()) return rowDeleteMsgCancel
+        return rowDeleteMsgUnsaved
+      }
+      if (!this.assayMode &&
+            this.sampleUuid &&
+            this.app.editContext.samples[this.sampleUuid].assays.length > 0) {
+        return rowDeleteMsgAssay
+      }
+      if (this.gridOptions.api.getDisplayedRowCount() < 2) {
+        return rowDeleteMsgAll
+      }
+      return rowDeleteMsgOk
     },
     getCellData (col) {
       // If referencing an existing node, only provide the UUID
@@ -344,6 +361,7 @@ export default Vue.extend({
     this.rowNode = this.params.node
     this.sampleColId = this.params.sampleColId
     this.sampleIdx = this.params.sampleIdx
+    this.sampleUuid = this.rowNode.data[this.sampleColId].uuid
   }
 })
 </script>

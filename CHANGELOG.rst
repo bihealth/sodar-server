@@ -26,6 +26,7 @@ Added
     - Enable ``stem_cell_core_sc`` ISA-Tab template (#1697)
     - Enable ``tumor_normal_dna`` ISA-Tab template (#1697)
     - General iRODS access ticket management for assay collections (#804, #1717)
+    - Disabled row delete button tooltips (#1731)
 - **Taskflowbackend**
     - ``BatchCalculateChecksumTask`` iRODS task (#1634)
     - Automated generation of missing checksums in ``zone_move`` flow (#1634)
