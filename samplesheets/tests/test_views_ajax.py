@@ -44,7 +44,7 @@ from samplesheets.tests.test_sheet_config import (
     CONFIG_STUDY_UUID,
 )
 from samplesheets.tests.test_views import (
-    TestViewsBase,
+    ViewTestBase,
     SHEET_DIR_SPECIAL,
     SHEET_PATH,
     SHEET_PATH_SMALL2,
@@ -169,7 +169,7 @@ class RowEditMixin:
                 n_uuid = self.row_uuids[i]
 
 
-class TestSheetContextAjaxView(TestViewsBase):
+class TestSheetContextAjaxView(ViewTestBase):
     """Tests for SheetContextAjaxView"""
 
     # TODO: Test with realistic ISA-Tab examples using BIH configs (see #434)
@@ -452,7 +452,7 @@ class TestSheetContextAjaxView(TestViewsBase):
         self.assertEqual(response_data['perms']['edit_config'], True)
 
 
-class TestStudyTablesAjaxView(IrodsAccessTicketMixin, TestViewsBase):
+class TestStudyTablesAjaxView(IrodsAccessTicketMixin, ViewTestBase):
     """Tests for StudyTablesAjaxView"""
 
     # TODO: Test with realistic ISA-Tab examples using BIH configs (see #434)
@@ -586,7 +586,7 @@ class TestStudyTablesAjaxView(IrodsAccessTicketMixin, TestViewsBase):
         self.assertEqual(JSONCacheItem.objects.count(), 1)
 
 
-class TestStudyLinksAjaxView(TestViewsBase):
+class TestStudyLinksAjaxView(ViewTestBase):
     """Tests for StudyLinksAjaxView"""
 
     # TODO: Test with realistic ISA-Tab examples using BIH configs (see #434)
@@ -610,7 +610,7 @@ class TestStudyLinksAjaxView(TestViewsBase):
         self.assertEqual(response.status_code, 404)  # No plugin for ISA-Tab
 
 
-class TestSheetWarningsAjaxView(TestViewsBase):
+class TestSheetWarningsAjaxView(ViewTestBase):
     """Tests for SheetWarningsAjaxView"""
 
     # TODO: Test with realistic ISA-Tab examples using BIH configs (see #434)
@@ -635,7 +635,7 @@ class TestSheetWarningsAjaxView(TestViewsBase):
         )
 
 
-class TestSheetCellEditAjaxView(TestViewsBase):
+class TestSheetCellEditAjaxView(ViewTestBase):
     """Tests for SheetCellEditAjaxView"""
 
     def setUp(self):
@@ -1246,7 +1246,7 @@ class TestSheetCellEditAjaxView(TestViewsBase):
         self.assertEqual(JSONCacheItem.objects.count(), 1)
 
 
-class TestSheetCellEditAjaxViewSpecial(TestViewsBase):
+class TestSheetCellEditAjaxViewSpecial(ViewTestBase):
     """Tests for SheetCellEditAjaxView with special columns"""
 
     def setUp(self):
@@ -1292,7 +1292,7 @@ class TestSheetCellEditAjaxViewSpecial(TestViewsBase):
         self.assertEqual(obj.extract_label, label)
 
 
-class TestSheetRowInsertAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
+class TestSheetRowInsertAjaxView(RowEditMixin, SheetConfigMixin, ViewTestBase):
     """Tests for SheetRowInsertAjaxView"""
 
     def setUp(self):
@@ -1505,7 +1505,7 @@ class TestSheetRowInsertAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
         self.assertEqual(JSONCacheItem.objects.count(), 1)
 
 
-class TestSheetRowDeleteAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
+class TestSheetRowDeleteAjaxView(RowEditMixin, SheetConfigMixin, ViewTestBase):
     """Tests for SheetRowDeleteAjaxView"""
 
     def setUp(self):
@@ -1631,7 +1631,7 @@ class TestSheetRowDeleteAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
         self.assertEqual(JSONCacheItem.objects.count(), 1)
 
 
-class TestSheetVersionSaveAjaxView(TestViewsBase):
+class TestSheetVersionSaveAjaxView(ViewTestBase):
     """Tests for SheetVersionSaveAjaxView"""
 
     def setUp(self):
@@ -1657,7 +1657,7 @@ class TestSheetVersionSaveAjaxView(TestViewsBase):
         self.assertEqual(new_version.description, VERSION_DESC)
 
 
-class TestSheetEditFinishAjaxView(TestViewsBase):
+class TestSheetEditFinishAjaxView(ViewTestBase):
     """Tests for SheetEditFinishAjaxView"""
 
     def setUp(self):
@@ -1711,7 +1711,7 @@ class TestSheetEditFinishAjaxView(TestViewsBase):
         self.assertEqual(ISATab.objects.count(), 1)
 
 
-class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
+class TestSheetEditConfigAjaxView(SheetConfigMixin, ViewTestBase):
     """Tests for SheetEditConfigAjaxView"""
 
     # TODO: Test with assay updates (needs a better test ISA-Tab)
@@ -1948,7 +1948,7 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
         self.assertEqual(JSONCacheItem.objects.count(), 1)
 
 
-class TestStudyDisplayConfigAjaxView(SheetConfigMixin, TestViewsBase):
+class TestStudyDisplayConfigAjaxView(SheetConfigMixin, ViewTestBase):
     """Tests for StudyDisplayConfigAjaxView"""
 
     def setUp(self):
@@ -2070,7 +2070,7 @@ class TestStudyDisplayConfigAjaxView(SheetConfigMixin, TestViewsBase):
         )
 
 
-class TestSheetVersionCompareAjaxView(SheetImportMixin, TestViewsBase):
+class TestSheetVersionCompareAjaxView(SheetImportMixin, ViewTestBase):
     """Tests for SheetVersionCompareAjaxView"""
 
     def setUp(self):

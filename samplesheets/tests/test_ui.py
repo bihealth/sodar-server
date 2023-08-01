@@ -1,6 +1,7 @@
 """UI tests for the samplesheets app"""
 
 import json
+import os
 
 from cubi_isa_templates import _TEMPLATES as ISA_TEMPLATES
 from datetime import timedelta
@@ -22,13 +23,16 @@ from projectroles.tests.test_ui import TestUIBase
 from samplesheets.constants import HIDDEN_SHEET_TEMPLATE_FIELDS
 from samplesheets.models import (
     ISATab,
-    IRODS_DATA_REQUEST_STATUS_CHOICES,
     Investigation,
+    IRODS_REQUEST_ACTION_DELETE,
+    IRODS_REQUEST_STATUS_ACTIVE,
 )
+
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_models import (
     IrodsAccessTicketMixin,
     IrodsDataRequestMixin,
+    IRODS_REQUEST_DESC,
 )
 from samplesheets.tests.test_sheet_config import (
     SheetConfigMixin,
@@ -47,6 +51,8 @@ app_settings = AppSettingAPI()
 # Local constants
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 DEFAULT_WAIT_ID = 'sodar-ss-vue-content'
+IRODS_REQUEST_PATH = '/some/path/to/a/file'
+
 with open(CONFIG_PATH_DEFAULT) as fp:
     CONFIG_DATA_DEFAULT = json.load(fp)
 with open(CONFIG_PATH_UPDATED) as fp:
@@ -149,11 +155,13 @@ class TestProjectSheetsView(IrodsDataRequestMixin, TestProjectSheetsUIBase):
         irods_backend = get_backend_api('omics_irods')
         self.investigation.irods_status = True
         self.investigation.save()
-        self.make_irods_data_request(
+        self.make_irods_request(
             project=self.project,
-            action='delete',
-            path=irods_backend.get_path(self.assay) + '/test/xxx.bam',
-            status='ACTIVE',
+            action=IRODS_REQUEST_ACTION_DELETE,
+            path=os.path.join(
+                irods_backend.get_path(self.assay), 'test', 'xxx.bam'
+            ),
+            status=IRODS_REQUEST_STATUS_ACTIVE,
             user=self.user_contributor,
         )
         users = [
@@ -394,7 +402,7 @@ class TestIrodsAccessTicketUpdateView(
             self.selenium.find_element(By.ID, 'sodar-ss-alert-ticket-create')
 
 
-class TestIrodsRequestCreateView(TestProjectSheetsUIBase):
+class TestIrodsDataRequestCreateView(TestProjectSheetsUIBase):
     """Tests for iRODS request create view UI"""
 
     def setUp(self):
@@ -414,28 +422,24 @@ class TestIrodsRequestCreateView(TestProjectSheetsUIBase):
         )
 
 
-class TestIrodsRequestUpdateView(
+class TestIrodsDataRequestUpdateView(
     IrodsDataRequestMixin, TestProjectSheetsUIBase
 ):
     """Tests for irods request update view UI"""
 
     def setUp(self):
         super().setUp()
-        self.action = 'delete'
-        self.description = 'description'
-        self.status = IRODS_DATA_REQUEST_STATUS_CHOICES[0][0]
-        self.path = '/some/path/to/a/file'
-        self.irods_data_request = self.make_irods_data_request(
+        self.request = self.make_irods_request(
             project=self.project,
-            action=self.action,
-            status=self.status,
-            path=self.path,
-            description=self.description,
+            action=IRODS_REQUEST_ACTION_DELETE,
+            status=IRODS_REQUEST_STATUS_ACTIVE,
+            path=IRODS_REQUEST_PATH,
+            description=IRODS_REQUEST_DESC,
             user=self.user_contributor,
         )
         self.url = reverse(
             'samplesheets:irods_request_update',
-            kwargs={'irodsdatarequest': self.irods_data_request.sodar_uuid},
+            kwargs={'irodsdatarequest': self.request.sodar_uuid},
         )
 
     def test_render_form(self):
@@ -448,28 +452,24 @@ class TestIrodsRequestUpdateView(
         )
 
 
-class TestIrodsRequestDeleteView(
+class TestIrodsDataRequestDeleteView(
     IrodsDataRequestMixin, TestProjectSheetsUIBase
 ):
     """Tests for iRODS request delete view UI"""
 
     def setUp(self):
         super().setUp()
-        self.action = 'delete'
-        self.description = 'description'
-        self.status = IRODS_DATA_REQUEST_STATUS_CHOICES[0][0]
-        self.path = '/some/path/to/a/file'
-        self.irods_data_request = self.make_irods_data_request(
+        self.request = self.make_irods_request(
             project=self.project,
-            action=self.action,
-            status=self.status,
-            path=self.path,
-            description=self.description,
+            action=IRODS_REQUEST_ACTION_DELETE,
+            status=IRODS_REQUEST_STATUS_ACTIVE,
+            path=IRODS_REQUEST_PATH,
+            description=IRODS_REQUEST_DESC,
             user=self.user_contributor,
         )
         self.url = reverse(
             'samplesheets:irods_request_delete',
-            kwargs={'irodsdatarequest': self.irods_data_request.sodar_uuid},
+            kwargs={'irodsdatarequest': self.request.sodar_uuid},
         )
 
     def test_render(self):
@@ -482,28 +482,24 @@ class TestIrodsRequestDeleteView(
         )
 
 
-class TestIrodsRequestAcceptView(
+class TestIrodsDataRequestAcceptView(
     IrodsDataRequestMixin, TestProjectSheetsUIBase
 ):
     """Tests for iRODS request accept view UI"""
 
     def setUp(self):
         super().setUp()
-        self.action = 'delete'
-        self.description = 'description'
-        self.status = IRODS_DATA_REQUEST_STATUS_CHOICES[0][0]
-        self.path = '/some/path/to/a/file'
-        self.irods_data_request = self.make_irods_data_request(
+        self.request = self.make_irods_request(
             project=self.project,
-            action=self.action,
-            status=self.status,
-            path=self.path,
-            description=self.description,
+            action=IRODS_REQUEST_ACTION_DELETE,
+            status=IRODS_REQUEST_STATUS_ACTIVE,
+            path=IRODS_REQUEST_PATH,
+            description=IRODS_REQUEST_DESC,
             user=self.user_contributor,
         )
         self.url = reverse(
             'samplesheets:irods_request_accept',
-            kwargs={'irodsdatarequest': self.irods_data_request.sodar_uuid},
+            kwargs={'irodsdatarequest': self.request.sodar_uuid},
         )
 
     def test_render(self):
@@ -513,21 +509,19 @@ class TestIrodsRequestAcceptView(
         )
 
 
-class TestIrodsRequestListView(IrodsDataRequestMixin, TestProjectSheetsUIBase):
+class TestIrodsDataRequestListView(
+    IrodsDataRequestMixin, TestProjectSheetsUIBase
+):
     """Tests for iRODS request reject view UI"""
 
     def setUp(self):
         super().setUp()
-        self.action = 'delete'
-        self.description = 'description'
-        self.status = IRODS_DATA_REQUEST_STATUS_CHOICES[0][0]
-        self.path = '/some/path/to/a/file'
-        self.irods_data_request = self.make_irods_data_request(
+        self.request = self.make_irods_request(
             project=self.project,
-            action=self.action,
-            status=self.status,
-            path=self.path,
-            description=self.description,
+            action=IRODS_REQUEST_ACTION_DELETE,
+            status=IRODS_REQUEST_STATUS_ACTIVE,
+            path=IRODS_REQUEST_PATH,
+            description=IRODS_REQUEST_DESC,
             user=self.user_contributor,
         )
         self.url = reverse(

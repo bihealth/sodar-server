@@ -36,7 +36,14 @@ from landingzones.tests.test_models import LandingZoneMixin
 
 from samplesheets.forms import TPL_DIR_FIELD
 from samplesheets.io import SampleSheetIO
-from samplesheets.models import Investigation, Assay, ISATab
+from samplesheets.models import (
+    Investigation,
+    Assay,
+    ISATab,
+    IrodsDataRequest,
+    IRODS_REQUEST_ACTION_DELETE,
+    IRODS_REQUEST_STATUS_ACTIVE,
+)
 from samplesheets.rendering import (
     SampleSheetTableBuilder,
     STUDY_TABLE_CACHE_ITEM,
@@ -47,7 +54,10 @@ from samplesheets.tests.test_io import (
     SHEET_DIR,
     SHEET_DIR_SPECIAL,
 )
-from samplesheets.tests.test_models import SampleSheetModelMixin
+from samplesheets.tests.test_models import (
+    SampleSheetModelMixin,
+    IrodsDataRequestMixin,
+)
 from samplesheets.tests.test_sheet_config import CONFIG_PATH_DEFAULT
 
 # TODO: This should not be required (see issue #1578)
@@ -109,18 +119,19 @@ REMOTE_SITE_DESC = 'description'
 REMOTE_SITE_SECRET = build_secret()
 EDIT_NEW_VALUE_STR = 'edited value'
 DUMMY_UUID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
+IRODS_BACKEND_SKIP_MSG = 'iRODS backend not enabled in settings'
+IRODS_FILE_PATH = '/sodarZone/path/test1.txt'
 with open(CONFIG_PATH_DEFAULT) as fp:
     CONFIG_DATA_DEFAULT = json.load(fp)
 IRODS_BACKEND_ENABLED = (
     True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
 )
-IRODS_BACKEND_SKIP_MSG = 'iRODS backend not enabled in settings'
 
 
 # TODO: Add testing for study table cache updates
 
 
-class TestViewsBase(
+class ViewTestBase(
     ProjectMixin, RoleMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase
 ):
     """Base view for samplesheets views tests"""
@@ -159,7 +170,7 @@ class TestViewsBase(
         )
 
 
-class TestProjectSheetsView(TestViewsBase):
+class TestProjectSheetsView(ViewTestBase):
     """Tests for the project sheets view"""
 
     def setUp(self):
@@ -187,7 +198,7 @@ class TestProjectSheetsView(TestViewsBase):
         self.assertNotIn('tables', response.context)
 
 
-class TestSheetImportView(SheetImportMixin, LandingZoneMixin, TestViewsBase):
+class TestSheetImportView(SheetImportMixin, LandingZoneMixin, ViewTestBase):
     """Tests for the investigation import view"""
 
     def setUp(self):
@@ -654,7 +665,7 @@ class TestSheetImportView(SheetImportMixin, LandingZoneMixin, TestViewsBase):
         )
 
 
-class TestSheetTemplateSelectView(TestViewsBase):
+class TestSheetTemplateSelectView(ViewTestBase):
     """Tests for SheetTemplateSelectView"""
 
     def test_render(self):
@@ -691,7 +702,7 @@ class TestSheetTemplateSelectView(TestViewsBase):
             )
 
 
-class TestSheetTemplateCreateFormView(TestViewsBase):
+class TestSheetTemplateCreateFormView(ViewTestBase):
     """Tests for SheetTemplateCreateFormView"""
 
     def _get_post_data(self, tpl_name):
@@ -808,7 +819,7 @@ class TestSheetTemplateCreateFormView(TestViewsBase):
             self.assertEqual(self.project.investigations.count(), 1)
 
 
-class TestSheetExcelExportView(TestViewsBase):
+class TestSheetExcelExportView(ViewTestBase):
     """Tests for the sample sheet Excel export view"""
 
     def setUp(self):
@@ -852,7 +863,7 @@ class TestSheetExcelExportView(TestViewsBase):
         self.assertEqual(tl_event.event_name, 'sheet_export_excel')
 
 
-class TestSheetISAExportView(TestViewsBase):
+class TestSheetISAExportView(ViewTestBase):
     """Tests for the investigation ISA-Tab export view"""
 
     def setUp(self):
@@ -919,7 +930,7 @@ class TestSheetISAExportView(TestViewsBase):
         )
 
 
-class TestSheetDeleteView(TestViewsBase):
+class TestSheetDeleteView(ViewTestBase):
     """Tests for the investigation delete view"""
 
     def setUp(self):
@@ -1045,7 +1056,7 @@ class TestSheetDeleteView(TestViewsBase):
         self.assertEqual(JSONCacheItem.objects.count(), 0)
 
 
-class TestSheetVersionListView(TestViewsBase):
+class TestSheetVersionListView(ViewTestBase):
     """Tests for the sample sheet version list view"""
 
     def test_render(self):
@@ -1087,7 +1098,7 @@ class TestSheetVersionListView(TestViewsBase):
         self.assertIsNone(response.context['current_version'])
 
 
-class TestSheetVersionRestoreView(TestViewsBase):
+class TestSheetVersionRestoreView(ViewTestBase):
     """Tests for the sample sheet version restore view"""
 
     def setUp(self):
@@ -1173,7 +1184,7 @@ class TestSheetVersionRestoreView(TestViewsBase):
         self.assertEqual(JSONCacheItem.objects.count(), 1)
 
 
-class TestSheetVersionUpdateView(TestViewsBase):
+class TestSheetVersionUpdateView(ViewTestBase):
     """Tests for the sample sheet version update view"""
 
     def setUp(self):
@@ -1218,7 +1229,7 @@ class TestSheetVersionUpdateView(TestViewsBase):
         self.assertEqual(self.isatab.date_created, date_created)
 
 
-class TestSheetVersionDeleteView(TestViewsBase):
+class TestSheetVersionDeleteView(ViewTestBase):
     """Tests for the sample sheet version delete view"""
 
     def setUp(self):
@@ -1256,7 +1267,7 @@ class TestSheetVersionDeleteView(TestViewsBase):
         self.assertEqual(ISATab.objects.count(), 0)
 
 
-class TestSheetVersionDeleteBatchView(SampleSheetModelMixin, TestViewsBase):
+class TestSheetVersionDeleteBatchView(SampleSheetModelMixin, ViewTestBase):
     """Tests for the sample sheet version batch delete view"""
 
     def setUp(self):
@@ -1323,7 +1334,7 @@ class TestSheetVersionDeleteBatchView(SampleSheetModelMixin, TestViewsBase):
         self.assertEqual(ISATab.objects.count(), 0)
 
 
-class TestProjectSearchResultsView(TestViewsBase):
+class TestProjectSearchResultsView(ViewTestBase):
     """Tests for ProjectSearchResultsView view with sample sheet input"""
 
     def _get_items(self, response):
@@ -1431,7 +1442,7 @@ class TestProjectSearchResultsView(TestViewsBase):
         self.assertEqual(len(items), 2)
 
 
-class TestSheetVersionCompareView(TestViewsBase):
+class TestSheetVersionCompareView(ViewTestBase):
     """Tests for the SheetVersionCompareView"""
 
     def setUp(self):
@@ -1490,7 +1501,7 @@ class TestSheetVersionCompareView(TestViewsBase):
         self.assertRedirects(response, reverse('home'))
 
 
-class TestSheetVersionCompareFileView(TestViewsBase):
+class TestSheetVersionCompareFileView(ViewTestBase):
     """Tests for the SheetVersionCompareFileView"""
 
     def setUp(self):
@@ -1553,6 +1564,86 @@ class TestSheetVersionCompareFileView(TestViewsBase):
                 follow=True,
             )
         self.assertRedirects(response, reverse('home'))
+
+
+class TestIrodsDataRequestListView(IrodsDataRequestMixin, ViewTestBase):
+    """Tests for IrodsDataRequestListView"""
+
+    def test_list(self):
+        """Test GET request for listing delete requests"""
+        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+        request = self.make_irods_request(
+            project=self.project,
+            action=IRODS_REQUEST_ACTION_DELETE,
+            path=IRODS_FILE_PATH,
+            status=IRODS_REQUEST_STATUS_ACTIVE,
+            user=self.user,
+        )
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:irods_requests',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['object_list']), 1)
+        self.assertEqual(response.context['object_list'][0], request)
+
+    def test_list_as_contributor_by_superuser(self):
+        """Test GET as contibutor with request created by superuser"""
+        self.make_irods_request(
+            project=self.project,
+            action=IRODS_REQUEST_ACTION_DELETE,
+            path=IRODS_FILE_PATH,
+            status=IRODS_REQUEST_STATUS_ACTIVE,
+            user=self.user,
+        )
+        with self.login(self.user_contributor):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:irods_requests',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['object_list']), 0)
+
+    def test_list_as_contributor2_by_contributor(self):
+        """Test GET as contributor2 with request created by contributor"""
+        user_contributor2 = self.make_user('user_contributor2')
+        self.make_assignment(
+            self.project, user_contributor2, self.role_contributor
+        )
+        self.make_irods_request(
+            project=self.project,
+            action=IRODS_REQUEST_ACTION_DELETE,
+            path=IRODS_FILE_PATH,
+            status=IRODS_REQUEST_STATUS_ACTIVE,
+            user=self.user_contributor,
+        )
+        with self.login(user_contributor2):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:irods_requests',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['object_list']), 0)
+
+    def test_list_empty(self):
+        """Test GET request for empty list of delete requests"""
+        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:irods_requests',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['object_list']), 0)
 
 
 class TestSheetRemoteSyncBase(

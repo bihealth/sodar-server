@@ -67,11 +67,11 @@ ISATAB_TAGS = {
     'REPLACE': 'Replacing a previous ISA-Tab',
 }
 
-IRODS_DATA_REQUEST_STATUS_CHOICES = [
-    ('ACTIVE', 'active'),
-    ('ACCEPTED', 'accepted'),
-    ('FAILED', 'failed'),
-]
+IRODS_REQUEST_ACTION_DELETE = 'DELETE'
+IRODS_REQUEST_STATUS_ACCEPTED = 'ACCEPTED'
+IRODS_REQUEST_STATUS_ACTIVE = 'ACTIVE'
+IRODS_REQUEST_STATUS_FAILED = 'FAILED'
+IRODS_REQUEST_STATUS_REJECTED = 'REJECTED'
 
 # ISA-Tab SODAR metadata comment key for assay plugin override
 ISA_META_ASSAY_PLUGIN = 'SODAR Assay Plugin'
@@ -1266,16 +1266,16 @@ class IrodsDataRequest(models.Model):
         Project,
         null=False,
         related_name='irods_data_request',
-        help_text='Project to which the iRODS delete request belongs',
+        help_text='Project to which the iRODS data request belongs',
         on_delete=models.CASCADE,
     )
 
-    #: Action to be performed (default currently supported)
+    #: Action to be performed (only DELETE is currently supported)
     action = models.CharField(
         max_length=64,
         unique=False,
         blank=False,
-        default='delete',
+        default=IRODS_REQUEST_ACTION_DELETE,
         help_text='Action to be performed',
     )
 
@@ -1309,8 +1309,7 @@ class IrodsDataRequest(models.Model):
     status = models.CharField(
         max_length=16,
         null=False,
-        choices=IRODS_DATA_REQUEST_STATUS_CHOICES,
-        default=IRODS_DATA_REQUEST_STATUS_CHOICES[0][0],
+        default=IRODS_REQUEST_STATUS_ACTIVE,
         help_text='Status of the request',
     )
 
@@ -1321,7 +1320,10 @@ class IrodsDataRequest(models.Model):
 
     #: Request description (optional)
     description = models.CharField(
-        max_length=1024, help_text='Request description'
+        blank=True,
+        null=True,
+        max_length=1024,
+        help_text='Request description (optional)',
     )
 
     #: DateTime of request creation
@@ -1348,6 +1350,33 @@ class IrodsDataRequest(models.Model):
             self.user.username,
         )
         return 'IrodsDataRequest({})'.format(', '.join(repr(v) for v in values))
+
+    # Saving and validation
+
+    def save(self, *args, **kwargs):
+        """Custom validation and saving method"""
+        self._validate_action()
+        self._validate_status()
+        super().save(*args, **kwargs)
+
+    def _validate_action(self):
+        """Validate the action field"""
+        if self.action != IRODS_REQUEST_ACTION_DELETE:
+            raise ValidationError(
+                'This model currently only supports the action "{}"'.format(
+                    IRODS_REQUEST_ACTION_DELETE
+                )
+            )
+
+    def _validate_status(self):
+        """Validate the status field"""
+        if self.status not in [
+            IRODS_REQUEST_STATUS_ACCEPTED,
+            IRODS_REQUEST_STATUS_ACTIVE,
+            IRODS_REQUEST_STATUS_FAILED,
+            IRODS_REQUEST_STATUS_REJECTED,
+        ]:
+            raise ValidationError('Unknown status "{}"'.format(self.status))
 
     # Custom row-level functions
 

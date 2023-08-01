@@ -26,6 +26,8 @@ from samplesheets.models import (
     ISATab,
     IrodsAccessTicket,
     IrodsDataRequest,
+    IRODS_REQUEST_STATUS_ACTIVE,
+    IRODS_REQUEST_STATUS_FAILED,
 )
 
 
@@ -33,6 +35,9 @@ from samplesheets.models import (
 ERROR_MSG_INVALID_PATH = 'Not a valid iRODS path for this project'
 ERROR_MSG_EXISTING = 'An active request already exists for this path'
 TPL_DIR_FIELD = '__output_dir'
+
+
+# Mixins and Helpers -----------------------------------------------------------
 
 
 class MultipleFileInput(forms.ClearableFileInput):
@@ -51,6 +56,72 @@ class MultipleFileField(forms.FileField):
         else:
             result = single_file_clean(data, initial)
         return result
+
+
+class IrodsDataRequestValidateMixin:
+    """Validation helpers for iRODS data requests"""
+
+    def validate_request_path(self, irods_backend, project, instance, path):
+        """
+        Validate path for IrodsAccessRequest.
+
+        :param irods_backend: IrodsAPI object
+        :param project: Project object
+        :param instance: Existing instance in case of update or None
+        :param path: Full iRODS path to a collection or a data object (string)
+        :raises: ValueError if path is incorrect
+        """
+        old_request = IrodsDataRequest.objects.filter(
+            path=path,
+            status__in=[
+                IRODS_REQUEST_STATUS_ACTIVE,
+                IRODS_REQUEST_STATUS_FAILED,
+            ],
+        ).first()
+        if old_request and old_request != instance:
+            raise ValueError(ERROR_MSG_EXISTING)
+
+        path_re = re.compile(
+            '^' + irods_backend.get_projects_path() + '/[0-9a-f]{2}/'
+            '(?P<project_uuid>[0-9a-f-]{36})/'
+            + settings.IRODS_SAMPLE_COLL
+            + '/study_(?P<study_uuid>[0-9a-f-]{36})/'
+            'assay_(?P<assay_uuid>[0-9a-f-]{36})/.+$'
+        )
+        match = re.search(path_re, path)
+        if not match:
+            raise ValueError(ERROR_MSG_INVALID_PATH)
+
+        project_path = irods_backend.get_path(project)
+        if not path.startswith(project_path):
+            raise ValueError('Path does not belong in project')
+
+        try:
+            Study.objects.get(
+                sodar_uuid=match.group('study_uuid'),
+                investigation__project__sodar_uuid=match.group('project_uuid'),
+            )
+        except Study.DoesNotExist:
+            raise ValueError('Study not found in project with UUID')
+        try:
+            Assay.objects.get(
+                sodar_uuid=match.group('assay_uuid'),
+                study__sodar_uuid=match.group('study_uuid'),
+            )
+        except Assay.DoesNotExist:
+            raise ValueError('Assay not found in this project with UUID')
+
+        with irods_backend.get_session() as irods:
+            if path and not (
+                irods.data_objects.exists(path)
+                or irods.collections.exists(path)
+            ):
+                raise ValueError(
+                    'Path to collection or data object doesn\'t exist in iRODS',
+                )
+
+
+# Forms ------------------------------------------------------------------------
 
 
 class SheetImportForm(forms.Form):
@@ -154,7 +225,7 @@ class SheetImportForm(forms.Form):
 
 
 class SheetTemplateCreateForm(forms.Form):
-    """Form for creating sample sheets from an ISA-Tab template."""
+    """Form for creating sample sheets from an ISA-Tab template"""
 
     @classmethod
     def _get_tsv_data(cls, path, file_names):
@@ -378,84 +449,34 @@ class IrodsAccessTicketForm(forms.ModelForm):
         return self.cleaned_data
 
 
-class IrodsRequestForm(forms.ModelForm):
-    """Form for the iRODS delete request creation and editing"""
+class IrodsDataRequestForm(IrodsDataRequestValidateMixin, forms.ModelForm):
+    """Form for iRODS data request creation and editing"""
 
     class Meta:
         model = IrodsDataRequest
         fields = ['path', 'description']
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, project=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if project:
+            self.project = Project.objects.filter(sodar_uuid=project).first()
         self.fields['description'].required = False
 
     def clean(self):
         cleaned_data = super().clean()
         irods_backend = get_backend_api('omics_irods')
-        # Remove trailing slashes as irodspython client does not recognize
-        # this as a collection
-        cleaned_data['path'] = cleaned_data['path'].rstrip('/')
-
-        old_request = IrodsDataRequest.objects.filter(
-            path=cleaned_data['path'], status__in=['ACTIVE', 'FAILED']
-        ).first()
-        if old_request and old_request != self.instance:
-            self.add_error('path', ERROR_MSG_EXISTING)
-            return cleaned_data
-
-        path_re = re.compile(
-            '^' + irods_backend.get_projects_path() + '/[0-9a-f]{2}/'
-            '(?P<project_uuid>[0-9a-f-]{36})/'
-            + settings.IRODS_SAMPLE_COLL
-            + '/study_(?P<study_uuid>[0-9a-f-]{36})/'
-            'assay_(?P<assay_uuid>[0-9a-f-]{36})/.+$'
-        )
-        match = re.search(
-            path_re,
-            cleaned_data['path'],
-        )
-        if not match:
-            self.add_error('path', ERROR_MSG_INVALID_PATH)
-        else:
-            try:
-                cleaned_data['project'] = Project.objects.get(
-                    sodar_uuid=match.group('project_uuid')
-                )
-            except Project.DoesNotExist:
-                self.add_error('path', 'Project not found')
-            try:
-                Study.objects.get(
-                    sodar_uuid=match.group('study_uuid'),
-                    investigation__project__sodar_uuid=match.group(
-                        'project_uuid'
-                    ),
-                )
-            except Study.DoesNotExist:
-                self.add_error('path', 'Study not found in project with UUID')
-            try:
-                Assay.objects.get(
-                    sodar_uuid=match.group('assay_uuid'),
-                    study__sodar_uuid=match.group('study_uuid'),
-                )
-            except Assay.DoesNotExist:
-                self.add_error(
-                    'path', 'Assay not found in this project with UUID'
-                )
-
-        with irods_backend.get_session() as irods:
-            if 'path' in cleaned_data and not (
-                irods.data_objects.exists(cleaned_data['path'])
-                or irods.collections.exists(cleaned_data['path'])
-            ):
-                self.add_error(
-                    'path',
-                    'Path to collection or data object doesn\'t exist in iRODS',
-                )
+        cleaned_data['path'] = irods_backend.sanitize_path(cleaned_data['path'])
+        try:
+            self.validate_request_path(
+                irods_backend, self.project, self.instance, cleaned_data['path']
+            )
+        except Exception as ex:
+            self.add_error('path', str(ex))
         return cleaned_data
 
 
-class IrodsRequestAcceptForm(forms.Form):
-    """Form accepting an iRODS delete request."""
+class IrodsDataRequestAcceptForm(forms.Form):
+    """Form for accepting an iRODS data request"""
 
     confirm = forms.BooleanField(required=True)
 
@@ -468,7 +489,7 @@ class IrodsRequestAcceptForm(forms.Form):
 
 
 class SheetVersionEditForm(forms.ModelForm):
-    """Form for editing a saved ISA-Tab version of the sample sheets."""
+    """Form for editing a saved ISA-Tab version of sample sheets"""
 
     class Meta:
         model = ISATab

@@ -12,15 +12,23 @@ from projectroles.models import SODAR_CONSTANTS
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import TaskflowViewTestBase
 
-from samplesheets.models import GenericMaterial, IrodsDataRequest
+from samplesheets.models import (
+    GenericMaterial,
+    IrodsDataRequest,
+    IRODS_REQUEST_ACTION_DELETE,
+    IRODS_REQUEST_STATUS_ACTIVE,
+)
 from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
+from samplesheets.tests.test_models import IrodsDataRequestMixin
 from samplesheets.tests.test_views_taskflow import (
-    TestIrodsRequestViewsBase,
+    IrodsDataRequestViewTestBase,
     SampleSheetTaskflowMixin,
-    TEST_FILE_NAME2,
+    IRODS_FILE_NAME,
+    IRODS_FILE_NAME2,
+    SHEET_PATH,
 )
-from samplesheets.views import IRODS_REQ_CREATE_ALERT as CREATE_ALERT
+from samplesheets.views import IRODS_REQUEST_EVENT_CREATE as CREATE_ALERT
 from samplesheets.views_ajax import ALERT_LIB_FILES_EXIST
 
 
@@ -218,8 +226,8 @@ class TestSheetCellEditAjaxView(
         )
 
 
-class TestIrodsRequestCreateAjaxView(TestIrodsRequestViewsBase):
-    """Tests for IrodsRequestCreateAjaxView"""
+class TestIrodsDataRequestCreateAjaxView(IrodsDataRequestViewTestBase):
+    """Tests for IrodsDataRequestCreateAjaxView"""
 
     def test_create_request(self):
         """Test creating a delete request on a data object"""
@@ -303,6 +311,10 @@ class TestIrodsRequestCreateAjaxView(TestIrodsRequestViewsBase):
 
     def test_create_exists_as_contributor_by_contributor2(self):
         """Test creating as contributor if request by contributor2 exists"""
+        user_contributor2 = self.make_user('user_contributor2')
+        self.make_assignment_taskflow(
+            self.project, user_contributor2, self.role_contributor
+        )
         with self.login(self.user_contrib):
             self.client.post(
                 reverse(
@@ -314,7 +326,7 @@ class TestIrodsRequestCreateAjaxView(TestIrodsRequestViewsBase):
 
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
 
-        with self.login(self.user_contrib2):
+        with self.login(user_contributor2):
             response = self.client.post(
                 reverse(
                     'samplesheets:ajax_irods_request_create',
@@ -330,8 +342,8 @@ class TestIrodsRequestCreateAjaxView(TestIrodsRequestViewsBase):
 
     def test_create_multiple(self):
         """Test creating multiple delete requests"""
-        path2 = os.path.join(self.assay_path, TEST_FILE_NAME2)
-        path2_md5 = os.path.join(self.assay_path, TEST_FILE_NAME2 + '.md5')
+        path2 = os.path.join(self.assay_path, IRODS_FILE_NAME2)
+        path2_md5 = os.path.join(self.assay_path, IRODS_FILE_NAME2 + '.md5')
         self.irods.data_objects.create(path2)
         self.irods.data_objects.create(path2_md5)
 
@@ -362,8 +374,8 @@ class TestIrodsRequestCreateAjaxView(TestIrodsRequestViewsBase):
         self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
 
 
-class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
-    """Tests for IrodsRequestDeleteAjaxView"""
+class TestIrodsDataRequestDeleteAjaxView(IrodsDataRequestViewTestBase):
+    """Tests for IrodsDataRequestDeleteAjaxView"""
 
     def test_delete_request(self):
         """Test GET request for deleting an existing delete request"""
@@ -428,6 +440,10 @@ class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
 
     def test_delete_request_as_contributor_by_contributor2(self):
         """Test GET request for deleting an existing delete request"""
+        user_contributor2 = self.make_user('user_contributor2')
+        self.make_assignment_taskflow(
+            self.project, user_contributor2, self.role_contributor
+        )
         with self.login(self.user_contrib):
             self.client.post(
                 reverse(
@@ -440,7 +456,7 @@ class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
 
         # Delete request
-        with self.login(self.user_contrib2):
+        with self.login(user_contributor2):
             response = self.client.post(
                 reverse(
                     'samplesheets:ajax_irods_request_delete',
@@ -473,8 +489,8 @@ class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
 
     def test_delete_one_of_multiple(self):
         """Test deleting one of multiple requests"""
-        path2 = os.path.join(self.assay_path, TEST_FILE_NAME2)
-        path2_md5 = os.path.join(self.assay_path, TEST_FILE_NAME2 + '.md5')
+        path2 = os.path.join(self.assay_path, IRODS_FILE_NAME2)
+        path2_md5 = os.path.join(self.assay_path, IRODS_FILE_NAME2 + '.md5')
         self.irods.data_objects.create(path2)
         self.irods.data_objects.create(path2_md5)
 
@@ -515,23 +531,33 @@ class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
             self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
 
 
-class TestIrodsObjectListAjaxView(TestIrodsRequestViewsBase):
+class TestIrodsObjectListAjaxView(
+    SampleSheetIOMixin,
+    SampleSheetTaskflowMixin,
+    IrodsDataRequestMixin,
+    TaskflowViewTestBase,
+):
     """Tests for IrodsObjectListAjaxView"""
+
+    def setUp(self):
+        super().setUp()
+        # Make project with owner in Taskflow and Django
+        self.project, self.owner_as = self.make_project_taskflow(
+            title='TestProject',
+            type=PROJECT_TYPE_PROJECT,
+            parent=self.category,
+            owner=self.user,
+            description='description',
+        )
+        # Import investigation
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+        self.assay_path = self.irods_backend.get_path(self.assay)
+        self.make_irods_colls(self.investigation)
 
     def test_get_empty_coll(self):
         """Test GET request for listing an empty collection in iRODS"""
-        self.irods.data_objects.unlink(self.obj_path, force=True)
-        self.irods.data_objects.unlink(self.obj_path_md5, force=True)
-        self.irods.data_objects.unlink(self.obj_path2, force=True)
-        self.irods.data_objects.unlink(self.obj_path2_md5, force=True)
-        self.assertEqual(self.irods.data_objects.exists(self.obj_path), False)
-        self.assertEqual(
-            self.irods.data_objects.exists(self.obj_path_md5), False
-        )
-        self.assertEqual(self.irods.data_objects.exists(self.obj_path2), False)
-        self.assertEqual(
-            self.irods.data_objects.exists(self.obj_path2_md5), False
-        )
         with self.login(self.user):
             response = self.client.get(
                 reverse(
@@ -545,6 +571,8 @@ class TestIrodsObjectListAjaxView(TestIrodsRequestViewsBase):
 
     def test_get_coll_obj(self):
         """Test GET request for listing a collection with a data object"""
+        obj_path = os.path.join(self.assay_path, IRODS_FILE_NAME)
+        file_obj = self.irods.data_objects.create(obj_path)
         with self.login(self.user):
             response = self.client.get(
                 reverse(
@@ -554,12 +582,12 @@ class TestIrodsObjectListAjaxView(TestIrodsRequestViewsBase):
                 data={'path': self.assay_path},
             )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data['irods_data']), 2)
+        self.assertEqual(len(response.data['irods_data']), 1)
         list_obj = response.data['irods_data'][0]
         self.assertNotIn('md5_file', list_obj)
-        self.assertEqual(self.file_obj.name, list_obj['name'])
-        self.assertEqual(self.file_obj.path, list_obj['path'])
-        self.assertEqual(self.file_obj.size, 0)
+        self.assertEqual(file_obj.name, list_obj['name'])
+        self.assertEqual(file_obj.path, list_obj['path'])
+        self.assertEqual(file_obj.size, 0)
 
     def test_get_invalid_path(self):
         """Test GET request with invalid path"""
@@ -604,11 +632,11 @@ class TestIrodsObjectListAjaxView(TestIrodsRequestViewsBase):
 
     def test_get_no_access(self):
         """Test GET request for listing with no acces for the iRODS folder"""
-        new_user = self.make_user('new_user')
+        user_new = self.make_user('user_new')
         self.make_assignment(
-            self.project, new_user, self.role_contributor
+            self.project, user_new, self.role_contributor
         )  # No taskflow
-        with self.login(new_user):
+        with self.login(user_new):
             response = self.client.get(
                 reverse(
                     'samplesheets:ajax_irods_objects',
@@ -620,18 +648,22 @@ class TestIrodsObjectListAjaxView(TestIrodsRequestViewsBase):
 
     def test_get_coll_obj_delete_request(self):
         """Test listing collection with data object and delete request"""
-        # Create request
-        with self.login(self.user_contrib):
-            self.client.post(
-                reverse(
-                    'samplesheets:ajax_irods_request_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                data={'path': self.obj_path},
-            )
-        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        user_contributor = self.make_user('user_contributor')
+        self.make_assignment_taskflow(
+            self.project, user_contributor, self.role_contributor
+        )
+        obj_path = os.path.join(self.assay_path, IRODS_FILE_NAME)
+        self.irods.data_objects.create(obj_path)
+        self.request = self.make_irods_request(
+            project=self.project,
+            action=IRODS_REQUEST_ACTION_DELETE,
+            path=obj_path,
+            status=IRODS_REQUEST_STATUS_ACTIVE,
+            user=user_contributor,
+            description='',
+        )
 
-        with self.login(self.user_contrib):
+        with self.login(user_contributor):
             response = self.client.get(
                 reverse(
                     'samplesheets:ajax_irods_objects',
@@ -641,11 +673,10 @@ class TestIrodsObjectListAjaxView(TestIrodsRequestViewsBase):
             )
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()['irods_data'][0]['name'], 'test1')
+        response_data = response.json()['irods_data']
+        self.assertEqual(response_data[0]['name'], IRODS_FILE_NAME)
+        self.assertEqual(response_data[0]['path'], obj_path)
         self.assertEqual(
-            response.json()['irods_data'][0]['path'], self.obj_path
-        )
-        self.assertEqual(
-            response.json()['irods_data'][0]['irods_request_status'],
-            'ACTIVE',
+            response_data[0]['irods_request_status'],
+            IRODS_REQUEST_STATUS_ACTIVE,
         )

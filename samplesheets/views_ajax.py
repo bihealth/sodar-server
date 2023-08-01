@@ -47,7 +47,7 @@ from samplesheets.utils import (
     get_ext_link_labels,
 )
 from samplesheets.views import (
-    IrodsRequestModifyMixin,
+    IrodsDataRequestModifyMixin,
     app_settings,
     APP_NAME,
     TARGET_ALTAMISA_VERSION,
@@ -1842,8 +1842,8 @@ class StudyDisplayConfigAjaxView(SODARBaseProjectAjaxView):
         )
 
 
-class IrodsRequestCreateAjaxView(
-    IrodsRequestModifyMixin, SODARBaseProjectAjaxView
+class IrodsDataRequestCreateAjaxView(
+    IrodsDataRequestModifyMixin, SODARBaseProjectAjaxView
 ):
     """Ajax view for creating an iRODS data request"""
 
@@ -1883,8 +1883,8 @@ class IrodsRequestCreateAjaxView(
         )
 
 
-class IrodsRequestDeleteAjaxView(
-    IrodsRequestModifyMixin, SODARBaseProjectAjaxView
+class IrodsDataRequestDeleteAjaxView(
+    IrodsDataRequestModifyMixin, SODARBaseProjectAjaxView
 ):
     """Ajax view for deleting an iRODS data request"""
 

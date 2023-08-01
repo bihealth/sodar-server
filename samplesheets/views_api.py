@@ -18,8 +18,10 @@ from rest_framework.exceptions import (
     PermissionDenied,
 )
 from rest_framework.generics import (
-    RetrieveAPIView,
     CreateAPIView,
+    DestroyAPIView,
+    ListAPIView,
+    RetrieveAPIView,
     UpdateAPIView,
 )
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -37,15 +39,21 @@ from projectroles.views_api import (
 )
 
 from samplesheets.io import SampleSheetIO
-from samplesheets.models import Investigation, ISATab, IrodsDataRequest
+from samplesheets.models import (
+    Investigation,
+    ISATab,
+    IrodsDataRequest,
+    IRODS_REQUEST_STATUS_ACTIVE,
+    IRODS_REQUEST_STATUS_FAILED,
+)
 from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.serializers import (
     InvestigationSerializer,
-    IrodsRequestSerializer,
+    IrodsDataRequestSerializer,
 )
 from samplesheets.views import (
     IrodsCollsCreateViewMixin,
-    IrodsRequestModifyMixin,
+    IrodsDataRequestModifyMixin,
     SheetImportMixin,
     SheetISAExportMixin,
     SITE_MODE_TARGET,
@@ -147,274 +155,6 @@ class IrodsCollsCreateAPIView(
         )
 
 
-class IrodsDataRequestListAPIView(
-    IrodsRequestModifyMixin, SODARAPIBaseProjectMixin, APIView
-):
-    """
-    List iRODS data requests for a project.
-
-    **URL:** ``/samplesheets/api/irods/requests/{Project.sodar_uuid}``
-
-    **Methods:** ``GET``
-
-    **Returns:**
-
-    - ``requests``: List of iRODS data requests (JSON)
-    """
-
-    http_method_names = ['get']
-    permission_required = 'samplesheets.edit_sheet'
-
-    def get(self, request, *args, **kwargs):
-        """GET request for listing iRODS data requests"""
-        project = self.get_project()
-        irods_requests = IrodsDataRequest.objects.filter(project=project)
-        content = {'detail': 'No iRODS data requests found'}
-
-        # For superusers, owners and delegates,
-        # display active/failed requests from all users
-        if self.request.user.is_superuser or project.is_owner_or_delegate(
-            self.request.user
-        ):
-            requests = irods_requests.filter(status__in=['ACTIVE', 'FAILED'])
-        else:
-            # For regular users, dispaly their own requests regardless of status
-            requests = irods_requests.filter(user=self.request.user)
-        if requests:
-            content['requests'] = requests
-            content['detail'] = 'iRODS data requests listed'
-        return Response(content, status=status.HTTP_200_OK)
-
-
-class IrodsRequestCreateAPIView(
-    IrodsRequestModifyMixin, SODARAPIBaseProjectMixin, CreateAPIView
-):
-    """
-    Create an iRODS data request for a project.
-
-    **URL:** ``/samplesheets/api/irods/request/create/{Project.sodar_uuid}``
-
-    **Methods:** ``POST``
-    """
-
-    http_method_names = ['post']
-    permission_required = 'samplesheets.edit_sheet'
-    serializer_class = IrodsRequestSerializer
-
-    def post(self, request, *args, **kwargs):
-        """POST request for creating an iRODS data request"""
-        project = self.get_project()
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(
-                project=project,
-                user=self.request.user,
-            )
-        else:
-            raise ValidationError('Invalid data: {}'.format(serializer.errors))
-
-        irods_request = IrodsDataRequest.objects.filter(
-            sodar_uuid=serializer.data.get('sodar_uuid')
-        ).first()
-        # Create timeline event
-        self.add_tl_create(irods_request)
-        # Add app alerts to owners/delegates
-        self.add_alerts_create(project)
-
-        return Response(
-            {
-                'detail': 'iRODS data request created',
-                'request': irods_request.sodar_uuid,
-            },
-            status=status.HTTP_200_OK,
-        )
-
-
-class IrodsRequestUpdateAPIView(
-    IrodsRequestModifyMixin, SODARAPIBaseProjectMixin, UpdateAPIView
-):
-    """
-    Update an iRODS data request for a project.
-
-    **URL:** ``/samplesheets/api/irods/request/update/{IrodsDataRequest.sodar_uuid}``
-
-    **Methods:** ``PUT``, ``PATCH``
-    """
-
-    http_method_names = ['put', 'patch']
-    permission_classes = (IsAuthenticated,)
-
-    def get_object(self):
-        """Override to allow POST requests"""
-        return IrodsDataRequest.objects.get(
-            sodar_uuid=self.kwargs.get('irodsdatarequest')
-        )
-
-    def put(self, request, *args, **kwargs):
-        """PUT request for updating an iRODS data request"""
-        obj = self.get_object()
-        if not self.has_irods_request_perms(request, obj):
-            raise PermissionDenied('Insufficient permissions')
-
-        irods_request = IrodsDataRequest.objects.filter(
-            sodar_uuid=self.kwargs.get('irodsdatarequest')
-        ).first()
-        serializer = IrodsRequestSerializer(
-            irods_request, data=request.data, partial=True
-        )
-        if serializer.is_valid():
-            serializer.save()
-        else:
-            raise ValidationError('Invalid data: {}'.format(serializer.errors))
-
-        irods_request = IrodsDataRequest.objects.filter(
-            sodar_uuid=serializer.data.get('sodar_uuid')
-        ).first()
-        # Create timeline event
-        self.add_tl_update(irods_request)
-
-        return Response(
-            {
-                'detail': 'iRODS data request updated',
-                'request': irods_request.sodar_uuid,
-            },
-            status=status.HTTP_200_OK,
-        )
-
-
-class IrodsRequestDeleteAPIView(
-    IrodsRequestModifyMixin, SODARAPIBaseProjectMixin, APIView
-):
-    """
-    Delete an iRODS data request for a project.
-
-    **URL:** ``/samplesheets/api/irods/request/delete/{IrodsDataRequest.sodar_uuid}``
-
-    **Methods:** ``DELETE``
-    """
-
-    http_method_names = ['delete']
-    # permission_required = 'samplesheets.edit_sheet'
-    permission_classes = (IsAuthenticated,)
-
-    def get_object(self):
-        """Override to allow POST requests"""
-        return IrodsDataRequest.objects.get(
-            sodar_uuid=self.kwargs.get('irodsdatarequest')
-        )
-
-    def delete(self, request, *args, **kwargs):
-        """DELETE request for deleting an iRODS data request"""
-        obj = self.get_object()
-        if not self.has_irods_request_perms(request, obj):
-            raise PermissionDenied('Insufficient permissions')
-
-        irods_request = IrodsDataRequest.objects.filter(
-            sodar_uuid=self.kwargs.get('irodsdatarequest')
-        ).first()
-        try:
-            irods_request.delete()
-        except Exception as ex:
-            raise APIException(
-                '{} {}'.format('Deleting ' + IRODS_EX_MSG + ':', ex)
-            )
-
-        # Add timeline event
-        self.add_tl_delete(irods_request)
-        # Handle project alerts
-        self.handle_alerts_deactivate(irods_request)
-        return Response(
-            {'detail': 'iRODS data request deleted'},
-            status=status.HTTP_200_OK,
-        )
-
-
-class IrodsRequestAcceptAPIView(
-    IrodsRequestModifyMixin, SODARAPIBaseProjectMixin, APIView
-):
-    """
-    Accept an iRODS data request for a project.
-
-    **URL:** ``/samplesheets/api/irods/request/accept/{IrodsDataRequest.sodar_uuid}``
-
-    **Methods:** ``POST``
-    """
-
-    http_method_names = ['post']
-    permission_required = 'samplesheets.manage_sheet'
-
-    def post(self, request, *args, **kwargs):
-        """POST request for accepting an iRODS data request"""
-        timeline = get_backend_api('timeline_backend')
-        taskflow = get_backend_api('taskflow')
-        app_alerts = get_backend_api('appalerts_backend')
-        project = self.get_project()
-
-        irods_request = IrodsDataRequest.objects.filter(
-            sodar_uuid=self.kwargs.get('irodsdatarequest')
-        ).first()
-
-        try:
-            self.accept_request(
-                irods_request,
-                project,
-                self.request,
-                timeline=timeline,
-                taskflow=taskflow,
-                app_alerts=app_alerts,
-            )
-        except Exception as ex:
-            raise ValidationError(
-                '{} {}'.format('Accepting ' + IRODS_EX_MSG + ':', ex)
-            )
-        return Response(
-            {'detail': 'iRODS data request accepted'}, status=status.HTTP_200_OK
-        )
-
-
-class IrodsRequestRejectAPIView(
-    IrodsRequestModifyMixin, SODARAPIBaseProjectMixin, APIView
-):
-    """
-    Reject an iRODS data request for a project.
-
-    **URL:** ``/samplesheets/api/irods/request/reject/{IrodsDataRequest.sodar_uuid}``
-
-    **Methods:** ``GET``
-    """
-
-    http_method_names = ['get']
-    permission_required = 'samplesheets.manage_sheet'
-
-    def get(self, request, *args, **kwargs):
-        """POST request for rejecting an iRODS data request"""
-        timeline = get_backend_api('timeline_backend')
-        app_alerts = get_backend_api('appalerts_backend')
-        project = self.get_project()
-        irods_request = IrodsDataRequest.objects.filter(
-            sodar_uuid=self.kwargs.get('irodsdatarequest')
-        ).first()
-
-        irods_request.status = 'REJECTED'
-        irods_request.save()
-
-        try:
-            self.reject_request(
-                irods_request,
-                project,
-                self.request,
-                timeline=timeline,
-                app_alerts=app_alerts,
-            )
-        except Exception as ex:
-            raise APIException(
-                '{} {}'.format('Rejecting ' + IRODS_EX_MSG + ':', ex)
-            )
-        return Response(
-            {'detail': 'iRODS data request rejected'}, status=status.HTTP_200_OK
-        )
-
-
 class SheetISAExportAPIView(
     SheetISAExportMixin, SODARAPIBaseProjectMixin, APIView
 ):
@@ -465,7 +205,7 @@ class SheetImportAPIView(SheetImportMixin, SODARAPIBaseProjectMixin, APIView):
 
     **Methods:** ``POST``
 
-    **Return:**
+    **Returns:**
 
     - ``detail``: Detail of project success (string)
     - ``sodar_warnings``: SODAR import issue warnings (list of srings, optional)
@@ -568,6 +308,239 @@ class SheetImportAPIView(SheetImportMixin, SODARAPIBaseProjectMixin, APIView):
                 self.get_assay_plugin_warning(a) for a in no_plugin_assays
             ]
         return Response(ret_data, status=status.HTTP_200_OK)
+
+
+class IrodsDataRequestRetrieveAPIView(
+    SODARAPIGenericProjectMixin, RetrieveAPIView
+):
+    """
+    Retrieve iRODS data request.
+
+    **URL:** ``/samplesheets/api/irods/request/retrieve/{IrodsDataRequest.sodar_uuid}``
+
+    **Methods:** ``GET``
+
+    **Returns:**
+
+    - ``project``: Project UUID (string)
+    - ``action``: Request action (string)
+    - ``path``: iRODS path to object or collection (string)
+    - ``target_path``: Target path (string, currently unused)
+    - ``user``: User initiating request (dictionary)
+    - ``status``: Request status (string)
+    - ``status_info``: Request status info (string)
+    - ``description``: Request description (string)
+    - ``date_created``: Request creation date (datetime)
+    - ``sodar_uuid`: Request UUID (string)
+    """
+
+    lookup_field = 'sodar_uuid'
+    lookup_url_kwarg = 'irodsdatarequest'
+    permission_required = 'samplesheets.edit_sheet'
+    serializer_class = IrodsDataRequestSerializer
+
+
+class IrodsDataRequestListAPIView(SODARAPIBaseProjectMixin, ListAPIView):
+    """
+    List iRODS data requests for a project.
+
+    **URL:** ``/samplesheets/api/irods/requests/{Project.sodar_uuid}``
+
+    **Methods:** ``GET``
+
+    **Returns:** List of iRODS data requests
+    """
+
+    permission_required = 'samplesheets.edit_sheet'
+    serializer_class = IrodsDataRequestSerializer
+
+    def get_queryset(self):
+        project = self.get_project()
+        requests = IrodsDataRequest.objects.filter(project=project)
+        # For superusers, owners and delegates, display requests from all users
+        if self.request.user.is_superuser or project.is_owner_or_delegate(
+            self.request.user
+        ):
+            return requests.filter(
+                status__in=[
+                    IRODS_REQUEST_STATUS_ACTIVE,
+                    IRODS_REQUEST_STATUS_FAILED,
+                ]
+            )
+        return requests.filter(user=self.request.user)
+
+
+class IrodsDataRequestCreateAPIView(
+    IrodsDataRequestModifyMixin, SODARAPIGenericProjectMixin, CreateAPIView
+):
+    """
+    Create an iRODS delete request for a project.
+
+    The request must point to a collection or data object within the sample data
+    repository of the project. The user must have at least the role of
+    contributor in the project.
+
+    **URL:** ``/samplesheets/api/irods/request/create/{Project.sodar_uuid}``
+
+    **Methods:** ``POST``
+
+    **Parameters:**
+
+    - ``path``: iRODS path to object or collection (string)
+    - ``description``: Request description (string, optional)
+    """
+
+    permission_required = 'samplesheets.edit_sheet'
+    serializer_class = IrodsDataRequestSerializer
+
+    def perform_create(self, serializer):
+        serializer.save()
+        # Create timeline event
+        self.add_tl_create(serializer.instance)
+        # Add app alerts to owners/delegates
+        self.add_alerts_create(serializer.instance.project)
+
+
+class IrodsDataRequestUpdateAPIView(
+    IrodsDataRequestModifyMixin, SODARAPIGenericProjectMixin, UpdateAPIView
+):
+    """
+    Update an iRODS data request for a project.
+
+    **URL:** ``/samplesheets/api/irods/request/update/{IrodsDataRequest.sodar_uuid}``
+
+    **Methods:** ``PUT``, ``PATCH``
+
+    **Parameters:**
+
+    - ``path``: iRODS path to object or collection (string)
+    - ``description``: Request description
+    """
+
+    # http_method_names = ['put', 'patch']
+    lookup_url_kwarg = 'irodsdatarequest'
+    permission_classes = [IsAuthenticated]
+    serializer_class = IrodsDataRequestSerializer
+
+    def perform_update(self, serializer):
+        """Override perform_update() to update IrodsDataRequest"""
+        if not self.has_irods_request_update_perms(
+            self.request, serializer.instance
+        ):
+            raise PermissionDenied
+        serializer.save()
+        # Add timeline event
+        self.add_tl_update(serializer.instance)
+
+
+class IrodsDataRequestDestroyAPIView(
+    IrodsDataRequestModifyMixin, SODARAPIGenericProjectMixin, DestroyAPIView
+):
+    """
+    Delete an iRODS data request object.
+
+    **URL:** ``/samplesheets/api/irods/request/delete/{IrodsDataRequest.sodar_uuid}``
+
+    **Methods:** ``DELETE``
+    """
+
+    lookup_url_kwarg = 'irodsdatarequest'
+    permission_classes = [IsAuthenticated]
+    serializer_class = IrodsDataRequestSerializer
+
+    def perform_destroy(self, instance):
+        """
+        Override perform_destroy() to delete IrodsDataRequest
+        """
+        if not self.has_irods_request_update_perms(self.request, instance):
+            raise PermissionDenied
+        instance.delete()
+        # Add timeline event
+        self.add_tl_delete(instance)
+        # Handle project alerts
+        self.handle_alerts_deactivate(instance)
+
+
+class IrodsDataRequestAcceptAPIView(
+    IrodsDataRequestModifyMixin, SODARAPIBaseProjectMixin, APIView
+):
+    """
+    Accept an iRODS data request for a project.
+
+    **URL:** ``/samplesheets/api/irods/request/accept/{IrodsDataRequest.sodar_uuid}``
+
+    **Methods:** ``POST``
+    """
+
+    http_method_names = ['post']
+    permission_required = 'samplesheets.manage_sheet'
+
+    def post(self, request, *args, **kwargs):
+        """POST request for accepting an iRODS data request"""
+        timeline = get_backend_api('timeline_backend')
+        taskflow = get_backend_api('taskflow')
+        app_alerts = get_backend_api('appalerts_backend')
+        project = self.get_project()
+        irods_request = IrodsDataRequest.objects.filter(
+            sodar_uuid=self.kwargs.get('irodsdatarequest')
+        ).first()
+
+        try:
+            self.accept_request(
+                irods_request,
+                project,
+                self.request,
+                timeline=timeline,
+                taskflow=taskflow,
+                app_alerts=app_alerts,
+            )
+        except Exception as ex:
+            raise ValidationError(
+                '{} {}'.format('Accepting ' + IRODS_EX_MSG + ':', ex)
+            )
+        return Response(
+            {'detail': 'iRODS data request accepted'}, status=status.HTTP_200_OK
+        )
+
+
+class IrodsDataRequestRejectAPIView(
+    IrodsDataRequestModifyMixin, SODARAPIBaseProjectMixin, APIView
+):
+    """
+    Reject an iRODS data request for a project.
+
+    **URL:** ``/samplesheets/api/irods/request/reject/{IrodsDataRequest.sodar_uuid}``
+
+    **Methods:** ``POST``
+    """
+
+    http_method_names = ['post']
+    permission_required = 'samplesheets.manage_sheet'
+
+    def post(self, request, *args, **kwargs):
+        """POST request for rejecting an iRODS data request"""
+        timeline = get_backend_api('timeline_backend')
+        app_alerts = get_backend_api('appalerts_backend')
+        project = self.get_project()
+        irods_request = IrodsDataRequest.objects.filter(
+            sodar_uuid=self.kwargs.get('irodsdatarequest')
+        ).first()
+
+        try:
+            self.reject_request(
+                irods_request,
+                project,
+                self.request,
+                timeline=timeline,
+                app_alerts=app_alerts,
+            )
+        except Exception as ex:
+            raise APIException(
+                '{} {}'.format('Rejecting ' + IRODS_EX_MSG + ':', ex)
+            )
+        return Response(
+            {'detail': 'iRODS data request rejected'}, status=status.HTTP_200_OK
+        )
 
 
 class SampleDataFileExistsAPIView(SODARAPIBaseMixin, APIView):

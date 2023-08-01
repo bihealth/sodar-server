@@ -2,9 +2,6 @@
 
 import os
 
-from django.forms.models import model_to_dict
-from django.utils.timezone import localtime
-
 # Projectroles dependency
 from projectroles.constants import SODAR_CONSTANTS
 
@@ -12,35 +9,34 @@ from projectroles.constants import SODAR_CONSTANTS
 from taskflowbackend.tests.base import TaskflowViewTestBase
 
 from samplesheets.models import (
-    IRODS_DATA_REQUEST_STATUS_CHOICES,
-    IrodsDataRequest,
+    IRODS_REQUEST_ACTION_DELETE,
+    IRODS_REQUEST_STATUS_ACTIVE,
 )
+
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
-from samplesheets.tests.test_views_taskflow import (
-    SampleSheetTaskflowMixin,
+from samplesheets.tests.test_models import (
+    IrodsDataRequestMixin,
+    IRODS_REQUEST_DESC,
 )
+from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 
 
 # SODAR constants
-PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
-PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
-PROJECT_ROLE_CONTRIBUTOR = SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR']
-PROJECT_ROLE_GUEST = SODAR_CONSTANTS['PROJECT_ROLE_GUEST']
-PROJECT_TYPE_CATEGORY = SODAR_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 # Local constants
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
-TEST_FILE_NAME = 'test1'
-TEST_COLL_NAME = 'coll1'
+TEST_FILE_NAME = 'test.txt'
+TEST_COLL_NAME = 'coll'
 
 
-class TestIrodsDataRequestBase(
+class TestIrodsDataRequest(
     SampleSheetIOMixin,
     SampleSheetTaskflowMixin,
+    IrodsDataRequestMixin,
     TaskflowViewTestBase,
 ):
-    """Base test class for iRODS delete requests"""
+    """Tests for the IrodsAccessTicket model"""
 
     def setUp(self):
         super().setUp()
@@ -48,187 +44,42 @@ class TestIrodsDataRequestBase(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
-            owner=self.user,
-            description='description',
+            owner=self.user_owner_cat,
         )
 
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-
         # Create iRODS collections
         self.make_irods_colls(self.investigation)
-
         self.assay_path = self.irods_backend.get_path(self.assay)
-        self.path = os.path.join(self.assay_path, TEST_FILE_NAME)
-        self.path_coll = os.path.join(self.assay_path, TEST_COLL_NAME)
-        self.path_md5 = os.path.join(self.assay_path, f'{TEST_FILE_NAME}.md5')
-
+        self.obj_path = os.path.join(self.assay_path, TEST_FILE_NAME)
+        self.coll_path = os.path.join(self.assay_path, TEST_COLL_NAME)
         # Create objects
-        self.file_obj = self.irods.data_objects.create(self.path)
-        self.coll = self.irods.collections.create(self.path_coll)
-        self.md5_obj = self.irods.data_objects.create(self.path_md5)
+        self.file_obj = self.irods.data_objects.create(self.obj_path)
+        self.coll = self.irods.collections.create(self.coll_path)
 
-        # Init users (owner = user_cat, superuser = user)
-        self.user_delegate = self.make_user('user_delegate')
-        self.user_contrib = self.make_user('user_contrib')
-        self.user_contrib2 = self.make_user('user_contrib2')
-        self.user_guest = self.make_user('user_guest')
-
-        self.make_assignment_taskflow(
-            self.project, self.user_delegate, self.role_delegate
-        )
-        self.make_assignment_taskflow(
-            self.project, self.user_contrib, self.role_contributor
-        )
-        self.make_assignment_taskflow(
-            self.project, self.user_contrib2, self.role_contributor
-        )
-        self.make_assignment_taskflow(
-            self.project, self.user_guest, self.role_guest
-        )
-
-        self.action = 'delete'
-        self.description = 'description'
-        self.status = IRODS_DATA_REQUEST_STATUS_CHOICES[0][0]
-        self.irods_data_request = self._make_irods_data_request(
+        # Create request
+        self.request = self.make_irods_request(
             project=self.project,
-            action=self.action,
-            status=self.status,
-            path=self.path,
-            description=self.description,
+            action=IRODS_REQUEST_ACTION_DELETE,
+            status=IRODS_REQUEST_STATUS_ACTIVE,
+            path=self.obj_path,
+            description=IRODS_REQUEST_DESC,
             user=self.user_owner_cat,
         )
 
-    def tearDown(self):
-        self.irods.collections.get('/sodarZone/projects').remove(force=True)
-        super().tearDown()
+    def test_is_data_object(self):
+        """Test is_data_object()"""
+        self.assertTrue(self.request.is_data_object())
+        self.request.path = self.coll_path
+        self.request.save()
+        self.assertFalse(self.request.is_data_object())
 
-    @classmethod
-    def _make_irods_data_request(
-        cls,
-        project,
-        action,
-        path,
-        status,
-        target_path='',
-        status_info='',
-        description='',
-        user=None,
-    ):
-        """Create an iRODS access ticket object in the database"""
-        values = {
-            'project': project,
-            'action': action,
-            'path': path,
-            'status': status,
-            'target_path': target_path,
-            'status_info': status_info,
-            'user': user,
-            'description': description,
-        }
-        obj = IrodsDataRequest(**values)
-        obj.save()
-        return obj
-
-
-class TestIrodsDataRequest(TestIrodsDataRequestBase):
-    """Tests for the IrodsAccessTicket model"""
-
-    def test_initialization(self):
-        """Test IrodsDataTicket initialization"""
-        expected = {
-            'id': self.irods_data_request.pk,
-            'project': self.project.pk,
-            'path': self.path,
-            'user': self.user_owner_cat.pk,
-            'action': self.action,
-            'status': self.status,
-            'target_path': '',
-            'status_info': '',
-            'description': self.description,
-            'sodar_uuid': self.irods_data_request.sodar_uuid,
-        }
-        self.assertDictEqual(model_to_dict(self.irods_data_request), expected)
-
-    def test__str__(self):
-        self.assertEqual(
-            str(self.irods_data_request),
-            '{}: {} {}'.format(
-                self.project.title,
-                self.action,
-                self.irods_data_request.get_short_path(),
-            ),
-        )
-
-    def test__repr__(self):
-        self.assertEqual(
-            repr(self.irods_data_request),
-            'IrodsDataRequest(\'{}\', \'{}\', \'{}\', \'{}\', \'{}\')'.format(
-                self.project.title,
-                self.irods_data_request.get_assay_name(),
-                self.action,
-                self.path,
-                self.user_owner_cat.username,
-            ),
-        )
-
-    def test_get_display_name(self):
-        self.assertEqual(
-            self.irods_data_request.get_display_name(),
-            '{} {}'.format(
-                self.action.capitalize(),
-                self.irods_data_request.get_short_path(),
-            ),
-        )
-
-    def test_get_date_created(self):
-        self.assertEqual(
-            self.irods_data_request.get_date_created(),
-            localtime(self.irods_data_request.date_created).strftime(
-                '%Y-%m-%d %H:%M'
-            ),
-        )
-
-    def test_is_data_object_true(self):
-        self.irods_data_request.path = self.path
-        self.irods_data_request.save()
-        self.assertTrue(self.irods_data_request.is_data_object())
-
-    def test_is_data_object_false(self):
-        self.irods_data_request.path = self.path_coll
-        self.irods_data_request.save()
-        self.assertFalse(self.irods_data_request.is_data_object())
-
-    def test_is_collection_true(self):
-        self.irods_data_request.path = self.path_coll
-        self.irods_data_request.save()
-        self.assertTrue(self.irods_data_request.is_collection())
-
-    def test_is_collection_false(self):
-        self.irods_data_request.path = self.path
-        self.irods_data_request.save()
-        self.assertFalse(self.irods_data_request.is_collection())
-
-    def test_get_short_path(self):
-        self.assertEqual(
-            self.irods_data_request.get_short_path(),
-            '{}/{}'.format(
-                os.path.basename(self.assay_path), os.path.basename(self.path)
-            ),
-        )
-
-    def test_get_assay(self):
-        self.assertEqual(self.irods_data_request.get_assay(), self.assay)
-
-    def test_get_assay_name(self):
-        self.assertEqual(
-            self.irods_data_request.get_assay_name(),
-            self.assay.get_display_name(),
-        )
-
-    def test_get_assay_name_na(self):
-        self.irods_data_request.path = '/different/path'
-        self.irods_data_request.save()
-        self.assertEqual(self.irods_data_request.get_assay_name(), 'N/A')
+    def test_is_collection(self):
+        """Test is_collection()"""
+        self.assertFalse(self.request.is_collection())
+        self.request.path = self.coll_path
+        self.request.save()
+        self.assertTrue(self.request.is_collection())

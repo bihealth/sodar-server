@@ -131,37 +131,37 @@ urls_ui = [
     ),
     path(
         route='irods/request/create/<uuid:project>',
-        view=views.IrodsRequestCreateView.as_view(),
+        view=views.IrodsDataRequestCreateView.as_view(),
         name='irods_request_create',
     ),
     path(
         route='irods/request/update/<uuid:irodsdatarequest>',
-        view=views.IrodsRequestUpdateView.as_view(),
+        view=views.IrodsDataRequestUpdateView.as_view(),
         name='irods_request_update',
     ),
     path(
         route='irods/request/delete/<uuid:irodsdatarequest>',
-        view=views.IrodsRequestDeleteView.as_view(),
+        view=views.IrodsDataRequestDeleteView.as_view(),
         name='irods_request_delete',
     ),
     path(
         route='irods/request/accept/<uuid:irodsdatarequest>',
-        view=views.IrodsRequestAcceptView.as_view(),
+        view=views.IrodsDataRequestAcceptView.as_view(),
         name='irods_request_accept',
     ),
     path(
         route='irods/request/accept/batch/<uuid:project>',
-        view=views.IrodsRequestAcceptBatchView.as_view(),
+        view=views.IrodsDataRequestAcceptBatchView.as_view(),
         name='irods_request_accept_batch',
     ),
     path(
         route='irods/request/reject/<uuid:irodsdatarequest>',
-        view=views.IrodsRequestRejectView.as_view(),
+        view=views.IrodsDataRequestRejectView.as_view(),
         name='irods_request_reject',
     ),
     path(
         route='irods/request/reject/batch/<uuid:project>',
-        view=views.IrodsRequestRejectBatchView.as_view(),
+        view=views.IrodsDataRequestRejectBatchView.as_view(),
         name='irods_request_reject_batch',
     ),
 ]
@@ -179,33 +179,38 @@ urls_api = [
         name='api_irods_colls_create',
     ),
     path(
+        route='api/irods/request/retrieve/<uuid:irodsdatarequest>',
+        view=samplesheets.views_api.IrodsDataRequestRetrieveAPIView.as_view(),
+        name='api_irods_request_retrieve',
+    ),
+    path(
         route='api/irods/requests/<uuid:project>',
         view=samplesheets.views_api.IrodsDataRequestListAPIView.as_view(),
         name='api_irods_request_list',
     ),
     path(
         route='api/irods/request/create/<uuid:project>',
-        view=samplesheets.views_api.IrodsRequestCreateAPIView.as_view(),
+        view=samplesheets.views_api.IrodsDataRequestCreateAPIView.as_view(),
         name='api_irods_request_create',
     ),
     path(
         route='api/irods/request/update/<uuid:irodsdatarequest>',
-        view=samplesheets.views_api.IrodsRequestUpdateAPIView.as_view(),
+        view=samplesheets.views_api.IrodsDataRequestUpdateAPIView.as_view(),
         name='api_irods_request_update',
     ),
     path(
         route='api/irods/request/delete/<uuid:irodsdatarequest>',
-        view=samplesheets.views_api.IrodsRequestDeleteAPIView.as_view(),
+        view=samplesheets.views_api.IrodsDataRequestDestroyAPIView.as_view(),
         name='api_irods_request_delete',
     ),
     path(
         route='api/irods/request/accept/<uuid:irodsdatarequest>',
-        view=samplesheets.views_api.IrodsRequestAcceptAPIView.as_view(),
+        view=samplesheets.views_api.IrodsDataRequestAcceptAPIView.as_view(),
         name='api_irods_request_accept',
     ),
     path(
         route='api/irods/request/reject/<uuid:irodsdatarequest>',
-        view=samplesheets.views_api.IrodsRequestRejectAPIView.as_view(),
+        view=samplesheets.views_api.IrodsDataRequestRejectAPIView.as_view(),
         name='api_irods_request_reject',
     ),
     path(
@@ -299,12 +304,12 @@ urls_ajax = [
     ),
     path(
         route='ajax/irods/request/create/<uuid:project>',
-        view=samplesheets.views_ajax.IrodsRequestCreateAjaxView.as_view(),
+        view=samplesheets.views_ajax.IrodsDataRequestCreateAjaxView.as_view(),
         name='ajax_irods_request_create',
     ),
     path(
         route='ajax/irods/request/delete/<uuid:project>',
-        view=samplesheets.views_ajax.IrodsRequestDeleteAjaxView.as_view(),
+        view=samplesheets.views_ajax.IrodsDataRequestDeleteAjaxView.as_view(),
         name='ajax_irods_request_delete',
     ),
     path(

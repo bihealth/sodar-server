@@ -14,8 +14,12 @@ Added
 - **Irodsbackend**
     - ``get_trash_path()`` helper (#1658)
     - iRODS trash statistics for siteinfo (#1658)
+- **Irodsinfo**
+    - ``IrodsEnvRetrieveAPIView`` for retrieving iRODS environment (#1685)
 - **Landingzones**
     - Landing zone updating (#1267)
+    - "Nothing to do" check for landing zone validation and moving (#339)
+    - iRODS path clipboard copying button in iRODS collection list modal (#1282)
 - **Samplesheets**
     - User setting for study and assay table height (#1283)
     - Study table cache disabling (#1639)
@@ -27,6 +31,9 @@ Added
     - Enable ``tumor_normal_dna`` ISA-Tab template (#1697)
     - General iRODS access ticket management for assay collections (#804, #1717)
     - Disabled row delete button tooltips (#1731)
+    - ``IrodsDataRequest`` REST API views (#1588, #1706, #1734, #1735, #1736)
+    - Davrods links in iRODS delete request list (#1339)
+    - Batch accepting and rejecting for iRODS delete requests (#1340)
 - **Taskflowbackend**
     - ``BatchCalculateChecksumTask`` iRODS task (#1634)
     - Automated generation of missing checksums in ``zone_move`` flow (#1634)
@@ -41,10 +48,14 @@ Changed
     - Upgrade to python-irodsclient v1.1.8 (#1538)
 - **Landingzones**
     - Move iRODS object helpers to ``TaskflowTestMixin`` (#1699)
+    - Enable superuser landing zone controls for locked zones (#1607)
+    - Add ``DELETING`` to locked states in UI (#1657)
+    - Query for landing zone status in batch (#1684)
 - **Samplesheets**
     - Sample sheet table viewport background color (#1692)
     - Contract sheet table height to fit content (#1693)
     - Hide additional internal fields from ISA-Tab templates (#1698)
+    - Refactor ``IrodsDataRequest`` model and tests (#1706)
 - **Taskflowbackend**
     - Move iRODS object helpers from ``LandingZoneTaskflowMixin`` (#1699)
     - Move iRODS test cleanup to ``TaskflowTestMixin.clear_irods_test_data()`` (#1722)
@@ -57,13 +68,17 @@ Fixed
     - Batch import tests failing from forbidden obolibrary access (#1694)
 - **Samplesheets**
     - ``perform_project_sync()`` crash with no iRODS collections created (#1687)
+    - iRODS delete request modification UI view permission checks failing for non-creator contributors (#1737)
 
 Removed
 -------
 
+- **Landingzones**
+    - Unused ``data_tables`` references from templates (#1710)
 - **Samplesheets**
     - ``SHEETS_TABLE_HEIGHT`` Django setting (#1283)
     - Duplicate ``IrodsAccessTicketMixin`` from ``test_views_ajax`` (#1703)
+    - ``IRODS_DATA_REQUEST_STATUS_CHOICES`` constant (#1706)
 
 
 v0.13.4 (2023-05-15)

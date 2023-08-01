@@ -1,5 +1,7 @@
 """Tests for REST API View permissions in the samplesheets app"""
 
+import uuid
+
 from django.test import override_settings
 from django.urls import reverse
 
@@ -9,8 +11,13 @@ from projectroles.tests.test_models import RemoteSiteMixin, RemoteProjectMixin
 from projectroles.tests.test_permissions import TestProjectPermissionBase
 from projectroles.tests.test_permissions_api import TestProjectAPIPermissionBase
 
-from samplesheets.models import Investigation
+from samplesheets.models import (
+    Investigation,
+    IRODS_REQUEST_ACTION_DELETE,
+    IRODS_REQUEST_STATUS_ACTIVE,
+)
 from samplesheets.tests.test_io import SampleSheetIOMixin
+from samplesheets.tests.test_models import IrodsDataRequestMixin
 from samplesheets.tests.test_permissions import (
     SHEET_PATH,
     REMOTE_SITE_NAME,
@@ -20,10 +27,12 @@ from samplesheets.tests.test_permissions import (
 )
 
 
+# Local constants
+IRODS_FILE_PATH = '/sodarZone/path/test1.txt'
+
+
 class TestInvestigationRetrieveAPIView(
     SampleSheetIOMixin,
-    RemoteSiteMixin,
-    RemoteProjectMixin,
     TestProjectAPIPermissionBase,
 ):
     """Tests for InvestigationRetrieveAPIView permissions"""
@@ -35,7 +44,7 @@ class TestInvestigationRetrieveAPIView(
         self.assay = self.study.assays.first()
 
     def test_get(self):
-        """Test get() in InvestigationRetrieveAPIView"""
+        """Test InvestigationRetrieveAPIView GET"""
         url = reverse(
             'samplesheets:api_investigation_retrieve',
             kwargs={'project': self.project.sodar_uuid},
@@ -65,7 +74,7 @@ class TestInvestigationRetrieveAPIView(
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
-        """Test get() with anonymous guest access"""
+        """Test GET with anonymous guest access"""
         url = reverse(
             'samplesheets:api_investigation_retrieve',
             kwargs={'project': self.project.sodar_uuid},
@@ -74,7 +83,7 @@ class TestInvestigationRetrieveAPIView(
         self.assert_response_api(url, self.anonymous, 200)
 
     def test_get_archive(self):
-        """Test get() with archived project"""
+        """Test GET with archived project"""
         self.project.set_archive()
         url = reverse(
             'samplesheets:api_investigation_retrieve',
@@ -104,12 +113,7 @@ class TestInvestigationRetrieveAPIView(
         self.assert_response_api(url, self.anonymous, 401)
 
 
-class TestSheetImportAPIView(
-    SampleSheetIOMixin,
-    RemoteSiteMixin,
-    RemoteProjectMixin,
-    TestProjectAPIPermissionBase,
-):
+class TestSheetImportAPIView(SampleSheetIOMixin, TestProjectAPIPermissionBase):
     """Tests for SheetImportAPIView permissions"""
 
     def _cleanup_import(self):
@@ -126,7 +130,7 @@ class TestSheetImportAPIView(
         super().tearDown()
 
     def test_post(self):
-        """Test post() in SampleSheetImportAPIView"""
+        """Test SampleSheetImportAPIView POST"""
         url = reverse(
             'samplesheets:api_import',
             kwargs={'project': self.project.sodar_uuid},
@@ -195,7 +199,7 @@ class TestSheetImportAPIView(
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_post_anon(self):
-        """Test post() with anonymous guest access"""
+        """Test POST with anonymous guest access"""
         url = reverse(
             'samplesheets:api_import',
             kwargs={'project': self.project.sodar_uuid},
@@ -211,7 +215,7 @@ class TestSheetImportAPIView(
         )
 
     def test_post_archive(self):
-        """Test post() with archived project"""
+        """Test POST with archived project"""
         self.project.set_archive()
         url = reverse(
             'samplesheets:api_import',
@@ -280,8 +284,6 @@ class TestSheetImportAPIView(
 
 class TestSheetISAExportAPIView(
     SampleSheetIOMixin,
-    RemoteSiteMixin,
-    RemoteProjectMixin,
     TestProjectAPIPermissionBase,
 ):
     """Tests for SheetISAExportAPIView permissions"""
@@ -293,7 +295,7 @@ class TestSheetISAExportAPIView(
         self.assay = self.study.assays.first()
 
     def test_get(self):
-        """Test get() in SampleSheetISAExportAPIView"""
+        """Test SampleSheetISAExportAPIView GET"""
         url = reverse(
             'samplesheets:api_export_zip',
             kwargs={'project': self.project.sodar_uuid},
@@ -319,7 +321,7 @@ class TestSheetISAExportAPIView(
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
-        """Test get() with anonymous guest access"""
+        """Test GET with anonymous guest access"""
         url = reverse(
             'samplesheets:api_export_zip',
             kwargs={'project': self.project.sodar_uuid},
@@ -328,7 +330,7 @@ class TestSheetISAExportAPIView(
         self.assert_response_api(url, self.anonymous, 200)
 
     def test_get_archive(self):
-        """Test get() with archived project"""
+        """Test GET with archived project"""
         self.project.set_archive()
         url = reverse(
             'samplesheets:api_export_zip',
@@ -352,6 +354,310 @@ class TestSheetISAExportAPIView(
         self.project.set_public()
         self.assert_response_api(url, bad_users, 200)
         self.assert_response_api(url, self.anonymous, 401)
+
+
+class TestIrodsDataRequestRetrieveAPIView(
+    IrodsDataRequestMixin, TestProjectAPIPermissionBase
+):
+    """Tests for TestIrodsDataRequestRetrieveAPIView permissions"""
+
+    def setUp(self):
+        super().setUp()
+        self.request = self.make_irods_request(
+            project=self.project,
+            action=IRODS_REQUEST_ACTION_DELETE,
+            path=IRODS_FILE_PATH,
+            status=IRODS_REQUEST_STATUS_ACTIVE,
+            user=self.user_contributor,
+        )
+        self.url = reverse(
+            'samplesheets:api_irods_request_retrieve',
+            kwargs={'irodsdatarequest': self.request.sodar_uuid},
+        )
+
+    def test_get(self):
+        """Test IrodsDataRequestListAPIView GET"""
+        good_users = [
+            self.superuser,
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+        ]
+        bad_users = [
+            self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_guest,
+            self.user_no_roles,
+        ]
+        self.assert_response_api(self.url, good_users, 200)
+        self.assert_response_api(self.url, bad_users, 403)
+        self.assert_response_api(self.url, self.anonymous, 401)
+        # Test public project
+        self.project.set_public()
+        self.assert_response_api(
+            self.url, [self.user_finder_cat, self.user_no_roles], 403
+        )
+        self.assert_response_api(self.url, self.anonymous, 401)
+
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_get_anon(self):
+        """Test GET with anonymous guest access"""
+        self.project.set_public()
+        self.assert_response_api(self.url, self.anonymous, 401)
+
+    def test_get_archive(self):
+        """Test GET with archived project"""
+        self.project.set_archive()
+        good_users = [self.superuser]
+        bad_users = [
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
+            self.user_no_roles,
+        ]
+        self.assert_response_api(self.url, good_users, 200)
+        self.assert_response_api(self.url, bad_users, 403)
+        self.assert_response_api(self.url, self.anonymous, 401)
+
+
+class TestIrodsDataRequestListAPIView(TestProjectAPIPermissionBase):
+    """Tests for TestIrodsDataRequestListAPIView permissions"""
+
+    def setUp(self):
+        super().setUp()
+        self.url = reverse(
+            'samplesheets:api_irods_request_list',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+
+    def test_get(self):
+        """Test IrodsDataRequestListAPIView GET"""
+        good_users = [
+            self.superuser,
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+        ]
+        bad_users = [
+            self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_guest,
+            self.user_no_roles,
+        ]
+        self.assert_response_api(self.url, good_users, 200)
+        self.assert_response_api(self.url, bad_users, 403)
+        self.assert_response_api(self.url, self.anonymous, 401)
+        # Test public project
+        self.project.set_public()
+        self.assert_response_api(
+            self.url, [self.user_finder_cat, self.user_no_roles], 403
+        )
+        self.assert_response_api(self.url, self.anonymous, 401)
+
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_get_anon(self):
+        """Test GET with anonymous guest access"""
+        self.project.set_public()
+        self.assert_response_api(self.url, self.anonymous, 401)
+
+    def test_get_archive(self):
+        """Test GET with archived project"""
+        self.project.set_archive()
+        good_users = [self.superuser]
+        bad_users = [
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
+            self.user_no_roles,
+        ]
+        self.assert_response_api(self.url, good_users, 200)
+        self.assert_response_api(self.url, bad_users, 403)
+        self.assert_response_api(self.url, self.anonymous, 401)
+
+
+class TestIrodsDataRequestRejectAPIView(
+    IrodsDataRequestMixin, TestProjectAPIPermissionBase
+):
+    """Test permissions for TestIrodsDataRequestRejectAPIView"""
+
+    def _cleanup(self):
+        self.request.status = IRODS_REQUEST_STATUS_ACTIVE
+        self.request.save()
+
+    def setUp(self):
+        super().setUp()
+        self.request = self.make_irods_request(
+            project=self.project,
+            action=IRODS_REQUEST_ACTION_DELETE,
+            path=IRODS_FILE_PATH,
+            status=IRODS_REQUEST_STATUS_ACTIVE,
+            user=self.user_contributor,
+        )
+        self.url = reverse(
+            'samplesheets:api_irods_request_reject',
+            kwargs={'irodsdatarequest': self.request.sodar_uuid},
+        )
+
+    def test_reject(self):
+        """Test IrodsDataRequestRejectAPIView POST"""
+        good_users = [
+            self.superuser,
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_owner,
+            self.user_delegate,
+        ]
+        bad_users = [
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_contributor,
+            self.user_guest,
+            self.user_no_roles,
+        ]
+        self.assert_response_api(
+            self.url,
+            good_users,
+            200,
+            method='POST',
+            cleanup_method=self._cleanup,
+        )
+        self.assert_response_api(self.url, bad_users, 403, method='POST')
+        self.assert_response_api(self.url, self.anonymous, 401, method='POST')
+
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_accept_anon(self):
+        """Test POST in IrodsDataRequestRejectAPIView with anonymous access"""
+        self.assert_response_api(self.url, self.anonymous, 401, method='POST')
+
+    def test_reject_archive(self):
+        """Test POST in IrodsDataRequestUpdateAPIView with archived project"""
+        self.project.set_archive()
+        good_users = [self.superuser]
+        bad_users = [
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
+            self.user_no_roles,
+        ]
+        self.assert_response_api(
+            self.url,
+            good_users,
+            200,
+            method='POST',
+            cleanup_method=self._cleanup,
+        )
+        self.assert_response_api(self.url, bad_users, 403, method='POST')
+        self.assert_response_api(self.url, self.anonymous, 401, method='POST')
+
+
+class TestIrodsDataRequestDestroyAPIView(
+    SampleSheetIOMixin, IrodsDataRequestMixin, TestProjectAPIPermissionBase
+):
+    """Test permissions for IrodsDataRequestDestroyAPIView"""
+
+    def _make_request(self):
+        self.request = self.make_irods_request(
+            project=self.project,
+            action=IRODS_REQUEST_ACTION_DELETE,
+            path=IRODS_FILE_PATH,
+            status=IRODS_REQUEST_STATUS_ACTIVE,
+            user=self.user_contributor,
+        )
+        self.request.sodar_uuid = self.request_uuid
+        self.request.save()
+        self.url = reverse(
+            'samplesheets:api_irods_request_delete',
+            kwargs={'irodsdatarequest': self.request.sodar_uuid},
+        )
+
+    def setUp(self):
+        super().setUp()
+        self.request_uuid = uuid.uuid4()
+        self._make_request()
+
+    def test_delete(self):
+        """Test IrodsDataRequestDestroyAPIView DELETE"""
+        good_users = [
+            self.superuser,
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,  # Request creator
+        ]
+        bad_users = [
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_guest,
+            self.user_no_roles,
+        ]
+        self.assert_response_api(
+            self.url,
+            good_users,
+            204,
+            method='DELETE',
+            cleanup_method=self._make_request,
+        )
+        self.assert_response_api(self.url, bad_users, 403, method='DELETE')
+        self.assert_response_api(self.url, self.anonymous, 401, method='DELETE')
+
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_delete_anon(self):
+        """Test DELETE with anonymous access"""
+        self.project.set_public()
+        self.assert_response_api(self.url, self.anonymous, 401, method='DELETE')
+
+    def test_delete_archive(self):
+        """Test DELETE with archived project"""
+        self.project.set_archive()
+        good_users = [self.superuser]
+        bad_users = [
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
+            self.user_no_roles,
+        ]
+        self.assert_response_api(
+            self.url,
+            good_users,
+            204,
+            method='DELETE',
+            cleanup_method=self._make_request,
+        )
+        self.assert_response_api(self.url, bad_users, 403, method='DELETE')
+        self.assert_response_api(self.url, self.anonymous, 401, method='DELETE')
 
 
 class TestRemoteSheetGetAPIView(
@@ -379,7 +685,7 @@ class TestRemoteSheetGetAPIView(
         )
 
     def test_get(self):
-        """Test RemoteSheetGetAPIView with correct access"""
+        """Test RemoteSheetGetAPIView GET"""
         # Create remote project
         self.make_remote_project(
             project_uuid=self.project.sodar_uuid,
@@ -396,7 +702,7 @@ class TestRemoteSheetGetAPIView(
         self.assert_response(url, self.anonymous, 200)
 
     def test_get_invalid_access(self):
-        """Test RemoteSheetGetAPIView with invalid access level"""
+        """Test GET with invalid access level"""
         self.make_remote_project(
             project_uuid=self.project.sodar_uuid,
             site=self.target_site,
@@ -412,7 +718,7 @@ class TestRemoteSheetGetAPIView(
         self.assert_response(url, self.anonymous, 401)
 
     def test_get_no_access(self):
-        """Test RemoteSheetGetAPIView with no remote access rights"""
+        """Test GET with no remote access rights"""
         url = reverse(
             'samplesheets:api_remote_get',
             kwargs={
@@ -423,7 +729,7 @@ class TestRemoteSheetGetAPIView(
         self.assert_response(url, self.anonymous, 401)
 
     def test_get_invalid_secret(self):
-        """Test RemoteSheetGetAPIView with invalid remote site secret"""
+        """Test GET with invalid remote site secret"""
         self.make_remote_project(
             project_uuid=self.project.sodar_uuid,
             site=self.target_site,
@@ -439,7 +745,7 @@ class TestRemoteSheetGetAPIView(
         self.assert_response(url, self.anonymous, 401)
 
     def test_get_archive(self):
-        """Test RemoteSheetGetAPIView with archived project"""
+        """Test GET with archived project"""
         self.project.set_archive()
         self.make_remote_project(
             project_uuid=self.project.sodar_uuid,
