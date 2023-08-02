@@ -331,7 +331,7 @@ class IrodsDataRequestRetrieveAPIView(
     - ``status_info``: Request status info (string)
     - ``description``: Request description (string)
     - ``date_created``: Request creation date (datetime)
-    - ``sodar_uuid`: Request UUID (string)
+    - ``sodar_uuid``: Request UUID (string)
     """
 
     lookup_field = 'sodar_uuid'

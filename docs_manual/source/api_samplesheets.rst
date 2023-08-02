@@ -23,7 +23,7 @@ API Views
 
 .. autoclass:: IrodsDataRequestUpdateAPIView
 
-.. autoclass:: IrodsDataRequestDeleteAPIView
+.. autoclass:: IrodsDataRequestDestroyAPIView
 
 .. autoclass:: IrodsDataRequestAcceptAPIView
 
