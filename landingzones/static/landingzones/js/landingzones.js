@@ -5,6 +5,7 @@ var isSuperuser = false;
  Zone status updating function
  *****************************/
 var updateZoneStatus = function() {
+    window.zoneStatusUpdated = false;
     var zoneUuids = [];
 
     $('.sodar-lz-zone-tr-existing').each(function() {
@@ -114,6 +115,7 @@ var updateZoneStatus = function() {
                 }
             }
         });
+    window.zoneStatusUpdated = true;
     });
 };
 
