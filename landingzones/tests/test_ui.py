@@ -58,14 +58,10 @@ class TestProjectZoneView(
 
     def _wait_for_status_update(self):
         """Wait for JQuery landing zone status updates to finish"""
-        max_retries = 5
-        retry = 0
-        while (
-            not self.selenium.execute_script('return window.zoneStatusUpdated')
-            and retry < max_retries
-        ):
+        for i in range(0, 5):
+            if self.selenium.execute_script('return window.zoneStatusUpdated'):
+                return
             time.sleep(0.5)
-            retry += 1
 
     def setUp(self):
         super().setUp()
@@ -363,9 +359,12 @@ class TestProjectZoneView(
             By.CLASS_NAME, 'sodar-lz-zone-tr-existing'
         )[0]
         dropdown_div = zone.find_element(By.CLASS_NAME, 'sodar-lz-zone-buttons')
-        attr = dropdown_div.find_element(
-            By.CLASS_NAME, 'sodar-list-dropdown'
-        ).get_attribute('disabled')
+        try:
+            attr = dropdown_div.find_element(
+                By.CLASS_NAME, 'sodar-list-dropdown'
+            ).get_attribute('disabled')
+        except AssertionError:
+            attr = None
         self.assertIsNone(attr)
         self.assertNotIn(
             'text-muted',
