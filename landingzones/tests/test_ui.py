@@ -345,36 +345,35 @@ class TestProjectZoneView(
             True,
         )
 
-    def test_zone_locked_buttons_superuser(self):
-        """Test ProjectZoneView zone buttons for locked zone as superuser"""
+    def test_zone_locked_superuser(self):
+        """Test ProjectZoneView zone rendering for locked zone as superuser"""
         self._setup_investigation()
         self.investigation.irods_status = True
         self.investigation.save()
-        self.make_landing_zone(
+        zone = self.make_landing_zone(
             'contrib_zone', self.project, self.user_contributor, self.assay
         )
+        self.assertEqual(zone.status, 'CREATING')
         self.login_and_redirect(self.superuser, self.url)
         self._wait_for_status_update()
-        zone = self.selenium.find_elements(
+        zone_elem = self.selenium.find_elements(
             By.CLASS_NAME, 'sodar-lz-zone-tr-existing'
         )[0]
-        dropdown_div = zone.find_element(By.CLASS_NAME, 'sodar-lz-zone-buttons')
-        try:
-            attr = dropdown_div.find_element(
+        self.assertNotIn(
+            'disabled',
+            zone_elem.find_element(
                 By.CLASS_NAME, 'sodar-list-dropdown'
-            ).get_attribute('disabled')
-        except AssertionError:
-            attr = None
-        self.assertIsNone(attr)
+            ).get_attribute('class'),
+        )
         self.assertNotIn(
             'text-muted',
-            zone.find_element(
+            zone_elem.find_element(
                 By.CLASS_NAME, 'sodar-lz-zone-title'
             ).get_attribute('class'),
         )
         self.assertNotIn(
             'text-muted',
-            zone.find_element(
+            zone_elem.find_element(
                 By.CLASS_NAME, 'sodar-lz-zone-status-info'
             ).get_attribute('class'),
         )
@@ -384,7 +383,39 @@ class TestProjectZoneView(
             'sodar-lz-zone-btn-copy',
             'sodar-lz-zone-btn-delete',
         ]
-        for class_name in class_names:
+        for c in class_names:
             self._assert_btn_enabled(
-                zone.find_element(By.CLASS_NAME, class_name), True
+                zone_elem.find_element(By.CLASS_NAME, c), True
             )
+
+    def test_zone_locked_contributor(self):
+        """Test ProjectZoneView zone rendering for locked zone as contributor"""
+        self._setup_investigation()
+        self.investigation.irods_status = True
+        self.investigation.save()
+        self.make_landing_zone(
+            'contrib_zone', self.project, self.user_contributor, self.assay
+        )
+        self.login_and_redirect(self.user_contributor, self.url)
+        self._wait_for_status_update()
+        zone_elem = self.selenium.find_elements(
+            By.CLASS_NAME, 'sodar-lz-zone-tr-existing'
+        )[0]
+        self.assertIn(
+            'disabled',
+            zone_elem.find_element(
+                By.CLASS_NAME, 'sodar-list-dropdown'
+            ).get_attribute('class'),
+        )
+        self.assertIn(
+            'text-muted',
+            zone_elem.find_element(
+                By.CLASS_NAME, 'sodar-lz-zone-title'
+            ).get_attribute('class'),
+        )
+        self.assertIn(
+            'text-muted',
+            zone_elem.find_element(
+                By.CLASS_NAME, 'sodar-lz-zone-status-info'
+            ).get_attribute('class'),
+        )
