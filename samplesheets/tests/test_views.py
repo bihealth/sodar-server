@@ -798,7 +798,7 @@ class TestSheetTemplateCreateFormView(ViewTestBase):
                     data=post_data,
                 )
             self.assertEqual(response.status_code, 302, msg=t)
-            self.assertIsNotNone(self.project.investigations.first())
+            self.assertIsNotNone(self.project.investigations.first(), msg=t)
             self.project.investigations.first().delete()
 
     def test_post_multiple(self):

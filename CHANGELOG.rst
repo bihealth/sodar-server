@@ -54,7 +54,7 @@ Changed
 - **Samplesheets**
     - Sample sheet table viewport background color (#1692)
     - Contract sheet table height to fit content (#1693)
-    - Hide additional internal fields from ISA-Tab templates (#1698)
+    - Hide internal fields from ISA-Tab templates (#1698, #1733)
     - Refactor ``IrodsDataRequest`` model and tests (#1706)
 - **Taskflowbackend**
     - Move iRODS object helpers from ``LandingZoneTaskflowMixin`` (#1699)
@@ -79,6 +79,7 @@ Removed
     - ``SHEETS_TABLE_HEIGHT`` Django setting (#1283)
     - Duplicate ``IrodsAccessTicketMixin`` from ``test_views_ajax`` (#1703)
     - ``IRODS_DATA_REQUEST_STATUS_CHOICES`` constant (#1706)
+    - ``HIDDEN_SHEET_TEMPLATE_FIELDS`` constant (#1733)
 
 
 v0.13.4 (2023-05-15)

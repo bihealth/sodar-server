@@ -16,7 +16,6 @@ from django.utils import timezone
 from projectroles.models import Project
 from projectroles.plugins import get_backend_api
 
-from samplesheets.constants import HIDDEN_SHEET_TEMPLATE_FIELDS
 from samplesheets.io import SampleSheetIO, ARCHIVE_TYPES
 from samplesheets.utils import clean_sheet_dir_name
 from samplesheets.models import (
@@ -278,10 +277,8 @@ class SheetTemplateCreateForm(forms.Form):
                 self.fields[k] = forms.CharField(**field_kwargs)
                 self.initial[k] = json.dumps(v)
                 self.json_fields.append(k)
-            # Hide fields not intended to be edited (see #1443, #1698)
-            if k in HIDDEN_SHEET_TEMPLATE_FIELDS or (
-                k.startswith('__') and k != TPL_DIR_FIELD
-            ):
+            # Hide fields not intended to be edited (see #1733)
+            if k.startswith('_') and k != TPL_DIR_FIELD:
                 self.fields[k].widget = forms.widgets.HiddenInput()
 
     def clean(self):

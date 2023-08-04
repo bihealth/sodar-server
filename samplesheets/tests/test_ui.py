@@ -20,14 +20,13 @@ from projectroles.app_settings import AppSettingAPI
 from projectroles.plugins import get_backend_api
 from projectroles.tests.test_ui import TestUIBase
 
-from samplesheets.constants import HIDDEN_SHEET_TEMPLATE_FIELDS
+from samplesheets.forms import TPL_DIR_FIELD
 from samplesheets.models import (
     ISATab,
     Investigation,
     IRODS_REQUEST_ACTION_DELETE,
     IRODS_REQUEST_STATUS_ACTIVE,
 )
-
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_models import (
     IrodsAccessTicketMixin,
@@ -209,8 +208,8 @@ class TestProjectSheetsView(IrodsDataRequestMixin, TestProjectSheetsUIBase):
 class TestSheetTemplateCreateFormView(TestProjectSheetsUIBase):
     """Tests for the sheet template creation view UI"""
 
-    def test_render_hidden_fields(self):
-        """Test rendering hidden fields in the sheet template form"""
+    def test_render_field_visibility(self):
+        """Test field visibility in sheet template form"""
         for t in ISA_TEMPLATES:
             url = (
                 reverse(
@@ -221,12 +220,18 @@ class TestSheetTemplateCreateFormView(TestProjectSheetsUIBase):
                 + t.name
             )
             self.login_and_redirect(self.superuser, url)
-            for f in HIDDEN_SHEET_TEMPLATE_FIELDS:
-                try:
-                    elem = self.selenium.find_element(By.ID, f)
-                    self.assertEqual(elem.get_attribute('type'), 'hidden')
-                except NoSuchElementException:
-                    pass  # This is ok
+            form_elems = self.selenium.find_elements(
+                By.CLASS_NAME, 'form-control'
+            )
+            for e in form_elems:
+                e_name = e.get_attribute('name')
+                msg = '{}/{}'.format(t.name, e_name)
+                if e_name.startswith('_') and e_name != TPL_DIR_FIELD:
+                    self.assertEqual(e.get_attribute('type'), 'hidden', msg=msg)
+                else:
+                    self.assertNotEqual(
+                        e.get_attribute('type'), 'hidden', msg=msg
+                    )
 
 
 class TestSheetVersionListView(TestProjectSheetsUIBase):
