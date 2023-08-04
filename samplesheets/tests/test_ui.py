@@ -20,7 +20,7 @@ from projectroles.app_settings import AppSettingAPI
 from projectroles.plugins import get_backend_api
 from projectroles.tests.test_ui import TestUIBase
 
-from samplesheets.forms import TPL_DIR_FIELD
+from samplesheets.forms import TPL_DIR_FIELD, TPL_DIR_LABEL
 from samplesheets.models import (
     ISATab,
     Investigation,
@@ -232,6 +232,32 @@ class TestSheetTemplateCreateFormView(TestProjectSheetsUIBase):
                     self.assertNotEqual(
                         e.get_attribute('type'), 'hidden', msg=msg
                     )
+
+    def test_render_labels(self):
+        """Test label rendering"""
+        for t in ISA_TEMPLATES:
+            prompts = t.configuration.get('__prompts__')
+            url = (
+                reverse(
+                    'samplesheets:template_create',
+                    kwargs={'project': self.project.sodar_uuid},
+                )
+                + '?sheet_tpl='
+                + t.name
+            )
+            self.login_and_redirect(self.superuser, url)
+            label_elems = self.selenium.find_elements(By.TAG_NAME, 'label')
+            for e in label_elems:
+                e_name = e.get_attribute('for')[3:]  # Strip "id_"
+                label_text = e.text
+                msg = '{}/{}'.format(t.name, e_name)
+                if e_name == TPL_DIR_FIELD:
+                    self.assertEqual(label_text, TPL_DIR_LABEL + '*')
+                # Need to use assertIn() because of extra label characters
+                elif prompts and e_name in prompts:
+                    self.assertIn(prompts[e_name], label_text, msg=msg)
+                else:
+                    self.assertIn(e_name, label_text, msg=msg)
 
 
 class TestSheetVersionListView(TestProjectSheetsUIBase):

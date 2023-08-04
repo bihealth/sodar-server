@@ -34,6 +34,7 @@ Added
     - ``IrodsDataRequest`` REST API views (#1588, #1706, #1734, #1735, #1736)
     - Davrods links in iRODS delete request list (#1339)
     - Batch accepting and rejecting for iRODS delete requests (#1340)
+    - Cookiecutter prompt support in sheet templates (#1726)
 - **Taskflowbackend**
     - ``BatchCalculateChecksumTask`` iRODS task (#1634)
     - Automated generation of missing checksums in ``zone_move`` flow (#1634)
