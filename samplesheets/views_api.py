@@ -37,11 +37,13 @@ from projectroles.views_api import (
     SODARAPIBaseProjectMixin,
     SODARAPIGenericProjectMixin,
 )
+from projectroles.utils import build_secret
 
 from samplesheets.io import SampleSheetIO
 from samplesheets.models import (
     Investigation,
     ISATab,
+    IrodsAccessTicket,
     IrodsDataRequest,
     IRODS_REQUEST_STATUS_ACTIVE,
     IRODS_REQUEST_STATUS_FAILED,
@@ -49,9 +51,11 @@ from samplesheets.models import (
 from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.serializers import (
     InvestigationSerializer,
+    IrodsAccessTicketSerializer,
     IrodsDataRequestSerializer,
 )
 from samplesheets.views import (
+    IrodsAccessTicketModifyMixin,
     IrodsCollsCreateViewMixin,
     IrodsDataRequestModifyMixin,
     SheetImportMixin,
@@ -69,7 +73,16 @@ table_builder = SampleSheetTableBuilder()
 MD5_RE = re.compile(r'([a-fA-F\d]{32})')
 APP_NAME = 'samplesheets'
 IRODS_QUERY_ERROR_MSG = 'Exception querying iRODS objects'
-IRODS_EX_MSG = 'iRODS data request failed'
+IRODS_REQUEST_EX_MSG = 'iRODS data request failed'
+IRODS_TICKET_EX_MSG = 'iRODS access ticket failed'
+IRODS_TICKET_READ_ONLY_FIELDS_MSG = 'The following fields are read-only'
+IRODS_TICKET_INVALID_DATA_MSG = 'Invalid data'
+IRODS_TICKETS_LISTED_MSG = 'iRODS access tickets listed'
+IRODS_TICKETS_NOT_FOUND_MSG = 'No iRODS access tickets found'
+IRODS_TICKET_RETREIVED_MSG = 'iRODS access ticket retrieved'
+IRODS_TICKET_CREATED_MSG = 'iRODS access ticket created'
+IRODS_TICKET_UPDATED_MSG = 'iRODS access ticket updated'
+IRODS_TICKET_DELETED_MSG = 'iRODS access ticket deleted'
 
 
 # API Views --------------------------------------------------------------------
@@ -310,6 +323,256 @@ class SheetImportAPIView(SheetImportMixin, SODARAPIBaseProjectMixin, APIView):
         return Response(ret_data, status=status.HTTP_200_OK)
 
 
+class IrodsAccessTicketListAPIView(
+    IrodsAccessTicketModifyMixin, SODARAPIBaseProjectMixin, APIView
+):
+    """
+    List iRODS access tickets for a project.
+
+    **URL:** ``/samplesheets/api/irods/ticket/list/{Project.sodar_uuid}``
+
+    **Methods:** ``GET``
+
+    **Query parameters:** ``active`` (boolean, default ``0``)
+
+    **Returns:**
+
+    - ``count``: Number of iRODS access tickets
+    - ``tickets``: List of iRODS access tickets
+    """
+
+    http_method_names = ['get']
+    permission_required = 'samplesheets.edit_sheet'
+
+    def get(self, request, *args, **kwargs):
+        """GET request for listing iRODS access tickets"""
+        project = self.get_project()
+        tickets = IrodsAccessTicket.objects.filter(
+            study__investigation__project=project
+        )
+        active = request.query_params.get('active', '0')
+        active = bool(int(active))
+        if active:
+            tickets = [t for t in tickets if t.is_active()]
+        if tickets:
+            serializer = IrodsAccessTicketSerializer(tickets, many=True)
+            content = {
+                'count': len(serializer.data),
+                'tickets': serializer.data,
+                'detail': IRODS_TICKETS_LISTED_MSG,
+            }
+        else:
+            content = {'detail': IRODS_TICKETS_NOT_FOUND_MSG}
+        return Response(content, status=status.HTTP_200_OK)
+
+
+class IrodsAccessTicketRetrieveAPIView(
+    IrodsAccessTicketModifyMixin, SODARAPIBaseProjectMixin, APIView
+):
+    """
+    Retrieve an iRODS access ticket for a project.
+
+    **URL:** ``/samplesheets/api/irods/ticket/retrieve/{IrodsAccessTicket.sodar_uuid}``
+
+    **Methods:** ``GET``
+
+    **Returns:**
+
+    - ``ticket``: iRODS access ticket
+    """
+
+    http_method_names = ['get']
+    permission_required = 'samplesheets.edit_sheet'
+
+    def get(self, request, *args, **kwargs):
+        """GET request for retrieving an iRODS access ticket"""
+        try:
+            ticket = IrodsAccessTicket.objects.get(
+                sodar_uuid=self.kwargs.get('irodsaccessticket')
+            )
+        except IrodsAccessTicket.DoesNotExist:
+            return Response(
+                {'detail': IRODS_TICKETS_NOT_FOUND_MSG},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        serializer = IrodsAccessTicketSerializer(ticket)
+        context = {
+            'ticket': serializer.data,
+            'detail': IRODS_TICKET_RETREIVED_MSG,
+        }
+        return Response(context, status=status.HTTP_200_OK)
+
+
+class IrodsAccessTicketCreateAPIView(
+    IrodsAccessTicketModifyMixin, SODARAPIBaseProjectMixin, CreateAPIView
+):
+    """
+    Create an iRODS access ticket for a project.
+
+    **URL:** ``/samplesheets/api/irods/ticket/create/{Project.sodar_uuid}``
+
+    **Methods:** ``POST``
+
+    **Parameters:**
+
+    - ``assay``: Assay primary key
+    - ``path``: iRODS path
+    - ``label``: Label (optional)
+    - ``date_expires``: Expiration date (YYYY-MM-DDThh:mm:ssZ, optional)
+
+    **Returns:**
+
+    - ``ticket``: iRODS access ticket
+    """
+
+    http_method_names = ['post']
+    permission_required = 'samplesheets.edit_sheet'
+
+    def post(self, request, *args, **kwargs):
+        """POST request for creating an iRODS access ticket"""
+        irods_backend = get_backend_api('omics_irods')
+        self.project = self.get_project()
+        serializer = IrodsAccessTicketSerializer(
+            data=request.data, partial=True
+        )
+        serializer.context['project'] = self.project
+        serializer.context['user'] = self.request.user
+
+        if serializer.is_valid():
+            try:
+                with irods_backend.get_session() as irods:
+                    ticket = self.create_irods_ticket(
+                        irods_backend,
+                        irods,
+                        serializer.validated_data.get('path'),
+                        build_secret(16),
+                        serializer.validated_data.get('date_expires'),
+                    )
+            except Exception as ex:
+                raise ValidationError(
+                    '{} {}'.format('Creating ' + IRODS_TICKET_EX_MSG + ':', ex)
+                )
+
+            # Create database object
+            serializer.validated_data['ticket'] = ticket.ticket
+            irods_access_ticket = serializer.save()
+
+            # Create timeline event and app alerts
+            self.create_timeline_event(irods_access_ticket, 'create')
+            self.create_app_alerts(
+                irods_access_ticket, 'create', self.request.user
+            )
+            context = {
+                'ticket': serializer.data,
+                'detail': IRODS_TICKET_CREATED_MSG,
+            }
+        else:
+            raise ValidationError('Invalid data: {}'.format(serializer.errors))
+        return Response(context, status=status.HTTP_201_CREATED)
+
+
+class IrodsAccessTicketUpdateAPIView(
+    IrodsAccessTicketModifyMixin, SODARAPIBaseProjectMixin, UpdateAPIView
+):
+    """
+    Update an iRODS access ticket for a project.
+
+    **URL:** ``/samplesheets/api/irods/ticket/update/{IrodsAccessTicket.sodar_uuid}``
+
+    **Methods:** ``PUT``, ``PATCH``
+
+    **Parameters:**
+
+    - ``label``: Label
+    - ``date_expires``: Expiration date (YYYY-MM-DD)
+
+    **Returns:**
+
+    - ``ticket``: iRODS access ticket
+    """
+
+    http_method_names = ['put', 'patch']
+    permission_required = 'samplesheets.edit_sheet'
+
+    def get_object(self):
+        return IrodsAccessTicket.objects.get(
+            sodar_uuid=self.kwargs.get('irodsaccessticket')
+        )
+
+    def put(self, request, *args, **kwargs):
+        """PUT request for updating an iRODS access ticket"""
+        ticket = self.get_object()
+        serializer = IrodsAccessTicketSerializer(
+            ticket, data=request.data, partial=True
+        )
+        read_only_fields = set(request.data) & set(
+            serializer.get_read_only_fields()
+        )
+        if read_only_fields:
+            raise ValidationError(
+                'Updating {}: {}: {}'.format(
+                    IRODS_TICKET_EX_MSG,
+                    IRODS_TICKET_READ_ONLY_FIELDS_MSG,
+                    ', '.join(read_only_fields),
+                )
+            )
+
+        if serializer.is_valid():
+            serializer.save()
+        else:
+            raise ValidationError(
+                'Updating {}: {}: {}'.format(
+                    IRODS_TICKET_EX_MSG,
+                    IRODS_TICKET_INVALID_DATA_MSG,
+                    serializer.errors,
+                )
+            )
+        self.create_timeline_event(ticket, 'update')
+        self.create_app_alerts(ticket, 'update', self.request.user)
+        context = {
+            'ticket': serializer.data,
+            'detail': IRODS_TICKET_UPDATED_MSG,
+        }
+        return Response(context, status=status.HTTP_200_OK)
+
+
+class IrodsAccessTicketDeleteAPIView(
+    IrodsAccessTicketModifyMixin, SODARAPIBaseProjectMixin, DestroyAPIView
+):
+    """
+    Delete an iRODS access ticket for a project.
+
+    **URL:** ``/samplesheets/api/irods/ticket/delete/{IrodsAccessTicket.sodar_uuid}``
+
+    **Methods:** ``DELETE``
+    """
+
+    http_method_names = ['delete']
+    permission_required = 'samplesheets.edit_sheet'
+
+    def get_object(self):
+        return IrodsAccessTicket.objects.get(
+            sodar_uuid=self.kwargs.get('irodsaccessticket')
+        )
+
+    def delete(self, request, *args, **kwargs):
+        """DELETE request for deleting an iRODS access ticket"""
+        ticket = self.get_object()
+        irods_backend = get_backend_api('omics_irods')
+        try:
+            with irods_backend.get_session() as irods:
+                irods_backend.delete_ticket(irods, ticket.ticket)
+        except Exception as ex:
+            raise ValidationError(
+                '{} {}'.format('Deleting ' + IRODS_TICKET_EX_MSG + ':', ex)
+            )
+        ticket.delete()
+        self.create_timeline_event(ticket, 'delete')
+        self.create_app_alerts(ticket, 'delete', self.request.user)
+        context = {'detail': IRODS_TICKET_DELETED_MSG}
+        return Response(context, status=status.HTTP_204_NO_CONTENT)
+
+
 class IrodsDataRequestRetrieveAPIView(
     SODARAPIGenericProjectMixin, RetrieveAPIView
 ):
@@ -502,7 +765,7 @@ class IrodsDataRequestAcceptAPIView(
             )
         except Exception as ex:
             raise ValidationError(
-                '{} {}'.format('Accepting ' + IRODS_EX_MSG + ':', ex)
+                '{} {}'.format('Accepting ' + IRODS_REQUEST_EX_MSG + ':', ex)
             )
         return Response(
             {'detail': 'iRODS data request accepted'}, status=status.HTTP_200_OK
@@ -545,7 +808,7 @@ class IrodsDataRequestRejectAPIView(
             )
         except Exception as ex:
             raise APIException(
-                '{} {}'.format('Rejecting ' + IRODS_EX_MSG + ':', ex)
+                '{} {}'.format('Rejecting ' + IRODS_REQUEST_EX_MSG + ':', ex)
             )
         return Response(
             {'detail': 'iRODS data request rejected'}, status=status.HTTP_200_OK
