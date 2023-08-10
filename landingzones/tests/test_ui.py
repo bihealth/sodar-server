@@ -16,6 +16,7 @@ from projectroles.tests.test_ui import TestUIBase
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_sheet_config import SheetConfigMixin
 
+from landingzones.constants import ZONE_STATUS_CREATING
 from landingzones.tests.test_models import LandingZoneMixin
 
 
@@ -353,7 +354,7 @@ class TestProjectZoneView(
         zone = self.make_landing_zone(
             'contrib_zone', self.project, self.user_contributor, self.assay
         )
-        self.assertEqual(zone.status, 'CREATING')
+        self.assertEqual(zone.status, ZONE_STATUS_CREATING)
         self.login_and_redirect(self.superuser, self.url)
         self._wait_for_status_update()
         zone_elem = self.selenium.find_elements(
