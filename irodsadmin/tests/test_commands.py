@@ -24,7 +24,7 @@ from landingzones.tests.test_models import LandingZoneMixin
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
-from irodsadmin.management.commands import irodsorphans
+from irodsadmin.management.commands.irodsorphans import Command, DELETED
 
 
 # SODAR constants
@@ -94,18 +94,14 @@ class TestIrodsOrphans(
             self.irods_backend.get_path(self.landing_zone)
         )
 
+        # Set up the command
+        self.irodsorphans = Command()
         self.expected_collections = (
-            *irodsorphans.get_assay_collections(
-                [self.assay], self.irods_backend
-            ),
-            *irodsorphans.get_study_collections(
-                [self.study], self.irods_backend
-            ),
-            *irodsorphans.get_zone_collections(self.irods_backend),
-            *irodsorphans.get_project_collections(self.irods_backend),
-            *irodsorphans.get_assay_subcollections(
-                [self.study], self.irods_backend
-            ),
+            *self.irodsorphans._get_assay_collections([self.assay]),
+            *self.irodsorphans._get_study_collections([self.study]),
+            *self.irodsorphans._get_zone_collections(),
+            *self.irodsorphans._get_project_collections(),
+            *self.irodsorphans._get_assay_subcollections([self.study]),
         )
 
     def tearDown(self):
@@ -115,35 +111,41 @@ class TestIrodsOrphans(
         self.irods.cleanup()
         super().tearDown()
 
+    @staticmethod
+    def catch_stdout():
+        """Catch stdout from 'irodsorphans' management command"""
+        out = io.StringIO()
+        sys.stdout = out
+        call_command('irodsorphans', stdout=out)
+        output = out.getvalue()
+        sys.stdout = sys.__stdout__
+        return output
+
     def test_get_assay_collections(self):
         """Test get_assay_collections()"""
         self.assertListEqual(
-            irodsorphans.get_assay_collections(
-                [self.assay], self.irods_backend
-            ),
+            self.irodsorphans._get_assay_collections([self.assay]),
             [self.irods_backend.get_path(self.assay)],
         )
 
     def test_get_study_collections(self):
         """Test get_study_collections()"""
         self.assertListEqual(
-            irodsorphans.get_study_collections(
-                [self.study], self.irods_backend
-            ),
+            self.irodsorphans._get_study_collections([self.study]),
             [self.irods_backend.get_path(self.study)],
         )
 
     def test_get_zone_collections(self):
         """Test get_zone_collections()"""
         self.assertListEqual(
-            irodsorphans.get_zone_collections(self.irods_backend),
+            self.irodsorphans._get_zone_collections(),
             [self.irods_backend.get_path(self.landing_zone)],
         )
 
     def test_get_project_collections(self):
         """Test get_project_collections()"""
         self.assertListEqual(
-            irodsorphans.get_project_collections(self.irods_backend),
+            self.irodsorphans._get_project_collections(),
             [self.irods_backend.get_path(self.project)],
         )
 
@@ -151,9 +153,7 @@ class TestIrodsOrphans(
         """Test get_assay_subcollections()"""
         assay_path = self.irods_backend.get_path(self.assay)
         self.assertListEqual(
-            irodsorphans.get_assay_subcollections(
-                [self.study], self.irods_backend
-            ),
+            self.irodsorphans._get_assay_subcollections([self.study]),
             [
                 assay_path + '/0815-N1-DNA1',
                 assay_path + '/0815-T1-DNA1',
@@ -168,51 +168,50 @@ class TestIrodsOrphans(
         collection = self.irods.collections.get(
             self.irods_backend.get_path(self.landing_zone)
         )
-        self.assertTrue(irodsorphans.is_zone(collection))
+        self.assertTrue(self.irodsorphans._is_zone(collection))
 
     def test_is_assay_or_study_with_assay(self):
         """Test is_assay_or_study() with assay"""
         collection = self.irods.collections.get(
             self.irods_backend.get_path(self.assay)
         )
-        self.assertTrue(irodsorphans.is_assay_or_study(collection))
+        self.assertTrue(self.irodsorphans._is_assay_or_study(collection))
 
     def test_is_assay_or_study_with_study(self):
         """Test is_assay_or_study() with study"""
         collection = self.irods.collections.get(
             self.irods_backend.get_path(self.study)
         )
-        self.assertTrue(irodsorphans.is_assay_or_study(collection))
+        self.assertTrue(self.irodsorphans._is_assay_or_study(collection))
 
     def test_is_project(self):
         """Test is_project()"""
         collection = self.irods.collections.get(
             self.irods_backend.get_path(self.project)
         )
-        self.assertTrue(irodsorphans.is_project(collection))
+        self.assertTrue(self.irodsorphans._is_project(collection))
 
     def test_is_zone_invalid(self):
         """Test is_zone() with a non-landingzone collection"""
         collection = self.irods.collections.get(
             self.irods_backend.get_path(self.project)
         )
-        self.assertFalse(irodsorphans.is_zone(collection))
+        self.assertFalse(self.irodsorphans._is_zone(collection))
 
     def test_is_assay_or_study_invalid(self):
         """Test is_assay_or_study() with non-assay/study collection"""
         collection = self.irods.collections.get(
             self.irods_backend.get_path(self.project)
         )
-        self.assertFalse(irodsorphans.is_assay_or_study(collection))
+        self.assertFalse(self.irodsorphans._is_assay_or_study(collection))
 
     def test_get_orphans_none(self):
         """Test get_orphans() with no orphans available"""
         # Capture stdout
         out = io.StringIO()
         sys.stdout = out
-        irodsorphans.get_orphans(
+        self.irodsorphans._get_orphans(
             self.irods,
-            self.irods_backend,
             self.expected_collections,
             [self.assay],
         )
@@ -230,15 +229,22 @@ class TestIrodsOrphans(
         # Capture stdout
         out = io.StringIO()
         sys.stdout = out
-        irodsorphans.get_orphans(
+        self.irodsorphans._get_orphans(
             self.irods,
-            self.irods_backend,
             self.expected_collections,
             [self.assay],
         )
         output = out.getvalue()
         sys.stdout = sys.__stdout__
-        self.assertIn(orphan_path, output)
+        expected = (
+            str(self.project.sodar_uuid)
+            + ';'
+            + self.project.title
+            + ';'
+            + orphan_path
+            + ';0;0 bytes\n'
+        )
+        self.assertEqual(expected, output)
 
     def test_get_orphans_study(self):
         """Test get_orphans() with orphan study"""
@@ -249,15 +255,22 @@ class TestIrodsOrphans(
         # Capture stdout
         out = io.StringIO()
         sys.stdout = out
-        irodsorphans.get_orphans(
+        self.irodsorphans._get_orphans(
             self.irods,
-            self.irods_backend,
             self.expected_collections,
             [self.assay],
         )
         output = out.getvalue()
         sys.stdout = sys.__stdout__
-        self.assertIn(orphan_path, output)
+        expected = (
+            str(self.project.sodar_uuid)
+            + ';'
+            + self.project.title
+            + ';'
+            + orphan_path
+            + ';0;0 bytes\n'
+        )
+        self.assertEqual(expected, output)
 
     def test_get_output_zone(self):
         """Test get_orphans() with orphan landing zone"""
@@ -273,16 +286,22 @@ class TestIrodsOrphans(
         # Capture stdout
         out = io.StringIO()
         sys.stdout = out
-        irodsorphans.get_orphans(
+        self.irodsorphans._get_orphans(
             self.irods,
-            self.irods_backend,
             self.expected_collections,
             [self.assay],
         )
         output = out.getvalue()
         sys.stdout = sys.__stdout__
-
-        self.assertIn(orphan_path, output)
+        expected = (
+            str(self.project.sodar_uuid)
+            + ';'
+            + self.project.title
+            + ';'
+            + orphan_path
+            + ';0;0 bytes\n'
+        )
+        self.assertEqual(expected, output)
 
     def test_get_output_project(self):
         """Test get_orphans() with orphan project"""
@@ -298,16 +317,17 @@ class TestIrodsOrphans(
         # Capture stdout
         out = io.StringIO()
         sys.stdout = out
-        irodsorphans.get_orphans(
+        self.irodsorphans._get_orphans(
             self.irods,
-            self.irods_backend,
             self.expected_collections,
             [self.assay],
         )
         output = out.getvalue()
         sys.stdout = sys.__stdout__
-
-        self.assertIn(orphan_path, output)
+        expected = (
+            collection[3:] + ';' + DELETED + ';' + orphan_path + ';0;0 bytes\n'
+        )
+        self.assertEqual(expected, output)
 
     def test_get_output_assay_subs(self):
         """Test get_orphans() with orphan assay subcollections"""
@@ -320,16 +340,22 @@ class TestIrodsOrphans(
         # Capture stdout
         out = io.StringIO()
         sys.stdout = out
-        irodsorphans.get_orphans(
+        self.irodsorphans._get_orphans(
             self.irods,
-            self.irods_backend,
             self.expected_collections,
             [self.assay],
         )
         output = out.getvalue()
         sys.stdout = sys.__stdout__
-
-        self.assertIn(orphan_path, output)
+        expected = (
+            str(self.project.sodar_uuid)
+            + ';'
+            + self.project.title
+            + ';'
+            + orphan_path
+            + ';0;0 bytes\n'
+        )
+        self.assertEqual(expected, output)
 
     def test_get_output_deleted_project(self):
         """Test get_output() with a deleted project"""
@@ -346,22 +372,17 @@ class TestIrodsOrphans(
         # Capture stdout
         out = io.StringIO()
         sys.stdout = out
-        irodsorphans.get_orphans(
+        self.irodsorphans._get_orphans(
             self.irods,
-            self.irods_backend,
             self.expected_collections,
             [self.assay],
         )
         output = out.getvalue()
         sys.stdout = sys.__stdout__
-
-        self.assertIn(
-            '{};<DELETED>;{};0;0 bytes'.format(
-                project_uuid,
-                orphan_path,
-            ),
-            output,
+        expected = (
+            project_uuid + ';' + DELETED + ';' + orphan_path + ';0;0 bytes\n'
         )
+        self.assertEqual(expected, output)
 
     def test_command_no_orphans(self):
         """Test command with no orphans"""
@@ -378,12 +399,7 @@ class TestIrodsOrphans(
             self.irods_backend.get_path(self.study), str(uuid.uuid4())
         )
         self.irods.collections.create(orphan_path)
-        out = io.StringIO()
-        sys.stdout = out
-        call_command('irodsorphans', stdout=out)
-        output = out.getvalue()
-        sys.stdout = sys.__stdout__
-
+        output = self.catch_stdout()
         expected = '{};{};{};0;0 bytes\n'.format(
             str(self.project.sodar_uuid),
             self.project.full_title,
@@ -397,12 +413,7 @@ class TestIrodsOrphans(
             self.irods_backend.get_path(self.project), str(uuid.uuid4())
         )
         self.irods.collections.create(orphan_path)
-        out = io.StringIO()
-        sys.stdout = out
-        call_command('irodsorphans', stdout=out)
-        output = out.getvalue()
-        sys.stdout = sys.__stdout__
-
+        output = self.catch_stdout()
         expected = '{};{};{};0;0 bytes\n'.format(
             str(self.project.sodar_uuid),
             self.project.full_title,
@@ -420,12 +431,7 @@ class TestIrodsOrphans(
             collection,
         )
         self.irods.collections.create(orphan_path)
-        out = io.StringIO()
-        sys.stdout = out
-        call_command('irodsorphans', stdout=out)
-        output = out.getvalue()
-        sys.stdout = sys.__stdout__
-
+        output = self.catch_stdout()
         expected = '{};{};{};0;0 bytes\n'.format(
             str(self.project.sodar_uuid),
             self.project.full_title,
@@ -444,12 +450,7 @@ class TestIrodsOrphans(
             collection,
         )
         self.irods.collections.create(orphan_path)
-        out = io.StringIO()
-        sys.stdout = out
-        call_command('irodsorphans', stdout=out)
-        output = out.getvalue()
-        sys.stdout = sys.__stdout__
-
+        output = self.catch_stdout()
         expected = '{};<DELETED>;{};0;0 bytes\n'.format(
             project_uuid, orphan_path
         )
@@ -462,12 +463,7 @@ class TestIrodsOrphans(
             self.irods_backend.get_path(self.assay), collection
         )
         self.irods.collections.create(orphan_path)
-        out = io.StringIO()
-        sys.stdout = out
-        call_command('irodsorphans', stdout=out)
-        output = out.getvalue()
-        sys.stdout = sys.__stdout__
-
+        output = self.catch_stdout()
         expected = '{};{};{};0;0 bytes\n'.format(
             str(self.project.sodar_uuid),
             self.project.full_title,
@@ -489,12 +485,7 @@ class TestIrodsOrphans(
             collection,
         )
         self.irods.collections.create(orphan_path2)
-        out = io.StringIO()
-        sys.stdout = out
-        call_command('irodsorphans', stdout=out)
-        output = out.getvalue()
-        sys.stdout = sys.__stdout__
-
+        output = self.catch_stdout()
         expected = '{};{};{};0;0 bytes\n'.format(
             str(self.project.sodar_uuid),
             self.project.full_title,
