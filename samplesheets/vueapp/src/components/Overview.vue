@@ -37,8 +37,7 @@
               <IrodsStatsBadge
                 :projectUuid="sodarContext.project_uuid"
                 :irodsStatus="sodarContext.irods_status"
-                :irodsPath="sodarContext.irods_path"
-              />
+                :irodsPath="sodarContext.irods_path"/>
             </span>
             <span v-else class="badge badge-pill badge-danger">
               Not Created
