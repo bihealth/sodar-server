@@ -90,7 +90,7 @@ class TestSamplesheetsTemplateTags(
             comments=DEFAULT_COMMENTS,
         )
         # Setup iRODS backend for the test
-        self.irods_backend = get_backend_api("omics_irods")
+        self.irods_backend = get_backend_api('omics_irods')
 
     def test_get_investigation(self):
         """Test get_investigation()"""
@@ -106,14 +106,14 @@ class TestSamplesheetsTemplateTags(
     def test_get_search_item_type_with_material_types(self):
         """Test get_search_item_type() with material types"""
         for material_type in GENERIC_MATERIAL_TYPES:
-            item = {"type": material_type}
+            item = {'type': material_type}
             expected_type = GENERIC_MATERIAL_TYPES[material_type]
             self.assertEqual(s_tags.get_search_item_type(item), expected_type)
 
     def test_get_search_item_type_with_file(self):
-        """Test get_search_item_type() with special case "file" """
-        item = {"type": "file"}
-        self.assertEqual(s_tags.get_search_item_type(item), "Data File")
+        """Test get_search_item_type() with special case 'file'"""
+        item = {'type': 'file'}
+        self.assertEqual(s_tags.get_search_item_type(item), 'Data File')
 
     def test_get_irods_tree(self):
         """Test get_irods_tree()"""
@@ -124,23 +124,23 @@ class TestSamplesheetsTemplateTags(
         self.assertIn(self.irods_backend.get_sub_path(self.study), ret)
         # Assert that assay path exists in the returned string
         clean_assay_path_0 = self.irods_backend.get_sub_path(self.assay).split(
-            "/"
+            '/'
         )[0]
         clean_assay_path_1 = self.irods_backend.get_sub_path(self.assay).split(
-            "/"
+            '/'
         )[1]
         self.assertIn(clean_assay_path_0, ret)
         self.assertIn(clean_assay_path_1, ret)
 
     def test_get_material_search_url(self):
         """Test get_material_search_url()"""
-        item = {"study": self.study, "name": "Sample1"}
+        item = {'study': self.study, 'name': 'Sample1'}
         url = s_tags.get_material_search_url(item)
         expected_url = reverse(
-            "samplesheets:project_sheets",
-            kwargs={"project": self.project.sodar_uuid},
+            'samplesheets:project_sheets',
+            kwargs={'project': self.project.sodar_uuid},
         )
-        expected_url += "#/study/{}/filter/Sample1".format(
+        expected_url += '#/study/{}/filter/Sample1'.format(
             self.study.sodar_uuid
         )
         self.assertEqual(url, expected_url)
@@ -158,8 +158,8 @@ class TestSamplesheetsTemplateTags(
     def test_get_irods_path_with_project_and_sub_path(self):
         """Test get_irods_path() with project and sub_path"""
         project_path = self.irods_backend.get_path(self.project)
-        sub_path = "subfolder1/subfolder2"
-        expected_path = project_path + "/" + sub_path
+        sub_path = 'subfolder1/subfolder2'
+        expected_path = project_path + '/' + sub_path
         self.assertEqual(
             s_tags.get_irods_path(self.project, sub_path), expected_path
         )
@@ -167,8 +167,8 @@ class TestSamplesheetsTemplateTags(
     def test_get_irods_path_with_assay_and_sub_path(self):
         """Test get_irods_path() with assay and sub_path"""
         assay_path = self.irods_backend.get_path(self.assay)
-        sub_path = "subfolder1/subfolder2"
-        expected_path = assay_path + "/" + sub_path
+        sub_path = 'subfolder1/subfolder2'
+        expected_path = assay_path + '/' + sub_path
         self.assertEqual(
             s_tags.get_irods_path(self.assay, sub_path), expected_path
         )
@@ -176,25 +176,25 @@ class TestSamplesheetsTemplateTags(
     def test_get_icon_study(self):
         """Test get_icon() with Study"""
         icon_html = s_tags.get_icon(self.study)
-        self.assertIn("text-info", icon_html)
-        self.assertIn("mdi:folder-table", icon_html)
+        self.assertIn('text-info', icon_html)
+        self.assertIn('mdi:folder-table', icon_html)
 
     def test_get_icon_assay(self):
         """Test get_icon() with Assay"""
         icon_html = s_tags.get_icon(self.assay)
-        self.assertIn("text-danger", icon_html)
-        self.assertIn("mdi:table-large", icon_html)
+        self.assertIn('text-danger', icon_html)
+        self.assertIn('mdi:table-large', icon_html)
 
-    def test_get_isatab_tag_html_with_tags_in_TAG_COLORS(self):
+    def test_get_isatab_tag_html_with_tags_in_tag_colors(self):
         """Test get_isatab_tag_html() with tags in TAG_COLORS"""
-        isatab = type("MockISATab", (object,), {"tags": TAG_COLORS.keys()})
+        isatab = type('MockISATab', (object,), {'tags': TAG_COLORS.keys()})
         tag_html = s_tags.get_isatab_tag_html(isatab)
         for tag, color in TAG_COLORS.items():
             self.assertIn(color, tag_html)
 
     def test_get_isatab_tag_html_with_unknown_tag(self):
         """Test get_isatab_tag_html() with an unknown tag"""
-        isatab = type("MockISATab", (object,), {"tags": ["UNKNOWN_TAG"]})
+        isatab = type('MockISATab', (object,), {'tags': ['UNKNOWN_TAG']})
         tag_html = s_tags.get_isatab_tag_html(isatab)
         self.assertIn(DEFAULT_TAG_COLOR, tag_html)
 
@@ -204,7 +204,7 @@ class TestSamplesheetsTemplateTags(
         """
         for status, css_class in REQUEST_STATUS_CLASSES.items():
             irods_request = type(
-                "MockIrodsRequest", (object,), {"status": status}
+                'MockIrodsRequest', (object,), {'status': status}
             )
             self.assertEqual(
                 s_tags.get_request_status_class(irods_request), css_class
@@ -213,15 +213,13 @@ class TestSamplesheetsTemplateTags(
     def test_get_request_status_class_with_unknown_status(self):
         """Test get_request_status_class() with an unknown status"""
         irods_request = type(
-            "MockIrodsRequest", (object,), {"status": "UNKNOWN"}
+            'MockIrodsRequest', (object,), {'status': 'UNKNOWN'}
         )
-        self.assertEqual(s_tags.get_request_status_class(irods_request), "")
+        self.assertEqual(s_tags.get_request_status_class(irods_request), '')
 
     def test_trim_base_path(self):
         """Test trim_base_path() with a realistic iRODS path"""
-        prefix = "/base_path"
-        path = prefix + "/project/subfolder1/subfolder2"
-        expected_trimmed_path = "/project/subfolder1/subfolder2"
-        self.assertEqual(
-            s_tags.trim_base_path(path, prefix), expected_trimmed_path
-        )
+        prefix = '/base_path'
+        path = prefix + '/project/subfolder1/subfolder2'
+        expected = '/project/subfolder1/subfolder2'
+        self.assertEqual(s_tags.trim_base_path(path, prefix), expected)

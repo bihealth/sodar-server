@@ -702,8 +702,8 @@ class TestSheetTemplateSelectView(ViewTestBase):
             )
 
 
-class TestSheetTemplateCreateFormView(ViewTestBase):
-    """Tests for SheetTemplateCreateFormView"""
+class TestSheetTemplateCreateView(ViewTestBase):
+    """Tests for SheetTemplateCreateView"""
 
     def _get_post_data(self, tpl_name):
         """
