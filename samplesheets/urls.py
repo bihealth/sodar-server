@@ -198,7 +198,7 @@ urls_api = [
     ),
     path(
         route='api/irods/ticket/delete/<uuid:irodsaccessticket>',
-        view=views_api.IrodsAccessTicketDeleteAPIView.as_view(),
+        view=views_api.IrodsAccessTicketDestroyAPIView.as_view(),
         name='api_irods_ticket_delete',
     ),
     path(

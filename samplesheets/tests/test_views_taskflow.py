@@ -80,9 +80,9 @@ PUBLIC_USER_PASS = 'password'
 SOURCE_ID = '0815'
 SAMPLE_ID = '0815-N1'
 INVALID_REDIS_URL = 'redis://127.0.0.1:6666/0'
-TICKET_LABEL = 'TestTicket'
 TICKET_LABEL_UPDATED = 'TestTicketUpdated'
 TICKET_STR = 'q657xxx3i2x2b8vj'
+TICKET_LABEL = 'TestTicket'
 IRODS_REQUEST_DESC_UPDATE = 'Updated'
 
 

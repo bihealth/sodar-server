@@ -522,7 +522,7 @@ class IrodsAccessTicketUpdateAPIView(
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class IrodsAccessTicketDeleteAPIView(
+class IrodsAccessTicketDestroyAPIView(
     IrodsAccessTicketModifyMixin, SODARAPIBaseProjectMixin, DestroyAPIView
 ):
     """

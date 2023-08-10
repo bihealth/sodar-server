@@ -139,19 +139,14 @@ class TestIrodsAccessTicketAPIViewBase(
 
     def create_ticket(self):
         """Helper function to create a ticket"""
-        path = self.coll.path + '/ticket1'
-        ticket_str = 'ticket'
-        label = 'label'
-        date_expires = (timezone.localtime() + timedelta(days=1)).isoformat()
-        # Create ticket in database and iRODS
         ticket = self.make_irods_ticket(
             study=self.study,
             assay=self.assay,
-            path=path,
+            path=self.coll.path + '/ticket1',
             user=self.user_owner,
-            ticket=ticket_str,
-            label=label,
-            date_expires=date_expires,
+            ticket='ticket',
+            label='label',
+            date_expires=(timezone.localtime() + timedelta(days=1)).isoformat(),
         )
         return ticket
 
@@ -217,11 +212,11 @@ class TestIrodsAccessTicketListAPIView(TestIrodsAccessTicketAPIViewBase):
             self.user_owner_cat,
             self.user_delegate_cat,
             self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_finder_cat,
             self.user_owner,
             self.user_delegate,
             self.user_contributor,
-            self.user_guest_cat,
-            self.user_finder_cat,
             self.user_guest,
             self.user_no_roles,
         ]
@@ -276,11 +271,11 @@ class TestIrodsAccessTicketRetrieveAPIView(TestIrodsAccessTicketAPIViewBase):
             self.user_owner_cat,
             self.user_delegate_cat,
             self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_finder_cat,
             self.user_owner,
             self.user_delegate,
             self.user_contributor,
-            self.user_guest_cat,
-            self.user_finder_cat,
             self.user_guest,
             self.user_no_roles,
         ]
@@ -315,8 +310,8 @@ class TestIrodsAccessTicketCreateAPIView(TestIrodsAccessTicketAPIViewBase):
     def _delete_ticket(self):
         """Delete ticket created in setUp()"""
         access_ticket = IrodsAccessTicket.objects.all().first()
-        ticket = access_ticket.ticket
-        self.irods_backend.delete_ticket(self.irods, ticket)
+        ticket_str = access_ticket.ticket
+        self.irods_backend.delete_ticket(self.irods, ticket_str)
         access_ticket.delete()
 
     def test_create(self):
@@ -366,11 +361,11 @@ class TestIrodsAccessTicketCreateAPIView(TestIrodsAccessTicketAPIViewBase):
             self.user_owner_cat,
             self.user_delegate_cat,
             self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_finder_cat,
             self.user_owner,
             self.user_delegate,
             self.user_contributor,
-            self.user_guest_cat,
-            self.user_finder_cat,
             self.user_guest,
             self.user_no_roles,
         ]
@@ -442,11 +437,11 @@ class TestIrodsAccessTicketUpdateAPIView(TestIrodsAccessTicketAPIViewBase):
             self.user_owner_cat,
             self.user_delegate_cat,
             self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_finder_cat,
             self.user_owner,
             self.user_delegate,
             self.user_contributor,
-            self.user_guest_cat,
-            self.user_finder_cat,
             self.user_guest,
             self.user_no_roles,
         ]
@@ -461,7 +456,7 @@ class TestIrodsAccessTicketUpdateAPIView(TestIrodsAccessTicketAPIViewBase):
         )
 
 
-class TestIrodsAccessTicketDeleteAPIView(TestIrodsAccessTicketAPIViewBase):
+class TestIrodsAccessTicketDestroyAPIView(TestIrodsAccessTicketAPIViewBase):
     """Test permissions for IrodsAccessTicketDeleteAPIView"""
 
     def create_irods_ticket(self):
@@ -572,11 +567,11 @@ class TestIrodsDataRequestListAPIView(
             self.user_owner_cat,
             self.user_delegate_cat,
             self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_finder_cat,
             self.user_owner,
             self.user_delegate,
             self.user_contributor,
-            self.user_guest_cat,
-            self.user_finder_cat,
             self.user_guest,
             self.user_no_roles,
         ]

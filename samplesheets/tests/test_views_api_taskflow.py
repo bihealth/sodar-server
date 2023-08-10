@@ -15,8 +15,6 @@ from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 
-from appalerts.models import AppAlert
-
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
@@ -66,6 +64,7 @@ from samplesheets.tests.test_views_taskflow import (
     IRODS_FILE_NAME2,
     INVALID_REDIS_URL,
     TICKET_STR,
+    TICKET_LABEL,
 )
 
 # SODAR constants
@@ -356,9 +355,9 @@ class TestIrodsAccessTicketListAPIView(TestIrodsAccessTicketAPIViewBase):
 
     def setUp(self):
         super().setUp()
-        self.ticket_str = 'ticket'
+        self.ticket_str = TICKET_STR
         self.path = self.coll.path
-        self.label = 'label'
+        self.label = TICKET_LABEL
         self.date_expires = None
         self.url = reverse(
             'samplesheets:api_irods_ticket_list',
@@ -465,9 +464,9 @@ class TestIrodsAccessTicketRetrieveAPIView(TestIrodsAccessTicketAPIViewBase):
 
     def setUp(self):
         super().setUp()
-        self.ticket_str = 'ticket'
+        self.ticket_str = TICKET_STR
         self.path = self.coll.path
-        self.label = 'label'
+        self.label = TICKET_LABEL
         self.date_expires = None
         self.ticket = self.make_irods_ticket(
             study=self.study,
@@ -529,7 +528,7 @@ class TestIrodsAccessTicketCreateAPIView(TestIrodsAccessTicketAPIViewBase):
     def setUp(self):
         super().setUp()
         self.path = self.coll.path
-        self.label = 'label'
+        self.label = TICKET_LABEL
         self.date_expires = (
             timezone.localtime() + timedelta(days=1)
         ).isoformat()
@@ -572,7 +571,9 @@ class TestIrodsAccessTicketCreateAPIView(TestIrodsAccessTicketAPIViewBase):
         self.assertEqual(self.get_tl_event_count('create'), 1)
         self.assertEqual(self.get_app_alert_count('create'), 1)
         self.assertEqual(
-            AppAlert.objects.filter(alert_name='irods_ticket_create')
+            self.app_alert_model.objects.filter(
+                alert_name='irods_ticket_create'
+            )
             .first()
             .user,
             self.user_delegate,
@@ -614,7 +615,9 @@ class TestIrodsAccessTicketCreateAPIView(TestIrodsAccessTicketAPIViewBase):
         self.assertEqual(self.get_tl_event_count('create'), 1)
         self.assertEqual(self.get_app_alert_count('create'), 2)
         self.assertEqual(
-            AppAlert.objects.filter(alert_name='irods_ticket_create')
+            self.app_alert_model.objects.filter(
+                alert_name='irods_ticket_create'
+            )
             .first()
             .user,
             self.user_delegate,
@@ -710,14 +713,13 @@ class TestIrodsAccessTicketCreateAPIView(TestIrodsAccessTicketAPIViewBase):
         self.assertEqual(self.get_app_alert_count('create'), 0)
 
 
-
 class TestIrodsAccessTicketUpdateAPIView(TestIrodsAccessTicketAPIViewBase):
     """Tests for IrodsAccessTicketUpdateAPIView"""
 
     def setUp(self):
         super().setUp()
-        self.ticket_str = 'ticket'
-        self.label = 'label'
+        self.ticket_str = TICKET_STR
+        self.label = TICKET_LABEL
         self.date_expires = None
         self.ticket = self.make_irods_ticket(
             study=self.study,
@@ -775,7 +777,9 @@ class TestIrodsAccessTicketUpdateAPIView(TestIrodsAccessTicketAPIViewBase):
         self.assertEqual(self.get_tl_event_count('update'), 1)
         self.assertEqual(self.get_app_alert_count('update'), 2)
         self.assertEqual(
-            AppAlert.objects.filter(alert_name='irods_ticket_update')
+            self.app_alert_model.objects.filter(
+                alert_name='irods_ticket_update'
+            )
             .first()
             .user,
             self.user_delegate,
@@ -816,13 +820,13 @@ class TestIrodsAccessTicketUpdateAPIView(TestIrodsAccessTicketAPIViewBase):
         self.assertEqual(self.get_app_alert_count('update'), 0)
 
 
-class TestIrodsAccessTicketDeleteAPIView(TestIrodsAccessTicketAPIViewBase):
+class TestIrodsAccessTicketDestroyAPIView(TestIrodsAccessTicketAPIViewBase):
     """Tests for IrodsAccessTicketDeleteAPIView"""
 
     def setUp(self):
         super().setUp()
-        self.ticket_str = 'ticket'
-        self.label = 'label'
+        self.ticket_str = TICKET_STR
+        self.label = TICKET_LABEL
         self.date_expires = (
             timezone.localtime() + timedelta(days=1)
         ).isoformat()
@@ -864,7 +868,9 @@ class TestIrodsAccessTicketDeleteAPIView(TestIrodsAccessTicketAPIViewBase):
         self.assertEqual(self.get_tl_event_count('delete'), 1)
         self.assertEqual(self.get_app_alert_count('delete'), 2)
         self.assertEqual(
-            AppAlert.objects.filter(alert_name='irods_ticket_delete')
+            self.app_alert_model.objects.filter(
+                alert_name='irods_ticket_delete'
+            )
             .first()
             .user,
             self.user_delegate,
