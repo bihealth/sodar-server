@@ -451,8 +451,8 @@ class TestIrodsOrphans(
         )
         self.irods.collections.create(orphan_path)
         output = self.catch_stdout()
-        expected = '{};<DELETED>;{};0;0 bytes\n'.format(
-            project_uuid, orphan_path
+        expected = '{};{};{};0;0 bytes\n'.format(
+            project_uuid, DELETED, orphan_path
         )
         self.assertEqual(expected, output)
 
