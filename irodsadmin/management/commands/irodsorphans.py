@@ -39,14 +39,34 @@ class Command(BaseCommand):
         super().__init__()
         self.irods_backend = get_backend_api('omics_irods')
 
-    def _get_uuid_from_path(self, path):
-        """Helper function to get UUID from a path"""
-        match = re.search(
-            r'/([a-f0-9]{2})/\1[a-f0-9]{6}-([a-f0-9]{4}-){3}[a-f0-9]{12}$', path
+    def _sort_colls_on_projects(self, all_project_collections, project_list):
+        """Helper function to sort collections based on project list"""
+        # Separate strings with UUIDs from those without
+        strings_with_uuids = []
+        strings_without_uuids = []
+
+        # Iterate through L1 and classify strings
+        for coll in all_project_collections:
+            match = re.search(
+                r'[a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12}', coll.path
+            )
+            if match and match.group() in project_list:
+                strings_with_uuids.append(coll)
+            else:
+                strings_without_uuids.append(coll)
+
+        # Sort strings with UUIDs based on L2
+        sorted_strings_with_uuids = sorted(
+            strings_with_uuids,
+            key=lambda coll: project_list.index(
+                re.search(
+                    r'[a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12}', coll.path
+                ).group()
+            ),
         )
-        if match:
-            return match.group(1)
-        return None
+
+        # Return the sorted strings with UUIDs followed by strings without UUIDs
+        return sorted_strings_with_uuids + strings_without_uuids
 
     def _get_assay_collections(self, assays):
         """Return a list of all assay collection names."""
@@ -162,16 +182,11 @@ class Command(BaseCommand):
             project.full_title: project.sodar_uuid
             for project in Project.objects.filter(type=PROJECT_TYPE_PROJECT)
         }
-        # Sort dict by full_title
-        project_dict = dict(
-            sorted(project_dict.items(), key=lambda item: item[0])
-        )
+        # Sort dict by full_title and extract the UUID values
+        project_list = [str(val) for _, val in sorted(project_dict.items())]
         # Sort collections by project full_title
-        sorted_project_collections = sorted(
-            all_project_collections,
-            key=lambda coll: project_dict.get(
-                self._get_uuid_from_path(coll.path), float('inf')
-            ),
+        sorted_project_collections = self._sort_colls_on_projects(
+            all_project_collections, project_list
         )
 
         for collection in sorted_project_collections:
