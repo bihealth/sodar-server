@@ -26,11 +26,8 @@ from projectroles.views_api import (
 # Samplesheets dependency
 from samplesheets.models import Investigation
 
-from landingzones.models import (
-    LandingZone,
-    STATUS_ALLOW_UPDATE,
-    STATUS_FINISHED,
-)
+from landingzones.constants import STATUS_ALLOW_UPDATE, STATUS_FINISHED
+from landingzones.models import LandingZone
 from landingzones.serializers import LandingZoneSerializer
 from landingzones.views import (
     ZoneModifyPermissionMixin,

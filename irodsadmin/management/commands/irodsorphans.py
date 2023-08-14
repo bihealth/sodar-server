@@ -12,6 +12,7 @@ from projectroles.models import Project
 from projectroles.plugins import get_backend_api
 
 # Landingzones dependency
+from landingzones.constants import ZONE_STATUS_MOVED, ZONE_STATUS_DELETED
 from landingzones.models import LandingZone
 
 # Samplesheets dependency
@@ -84,7 +85,7 @@ def get_zone_collections(irods_backend):
     return [
         irods_backend.get_path(lz)
         for lz in LandingZone.objects.filter(
-            ~(Q(status='MOVED') & Q(status='DELETED'))
+            ~(Q(status=ZONE_STATUS_MOVED) & Q(status=ZONE_STATUS_DELETED))
         )
     ]
 

@@ -1,3 +1,4 @@
+from landingzones.constants import ZONE_STATUS_DELETING, ZONE_STATUS_DELETED
 from taskflowbackend.flows.base_flow import BaseLinearFlow
 from taskflowbackend.tasks import irods_tasks
 
@@ -40,7 +41,7 @@ class Flow(BaseLinearFlow):
                 project=self.project,
                 inject={
                     'landing_zone': zone,
-                    'status': 'DELETING',
+                    'status': ZONE_STATUS_DELETING,
                     'status_info': 'Deleting landing zone',
                     'flow_name': self.flow_name,
                 },
@@ -61,7 +62,7 @@ class Flow(BaseLinearFlow):
                 inject={
                     'landing_zone': zone,
                     'flow_name': self.flow_name,
-                    'status': 'DELETED',
+                    'status': ZONE_STATUS_DELETED,
                     'status_info': 'Landing zone deleted',
                 },
             )
