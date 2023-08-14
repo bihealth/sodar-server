@@ -126,7 +126,7 @@ class Command(BaseCommand):
         return [
             self.irods_backend.get_path(lz)
             for lz in LandingZone.objects.filter(
-                ~(Q(status='MOVED') & Q(status='DELETED'))
+                ~(Q(status=ZONE_STATUS_MOVED) & Q(status=ZONE_STATUS_DELETED))
             )
         ]
 
