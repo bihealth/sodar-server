@@ -39,7 +39,6 @@
     "eslint-plugin-vue": "^7.20.0",
     "fetch-mock-jest": "^1.5.1",
     "jest": "^27.1.0",
-    "node-fetch": "^3.3.2",
     "vue-property-decorator": "^9.1.2",
     "vue-template-compiler": "^2.6.14",
     "webpack-bundle-tracker": "^1.4.0"

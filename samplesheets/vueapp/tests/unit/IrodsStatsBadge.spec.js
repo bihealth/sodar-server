@@ -2,16 +2,13 @@ import { createLocalVue, mount } from '@vue/test-utils'
 import { projectUuid } from '../testUtils.js'
 import IrodsStatsBadge from '@/components/IrodsStatsBadge.vue'
 import '@/filters/prettyBytes.js'
-import fetch from 'node-fetch'
 
 // Set up extended Vue constructor
 const localVue = createLocalVue()
+const updateStatsStub = jest.fn()
 
 // Init data
 let propsData
-
-// Mock fetch
-global.fetch = fetch
 
 describe('IrodsStatsBadge.vue', () => {
   function getPropsData () {
@@ -35,13 +32,21 @@ describe('IrodsStatsBadge.vue', () => {
   })
 
   it('renders default badge', () => {
-    const wrapper = mount(IrodsStatsBadge, { localVue, propsData: propsData })
+    const wrapper = mount(IrodsStatsBadge, {
+      localVue,
+      propsData: propsData,
+      methods: { updateStats: updateStatsStub }
+    })
 
     expect(wrapper.find('.sodar-ss-irods-stats').find('span').text()).toBe('Updating..')
   })
 
   it('updates and renders stats in badge', async () => {
-    const wrapper = mount(IrodsStatsBadge, { localVue, propsData: propsData })
+    const wrapper = mount(IrodsStatsBadge, {
+      localVue,
+      propsData: propsData,
+      methods: { updateStats: updateStatsStub }
+    })
 
     await wrapper.vm.setStats({ file_count: 2, total_size: 170 })
     expect(wrapper.vm.fileCount).toBe(2)
@@ -52,7 +57,11 @@ describe('IrodsStatsBadge.vue', () => {
   })
 
   it('renders error state', async () => {
-    const wrapper = mount(IrodsStatsBadge, { localVue, propsData: propsData })
+    const wrapper = mount(IrodsStatsBadge, {
+      localVue,
+      propsData: propsData,
+      methods: { updateStats: updateStatsStub }
+    })
 
     await wrapper.setData({ error: true })
     expect(wrapper.find('.sodar-ss-irods-stats').find('span').text()).toBe('Error')
