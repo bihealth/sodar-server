@@ -107,8 +107,8 @@ class TestSamplesheetsTemplateTags(
         """Test get_search_item_type() with material types"""
         for material_type in GENERIC_MATERIAL_TYPES:
             item = {'type': material_type}
-            expected_type = GENERIC_MATERIAL_TYPES[material_type]
-            self.assertEqual(s_tags.get_search_item_type(item), expected_type)
+            expected = GENERIC_MATERIAL_TYPES[material_type]
+            self.assertEqual(s_tags.get_search_item_type(item), expected)
 
     def test_get_search_item_type_with_file(self):
         """Test get_search_item_type() with special case 'file'"""
@@ -123,55 +123,46 @@ class TestSamplesheetsTemplateTags(
         # Assert that study path exists in the returned string
         self.assertIn(self.irods_backend.get_sub_path(self.study), ret)
         # Assert that assay path exists in the returned string
-        clean_assay_path_0 = self.irods_backend.get_sub_path(self.assay).split(
-            '/'
-        )[0]
-        clean_assay_path_1 = self.irods_backend.get_sub_path(self.assay).split(
-            '/'
-        )[1]
-        self.assertIn(clean_assay_path_0, ret)
-        self.assertIn(clean_assay_path_1, ret)
+        path0, path1 = self.irods_backend.get_sub_path(self.assay).split('/')
+        self.assertIn(path0, ret)
+        self.assertIn(path1, ret)
 
     def test_get_material_search_url(self):
         """Test get_material_search_url()"""
         item = {'study': self.study, 'name': 'Sample1'}
         url = s_tags.get_material_search_url(item)
-        expected_url = reverse(
+        expected = reverse(
             'samplesheets:project_sheets',
             kwargs={'project': self.project.sodar_uuid},
         )
-        expected_url += '#/study/{}/filter/Sample1'.format(
-            self.study.sodar_uuid
-        )
-        self.assertEqual(url, expected_url)
+        expected += '#/study/{}/filter/Sample1'.format(self.study.sodar_uuid)
+        self.assertEqual(url, expected)
 
     def test_get_irods_path_with_project(self):
         """Test get_irods_path() with project"""
-        expected_path = self.irods_backend.get_path(self.project)
-        self.assertEqual(s_tags.get_irods_path(self.project), expected_path)
+        expected = self.irods_backend.get_path(self.project)
+        self.assertEqual(s_tags.get_irods_path(self.project), expected)
 
     def test_get_irods_path_with_assay(self):
         """Test get_irods_path() with assay"""
-        expected_path = self.irods_backend.get_path(self.assay)
-        self.assertEqual(s_tags.get_irods_path(self.assay), expected_path)
+        expected = self.irods_backend.get_path(self.assay)
+        self.assertEqual(s_tags.get_irods_path(self.assay), expected)
 
     def test_get_irods_path_with_project_and_sub_path(self):
         """Test get_irods_path() with project and sub_path"""
         project_path = self.irods_backend.get_path(self.project)
         sub_path = 'subfolder1/subfolder2'
-        expected_path = project_path + '/' + sub_path
+        expected = project_path + '/' + sub_path
         self.assertEqual(
-            s_tags.get_irods_path(self.project, sub_path), expected_path
+            s_tags.get_irods_path(self.project, sub_path), expected
         )
 
     def test_get_irods_path_with_assay_and_sub_path(self):
         """Test get_irods_path() with assay and sub_path"""
         assay_path = self.irods_backend.get_path(self.assay)
         sub_path = 'subfolder1/subfolder2'
-        expected_path = assay_path + '/' + sub_path
-        self.assertEqual(
-            s_tags.get_irods_path(self.assay, sub_path), expected_path
-        )
+        expected = assay_path + '/' + sub_path
+        self.assertEqual(s_tags.get_irods_path(self.assay, sub_path), expected)
 
     def test_get_icon_study(self):
         """Test get_icon() with Study"""
