@@ -14,6 +14,7 @@ from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import TaskflowViewTestBase
 
+from landingzones.constants import ZONE_STATUS_ACTIVE, ZONE_STATUS_MOVED
 from landingzones.tasks_celery import TriggerZoneMoveTask
 from landingzones.tests.test_models import LandingZoneMixin
 from landingzones.tests.test_views_taskflow import LandingZoneTaskflowMixin
@@ -93,7 +94,7 @@ class TestTriggerZoneMoveTask(
 
     def test_trigger(self):
         """Test triggering automated zone validation and moving"""
-        self.assertEqual(self.landing_zone.status, 'ACTIVE')
+        self.assertEqual(self.landing_zone.status, ZONE_STATUS_ACTIVE)
 
         # Create file and fake request
         self.make_irods_object(
@@ -104,13 +105,13 @@ class TestTriggerZoneMoveTask(
 
         # Run task and assert results
         self.task.run(request)
-        self.assert_zone_status(self.landing_zone, 'MOVED')
+        self.assert_zone_status(self.landing_zone, ZONE_STATUS_MOVED)
         self.landing_zone.refresh_from_db()
-        self.assertEqual(self.landing_zone.status, 'MOVED')
+        self.assertEqual(self.landing_zone.status, ZONE_STATUS_MOVED)
 
     def test_trigger_no_file(self):
         """Test triggering without an uploaded file"""
-        self.assertEqual(self.landing_zone.status, 'ACTIVE')
+        self.assertEqual(self.landing_zone.status, ZONE_STATUS_ACTIVE)
         # Run task and assert results
         self.task.run()
-        self.assert_zone_status(self.landing_zone, 'ACTIVE')
+        self.assert_zone_status(self.landing_zone, ZONE_STATUS_ACTIVE)

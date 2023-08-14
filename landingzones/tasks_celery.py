@@ -1,4 +1,5 @@
 """Celery tasks for the landingzones app"""
+
 import logging
 
 from django.conf import settings
@@ -10,7 +11,7 @@ from config.celery import app
 from projectroles.models import Project
 from projectroles.plugins import get_backend_api
 
-from landingzones.models import STATUS_ALLOW_UPDATE, STATUS_LOCKING
+from landingzones.constants import STATUS_ALLOW_UPDATE, STATUS_LOCKING
 from landingzones.views import ZoneMoveMixin
 
 logger = logging.getLogger(__name__)

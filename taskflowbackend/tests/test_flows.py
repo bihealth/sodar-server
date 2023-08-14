@@ -16,6 +16,14 @@ from django.test import override_settings
 from projectroles.models import SODAR_CONSTANTS
 
 # Landingzones dependency
+from landingzones.constants import (
+    ZONE_STATUS_MOVED,
+    ZONE_STATUS_CREATING,
+    ZONE_STATUS_NOT_CREATED,
+    ZONE_STATUS_ACTIVE,
+    ZONE_STATUS_FAILED,
+    ZONE_STATUS_DELETED,
+)
 from landingzones.tests.test_models import ZONE_TITLE, ZONE_DESC
 from landingzones.tests.test_views import LandingZoneMixin
 from landingzones.tests.test_views_taskflow import LandingZoneTaskflowMixin
@@ -172,14 +180,14 @@ class TestLandingZoneCreate(
             user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
-            status='CREATING',
+            status=ZONE_STATUS_CREATING,
         )
         self.zone_path = self.irods_backend.get_path(self.zone)
 
     def test_create(self):
         """Test landing_zone_create for creating a zone"""
         self.assertEqual(self.irods.collections.exists(self.zone_path), False)
-        self.assertEqual(self.zone.status, 'CREATING')
+        self.assertEqual(self.zone.status, ZONE_STATUS_CREATING)
 
         flow_data = {
             'zone_uuid': str(self.zone.sodar_uuid),
@@ -196,7 +204,7 @@ class TestLandingZoneCreate(
         self._build_and_run(flow)
 
         self.zone.refresh_from_db()
-        self.assertEqual(self.zone.status, 'ACTIVE')
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         zone_coll = self.irods.collections.get(self.zone_path)
         self.assertEqual(
             zone_coll.metadata.get_one('description').value,
@@ -210,7 +218,7 @@ class TestLandingZoneCreate(
     def test_create_revert(self):
         """Test landing_zone_create for reverting creation"""
         self.assertEqual(self.irods.collections.exists(self.zone_path), False)
-        self.assertEqual(self.zone.status, 'CREATING')
+        self.assertEqual(self.zone.status, ZONE_STATUS_CREATING)
 
         flow_data = {
             'zone_uuid': str(self.zone.sodar_uuid),
@@ -227,7 +235,7 @@ class TestLandingZoneCreate(
         self._build_and_run(flow, force_fail=True)
 
         self.zone.refresh_from_db()
-        self.assertEqual(self.zone.status, 'NOT CREATED')
+        self.assertEqual(self.zone.status, ZONE_STATUS_NOT_CREATED)
         self.assertEqual(self.irods.collections.exists(self.zone_path), False)
 
     def test_create_colls(self):
@@ -252,7 +260,7 @@ class TestLandingZoneCreate(
         self._build_and_run(flow)
 
         self.zone.refresh_from_db()
-        self.assertEqual(self.zone.status, 'ACTIVE')
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(self.irods.collections.exists(self.zone_path), True)
         self.assertEqual(self.irods.collections.exists(results_path), True)
         self.assertEqual(self.irods.collections.exists(misc_path), True)
@@ -286,7 +294,7 @@ class TestLandingZoneCreate(
         self._build_and_run(flow)
 
         self.zone.refresh_from_db()
-        self.assertEqual(self.zone.status, 'ACTIVE')
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(self.irods.collections.exists(self.zone_path), True)
         self.assertEqual(self.irods.collections.exists(results_path), True)
         self.assertEqual(self.irods.collections.exists(misc_path), True)
@@ -311,7 +319,7 @@ class TestLandingZoneCreate(
     def test_create_colls_restrict_revert(self):
         """Test reverting creation with created and restricted collections"""
         self.assertEqual(self.irods.collections.exists(self.zone_path), False)
-        self.assertEqual(self.zone.status, 'CREATING')
+        self.assertEqual(self.zone.status, ZONE_STATUS_CREATING)
 
         flow_data = {
             'zone_uuid': str(self.zone.sodar_uuid),
@@ -328,7 +336,7 @@ class TestLandingZoneCreate(
         self._build_and_run(flow, force_fail=True)
 
         self.zone.refresh_from_db()
-        self.assertEqual(self.zone.status, 'NOT CREATED')
+        self.assertEqual(self.zone.status, ZONE_STATUS_NOT_CREATED)
         self.assertEqual(self.irods.collections.exists(self.zone_path), False)
 
     def test_create_script_user(self):
@@ -356,7 +364,7 @@ class TestLandingZoneCreate(
         self._build_and_run(flow)
 
         self.zone.refresh_from_db()
-        self.assertEqual(self.zone.status, 'ACTIVE')
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         zone_coll = self.irods.collections.get(self.zone_path)
         self.assert_irods_access(
             self.user.username, zone_coll, IRODS_ACCESS_OWN
@@ -390,7 +398,7 @@ class TestLandingZoneCreate(
             flow.run()
 
         self.zone.refresh_from_db()
-        self.assertEqual(self.zone.status, 'NOT CREATED')
+        self.assertEqual(self.zone.status, ZONE_STATUS_NOT_CREATED)
         self.assertEqual(self.irods.collections.exists(self.zone_path), False)
         with self.assertRaises(UserDoesNotExist):
             self.irods.users.get(SCRIPT_USER_NAME)
@@ -419,7 +427,7 @@ class TestLandingZoneCreate(
         self._build_and_run(flow, force_fail=True)
 
         self.zone.refresh_from_db()
-        self.assertEqual(self.zone.status, 'NOT CREATED')
+        self.assertEqual(self.zone.status, ZONE_STATUS_NOT_CREATED)
         self.assertIsNotNone(self.irods.users.get(SCRIPT_USER_NAME))
 
 
@@ -454,11 +462,11 @@ class TestLandingZoneDelete(
             user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
-            status='CREATING',
+            status=ZONE_STATUS_CREATING,
         )
         self.make_zone_taskflow(zone)
         zone_path = self.irods_backend.get_path(zone)
-        self.assertEqual(zone.status, 'ACTIVE')
+        self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(self.irods.collections.exists(zone_path), True)
 
         flow_data = {'zone_uuid': str(zone.sodar_uuid)}
@@ -472,7 +480,7 @@ class TestLandingZoneDelete(
         self._build_and_run(flow)
 
         zone.refresh_from_db()
-        self.assertEqual(zone.status, 'DELETED')
+        self.assertEqual(zone.status, ZONE_STATUS_DELETED)
         self.assertEqual(self.irods.collections.exists(zone_path), False)
 
     def test_delete_files(self):
@@ -483,11 +491,11 @@ class TestLandingZoneDelete(
             user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
-            status='CREATING',
+            status=ZONE_STATUS_CREATING,
         )
         self.make_zone_taskflow(zone)
         zone_path = self.irods_backend.get_path(zone)
-        self.assertEqual(zone.status, 'ACTIVE')
+        self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(self.irods.collections.exists(zone_path), True)
         coll_path = os.path.join(zone_path, COLL_NAME)
         self.irods.collections.create(coll_path)
@@ -506,7 +514,7 @@ class TestLandingZoneDelete(
         self._build_and_run(flow)
 
         zone.refresh_from_db()
-        self.assertEqual(zone.status, 'DELETED')
+        self.assertEqual(zone.status, ZONE_STATUS_DELETED)
         self.assertEqual(self.irods.collections.exists(coll_path), False)
         self.assertEqual(self.irods.data_objects.exists(obj_path), False)
         self.assertEqual(self.irods.collections.exists(zone_path), False)
@@ -519,7 +527,7 @@ class TestLandingZoneDelete(
             user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
-            status='CREATING',
+            status=ZONE_STATUS_CREATING,
         )
         self.make_zone_taskflow(
             zone=zone,
@@ -527,7 +535,7 @@ class TestLandingZoneDelete(
             restrict_colls=True,
         )
         zone_path = self.irods_backend.get_path(zone)
-        self.assertEqual(zone.status, 'ACTIVE')
+        self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(self.irods.collections.exists(zone_path), True)
         results_path = os.path.join(zone_path, RESULTS_COLL)
         self.assertEqual(self.irods.collections.exists(results_path), True)
@@ -549,7 +557,7 @@ class TestLandingZoneDelete(
         self._build_and_run(flow)
 
         zone.refresh_from_db()
-        self.assertEqual(zone.status, 'DELETED')
+        self.assertEqual(zone.status, ZONE_STATUS_DELETED)
         self.assertEqual(self.irods.collections.exists(coll_path), False)
         self.assertEqual(self.irods.data_objects.exists(obj_path), False)
         self.assertEqual(self.irods.collections.exists(zone_path), False)
@@ -584,7 +592,7 @@ class TestLandingZoneMove(
             user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
-            status='CREATING',
+            status=ZONE_STATUS_CREATING,
         )
         self.make_zone_taskflow(self.zone)
         self.sample_path = self.irods_backend.get_path(self.assay)
@@ -593,7 +601,7 @@ class TestLandingZoneMove(
 
     def test_move(self):
         """Test landing_zone_move"""
-        self.assertEqual(self.zone.status, 'ACTIVE')
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(self.irods.collections.exists(self.zone_path), True)
         empty_coll_path = os.path.join(self.zone_path, COLL_NAME)
         self.irods.collections.create(empty_coll_path)
@@ -629,7 +637,7 @@ class TestLandingZoneMove(
         self._build_and_run(flow)
 
         self.zone.refresh_from_db()
-        self.assertEqual(self.zone.status, 'MOVED')
+        self.assertEqual(self.zone.status, ZONE_STATUS_MOVED)
         self.assertEqual(self.irods.collections.exists(self.zone_path), False)
         sample_empty_path = os.path.join(self.sample_path, COLL_NAME)
         # An empty collection should not be created by moving
@@ -654,7 +662,7 @@ class TestLandingZoneMove(
 
     def test_move_no_checksum(self):
         """Test landing_zone_move with no checksum"""
-        self.assertEqual(self.zone.status, 'ACTIVE')
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(self.irods.collections.exists(self.zone_path), True)
         obj_coll_path = os.path.join(self.zone_path, OBJ_COLL_NAME)
         obj_coll = self.irods.collections.create(obj_coll_path)
@@ -688,7 +696,7 @@ class TestLandingZoneMove(
         self._build_and_run(flow)
 
         self.zone.refresh_from_db()
-        self.assertEqual(self.zone.status, 'MOVED')
+        self.assertEqual(self.zone.status, ZONE_STATUS_MOVED)
         self.assertEqual(self.irods.collections.exists(self.zone_path), False)
         self.assertEqual(self.irods.data_objects.exists(sample_obj_path), True)
         self.assertEqual(
@@ -725,7 +733,7 @@ class TestLandingZoneMove(
             flow.run()
 
         self.zone.refresh_from_db()
-        self.assertEqual(self.zone.status, 'FAILED')
+        self.assertEqual(self.zone.status, ZONE_STATUS_FAILED)
         self.assertEqual(self.irods.collections.exists(self.zone_path), True)
         sample_obj_path = os.path.join(self.sample_path, COLL_NAME, OBJ_NAME)
         self.assertEqual(self.irods.data_objects.exists(sample_obj_path), False)
@@ -760,7 +768,7 @@ class TestLandingZoneMove(
         self._build_and_run(flow)
 
         self.zone.refresh_from_db()
-        self.assertEqual(self.zone.status, 'MOVED')
+        self.assertEqual(self.zone.status, ZONE_STATUS_MOVED)
         self.assertEqual(self.irods.collections.exists(self.zone_path), False)
         sample_obj_path = os.path.join(self.sample_path, COLL_NAME, OBJ_NAME)
         self.assertEqual(self.irods.data_objects.exists(sample_obj_path), True)
@@ -801,7 +809,7 @@ class TestLandingZoneMove(
             flow.run()
 
         self.zone.refresh_from_db()
-        self.assertEqual(self.zone.status, 'FAILED')
+        self.assertEqual(self.zone.status, ZONE_STATUS_FAILED)
         self.assertEqual(self.irods.collections.exists(coll_path), True)
         self.assertEqual(self.irods.data_objects.exists(obj_path), True)
         self.assertEqual(
@@ -834,7 +842,7 @@ class TestLandingZoneMove(
         self._build_and_run(flow)
 
         self.zone.refresh_from_db()
-        self.assertEqual(self.zone.status, 'ACTIVE')
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(self.irods.data_objects.exists(obj_path), True)
         self.assertEqual(
             self.irods.data_objects.exists(obj_path + '.md5'), True
@@ -864,7 +872,7 @@ class TestLandingZoneMove(
         self._build_and_run(flow)
 
         self.zone.refresh_from_db()
-        self.assertEqual(self.zone.status, 'ACTIVE')
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         obj = self.irods.data_objects.get(obj_path)  # Reload object
         self.assertIsNotNone(obj.replicas[0].checksum)
         self.assertEqual(obj.replicas[0].checksum, self.get_md5_checksum(obj))
@@ -893,7 +901,7 @@ class TestLandingZoneMove(
         self._build_and_run(flow, force_fail=True)
 
         self.zone.refresh_from_db()
-        self.assertEqual(self.zone.status, 'FAILED')
+        self.assertEqual(self.zone.status, ZONE_STATUS_FAILED)
         self.assertEqual(self.irods.collections.exists(coll_path), True)
         self.assertEqual(self.irods.data_objects.exists(obj_path), True)
         self.assertEqual(
@@ -918,7 +926,7 @@ class TestLandingZoneMove(
             user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
-            status='CREATING',
+            status=ZONE_STATUS_CREATING,
         )
         self.make_zone_taskflow(
             zone=new_zone,
@@ -926,7 +934,7 @@ class TestLandingZoneMove(
             restrict_colls=True,
         )
         new_zone_path = self.irods_backend.get_path(new_zone)
-        self.assertEqual(new_zone.status, 'ACTIVE')
+        self.assertEqual(new_zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(self.irods.collections.exists(new_zone_path), True)
         results_path = os.path.join(new_zone_path, RESULTS_COLL)
         self.assertEqual(self.irods.collections.exists(results_path), True)
@@ -964,7 +972,7 @@ class TestLandingZoneMove(
         self._build_and_run(flow)
 
         new_zone.refresh_from_db()
-        self.assertEqual(new_zone.status, 'MOVED')
+        self.assertEqual(new_zone.status, ZONE_STATUS_MOVED)
         self.assertEqual(self.irods.collections.exists(new_zone_path), False)
         sample_empty_path = os.path.join(
             self.sample_path, RESULTS_COLL, COLL_NAME
@@ -1723,7 +1731,7 @@ class TestSheetDelete(
             user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
-            status='CREATING',
+            status=ZONE_STATUS_CREATING,
         )
         self.make_zone_taskflow(zone)
         zone_path = self.irods_backend.get_path(zone)

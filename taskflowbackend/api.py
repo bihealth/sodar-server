@@ -4,6 +4,11 @@ import json
 import logging
 
 # Landingzones dependency
+from landingzones.constants import (
+    ZONE_STATUS_NOT_CREATED,
+    ZONE_STATUS_CREATING,
+    ZONE_STATUS_FAILED,
+)
 from landingzones.models import LandingZone
 
 # Projectroles dependency
@@ -45,10 +50,14 @@ class TaskflowAPI:
         :raise: FlowSubmitException
         """
         if tl_event:
-            tl_event.set_status('FAILED', ex_msg)
+            tl_event.set_status(ZONE_STATUS_FAILED, ex_msg)
         # Update landing zone
         if zone:
-            status = 'NOT CREATED' if zone.status == 'CREATING' else 'FAILED'
+            status = (
+                ZONE_STATUS_NOT_CREATED
+                if zone.status == ZONE_STATUS_CREATING
+                else ZONE_STATUS_FAILED
+            )
             zone.set_status(status, ex_msg)
         # TODO: Create app alert for failure if async (see #1499)
         raise cls.FlowSubmitException(ex_msg)

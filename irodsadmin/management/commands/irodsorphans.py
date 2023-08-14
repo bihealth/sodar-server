@@ -13,6 +13,7 @@ from projectroles.models import Project, PROJECT_TYPE_PROJECT
 from projectroles.plugins import get_backend_api
 
 # Landingzones dependency
+from landingzones.constants import ZONE_STATUS_MOVED, ZONE_STATUS_DELETED
 from landingzones.models import LandingZone
 
 # Samplesheets dependency

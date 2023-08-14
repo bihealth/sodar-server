@@ -10,6 +10,7 @@ from projectroles.tests.test_permissions import TestProjectPermissionBase
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
+from landingzones.constants import ZONE_STATUS_ACTIVE
 from landingzones.tests.test_models import (
     LandingZoneMixin,
     ZONE_TITLE,
@@ -206,7 +207,7 @@ class TestLandingZonePermissions(TestLandingZonePermissionsBase):
 
     def test_zone_update(self):
         """Test ZoneUpdateView permissions"""
-        self.landing_zone.status = 'ACTIVE'
+        self.landing_zone.status = ZONE_STATUS_ACTIVE
         self.landing_zone.save()
         url = reverse(
             'landingzones:update',
@@ -238,7 +239,7 @@ class TestLandingZonePermissions(TestLandingZonePermissionsBase):
     def test_zone_update_archive(self):
         """Test ZoneUpdateView with archived project"""
         self.project.set_archive()
-        self.landing_zone.status = 'ACTIVE'
+        self.landing_zone.status = ZONE_STATUS_ACTIVE
         self.landing_zone.save()
         url = reverse(
             'landingzones:update',
@@ -270,7 +271,7 @@ class TestLandingZonePermissions(TestLandingZonePermissionsBase):
     @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
     def test_zone_update_disable(self):
         """Test ZoneUpdateView with disabled non-superuser access"""
-        self.landing_zone.status = 'ACTIVE'
+        self.landing_zone.status = ZONE_STATUS_ACTIVE
         self.landing_zone.save()
         url = reverse(
             'landingzones:update',
@@ -301,7 +302,7 @@ class TestLandingZonePermissions(TestLandingZonePermissionsBase):
 
     def test_zone_delete(self):
         """Test ZoneDeleteView permissions"""
-        self.landing_zone.status = 'ACTIVE'
+        self.landing_zone.status = ZONE_STATUS_ACTIVE
         self.landing_zone.save()
         url = reverse(
             'landingzones:delete',
@@ -328,7 +329,7 @@ class TestLandingZonePermissions(TestLandingZonePermissionsBase):
 
     def test_zone_delete_archive(self):
         """Test ZoneDeleteView with archived project"""
-        self.landing_zone.status = 'ACTIVE'
+        self.landing_zone.status = ZONE_STATUS_ACTIVE
         self.landing_zone.save()
         self.project.set_archive()
         url = reverse(
@@ -357,7 +358,7 @@ class TestLandingZonePermissions(TestLandingZonePermissionsBase):
     @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
     def test_zone_delete_disable(self):
         """Test ZoneDeleteView with disabled non-superuser access"""
-        self.landing_zone.status = 'ACTIVE'
+        self.landing_zone.status = ZONE_STATUS_ACTIVE
         self.landing_zone.save()
         url = reverse(
             'landingzones:delete',

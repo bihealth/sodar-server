@@ -18,6 +18,7 @@ from samplesheets.tests.test_views_taskflow import (
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import TaskflowViewTestBase
 
+from landingzones.constants import ZONE_STATUS_ACTIVE, ZONE_STATUS_MOVED
 from landingzones.tests.test_models import LandingZoneMixin
 from landingzones.tests.test_views_taskflow import LandingZoneTaskflowMixin
 
@@ -76,7 +77,7 @@ class TestPerformProjectSync(
             project=self.project,
             user=self.user,
             assay=self.assay,
-            status='ACTIVE',
+            status=ZONE_STATUS_ACTIVE,
         )
         zone_path = self.irods_backend.get_path(zone)
         self.assertEqual(self.irods.collections.exists(zone_path), False)
@@ -91,7 +92,7 @@ class TestPerformProjectSync(
             project=self.project,
             user=self.user,
             assay=self.assay,
-            status='MOVED',
+            status=ZONE_STATUS_MOVED,
         )
         zone_path = self.irods_backend.get_path(zone)
         self.assertEqual(self.irods.collections.exists(zone_path), False)

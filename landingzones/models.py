@@ -9,66 +9,10 @@ from projectroles.models import Project
 # Samplesheets dependency
 from samplesheets.models import Assay
 
+import landingzones.constants as lc
+
 # Access Django user model
 AUTH_USER_MODEL = getattr(settings, 'AUTH_USER_MODEL', 'auth.User')
-
-
-ZONE_STATUS_TYPES = [
-    'CREATING',
-    'NOT CREATED',
-    'ACTIVE',
-    'PREPARING',
-    'VALIDATING',
-    'MOVING',
-    'FAILED',
-    'MOVED',
-    'DELETING',
-    'DELETED',
-]
-
-DEFAULT_STATUS_INFO = {
-    'CREATING': 'Creating landing zone in iRODS',
-    'NOT CREATED': 'Creating landing zone in iRODS failed (unknown problem)',
-    'ACTIVE': 'Available with write access for user',
-    'PREPARING': 'Preparing transaction for validation and moving',
-    'VALIDATING': 'Validation in progress, write access disabled',
-    'MOVING': 'Validation OK, moving files into sample data repository',
-    'MOVED': 'Files moved successfully, landing zone removed',
-    'FAILED': 'Validation/moving failed (unknown problem)',
-    'DELETING': 'Deleting landing zone',
-    'DELETED': 'Landing zone deleted',
-}
-STATUS_INFO_DELETE_NO_COLL = (
-    'No iRODS collection for zone found, marked as deleted'
-)
-
-STATUS_STYLES = {
-    'CREATING': 'bg-warning',
-    'NOT CREATED': 'bg-danger',
-    'ACTIVE': 'bg-info',
-    'PREPARING': 'bg-warning',
-    'VALIDATING': 'bg-warning',
-    'MOVING': 'bg-warning',
-    'MOVED': 'bg-success',
-    'FAILED': 'bg-danger',
-    'DELETING': 'bg-warning',
-    'DELETED': 'bg-secondary',
-}
-
-# Status types for which zone validation, moving and deletion are allowed
-STATUS_ALLOW_UPDATE = ['ACTIVE', 'FAILED']
-
-# Status types for zones for which activities have finished
-STATUS_FINISHED = ['MOVED', 'NOT CREATED', 'DELETED']
-
-# Status types which lock the project in Taskflow
-STATUS_LOCKING = ['PREPARING', 'VALIDATING', 'MOVING']
-
-# Status types for busy landing zones
-STATUS_BUSY = ['CREATING', 'PREPARING', 'VALIDATING', 'MOVING', 'DELETING']
-
-# Status types during which file lists and stats should be displayed
-STATUS_DISPLAY_FILES = ['ACTIVE', 'PREPARING', 'VALIDATING', 'MOVING', 'FAILED']
 
 
 class LandingZone(models.Model):
@@ -108,7 +52,7 @@ class LandingZone(models.Model):
         max_length=64,
         null=False,
         blank=False,
-        default='CREATING',
+        default=lc.ZONE_STATUS_CREATING,
         help_text='Status of landing zone',
     )
 
@@ -117,7 +61,7 @@ class LandingZone(models.Model):
         max_length=1024,
         null=True,
         blank=True,
-        default=DEFAULT_STATUS_INFO['CREATING'],
+        default=lc.DEFAULT_STATUS_INFO[lc.ZONE_STATUS_CREATING],
         help_text='Additional status information',
     )
 
@@ -185,13 +129,13 @@ class LandingZone(models.Model):
 
     def set_status(self, status, status_info=None):
         """Set zone status"""
-        if status not in ZONE_STATUS_TYPES:
+        if status not in lc.ZONE_STATUS_TYPES:
             raise TypeError('Unknown status "{}"'.format(status))
         self.status = status
         if status_info:
             self.status_info = status_info
         else:
-            self.status_info = DEFAULT_STATUS_INFO[status][:1024]
+            self.status_info = lc.DEFAULT_STATUS_INFO[status][:1024]
         self.save()
 
     def is_locked(self):
@@ -199,10 +143,10 @@ class LandingZone(models.Model):
         Return True/False depending whether write access to zone is currently
         locked.
         """
-        return self.status in STATUS_LOCKING
+        return self.status in lc.STATUS_LOCKING
 
     def can_display_files(self):
         """
         Return True/False depending whether file info should be displayed.
         """
-        return self.status in STATUS_DISPLAY_FILES
+        return self.status in lc.STATUS_DISPLAY_FILES

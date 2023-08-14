@@ -17,6 +17,7 @@ from projectroles.tests.test_models import (
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
+from landingzones.constants import ZONE_STATUS_ACTIVE, ZONE_STATUS_DELETED
 from landingzones.models import LandingZone
 from landingzones.tests.test_models import (
     LandingZoneMixin,
@@ -35,7 +36,6 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 # Local constants
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
-ZONE_STATUS = 'VALIDATING'
 ZONE_STATUS_INFO = 'Testing'
 
 
@@ -79,7 +79,7 @@ class TestViewsBase(
             user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
-            status='ACTIVE',
+            status=ZONE_STATUS_ACTIVE,
         )
 
 
@@ -193,7 +193,7 @@ class TestLandingZoneUpdateView(TestViewsBase):
 
     def test_render_invalid_status(self):
         """Test rendering with an invalid zone status"""
-        self.landing_zone.status = 'DELETED'
+        self.landing_zone.status = ZONE_STATUS_DELETED
         self.landing_zone.save()
 
         with self.login(self.user):
@@ -260,7 +260,7 @@ class TestLandingZoneMoveView(TestViewsBase):
 
     def test_render_invalid_status(self):
         """Test rendering with an invalid zone status"""
-        self.landing_zone.status = 'DELETED'
+        self.landing_zone.status = ZONE_STATUS_DELETED
         self.landing_zone.save()
 
         with self.login(self.user):
@@ -289,7 +289,7 @@ class TestLandingZoneDeleteView(TestViewsBase):
 
     def test_render_invalid_status(self):
         """Test rendering with an invalid zone status"""
-        self.landing_zone.status = 'DELETED'
+        self.landing_zone.status = ZONE_STATUS_DELETED
         self.landing_zone.save()
 
         with self.login(self.user):

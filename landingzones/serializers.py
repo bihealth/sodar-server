@@ -12,6 +12,11 @@ from projectroles.serializers import (
 # Samplesheets dependency
 from samplesheets.models import Assay
 
+from landingzones.constants import (
+    ZONE_STATUS_OK,
+    ZONE_STATUS_DELETED,
+    ZONE_STATUS_NOT_CREATED,
+)
 from landingzones.models import LandingZone
 from landingzones.utils import get_zone_title
 
@@ -56,9 +61,9 @@ class LandingZoneSerializer(SODARProjectModelSerializer):
     def get_irods_path(self, obj):
         irods_backend = get_backend_api('omics_irods')
         if irods_backend and obj.status not in [
-            'MOVED',
-            'DELETED',
-            'NOT CREATED',
+            ZONE_STATUS_OK,
+            ZONE_STATUS_DELETED,
+            ZONE_STATUS_NOT_CREATED,
         ]:
             return irods_backend.get_path(obj)
 
