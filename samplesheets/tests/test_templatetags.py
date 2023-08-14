@@ -123,9 +123,11 @@ class TestSamplesheetsTemplateTags(
         # Assert that study path exists in the returned string
         self.assertIn(self.irods_backend.get_sub_path(self.study), ret)
         # Assert that assay path exists in the returned string
-        path0, path1 = self.irods_backend.get_sub_path(self.assay).split('/')
-        self.assertIn(path0, ret)
-        self.assertIn(path1, ret)
+        study_path, assay_path = self.irods_backend.get_sub_path(
+            self.assay
+        ).split('/')
+        self.assertIn(study_path, ret)
+        self.assertIn(assay_path, ret)
 
     def test_get_material_search_url(self):
         """Test get_material_search_url()"""
