@@ -327,6 +327,7 @@ class SheetContextAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
             'alerts': [],
             'csrf_token': get_token(request),
             'investigation': {},
+            'project_uuid': str(project.sodar_uuid),
             'user_uuid': str(request.user.sodar_uuid)
             if hasattr(request.user, 'sodar_uuid')
             else None,

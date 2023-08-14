@@ -61,6 +61,9 @@ export default {
           console.error('irodsStatsBadge error: ' + error.message)
         })
     }
+  },
+  mounted () {
+    this.updateStats()
   }
 }
 </script>

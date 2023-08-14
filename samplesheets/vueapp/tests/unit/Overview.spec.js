@@ -2,6 +2,7 @@ import { createLocalVue, mount } from '@vue/test-utils'
 import BootstrapVue from 'bootstrap-vue'
 import Overview from '@/components/Overview.vue'
 import sodarContext from './data/sodarContext.json'
+import fetch from 'node-fetch'
 
 // Set up extended Vue constructor
 const localVue = createLocalVue()
@@ -9,6 +10,9 @@ localVue.use(BootstrapVue)
 
 // Init data
 let propsData
+
+// Mock fetch
+global.fetch = fetch
 
 describe('Overview.vue', () => {
   function getPropsData () {

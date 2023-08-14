@@ -2,12 +2,16 @@ import { createLocalVue, mount } from '@vue/test-utils'
 import { projectUuid } from '../testUtils.js'
 import IrodsStatsBadge from '@/components/IrodsStatsBadge.vue'
 import '@/filters/prettyBytes.js'
+import fetch from 'node-fetch'
 
 // Set up extended Vue constructor
 const localVue = createLocalVue()
 
 // Init data
 let propsData
+
+// Mock fetch
+global.fetch = fetch
 
 describe('IrodsStatsBadge.vue', () => {
   function getPropsData () {
