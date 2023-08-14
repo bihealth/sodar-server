@@ -226,6 +226,7 @@ class TestSheetContextAjaxView(ViewTestBase):
                 'description': None,
                 'comments': None,
             },
+            'project_uuid': str(self.project.sodar_uuid),
             'user_uuid': str(self.user.sodar_uuid),
             'studies': {
                 str(self.study.sodar_uuid): {
@@ -324,6 +325,7 @@ class TestSheetContextAjaxView(ViewTestBase):
             ),
             'alerts': [],
             'investigation': {},
+            'project_uuid': str(self.project.sodar_uuid),
             'user_uuid': str(self.user.sodar_uuid),
             'studies': {},
             'perms': {
