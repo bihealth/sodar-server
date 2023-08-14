@@ -44,7 +44,7 @@ class Command(BaseCommand):
         return [self.irods_backend.get_path(a) for a in assays]
 
     def _get_assay_subcollections(self, studies):
-        """Return a list of all assay row colletion names."""
+        """Return a list of all assay row collection names."""
         collections = []
         for study in studies:
             try:
@@ -102,7 +102,10 @@ class Command(BaseCommand):
 
     def _get_project_collections(self):
         """Return a list of all study collection names."""
-        return [self.irods_backend.get_path(p) for p in Project.objects.all()]
+        return [
+            self.irods_backend.get_path(p)
+            for p in Project.objects.all().order_by('full_title')
+        ]
 
     def _is_zone(self, collection):
         """

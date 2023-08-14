@@ -113,7 +113,7 @@ class TestIrodsOrphans(
 
     @staticmethod
     def catch_stdout():
-        """Catch stdout from 'irodsorphans' management command"""
+        """Catch stdout from irodsorphans management command"""
         out = io.StringIO()
         sys.stdout = out
         call_command('irodsorphans', stdout=out)
