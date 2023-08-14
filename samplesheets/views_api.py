@@ -356,14 +356,12 @@ class IrodsAccessTicketListAPIView(
             tickets = [t for t in tickets if t.is_active()]
         if tickets:
             serializer = IrodsAccessTicketSerializer(tickets, many=True)
-            content = {
-                'count': len(serializer.data),
-                'tickets': serializer.data,
-                'detail': IRODS_TICKETS_LISTED_MSG,
-            }
+            return Response(serializer.data, status=status.HTTP_200_OK)
         else:
-            content = {'detail': IRODS_TICKETS_NOT_FOUND_MSG}
-        return Response(content, status=status.HTTP_200_OK)
+            return Response(
+                {'detail': IRODS_TICKETS_NOT_FOUND_MSG},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
 
 class IrodsAccessTicketRetrieveAPIView(
@@ -396,11 +394,7 @@ class IrodsAccessTicketRetrieveAPIView(
                 status=status.HTTP_404_NOT_FOUND,
             )
         serializer = IrodsAccessTicketSerializer(ticket)
-        context = {
-            'ticket': serializer.data,
-            'detail': IRODS_TICKET_RETREIVED_MSG,
-        }
-        return Response(context, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class IrodsAccessTicketCreateAPIView(
@@ -462,13 +456,9 @@ class IrodsAccessTicketCreateAPIView(
             self.create_app_alerts(
                 irods_access_ticket, 'create', self.request.user
             )
-            context = {
-                'ticket': serializer.data,
-                'detail': IRODS_TICKET_CREATED_MSG,
-            }
         else:
             raise ValidationError('Invalid data: {}'.format(serializer.errors))
-        return Response(context, status=status.HTTP_201_CREATED)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class IrodsAccessTicketUpdateAPIView(
@@ -529,11 +519,7 @@ class IrodsAccessTicketUpdateAPIView(
             )
         self.create_timeline_event(ticket, 'update')
         self.create_app_alerts(ticket, 'update', self.request.user)
-        context = {
-            'ticket': serializer.data,
-            'detail': IRODS_TICKET_UPDATED_MSG,
-        }
-        return Response(context, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class IrodsAccessTicketDeleteAPIView(

@@ -204,6 +204,11 @@ class TestIrodsAccessTicketListAPIView(TestIrodsAccessTicketAPIViewBase):
         self.assert_response_api(self.url, bad_users, 403)
         self.assert_response_api(self.url, self.anonymous, 401)
 
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_get_anon(self):
+        """Test get() with anonymous access"""
+        self.assert_response_api(self.url, self.anonymous, 401)
+
     def test_get_archive(self):
         """Test get() with archived project"""
         self.project.set_archive()
@@ -256,6 +261,11 @@ class TestIrodsAccessTicketRetrieveAPIView(TestIrodsAccessTicketAPIViewBase):
         ]
         self.assert_response_api(self.url, good_users, 200)
         self.assert_response_api(self.url, bad_users, 403)
+        self.assert_response_api(self.url, self.anonymous, 401)
+
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_get_anon(self):
+        """Test get() with anonymous access"""
         self.assert_response_api(self.url, self.anonymous, 401)
 
     def test_get_archive(self):
@@ -341,6 +351,13 @@ class TestIrodsAccessTicketCreateAPIView(TestIrodsAccessTicketAPIViewBase):
             self.url, self.anonymous, 401, method='post', data=self.post_data
         )
 
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_create_anon(self):
+        """Test post() with anonymous access"""
+        self.assert_response_api(
+            self.url, self.anonymous, 401, method='post', data=self.post_data
+        )
+
     def test_create_archive(self):
         """Test post() with archived project"""
         self.project.set_archive()
@@ -406,6 +423,13 @@ class TestIrodsAccessTicketUpdateAPIView(TestIrodsAccessTicketAPIViewBase):
         self.assert_response_api(
             self.url, bad_users, 403, method='put', data=self.post_data
         )
+        self.assert_response_api(
+            self.url, self.anonymous, 401, method='put', data=self.post_data
+        )
+
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_update_anon(self):
+        """Test put() with anonymous access"""
         self.assert_response_api(
             self.url, self.anonymous, 401, method='put', data=self.post_data
         )
