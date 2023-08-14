@@ -9,7 +9,7 @@ from django.template.defaultfilters import filesizeformat
 
 # Projectroles dependency
 from projectroles.management.logging import ManagementCommandLogger
-from projectroles.models import Project
+from projectroles.models import Project, PROJECT_TYPE_PROJECT
 from projectroles.plugins import get_backend_api
 
 # Landingzones dependency
@@ -38,6 +38,15 @@ class Command(BaseCommand):
     def __init__(self):
         super().__init__()
         self.irods_backend = get_backend_api('omics_irods')
+
+    def _get_uuid_from_path(self, path):
+        """Helper function to get UUID from a path"""
+        match = re.search(
+            r'/([a-f0-9]{2})/\1[a-f0-9]{6}-([a-f0-9]{4}-){3}[a-f0-9]{12}$', path
+        )
+        if match:
+            return match.group(1)
+        return None
 
     def _get_assay_collections(self, assays):
         """Return a list of all assay collection names."""
@@ -141,9 +150,31 @@ class Command(BaseCommand):
         Return a list of orphans in a given irods session that are not in a given
         list of expected collections.
         """
-        collections = irods.collections.get('/{}/projects'.format(irods.zone))
+        # Get a sorted list of all project collections
+        all_project_collections = sorted(
+            self.irods_backend.get_colls_recursively(
+                irods.collections.get('/{}/projects'.format(irods.zone))
+            ),
+            key=lambda coll: coll.path,
+        )
+        # Query for all projects of type PROJECT and store in a dict
+        project_dict = {
+            project.full_title: project.sodar_uuid
+            for project in Project.objects.filter(type=PROJECT_TYPE_PROJECT)
+        }
+        # Sort dict by full_title
+        project_dict = dict(
+            sorted(project_dict.items(), key=lambda item: item[0])
+        )
+        # Sort collections by project full_title
+        sorted_project_collections = sorted(
+            all_project_collections,
+            key=lambda coll: project_dict.get(
+                self._get_uuid_from_path(coll.path), float('inf')
+            ),
+        )
 
-        for collection in self.irods_backend.get_colls_recursively(collections):
+        for collection in sorted_project_collections:
             if (
                 self._is_zone(collection)
                 or self._is_assay_or_study(collection)

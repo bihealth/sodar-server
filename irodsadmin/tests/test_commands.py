@@ -36,6 +36,7 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 ZONE_TITLE = '20180503_172456_test_zone'
 ZONE_DESC = 'description'
+DUMMY_UUID = '11111111-1111-1111-1111-111111111111'
 
 
 class TestIrodsOrphans(
@@ -495,5 +496,57 @@ class TestIrodsOrphans(
             str(self.project.sodar_uuid),
             self.project.full_title,
             orphan_path,
+        )
+        self.assertEqual(expected, output)
+
+    def test_command_ordering(self):
+        """Test ordering of orphans in command output"""
+        # Create orphans for multiple projects
+        orphan_path1 = '{}/sample_data/study_{}'.format(
+            self.irods_backend.get_path(self.project), str(uuid.uuid4())
+        )
+        self.irods.collections.create(orphan_path1)
+
+        orphan_path2 = '{}/landing_zones/{}/{}/{}'.format(
+            self.irods_backend.get_path(self.project),
+            self.user.username,
+            self.study.get_display_name().replace(' ', '_').lower(),
+            '20201031_123456',
+        )
+        self.irods.collections.create(orphan_path2)
+
+        # Create another project and study
+        project2 = self.make_project(
+            'Another Project',
+            PROJECT_TYPE_PROJECT,
+            None,
+        )
+        self.make_assignment(project2, self.user, self.role_owner)
+        investigation2 = self.import_isa_from_file(SHEET_PATH, project2)
+        investigation2.irods_status = True
+        investigation2.save()
+
+        orphan_path3 = '{}/sample_data/study_{}'.format(
+            self.irods_backend.get_path(project2), DUMMY_UUID
+        )
+        self.irods.collections.create(orphan_path3)
+
+        # Run the orphans management command
+        output = self.catch_stdout()
+        # Define the expected output based on ordering
+        expected = '{};{};{};0;0 bytes\n'.format(
+            str(project2.sodar_uuid),
+            project2.full_title,
+            orphan_path3,
+        )
+        expected += '{};{};{};0;0 bytes\n'.format(
+            str(self.project.sodar_uuid),
+            self.project.full_title,
+            orphan_path2,
+        )
+        expected += '{};{};{};0;0 bytes\n'.format(
+            str(self.project.sodar_uuid),
+            self.project.full_title,
+            orphan_path1,
         )
         self.assertEqual(expected, output)
