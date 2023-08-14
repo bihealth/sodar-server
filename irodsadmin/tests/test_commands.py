@@ -502,14 +502,14 @@ class TestIrodsOrphans(
     def test_command_ordering(self):
         """Test ordering of orphans in command output"""
         project1 = self.make_project('A_Project', PROJECT_TYPE_PROJECT, None)
-        project2 = self.make_project('B_Project', PROJECT_TYPE_PROJECT, None)
         self.make_assignment(project1, self.user, self.role_owner)
-        self.make_assignment(project2, self.user, self.role_owner)
         orphan_path1 = '{}/sample_data/study_{}'.format(
             self.irods_backend.get_path(project1), str(uuid.uuid4())
         )
+        # As the title of self.project is 'Test Project', it should be ordered
+        # after project1 with title 'A_Project'
         orphan_path2 = '{}/sample_data/study_{}'.format(
-            self.irods_backend.get_path(project2), str(uuid.uuid4())
+            self.irods_backend.get_path(self.project), str(uuid.uuid4())
         )
         self.irods.collections.create(orphan_path1)
         self.irods.collections.create(orphan_path2)
@@ -523,8 +523,8 @@ class TestIrodsOrphans(
             orphan_path1,
         )
         expected += '{};{};{};0;0 bytes\n'.format(
-            str(project2.sodar_uuid),
-            project2.full_title,
+            str(self.project.sodar_uuid),
+            self.project.full_title,
             orphan_path2,
         )
         self.assertEqual(expected, output)
