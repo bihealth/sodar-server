@@ -495,17 +495,7 @@ class IrodsAccessTicketUpdateAPIView(
         serializer = IrodsAccessTicketSerializer(
             ticket, data=request.data, partial=True
         )
-        read_only_fields = set(request.data) & set(
-            serializer.get_read_only_fields()
-        )
-        if read_only_fields:
-            raise ValidationError(
-                'Updating {}: {}: {}'.format(
-                    IRODS_TICKET_EX_MSG,
-                    IRODS_TICKET_READ_ONLY_FIELDS_MSG,
-                    ', '.join(read_only_fields),
-                )
-            )
+        serializer.context['project'] = self.get_project()
 
         if serializer.is_valid():
             serializer.save()

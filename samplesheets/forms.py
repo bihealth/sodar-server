@@ -38,6 +38,94 @@ TPL_DIR_FIELD = '__output_dir'
 TPL_DIR_LABEL = 'Output directory'
 
 
+# Mixins and Helpers -----------------------------------------------------------
+
+
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class MultipleFileField(forms.FileField):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('widget', MultipleFileInput())
+        super().__init__(*args, **kwargs)
+
+    def clean(self, data, initial=None):
+        single_file_clean = super().clean
+        if isinstance(data, (list, tuple)):
+            result = [single_file_clean(d, initial) for d in data]
+        else:
+            result = single_file_clean(data, initial)
+        return result
+
+
+class IrodsAccessTicketValidateMixin:
+    """Validation helpers for iRODS access tickets"""
+
+    def validate_data(self, irods_backend, project, instance, data):
+        """
+        Validate iRODS access ticket.
+
+        :param irods_backend: IrodsAPI object
+        :param project: Project object
+        :param instance: IrodsAccessTicket object (None if creating)
+        :param data: Dict of data to validate
+        :return: Dict of errors in form field-error (empty if no errors)
+        """
+        # Validate path (only if creating)
+        if not instance or not instance.pk:
+            try:
+                data['path'] = irods_backend.sanitize_path(data['path'])
+            except Exception as ex:
+                return {'path': 'Invalid iRODS path: {}'.format(ex)}
+            # Ensure path is within project
+            if not data['path'].startswith(irods_backend.get_path(project)):
+                return {'path': 'Path is not within the project'}
+            # Ensure path is a collection
+            with irods_backend.get_session() as irods:
+                if not irods.collections.exists(data['path']):
+                    return {
+                        'path': 'Path does not point to a collection '
+                        'or the collection doesn\'t exist'
+                    }
+            # Ensure path is within a project assay
+            match = re.search(
+                r'/assay_([0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12})',
+                data['path'],
+            )
+            if not match:
+                return {'path': 'Not a valid assay path'}
+            else:
+                try:
+                    # Set assay if successful
+                    data['assay'] = Assay.objects.get(
+                        study__investigation__project=project,
+                        sodar_uuid=match.group(1),
+                    )
+                except ObjectDoesNotExist:
+                    return {'path': 'Assay not found in project'}
+            # Ensure path is not assay root
+            if data['path'] == irods_backend.get_path(data['assay']):
+                return {
+                    'path': 'Ticket creation for assay root path is not allowed'
+                }
+
+        # Check if expiry date is in the past
+        if (
+            data.get('date_expires')
+            and data.get('date_expires') <= timezone.now()
+        ):
+            return {'date_expires': 'Expiry date in the past not allowed'}
+
+        # Check if unexpired ticket already exists for path
+        if (
+            not instance.pk
+            and IrodsAccessTicket.objects.filter(path=data['path']).first()
+        ):
+            return {'path': 'Ticket already exists for this path'}
+        return None
+
+
 class IrodsDataRequestValidateMixin:
     """Validation helpers for iRODS data requests"""
 
@@ -335,7 +423,7 @@ class SheetTemplateCreateForm(forms.Form):
             )
 
 
-class IrodsAccessTicketForm(forms.ModelForm):
+class IrodsAccessTicketForm(IrodsAccessTicketValidateMixin, forms.ModelForm):
     """Form for the irods access ticket creation and editing"""
 
     class Meta:
@@ -361,77 +449,15 @@ class IrodsAccessTicketForm(forms.ModelForm):
         )
 
     def clean(self):
+        cleaned_data = super().clean()
         irods_backend = get_backend_api('omics_irods')
-        # Validate path (only if creating)
-        if not self.instance.pk:
-            try:
-                self.cleaned_data['path'] = irods_backend.sanitize_path(
-                    self.cleaned_data['path']
-                )
-            except Exception as ex:
-                self.add_error('path', 'Invalid iRODS path: {}'.format(ex))
-                return self.cleaned_data
-            # Ensure path is within project
-            if not self.cleaned_data['path'].startswith(
-                irods_backend.get_path(self.project)
-            ):
-                self.add_error('path', 'Path is not within the project')
-                return self.cleaned_data
-            # Ensure path is a collection
-            with irods_backend.get_session() as irods:
-                if not irods.collections.exists(self.cleaned_data['path']):
-                    self.add_error(
-                        'path',
-                        'Path does not point to a collection or the collection '
-                        'doesn\'t exist',
-                    )
-                    return self.cleaned_data
-            # Ensure path is within a project assay
-            match = re.search(
-                r'/assay_([0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12})',
-                self.cleaned_data['path'],
-            )
-            if not match:
-                self.add_error('path', 'Not a valid assay path')
-                return self.cleaned_data
-            else:
-                try:
-                    # Set assay if successful
-                    self.cleaned_data['assay'] = Assay.objects.get(
-                        study__investigation__project=self.project,
-                        sodar_uuid=match.group(1),
-                    )
-                except ObjectDoesNotExist:
-                    self.add_error('path', 'Assay not found in project')
-                    return self.cleaned_data
-            # Ensure path is not assay root
-            if self.cleaned_data['path'] == irods_backend.get_path(
-                self.cleaned_data['assay']
-            ):
-                self.add_error(
-                    'path', 'Ticket creation for assay root path is not allowed'
-                )
-                return self.cleaned_data
-        else:  # Do not allow editing path
-            self.cleaned_data['path'] = self.instance.path
-
-        # Check if expiry date is in the past
-        if (
-            self.cleaned_data.get('date_expires')
-            and self.cleaned_data.get('date_expires') <= timezone.now()
-        ):
-            self.add_error(
-                'date_expires', 'Expiry date in the past not allowed'
-            )
-
-        # Check if unexpired ticket already exists for path
-        if (
-            not self.instance.pk
-            and IrodsAccessTicket.objects.filter(
-                path=self.cleaned_data['path']
-            ).first()
-        ):
-            self.add_error('path', 'Ticket for path already exists')
+        cleaned_data['path'] = irods_backend.sanitize_path(cleaned_data['path'])
+        errors = self.validate_data(
+            irods_backend, self.project, self.instance, cleaned_data
+        )
+        if errors:
+            for k, v in errors.items():
+                self.add_error(k, v)
         return self.cleaned_data
 
 
