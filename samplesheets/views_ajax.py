@@ -327,6 +327,7 @@ class SheetContextAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
             'alerts': [],
             'csrf_token': get_token(request),
             'investigation': {},
+            'project_uuid': str(project.sodar_uuid),
             'user_uuid': str(request.user.sodar_uuid)
             if hasattr(request.user, 'sodar_uuid')
             else None,
@@ -347,6 +348,9 @@ class SheetContextAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
                 'configuration': inv.get_configuration(),
                 'inv_file_name': inv.file_name.split('/')[-1],
                 'irods_status': inv.irods_status,
+                'irods_path': irods_backend.get_path(project)
+                if irods_backend and inv.irods_status
+                else None,
                 'parser_version': inv.parser_version or 'LEGACY',
                 'parser_warnings': True
                 if inv.parser_warnings

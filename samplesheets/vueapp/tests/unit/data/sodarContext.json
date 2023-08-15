@@ -2,6 +2,7 @@
   "configuration": null,
   "inv_file_name": "i_small.txt",
   "irods_status": true,
+  "irods_path": "/sodarZone/projects/00/00000000-0000-0000-0000-000000000000/sample_data",
   "irods_backend_enabled": true,
   "parser_version": "0.2.7",
   "parser_warnings": true,
