@@ -205,7 +205,7 @@ class TestProjectSheetsView(IrodsDataRequestMixin, TestProjectSheetsUIBase):
     # NOTE: For further vue app tests, see samplesheets/vueapp/tests
 
 
-class TestSheetTemplateCreateFormView(TestProjectSheetsUIBase):
+class TestSheetTemplateCreateView(TestProjectSheetsUIBase):
     """Tests for the sheet template creation view UI"""
 
     def test_render_field_visibility(self):
@@ -277,6 +277,11 @@ class TestSheetVersionListView(TestProjectSheetsUIBase):
         )
         self.assert_element_exists(
             [self.user_contributor], self.url, 'sodar-ss-version-alert', False
+        )
+        # Ensure badge is shown for current version
+        self.login_and_redirect(self.user_contributor, self.url)
+        self.assertIsNotNone(
+            self.selenium.find_element(By.CLASS_NAME, 'badge-info')
         )
 
     def test_list_no_versions(self):

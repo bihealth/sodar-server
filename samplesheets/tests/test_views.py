@@ -703,8 +703,8 @@ class TestSheetTemplateSelectView(ViewTestBase):
             )
 
 
-class TestSheetTemplateCreateFormView(ViewTestBase):
-    """Tests for SheetTemplateCreateFormView"""
+class TestSheetTemplateCreateView(ViewTestBase):
+    """Tests for SheetTemplateCreateView"""
 
     def _get_post_data(self, tpl_name):
         """
@@ -798,6 +798,8 @@ class TestSheetTemplateCreateFormView(ViewTestBase):
                     + t,
                     data=post_data,
                 )
+            isa_tab = ISATab.objects.first()
+            self.assertEqual(isa_tab.tags, ['CREATE'])
             self.assertEqual(response.status_code, 302, msg=t)
             self.assertIsNotNone(self.project.investigations.first(), msg=t)
             self.project.investigations.first().delete()
