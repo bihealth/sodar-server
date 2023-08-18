@@ -20,7 +20,7 @@ var updateZoneStatus = function() {
     });
 
     // Make the POST request to retrieve zone statuses
-    if (zoneUuids.length >= 0) {
+    if (zoneUuids.length > 0) {
         $.ajax({
             url: zoneStatusUrl,
             method: 'POST',

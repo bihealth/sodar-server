@@ -27,7 +27,7 @@ class TestLandingZoneStatusGetAjaxView(TestViewsBase):
         }
         self.assertEquals(response.data, expected)
 
-    def test_post_no_landingzone(self):
+    def test_post_no_zone(self):
         """Test POST request for getting a landing zone status with no zones"""
         with self.login(self.user):
             response = self.client.post(
