@@ -54,16 +54,16 @@ class Command(BaseCommand):
         ]
 
         # Get the actual path to the projects collection
-        projects_path = self.irods_backend.get_projects_path()
-        projects_path_depth = len(projects_path.split('/'))
+        project_path = self.irods_backend.get_projects_path()
         for coll in collections:
-            path_parts = coll.path.split('/')
-            if len(path_parts) > projects_path_depth + 1:
-                uuid = path_parts[projects_path_depth + 1]
-                if any(uuid in path for path in valid_project_paths):
-                    colls_with_project.append(coll)
-                else:
-                    colls_no_project.append(coll)
+            pattern = (
+                project_path
+                + r'/([a-f0-9]{2})/\1[a-f0-9]{6}-([a-f0-9]{4}-){3}[a-f0-9]{12}'
+            )
+            match = re.search(r'{}'.format(pattern), coll.path)
+            uuid = match.string.split('/')[4] if match else ''
+            if any(uuid in path for path in valid_project_paths):
+                colls_with_project.append(coll)
             else:
                 colls_no_project.append(coll)
 
@@ -75,8 +75,8 @@ class Command(BaseCommand):
                     i
                     for i, path in enumerate(valid_project_paths)
                     if (
-                        coll.path.split('/')[projects_path_depth + 1]
-                        if len(coll.path.split('/')) > projects_path_depth + 1
+                        coll.path.split('/')[4]
+                        if len(coll.path.split('/')) > 4
                         else ''
                     )
                     in path
@@ -178,9 +178,9 @@ class Command(BaseCommand):
         Check if a given collection matches the format of path to a project
         collection under the projects path.
         """
-        projects_path = self.irods_backend.get_projects_path()
+        project_path = self.irods_backend.get_projects_path()
         pattern = (
-            projects_path
+            project_path
             + r'/([a-f0-9]{2})/\1[a-f0-9]{6}-([a-f0-9]{4}-){3}[a-f0-9]{12}$'
         )
         return re.search(r'{}'.format(pattern), collection.path)
