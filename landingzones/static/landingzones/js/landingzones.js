@@ -6,7 +6,7 @@ var isSuperuser = false;
  *****************************/
 var updateZoneStatus = function() {
     window.zoneStatusUpdated = false;
-    var zoneUuids = '';
+    var zoneUuids = [];
 
     $('.sodar-lz-zone-tr-existing').each(function() {
         var trId = $(this).attr('id');
@@ -15,7 +15,7 @@ var updateZoneStatus = function() {
         var statusTd = zoneTr.find('td#sodar-lz-zone-status-' + zoneUuid);
 
         if (statusTd.text() !== 'MOVED' && statusTd.text() !== 'DELETED') {
-            zoneUuids += zoneUuid + ',';
+            zoneUuids.push(zoneUuid);
         }
     });
 
