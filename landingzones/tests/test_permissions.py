@@ -55,7 +55,7 @@ class TestLandingZonePermissionsBase(
             config_data={},
         )
         # Data for post requests
-        self.post_data = {'zone_uuids': [str(self.landing_zone.sodar_uuid)]}
+        self.post_data = {'zone_uuids': str(self.landing_zone.sodar_uuid) + ','}
 
 
 class TestLandingZonePermissions(TestLandingZonePermissionsBase):

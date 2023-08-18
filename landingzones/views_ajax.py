@@ -22,7 +22,8 @@ class ZoneStatusRetrieveAjaxView(SODARBaseProjectAjaxView):
         return user.has_perm(permission, obj=zone.project)
 
     def post(self, request, *args, **kwargs):
-        zone_uuids = request.data.getlist('zone_uuids[]')
+        zone_uuids_string = request.data.get('zone_uuids')
+        zone_uuids = zone_uuids_string.split(',')[:-1]
         project = self.get_project()
 
         # Filter landing zones based on UUIDs and project
