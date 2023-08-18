@@ -64,7 +64,7 @@ class IrodsAccessTicketValidateMixin:
 
     def validate_data(self, irods_backend, project, instance, data):
         """
-        Validate iRODS access ticket.
+        Validate iRODS access ticket data.
 
         :param irods_backend: IrodsAPI object
         :param project: Project object
@@ -73,7 +73,7 @@ class IrodsAccessTicketValidateMixin:
         :return: Dict of errors in form field-error (empty if no errors)
         """
         # Validate path (only if creating)
-        if not instance or not instance.pk:
+        if not instance.pk if instance else True:
             try:
                 data['path'] = irods_backend.sanitize_path(data['path'])
             except Exception as ex:
@@ -120,6 +120,8 @@ class IrodsAccessTicketValidateMixin:
         # Check if unexpired ticket already exists for path
         if (
             not instance.pk
+            if instance
+            else True
             and IrodsAccessTicket.objects.filter(path=data['path']).first()
         ):
             return {'path': 'Ticket already exists for this path'}
@@ -451,7 +453,8 @@ class IrodsAccessTicketForm(IrodsAccessTicketValidateMixin, forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         irods_backend = get_backend_api('omics_irods')
-        cleaned_data['path'] = irods_backend.sanitize_path(cleaned_data['path'])
+        if self.instance.pk:
+            cleaned_data['path'] = self.instance.path
         errors = self.validate_data(
             irods_backend, self.project, self.instance, cleaned_data
         )

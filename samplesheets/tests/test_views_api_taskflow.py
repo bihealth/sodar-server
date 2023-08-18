@@ -43,12 +43,10 @@ from samplesheets.views import (
 )
 from samplesheets.views_api import (
     IRODS_QUERY_ERROR_MSG,
-    IRODS_TICKETS_LISTED_MSG,
     IRODS_TICKETS_NOT_FOUND_MSG,
-    IRODS_TICKET_RETREIVED_MSG,
-    IRODS_TICKET_UPDATED_MSG,
     IRODS_TICKET_EX_MSG,
     IRODS_TICKET_DELETED_MSG,
+    IRODS_TICKET_NO_UPDATE_FIELDS_MSG,
 )
 
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
@@ -382,24 +380,20 @@ class TestIrodsAccessTicketListAPIView(TestIrodsAccessTicketAPIViewBase):
         local_date_created = self.ticket.date_created.astimezone(
             timezone.get_current_timezone()
         )
-        expected = {
-            'count': 1,
-            'detail': IRODS_TICKETS_LISTED_MSG,
-            'tickets': [
-                {
-                    'sodar_uuid': str(self.ticket.sodar_uuid),
-                    'label': self.ticket.label,
-                    'ticket': self.ticket.ticket,
-                    'assay': self.ticket.assay.pk,
-                    'study': self.ticket.study.pk,
-                    'path': self.ticket.path,
-                    'date_created': local_date_created.isoformat(),
-                    'date_expires': self.ticket.date_expires,
-                    'user': self.ticket.user.pk,
-                    'is_active': self.ticket.is_active(),
-                }
-            ],
-        }
+        expected = [
+            {
+                'sodar_uuid': str(self.ticket.sodar_uuid),
+                'label': self.ticket.label,
+                'ticket': self.ticket.ticket,
+                'assay': self.ticket.assay.pk,
+                'study': self.ticket.study.pk,
+                'path': self.ticket.path,
+                'date_created': local_date_created.isoformat(),
+                'date_expires': self.ticket.date_expires,
+                'user': self.ticket.user.pk,
+                'is_active': self.ticket.is_active(),
+            }
+        ]
         self.assertEqual(json.loads(response.content), expected)
 
     def test_get_no_tickets(self):
@@ -407,7 +401,7 @@ class TestIrodsAccessTicketListAPIView(TestIrodsAccessTicketAPIViewBase):
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
         with self.login(self.user_contrib):
             response = self.client.get(self.url)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 404)
         expected = {'detail': IRODS_TICKETS_NOT_FOUND_MSG}
         self.assertEqual(json.loads(response.content), expected)
 
@@ -438,24 +432,20 @@ class TestIrodsAccessTicketListAPIView(TestIrodsAccessTicketAPIViewBase):
         local_date_created = self.ticket.date_created.astimezone(
             timezone.get_current_timezone()
         )
-        expected = {
-            'count': 1,
-            'detail': IRODS_TICKETS_LISTED_MSG,
-            'tickets': [
-                {
-                    'sodar_uuid': str(self.ticket.sodar_uuid),
-                    'label': self.ticket.label,
-                    'ticket': self.ticket.ticket,
-                    'assay': self.ticket.assay.pk,
-                    'study': self.ticket.study.pk,
-                    'path': self.ticket.path,
-                    'date_created': local_date_created.isoformat(),
-                    'date_expires': self.ticket.date_expires,
-                    'user': self.ticket.user.pk,
-                    'is_active': self.ticket.is_active(),
-                }
-            ],
-        }
+        expected = [
+            {
+                'sodar_uuid': str(self.ticket.sodar_uuid),
+                'label': self.ticket.label,
+                'ticket': self.ticket.ticket,
+                'assay': self.ticket.assay.pk,
+                'study': self.ticket.study.pk,
+                'path': self.ticket.path,
+                'date_created': local_date_created.isoformat(),
+                'date_expires': self.ticket.date_expires,
+                'user': self.ticket.user.pk,
+                'is_active': self.ticket.is_active(),
+            }
+        ]
         self.assertEqual(json.loads(response.content), expected)
 
 
@@ -492,19 +482,16 @@ class TestIrodsAccessTicketRetrieveAPIView(TestIrodsAccessTicketAPIViewBase):
             timezone.get_current_timezone()
         )
         expected = {
-            'detail': IRODS_TICKET_RETREIVED_MSG,
-            'ticket': {
-                'sodar_uuid': str(self.ticket.sodar_uuid),
-                'label': self.ticket.label,
-                'ticket': self.ticket.ticket,
-                'assay': self.ticket.assay.pk,
-                'study': self.ticket.study.pk,
-                'path': self.ticket.path,
-                'date_created': local_date_created.isoformat(),
-                'date_expires': self.ticket.date_expires,
-                'user': self.ticket.user.pk,
-                'is_active': self.ticket.is_active(),
-            },
+            'sodar_uuid': str(self.ticket.sodar_uuid),
+            'label': self.ticket.label,
+            'ticket': self.ticket.ticket,
+            'assay': self.ticket.assay.pk,
+            'study': self.ticket.study.pk,
+            'path': self.ticket.path,
+            'date_created': local_date_created.isoformat(),
+            'date_expires': self.ticket.date_expires,
+            'user': self.ticket.user.pk,
+            'is_active': self.ticket.is_active(),
         }
         self.assertEqual(json.loads(response.content), expected)
 
@@ -522,8 +509,6 @@ class TestIrodsAccessTicketRetrieveAPIView(TestIrodsAccessTicketAPIViewBase):
 
 class TestIrodsAccessTicketCreateAPIView(TestIrodsAccessTicketAPIViewBase):
     """Tests for IrodsAccessTicketCreateAPIView"""
-
-    maxDiff = None
 
     def setUp(self):
         super().setUp()
@@ -569,7 +554,7 @@ class TestIrodsAccessTicketCreateAPIView(TestIrodsAccessTicketAPIViewBase):
         self.assert_alert_count(CREATE_ALERT, self.user, 0)
         self.assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
         self.assertEqual(self.get_tl_event_count('create'), 1)
-        self.assertEqual(self.get_app_alert_count('create'), 1)
+        self.assertEqual(self.get_app_alert_count('create'), 2)
         self.assertEqual(
             self.app_alert_model.objects.filter(
                 alert_name='irods_ticket_create'
@@ -613,7 +598,7 @@ class TestIrodsAccessTicketCreateAPIView(TestIrodsAccessTicketAPIViewBase):
         self.assert_alert_count(CREATE_ALERT, self.user, 0)
         self.assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
         self.assertEqual(self.get_tl_event_count('create'), 1)
-        self.assertEqual(self.get_app_alert_count('create'), 2)
+        self.assertEqual(self.get_app_alert_count('create'), 3)
         self.assertEqual(
             self.app_alert_model.objects.filter(
                 alert_name='irods_ticket_create'
@@ -759,23 +744,20 @@ class TestIrodsAccessTicketUpdateAPIView(TestIrodsAccessTicketAPIViewBase):
             timezone.get_current_timezone()
         )
         expected = {
-            'detail': IRODS_TICKET_UPDATED_MSG,
-            'ticket': {
-                'sodar_uuid': str(self.ticket.sodar_uuid),
-                'label': self.label_update,
-                'ticket': self.ticket.ticket,
-                'assay': self.ticket.assay.pk,
-                'study': self.ticket.study.pk,
-                'path': self.ticket.path,
-                'date_created': local_date_created.isoformat(),
-                'date_expires': self.date_expires_update,
-                'user': self.ticket.user.pk,
-                'is_active': self.ticket.is_active(),
-            },
+            'sodar_uuid': str(self.ticket.sodar_uuid),
+            'label': self.label_update,
+            'ticket': self.ticket.ticket,
+            'assay': self.ticket.assay.pk,
+            'study': self.ticket.study.pk,
+            'path': self.ticket.path,
+            'date_created': local_date_created.isoformat(),
+            'date_expires': self.date_expires_update,
+            'user': self.ticket.user.pk,
+            'is_active': self.ticket.is_active(),
         }
         self.assertEqual(response.json(), expected)
         self.assertEqual(self.get_tl_event_count('update'), 1)
-        self.assertEqual(self.get_app_alert_count('update'), 2)
+        self.assertEqual(self.get_app_alert_count('update'), 3)
         self.assertEqual(
             self.app_alert_model.objects.filter(
                 alert_name='irods_ticket_update'
@@ -796,8 +778,9 @@ class TestIrodsAccessTicketUpdateAPIView(TestIrodsAccessTicketAPIViewBase):
 
         self.assertEqual(response.status_code, 400)
         expected = [
-            'Updating {}: The following fields are read-only: path'.format(
-                IRODS_TICKET_EX_MSG
+            '{} {}'.format(
+                'Updating ' + IRODS_TICKET_EX_MSG + ':',
+                IRODS_TICKET_NO_UPDATE_FIELDS_MSG + ' path',
             )
         ]
         self.assertEqual(response.json(), expected)
@@ -866,7 +849,7 @@ class TestIrodsAccessTicketDestroyAPIView(TestIrodsAccessTicketAPIViewBase):
         self.assertEqual(response.data, expected)
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
         self.assertEqual(self.get_tl_event_count('delete'), 1)
-        self.assertEqual(self.get_app_alert_count('delete'), 2)
+        self.assertEqual(self.get_app_alert_count('delete'), 3)
         self.assertEqual(
             self.app_alert_model.objects.filter(
                 alert_name='irods_ticket_delete'

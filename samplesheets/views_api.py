@@ -75,7 +75,7 @@ APP_NAME = 'samplesheets'
 IRODS_QUERY_ERROR_MSG = 'Exception querying iRODS objects'
 IRODS_REQUEST_EX_MSG = 'iRODS data request failed'
 IRODS_TICKET_EX_MSG = 'iRODS access ticket failed'
-IRODS_TICKET_READ_ONLY_FIELDS_MSG = 'The following fields are read-only'
+IRODS_TICKET_NO_UPDATE_FIELDS_MSG = 'The following fields cannot be updated:'
 IRODS_TICKET_INVALID_DATA_MSG = 'Invalid data'
 IRODS_TICKETS_LISTED_MSG = 'iRODS access tickets listed'
 IRODS_TICKETS_NOT_FOUND_MSG = 'No iRODS access tickets found'
@@ -419,7 +419,6 @@ class IrodsAccessTicketCreateAPIView(
     - ``ticket``: iRODS access ticket
     """
 
-    http_method_names = ['post']
     permission_required = 'samplesheets.edit_sheet'
 
     def post(self, request, *args, **kwargs):
@@ -481,7 +480,6 @@ class IrodsAccessTicketUpdateAPIView(
     - ``ticket``: iRODS access ticket
     """
 
-    http_method_names = ['put', 'patch']
     permission_required = 'samplesheets.edit_sheet'
 
     def get_object(self):
@@ -492,6 +490,17 @@ class IrodsAccessTicketUpdateAPIView(
     def put(self, request, *args, **kwargs):
         """PUT request for updating an iRODS access ticket"""
         ticket = self.get_object()
+        if request.data.keys() - {'label', 'date_expires'}:
+            raise ValidationError(
+                '{} {}'.format(
+                    'Updating ' + IRODS_TICKET_EX_MSG + ':',
+                    IRODS_TICKET_NO_UPDATE_FIELDS_MSG
+                    + ' '
+                    + ', '.join(
+                        request.data.keys() - {'label', 'date_expires'}
+                    ),
+                )
+            )
         serializer = IrodsAccessTicketSerializer(
             ticket, data=request.data, partial=True
         )
@@ -523,7 +532,6 @@ class IrodsAccessTicketDestroyAPIView(
     **Methods:** ``DELETE``
     """
 
-    http_method_names = ['delete']
     permission_required = 'samplesheets.edit_sheet'
 
     def get_object(self):

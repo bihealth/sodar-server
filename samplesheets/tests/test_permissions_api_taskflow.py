@@ -162,6 +162,7 @@ class TestIrodsAccessTicketAPIViewBase(
         self.coll = self.irods.collections.create(
             os.path.join(self.assay_path, 'coll')
         )
+        self.ticket = self.create_ticket()
 
 
 class TestIrodsAccessTicketListAPIView(TestIrodsAccessTicketAPIViewBase):

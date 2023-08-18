@@ -174,18 +174,6 @@ class IrodsAccessTicketSerializer(
             return True
         return obj.date_expires > timezone.now()
 
-    def get_read_only_fields(self):
-        return [
-            'study',
-            'assay',
-            'ticket',
-            'path',
-            'user',
-            'date_created',
-            'is_active',
-            'sodar_uuid',
-        ]
-
     def validate(self, attrs):
         irods_backend = get_backend_api('omics_irods')
         project = self.context['project']
