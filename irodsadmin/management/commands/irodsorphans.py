@@ -53,14 +53,20 @@ class Command(BaseCommand):
             )
         ]
 
+        # Get the actual path to the projects collection
+        projects_path = self.irods_backend.get_projects_path()
+        projects_path_depth = len(projects_path.split('/'))
         for coll in collections:
-            uuid_prefix = (
-                coll.path.split('/')[4] if len(coll.path.split('/')) > 4 else ''
-            )
-            if any(uuid_prefix in path for path in valid_project_paths):
-                colls_with_project.append(coll)
+            path_parts = coll.path.split('/')
+            if len(path_parts) > projects_path_depth + 1:
+                uuid = path_parts[projects_path_depth + 1]
+                if any(uuid in path for path in valid_project_paths):
+                    colls_with_project.append(coll)
+                else:
+                    colls_no_project.append(coll)
             else:
                 colls_no_project.append(coll)
+
         # Sort collections with project path based on project list
         sorted_colls = sorted(
             colls_with_project,
@@ -69,8 +75,8 @@ class Command(BaseCommand):
                     i
                     for i, path in enumerate(valid_project_paths)
                     if (
-                        coll.path.split('/')[4]
-                        if len(coll.path.split('/')) > 4
+                        coll.path.split('/')[projects_path_depth + 1]
+                        if len(coll.path.split('/')) > projects_path_depth + 1
                         else ''
                     )
                     in path
@@ -170,12 +176,14 @@ class Command(BaseCommand):
     def _is_project(self, collection):
         """
         Check if a given collection matches the format of path to a project
-        collection.
+        collection under the projects path.
         """
-        return re.search(
-            r'projects/([a-f0-9]{2})/\1[a-f0-9]{6}-([a-f0-9]{4}-){3}[a-f0-9]{12}$',
-            collection.path,
+        projects_path = self.irods_backend.get_projects_path()
+        pattern = (
+            projects_path
+            + r'/([a-f0-9]{2})/\1[a-f0-9]{6}-([a-f0-9]{4}-){3}[a-f0-9]{12}$'
         )
+        return re.search(r'{}'.format(pattern), collection.path)
 
     def _get_orphans(self, irods, expected, assays):
         """

@@ -190,6 +190,7 @@ class TestIrodsOrphans(
         collection = self.irods.collections.get(
             self.irods_backend.get_path(self.project)
         )
+        print(collection.path)
         self.assertTrue(self.irodsorphans._is_project(collection))
 
     def test_is_zone_invalid(self):
