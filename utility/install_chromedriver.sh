@@ -4,15 +4,13 @@ echo "***********************************************"
 echo "Installing Chromedriver for UI Testing         "
 echo "***********************************************"
 
-# Install dependencies
-sudo apt-get update
-sudo apt-get install -y unzip xvfb libxi6 libgconf-2-4
+# NOTE: If depdendencies are missing, first run install_chrome.sh
 
-# Install ChromeDriver
-CHROME_DRIVER_VERSION=$(curl http://chromedriver.storage.googleapis.com/LATEST_RELEASE)
-wget -N http://chromedriver.storage.googleapis.com/$CHROME_DRIVER_VERSION/chromedriver_linux64.zip -P ~/
-unzip -o ~/chromedriver_linux64.zip -d ~/
-rm ~/chromedriver_linux64.zip
-sudo mv -f ~/chromedriver /usr/local/bin/chromedriver
+# Install Chromedriver
+CHROME_DRIVER_URL=$(python3 $(dirname "$0")/get_chromedriver_url.py)
+wget -N $CHROME_DRIVER_URL -P ~/
+unzip -o ~/chromedriver-linux64.zip -d ~/
+rm ~/chromedriver-linux64.zip
+sudo mv -f ~/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver
 sudo chown root:root /usr/local/bin/chromedriver
 sudo chmod 0755 /usr/local/bin/chromedriver

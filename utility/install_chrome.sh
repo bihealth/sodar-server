@@ -1,11 +1,8 @@
 #!/usr/bin/env bash
 
 echo "***********************************************"
-echo "Installing Chrome + Driver for UI Testing"
+echo "Installing Chrome + Chromedriver for UI Testing"
 echo "***********************************************"
-
-# Version
-CHROME_DRIVER_VERSION=$(curl http://chromedriver.storage.googleapis.com/LATEST_RELEASE)
 
 # Install dependencies
 sudo apt-get update
@@ -17,10 +14,5 @@ sudo dpkg -i --force-depends ~/google-chrome-stable_current_amd64.deb
 sudo apt-get -f install -y
 rm ~/google-chrome-stable_current_amd64.deb
 
-# Install ChromeDriver
-wget -N http://chromedriver.storage.googleapis.com/$CHROME_DRIVER_VERSION/chromedriver_linux64.zip -P ~/
-unzip -o ~/chromedriver_linux64.zip -d ~/
-rm ~/chromedriver_linux64.zip
-sudo mv -f ~/chromedriver /usr/local/bin/chromedriver
-sudo chown root:root /usr/local/bin/chromedriver
-sudo chmod 0755 /usr/local/bin/chromedriver
+# Install Chromedriver
+sh $(dirname "$0")/install_chromedriver.sh

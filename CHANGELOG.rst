@@ -66,6 +66,8 @@ Changed
 Fixed
 -----
 
+- **General**
+    - Local Chromedriver install failure (#1753, bihealth/sodar-core#1255)
 - **Ontologyaccess**
     - Batch import tests failing from forbidden obolibrary access (#1694)
 - **Samplesheets**
