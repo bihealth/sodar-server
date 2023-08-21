@@ -46,6 +46,7 @@ class Command(BaseCommand):
         """Helper function to sort collections based on project list"""
         colls_with_project = []
         colls_no_project = []
+        temp_paths = []
 
         # Create a set of valid project paths based on project UUIDs
         valid_project_paths = [
@@ -64,10 +65,16 @@ class Command(BaseCommand):
             )
             match = re.search(r'{}'.format(pattern), coll.path)
             uuid = match.string.split('/')[4] if match else ''
-            if uuid and any(uuid in path for path in valid_project_paths):
+            if (
+                uuid
+                and any(uuid in path for path in valid_project_paths)
+                and coll.path not in temp_paths
+            ):
                 colls_with_project.append(coll)
-            else:
+                temp_paths.append(coll.path)
+            elif coll.path not in temp_paths:
                 colls_no_project.append(coll)
+                temp_paths.append(coll.path)
 
         # Sort collections with project path based on project list
         sorted_colls = sorted(
