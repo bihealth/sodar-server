@@ -3,6 +3,8 @@
 import re
 import sys
 
+from itertools import chain
+
 from django.core.management.base import BaseCommand
 from django.db.models import Q
 from django.template.defaultfilters import filesizeformat
@@ -62,7 +64,7 @@ class Command(BaseCommand):
             )
             match = re.search(r'{}'.format(pattern), coll.path)
             uuid = match.string.split('/')[4] if match else ''
-            if any(uuid in path for path in valid_project_paths):
+            if uuid and any(uuid in path for path in valid_project_paths):
                 colls_with_project.append(coll)
             else:
                 colls_no_project.append(coll)
@@ -165,12 +167,22 @@ class Command(BaseCommand):
 
     def _is_assay_or_study(self, collection):
         """
-        Check if a given collection matches the format of path to a study or assay
-        collection.
+        Check if a given collection matches the format of path to a study or
+        assay collection.
         """
         return re.match(
             r'(assay|study)_[a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12}',
             collection.name,
+        )
+
+    def _is_assay_orphan(self, collection):
+        """
+        Check if a given collection matches the format of path to a study or
+        assay orphan.
+        """
+        return re.search(
+            r'(assay|study)_[a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12}',
+            collection.path,
         )
 
     def _is_project(self, collection):
@@ -197,27 +209,30 @@ class Command(BaseCommand):
             ),
             key=lambda coll: coll.path,
         )
+        assay_collections = list(
+            chain.from_iterable(
+                self.irods_backend.get_child_colls(
+                    irods, self.irods_backend.get_path(a)
+                )
+                for a in assays
+                if a.get_plugin()
+            )
+        )
+
         # Sort collections by project full_title
-        sorted_collections = self._sort_colls_on_projects(project_collections)
+        sorted_collections = self._sort_colls_on_projects(
+            project_collections + assay_collections
+        )
 
         for collection in sorted_collections:
             if (
                 self._is_zone(collection)
                 or self._is_assay_or_study(collection)
                 or self._is_project(collection)
+                or self._is_assay_orphan(collection)
             ):
                 if collection.path not in expected:
                     self._write_orphan(collection.path, irods)
-
-        for assay in assays:
-            if not assay.get_plugin():
-                continue
-            with self.irods_backend.get_session() as irods:
-                for collection in self.irods_backend.get_child_colls(
-                    irods, self.irods_backend.get_path(assay)
-                ):
-                    if collection.path not in expected:
-                        self._write_orphan(collection.path, irods)
 
     def _write_orphan(self, path, irods):
         stats = self.irods_backend.get_object_stats(irods, path)
@@ -247,7 +262,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         studies = list(Study.objects.all())
-        assays = list(Assay.objects.all())
+        assays = list(Assay.objects.all().order_by())
         expected = (
             *self._get_assay_collections(assays),
             *self._get_study_collections(studies),
