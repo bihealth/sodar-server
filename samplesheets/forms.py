@@ -73,7 +73,7 @@ class IrodsAccessTicketValidateMixin:
         :return: Dict of errors in form field-error (empty if no errors)
         """
         # Validate path (only if creating)
-        if not instance.pk if instance else True:
+        if not instance.pk if instance else not instance:
             try:
                 data['path'] = irods_backend.sanitize_path(data['path'])
             except Exception as ex:
@@ -119,11 +119,8 @@ class IrodsAccessTicketValidateMixin:
 
         # Check if unexpired ticket already exists for path
         if (
-            not instance.pk
-            if instance
-            else True
-            and IrodsAccessTicket.objects.filter(path=data['path']).first()
-        ):
+            not instance.pk if instance else not instance
+        ) and IrodsAccessTicket.objects.filter(path=data['path']).first():
             return {'path': 'Ticket already exists for this path'}
         return None
 
