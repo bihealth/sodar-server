@@ -48,6 +48,7 @@ Changed
     - Upgrade to django-sodar-core v0.13.1-WIP (#1617, #1720)
     - Upgrade to python-irodsclient v1.1.8 (#1538)
     - Upgrade Python dependencies (#1620)
+    - Upgrade Vue app dependencies (#1620)
 - **Landingzones**
     - Move iRODS object helpers to ``TaskflowTestMixin`` (#1699)
     - Enable superuser landing zone controls for locked zones (#1607)
