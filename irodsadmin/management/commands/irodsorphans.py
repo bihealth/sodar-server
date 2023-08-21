@@ -42,59 +42,6 @@ class Command(BaseCommand):
         super().__init__()
         self.irods_backend = get_backend_api('omics_irods')
 
-    def _sort_colls_on_projects(self, collections):
-        """Helper function to sort collections based on project list"""
-        colls_with_project = []
-        colls_no_project = []
-        temp_paths = []
-
-        # Create a set of valid project paths based on project UUIDs
-        valid_project_paths = [
-            self.irods_backend.get_path(p)
-            for p in Project.objects.filter(type=PROJECT_TYPE_PROJECT).order_by(
-                'full_title'
-            )
-        ]
-
-        # Get the actual path to the projects collection
-        project_path = self.irods_backend.get_projects_path()
-        for coll in collections:
-            pattern = (
-                project_path
-                + r'/([a-f0-9]{2})/\1[a-f0-9]{6}-([a-f0-9]{4}-){3}[a-f0-9]{12}'
-            )
-            match = re.search(r'{}'.format(pattern), coll.path)
-            uuid = match.string.split('/')[4] if match else ''
-            if (
-                uuid
-                and any(uuid in path for path in valid_project_paths)
-                and coll.path not in temp_paths
-            ):
-                colls_with_project.append(coll)
-                temp_paths.append(coll.path)
-            elif coll.path not in temp_paths:
-                colls_no_project.append(coll)
-                temp_paths.append(coll.path)
-
-        # Sort collections with project path based on project list
-        sorted_colls = sorted(
-            colls_with_project,
-            key=lambda coll: next(
-                (
-                    i
-                    for i, path in enumerate(valid_project_paths)
-                    if (
-                        coll.path.split('/')[4]
-                        if len(coll.path.split('/')) > 4
-                        else ''
-                    )
-                    in path
-                ),
-                float('inf'),
-            ),
-        )
-        return sorted_colls + colls_no_project
-
     def _get_assay_collections(self, assays):
         """Return a list of all assay collection names."""
         return [self.irods_backend.get_path(a) for a in assays]
@@ -204,6 +151,59 @@ class Command(BaseCommand):
         )
         return re.search(r'{}'.format(pattern), collection.path)
 
+    def _sort_colls_on_projects(self, collections):
+        """Helper function to sort collections based on project list"""
+        colls_with_project = []
+        colls_no_project = []
+        temp_paths = []
+
+        # Create a set of valid project paths based on project UUIDs
+        valid_project_paths = [
+            self.irods_backend.get_path(p)
+            for p in Project.objects.filter(type=PROJECT_TYPE_PROJECT).order_by(
+                'full_title'
+            )
+        ]
+
+        # Get the actual path to the projects collection
+        project_path = self.irods_backend.get_projects_path()
+        for coll in collections:
+            pattern = (
+                project_path
+                + r'/([a-f0-9]{2})/\1[a-f0-9]{6}-([a-f0-9]{4}-){3}[a-f0-9]{12}'
+            )
+            match = re.search(r'{}'.format(pattern), coll.path)
+            uuid = match.string.split('/')[4] if match else ''
+            if (
+                uuid
+                and any(uuid in path for path in valid_project_paths)
+                and coll.path not in temp_paths
+            ):
+                colls_with_project.append(coll)
+                temp_paths.append(coll.path)
+            elif coll.path not in temp_paths:
+                colls_no_project.append(coll)
+                temp_paths.append(coll.path)
+
+        # Sort collections with project path based on project list
+        sorted_colls = sorted(
+            colls_with_project,
+            key=lambda coll: next(
+                (
+                    i
+                    for i, path in enumerate(valid_project_paths)
+                    if (
+                        coll.path.split('/')[4]
+                        if len(coll.path.split('/')) > 4
+                        else ''
+                    )
+                    in path
+                ),
+                float('inf'),
+            ),
+        )
+        return sorted_colls + colls_no_project
+
     def _get_orphans(self, irods, expected, assays):
         """
         Return a list of orphans in a given irods session that are not in a given
@@ -225,6 +225,7 @@ class Command(BaseCommand):
                 if a.get_plugin()
             )
         )
+        assay_coll_paths = [coll.path for coll in assay_collections]
 
         # Sort collections by project full_title
         sorted_collections = self._sort_colls_on_projects(
@@ -236,10 +237,9 @@ class Command(BaseCommand):
                 self._is_zone(collection)
                 or self._is_assay_or_study(collection)
                 or self._is_project(collection)
-                or self._is_assay_orphan(collection)
-            ):
-                if collection.path not in expected:
-                    self._write_orphan(collection.path, irods)
+                or collection.path in assay_coll_paths
+            ) and collection.path not in expected:
+                self._write_orphan(collection.path, irods)
 
     def _write_orphan(self, path, irods):
         stats = self.irods_backend.get_object_stats(irods, path)
