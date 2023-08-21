@@ -1,6 +1,7 @@
 """Tests for samplesheets REST API view permissions with taskflow"""
 
 import os
+import uuid
 
 from datetime import timedelta
 
@@ -35,6 +36,28 @@ from samplesheets.tests.test_views_taskflow import (
 
 
 # Base Classes and Mixins ------------------------------------------------------
+
+
+class IrodsAccessTicketAPIViewTestBase(
+    SampleSheetIOMixin,
+    IrodsAccessTicketMixin,
+    SampleSheetTaskflowMixin,
+    TaskflowAPIPermissionTestBase,
+):
+    """Base class for iRODS access ticket API view permission tests"""
+
+    def setUp(self):
+        super().setUp()
+        # Import investigation
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+        # Set up iRODS data
+        self.make_irods_colls(self.investigation)
+        self.assay_path = self.irods_backend.get_path(self.assay)
+        self.coll = self.irods.collections.create(
+            os.path.join(self.assay_path, 'coll')
+        )
 
 
 class IrodsDataRequestAPIViewTestBase(
@@ -129,43 +152,7 @@ class TestSampleDataFileExistsAPIView(
         )
 
 
-class TestIrodsAccessTicketAPIViewBase(
-    SampleSheetIOMixin,
-    IrodsAccessTicketMixin,
-    SampleSheetTaskflowMixin,
-    TaskflowAPIPermissionTestBase,
-):
-    """Tests for IrodsAccessAPIView permissions"""
-
-    def create_ticket(self):
-        """Helper function to create a ticket"""
-        ticket = self.make_irods_ticket(
-            study=self.study,
-            assay=self.assay,
-            path=self.coll.path + '/ticket1',
-            user=self.user_owner,
-            ticket='ticket',
-            label='label',
-            date_expires=(timezone.localtime() + timedelta(days=1)).isoformat(),
-        )
-        return ticket
-
-    def setUp(self):
-        super().setUp()
-        # Import investigation
-        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
-        self.study = self.investigation.studies.first()
-        self.assay = self.study.assays.first()
-        # Set up iRODS data
-        self.make_irods_colls(self.investigation)
-        self.assay_path = self.irods_backend.get_path(self.assay)
-        self.coll = self.irods.collections.create(
-            os.path.join(self.assay_path, 'coll')
-        )
-        self.ticket = self.create_ticket()
-
-
-class TestIrodsAccessTicketListAPIView(TestIrodsAccessTicketAPIViewBase):
+class TestIrodsAccessTicketListAPIView(IrodsAccessTicketAPIViewTestBase):
     """Test permissions for IrodsAccessTicketListAPIView"""
 
     def setUp(self):
@@ -178,9 +165,18 @@ class TestIrodsAccessTicketListAPIView(TestIrodsAccessTicketAPIViewBase):
             )
             + '?active=0'
         )
+        self.ticket = self.make_irods_ticket(
+            study=self.study,
+            assay=self.assay,
+            path=self.coll.path + '/ticket1',
+            user=self.user_owner,
+            ticket='ticket',
+            label='label',
+            date_expires=(timezone.localtime() + timedelta(days=1)).isoformat(),
+        )
 
     def test_get(self):
-        """Test get() in IrodsAccessTicketListAPIView"""
+        """Test IrodsAccessTicketListAPIView GET"""
         good_users = [
             self.superuser,
             self.user_owner_cat,
@@ -202,11 +198,11 @@ class TestIrodsAccessTicketListAPIView(TestIrodsAccessTicketAPIViewBase):
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
-        """Test get() with anonymous access"""
+        """Test GET with anonymous access"""
         self.assert_response_api(self.url, self.anonymous, 401)
 
     def test_get_archive(self):
-        """Test get() with archived project"""
+        """Test GET with archived project"""
         self.project.set_archive()
         good_users = [self.superuser]
         bad_users = [
@@ -226,20 +222,28 @@ class TestIrodsAccessTicketListAPIView(TestIrodsAccessTicketAPIViewBase):
         self.assert_response_api(self.url, self.anonymous, 401)
 
 
-class TestIrodsAccessTicketRetrieveAPIView(TestIrodsAccessTicketAPIViewBase):
+class TestIrodsAccessTicketRetrieveAPIView(IrodsAccessTicketAPIViewTestBase):
     """Test permissions for IrodsAccessTicketRetrieveAPIView"""
 
     def setUp(self):
         super().setUp()
         # Set up URLs
-        self.ticket = self.create_ticket()
+        self.ticket = self.make_irods_ticket(
+            study=self.study,
+            assay=self.assay,
+            path=self.coll.path + '/ticket1',
+            user=self.user_owner,
+            ticket='ticket',
+            label='label',
+            date_expires=(timezone.localtime() + timedelta(days=1)).isoformat(),
+        )
         self.url = reverse(
             'samplesheets:api_irods_ticket_retrieve',
             kwargs={'irodsaccessticket': self.ticket.sodar_uuid},
         )
 
     def test_get(self):
-        """Test get() in IrodsAccessTicketRetrieveAPIView"""
+        """Test IrodsAccessTicketRetrieveAPIView GET"""
         good_users = [
             self.superuser,
             self.user_owner_cat,
@@ -261,11 +265,11 @@ class TestIrodsAccessTicketRetrieveAPIView(TestIrodsAccessTicketAPIViewBase):
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
-        """Test get() with anonymous access"""
+        """Test GET with anonymous access"""
         self.assert_response_api(self.url, self.anonymous, 401)
 
     def test_get_archive(self):
-        """Test get() with archived project"""
+        """Test GET with archived project"""
         self.project.set_archive()
         good_users = [self.superuser]
         bad_users = [
@@ -285,7 +289,7 @@ class TestIrodsAccessTicketRetrieveAPIView(TestIrodsAccessTicketAPIViewBase):
         self.assert_response_api(self.url, self.anonymous, 401)
 
 
-class TestIrodsAccessTicketCreateAPIView(TestIrodsAccessTicketAPIViewBase):
+class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
     """Test permissions for IrodsAccessTicketCreateAPIView"""
 
     def setUp(self):
@@ -309,14 +313,14 @@ class TestIrodsAccessTicketCreateAPIView(TestIrodsAccessTicketAPIViewBase):
         }
 
     def _delete_ticket(self):
-        """Delete ticket created in setUp()"""
+        """Delete ticket created in test case"""
         access_ticket = IrodsAccessTicket.objects.all().first()
         ticket_str = access_ticket.ticket
         self.irods_backend.delete_ticket(self.irods, ticket_str)
         access_ticket.delete()
 
     def test_create(self):
-        """Test post() in IrodsAccessTicketCreateAPIView"""
+        """Test IrodsAccessTicketCreateAPIView POST"""
         good_users = [
             self.superuser,
             self.user_owner_cat,
@@ -349,13 +353,13 @@ class TestIrodsAccessTicketCreateAPIView(TestIrodsAccessTicketAPIViewBase):
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_create_anon(self):
-        """Test post() with anonymous access"""
+        """Test POST with anonymous access"""
         self.assert_response_api(
             self.url, self.anonymous, 401, method='post', data=self.post_data
         )
 
     def test_create_archive(self):
-        """Test post() with archived project"""
+        """Test POST with archived project"""
         self.project.set_archive()
         good_users = [self.superuser]
         bad_users = [
@@ -371,7 +375,12 @@ class TestIrodsAccessTicketCreateAPIView(TestIrodsAccessTicketAPIViewBase):
             self.user_no_roles,
         ]
         self.assert_response_api(
-            self.url, good_users, 201, method='post', data=self.post_data
+            self.url,
+            good_users,
+            201,
+            method='post',
+            data=self.post_data,
+            cleanup_method=self._delete_ticket,
         )
         self.assert_response_api(
             self.url, bad_users, 403, method='post', data=self.post_data
@@ -381,13 +390,21 @@ class TestIrodsAccessTicketCreateAPIView(TestIrodsAccessTicketAPIViewBase):
         )
 
 
-class TestIrodsAccessTicketUpdateAPIView(TestIrodsAccessTicketAPIViewBase):
+class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
     """Test permissions for IrodsAccessTicketUpdateAPIView"""
 
     def setUp(self):
         super().setUp()
-        self.ticket = self.create_ticket()
         # Set up URLs
+        self.ticket = self.make_irods_ticket(
+            study=self.study,
+            assay=self.assay,
+            path=self.coll.path + '/ticket1',
+            user=self.user_owner,
+            ticket='ticket',
+            label='label',
+            date_expires=(timezone.localtime() + timedelta(days=1)).isoformat(),
+        )
         self.url = reverse(
             'samplesheets:api_irods_ticket_update',
             kwargs={'irodsaccessticket': self.ticket.sodar_uuid},
@@ -397,7 +414,7 @@ class TestIrodsAccessTicketUpdateAPIView(TestIrodsAccessTicketAPIViewBase):
         self.post_data = {'label': self.label_update}
 
     def test_update(self):
-        """Test put() in IrodsAccessTicketUpdateAPIView"""
+        """Test IrodsAccessTicketUpdateAPIView PUT"""
         good_users = [
             self.superuser,
             self.user_owner_cat,
@@ -425,13 +442,13 @@ class TestIrodsAccessTicketUpdateAPIView(TestIrodsAccessTicketAPIViewBase):
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_update_anon(self):
-        """Test put() with anonymous access"""
+        """Test PUT with anonymous access"""
         self.assert_response_api(
             self.url, self.anonymous, 401, method='put', data=self.post_data
         )
 
     def test_update_archive(self):
-        """Test put() with archived project"""
+        """Test PUT with archived project"""
         self.project.set_archive()
         good_users = [self.superuser]
         bad_users = [
@@ -457,15 +474,15 @@ class TestIrodsAccessTicketUpdateAPIView(TestIrodsAccessTicketAPIViewBase):
         )
 
 
-class TestIrodsAccessTicketDestroyAPIView(TestIrodsAccessTicketAPIViewBase):
+class TestIrodsAccessTicketDestroyAPIView(IrodsAccessTicketAPIViewTestBase):
     """Test permissions for IrodsAccessTicketDeleteAPIView"""
 
-    def create_irods_ticket(self):
+    def _create_irods_ticket(self):
         # Create ticket in database and iRODS
         ticket_str = 'ticket'
         label = 'label'
         # Create ticket in database and iRODS
-        ticket = self.make_irods_ticket(
+        self.ticket = self.make_irods_ticket(
             study=self.study,
             assay=self.assay,
             path=self.coll.path,
@@ -481,10 +498,20 @@ class TestIrodsAccessTicketDestroyAPIView(TestIrodsAccessTicketAPIViewBase):
             ticket_str=ticket_str,
             expiry_date=None,
         )
-        return ticket
+        self.ticket.sodar_uuid = self.request_uuid
+        self.ticket.save()
+        self.url = reverse(
+            'samplesheets:api_irods_ticket_delete',
+            kwargs={'irodsaccessticket': self.ticket.sodar_uuid},
+        )
+
+    def setUp(self):
+        super().setUp()
+        self.request_uuid = uuid.uuid4()
+        self._create_irods_ticket()
 
     def test_delete(self):
-        """Test delete() in IrodsAccessTicketDeleteAPIView"""
+        """Test IrodsAccessTicketDeleteAPIView DELETE"""
         good_users = [
             self.superuser,
             self.user_owner_cat,
@@ -500,22 +527,46 @@ class TestIrodsAccessTicketDestroyAPIView(TestIrodsAccessTicketAPIViewBase):
             self.user_guest,
             self.user_no_roles,
         ]
-
-        for user in good_users:
-            self.ticket = self.create_irods_ticket()
-            self.url = reverse(
-                'samplesheets:api_irods_ticket_delete',
-                kwargs={'irodsaccessticket': self.ticket.sodar_uuid},
-            )
-            self.assert_response_api(self.url, user, 204, method='delete')
-
-        self.ticket = self.create_ticket()
-        self.url = reverse(
-            'samplesheets:api_irods_ticket_delete',
-            kwargs={'irodsaccessticket': self.ticket.sodar_uuid},
+        self.assert_response_api(
+            self.url,
+            good_users,
+            204,
+            method='DELETE',
+            cleanup_method=self._create_irods_ticket,
         )
-        self.assert_response_api(self.url, bad_users, 403, method='delete')
-        self.assert_response_api(self.url, self.anonymous, 401, method='delete')
+        self.assert_response_api(self.url, bad_users, 403, method='DELETE')
+        self.assert_response_api(self.url, self.anonymous, 401, method='DELETE')
+
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_delete_anon(self):
+        """Test DELETE with anonymous access"""
+        self.assert_response_api(self.url, self.anonymous, 401, method='DELETE')
+
+    def test_delete_archive(self):
+        """Test DELETE with archived project"""
+        self.project.set_archive()
+        good_users = [self.superuser]
+        bad_users = [
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
+            self.user_no_roles,
+        ]
+        self.assert_response_api(
+            self.url,
+            good_users,
+            204,
+            method='DELETE',
+            cleanup_method=self._create_irods_ticket,
+        )
+        self.assert_response_api(self.url, bad_users, 403, method='DELETE')
+        self.assert_response_api(self.url, self.anonymous, 401, method='DELETE')
 
 
 class TestIrodsDataRequestListAPIView(

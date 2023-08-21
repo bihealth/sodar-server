@@ -77,24 +77,25 @@ class IrodsAccessTicketValidateMixin:
             try:
                 data['path'] = irods_backend.sanitize_path(data['path'])
             except Exception as ex:
-                return {'path': 'Invalid iRODS path: {}'.format(ex)}
+                return 'path', 'Invalid iRODS path: {}'.format(ex)
             # Ensure path is within project
             if not data['path'].startswith(irods_backend.get_path(project)):
-                return {'path': 'Path is not within the project'}
+                return 'path', 'Path is not within the project'
             # Ensure path is a collection
             with irods_backend.get_session() as irods:
                 if not irods.collections.exists(data['path']):
-                    return {
-                        'path': 'Path does not point to a collection '
-                        'or the collection doesn\'t exist'
-                    }
+                    return (
+                        'path',
+                        'Path does not point to a collection or '
+                        'the collection doesn\'t exist',
+                    )
             # Ensure path is within a project assay
             match = re.search(
                 r'/assay_([0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12})',
                 data['path'],
             )
             if not match:
-                return {'path': 'Not a valid assay path'}
+                return 'path', 'Not a valid assay path'
             else:
                 try:
                     # Set assay if successful
@@ -103,25 +104,26 @@ class IrodsAccessTicketValidateMixin:
                         sodar_uuid=match.group(1),
                     )
                 except ObjectDoesNotExist:
-                    return {'path': 'Assay not found in project'}
+                    return 'path', 'Assay not found in project'
             # Ensure path is not assay root
             if data['path'] == irods_backend.get_path(data['assay']):
-                return {
-                    'path': 'Ticket creation for assay root path is not allowed'
-                }
+                return (
+                    'path',
+                    'Ticket creation for assay root path is not ' 'allowed',
+                )
 
         # Check if expiry date is in the past
         if (
             data.get('date_expires')
             and data.get('date_expires') <= timezone.now()
         ):
-            return {'date_expires': 'Expiry date in the past not allowed'}
+            return 'date_expires', 'Expiry date in the past not allowed'
 
         # Check if unexpired ticket already exists for path
         if (
             not instance.pk if instance else not instance
         ) and IrodsAccessTicket.objects.filter(path=data['path']).first():
-            return {'path': 'Ticket already exists for this path'}
+            return 'path', 'Ticket already exists for this path'
         return None
 
 
@@ -456,8 +458,8 @@ class IrodsAccessTicketForm(IrodsAccessTicketValidateMixin, forms.ModelForm):
             irods_backend, self.project, self.instance, cleaned_data
         )
         if errors:
-            for k, v in errors.items():
-                self.add_error(k, v)
+            field, error = errors
+            self.add_error(field, error)
         return self.cleaned_data
 
 

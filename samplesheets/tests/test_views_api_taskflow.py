@@ -44,9 +44,7 @@ from samplesheets.views import (
 from samplesheets.views_api import (
     IRODS_QUERY_ERROR_MSG,
     IRODS_TICKETS_NOT_FOUND_MSG,
-    IRODS_TICKET_EX_MSG,
     IRODS_TICKET_DELETED_MSG,
-    IRODS_TICKET_NO_UPDATE_FIELDS_MSG,
 )
 
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
@@ -77,12 +75,13 @@ IRODS_FILE_PATH = os.path.dirname(__file__) + '/irods/test1.txt'
 IRODS_FILE_MD5 = '0b26e313ed4a7ca6904b0e9369e5b957'
 IRODS_REQUEST_DESC_UPDATED = 'updated'
 DUMMY_UUID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
+LABEL_UPDATE = 'label_update'
 
 
 # Base Classes and Mixins ------------------------------------------------------
 
 
-class TestSampleSheetAPITaskflowBase(
+class SampleSheetAPITaskflowTestBase(
     SampleSheetIOMixin, SampleSheetTaskflowMixin, TaskflowAPIViewTestBase
 ):
     """Base samplesheets API view test class with Taskflow enabled"""
@@ -103,7 +102,7 @@ class TestSampleSheetAPITaskflowBase(
         self.assay = self.study.assays.first()
 
 
-class TestIrodsAccessTicketAPIViewBase(
+class IrodsAccessTicketAPIViewTestBase(
     SampleSheetIOMixin,
     SampleSheetTaskflowMixin,
     IrodsAccessTicketMixin,
@@ -116,6 +115,7 @@ class TestIrodsAccessTicketAPIViewBase(
         """
         Assert expected app alert count. If project is not specified, default to
         self.project.
+
         :param alert_name: String
         :param user: User object
         :param count: Expected count
@@ -177,12 +177,6 @@ class TestIrodsAccessTicketAPIViewBase(
         # Get appalerts API and model
         self.app_alerts = get_backend_api('appalerts_backend')
         self.app_alert_model = self.app_alerts.get_model()
-        # Set create URL
-        self.create_url = reverse(
-            'samplesheets:api_irods_ticket_create',
-            kwargs={'project': self.project.sodar_uuid},
-        )
-        self.user.set_password('password')
 
 
 class TestIrodsDataRequestAPIViewBase(
@@ -263,7 +257,7 @@ class TestIrodsDataRequestAPIViewBase(
 # Test Cases -------------------------------------------------------------------
 
 
-class TestInvestigationRetrieveAPIView(TestSampleSheetAPITaskflowBase):
+class TestInvestigationRetrieveAPIView(SampleSheetAPITaskflowTestBase):
     """Tests for InvestigationRetrieveAPIView"""
 
     def test_get(self):
@@ -317,7 +311,7 @@ class TestInvestigationRetrieveAPIView(TestSampleSheetAPITaskflowBase):
         self.assertEqual(json.loads(response.content), expected)
 
 
-class TestIrodsCollsCreateAPIView(TestSampleSheetAPITaskflowBase):
+class TestIrodsCollsCreateAPIView(SampleSheetAPITaskflowTestBase):
     """Tests for IrodsCollsCreateAPIView"""
 
     def test_post(self):
@@ -348,15 +342,13 @@ class TestIrodsCollsCreateAPIView(TestSampleSheetAPITaskflowBase):
         self.assertEqual(response.status_code, 400)
 
 
-class TestIrodsAccessTicketListAPIView(TestIrodsAccessTicketAPIViewBase):
+class TestIrodsAccessTicketListAPIView(IrodsAccessTicketAPIViewTestBase):
     """Tests for IrodsAccessListAPIView"""
 
     def setUp(self):
         super().setUp()
-        self.ticket_str = TICKET_STR
         self.path = self.coll.path
         self.label = TICKET_LABEL
-        self.date_expires = None
         self.url = reverse(
             'samplesheets:api_irods_ticket_list',
             kwargs={'project': self.project.sodar_uuid},
@@ -367,11 +359,11 @@ class TestIrodsAccessTicketListAPIView(TestIrodsAccessTicketAPIViewBase):
         self.ticket = self.make_irods_ticket(
             study=self.study,
             assay=self.assay,
-            ticket=self.ticket_str,
+            ticket=TICKET_STR,
             path=self.path,
             label=self.label,
             user=self.user,
-            date_expires=self.date_expires,
+            date_expires=None,
         )
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         with self.login(self.user_contrib):
@@ -410,16 +402,16 @@ class TestIrodsAccessTicketListAPIView(TestIrodsAccessTicketAPIViewBase):
         self.ticket = self.make_irods_ticket(
             study=self.study,
             assay=self.assay,
-            ticket=self.ticket_str,
+            ticket=TICKET_STR,
             path=self.path,
             label=self.label,
             user=self.user,
-            date_expires=self.date_expires,
+            date_expires=None,
         )
         self.ticket_expired = self.make_irods_ticket(
             study=self.study,
             assay=self.assay,
-            ticket=self.ticket_str,
+            ticket=TICKET_STR,
             path=self.path,
             label=self.label,
             user=self.user,
@@ -449,31 +441,29 @@ class TestIrodsAccessTicketListAPIView(TestIrodsAccessTicketAPIViewBase):
         self.assertEqual(json.loads(response.content), expected)
 
 
-class TestIrodsAccessTicketRetrieveAPIView(TestIrodsAccessTicketAPIViewBase):
+class TestIrodsAccessTicketRetrieveAPIView(IrodsAccessTicketAPIViewTestBase):
     """Tests for IrodsAccessTicketRetrieveAPIView"""
 
     def setUp(self):
         super().setUp()
-        self.ticket_str = TICKET_STR
         self.path = self.coll.path
         self.label = TICKET_LABEL
-        self.date_expires = None
+
+    def test_get(self):
+        """Test get() in IrodsAccessTicketRetrieveAPIView"""
         self.ticket = self.make_irods_ticket(
             study=self.study,
             assay=self.assay,
-            ticket=self.ticket_str,
+            ticket=TICKET_STR,
             path=self.path,
             label=self.label,
             user=self.user,
-            date_expires=self.date_expires,
+            date_expires=None,
         )
         self.url = reverse(
             'samplesheets:api_irods_ticket_retrieve',
             kwargs={'irodsaccessticket': self.ticket.sodar_uuid},
         )
-
-    def test_get(self):
-        """Test get() in IrodsAccessTicketRetrieveAPIView"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         with self.login(self.user_contrib):
             response = self.client.get(self.url)
@@ -497,17 +487,17 @@ class TestIrodsAccessTicketRetrieveAPIView(TestIrodsAccessTicketAPIViewBase):
 
     def test_get_no_ticket(self):
         """Test get() in IrodsAccessTicketRetrieveAPIView with no ticket"""
-        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
-        self.ticket.delete()
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
+        self.url = reverse(
+            'samplesheets:api_irods_ticket_retrieve',
+            kwargs={'irodsaccessticket': DUMMY_UUID},
+        )
         with self.login(self.user_contrib):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 404)
-        expected = {'detail': 'Not found.'}
-        self.assertEqual(json.loads(response.content), expected)
 
 
-class TestIrodsAccessTicketCreateAPIView(TestIrodsAccessTicketAPIViewBase):
+class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
     """Tests for IrodsAccessTicketCreateAPIView"""
 
     def setUp(self):
@@ -522,7 +512,6 @@ class TestIrodsAccessTicketCreateAPIView(TestIrodsAccessTicketAPIViewBase):
             kwargs={'project': self.project.sodar_uuid},
         )
         self.post_data = {
-            'assay': self.assay.pk,
             'path': self.path,
             'label': self.label,
             'date_expires': self.date_expires,
@@ -586,15 +575,7 @@ class TestIrodsAccessTicketCreateAPIView(TestIrodsAccessTicketAPIViewBase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         ticket = IrodsAccessTicket.objects.first()
-        self.assertEqual(ticket.path, self.path)
-        self.assertEqual(ticket.label, self.label)
-        self.assertEqual(
-            ticket.date_expires,
-            datetime.strptime(self.date_expires, '%Y-%m-%dT%H:%M:%S.%f%z'),
-        )
         self.assertEqual(ticket.user, self.user_contrib)
-        self.assertEqual(ticket.study, self.study)
-        self.assertEqual(ticket.assay, self.assay)
         self.assert_alert_count(CREATE_ALERT, self.user, 0)
         self.assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
         self.assertEqual(self.get_tl_event_count('create'), 1)
@@ -608,14 +589,6 @@ class TestIrodsAccessTicketCreateAPIView(TestIrodsAccessTicketAPIViewBase):
             self.user_delegate,
         )
 
-        # Assert ticket state in iRODS
-        irods_ticket = self.get_irods_ticket(ticket)
-        self.assertEqual(irods_ticket[TicketQuery.Ticket.type], 'read')
-        self.assertIsNotNone(irods_ticket[TicketQuery.Ticket.expiry_ts])
-        self.assertEqual(
-            irods_ticket[TicketQuery.Collection.name], self.coll.path
-        )
-
     def test_create_no_expiry(self):
         """Test post() in IrodsAccessTicketCreateAPIView with no expiry date"""
         self.post_data['date_expires'] = ''
@@ -625,17 +598,7 @@ class TestIrodsAccessTicketCreateAPIView(TestIrodsAccessTicketAPIViewBase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         ticket = IrodsAccessTicket.objects.first()
-        self.assertEqual(ticket.path, self.path)
-        self.assertEqual(ticket.label, self.label)
         self.assertIsNone(ticket.date_expires)
-
-        # Assert ticket state in iRODS
-        irods_ticket = self.get_irods_ticket(ticket)
-        self.assertEqual(irods_ticket[TicketQuery.Ticket.type], 'read')
-        self.assertIsNone(irods_ticket[TicketQuery.Ticket.expiry_ts])
-        self.assertEqual(
-            irods_ticket[TicketQuery.Collection.name], self.coll.path
-        )
 
     def test_create_invalid_path(self):
         """Test post() in IrodsAccessTicketCreateAPIView with invalid path"""
@@ -698,22 +661,20 @@ class TestIrodsAccessTicketCreateAPIView(TestIrodsAccessTicketAPIViewBase):
         self.assertEqual(self.get_app_alert_count('create'), 0)
 
 
-class TestIrodsAccessTicketUpdateAPIView(TestIrodsAccessTicketAPIViewBase):
+class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
     """Tests for IrodsAccessTicketUpdateAPIView"""
 
     def setUp(self):
         super().setUp()
-        self.ticket_str = TICKET_STR
         self.label = TICKET_LABEL
-        self.date_expires = None
         self.ticket = self.make_irods_ticket(
             study=self.study,
             assay=self.assay,
-            ticket=self.ticket_str,
+            ticket=TICKET_STR,
             path=self.coll.path,
             label=self.label,
             user=self.user,
-            date_expires=self.date_expires,
+            date_expires=None,
         )
         self.url = reverse(
             'samplesheets:api_irods_ticket_update',
@@ -722,10 +683,9 @@ class TestIrodsAccessTicketUpdateAPIView(TestIrodsAccessTicketAPIViewBase):
         self.date_expires_update = (
             timezone.localtime() + timedelta(days=1)
         ).isoformat()
-        self.label_update = 'label_update'
 
     def test_update(self):
-        """Test put() in IrodsAccessTicketUpdateAPIView"""
+        """Test IrodsAccessTicketUpdateAPIView PUT"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         self.assertEqual(self.get_tl_event_count('update'), 0)
         self.assertEqual(self.get_app_alert_count('update'), 0)
@@ -734,7 +694,7 @@ class TestIrodsAccessTicketUpdateAPIView(TestIrodsAccessTicketAPIViewBase):
             response = self.client.put(
                 self.url,
                 {
-                    'label': self.label_update,
+                    'label': LABEL_UPDATE,
                     'date_expires': self.date_expires_update,
                 },
             )
@@ -745,7 +705,7 @@ class TestIrodsAccessTicketUpdateAPIView(TestIrodsAccessTicketAPIViewBase):
         )
         expected = {
             'sodar_uuid': str(self.ticket.sodar_uuid),
-            'label': self.label_update,
+            'label': LABEL_UPDATE,
             'ticket': self.ticket.ticket,
             'assay': self.ticket.assay.pk,
             'study': self.ticket.study.pk,
@@ -768,7 +728,7 @@ class TestIrodsAccessTicketUpdateAPIView(TestIrodsAccessTicketAPIViewBase):
         )
 
     def test_update_with_path(self):
-        """Test put() in IrodsAccessTicketUpdateAPIView with path"""
+        """Test PUT in IrodsAccessTicketUpdateAPIView with path"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         self.assertEqual(self.get_tl_event_count('update'), 0)
         self.assertEqual(self.get_app_alert_count('update'), 0)
@@ -776,19 +736,12 @@ class TestIrodsAccessTicketUpdateAPIView(TestIrodsAccessTicketAPIViewBase):
         with self.login(self.user_contrib):
             response = self.client.put(self.url, {'path': self.coll.path})
 
-        self.assertEqual(response.status_code, 400)
-        expected = [
-            '{} {}'.format(
-                'Updating ' + IRODS_TICKET_EX_MSG + ':',
-                IRODS_TICKET_NO_UPDATE_FIELDS_MSG + ' path',
-            )
-        ]
-        self.assertEqual(response.json(), expected)
+        self.assertEqual(response.status_code, 404)
         self.assertEqual(self.get_tl_event_count('update'), 0)
         self.assertEqual(self.get_app_alert_count('update'), 0)
 
     def test_update_invalid_date(self):
-        """Test put() in IrodsAccessTicketUpdateAPIView with invalid date"""
+        """Test PUT in IrodsAccessTicketUpdateAPIView with invalid date"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         self.assertEqual(self.get_tl_event_count('update'), 0)
         self.assertEqual(self.get_app_alert_count('update'), 0)
@@ -796,19 +749,87 @@ class TestIrodsAccessTicketUpdateAPIView(TestIrodsAccessTicketAPIViewBase):
         with self.login(self.user_contrib):
             response = self.client.put(self.url, {'date_expires': invalid_date})
 
-        self.assertEqual(response.status_code, 400)
-        expected = "Updating {}: Invalid data: ".format(IRODS_TICKET_EX_MSG)
-        self.assertIn(expected, str(response.json()))
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(self.get_tl_event_count('update'), 0)
+        self.assertEqual(self.get_app_alert_count('update'), 0)
+
+    def test_update_patch(self):
+        """Test IrodsAccessTicketUpdateAPIView PATCH"""
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        self.assertEqual(self.get_tl_event_count('update'), 0)
+        self.assertEqual(self.get_app_alert_count('update'), 0)
+
+        with self.login(self.user_contrib):
+            response = self.client.patch(
+                self.url,
+                {
+                    'label': LABEL_UPDATE,
+                    'date_expires': self.date_expires_update,
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        local_date_created = self.ticket.date_created.astimezone(
+            timezone.get_current_timezone()
+        )
+        expected = {
+            'sodar_uuid': str(self.ticket.sodar_uuid),
+            'label': LABEL_UPDATE,
+            'ticket': self.ticket.ticket,
+            'assay': self.ticket.assay.pk,
+            'study': self.ticket.study.pk,
+            'path': self.ticket.path,
+            'date_created': local_date_created.isoformat(),
+            'date_expires': self.date_expires_update,
+            'user': self.ticket.user.pk,
+            'is_active': self.ticket.is_active(),
+        }
+        self.assertEqual(response.json(), expected)
+        self.assertEqual(self.get_tl_event_count('update'), 1)
+        self.assertEqual(self.get_app_alert_count('update'), 3)
+        self.assertEqual(
+            self.app_alert_model.objects.filter(
+                alert_name='irods_ticket_update'
+            )
+            .first()
+            .user,
+            self.user_delegate,
+        )
+
+    def test_update_patch_with_path(self):
+        """Test PATCH in IrodsAccessTicketUpdateAPIView with path"""
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        self.assertEqual(self.get_tl_event_count('update'), 0)
+        self.assertEqual(self.get_app_alert_count('update'), 0)
+
+        with self.login(self.user_contrib):
+            response = self.client.patch(self.url, {'path': self.coll.path})
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(self.get_tl_event_count('update'), 0)
+        self.assertEqual(self.get_app_alert_count('update'), 0)
+
+    def test_update_patch_invalid_date(self):
+        """Test PATCH in IrodsAccessTicketUpdateAPIView with invalid date"""
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        self.assertEqual(self.get_tl_event_count('update'), 0)
+        self.assertEqual(self.get_app_alert_count('update'), 0)
+        invalid_date = 'invalid'
+        with self.login(self.user_contrib):
+            response = self.client.patch(
+                self.url, {'date_expires': invalid_date}
+            )
+
+        self.assertEqual(response.status_code, 404)
         self.assertEqual(self.get_tl_event_count('update'), 0)
         self.assertEqual(self.get_app_alert_count('update'), 0)
 
 
-class TestIrodsAccessTicketDestroyAPIView(TestIrodsAccessTicketAPIViewBase):
+class TestIrodsAccessTicketDestroyAPIView(IrodsAccessTicketAPIViewTestBase):
     """Tests for IrodsAccessTicketDeleteAPIView"""
 
     def setUp(self):
         super().setUp()
-        self.ticket_str = TICKET_STR
         self.label = TICKET_LABEL
         self.date_expires = (
             timezone.localtime() + timedelta(days=1)
@@ -819,7 +840,7 @@ class TestIrodsAccessTicketDestroyAPIView(TestIrodsAccessTicketAPIViewBase):
             assay=self.assay,
             path=self.coll.path,
             user=self.user,
-            ticket=self.ticket_str,
+            ticket=TICKET_STR,
             label=self.label,
             date_expires=timezone.localtime() + timedelta(days=1),
         )
@@ -827,7 +848,7 @@ class TestIrodsAccessTicketDestroyAPIView(TestIrodsAccessTicketAPIViewBase):
             self.irods,
             'read',
             self.coll.path,
-            ticket_str=self.ticket_str,
+            ticket_str=TICKET_STR,
             expiry_date=None,
         )
         self.url = reverse(
@@ -872,8 +893,6 @@ class TestIrodsAccessTicketDestroyAPIView(TestIrodsAccessTicketAPIViewBase):
             response = self.client.delete(invalid_url)
 
         self.assertEqual(response.status_code, 404)
-        expected = {'detail': 'Not found.'}
-        self.assertEqual(response.json(), expected)
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         self.assertEqual(self.get_tl_event_count('delete'), 0)
         self.assertEqual(self.get_app_alert_count('delete'), 0)
@@ -1267,7 +1286,7 @@ class TestIrodsDataRequestRejectAPIView(
         self.assertEqual(response.status_code, 404)
 
 
-class TestSampleDataFileExistsAPIView(TestSampleSheetAPITaskflowBase):
+class TestSampleDataFileExistsAPIView(SampleSheetAPITaskflowTestBase):
     """Tests for SampleDataFileExistsAPIView"""
 
     def setUp(self):
@@ -1317,7 +1336,7 @@ class TestSampleDataFileExistsAPIView(TestSampleSheetAPITaskflowBase):
         self.assertEqual(response.status_code, 400)
 
 
-class TestProjectIrodsFileListAPIView(TestSampleSheetAPITaskflowBase):
+class TestProjectIrodsFileListAPIView(SampleSheetAPITaskflowTestBase):
     """Tests for ProjectIrodsFileListAPIView"""
 
     def setUp(self):

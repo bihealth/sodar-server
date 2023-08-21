@@ -164,9 +164,7 @@ class IrodsAccessTicketSerializer(
             'is_active',
         ]
         read_only_fields = [
-            f
-            for f in fields
-            if f not in ['assay', 'path', 'label', 'date_expires']
+            f for f in fields if f not in ['path', 'label', 'date_expires']
         ]
 
     def get_is_active(self, obj):
@@ -178,7 +176,16 @@ class IrodsAccessTicketSerializer(
         irods_backend = get_backend_api('omics_irods')
         project = self.context['project']
         if not self.instance:
-            attrs['path'] = irods_backend.sanitize_path(attrs['path'])
+            try:
+                attrs['path'] = irods_backend.sanitize_path(attrs['path'])
+                # Add assay from path
+                attrs['assay'] = Assay.objects.get(
+                    sodar_uuid=irods_backend.get_uuid_from_path(
+                        attrs['path'], 'assay'
+                    )
+                )
+            except Exception as ex:
+                raise serializers.ValidationError(str(ex))
             # Add study from assay
             attrs['study'] = attrs['assay'].study
             # Add empty ticket
@@ -186,11 +193,17 @@ class IrodsAccessTicketSerializer(
             # Add user from context
             attrs['user'] = self.context['user']
         else:  # Update
+            if self.context['update_fields'] - {'label', 'date_expires'}:
+                raise serializers.ValidationError(
+                    'Some of the fields cannot be updated'
+                )
             attrs['path'] = self.instance.path
             attrs['assay'] = self.instance.assay
+
         errors = self.validate_data(
             irods_backend, project, self.instance, attrs
         )
         if errors:
-            raise serializers.ValidationError(errors)
+            field, error = errors
+            raise serializers.ValidationError('{}: {}'.format(field, error))
         return attrs

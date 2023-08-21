@@ -783,28 +783,6 @@ class IrodsAccessTicketModifyMixin:
             project=project,
         )
 
-    @classmethod
-    def create_irods_ticket(
-        cls, irods_backend, irods, path, ticket_str, expiry_date
-    ):
-        """
-        Create access ticket in iRODS.
-        :param irods_backend: IrodsBackend object
-        :param irods: iRODSSession object
-        :param path: iRODS path
-        :param ticket_str: Ticket string
-        :param expiry_date: Expiry date as datetime object
-        :raise: IrodsException
-        """
-        ticket = irods_backend.issue_ticket(
-            irods,
-            'read',
-            path,
-            ticket_str=ticket_str,
-            expiry_date=expiry_date,
-        )
-        return ticket
-
 
 class IrodsDataRequestModifyMixin:
     """iRODS data request modification helpers"""
@@ -2296,12 +2274,12 @@ class IrodsAccessTicketCreateView(
 
         try:
             with irods_backend.get_session() as irods:
-                ticket = self.create_irods_ticket(
-                    irods_backend,
+                ticket = irods_backend.issue_ticket(
                     irods,
+                    'read',
                     form.cleaned_data['path'],
-                    build_secret(16),
-                    form.cleaned_data.get('date_expires'),
+                    ticket_str=build_secret(16),
+                    expiry_date=form.cleaned_data.get('date_expires'),
                 )
         except Exception as ex:
             messages.error(
