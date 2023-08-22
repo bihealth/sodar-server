@@ -56,10 +56,6 @@ rules==3.3
 # REST framework
 djangorestframework==3.14.0
 
-# Keyed list addon for DRF
-# drf-keyed-list==0.0.2
--e git+https://github.com/mikkonie/drf-keyed-list.git@b03607b866c5706b0e1ea46a7eeaab6527030734#egg=drf-keyed-list
-
 # Token authentication
 django-rest-knox==4.2.0
 
@@ -69,16 +65,13 @@ django-markupfield==2.0.1
 django-pagedown==2.2.1
 mistune==2.0.5
 
-# Django-plugins (with Django v3.0+ support)
--e git+https://github.com/mikkonie/django-plugins.git@42e86e7904e5c09f1da32173862b26843eda5dd8#egg=django-plugins
-
 # Pin to avoid issue with v3.9.5
 # See issue #166 and bihealth/sodar-core#1225
 django-autocomplete-light==3.9.4
 
 # SODAR Core
 # django-sodar-core==0.13.0
--e git+https://github.com/bihealth/sodar-core.git@3981ad649df5e199bcaebf154ab4d9cac6c624cb#egg=django-sodar-core
+-e git+https://github.com/bihealth/sodar-core.git@f3373fc5145e181d17fc32ce09dfe9d76748ac3f#egg=django-sodar-core
 
 # Celery
 celery==5.2.7
