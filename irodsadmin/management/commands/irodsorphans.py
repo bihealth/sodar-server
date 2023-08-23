@@ -115,7 +115,13 @@ class Command(BaseCommand):
         Check if a given collection matches the format of path to a landing zone
         collection.
         """
-        return '/landing_zones/' in collection.path and re.search(
+        projects_path = self.irods_backend.get_projects_path()
+        pattern = (
+            projects_path
+            + r'/([a-f0-9]{2})/\1[a-f0-9]{6}-([a-f0-9]{4}-){3}[a-f0-9]{12}/'
+            r'landing_zones'
+        )
+        return re.search(r'{}'.format(pattern), collection.path) and re.search(
             r'^\d{8}_\d{6}', collection.name
         )
 
