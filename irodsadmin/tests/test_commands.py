@@ -190,8 +190,10 @@ class TestIrodsOrphans(
         collection = self.irods.collections.get(
             self.irods_backend.get_path(self.project)
         )
-        print(collection.path)
-        self.assertTrue(self.irodsorphans._is_project(collection))
+        projects_path = self.irods_backend.get_projects_path()
+        self.assertTrue(
+            self.irodsorphans._is_project(projects_path, collection)
+        )
 
     def test_is_zone_invalid(self):
         """Test is_zone() with a non-landingzone collection"""

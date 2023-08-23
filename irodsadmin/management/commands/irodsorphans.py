@@ -124,29 +124,34 @@ class Command(BaseCommand):
         Check if a given collection matches the format of path to a study or
         assay collection.
         """
-        return re.match(
-            r'(assay|study)_[a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12}',
-            collection.name,
+        projects_path = self.irods_backend.get_projects_path()
+        pattern = (
+            projects_path
+            + r'/([a-f0-9]{2})/\1[a-f0-9]{6}-([a-f0-9]{4}-){3}[a-f0-9]{12}/.*/'
+            r'(assay|study)_[a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12}$'
         )
+        return re.search(pattern, collection.path)
 
     def _is_assay_orphan(self, collection):
         """
         Check if a given collection matches the format of path to a study or
         assay orphan.
         """
-        return re.search(
-            r'(assay|study)_[a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12}',
-            collection.path,
+        projects_path = self.irods_backend.get_projects_path()
+        pattern = (
+            projects_path
+            + r'/([a-f0-9]{2})/\1[a-f0-9]{6}-([a-f0-9]{4}-){3}[a-f0-9]{12}/.*/'
+            r'(assay|study)_[a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12}'
         )
+        return re.search(pattern, collection.path)
 
-    def _is_project(self, collection):
+    def _is_project(self, projects_path, collection):
         """
         Check if a given collection matches the format of path to a project
         collection under the projects path.
         """
-        project_path = self.irods_backend.get_projects_path()
         pattern = (
-            project_path
+            projects_path
             + r'/([a-f0-9]{2})/\1[a-f0-9]{6}-([a-f0-9]{4}-){3}[a-f0-9]{12}$'
         )
         return re.search(r'{}'.format(pattern), collection.path)
@@ -232,11 +237,12 @@ class Command(BaseCommand):
             project_collections + assay_collections
         )
 
+        projects_path = self.irods_backend.get_projects_path()
         for collection in sorted_collections:
             if (
                 self._is_zone(collection)
                 or self._is_assay_or_study(collection)
-                or self._is_project(collection)
+                or self._is_project(projects_path, collection)
                 or collection.path in assay_coll_paths
             ) and collection.path not in expected:
                 self._write_orphan(collection.path, irods)
