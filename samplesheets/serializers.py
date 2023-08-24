@@ -174,7 +174,6 @@ class IrodsAccessTicketSerializer(
 
     def validate(self, attrs):
         irods_backend = get_backend_api('omics_irods')
-        project = self.context['project']
         if not self.instance:
             try:
                 attrs['path'] = irods_backend.sanitize_path(attrs['path'])
@@ -193,15 +192,11 @@ class IrodsAccessTicketSerializer(
             # Add user from context
             attrs['user'] = self.context['user']
         else:  # Update
-            if self.context['update_fields'] - {'label', 'date_expires'}:
-                raise serializers.ValidationError(
-                    'Some of the fields cannot be updated'
-                )
             attrs['path'] = self.instance.path
             attrs['assay'] = self.instance.assay
 
         errors = self.validate_data(
-            irods_backend, project, self.instance, attrs
+            irods_backend, self.context['project'], self.instance, attrs
         )
         if errors:
             field, error = errors

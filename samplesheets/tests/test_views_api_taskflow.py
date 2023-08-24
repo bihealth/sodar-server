@@ -44,7 +44,6 @@ from samplesheets.views import (
 from samplesheets.views_api import (
     IRODS_QUERY_ERROR_MSG,
     IRODS_TICKETS_NOT_FOUND_MSG,
-    IRODS_TICKET_DELETED_MSG,
 )
 
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
@@ -684,7 +683,7 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
             timezone.localtime() + timedelta(days=1)
         ).isoformat()
 
-    def test_update(self):
+    def test_put(self):
         """Test IrodsAccessTicketUpdateAPIView PUT"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         self.assertEqual(self.get_tl_event_count('update'), 0)
@@ -696,9 +695,9 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
                 {
                     'label': LABEL_UPDATE,
                     'date_expires': self.date_expires_update,
+                    'path': self.coll.path,
                 },
             )
-
         self.assertEqual(response.status_code, 200)
         local_date_created = self.ticket.date_created.astimezone(
             timezone.get_current_timezone()
@@ -709,7 +708,7 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
             'ticket': self.ticket.ticket,
             'assay': self.ticket.assay.pk,
             'study': self.ticket.study.pk,
-            'path': self.ticket.path,
+            'path': self.ticket.path,  # Path should not be updated
             'date_created': local_date_created.isoformat(),
             'date_expires': self.date_expires_update,
             'user': self.ticket.user.pk,
@@ -727,7 +726,7 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
             self.user_delegate,
         )
 
-    def test_update_with_path(self):
+    def test_put_with_path(self):
         """Test PUT in IrodsAccessTicketUpdateAPIView with path"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         self.assertEqual(self.get_tl_event_count('update'), 0)
@@ -736,11 +735,11 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
         with self.login(self.user_contrib):
             response = self.client.put(self.url, {'path': self.coll.path})
 
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 400)
         self.assertEqual(self.get_tl_event_count('update'), 0)
         self.assertEqual(self.get_app_alert_count('update'), 0)
 
-    def test_update_invalid_date(self):
+    def test_put_invalid_date(self):
         """Test PUT in IrodsAccessTicketUpdateAPIView with invalid date"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         self.assertEqual(self.get_tl_event_count('update'), 0)
@@ -749,11 +748,11 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
         with self.login(self.user_contrib):
             response = self.client.put(self.url, {'date_expires': invalid_date})
 
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 400)
         self.assertEqual(self.get_tl_event_count('update'), 0)
         self.assertEqual(self.get_app_alert_count('update'), 0)
 
-    def test_update_patch(self):
+    def test_patch(self):
         """Test IrodsAccessTicketUpdateAPIView PATCH"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         self.assertEqual(self.get_tl_event_count('update'), 0)
@@ -796,7 +795,7 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
             self.user_delegate,
         )
 
-    def test_update_patch_with_path(self):
+    def test_patch_with_path(self):
         """Test PATCH in IrodsAccessTicketUpdateAPIView with path"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         self.assertEqual(self.get_tl_event_count('update'), 0)
@@ -805,11 +804,11 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
         with self.login(self.user_contrib):
             response = self.client.patch(self.url, {'path': self.coll.path})
 
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 400)
         self.assertEqual(self.get_tl_event_count('update'), 0)
         self.assertEqual(self.get_app_alert_count('update'), 0)
 
-    def test_update_patch_invalid_date(self):
+    def test_patch_invalid_date(self):
         """Test PATCH in IrodsAccessTicketUpdateAPIView with invalid date"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         self.assertEqual(self.get_tl_event_count('update'), 0)
@@ -820,7 +819,7 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
                 self.url, {'date_expires': invalid_date}
             )
 
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 400)
         self.assertEqual(self.get_tl_event_count('update'), 0)
         self.assertEqual(self.get_app_alert_count('update'), 0)
 
@@ -866,8 +865,6 @@ class TestIrodsAccessTicketDestroyAPIView(IrodsAccessTicketAPIViewTestBase):
             response = self.client.delete(self.url)
 
         self.assertEqual(response.status_code, 204)
-        expected = {'detail': IRODS_TICKET_DELETED_MSG}
-        self.assertEqual(response.data, expected)
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
         self.assertEqual(self.get_tl_event_count('delete'), 1)
         self.assertEqual(self.get_app_alert_count('delete'), 3)

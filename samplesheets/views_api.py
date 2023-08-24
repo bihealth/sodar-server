@@ -75,14 +75,8 @@ APP_NAME = 'samplesheets'
 IRODS_QUERY_ERROR_MSG = 'Exception querying iRODS objects'
 IRODS_REQUEST_EX_MSG = 'iRODS data request failed'
 IRODS_TICKET_EX_MSG = 'iRODS access ticket failed'
-IRODS_TICKET_NO_UPDATE_FIELDS_MSG = 'The following fields cannot be updated:'
-IRODS_TICKET_INVALID_DATA_MSG = 'Invalid data'
-IRODS_TICKETS_LISTED_MSG = 'iRODS access tickets listed'
+IRODS_TICKET_NO_UPDATE_FIELDS_MSG = 'No fields to update'
 IRODS_TICKETS_NOT_FOUND_MSG = 'No iRODS access tickets found'
-IRODS_TICKET_RETREIVED_MSG = 'iRODS access ticket retrieved'
-IRODS_TICKET_CREATED_MSG = 'iRODS access ticket created'
-IRODS_TICKET_UPDATED_MSG = 'iRODS access ticket updated'
-IRODS_TICKET_DELETED_MSG = 'iRODS access ticket deleted'
 
 
 # API Views --------------------------------------------------------------------
@@ -377,7 +371,8 @@ class IrodsAccessTicketRetrieveAPIView(
     permission_required = 'samplesheets.edit_sheet'
     serializer_class = IrodsAccessTicketSerializer
 
-    def get_queryset(self):
+    def get_object(self):
+        """Override get_object() to get IrodsAccessTicket"""
         return IrodsAccessTicket.objects.get(
             sodar_uuid=self.kwargs.get('irodsaccessticket')
         )
@@ -465,67 +460,21 @@ class IrodsAccessTicketUpdateAPIView(
     permission_required = 'samplesheets.edit_sheet'
     serializer_class = IrodsAccessTicketSerializer
 
-    def get_queryset(self):
-        return IrodsAccessTicket.objects.filter(
+    def get_object(self):
+        """Override get_object() to get IrodsAccessTicket"""
+        return IrodsAccessTicket.objects.get(
             sodar_uuid=self.kwargs.get('irodsaccessticket')
-        ).first()
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context['project'] = self.get_project()
-        context['update_fields'] = self.request.data.keys()
-        return context
+        )
 
     def perform_update(self, serializer):
         """Override perform_update() to update IrodsAccessTicket"""
         serializer.save()
+        if not set(serializer.initial_data) & {'label', 'date_expires'}:
+            raise ValidationError(IRODS_TICKET_NO_UPDATE_FIELDS_MSG)
         # Create timeline event
         self.create_timeline_event(serializer.instance, 'update')
         # Add app alerts to owners/delegates
         self.create_app_alerts(serializer.instance, 'update', self.request.user)
-
-    # def update_serializer(self, request):
-    #     """Update serializer for PUT/PATCH requests"""
-    #     ticket = self.get_object()
-    #     if request.data.keys() - {'label', 'date_expires'}:
-    #         raise ValidationError(
-    #             '{} {}'.format(
-    #                 'Updating ' + IRODS_TICKET_EX_MSG + ':',
-    #                 IRODS_TICKET_NO_UPDATE_FIELDS_MSG
-    #                 + ' '
-    #                 + ', '.join(
-    #                     request.data.keys() - {'label', 'date_expires'}
-    #                 ),
-    #             )
-    #         )
-    #     serializer = IrodsAccessTicketSerializer(
-    #         ticket, data=request.data, partial=True
-    #     )
-    #     serializer.context['project'] = self.get_project()
-    #
-    #     if serializer.is_valid():
-    #         serializer.save()
-    #     else:
-    #         raise ValidationError(
-    #             'Updating {}: {}: {}'.format(
-    #                 IRODS_TICKET_EX_MSG,
-    #                 IRODS_TICKET_INVALID_DATA_MSG,
-    #                 serializer.errors,
-    #             )
-    #         )
-    #     self.create_timeline_event(ticket, 'update')
-    #     self.create_app_alerts(ticket, 'update', self.request.user)
-    #     return serializer
-    #
-    # def put(self, request, *args, **kwargs):
-    #     """PUT request for updating an iRODS access ticket"""
-    #     serializer = self.update_serializer(request)
-    #     return Response(serializer.data, status=status.HTTP_200_OK)
-    #
-    # def patch(self, request, *args, **kwargs):
-    #     """PATCH request for updating an iRODS access ticket"""
-    #     serializer = self.update_serializer(request)
-    #     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class IrodsAccessTicketDestroyAPIView(
@@ -540,14 +489,13 @@ class IrodsAccessTicketDestroyAPIView(
     """
 
     lookup_field = 'sodar_uuid'
-    lookup_url_kwarg = 'irodsaccessticket'
     permission_required = 'samplesheets.edit_sheet'
     serializer_class = IrodsAccessTicketSerializer
 
-    def get_queryset(self):
-        return IrodsAccessTicket.objects.filter(
+    def get_object(self):
+        return IrodsAccessTicket.objects.get(
             sodar_uuid=self.kwargs.get('irodsaccessticket')
-        ).first()
+        )
 
     def perform_destroy(self, instance):
         """Override perform_destroy() to delete IrodsAccessTicket"""
@@ -564,28 +512,6 @@ class IrodsAccessTicketDestroyAPIView(
         self.create_timeline_event(instance, 'delete')
         # Add app alerts to owners/delegates
         self.create_app_alerts(instance, 'delete', self.request.user)
-
-    # def get_object(self):
-    #     return IrodsAccessTicket.objects.get(
-    #         sodar_uuid=self.kwargs.get('irodsaccessticket')
-    #     )
-    #
-    # def delete(self, request, *args, **kwargs):
-    #     """DELETE request for deleting an iRODS access ticket"""
-    #     ticket = self.get_object()
-    #     irods_backend = get_backend_api('omics_irods')
-    #     try:
-    #         with irods_backend.get_session() as irods:
-    #             irods_backend.delete_ticket(irods, ticket.ticket)
-    #     except Exception as ex:
-    #         raise ValidationError(
-    #             '{} {}'.format('Deleting ' + IRODS_TICKET_EX_MSG + ':', ex)
-    #         )
-    #     ticket.delete()
-    #     self.create_timeline_event(ticket, 'delete')
-    #     self.create_app_alerts(ticket, 'delete', self.request.user)
-    #     context = {'detail': IRODS_TICKET_DELETED_MSG}
-    #     return Response(context, status=status.HTTP_204_NO_CONTENT)
 
 
 class IrodsDataRequestRetrieveAPIView(
