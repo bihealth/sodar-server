@@ -414,7 +414,7 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
         self.post_data = {'label': self.label_update}
 
     def test_update(self):
-        """Test IrodsAccessTicketUpdateAPIView PUT"""
+        """Test IrodsAccessTicketUpdateAPIView PATCH"""
         good_users = [
             self.superuser,
             self.user_owner_cat,
@@ -431,24 +431,24 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
             self.user_no_roles,
         ]
         self.assert_response_api(
-            self.url, good_users, 200, method='put', data=self.post_data
+            self.url, good_users, 200, method='patch', data=self.post_data
         )
         self.assert_response_api(
-            self.url, bad_users, 403, method='put', data=self.post_data
+            self.url, bad_users, 403, method='patch', data=self.post_data
         )
         self.assert_response_api(
-            self.url, self.anonymous, 401, method='put', data=self.post_data
+            self.url, self.anonymous, 401, method='patch', data=self.post_data
         )
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_update_anon(self):
         """Test PUT with anonymous access"""
         self.assert_response_api(
-            self.url, self.anonymous, 401, method='put', data=self.post_data
+            self.url, self.anonymous, 401, method='patch', data=self.post_data
         )
 
     def test_update_archive(self):
-        """Test PUT with archived project"""
+        """Test PATCH with archived project"""
         self.project.set_archive()
         good_users = [self.superuser]
         bad_users = [
@@ -464,13 +464,13 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
             self.user_no_roles,
         ]
         self.assert_response_api(
-            self.url, good_users, 200, method='put', data=self.post_data
+            self.url, good_users, 200, method='patch', data=self.post_data
         )
         self.assert_response_api(
-            self.url, bad_users, 403, method='put', data=self.post_data
+            self.url, bad_users, 403, method='patch', data=self.post_data
         )
         self.assert_response_api(
-            self.url, self.anonymous, 401, method='put', data=self.post_data
+            self.url, self.anonymous, 401, method='patch', data=self.post_data
         )
 
 

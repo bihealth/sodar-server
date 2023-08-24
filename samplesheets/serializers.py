@@ -1,7 +1,8 @@
 """API view model serializers for the samplesheets app"""
 
-from django.utils import timezone
 from rest_framework import serializers
+
+from django.utils import timezone
 
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
