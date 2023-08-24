@@ -354,7 +354,7 @@ class TestIrodsAccessTicketListAPIView(IrodsAccessTicketAPIViewTestBase):
         )
 
     def test_get(self):
-        """Test get() in IrodsAccessTicketListAPIView"""
+        """Test IrodsAccessTicketListAPIView GET"""
         self.ticket = self.make_irods_ticket(
             study=self.study,
             assay=self.assay,
@@ -388,7 +388,7 @@ class TestIrodsAccessTicketListAPIView(IrodsAccessTicketAPIViewTestBase):
         self.assertEqual(json.loads(response.content), expected)
 
     def test_get_no_tickets(self):
-        """Test get() in IrodsAccessTicketListAPIView with no tickets"""
+        """Test GET IrodsAccessTicketListAPIView with no tickets"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
         with self.login(self.user_contrib):
             response = self.client.get(self.url)
@@ -397,7 +397,7 @@ class TestIrodsAccessTicketListAPIView(IrodsAccessTicketAPIViewTestBase):
         self.assertEqual(json.loads(response.content), expected)
 
     def test_get_active(self):
-        """Test get() in IrodsAccessTicketListAPIView with active = True"""
+        """Test GET IrodsAccessTicketListAPIView with active = True"""
         self.ticket = self.make_irods_ticket(
             study=self.study,
             assay=self.assay,
@@ -449,7 +449,7 @@ class TestIrodsAccessTicketRetrieveAPIView(IrodsAccessTicketAPIViewTestBase):
         self.label = TICKET_LABEL
 
     def test_get(self):
-        """Test get() in IrodsAccessTicketRetrieveAPIView"""
+        """Test IrodsAccessTicketRetrieveAPIView GET"""
         self.ticket = self.make_irods_ticket(
             study=self.study,
             assay=self.assay,
@@ -485,7 +485,7 @@ class TestIrodsAccessTicketRetrieveAPIView(IrodsAccessTicketAPIViewTestBase):
         self.assertEqual(json.loads(response.content), expected)
 
     def test_get_no_ticket(self):
-        """Test get() in IrodsAccessTicketRetrieveAPIView with no ticket"""
+        """Test GET IrodsAccessTicketRetrieveAPIView with no ticket"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
         self.url = reverse(
             'samplesheets:api_irods_ticket_retrieve',
@@ -517,7 +517,7 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
         }
 
     def test_create(self):
-        """Test post() in IrodsAccessTicketCreateAPIView as admin"""
+        """Test POST IrodsAccessTicketCreateAPIView as admin"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
         self.assert_alert_count(CREATE_ALERT, self.user, 0)
         self.assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
@@ -561,7 +561,7 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
         )
 
     def test_create_contributor(self):
-        """Test post() in IrodsAccessTicketCreateAPIView as contributor"""
+        """Test POST IrodsAccessTicketCreateAPIView as contributor"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
         self.assert_alert_count(CREATE_ALERT, self.user, 0)
         self.assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
@@ -589,7 +589,7 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
         )
 
     def test_create_no_expiry(self):
-        """Test post() in IrodsAccessTicketCreateAPIView with no expiry date"""
+        """Test POST IrodsAccessTicketCreateAPIView with no expiry date"""
         self.post_data['date_expires'] = ''
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
         with self.login(self.user):
@@ -600,7 +600,7 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
         self.assertIsNone(ticket.date_expires)
 
     def test_create_invalid_path(self):
-        """Test post() in IrodsAccessTicketCreateAPIView with invalid path"""
+        """Test POST IrodsAccessTicketCreateAPIView with invalid path"""
         self.post_data['path'] = '/invalid/path'
         with self.login(self.user):
             response = self.client.post(self.url, self.post_data)
@@ -610,7 +610,7 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
         self.assertEqual(self.get_app_alert_count('create'), 0)
 
     def test_create_expired(self):
-        """Test post() in IrodsAccessTicketCreateAPIView with expired date"""
+        """Test POST IrodsAccessTicketCreateAPIView with expired date"""
         self.post_data['date_expires'] = (
             timezone.localtime() - timedelta(days=1)
         ).isoformat()
@@ -622,7 +622,7 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
         self.assertEqual(self.get_app_alert_count('create'), 0)
 
     def test_create_assay_root(self):
-        """Test post() in IrodsAccessTicketCreateAPIView with assay root"""
+        """Test POST IrodsAccessTicketCreateAPIView with assay root"""
         self.post_data['path'] = self.irods_backend.get_path(self.assay)
         with self.login(self.user):
             response = self.client.post(self.url, self.post_data)
@@ -632,7 +632,7 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
         self.assertEqual(self.get_app_alert_count('create'), 0)
 
     def test_create_study_path(self):
-        """Test post() in IrodsAccessTicketCreateAPIView with study path"""
+        """Test POST IrodsAccessTicketCreateAPIView with study path"""
         self.post_data['path'] = self.irods_backend.get_path(self.study)
         with self.login(self.user):
             response = self.client.post(self.url, self.post_data)
@@ -642,7 +642,7 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
         self.assertEqual(self.get_app_alert_count('create'), 0)
 
     def test_post_existing_ticket(self):
-        """Test post() in IrodsAccessTicketCreateAPIView for the same path"""
+        """Test POST IrodsAccessTicketCreateAPIView for the same path"""
         self.make_irods_ticket(
             study=self.study,
             assay=self.assay,
@@ -856,7 +856,7 @@ class TestIrodsAccessTicketDestroyAPIView(IrodsAccessTicketAPIViewTestBase):
         )
 
     def test_delete(self):
-        """Test delete() in IrodsAccessTicketDeleteAPIView"""
+        """Test IrodsAccessTicketDeleteAPIView DELETE"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         self.assertEqual(self.get_tl_event_count('delete'), 0)
         self.assertEqual(self.get_app_alert_count('delete'), 0)
@@ -878,7 +878,7 @@ class TestIrodsAccessTicketDestroyAPIView(IrodsAccessTicketAPIViewTestBase):
         )
 
     def test_delete_invalid_url(self):
-        """Test delete() in IrodsAccessTicketDeleteAPIView with invalid URL"""
+        """Test DELETE IrodsAccessTicketDeleteAPIView with invalid URL"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         self.assertEqual(self.get_tl_event_count('delete'), 0)
         self.assertEqual(self.get_app_alert_count('delete'), 0)
