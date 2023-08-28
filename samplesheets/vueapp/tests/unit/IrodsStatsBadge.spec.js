@@ -21,6 +21,8 @@ describe('IrodsStatsBadge.vue', () => {
   }
 
   beforeAll(() => {
+    // NOTE: Workaround for bootstrap-vue "Vue warn" errors, see issue #1034
+    jest.spyOn(console, 'error').mockImplementation(jest.fn())
     // Disable warnings
     jest.spyOn(console, 'warn').mockImplementation(jest.fn())
   })

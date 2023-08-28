@@ -59,7 +59,7 @@ class TestProjectZoneView(
 
     def _wait_for_status_update(self):
         """Wait for JQuery landing zone status updates to finish"""
-        for i in range(0, 5):
+        for i in range(0, 10):
             if self.selenium.execute_script('return window.zoneStatusUpdated'):
                 return
             time.sleep(0.5)

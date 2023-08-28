@@ -53,6 +53,7 @@ describe('IrodsButtonsRenderer.vue', () => {
   it('renders irods buttons for an assay table', async () => {
     const wrapper = mountSheetTable()
     await waitAG(wrapper)
+    await waitNT(wrapper.vm)
     await waitRAF()
     await waitSelector(wrapper, '.sodar-ss-data-links-cell', 2)
 
