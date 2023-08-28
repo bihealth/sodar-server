@@ -118,31 +118,26 @@ class TestCreateCollectionTask(IRODSTaskTestBase):
 
     def test_execute(self):
         """Test collection creation"""
+        self.assertFalse(self.irods.collections.exists(self.new_coll_path))
         self._add_task(
             cls=CreateCollectionTask,
             name='Create collection',
             inject={'path': self.new_coll_path},
         )
-        self.assertRaises(
-            CollectionDoesNotExist,
-            self.irods.collections.get,
-            self.new_coll_path,
-        )
         result = self._run_flow()
-
-        self.assertEqual(result, True)
-        coll = self.irods.collections.get(self.new_coll_path)
-        self.assertIsInstance(coll, iRODSCollection)
+        self.assertTrue(result)
+        self.assertTrue(self.irods.collections.exists(self.new_coll_path))
 
     def test_execute_twice(self):
         """Test collection creation twice"""
+        self.assertFalse(self.irods.collections.exists(self.new_coll_path))
         self._add_task(
             cls=CreateCollectionTask,
             name='Create collection',
             inject={'path': self.new_coll_path},
         )
         self._run_flow()
-
+        self.assertTrue(self.irods.collections.exists(self.new_coll_path))
         self.flow = self._init_flow()
         self._add_task(
             cls=CreateCollectionTask,
@@ -150,13 +145,13 @@ class TestCreateCollectionTask(IRODSTaskTestBase):
             inject={'path': self.new_coll_path},
         )
         result = self._run_flow()
-
-        self.assertEqual(result, True)
-        coll = self.irods.collections.get(self.new_coll_path)
-        self.assertIsInstance(coll, iRODSCollection)
+        self.assertTrue(result)
+        self.assertTrue(self.irods.collections.exists(self.new_coll_path))
 
     def test_revert_created(self):
         """Test collection creation reverting after creating"""
+        self.assertFalse(self.irods.collections.exists(self.new_coll_path))
+        self.assertTrue(self.irods.collections.exists(self.test_coll_path))
         self._add_task(
             cls=CreateCollectionTask,
             name='Create collection',
@@ -164,24 +159,23 @@ class TestCreateCollectionTask(IRODSTaskTestBase):
             force_fail=True,
         )  # FAIL
         result = self._run_flow()
-
-        self.assertNotEqual(result, True)
-        self.assertRaises(
-            CollectionDoesNotExist,
-            self.irods.collections.get,
-            self.new_coll_path,
-        )
+        self.assertFalse(result)
+        self.assertFalse(self.irods.collections.exists(self.new_coll_path))
+        self.assertTrue(self.irods.collections.exists(self.test_coll_path))
 
     def test_revert_not_modified(self):
         """Test collection creation reverting without modification"""
+        self.assertFalse(self.irods.collections.exists(self.new_coll_path))
+        self.assertTrue(self.irods.collections.exists(self.test_coll_path))
         self._add_task(
             cls=CreateCollectionTask,
             name='Create collection',
             inject={'path': self.new_coll_path},
         )
         result = self._run_flow()
+        self.assertTrue(result)
+        self.assertTrue(self.irods.collections.exists(self.new_coll_path))
 
-        self.assertEqual(result, True)
         self.flow = self._init_flow()
         self._add_task(
             cls=CreateCollectionTask,
@@ -190,13 +184,23 @@ class TestCreateCollectionTask(IRODSTaskTestBase):
             force_fail=True,
         )  # FAIL
         result = self._run_flow()
-
-        self.assertNotEqual(result, True)
-        coll = self.irods.collections.get(self.new_coll_path)
-        self.assertIsInstance(coll, iRODSCollection)
+        self.assertFalse(result)
+        self.assertTrue(self.irods.collections.exists(self.new_coll_path))
+        self.assertTrue(self.irods.collections.exists(self.test_coll_path))
 
     def test_execute_nested(self):
         """Test collection creation with nested collections"""
+        self.assertFalse(self.irods.collections.exists(self.new_coll_path))
+        self.assertFalse(
+            self.irods.collections.exists(self.new_coll_path + '/subcoll1')
+        )
+        self.assertFalse(
+            self.irods.collections.exists(
+                self.new_coll_path + '/subcoll1/subcoll2'
+            )
+        )
+        self.assertTrue(self.irods.collections.exists(self.test_coll_path))
+
         self._add_task(
             cls=CreateCollectionTask,
             name='Create collection',
@@ -219,24 +223,49 @@ class TestCreateCollectionTask(IRODSTaskTestBase):
         )
         result = self._run_flow()
 
-        self.assertEqual(result, True)
-        coll = self.irods.collections.get(self.new_coll_path)
-        self.assertIsInstance(coll, iRODSCollection)
-        coll = self.irods.collections.get(self.new_coll_path + '/subcoll1')
-        self.assertIsInstance(coll, iRODSCollection)
-        coll = self.irods.collections.get(
-            self.new_coll_path + '/subcoll1/subcoll2'
+        self.assertTrue(result)
+        self.assertTrue(self.irods.collections.exists(self.new_coll_path))
+        self.assertTrue(
+            self.irods.collections.exists(self.new_coll_path + '/subcoll1')
         )
-        self.assertIsInstance(coll, iRODSCollection)
+        self.assertTrue(
+            self.irods.collections.exists(
+                self.new_coll_path + '/subcoll1/subcoll2'
+            )
+        )
+        self.assertTrue(self.irods.collections.exists(self.test_coll_path))
 
     def test_execute_nested_twice(self):
         """Test collection creation twice with nested collections"""
+        self.assertFalse(self.irods.collections.exists(self.new_coll_path))
+        self.assertFalse(
+            self.irods.collections.exists(self.new_coll_path + '/subcoll1')
+        )
+        self.assertFalse(
+            self.irods.collections.exists(
+                self.new_coll_path + '/subcoll1/subcoll2'
+            )
+        )
+        self.assertTrue(self.irods.collections.exists(self.test_coll_path))
+
         self._add_task(
             cls=CreateCollectionTask,
             name='Create collection',
             inject={'path': self.new_coll_path + '/subcoll1/subcoll2'},
         )
-        self._run_flow()
+        result = self._run_flow()
+
+        self.assertTrue(result)
+        self.assertTrue(self.irods.collections.exists(self.new_coll_path))
+        self.assertTrue(
+            self.irods.collections.exists(self.new_coll_path + '/subcoll1')
+        )
+        self.assertTrue(
+            self.irods.collections.exists(
+                self.new_coll_path + '/subcoll1/subcoll2'
+            )
+        )
+        self.assertTrue(self.irods.collections.exists(self.test_coll_path))
 
         self.flow = self._init_flow()
         self._add_task(
@@ -246,18 +275,31 @@ class TestCreateCollectionTask(IRODSTaskTestBase):
         )
         result = self._run_flow()
 
-        self.assertEqual(result, True)
-        coll = self.irods.collections.get(self.new_coll_path)
-        self.assertIsInstance(coll, iRODSCollection)
-        coll = self.irods.collections.get(self.new_coll_path + '/subcoll1')
-        self.assertIsInstance(coll, iRODSCollection)
-        coll = self.irods.collections.get(
-            self.new_coll_path + '/subcoll1/subcoll2'
+        self.assertTrue(result)
+        self.assertTrue(self.irods.collections.exists(self.new_coll_path))
+        self.assertTrue(
+            self.irods.collections.exists(self.new_coll_path + '/subcoll1')
         )
-        self.assertIsInstance(coll, iRODSCollection)
+        self.assertTrue(
+            self.irods.collections.exists(
+                self.new_coll_path + '/subcoll1/subcoll2'
+            )
+        )
+        self.assertTrue(self.irods.collections.exists(self.test_coll_path))
 
     def test_revert_created_nested(self):
         """Test creation reverting with nested collections"""
+        self.assertFalse(self.irods.collections.exists(self.new_coll_path))
+        self.assertFalse(
+            self.irods.collections.exists(self.new_coll_path + '/subcoll1')
+        )
+        self.assertFalse(
+            self.irods.collections.exists(
+                self.new_coll_path + '/subcoll1/subcoll2'
+            )
+        )
+        self.assertTrue(self.irods.collections.exists(self.test_coll_path))
+
         self._add_task(
             cls=CreateCollectionTask,
             name='Create collection',
@@ -266,22 +308,17 @@ class TestCreateCollectionTask(IRODSTaskTestBase):
         )  # FAIL
         result = self._run_flow()
 
-        self.assertNotEqual(result, True)
-        self.assertRaises(
-            CollectionDoesNotExist,
-            self.irods.collections.get,
-            self.new_coll_path,
+        self.assertFalse(result)
+        self.assertFalse(self.irods.collections.exists(self.new_coll_path))
+        self.assertFalse(
+            self.irods.collections.exists(self.new_coll_path + '/subcoll1')
         )
-        self.assertRaises(
-            CollectionDoesNotExist,
-            self.irods.collections.get,
-            self.new_coll_path + '/subcoll1',
+        self.assertFalse(
+            self.irods.collections.exists(
+                self.new_coll_path + '/subcoll1/subcoll2'
+            )
         )
-        self.assertRaises(
-            CollectionDoesNotExist,
-            self.irods.collections.get,
-            self.new_coll_path + '/subcoll1/subcoll2',
-        )
+        self.assertTrue(self.irods.collections.exists(self.test_coll_path))
 
 
 class TestRemoveCollectionTask(IRODSTaskTestBase):
