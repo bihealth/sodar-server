@@ -86,6 +86,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         old_data=None,
         old_settings=None,
         request=None,
+        **kwargs,
     ):
         """
         Perform additional actions to finalize project creation or update.
@@ -169,14 +170,18 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
             )
 
         if timeline:
+            # Change event name and description if called from syncmodifyapi
+            tl_action = (
+                'sync' if kwargs.get('sync_modify_api') else action.lower()
+            )
             timeline.add_event(
                 project=project,
                 app_name=APP_NAME,
                 plugin_name='taskflow',
                 user=request.user if request else None,
-                event_name='project_{}'.format(action.lower()),
+                event_name='project_{}'.format(tl_action),
                 description='{} {} in iRODS'.format(
-                    action.lower(), project.type.lower()
+                    tl_action, project.type.lower()
                 ),
                 status_type='OK',
             )
@@ -556,10 +561,12 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
             logger.error('iRODS backend not enabled')
             return
         # Perform project create
+        logger.info('Syncing project iRODS collection, metadata and access..')
         self.perform_project_modify(
             project=project,
             action=PROJECT_ACTION_CREATE,
             project_settings=app_settings.get_all(project),
+            **{'sync_modify_api': True},
         )
         # Remove inactive roles
         group_name = irods_backend.get_user_group_name(project)

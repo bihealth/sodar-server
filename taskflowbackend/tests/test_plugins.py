@@ -1244,7 +1244,7 @@ class TestPerformProjectSync(TestModifyAPIBase):
             project=project,
             plugin='taskflow',
             user=None,
-            event_name='project_create',
+            event_name='project_sync',
         )
         self.assertEqual(tl_events.count(), 1)
         self.assertEqual(tl_events.first().get_status().status_type, 'OK')
@@ -1275,9 +1275,9 @@ class TestPerformProjectSync(TestModifyAPIBase):
             project=project,
             plugin='taskflow',
             user=None,
-            event_name='project_create',
+            event_name='project_sync',
         )
-        self.assertEqual(tl_events.count(), 2)
+        self.assertEqual(tl_events.count(), 1)
 
     def test_sync_new_member(self):
         """Test sync with existing iRODS project and new member"""

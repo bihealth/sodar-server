@@ -682,7 +682,7 @@ class SheetCreateImportAccessMixin:
 class IrodsCollsCreateViewMixin:
     """Mixin to be used in iRODS collections creation UI / API views"""
 
-    def create_colls(self, investigation, request=None):
+    def create_colls(self, investigation, request=None, sync=False):
         """
         Handle iRODS collection creation via Taskflow.
 
@@ -690,6 +690,7 @@ class IrodsCollsCreateViewMixin:
 
         :param investigation: Investigation object
         :param request: HTTPRequest object or None
+        :param sync: Whether method is called from syncmodifyapi (boolean)
         :raise: taskflow.FlowSubmitException if taskflow submit fails
         """
         timeline = get_backend_api('timeline_backend')
@@ -700,12 +701,13 @@ class IrodsCollsCreateViewMixin:
 
         # Add event in Timeline
         if timeline:
+            tl_action = 'sync' if sync else action
             tl_event = timeline.add_event(
                 project=project,
                 app_name=APP_NAME,
                 user=request.user if request else None,
-                event_name='sheet_colls_' + action,
-                description=action + ' irods collection structure for '
+                event_name='sheet_colls_' + tl_action,
+                description=tl_action + ' iRODS collection structure for '
                 '{investigation}',
                 status_type='SUBMIT',
             )

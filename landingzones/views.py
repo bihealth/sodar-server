@@ -120,7 +120,12 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
     """Mixin to be used in zone creation in UI and REST API views"""
 
     def submit_create(
-        self, zone, create_colls=False, restrict_colls=False, request=None
+        self,
+        zone,
+        create_colls=False,
+        restrict_colls=False,
+        request=None,
+        sync=False,
     ):
         """
         Handle timeline updating and taskflow initialization after a LandingZone
@@ -130,6 +135,7 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
         :param create_colls: Auto-create expected collections (boolean)
         :param restrict_colls: Restrict access to created collections (boolean)
         :param request: HTTPRequest object or None
+        :param sync: Whether method is called from syncmodifyapi (boolean)
         :raise: taskflow.FlowSubmitException if taskflow submit fails
         """
         taskflow = get_backend_api('taskflow')
@@ -145,6 +151,7 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
 
         # Add event in Timeline
         if timeline:
+            tl_action = 'sync' if sync else 'create'
             tl_extra = {
                 'title': zone.title,
                 'assay': str(zone.assay.sodar_uuid),
@@ -159,9 +166,9 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
                 project=project,
                 app_name=APP_NAME,
                 user=request.user if request else None,
-                event_name='zone_create',
-                description='create landing zone {{{}}}{} for {{{}}} in '
-                '{{{}}}'.format('zone', config_str, 'user', 'assay'),
+                event_name='zone_{}'.format(tl_action),
+                description='{} landing zone {{{}}}{} for {{{}}} in '
+                '{{{}}}'.format(tl_action, 'zone', config_str, 'user', 'assay'),
                 status_type='SUBMIT',
                 extra_data=tl_extra,
             )

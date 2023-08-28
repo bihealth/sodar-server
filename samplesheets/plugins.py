@@ -662,8 +662,8 @@ class ProjectAppPlugin(
             logger.debug('Skipping: {}'.format(SKIP_MSG_NO_INV))
             return
         if investigation.irods_status:
-            logger.info('Creating iRODS collections..')
-            self.create_colls(investigation)
+            logger.info('Syncing iRODS sample data collections..')
+            self.create_colls(investigation, sync=True)
 
         # Sync public guest access
         if not investigation.irods_status:

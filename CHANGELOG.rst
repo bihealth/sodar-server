@@ -49,11 +49,13 @@ Changed
     - Upgrade to python-irodsclient v1.1.8 (#1538)
     - Upgrade Python dependencies (#1620)
     - Upgrade Vue app dependencies (#1620)
+    - Timeline event names and descriptions if called from syncmodifyapi (#1761)
 - **Landingzones**
     - Move iRODS object helpers to ``TaskflowTestMixin`` (#1699)
     - Enable superuser landing zone controls for locked zones (#1607)
     - Add ``DELETING`` to locked states in UI (#1657)
     - Query for landing zone status in batch (#1684)
+    - Create expected collections if zone sync is called from syncmodifyapi (#1761)
 - **Samplesheets**
     - Sample sheet table viewport background color (#1692)
     - Contract sheet table height to fit content (#1693)
