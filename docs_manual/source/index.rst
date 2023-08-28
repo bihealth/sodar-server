@@ -52,9 +52,9 @@ Table of Contents
     ui_api_tokens
     ui_user_profile
     ui_project_overview
-    ui_project_timeline
     ui_project_members
     ui_project_update
+    ui_project_timeline
     ui_alerts
 
 .. toctree::
@@ -70,6 +70,7 @@ Table of Contents
     app_samplesheets_version
     app_samplesheets_irods_ticket
     app_samplesheets_irods_delete
+    app_samplesheets_delete
     app_samplesheets_sync
 
 .. toctree::

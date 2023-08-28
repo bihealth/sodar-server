@@ -91,7 +91,7 @@ class InvestigationRetrieveAPIView(
     **Returns:**
 
     - ``archive_name``: Original archive name if imported from a zip (string)
-    - ``comments``: Investigation comments (JSON)
+    - ``comments``: Investigation comments (dict)
     - ``description``: Investigation description (string)
     - ``file_name``: Investigation file name (string)
     - ``identifier``: Locally unique investigation identifier (string)
@@ -100,7 +100,7 @@ class InvestigationRetrieveAPIView(
     - ``parser_version``: Version of altamISA used in importing (string)
     - ``project``: Project UUID (string)
     - ``sodar_uuid``: Investigation UUID (string)
-    - ``studies``: Study and assay information (JSON, using study UUID as key)
+    - ``studies``: Study and assay information (dict, using study UUID as key)
     - ``title``: Investigation title (string)
     """
 
@@ -314,7 +314,7 @@ class IrodsDataRequestRetrieveAPIView(
     SODARAPIGenericProjectMixin, RetrieveAPIView
 ):
     """
-    Retrieve iRODS data request.
+    Retrieve a iRODS data request.
 
     **URL:** ``/samplesheets/api/irods/request/retrieve/{IrodsDataRequest.sodar_uuid}``
 
@@ -326,7 +326,7 @@ class IrodsDataRequestRetrieveAPIView(
     - ``action``: Request action (string)
     - ``path``: iRODS path to object or collection (string)
     - ``target_path``: Target path (string, currently unused)
-    - ``user``: User initiating request (dictionary)
+    - ``user``: User initiating request (dict)
     - ``status``: Request status (string)
     - ``status_info``: Request status info (string)
     - ``description``: Request description (string)
@@ -342,13 +342,17 @@ class IrodsDataRequestRetrieveAPIView(
 
 class IrodsDataRequestListAPIView(SODARAPIBaseProjectMixin, ListAPIView):
     """
-    List iRODS data requests for a project.
+    List the iRODS data requests for a project.
+
+    If the requesting user is an owner, delegate or superuser, the view lists
+    all requests with the status of ACTIVE or FAILED. If called as a
+    contributor, returns the user's own requests regardless of the state.
 
     **URL:** ``/samplesheets/api/irods/requests/{Project.sodar_uuid}``
 
     **Methods:** ``GET``
 
-    **Returns:** List of iRODS data requests
+    **Returns:** List of iRODS data requests (list of dicts)
     """
 
     permission_required = 'samplesheets.edit_sheet'
@@ -377,8 +381,8 @@ class IrodsDataRequestCreateAPIView(
     Create an iRODS delete request for a project.
 
     The request must point to a collection or data object within the sample data
-    repository of the project. The user must have at least the role of
-    contributor in the project.
+    repository of the project. The user making the request must have the role of
+    contributor or above in the project.
 
     **URL:** ``/samplesheets/api/irods/request/create/{Project.sodar_uuid}``
 
@@ -417,13 +421,11 @@ class IrodsDataRequestUpdateAPIView(
     - ``description``: Request description
     """
 
-    # http_method_names = ['put', 'patch']
     lookup_url_kwarg = 'irodsdatarequest'
     permission_classes = [IsAuthenticated]
     serializer_class = IrodsDataRequestSerializer
 
     def perform_update(self, serializer):
-        """Override perform_update() to update IrodsDataRequest"""
         if not self.has_irods_request_update_perms(
             self.request, serializer.instance
         ):
@@ -439,6 +441,10 @@ class IrodsDataRequestDestroyAPIView(
     """
     Delete an iRODS data request object.
 
+    This action only deletes the request object and is equvalent to cencelling
+    the request. No associated iRODS collections or data objects will be
+    deleted.
+
     **URL:** ``/samplesheets/api/irods/request/delete/{IrodsDataRequest.sodar_uuid}``
 
     **Methods:** ``DELETE``
@@ -449,9 +455,6 @@ class IrodsDataRequestDestroyAPIView(
     serializer_class = IrodsDataRequestSerializer
 
     def perform_destroy(self, instance):
-        """
-        Override perform_destroy() to delete IrodsDataRequest
-        """
         if not self.has_irods_request_update_perms(self.request, instance):
             raise PermissionDenied
         instance.delete()
@@ -466,6 +469,9 @@ class IrodsDataRequestAcceptAPIView(
 ):
     """
     Accept an iRODS data request for a project.
+
+    Accepting will delete the iRODS collection or data object targeted by the
+    request. This action can not  be undone.
 
     **URL:** ``/samplesheets/api/irods/request/accept/{IrodsDataRequest.sodar_uuid}``
 
@@ -508,6 +514,9 @@ class IrodsDataRequestRejectAPIView(
 ):
     """
     Reject an iRODS data request for a project.
+
+    This action will set the request status as rejected and keep the targeted
+    iRODS collection or data object intact.
 
     **URL:** ``/samplesheets/api/irods/request/reject/{IrodsDataRequest.sodar_uuid}``
 
@@ -617,6 +626,39 @@ class SampleDataFileExistsAPIView(SODARAPIBaseMixin, APIView):
         return Response(ret, status=status.HTTP_200_OK)
 
 
+class ProjectIrodsFileListAPIView(SODARAPIBaseProjectMixin, APIView):
+    """
+    Return a list of files in the project sample data repository.
+
+    **URL:** ``/samplesheets/api/file/list/{Project.sodar_uuid}``
+
+    **Methods:** ``GET``
+
+    **Returns:**
+
+    - ``irods_data``: List of iRODS data objects (list of dicts)
+    """
+
+    http_method_names = ['get']
+    permission_required = 'samplesheets.view_sheet'
+
+    def get(self, request, *args, **kwargs):
+        if not settings.ENABLE_IRODS:
+            raise APIException('iRODS not enabled')
+        irods_backend = get_backend_api('omics_irods')
+        project = self.get_project()
+        path = irods_backend.get_sample_path(project)
+        try:
+            with irods_backend.get_session() as irods:
+                irods_data = irods_backend.get_objects(irods, path)
+        except Exception as ex:
+            return Response(
+                {'detail': '{}: {}'.format(IRODS_QUERY_ERROR_MSG, ex)},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        return Response(irods_data, status=status.HTTP_200_OK)
+
+
 # TODO: Temporary HACK, should be replaced by proper API view
 class RemoteSheetGetAPIView(APIView):
     """
@@ -673,36 +715,3 @@ class RemoteSheetGetAPIView(APIView):
             except Exception as ex:
                 return Response(str(ex), status=500)
         return Response(ret, status=200)
-
-
-class ProjectIrodsFileListAPIView(SODARAPIBaseProjectMixin, APIView):
-    """
-    Return a list of files in the project sample data repository.
-
-    **URL:** ``/samplesheets/api/file/list/{Project.sodar_uuid}``
-
-    **Methods:** ``GET``
-
-    **Returns:**
-
-    - ``irods_data``: List of iRODS data objects
-    """
-
-    http_method_names = ['get']
-    permission_required = 'samplesheets.view_sheet'
-
-    def get(self, request, *args, **kwargs):
-        if not settings.ENABLE_IRODS:
-            raise APIException('iRODS not enabled')
-        irods_backend = get_backend_api('omics_irods')
-        project = self.get_project()
-        path = irods_backend.get_sample_path(project)
-        try:
-            with irods_backend.get_session() as irods:
-                irods_data = irods_backend.get_objects(irods, path)
-        except Exception as ex:
-            return Response(
-                {'detail': '{}: {}'.format(IRODS_QUERY_ERROR_MSG, ex)},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-        return Response(irods_data, status=status.HTTP_200_OK)

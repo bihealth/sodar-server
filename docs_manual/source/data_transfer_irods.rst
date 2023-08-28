@@ -47,11 +47,6 @@ You will be prompted for your password, which is the same one you use to access
 this web site. After this, you should be successfully logged on to iRODS and can
 access data on the storage in your terminal.
 
-.. note::
-
-    When using ``iput`` or ``irsync`` to upload data into the SODAR iRODS
-    server, you must use the ``-k`` argument to enable checksum generation.
-
 See `iRODS documentation <https://docs.irods.org/master/icommands/user/>`_
 for iCommands reference.
 

@@ -25,7 +25,7 @@ class IrodsEnvRetrieveAPIView(IrodsConfigMixin, APIView):
 
     **Returns:**
 
-    - ``irods_environment``: iRODS client environment
+    - ``irods_environment``: iRODS client environment (dict)
     """
 
     permission_classes = [IsAuthenticated]

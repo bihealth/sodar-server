@@ -18,23 +18,19 @@
       white-space: nowrap;
       width: 180px;
     }
-
     table#sodar-ss-version-table thead tr th:nth-child(3),
     table#sodar-ss-version-table tbody tr td:nth-child(3) {
       white-space: nowrap;
     }
-
     table#sodar-ss-version-table thead tr th:nth-child(4),
     table#sodar-ss-version-table tbody tr td:nth-child(4) {
       width: 75px;
     }
-
     table#sodar-ss-version-table thead tr th:nth-child(5),
     table#sodar-ss-version-table tbody tr td:nth-child(5) {
       text-align: right;
       width: 75px;
     }
-
     table#sodar-ss-version-table thead tr th:nth-child(6),
     table#sodar-ss-version-table tbody tr td:nth-child(6) {
       width: 40px;
@@ -46,14 +42,12 @@
         display: none;
       }
     }
-
     @media screen and (max-width: 950px) {
       table#sodar-ss-version-table thead tr th:nth-child(3),
       table#sodar-ss-version-table tbody tr td:nth-child(3) {
         display: none;
       }
     }
-
     @media screen and (max-width: 800px) {
       table#sodar-ss-version-table thead tr th:nth-child(1),
       table#sodar-ss-version-table tbody tr td:nth-child(1) {
@@ -64,6 +58,7 @@
 {% endblock css %}
 
 {% block projectroles_extend %}
+
 {% has_perm 'samplesheets.manage_sheet' request.user project as can_manage_sheet %}
 
 <form class="form-inline"
@@ -77,15 +72,17 @@
     <h3>Sample Sheet Versions</h3>
     <div class="input-group ml-auto">
       <a href="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}"
-         class="btn btn-secondary mr-2" role="button">
+         class="btn btn-secondary mr-2" role="button" id="sodar-ss-btn-back">
         <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Project Sheets
       </a>
       <div class="btn-group ml-auto" id="sodar-pr-btn-role-list">
-        <button class="btn btn-primary dropdown-toggle" id="sodar-ss-version-btn-op"
+        <button class="btn btn-primary dropdown-toggle"
+                id="sodar-ss-version-btn-ops"
                 type="button" data-toggle="dropdown">
           Version Operations
         </button>
-        <div class="dropdown-menu dropdown-menu-right">
+        <div class="dropdown-menu dropdown-menu-right"
+             id="sodar-ss-version-ops-btn">
           <a href="#"
              class="dropdown-item disabled"
              id="sodar-ss-version-link-compare"
@@ -112,48 +109,48 @@
                id="sodar-ss-version-table">
           <thead>
             <tr>
-              <th>Version</th>
+              <th>Title</th>
               <th>Description<span class="pull-right">Tags</span></th>
               <th>User</th>
               <th>Parser</th>
               {% if object_list.count > 0 and can_manage_sheet %}
                 <th></th>
                 <th>
-                  <input class="sodar-checkbox sodar-ss-version-check" type="checkbox"
+                  <input class="sodar-checkbox sodar-ss-version-check"
+                         type="checkbox"
                          id="sodar-ss-version-check-all"
                          title="Select/deselect all"
                          data-toggle="tooltip" data-placement="left"
-                         onchange="checkAll(this)"/>
+                         onchange="checkAll(this)" />
                 </th>
               {% endif %}
             </tr>
           </thead>
           <tbody>
             {% if object_list.count == 0 %}
-              <tr>
+              <tr class="sodar-ss-version-item">
                 <td colspan="4" class="text-muted text-center">
-                  <em>No saved versions have been found for the sample sheets in this project.</em>
+                  <i>
+                    No saved versions have been found for the sample sheets in
+                    this project.
+                  </i>
                 </td>
               </tr>
             {% endif %}
             {% for sv in object_list %}
-              <tr>
-                <td class="sodar-ss-version-list-item">
-                  {% if sv == current_version %}
-                    <strong>
-                  {% endif %}
-                  <a href="{% url 'samplesheets:export_isa' isatab=sv.sodar_uuid %}">
+              <tr class="sodar-ss-version-item">
+                <td class="sodar-ss-version-item-title">
+                  <a href="{% url 'samplesheets:export_isa' isatab=sv.sodar_uuid %}"
+                     class="{% if sv == current_version %}font-weight-bold{% endif %}">
                     {{ sv.date_created | date:'Y-m-d H:i:s' }}
                   </a>
-                  {% if sv == current_version %}
-                    </strong>
-                  {% endif %}
                 </td>
                 <td>
-                  <span {% if not sv.description %}class="text-muted"{% endif %}>
+                  <span class="{% if not sv.description %}text-muted{% endif %}
+                               sodar-ss-version-item-desc">
                     {{ sv.description | default:'N/A' }}
                   </span>
-                  <span class="pull-right">
+                  <span class="pull-right sodar-ss-version-item-tags">
                     {% if sv == current_version %}
                       <span class="badge badge-pill badge-success">Most Recent</span>
                     {% endif %}
@@ -167,38 +164,44 @@
                 {% else %}
                   <td class="text-muted">N/A</td>
                 {% endif %}
-                <td>{{ sv.parser_version }}</td>
+                <td class="sodar-ss-version-item-parser">
+                  {{ sv.parser_version }}
+                </td>
                 {% if can_manage_sheet %}
                   <td>
-                    <div class="btn-group sodar-list-btn-group sodar-ss-version-btn-group"
-                         id="sodar-ss-version-btn-group-{{ sv.sodar_uuid }}">
-                      <button class="btn btn-secondary dropdown-toggle sodar-list-dropdown"
-                              type="button" data-toggle="dropdown" aria-expanded="false">
-                        <i class="iconify" data-icon="mdi:cog"></i>
-                      </button>
-                      <div class="dropdown-menu dropdown-menu-right">
-                        <a class="dropdown-item"
-                           href="{% url 'samplesheets:export_isa' isatab=sv.sodar_uuid %}">
-                          <i class="iconify" data-icon="mdi:download"></i> Export Version
-                        </a>
-                        <a class="dropdown-item"
-                           href="{% url 'samplesheets:version_update' isatab=sv.sodar_uuid %}">
-                          <i class="iconify" data-icon="mdi:lead-pencil"></i> Update Description
-                        </a>
-                        <a class="dropdown-item" href="{% url 'samplesheets:version_restore' isatab=sv.sodar_uuid %}">
-                          <i class="iconify" data-icon="mdi:refresh"></i> Restore Version
-                        </a>
-                        <a class="dropdown-item text-danger" href="{% url 'samplesheets:version_delete' isatab=sv.sodar_uuid %}">
-                          <i class="iconify" data-icon="mdi:close-thick"></i> Delete Version
-                        </a>
-                      </div>
+                    <button class="btn btn-secondary dropdown-toggle
+                                   sodar-list-dropdown sodar-ss-version-dropdown"
+                            type="button" data-toggle="dropdown" aria-expanded="false">
+                      <i class="iconify" data-icon="mdi:cog"></i>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-right">
+                      <a class="dropdown-item"
+                         href="{% url 'samplesheets:export_isa' isatab=sv.sodar_uuid %}">
+                        <i class="iconify" data-icon="mdi:download"></i>
+                        Export Version
+                      </a>
+                      <a class="dropdown-item"
+                         href="{% url 'samplesheets:version_update' isatab=sv.sodar_uuid %}">
+                        <i class="iconify" data-icon="mdi:lead-pencil"></i>
+                        Update Description
+                      </a>
+                      <a class="dropdown-item"
+                         href="{% url 'samplesheets:version_restore' isatab=sv.sodar_uuid %}">
+                        <i class="iconify" data-icon="mdi:refresh"></i>
+                        Restore Version
+                      </a>
+                      <a class="dropdown-item text-danger"
+                         href="{% url 'samplesheets:version_delete' isatab=sv.sodar_uuid %}">
+                        <i class="iconify" data-icon="mdi:close-thick"></i>
+                        Delete Version
+                      </a>
                     </div>
                    </td>
                   <td>
                     <input type="checkbox"
                            class="sodar-checkbox sodar-ss-version-check sodar-ss-version-check-item"
                            name="version_check" value="{{ sv.sodar_uuid }}" />
-                    </td>
+                  </td>
                 {% endif %}
               </tr>
             {% endfor %}
@@ -210,21 +213,132 @@
       {% include 'projectroles/_pagination.html' with pg_small=False %}
     {% endif %}
   </div>
-
 </form>
 
 {% endblock projectroles_extend %}
 
 {% block javascript %}
   {{ block.super }}
-
   <!-- Sheet Version List Javascript -->
   <script type="text/javascript" src="{% static 'samplesheets/js/sheet_versions.js' %}"></script>
 
   {# Tour content #}
   <script type="text/javascript">
-    tourEnabled = false;
-    // TODO: Tour
-  </script>
+    tourEnabled = true;
 
+    tour.addStep('sheet_version', {
+        title: 'Sample Sheet Versions',
+        text: 'In this view you can manage saved backup versions of the ' +
+              'project sample sheets. These versions are saved as ISA-Tab ' +
+              'files. They can be exported, compared, deleted or restored to ' +
+              'replace the currently active sheet version.',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+    });
+
+    tour.addStep('sheet_version_list', {
+        title: 'Sheet Version List',
+        text: 'The saved sample sheet versions are displayed in this list. ' +
+              'They appear in the reverse chronological order, with the most ' +
+              'recently saved or restored version on top.',
+        attachTo: '#sodar-ss-version-table top',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+    });
+
+    if ($('.sodar-ss-version-item-title').length) {
+        tour.addStep('sheet_version_title', {
+            title: 'Sheet Version Title',
+            text: 'The sheet version title appears as a timestamp of its ' +
+                  'creation. The title links to exporting the sheets as an ' +
+                  'ISA-Tab Zip archive.',
+            attachTo: '.sodar-ss-version-item-title top',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+    }
+
+    if ($('.sodar-ss-version-item-desc').length) {
+        tour.addStep('sheet_version_desc', {
+            title: 'Sheet Version Description',
+            text: 'The optional description for a version is displayed here. ' +
+                  'This may be set by a user or automatically by SODAR.',
+            attachTo: '.sodar-ss-version-item-desc top',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+    }
+
+    if ($('.sodar-ss-version-item-tags').length) {
+        tour.addStep('sheet_version_tags', {
+            title: 'Sheet Version Tags',
+            text: 'Tags for the sheet version are displayed here. They ' +
+                  'inform of the origin of the version (importing, creating ' +
+                  'for template, using the sheet editor) as well as which ' +
+                  'one is the most recently saved version.',
+            attachTo: '.sodar-ss-version-item-tags top',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+    }
+
+    if ($('.sodar-ss-version-item-parser').length) {
+        tour.addStep('sheet_version_parser', {
+            title: 'Parser Version',
+            text: 'The version of the AltamISA parser used to parse and ' +
+                  'validate the sample sheet version ISA-Tab is displayed ' +
+                  'here. Most of the time this is not significant, but in ' +
+                  'some cases upgrades in the parser may make SODAR reject ' +
+                  'restoring sheet versions parsed with an older version.',
+            attachTo: '.sodar-ss-version-item-parser top',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+    }
+
+    if ($('.sodar-ss-version-dropdown').length) {
+        tour.addStep('sheet_version_dropdown', {
+            title: 'Sheet Version Dropdown',
+            text: 'From the sheet version dropdown, you can export the ' +
+                  'version, update its description, replace the currently ' +
+                  'active sample sheets with the version or delete the ' +
+                  'version from SODAR.',
+            attachTo: '.sodar-ss-version-dropdown left',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+    }
+
+    if ($('#sodar-ss-version-check-all').length) {
+        tour.addStep('sheet_version_check', {
+            title: 'Sheet Version Checkboxes',
+            text: 'From these checkboxes you can select and unselect ' +
+                  'multiple sheet versions for comparison or deletion. To ' +
+                  'enable version comparison, exactly two versions must be ' +
+                  'selected.',
+            attachTo: '#sodar-ss-version-check-all left',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+    }
+
+    tour.addStep('sheet_version_ops', {
+        title: 'Version Operations',
+        text: 'The version operations dropdown allows you to delete multiple ' +
+              'sample sheet versions at once, or compare two versions if ' +
+              'they have been selected using the checkboxes in the version ' +
+              'list.',
+        attachTo: '#sodar-ss-version-btn-ops left',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+    });
+
+    tour.addStep('sheets_btn_back', {
+        title: 'Back to Project Sample Sheets',
+        text: 'Click on this button to return to the project sample sheets.',
+        attachTo: '#sodar-ss-btn-back left',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+    });
+  </script>
 {% endblock javascript %}

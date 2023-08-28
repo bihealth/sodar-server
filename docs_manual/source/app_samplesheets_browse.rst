@@ -123,6 +123,11 @@ Files
     Cells in file columns link out to iRODS files if present. For more details,
     see the "iRODS File Linking" section.
 
+.. hint::
+
+    The maximum height of study and assay tables can be set in your user
+    settings in the :ref:`ui_user_profile`.
+
 
 Toggling Column Visibility
 ==========================

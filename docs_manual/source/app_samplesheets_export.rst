@@ -19,6 +19,8 @@ archive containing all the ISA-Tab files as tab separated values (TSV). The
 export is fully ISA-Tab compatible and can be used with other software
 supporting the model.
 
+.. include:: _include/sheets_zip_warning.rst
+
 
 Export Excel Table
 ==================

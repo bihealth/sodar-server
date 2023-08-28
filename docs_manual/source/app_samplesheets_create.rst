@@ -35,7 +35,15 @@ upload them at once.
 .. note::
 
     When uploading multiple files instead of a zip archive, all files for the
-    investigation must be present or the import will fail!
+    investigation must be present and in the same directory or the import will
+    fail.
+
+.. note::
+
+    Importing ISA-Tab files with empty study or assay tables is not allowed.
+    Study tables must also contain source and sample materials.
+
+.. include:: _include/sheets_zip_warning.rst
 
 .. figure:: _static/app_samplesheets/sheet_import.png
     :align: center
@@ -43,14 +51,9 @@ upload them at once.
 
     ISA-Tab import form
 
-In case of a successful import, you will be redirected to the main sample sheets
+After a successful import, you will be redirected to the main sample sheets
 view, where you should see the study and assay tables for your imported sample
 sheets.
-
-.. note::
-
-    Importing ISA-Tab files with empty study or assay tables is not allowed.
-    Study tables must also contain source and sample materials.
 
 Parser Warnings
 ---------------

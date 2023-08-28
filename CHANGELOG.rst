@@ -20,6 +20,7 @@ Added
     - Landing zone updating (#1267)
     - "Nothing to do" check for landing zone validation and moving (#339)
     - iRODS path clipboard copying button in iRODS collection list modal (#1282)
+    - ``constants`` module for zone constants (#1398)
 - **Samplesheets**
     - User setting for study and assay table height (#1283)
     - Study table cache disabling (#1639)
@@ -33,8 +34,11 @@ Added
     - Disabled row delete button tooltips (#1731)
     - ``IrodsDataRequest`` REST API views (#1588, #1706, #1734, #1735, #1736)
     - Davrods links in iRODS delete request list (#1339)
-    - Batch accepting and rejecting for iRODS delete requests (#1340)
+    - Batch accepting and rejecting for iRODS delete requests (#1340, #1751)
     - Cookiecutter prompt support in sheet templates (#1726)
+    - "Create" tag for sheet versions (#1296)
+    - Template tag tests (#1723)
+    - iRODS file count in sheet overview tab (#1295)
 - **Taskflowbackend**
     - ``BatchCalculateChecksumTask`` iRODS task (#1634)
     - Automated generation of missing checksums in ``zone_move`` flow (#1634)
@@ -50,12 +54,14 @@ Changed
     - Upgrade Python dependencies (#1620)
     - Upgrade Vue app dependencies (#1620)
     - Timeline event names and descriptions if called from syncmodifyapi (#1761)
+    - Update tour help (#1583)
 - **Landingzones**
     - Move iRODS object helpers to ``TaskflowTestMixin`` (#1699)
     - Enable superuser landing zone controls for locked zones (#1607)
     - Add ``DELETING`` to locked states in UI (#1657)
-    - Query for landing zone status in batch (#1684)
+    - Query for landing zone status in batch (#1684, #1752)
     - Create expected collections if zone sync is called from syncmodifyapi (#1761)
+    - Define and use zone status constants (#1398)
 - **Samplesheets**
     - Sample sheet table viewport background color (#1692)
     - Contract sheet table height to fit content (#1693)

@@ -26,10 +26,10 @@ viewing them.
 
     Alert badge on the title bar
 
-The alert list will display your alerts in a chronological order with the newest
-alert on top. The colour of the alert will define its type: blue for
-information, green for a successful operation, yellow for a warning and red for
-an error.
+The "Active App Alerts" list will display your alerts in a chronological order
+with the newest alert on top. The colour of the alert will define its type: blue
+for information, green for a successful operation, yellow for a warning and red
+for an error.
 
 The left hand side of each alert displays an icon for the application raising
 the alert as well as the alert timestamp. The name of the project is also
@@ -39,17 +39,22 @@ project overview page.
 The right hand side of each alert contains one or two buttons. The arrow button
 directs you to the project view related to the alert message before dismissing
 the alert. The close button dismisses the alert and keeps you in the alert list
-view. You can also click the :guilabel:`Dismiss All` button to dismiss all of
-your alerts.
+view.
 
-You can also access the alert list by accessing the user dropdown on the top
-right corner of the site and selecting :guilabel:`App Alerts`.
+On the top right corner of the view you can find the
+:guilabel:`Alert Operations` dropdown. From the dropdown, you can select
+:guilabel:`View Dismissed` to see your previously dismissed alerts, or
+:guilabel:`Dismiss All` to dismiss all currently active alerts.
+
+In addition to the alert badge, you can access the alert list by accessing the
+user dropdown on the top right corner of the site and selecting
+:guilabel:`App Alerts`.
 
 .. figure:: _static/sodar_ui/alert_list.png
     :align: center
     :scale: 70%
 
-    Alert list
+    List of active app alerts
 
 
 .. _ui_alerts_admin:

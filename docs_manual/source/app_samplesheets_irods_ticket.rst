@@ -3,40 +3,25 @@
 iRODS Access Tickets
 ^^^^^^^^^^^^^^^^^^^^
 
-The Sample Sheets application allows you to create anonymous iRODS access
-tickets to specific collections in the sample data repository. This enables
-providing publicly accessible URLs to these collections for e.g. integrating
-data with other software.
+The Sample Sheets application allows you to create iRODS access tickets. The
+tickets enable read-only access to specific collections in a project's sample
+data repository without the need for a login or project membership. This can be
+used to provide URLs for simple links to iRODS collections for e.g. enabling
+access to SODAR data from other software.
 
 .. warning::
 
-    Anyone with the ticket or URL and network access to your iRODS server can
-    access these collections, regardless of their project access! Care should be
-    taken in what is shared publicly and to whom tickets are provided.
+    Anyone with the URL and network access to your iRODS server can access these
+    collections regardless of their project roles. Care should be taken in what
+    is shared publicly and to whom tickets are provided.
 
-Currently, creating tickets is supported for setting up
-`track hubs <https://genome.ucsc.edu/goldenpath/help/hgTrackHubHelp.html>`_ for
-`UCSC Genome Browser <https://genome.ucsc.edu/>`_ integration.
 
-You can create a track hub by uploading files under a collection under
-``TrackHubs`` using Landing Zones. Thus, if you want to create a track hub named
-``YourHub``, files should go under the collection ``TrackHubs/YourHub``. For
-more information on landing zone uploads, see the Landing Zones documentation.
+Browsing Access Tickets
+=======================
 
-After the upload, your track hub should be visible in the assay shortcuts.
-
-.. figure:: _static/app_samplesheets/irods_ticket_hub.png
-    :align: center
-
-    Track hub in assay shortcuts
-
-Once the track hub is available, you can create an access ticket for it in the
-Sample Sheets app. Open the :guilabel:`Sheet Operations` dropdown and select
-:guilabel:`iRODS Access Tickets` to open a list of access tickets for track hubs
-in the project. The anonymous URL for each ticket can be copied to the clipboard
-using the button next to the ticket label. In the right hand side dropdown for
-each ticket, you can either update its details or delete it. Access is revoked
-for deleted tickets.
+To browse access tickets in a project, open the :guilabel:`Sheet Operations`
+dropdown and select :guilabel:`iRODS Access Tickets`. The view displays a list
+of tickets created in the project.
 
 .. figure:: _static/app_samplesheets/irods_ticket_list.png
     :align: center
@@ -44,24 +29,100 @@ for deleted tickets.
 
     iRODS access ticket list
 
-To create a new ticket, click the :guilabel:`Create Ticket` button. This opens a
-simple form where you must choose the track hub path as well as set an optional
-ticket label and expiry date. The label is for referencing the purpose of the
-ticket: tickets with no label will be listed by their creation date. If no
-expiry date is set, the ticket will be valid until manually revoked.
+For each ticket, the list displays the following information:
 
-It is possible to create multiple tickets for a single track hub if there is
-need to e.g. revoke access to ticket users at different times.
+Name
+    Collection name and label for the ticket. The name works as a link to the
+    collection in Davrods. A button for copying the ticket link with the
+    access token included is also included.
+Ticket
+    The token string of the access ticket.
+User
+    The user who created the ticket.
+Created
+    Date and time of ticket creation.
+Expires
+    Expiry date for the ticket, or *"Never"* if no expiry has been set.
+
+
+Creating Access Tickets
+=======================
+
+With a sufficient role in a project (contributor or above), you can create
+access tickets for any collection in the project within the following
+constraints:
+
+- The collection must exist.
+- The collection must belong to the project in question.
+- The collection must be within an assay collection.
+- The collection must **not** be an assay root collection.
+- There must not be another active ticket for the same collection.
+
+To create a ticket, navigate to the access ticket list of the desired project
+and click on :guilabel:`Create Ticket`. This will open the form for ticket
+creation.
 
 .. figure:: _static/app_samplesheets/irods_ticket_form.png
     :align: center
-    :scale: 75%
+    :scale: 60%
 
     iRODS access ticket creation form
 
-A link to the WebDAV URL for the most recent valid access ticket is displayed in
-assay shortcuts next to the existing assay, as displayed in the screenshot
-below.
+The form contains the following items:
+
+Path
+    Full iRODS path for the collection for which the ticket should be created.
+    See constraints above.
+Label
+    Optional text label for the ticket. This will be displayed for the ticket
+    to e.g. inform other users of the purpose for which the ticket was created.
+Expiry Date
+    Optional date for ticket expiry.
+
+
+Updating Access Tickets
+=======================
+
+To update an existing access ticket, open the dropdown menu on the right hand
+side of the ticket list and select :guilabel:`Update Ticket`. In the form, you
+can edit the label and the expiry date for the ticket. The path can not be
+edited. To enable ticket access to another iRODS collection, you need to create
+another ticket.
+
+
+Deleting Access Tickets
+=======================
+
+To delete an access ticket, open the dropdown menu associated with a ticket in
+the ticket list and select :guilabel:`Delete Ticket`. After confirming the
+deletion, the collection the ticket targeted can no longer be accessed with the
+token string.
+
+
+Managing Tickets for UCSC Track Hubs
+====================================
+
+Tickets for
+`track hubs <https://genome.ucsc.edu/goldenpath/help/hgTrackHubHelp.html>`_ for
+`UCSC Genome Browser <https://genome.ucsc.edu/>`_ integration are a special
+case, as they are also visible in the sample sheets GUI.
+
+If you upload a collection with files under an assay collection called
+``TrackHubs`` using Landing Zones, the track hub collection will be visible in
+the assay shortcuts. E.g. if you want to create a track hub named
+``YourTrackHub``, files should go under the collection
+``TrackHubs/YourTrackHub``. Once files are uploaded, validated and moved from
+the landing zone, the collection will be displayed in the GUI.
+
+.. figure:: _static/app_samplesheets/irods_ticket_hub.png
+    :align: center
+
+    Track hub in assay shortcuts
+
+Once you create an access ticket for the track hub collection, a button for
+accessing the collection with the ticket link is automatically added to the
+assay shortcut. The URL can also be copied into the clipboard from this link.
+
 
 .. figure:: _static/app_samplesheets/irods_ticket_hub_link.png
     :align: center
@@ -70,6 +131,6 @@ below.
 
 .. note::
 
-    Currently SODAR only supports anonymous access tickets for track hub
-    collections. This functionality may be expanded to other sample repository
-    collections in a future SODAR release.
+    GUI links for access tickets for collections other than track hubs will be
+    introduced in a later SODAR release. For now, the tickets can be viewed in
+    the access ticket list.

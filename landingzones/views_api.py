@@ -131,7 +131,7 @@ class ZoneRetrieveAPIView(SODARAPIGenericProjectMixin, RetrieveAPIView):
     **Returns:**
 
     - ``assay``: Assay UUID (string)
-    - ``config_data``: Data for special configuration (JSON)
+    - ``config_data``: Data for special configuration (dict)
     - ``configuration``: Special configuration name (string)
     - ``date_modified``: Last modification date of the zone (string)
     - ``description``: Landing zone description (string)
@@ -143,7 +143,7 @@ class ZoneRetrieveAPIView(SODARAPIGenericProjectMixin, RetrieveAPIView):
     - ``status_info``: Detailed description of the landing zone status (string)
     - ``status_locked``: Whether write access to the zone is currently locked (boolean)
     - ``title``: Full title of the created landing zone (string)
-    - ``user``: User who owns the zone (JSON)
+    - ``user``: User who owns the zone (dict)
     """
 
     lookup_field = 'sodar_uuid'
@@ -175,7 +175,7 @@ class ZoneCreateAPIView(
     **Parameters:**
 
     - ``assay``: Assay UUID (string)
-    - ``config_data``: Data for special configuration (JSON, optional)
+    - ``config_data``: Data for special configuration (dict, optional)
     - ``configuration``: Special configuration (string, optional)
     - ``description``: Landing zone description (string, optional)
     - ``user_message``: Message displayed to users on successful moving of zone (string, optional)

@@ -270,7 +270,7 @@ class TestSheetVersionListView(TestProjectSheetsUIBase):
             'samplesheets:versions', kwargs={'project': self.project.sodar_uuid}
         )
 
-    def test_list(self):
+    def test_render(self):
         """Test UI rendering for list items"""
         self.assert_element_exists(
             [self.user_contributor], self.url, 'sodar-ss-version-list', True
@@ -284,7 +284,7 @@ class TestSheetVersionListView(TestProjectSheetsUIBase):
             self.selenium.find_element(By.CLASS_NAME, 'badge-info')
         )
 
-    def test_list_no_versions(self):
+    def test_render_no_versions(self):
         """Test UI rendering for list items with no versions"""
         ISATab.objects.filter(
             investigation_uuid=self.investigation.sodar_uuid
@@ -299,8 +299,8 @@ class TestSheetVersionListView(TestProjectSheetsUIBase):
             False,
         )
 
-    def test_list_buttons(self):
-        """Test list button rendering"""
+    def test_render_dropdown(self):
+        """Test sheet version dropdown rendering"""
         expected = [
             (self.superuser, 1),
             (self.user_owner_cat, 1),
@@ -313,7 +313,7 @@ class TestSheetVersionListView(TestProjectSheetsUIBase):
             (self.user_guest, 0),
         ]
         self.assert_element_count(
-            expected, self.url, 'sodar-ss-version-btn-group', 'class'
+            expected, self.url, 'sodar-ss-version-dropdown', 'class'
         )
 
 

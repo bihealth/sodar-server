@@ -7,9 +7,9 @@ Once you navigate into a project, you can see the project overview on the right
 hand side of the screen. The sidebar on the left hand side has been expanded to
 display links related to the project.
 
-Furthermore, you can see a navigation breadcrumb for quickly returning to a
-parent category, as well as the project title bar displaying the project title,
-description and some general links.
+Below the site title bar there is a navigation breadcrumb. It can be used to
+easily return to a parent category. The project title bar displays the project
+title, description and project-specific links.
 
 .. figure:: _static/sodar_ui/project_detail.png
     :align: center

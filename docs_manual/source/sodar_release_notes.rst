@@ -17,9 +17,25 @@ Major feature update.
 - Add support for additional sample sheet templates
 - Add landing zone updating
 - Add automated checksum calculation in landing zone validation and moving
+- Add iRODS delete request API views
+- Add iRODS delete request batch handling in UI
+- Add iRODS environment retrieval API view
+- Add "create" tag for sample sheet versions
 - Add user setting for maximum sample sheet table height
-- Contract sample sheet table height to fit content in browsing mode
+- Improve sheet template creation form
+- Landingzones UI improvements
+- Sample sheet table resizing and rendering improvements
+- Add study table cache disabling
+- Minor updates and bug fixes
 - Upgrade to SODAR Core v0.13.0
+- SODAR Core v0.13 updates: full role inheritance, finder role, etc.
+
+Migration Guide
+---------------
+
+Upon deploying this release on an existing instance, admins must run the
+``syncmodifyapi`` management command. This will update project user access in
+iRODS according to the role inheritance update introduced in SODAR Core v0.13.
 
 
 v0.13.4 (2023-05-15)
