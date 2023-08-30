@@ -20,19 +20,18 @@ RUN chmod +x /usr/local/bin/wait
 RUN mkdir -p /usr/src
 RUN git clone --depth $app_git_depth --branch $app_git_tag $app_git_url /usr/src/app
 
+# Set up apt repositories
+RUN curl -sL https://deb.nodesource.com/setup_18.x | bash -
+
 # Install system dependencies
 RUN apt-get update && \
     apt-get install -y apt-utils gcc ldap-utils libldap2-dev libsasl2-dev \
-        make postgresql-client wget
+        make postgresql-client wget nodejs
 
 # Install Python dependencies
 RUN cd /usr/src/app && \
     pip install --no-cache-dir -r requirements/production.txt && \
     pip install --no-cache-dir -r requirements/local.txt
-
-# Install modern nodejs
-RUN curl -sL https://deb.nodesource.com/setup_16.x | bash - && \
-    apt-get install nodejs
 
 # Install npm dependencies
 RUN cd /usr/src/app/samplesheets/vueapp && \

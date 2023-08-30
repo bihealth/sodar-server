@@ -53,6 +53,7 @@ Changed
     - Upgrade to python-irodsclient v1.1.8 (#1538)
     - Upgrade Python dependencies (#1620)
     - Upgrade Vue app dependencies (#1620)
+    - Upgrade to nodejs v18 (#1765, #1766)
     - Timeline event names and descriptions if called from syncmodifyapi (#1761)
     - Update tour help (#1583)
 - **Landingzones**

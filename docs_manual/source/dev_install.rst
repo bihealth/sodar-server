@@ -189,14 +189,14 @@ set in your environment variables.
 ---------------------------------
 
 To enable the Sample Sheets Vue.js app in development, you need to install its
-prerequisites using NPM. First install the NPM dependencies using the following
+prerequisites. First, install Nodejs and Vue dependencies using the following
 command:
 
 .. code-block:: bash
 
     $ sudo utility/install_vue_dev.sh
 
-Once NPM has been set up, install the app requirements:
+Once the dependencies have been set up, install the app requirements:
 
 .. code-block:: bash
 
