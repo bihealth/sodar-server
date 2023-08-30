@@ -3,7 +3,7 @@
 from django.urls import reverse
 
 # Projectroles dependency
-from projectroles.tests.test_permissions import TestPermissionBase
+from projectroles.tests.test_permissions import TestSiteAppPermissionBase
 
 from ontologyaccess.models import DEFAULT_TERM_URL
 from ontologyaccess.tests.test_models import OBOFormatOntologyModelMixin
@@ -29,19 +29,12 @@ OBO_TERM_COMMENT = 'This is not a real term.'
 
 
 class TestOntologyAccessPermissionBase(
-    OBOFormatOntologyModelMixin, TestPermissionBase
+    OBOFormatOntologyModelMixin, TestSiteAppPermissionBase
 ):
     """Base class for ontologyaccess UI view permission tests"""
 
     def setUp(self):
-        # Create users
-        self.superuser = self.make_user('superuser')
-        self.superuser.is_superuser = True
-        self.superuser.is_staff = True
-        self.superuser.save()
-        self.regular_user = self.make_user('regular_user')
-        # No user
-        self.anonymous = None
+        super().setUp()
         # Create Ontology and term
         self.ontology = self.make_obo_ontology(
             name=OBO_NAME,

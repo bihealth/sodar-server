@@ -13,6 +13,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 
 # Projectroles dependency
+from projectroles.forms import MultipleFileField
 from projectroles.models import Project
 from projectroles.plugins import get_backend_api
 
@@ -35,27 +36,6 @@ ERROR_MSG_INVALID_PATH = 'Not a valid iRODS path for this project'
 ERROR_MSG_EXISTING = 'An active request already exists for this path'
 TPL_DIR_FIELD = '__output_dir'
 TPL_DIR_LABEL = 'Output directory'
-
-
-# Mixins and Helpers -----------------------------------------------------------
-
-
-class MultipleFileInput(forms.ClearableFileInput):
-    allow_multiple_selected = True
-
-
-class MultipleFileField(forms.FileField):
-    def __init__(self, *args, **kwargs):
-        kwargs.setdefault('widget', MultipleFileInput())
-        super().__init__(*args, **kwargs)
-
-    def clean(self, data, initial=None):
-        single_file_clean = super().clean
-        if isinstance(data, (list, tuple)):
-            result = [single_file_clean(d, initial) for d in data]
-        else:
-            result = single_file_clean(data, initial)
-        return result
 
 
 class IrodsDataRequestValidateMixin:
