@@ -739,7 +739,7 @@ class BatchCalculateChecksumTask(IrodsBaseTask):
                     if force or not replica.checksum:
                         try:
                             data_obj.chksum(
-                                **{kw.RESC_NAME_KW: replica.resource_name}
+                                **{kw.RESC_HIER_STR_KW: replica.resc_hier}
                             )
                         except Exception:
                             pass  # TBD: How to handle an exception for this?

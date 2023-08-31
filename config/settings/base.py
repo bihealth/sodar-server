@@ -719,6 +719,8 @@ IRODS_CERT_PATH = env.str('IRODS_CERT_PATH', None)
 
 
 # Taskflow backend settings
+# Connection timeout for taskflowbackend flows (other sessions not affected)
+TASKFLOW_IRODS_CONN_TIMEOUT = env.int('TASKFLOW_IRODS_CONN_TIMEOUT', 480)
 TASKFLOW_LOCK_RETRY_COUNT = env.int('TASKFLOW_LOCK_RETRY_COUNT', 2)
 TASKFLOW_LOCK_RETRY_INTERVAL = env.int('TASKFLOW_LOCK_RETRY_INTERVAL', 3)
 TASKFLOW_LOCK_ENABLED = True

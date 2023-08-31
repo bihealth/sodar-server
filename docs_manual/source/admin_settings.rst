@@ -111,12 +111,15 @@ iRODS Settings
 Taskflow Backend Settings
 -------------------------
 
+``TASKFLOW_IRODS_CONN_TIMEOUT``
+    Connection timeout for taskflows in seconds, other SODAR iRODS sessions are
+    not affected (int, default: 480).
 ``TASKFLOW_LOCK_RETRY_COUNT``
     Retry count for project lock retrieval for Taskflow operations (int,
-    default: 2)
+    default: 2).
 ``TASKFLOW_LOCK_RETRY_INTERVAL``
     Retry interval for project lock retrieval for Taskflow operations (int,
-    default: 3)
+    default: 3).
 
 iRODS WebDAV Settings
 ---------------------

@@ -41,9 +41,11 @@ Added
     - iRODS file count in sheet overview tab (#1295)
 - **Taskflowbackend**
     - ``BatchCalculateChecksumTask`` iRODS task (#1634)
-    - Automated generation of missing checksums in ``zone_move`` flow (#1634)
+    - Automated generation of missing checksums in ``zone_move`` flow (#1634, #1767)
     - Cleanup of trash collections in testing (#1658)
     - ``TaskflowPermissionTestBase`` base test class (#1718)
+    - Taskflow session timeout management (#1768)
+    - ``TASKFLOW_IRODS_CONN_TIMEOUT`` Django setting (#1768)
 
 Changed
 -------
