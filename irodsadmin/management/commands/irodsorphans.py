@@ -178,13 +178,14 @@ class Command(BaseCommand):
 
         # Get the actual path to the projects collection
         project_path = self.irods_backend.get_projects_path()
+        depth = len(project_path.split('/')) + 1
         for coll in collections:
             pattern = (
                 project_path
                 + r'/([a-f0-9]{2})/\1[a-f0-9]{6}-([a-f0-9]{4}-){3}[a-f0-9]{12}'
             )
             match = re.search(r'{}'.format(pattern), coll.path)
-            uuid = match.string.split('/')[4] if match else ''
+            uuid = match.string.split('/')[depth] if match else ''
             if (
                 uuid
                 and any(uuid in path for path in valid_project_paths)
@@ -204,8 +205,8 @@ class Command(BaseCommand):
                     i
                     for i, path in enumerate(valid_project_paths)
                     if (
-                        coll.path.split('/')[4]
-                        if len(coll.path.split('/')) > 4
+                        coll.path.split('/')[depth]
+                        if len(coll.path.split('/')) > depth
                         else ''
                     )
                     in path
@@ -255,7 +256,9 @@ class Command(BaseCommand):
 
     def _write_orphan(self, path, irods):
         stats = self.irods_backend.get_object_stats(irods, path)
-        m = re.search(r'/projects/([^/]{2})/(\1[^/]+)', path)
+        projects_path = self.irods_backend.get_projects_path()
+        pattern = projects_path + r'/([^/]{2})/(\1[^/]+)'
+        m = re.search(pattern, path)
         if m:
             uuid = m.group(2)
             try:
