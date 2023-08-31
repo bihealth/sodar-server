@@ -56,6 +56,7 @@ Changed
     - Upgrade Python dependencies (#1620)
     - Upgrade Vue app dependencies (#1620)
     - Upgrade to nodejs v18 (#1765, #1766)
+    - Update deprecated Nodejs install method in Docker and dev (#1769)
     - Timeline event names and descriptions if called from syncmodifyapi (#1761)
     - Update tour help (#1583)
 - **Landingzones**
