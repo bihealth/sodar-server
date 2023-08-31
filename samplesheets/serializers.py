@@ -200,6 +200,5 @@ class IrodsAccessTicketSerializer(
             irods_backend, self.context['project'], self.instance, attrs
         )
         if errors:
-            field, error = errors
-            raise serializers.ValidationError('{}: {}'.format(field, error))
+            raise serializers.ValidationError('{}: {}'.format(*errors))
         return attrs

@@ -458,8 +458,7 @@ class IrodsAccessTicketForm(IrodsAccessTicketValidateMixin, forms.ModelForm):
             irods_backend, self.project, self.instance, cleaned_data
         )
         if errors:
-            field, error = errors
-            self.add_error(field, error)
+            self.add_error(*errors)
         return self.cleaned_data
 
 

@@ -43,7 +43,6 @@ from samplesheets.views import (
 )
 from samplesheets.views_api import (
     IRODS_QUERY_ERROR_MSG,
-    IRODS_TICKETS_NOT_FOUND_MSG,
 )
 
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
@@ -392,9 +391,8 @@ class TestIrodsAccessTicketListAPIView(IrodsAccessTicketAPIViewTestBase):
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
         with self.login(self.user_contrib):
             response = self.client.get(self.url)
-        self.assertEqual(response.status_code, 404)
-        expected = {'detail': IRODS_TICKETS_NOT_FOUND_MSG}
-        self.assertEqual(json.loads(response.content), expected)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(json.loads(response.content), [])
 
     def test_get_active(self):
         """Test GET IrodsAccessTicketListAPIView with active = True"""
@@ -761,10 +759,7 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
         with self.login(self.user_contrib):
             response = self.client.patch(
                 self.url,
-                {
-                    'label': LABEL_UPDATE,
-                    'date_expires': self.date_expires_update,
-                },
+                {'date_expires': self.date_expires_update},
             )
 
         self.assertEqual(response.status_code, 200)
@@ -773,7 +768,7 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
         )
         expected = {
             'sodar_uuid': str(self.ticket.sodar_uuid),
-            'label': LABEL_UPDATE,
+            'label': self.label,
             'ticket': self.ticket.ticket,
             'assay': self.ticket.assay.pk,
             'study': self.ticket.study.pk,

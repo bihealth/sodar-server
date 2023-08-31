@@ -35,6 +35,11 @@ from samplesheets.tests.test_views_taskflow import (
 )
 
 
+# Local constants
+LABEL_CREATE = 'label'
+LABEL_UPDATE = 'label_update'
+
+
 # Base Classes and Mixins ------------------------------------------------------
 
 
@@ -157,7 +162,6 @@ class TestIrodsAccessTicketListAPIView(IrodsAccessTicketAPIViewTestBase):
 
     def setUp(self):
         super().setUp()
-        # Set up URLs
         self.url = (
             reverse(
                 'samplesheets:api_irods_ticket_list',
@@ -171,7 +175,7 @@ class TestIrodsAccessTicketListAPIView(IrodsAccessTicketAPIViewTestBase):
             path=self.coll.path + '/ticket1',
             user=self.user_owner,
             ticket='ticket',
-            label='label',
+            label=LABEL_CREATE,
             date_expires=(timezone.localtime() + timedelta(days=1)).isoformat(),
         )
 
@@ -227,14 +231,13 @@ class TestIrodsAccessTicketRetrieveAPIView(IrodsAccessTicketAPIViewTestBase):
 
     def setUp(self):
         super().setUp()
-        # Set up URLs
         self.ticket = self.make_irods_ticket(
             study=self.study,
             assay=self.assay,
             path=self.coll.path + '/ticket1',
             user=self.user_owner,
             ticket='ticket',
-            label='label',
+            label=LABEL_CREATE,
             date_expires=(timezone.localtime() + timedelta(days=1)).isoformat(),
         )
         self.url = reverse(
@@ -292,15 +295,20 @@ class TestIrodsAccessTicketRetrieveAPIView(IrodsAccessTicketAPIViewTestBase):
 class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
     """Test permissions for IrodsAccessTicketCreateAPIView"""
 
+    def _delete_ticket(self):
+        """Delete ticket created in test case"""
+        access_ticket = IrodsAccessTicket.objects.all().first()
+        ticket_str = access_ticket.ticket
+        self.irods_backend.delete_ticket(self.irods, ticket_str)
+        access_ticket.delete()
+
     def setUp(self):
         super().setUp()
-        # Set up URLs
         self.url = reverse(
             'samplesheets:api_irods_ticket_create',
             kwargs={'project': self.project.sodar_uuid},
         )
         self.path = self.coll.path
-        self.label = 'label'
         self.date_expires = (
             timezone.localtime() + timedelta(days=1)
         ).isoformat()
@@ -308,16 +316,9 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
         self.post_data = {
             'assay': self.assay.pk,
             'path': self.path,
-            'label': self.label,
+            'label': LABEL_CREATE,
             'date_expires': self.date_expires,
         }
-
-    def _delete_ticket(self):
-        """Delete ticket created in test case"""
-        access_ticket = IrodsAccessTicket.objects.all().first()
-        ticket_str = access_ticket.ticket
-        self.irods_backend.delete_ticket(self.irods, ticket_str)
-        access_ticket.delete()
 
     def test_create(self):
         """Test IrodsAccessTicketCreateAPIView POST"""
@@ -395,14 +396,13 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
 
     def setUp(self):
         super().setUp()
-        # Set up URLs
         self.ticket = self.make_irods_ticket(
             study=self.study,
             assay=self.assay,
             path=self.coll.path + '/ticket1',
             user=self.user_owner,
             ticket='ticket',
-            label='label',
+            label=LABEL_CREATE,
             date_expires=(timezone.localtime() + timedelta(days=1)).isoformat(),
         )
         self.url = reverse(
@@ -410,8 +410,7 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
             kwargs={'irodsaccessticket': self.ticket.sodar_uuid},
         )
         # Set up post data
-        self.label_update = 'label_update'
-        self.post_data = {'label': self.label_update}
+        self.post_data = {'label': LABEL_UPDATE}
 
     def test_update(self):
         """Test IrodsAccessTicketUpdateAPIView PATCH"""
@@ -480,7 +479,6 @@ class TestIrodsAccessTicketDestroyAPIView(IrodsAccessTicketAPIViewTestBase):
     def _create_irods_ticket(self):
         # Create ticket in database and iRODS
         ticket_str = 'ticket'
-        label = 'label'
         # Create ticket in database and iRODS
         self.ticket = self.make_irods_ticket(
             study=self.study,
@@ -488,7 +486,7 @@ class TestIrodsAccessTicketDestroyAPIView(IrodsAccessTicketAPIViewTestBase):
             path=self.coll.path,
             user=self.user_owner,
             ticket=ticket_str,
-            label=label,
+            label=LABEL_CREATE,
             date_expires=timezone.localtime() + timedelta(days=1),
         )
         self.irods_backend.issue_ticket(
