@@ -56,7 +56,7 @@ class BaseGermlineConfigView(
             self.source = GenericMaterial.objects.get(
                 sodar_uuid=self.kwargs['genericmaterial']
             )
-            self.redirect_url = get_sheets_url(self.source.study)
+            self.redirect_url = self.source.study.get_url()
         except GenericMaterial.DoesNotExist:
             messages.error(request, 'Source material not found')
             return redirect(self.redirect_url)

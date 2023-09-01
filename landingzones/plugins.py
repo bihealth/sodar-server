@@ -142,12 +142,7 @@ class ProjectAppPlugin(
             }
         elif obj.__class__ == Assay:
             return {
-                'url': reverse(
-                    'samplesheets:project_sheets',
-                    kwargs={'project': obj.get_project().sodar_uuid},
-                )
-                + '#/assay/'
-                + str(obj.sodar_uuid),
+                'url': obj.get_url(),
                 'label': obj.get_display_name(),
             }
 

@@ -21,6 +21,7 @@ Added
     - "Nothing to do" check for landing zone validation and moving (#339)
     - iRODS path clipboard copying button in iRODS collection list modal (#1282)
     - ``constants`` module for zone constants (#1398)
+    - Assay link from zone assay icon (#1747)
 - **Samplesheets**
     - User setting for study and assay table height (#1283)
     - Study table cache disabling (#1639)
@@ -39,6 +40,7 @@ Added
     - "Create" tag for sheet versions (#1296)
     - Template tag tests (#1723)
     - iRODS file count in sheet overview tab (#1295)
+    - ``get_url()`` helpers for ``Investigation``, ``Study`` and ``Assay`` models (#1748)
 - **Taskflowbackend**
     - ``BatchCalculateChecksumTask`` iRODS task (#1634)
     - Automated generation of missing checksums in ``zone_move`` flow (#1634, #1767)
@@ -71,6 +73,7 @@ Changed
     - Contract sheet table height to fit content (#1693)
     - Hide internal fields from ISA-Tab templates (#1698, #1733)
     - Refactor ``IrodsDataRequest`` model and tests (#1706)
+    - Update ``get_sheets_url()`` helper to only handle ``Project`` objects (#1771)
 - **Taskflowbackend**
     - Move iRODS object helpers from ``LandingZoneTaskflowMixin`` (#1699)
     - Move iRODS test cleanup to ``TaskflowTestMixin.clear_irods_test_data()`` (#1722)
@@ -92,6 +95,7 @@ Removed
 
 - **Landingzones**
     - Unused ``data_tables`` references from templates (#1710)
+    - ``get_zone_samples_url()`` template tag (#1748)
 - **Samplesheets**
     - ``SHEETS_TABLE_HEIGHT`` Django setting (#1283)
     - Duplicate ``IrodsAccessTicketMixin`` from ``test_views_ajax`` (#1703)

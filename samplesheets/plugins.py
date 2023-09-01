@@ -305,7 +305,7 @@ class ProjectAppPlugin(
             }
         if obj.__class__ in [Investigation, Study, Assay]:
             return {
-                'url': get_sheets_url(obj),
+                'url': obj.get_url(),
                 'label': obj.title
                 if obj.__class__ == Investigation
                 else obj.get_display_name(),

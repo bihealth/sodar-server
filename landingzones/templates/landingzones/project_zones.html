@@ -20,33 +20,31 @@
     .sodar-lz-table {
         table-layout: fixed;
     }
-
     .sodar-lz-table thead tr th:nth-child(1){
       width: 350px;
     }
-
     .sodar-lz-table tbody tr td:nth-child(2) {
       word-wrap: break-word;
     }
-
     .sodar-lz-table thead tr th:nth-child(3),
     .sodar-lz-table tbody tr td:nth-child(3) {
       white-space: nowrap;
       width: 150px;
     }
-
     .sodar-lz-table thead tr th:nth-child(4),
     .sodar-lz-table tbody tr td:nth-child(4) {
       width: 150px;
       max-width: 150px;
       white-space: nowrap;
     }
-
     .sodar-lz-table thead tr th:nth-child(5),
     .sodar-lz-table tbody tr td:nth-child(5) {
       text-align: right;
       width: 70px;
       max-width: 140px;
+    }
+    .sodar-lz-zone-assay-link:hover {
+        text-decoration: none;
     }
 
     /* Responsive modifications */
@@ -244,7 +242,7 @@
             text: 'Each landing zone is specific to an assay within the ' +
                   'project studies. This assay icon links to the assay in ' +
                   'the Sample Sheets app.',
-            attachTo: '.sodar-lz-zone-assay-icon right',
+            attachTo: '.sodar-lz-zone-assay-link right',
             advanceOn: '.docs-link click',
             showCancelLink: true
         });

@@ -38,7 +38,7 @@
     <td>
       <div class="sodar-overflow-container">
         {% if item.study %}
-          <a href="{% url 'samplesheets:project_sheets' project=item.study.get_project.sodar_uuid %}#/study/{{ item.study.sodar_uuid }}">
+          <a href="{{ item.study.get_url }}">
             {{ item.study.get_display_name }}
           </a>
         {% else %}
@@ -51,7 +51,7 @@
     {% if item.assays %}
       {% for assay in item.assays %}
         <div class="sodar-overflow-container">
-          <a href="{% url 'samplesheets:project_sheets' project=item.study.get_project.sodar_uuid %}#/assay/{{ assay.sodar_uuid }}">
+          <a href="{{ assay.get_url }}">
             {{ assay.get_display_name }}
           </a>
           <br />

@@ -51,20 +51,6 @@ def get_zone_desc_html(zone):
 
 
 @register.simple_tag
-def get_zone_samples_url(zone):
-    """Return URL for samples related to zone"""
-    # TODO: TBD: Inherit this from samplesheets instead?
-    return (
-        reverse(
-            'samplesheets:project_sheets',
-            kwargs={'project': zone.project.sodar_uuid},
-        )
-        + '#/assay/'
-        + str(zone.assay.sodar_uuid)
-    )
-
-
-@register.simple_tag
 def is_zone_enabled(zone):
     """Return True/False if the zone can be enabled in the UI"""
     return True if zone.status not in STATUS_FINISHED else False

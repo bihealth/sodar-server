@@ -11,6 +11,7 @@ from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.timezone import localtime
 
@@ -276,6 +277,13 @@ class Investigation(BaseSampleSheet):
             Q(study__investigation=self) | Q(assay__study__investigation=self),
         ).count()
 
+    def get_url(self):
+        """Return the URL for this investigation"""
+        return reverse(
+            'samplesheets:project_sheets',
+            kwargs={'project': self.get_project().sodar_uuid},
+        )
+
 
 # Study ------------------------------------------------------------------------
 
@@ -398,6 +406,13 @@ class Study(BaseSampleSheet):
         for plugin in SampleSheetStudyPluginPoint.get_plugins():
             if plugin.config_name == self.investigation.get_configuration():
                 return plugin
+
+    def get_url(self):
+        """Return the URL for this study"""
+        return reverse(
+            'samplesheets:project_sheets',
+            kwargs={'project': self.get_project().sodar_uuid},
+        ) + '#/study/{}'.format(self.sodar_uuid)
 
 
 # Protocol ---------------------------------------------------------------------
@@ -537,9 +552,7 @@ class Assay(BaseSampleSheet):
         return ' '.join(s for s in self.get_name().split('_')).title()
 
     def get_plugin(self):
-        """
-        Get active assay app plugin or None if not found.
-        """
+        """Return the active assay app plugin or None if not found"""
         # TODO: Log warning if there are multiple plugins found?
         from samplesheets.plugins import SampleSheetAssayPluginPoint
 
@@ -563,6 +576,13 @@ class Assay(BaseSampleSheet):
         for plugin in SampleSheetAssayPluginPoint.get_plugins():
             if search_fields in plugin.assay_fields:
                 return plugin
+
+    def get_url(self):
+        """Return the URL for this assay"""
+        return reverse(
+            'samplesheets:project_sheets',
+            kwargs={'project': self.get_project().sodar_uuid},
+        ) + '#/assay/{}'.format(self.sodar_uuid)
 
 
 # Materials and data files -----------------------------------------------------

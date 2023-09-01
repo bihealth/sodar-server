@@ -12,6 +12,7 @@ from datetime import timedelta
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.forms.models import model_to_dict
+from django.urls import reverse
 from django.utils import timezone
 
 from test_plus.test import TestCase
@@ -540,6 +541,14 @@ class TestInvestigation(TestSampleSheetBase):
         """Test Investigation get_project() function"""
         self.assertEqual(self.investigation.get_project(), self.project)
 
+    def test_get_url(self):
+        """Test get_url()"""
+        expected = reverse(
+            'samplesheets:project_sheets',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        self.assertEqual(self.investigation.get_url(), expected)
+
 
 class TestStudy(TestSampleSheetBase):
     """Tests for the Study model"""
@@ -595,6 +604,14 @@ class TestStudy(TestSampleSheetBase):
         self.study.title = ''
         self.study.save()
         self.assertEqual(self.study.get_name(), self.study.identifier)
+
+    def test_get_url(self):
+        """Test get_url()"""
+        expected = reverse(
+            'samplesheets:project_sheets',
+            kwargs={'project': self.project.sodar_uuid},
+        ) + '#/study/{}'.format(self.study.sodar_uuid)
+        self.assertEqual(self.study.get_url(), expected)
 
 
 class TestProtocol(TestSampleSheetBase):
@@ -705,10 +722,6 @@ class TestAssay(TestSampleSheetBase):
         """Test Assay get_name() function"""
         self.assertEqual(self.assay.get_name(), 'assay')
 
-    def test_get_plugin_unknown(self):
-        """Test get_plugin() without measurement/technology type"""
-        self.assertEqual(self.assay.get_plugin(), None)
-
     def test_get_plugin(self):
         """Test get_plugin() with measurement/technology type"""
         self.assay.measurement_type = {
@@ -724,6 +737,10 @@ class TestAssay(TestSampleSheetBase):
         plugin = self.assay.get_plugin()
         self.assertIsNotNone(plugin)
         self.assertEqual(plugin.name, PLUGIN_NAME_DNA_SEQ)
+
+    def test_get_plugin_unknown(self):
+        """Test get_plugin() without measurement/technology type"""
+        self.assertEqual(self.assay.get_plugin(), None)
 
     def test_get_plugin_force(self):
         """Test get_plugin() with forced plugin in assay comments"""
@@ -748,6 +765,14 @@ class TestAssay(TestSampleSheetBase):
         plugin = self.assay.get_plugin()
         self.assertIsNotNone(plugin)
         self.assertEqual(plugin.name, PLUGIN_NAME_GENERIC_RAW)
+
+    def test_get_url(self):
+        """Test get_url()"""
+        expected = reverse(
+            'samplesheets:project_sheets',
+            kwargs={'project': self.project.sodar_uuid},
+        ) + '#/assay/{}'.format(self.assay.sodar_uuid)
+        self.assertEqual(self.assay.get_url(), expected)
 
 
 class TestSource(TestSampleSheetBase):

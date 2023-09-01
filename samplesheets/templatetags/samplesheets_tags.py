@@ -2,7 +2,6 @@
 
 from django import template
 from django.conf import settings
-from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
@@ -81,13 +80,7 @@ def get_irods_tree(investigation):
 @register.simple_tag
 def get_material_search_url(item):
     """Return search URL for source or sample material"""
-    url = reverse(
-        'samplesheets:project_sheets',
-        kwargs={'project': item['study'].get_project().sodar_uuid},
-    )
-    url += '#/study/{}'.format(item['study'].sodar_uuid)
-    url += '/filter/{}'.format(item['name'])
-    return url
+    return item['study'].get_url() + '/filter/{}'.format(item['name'])
 
 
 # Table rendering --------------------------------------------------------------

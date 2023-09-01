@@ -185,15 +185,7 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
         )
         if zone.status == ZONE_STATUS_MOVED:
             message_body = EMAIL_MSG_MOVED
-            email_url = (
-                server_host
-                + reverse(
-                    'samplesheets:project_sheets',
-                    kwargs={'project': zone.project.sodar_uuid},
-                )
-                + '#/assay/'
-                + str(zone.assay.sodar_uuid)
-            )
+            email_url = server_host + zone.assay.get_url()
         else:  # FAILED
             message_body = EMAIL_MSG_FAILED
             email_url = (
@@ -225,15 +217,7 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
             zone.user.get_full_name(),
         )
         message_body = EMAIL_MSG_MEMBER
-        email_url = (
-            server_host
-            + reverse(
-                'samplesheets:project_sheets',
-                kwargs={'project': zone.project.sodar_uuid},
-            )
-            + '#/assay/'
-            + str(zone.assay.sodar_uuid)
-        )
+        email_url = server_host + zone.assay.get_url()
         message_body = message_body.format(
             project=zone.project.title,
             assay=zone.assay.get_display_name(),

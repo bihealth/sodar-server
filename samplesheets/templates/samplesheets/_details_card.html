@@ -80,7 +80,7 @@
         <tr>
           <td class="pl-4">
             {% autoescape off %}{% get_icon study %}{% endautoescape %}
-             <a href="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}#/study/{{ study.sodar_uuid }}">{{ study.get_display_name }}</a>
+             <a href="{{ study.get_url }}">{{ study.get_display_name }}</a>
           </td>
           <td>
             {% get_irods_path study as irods_study_path %}
@@ -98,7 +98,7 @@
           <tr>
             <td class="pl-5">
               {% autoescape off %}{% get_icon assay %}{% endautoescape %}
-               <a href="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}#/assay/{{ assay.sodar_uuid }}">{{ assay.get_display_name }}</a>
+               <a href="{{ assay.get_url }}">{{ assay.get_display_name }}</a>
               {% get_irods_path assay as irods_assay_path %}
             </td>
             <td>

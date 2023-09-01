@@ -14,7 +14,6 @@ from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.models import Project
 from projectroles.plugins import get_backend_api
 
 from samplesheets.constants import DEFAULT_EXTERNAL_LINK_LABELS
@@ -146,24 +145,16 @@ def get_isa_field_name(field):
     return field
 
 
-def get_sheets_url(obj):
+def get_sheets_url(project):
     """
-    Return URL for sample sheets compatible with the new Vue.js framework.
+    Return sample sheets app URL for project.
 
-    :param obj: An object of type Project, Study or Assay (or any other model
-                implementing get_project()
+    :param project: Project object
     :return: String
     """
-    project = obj if isinstance(obj, Project) else obj.get_project()
-    url = reverse(
+    return reverse(
         'samplesheets:project_sheets', kwargs={'project': project.sodar_uuid}
     )
-    # NOTE: Importing the model fails because of circular dependency
-    if obj.__class__.__name__ == 'Study':
-        url += '#/study/' + str(obj.sodar_uuid)
-    elif obj.__class__.__name__ == 'Assay':
-        url += '#/assay' + str(obj.sodar_uuid)
-    return url
 
 
 def get_comment(obj, key):
