@@ -74,6 +74,8 @@ Changed
     - Hide internal fields from ISA-Tab templates (#1698, #1733)
     - Refactor ``IrodsDataRequest`` model and tests (#1706)
     - Update ``get_sheets_url()`` helper to only handle ``Project`` objects (#1771)
+    - Display full path under assay for iRODS data requests in UI (#1749)
+    - Return full path under assay from ``IrodsDataRequest.get_short_path()`` (#1749)
 - **Taskflowbackend**
     - Move iRODS object helpers from ``LandingZoneTaskflowMixin`` (#1699)
     - Move iRODS test cleanup to ``TaskflowTestMixin.clear_irods_test_data()`` (#1722)

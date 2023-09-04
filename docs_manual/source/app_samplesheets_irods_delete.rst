@@ -50,7 +50,7 @@ requests in the project as a project owner or delegate, open the
 
 .. figure:: _static/app_samplesheets/irods_del_list.png
     :align: center
-    :scale: 70%
+    :scale: 60%
 
     iRODS delete request list
 

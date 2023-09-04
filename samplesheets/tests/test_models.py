@@ -1633,7 +1633,7 @@ class TestIrodsDataRequest(IrodsDataRequestMixin, TestSampleSheetBase):
 
     def test_get_short_path(self):
         """Test get_short_path()"""
-        expected = '/'.join(self.request_path.split('/')[-2:])
+        expected = self.request_path.split('/')[-1]
         self.assertEqual(self.request.get_short_path(), expected)
 
     def test_get_assay(self):

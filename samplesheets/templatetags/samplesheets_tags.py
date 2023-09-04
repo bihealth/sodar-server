@@ -139,8 +139,17 @@ def get_isatab_tag_html(isatab):
 
 
 @register.simple_tag
+def get_request_path_html(irods_request):
+    """Return IrodsDataRequest short path as HTML"""
+    ps = irods_request.get_short_path().split('/')
+    ret = '<span class="text-muted">{}/</span>'.format('/'.join(ps[:-1]))
+    ret += ps[-1]
+    return ret
+
+
+@register.simple_tag
 def get_request_status_class(irods_request):
-    """Return class(es) for iRODS request table status cell"""
+    """Return IrodsDataRequest status classes"""
     if irods_request.status not in REQUEST_STATUS_CLASSES:
         return ''
     return REQUEST_STATUS_CLASSES[irods_request.status]

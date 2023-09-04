@@ -18,12 +18,10 @@
     table#sodar-ss-request-table tbody tr td:nth-child(4) {
       white-space: nowrap;
     }
-
     table#sodar-ss-request-table thead tr th:nth-child(3),
     table#sodar-ss-request-table tbody tr td:nth-child(3) {
       width: 150px;
     }
-
     table#sodar-ss-request-table thead tr th:nth-child(4),
     table#sodar-ss-request-table tbody tr td:nth-child(4) {
       width: 120px;
@@ -31,9 +29,8 @@
 
     table#sodar-ss-request-table thead tr th:nth-child(5),
     table#sodar-ss-request-table tbody tr td:nth-child(5) {
-  width: 75px;
+      width: 75px;
     }
-
     /* Date column */
     @media screen and (max-width: 900px) {
       table#sodar-ss-request-table thead tr th:nth-child(3),
@@ -41,7 +38,6 @@
         display: none;
       }
     }
-
     /* User column */
     @media screen and (max-width: 700px) {
       table#sodar-ss-request-table thead tr th:nth-child(2),
@@ -49,7 +45,6 @@
         display: none;
       }
     }
-
     /* Status column */
     @media screen and (max-width: 550px) {
       table#sodar-ss-request-table thead tr th:nth-child(4),
@@ -127,10 +122,15 @@
           {% for irods_request in object_list %}
             <tr class="sodar-ss-request-item">
               <td>
-                <span class="sodar-ss-request-item-path"
-                      title="Assay: {{ irods_request.get_assay.get_display_name }}"
-                      data-toggle="tooltip">
-                  {{ irods_request.get_short_path }}
+                <a href="{{ irods_request.get_assay.get_url }}"
+                   title="{{ irods_request.get_assay.get_display_name }}"
+                   class="sodar-ss-request-item-assay-link"
+                   data-tooltip="tooltip" data-placement="top">
+                  <i class="iconify text-danger" data-icon="mdi:table-large"></i>
+                </a>
+                <span class="sodar-ss-request-item-path">
+                  {% get_request_path_html irods_request as req_path %}
+                  {{ req_path | safe }}
                 </span>
                 {% if irods_request.description %}
                   <span class="sodar-ss-request-item-description">
@@ -232,7 +232,6 @@
   {# Tour content #}
   <script type="text/javascript">
     tourEnabled = true;
-
     tour.addStep('irods_req_info', {
         title: 'iRODS Delete Requests',
         text: 'In this view you can manage requests for deleting specific ' +
@@ -241,7 +240,6 @@
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
-
     tour.addStep('irods_req_contributor', {
         title: 'As Project Contributor',
         text: 'As a project contributor, you can see your own requests along ' +
@@ -252,7 +250,6 @@
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
-
     tour.addStep('irods_req_owner', {
         title: 'As Project Owner or Delegate',
         text: 'As a project owner or delegate, you see a list of all active ' +
@@ -264,8 +261,15 @@
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
-
     if ($('.sodar-ss-request-item').length) {
+        tour.addStep('irods_req_assay', {
+            title: 'Request assay',
+            text: 'This icon displays the assay for the request and links to ' +
+                  'it in the main sample sheets view.',
+            attachTo: '.sodar-ss-request-item-assay-link right',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
         tour.addStep('irods_req_path', {
             title: 'Request Path',
             text: 'The partial path of the request is displayed here, ' +
@@ -277,7 +281,6 @@
             advanceOn: '.docs-link click',
             showCancelLink: true
         });
-
         if ($('.sodar-ss-request-item-description').length) {
             tour.addStep('irods_req_desc', {
                 title: 'Request Description',
@@ -289,7 +292,6 @@
                 showCancelLink: true
              });
          }
-
         tour.addStep('irods_req_status', {
             title: 'Request Status',
             text: 'The current status of the request is displayed here.',
@@ -297,7 +299,6 @@
             advanceOn: '.docs-link click',
             showCancelLink: true
         });
-
         tour.addStep('irods_req_dropdown', {
             title: 'Request Dropdown',
             text: 'This dropdown contains links to actions the user is ' +
@@ -306,7 +307,6 @@
             advanceOn: '.docs-link click',
             showCancelLink: true
         });
-
         if ($('.sodar-ss-request-item-check').length) {
             tour.addStep('irods_req_check', {
                 title: 'Batch Accepting or Rejecting Requests',
@@ -323,7 +323,6 @@
              });
          }
     }
-
     tour.addStep('irods_req_ops_dropdown', {
         title: 'Request Operations Dropdown',
         text: 'This dropdown lists operations you can perform on requests. ' +
@@ -334,7 +333,6 @@
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
-
     tour.addStep('sheets_btn_back', {
         title: 'Back to Project Sample Sheets',
         text: 'Click on this button to return to the project sample sheets.',
@@ -343,5 +341,4 @@
         showCancelLink: true
     });
   </script>
-
 {% endblock javascript %}

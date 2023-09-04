@@ -1,5 +1,7 @@
 """Tests for template tags in the samplesheets app"""
 
+import os
+
 from django.conf import settings
 from django.urls import reverse
 
@@ -17,6 +19,7 @@ from samplesheets.models import GENERIC_MATERIAL_TYPES
 from samplesheets.templatetags import samplesheets_tags as s_tags
 from samplesheets.tests.test_models import (
     SampleSheetModelMixin,
+    IrodsDataRequestMixin,
     INV_IDENTIFIER,
     INV_FILE_NAME,
     INV_TITLE,
@@ -30,6 +33,8 @@ from samplesheets.tests.test_models import (
     ASSAY_TECH_PLATFORM,
     ASSAY_TECH_TYPE,
     ASSAY_MEASURE_TYPE,
+    IRODS_REQUEST_ACTION_DELETE,
+    IRODS_REQUEST_STATUS_ACTIVE,
 )
 
 # Local constants
@@ -37,6 +42,8 @@ IRODS_SAMPLE_COLL = settings.IRODS_SAMPLE_COLL
 DEFAULT_TAG_COLOR = s_tags.DEFAULT_TAG_COLOR
 TAG_COLORS = s_tags.TAG_COLORS
 REQUEST_STATUS_CLASSES = s_tags.REQUEST_STATUS_CLASSES
+MISC_FILES_COLL = 'MiscFiles'
+SUB_COLL = 'SubCollection'
 
 
 class TestSamplesheetsTemplateTags(
@@ -44,6 +51,7 @@ class TestSamplesheetsTemplateTags(
     RoleMixin,
     RoleAssignmentMixin,
     SampleSheetModelMixin,
+    IrodsDataRequestMixin,
     TestCase,
 ):
     """Tests for template tags in the samplesheets app"""
@@ -103,14 +111,14 @@ class TestSamplesheetsTemplateTags(
         self.investigation.delete()
         self.assertEqual(s_tags.get_investigation(self.project), None)
 
-    def test_get_search_item_type_with_material_types(self):
+    def test_get_search_item_type_material_types(self):
         """Test get_search_item_type() with material types"""
         for material_type in GENERIC_MATERIAL_TYPES:
             item = {'type': material_type}
             expected = GENERIC_MATERIAL_TYPES[material_type]
             self.assertEqual(s_tags.get_search_item_type(item), expected)
 
-    def test_get_search_item_type_with_file(self):
+    def test_get_search_item_type_file(self):
         """Test get_search_item_type() with special case 'file'"""
         item = {'type': 'file'}
         self.assertEqual(s_tags.get_search_item_type(item), 'Data File')
@@ -178,23 +186,53 @@ class TestSamplesheetsTemplateTags(
         self.assertIn('text-danger', icon_html)
         self.assertIn('mdi:table-large', icon_html)
 
-    def test_get_isatab_tag_html_with_tags_in_tag_colors(self):
+    def test_get_isatab_tag_html_tags_in_tag_colors(self):
         """Test get_isatab_tag_html() with tags in TAG_COLORS"""
         isatab = type('MockISATab', (object,), {'tags': TAG_COLORS.keys()})
         tag_html = s_tags.get_isatab_tag_html(isatab)
         for tag, color in TAG_COLORS.items():
             self.assertIn(color, tag_html)
 
-    def test_get_isatab_tag_html_with_unknown_tag(self):
+    def test_get_isatab_tag_html_unknown_tag(self):
         """Test get_isatab_tag_html() with an unknown tag"""
         isatab = type('MockISATab', (object,), {'tags': ['UNKNOWN_TAG']})
         tag_html = s_tags.get_isatab_tag_html(isatab)
         self.assertIn(DEFAULT_TAG_COLOR, tag_html)
 
-    def test_get_request_status_class_with_valid_status(self):
-        """
-        Test get_request_status_class() with values in REQUEST_STATUS_CLASSES
-        """
+    def test_get_request_path_html(self):
+        """Test get_request_path_html()"""
+        req_path = os.path.join(
+            self.irods_backend.get_path(self.assay), MISC_FILES_COLL
+        )
+        request = self.make_irods_request(
+            project=self.project,
+            action=IRODS_REQUEST_ACTION_DELETE,
+            status=IRODS_REQUEST_STATUS_ACTIVE,
+            path=req_path,
+            user=self.user_owner,
+        )
+        expected = '<span class="text-muted">/</span>{}'.format(MISC_FILES_COLL)
+        self.assertEqual(s_tags.get_request_path_html(request), expected)
+
+    def test_get_request_path_html_nested(self):
+        """Test get_request_path_html() with nested collections"""
+        req_path = os.path.join(
+            self.irods_backend.get_path(self.assay), MISC_FILES_COLL, SUB_COLL
+        )
+        request = self.make_irods_request(
+            project=self.project,
+            action=IRODS_REQUEST_ACTION_DELETE,
+            status=IRODS_REQUEST_STATUS_ACTIVE,
+            path=req_path,
+            user=self.user_owner,
+        )
+        expected = '<span class="text-muted">{}/</span>{}'.format(
+            MISC_FILES_COLL, SUB_COLL
+        )
+        self.assertEqual(s_tags.get_request_path_html(request), expected)
+
+    def test_get_request_status_class_valid(self):
+        """Test get_request_status_class() with values in REQUEST_STATUS_CLASSES"""
         for status, css_class in REQUEST_STATUS_CLASSES.items():
             irods_request = type(
                 'MockIrodsRequest', (object,), {'status': status}
@@ -203,8 +241,8 @@ class TestSamplesheetsTemplateTags(
                 s_tags.get_request_status_class(irods_request), css_class
             )
 
-    def test_get_request_status_class_with_unknown_status(self):
-        """Test get_request_status_class() with an unknown status"""
+    def test_get_request_status_class_unknown(self):
+        """Test get_request_status_class() with unknown status"""
         irods_request = type(
             'MockIrodsRequest', (object,), {'status': 'UNKNOWN'}
         )

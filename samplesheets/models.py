@@ -1421,14 +1421,19 @@ class IrodsDataRequest(models.Model):
             return irods.collections.exists(self.path)
 
     def get_short_path(self):
-        """Return shortened layout-friendly path"""
-        return '/'.join(self.path.split('/')[-2:])
+        """
+        Return shortened layout-friendly path, omitting the full path to the
+        assay root.
+        """
+        irods_backend = get_backend_api('omics_irods')
+        pp_len = len(irods_backend.get_projects_path().split('/'))
+        # NOTE: This only works for assays, needs to be changed if studies are
+        #       supported
+        return '/'.join(self.path.split('/')[pp_len + 5 :])
 
     def get_assay(self):
         """Return Assay object for request path or None if not found"""
         irods_backend = get_backend_api('omics_irods')
-        if not irods_backend:
-            return None
         a_uuid = irods_backend.get_uuid_from_path(self.path, 'assay')
         return Assay.objects.filter(sodar_uuid=a_uuid).first()
 
