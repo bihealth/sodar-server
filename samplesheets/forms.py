@@ -39,26 +39,6 @@ TPL_DIR_LABEL = 'Output directory'
 
 
 # Mixins and Helpers -----------------------------------------------------------
-
-
-class MultipleFileInput(forms.ClearableFileInput):
-    allow_multiple_selected = True
-
-
-class MultipleFileField(forms.FileField):
-    def __init__(self, *args, **kwargs):
-        kwargs.setdefault('widget', MultipleFileInput())
-        super().__init__(*args, **kwargs)
-
-    def clean(self, data, initial=None):
-        single_file_clean = super().clean
-        if isinstance(data, (list, tuple)):
-            result = [single_file_clean(d, initial) for d in data]
-        else:
-            result = single_file_clean(data, initial)
-        return result
-
-
 class IrodsAccessTicketValidateMixin:
     """Validation helpers for iRODS access tickets"""
 
@@ -454,11 +434,11 @@ class IrodsAccessTicketForm(IrodsAccessTicketValidateMixin, forms.ModelForm):
         irods_backend = get_backend_api('omics_irods')
         if self.instance.pk:
             cleaned_data['path'] = self.instance.path
-        errors = self.validate_data(
+        error = self.validate_data(
             irods_backend, self.project, self.instance, cleaned_data
         )
-        if errors:
-            self.add_error(*errors)
+        if error:
+            self.add_error(*error)
         return self.cleaned_data
 
 

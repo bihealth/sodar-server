@@ -76,7 +76,6 @@ IRODS_QUERY_ERROR_MSG = 'Exception querying iRODS objects'
 IRODS_REQUEST_EX_MSG = 'iRODS data request failed'
 IRODS_TICKET_EX_MSG = 'iRODS access ticket failed'
 IRODS_TICKET_NO_UPDATE_FIELDS_MSG = 'No fields to update'
-IRODS_TICKETS_NOT_FOUND_MSG = 'No iRODS access tickets found'
 
 
 # API Views --------------------------------------------------------------------
@@ -317,9 +316,7 @@ class SheetImportAPIView(SheetImportMixin, SODARAPIBaseProjectMixin, APIView):
         return Response(ret_data, status=status.HTTP_200_OK)
 
 
-class IrodsAccessTicketListAPIView(
-    IrodsAccessTicketModifyMixin, SODARAPIBaseProjectMixin, ListAPIView
-):
+class IrodsAccessTicketListAPIView(SODARAPIBaseProjectMixin, ListAPIView):
     """
     List iRODS access tickets for a project.
 
@@ -348,7 +345,7 @@ class IrodsAccessTicketListAPIView(
 
 
 class IrodsAccessTicketRetrieveAPIView(
-    IrodsAccessTicketModifyMixin, SODARAPIGenericProjectMixin, RetrieveAPIView
+    SODARAPIGenericProjectMixin, RetrieveAPIView
 ):
     """
     Retrieve an iRODS access ticket for a project.
@@ -383,7 +380,7 @@ class IrodsAccessTicketCreateAPIView(
     **Parameters:**
 
     - ``path``: iRODS path
-    - ``label``: Label (string)
+    - ``label``: Label (string, optional)
     - ``date_expires``: Expiration date (YYYY-MM-DDThh:mm:ssZ, optional)
     """
 

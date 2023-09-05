@@ -196,9 +196,9 @@ class IrodsAccessTicketSerializer(
             attrs['path'] = self.instance.path
             attrs['assay'] = self.instance.assay
 
-        errors = self.validate_data(
+        error = self.validate_data(
             irods_backend, self.context['project'], self.instance, attrs
         )
-        if errors:
-            raise serializers.ValidationError('{}: {}'.format(*errors))
+        if error:
+            raise serializers.ValidationError('{}: {}'.format(*error))
         return attrs

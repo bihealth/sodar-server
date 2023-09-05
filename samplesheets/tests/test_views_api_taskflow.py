@@ -176,6 +176,9 @@ class IrodsAccessTicketAPIViewTestBase(
         self.app_alerts = get_backend_api('appalerts_backend')
         self.app_alert_model = self.app_alerts.get_model()
 
+        self.token_admin = self.get_token(self.user)
+        self.token_contrib = self.get_token(self.user_contrib)
+
 
 class TestIrodsDataRequestAPIViewBase(
     SampleSheetIOMixin, SampleSheetTaskflowMixin, TaskflowAPIViewTestBase
@@ -340,158 +343,8 @@ class TestIrodsCollsCreateAPIView(SampleSheetAPITaskflowTestBase):
         self.assertEqual(response.status_code, 400)
 
 
-class TestIrodsAccessTicketListAPIView(IrodsAccessTicketAPIViewTestBase):
-    """Tests for IrodsAccessListAPIView"""
-
-    def setUp(self):
-        super().setUp()
-        self.path = self.coll.path
-        self.label = TICKET_LABEL
-        self.url = reverse(
-            'samplesheets:api_irods_ticket_list',
-            kwargs={'project': self.project.sodar_uuid},
-        )
-
-    def test_get(self):
-        """Test IrodsAccessTicketListAPIView GET"""
-        self.ticket = self.make_irods_ticket(
-            study=self.study,
-            assay=self.assay,
-            ticket=TICKET_STR,
-            path=self.path,
-            label=self.label,
-            user=self.user,
-            date_expires=None,
-        )
-        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
-        with self.login(self.user_contrib):
-            response = self.client.get(self.url)
-        self.assertEqual(response.status_code, 200)
-        local_date_created = self.ticket.date_created.astimezone(
-            timezone.get_current_timezone()
-        )
-        expected = [
-            {
-                'sodar_uuid': str(self.ticket.sodar_uuid),
-                'label': self.ticket.label,
-                'ticket': self.ticket.ticket,
-                'assay': self.ticket.assay.pk,
-                'study': self.ticket.study.pk,
-                'path': self.ticket.path,
-                'date_created': local_date_created.isoformat(),
-                'date_expires': self.ticket.date_expires,
-                'user': self.ticket.user.pk,
-                'is_active': self.ticket.is_active(),
-            }
-        ]
-        self.assertEqual(json.loads(response.content), expected)
-
-    def test_get_no_tickets(self):
-        """Test GET IrodsAccessTicketListAPIView with no tickets"""
-        self.assertEqual(IrodsAccessTicket.objects.count(), 0)
-        with self.login(self.user_contrib):
-            response = self.client.get(self.url)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(json.loads(response.content), [])
-
-    def test_get_active(self):
-        """Test GET IrodsAccessTicketListAPIView with active = True"""
-        self.ticket = self.make_irods_ticket(
-            study=self.study,
-            assay=self.assay,
-            ticket=TICKET_STR,
-            path=self.path,
-            label=self.label,
-            user=self.user,
-            date_expires=None,
-        )
-        self.ticket_expired = self.make_irods_ticket(
-            study=self.study,
-            assay=self.assay,
-            ticket=TICKET_STR,
-            path=self.path,
-            label=self.label,
-            user=self.user,
-            date_expires=timezone.now() - timedelta(days=1),
-        )
-        self.assertEqual(IrodsAccessTicket.objects.count(), 2)
-        with self.login(self.user_contrib):
-            response = self.client.get(self.url + '?active=1')
-        self.assertEqual(response.status_code, 200)
-        local_date_created = self.ticket.date_created.astimezone(
-            timezone.get_current_timezone()
-        )
-        expected = [
-            {
-                'sodar_uuid': str(self.ticket.sodar_uuid),
-                'label': self.ticket.label,
-                'ticket': self.ticket.ticket,
-                'assay': self.ticket.assay.pk,
-                'study': self.ticket.study.pk,
-                'path': self.ticket.path,
-                'date_created': local_date_created.isoformat(),
-                'date_expires': self.ticket.date_expires,
-                'user': self.ticket.user.pk,
-                'is_active': self.ticket.is_active(),
-            }
-        ]
-        self.assertEqual(json.loads(response.content), expected)
-
-
-class TestIrodsAccessTicketRetrieveAPIView(IrodsAccessTicketAPIViewTestBase):
-    """Tests for IrodsAccessTicketRetrieveAPIView"""
-
-    def setUp(self):
-        super().setUp()
-        self.path = self.coll.path
-        self.label = TICKET_LABEL
-
-    def test_get(self):
-        """Test IrodsAccessTicketRetrieveAPIView GET"""
-        self.ticket = self.make_irods_ticket(
-            study=self.study,
-            assay=self.assay,
-            ticket=TICKET_STR,
-            path=self.path,
-            label=self.label,
-            user=self.user,
-            date_expires=None,
-        )
-        self.url = reverse(
-            'samplesheets:api_irods_ticket_retrieve',
-            kwargs={'irodsaccessticket': self.ticket.sodar_uuid},
-        )
-        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
-        with self.login(self.user_contrib):
-            response = self.client.get(self.url)
-        self.assertEqual(response.status_code, 200)
-        local_date_created = self.ticket.date_created.astimezone(
-            timezone.get_current_timezone()
-        )
-        expected = {
-            'sodar_uuid': str(self.ticket.sodar_uuid),
-            'label': self.ticket.label,
-            'ticket': self.ticket.ticket,
-            'assay': self.ticket.assay.pk,
-            'study': self.ticket.study.pk,
-            'path': self.ticket.path,
-            'date_created': local_date_created.isoformat(),
-            'date_expires': self.ticket.date_expires,
-            'user': self.ticket.user.pk,
-            'is_active': self.ticket.is_active(),
-        }
-        self.assertEqual(json.loads(response.content), expected)
-
-    def test_get_no_ticket(self):
-        """Test GET IrodsAccessTicketRetrieveAPIView with no ticket"""
-        self.assertEqual(IrodsAccessTicket.objects.count(), 0)
-        self.url = reverse(
-            'samplesheets:api_irods_ticket_retrieve',
-            kwargs={'irodsaccessticket': DUMMY_UUID},
-        )
-        with self.login(self.user_contrib):
-            response = self.client.get(self.url)
-        self.assertEqual(response.status_code, 404)
+# NOTE: For TestIrodsAccessTicketListAPIView, see test_views_api
+# NOTE: For TestIrodsAccessTicketRetrieveAPIView, see test_views_api
 
 
 class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
@@ -521,10 +374,9 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
         self.assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
         self.assertEqual(self.get_tl_event_count('create'), 0)
         self.assertEqual(self.get_app_alert_count('create'), 0)
-
-        with self.login(self.user):
-            response = self.client.post(self.url, self.post_data)
-
+        response = self.request_knox(
+            self.url, 'POST', data=self.post_data, token=self.token_admin
+        )
         self.assertEqual(response.status_code, 201)
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         ticket = IrodsAccessTicket.objects.first()
@@ -565,9 +417,9 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
         self.assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
         self.assertEqual(self.get_tl_event_count('create'), 0)
         self.assertEqual(self.get_app_alert_count('create'), 0)
-
-        with self.login(self.user_contrib):
-            response = self.client.post(self.url, self.post_data)
+        response = self.request_knox(
+            self.url, 'POST', data=self.post_data, token=self.token_contrib
+        )
 
         self.assertEqual(response.status_code, 201)
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
@@ -600,8 +452,9 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
     def test_create_invalid_path(self):
         """Test POST IrodsAccessTicketCreateAPIView with invalid path"""
         self.post_data['path'] = '/invalid/path'
-        with self.login(self.user):
-            response = self.client.post(self.url, self.post_data)
+        response = self.request_knox(
+            self.url, 'POST', data=self.post_data, token=self.token_admin
+        )
         self.assertEqual(response.status_code, 400)
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
         self.assertEqual(self.get_tl_event_count('create'), 0)
@@ -612,8 +465,9 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
         self.post_data['date_expires'] = (
             timezone.localtime() - timedelta(days=1)
         ).isoformat()
-        with self.login(self.user):
-            response = self.client.post(self.url, self.post_data)
+        response = self.request_knox(
+            self.url, 'POST', data=self.post_data, token=self.token_admin
+        )
         self.assertEqual(response.status_code, 400)
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
         self.assertEqual(self.get_tl_event_count('create'), 0)
@@ -622,8 +476,9 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
     def test_create_assay_root(self):
         """Test POST IrodsAccessTicketCreateAPIView with assay root"""
         self.post_data['path'] = self.irods_backend.get_path(self.assay)
-        with self.login(self.user):
-            response = self.client.post(self.url, self.post_data)
+        response = self.request_knox(
+            self.url, 'POST', data=self.post_data, token=self.token_admin
+        )
         self.assertEqual(response.status_code, 400)
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
         self.assertEqual(self.get_tl_event_count('create'), 0)
@@ -632,8 +487,9 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
     def test_create_study_path(self):
         """Test POST IrodsAccessTicketCreateAPIView with study path"""
         self.post_data['path'] = self.irods_backend.get_path(self.study)
-        with self.login(self.user):
-            response = self.client.post(self.url, self.post_data)
+        response = self.request_knox(
+            self.url, 'POST', data=self.post_data, token=self.token_admin
+        )
         self.assertEqual(response.status_code, 400)
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
         self.assertEqual(self.get_tl_event_count('create'), 0)
@@ -650,8 +506,9 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
             user=self.user,
         )
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
-        with self.login(self.user):
-            response = self.client.post(self.url, self.post_data)
+        response = self.request_knox(
+            self.url, 'POST', data=self.post_data, token=self.token_admin
+        )
         self.assertEqual(response.status_code, 400)
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         self.assertEqual(self.get_tl_event_count('create'), 0)
@@ -686,16 +543,14 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         self.assertEqual(self.get_tl_event_count('update'), 0)
         self.assertEqual(self.get_app_alert_count('update'), 0)
-
-        with self.login(self.user_contrib):
-            response = self.client.put(
-                self.url,
-                {
-                    'label': LABEL_UPDATE,
-                    'date_expires': self.date_expires_update,
-                    'path': self.coll.path,
-                },
-            )
+        self.post_data = {
+            'label': LABEL_UPDATE,
+            'date_expires': self.date_expires_update,
+            'path': self.coll.path,
+        }
+        response = self.request_knox(
+            self.url, 'PUT', data=self.post_data, token=self.token_contrib
+        )
         self.assertEqual(response.status_code, 200)
         local_date_created = self.ticket.date_created.astimezone(
             timezone.get_current_timezone()
@@ -729,10 +584,12 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         self.assertEqual(self.get_tl_event_count('update'), 0)
         self.assertEqual(self.get_app_alert_count('update'), 0)
-
-        with self.login(self.user_contrib):
-            response = self.client.put(self.url, {'path': self.coll.path})
-
+        self.post_data = {
+            'path': self.coll.path,
+        }
+        response = self.request_knox(
+            self.url, 'PUT', data=self.post_data, token=self.token_contrib
+        )
         self.assertEqual(response.status_code, 400)
         self.assertEqual(self.get_tl_event_count('update'), 0)
         self.assertEqual(self.get_app_alert_count('update'), 0)
@@ -743,8 +600,12 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
         self.assertEqual(self.get_tl_event_count('update'), 0)
         self.assertEqual(self.get_app_alert_count('update'), 0)
         invalid_date = 'invalid'
-        with self.login(self.user_contrib):
-            response = self.client.put(self.url, {'date_expires': invalid_date})
+        self.post_data = {
+            'date_expires': invalid_date,
+        }
+        response = self.request_knox(
+            self.url, 'PUT', data=self.post_data, token=self.token_contrib
+        )
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(self.get_tl_event_count('update'), 0)
@@ -755,12 +616,10 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         self.assertEqual(self.get_tl_event_count('update'), 0)
         self.assertEqual(self.get_app_alert_count('update'), 0)
-
-        with self.login(self.user_contrib):
-            response = self.client.patch(
-                self.url,
-                {'date_expires': self.date_expires_update},
-            )
+        self.post_data = {'date_expires': self.date_expires_update}
+        response = self.request_knox(
+            self.url, 'PATCH', data=self.post_data, token=self.token_contrib
+        )
 
         self.assertEqual(response.status_code, 200)
         local_date_created = self.ticket.date_created.astimezone(
@@ -795,10 +654,10 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         self.assertEqual(self.get_tl_event_count('update'), 0)
         self.assertEqual(self.get_app_alert_count('update'), 0)
-
-        with self.login(self.user_contrib):
-            response = self.client.patch(self.url, {'path': self.coll.path})
-
+        self.post_data = {'path': self.coll.path}
+        response = self.request_knox(
+            self.url, 'PATCH', data=self.post_data, token=self.token_contrib
+        )
         self.assertEqual(response.status_code, 400)
         self.assertEqual(self.get_tl_event_count('update'), 0)
         self.assertEqual(self.get_app_alert_count('update'), 0)
@@ -809,10 +668,10 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
         self.assertEqual(self.get_tl_event_count('update'), 0)
         self.assertEqual(self.get_app_alert_count('update'), 0)
         invalid_date = 'invalid'
-        with self.login(self.user_contrib):
-            response = self.client.patch(
-                self.url, {'date_expires': invalid_date}
-            )
+        self.post_data = {'date_expires': invalid_date}
+        response = self.request_knox(
+            self.url, 'PATCH', data=self.post_data, token=self.token_contrib
+        )
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(self.get_tl_event_count('update'), 0)
@@ -855,9 +714,9 @@ class TestIrodsAccessTicketDestroyAPIView(IrodsAccessTicketAPIViewTestBase):
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         self.assertEqual(self.get_tl_event_count('delete'), 0)
         self.assertEqual(self.get_app_alert_count('delete'), 0)
-
-        with self.login(self.user_contrib):
-            response = self.client.delete(self.url)
+        response = self.request_knox(
+            self.url, 'DELETE', token=self.token_contrib
+        )
 
         self.assertEqual(response.status_code, 204)
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
@@ -881,8 +740,9 @@ class TestIrodsAccessTicketDestroyAPIView(IrodsAccessTicketAPIViewTestBase):
             'samplesheets:api_irods_ticket_delete',
             kwargs={'irodsaccessticket': DUMMY_UUID},
         )
-        with self.login(self.user_contrib):
-            response = self.client.delete(invalid_url)
+        response = self.request_knox(
+            invalid_url, 'DELETE', token=self.token_contrib
+        )
 
         self.assertEqual(response.status_code, 404)
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)

@@ -2,8 +2,11 @@
 
 import uuid
 
+from datetime import timedelta
+
 from django.test import override_settings
 from django.urls import reverse
+from django.utils import timezone
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
@@ -25,7 +28,10 @@ from samplesheets.tests.test_permissions import (
     REMOTE_SITE_SECRET,
     INVALID_SECRET,
 )
-
+from samplesheets.tests.test_permissions_api_taskflow import (
+    IrodsAccessTicketAPIViewTestBase,
+    LABEL_CREATE,
+)
 
 # Local constants
 IRODS_FILE_PATH = '/sodarZone/path/test1.txt'
@@ -354,6 +360,141 @@ class TestSheetISAExportAPIView(
         self.project.set_public()
         self.assert_response_api(url, bad_users, 200)
         self.assert_response_api(url, self.anonymous, 401)
+
+
+class TestIrodsAccessTicketListAPIView(IrodsAccessTicketAPIViewTestBase):
+    """Test permissions for IrodsAccessTicketListAPIView"""
+
+    def setUp(self):
+        super().setUp()
+        self.url = (
+            reverse(
+                'samplesheets:api_irods_ticket_list',
+                kwargs={'project': self.project.sodar_uuid},
+            )
+            + '?active=0'
+        )
+        self.ticket = self.make_irods_ticket(
+            study=self.study,
+            assay=self.assay,
+            path=self.coll.path + '/ticket1',
+            user=self.user_owner,
+            ticket='ticket',
+            label=LABEL_CREATE,
+            date_expires=(timezone.localtime() + timedelta(days=1)).isoformat(),
+        )
+
+    def test_get(self):
+        """Test IrodsAccessTicketListAPIView GET"""
+        good_users = [
+            self.superuser,
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+        ]
+        bad_users = [
+            self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_guest,
+            self.user_no_roles,
+        ]
+        self.assert_response_api(self.url, good_users, 200)
+        self.assert_response_api(self.url, bad_users, 403)
+        self.assert_response_api(self.url, self.anonymous, 401)
+
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_get_anon(self):
+        """Test GET with anonymous access"""
+        self.assert_response_api(self.url, self.anonymous, 401)
+
+    def test_get_archive(self):
+        """Test GET with archived project"""
+        self.project.set_archive()
+        good_users = [self.superuser]
+        bad_users = [
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
+            self.user_no_roles,
+        ]
+        self.assert_response_api(self.url, good_users, 200)
+        self.assert_response_api(self.url, bad_users, 403)
+        self.assert_response_api(self.url, self.anonymous, 401)
+
+
+class TestIrodsAccessTicketRetrieveAPIView(IrodsAccessTicketAPIViewTestBase):
+    """Test permissions for IrodsAccessTicketRetrieveAPIView"""
+
+    def setUp(self):
+        super().setUp()
+        self.ticket = self.make_irods_ticket(
+            study=self.study,
+            assay=self.assay,
+            path=self.coll.path + '/ticket1',
+            user=self.user_owner,
+            ticket='ticket',
+            label=LABEL_CREATE,
+            date_expires=(timezone.localtime() + timedelta(days=1)).isoformat(),
+        )
+        self.url = reverse(
+            'samplesheets:api_irods_ticket_retrieve',
+            kwargs={'irodsaccessticket': self.ticket.sodar_uuid},
+        )
+
+    def test_get(self):
+        """Test IrodsAccessTicketRetrieveAPIView GET"""
+        good_users = [
+            self.superuser,
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+        ]
+        bad_users = [
+            self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_guest,
+            self.user_no_roles,
+        ]
+        self.assert_response_api(self.url, good_users, 200)
+        self.assert_response_api(self.url, bad_users, 403)
+        self.assert_response_api(self.url, self.anonymous, 401)
+
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_get_anon(self):
+        """Test GET with anonymous access"""
+        self.assert_response_api(self.url, self.anonymous, 401)
+
+    def test_get_archive(self):
+        """Test GET with archived project"""
+        self.project.set_archive()
+        good_users = [self.superuser]
+        bad_users = [
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
+            self.user_no_roles,
+        ]
+        self.assert_response_api(self.url, good_users, 200)
+        self.assert_response_api(self.url, bad_users, 403)
+        self.assert_response_api(self.url, self.anonymous, 401)
 
 
 class TestIrodsDataRequestRetrieveAPIView(
