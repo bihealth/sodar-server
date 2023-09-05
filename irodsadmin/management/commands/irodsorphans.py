@@ -117,7 +117,8 @@ class Command(BaseCommand):
         """
         projects_path = self.irods_backend.get_projects_path()
         pattern = (
-            projects_path
+            r'^'
+            + projects_path
             + r'/([a-f0-9]{2})/\1[a-f0-9]{6}-([a-f0-9]{4}-){3}[a-f0-9]{12}/'
             r'landing_zones'
         )
@@ -132,7 +133,8 @@ class Command(BaseCommand):
         """
         projects_path = self.irods_backend.get_projects_path()
         pattern = (
-            projects_path
+            r'^'
+            + projects_path
             + r'/([a-f0-9]{2})/\1[a-f0-9]{6}-([a-f0-9]{4}-){3}[a-f0-9]{12}/.*/'
             r'(assay|study)_[a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12}$'
         )
@@ -145,7 +147,8 @@ class Command(BaseCommand):
         """
         projects_path = self.irods_backend.get_projects_path()
         pattern = (
-            projects_path
+            r'^'
+            + projects_path
             + r'/([a-f0-9]{2})/\1[a-f0-9]{6}-([a-f0-9]{4}-){3}[a-f0-9]{12}/.*/'
             r'(assay|study)_[a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12}'
         )
@@ -157,7 +160,8 @@ class Command(BaseCommand):
         collection under the projects path.
         """
         pattern = (
-            projects_path
+            r'^'
+            + projects_path
             + r'/([a-f0-9]{2})/\1[a-f0-9]{6}-([a-f0-9]{4}-){3}[a-f0-9]{12}$'
         )
         return re.search(r'{}'.format(pattern), collection.path)
