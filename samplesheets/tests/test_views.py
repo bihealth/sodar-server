@@ -843,11 +843,6 @@ class TestSheetExcelExportView(ViewTestBase):
                 )
             )
         self.assertEqual(response.status_code, 200)
-        # Assert data in timeline event
-        tl_event = self.timeline.get_project_events(
-            self.project, classified=True
-        ).order_by('-pk')[0]
-        self.assertEqual(tl_event.event_name, 'sheet_export_excel')
 
     def test_render_assay(self):
         """Test rendering the Excel file for a assay table"""
@@ -859,11 +854,6 @@ class TestSheetExcelExportView(ViewTestBase):
                 )
             )
         self.assertEqual(response.status_code, 200)
-        # Assert data in timeline event
-        tl_event = self.timeline.get_project_events(
-            self.project, classified=True
-        ).order_by('-pk')[0]
-        self.assertEqual(tl_event.event_name, 'sheet_export_excel')
 
 
 class TestSheetISAExportView(ViewTestBase):
@@ -889,12 +879,6 @@ class TestSheetISAExportView(ViewTestBase):
             response.get('Content-Disposition'),
             'attachment; filename="{}"'.format(self.investigation.archive_name),
         )
-        # Assert data in timeline event
-        tl_event = self.timeline.get_project_events(
-            self.project, classified=True
-        ).order_by('-pk')[0]
-        tl_status = tl_event.get_status()
-        self.assertIsNotNone(tl_status.extra_data['warnings'])
 
     def test_get_no_investigation(self):
         """Test requesting an ISA-Tab export with no investigation provided"""

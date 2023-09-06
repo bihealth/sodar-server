@@ -530,8 +530,6 @@ class SheetISAExportMixin:
         :raise: ISATab.DoesNotExist if version is requested but not found
         :raise Investigation.DosNotExist if investigation is not found
         """
-        timeline = get_backend_api('timeline_backend')
-        tl_event = None
         sheet_io = SampleSheetIO()
         isa_version = None
         valid_formats = ['zip', 'json']
@@ -578,90 +576,45 @@ class SheetISAExportMixin:
                 file_name += '_' + slugify(isa_version.user.username)
         file_name += '.zip'
 
-        # TODO: Log anonymous export? (see #1164)
-        if timeline and request.user and request.user.is_authenticated:
-            if isa_version:
-                tl_desc = 'export {investigation} version {isatab}'
-            else:
-                tl_desc = 'export {investigation} as ISA-Tab'
-            tl_event = timeline.add_event(
-                project=project,
-                app_name=APP_NAME,
-                user=request.user,
-                event_name='sheet_export',
-                description=tl_desc,
-                classified=True,
-            )
-            tl_event.add_object(
-                obj=investigation,
-                label='investigation',
-                name=investigation.title,
-            )
-            if isa_version:
-                tl_event.add_object(
-                    obj=isa_version,
-                    label='isatab',
-                    name=isa_version.get_full_name(),
-                )
-
         # Initiate export
-        try:
-            if isa_version:
-                export_data = isa_version.data
-            else:
-                export_data = sheet_io.export_isa(investigation)
-            zip_io = None
+        if isa_version:
+            export_data = isa_version.data
+        else:
+            export_data = sheet_io.export_isa(investigation)
+        zip_io = None
 
-            if format == 'zip':
-                # Build Zip archive
-                zip_io = io.BytesIO()
-                zf = zipfile.ZipFile(
-                    zip_io, mode='w', compression=zipfile.ZIP_DEFLATED
-                )
-                zf.writestr(
-                    export_data['investigation']['path'],
-                    export_data['investigation']['tsv'],
-                )
-                inv_dir = '/'.join(
-                    export_data['investigation']['path'].split('/')[:-1]
-                )
-                for k, v in export_data['studies'].items():
-                    zf.writestr('{}/{}'.format(inv_dir, k), v['tsv'])
+        if format == 'zip':
+            # Build Zip archive
+            zip_io = io.BytesIO()
+            zf = zipfile.ZipFile(
+                zip_io, mode='w', compression=zipfile.ZIP_DEFLATED
+            )
+            zf.writestr(
+                export_data['investigation']['path'],
+                export_data['investigation']['tsv'],
+            )
+            inv_dir = '/'.join(
+                export_data['investigation']['path'].split('/')[:-1]
+            )
+            for k, v in export_data['studies'].items():
+                zf.writestr('{}/{}'.format(inv_dir, k), v['tsv'])
 
-                for k, v in export_data['assays'].items():
-                    zf.writestr('{}/{}'.format(inv_dir, k), v['tsv'])
-                zf.close()
+            for k, v in export_data['assays'].items():
+                zf.writestr('{}/{}'.format(inv_dir, k), v['tsv'])
+            zf.close()
 
-            # Update timeline event
-            if tl_event:
-                export_warnings = sheet_io.get_warnings()
-                extra_data = (
-                    {'warnings': export_warnings}
-                    if not export_warnings['all_ok']
-                    else None
-                )
-                status_desc = WARNING_STATUS_MSG if extra_data else None
-                tl_event.set_status(
-                    'OK', status_desc=status_desc, extra_data=extra_data
-                )
-
-            # Set up response
-            if format == 'zip' and zip_io:
-                response = HttpResponse(
-                    zip_io.getvalue(), content_type='application/zip'
-                )
-                response[
-                    'Content-Disposition'
-                ] = 'attachment; filename="{}"'.format(file_name)
-                return response
-            elif format == 'json':
-                export_data['date_modified'] = str(investigation.date_modified)
-                return Response(export_data, status=200)
-
-        except Exception as ex:
-            if tl_event:
-                tl_event.set_status('FAILED', str(ex))
-            raise ex
+        # Set up response
+        if format == 'zip' and zip_io:
+            response = HttpResponse(
+                zip_io.getvalue(), content_type='application/zip'
+            )
+            response[
+                'Content-Disposition'
+            ] = 'attachment; filename="{}"'.format(file_name)
+            return response
+        elif format == 'json':
+            export_data['date_modified'] = str(investigation.date_modified)
+            return Response(export_data, status=200)
 
 
 class SheetCreateImportAccessMixin:
@@ -1617,7 +1570,6 @@ class SheetExcelExportView(
 
     def get(self, request, *args, **kwargs):
         """Override get() to return an Excel file"""
-        timeline = get_backend_api('timeline_backend')
         redirect_url = get_sheets_url(self.get_project())
         assay = None
         study = None
@@ -1664,32 +1616,6 @@ class SheetExcelExportView(
         )  # TODO: TBD: Output file name?
         # Build Excel file
         write_excel_table(table, response, display_name)
-
-        # TODO: Log anonymous export? (see #1164)
-        if (
-            timeline
-            and self.request.user
-            and self.request.user.is_authenticated
-        ):
-            tl_event = timeline.add_event(
-                project=self.get_project(),
-                app_name=APP_NAME,
-                user=self.request.user,
-                event_name='sheet_export_excel',
-                description='export {{{}}} as Excel file'.format(
-                    'assay' if assay else 'study'
-                ),
-                status_type='OK',
-                classified=True,
-            )
-            if assay:
-                tl_event.add_object(
-                    obj=assay, label='assay', name=assay.get_display_name()
-                )
-            else:  # Study
-                tl_event.add_object(
-                    obj=study, label='study', name=study.get_display_name()
-                )
         return response
 
 

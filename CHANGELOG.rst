@@ -103,6 +103,7 @@ Removed
     - Duplicate ``IrodsAccessTicketMixin`` from ``test_views_ajax`` (#1703)
     - ``IRODS_DATA_REQUEST_STATUS_CHOICES`` constant (#1706)
     - ``HIDDEN_SHEET_TEMPLATE_FIELDS`` constant (#1733)
+    - ``sheet_export*`` timeline events (#1773)
 
 
 v0.13.4 (2023-05-15)
