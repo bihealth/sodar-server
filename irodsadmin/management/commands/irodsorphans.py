@@ -6,7 +6,6 @@ import sys
 from itertools import chain
 
 from django.core.management.base import BaseCommand
-from django.db.models import Q
 from django.template.defaultfilters import filesizeformat
 
 # Projectroles dependency
@@ -98,8 +97,8 @@ class Command(BaseCommand):
         """
         return [
             self.irods_backend.get_path(lz)
-            for lz in LandingZone.objects.filter(
-                ~(Q(status=ZONE_STATUS_MOVED) & Q(status=ZONE_STATUS_DELETED))
+            for lz in LandingZone.objects.exclude(
+                status__in=[ZONE_STATUS_MOVED, ZONE_STATUS_DELETED]
             )
         ]
 
@@ -185,7 +184,8 @@ class Command(BaseCommand):
         depth = len(project_path.split('/')) + 1
         for coll in collections:
             pattern = (
-                project_path
+                r'^'
+                + project_path
                 + r'/([a-f0-9]{2})/\1[a-f0-9]{6}-([a-f0-9]{4}-){3}[a-f0-9]{12}'
             )
             match = re.search(r'{}'.format(pattern), coll.path)
