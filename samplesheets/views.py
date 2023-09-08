@@ -1379,11 +1379,6 @@ class SheetImportView(
             self.handle_import_exception(ex, tl_event)
             return redirect(redirect_url)  # Return with error here
 
-        if tl_event:
-            tl_event.add_object(
-                obj=self.object, label='investigation', name=self.object.title
-            )
-
         # Handle replace
         old_inv = Investigation.objects.filter(
             project=project, active=True
@@ -1410,6 +1405,12 @@ class SheetImportView(
             # Display warnings if assay plugins are not found
             for a in self.get_assays_without_plugins(self.object):
                 messages.warning(self.request, self.get_assay_plugin_warning(a))
+            if tl_event:  # Add object ref to timeline event
+                tl_event.add_object(
+                    obj=self.object,
+                    label='investigation',
+                    name=self.object.title,
+                )
         return redirect(redirect_url)
 
 

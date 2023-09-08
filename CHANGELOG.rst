@@ -91,6 +91,7 @@ Fixed
 - **Samplesheets**
     - ``perform_project_sync()`` crash with no iRODS collections created (#1687)
     - iRODS delete request modification UI view permission checks failing for non-creator contributors (#1737)
+    - Investigation object ref broken in timeline ``sheet_replace`` events (#1774)
 
 Removed
 -------
