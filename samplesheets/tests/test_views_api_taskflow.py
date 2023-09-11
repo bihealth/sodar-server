@@ -176,7 +176,6 @@ class IrodsAccessTicketAPIViewTestBase(
         self.app_alerts = get_backend_api('appalerts_backend')
         self.app_alert_model = self.app_alerts.get_model()
 
-        self.token_admin = self.get_token(self.user)
         self.token_contrib = self.get_token(self.user_contrib)
 
 
@@ -374,9 +373,7 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
         self.assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
         self.assertEqual(self.get_tl_event_count('create'), 0)
         self.assertEqual(self.get_app_alert_count('create'), 0)
-        response = self.request_knox(
-            self.url, 'POST', data=self.post_data, token=self.token_admin
-        )
+        response = self.request_knox(self.url, 'POST', data=self.post_data)
         self.assertEqual(response.status_code, 201)
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         ticket = IrodsAccessTicket.objects.first()
@@ -442,9 +439,7 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
         """Test POST IrodsAccessTicketCreateAPIView with no expiry date"""
         self.post_data['date_expires'] = None
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
-        response = self.request_knox(
-            self.url, 'POST', data=self.post_data, token=self.token_admin
-        )
+        response = self.request_knox(self.url, 'POST', data=self.post_data)
         self.assertEqual(response.status_code, 201)
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         ticket = IrodsAccessTicket.objects.first()
@@ -453,9 +448,7 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
     def test_create_invalid_path(self):
         """Test POST IrodsAccessTicketCreateAPIView with invalid path"""
         self.post_data['path'] = '/invalid/path'
-        response = self.request_knox(
-            self.url, 'POST', data=self.post_data, token=self.token_admin
-        )
+        response = self.request_knox(self.url, 'POST', data=self.post_data)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
         self.assertEqual(self.get_tl_event_count('create'), 0)
@@ -466,9 +459,7 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
         self.post_data['date_expires'] = (
             timezone.localtime() - timedelta(days=1)
         ).isoformat()
-        response = self.request_knox(
-            self.url, 'POST', data=self.post_data, token=self.token_admin
-        )
+        response = self.request_knox(self.url, 'POST', data=self.post_data)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
         self.assertEqual(self.get_tl_event_count('create'), 0)
@@ -477,9 +468,7 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
     def test_create_assay_root(self):
         """Test POST IrodsAccessTicketCreateAPIView with assay root"""
         self.post_data['path'] = self.irods_backend.get_path(self.assay)
-        response = self.request_knox(
-            self.url, 'POST', data=self.post_data, token=self.token_admin
-        )
+        response = self.request_knox(self.url, 'POST', data=self.post_data)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
         self.assertEqual(self.get_tl_event_count('create'), 0)
@@ -488,9 +477,7 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
     def test_create_study_path(self):
         """Test POST IrodsAccessTicketCreateAPIView with study path"""
         self.post_data['path'] = self.irods_backend.get_path(self.study)
-        response = self.request_knox(
-            self.url, 'POST', data=self.post_data, token=self.token_admin
-        )
+        response = self.request_knox(self.url, 'POST', data=self.post_data)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
         self.assertEqual(self.get_tl_event_count('create'), 0)
@@ -507,9 +494,7 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
             user=self.user,
         )
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
-        response = self.request_knox(
-            self.url, 'POST', data=self.post_data, token=self.token_admin
-        )
+        response = self.request_knox(self.url, 'POST', data=self.post_data)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         self.assertEqual(self.get_tl_event_count('create'), 0)
