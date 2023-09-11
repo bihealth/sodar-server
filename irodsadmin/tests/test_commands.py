@@ -511,10 +511,10 @@ class TestIrodsOrphans(
 
         project1 = self.make_project('A_Project', PROJECT_TYPE_PROJECT, None)
         self.make_assignment(project1, self.user, self.role_owner)
-        orphan_path1 = '{}/sample_data/study_{}'.format(
+        orphan_path2 = '{}/sample_data/study_{}'.format(
             self.irods_backend.get_path(project1), str(uuid.uuid4())
         )
-        self.irods.collections.create(orphan_path1)
+        self.irods.collections.create(orphan_path2)
 
         # Run the orphans management command
         output = self.catch_stdout()
@@ -523,7 +523,7 @@ class TestIrodsOrphans(
         expected = '{};{};{};0;0 bytes\n'.format(
             str(project1.sodar_uuid),
             project1.full_title,
-            orphan_path1,
+            orphan_path2,
         )
         expected += '{};{};{};0;0 bytes\n'.format(
             str(self.project.sodar_uuid),
