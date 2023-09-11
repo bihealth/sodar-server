@@ -440,10 +440,11 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
 
     def test_create_no_expiry(self):
         """Test POST IrodsAccessTicketCreateAPIView with no expiry date"""
-        self.post_data['date_expires'] = ''
+        self.post_data['date_expires'] = None
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
-        with self.login(self.user):
-            response = self.client.post(self.url, self.post_data)
+        response = self.request_knox(
+            self.url, 'POST', data=self.post_data, token=self.token_admin
+        )
         self.assertEqual(response.status_code, 201)
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         ticket = IrodsAccessTicket.objects.first()

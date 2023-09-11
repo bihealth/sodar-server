@@ -648,7 +648,7 @@ class TestIrodsAccessTicketListAPIView(IrodsAccessTicketAPIViewTestBase):
 
     def test_get(self):
         """Test IrodsAccessTicketListAPIView GET"""
-        self.ticket = self.make_irods_ticket(
+        ticket = self.make_irods_ticket(
             study=self.study,
             assay=self.assay,
             ticket=TICKET_STR,
@@ -661,21 +661,21 @@ class TestIrodsAccessTicketListAPIView(IrodsAccessTicketAPIViewTestBase):
         with self.login(self.user_contrib):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        local_date_created = self.ticket.date_created.astimezone(
+        local_date_created = ticket.date_created.astimezone(
             timezone.get_current_timezone()
         )
         expected = [
             {
-                'sodar_uuid': str(self.ticket.sodar_uuid),
-                'label': self.ticket.label,
-                'ticket': self.ticket.ticket,
-                'assay': self.ticket.assay.pk,
-                'study': self.ticket.study.pk,
-                'path': self.ticket.path,
+                'sodar_uuid': str(ticket.sodar_uuid),
+                'label': ticket.label,
+                'ticket': ticket.ticket,
+                'assay': ticket.assay.pk,
+                'study': ticket.study.pk,
+                'path': ticket.path,
                 'date_created': local_date_created.isoformat(),
-                'date_expires': self.ticket.date_expires,
-                'user': self.ticket.user.pk,
-                'is_active': self.ticket.is_active(),
+                'date_expires': ticket.date_expires,
+                'user': ticket.user.pk,
+                'is_active': ticket.is_active(),
             }
         ]
         self.assertEqual(json.loads(response.content), expected)
@@ -690,7 +690,7 @@ class TestIrodsAccessTicketListAPIView(IrodsAccessTicketAPIViewTestBase):
 
     def test_get_active(self):
         """Test GET IrodsAccessTicketListAPIView with active = True"""
-        self.ticket = self.make_irods_ticket(
+        ticket = self.make_irods_ticket(
             study=self.study,
             assay=self.assay,
             ticket=TICKET_STR,
@@ -699,7 +699,7 @@ class TestIrodsAccessTicketListAPIView(IrodsAccessTicketAPIViewTestBase):
             user=self.user,
             date_expires=None,
         )
-        self.ticket_expired = self.make_irods_ticket(
+        self.make_irods_ticket(
             study=self.study,
             assay=self.assay,
             ticket=TICKET_STR,
@@ -712,21 +712,21 @@ class TestIrodsAccessTicketListAPIView(IrodsAccessTicketAPIViewTestBase):
         with self.login(self.user_contrib):
             response = self.client.get(self.url + '?active=1')
         self.assertEqual(response.status_code, 200)
-        local_date_created = self.ticket.date_created.astimezone(
+        local_date_created = ticket.date_created.astimezone(
             timezone.get_current_timezone()
         )
         expected = [
             {
-                'sodar_uuid': str(self.ticket.sodar_uuid),
-                'label': self.ticket.label,
-                'ticket': self.ticket.ticket,
-                'assay': self.ticket.assay.pk,
-                'study': self.ticket.study.pk,
-                'path': self.ticket.path,
+                'sodar_uuid': str(ticket.sodar_uuid),
+                'label': ticket.label,
+                'ticket': ticket.ticket,
+                'assay': ticket.assay.pk,
+                'study': ticket.study.pk,
+                'path': ticket.path,
                 'date_created': local_date_created.isoformat(),
-                'date_expires': self.ticket.date_expires,
-                'user': self.ticket.user.pk,
-                'is_active': self.ticket.is_active(),
+                'date_expires': ticket.date_expires,
+                'user': ticket.user.pk,
+                'is_active': ticket.is_active(),
             }
         ]
         self.assertEqual(json.loads(response.content), expected)
@@ -742,7 +742,7 @@ class TestIrodsAccessTicketRetrieveAPIView(IrodsAccessTicketAPIViewTestBase):
 
     def test_get(self):
         """Test IrodsAccessTicketRetrieveAPIView GET"""
-        self.ticket = self.make_irods_ticket(
+        ticket = self.make_irods_ticket(
             study=self.study,
             assay=self.assay,
             ticket=TICKET_STR,
@@ -753,26 +753,26 @@ class TestIrodsAccessTicketRetrieveAPIView(IrodsAccessTicketAPIViewTestBase):
         )
         self.url = reverse(
             'samplesheets:api_irods_ticket_retrieve',
-            kwargs={'irodsaccessticket': self.ticket.sodar_uuid},
+            kwargs={'irodsaccessticket': ticket.sodar_uuid},
         )
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         with self.login(self.user_contrib):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        local_date_created = self.ticket.date_created.astimezone(
+        local_date_created = ticket.date_created.astimezone(
             timezone.get_current_timezone()
         )
         expected = {
-            'sodar_uuid': str(self.ticket.sodar_uuid),
-            'label': self.ticket.label,
-            'ticket': self.ticket.ticket,
-            'assay': self.ticket.assay.pk,
-            'study': self.ticket.study.pk,
-            'path': self.ticket.path,
+            'sodar_uuid': str(ticket.sodar_uuid),
+            'label': ticket.label,
+            'ticket': ticket.ticket,
+            'assay': ticket.assay.pk,
+            'study': ticket.study.pk,
+            'path': ticket.path,
             'date_created': local_date_created.isoformat(),
-            'date_expires': self.ticket.date_expires,
-            'user': self.ticket.user.pk,
-            'is_active': self.ticket.is_active(),
+            'date_expires': ticket.date_expires,
+            'user': ticket.user.pk,
+            'is_active': ticket.is_active(),
         }
         self.assertEqual(json.loads(response.content), expected)
 

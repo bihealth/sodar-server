@@ -20,7 +20,10 @@ from samplesheets.models import (
     IRODS_REQUEST_STATUS_ACTIVE,
 )
 from samplesheets.tests.test_io import SampleSheetIOMixin
-from samplesheets.tests.test_models import IrodsDataRequestMixin
+from samplesheets.tests.test_models import (
+    IrodsDataRequestMixin,
+    IrodsAccessTicketMixin,
+)
 from samplesheets.tests.test_permissions import (
     SHEET_PATH,
     REMOTE_SITE_NAME,
@@ -28,10 +31,7 @@ from samplesheets.tests.test_permissions import (
     REMOTE_SITE_SECRET,
     INVALID_SECRET,
 )
-from samplesheets.tests.test_permissions_api_taskflow import (
-    IrodsAccessTicketAPIViewTestBase,
-    LABEL_CREATE,
-)
+from samplesheets.tests.test_permissions_api_taskflow import LABEL_CREATE
 
 # Local constants
 IRODS_FILE_PATH = '/sodarZone/path/test1.txt'
@@ -362,11 +362,16 @@ class TestSheetISAExportAPIView(
         self.assert_response_api(url, self.anonymous, 401)
 
 
-class TestIrodsAccessTicketListAPIView(IrodsAccessTicketAPIViewTestBase):
+class TestIrodsAccessTicketListAPIView(
+    SampleSheetIOMixin, IrodsAccessTicketMixin, TestProjectAPIPermissionBase
+):
     """Test permissions for IrodsAccessTicketListAPIView"""
 
     def setUp(self):
         super().setUp()
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
         self.url = (
             reverse(
                 'samplesheets:api_irods_ticket_list',
@@ -377,7 +382,7 @@ class TestIrodsAccessTicketListAPIView(IrodsAccessTicketAPIViewTestBase):
         self.ticket = self.make_irods_ticket(
             study=self.study,
             assay=self.assay,
-            path=self.coll.path + '/ticket1',
+            path='/test/ticket1',
             user=self.user_owner,
             ticket='ticket',
             label=LABEL_CREATE,
@@ -431,15 +436,20 @@ class TestIrodsAccessTicketListAPIView(IrodsAccessTicketAPIViewTestBase):
         self.assert_response_api(self.url, self.anonymous, 401)
 
 
-class TestIrodsAccessTicketRetrieveAPIView(IrodsAccessTicketAPIViewTestBase):
+class TestIrodsAccessTicketRetrieveAPIView(
+    SampleSheetIOMixin, IrodsAccessTicketMixin, TestProjectAPIPermissionBase
+):
     """Test permissions for IrodsAccessTicketRetrieveAPIView"""
 
     def setUp(self):
         super().setUp()
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
         self.ticket = self.make_irods_ticket(
             study=self.study,
             assay=self.assay,
-            path=self.coll.path + '/ticket1',
+            path='/test/ticket1',
             user=self.user_owner,
             ticket='ticket',
             label=LABEL_CREATE,

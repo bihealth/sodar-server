@@ -432,10 +432,6 @@ class IrodsAccessTicketUpdateAPIView(
 
     - ``label``: Label (string)
     - ``date_expires``: Expiration date (YYYY-MM-DD)
-
-    **Returns:**
-
-    - ``ticket``: iRODS access ticket
     """
 
     lookup_url_kwarg = 'irodsaccessticket'
