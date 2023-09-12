@@ -551,7 +551,7 @@ class SampleSheetTableBuilder:
                 header_len = 0  # Header length is not comparable
                 max_cell_len = max(
                     [
-                        _get_length(x[i]['value'], col_type)
+                        len(x[i]['value'])
                         if (x[i]['value'] and isinstance(x[i]['value'], list))
                         else 0
                         for x in self._table_data
