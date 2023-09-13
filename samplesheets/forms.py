@@ -50,7 +50,7 @@ class IrodsAccessTicketValidateMixin:
         :param project: Project object
         :param instance: IrodsAccessTicket object (None if creating)
         :param data: Dict of data to validate
-        :return: Dict of errors in form field-error (empty if no errors)
+        :return: Field name and error message tuple or None
         """
         # Validate path (only if creating)
         if not instance.pk if instance else not instance:

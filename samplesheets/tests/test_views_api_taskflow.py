@@ -150,8 +150,8 @@ class IrodsAccessTicketAPIViewTestBase(
         # Init users (owner = user_cat, superuser = user)
         self.user_delegate = self.make_user('user_delegate')
         self.user_contrib = self.make_user('user_contrib')
-        self.user_contrib2 = self.make_user('user_contrib2')
-        self.user_guest = self.make_user('user_guest')
+        # self.user_contrib2 = self.make_user('user_contrib2')
+        # self.user_guest = self.make_user('user_guest')
 
         self.make_assignment_taskflow(
             self.project, self.user_delegate, self.role_delegate
@@ -159,12 +159,12 @@ class IrodsAccessTicketAPIViewTestBase(
         self.make_assignment_taskflow(
             self.project, self.user_contrib, self.role_contributor
         )
-        self.make_assignment_taskflow(
-            self.project, self.user_contrib2, self.role_contributor
-        )
-        self.make_assignment_taskflow(
-            self.project, self.user_guest, self.role_guest
-        )
+        # self.make_assignment_taskflow(
+        #     self.project, self.user_contrib2, self.role_contributor
+        # )
+        # self.make_assignment_taskflow(
+        #     self.project, self.user_guest, self.role_guest
+        # )
 
         # Create collection under assay
         self.assay_path = self.irods_backend.get_path(self.assay)
@@ -352,7 +352,6 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
     def setUp(self):
         super().setUp()
         self.path = self.coll.path
-        self.label = TICKET_LABEL
         self.date_expires = (
             timezone.localtime() + timedelta(days=1)
         ).isoformat()
@@ -362,7 +361,7 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
         )
         self.post_data = {
             'path': self.path,
-            'label': self.label,
+            'label': TICKET_LABEL,
             'date_expires': self.date_expires,
         }
 
@@ -378,7 +377,7 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         ticket = IrodsAccessTicket.objects.first()
         self.assertEqual(ticket.path, self.path)
-        self.assertEqual(ticket.label, self.label)
+        self.assertEqual(ticket.label, TICKET_LABEL)
         self.assertEqual(
             ticket.date_expires,
             datetime.strptime(self.date_expires, '%Y-%m-%dT%H:%M:%S.%f%z'),
@@ -483,7 +482,7 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
         self.assertEqual(self.get_tl_event_count('create'), 0)
         self.assertEqual(self.get_app_alert_count('create'), 0)
 
-    def test_post_existing_ticket(self):
+    def test_create_existing_ticket(self):
         """Test POST IrodsAccessTicketCreateAPIView for the same path"""
         self.make_irods_ticket(
             study=self.study,
@@ -506,13 +505,12 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
 
     def setUp(self):
         super().setUp()
-        self.label = TICKET_LABEL
         self.ticket = self.make_irods_ticket(
             study=self.study,
             assay=self.assay,
             ticket=TICKET_STR,
             path=self.coll.path,
-            label=self.label,
+            label=TICKET_LABEL,
             user=self.user,
             date_expires=None,
         )
@@ -613,7 +611,7 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
         )
         expected = {
             'sodar_uuid': str(self.ticket.sodar_uuid),
-            'label': self.label,
+            'label': TICKET_LABEL,
             'ticket': self.ticket.ticket,
             'assay': self.ticket.assay.pk,
             'study': self.ticket.study.pk,
@@ -669,7 +667,6 @@ class TestIrodsAccessTicketDestroyAPIView(IrodsAccessTicketAPIViewTestBase):
 
     def setUp(self):
         super().setUp()
-        self.label = TICKET_LABEL
         self.date_expires = (
             timezone.localtime() + timedelta(days=1)
         ).isoformat()
@@ -680,7 +677,7 @@ class TestIrodsAccessTicketDestroyAPIView(IrodsAccessTicketAPIViewTestBase):
             path=self.coll.path,
             user=self.user,
             ticket=TICKET_STR,
-            label=self.label,
+            label=TICKET_LABEL,
             date_expires=timezone.localtime() + timedelta(days=1),
         )
         self.irods_backend.issue_ticket(

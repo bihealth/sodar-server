@@ -359,12 +359,7 @@ class IrodsAccessTicketRetrieveAPIView(
     lookup_url_kwarg = 'irodsaccessticket'
     permission_required = 'samplesheets.edit_sheet'
     serializer_class = IrodsAccessTicketSerializer
-
-    def get_object(self):
-        """Override get_object() to get IrodsAccessTicket"""
-        return IrodsAccessTicket.objects.get(
-            sodar_uuid=self.kwargs.get('irodsaccessticket')
-        )
+    queryset_project_field = 'study__investigation__project'
 
 
 class IrodsAccessTicketCreateAPIView(
@@ -437,12 +432,7 @@ class IrodsAccessTicketUpdateAPIView(
     lookup_url_kwarg = 'irodsaccessticket'
     permission_required = 'samplesheets.edit_sheet'
     serializer_class = IrodsAccessTicketSerializer
-
-    def get_object(self):
-        """Override get_object() to get IrodsAccessTicket"""
-        return IrodsAccessTicket.objects.get(
-            sodar_uuid=self.kwargs.get('irodsaccessticket')
-        )
+    queryset_project_field = 'study__investigation__project'
 
     def perform_update(self, serializer):
         """Override perform_update() to update IrodsAccessTicket"""
@@ -469,11 +459,7 @@ class IrodsAccessTicketDestroyAPIView(
     lookup_field = 'sodar_uuid'
     permission_required = 'samplesheets.edit_sheet'
     serializer_class = IrodsAccessTicketSerializer
-
-    def get_object(self):
-        return IrodsAccessTicket.objects.get(
-            sodar_uuid=self.kwargs.get('irodsaccessticket')
-        )
+    queryset_project_field = 'study__investigation__project'
 
     def perform_destroy(self, instance):
         """Override perform_destroy() to delete IrodsAccessTicket"""

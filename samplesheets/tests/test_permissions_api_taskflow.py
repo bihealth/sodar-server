@@ -346,9 +346,7 @@ class TestIrodsAccessTicketDestroyAPIView(IrodsAccessTicketAPIViewTestBase):
     """Test permissions for IrodsAccessTicketDeleteAPIView"""
 
     def _create_irods_ticket(self):
-        # Create ticket in database and iRODS
         ticket_str = 'ticket'
-        # Create ticket in database and iRODS
         self.ticket = self.make_irods_ticket(
             study=self.study,
             assay=self.assay,
