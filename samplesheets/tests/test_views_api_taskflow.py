@@ -150,8 +150,6 @@ class IrodsAccessTicketAPIViewTestBase(
         # Init users (owner = user_cat, superuser = user)
         self.user_delegate = self.make_user('user_delegate')
         self.user_contrib = self.make_user('user_contrib')
-        # self.user_contrib2 = self.make_user('user_contrib2')
-        # self.user_guest = self.make_user('user_guest')
 
         self.make_assignment_taskflow(
             self.project, self.user_delegate, self.role_delegate
@@ -159,12 +157,6 @@ class IrodsAccessTicketAPIViewTestBase(
         self.make_assignment_taskflow(
             self.project, self.user_contrib, self.role_contributor
         )
-        # self.make_assignment_taskflow(
-        #     self.project, self.user_contrib2, self.role_contributor
-        # )
-        # self.make_assignment_taskflow(
-        #     self.project, self.user_guest, self.role_guest
-        # )
 
         # Create collection under assay
         self.assay_path = self.irods_backend.get_path(self.assay)
