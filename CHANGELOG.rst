@@ -93,6 +93,7 @@ Fixed
     - iRODS delete request modification UI view permission checks failing for non-creator contributors (#1737)
     - Investigation object ref broken in timeline ``sheet_replace`` events (#1774)
     - External links column width estimation crash in table rendering (#1787)
+    - Comment field editing with semicolon in data (#1790)
 
 Removed
 -------
