@@ -53,7 +53,7 @@ Changed
 -------
 
 - **General**
-    - Upgrade to django-sodar-core v0.13.2-WIP (#1617, #1720, #1775)
+    - Upgrade to django-sodar-core v0.13.2-WIP (#1617, #1720, #1775, #1792)
     - Upgrade to python-irodsclient v1.1.8 (#1538)
     - Upgrade Python dependencies (#1620)
     - Upgrade Vue app dependencies (#1620)
