@@ -15,6 +15,16 @@ API Views
 
 .. autoclass:: IrodsCollsCreateAPIView
 
+.. autoclass:: IrodsAccessTicketListAPIView
+
+.. autoclass:: IrodsAccessTicketRetrieveAPIView
+
+.. autoclass:: IrodsAccessTicketCreateAPIView
+
+.. autoclass:: IrodsAccessTicketUpdateAPIView
+
+.. autoclass:: IrodsAccessTicketDeleteAPIView
+
 .. autoclass:: IrodsDataRequestRetrieveAPIView
 
 .. autoclass:: IrodsDataRequestListAPIView

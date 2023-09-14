@@ -3,8 +3,11 @@
 import json
 import os
 
+from datetime import timedelta
+
 from django.test import override_settings
 from django.urls import reverse
+from django.utils import timezone
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
@@ -34,6 +37,7 @@ from samplesheets.models import (
     IRODS_REQUEST_STATUS_ACCEPTED,
     IRODS_REQUEST_STATUS_ACTIVE,
     IRODS_REQUEST_STATUS_FAILED,
+    IrodsAccessTicket,
 )
 from samplesheets.rendering import (
     SampleSheetTableBuilder,
@@ -45,7 +49,10 @@ from samplesheets.tests.test_io import (
     SHEET_DIR,
     SHEET_DIR_SPECIAL,
 )
-from samplesheets.tests.test_models import IrodsDataRequestMixin
+from samplesheets.tests.test_models import (
+    IrodsDataRequestMixin,
+    IrodsAccessTicketMixin,
+)
 from samplesheets.tests.test_sheet_config import SheetConfigMixin
 from samplesheets.tests.test_views import (
     ViewTestBase,
@@ -53,6 +60,11 @@ from samplesheets.tests.test_views import (
     REMOTE_SITE_URL,
     REMOTE_SITE_DESC,
     REMOTE_SITE_SECRET,
+)
+from samplesheets.tests.test_views_taskflow import (
+    TICKET_LABEL,
+    TICKET_STR,
+    IrodsAccessTicketViewTestMixin,
 )
 from samplesheets.views import SheetImportMixin
 
@@ -75,6 +87,7 @@ SHEET_PATH_ALT = SHEET_DIR + 'i_small2_alt.zip'
 SHEET_PATH_NO_PLUGIN_ASSAY = SHEET_DIR_SPECIAL + 'i_small_assay_no_plugin.zip'
 IRODS_FILE_NAME = 'test1.txt'
 IRODS_FILE_MD5 = '0b26e313ed4a7ca6904b0e9369e5b957'
+TICKET_PATH = '/test/path'
 
 
 # TODO: Add testing for study table cache updates
@@ -82,6 +95,31 @@ IRODS_FILE_MD5 = '0b26e313ed4a7ca6904b0e9369e5b957'
 
 class TestSampleSheetAPIBase(SampleSheetIOMixin, TestAPIViewsBase):
     """Base view for samplesheets API views tests"""
+
+
+class TestIrodsAccessTicketAPIBase(
+    IrodsAccessTicketMixin,
+    IrodsAccessTicketViewTestMixin,
+    TestSampleSheetAPIBase,
+):
+    """Base view for iRODS access ticket requests API tests"""
+
+    def setUp(self):
+        super().setUp()
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+
+        # Init contrib user
+        self.user_contrib = self.make_user('user_contrib')
+        self.make_assignment(
+            self.project, self.user_contrib, self.role_contributor
+        )
+        self.token_contrib = self.get_token(self.user_contrib)
+
+        # Get appalerts API and model
+        self.app_alerts = get_backend_api('appalerts_backend')
+        self.app_alert_model = self.app_alerts.get_model()
 
 
 class TestInvestigationRetrieveAPIView(TestSampleSheetAPIBase):
@@ -623,6 +661,124 @@ class TestSheetISAExportAPIView(TestSampleSheetAPIBase):
         expected['date_modified'] = str(investigation.date_modified)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data, expected)
+
+
+class TestIrodsAccessTicketListAPIView(TestIrodsAccessTicketAPIBase):
+    """Tests for IrodsAccessListAPIView"""
+
+    def setUp(self):
+        super().setUp()
+        self.url = reverse(
+            'samplesheets:api_irods_ticket_list',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        self.ticket = self.make_irods_ticket(
+            study=self.study,
+            assay=self.assay,
+            ticket=TICKET_STR,
+            path='/test/path',
+            label=TICKET_LABEL,
+            user=self.user,
+            date_expires=None,
+        )
+
+    def test_get(self):
+        """Test IrodsAccessTicketListAPIView GET"""
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        with self.login(self.user_contrib):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        local_date_created = self.ticket.date_created.astimezone(
+            timezone.get_current_timezone()
+        )
+        expected = {
+            'sodar_uuid': str(self.ticket.sodar_uuid),
+            'label': self.ticket.label,
+            'ticket': self.ticket.ticket,
+            'assay': self.ticket.assay.pk,
+            'study': self.ticket.study.pk,
+            'path': self.ticket.path,
+            'date_created': local_date_created.isoformat(),
+            'date_expires': self.ticket.date_expires,
+            'user': self.ticket.user.pk,
+            'is_active': self.ticket.is_active(),
+        }
+        self.assertEqual(json.loads(response.content), [expected])
+
+    def test_get_active(self):
+        """Test GET IrodsAccessTicketListAPIView with active = True"""
+        self.make_irods_ticket(
+            study=self.study,
+            assay=self.assay,
+            ticket=TICKET_STR,
+            path='/test/path2',
+            label=TICKET_LABEL,
+            user=self.user,
+            date_expires=timezone.now() - timedelta(days=1),
+        )
+        self.assertEqual(IrodsAccessTicket.objects.count(), 2)
+        with self.login(self.user_contrib):
+            response = self.client.get(self.url + '?active=1')
+        self.assertEqual(response.status_code, 200)
+        local_date_created = self.ticket.date_created.astimezone(
+            timezone.get_current_timezone()
+        )
+        expected = {
+            'sodar_uuid': str(self.ticket.sodar_uuid),
+            'label': self.ticket.label,
+            'ticket': self.ticket.ticket,
+            'assay': self.ticket.assay.pk,
+            'study': self.ticket.study.pk,
+            'path': self.ticket.path,
+            'date_created': local_date_created.isoformat(),
+            'date_expires': self.ticket.date_expires,
+            'user': self.ticket.user.pk,
+            'is_active': self.ticket.is_active(),
+        }
+        self.assertEqual(json.loads(response.content), [expected])
+
+
+class TestIrodsAccessTicketRetrieveAPIView(TestIrodsAccessTicketAPIBase):
+    """Tests for IrodsAccessTicketRetrieveAPIView"""
+
+    def setUp(self):
+        super().setUp()
+        self.ticket = self.make_irods_ticket(
+            study=self.study,
+            assay=self.assay,
+            ticket=TICKET_STR,
+            path=TICKET_PATH,
+            label=TICKET_LABEL,
+            user=self.user,
+            date_expires=None,
+        )
+        self.url = reverse(
+            'samplesheets:api_irods_ticket_retrieve',
+            kwargs={'irodsaccessticket': self.ticket.sodar_uuid},
+        )
+
+    def test_get(self):
+        """Test IrodsAccessTicketRetrieveAPIView GET"""
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        with self.login(self.user_contrib):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        local_date_created = self.ticket.date_created.astimezone(
+            timezone.get_current_timezone()
+        )
+        expected = {
+            'sodar_uuid': str(self.ticket.sodar_uuid),
+            'label': self.ticket.label,
+            'ticket': self.ticket.ticket,
+            'assay': self.ticket.assay.pk,
+            'study': self.ticket.study.pk,
+            'path': self.ticket.path,
+            'date_created': local_date_created.isoformat(),
+            'date_expires': self.ticket.date_expires,
+            'user': self.ticket.user.pk,
+            'is_active': self.ticket.is_active(),
+        }
+        self.assertEqual(json.loads(response.content), expected)
 
 
 class TestIrodsDataRequestRetrieveAPIView(

@@ -2,6 +2,8 @@
 
 from rest_framework import serializers
 
+from django.utils import timezone
+
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
 from projectroles.serializers import (
@@ -10,8 +12,17 @@ from projectroles.serializers import (
     SODARUserSerializer,
 )
 
-from samplesheets.forms import IrodsDataRequestValidateMixin
-from samplesheets.models import Investigation, Study, Assay, IrodsDataRequest
+from samplesheets.forms import (
+    IrodsDataRequestValidateMixin,
+    IrodsAccessTicketValidateMixin,
+)
+from samplesheets.models import (
+    Investigation,
+    Study,
+    Assay,
+    IrodsDataRequest,
+    IrodsAccessTicket,
+)
 
 
 class AssaySerializer(SODARNestedListSerializer):
@@ -130,3 +141,64 @@ class IrodsDataRequestSerializer(
         validated_data['project'] = self.context['project']
         validated_data['user'] = self.context['request'].user
         return super().create(validated_data)
+
+
+class IrodsAccessTicketSerializer(
+    IrodsAccessTicketValidateMixin, serializers.ModelSerializer
+):
+    """Serializer for the IrodsAccessTicket model"""
+
+    is_active = serializers.SerializerMethodField()
+
+    class Meta:
+        model = IrodsAccessTicket
+        fields = [
+            'study',
+            'assay',
+            'ticket',
+            'path',
+            'user',
+            'date_created',
+            'date_expires',
+            'label',
+            'sodar_uuid',
+            'is_active',
+        ]
+        read_only_fields = [
+            f for f in fields if f not in ['path', 'label', 'date_expires']
+        ]
+
+    def get_is_active(self, obj):
+        if not obj.date_expires:
+            return True
+        return obj.date_expires > timezone.now()
+
+    def validate(self, attrs):
+        irods_backend = get_backend_api('omics_irods')
+        if not self.instance:
+            try:
+                attrs['path'] = irods_backend.sanitize_path(attrs['path'])
+                # Add assay from path
+                attrs['assay'] = Assay.objects.get(
+                    sodar_uuid=irods_backend.get_uuid_from_path(
+                        attrs['path'], 'assay'
+                    )
+                )
+            except Exception as ex:
+                raise serializers.ValidationError(str(ex))
+            # Add study from assay
+            attrs['study'] = attrs['assay'].study
+            # Add empty ticket
+            attrs['ticket'] = ''
+            # Add user from context
+            attrs['user'] = self.context['user']
+        else:  # Update
+            attrs['path'] = self.instance.path
+            attrs['assay'] = self.instance.assay
+
+        error = self.validate_data(
+            irods_backend, self.context['project'], self.instance, attrs
+        )
+        if error:
+            raise serializers.ValidationError('{}: {}'.format(*error))
+        return attrs

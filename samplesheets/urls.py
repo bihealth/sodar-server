@@ -1,8 +1,6 @@
 from django.urls import path
 
-import samplesheets.views_ajax
-import samplesheets.views_api
-from samplesheets import views
+from samplesheets import views, views_ajax, views_api
 
 
 app_name = 'samplesheets'
@@ -170,77 +168,102 @@ urls_ui = [
 urls_api = [
     path(
         route='api/investigation/retrieve/<uuid:project>',
-        view=samplesheets.views_api.InvestigationRetrieveAPIView.as_view(),
+        view=views_api.InvestigationRetrieveAPIView.as_view(),
         name='api_investigation_retrieve',
     ),
     path(
         route='api/irods/collections/create/<uuid:project>',
-        view=samplesheets.views_api.IrodsCollsCreateAPIView.as_view(),
+        view=views_api.IrodsCollsCreateAPIView.as_view(),
         name='api_irods_colls_create',
     ),
     path(
+        route='api/irods/ticket/list/<uuid:project>',
+        view=views_api.IrodsAccessTicketListAPIView.as_view(),
+        name='api_irods_ticket_list',
+    ),
+    path(
+        route='api/irods/ticket/retrieve/<uuid:irodsaccessticket>',
+        view=views_api.IrodsAccessTicketRetrieveAPIView.as_view(),
+        name='api_irods_ticket_retrieve',
+    ),
+    path(
+        route='api/irods/ticket/create/<uuid:project>',
+        view=views_api.IrodsAccessTicketCreateAPIView.as_view(),
+        name='api_irods_ticket_create',
+    ),
+    path(
+        route='api/irods/ticket/update/<uuid:irodsaccessticket>',
+        view=views_api.IrodsAccessTicketUpdateAPIView.as_view(),
+        name='api_irods_ticket_update',
+    ),
+    path(
+        route='api/irods/ticket/delete/<uuid:irodsaccessticket>',
+        view=views_api.IrodsAccessTicketDestroyAPIView.as_view(),
+        name='api_irods_ticket_delete',
+    ),
+    path(
         route='api/irods/request/retrieve/<uuid:irodsdatarequest>',
-        view=samplesheets.views_api.IrodsDataRequestRetrieveAPIView.as_view(),
+        view=views_api.IrodsDataRequestRetrieveAPIView.as_view(),
         name='api_irods_request_retrieve',
     ),
     path(
         route='api/irods/requests/<uuid:project>',
-        view=samplesheets.views_api.IrodsDataRequestListAPIView.as_view(),
+        view=views_api.IrodsDataRequestListAPIView.as_view(),
         name='api_irods_request_list',
     ),
     path(
         route='api/irods/request/create/<uuid:project>',
-        view=samplesheets.views_api.IrodsDataRequestCreateAPIView.as_view(),
+        view=views_api.IrodsDataRequestCreateAPIView.as_view(),
         name='api_irods_request_create',
     ),
     path(
         route='api/irods/request/update/<uuid:irodsdatarequest>',
-        view=samplesheets.views_api.IrodsDataRequestUpdateAPIView.as_view(),
+        view=views_api.IrodsDataRequestUpdateAPIView.as_view(),
         name='api_irods_request_update',
     ),
     path(
         route='api/irods/request/delete/<uuid:irodsdatarequest>',
-        view=samplesheets.views_api.IrodsDataRequestDestroyAPIView.as_view(),
+        view=views_api.IrodsDataRequestDestroyAPIView.as_view(),
         name='api_irods_request_delete',
     ),
     path(
         route='api/irods/request/accept/<uuid:irodsdatarequest>',
-        view=samplesheets.views_api.IrodsDataRequestAcceptAPIView.as_view(),
+        view=views_api.IrodsDataRequestAcceptAPIView.as_view(),
         name='api_irods_request_accept',
     ),
     path(
         route='api/irods/request/reject/<uuid:irodsdatarequest>',
-        view=samplesheets.views_api.IrodsDataRequestRejectAPIView.as_view(),
+        view=views_api.IrodsDataRequestRejectAPIView.as_view(),
         name='api_irods_request_reject',
     ),
     path(
         route='api/import/<uuid:project>',
-        view=samplesheets.views_api.SheetImportAPIView.as_view(),
+        view=views_api.SheetImportAPIView.as_view(),
         name='api_import',
     ),
     path(
         route='api/export/zip/<uuid:project>',
-        view=samplesheets.views_api.SheetISAExportAPIView.as_view(),
+        view=views_api.SheetISAExportAPIView.as_view(),
         name='api_export_zip',
     ),
     path(
         route='api/export/json/<uuid:project>',
-        view=samplesheets.views_api.SheetISAExportAPIView.as_view(),
+        view=views_api.SheetISAExportAPIView.as_view(),
         name='api_export_json',
     ),
     path(
         route='api/file/exists',
-        view=samplesheets.views_api.SampleDataFileExistsAPIView.as_view(),
+        view=views_api.SampleDataFileExistsAPIView.as_view(),
         name='api_file_exists',
     ),
     path(
         route='api/remote/get/<uuid:project>/<str:secret>',
-        view=samplesheets.views_api.RemoteSheetGetAPIView.as_view(),
+        view=views_api.RemoteSheetGetAPIView.as_view(),
         name='api_remote_get',
     ),
     path(
         route='api/file/list/<uuid:project>',
-        view=samplesheets.views_api.ProjectIrodsFileListAPIView.as_view(),
+        view=views_api.ProjectIrodsFileListAPIView.as_view(),
         name='api_file_list',
     ),
 ]
@@ -249,77 +272,77 @@ urls_api = [
 urls_ajax = [
     path(
         route='ajax/context/<uuid:project>',
-        view=samplesheets.views_ajax.SheetContextAjaxView.as_view(),
+        view=views_ajax.SheetContextAjaxView.as_view(),
         name='ajax_context',
     ),
     path(
         route='ajax/study/tables/<uuid:study>',
-        view=samplesheets.views_ajax.StudyTablesAjaxView.as_view(),
+        view=views_ajax.StudyTablesAjaxView.as_view(),
         name='ajax_study_tables',
     ),
     path(
         route='ajax/study/links/<uuid:study>',
-        view=samplesheets.views_ajax.StudyLinksAjaxView.as_view(),
+        view=views_ajax.StudyLinksAjaxView.as_view(),
         name='ajax_study_links',
     ),
     path(
         route='ajax/warnings/<uuid:project>',
-        view=samplesheets.views_ajax.SheetWarningsAjaxView.as_view(),
+        view=views_ajax.SheetWarningsAjaxView.as_view(),
         name='ajax_warnings',
     ),
     path(
         route='ajax/edit/cell/<uuid:project>',
-        view=samplesheets.views_ajax.SheetCellEditAjaxView.as_view(),
+        view=views_ajax.SheetCellEditAjaxView.as_view(),
         name='ajax_edit_cell',
     ),
     path(
         route='ajax/edit/row/insert/<uuid:project>',
-        view=samplesheets.views_ajax.SheetRowInsertAjaxView.as_view(),
+        view=views_ajax.SheetRowInsertAjaxView.as_view(),
         name='ajax_edit_row_insert',
     ),
     path(
         route='ajax/edit/row/delete/<uuid:project>',
-        view=samplesheets.views_ajax.SheetRowDeleteAjaxView.as_view(),
+        view=views_ajax.SheetRowDeleteAjaxView.as_view(),
         name='ajax_edit_row_delete',
     ),
     path(
         route='ajax/version/save/<uuid:project>',
-        view=samplesheets.views_ajax.SheetVersionSaveAjaxView.as_view(),
+        view=views_ajax.SheetVersionSaveAjaxView.as_view(),
         name='ajax_version_save',
     ),
     path(
         route='ajax/edit/finish/<uuid:project>',
-        view=samplesheets.views_ajax.SheetEditFinishAjaxView.as_view(),
+        view=views_ajax.SheetEditFinishAjaxView.as_view(),
         name='ajax_edit_finish',
     ),
     path(
         route='ajax/config/update/<uuid:project>',
-        view=samplesheets.views_ajax.SheetEditConfigAjaxView.as_view(),
+        view=views_ajax.SheetEditConfigAjaxView.as_view(),
         name='ajax_config_update',
     ),
     path(
         route='ajax/display/update/<str:study>',
-        view=samplesheets.views_ajax.StudyDisplayConfigAjaxView.as_view(),
+        view=views_ajax.StudyDisplayConfigAjaxView.as_view(),
         name='ajax_display_update',
     ),
     path(
         route='ajax/irods/request/create/<uuid:project>',
-        view=samplesheets.views_ajax.IrodsDataRequestCreateAjaxView.as_view(),
+        view=views_ajax.IrodsDataRequestCreateAjaxView.as_view(),
         name='ajax_irods_request_create',
     ),
     path(
         route='ajax/irods/request/delete/<uuid:project>',
-        view=samplesheets.views_ajax.IrodsDataRequestDeleteAjaxView.as_view(),
+        view=views_ajax.IrodsDataRequestDeleteAjaxView.as_view(),
         name='ajax_irods_request_delete',
     ),
     path(
         route='ajax/irods/objects/<uuid:project>',
-        view=samplesheets.views_ajax.IrodsObjectListAjaxView.as_view(),
+        view=views_ajax.IrodsObjectListAjaxView.as_view(),
         name='ajax_irods_objects',
     ),
     path(
         route='ajax/version/compare/<uuid:project>',
-        view=samplesheets.views_ajax.SheetVersionCompareAjaxView.as_view(),
+        view=views_ajax.SheetVersionCompareAjaxView.as_view(),
         name='ajax_version_compare',
     ),
 ]
