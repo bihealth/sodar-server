@@ -457,6 +457,7 @@ class IrodsAccessTicketDestroyAPIView(
     """
 
     lookup_field = 'sodar_uuid'
+    lookup_url_kwarg = 'irodsaccessticket'
     permission_required = 'samplesheets.edit_sheet'
     serializer_class = IrodsAccessTicketSerializer
     queryset_project_field = 'study__investigation__project'
