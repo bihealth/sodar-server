@@ -61,6 +61,8 @@ Changed
     - Update deprecated Nodejs install method in Docker and dev (#1769)
     - Timeline event names and descriptions if called from syncmodifyapi (#1761)
     - Update tour help (#1583)
+    - Enable setting ``ADMINS`` via environment variable (#1796)
+    - Update ``ADMINS`` default value (#1796)
 - **Landingzones**
     - Move iRODS object helpers to ``TaskflowTestMixin`` (#1699)
     - Enable superuser landing zone controls for locked zones (#1607)
