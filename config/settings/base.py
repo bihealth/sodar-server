@@ -791,21 +791,6 @@ SHEETS_EXTERNAL_LINK_PATH = env.str(
     os.path.join(ROOT_DIR, 'samplesheets/config/ext_links.json'),
 )
 
-# HACK: Supported cubi-tk templates, excluding ones which altamISA cannot parse
-SHEETS_ENABLED_TEMPLATES = [
-    'bulk_rnaseq',
-    'generic',
-    'germline',
-    'mass_cytometry',
-    'microarray',
-    'ms_meta_biocrates',
-    'single_cell_rnaseq',
-    'stem_cell_core_bulk',
-    'stem_cell_core_sc',
-    'tumor_normal_dna',
-    'tumor_normal_triplets',
-]
-
 # Remote sample sheet sync interval in minutes
 SHEETS_SYNC_INTERVAL = env.int('SHEETS_SYNC_INTERVAL', 5)
 

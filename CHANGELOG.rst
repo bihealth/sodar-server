@@ -27,10 +27,7 @@ Added
     - Study table cache disabling (#1639)
     - ``SHEETS_ENABLE_STUDY_TABLE_CACHE`` setting (#1639)
     - ``cytof`` assay plugin (#1642)
-    - Enable ``mass_cytometry`` ISA-Tab template (#1697)
-    - Enable ``stem_cell_core_bulk`` ISA-Tab template (#1697)
-    - Enable ``stem_cell_core_sc`` ISA-Tab template (#1697)
-    - Enable ``tumor_normal_dna`` ISA-Tab template (#1697)
+    - New ISA-Tab templates from ``cubi-isa-templates`` (#1697, #1757)
     - General iRODS access ticket management for assay collections (#804, #1717)
     - Disabled row delete button tooltips (#1731)
     - ``IrodsDataRequest`` REST API views (#1588, #1706, #1734, #1735, #1736)
@@ -42,6 +39,7 @@ Added
     - iRODS file count in sheet overview tab (#1295)
     - ``get_url()`` helpers for ``Investigation``, ``Study`` and ``Assay`` models (#1748)
     - ``normalizesheets`` management command for sheet cleanup (#1661)
+    - Boolean field support in sheet templates (#1757)
 - **Taskflowbackend**
     - ``BatchCalculateChecksumTask`` iRODS task (#1634)
     - Automated generation of missing checksums in ``zone_move`` flow (#1634, #1767)
@@ -55,6 +53,7 @@ Changed
 
 - **General**
     - Upgrade to django-sodar-core v0.13.2-WIP (#1617, #1720, #1775, #1792)
+    - Upgrade to cubi-isa-templates v0.1.0 (#1757)
     - Upgrade to python-irodsclient v1.1.8 (#1538)
     - Upgrade Python dependencies (#1620)
     - Upgrade Vue app dependencies (#1620)
@@ -111,6 +110,8 @@ Removed
     - ``IRODS_DATA_REQUEST_STATUS_CHOICES`` constant (#1706)
     - ``HIDDEN_SHEET_TEMPLATE_FIELDS`` constant (#1733)
     - ``sheet_export*`` timeline events (#1773)
+    - ``SHEETS_ENABLED_TEMPLATES`` Django setting (#1756)
+    - ``tumor_normal_triplets`` ISA-Tab template (#1757)
 
 
 v0.13.4 (2023-05-15)

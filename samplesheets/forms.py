@@ -327,6 +327,10 @@ class SheetTemplateCreateForm(forms.Form):
                 if not all(v):  # Allow empty value if in options
                     field_kwargs['required'] = False
                 self.fields[k] = forms.ChoiceField(**field_kwargs)
+            elif isinstance(v, bool):
+                field_kwargs['required'] = False
+                self.fields[k] = forms.BooleanField(**field_kwargs)
+                self.initial[k] = v
             elif isinstance(v, dict):
                 field_kwargs['widget'] = forms.Textarea(
                     {'class': 'sodar-json-input'}
@@ -362,10 +366,6 @@ class SheetTemplateCreateForm(forms.Form):
         for k in self.json_fields:
             if not isinstance(extra_context[k], dict):
                 extra_context[k] = json.loads(extra_context[k])
-        if 'is_triplet' in self.sheet_tpl.configuration:
-            extra_context['is_triplet'] = self.sheet_tpl.configuration[
-                'is_triplet'
-            ]
 
         with tempfile.TemporaryDirectory() as td:
             cookiecutter(

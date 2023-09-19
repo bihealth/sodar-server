@@ -681,7 +681,7 @@ class TestSheetTemplateSelectView(ViewTestBase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             len(response.context['sheet_templates']),
-            len(settings.SHEETS_ENABLED_TEMPLATES),
+            len(ISA_TEMPLATES),
         )
 
     def test_render_with_sheets(self):
@@ -706,19 +706,13 @@ class TestSheetTemplateSelectView(ViewTestBase):
 class TestSheetTemplateCreateView(ViewTestBase):
     """Tests for SheetTemplateCreateView"""
 
-    def _get_post_data(self, tpl_name):
+    def _get_post_data(self, sheet_tpl):
         """
         Return POST data for creation from template
 
-        :param tpl_name: Template name (string)
+        :param sheet_tpl: IsaTabTemplate object
         :return: Dict
         """
-        templates = {
-            t.name: t
-            for t in ISA_TEMPLATES
-            if t.name in settings.SHEETS_ENABLED_TEMPLATES
-        }
-        sheet_tpl = templates[tpl_name]
         ret = {TPL_DIR_FIELD: clean_sheet_dir_name(self.project.title)}
         for k, v in sheet_tpl.configuration.items():
             if isinstance(v, str):
@@ -733,16 +727,16 @@ class TestSheetTemplateCreateView(ViewTestBase):
 
     def test_render_batch(self):
         """Test rendering the view with supported templates"""
-        for t in settings.SHEETS_ENABLED_TEMPLATES:
+        for t in ISA_TEMPLATES:
             with self.login(self.user):
                 response = self.client.get(
                     reverse(
                         'samplesheets:template_create',
                         kwargs={'project': self.project.sodar_uuid},
                     ),
-                    data={'sheet_tpl': t},
+                    data={'sheet_tpl': t.name},
                 )
-            self.assertEqual(response.status_code, 200, msg=t)
+            self.assertEqual(response.status_code, 200, msg=t.name)
 
     def test_render_invalid_template(self):
         """Test rendering the view with invalid template (should redirect)"""
@@ -784,8 +778,7 @@ class TestSheetTemplateCreateView(ViewTestBase):
 
     def test_post_batch(self):
         """Test POST request with supported templates and default values"""
-
-        for t in settings.SHEETS_ENABLED_TEMPLATES:
+        for t in ISA_TEMPLATES:
             self.assertIsNone(self.project.investigations.first())
             post_data = self._get_post_data(t)
             with self.login(self.user):
@@ -795,24 +788,26 @@ class TestSheetTemplateCreateView(ViewTestBase):
                         kwargs={'project': self.project.sodar_uuid},
                     )
                     + '?sheet_tpl='
-                    + t,
+                    + t.name,
                     data=post_data,
                 )
             isa_tab = ISATab.objects.first()
             self.assertEqual(isa_tab.tags, ['CREATE'])
-            self.assertEqual(response.status_code, 302, msg=t)
-            self.assertIsNotNone(self.project.investigations.first(), msg=t)
+            self.assertEqual(response.status_code, 302, msg=t.name)
+            self.assertIsNotNone(
+                self.project.investigations.first(), msg=t.name
+            )
             self.project.investigations.first().delete()
 
     def test_post_multiple(self):
         """Test multiple requests to add multiple sample sheets (should fail)"""
-        tpl_name = settings.SHEETS_ENABLED_TEMPLATES[0]
+        tpl = ISA_TEMPLATES[0]
         url = reverse(
             'samplesheets:template_create',
             kwargs={'project': self.project.sodar_uuid},
         )
-        url += '?sheet_tpl=' + tpl_name
-        post_data = self._get_post_data(tpl_name)
+        url += '?sheet_tpl=' + tpl.name
+        post_data = self._get_post_data(tpl)
         with self.login(self.user):
             response = self.client.post(url, data=post_data)
             self.assertEqual(response.status_code, 302)

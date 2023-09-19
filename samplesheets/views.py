@@ -128,6 +128,7 @@ SYNC_FAIL_UNSET_TOKEN = 'Remote sync token not set'
 SYNC_FAIL_UNSET_URL = 'Remote sync URL not set'
 SYNC_FAIL_INVALID_URL = 'Invalid API URL'
 SYNC_FAIL_STATUS_CODE = 'Source API responded with status code'
+TPL_DICT = {t.name: t for t in ISA_TEMPLATES}
 
 EMAIL_DELETE_REQUEST_ACCEPT = r'''
 Your delete request has been accepted.
@@ -1430,12 +1431,7 @@ class SheetTemplateSelectView(
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         templates = []
-        # HACK: Skip non-working templates in cubi-tk
-        for t in [
-            t
-            for t in ISA_TEMPLATES
-            if t.name in settings.SHEETS_ENABLED_TEMPLATES
-        ]:
+        for t in ISA_TEMPLATES:
             templates.append(
                 {
                     'name': t.name,
@@ -1482,7 +1478,7 @@ class SheetTemplateCreateView(
 
     def _get_sheet_template(self):
         t_name = self.request.GET.get('sheet_tpl')
-        return {t.name: t for t in ISA_TEMPLATES}[t_name]
+        return TPL_DICT[t_name] if t_name in TPL_DICT else None
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
@@ -1550,10 +1546,8 @@ class SheetTemplateCreateView(
         if not t_name:
             messages.error(request, 'Template name not provided.')
             return redirect(redirect_url)
-        elif t_name not in settings.SHEETS_ENABLED_TEMPLATES:
-            messages.error(
-                request, 'Template "{}" is not supported.'.format(t_name)
-            )
+        if t_name not in TPL_DICT:
+            messages.error(request, 'Template not found.')
             return redirect(redirect_url)
         return super().render_to_response(self.get_context_data())
 
