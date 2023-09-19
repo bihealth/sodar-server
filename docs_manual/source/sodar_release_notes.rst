@@ -22,6 +22,7 @@ Major feature update.
 - Add iRODS environment retrieval API view
 - Add "create" tag for sample sheet versions
 - Add user setting for maximum sample sheet table height
+- Add "normalizesheets" management command to clean up existing sample sheets
 - Improve sheet template creation form
 - Landingzones UI improvements
 - Sample sheet table resizing and rendering improvements

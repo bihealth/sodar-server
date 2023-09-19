@@ -265,12 +265,12 @@ class SheetVersionMixin:
     """Mixin for sheet version saving"""
 
     @classmethod
-    def save_version(cls, investigation, request, description=None):
+    def save_version(cls, investigation, request=None, description=None):
         """
         Save current version of an investigation as ISA-Tab into the database.
 
         :param investigation: Investigation object
-        :param request: HTTP request
+        :param request: HTTP request or None
         :param description: Version description (string, optional)
         :return: ISATab object
         :raise: Exception if ISA-Tab saving fails
@@ -287,7 +287,7 @@ class SheetVersionMixin:
             inv_uuid=investigation.sodar_uuid,
             isa_data=isa_data,
             tags=['EDIT'],
-            user=request.user,
+            user=request.user if request else None,
             archive_name=investigation.archive_name,
             description=description,
         )

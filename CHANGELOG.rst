@@ -41,6 +41,7 @@ Added
     - Template tag tests (#1723)
     - iRODS file count in sheet overview tab (#1295)
     - ``get_url()`` helpers for ``Investigation``, ``Study`` and ``Assay`` models (#1748)
+    - ``normalizesheets`` management command for sheet cleanup (#1661)
 - **Taskflowbackend**
     - ``BatchCalculateChecksumTask`` iRODS task (#1634)
     - Automated generation of missing checksums in ``zone_move`` flow (#1634, #1767)
@@ -78,6 +79,7 @@ Changed
     - Update ``get_sheets_url()`` helper to only handle ``Project`` objects (#1771)
     - Display full path under assay for iRODS data requests in UI (#1749)
     - Return full path under assay from ``IrodsDataRequest.get_short_path()`` (#1749)
+    - Make ``request`` optional in ``SheetVersionMixin.save_version()``
 - **Taskflowbackend**
     - Move iRODS object helpers from ``LandingZoneTaskflowMixin`` (#1699)
     - Move iRODS test cleanup to ``TaskflowTestMixin.clear_irods_test_data()`` (#1722)

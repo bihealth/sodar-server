@@ -54,6 +54,10 @@ operations regarding sample sheets, landing zones, iRODS data and ontologies.
     Return list of landing zones last modified over two weeks ago.
 ``irodsorphans``
     Find orphans in iRODS project collections.
+``normalizesheets``
+    Clean up and normalize previously imported sample sheets for
+    non-standard data or other issues. Also updates render tables and creates a
+    backup ISA-Tab version of the normalized sheets.
 ``syncnames``
     Synchronize alternative names for sample sheet material search.
 ``syncstudytables``
