@@ -92,11 +92,13 @@
           <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Cancel
         </a>
         {% if replace_sheets %}
-          <button type="submit" class="btn btn-primary" id="sodar-ss-btn-import-submit">
+          <button type="submit" class="btn btn-primary sodar-btn-submit-once"
+                  id="sodar-ss-btn-import-submit">
             <i class="iconify" data-icon="mdi:refresh"></i> Replace
           </button>
         {% else %}
-          <button type="submit" class="btn btn-primary" id="sodar-ss-btn-import-submit">
+          <button type="submit" class="btn btn-primary sodar-btn-submit-once"
+                  id="sodar-ss-btn-import-submit">
             <i class="iconify" data-icon="mdi:upload"></i> Import
           </button>
         {% endif %}

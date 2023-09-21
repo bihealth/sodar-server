@@ -42,7 +42,7 @@
            href="{{ request.session.real_referer }}">
           <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Cancel
         </a>
-        <button type="submit" class="btn btn-primary">
+        <button type="submit" class="btn btn-primary sodar-btn-submit-once">
           {% if not object.pk %}
             <i class="iconify" data-icon="mdi:plus-thick"></i> Create
           {% else %}

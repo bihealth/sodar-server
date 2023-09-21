@@ -52,7 +52,7 @@ Changed
 -------
 
 - **General**
-    - Upgrade to django-sodar-core v0.13.2-WIP (#1617, #1720, #1775, #1792)
+    - Upgrade to django-sodar-core v0.13.2 (#1617, #1720, #1775, #1792)
     - Upgrade to cubi-isa-templates v0.1.0 (#1757)
     - Upgrade to python-irodsclient v1.1.8 (#1538)
     - Upgrade Python dependencies (#1620)

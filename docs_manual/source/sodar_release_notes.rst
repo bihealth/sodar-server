@@ -28,7 +28,7 @@ Major feature update.
 - Sample sheet table resizing and rendering improvements
 - Add study table cache disabling
 - Minor updates and bug fixes
-- Upgrade to SODAR Core v0.13.0
+- Upgrade to SODAR Core v0.13.2
 - SODAR Core v0.13 updates: full role inheritance, finder role, etc.
 
 Migration Guide

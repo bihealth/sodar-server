@@ -18,6 +18,11 @@ TEMPLATES[0]['OPTIONS']['debug'] = True
 # Note: This key only used for development and testing.
 SECRET_KEY = env('DJANGO_SECRET_KEY', default='CHANGEME!!!')
 
+# MANAGER CONFIGURATION
+# ------------------------------------------------------------------------------
+ADMINS = [('Admin User', 'admin@example.com')]
+MANAGERS = ADMINS
+
 # Mail settings
 # ------------------------------------------------------------------------------
 EMAIL_HOST = 'localhost'

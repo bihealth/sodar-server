@@ -70,8 +70,8 @@ mistune==2.0.5
 django-autocomplete-light==3.9.4
 
 # SODAR Core
-# django-sodar-core==0.13.1
--e git+https://github.com/bihealth/sodar-core.git@43263b2d080ad313178aed93190091c9b16030ac#egg=django-sodar-core
+django-sodar-core==0.13.2
+# -e git+https://github.com/bihealth/sodar-core.git@737ef1c9f3a2294b9e8942f3af932b722273edc3#egg=django-sodar-core
 
 # Celery
 celery==5.2.7
