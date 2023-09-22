@@ -97,6 +97,7 @@ Fixed
     - Investigation object ref broken in timeline ``sheet_replace`` events (#1774)
     - External links column width estimation crash in table rendering (#1787)
     - Comment field editing with semicolon in data (#1790)
+    - Ontology URLs not encoded if passed as query string in wrapper template (#1762)
 
 Removed
 -------

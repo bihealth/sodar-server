@@ -515,7 +515,7 @@ export function buildRowData (params) {
             if (ontologyName === 'HPO') ontologyName = 'HP'
             let url = params.sodarContext.ontology_url_template
             url = url.replace('{ontology_name}', ontologyName)
-            url = url.replace('{accession}', term.accession)
+            url = url.replace('{accession}', encodeURIComponent(term.accession))
             term.accession = url
           }
         }
