@@ -11,6 +11,8 @@ Unreleased
 Added
 -----
 
+- **General**
+    - Release cleanup issue template (#1797)
 - **Irodsbackend**
     - ``get_trash_path()`` helper (#1658)
     - iRODS trash statistics for siteinfo (#1658)
