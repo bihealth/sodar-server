@@ -14,16 +14,30 @@ Make sure to base your work branch on the ``dev`` branch. This branch is used
 for development and is always the latest "bleeding edge" version of SODAR. The
 ``main`` branch is only used for merging stable releases.
 
-When naming your work branches, prefix them with the issue name, e.g.
-``123-your-new-feature`` or ``123-bug-being-fixed``. It is recommended to keep
-the branch names short and concise.
+When naming your work branches, prefix them with the issue ID, preferably
+followed by a verb depicting the action: "add", "update", "fix", "remove",
+"refactor", "upgrade", "deprecate" or something else if none of these ar
+applicable.
 
+The rest of the branch name should *concisely* represent the change. It is not
+necessary (and often not recommended) to include the entire name of the issue
+as they may be verbose.
+
+If a branch and pull request tackles multiple issues at once, including the ID
+of the most major issue is enough.
+
+Examples of recommended branch names:
+
+- ``123-add-zone-polarity-reversing``
+- ``456-fix-contact-cell-rendering``
+- ``789-refactor-irodsbackend-tests``
 
 Commits
 =======
 
 It is recommended to use short but descriptive commit messages and always
-include the related issue ID(s) in the message. Examples:
+include the related issue ID(s) in the message. Starting them with the verb
+depicting the action is desirable. Examples:
 
 - ``add local irods auth api view (#1263)``
 - ``fix ontology column config tooltip hiding (#1379)``
@@ -34,6 +48,9 @@ Pull Requests
 
 Please add the related issue ID(s) to the title of your pull request and ensure
 the pull request is set against the ``dev`` branch.
+
+It is strongly recommended to use descriptive commit messages even in work
+commits that are to be squashed in merging. This will aid the review process.
 
 Before submitting a pull request for review, ensure the following:
 
@@ -94,17 +111,8 @@ Sphinx and other requirements installed.
 .. code-block:: bash
 
     $ cd docs
-    $ make html
+    $ rm -rf build && make html
 
-Note that in some cases such as editing the index, changes may not be visible
-unless you build the docs from scratch. In that case, first remove previously
-built files with ``rm -rf build``.
-
-When updating the ``CHANGELOG`` file, the following conventions should be
-followed:
-
-- Split updates into the Added/Changed/Fixed/Removed categories.
-- Under each category, mark updates under the related app if applicable,
-  otherwise use *General*.
-- Write brief but descriptive descriptions followed by issue ID(s). Previous
-  entries serve as examples.
+It is recommended to **not** update the ``CHANGELOG`` file in pull requests.
+This will be done by the maintainers when preparing a release in order to avoid
+unnecessary merge/rebase conflicts.

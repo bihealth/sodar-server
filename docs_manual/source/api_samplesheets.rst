@@ -11,9 +11,26 @@ API Views
 
 .. currentmodule:: samplesheets.views_api
 
+Sample Sheet Management
+-----------------------
+
 .. autoclass:: InvestigationRetrieveAPIView
 
+.. autoclass:: SheetImportAPIView
+
+.. autoclass:: SheetISAExportAPIView
+
+iRODS Data Objects and Collections
+----------------------------------
+
 .. autoclass:: IrodsCollsCreateAPIView
+
+.. autoclass:: SampleDataFileExistsAPIView
+
+.. autoclass:: ProjectIrodsFileListAPIView
+
+iRODS Access Tickets
+--------------------
 
 .. autoclass:: IrodsAccessTicketListAPIView
 
@@ -23,7 +40,10 @@ API Views
 
 .. autoclass:: IrodsAccessTicketUpdateAPIView
 
-.. autoclass:: IrodsAccessTicketDeleteAPIView
+.. autoclass:: IrodsAccessTicketDestroyAPIView
+
+iRODS Data Requests
+-------------------
 
 .. autoclass:: IrodsDataRequestRetrieveAPIView
 
@@ -38,14 +58,6 @@ API Views
 .. autoclass:: IrodsDataRequestAcceptAPIView
 
 .. autoclass:: IrodsDataRequestRejectAPIView
-
-.. autoclass:: SheetImportAPIView
-
-.. autoclass:: SheetISAExportAPIView
-
-.. autoclass:: SampleDataFileExistsAPIView
-
-.. autoclass:: ProjectIrodsFileListAPIView
 
 
 Versioning
