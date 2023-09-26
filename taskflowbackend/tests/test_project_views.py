@@ -1,7 +1,6 @@
 """Tests for projectroles views with taskflow"""
 
 from irods.collection import iRODSCollection
-from irods.exception import CollectionDoesNotExist
 from irods.user import iRODSUser, iRODSUserGroup
 
 from django.conf import settings
@@ -55,8 +54,12 @@ class TestProjectCreateView(TaskflowViewTestBase):
     def test_create_project(self):
         """Test Project creation with taskflow"""
         self.assertEqual(Project.objects.count(), 1)
-        with self.assertRaises(CollectionDoesNotExist):
-            self.irods.collections.get(self.irods_backend.get_projects_path())
+        self.assertEqual(
+            self.irods.collections.exists(
+                self.irods_backend.get_projects_path()
+            ),
+            False,
+        )
 
         # Make project with owner in Taskflow and Django
         self.project, self.owner_as = self.make_project_taskflow(

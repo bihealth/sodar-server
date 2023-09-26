@@ -45,14 +45,14 @@ UPDATED_README = 'Updated readme'
 # Tests with Taskflow ----------------------------------------------------------
 
 
-class TestCoreTaskflowAPIBase(TaskflowAPIViewTestBase):
+class CoreTaskflowAPITestBase(TaskflowAPIViewTestBase):
     """Override of TestTaskflowAPIBase for SODAR Core API views"""
 
     media_type = CORE_API_MEDIA_TYPE
     api_version = CORE_API_DEFAULT_VERSION
 
 
-class TestProjectCreateAPIView(TestCoreTaskflowAPIBase):
+class TestProjectCreateAPIView(CoreTaskflowAPITestBase):
     """Tests for ProjectCreateAPIView with taskflow"""
 
     def test_create_project(self):
@@ -93,7 +93,7 @@ class TestProjectCreateAPIView(TestCoreTaskflowAPIBase):
         self.assert_group_member(project, self.user, True)
 
 
-class TestProjectUpdateAPIView(TestCoreTaskflowAPIBase):
+class TestProjectUpdateAPIView(CoreTaskflowAPITestBase):
     """Tests for ProjectUpdateAPIView with taskflow"""
 
     def setUp(self):
@@ -318,7 +318,7 @@ class TestProjectUpdateAPIView(TestCoreTaskflowAPIBase):
         )
 
 
-class TestRoleAssignmentCreateAPIView(TestCoreTaskflowAPIBase):
+class TestRoleAssignmentCreateAPIView(CoreTaskflowAPITestBase):
     """Tests for RoleAssignmentCreateAPIView with taskflow"""
 
     def setUp(self):
@@ -384,7 +384,7 @@ class TestRoleAssignmentCreateAPIView(TestCoreTaskflowAPIBase):
         self.assert_group_member(self.project, self.user_new, False)
 
 
-class TestRoleAssignmentUpdateAPIView(TestCoreTaskflowAPIBase):
+class TestRoleAssignmentUpdateAPIView(CoreTaskflowAPITestBase):
     """Tests for RoleAssignmentUpdateAPIView with taskflow"""
 
     def setUp(self):
@@ -470,7 +470,7 @@ class TestRoleAssignmentUpdateAPIView(TestCoreTaskflowAPIBase):
         self.assert_group_member(self.project, self.user_new, False)
 
 
-class TestRoleAssignmentOwnerTransferAPIView(TestCoreTaskflowAPIBase):
+class TestRoleAssignmentOwnerTransferAPIView(CoreTaskflowAPITestBase):
     """Tests for RoleAssignmentOwnerTransferAPIView"""
 
     def setUp(self):
@@ -609,7 +609,7 @@ class TestRoleAssignmentOwnerTransferAPIView(TestCoreTaskflowAPIBase):
         self.assert_group_member(self.project, self.user, False)
 
 
-class TestRoleAssignmentDestroyAPIView(TestCoreTaskflowAPIBase):
+class TestRoleAssignmentDestroyAPIView(CoreTaskflowAPITestBase):
     """Tests for RoleAssignmentDestroyAPIView with taskflow"""
 
     def setUp(self):

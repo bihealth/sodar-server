@@ -225,7 +225,6 @@
   {# Tour content #}
   <script type="text/javascript">
     tourEnabled = true;
-
     tour.addStep('sheet_version', {
         title: 'Sample Sheet Versions',
         text: 'In this view you can manage saved backup versions of the ' +
@@ -235,7 +234,6 @@
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
-
     tour.addStep('sheet_version_list', {
         title: 'Sheet Version List',
         text: 'The saved sample sheet versions are displayed in this list. ' +
@@ -245,7 +243,6 @@
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
-
     if ($('.sodar-ss-version-item-title').length) {
         tour.addStep('sheet_version_title', {
             title: 'Sheet Version Title',
@@ -257,7 +254,6 @@
             showCancelLink: true
         });
     }
-
     if ($('.sodar-ss-version-item-desc').length) {
         tour.addStep('sheet_version_desc', {
             title: 'Sheet Version Description',
@@ -268,7 +264,6 @@
             showCancelLink: true
         });
     }
-
     if ($('.sodar-ss-version-item-tags').length) {
         tour.addStep('sheet_version_tags', {
             title: 'Sheet Version Tags',
@@ -281,7 +276,6 @@
             showCancelLink: true
         });
     }
-
     if ($('.sodar-ss-version-item-parser').length) {
         tour.addStep('sheet_version_parser', {
             title: 'Parser Version',
@@ -295,7 +289,6 @@
             showCancelLink: true
         });
     }
-
     if ($('.sodar-ss-version-dropdown').length) {
         tour.addStep('sheet_version_dropdown', {
             title: 'Sheet Version Dropdown',
@@ -308,7 +301,6 @@
             showCancelLink: true
         });
     }
-
     if ($('#sodar-ss-version-check-all').length) {
         tour.addStep('sheet_version_check', {
             title: 'Sheet Version Checkboxes',
@@ -321,7 +313,6 @@
             showCancelLink: true
         });
     }
-
     tour.addStep('sheet_version_ops', {
         title: 'Version Operations',
         text: 'The version operations dropdown allows you to delete multiple ' +
@@ -332,7 +323,6 @@
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
-
     tour.addStep('sheets_btn_back', {
         title: 'Back to Project Sample Sheets',
         text: 'Click on this button to return to the project sample sheets.',

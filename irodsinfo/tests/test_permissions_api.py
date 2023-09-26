@@ -9,8 +9,8 @@ from projectroles.tests.test_permissions import TestSiteAppPermissionBase
 class TestIrodsConfigRetrieveAPIView(TestSiteAppPermissionBase):
     """Tests for irodsinfo API"""
 
-    def test_irods_config(self):
-        """Test permissions for IrodsConfigRetrieveAPIView"""
+    def test_get_irods_config(self):
+        """Test IrodsConfigRetrieveAPIView GET"""
         url = reverse('irodsinfo:api_env')
         good_users = [self.superuser, self.regular_user]
         bad_users = [self.anonymous]

@@ -45,9 +45,9 @@ class TestLandingZoneAPIViewsBase(
     def setUp(self):
         super().setUp()
         # Init contributor user and assignment
-        self.user_contrib = self.make_user('user_contrib')
-        self.contrib_as = self.make_assignment(
-            self.project, self.user_contrib, self.role_contributor
+        self.user_contributor = self.make_user('user_contributor')
+        self.contributor_as = self.make_assignment(
+            self.project, self.user_contributor, self.role_contributor
         )
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
@@ -104,7 +104,7 @@ class TestLandingZoneListAPIView(TestLandingZoneAPIViewsBase):
             'landingzones:api_list', kwargs={'project': self.project.sodar_uuid}
         )
         response = self.request_knox(
-            url, token=self.get_token(self.user_contrib)
+            url, token=self.get_token(self.user_contributor)
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 0)

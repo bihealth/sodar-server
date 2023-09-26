@@ -120,7 +120,7 @@ class TestSheetCellEditAjaxView(
         """Test updating library name with empty collection"""
         with self.irods_backend.get_session() as irods:
             irods.collections.create(self.library_path)
-            self.assertIsNotNone(irods.collections.get(self.library_path))
+            self.assertEqual(irods.collections.exists(self.library_path), True)
         self.assay_plugin.update_cache(project=self.project, user=self.user)
         with self.login(self.user):
             response = self.client.post(
@@ -140,7 +140,7 @@ class TestSheetCellEditAjaxView(
         """Test updating library name with file in iRODS (should fail)"""
         with self.irods_backend.get_session() as irods:
             irods.collections.create(self.library_path)
-            self.assertIsNotNone(irods.collections.get(self.library_path))
+            self.assertEqual(irods.collections.exists(self.library_path), True)
             irods.data_objects.create(
                 os.path.join(self.library_path, DATA_OBJ_NAME)
             )
@@ -168,7 +168,7 @@ class TestSheetCellEditAjaxView(
         self.values['verify'] = False
         with self.irods_backend.get_session() as irods:
             irods.collections.create(self.library_path)
-            self.assertIsNotNone(irods.collections.get(self.library_path))
+            self.assertEqual(irods.collections.exists(self.library_path), True)
             irods.data_objects.create(
                 os.path.join(self.library_path, DATA_OBJ_NAME)
             )
@@ -202,7 +202,7 @@ class TestSheetCellEditAjaxView(
         }
         with self.irods_backend.get_session() as irods:
             irods.collections.create(self.library_path)
-            self.assertIsNotNone(irods.collections.get(self.library_path))
+            self.assertEqual(irods.collections.exists(self.library_path), True)
             irods.data_objects.create(
                 os.path.join(self.library_path, DATA_OBJ_NAME)
             )
@@ -253,7 +253,7 @@ class TestIrodsDataRequestCreateAjaxView(IrodsDataRequestViewTestBase):
 
     def test_create_exists_same_user(self):
         """Test creating delete request if request for same user exists"""
-        with self.login(self.user_contrib):
+        with self.login(self.user_contributor):
             self.client.post(
                 reverse(
                     'samplesheets:ajax_irods_request_create',
@@ -266,7 +266,7 @@ class TestIrodsDataRequestCreateAjaxView(IrodsDataRequestViewTestBase):
         self._assert_alert_count(CREATE_ALERT, self.user, 1)
         self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
 
-        with self.login(self.user_contrib):
+        with self.login(self.user_contributor):
             response = self.client.post(
                 reverse(
                     'samplesheets:ajax_irods_request_create',
@@ -284,7 +284,7 @@ class TestIrodsDataRequestCreateAjaxView(IrodsDataRequestViewTestBase):
 
     def test_create_exists_as_admin_by_contributor(self):
         """Test creating request as admin if request from contributor exists"""
-        with self.login(self.user_contrib):
+        with self.login(self.user_contributor):
             self.client.post(
                 reverse(
                     'samplesheets:ajax_irods_request_create',
@@ -315,7 +315,7 @@ class TestIrodsDataRequestCreateAjaxView(IrodsDataRequestViewTestBase):
         self.make_assignment_taskflow(
             self.project, user_contributor2, self.role_contributor
         )
-        with self.login(self.user_contrib):
+        with self.login(self.user_contributor):
             self.client.post(
                 reverse(
                     'samplesheets:ajax_irods_request_create',
@@ -380,7 +380,7 @@ class TestIrodsDataRequestDeleteAjaxView(IrodsDataRequestViewTestBase):
     def test_delete_request(self):
         """Test GET request for deleting an existing delete request"""
         # Create request
-        with self.login(self.user_contrib):
+        with self.login(self.user_contributor):
             self.client.post(
                 reverse(
                     'samplesheets:ajax_irods_request_create',
@@ -394,7 +394,7 @@ class TestIrodsDataRequestDeleteAjaxView(IrodsDataRequestViewTestBase):
         self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
 
         # Delete request
-        with self.login(self.user_contrib):
+        with self.login(self.user_contributor):
             response = self.client.post(
                 reverse(
                     'samplesheets:ajax_irods_request_delete',
@@ -412,7 +412,7 @@ class TestIrodsDataRequestDeleteAjaxView(IrodsDataRequestViewTestBase):
 
     def test_delete_request_as_admin_by_contributor(self):
         """Test deleting an existing delete request"""
-        with self.login(self.user_contrib):
+        with self.login(self.user_contributor):
             self.client.post(
                 reverse(
                     'samplesheets:ajax_irods_request_create',
@@ -444,7 +444,7 @@ class TestIrodsDataRequestDeleteAjaxView(IrodsDataRequestViewTestBase):
         self.make_assignment_taskflow(
             self.project, user_contributor2, self.role_contributor
         )
-        with self.login(self.user_contrib):
+        with self.login(self.user_contributor):
             self.client.post(
                 reverse(
                     'samplesheets:ajax_irods_request_create',
@@ -498,7 +498,7 @@ class TestIrodsDataRequestDeleteAjaxView(IrodsDataRequestViewTestBase):
         self._assert_alert_count(CREATE_ALERT, self.user, 0)
         self._assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
 
-        with self.login(self.user_contrib):
+        with self.login(self.user_contributor):
             self.client.post(
                 reverse(
                     'samplesheets:ajax_irods_request_create',

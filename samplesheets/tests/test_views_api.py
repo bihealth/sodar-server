@@ -55,7 +55,7 @@ from samplesheets.tests.test_models import (
 )
 from samplesheets.tests.test_sheet_config import SheetConfigMixin
 from samplesheets.tests.test_views import (
-    ViewTestBase,
+    SamplesheetsViewTestBase,
     REMOTE_SITE_NAME,
     REMOTE_SITE_URL,
     REMOTE_SITE_DESC,
@@ -93,14 +93,14 @@ TICKET_PATH = '/test/path'
 # TODO: Add testing for study table cache updates
 
 
-class TestSampleSheetAPIBase(SampleSheetIOMixin, TestAPIViewsBase):
+class SampleSheetAPIViewTestBase(SampleSheetIOMixin, TestAPIViewsBase):
     """Base view for samplesheets API views tests"""
 
 
-class TestIrodsAccessTicketAPIBase(
+class IrodsAccessTicketAPITestBase(
     IrodsAccessTicketMixin,
     IrodsAccessTicketViewTestMixin,
-    TestSampleSheetAPIBase,
+    SampleSheetAPIViewTestBase,
 ):
     """Base view for iRODS access ticket requests API tests"""
 
@@ -109,20 +109,18 @@ class TestIrodsAccessTicketAPIBase(
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-
-        # Init contrib user
-        self.user_contrib = self.make_user('user_contrib')
+        # Init contributor user
+        self.user_contributor = self.make_user('user_contributor')
         self.make_assignment(
-            self.project, self.user_contrib, self.role_contributor
+            self.project, self.user_contributor, self.role_contributor
         )
-        self.token_contrib = self.get_token(self.user_contrib)
-
+        self.token_contrib = self.get_token(self.user_contributor)
         # Get appalerts API and model
         self.app_alerts = get_backend_api('appalerts_backend')
         self.app_alert_model = self.app_alerts.get_model()
 
 
-class TestInvestigationRetrieveAPIView(TestSampleSheetAPIBase):
+class TestInvestigationRetrieveAPIView(SampleSheetAPIViewTestBase):
     """Tests for InvestigationRetrieveAPIView"""
 
     def setUp(self):
@@ -179,7 +177,10 @@ class TestInvestigationRetrieveAPIView(TestSampleSheetAPIBase):
 
 
 class TestSheetImportAPIView(
-    SheetImportMixin, SheetConfigMixin, LandingZoneMixin, TestSampleSheetAPIBase
+    SheetImportMixin,
+    SheetConfigMixin,
+    LandingZoneMixin,
+    SampleSheetAPIViewTestBase,
 ):
     """Tests for SampleSheetImportAPIView"""
 
@@ -624,7 +625,7 @@ class TestSheetImportAPIView(
         self.assertEqual(ISATab.objects.filter(project=self.project).count(), 0)
 
 
-class TestSheetISAExportAPIView(TestSampleSheetAPIBase):
+class TestSheetISAExportAPIView(SampleSheetAPIViewTestBase):
     """Tests for SheetISAExportAPIView"""
 
     def test_get_zip(self):
@@ -663,7 +664,51 @@ class TestSheetISAExportAPIView(TestSampleSheetAPIBase):
         self.assertEqual(response.data, expected)
 
 
-class TestIrodsAccessTicketListAPIView(TestIrodsAccessTicketAPIBase):
+class TestIrodsAccessTicketRetrieveAPIView(IrodsAccessTicketAPITestBase):
+    """Tests for IrodsAccessTicketRetrieveAPIView"""
+
+    def setUp(self):
+        super().setUp()
+        self.ticket = self.make_irods_ticket(
+            study=self.study,
+            assay=self.assay,
+            ticket=TICKET_STR,
+            path=TICKET_PATH,
+            label=TICKET_LABEL,
+            user=self.user,
+            date_expires=None,
+        )
+        self.url = reverse(
+            'samplesheets:api_irods_ticket_retrieve',
+            kwargs={'irodsaccessticket': self.ticket.sodar_uuid},
+        )
+
+    # TODO: Update test (see issues #1800 and #1801)
+    def test_get(self):
+        """Test IrodsAccessTicketRetrieveAPIView GET"""
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        with self.login(self.user_contributor):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        local_date_created = self.ticket.date_created.astimezone(
+            timezone.get_current_timezone()
+        )
+        expected = {
+            'sodar_uuid': str(self.ticket.sodar_uuid),
+            'label': self.ticket.label,
+            'ticket': self.ticket.ticket,
+            'assay': self.ticket.assay.pk,
+            'study': self.ticket.study.pk,
+            'path': self.ticket.path,
+            'date_created': local_date_created.isoformat(),
+            'date_expires': self.ticket.date_expires,
+            'user': self.ticket.user.pk,
+            'is_active': self.ticket.is_active(),
+        }
+        self.assertEqual(json.loads(response.content), expected)
+
+
+class TestIrodsAccessTicketListAPIView(IrodsAccessTicketAPITestBase):
     """Tests for IrodsAccessListAPIView"""
 
     def setUp(self):
@@ -685,7 +730,7 @@ class TestIrodsAccessTicketListAPIView(TestIrodsAccessTicketAPIBase):
     def test_get(self):
         """Test IrodsAccessTicketListAPIView GET"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
-        with self.login(self.user_contrib):
+        with self.login(self.user_contributor):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         local_date_created = self.ticket.date_created.astimezone(
@@ -717,7 +762,7 @@ class TestIrodsAccessTicketListAPIView(TestIrodsAccessTicketAPIBase):
             date_expires=timezone.now() - timedelta(days=1),
         )
         self.assertEqual(IrodsAccessTicket.objects.count(), 2)
-        with self.login(self.user_contrib):
+        with self.login(self.user_contributor):
             response = self.client.get(self.url + '?active=1')
         self.assertEqual(response.status_code, 200)
         local_date_created = self.ticket.date_created.astimezone(
@@ -738,62 +783,17 @@ class TestIrodsAccessTicketListAPIView(TestIrodsAccessTicketAPIBase):
         self.assertEqual(json.loads(response.content), [expected])
 
 
-class TestIrodsAccessTicketRetrieveAPIView(TestIrodsAccessTicketAPIBase):
-    """Tests for IrodsAccessTicketRetrieveAPIView"""
-
-    def setUp(self):
-        super().setUp()
-        self.ticket = self.make_irods_ticket(
-            study=self.study,
-            assay=self.assay,
-            ticket=TICKET_STR,
-            path=TICKET_PATH,
-            label=TICKET_LABEL,
-            user=self.user,
-            date_expires=None,
-        )
-        self.url = reverse(
-            'samplesheets:api_irods_ticket_retrieve',
-            kwargs={'irodsaccessticket': self.ticket.sodar_uuid},
-        )
-
-    def test_get(self):
-        """Test IrodsAccessTicketRetrieveAPIView GET"""
-        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
-        with self.login(self.user_contrib):
-            response = self.client.get(self.url)
-        self.assertEqual(response.status_code, 200)
-        local_date_created = self.ticket.date_created.astimezone(
-            timezone.get_current_timezone()
-        )
-        expected = {
-            'sodar_uuid': str(self.ticket.sodar_uuid),
-            'label': self.ticket.label,
-            'ticket': self.ticket.ticket,
-            'assay': self.ticket.assay.pk,
-            'study': self.ticket.study.pk,
-            'path': self.ticket.path,
-            'date_created': local_date_created.isoformat(),
-            'date_expires': self.ticket.date_expires,
-            'user': self.ticket.user.pk,
-            'is_active': self.ticket.is_active(),
-        }
-        self.assertEqual(json.loads(response.content), expected)
-
-
 class TestIrodsDataRequestRetrieveAPIView(
-    IrodsDataRequestMixin, TestSampleSheetAPIBase
+    IrodsDataRequestMixin, SampleSheetAPIViewTestBase
 ):
     """Tests for IrodsDataRequestRetrieveAPIView"""
 
     def setUp(self):
         super().setUp()
-        # Add contributor user
-        self.user_contrib = self.make_user('user_contributor')
+        self.user_contributor = self.make_user('user_contributor')
         self.make_assignment(
-            self.project, self.user_contrib, self.role_contributor
+            self.project, self.user_contributor, self.role_contributor
         )
-        # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
@@ -806,7 +806,7 @@ class TestIrodsDataRequestRetrieveAPIView(
             action=IRODS_REQUEST_ACTION_DELETE,
             path=os.path.join(self.assay_path, IRODS_FILE_NAME),
             status=IRODS_REQUEST_STATUS_ACTIVE,
-            user=self.user_contrib,
+            user=self.user_contributor,
         )
         self.url = reverse(
             'samplesheets:api_irods_request_retrieve',
@@ -823,7 +823,7 @@ class TestIrodsDataRequestRetrieveAPIView(
             'action': IRODS_REQUEST_ACTION_DELETE,
             'path': self.request.path,
             'target_path': '',
-            'user': self.get_serialized_user(self.user_contrib),
+            'user': self.get_serialized_user(self.user_contributor),
             'status': IRODS_REQUEST_STATUS_ACTIVE,
             'status_info': '',
             'description': self.request.description,
@@ -834,31 +834,27 @@ class TestIrodsDataRequestRetrieveAPIView(
 
 
 class TestIrodsDataRequestListAPIView(
-    IrodsDataRequestMixin, TestSampleSheetAPIBase
+    IrodsDataRequestMixin, SampleSheetAPIViewTestBase
 ):
     """Tests for IrodsDataRequestListAPIView"""
 
     def setUp(self):
         super().setUp()
-        # Add contributor user
-        self.user_contrib = self.make_user('user_contributor')
+        self.user_contributor = self.make_user('user_contributor')
         self.make_assignment(
-            self.project, self.user_contrib, self.role_contributor
+            self.project, self.user_contributor, self.role_contributor
         )
-        # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-        # Set up iRODS backend and paths
         self.irods_backend = get_backend_api('omics_irods')
         self.assay_path = self.irods_backend.get_path(self.assay)
-        # Make request
         self.request = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
             path=os.path.join(self.assay_path, IRODS_FILE_NAME),
             status=IRODS_REQUEST_STATUS_ACTIVE,
-            user=self.user_contrib,
+            user=self.user_contributor,
         )
         self.url = reverse(
             'samplesheets:api_irods_request_list',
@@ -876,7 +872,7 @@ class TestIrodsDataRequestListAPIView(
             'action': IRODS_REQUEST_ACTION_DELETE,
             'path': self.request.path,
             'target_path': '',
-            'user': self.get_serialized_user(self.user_contrib),
+            'user': self.get_serialized_user(self.user_contributor),
             'status': IRODS_REQUEST_STATUS_ACTIVE,
             'status_info': '',
             'description': self.request.description,
@@ -916,14 +912,14 @@ class TestIrodsDataRequestListAPIView(
         self.request.status = IRODS_REQUEST_STATUS_ACCEPTED
         self.request.save()
         response = self.request_knox(
-            self.url, token=self.get_token(self.user_contrib)
+            self.url, token=self.get_token(self.user_contributor)
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
 
 
 class TestIrodsDataRequestDestroyAPIView(
-    IrodsDataRequestMixin, TestSampleSheetAPIBase
+    IrodsDataRequestMixin, SampleSheetAPIViewTestBase
 ):
     """Tests for IrodsDataRequestDestroyAPIView"""
 
@@ -970,7 +966,7 @@ class TestIrodsDataRequestDestroyAPIView(
         self._assert_tl_count(1)
 
 
-class TestSampleDataFileExistsAPIView(TestSampleSheetAPIBase):
+class TestSampleDataFileExistsAPIView(SampleSheetAPIViewTestBase):
     """Tests for SampleDataFileExistsAPIView"""
 
     @override_settings(ENABLE_IRODS=False)
@@ -983,7 +979,7 @@ class TestSampleDataFileExistsAPIView(TestSampleSheetAPIBase):
 
 # NOTE: Not yet standardized api, use old base class to test
 class TestRemoteSheetGetAPIView(
-    RemoteSiteMixin, RemoteProjectMixin, ViewTestBase
+    RemoteSiteMixin, RemoteProjectMixin, SamplesheetsViewTestBase
 ):
     """Tests for RemoteSheetGetAPIView"""
 

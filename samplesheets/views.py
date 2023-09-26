@@ -174,9 +174,9 @@ class SheetImportMixin:
     #: Whether configs should be regenerated on sheet replace
     replace_configs = True
 
-    def create_timeline_event(self, project, action, tpl_name=None):
+    def add_tl_event(self, project, action, tpl_name=None):
         """
-        Create timeline event for sample sheet import, replace or create.
+        Add timeline event for sample sheet import, replace or create.
 
         :param project: Project object
         :param action: "import", "create" or "replace" (string)
@@ -713,9 +713,9 @@ class IrodsAccessTicketModifyMixin:
     """iRODS access ticket modification helpers and overrides"""
 
     @classmethod
-    def create_timeline_event(cls, ticket, action):
+    def add_tl_event(cls, ticket, action):
         """
-        Create timeline event for ticket modification.
+        Add timeline event for ticket modification.
 
         :param ticket: IrodsAccessTicket object
         :param action: "create", "delete" or "update" (string)
@@ -1371,7 +1371,7 @@ class SheetImportView(
         form_kwargs = self.get_form_kwargs()
         form_action = 'replace' if form_kwargs['replace'] else 'create'
         redirect_url = get_sheets_url(project)
-        tl_event = self.create_timeline_event(project, form_action)
+        tl_event = self.add_tl_event(project, form_action)
 
         # Import via form
         try:
@@ -1503,7 +1503,7 @@ class SheetTemplateCreateView(
         project = self.get_project()
         redirect_url = get_sheets_url(project)
         sheet_tpl = self._get_sheet_template()
-        tl_event = self.create_timeline_event(
+        tl_event = self.add_tl_event(
             project, 'create', tpl_name=sheet_tpl.name if sheet_tpl else None
         )
 
@@ -2055,7 +2055,7 @@ class SheetVersionRestoreView(
                 investigation=new_inv, old_inv=old_inv, tl_event=tl_event
             )
         if new_inv:
-            new_inv = self.finalize_import(
+            self.finalize_import(
                 investigation=new_inv,
                 action='restore',
                 tl_event=tl_event,
@@ -2291,7 +2291,7 @@ class IrodsAccessTicketCreateView(
         obj.save()
 
         # Create timeline event and app alerts
-        self.create_timeline_event(obj, 'create')
+        self.add_tl_event(obj, 'create')
         self.create_app_alerts(obj, 'create', self.request.user)
         messages.success(
             self.request,
@@ -2319,7 +2319,7 @@ class IrodsAccessTicketUpdateView(
 
     def form_valid(self, form):
         obj = form.save()
-        self.create_timeline_event(obj, 'update')
+        self.add_tl_event(obj, 'update')
         self.create_app_alerts(obj, 'update', self.request.user)
         messages.success(
             self.request,
@@ -2371,8 +2371,7 @@ class IrodsAccessTicketDeleteView(
                     kwargs={'project': obj.get_project().sodar_uuid},
                 )
             )
-
-        self.create_timeline_event(obj, 'delete')
+        self.add_tl_event(obj, 'delete')
         self.create_app_alerts(obj, 'delete', request.user)
         messages.success(
             request,
@@ -2729,7 +2728,6 @@ class IrodsDataRequestRejectView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
-    InvestigationContextMixin,
     IrodsDataRequestModifyMixin,
     View,
 ):
@@ -2788,7 +2786,6 @@ class IrodsDataRequestRejectBatchView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
-    InvestigationContextMixin,
     IrodsDataRequestModifyMixin,
     View,
 ):

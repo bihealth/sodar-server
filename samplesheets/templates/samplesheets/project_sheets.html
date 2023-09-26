@@ -24,11 +24,9 @@
 
 {% block javascript %}
   {{ block.super }}
-
   {# Tour content #}
   <script type="text/javascript">
     tourEnabled = true;
-
     tour.addStep('sheet_info', {
         title: 'Sample Sheets',
         text: 'In this app you are able to access the project\'s study design ' +
@@ -37,7 +35,6 @@
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
-
     tour.addStep('sheet_isa', {
         title: 'ISA Model',
         text: 'The study design is represented according to the ISA ' +
@@ -49,7 +46,6 @@
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
-
     tour.addStep('sheet_navigation', {
         title: 'Sample Sheet Navigation',
         text: 'Navigate between studies and data overview using the ' +
@@ -57,7 +53,6 @@
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
-
     tour.addStep('sheet_operations', {
         title: 'Sheet Operations',
         text: 'Authorized users can perform sheet-wide operations ' +
@@ -65,7 +60,6 @@
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
-
     tour.addStep('data_links', {
         title: 'iRODS Links',
         text: 'Links to sample files in iRODS can be accessed in ' +
@@ -76,7 +70,6 @@
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
-
     tour.addStep('study_shortcuts', {
         title: 'Study Shortcuts',
         text: 'Study shortcuts such as IGV links can be found in the ' +
@@ -85,7 +78,6 @@
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
-
     tour.addStep('cell_copying', {
         title: 'Cell Copying',
         text: 'You can copy one or several cells by clicking on a ' +
@@ -94,7 +86,6 @@
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
-
     tour.addStep('sheet_edit', {
         title: 'Sheet Editing',
         text: 'Certain aspects of the sample sheets can be edited. See the ' +
@@ -103,7 +94,5 @@
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
-
   </script>
-
 {% endblock javascript %}

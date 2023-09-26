@@ -233,9 +233,7 @@ class ProjectAppPlugin(
 
     #: Description string
     description = (
-        'Sample sheets contain your donors/patients, samples, and '
-        'links to assays (such as NGS data), with ISA-Tools '
-        'compatibility'
+        'Study design metadata with access to assay data files in iRODS'
     )
 
     #: Required permission for accessing the app

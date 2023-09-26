@@ -1,6 +1,7 @@
 """Tests for views in the irodsbackend app"""
 
 import base64
+import os
 
 from irods.test.helpers import make_object
 
@@ -11,12 +12,13 @@ from django.urls import reverse
 from test_plus.test import TestCase
 
 # Projectroles dependency
-from projectroles.models import Role, SODAR_CONSTANTS
-from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
-from projectroles.plugins import get_backend_api
+from projectroles.models import SODAR_CONSTANTS
+
+# Taskflowbackend dependency
+from taskflowbackend.tests.base import TaskflowViewTestBase
 
 
-# Global constants
+# SODAR constants
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
 PROJECT_ROLE_CONTRIBUTOR = SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR']
@@ -38,54 +40,25 @@ LOCAL_USER_NAME = 'local_user'
 LOCAL_USER_PASS = 'password'
 
 
-class TestViewsBase(ProjectMixin, RoleAssignmentMixin, TestCase):
-    """Base class for view testing"""
+class IrodsbackendViewTestBase(TaskflowViewTestBase):
+    """Base class for irodsbackend UI view testing"""
 
     def setUp(self):
+        super().setUp()
         self.req_factory = RequestFactory()
-        # Get iRODS backend
-        self.irods_backend = get_backend_api('omics_irods')
-        self.assertIsNotNone(self.irods_backend)
-        # Get iRODS session
-        self.irods = self.irods_backend.get_session_obj()
-
-        # Init roles
-        self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
-        self.role_delegate = Role.objects.get_or_create(
-            name=PROJECT_ROLE_DELEGATE
-        )[0]
-        self.role_contributor = Role.objects.get_or_create(
-            name=PROJECT_ROLE_CONTRIBUTOR
-        )[0]
-        self.role_guest = Role.objects.get_or_create(name=PROJECT_ROLE_GUEST)[0]
-
-        # Init superuser
-        self.user = self.make_user('superuser')
-        self.user.is_staff = True
-        self.user.is_superuser = True
-        self.user.save()
-
-        # Init project with owner
-        self.project = self.make_project(
-            'TestProject', PROJECT_TYPE_PROJECT, None
+        # self.irods_backend = get_backend_api('omics_irods')
+        # self.irods = self.irods_backend.get_session_obj()
+        # Init project with owner in taskflow
+        self.project, self.owner_as = self.make_project_taskflow(
+            'TestProject', PROJECT_TYPE_PROJECT, self.category, self.user
         )
-        self.owner_as = self.make_assignment(
-            self.project, self.user, self.role_owner
-        )
-
-        # Build path for test collection
-        self.project_path = self.irods_backend.get_path(self.project)
-        self.irods_path = self.project_path + '/' + IRODS_TEMP_COLL
         # Create test collection in iRODS
+        self.project_path = self.irods_backend.get_path(self.project)
+        self.irods_path = os.path.join(self.project_path, IRODS_TEMP_COLL)
         self.irods_coll = self.irods.collections.create(self.irods_path)
 
-    def tearDown(self):
-        if self.irods.collections.exists(self.project_path):
-            self.irods.collections.get(self.project_path).remove(force=True)
-        self.irods.cleanup()
 
-
-class TestIrodsStatisticsAjaxView(TestViewsBase):
+class TestIrodsStatisticsAjaxView(IrodsbackendViewTestBase):
     """Tests for the landing zone collection statistics Ajax view"""
 
     def setUp(self):
@@ -328,17 +301,8 @@ class TestIrodsStatisticsAjaxView(TestViewsBase):
             )
 
 
-class TestIrodsObjectListAjaxView(TestViewsBase):
+class TestIrodsObjectListAjaxView(IrodsbackendViewTestBase):
     """Tests for the landing zone data object listing Ajax view"""
-
-    def setUp(self):
-        super().setUp()
-        # Build path for test collection
-        self.irods_path = (
-            self.irods_backend.get_path(self.project) + '/' + IRODS_TEMP_COLL
-        )
-        # Create test collection in iRODS
-        self.irods_coll = self.irods.collections.create(self.irods_path)
 
     def test_get_empty_coll(self):
         """Test GET for listing an empty collection in iRODS"""
@@ -356,7 +320,6 @@ class TestIrodsObjectListAjaxView(TestViewsBase):
 
     def test_get_coll_obj(self):
         """Test GET for listing a collection with a data object"""
-
         # Put data object in iRODS
         obj_path = self.irods_path + '/' + IRODS_OBJ_NAME
         data_obj = make_object(self.irods, obj_path, IRODS_OBJ_CONTENT)
@@ -381,7 +344,6 @@ class TestIrodsObjectListAjaxView(TestViewsBase):
 
     def test_get_coll_md5(self):
         """Test GET for listing a collection with a data object and md5"""
-        # Put data object in iRODS
         obj_path = self.irods_path + '/' + IRODS_OBJ_NAME
         make_object(self.irods, obj_path, IRODS_OBJ_CONTENT)
         # Put MD5 data object in iRODS
@@ -403,7 +365,6 @@ class TestIrodsObjectListAjaxView(TestViewsBase):
 
     def test_get_coll_md5_no_file(self):
         """Test GET with md5 set True but no md5 file"""
-        # Put data object in iRODS
         obj_path = self.irods_path + '/' + IRODS_OBJ_NAME
         make_object(self.irods, obj_path, IRODS_OBJ_CONTENT)
 
@@ -424,7 +385,6 @@ class TestIrodsObjectListAjaxView(TestViewsBase):
         """Test GET for listing a collection which doesn't exist"""
         fail_path = self.irods_path + '/' + IRODS_FAIL_COLL
         self.assertEqual(self.irods.collections.exists(fail_path), False)
-
         with self.login(self.user):
             response = self.client.get(
                 self.irods_backend.get_url(
@@ -438,7 +398,6 @@ class TestIrodsObjectListAjaxView(TestViewsBase):
         self.assertEqual(
             self.irods.collections.exists(IRODS_NON_PROJECT_PATH), True
         )
-
         with self.login(self.user):
             response = self.client.get(
                 self.irods_backend.get_url(
@@ -456,7 +415,6 @@ class TestIrodsObjectListAjaxView(TestViewsBase):
         self.make_assignment(
             self.project, new_user, self.role_contributor
         )  # No taskflow
-
         with self.login(new_user):
             response = self.client.get(
                 self.irods_backend.get_url(

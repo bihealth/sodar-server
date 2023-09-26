@@ -64,9 +64,9 @@ class TestViewsBase(
             self.project, self.user, self.role_owner
         )
         # Init contributor user and assignment
-        self.user_contrib = self.make_user('user_contrib')
-        self.contrib_as = self.make_assignment(
-            self.project, self.user_contrib, self.role_contributor
+        self.user_contributor = self.make_user('user_contributor')
+        self.contributor_as = self.make_assignment(
+            self.project, self.user_contributor, self.role_contributor
         )
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
@@ -104,7 +104,7 @@ class TestProjectZonesView(TestViewsBase):
 
     def test_render_contrib(self):
         """Test rendering of project zones view as project contributor"""
-        with self.login(self.user_contrib):
+        with self.login(self.user_contributor):
             response = self.client.get(
                 reverse(
                     'landingzones:list',
@@ -121,7 +121,7 @@ class TestProjectZonesView(TestViewsBase):
     @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
     def test_render_disable(self):
         """Test rendering with user access disabled"""
-        with self.login(self.user_contrib):
+        with self.login(self.user_contributor):
             response = self.client.get(
                 reverse(
                     'landingzones:list',

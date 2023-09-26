@@ -31,13 +31,13 @@ SHEET_PATH = SHEET_DIR + 'i_small.zip'
 TEST_OBJ_NAME = 'test1.txt'
 
 
-class TestLandingZonePermissionTaskflowBase(
+class ZonePermissionTaskflowTestBase(
     LandingZoneMixin,
     LandingZoneTaskflowMixin,
     SampleSheetIOMixin,
     TaskflowPermissionTestBase,
 ):
-    """Base view for landingzones permissions tests"""
+    """Base view for landingzones permissions tests with taskflow"""
 
     def setUp(self):
         super().setUp()
@@ -49,32 +49,33 @@ class TestLandingZonePermissionTaskflowBase(
         self.landing_zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
-            user=self.user_contributor,  # NOTE: Zone owner = user_contributor
+            user=self.user_contributor,  # NOTE: owner = user_contributor
             assay=self.assay,
             description=ZONE_DESC,
             configuration=None,
             config_data={},
         )
-        # Create zone in taskflow
+        # Create zone and file in taskflow
         self.make_zone_taskflow(self.landing_zone)
-        # Get collections
         self.zone_coll = self.irods.collections.get(
             self.irods_backend.get_path(self.landing_zone)
         )
-        # Add files to zone
         self.irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         self.make_irods_md5_object(self.irods_obj)
 
 
-class TestLandingZonePermissions(TestLandingZonePermissionTaskflowBase):
-    """Tests for landingzones UI view permissions with taskflow"""
+class TestZoneMoveView(ZonePermissionTaskflowTestBase):
+    """Tests for ZoneMoveView permissions with taskflow"""
 
-    def test_zone_move(self):
-        """Test ZoneMoveView permissions"""
-        url = reverse(
+    def setUp(self):
+        super().setUp()
+        self.url = reverse(
             'landingzones:move',
             kwargs={'landingzone': self.landing_zone.sodar_uuid},
         )
+
+    def test_get(self):
+        """Test ZoneMoveView GET"""
         good_users = [
             self.superuser,
             self.user_owner_cat,
@@ -91,16 +92,22 @@ class TestLandingZonePermissions(TestLandingZonePermissionTaskflowBase):
             self.user_no_roles,
             self.anonymous,
         ]
-        self.assert_response(url, good_users, 200)
-        self.assert_response(url, bad_users, 302)
-
-    def test_zone_move_archive(self):
-        """Test ZoneMoveView with archived project"""
-        self.project.set_archive()
-        url = reverse(
-            'landingzones:move',
-            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+        self.assert_response(self.url, good_users, 200)
+        self.assert_response(self.url, bad_users, 302)
+        self.project.set_public()
+        self.assert_response(
+            self.url, [self.user_no_roles, self.anonymous], 302
         )
+
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_get_anon(self):
+        """Test GET with anonymous access"""
+        self.project.set_public()
+        self.assert_response(self.url, self.anonymous, 302)
+
+    def test_get_archive(self):
+        """Test GET with archived project"""
+        self.project.set_archive()
         good_users = [self.superuser]
         bad_users = [
             self.user_owner_cat,
@@ -115,16 +122,16 @@ class TestLandingZonePermissions(TestLandingZonePermissionTaskflowBase):
             self.user_no_roles,
             self.anonymous,
         ]
-        self.assert_response(url, good_users, 200)
-        self.assert_response(url, bad_users, 302)
+        self.assert_response(self.url, good_users, 200)
+        self.assert_response(self.url, bad_users, 302)
+        self.project.set_public()
+        self.assert_response(
+            self.url, [self.user_no_roles, self.anonymous], 302
+        )
 
     @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
-    def test_zone_move_disable(self):
-        """Test ZoneMoveView with disabled non-superuser access"""
-        url = reverse(
-            'landingzones:move',
-            kwargs={'landingzone': self.landing_zone.sodar_uuid},
-        )
+    def test_get_disable(self):
+        """Test GET with disabled non-superuser access"""
         good_users = [self.superuser]
         bad_users = [
             self.user_owner_cat,
@@ -139,78 +146,5 @@ class TestLandingZonePermissions(TestLandingZonePermissionTaskflowBase):
             self.user_no_roles,
             self.anonymous,
         ]
-        self.assert_response(url, good_users, 200)
-        self.assert_response(url, bad_users, 302)
-
-    def test_zone_validate(self):
-        """Test ZoneMoveView for zone validation"""
-        url = reverse(
-            'landingzones:validate',
-            kwargs={'landingzone': self.landing_zone.sodar_uuid},
-        )
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-        ]
-        bad_users = [
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_guest,
-            self.anonymous,
-            self.user_no_roles,
-        ]
-        self.assert_response(url, good_users, 200)
-        self.assert_response(url, bad_users, 302)
-
-    def test_zone_validate_archive(self):
-        """Test ZoneMoveView for zone validation with archived project"""
-        self.project.set_archive()
-        url = reverse(
-            'landingzones:validate',
-            kwargs={'landingzone': self.landing_zone.sodar_uuid},
-        )
-        good_users = [self.superuser]
-        bad_users = [
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
-        self.assert_response(url, good_users, 200)
-        self.assert_response(url, bad_users, 302)
-
-    @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
-    def test_zone_validate_disable(self):
-        """Test ZoneMoveView for zone validation with disabled non-superuser access"""
-        url = reverse(
-            'landingzones:validate',
-            kwargs={'landingzone': self.landing_zone.sodar_uuid},
-        )
-        good_users = [self.superuser]
-        bad_users = [
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
-        self.assert_response(url, good_users, 200)
-        self.assert_response(url, bad_users, 302)
+        self.assert_response(self.url, good_users, 200)
+        self.assert_response(self.url, bad_users, 302)

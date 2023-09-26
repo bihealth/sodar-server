@@ -16,7 +16,7 @@ from taskflowbackend.tests.base import (
 
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_plugins_taskflow import (
-    TestSamplesheetsModifyAPIMixin,
+    SamplesheetsModifyAPITestMixin,
 )
 
 
@@ -28,7 +28,7 @@ SHEET_PATH = SHEET_DIR + 'i_small.zip'
 
 
 class TestSyncModifyAPI(
-    SampleSheetIOMixin, TestSamplesheetsModifyAPIMixin, TaskflowViewTestBase
+    SampleSheetIOMixin, SamplesheetsModifyAPITestMixin, TaskflowViewTestBase
 ):
     """Tests for the syncmofidyapi command"""
 

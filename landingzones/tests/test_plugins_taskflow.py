@@ -6,10 +6,7 @@ from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import ProjectAppPluginPoint
 
 # Samplesheets dependency
-from samplesheets.tests.test_io import (
-    SampleSheetIOMixin,
-    SHEET_DIR,
-)
+from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_views_taskflow import (
     SampleSheetPublicAccessMixin,
     SampleSheetTaskflowMixin,

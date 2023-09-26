@@ -146,29 +146,24 @@ class IrodsAccessTicketAPIViewTestBase(
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
         self.make_irods_colls(self.investigation)
-
         # Init users (owner = user_cat, superuser = user)
         self.user_delegate = self.make_user('user_delegate')
-        self.user_contrib = self.make_user('user_contrib')
-
+        self.user_contributor = self.make_user('user_contributor')
+        self.token_contrib = self.get_token(self.user_contributor)
         self.make_assignment_taskflow(
             self.project, self.user_delegate, self.role_delegate
         )
         self.make_assignment_taskflow(
-            self.project, self.user_contrib, self.role_contributor
+            self.project, self.user_contributor, self.role_contributor
         )
-
         # Create collection under assay
         self.assay_path = self.irods_backend.get_path(self.assay)
         self.coll = self.irods.collections.create(
             os.path.join(self.assay_path, 'coll')
         )
-
         # Get appalerts API and model
         self.app_alerts = get_backend_api('appalerts_backend')
         self.app_alert_model = self.app_alerts.get_model()
-
-        self.token_contrib = self.get_token(self.user_contrib)
 
 
 class TestIrodsDataRequestAPIViewBase(
@@ -210,13 +205,13 @@ class TestIrodsDataRequestAPIViewBase(
         )
         # Init users (owner = user_cat, superuser = user)
         self.user_delegate = self.make_user('user_delegate')
-        self.user_contrib = self.make_user('user_contrib')
+        self.user_contributor = self.make_user('user_contributor')
         self.user_guest = self.make_user('user_guest')
         self.make_assignment_taskflow(
             self.project, self.user_delegate, self.role_delegate
         )
         self.make_assignment_taskflow(
-            self.project, self.user_contrib, self.role_contributor
+            self.project, self.user_contributor, self.role_contributor
         )
         self.make_assignment_taskflow(
             self.project, self.user_guest, self.role_guest
@@ -243,7 +238,7 @@ class TestIrodsDataRequestAPIViewBase(
             'path': self.obj_path,
             'description': IRODS_REQUEST_DESC,
         }
-        self.token_contrib = self.get_token(self.user_contrib)
+        self.token_contrib = self.get_token(self.user_contributor)
 
 
 # Test Cases -------------------------------------------------------------------
@@ -412,7 +407,7 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         ticket = IrodsAccessTicket.objects.first()
-        self.assertEqual(ticket.user, self.user_contrib)
+        self.assertEqual(ticket.user, self.user_contributor)
         self.assert_alert_count(CREATE_ALERT, self.user, 0)
         self.assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
         self.assertEqual(self.get_tl_event_count('create'), 1)
@@ -749,7 +744,7 @@ class TestIrodsDataRequestCreateAPIView(TestIrodsDataRequestAPIViewBase):
             'action': IRODS_REQUEST_ACTION_DELETE,
             'target_path': None,
             'path': self.obj_path,
-            'user': self.user_contrib.pk,
+            'user': self.user_contributor.pk,
             'status': IRODS_REQUEST_STATUS_ACTIVE,
             'status_info': '',
             'description': IRODS_REQUEST_DESC,
@@ -758,7 +753,7 @@ class TestIrodsDataRequestCreateAPIView(TestIrodsDataRequestAPIViewBase):
         self.assertEqual(model_to_dict(obj), expected)
         self.assert_alert_count(CREATE_ALERT, self.user, 1)
         self.assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
-        self.assert_alert_count(CREATE_ALERT, self.user_contrib, 0)
+        self.assert_alert_count(CREATE_ALERT, self.user_contributor, 0)
         self.assert_alert_count(CREATE_ALERT, self.user_guest, 0)
 
     def test_create_no_description(self):
@@ -851,7 +846,7 @@ class TestIrodsDataRequestUpdateAPIView(
             path=self.obj_path,
             status=IRODS_REQUEST_STATUS_ACTIVE,
             description='',
-            user=self.user_contrib,
+            user=self.user_contributor,
         )
         self.url = reverse(
             'samplesheets:api_irods_request_update',
@@ -878,7 +873,7 @@ class TestIrodsDataRequestUpdateAPIView(
             'action': IRODS_REQUEST_ACTION_DELETE,
             'target_path': '',
             'path': self.obj_path,
-            'user': self.user_contrib.pk,
+            'user': self.user_contributor.pk,
             'status': IRODS_REQUEST_STATUS_ACTIVE,
             'status_info': '',
             'description': IRODS_REQUEST_DESC_UPDATED,
@@ -950,7 +945,7 @@ class TestIrodsDataRequestAcceptAPIView(
             path=self.obj_path,
             status=IRODS_REQUEST_STATUS_ACTIVE,
             description=IRODS_REQUEST_DESC,
-            user=self.user_contrib,
+            user=self.user_contributor,
         )
         self.url = reverse(
             'samplesheets:api_irods_request_accept',
@@ -962,14 +957,14 @@ class TestIrodsDataRequestAcceptAPIView(
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
         self.assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
-        self.assert_alert_count(ACCEPT_ALERT, self.user_contrib, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_contributor, 0)
         response = self.request_knox(self.url, 'POST')
         self.assertEqual(response.status_code, 200)
         self.request.refresh_from_db()
         self.assertEqual(self.request.status, IRODS_REQUEST_STATUS_ACCEPTED)
         self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
         self.assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
-        self.assert_alert_count(ACCEPT_ALERT, self.user_contrib, 1)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_contributor, 1)
         self.assert_irods_obj(self.obj_path, False)
 
     def test_accept_no_request(self):
@@ -986,7 +981,7 @@ class TestIrodsDataRequestAcceptAPIView(
         self.assert_irods_obj(self.obj_path)
         self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
         self.assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
-        self.assert_alert_count(ACCEPT_ALERT, self.user_contrib, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_contributor, 0)
         response = self.request_knox(
             self.url, 'POST', token=self.get_token(self.user_delegate)
         )
@@ -996,16 +991,16 @@ class TestIrodsDataRequestAcceptAPIView(
         self.assert_irods_obj(self.obj_path, False)
         self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
         self.assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
-        self.assert_alert_count(ACCEPT_ALERT, self.user_contrib, 1)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_contributor, 1)
 
     def test_accept_contributor(self):
         """Test POST to accept request as contributor (should fail)"""
         self.assert_irods_obj(self.obj_path)
         self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
         self.assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
-        self.assert_alert_count(ACCEPT_ALERT, self.user_contrib, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_contributor, 0)
         response = self.request_knox(
-            self.url, 'POST', token=self.get_token(self.user_contrib)
+            self.url, 'POST', token=self.get_token(self.user_contributor)
         )
         self.assertEqual(response.status_code, 403)
         self.request.refresh_from_db()
@@ -1013,7 +1008,7 @@ class TestIrodsDataRequestAcceptAPIView(
         self.assert_irods_obj(self.obj_path)
         self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
         self.assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
-        self.assert_alert_count(ACCEPT_ALERT, self.user_contrib, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_contributor, 0)
 
     @override_settings(REDIS_URL=INVALID_REDIS_URL)
     def test_accept_lock_failure(self):
@@ -1026,7 +1021,7 @@ class TestIrodsDataRequestAcceptAPIView(
         self.assert_irods_obj(self.obj_path)
         self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
         self.assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
-        self.assert_alert_count(ACCEPT_ALERT, self.user_contrib, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_contributor, 0)
 
     def test_accept_already_accepted(self):
         """Test accepting already accepted request (should fail)"""
@@ -1053,7 +1048,7 @@ class TestIrodsDataRequestRejectAPIView(
             path=self.obj_path,
             status=IRODS_REQUEST_STATUS_ACTIVE,
             description=IRODS_REQUEST_DESC,
-            user=self.user_contrib,
+            user=self.user_contributor,
         )
         self.url = reverse(
             'samplesheets:api_irods_request_reject',
@@ -1064,7 +1059,7 @@ class TestIrodsDataRequestRejectAPIView(
         """Test IrodsDataRequestRejectAPIView POST"""
         self.assert_alert_count(REJECT_ALERT, self.user, 0)
         self.assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
-        self.assert_alert_count(REJECT_ALERT, self.user_contrib, 0)
+        self.assert_alert_count(REJECT_ALERT, self.user_contributor, 0)
         response = self.request_knox(self.url, 'POST')
         self.assertEqual(response.status_code, 200)
         self.request.refresh_from_db()
@@ -1072,13 +1067,13 @@ class TestIrodsDataRequestRejectAPIView(
         self.assert_irods_obj(self.obj_path)
         self.assert_alert_count(REJECT_ALERT, self.user, 0)
         self.assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
-        self.assert_alert_count(REJECT_ALERT, self.user_contrib, 1)
+        self.assert_alert_count(REJECT_ALERT, self.user_contributor, 1)
 
     def test_reject_delegate(self):
         """Test POST to reject request as delegate"""
         self.assert_alert_count(REJECT_ALERT, self.user, 0)
         self.assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
-        self.assert_alert_count(REJECT_ALERT, self.user_contrib, 0)
+        self.assert_alert_count(REJECT_ALERT, self.user_contributor, 0)
         response = self.request_knox(
             self.url, 'POST', token=self.get_token(self.user_delegate)
         )
@@ -1087,13 +1082,13 @@ class TestIrodsDataRequestRejectAPIView(
         self.assertEqual(self.request.status, IRODS_REQUEST_STATUS_REJECTED)
         self.assert_alert_count(REJECT_ALERT, self.user, 0)
         self.assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
-        self.assert_alert_count(REJECT_ALERT, self.user_contrib, 1)
+        self.assert_alert_count(REJECT_ALERT, self.user_contributor, 1)
 
     def test_reject_contributor(self):
         """Test POST to reject request as contributor"""
         self.assert_alert_count(REJECT_ALERT, self.user, 0)
         self.assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
-        self.assert_alert_count(REJECT_ALERT, self.user_contrib, 0)
+        self.assert_alert_count(REJECT_ALERT, self.user_contributor, 0)
         response = self.request_knox(self.url, 'POST', token=self.token_contrib)
         self.assertEqual(response.status_code, 403)
         self.request.refresh_from_db()
@@ -1101,7 +1096,7 @@ class TestIrodsDataRequestRejectAPIView(
         self.assert_irods_obj(self.obj_path)
         self.assert_alert_count(REJECT_ALERT, self.user, 0)
         self.assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
-        self.assert_alert_count(REJECT_ALERT, self.user_contrib, 0)
+        self.assert_alert_count(REJECT_ALERT, self.user_contributor, 0)
 
     def test_reject_no_request(self):
         """Test POST to reject non-existing request"""

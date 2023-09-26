@@ -32,7 +32,7 @@ from landingzones.tests.test_views_taskflow import (
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 
 
-class TestZoneAPIPermissionTaskflowBase(
+class ZoneAPIPermissionTaskflowTestBase(
     SampleSheetIOMixin,
     SampleSheetTaskflowMixin,
     LandingZoneMixin,
@@ -50,7 +50,7 @@ class TestZoneAPIPermissionTaskflowBase(
         self.make_irods_colls(self.investigation)
 
 
-class TestZoneCreateAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
+class TestZoneCreateAPIViewPermissions(ZoneAPIPermissionTaskflowTestBase):
     """Tests for ZoneCreateAPIView permissions with Taskflow"""
 
     def _get_post_data(self):
@@ -70,8 +70,8 @@ class TestZoneCreateAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
             kwargs={'project': self.project.sodar_uuid},
         )
 
-    def test_create(self):
-        """Test ZoneCreateAPIView permissions"""
+    def test_post(self):
+        """Test ZoneCreateAPIView POST"""
         good_users = [
             self.superuser,
             self.user_owner_cat,
@@ -108,7 +108,6 @@ class TestZoneCreateAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
             data=self._get_post_data(),
             knox=True,
         )
-        # Test public project
         self.project.set_public()
         self.assert_response_api(
             self.url,
@@ -119,8 +118,8 @@ class TestZoneCreateAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
         )
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
-    def test_create_anon(self):
-        """Test ZoneCreateAPIView with anonymous guest access"""
+    def test_post_anon(self):
+        """Test POST with anonymous guest access"""
         self.project.set_public()
         self.assert_response_api(
             self.url,
@@ -130,8 +129,8 @@ class TestZoneCreateAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
             data=self._get_post_data(),
         )
 
-    def test_create_archive(self):
-        """Test ZoneCreateAPIView with archived project"""
+    def test_post_archive(self):
+        """Test POST with archived project"""
         self.project.set_archive()
         good_users = [self.superuser]
         bad_users = [
@@ -167,7 +166,6 @@ class TestZoneCreateAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
             data=self._get_post_data(),
             knox=True,
         )
-        # Test public project
         self.project.set_public()
         self.assert_response_api(
             self.url,
@@ -178,8 +176,8 @@ class TestZoneCreateAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
         )
 
     @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
-    def test_create_disable(self):
-        """Test ZoneCreateAPIView with disabled non-superuser access"""
+    def test_post_disable(self):
+        """Test POST with disabled non-superuser access"""
         good_users = [self.superuser]
         bad_users = [
             self.user_owner_cat,
@@ -214,7 +212,6 @@ class TestZoneCreateAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
             data=self._get_post_data(),
             knox=True,
         )
-        # Test public project
         self.project.set_public()
         self.assert_response_api(
             self.url,
@@ -225,7 +222,7 @@ class TestZoneCreateAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
         )
 
 
-class TestZoneSubmitDeleteAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
+class TestZoneSubmitDeleteAPIViewPermissions(ZoneAPIPermissionTaskflowTestBase):
     """Tests for ZoneSubmitDeleteAPIView permissions with Taskflow"""
 
     def _cleanup(self):
@@ -249,8 +246,8 @@ class TestZoneSubmitDeleteAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
             kwargs={'landingzone': self.landing_zone.sodar_uuid},
         )
 
-    def test_submit_delete(self):
-        """Test ZoneSubmitDeleteAPIView permissions"""
+    def test_post(self):
+        """Test ZoneSubmitDeleteAPIView POST"""
         good_users = [
             self.superuser,
             self.user_owner_cat,
@@ -293,7 +290,6 @@ class TestZoneSubmitDeleteAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
             cleanup_method=self._cleanup,
             knox=True,
         )
-        # Test public project
         self.project.set_public()
         self.assert_response_api(
             self.url,
@@ -303,13 +299,13 @@ class TestZoneSubmitDeleteAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
         )
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
-    def test_submit_delete_anon(self):
-        """Test ZoneSubmitDeleteAPIView with anonymous guest access"""
+    def test_post_anon(self):
+        """Test POST with anonymous guest access"""
         self.project.set_public()
         self.assert_response_api(self.url, self.anonymous, 401, method='POST')
 
-    def test_submit_delete_archive(self):
-        """Test ZoneSubmitDeleteAPIView with archived project"""
+    def test_post_archive(self):
+        """Test POST with archived project"""
         # NOTE: Should still be allowed
         self.project.set_archive()
         good_users = [
@@ -354,7 +350,6 @@ class TestZoneSubmitDeleteAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
             cleanup_method=self._cleanup,
             knox=True,
         )
-        # Test public project
         self.project.set_public()
         self.assert_response_api(
             self.url,
@@ -364,11 +359,9 @@ class TestZoneSubmitDeleteAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
         )
 
     @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
-    def test_submit_delete_disable(self):
-        """Test ZoneSubmitDeleteAPIView with disabled non-superuser access"""
-        good_users = [
-            self.superuser,
-        ]
+    def test_post_disable(self):
+        """Test POST with disabled non-superuser access"""
+        good_users = [self.superuser]
         bad_users = [
             self.user_owner_cat,
             self.user_delegate_cat,
@@ -408,7 +401,6 @@ class TestZoneSubmitDeleteAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
             cleanup_method=self._cleanup,
             knox=True,
         )
-        # Test public project
         self.project.set_public()
         self.assert_response_api(
             self.url,
@@ -418,7 +410,7 @@ class TestZoneSubmitDeleteAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
         )
 
 
-class TestZoneSubmitMoveAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
+class TestZoneSubmitMoveAPIViewPermissions(ZoneAPIPermissionTaskflowTestBase):
     """Tests for ZoneSubmitMoveAPIView permissions with Taskflow"""
 
     # NOTE: Using validate_only in tests, perms are identical to move
@@ -456,8 +448,8 @@ class TestZoneSubmitMoveAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
             kwargs={'landingzone': self.landing_zone.sodar_uuid},
         )
 
-    def test_submit_validate(self):
-        """Test ZoneSubmitMoveAPIView permissions"""
+    def test_post(self):
+        """Test ZoneSubmitMoveAPIView POST"""
         good_users = [
             self.superuser,
             self.user_owner_cat,
@@ -500,7 +492,6 @@ class TestZoneSubmitMoveAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
             cleanup_method=self._cleanup,
             knox=True,
         )
-        # Test public project
         self.project.set_public()
         self.assert_response_api(
             self.url,
@@ -510,13 +501,13 @@ class TestZoneSubmitMoveAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
         )
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
-    def test_submit_validate_anon(self):
-        """Test ZoneSubmitMoveAPIView with anonymous guest access"""
+    def test_post_anon(self):
+        """Test POST with anonymous guest access"""
         self.project.set_public()
         self.assert_response_api(self.url, self.anonymous, 401, method='POST')
 
-    def test_submit_validate_archive(self):
-        """Test ZoneSubmitMoveAPIView with archived project"""
+    def test_post_archive(self):
+        """Test POST with archived project"""
         # NOTE: We don't allow move OR validate for archived projects
         self.project.set_archive()
         good_users = [self.superuser]
@@ -559,7 +550,6 @@ class TestZoneSubmitMoveAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
             cleanup_method=self._cleanup,
             knox=True,
         )
-        # Test public project
         self.project.set_public()
         self.assert_response_api(
             self.url,
@@ -569,8 +559,8 @@ class TestZoneSubmitMoveAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
         )
 
     @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
-    def test_submit_validate_disable(self):
-        """Test ZoneSubmitMoveAPIView with disabled non-superuser access"""
+    def test_post_disable(self):
+        """Test POST with disabled non-superuser access"""
         good_users = [self.superuser]
         bad_users = [
             self.user_owner_cat,
@@ -611,7 +601,6 @@ class TestZoneSubmitMoveAPIViewPermissions(TestZoneAPIPermissionTaskflowBase):
             cleanup_method=self._cleanup,
             knox=True,
         )
-        # Test public project
         self.project.set_public()
         self.assert_response_api(
             self.url,

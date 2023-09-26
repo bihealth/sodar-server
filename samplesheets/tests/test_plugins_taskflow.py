@@ -40,7 +40,7 @@ APP_NAME = 'samplesheets'
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 
 
-class TestSamplesheetsModifyAPIMixin:
+class SamplesheetsModifyAPITestMixin:
     """
     Mixin with test helpers for the samplesheets project modify API
     implementation.
@@ -68,7 +68,7 @@ class TestSamplesheetsModifyAPIMixin:
 
 
 class TestPerformProjectModify(
-    TestSamplesheetsModifyAPIMixin,
+    SamplesheetsModifyAPITestMixin,
     SampleSheetIOMixin,
     SampleSheetPublicAccessMixin,
     SampleSheetTaskflowMixin,
@@ -213,7 +213,7 @@ class TestPerformProjectModify(
 
 
 class TestPerformProjectSync(
-    TestSamplesheetsModifyAPIMixin,
+    SamplesheetsModifyAPITestMixin,
     SampleSheetIOMixin,
     SampleSheetPublicAccessMixin,
     SampleSheetTaskflowMixin,

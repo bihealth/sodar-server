@@ -101,7 +101,7 @@ class OBOFormatOntologyModelMixin:
         return OBOFormatOntologyTerm.objects.create(**values)
 
 
-class TestOBOFormatOntologyBase(OBOFormatOntologyModelMixin, TestCase):
+class OBOFormatOntologyTestBase(OBOFormatOntologyModelMixin, TestCase):
     """Base class for OBOFormatOntology model tests"""
 
     def setUp(self):
@@ -128,7 +128,7 @@ class TestOBOFormatOntologyBase(OBOFormatOntologyModelMixin, TestCase):
         )
 
 
-class TestOBOFormatOntology(TestOBOFormatOntologyBase):
+class TestOBOFormatOntology(OBOFormatOntologyTestBase):
     """Tests for the OBOFormatOntology model"""
 
     def test_initialization(self):
@@ -169,7 +169,7 @@ class TestOBOFormatOntology(TestOBOFormatOntologyBase):
         self.assertEqual(self.ontology.get_term_by_id('Not an ID'), None)
 
 
-class TestOBOFormatOntologyTerm(TestOBOFormatOntologyBase):
+class TestOBOFormatOntologyTerm(OBOFormatOntologyTestBase):
     """Tests for the OBOFormatOntologyTerm model"""
 
     def test_initialization(self):

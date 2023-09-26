@@ -28,7 +28,7 @@ OBO_TERM_NAMESPACE = 'specific_namespace'
 OBO_TERM_COMMENT = 'This is not a real term.'
 
 
-class TestOntologyAccessPermissionBase(
+class OntologyAccessPermissionTestBase(
     OBOFormatOntologyModelMixin, TestSiteAppPermissionBase
 ):
     """Base class for ontologyaccess UI view permission tests"""
@@ -59,19 +59,19 @@ class TestOntologyAccessPermissionBase(
         )
 
 
-class TestOntologyAccessPermissions(TestOntologyAccessPermissionBase):
+class TestOntologyAccessPermissions(OntologyAccessPermissionTestBase):
     """Tests for ontologyaccess UI view permissions"""
 
-    def test_ontology_list(self):
-        """Test permissions for OBOFormatOntologyListView"""
+    def test_get_ontology_list(self):
+        """Test OBOFormatOntologyListView GET"""
         url = reverse('ontologyaccess:list')
         good_users = [self.superuser]
         bad_users = [self.anonymous, self.regular_user]
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 302)
 
-    def test_ontology_detail(self):
-        """Test permissions for OBOFormatOntologyDetailView"""
+    def test_get_ontology_detail(self):
+        """Test OBOFormatOntologyDetailView GET"""
         url = reverse(
             'ontologyaccess:obo_detail',
             kwargs={'oboformatontology': self.ontology.sodar_uuid},
@@ -81,16 +81,16 @@ class TestOntologyAccessPermissions(TestOntologyAccessPermissionBase):
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 302)
 
-    def test_ontology_import(self):
-        """Test permissions for OBOFormatOntologyImportView"""
+    def test_get_ontology_import(self):
+        """Test OBOFormatOntologyImportView GET"""
         url = reverse('ontologyaccess:obo_import')
         good_users = [self.superuser]
         bad_users = [self.anonymous, self.regular_user]
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 302)
 
-    def test_ontology_update(self):
-        """Test permissions for OBOFormatOntologyUpdateView"""
+    def test_get_ontology_update(self):
+        """Test OBOFormatOntologyUpdateView GET"""
         url = reverse(
             'ontologyaccess:obo_update',
             kwargs={'oboformatontology': self.ontology.sodar_uuid},
@@ -101,7 +101,7 @@ class TestOntologyAccessPermissions(TestOntologyAccessPermissionBase):
         self.assert_response(url, bad_users, 302)
 
     def test_ontology_delete(self):
-        """Test permissions for OBOFormatOntologyDeleteView"""
+        """Test OBOFormatOntologyDeleteView GET"""
         url = reverse(
             'ontologyaccess:obo_delete',
             kwargs={'oboformatontology': self.ontology.sodar_uuid},

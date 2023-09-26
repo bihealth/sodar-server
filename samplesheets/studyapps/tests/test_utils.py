@@ -35,7 +35,7 @@ class TestStudyAppUtilsBase(
         self.role_owner = Role.objects.get_or_create(
             name=SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
         )[0]
-        self.assignment_owner = self.make_assignment(
+        self.owner_as = self.make_assignment(
             self.project, self.user_owner, self.role_owner
         )
 

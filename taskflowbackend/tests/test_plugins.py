@@ -11,7 +11,7 @@ from projectroles.models import RoleAssignment, SODAR_CONSTANTS
 from projectroles.plugins import BackendPluginPoint
 
 # Irodsbackend dependency
-from irodsbackend.api import USER_GROUP_PREFIX
+from irodsbackend.api import USER_GROUP_TEMPLATE
 
 # Timeline dependency
 from timeline.models import ProjectEvent
@@ -32,7 +32,7 @@ PROJECT_ACTION_CREATE = SODAR_CONSTANTS['PROJECT_ACTION_CREATE']
 PROJECT_ACTION_UPDATE = SODAR_CONSTANTS['PROJECT_ACTION_UPDATE']
 
 
-class TestModifyAPIBase(TaskflowViewTestBase):
+class ModifyAPITaskflowTestBase(TaskflowViewTestBase):
     """Base class for project modify API tests"""
 
     def _make_project_tf(self):
@@ -50,7 +50,7 @@ class TestModifyAPIBase(TaskflowViewTestBase):
         self.request.user = self.user
 
 
-class TestPerformProjectModify(TestModifyAPIBase):
+class TestPerformProjectModify(ModifyAPITaskflowTestBase):
     """Tests for perform_project_modify()"""
 
     def test_create(self):
@@ -240,7 +240,7 @@ class TestPerformProjectModify(TestModifyAPIBase):
             'SubCategory', PROJECT_TYPE_CATEGORY, self.category
         )
         self.make_assignment(category, self.user, self.role_owner)
-        group_name = '{}{}'.format(USER_GROUP_PREFIX, category.sodar_uuid)
+        group_name = USER_GROUP_TEMPLATE.format(uuid=category.sodar_uuid)
 
         self.assert_irods_coll(category, expected=False)
         with self.assertRaises(UserGroupDoesNotExist):
@@ -289,18 +289,18 @@ class TestPerformProjectModify(TestModifyAPIBase):
     def test_update_parent(self):
         """Test project update in iRODS with changed parent"""
         project = self._make_project_tf()
-        user_contrib = self.make_user('contrib_user')
+        user_contributor = self.make_user('user_contributor')
         user_owner_cat_new = self.make_user('user_owner_cat_new')
         user_guest_cat_new = self.make_user('user_guest_cat_new')
         user_finder_cat_new = self.make_user('user_finder_cat_new')
         self.make_assignment_taskflow(
-            project, user_contrib, self.role_contributor
+            project, user_contributor, self.role_contributor
         )
         project_path = self.irods_backend.get_path(project)
 
         self.assert_group_member(project, self.user, True)
         self.assert_group_member(project, self.user_owner_cat, True)
-        self.assert_group_member(project, user_contrib, True)
+        self.assert_group_member(project, user_contributor, True)
         self.assert_group_member(project, user_owner_cat_new, False)
         self.assert_group_member(project, user_guest_cat_new, False)
         self.assert_group_member(project, user_finder_cat_new, False)
@@ -333,7 +333,7 @@ class TestPerformProjectModify(TestModifyAPIBase):
         self.assert_group_member(project, self.user, True)
         # Owner of old category should no longer have access
         self.assert_group_member(project, self.user_owner_cat, False)
-        self.assert_group_member(project, user_contrib, True)
+        self.assert_group_member(project, user_contributor, True)
         # Users of new category should have access
         self.assert_group_member(project, user_owner_cat_new, True)
         self.assert_group_member(project, user_guest_cat_new, True)
@@ -342,7 +342,7 @@ class TestPerformProjectModify(TestModifyAPIBase):
 
     def test_update_category(self):
         """Test category update in iRODS with unchanged parent"""
-        group_name = '{}{}'.format(USER_GROUP_PREFIX, self.category.sodar_uuid)
+        group_name = USER_GROUP_TEMPLATE.format(uuid=self.category.sodar_uuid)
         self.assert_irods_coll(self.category, expected=False)
         with self.assertRaises(UserGroupDoesNotExist):
             self.irods.user_groups.get(group_name)
@@ -417,7 +417,7 @@ class TestPerformProjectModify(TestModifyAPIBase):
         self.assert_group_member(project, user_finder_cat_new, False)
 
 
-class TestRevertProjectModify(TestModifyAPIBase):
+class TestRevertProjectModify(ModifyAPITaskflowTestBase):
     """Tests for revert_project_modify()"""
 
     def setUp(self):
@@ -457,7 +457,7 @@ class TestRevertProjectModify(TestModifyAPIBase):
         self.assertEqual(tl_events.first().get_status().status_type, 'OK')
 
 
-class TestPerformRoleModify(TestModifyAPIBase):
+class TestPerformRoleModify(ModifyAPITaskflowTestBase):
     """Tests for perform_role_modify() and revert_role_modify()"""
 
     def setUp(self):
@@ -878,7 +878,7 @@ class TestPerformRoleModify(TestModifyAPIBase):
         self.assert_group_member(self.project, self.user_new, True)
 
 
-class TestPerformRoleDelete(TestModifyAPIBase):
+class TestPerformRoleDelete(ModifyAPITaskflowTestBase):
     """Tests for perform_role_delete() and revert_role_delete()"""
 
     def setUp(self):
@@ -1069,7 +1069,7 @@ class TestPerformRoleDelete(TestModifyAPIBase):
         self.assert_group_member(self.project, self.user_new, True)
 
 
-class TestPerformOwnerTransfer(TestModifyAPIBase):
+class TestPerformOwnerTransfer(ModifyAPITaskflowTestBase):
     """Tests for perform_owner_transfer()"""
 
     def setUp(self):
@@ -1197,7 +1197,7 @@ class TestPerformOwnerTransfer(TestModifyAPIBase):
         self.assert_group_member(self.project, self.user_owner_cat, True)
 
 
-class TestPerformProjectSync(TestModifyAPIBase):
+class TestPerformProjectSync(ModifyAPITaskflowTestBase):
     """Tests for perform_project_sync()"""
 
     def test_sync_new_project(self):

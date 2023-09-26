@@ -44,7 +44,7 @@ ZONE4_TITLE = '20201218_172743_test_zone_deleted'
 LOGGER_BUSY_ZONES = 'landingzones.management.commands.busyzones'
 
 
-class TestCommandBase(
+class LandingzonesCommandTestBase(
     ProjectMixin,
     RoleMixin,
     RoleAssignmentMixin,
@@ -74,7 +74,7 @@ class TestCommandBase(
         self.assay = self.study.assays.first()
 
 
-class TestInactiveZones(TestCommandBase):
+class TestInactiveZones(LandingzonesCommandTestBase):
     """Tests for the inactivezones command"""
 
     def setUp(self):
@@ -137,10 +137,6 @@ class TestInactiveZones(TestCommandBase):
         self.irods.collections.create(self.irods_backend.get_path(self.zone3))
         self.irods.collections.create(self.irods_backend.get_path(self.zone4))
 
-    def tearDown(self):
-        self.irods.collections.get('/sodarZone/projects').remove(force=True)
-        self.irods.cleanup()
-
     def test_get_inactive_zones(self):
         """Test get_inactive_zones()"""
         zones = get_inactive_zones()
@@ -176,7 +172,7 @@ class TestInactiveZones(TestCommandBase):
         self.assertIn(expected, cm.output[0])
 
 
-class TestBusyZones(TestCommandBase):
+class TestBusyZones(LandingzonesCommandTestBase):
     """Tests for the busyzones command"""
 
     def setUp(self):

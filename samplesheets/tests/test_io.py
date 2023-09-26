@@ -141,9 +141,11 @@ class SampleSheetIOMixin:
         self.fail('Exception in {}: {}'.format(zip_name, ex))
 
 
-class TestSampleSheetIOBase(
+class SampleSheetIOTestBase(
     ProjectMixin, RoleMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase
 ):
+    """Base class for samplesheets IO tests"""
+
     def setUp(self):
         # Init roles
         self.init_roles()
@@ -156,7 +158,7 @@ class TestSampleSheetIOBase(
         self.role_owner = Role.objects.get_or_create(
             name=SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
         )[0]
-        self.assignment_owner = self.make_assignment(
+        self.owner_as = self.make_assignment(
             self.project, self.user_owner, self.role_owner
         )
 
@@ -175,7 +177,7 @@ class TestSampleSheetIOBase(
         return ret
 
 
-class TestSampleSheetIOBatch(TestSampleSheetIOBase):
+class TestSampleSheetIOBatch(SampleSheetIOTestBase):
     """Batch import/export tests for sample sheets"""
 
     def test_isa_import_batch(self):
@@ -311,7 +313,7 @@ class TestSampleSheetIOBatch(TestSampleSheetIOBase):
             ISATab.objects.first().delete()
 
 
-class TestSampleSheetIOImport(TestSampleSheetIOBase):
+class TestSampleSheetIOImport(SampleSheetIOTestBase):
     """Sample sheet import tests"""
 
     def setUp(self):
@@ -449,7 +451,7 @@ class TestSampleSheetIOImport(TestSampleSheetIOBase):
         self.assertEqual(len(out_data), len(in_data))
 
 
-class TestSampleSheetIOExport(TestSampleSheetIOBase):
+class TestSampleSheetIOExport(SampleSheetIOTestBase):
     """Sample sheet export tests"""
 
     def setUp(self):

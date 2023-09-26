@@ -32,9 +32,9 @@ iRODS Data Objects and Collections
 iRODS Access Tickets
 --------------------
 
-.. autoclass:: IrodsAccessTicketListAPIView
-
 .. autoclass:: IrodsAccessTicketRetrieveAPIView
+
+.. autoclass:: IrodsAccessTicketListAPIView
 
 .. autoclass:: IrodsAccessTicketCreateAPIView
 

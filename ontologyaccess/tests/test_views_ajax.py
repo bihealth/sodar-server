@@ -5,7 +5,7 @@ import json
 from django.urls import reverse
 
 from ontologyaccess.tests.test_views import (
-    TestOntologyAccessViewBase,
+    OntologyAccessViewTestBase,
     OBO_TERM_NAME,
 )
 
@@ -19,7 +19,7 @@ OBO_TERM_ID_ALT = 'ALT:0000003'
 OBO_TERM_NAME_ALT = 'Alt term'
 
 
-class TestOBOOntologyListAjaxView(TestOntologyAccessViewBase):
+class TestOBOOntologyListAjaxView(OntologyAccessViewTestBase):
     """Tests for OBOOntologyListAjaxView"""
 
     def test_list(self):
@@ -44,7 +44,7 @@ class TestOBOOntologyListAjaxView(TestOntologyAccessViewBase):
         self.assertEqual(response_data, expected)
 
 
-class TestOBOTermQueryAjaxView(TestOntologyAccessViewBase):
+class TestOBOTermQueryAjaxView(OntologyAccessViewTestBase):
     """Tests for OBOTermQueryAjaxView"""
 
     def setUp(self):
@@ -189,7 +189,7 @@ class TestOBOTermQueryAjaxView(TestOntologyAccessViewBase):
         self.assertEqual(response_data['terms'][0], expected)
 
 
-class TestOBOTermListAjaxView(TestOntologyAccessViewBase):
+class TestOBOTermListAjaxView(OntologyAccessViewTestBase):
     """Tests for OBOTermListAjaxView"""
 
     def setUp(self):

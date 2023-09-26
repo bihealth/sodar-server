@@ -171,7 +171,6 @@
   {# Tour content #}
   <script type="text/javascript">
     tourEnabled = true;
-
     tour.addStep('zone_info', {
         title: 'Landing Zones',
         text: 'In this view you can create and manage personal landing zones ' +
@@ -180,7 +179,6 @@
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
-
     // No zones
     if ($('#sodar-lz-alert-no-zones').length) {
         tour.addStep('no_zones', {
@@ -192,7 +190,6 @@
             showCancelLink: true
         });
     }
-
     if ($('#sodar-lz-zone-list-own').length) {
         tour.addStep('own_zones', {
             title: 'Your Zones',
@@ -202,7 +199,6 @@
             showCancelLink: true
         });
     }
-
     if ($('#sodar-lz-zone-list-other').length) {
         tour.addStep('other_zones', {
             title: 'Zones of Other Users',
@@ -213,7 +209,6 @@
             showCancelLink: true
         });
     }
-
     if ($('#sodar-lz-buttons-list').length) {
         tour.addStep('zone_operations', {
             title: 'Zone Operations',
@@ -224,7 +219,6 @@
             showCancelLink: true
         });
     }
-
     // Table data
     if ($('.sodar-lz-table').length) {
         tour.addStep('zone_title', {
@@ -236,7 +230,6 @@
             advanceOn: '.docs-link click',
             showCancelLink: true
         });
-
         tour.addStep('zone_assay', {
             title: 'Zone Assay',
             text: 'Each landing zone is specific to an assay within the ' +
@@ -246,7 +239,6 @@
             advanceOn: '.docs-link click',
             showCancelLink: true
         });
-
         if ($('.sodar-lz-zone-description-link').length) {
             tour.addStep('zone_description', {
             title: 'Zone Description',
@@ -257,7 +249,6 @@
             showCancelLink: true
           });
         }
-
         tour.addStep('zone_status', {
             title: 'Zone Status',
             text: 'The status of each landing zone can be seen in this ' +
@@ -270,7 +261,6 @@
             advanceOn: '.docs-link click',
             showCancelLink: true
         });
-
         tour.addStep('zone_status_info', {
             title: 'Zone Status Information',
             text: 'Detailed information about the landing zone status can be ' +
@@ -280,7 +270,6 @@
             advanceOn: '.docs-link click',
             showCancelLink: true
         });
-
         tour.addStep('zone_links', {
             title: 'iRODS Links for Zone',
             text: 'Links for iRODS access for available zone are presented ' +
@@ -289,7 +278,6 @@
             advanceOn: '.docs-link click',
             showCancelLink: true
         });
-
         tour.addStep('zone_dropdown', {
             title: 'Zone Dropdown',
             text: 'From the zone dropdown, you can trigger the data ' +
@@ -301,7 +289,6 @@
             showCancelLink: true
         });
     }
-
     // Create zone
     if ($('#sodar-lz-btn-create-zone').length) {
         tour.addStep('zone_create', {

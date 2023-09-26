@@ -31,10 +31,11 @@ from samplesheets.tests.test_permissions import (
     REMOTE_SITE_SECRET,
     INVALID_SECRET,
 )
-from samplesheets.tests.test_permissions_api_taskflow import LABEL_CREATE
+
 
 # Local constants
 IRODS_FILE_PATH = '/sodarZone/path/test1.txt'
+LABEL_CREATE = 'label'
 
 
 class TestInvestigationRetrieveAPIView(

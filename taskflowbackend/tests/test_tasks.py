@@ -1,5 +1,6 @@
 """Tests for Taskflow tasks in the taskflowbackend app"""
 
+import os
 import uuid
 
 from irods.collection import iRODSCollection
@@ -29,13 +30,12 @@ DEFAULT_USER_GROUP = USER_PREFIX + 'group1'
 GROUP_USER = USER_PREFIX + 'user1'
 GROUPLESS_USER = USER_PREFIX + 'user2'
 
-# TODO: Refactor these so we don't have leading slashes in constants
-TEST_COLL_NAME = '/test'
-NEW_COLL_NAME = '/test_new'
-NEW_COLL2_NAME = '/test_new2'
-TEST_OBJ_NAME = '/move_obj'
-SUB_COLL_NAME = '/sub'
-MOVE_COLL_NAME = '/move_coll'
+TEST_COLL_NAME = 'test'
+NEW_COLL_NAME = 'test_new'
+NEW_COLL2_NAME = 'test_new2'
+TEST_OBJ_NAME = 'move_obj'
+SUB_COLL_NAME = 'sub'
+MOVE_COLL_NAME = 'move_coll'
 
 TEST_USER = USER_PREFIX + 'user3'
 TEST_USER_TYPE = 'rodsuser'
@@ -51,11 +51,10 @@ TEST_ACCESS_WRITE_IN = 'write'
 TEST_ACCESS_WRITE_OUT = 'modify object'
 TEST_ACCESS_NULL = 'null'
 
-# TODO: Refactor these so we don't have leading slashes in constants
-BATCH_SRC_NAME = '/batch_src'
-BATCH_DEST_NAME = '/batch_dest'
-BATCH_OBJ_NAME = '/batch_obj'
-BATCH_OBJ2_NAME = '/batch_obj2'
+BATCH_SRC_NAME = 'batch_src'
+BATCH_DEST_NAME = 'batch_dest'
+BATCH_OBJ_NAME = 'batch_obj'
+BATCH_OBJ2_NAME = 'batch_obj2'
 
 
 class IRODSTaskTestBase(TaskflowViewTestBase):
@@ -105,10 +104,10 @@ class IRODSTaskTestBase(TaskflowViewTestBase):
         # Init vars and iRODS collections
         self.project_path = self.irods_backend.get_path(self.project)
         self.test_coll = self.irods.collections.create(
-            self.project_path + '/' + TEST_COLL_NAME
+            os.path.join(self.project_path, TEST_COLL_NAME)
         )
         self.test_coll_path = self.test_coll.path
-        self.new_coll_path = self.project_path + NEW_COLL_NAME
+        self.new_coll_path = os.path.join(self.project_path, NEW_COLL_NAME)
         # Init flow
         self.flow = self._init_flow()
 
@@ -192,11 +191,13 @@ class TestCreateCollectionTask(IRODSTaskTestBase):
         """Test collection creation with nested collections"""
         self.assertFalse(self.irods.collections.exists(self.new_coll_path))
         self.assertFalse(
-            self.irods.collections.exists(self.new_coll_path + '/subcoll1')
+            self.irods.collections.exists(
+                os.path.join(self.new_coll_path, '/subcoll1')
+            )
         )
         self.assertFalse(
             self.irods.collections.exists(
-                self.new_coll_path + '/subcoll1/subcoll2'
+                os.path.join(self.new_coll_path, 'subcoll1', 'subcoll2')
             )
         )
         self.assertTrue(self.irods.collections.exists(self.test_coll_path))
@@ -204,7 +205,9 @@ class TestCreateCollectionTask(IRODSTaskTestBase):
         self._add_task(
             cls=CreateCollectionTask,
             name='Create collection',
-            inject={'path': self.new_coll_path + '/subcoll1/subcoll2'},
+            inject={
+                'path': os.path.join(self.new_coll_path, 'subcoll1', 'subcoll2')
+            },
         )
         self.assertRaises(
             CollectionDoesNotExist,
@@ -214,23 +217,25 @@ class TestCreateCollectionTask(IRODSTaskTestBase):
         self.assertRaises(
             CollectionDoesNotExist,
             self.irods.collections.get,
-            self.new_coll_path + '/subcoll1',
+            os.path.join(self.new_coll_path, 'subcoll1'),
         )
         self.assertRaises(
             CollectionDoesNotExist,
             self.irods.collections.get,
-            self.new_coll_path + '/subcoll1/subcoll2',
+            os.path.join(self.new_coll_path, 'subcoll1', 'subcoll2'),
         )
         result = self._run_flow()
 
         self.assertTrue(result)
         self.assertTrue(self.irods.collections.exists(self.new_coll_path))
         self.assertTrue(
-            self.irods.collections.exists(self.new_coll_path + '/subcoll1')
+            self.irods.collections.exists(
+                os.path.join(self.new_coll_path, 'subcoll1')
+            )
         )
         self.assertTrue(
             self.irods.collections.exists(
-                self.new_coll_path + '/subcoll1/subcoll2'
+                os.path.join(self.new_coll_path, 'subcoll1', 'subcoll2')
             )
         )
         self.assertTrue(self.irods.collections.exists(self.test_coll_path))
@@ -239,11 +244,13 @@ class TestCreateCollectionTask(IRODSTaskTestBase):
         """Test collection creation twice with nested collections"""
         self.assertFalse(self.irods.collections.exists(self.new_coll_path))
         self.assertFalse(
-            self.irods.collections.exists(self.new_coll_path + '/subcoll1')
+            self.irods.collections.exists(
+                os.path.join(self.new_coll_path, 'subcoll1')
+            )
         )
         self.assertFalse(
             self.irods.collections.exists(
-                self.new_coll_path + '/subcoll1/subcoll2'
+                os.path.join(self.new_coll_path, 'subcoll1', 'subcoll2')
             )
         )
         self.assertTrue(self.irods.collections.exists(self.test_coll_path))
@@ -251,18 +258,22 @@ class TestCreateCollectionTask(IRODSTaskTestBase):
         self._add_task(
             cls=CreateCollectionTask,
             name='Create collection',
-            inject={'path': self.new_coll_path + '/subcoll1/subcoll2'},
+            inject={
+                'path': os.path.join(self.new_coll_path, 'subcoll1', 'subcoll2')
+            },
         )
         result = self._run_flow()
 
         self.assertTrue(result)
         self.assertTrue(self.irods.collections.exists(self.new_coll_path))
         self.assertTrue(
-            self.irods.collections.exists(self.new_coll_path + '/subcoll1')
+            self.irods.collections.exists(
+                os.path.join(self.new_coll_path, 'subcoll1')
+            )
         )
         self.assertTrue(
             self.irods.collections.exists(
-                self.new_coll_path + '/subcoll1/subcoll2'
+                os.path.join(self.new_coll_path, 'subcoll1', 'subcoll2')
             )
         )
         self.assertTrue(self.irods.collections.exists(self.test_coll_path))
@@ -271,18 +282,22 @@ class TestCreateCollectionTask(IRODSTaskTestBase):
         self._add_task(
             cls=CreateCollectionTask,
             name='Create collection',
-            inject={'path': self.new_coll_path + '/subcoll1/subcoll2'},
+            inject={
+                'path': os.path.join(self.new_coll_path, 'subcoll1', 'subcoll2')
+            },
         )
         result = self._run_flow()
 
         self.assertTrue(result)
         self.assertTrue(self.irods.collections.exists(self.new_coll_path))
         self.assertTrue(
-            self.irods.collections.exists(self.new_coll_path + '/subcoll1')
+            self.irods.collections.exists(
+                os.path.join(self.new_coll_path, 'subcoll1')
+            )
         )
         self.assertTrue(
             self.irods.collections.exists(
-                self.new_coll_path + '/subcoll1/subcoll2'
+                os.path.join(self.new_coll_path, 'subcoll1', 'subcoll2')
             )
         )
         self.assertTrue(self.irods.collections.exists(self.test_coll_path))
@@ -291,11 +306,13 @@ class TestCreateCollectionTask(IRODSTaskTestBase):
         """Test creation reverting with nested collections"""
         self.assertFalse(self.irods.collections.exists(self.new_coll_path))
         self.assertFalse(
-            self.irods.collections.exists(self.new_coll_path + '/subcoll1')
+            self.irods.collections.exists(
+                os.path.join(self.new_coll_path, 'subcoll1')
+            )
         )
         self.assertFalse(
             self.irods.collections.exists(
-                self.new_coll_path + '/subcoll1/subcoll2'
+                os.path.join(self.new_coll_path, 'subcoll1', 'subcoll2')
             )
         )
         self.assertTrue(self.irods.collections.exists(self.test_coll_path))
@@ -303,7 +320,9 @@ class TestCreateCollectionTask(IRODSTaskTestBase):
         self._add_task(
             cls=CreateCollectionTask,
             name='Create collection',
-            inject={'path': self.new_coll_path + '/subcoll1/subcoll2'},
+            inject={
+                'path': os.path.join(self.new_coll_path, 'subcoll1', 'subcoll2')
+            },
             force_fail=True,
         )  # FAIL
         result = self._run_flow()
@@ -311,11 +330,13 @@ class TestCreateCollectionTask(IRODSTaskTestBase):
         self.assertFalse(result)
         self.assertFalse(self.irods.collections.exists(self.new_coll_path))
         self.assertFalse(
-            self.irods.collections.exists(self.new_coll_path + '/subcoll1')
+            self.irods.collections.exists(
+                os.path.join(self.new_coll_path, 'subcoll1')
+            )
         )
         self.assertFalse(
             self.irods.collections.exists(
-                self.new_coll_path + '/subcoll1/subcoll2'
+                os.path.join(self.new_coll_path, 'subcoll1', 'subcoll2')
             )
         )
         self.assertTrue(self.irods.collections.exists(self.test_coll_path))
@@ -411,7 +432,7 @@ class TestRemoveDataObjectTask(IRODSTaskTestBase):
     def setUp(self):
         super().setUp()
         # Init object to be removed
-        self.obj_path = self.test_coll_path + TEST_OBJ_NAME
+        self.obj_path = os.path.join(self.test_coll_path, TEST_OBJ_NAME)
         self.obj = self.irods.data_objects.create(self.obj_path)
 
     def test_execute(self):
@@ -466,7 +487,7 @@ class TestRemoveDataObjectTask(IRODSTaskTestBase):
 
     def test_revert_not_modified(self):
         """Test data object removal reverting without modification"""
-        obj_path2 = self.test_coll_path + '/move_obj2'
+        obj_path2 = os.path.join(self.test_coll_path, 'move_obj2')
         with self.assertRaises(DataObjectDoesNotExist):
             self.irods.data_objects.get(obj_path2)
 
@@ -745,7 +766,7 @@ class TestSetAccessTask(IRODSTaskTestBase):
 
     def setUp(self):
         super().setUp()
-        self.sub_coll_path = self.test_coll_path + SUB_COLL_NAME
+        self.sub_coll_path = os.path.join(self.test_coll_path, SUB_COLL_NAME)
         # Init default user group
         self.irods.user_groups.create(DEFAULT_USER_GROUP)
 
@@ -1228,7 +1249,7 @@ class TestSetDataObjAccessTask(IRODSTaskTestBase):
         # Init default user group
         self.irods.user_groups.create(DEFAULT_USER_GROUP)
         # Init object to be copied
-        self.obj_path = self.test_coll_path + TEST_OBJ_NAME
+        self.obj_path = os.path.join(self.test_coll_path, TEST_OBJ_NAME)
         self.obj = self.irods.data_objects.create(self.obj_path)
 
     def test_execute_read(self):
@@ -1690,8 +1711,8 @@ class TestMoveDataObjectTask(IRODSTaskTestBase):
 
     def setUp(self):
         super().setUp()
-        self.obj_path = self.test_coll_path + TEST_OBJ_NAME
-        self.move_coll_path = self.test_coll_path + MOVE_COLL_NAME
+        self.obj_path = os.path.join(self.test_coll_path, TEST_OBJ_NAME)
+        self.move_coll_path = os.path.join(self.test_coll_path, MOVE_COLL_NAME)
         # Init object to be copied
         self.move_obj = self.irods.data_objects.create(self.obj_path)
         # Init collection for copying
@@ -1699,6 +1720,7 @@ class TestMoveDataObjectTask(IRODSTaskTestBase):
 
     def test_execute(self):
         """Test moving a data object"""
+        move_obj_path = os.path.join(self.move_coll_path, TEST_OBJ_NAME)
         self._add_task(
             cls=MoveDataObjectTask,
             name='Move data object',
@@ -1708,22 +1730,15 @@ class TestMoveDataObjectTask(IRODSTaskTestBase):
             },
         )
         with self.assertRaises(DataObjectDoesNotExist):
-            self.irods.data_objects.get(
-                '{}/move_obj'.format(self.move_coll_path)
-            )
+            self.irods.data_objects.get(move_obj_path)
         result = self._run_flow()
-
         self.assertEqual(result, True)
-        with self.assertRaises(DataObjectDoesNotExist):
-            self.irods.data_objects.get(self.obj_path)
-
-        move_obj = self.irods.data_objects.get(
-            '{}/move_obj'.format(self.move_coll_path)
-        )
-        self.assertIsInstance(move_obj, iRODSDataObject)
+        self.assertEqual(self.irods.data_objects.exists(self.obj_path), False)
+        self.assertEqual(self.irods.data_objects.exists(move_obj_path), True)
 
     def test_revert(self):
         """Test reverting the moving of a data object"""
+        move_obj_path = os.path.join(self.move_coll_path, TEST_OBJ_NAME)
         self._add_task(
             cls=MoveDataObjectTask,
             name='Move data object',
@@ -1734,18 +1749,13 @@ class TestMoveDataObjectTask(IRODSTaskTestBase):
             force_fail=True,
         )  # FAILS
         result = self._run_flow()
-
-        self.assertNotEqual(result, True)
-        move_obj = self.irods.data_objects.get(self.obj_path)
-        self.assertIsInstance(move_obj, iRODSDataObject)
-        with self.assertRaises(DataObjectDoesNotExist):
-            self.irods.data_objects.get(
-                '{}/move_obj'.format(self.move_coll_path)
-            )
+        self.assertEqual(result, False)
+        self.assertEqual(self.irods.data_objects.exists(self.obj_path), True)
+        self.assertEqual(self.irods.data_objects.exists(move_obj_path), False)
 
     def test_overwrite_failure(self):
         """Test moving a data object when a similarly named file exists"""
-        new_obj_path = self.move_coll_path + '/move_obj'
+        new_obj_path = os.path.join(self.move_coll_path, TEST_OBJ_NAME)
         # Create object already in target
         new_obj = self.irods.data_objects.create(new_obj_path)
         self._add_task(
@@ -1776,7 +1786,7 @@ class TestBatchCreateCollectionsTask(IRODSTaskTestBase):
 
     def setUp(self):
         super().setUp()
-        self.new_coll_path2 = self.project_path + NEW_COLL2_NAME
+        self.new_coll_path2 = os.path.join(self.project_path, NEW_COLL2_NAME)
 
     def test_execute(self):
         """Test batch collection creation"""
@@ -1893,25 +1903,23 @@ class TestBatchCreateCollectionsTask(IRODSTaskTestBase):
             name='Create collections',
             inject={
                 'paths': [
-                    self.new_coll_path + '/subcoll1/subcoll1a',
-                    self.new_coll_path + '/subcoll2/subcoll2a',
+                    os.path.join(self.new_coll_path, 'subcoll1', 'subcoll1a'),
+                    os.path.join(self.new_coll_path, 'subcoll2', 'subcoll2a'),
                 ]
             },
         )
         result = self._run_flow()
 
         self.assertEqual(result, True)
-        self.assertIsInstance(
-            self.irods.collections.get(
-                self.new_coll_path + '/subcoll1/subcoll1a'
-            ),
-            iRODSCollection,
+        self.assertTrue(
+            self.irods.collections.exists(
+                os.path.join(self.new_coll_path, 'subcoll1', 'subcoll1a')
+            )
         )
-        self.assertIsInstance(
-            self.irods.collections.get(
-                self.new_coll_path + '/subcoll2/subcoll2a'
-            ),
-            iRODSCollection,
+        self.assertTrue(
+            self.irods.collections.exists(
+                os.path.join(self.new_coll_path, 'subcoll2', 'subcoll2a')
+            )
         )
 
     def test_execute_nested_existing(self):
@@ -1921,23 +1929,23 @@ class TestBatchCreateCollectionsTask(IRODSTaskTestBase):
             name='Create collections',
             inject={
                 'paths': [
-                    self.new_coll_path + '/subcoll1/subcoll1a',
-                    self.new_coll_path + '/subcoll1',
+                    os.path.join(self.new_coll_path, 'subcoll1', 'subcoll1a'),
+                    os.path.join(self.new_coll_path, 'subcoll1'),
                 ]
             },
         )
         result = self._run_flow()
 
         self.assertEqual(result, True)
-        self.assertIsInstance(
-            self.irods.collections.get(
-                self.new_coll_path + '/subcoll1/subcoll1a'
-            ),
-            iRODSCollection,
+        self.assertTrue(
+            self.irods.collections.exists(
+                os.path.join(self.new_coll_path, 'subcoll1', 'subcoll1a')
+            )
         )
-        self.assertIsInstance(
-            self.irods.collections.get(self.new_coll_path + '/subcoll1'),
-            iRODSCollection,
+        self.assertTrue(
+            self.irods.collections.exists(
+                os.path.join(self.new_coll_path, 'subcoll1')
+            )
         )
 
     def test_revert_created_nested(self):
@@ -1947,8 +1955,8 @@ class TestBatchCreateCollectionsTask(IRODSTaskTestBase):
             name='Create collections',
             inject={
                 'paths': [
-                    self.new_coll_path + '/subcoll1/subcoll1a',
-                    self.new_coll_path + '/subcoll2/subcoll2a',
+                    os.path.join(self.new_coll_path, 'subcoll1', 'subcoll1a'),
+                    os.path.join(self.new_coll_path, 'subcoll2', 'subcoll2a'),
                 ]
             },
             force_fail=True,
@@ -1959,22 +1967,22 @@ class TestBatchCreateCollectionsTask(IRODSTaskTestBase):
         self.assertRaises(
             CollectionDoesNotExist,
             self.irods.collections.get,
-            self.new_coll_path + '/subcoll1',
+            os.path.join(self.new_coll_path, 'subcoll1'),
         )
         self.assertRaises(
             CollectionDoesNotExist,
             self.irods.collections.get,
-            self.new_coll_path + '/subcoll1/subcoll1a',
+            os.path.join(self.new_coll_path, 'subcoll1', 'subcoll1a'),
         )
         self.assertRaises(
             CollectionDoesNotExist,
             self.irods.collections.get,
-            self.new_coll_path + '/subcoll2',
+            os.path.join(self.new_coll_path, 'subcoll2'),
         )
         self.assertRaises(
             CollectionDoesNotExist,
             self.irods.collections.get,
-            self.new_coll_path + '/subcoll2/subcoll2a',
+            os.path.join(self.new_coll_path, 'subcoll2', 'subcoll2a'),
         )
 
 
@@ -1986,15 +1994,23 @@ class TestBatchMoveDataObjectsTask(IRODSTaskTestBase):
         # Init default user group
         self.irods.user_groups.create(DEFAULT_USER_GROUP)
         # Init batch collections
-        self.batch_src_path = self.test_coll_path + BATCH_SRC_NAME
-        self.batch_dest_path = self.test_coll_path + BATCH_DEST_NAME
+        self.batch_src_path = os.path.join(self.test_coll_path, BATCH_SRC_NAME)
+        self.batch_dest_path = os.path.join(
+            self.test_coll_path, BATCH_DEST_NAME
+        )
         self.src_coll = self.irods.collections.create(self.batch_src_path)
         self.dest_coll = self.irods.collections.create(self.batch_dest_path)
         # Init objects to be copied
-        self.batch_obj_path = self.batch_src_path + BATCH_OBJ_NAME
-        self.batch_obj2_path = self.batch_src_path + BATCH_OBJ2_NAME
+        self.batch_obj_path = os.path.join(self.batch_src_path, BATCH_OBJ_NAME)
+        self.batch_obj2_path = os.path.join(
+            self.batch_src_path, BATCH_OBJ2_NAME
+        )
         self.batch_obj = self.irods.data_objects.create(self.batch_obj_path)
         self.batch_obj2 = self.irods.data_objects.create(self.batch_obj2_path)
+        self.dest_obj_path = os.path.join(self.batch_dest_path, BATCH_OBJ_NAME)
+        self.dest_obj2_path = os.path.join(
+            self.batch_dest_path, BATCH_OBJ2_NAME
+        )
 
     def test_execute(self):
         """Test moving data objects and setting access"""
@@ -2009,14 +2025,8 @@ class TestBatchMoveDataObjectsTask(IRODSTaskTestBase):
                 'user_name': DEFAULT_USER_GROUP,
             },
         )
-        with self.assertRaises(DataObjectDoesNotExist):
-            self.irods.data_objects.get(
-                '{}/batch_obj'.format(self.batch_dest_path)
-            )
-        with self.assertRaises(DataObjectDoesNotExist):
-            self.irods.data_objects.get(
-                '{}/batch_obj2'.format(self.batch_dest_path)
-            )
+        self.assertFalse(self.irods.data_objects.exists(self.dest_obj_path))
+        self.assertFalse(self.irods.data_objects.exists(self.dest_obj2_path))
         self.assertEqual(
             self._get_user_access(
                 target=self.irods.data_objects.get(self.batch_obj_path),
@@ -2035,22 +2045,10 @@ class TestBatchMoveDataObjectsTask(IRODSTaskTestBase):
         result = self._run_flow()
 
         self.assertEqual(result, True)
-        with self.assertRaises(DataObjectDoesNotExist):
-            self.irods.data_objects.get(self.batch_obj_path)
-        with self.assertRaises(DataObjectDoesNotExist):
-            self.irods.data_objects.get(self.batch_obj2_path)
-        self.assertIsInstance(
-            self.irods.data_objects.get(
-                '{}/batch_obj'.format(self.batch_dest_path)
-            ),
-            iRODSDataObject,
-        )
-        self.assertIsInstance(
-            self.irods.data_objects.get(
-                '{}/batch_obj2'.format(self.batch_dest_path)
-            ),
-            iRODSDataObject,
-        )
+        self.assertFalse(self.irods.data_objects.exists(self.batch_obj_path))
+        self.assertFalse(self.irods.data_objects.exists(self.batch_obj2_path))
+        self.assertTrue(self.irods.data_objects.exists(self.dest_obj_path))
+        self.assertTrue(self.irods.data_objects.exists(self.dest_obj2_path))
         obj_access = self._get_user_access(
             target=self.irods.data_objects.get(
                 '{}/batch_obj'.format(self.batch_dest_path)
@@ -2060,9 +2058,7 @@ class TestBatchMoveDataObjectsTask(IRODSTaskTestBase):
         self.assertIsInstance(obj_access, iRODSAccess)
         self.assertEqual(obj_access.access_name, TEST_ACCESS_READ_OUT)
         obj_access = self._get_user_access(
-            target=self.irods.data_objects.get(
-                '{}/batch_obj2'.format(self.batch_dest_path)
-            ),
+            target=self.irods.data_objects.get(self.dest_obj_path),
             user_name=DEFAULT_USER_GROUP,
         )
         self.assertIsInstance(obj_access, iRODSAccess)
@@ -2085,44 +2081,24 @@ class TestBatchMoveDataObjectsTask(IRODSTaskTestBase):
         result = self._run_flow()
 
         self.assertNotEqual(result, True)
-        self.assertIsInstance(
-            self.irods.data_objects.get(
-                '{}/batch_obj'.format(self.batch_src_path)
-            ),
-            iRODSDataObject,
-        )
-        self.assertIsInstance(
-            self.irods.data_objects.get(
-                '{}/batch_obj2'.format(self.batch_src_path)
-            ),
-            iRODSDataObject,
-        )
-        with self.assertRaises(DataObjectDoesNotExist):
-            self.irods.data_objects.get(
-                '{}/batch_obj'.format(self.batch_dest_path)
-            )
-        with self.assertRaises(DataObjectDoesNotExist):
-            self.irods.data_objects.get(
-                '{}/batch_obj2'.format(self.batch_dest_path)
-            )
+        self.assertTrue(self.irods.data_objects.exists(self.batch_obj_path))
+        self.assertTrue(self.irods.data_objects.exists(self.batch_obj2_path))
+        self.assertFalse(self.irods.data_objects.exists(self.dest_obj_path))
+        self.assertFalse(self.irods.data_objects.exists(self.dest_obj2_path))
         obj_access = self._get_user_access(
-            target=self.irods.data_objects.get(
-                '{}/batch_obj'.format(self.batch_src_path)
-            ),
+            target=self.irods.data_objects.get(self.batch_obj_path),
             user_name=DEFAULT_USER_GROUP,
         )
         self.assertIsNone(obj_access)
         obj_access = self._get_user_access(
-            target=self.irods.data_objects.get(
-                '{}/batch_obj2'.format(self.batch_src_path)
-            ),
+            target=self.irods.data_objects.get(self.batch_obj2_path),
             user_name=DEFAULT_USER_GROUP,
         )
         self.assertIsNone(obj_access)
 
     def test_overwrite_failure(self):
         """Test moving data objects when a similarly named file exists"""
-        new_obj_path = self.batch_dest_path + '/batch_obj2'
+        new_obj_path = os.path.join(self.batch_dest_path, 'batch_obj2')
         # Create object already in target
         new_obj = self.irods.data_objects.create(new_obj_path)
         self._add_task(
@@ -2140,24 +2116,10 @@ class TestBatchMoveDataObjectsTask(IRODSTaskTestBase):
             self._run_flow()
 
         # Assert state of objects after attempted move
-        self.assertIsInstance(
-            self.irods.data_objects.get(
-                '{}/batch_obj'.format(self.batch_src_path)
-            ),
-            iRODSDataObject,
-        )
-        self.assertIsInstance(
-            self.irods.data_objects.get(
-                '{}/batch_obj2'.format(self.batch_src_path)
-            ),
-            iRODSDataObject,
-        )
-        self.assertIsInstance(
-            self.irods.data_objects.get(new_obj_path), iRODSDataObject
-        )
-        move_obj = self.irods.data_objects.get(
-            '{}/batch_obj2'.format(self.batch_src_path)
-        )
+        self.assertTrue(self.irods.data_objects.exists(self.batch_obj_path))
+        self.assertTrue(self.irods.data_objects.exists(self.batch_obj2_path))
+        self.assertTrue(self.irods.data_objects.exists(new_obj_path))
+        move_obj = self.irods.data_objects.get(self.batch_obj2_path)
         self.assertEqual(self.batch_obj.checksum, move_obj.checksum)
         existing_obj = self.irods.data_objects.get(new_obj_path)
         self.assertEqual(new_obj.checksum, existing_obj.checksum)

@@ -37,10 +37,10 @@ SHEET_PATH_ALT = SHEET_DIR + 'i_small2.zip'
 
 
 # TODO: Unify with TestTableBuilder if no other classes are needed
-class TestRenderingBase(
+class SamplesheetsRenderingTestBase(
     ProjectMixin, RoleMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase
 ):
-    """Base class for rendering tests"""
+    """Base class for samplesheets rendering tests"""
 
     def setUp(self):
         # Init roles
@@ -51,7 +51,7 @@ class TestRenderingBase(
         self.project = self.make_project(
             'TestProject', SODAR_CONSTANTS['PROJECT_TYPE_PROJECT'], None
         )
-        self.assignment_owner = self.make_assignment(
+        self.owner_as = self.make_assignment(
             self.project, self.user_owner, self.role_owner
         )
         # Import investigation
@@ -66,7 +66,7 @@ class TestRenderingBase(
         self.cache_args = [APP_NAME, self.cache_name, self.project]
 
 
-class TestTableBuilder(SheetConfigMixin, TestRenderingBase):
+class TestTableBuilder(SheetConfigMixin, SamplesheetsRenderingTestBase):
     """Tests for SampleSheetTableBuilder"""
 
     def _assert_row_length(self, table):

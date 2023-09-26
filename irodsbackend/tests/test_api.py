@@ -21,13 +21,13 @@ from landingzones.tests.test_models import LandingZoneMixin
 
 from irodsbackend.api import (
     IrodsAPI,
-    USER_GROUP_PREFIX,
+    USER_GROUP_TEMPLATE,
     ERROR_PATH_PARENT,
     ERROR_PATH_UNSET,
 )
 
 
-# Global constants
+# SODAR constants
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
 PROJECT_ROLE_CONTRIBUTOR = SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR']
@@ -283,14 +283,14 @@ class TestIrodsbackendAPI(
         """Test get_user_group_name() with Project object"""
         self.assertEqual(
             self.irods_backend.get_user_group_name(self.project),
-            '{}{}'.format(USER_GROUP_PREFIX, self.project.sodar_uuid),
+            USER_GROUP_TEMPLATE.format(uuid=self.project.sodar_uuid),
         )
 
     def test_get_user_group_name_uuid(self):
         """Test get_user_group_name() with UUID object"""
         self.assertEqual(
             self.irods_backend.get_user_group_name(self.project.sodar_uuid),
-            '{}{}'.format(USER_GROUP_PREFIX, self.project.sodar_uuid),
+            USER_GROUP_TEMPLATE.format(uuid=self.project.sodar_uuid),
         )
 
     def test_get_user_group_name_uuid_str(self):
@@ -299,5 +299,5 @@ class TestIrodsbackendAPI(
             self.irods_backend.get_user_group_name(
                 str(self.project.sodar_uuid)
             ),
-            '{}{}'.format(USER_GROUP_PREFIX, self.project.sodar_uuid),
+            USER_GROUP_TEMPLATE.format(uuid=self.project.sodar_uuid),
         )

@@ -89,13 +89,12 @@ IRODS_REQUEST_DESC_UPDATE = 'Updated'
 class SampleSheetTaskflowMixin:
     """Taskflow helpers for samplesheets tests"""
 
-    def make_irods_colls(self, investigation, ticket_str=None, request=None):
+    def make_irods_colls(self, investigation, ticket_str=None):
         """
         Create iRODS collection structure for investigation.
 
         :param investigation: Investigation object
         :param ticket_str: Access ticket string or None
-        :param request: HTTP request object (optional, default=None)
         :raise taskflow.FlowSubmitException if submit fails
         """
         self.assertEqual(investigation.irods_status, False)
@@ -1128,14 +1127,14 @@ class IrodsDataRequestViewTestBase(
 
         # Init users (owner = user_cat, superuser = user)
         self.user_delegate = self.make_user('user_delegate')
-        self.user_contrib = self.make_user('user_contrib')
+        self.user_contributor = self.make_user('user_contributor')
         self.user_guest = self.make_user('user_guest')
 
         self.make_assignment_taskflow(
             self.project, self.user_delegate, self.role_delegate
         )
         self.make_assignment_taskflow(
-            self.project, self.user_contrib, self.role_contributor
+            self.project, self.user_contributor, self.role_contributor
         )
         self.make_assignment_taskflow(
             self.project, self.user_guest, self.role_guest
@@ -1155,10 +1154,6 @@ class IrodsDataRequestViewTestBase(
             'description': IRODS_REQUEST_DESC,
         }
 
-    def tearDown(self):
-        self.irods.collections.get('/sodarZone/projects').remove(force=True)
-        super().tearDown()
-
 
 class TestIrodsDataRequestCreateView(IrodsDataRequestViewTestBase):
     """Test IrodsDataRequestCreateView"""
@@ -1170,7 +1165,7 @@ class TestIrodsDataRequestCreateView(IrodsDataRequestViewTestBase):
         self._assert_alert_count(EVENT_CREATE, self.user, 0)
         self._assert_alert_count(EVENT_CREATE, self.user_delegate, 0)
 
-        with self.login(self.user_contrib):
+        with self.login(self.user_contributor):
             response = self.client.post(
                 reverse(
                     'samplesheets:irods_request_create',
@@ -1206,7 +1201,7 @@ class TestIrodsDataRequestCreateView(IrodsDataRequestViewTestBase):
             'description': IRODS_REQUEST_DESC,
         }
 
-        with self.login(self.user_contrib):
+        with self.login(self.user_contributor):
             response = self.client.post(
                 reverse(
                     'samplesheets:irods_request_create',
@@ -1239,7 +1234,7 @@ class TestIrodsDataRequestCreateView(IrodsDataRequestViewTestBase):
         self._assert_alert_count(EVENT_CREATE, self.user_delegate, 0)
         post_data = {'path': '/doesnt/exist', 'description': IRODS_REQUEST_DESC}
 
-        with self.login(self.user_contrib):
+        with self.login(self.user_contributor):
             response = self.client.post(
                 reverse(
                     'samplesheets:irods_request_create',
@@ -1262,7 +1257,7 @@ class TestIrodsDataRequestCreateView(IrodsDataRequestViewTestBase):
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         post_data = {'path': self.assay_path, 'description': IRODS_REQUEST_DESC}
 
-        with self.login(self.user_contrib):
+        with self.login(self.user_contributor):
             response = self.client.post(
                 reverse(
                     'samplesheets:irods_request_create',
@@ -1286,7 +1281,7 @@ class TestIrodsDataRequestCreateView(IrodsDataRequestViewTestBase):
         self._assert_alert_count(EVENT_CREATE, self.user, 0)
         self._assert_alert_count(EVENT_CREATE, self.user_delegate, 0)
 
-        with self.login(self.user_contrib):
+        with self.login(self.user_contributor):
             self.client.post(
                 reverse(
                     'samplesheets:irods_request_create',
@@ -1321,7 +1316,7 @@ class TestIrodsDataRequestUpdateView(
             action=IRODS_REQUEST_ACTION_DELETE,
             path=self.obj_path,
             status=IRODS_REQUEST_STATUS_ACTIVE,
-            user=self.user_contrib,
+            user=self.user_contributor,
             description=IRODS_REQUEST_DESC,
         )
 
@@ -1334,7 +1329,7 @@ class TestIrodsDataRequestUpdateView(
             'path': self.obj_path,
             'description': IRODS_REQUEST_DESC_UPDATE,
         }
-        with self.login(self.user_contrib):
+        with self.login(self.user_contributor):
             response = self.client.post(
                 reverse(
                     'samplesheets:irods_request_update',
@@ -1371,7 +1366,7 @@ class TestIrodsDataRequestUpdateView(
             'path': '/sodarZone/path/does/not/exist',
             'description': IRODS_REQUEST_DESC_UPDATE,
         }
-        with self.login(self.user_contrib):
+        with self.login(self.user_contributor):
             response = self.client.post(
                 reverse(
                     'samplesheets:irods_request_update',
@@ -1406,7 +1401,7 @@ class TestIrodsDataRequestDeleteView(
     def test_delete_contributor(self):
         """Test POST request for deleting a request"""
         # NOTE: We use post() to ensure alerts are created
-        with self.login(self.user_contrib):
+        with self.login(self.user_contributor):
             self.client.post(self.create_url, self.post_data)
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         self.assert_irods_obj(self.obj_path)
@@ -1415,7 +1410,7 @@ class TestIrodsDataRequestDeleteView(
         self._assert_alert_count(EVENT_CREATE, self.user_delegate, 1)
         obj = IrodsDataRequest.objects.first()
 
-        with self.login(self.user_contrib):
+        with self.login(self.user_contributor):
             response = self.client.post(
                 reverse(
                     'samplesheets:irods_request_delete',
@@ -1448,7 +1443,7 @@ class TestIrodsDataRequestDeleteView(
         self.irods.data_objects.create(obj_path2)
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
 
-        with self.login(self.user_contrib):
+        with self.login(self.user_contributor):
             self.client.post(self.create_url, self.post_data)
             self.post_data['path'] = obj_path2
             self.client.post(self.create_url, self.post_data)
@@ -1496,7 +1491,7 @@ class TestIrodsDataRequestAcceptView(
             action=IRODS_REQUEST_ACTION_DELETE,
             path=self.obj_path,
             status=IRODS_REQUEST_STATUS_ACTIVE,
-            user=self.user_contrib,
+            user=self.user_contributor,
         )
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         obj = IrodsDataRequest.objects.first()
@@ -1521,7 +1516,7 @@ class TestIrodsDataRequestAcceptView(
             action=IRODS_REQUEST_ACTION_DELETE,
             path=coll_path,
             status=IRODS_REQUEST_STATUS_ACTIVE,
-            user=self.user_contrib,
+            user=self.user_contributor,
         )
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
 
@@ -1538,7 +1533,7 @@ class TestIrodsDataRequestAcceptView(
     def test_accept(self):
         """Test accepting a delete request"""
         self.assert_irods_obj(self.obj_path)
-        with self.login(self.user_contrib):
+        with self.login(self.user_contributor):
             self.client.post(self.create_url, self.post_data)
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         self._assert_tl_count(EVENT_ACCEPT, 0)
@@ -1593,7 +1588,7 @@ class TestIrodsDataRequestAcceptView(
     def test_accept_invalid_form_data(self):
         """Test accepting delete request with invalid form data"""
         self.assert_irods_obj(self.obj_path)
-        with self.login(self.user_contrib):
+        with self.login(self.user_contributor):
             self.client.post(self.create_url, self.post_data)
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         self._assert_tl_count(EVENT_ACCEPT, 0)
@@ -1632,11 +1627,11 @@ class TestIrodsDataRequestAcceptView(
             action=IRODS_REQUEST_ACTION_DELETE,
             path=self.obj_path,
             status=IRODS_REQUEST_STATUS_ACTIVE,
-            user=self.user_contrib,
+            user=self.user_contributor,
         )
         self._assert_alert_count(EVENT_ACCEPT, self.user, 0)
         self._assert_alert_count(EVENT_ACCEPT, self.user_delegate, 0)
-        self._assert_alert_count(EVENT_ACCEPT, self.user_contrib, 0)
+        self._assert_alert_count(EVENT_ACCEPT, self.user_contributor, 0)
 
         with self.login(self.user_owner_cat):
             self.client.post(
@@ -1652,7 +1647,7 @@ class TestIrodsDataRequestAcceptView(
         self.assert_irods_obj(self.obj_path, False)
         self._assert_alert_count(EVENT_ACCEPT, self.user, 0)
         self._assert_alert_count(EVENT_ACCEPT, self.user_delegate, 0)
-        self._assert_alert_count(EVENT_ACCEPT, self.user_contrib, 1)
+        self._assert_alert_count(EVENT_ACCEPT, self.user_contributor, 1)
 
     def test_accept_delegate(self):
         """Test accepting delete request as delegate"""
@@ -1662,11 +1657,11 @@ class TestIrodsDataRequestAcceptView(
             action=IRODS_REQUEST_ACTION_DELETE,
             path=self.obj_path,
             status=IRODS_REQUEST_STATUS_ACTIVE,
-            user=self.user_contrib,
+            user=self.user_contributor,
         )
         self._assert_alert_count(EVENT_ACCEPT, self.user, 0)
         self._assert_alert_count(EVENT_ACCEPT, self.user_delegate, 0)
-        self._assert_alert_count(EVENT_ACCEPT, self.user_contrib, 0)
+        self._assert_alert_count(EVENT_ACCEPT, self.user_contributor, 0)
 
         with self.login(self.user_delegate):
             self.client.post(
@@ -1682,7 +1677,7 @@ class TestIrodsDataRequestAcceptView(
         self.assert_irods_obj(self.obj_path, False)
         self._assert_alert_count(EVENT_ACCEPT, self.user, 0)
         self._assert_alert_count(EVENT_ACCEPT, self.user_delegate, 0)
-        self._assert_alert_count(EVENT_ACCEPT, self.user_contrib, 1)
+        self._assert_alert_count(EVENT_ACCEPT, self.user_contributor, 1)
 
     def test_accept_contributor(self):
         """Test accepting delete request as contributor"""
@@ -1692,13 +1687,13 @@ class TestIrodsDataRequestAcceptView(
             action=IRODS_REQUEST_ACTION_DELETE,
             path=self.obj_path,
             status=IRODS_REQUEST_STATUS_ACTIVE,
-            user=self.user_contrib,
+            user=self.user_contributor,
         )
         self._assert_alert_count(EVENT_ACCEPT, self.user, 0)
         self._assert_alert_count(EVENT_ACCEPT, self.user_delegate, 0)
-        self._assert_alert_count(EVENT_ACCEPT, self.user_contrib, 0)
+        self._assert_alert_count(EVENT_ACCEPT, self.user_contributor, 0)
 
-        with self.login(self.user_contrib):
+        with self.login(self.user_contributor):
             response = self.client.post(
                 reverse(
                     'samplesheets:irods_request_accept',
@@ -1713,7 +1708,7 @@ class TestIrodsDataRequestAcceptView(
         self.assert_irods_obj(self.obj_path)
         self._assert_alert_count(EVENT_ACCEPT, self.user, 0)
         self._assert_alert_count(EVENT_ACCEPT, self.user_delegate, 0)
-        self._assert_alert_count(EVENT_ACCEPT, self.user_contrib, 0)
+        self._assert_alert_count(EVENT_ACCEPT, self.user_contributor, 0)
 
     def test_accept_one_of_multiple(self):
         """Test accepting one of multiple requests"""
@@ -1726,14 +1721,14 @@ class TestIrodsDataRequestAcceptView(
             action=IRODS_REQUEST_ACTION_DELETE,
             path=self.obj_path,
             status=IRODS_REQUEST_STATUS_ACTIVE,
-            user=self.user_contrib,
+            user=self.user_contributor,
         )
         request2 = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
             path=obj_path2,
             status=IRODS_REQUEST_STATUS_ACTIVE,
-            user=self.user_contrib,
+            user=self.user_contributor,
         )
         self.assertEqual(
             IrodsDataRequest.objects.filter(
@@ -1763,7 +1758,7 @@ class TestIrodsDataRequestAcceptView(
     def test_accept_lock_failure(self):
         """Test accepting a delete request with project lock failure"""
         self.assert_irods_obj(self.obj_path)
-        with self.login(self.user_contrib):
+        with self.login(self.user_contributor):
             self.client.post(self.create_url, self.post_data)
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         self._assert_alert_count(EVENT_CREATE, self.user, 1)
@@ -1806,11 +1801,11 @@ class TestIrodsDataRequestAcceptView(
             action=IRODS_REQUEST_ACTION_DELETE,
             path=coll_path,
             status=IRODS_REQUEST_STATUS_ACTIVE,
-            user=self.user_contrib,
+            user=self.user_contributor,
         )
         self._assert_alert_count(EVENT_ACCEPT, self.user, 0)
         self._assert_alert_count(EVENT_ACCEPT, self.user_delegate, 0)
-        self._assert_alert_count(EVENT_ACCEPT, self.user_contrib, 0)
+        self._assert_alert_count(EVENT_ACCEPT, self.user_contributor, 0)
 
         with self.login(self.user):
             self.client.post(
@@ -1825,7 +1820,7 @@ class TestIrodsDataRequestAcceptView(
         self.assertEqual(request.status, IRODS_REQUEST_STATUS_ACCEPTED)
         self._assert_alert_count(EVENT_ACCEPT, self.user, 0)
         self._assert_alert_count(EVENT_ACCEPT, self.user_delegate, 0)
-        self._assert_alert_count(EVENT_ACCEPT, self.user_contrib, 1)
+        self._assert_alert_count(EVENT_ACCEPT, self.user_contributor, 1)
         self.assertEqual(self.irods.collections.exists(coll_path), False)
         self.assert_irods_obj(obj_path2, False)
 
@@ -1854,14 +1849,14 @@ class TestIrodsDataRequestAcceptBatchView(
             action=IRODS_REQUEST_ACTION_DELETE,
             path=self.obj_path,
             status=IRODS_REQUEST_STATUS_ACTIVE,
-            user=self.user_contrib,
+            user=self.user_contributor,
         )
         self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
             path=self.obj_path2,
             status=IRODS_REQUEST_STATUS_ACTIVE,
-            user=self.user_contrib,
+            user=self.user_contributor,
         )
         self.assertEqual(IrodsDataRequest.objects.count(), 2)
 
@@ -1909,7 +1904,7 @@ class TestIrodsDataRequestAcceptBatchView(
             action=IRODS_REQUEST_ACTION_DELETE,
             path=coll_path,
             status=IRODS_REQUEST_STATUS_ACTIVE,
-            user=self.user_contrib,
+            user=self.user_contributor,
         )
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
 
@@ -1939,7 +1934,7 @@ class TestIrodsDataRequestAcceptBatchView(
         self.assert_irods_obj(self.obj_path)
         self.assert_irods_obj(self.obj_path2)
 
-        with self.login(self.user_contrib):
+        with self.login(self.user_contributor):
             self.client.post(self.create_url, self.post_data)
             self.client.post(
                 reverse(
@@ -2024,7 +2019,7 @@ class TestIrodsDataRequestAcceptBatchView(
         self.assert_irods_obj(self.obj_path)
         self.assert_irods_obj(self.obj_path2)
 
-        with self.login(self.user_contrib):
+        with self.login(self.user_contributor):
             self.client.post(self.create_url, self.post_data)
             self.assertEqual(IrodsDataRequest.objects.count(), 1)
             self.client.post(self.create_url, self.post_data2)
@@ -2067,7 +2062,7 @@ class TestIrodsDataRequestAcceptBatchView(
         self.assert_irods_obj(self.obj_path)
         self.assert_irods_obj(self.obj_path2)
 
-        with self.login(self.user_contrib):
+        with self.login(self.user_contributor):
             self.client.post(self.create_url, self.post_data)
             self.assertEqual(IrodsDataRequest.objects.count(), 1)
             self.client.post(self.create_url, self.post_data2)
@@ -2129,13 +2124,13 @@ class TestIrodsDataRequestRejectView(
         self.assert_irods_obj(self.obj_path)
         self._assert_alert_count(EVENT_REJECT, self.user, 0)
         self._assert_alert_count(EVENT_REJECT, self.user_delegate, 0)
-        self._assert_alert_count(EVENT_REJECT, self.user_contrib, 0)
+        self._assert_alert_count(EVENT_REJECT, self.user_contributor, 0)
         request = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
             path=self.obj_path,
             status=IRODS_REQUEST_STATUS_ACTIVE,
-            user=self.user_contrib,
+            user=self.user_contributor,
         )
 
         with self.login(self.user):
@@ -2164,7 +2159,7 @@ class TestIrodsDataRequestRejectView(
         self.assert_irods_obj(self.obj_path)
         self._assert_alert_count(EVENT_REJECT, self.user, 0)
         self._assert_alert_count(EVENT_REJECT, self.user_delegate, 0)
-        self._assert_alert_count(EVENT_REJECT, self.user_contrib, 1)
+        self._assert_alert_count(EVENT_REJECT, self.user_contributor, 1)
 
     def test_reject_owner(self):
         """Test rejecting delete request as owner"""
@@ -2174,7 +2169,7 @@ class TestIrodsDataRequestRejectView(
             action=IRODS_REQUEST_ACTION_DELETE,
             path=self.obj_path,
             status=IRODS_REQUEST_STATUS_ACTIVE,
-            user=self.user_contrib,
+            user=self.user_contributor,
         )
 
         with self.login(self.user_owner_cat):
@@ -2189,7 +2184,7 @@ class TestIrodsDataRequestRejectView(
         self.assertEqual(request.status, IRODS_REQUEST_STATUS_REJECTED)
         self._assert_alert_count(EVENT_REJECT, self.user, 0)
         self._assert_alert_count(EVENT_REJECT, self.user_delegate, 0)
-        self._assert_alert_count(EVENT_REJECT, self.user_contrib, 1)
+        self._assert_alert_count(EVENT_REJECT, self.user_contributor, 1)
 
     def test_reject_delegate(self):
         """Test rejecting delete request as delegate"""
@@ -2199,7 +2194,7 @@ class TestIrodsDataRequestRejectView(
             action=IRODS_REQUEST_ACTION_DELETE,
             path=self.obj_path,
             status=IRODS_REQUEST_STATUS_ACTIVE,
-            user=self.user_contrib,
+            user=self.user_contributor,
         )
 
         with self.login(self.user_delegate):
@@ -2214,7 +2209,7 @@ class TestIrodsDataRequestRejectView(
         self.assertEqual(request.status, IRODS_REQUEST_STATUS_REJECTED)
         self._assert_alert_count(EVENT_REJECT, self.user, 0)
         self._assert_alert_count(EVENT_REJECT, self.user_delegate, 0)
-        self._assert_alert_count(EVENT_REJECT, self.user_contrib, 1)
+        self._assert_alert_count(EVENT_REJECT, self.user_contributor, 1)
 
     def test_reject_contributor(self):
         """Test rejecting delete request as contributor"""
@@ -2224,10 +2219,10 @@ class TestIrodsDataRequestRejectView(
             action=IRODS_REQUEST_ACTION_DELETE,
             path=self.obj_path,
             status=IRODS_REQUEST_STATUS_ACTIVE,
-            user=self.user_contrib,
+            user=self.user_contributor,
         )
 
-        with self.login(self.user_contrib):
+        with self.login(self.user_contributor):
             response = self.client.get(
                 reverse(
                     'samplesheets:irods_request_reject',
@@ -2244,7 +2239,7 @@ class TestIrodsDataRequestRejectView(
         self.assertEqual(request.status, IRODS_REQUEST_STATUS_ACTIVE)
         self._assert_alert_count(EVENT_REJECT, self.user, 0)
         self._assert_alert_count(EVENT_REJECT, self.user_delegate, 0)
-        self._assert_alert_count(EVENT_REJECT, self.user_contrib, 0)
+        self._assert_alert_count(EVENT_REJECT, self.user_contributor, 0)
 
     def test_reject_one_of_multiple(self):
         """Test rejecting one of multiple requests"""
@@ -2252,7 +2247,7 @@ class TestIrodsDataRequestRejectView(
         self.irods.data_objects.create(obj_path2)
         self.assert_irods_obj(self.obj_path)
         self.assert_irods_obj(obj_path2)
-        with self.login(self.user_contrib):
+        with self.login(self.user_contributor):
             self.client.post(self.create_url, self.post_data)
             self.post_data['path'] = obj_path2
             self.client.post(self.create_url, self.post_data)
@@ -2286,7 +2281,7 @@ class TestIrodsDataRequestRejectView(
         self._assert_alert_count(EVENT_CREATE, self.user_delegate, 1)
         self._assert_alert_count(EVENT_REJECT, self.user, 0)
         self._assert_alert_count(EVENT_REJECT, self.user_delegate, 0)
-        self._assert_alert_count(EVENT_REJECT, self.user_contrib, 1)
+        self._assert_alert_count(EVENT_REJECT, self.user_contributor, 1)
 
     def test_reject_no_request(self):
         """Test rejecting delete request that doesn't exist"""
@@ -2321,7 +2316,7 @@ class TestIrodsDataRequestRejectBatchView(
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         self._assert_alert_count(EVENT_REJECT, self.user, 0)
         self._assert_alert_count(EVENT_REJECT, self.user_delegate, 0)
-        self._assert_alert_count(EVENT_REJECT, self.user_contrib, 0)
+        self._assert_alert_count(EVENT_REJECT, self.user_contributor, 0)
         with self.login(self.user):
             self.client.post(self.create_url, self.post_data)
             self.client.post(self.create_url, self.post_data2)
@@ -2365,7 +2360,7 @@ class TestIrodsDataRequestRejectBatchView(
         self.assertEqual(obj2.status, IRODS_REQUEST_STATUS_REJECTED)
         self._assert_alert_count(EVENT_REJECT, self.user, 0)
         self._assert_alert_count(EVENT_REJECT, self.user_delegate, 0)
-        self._assert_alert_count(EVENT_REJECT, self.user_contrib, 0)
+        self._assert_alert_count(EVENT_REJECT, self.user_contributor, 0)
 
     def test_reject_no_request(self):
         """Test rejecting delete request that doesn't exist"""

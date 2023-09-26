@@ -35,7 +35,7 @@ OBO_TITLE_UPDATED = 'Updated Ontology Title'
 OBO_TERM_URL_ALT = 'http://example.com/ontology/TST/{local_id}'
 
 
-class TestOntologyAccessViewBase(OBOFormatOntologyModelMixin, TestCase):
+class OntologyAccessViewTestBase(OBOFormatOntologyModelMixin, TestCase):
     """Base class for ontologyaccess view tests"""
 
     def setUp(self):
@@ -70,7 +70,7 @@ class TestOntologyAccessViewBase(OBOFormatOntologyModelMixin, TestCase):
         )
 
 
-class TestOBOFormatOntologyListView(TestOntologyAccessViewBase):
+class TestOBOFormatOntologyListView(OntologyAccessViewTestBase):
     """Tests for OBOFormatOntologyListView"""
 
     def test_render(self):
@@ -84,7 +84,7 @@ class TestOBOFormatOntologyListView(TestOntologyAccessViewBase):
         )
 
 
-class TestOBOFormatOntologyDetailView(TestOntologyAccessViewBase):
+class TestOBOFormatOntologyDetailView(OntologyAccessViewTestBase):
     """Tests for OBOFormatOntologyDetailView"""
 
     def test_render(self):
@@ -113,7 +113,7 @@ class TestOBOFormatOntologyDetailView(TestOntologyAccessViewBase):
         self.assertEqual(response.status_code, 200)
 
 
-class TestOBOFormatOntologyImportView(TestOntologyAccessViewBase):
+class TestOBOFormatOntologyImportView(OntologyAccessViewTestBase):
     """Tests for OBOFormatOntologyImportView"""
 
     def test_render(self):
@@ -143,7 +143,7 @@ class TestOBOFormatOntologyImportView(TestOntologyAccessViewBase):
     # TODO: Add test for OWL import
 
 
-class TestOBOFormatOntologyUpdateView(TestOntologyAccessViewBase):
+class TestOBOFormatOntologyUpdateView(OntologyAccessViewTestBase):
     """Tests for OBOFormatOntologyUpdateView"""
 
     def test_render(self):
@@ -181,7 +181,7 @@ class TestOBOFormatOntologyUpdateView(TestOntologyAccessViewBase):
         self.assertEqual(self.ontology.term_url, OBO_TERM_URL_ALT)
 
 
-class TestOBOFormatOntologyDeleteView(TestOntologyAccessViewBase):
+class TestOBOFormatOntologyDeleteView(OntologyAccessViewTestBase):
     """Tests for OBOFormatOntologyDeleteView"""
 
     def test_render(self):

@@ -54,7 +54,7 @@ IRODS_TICKET_STR = 'ooChaa1t'
 EXT_LINK_PATH_INVALID = '/tmp/NON_EXISTING_EXT_LINK_FILE.json'
 
 
-class TestUtilsBase(
+class SamplesheetsUtilsTestBase(
     ProjectMixin, RoleMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase
 ):
     """Base class for samplesheets utils tests"""
@@ -80,7 +80,7 @@ class TestUtilsBase(
         self.tb = SampleSheetTableBuilder()
 
 
-class TestGetAltNames(TestUtilsBase):
+class TestGetAltNames(SamplesheetsUtilsTestBase):
     """Tests for get_alt_names()"""
 
     def test_get_alt_names(self):
@@ -95,7 +95,7 @@ class TestGetAltNames(TestUtilsBase):
         )
 
 
-class TestGetSampleColls(TestUtilsBase):
+class TestGetSampleColls(SamplesheetsUtilsTestBase):
     """Tests for get_sample_colls()"""
 
     def setUp(self):
@@ -111,7 +111,7 @@ class TestGetSampleColls(TestUtilsBase):
         self.assertEqual(get_sample_colls(self.investigation), expected)
 
 
-class TestCompareInvReplace(TestUtilsBase):
+class TestCompareInvReplace(SamplesheetsUtilsTestBase):
     """Tests for compare_inv_replace()"""
 
     def test_inserted_rows(self):
@@ -141,7 +141,7 @@ class TestCompareInvReplace(TestUtilsBase):
         self.assertFalse(compare_inv_replace(inv1, inv2))
 
 
-class TestGetIndexByHeader(TestUtilsBase):
+class TestGetIndexByHeader(SamplesheetsUtilsTestBase):
     """Tests for get_index_by_header()"""
 
     def setUp(self):
@@ -196,7 +196,7 @@ class TestGetIndexByHeader(TestUtilsBase):
         )
 
 
-class TestGetLastMaterialName(TestUtilsBase):
+class TestGetLastMaterialName(SamplesheetsUtilsTestBase):
     """Tests for get_last_material_name()"""
 
     def setUp(self):
@@ -214,7 +214,7 @@ class TestGetLastMaterialName(TestUtilsBase):
         )
 
 
-class TestGetWebdavUrl(TestUtilsBase):
+class TestGetWebdavUrl(SamplesheetsUtilsTestBase):
     """Tests for get_webdav_url()"""
 
     def setUp(self):
@@ -270,7 +270,7 @@ class TestGetWebdavUrl(TestUtilsBase):
         self.assertIsNone(get_webdav_url(self.project, self.user_owner))
 
 
-class TestGetExtLinkLabels(TestUtilsBase):
+class TestGetExtLinkLabels(SamplesheetsUtilsTestBase):
     """Tests for get_ext_link_labels()"""
 
     def test_get(self):

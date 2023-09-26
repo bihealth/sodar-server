@@ -252,7 +252,7 @@ class SheetImportAPIView(SheetImportMixin, SODARAPIBaseProjectMixin, APIView):
 
         # Handle import
         action = 'replace' if old_inv else 'create'
-        tl_event = self.create_timeline_event(project=project, action=action)
+        tl_event = self.add_tl_event(project=project, action=action)
         try:
             investigation = sheet_io.import_isa(
                 isa_data=isa_data,
@@ -316,6 +316,37 @@ class SheetImportAPIView(SheetImportMixin, SODARAPIBaseProjectMixin, APIView):
         return Response(ret_data, status=status.HTTP_200_OK)
 
 
+class IrodsAccessTicketRetrieveAPIView(
+    SODARAPIGenericProjectMixin, RetrieveAPIView
+):
+    """
+    Retrieve an iRODS access ticket for a project.
+
+    **URL:** ``/samplesheets/api/irods/ticket/retrieve/{IrodsAccessTicket.sodar_uuid}``
+
+    **Methods:** ``GET``
+
+    **Returns**
+
+    - ``path``: Full iRODS path (string)
+    - ``label``: Text label for ticket (string, optional)
+    - ``ticket``: Ticket string for accessing the path (string)
+    - ``assay``: Assay UUID (string)
+    - ``study``: Study UUID (string)
+    - ``date_created``: Creation datetime (YYYY-MM-DDThh:mm:ssZ)
+    - ``date_expires``: Expiry datetime (YYYY-MM-DDThh:mm:ssZ or null)
+    - ``user``: User who initiated the request (SODARUserSerializer dict)
+    - ``is_active``: Whether the request is currently active (boolean)
+    - ``sodar_uuid``: IrodsAccessTicket UUID (string)
+    """
+
+    lookup_field = 'sodar_uuid'
+    lookup_url_kwarg = 'irodsaccessticket'
+    permission_required = 'samplesheets.edit_sheet'
+    serializer_class = IrodsAccessTicketSerializer
+    queryset_project_field = 'study__investigation__project'
+
+
 class IrodsAccessTicketListAPIView(SODARAPIBaseProjectMixin, ListAPIView):
     """
     List iRODS access tickets for a project.
@@ -326,7 +357,9 @@ class IrodsAccessTicketListAPIView(SODARAPIBaseProjectMixin, ListAPIView):
 
     **Query parameters:**
 
-    - ``active`` (boolean, default ``0``)
+    - ``active`` (boolean, optional, default=false)
+
+    **Returns:** List of ticket dicts, see ``IrodsAccessTicketRetrieveAPIView``
     """
 
     permission_required = 'samplesheets.edit_sheet'
@@ -344,24 +377,6 @@ class IrodsAccessTicketListAPIView(SODARAPIBaseProjectMixin, ListAPIView):
         return tickets
 
 
-class IrodsAccessTicketRetrieveAPIView(
-    SODARAPIGenericProjectMixin, RetrieveAPIView
-):
-    """
-    Retrieve an iRODS access ticket for a project.
-
-    **URL:** ``/samplesheets/api/irods/ticket/retrieve/{IrodsAccessTicket.sodar_uuid}``
-
-    **Methods:** ``GET``
-    """
-
-    lookup_field = 'sodar_uuid'
-    lookup_url_kwarg = 'irodsaccessticket'
-    permission_required = 'samplesheets.edit_sheet'
-    serializer_class = IrodsAccessTicketSerializer
-    queryset_project_field = 'study__investigation__project'
-
-
 class IrodsAccessTicketCreateAPIView(
     IrodsAccessTicketModifyMixin, SODARAPIGenericProjectMixin, CreateAPIView
 ):
@@ -374,9 +389,11 @@ class IrodsAccessTicketCreateAPIView(
 
     **Parameters:**
 
-    - ``path``: iRODS path
-    - ``label``: Label (string, optional)
+    - ``path``: Full iRODS path (string)
+    - ``label``: Text label for ticket (string, optional)
     - ``date_expires``: Expiration date (YYYY-MM-DDThh:mm:ssZ, optional)
+
+    **Returns:** Ticket dict, see ``IrodsAccessTicketRetrieveAPIView``
     """
 
     permission_required = 'samplesheets.edit_sheet'
@@ -408,7 +425,7 @@ class IrodsAccessTicketCreateAPIView(
         serializer.validated_data['ticket'] = ticket.ticket
         serializer.save()
         # Create timeline event
-        self.create_timeline_event(serializer.instance, 'create')
+        self.add_tl_event(serializer.instance, 'create')
         # Add app alerts to owners/delegates
         self.create_app_alerts(serializer.instance, 'create', self.request.user)
 
@@ -426,7 +443,9 @@ class IrodsAccessTicketUpdateAPIView(
     **Parameters:**
 
     - ``label``: Label (string)
-    - ``date_expires``: Expiration date (YYYY-MM-DD)
+    - ``date_expires``: Expiration date (YYYY-MM-DDThh:mm:ssZ, optional)
+
+    **Returns:** Ticket dict, see ``IrodsAccessTicketRetrieveAPIView``
     """
 
     lookup_url_kwarg = 'irodsaccessticket'
@@ -439,8 +458,8 @@ class IrodsAccessTicketUpdateAPIView(
         if not set(serializer.initial_data) & {'label', 'date_expires'}:
             raise ValidationError(IRODS_TICKET_NO_UPDATE_FIELDS_MSG)
         serializer.save()
-        # Create timeline event
-        self.create_timeline_event(serializer.instance, 'update')
+        # Add timeline event
+        self.add_tl_event(serializer.instance, 'update')
         # Add app alerts to owners/delegates
         self.create_app_alerts(serializer.instance, 'update', self.request.user)
 
@@ -449,7 +468,7 @@ class IrodsAccessTicketDestroyAPIView(
     IrodsAccessTicketModifyMixin, SODARAPIGenericProjectMixin, DestroyAPIView
 ):
     """
-    Delete an iRODS access ticket for a project.
+    Delete an iRODS access ticket.
 
     **URL:** ``/samplesheets/api/irods/ticket/delete/{IrodsAccessTicket.sodar_uuid}``
 
@@ -474,7 +493,7 @@ class IrodsAccessTicketDestroyAPIView(
             )
         instance.delete()
         # Create timeline event
-        self.create_timeline_event(instance, 'delete')
+        self.add_tl_event(instance, 'delete')
         # Add app alerts to owners/delegates
         self.create_app_alerts(instance, 'delete', self.request.user)
 

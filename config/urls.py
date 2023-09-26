@@ -33,11 +33,7 @@ urlpatterns = [
         view=auth_views.LoginView.as_view(template_name='users/login.html'),
         name='login',
     ),
-    path(
-        route='logout/',
-        view=auth_views.logout_then_login,
-        name='logout',
-    ),
+    path(route='logout/', view=auth_views.logout_then_login, name='logout'),
     # User Profile URLs
     path('user/', include('userprofile.urls')),
     # Auth

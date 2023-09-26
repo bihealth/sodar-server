@@ -1,5 +1,6 @@
 """Tests for REST API view permissions in the landingzones app"""
 
+from django.test import override_settings
 from django.urls import reverse
 
 # Projectroles dependency
@@ -28,38 +29,25 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 
 
-class TestLandingZonePermissions(
+class ZoneAPIPermissionTestBase(
     LandingZoneMixin,
     SampleSheetIOMixin,
     TestProjectAPIPermissionBase,
 ):
-    """Tests for landingzones REST API view permissions"""
+    """Base class for landingzones REST API view permission tests"""
 
-    def _get_update_post_data(self):
-        return {'description': 'Test description updated'}
+
+class TestZoneListAPIView(ZoneAPIPermissionTestBase):
+    """Tests for ZoneListAPIView permissions"""
 
     def setUp(self):
         super().setUp()
-        # Import investigation
-        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
-        self.study = self.investigation.studies.first()
-        self.assay = self.study.assays.first()
-        # Create LandingZone for project owner
-        self.landing_zone = self.make_landing_zone(
-            title=ZONE_TITLE,
-            project=self.project,
-            user=self.user_owner,
-            assay=self.assay,
-            description=ZONE_DESC,
-            configuration=None,
-            config_data={},
-        )
-
-    def test_list(self):
-        """Test LandingZoneListAPIView permissions"""
-        url = reverse(
+        self.url = reverse(
             'landingzones:api_list', kwargs={'project': self.project.sodar_uuid}
         )
+
+    def test_get(self):
+        """Test ZoneListAPIView GET"""
         good_users = [
             self.superuser,
             self.user_owner_cat,  # Inherited
@@ -75,16 +63,22 @@ class TestLandingZonePermissions(
             self.user_guest,
             self.user_no_roles,
         ]
-        self.assert_response(url, good_users, 200)
-        self.assert_response(url, bad_users, 403)
-        self.assert_response(url, [self.anonymous], 401)
+        self.assert_response(self.url, good_users, 200)
+        self.assert_response(self.url, bad_users, 403)
+        self.assert_response(self.url, self.anonymous, 401)
+        self.project.set_public()
+        self.assert_response(self.url, self.user_no_roles, 403)
+        self.assert_response(self.url, self.anonymous, 401)
 
-    def test_list_archive(self):
-        """Test LandingZoneListAPIView with archived project"""
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_get_anon(self):
+        """Test GET with anonymous access"""
+        self.project.set_public()
+        self.assert_response(self.url, self.anonymous, 401)
+
+    def test_get_archive(self):
+        """Test GET with archived project"""
         self.project.set_archive()
-        url = reverse(
-            'landingzones:api_list', kwargs={'project': self.project.sodar_uuid}
-        )
         good_users = [
             self.superuser,
             self.user_owner_cat,
@@ -100,16 +94,39 @@ class TestLandingZonePermissions(
             self.user_guest,
             self.user_no_roles,
         ]
-        self.assert_response(url, good_users, 200)
-        self.assert_response(url, bad_users, 403)
-        self.assert_response(url, [self.anonymous], 401)
+        self.assert_response(self.url, good_users, 200)
+        self.assert_response(self.url, bad_users, 403)
+        self.assert_response(self.url, self.anonymous, 401)
+        self.project.set_public()
+        self.assert_response(self.url, self.user_no_roles, 403)
+        self.assert_response(self.url, self.anonymous, 401)
 
-    def test_retrieve(self):
-        """Test LandingZoneRetrieveAPIView permissions"""
-        url = reverse(
-            'landingzones:api_retrieve',
-            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+
+class TestZoneRetrieveAPIView(ZoneAPIPermissionTestBase):
+    """Tests for ZoneRetrieveAPIView permissions"""
+
+    def setUp(self):
+        super().setUp()
+        # Import investigation
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+        # Create zone for project owner
+        zone = self.make_landing_zone(
+            title=ZONE_TITLE,
+            project=self.project,
+            user=self.user_owner,
+            assay=self.assay,
+            description=ZONE_DESC,
+            configuration=None,
+            config_data={},
         )
+        self.url = reverse(
+            'landingzones:api_retrieve', kwargs={'landingzone': zone.sodar_uuid}
+        )
+
+    def test_get(self):
+        """Test ZoneRetrieveAPIView GET"""
         good_users = [
             self.superuser,
             self.user_owner_cat,
@@ -125,17 +142,22 @@ class TestLandingZonePermissions(
             self.user_guest,
             self.user_no_roles,
         ]
-        self.assert_response(url, good_users, 200)
-        self.assert_response(url, bad_users, 403)
-        self.assert_response(url, [self.anonymous], 401)
+        self.assert_response(self.url, good_users, 200)
+        self.assert_response(self.url, bad_users, 403)
+        self.assert_response(self.url, self.anonymous, 401)
+        self.project.set_public()
+        self.assert_response(self.url, self.user_no_roles, 403)
+        self.assert_response(self.url, self.anonymous, 401)
 
-    def test_retrieve_archive(self):
-        """Test LandingZoneRetrieveAPIView with archived project"""
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_get_anon(self):
+        """Test GET with anonymous access"""
+        self.project.set_public()
+        self.assert_response(self.url, self.anonymous, 401)
+
+    def test_get_archive(self):
+        """Test GET with archived project"""
         self.project.set_archive()
-        url = reverse(
-            'landingzones:api_retrieve',
-            kwargs={'landingzone': self.landing_zone.sodar_uuid},
-        )
         good_users = [
             self.superuser,
             self.user_owner_cat,
@@ -151,16 +173,41 @@ class TestLandingZonePermissions(
             self.user_guest,
             self.user_no_roles,
         ]
-        self.assert_response(url, good_users, 200)
-        self.assert_response(url, bad_users, 403)
-        self.assert_response(url, [self.anonymous], 401)
+        self.assert_response(self.url, good_users, 200)
+        self.assert_response(self.url, bad_users, 403)
+        self.assert_response(self.url, self.anonymous, 401)
+        self.project.set_public()
+        self.assert_response(self.url, self.user_no_roles, 403)
+        self.assert_response(self.url, self.anonymous, 401)
 
-    def test_update(self):
-        """Test LandingZoneUpdateAPIView permissions"""
-        url = reverse(
-            'landingzones:api_update',
-            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+
+# NOTE: For ZoneCreateAPIView tests, see test_permissions_api_taskflow
+
+
+class TestZoneUpdateAPIView(ZoneAPIPermissionTestBase):
+    """Tests for ZoneUpdateAPIView permissions"""
+
+    def setUp(self):
+        super().setUp()
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+        zone = self.make_landing_zone(
+            title=ZONE_TITLE,
+            project=self.project,
+            user=self.user_owner,
+            assay=self.assay,
+            description=ZONE_DESC,
+            configuration=None,
+            config_data={},
         )
+        self.url = reverse(
+            'landingzones:api_update', kwargs={'landingzone': zone.sodar_uuid}
+        )
+        self.post_data = {'description': 'Test description updated'}
+
+    def test_patch(self):
+        """Test ZoneUpdateAPIView PATCH"""
         good_users = [
             self.superuser,
             self.user_owner_cat,
@@ -177,36 +224,59 @@ class TestLandingZonePermissions(
             self.user_no_roles,
         ]
         self.assert_response_api(
-            url,
+            self.url,
             good_users,
             200,
             method='PATCH',
-            data=self._get_update_post_data(),
+            data=self.post_data,
             knox=True,
         )
         self.assert_response_api(
-            url,
+            self.url,
             bad_users,
             403,
             method='PATCH',
-            data=self._get_update_post_data(),
+            data=self.post_data,
             knox=True,
         )
         self.assert_response_api(
-            url,
-            [self.anonymous],
+            self.url,
+            self.anonymous,
             401,
             method='PATCH',
-            data=self._get_update_post_data(),
+            data=self.post_data,
+        )
+        self.project.set_public()
+        self.assert_response_api(
+            self.url,
+            self.user_no_roles,
+            403,
+            method='PATCH',
+            data=self.post_data,
+            knox=True,
+        )
+        self.assert_response_api(
+            self.url,
+            self.anonymous,
+            401,
+            method='PATCH',
+            data=self.post_data,
         )
 
-    def test_update_archive(self):
-        """Test LandingZoneUpdateAPIView with archived project"""
-        self.project.set_archive()
-        url = reverse(
-            'landingzones:api_update',
-            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+    def test_patch_anon(self):
+        """Test PATCH with anonymous access"""
+        self.project.set_public()
+        self.assert_response_api(
+            self.url,
+            self.anonymous,
+            401,
+            method='PATCH',
+            data=self.post_data,
         )
+
+    def test_patch_archive(self):
+        """Test PATCH with archived project"""
+        self.project.set_archive()
         good_users = [self.superuser]
         bad_users = [
             self.user_owner_cat,
@@ -221,25 +291,44 @@ class TestLandingZonePermissions(
             self.user_no_roles,
         ]
         self.assert_response_api(
-            url,
+            self.url,
             good_users,
             200,
             method='PATCH',
-            data=self._get_update_post_data(),
+            data=self.post_data,
             knox=True,
         )
         self.assert_response_api(
-            url,
+            self.url,
             bad_users,
             403,
             method='PATCH',
-            data=self._get_update_post_data(),
+            data=self.post_data,
             knox=True,
         )
         self.assert_response_api(
-            url,
-            [self.anonymous],
+            self.url,
+            self.anonymous,
             401,
             method='PATCH',
-            data=self._get_update_post_data(),
+            data=self.post_data,
         )
+        self.project.set_public()
+        self.assert_response_api(
+            self.url,
+            self.user_no_roles,
+            403,
+            method='PATCH',
+            data=self.post_data,
+            knox=True,
+        )
+        self.assert_response_api(
+            self.url,
+            self.anonymous,
+            401,
+            method='PATCH',
+            data=self.post_data,
+        )
+
+
+# NOTE: For other API view tests, see test_permissions_api_taskflow

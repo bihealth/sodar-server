@@ -17,9 +17,11 @@ Major feature update.
 - Add support for additional sample sheet templates
 - Add landing zone updating
 - Add automated checksum calculation in landing zone validation and moving
-- Add iRODS delete request API views
+- Add iRODS delete request REST API views
 - Add iRODS delete request batch handling in UI
-- Add iRODS environment retrieval API view
+- Add iRODS access ticket REST API views
+- Add iRODS environment retrieval REST API view
+- Add cytof assay plugin
 - Add "create" tag for sample sheet versions
 - Add user setting for maximum sample sheet table height
 - Add "normalizesheets" management command to clean up existing sample sheets

@@ -418,7 +418,10 @@ class IrodsAccessTicketForm(IrodsAccessTicketValidateMixin, forms.ModelForm):
         else:
             self.project = project
         # Update path help and hide in update
-        path_help = 'Full path to iRODS collection within an assay'
+        path_help = (
+            'Full path to iRODS collection: collection must be within '
+            'an assay of the project'
+        )
         self.fields['path'].help_text = path_help
         if self.instance.path:
             self.fields['path'].widget = forms.widgets.HiddenInput()

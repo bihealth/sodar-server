@@ -23,10 +23,10 @@ from samplesheets.tests.test_io import (
 SHEET_PATH_SMALL2 = SHEET_DIR + 'i_small2.zip'
 
 
-class TestPluginsBase(
+class SamplesheetsPluginTestBase(
     ProjectMixin, RoleMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase
 ):
-    """Class for samplesheets utils tests"""
+    """Base class for samplesheets plugin tests"""
 
     def setUp(self):
         # Init roles
@@ -37,7 +37,7 @@ class TestPluginsBase(
         self.project = self.make_project(
             'TestProject', SODAR_CONSTANTS['PROJECT_TYPE_PROJECT'], None
         )
-        self.assignment_owner = self.make_assignment(
+        self.owner_as = self.make_assignment(
             self.project, self.user_owner, self.role_owner
         )
 
@@ -58,7 +58,7 @@ class TestPluginsBase(
         self.irods_backend = get_backend_api('omics_irods')
 
 
-class TestGetIrodsContent(TestPluginsBase):
+class TestGetIrodsContent(SamplesheetsPluginTestBase):
     """Tests for get_irods_content()"""
 
     def test_get_irods_content(self):

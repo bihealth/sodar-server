@@ -152,14 +152,14 @@ class LandingZoneTaskflowMixin:
         )
 
 
-class TestLandingZoneCreateView(
+class TestZoneCreateView(
     SampleSheetIOMixin,
     LandingZoneMixin,
     SampleSheetTaskflowMixin,
     LandingZoneTaskflowMixin,
     TaskflowViewTestBase,
 ):
-    """Tests for the landingzones create view with Taskflow and iRODS"""
+    """Tests for ZoneCreateView with Taskflow and iRODS"""
 
     def setUp(self):
         super().setUp()
@@ -177,6 +177,13 @@ class TestLandingZoneCreateView(
         self.assay = self.study.assays.first()
         # Create iRODS collections
         self.make_irods_colls(self.investigation)
+        # Set up URLs
+        self.url = reverse(
+            'landingzones:create', kwargs={'project': self.project.sodar_uuid}
+        )
+        self.redirect_url = reverse(
+            'landingzones:list', kwargs={'project': self.project.sodar_uuid}
+        )
 
     def test_create_zone(self):
         """Test landingzones creation with taskflow"""
@@ -195,20 +202,8 @@ class TestLandingZoneCreateView(
             'restrict_colls': False,
         }
         with self.login(self.user):
-            response = self.client.post(
-                reverse(
-                    'landingzones:create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                values,
-            )
-            self.assertRedirects(
-                response,
-                reverse(
-                    'landingzones:list',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-            )
+            response = self.client.post(self.url, values)
+            self.assertRedirects(response, self.redirect_url)
 
         self.assert_zone_count(1)
         zone = LandingZone.objects.first()
@@ -238,7 +233,6 @@ class TestLandingZoneCreateView(
     def test_create_zone_colls(self):
         """Test landingzones creation with default collections"""
         self.assertEqual(LandingZone.objects.count(), 0)
-
         values = {
             'assay': str(self.assay.sodar_uuid),
             'title_suffix': ZONE_SUFFIX,
@@ -248,20 +242,8 @@ class TestLandingZoneCreateView(
             'configuration': '',
         }
         with self.login(self.user):
-            response = self.client.post(
-                reverse(
-                    'landingzones:create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                values,
-            )
-            self.assertRedirects(
-                response,
-                reverse(
-                    'landingzones:list',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-            )
+            response = self.client.post(self.url, values)
+            self.assertRedirects(response, self.redirect_url)
 
         self.assert_zone_count(1)
         zone = LandingZone.objects.first()
@@ -308,20 +290,8 @@ class TestLandingZoneCreateView(
             'configuration': '',
         }
         with self.login(self.user):
-            response = self.client.post(
-                reverse(
-                    'landingzones:create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                values,
-            )
-            self.assertRedirects(
-                response,
-                reverse(
-                    'landingzones:list',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-            )
+            response = self.client.post(self.url, values)
+            self.assertRedirects(response, self.redirect_url)
 
         self.assert_zone_count(1)
         zone = LandingZone.objects.first()
@@ -365,20 +335,8 @@ class TestLandingZoneCreateView(
             'configuration': '',
         }
         with self.login(self.user):
-            response = self.client.post(
-                reverse(
-                    'landingzones:create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                values,
-            )
-            self.assertRedirects(
-                response,
-                reverse(
-                    'landingzones:list',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-            )
+            response = self.client.post(self.url, values)
+            self.assertRedirects(response, self.redirect_url)
 
         self.assert_zone_count(1)
         zone = LandingZone.objects.first()
@@ -395,14 +353,14 @@ class TestLandingZoneCreateView(
             )
 
 
-class TestLandingZoneMoveView(
+class TestZoneMoveView(
     SampleSheetIOMixin,
     LandingZoneMixin,
     LandingZoneTaskflowMixin,
     SampleSheetTaskflowMixin,
     TaskflowViewTestBase,
 ):
-    """Tests for landingzones move/validate view with Taskflow and iRODS"""
+    """Tests for ZoneMoveView view with Taskflow and iRODS"""
 
     def setUp(self):
         super().setUp()
@@ -441,6 +399,18 @@ class TestLandingZoneMoveView(
         )
         self.sample_path = self.irods_backend.get_path(self.assay)
         self.group_name = self.irods_backend.get_user_group_name(self.project)
+        # Set up URLs
+        self.url_move = reverse(
+            'landingzones:move',
+            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+        )
+        self.url_validate = reverse(
+            'landingzones:validate',
+            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+        )
+        self.url_redirect = reverse(
+            'landingzones:list', kwargs={'project': self.project.sodar_uuid}
+        )
 
     def test_render(self):
         """Test rendering of the landing zone validation and moving view"""
@@ -449,12 +419,7 @@ class TestLandingZoneMoveView(
         zone = LandingZone.objects.first()
         self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'landingzones:move',
-                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
-                )
-            )
+            response = self.client.get(self.url_move)
         self.assertEqual(response.status_code, 200)
 
     def test_move(self):
@@ -471,19 +436,8 @@ class TestLandingZoneMoveView(
         )
 
         with self.login(self.user):
-            response = self.client.post(
-                reverse(
-                    'landingzones:move',
-                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
-                ),
-            )
-            self.assertRedirects(
-                response,
-                reverse(
-                    'landingzones:list',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-            )
+            response = self.client.post(self.url_move)
+            self.assertRedirects(response, self.url_redirect)
 
         self.assert_zone_status(zone, ZONE_STATUS_MOVED)
         self.assertEqual(len(self.zone_coll.data_objects), 0)
@@ -504,19 +458,8 @@ class TestLandingZoneMoveView(
         )
 
         with self.login(self.user):
-            response = self.client.post(
-                reverse(
-                    'landingzones:move',
-                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
-                ),
-            )
-            self.assertRedirects(
-                response,
-                reverse(
-                    'landingzones:list',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-            )
+            response = self.client.post(self.url_move)
+            self.assertRedirects(response, self.url_redirect)
 
         self.assertEqual(len(self.zone_coll.data_objects), 0)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
@@ -538,19 +481,8 @@ class TestLandingZoneMoveView(
         )
 
         with self.login(self.user):
-            response = self.client.post(
-                reverse(
-                    'landingzones:move',
-                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
-                ),
-            )
-            self.assertRedirects(
-                response,
-                reverse(
-                    'landingzones:list',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-            )
+            response = self.client.post(self.url_move)
+            self.assertRedirects(response, self.url_redirect)
 
         self.assert_zone_status(zone, ZONE_STATUS_FAILED)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
@@ -573,19 +505,8 @@ class TestLandingZoneMoveView(
         )
 
         with self.login(self.user):
-            response = self.client.post(
-                reverse(
-                    'landingzones:move',
-                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
-                ),
-            )
-            self.assertRedirects(
-                response,
-                reverse(
-                    'landingzones:list',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-            )
+            response = self.client.post(self.url_move)
+            self.assertRedirects(response, self.url_redirect)
 
         self.assert_zone_status(zone, ZONE_STATUS_FAILED)
         self.assertEqual(len(self.zone_coll.data_objects), 1)
@@ -608,19 +529,8 @@ class TestLandingZoneMoveView(
         )
 
         with self.login(self.user):
-            response = self.client.post(
-                reverse(
-                    'landingzones:validate',
-                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
-                ),
-            )
-            self.assertRedirects(
-                response,
-                reverse(
-                    'landingzones:list',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-            )
+            response = self.client.post(self.url_validate)
+            self.assertRedirects(response, self.url_redirect)
 
         self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
@@ -641,19 +551,8 @@ class TestLandingZoneMoveView(
         )
 
         with self.login(self.user):
-            response = self.client.post(
-                reverse(
-                    'landingzones:validate',
-                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
-                ),
-            )
-            self.assertRedirects(
-                response,
-                reverse(
-                    'landingzones:list',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-            )
+            response = self.client.post(self.url_validate)
+            self.assertRedirects(response, self.url_redirect)
 
         self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 0)
@@ -676,12 +575,7 @@ class TestLandingZoneMoveView(
         )
 
         with self.login(self.user):
-            self.client.post(
-                reverse(
-                    'landingzones:validate',
-                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
-                ),
-            )
+            self.client.post(self.url_validate)
 
         self.assert_zone_status(zone, ZONE_STATUS_FAILED)
         self.assertTrue('BatchValidateChecksumsTask' in zone.status_info)
@@ -702,12 +596,7 @@ class TestLandingZoneMoveView(
         self.assertEqual(len(self.assay_coll.data_objects), 0)
 
         with self.login(self.user):
-            self.client.post(
-                reverse(
-                    'landingzones:validate',
-                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
-                ),
-            )
+            self.client.post(self.url_validate)
 
         self.assert_zone_status(zone, ZONE_STATUS_FAILED)
         self.assertTrue('BatchCheckFilesTask' in zone.status_info)
@@ -725,12 +614,7 @@ class TestLandingZoneMoveView(
         self.assertEqual(len(self.assay_coll.data_objects), 0)
 
         with self.login(self.user):
-            self.client.post(
-                reverse(
-                    'landingzones:validate',
-                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
-                ),
-            )
+            self.client.post(self.url_validate)
 
         self.assert_zone_status(zone, ZONE_STATUS_FAILED)
         self.assertTrue('BatchCheckFilesTask' in zone.status_info)
@@ -755,19 +639,8 @@ class TestLandingZoneMoveView(
         )
 
         with self.login(self.user):
-            response = self.client.post(
-                reverse(
-                    'landingzones:move',
-                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
-                ),
-            )
-            self.assertRedirects(
-                response,
-                reverse(
-                    'landingzones:list',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-            )
+            response = self.client.post(self.url_validate)
+            self.assertRedirects(response, self.url_redirect)
 
         self.assertEqual(
             str(list(get_messages(response.wsgi_request))[0]),
@@ -801,19 +674,8 @@ class TestLandingZoneMoveView(
         )
 
         with self.login(self.user):
-            response = self.client.post(
-                reverse(
-                    'landingzones:move',
-                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
-                ),
-            )
-            self.assertRedirects(
-                response,
-                reverse(
-                    'landingzones:list',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-            )
+            response = self.client.post(self.url_move)
+            self.assertRedirects(response, self.url_redirect)
 
         self.assert_zone_status(zone, ZONE_STATUS_FAILED)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
@@ -857,20 +719,12 @@ class TestLandingZoneMoveView(
             AppAlert.objects.filter(alert_name='zone_move').count(), 0
         )
 
+        url = reverse(
+            'landingzones:move', kwargs={'landingzone': zone.sodar_uuid}
+        )
         with self.login(self.user):
-            response = self.client.post(
-                reverse(
-                    'landingzones:move',
-                    kwargs={'landingzone': zone.sodar_uuid},
-                ),
-            )
-            self.assertRedirects(
-                response,
-                reverse(
-                    'landingzones:list',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-            )
+            response = self.client.post(url)
+            self.assertRedirects(response, self.url_redirect)
 
         self.assert_zone_status(zone, ZONE_STATUS_MOVED)
         self.assertEqual(len(zone_results_coll.data_objects), 0)
@@ -894,18 +748,17 @@ class TestLandingZoneMoveView(
         )
 
 
-class TestLandingZoneDeleteView(
+class TestZoneDeleteView(
     SampleSheetIOMixin,
     LandingZoneMixin,
     LandingZoneTaskflowMixin,
     SampleSheetTaskflowMixin,
     TaskflowViewTestBase,
 ):
-    """Tests for landingzones delete view with Taskflow and iRODS"""
+    """Tests for ZoneDeleteView with Taskflow and iRODS"""
 
     def setUp(self):
         super().setUp()
-        # Make project with owner in Taskflow and Django
         self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
@@ -913,16 +766,17 @@ class TestLandingZoneDeleteView(
             owner=self.user,
             description='description',
         )
-        # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-        # Create iRODS collections
         self.make_irods_colls(self.investigation)
+        self.url_redirect = reverse(
+            'landingzones:list',
+            kwargs={'project': self.project.sodar_uuid},
+        )
 
     def test_delete_zone(self):
         """Test landingzones deletion with taskflow"""
-        # Create zone
         zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
@@ -938,20 +792,12 @@ class TestLandingZoneDeleteView(
             AppAlert.objects.filter(alert_name='zone_delete').count(), 0
         )
 
+        url = reverse(
+            'landingzones:delete', kwargs={'landingzone': zone.sodar_uuid}
+        )
         with self.login(self.user):
-            response = self.client.post(
-                reverse(
-                    'landingzones:delete',
-                    kwargs={'landingzone': zone.sodar_uuid},
-                ),
-            )
-            self.assertRedirects(
-                response,
-                reverse(
-                    'landingzones:list',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-            )
+            response = self.client.post(url)
+            self.assertRedirects(response, self.url_redirect)
 
         self.assert_zone_count(1)
         zone.refresh_from_db()
@@ -982,20 +828,12 @@ class TestLandingZoneDeleteView(
             AppAlert.objects.filter(alert_name='zone_delete').count(), 0
         )
 
+        url = reverse(
+            'landingzones:delete', kwargs={'landingzone': zone.sodar_uuid}
+        )
         with self.login(self.user):
-            response = self.client.post(
-                reverse(
-                    'landingzones:delete',
-                    kwargs={'landingzone': zone.sodar_uuid},
-                ),
-            )
-            self.assertRedirects(
-                response,
-                reverse(
-                    'landingzones:list',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-            )
+            response = self.client.post(url)
+            self.assertRedirects(response, self.url_redirect)
 
         self.assert_zone_count(1)
         zone.refresh_from_db()
@@ -1024,13 +862,11 @@ class TestLandingZoneDeleteView(
         self.irods.collections.remove(zone_path)
         self.assertFalse(self.irods.collections.exists(zone_path))
 
+        url = reverse(
+            'landingzones:delete', kwargs={'landingzone': zone.sodar_uuid}
+        )
         with self.login(self.user):
-            self.client.post(
-                reverse(
-                    'landingzones:delete',
-                    kwargs={'landingzone': zone.sodar_uuid},
-                ),
-            )
+            self.client.post(url)
         self.assert_zone_count(1)
         zone.refresh_from_db()
         self.assert_zone_status(zone, ZONE_STATUS_DELETED)

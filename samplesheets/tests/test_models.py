@@ -439,14 +439,14 @@ class IrodsDataRequestMixin:
 # Test classes -----------------------------------------------------------------
 
 
-class TestSampleSheetBase(
+class SamplesheetsModelTestBase(
     ProjectMixin,
     RoleMixin,
     RoleAssignmentMixin,
     SampleSheetModelMixin,
     TestCase,
 ):
-    """Base class for Samplesheets tests"""
+    """Base class for samplesheets model tests"""
 
     def setUp(self):
         # Init roles
@@ -491,7 +491,7 @@ class TestSampleSheetBase(
         )
 
 
-class TestInvestigation(TestSampleSheetBase):
+class TestInvestigation(SamplesheetsModelTestBase):
     """Tests for the Investigation model"""
 
     def test_initialization(self):
@@ -550,7 +550,7 @@ class TestInvestigation(TestSampleSheetBase):
         self.assertEqual(self.investigation.get_url(), expected)
 
 
-class TestStudy(TestSampleSheetBase):
+class TestStudy(SamplesheetsModelTestBase):
     """Tests for the Study model"""
 
     def test_initialization(self):
@@ -614,7 +614,7 @@ class TestStudy(TestSampleSheetBase):
         self.assertEqual(self.study.get_url(), expected)
 
 
-class TestProtocol(TestSampleSheetBase):
+class TestProtocol(SamplesheetsModelTestBase):
     """Tests for the Protocol model"""
 
     def setUp(self):
@@ -675,7 +675,7 @@ class TestProtocol(TestSampleSheetBase):
         self.assertEqual(self.protocol.get_project(), self.project)
 
 
-class TestAssay(TestSampleSheetBase):
+class TestAssay(SamplesheetsModelTestBase):
     """Tests for the Assay model"""
 
     def test_initialization(self):
@@ -775,7 +775,7 @@ class TestAssay(TestSampleSheetBase):
         self.assertEqual(self.assay.get_url(), expected)
 
 
-class TestSource(TestSampleSheetBase):
+class TestSource(SamplesheetsModelTestBase):
     """Tests for the GenericMaterial model with type SOURCE"""
 
     def setUp(self):
@@ -855,7 +855,7 @@ class TestSource(TestSampleSheetBase):
     # TODO: Test header helpers
 
 
-class TestSample(TestSampleSheetBase):
+class TestSample(SamplesheetsModelTestBase):
     """Tests for the GenericMaterial model with type SAMPLE"""
 
     def setUp(self):
@@ -933,7 +933,7 @@ class TestSample(TestSampleSheetBase):
         self.assertEqual(self.material.get_parent(), self.study)
 
 
-class TestMaterial(TestSampleSheetBase):
+class TestMaterial(SamplesheetsModelTestBase):
     """Tests for the GenericMaterial model with type MATERIAL"""
 
     def setUp(self):
@@ -1011,7 +1011,7 @@ class TestMaterial(TestSampleSheetBase):
         self.assertEqual(self.material.get_parent(), self.assay)
 
 
-class TestDataFile(TestSampleSheetBase):
+class TestDataFile(SamplesheetsModelTestBase):
     """Tests for the GenericMaterial model with type DATA"""
 
     def setUp(self):
@@ -1089,7 +1089,7 @@ class TestDataFile(TestSampleSheetBase):
         self.assertEqual(self.material.get_parent(), self.assay)
 
 
-class TestGenericMaterialManager(TestSampleSheetBase):
+class TestGenericMaterialManager(SamplesheetsModelTestBase):
     """Tests for GenericMaterialManager"""
 
     def setUp(self):
@@ -1209,7 +1209,7 @@ class TestGenericMaterialManager(TestSampleSheetBase):
         self.assertEqual(result.first(), self.sample)
 
 
-class TestProcess(TestSampleSheetBase):
+class TestProcess(SamplesheetsModelTestBase):
     """Tests for the Process model"""
 
     def setUp(self):
@@ -1299,7 +1299,7 @@ class TestProcess(TestSampleSheetBase):
     # TODO: Test header helpers
 
 
-class TestISATab(TestSampleSheetBase):
+class TestISATab(SamplesheetsModelTestBase):
     """Tests for the ISATab model"""
 
     def setUp(self):
@@ -1391,7 +1391,7 @@ class TestISATab(TestSampleSheetBase):
         self.assertEqual(self.isatab.get_full_name(), expected)
 
 
-class TestIrodsAccessTicket(IrodsAccessTicketMixin, TestSampleSheetBase):
+class TestIrodsAccessTicket(IrodsAccessTicketMixin, SamplesheetsModelTestBase):
     """Tests for the IrodsAccessTicket model"""
 
     def setUp(self):
@@ -1543,7 +1543,7 @@ class TestIrodsAccessTicket(IrodsAccessTicketMixin, TestSampleSheetBase):
         )
 
 
-class TestIrodsDataRequest(IrodsDataRequestMixin, TestSampleSheetBase):
+class TestIrodsDataRequest(IrodsDataRequestMixin, SamplesheetsModelTestBase):
     """Tests for the IrodsDataRequest model"""
 
     def setUp(self):

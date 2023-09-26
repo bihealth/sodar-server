@@ -54,7 +54,7 @@ ENV_INT_PARAMS = [
     'irods_encryption_salt_size',
     'irods_port',
 ]
-USER_GROUP_PREFIX = 'omics_project_'
+USER_GROUP_TEMPLATE = 'omics_project_{uuid}'
 TRASH_COLL_NAME = 'trash'
 PATH_PARENT_SUBSTRING = '/..'
 ERROR_PATH_PARENT = 'Use of parent not allowed in path'
@@ -400,7 +400,7 @@ class IrodsAPI:
         else:
             cls._validate_project(project)
             project_uuid = project.sodar_uuid
-        return '{}{}'.format(USER_GROUP_PREFIX, project_uuid)
+        return USER_GROUP_TEMPLATE.format(uuid=project_uuid)
 
     # TODO: Add tests
     @classmethod

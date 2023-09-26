@@ -75,7 +75,7 @@ class LandingZoneMixin:
         return result
 
 
-class TestLandingZoneBase(
+class TestLandingZone(
     LandingZoneMixin,
     SampleSheetIOMixin,
     ProjectMixin,
@@ -83,7 +83,7 @@ class TestLandingZoneBase(
     RoleAssignmentMixin,
     TestCase,
 ):
-    """Base tests for LandingZone"""
+    """Tests for LandingZone"""
 
     def setUp(self):
         # Init roles
@@ -112,13 +112,6 @@ class TestLandingZoneBase(
             configuration=None,
             config_data={},
         )
-
-
-class TestLandingZone(TestLandingZoneBase):
-    """Tests for LandingZone"""
-
-    def setUp(self):
-        super().setUp()
 
     def test_initialization(self):
         """Test LandingZone initialization"""

@@ -44,7 +44,7 @@ from samplesheets.tests.test_sheet_config import (
     CONFIG_STUDY_UUID,
 )
 from samplesheets.tests.test_views import (
-    ViewTestBase,
+    SamplesheetsViewTestBase,
     SHEET_DIR_SPECIAL,
     SHEET_PATH,
     SHEET_PATH_SMALL2,
@@ -169,7 +169,7 @@ class RowEditMixin:
                 n_uuid = self.row_uuids[i]
 
 
-class TestSheetContextAjaxView(ViewTestBase):
+class TestSheetContextAjaxView(SamplesheetsViewTestBase):
     """Tests for SheetContextAjaxView"""
 
     # TODO: Test with realistic ISA-Tab examples using BIH configs (see #434)
@@ -423,10 +423,12 @@ class TestSheetContextAjaxView(ViewTestBase):
             path=self.irods_backend.get_path(self.assay) + '/test/xxx.bam',
             user=self.user,
         )
-        contrib_user = self.make_user('user_contributor')
-        self.make_assignment(self.project, contrib_user, self.role_contributor)
+        user_contributor = self.make_user('user_contributor')
+        self.make_assignment(
+            self.project, user_contributor, self.role_contributor
+        )
 
-        with self.login(contrib_user):
+        with self.login(user_contributor):
             response = self.client.get(
                 reverse(
                     'samplesheets:ajax_context',
@@ -455,14 +457,13 @@ class TestSheetContextAjaxView(ViewTestBase):
         self.assertEqual(response_data['perms']['edit_config'], True)
 
 
-class TestStudyTablesAjaxView(IrodsAccessTicketMixin, ViewTestBase):
+class TestStudyTablesAjaxView(IrodsAccessTicketMixin, SamplesheetsViewTestBase):
     """Tests for StudyTablesAjaxView"""
 
     # TODO: Test with realistic ISA-Tab examples using BIH configs (see #434)
 
     def setUp(self):
         super().setUp()
-        # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
@@ -589,14 +590,13 @@ class TestStudyTablesAjaxView(IrodsAccessTicketMixin, ViewTestBase):
         self.assertEqual(JSONCacheItem.objects.count(), 1)
 
 
-class TestStudyLinksAjaxView(ViewTestBase):
+class TestStudyLinksAjaxView(SamplesheetsViewTestBase):
     """Tests for StudyLinksAjaxView"""
 
     # TODO: Test with realistic ISA-Tab examples using BIH configs (see #434)
 
     def setUp(self):
         super().setUp()
-        # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
@@ -613,14 +613,13 @@ class TestStudyLinksAjaxView(ViewTestBase):
         self.assertEqual(response.status_code, 404)  # No plugin for ISA-Tab
 
 
-class TestSheetWarningsAjaxView(ViewTestBase):
+class TestSheetWarningsAjaxView(SamplesheetsViewTestBase):
     """Tests for SheetWarningsAjaxView"""
 
     # TODO: Test with realistic ISA-Tab examples using BIH configs (see #434)
 
     def setUp(self):
         super().setUp()
-        # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
 
     def test_get(self):
@@ -638,12 +637,11 @@ class TestSheetWarningsAjaxView(ViewTestBase):
         )
 
 
-class TestSheetCellEditAjaxView(ViewTestBase):
+class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
     """Tests for SheetCellEditAjaxView"""
 
     def setUp(self):
         super().setUp()
-        # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         # Set up POST data
@@ -1249,17 +1247,15 @@ class TestSheetCellEditAjaxView(ViewTestBase):
         self.assertEqual(JSONCacheItem.objects.count(), 1)
 
 
-class TestSheetCellEditAjaxViewSpecial(ViewTestBase):
+class TestSheetCellEditAjaxViewSpecial(SamplesheetsViewTestBase):
     """Tests for SheetCellEditAjaxView with special columns"""
 
     def setUp(self):
         super().setUp()
-        # Import investigation
         self.investigation = self.import_isa_from_file(
             SHEET_PATH_SMALL2, self.project
         )
         self.study = self.investigation.studies.first()
-        # Set up POST data
         self.values = {'updated_cells': []}
 
     def test_edit_extract_label_string(self):
@@ -1295,12 +1291,13 @@ class TestSheetCellEditAjaxViewSpecial(ViewTestBase):
         self.assertEqual(obj.extract_label, label)
 
 
-class TestSheetRowInsertAjaxView(RowEditMixin, SheetConfigMixin, ViewTestBase):
+class TestSheetRowInsertAjaxView(
+    RowEditMixin, SheetConfigMixin, SamplesheetsViewTestBase
+):
     """Tests for SheetRowInsertAjaxView"""
 
     def setUp(self):
         super().setUp()
-        # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         # Set up UUIDs and default config
         self.update_uuids(self.investigation, CONFIG_DATA_DEFAULT)
@@ -1508,7 +1505,9 @@ class TestSheetRowInsertAjaxView(RowEditMixin, SheetConfigMixin, ViewTestBase):
         self.assertEqual(JSONCacheItem.objects.count(), 1)
 
 
-class TestSheetRowDeleteAjaxView(RowEditMixin, SheetConfigMixin, ViewTestBase):
+class TestSheetRowDeleteAjaxView(
+    RowEditMixin, SheetConfigMixin, SamplesheetsViewTestBase
+):
     """Tests for SheetRowDeleteAjaxView"""
 
     def setUp(self):
@@ -1634,7 +1633,7 @@ class TestSheetRowDeleteAjaxView(RowEditMixin, SheetConfigMixin, ViewTestBase):
         self.assertEqual(JSONCacheItem.objects.count(), 1)
 
 
-class TestSheetVersionSaveAjaxView(ViewTestBase):
+class TestSheetVersionSaveAjaxView(SamplesheetsViewTestBase):
     """Tests for SheetVersionSaveAjaxView"""
 
     def setUp(self):
@@ -1660,7 +1659,7 @@ class TestSheetVersionSaveAjaxView(ViewTestBase):
         self.assertEqual(new_version.description, VERSION_DESC)
 
 
-class TestSheetEditFinishAjaxView(ViewTestBase):
+class TestSheetEditFinishAjaxView(SamplesheetsViewTestBase):
     """Tests for SheetEditFinishAjaxView"""
 
     def setUp(self):
@@ -1714,7 +1713,7 @@ class TestSheetEditFinishAjaxView(ViewTestBase):
         self.assertEqual(ISATab.objects.count(), 1)
 
 
-class TestSheetEditConfigAjaxView(SheetConfigMixin, ViewTestBase):
+class TestSheetEditConfigAjaxView(SheetConfigMixin, SamplesheetsViewTestBase):
     """Tests for SheetEditConfigAjaxView"""
 
     # TODO: Test with assay updates (needs a better test ISA-Tab)
@@ -1724,9 +1723,9 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, ViewTestBase):
         # Set up category owner
         self.user_cat = self.make_user('user_cat')
         self.make_assignment(self.category, self.user_cat, self.role_owner)
-
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+
         # Set up UUIDs and default config
         self.update_uuids(self.investigation, CONFIG_DATA_DEFAULT)
         app_settings.set(
@@ -1766,8 +1765,6 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, ViewTestBase):
                 }
             ]
         }
-
-        # Set up helpers
         self.cache_backend = get_backend_api('sodar_cache')
         self.cache_name = STUDY_TABLE_CACHE_ITEM.format(
             study=self.study.sodar_uuid
@@ -1951,12 +1948,13 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, ViewTestBase):
         self.assertEqual(JSONCacheItem.objects.count(), 1)
 
 
-class TestStudyDisplayConfigAjaxView(SheetConfigMixin, ViewTestBase):
+class TestStudyDisplayConfigAjaxView(
+    SheetConfigMixin, SamplesheetsViewTestBase
+):
     """Tests for StudyDisplayConfigAjaxView"""
 
     def setUp(self):
         super().setUp()
-        # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.s_uuid = str(self.investigation.studies.first().sodar_uuid)
@@ -2073,13 +2071,14 @@ class TestStudyDisplayConfigAjaxView(SheetConfigMixin, ViewTestBase):
         )
 
 
-class TestSheetVersionCompareAjaxView(SheetImportMixin, ViewTestBase):
+class TestSheetVersionCompareAjaxView(
+    SheetImportMixin, SamplesheetsViewTestBase
+):
     """Tests for SheetVersionCompareAjaxView"""
 
     def setUp(self):
         super().setUp()
         self.import_isa_from_file(SHEET_PATH_SMALL2, self.project)
-
         with open(SHEET_PATH_SMALL2_ALT, 'rb') as file, self.login(self.user):
             values = {'file_upload': file}
             self.client.post(
@@ -2089,7 +2088,6 @@ class TestSheetVersionCompareAjaxView(SheetImportMixin, ViewTestBase):
                 ),
                 values,
             )
-
         self.isa1 = ISATab.objects.first()
         self.isa2 = ISATab.objects.last()
         self.isa2.data['studies']['s_small2.txt'] = self.isa2.data[

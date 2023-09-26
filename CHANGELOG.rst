@@ -24,6 +24,7 @@ Added
     - iRODS path clipboard copying button in iRODS collection list modal (#1282)
     - ``constants`` module for zone constants (#1398)
     - Assay link from zone assay icon (#1747)
+    - Missing permission tests (#1739)
 - **Samplesheets**
     - User setting for study and assay table height (#1283)
     - Study table cache disabling (#1639)
@@ -42,9 +43,10 @@ Added
     - ``get_url()`` helpers for ``Investigation``, ``Study`` and ``Assay`` models (#1748)
     - ``normalizesheets`` management command for sheet cleanup (#1661)
     - Boolean field support in sheet templates (#1757)
+    - iRODS access ticket REST API views (#1707)
 - **Taskflowbackend**
     - ``BatchCalculateChecksumTask`` iRODS task (#1634)
-    - Automated generation of missing checksums in ``zone_move`` flow (#1634, #1767)
+    - Automated generation of missing checksums in ``landing_zone_move`` (#1634, #1767)
     - Cleanup of trash collections in testing (#1658)
     - ``TaskflowPermissionTestBase`` base test class (#1718)
     - Taskflow session timeout management (#1768)
@@ -65,6 +67,9 @@ Changed
     - Update tour help (#1583)
     - Enable setting ``ADMINS`` via environment variable (#1796)
     - Update ``ADMINS`` default value (#1796)
+- **Irodsadmin**
+    - Output ``irodsorphans`` results during execution (#1319)
+    - Order ``irodsorphans`` results by project (#1741)
 - **Landingzones**
     - Move iRODS object helpers to ``TaskflowTestMixin`` (#1699)
     - Enable superuser landing zone controls for locked zones (#1607)

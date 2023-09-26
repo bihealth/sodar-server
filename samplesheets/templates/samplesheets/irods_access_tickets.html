@@ -181,7 +181,6 @@
   {# Tour content #}
   <script type="text/javascript">
     tourEnabled = true;
-
     tour.addStep('irods_ticket', {
         title: 'iRODS Access Tickets',
         text: 'In this view you can manage access tickets for iRODS ' +
@@ -192,7 +191,6 @@
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
-
     tour.addStep('irods_ticket_warning', {
         title: 'iRODS Access Warning',
         text: 'WARNING: Anyone with the URL and network access to your iRODS ' +
@@ -202,7 +200,6 @@
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
-
     if ($('#sodar-ss-ticket-list').length) {
         tour.addStep('irods_ticket_list', {
             title: 'iRODS Access Ticket List',
@@ -213,7 +210,6 @@
             showCancelLink: true
         });
     }
-
     if ($('.sodar-ss-ticket-item-title').length) {
         tour.addStep('irods_ticket_title', {
             title: 'iRODS Access Ticket Title',
@@ -228,7 +224,6 @@
             showCancelLink: true
         });
     }
-
     if ($('.sodar-ss-ticket-item-str').length) {
         tour.addStep('irods_ticket_str', {
             title: 'iRODS Access Ticket String',
@@ -238,7 +233,6 @@
             showCancelLink: true
         });
     }
-
     if ($('.sodar-ss-ticket-item-expiry').length) {
         tour.addStep('irods_ticket_expiry', {
             title: 'iRODS Access Ticket Expiration',
@@ -248,7 +242,6 @@
             showCancelLink: true
         });
     }
-
     if ($('.sodar-ss-ticket-dropdown').length) {
         tour.addStep('irods_ticket_dropdown', {
             title: 'iRODS Access Ticket Dropdown',
@@ -259,7 +252,6 @@
             showCancelLink: true
         });
     }
-
     tour.addStep('irods_ticket_create', {
         title: 'iRODS Access Ticket Creation',
         text: 'Click on this button to create a new access ticket. You will ' +
@@ -269,7 +261,6 @@
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
-
     tour.addStep('sheets_btn_back', {
         title: 'Back to Project Sample Sheets',
         text: 'Click on this button to return to the project sample sheets.',

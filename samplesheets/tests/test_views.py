@@ -7,7 +7,6 @@ from cubi_isa_templates import _TEMPLATES as ISA_TEMPLATES
 from urllib.parse import urlencode
 from zipfile import ZipFile
 
-from django.conf import settings
 from django.contrib.messages import get_messages
 from django.test import LiveServerTestCase, override_settings
 from django.urls import reverse
@@ -120,19 +119,15 @@ REMOTE_SITE_DESC = 'description'
 REMOTE_SITE_SECRET = build_secret()
 EDIT_NEW_VALUE_STR = 'edited value'
 DUMMY_UUID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
-IRODS_BACKEND_SKIP_MSG = 'iRODS backend not enabled in settings'
 IRODS_FILE_PATH = '/sodarZone/path/test1.txt'
 with open(CONFIG_PATH_DEFAULT) as fp:
     CONFIG_DATA_DEFAULT = json.load(fp)
-IRODS_BACKEND_ENABLED = (
-    True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
-)
 
 
 # TODO: Add testing for study table cache updates
 
 
-class ViewTestBase(
+class SamplesheetsViewTestBase(
     ProjectMixin, RoleMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase
 ):
     """Base view for samplesheets views tests"""
@@ -171,7 +166,7 @@ class ViewTestBase(
         )
 
 
-class TestProjectSheetsView(ViewTestBase):
+class TestProjectSheetsView(SamplesheetsViewTestBase):
     """Tests for the project sheets view"""
 
     def setUp(self):
@@ -199,7 +194,9 @@ class TestProjectSheetsView(ViewTestBase):
         self.assertNotIn('tables', response.context)
 
 
-class TestSheetImportView(SheetImportMixin, LandingZoneMixin, ViewTestBase):
+class TestSheetImportView(
+    SheetImportMixin, LandingZoneMixin, SamplesheetsViewTestBase
+):
     """Tests for the investigation import view"""
 
     def setUp(self):
@@ -666,7 +663,7 @@ class TestSheetImportView(SheetImportMixin, LandingZoneMixin, ViewTestBase):
         )
 
 
-class TestSheetTemplateSelectView(ViewTestBase):
+class TestSheetTemplateSelectView(SamplesheetsViewTestBase):
     """Tests for SheetTemplateSelectView"""
 
     def test_render(self):
@@ -703,7 +700,7 @@ class TestSheetTemplateSelectView(ViewTestBase):
             )
 
 
-class TestSheetTemplateCreateView(ViewTestBase):
+class TestSheetTemplateCreateView(SamplesheetsViewTestBase):
     """Tests for SheetTemplateCreateView"""
 
     def _get_post_data(self, sheet_tpl):
@@ -817,7 +814,7 @@ class TestSheetTemplateCreateView(ViewTestBase):
             self.assertEqual(self.project.investigations.count(), 1)
 
 
-class TestSheetExcelExportView(ViewTestBase):
+class TestSheetExcelExportView(SamplesheetsViewTestBase):
     """Tests for the sample sheet Excel export view"""
 
     def setUp(self):
@@ -851,7 +848,7 @@ class TestSheetExcelExportView(ViewTestBase):
         self.assertEqual(response.status_code, 200)
 
 
-class TestSheetISAExportView(ViewTestBase):
+class TestSheetISAExportView(SamplesheetsViewTestBase):
     """Tests for the investigation ISA-Tab export view"""
 
     def setUp(self):
@@ -912,7 +909,7 @@ class TestSheetISAExportView(ViewTestBase):
         )
 
 
-class TestSheetDeleteView(ViewTestBase):
+class TestSheetDeleteView(SamplesheetsViewTestBase):
     """Tests for the investigation delete view"""
 
     def setUp(self):
@@ -1038,7 +1035,7 @@ class TestSheetDeleteView(ViewTestBase):
         self.assertEqual(JSONCacheItem.objects.count(), 0)
 
 
-class TestSheetVersionListView(ViewTestBase):
+class TestSheetVersionListView(SamplesheetsViewTestBase):
     """Tests for the sample sheet version list view"""
 
     def test_render(self):
@@ -1080,7 +1077,7 @@ class TestSheetVersionListView(ViewTestBase):
         self.assertIsNone(response.context['current_version'])
 
 
-class TestSheetVersionRestoreView(ViewTestBase):
+class TestSheetVersionRestoreView(SamplesheetsViewTestBase):
     """Tests for the sample sheet version restore view"""
 
     def setUp(self):
@@ -1166,7 +1163,7 @@ class TestSheetVersionRestoreView(ViewTestBase):
         self.assertEqual(JSONCacheItem.objects.count(), 1)
 
 
-class TestSheetVersionUpdateView(ViewTestBase):
+class TestSheetVersionUpdateView(SamplesheetsViewTestBase):
     """Tests for the sample sheet version update view"""
 
     def setUp(self):
@@ -1211,7 +1208,7 @@ class TestSheetVersionUpdateView(ViewTestBase):
         self.assertEqual(self.isatab.date_created, date_created)
 
 
-class TestSheetVersionDeleteView(ViewTestBase):
+class TestSheetVersionDeleteView(SamplesheetsViewTestBase):
     """Tests for the sample sheet version delete view"""
 
     def setUp(self):
@@ -1249,7 +1246,9 @@ class TestSheetVersionDeleteView(ViewTestBase):
         self.assertEqual(ISATab.objects.count(), 0)
 
 
-class TestSheetVersionDeleteBatchView(SampleSheetModelMixin, ViewTestBase):
+class TestSheetVersionDeleteBatchView(
+    SampleSheetModelMixin, SamplesheetsViewTestBase
+):
     """Tests for the sample sheet version batch delete view"""
 
     def setUp(self):
@@ -1316,7 +1315,7 @@ class TestSheetVersionDeleteBatchView(SampleSheetModelMixin, ViewTestBase):
         self.assertEqual(ISATab.objects.count(), 0)
 
 
-class TestProjectSearchResultsView(ViewTestBase):
+class TestProjectSearchResultsView(SamplesheetsViewTestBase):
     """Tests for ProjectSearchResultsView view with sample sheet input"""
 
     def _get_items(self, response):
@@ -1424,7 +1423,7 @@ class TestProjectSearchResultsView(ViewTestBase):
         self.assertEqual(len(items), 2)
 
 
-class TestSheetVersionCompareView(ViewTestBase):
+class TestSheetVersionCompareView(SamplesheetsViewTestBase):
     """Tests for the SheetVersionCompareView"""
 
     def setUp(self):
@@ -1483,7 +1482,7 @@ class TestSheetVersionCompareView(ViewTestBase):
         self.assertRedirects(response, reverse('home'))
 
 
-class TestSheetVersionCompareFileView(ViewTestBase):
+class TestSheetVersionCompareFileView(SamplesheetsViewTestBase):
     """Tests for the SheetVersionCompareFileView"""
 
     def setUp(self):
@@ -1548,7 +1547,9 @@ class TestSheetVersionCompareFileView(ViewTestBase):
         self.assertRedirects(response, reverse('home'))
 
 
-class TestIrodsDataRequestListView(IrodsDataRequestMixin, ViewTestBase):
+class TestIrodsDataRequestListView(
+    IrodsDataRequestMixin, SamplesheetsViewTestBase
+):
     """Tests for IrodsDataRequestListView"""
 
     def test_list(self):

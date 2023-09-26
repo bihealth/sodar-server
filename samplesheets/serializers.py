@@ -143,6 +143,7 @@ class IrodsDataRequestSerializer(
         return super().create(validated_data)
 
 
+# TODO: Update fields (see issues #1800 and #1801)
 class IrodsAccessTicketSerializer(
     IrodsAccessTicketValidateMixin, serializers.ModelSerializer
 ):

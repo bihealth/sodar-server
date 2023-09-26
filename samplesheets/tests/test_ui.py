@@ -58,7 +58,7 @@ with open(CONFIG_PATH_UPDATED) as fp:
     CONFIG_DATA_UPDATED = json.load(fp)
 
 
-class TestProjectSheetsUIBase(SampleSheetIOMixin, SheetConfigMixin, TestUIBase):
+class SamplesheetsUITestBase(SampleSheetIOMixin, SheetConfigMixin, TestUIBase):
     """Base view samplesheets view UI tests"""
 
     def setup_investigation(self, config_data=None):
@@ -77,7 +77,7 @@ class TestProjectSheetsUIBase(SampleSheetIOMixin, SheetConfigMixin, TestUIBase):
         self.assay = self.study.assays.first()
 
 
-class TestProjectSheetsView(IrodsDataRequestMixin, TestProjectSheetsUIBase):
+class TestProjectSheetsView(IrodsDataRequestMixin, SamplesheetsUITestBase):
     """Tests for the project sheets view UI"""
 
     def _login_and_render(self, user, wait_elem=DEFAULT_WAIT_ID, url_suffix=''):
@@ -205,7 +205,7 @@ class TestProjectSheetsView(IrodsDataRequestMixin, TestProjectSheetsUIBase):
     # NOTE: For further vue app tests, see samplesheets/vueapp/tests
 
 
-class TestSheetTemplateCreateView(TestProjectSheetsUIBase):
+class TestSheetTemplateCreateView(SamplesheetsUITestBase):
     """Tests for the sheet template creation view UI"""
 
     def test_render_field_visibility(self):
@@ -260,7 +260,7 @@ class TestSheetTemplateCreateView(TestProjectSheetsUIBase):
                     self.assertIn(e_name, label_text, msg=msg)
 
 
-class TestSheetVersionListView(TestProjectSheetsUIBase):
+class TestSheetVersionListView(SamplesheetsUITestBase):
     """Tests for the sheet version list view UI"""
 
     def setUp(self):
@@ -318,7 +318,7 @@ class TestSheetVersionListView(TestProjectSheetsUIBase):
 
 
 class TestIrodsAccessTicketListView(
-    IrodsAccessTicketMixin, TestProjectSheetsUIBase
+    IrodsAccessTicketMixin, SamplesheetsUITestBase
 ):
     """Tests for iRODS access ticket list view UI"""
 
@@ -392,7 +392,7 @@ class TestIrodsAccessTicketListView(
         self.assertIn('text-danger', elem.get_attribute('class'))
 
 
-class TestIrodsAccessTicketCreateView(TestProjectSheetsUIBase):
+class TestIrodsAccessTicketCreateView(SamplesheetsUITestBase):
     """Tests for iRODS access ticket create view UI"""
 
     def setUp(self):
@@ -412,7 +412,7 @@ class TestIrodsAccessTicketCreateView(TestProjectSheetsUIBase):
 
 
 class TestIrodsAccessTicketUpdateView(
-    IrodsAccessTicketMixin, TestProjectSheetsUIBase
+    IrodsAccessTicketMixin, SamplesheetsUITestBase
 ):
     """Tests for iRODS access ticket update view UI"""
 
@@ -438,7 +438,7 @@ class TestIrodsAccessTicketUpdateView(
             self.selenium.find_element(By.ID, 'sodar-ss-alert-ticket-create')
 
 
-class TestIrodsDataRequestCreateView(TestProjectSheetsUIBase):
+class TestIrodsDataRequestCreateView(SamplesheetsUITestBase):
     """Tests for iRODS request create view UI"""
 
     def setUp(self):
@@ -459,7 +459,7 @@ class TestIrodsDataRequestCreateView(TestProjectSheetsUIBase):
 
 
 class TestIrodsDataRequestUpdateView(
-    IrodsDataRequestMixin, TestProjectSheetsUIBase
+    IrodsDataRequestMixin, SamplesheetsUITestBase
 ):
     """Tests for irods request update view UI"""
 
@@ -489,7 +489,7 @@ class TestIrodsDataRequestUpdateView(
 
 
 class TestIrodsDataRequestDeleteView(
-    IrodsDataRequestMixin, TestProjectSheetsUIBase
+    IrodsDataRequestMixin, SamplesheetsUITestBase
 ):
     """Tests for iRODS request delete view UI"""
 
@@ -519,7 +519,7 @@ class TestIrodsDataRequestDeleteView(
 
 
 class TestIrodsDataRequestAcceptView(
-    IrodsDataRequestMixin, TestProjectSheetsUIBase
+    IrodsDataRequestMixin, SamplesheetsUITestBase
 ):
     """Tests for iRODS request accept view UI"""
 
@@ -546,7 +546,7 @@ class TestIrodsDataRequestAcceptView(
 
 
 class TestIrodsDataRequestListView(
-    IrodsDataRequestMixin, TestProjectSheetsUIBase
+    IrodsDataRequestMixin, SamplesheetsUITestBase
 ):
     """Tests for iRODS request reject view UI"""
 

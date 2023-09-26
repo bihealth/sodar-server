@@ -90,8 +90,8 @@ SODAR currently supports the following assay plugins:
 - **Generic Raw Data Plugin**
 - **Metabolite Profiling / Mass Spectrometry**
 - **Microarray**
-- **Protein Expression Profiling / Mass Spectrometry**
 - **Protein Expression Profiling / Mass Cytometry**
+- **Protein Expression Profiling / Mass Spectrometry**
 
 Common links as well as plugin specific links are detailed below.
 

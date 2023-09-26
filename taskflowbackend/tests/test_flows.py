@@ -1107,14 +1107,14 @@ class TestProjectUpdate(TaskflowbackendFlowTestBase):
 
     def test_update_parent(self):
         """Test project_update with updated parent"""
-        user_contrib = self.make_user('contrib_user')
+        user_contributor = self.make_user('user_contributor')
         user_cat_new = self.make_user('user_cat_new')
         self.make_assignment_taskflow(
-            self.project, user_contrib, self.role_contributor
+            self.project, user_contributor, self.role_contributor
         )
         self.assert_group_member(self.project, self.user, True)
         self.assert_group_member(self.project, self.user_owner_cat, True)
-        self.assert_group_member(self.project, user_contrib, True)
+        self.assert_group_member(self.project, user_contributor, True)
         self.assert_group_member(self.project, user_cat_new, False)
         project_coll = self.irods.collections.get(self.project_path)
         self.assertEqual(
@@ -1143,7 +1143,7 @@ class TestProjectUpdate(TaskflowbackendFlowTestBase):
 
         self.assert_group_member(self.project, self.user, True)
         self.assert_group_member(self.project, self.user_owner_cat, False)
-        self.assert_group_member(self.project, user_contrib, True)
+        self.assert_group_member(self.project, user_contributor, True)
         self.assert_group_member(self.project, user_cat_new, True)
         project_coll = self.irods.collections.get(self.project_path)
         self.assertEqual(

@@ -80,7 +80,9 @@ class ProjectAppPlugin(
     entry_point_url_id = 'landingzones:list'
 
     #: Description string
-    description = 'Management of sample data landing zones in iRODS'
+    description = (
+        'Landing zone management for uploading sample data files to iRODS'
+    )
 
     #: Required permission for accessing the app
     app_permission = 'landingzones.view_zone_own'
