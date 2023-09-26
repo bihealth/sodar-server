@@ -683,7 +683,6 @@ class TestIrodsAccessTicketRetrieveAPIView(IrodsAccessTicketAPITestBase):
             kwargs={'irodsaccessticket': self.ticket.sodar_uuid},
         )
 
-    # TODO: Update test (see issues #1800 and #1801)
     def test_get(self):
         """Test IrodsAccessTicketRetrieveAPIView GET"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
@@ -697,12 +696,12 @@ class TestIrodsAccessTicketRetrieveAPIView(IrodsAccessTicketAPITestBase):
             'sodar_uuid': str(self.ticket.sodar_uuid),
             'label': self.ticket.label,
             'ticket': self.ticket.ticket,
-            'assay': self.ticket.assay.pk,
-            'study': self.ticket.study.pk,
+            'study': str(self.study.sodar_uuid),
+            'assay': str(self.assay.sodar_uuid),
             'path': self.ticket.path,
             'date_created': local_date_created.isoformat(),
             'date_expires': self.ticket.date_expires,
-            'user': self.ticket.user.pk,
+            'user': self.get_serialized_user(self.user),
             'is_active': self.ticket.is_active(),
         }
         self.assertEqual(json.loads(response.content), expected)
@@ -740,12 +739,12 @@ class TestIrodsAccessTicketListAPIView(IrodsAccessTicketAPITestBase):
             'sodar_uuid': str(self.ticket.sodar_uuid),
             'label': self.ticket.label,
             'ticket': self.ticket.ticket,
-            'assay': self.ticket.assay.pk,
-            'study': self.ticket.study.pk,
+            'study': str(self.study.sodar_uuid),
+            'assay': str(self.assay.sodar_uuid),
             'path': self.ticket.path,
             'date_created': local_date_created.isoformat(),
             'date_expires': self.ticket.date_expires,
-            'user': self.ticket.user.pk,
+            'user': self.get_serialized_user(self.user),
             'is_active': self.ticket.is_active(),
         }
         self.assertEqual(json.loads(response.content), [expected])
@@ -772,12 +771,12 @@ class TestIrodsAccessTicketListAPIView(IrodsAccessTicketAPITestBase):
             'sodar_uuid': str(self.ticket.sodar_uuid),
             'label': self.ticket.label,
             'ticket': self.ticket.ticket,
-            'assay': self.ticket.assay.pk,
-            'study': self.ticket.study.pk,
+            'study': str(self.study.sodar_uuid),
+            'assay': str(self.assay.sodar_uuid),
             'path': self.ticket.path,
             'date_created': local_date_created.isoformat(),
             'date_expires': self.ticket.date_expires,
-            'user': self.ticket.user.pk,
+            'user': self.get_serialized_user(self.user),
             'is_active': self.ticket.is_active(),
         }
         self.assertEqual(json.loads(response.content), [expected])

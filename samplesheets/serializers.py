@@ -143,13 +143,13 @@ class IrodsDataRequestSerializer(
         return super().create(validated_data)
 
 
-# TODO: Update fields (see issues #1800 and #1801)
 class IrodsAccessTicketSerializer(
     IrodsAccessTicketValidateMixin, serializers.ModelSerializer
 ):
     """Serializer for the IrodsAccessTicket model"""
 
     is_active = serializers.SerializerMethodField()
+    user = SODARUserSerializer(read_only=True)
 
     class Meta:
         model = IrodsAccessTicket
@@ -162,8 +162,8 @@ class IrodsAccessTicketSerializer(
             'date_created',
             'date_expires',
             'label',
-            'sodar_uuid',
             'is_active',
+            'sodar_uuid',
         ]
         read_only_fields = [
             f for f in fields if f not in ['path', 'label', 'date_expires']
@@ -203,3 +203,11 @@ class IrodsAccessTicketSerializer(
         if error:
             raise serializers.ValidationError('{}: {}'.format(*error))
         return attrs
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        ret['study'] = str(instance.study.sodar_uuid)
+        ret['assay'] = (
+            str(instance.assay.sodar_uuid) if instance.assay else None
+        )
+        return ret

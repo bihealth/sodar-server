@@ -43,7 +43,7 @@ Added
     - ``get_url()`` helpers for ``Investigation``, ``Study`` and ``Assay`` models (#1748)
     - ``normalizesheets`` management command for sheet cleanup (#1661)
     - Boolean field support in sheet templates (#1757)
-    - iRODS access ticket REST API views (#1707)
+    - iRODS access ticket REST API views (#1707, #1800, #1801)
 - **Taskflowbackend**
     - ``BatchCalculateChecksumTask`` iRODS task (#1634)
     - Automated generation of missing checksums in ``landing_zone_move`` (#1634, #1767)
