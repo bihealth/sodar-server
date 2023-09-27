@@ -14,14 +14,15 @@
 <tr class="{% get_zone_row_class zone %}"
     id="{{ zone.sodar_uuid }}"
     data-zone-uuid="{{ zone.sodar_uuid }}"
-    data-sample-url="{% get_zone_samples_url zone %}"
-    data-status-url="{% url 'landingzones:ajax_status' landingzone=zone.sodar_uuid %}">
+    data-status-url="{% url 'landingzones:ajax_status' project=project.sodar_uuid %}">
   <td class="sodar-lz-zone-title">
     <div class="sodar-overflow-container">
-      <span title="{{ zone.assay.get_display_name }}"
-            data-tooltip="tooltip" data-placement="top">
+      <a href="{{ zone.assay.get_url }}"
+         title="{{ zone.assay.get_display_name }}"
+         class="sodar-lz-zone-assay-link"
+         data-tooltip="tooltip" data-placement="top">
         <i class="iconify text-danger" data-icon="mdi:table-large"></i>
-      </span>
+      </a>
       {% if zone.user != request.user %}
         {% get_user_html zone.user as zone_user %}
         {{ zone_user | safe }} /
@@ -34,9 +35,11 @@
         </a>
       {% endif %}
       {% if zone.description %}
-        {% get_zone_desc_html zone as zone_desc_html %}
-        {% get_info_link zone_desc_html html=True as info_link %}
-        {{ info_link | safe }}
+        <span class="sodar-lz-zone-description-link">
+          {% get_zone_desc_html zone as zone_desc_html %}
+          {% get_info_link zone_desc_html html=True as info_link %}
+          {{ info_link | safe }}
+        </span>
       {% endif %}
       {% if zone.configuration %}
         <span class="badge badge-pill badge-success">{% get_config_legend zone %}</span>
@@ -60,7 +63,7 @@
     <span id="sodar-lz-zone-status-moved-{{ zone.sodar_uuid }}">
     {% if zone.status == 'MOVED' %}
       <p class="mb-0">
-        <a href="{% get_zone_samples_url zone %}">
+        <a href="{{ zone.assay.get_url }}">
           <i class="iconify" data-icon="mdi:arrow-right-circle"></i>
           Browse files in sample sheets
         </a>

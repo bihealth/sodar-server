@@ -2,14 +2,27 @@
 
 from rest_framework import serializers
 
+from django.utils import timezone
+
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
 from projectroles.serializers import (
     SODARProjectModelSerializer,
     SODARNestedListSerializer,
+    SODARUserSerializer,
 )
 
-from samplesheets.models import Investigation, Study, Assay
+from samplesheets.forms import (
+    IrodsDataRequestValidateMixin,
+    IrodsAccessTicketValidateMixin,
+)
+from samplesheets.models import (
+    Investigation,
+    Study,
+    Assay,
+    IrodsDataRequest,
+    IrodsAccessTicket,
+)
 
 
 class AssaySerializer(SODARNestedListSerializer):
@@ -86,3 +99,115 @@ class InvestigationSerializer(SODARProjectModelSerializer):
             'sodar_uuid',
         ]
         read_only_fields = fields
+
+
+class IrodsDataRequestSerializer(
+    IrodsDataRequestValidateMixin, SODARProjectModelSerializer
+):
+    """Serializer for the IrodsDataRequest model"""
+
+    user = SODARUserSerializer(read_only=True)
+
+    class Meta:
+        model = IrodsDataRequest
+        fields = [
+            'project',
+            'action',
+            'path',
+            'target_path',
+            'user',
+            'status',
+            'status_info',
+            'description',
+            'date_created',
+            'sodar_uuid',
+        ]
+        read_only_fields = [
+            f for f in fields if f not in ['path', 'description']
+        ]
+
+    def validate_path(self, value):
+        irods_backend = get_backend_api('omics_irods')
+        path = irods_backend.sanitize_path(value)
+        try:
+            self.validate_request_path(
+                irods_backend, self.context['project'], self.instance, path
+            )
+        except Exception as ex:
+            raise serializers.ValidationError(str(ex))
+        return value
+
+    def create(self, validated_data):
+        validated_data['project'] = self.context['project']
+        validated_data['user'] = self.context['request'].user
+        return super().create(validated_data)
+
+
+class IrodsAccessTicketSerializer(
+    IrodsAccessTicketValidateMixin, serializers.ModelSerializer
+):
+    """Serializer for the IrodsAccessTicket model"""
+
+    is_active = serializers.SerializerMethodField()
+    user = SODARUserSerializer(read_only=True)
+
+    class Meta:
+        model = IrodsAccessTicket
+        fields = [
+            'study',
+            'assay',
+            'ticket',
+            'path',
+            'user',
+            'date_created',
+            'date_expires',
+            'label',
+            'is_active',
+            'sodar_uuid',
+        ]
+        read_only_fields = [
+            f for f in fields if f not in ['path', 'label', 'date_expires']
+        ]
+
+    def get_is_active(self, obj):
+        if not obj.date_expires:
+            return True
+        return obj.date_expires > timezone.now()
+
+    def validate(self, attrs):
+        irods_backend = get_backend_api('omics_irods')
+        if not self.instance:
+            try:
+                attrs['path'] = irods_backend.sanitize_path(attrs['path'])
+                # Add assay from path
+                attrs['assay'] = Assay.objects.get(
+                    sodar_uuid=irods_backend.get_uuid_from_path(
+                        attrs['path'], 'assay'
+                    )
+                )
+            except Exception as ex:
+                raise serializers.ValidationError(str(ex))
+            # Add study from assay
+            attrs['study'] = attrs['assay'].study
+            # Add empty ticket
+            attrs['ticket'] = ''
+            # Add user from context
+            attrs['user'] = self.context['user']
+        else:  # Update
+            attrs['path'] = self.instance.path
+            attrs['assay'] = self.instance.assay
+
+        error = self.validate_data(
+            irods_backend, self.context['project'], self.instance, attrs
+        )
+        if error:
+            raise serializers.ValidationError('{}: {}'.format(*error))
+        return attrs
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        ret['study'] = str(instance.study.sodar_uuid)
+        ret['assay'] = (
+            str(instance.assay.sodar_uuid) if instance.assay else None
+        )
+        return ret

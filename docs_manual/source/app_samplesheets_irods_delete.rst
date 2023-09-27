@@ -50,22 +50,26 @@ requests in the project as a project owner or delegate, open the
 
 .. figure:: _static/app_samplesheets/irods_del_list.png
     :align: center
-    :scale: 70%
+    :scale: 60%
 
     iRODS delete request list
 
-The list provides a button for copying the iRODS path into the clipboard, status
-information for the requests as well as dropdowns allowing you to either update
-or delete your requests. On the top of the page you can see a *Create Request*
-link for manual creation.
+The list displays the label and status for existing requests. Buttons for
+copying the iRODS path into clipboard and opening the data object or collection
+in WebDAV are provided for each request. The request dropdown contains
+operations for updating, deleting, accepting and/or rejecting requests depending
+on your role in the project. The :guilabel:`Request Operations` dropdown on the
+top of the view contains options for manually creating a new requests as well
+as accepting and rejecting requests multiple requests at once.
 
 
 Manual Request Creation
 =======================
 
-Clicking the :guilabel:`Create Request` button takes you to a simple form where
-you can create a delete request by manually entering an iRODS path and an
-optional description.
+Selecting the :guilabel:`Create Request` option in the
+:guilabel:`Request Operations` dropdown takes you to a form in which you can
+create a delete request by manually entering an iRODS path. An optional
+description can also be provided.
 
 .. figure:: _static/app_samplesheets/irods_del_form.png
     :align: center
@@ -99,3 +103,19 @@ user will be informed of rejection.
     Accepting delete requests will delete the associated file(s) from iRODS with
     no possibility for undoing the action! Each request should be reviewed
     carefully.
+
+
+Accepting and Rejecting Multiple Requests
+=========================================
+
+In addition to accepting or rejecting requests one by one, you can also accept
+or reject multiple requests at once. This is done by selecting the requests you
+want to accept or reject by clicking the checkboxes on the leftmost column of
+the request list. Once you have selected the requests, click the
+:guilabel:`Request Operations` dropdown and select either
+:guilabel:`Accept Selected` or :guilabel:`Reject Selected`.
+
+.. note::
+
+    Batch accepting or rejeting requests for entire collections is disabled.
+    They must be accepted or rejected individually from the request dropdown.

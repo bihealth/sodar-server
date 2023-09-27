@@ -17,6 +17,15 @@
 </div>
 
 <div class="container-fluid sodar-page-container">
+  {% if not object.pk %}
+    <div class="alert alert-warning" id="sodar-ss-alert-ticket-create">
+      Anyone with an iRODS ticket will gain read access to the associated
+      collection and its subcollections. They are also able to pass on the
+      ticket link and grant access to others. Enabling iRODS tickets to
+      collections should be done with care. This functionality is mostly
+      intended for external third party apps to access SODAR data.
+    </div>
+  {% endif %}
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {{ form | crispy }}
@@ -26,7 +35,8 @@
            href="{{ request.session.real_referer }}">
           <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Cancel
         </a>
-        <button type="submit" class="btn btn-primary" id="sodar-ss-btn-import-submit">
+        <button type="submit" class="btn btn-primary sodar-btn-submit-once"
+                id="sodar-ss-btn-import-submit">
           <i class="iconify" data-icon="mdi:check-bold"></i>
           {% if object.pk %}Update{% else %}Create{% endif %}
         </button>

@@ -57,7 +57,7 @@ class BaseCancerConfigView(
             self.material = GenericMaterial.objects.get(
                 sodar_uuid=self.kwargs['genericmaterial']
             )
-            self.redirect_url = get_sheets_url(self.material.study)
+            self.redirect_url = self.material.study.get_url()
         except GenericMaterial.DoesNotExist:
             messages.error(request, 'Material not found')
             return redirect(self.redirect_url)

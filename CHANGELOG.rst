@@ -5,6 +5,124 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+v0.14.0 (2023-09-27)
+====================
+
+Added
+-----
+
+- **General**
+    - Release cleanup issue template (#1797)
+    - LDAP settings for TLS and user filter (#1803)
+- **Irodsbackend**
+    - ``get_trash_path()`` helper (#1658)
+    - iRODS trash statistics for siteinfo (#1658)
+- **Irodsinfo**
+    - ``IrodsEnvRetrieveAPIView`` for retrieving iRODS environment (#1685)
+- **Landingzones**
+    - Landing zone updating (#1267)
+    - "Nothing to do" check for landing zone validation and moving (#339)
+    - iRODS path clipboard copying button in iRODS collection list modal (#1282)
+    - ``constants`` module for zone constants (#1398)
+    - Assay link from zone assay icon (#1747)
+    - Missing permission tests (#1739)
+- **Samplesheets**
+    - User setting for study and assay table height (#1283)
+    - Study table cache disabling (#1639)
+    - ``SHEETS_ENABLE_STUDY_TABLE_CACHE`` setting (#1639)
+    - ``cytof`` assay plugin (#1642)
+    - New ISA-Tab templates from ``cubi-isa-templates`` (#1697, #1757)
+    - General iRODS access ticket management for assay collections (#804, #1717)
+    - Disabled row delete button tooltips (#1731)
+    - ``IrodsDataRequest`` REST API views (#1588, #1706, #1734, #1735, #1736)
+    - Davrods links in iRODS delete request list (#1339)
+    - Batch accepting and rejecting for iRODS delete requests (#1340, #1751)
+    - Cookiecutter prompt support in sheet templates (#1726)
+    - "Create" tag for sheet versions (#1296)
+    - Template tag tests (#1723)
+    - iRODS file count in sheet overview tab (#1295)
+    - ``get_url()`` helpers for ``Investigation``, ``Study`` and ``Assay`` models (#1748)
+    - ``normalizesheets`` management command for sheet cleanup (#1661)
+    - Boolean field support in sheet templates (#1757)
+    - iRODS access ticket REST API views (#1707, #1800, #1801)
+- **Taskflowbackend**
+    - ``BatchCalculateChecksumTask`` iRODS task (#1634)
+    - Automated generation of missing checksums in ``landing_zone_move`` (#1634, #1767)
+    - Cleanup of trash collections in testing (#1658)
+    - ``TaskflowPermissionTestBase`` base test class (#1718)
+    - Taskflow session timeout management (#1768)
+    - ``TASKFLOW_IRODS_CONN_TIMEOUT`` Django setting (#1768)
+
+Changed
+-------
+
+- **General**
+    - Upgrade to django-sodar-core v0.13.2 (#1617, #1720, #1775, #1792)
+    - Upgrade to cubi-isa-templates v0.1.0 (#1757)
+    - Upgrade to python-irodsclient v1.1.8 (#1538)
+    - Upgrade Python dependencies (#1620)
+    - Upgrade Vue app dependencies (#1620)
+    - Upgrade to nodejs v18 (#1765, #1766)
+    - Update deprecated Nodejs install method in Docker and dev (#1769)
+    - Timeline event names and descriptions if called from syncmodifyapi (#1761)
+    - Update tour help (#1583)
+    - Enable setting ``ADMINS`` via environment variable (#1796)
+    - Update ``ADMINS`` default value (#1796)
+- **Irodsadmin**
+    - Output ``irodsorphans`` results during execution (#1319)
+    - Order ``irodsorphans`` results by project (#1741)
+- **Landingzones**
+    - Move iRODS object helpers to ``TaskflowTestMixin`` (#1699)
+    - Enable superuser landing zone controls for locked zones (#1607)
+    - Add ``DELETING`` to locked states in UI (#1657)
+    - Query for landing zone status in batch (#1684, #1752)
+    - Create expected collections if zone sync is called from syncmodifyapi (#1761)
+    - Define and use zone status constants (#1398)
+- **Samplesheets**
+    - Sample sheet table viewport background color (#1692)
+    - Contract sheet table height to fit content (#1693)
+    - Hide internal fields from ISA-Tab templates (#1698, #1733)
+    - Refactor ``IrodsDataRequest`` model and tests (#1706)
+    - Update ``get_sheets_url()`` helper to only handle ``Project`` objects (#1771)
+    - Display full path under assay for iRODS data requests in UI (#1749)
+    - Return full path under assay from ``IrodsDataRequest.get_short_path()`` (#1749)
+    - Make ``request`` optional in ``SheetVersionMixin.save_version()``
+- **Taskflowbackend**
+    - Move iRODS object helpers from ``LandingZoneTaskflowMixin`` (#1699)
+    - Move iRODS test cleanup to ``TaskflowTestMixin.clear_irods_test_data()`` (#1722)
+    - Refactor base test classes (#1722)
+
+Fixed
+-----
+
+- **General**
+    - Local Chromedriver install failure (#1753, bihealth/sodar-core#1255)
+- **Ontologyaccess**
+    - Batch import tests failing from forbidden obolibrary access (#1694)
+- **Samplesheets**
+    - ``perform_project_sync()`` crash with no iRODS collections created (#1687)
+    - iRODS delete request modification UI view permission checks failing for non-creator contributors (#1737)
+    - Investigation object ref broken in timeline ``sheet_replace`` events (#1774)
+    - External links column width estimation crash in table rendering (#1787)
+    - Comment field editing with semicolon in data (#1790)
+    - Ontology URLs not encoded if passed as query string in wrapper template (#1762)
+
+Removed
+-------
+
+- **Landingzones**
+    - Unused ``data_tables`` references from templates (#1710)
+    - ``get_zone_samples_url()`` template tag (#1748)
+- **Samplesheets**
+    - ``SHEETS_TABLE_HEIGHT`` Django setting (#1283)
+    - Duplicate ``IrodsAccessTicketMixin`` from ``test_views_ajax`` (#1703)
+    - ``IRODS_DATA_REQUEST_STATUS_CHOICES`` constant (#1706)
+    - ``HIDDEN_SHEET_TEMPLATE_FIELDS`` constant (#1733)
+    - ``sheet_export*`` timeline events (#1773)
+    - ``SHEETS_ENABLED_TEMPLATES`` Django setting (#1756)
+    - ``tumor_normal_triplets`` ISA-Tab template (#1757)
+
+
 v0.13.4 (2023-05-15)
 ====================
 

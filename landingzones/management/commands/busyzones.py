@@ -5,7 +5,8 @@ from django.core.management.base import BaseCommand
 # Projectroles dependency
 from projectroles.management.logging import ManagementCommandLogger
 
-from landingzones.models import LandingZone, STATUS_BUSY
+from landingzones.constants import STATUS_BUSY
+from landingzones.models import LandingZone
 
 
 logger = ManagementCommandLogger(__name__)

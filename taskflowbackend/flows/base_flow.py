@@ -2,6 +2,9 @@ import logging
 
 from taskflow import engines
 from taskflow.patterns import linear_flow as lf
+
+from django.conf import settings
+
 from taskflowbackend.tasks.base_task import ForceFailException
 
 
@@ -22,6 +25,7 @@ class BaseLinearFlow:
     ):
         self.irods_backend = irods_backend
         self.irods = irods_backend.get_session_obj()
+        self.irods.connection_timeout = settings.TASKFLOW_IRODS_CONN_TIMEOUT
         self.project = project
         self.flow_name = flow_name
         self.flow_data = flow_data

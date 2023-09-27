@@ -5,25 +5,61 @@ Tests for REST API views in the samplesheets app with SODAR Taskflow enabled
 import json
 import os
 
-from irods.keywords import REG_CHKSUM_KW
+from datetime import timedelta, datetime
 
+from irods.keywords import REG_CHKSUM_KW
+from irods.models import TicketQuery
+
+from django.forms.models import model_to_dict
+from django.test import override_settings
 from django.urls import reverse
+from django.utils import timezone
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
+
+# Timeline dependency
+from timeline.models import ProjectEvent
 
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import (
     TaskflowAPIViewTestBase,
 )
 
-# Samplesheets dependencies
-from samplesheets.views_api import IRODS_QUERY_ERROR_MSG
+from samplesheets.models import (
+    IrodsAccessTicket,
+    IrodsDataRequest,
+    IRODS_REQUEST_STATUS_ACCEPTED,
+    IRODS_REQUEST_STATUS_ACTIVE,
+    IRODS_REQUEST_STATUS_FAILED,
+    IRODS_REQUEST_STATUS_REJECTED,
+    IRODS_REQUEST_ACTION_DELETE,
+)
+from samplesheets.views import (
+    IRODS_REQUEST_EVENT_CREATE as CREATE_ALERT,
+    IRODS_REQUEST_EVENT_ACCEPT as ACCEPT_ALERT,
+    IRODS_REQUEST_EVENT_REJECT as REJECT_ALERT,
+)
+from samplesheets.views_api import (
+    IRODS_QUERY_ERROR_MSG,
+)
 
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
-from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
-
+from samplesheets.tests.test_models import (
+    IrodsAccessTicketMixin,
+    IrodsDataRequestMixin,
+    IRODS_REQUEST_DESC,
+)
+from samplesheets.tests.test_views_taskflow import (
+    SampleSheetTaskflowMixin,
+    IrodsAccessTicketViewTestMixin,
+    IRODS_FILE_NAME,
+    IRODS_FILE_NAME2,
+    INVALID_REDIS_URL,
+    TICKET_STR,
+    TICKET_LABEL,
+)
 
 # SODAR constants
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
@@ -34,11 +70,16 @@ SHEET_PATH = SHEET_DIR + 'i_small2.zip'
 SHEET_PATH_EDITED = SHEET_DIR + 'i_small2_edited.zip'
 SHEET_PATH_ALT = SHEET_DIR + 'i_small2_alt.zip'
 IRODS_FILE_PATH = os.path.dirname(__file__) + '/irods/test1.txt'
-IRODS_FILE_NAME = 'test1.txt'
 IRODS_FILE_MD5 = '0b26e313ed4a7ca6904b0e9369e5b957'
+IRODS_REQUEST_DESC_UPDATED = 'updated'
+DUMMY_UUID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
+LABEL_UPDATE = 'label_update'
 
 
-class TestSampleSheetAPITaskflowBase(
+# Base Classes and Mixins ------------------------------------------------------
+
+
+class SampleSheetAPITaskflowTestBase(
     SampleSheetIOMixin, SampleSheetTaskflowMixin, TaskflowAPIViewTestBase
 ):
     """Base samplesheets API view test class with Taskflow enabled"""
@@ -59,11 +100,155 @@ class TestSampleSheetAPITaskflowBase(
         self.assay = self.study.assays.first()
 
 
-class TestInvestigationRetrieveAPIView(TestSampleSheetAPITaskflowBase):
+class IrodsAccessTicketAPIViewTestBase(
+    SampleSheetIOMixin,
+    SampleSheetTaskflowMixin,
+    IrodsAccessTicketMixin,
+    IrodsAccessTicketViewTestMixin,
+    TaskflowAPIViewTestBase,
+):
+    """Base samplesheets API view test class for iRODS access ticket requests"""
+
+    def assert_alert_count(self, alert_name, user, count, project=None):
+        """
+        Assert expected app alert count. If project is not specified, default to
+        self.project.
+
+        :param alert_name: String
+        :param user: User object
+        :param count: Expected count
+        :param project: Project object or None
+        """
+        if not project:
+            project = self.project
+        self.assertEqual(
+            self.app_alert_model.objects.filter(
+                alert_name=alert_name,
+                active=True,
+                project=project,
+                user=user,
+            ).count(),
+            count,
+        )
+
+    def setUp(self):
+        super().setUp()
+        # Make project with owner in Taskflow and Django
+        self.project, self.owner_as = self.make_project_taskflow(
+            title='TestProject',
+            type=PROJECT_TYPE_PROJECT,
+            parent=self.category,
+            owner=self.user,
+            description='description',
+        )
+        # Set up investigation and collections
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+        self.make_irods_colls(self.investigation)
+        # Init users (owner = user_cat, superuser = user)
+        self.user_delegate = self.make_user('user_delegate')
+        self.user_contributor = self.make_user('user_contributor')
+        self.token_contrib = self.get_token(self.user_contributor)
+        self.make_assignment_taskflow(
+            self.project, self.user_delegate, self.role_delegate
+        )
+        self.make_assignment_taskflow(
+            self.project, self.user_contributor, self.role_contributor
+        )
+        # Create collection under assay
+        self.assay_path = self.irods_backend.get_path(self.assay)
+        self.coll = self.irods.collections.create(
+            os.path.join(self.assay_path, 'coll')
+        )
+        # Get appalerts API and model
+        self.app_alerts = get_backend_api('appalerts_backend')
+        self.app_alert_model = self.app_alerts.get_model()
+
+
+class TestIrodsDataRequestAPIViewBase(
+    SampleSheetIOMixin, SampleSheetTaskflowMixin, TaskflowAPIViewTestBase
+):
+    """Base samplesheets API view test class for iRODS delete requests"""
+
+    # TODO: Retrieve this from a common base/helper class instead of redef
+    def assert_alert_count(self, alert_name, user, count, project=None):
+        """
+        Assert expected app alert count. If project is not specified, default to
+        self.project.
+
+        :param alert_name: String
+        :param user: User object
+        :param count: Expected count
+        :param project: Project object or None
+        """
+        if not project:
+            project = self.project
+        self.assertEqual(
+            self.app_alert_model.objects.filter(
+                alert_name=alert_name,
+                active=True,
+                project=project,
+                user=user,
+            ).count(),
+            count,
+        )
+
+    def setUp(self):
+        super().setUp()
+        self.project, self.owner_as = self.make_project_taskflow(
+            title='TestProject',
+            type=PROJECT_TYPE_PROJECT,
+            parent=self.category,
+            owner=self.user,
+            description='description',
+        )
+        # Init users (owner = user_cat, superuser = user)
+        self.user_delegate = self.make_user('user_delegate')
+        self.user_contributor = self.make_user('user_contributor')
+        self.user_guest = self.make_user('user_guest')
+        self.make_assignment_taskflow(
+            self.project, self.user_delegate, self.role_delegate
+        )
+        self.make_assignment_taskflow(
+            self.project, self.user_contributor, self.role_contributor
+        )
+        self.make_assignment_taskflow(
+            self.project, self.user_guest, self.role_guest
+        )
+
+        # Import investigation
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+        # Set up iRODS data
+        self.make_irods_colls(self.investigation)
+        self.assay_path = self.irods_backend.get_path(self.assay)
+        self.obj_path = os.path.join(self.assay_path, IRODS_FILE_NAME)
+        self.file_obj = self.irods.data_objects.create(self.obj_path)
+
+        # Setup for tests
+        self.app_alerts = get_backend_api('appalerts_backend')
+        self.app_alert_model = self.app_alerts.get_model()
+        self.url = reverse(
+            'samplesheets:api_irods_request_create',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        self.post_data = {
+            'path': self.obj_path,
+            'description': IRODS_REQUEST_DESC,
+        }
+        self.token_contrib = self.get_token(self.user_contributor)
+
+
+# Test Cases -------------------------------------------------------------------
+
+
+class TestInvestigationRetrieveAPIView(SampleSheetAPITaskflowTestBase):
     """Tests for InvestigationRetrieveAPIView"""
 
     def test_get(self):
-        """Test get() in InvestigationRetrieveAPIView"""
+        """Test InvestigationRetrieveAPIView GET"""
         self.investigation.irods_status = True
         self.investigation.save()
 
@@ -113,11 +298,11 @@ class TestInvestigationRetrieveAPIView(TestSampleSheetAPITaskflowBase):
         self.assertEqual(json.loads(response.content), expected)
 
 
-class TestIrodsCollsCreateAPIView(TestSampleSheetAPITaskflowBase):
+class TestIrodsCollsCreateAPIView(SampleSheetAPITaskflowTestBase):
     """Tests for IrodsCollsCreateAPIView"""
 
     def test_post(self):
-        """Test post() in IrodsCollsCreateAPIView"""
+        """Test IrodsCollsCreateAPIView POST"""
         self.assertEqual(self.investigation.irods_status, False)
         url = reverse(
             'samplesheets:api_irods_colls_create',
@@ -132,7 +317,7 @@ class TestIrodsCollsCreateAPIView(TestSampleSheetAPITaskflowBase):
         self.assert_irods_coll(self.assay)
 
     def test_post_created(self):
-        """Test post() with already created collections (should fail)"""
+        """Test POST with already created collections (should fail)"""
         # Set up iRODS collections
         self.make_irods_colls(self.investigation)
         self.assertEqual(self.investigation.irods_status, True)
@@ -144,22 +329,801 @@ class TestIrodsCollsCreateAPIView(TestSampleSheetAPITaskflowBase):
         self.assertEqual(response.status_code, 400)
 
 
-class TestSampleDataFileExistsAPIView(TestSampleSheetAPITaskflowBase):
+# NOTE: For TestIrodsAccessTicketListAPIView, see test_views_api
+# NOTE: For TestIrodsAccessTicketRetrieveAPIView, see test_views_api
+
+
+class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
+    """Tests for IrodsAccessTicketCreateAPIView"""
+
+    def setUp(self):
+        super().setUp()
+        self.path = self.coll.path
+        self.date_expires = (
+            timezone.localtime() + timedelta(days=1)
+        ).isoformat()
+        self.url = reverse(
+            'samplesheets:api_irods_ticket_create',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        self.post_data = {
+            'path': self.path,
+            'label': TICKET_LABEL,
+            'date_expires': self.date_expires,
+        }
+
+    def test_create(self):
+        """Test POST IrodsAccessTicketCreateAPIView as admin"""
+        self.assertEqual(IrodsAccessTicket.objects.count(), 0)
+        self.assert_alert_count(CREATE_ALERT, self.user, 0)
+        self.assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
+        self.assertEqual(self.get_tl_event_count('create'), 0)
+        self.assertEqual(self.get_app_alert_count('create'), 0)
+        response = self.request_knox(self.url, 'POST', data=self.post_data)
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        ticket = IrodsAccessTicket.objects.first()
+        self.assertEqual(ticket.path, self.path)
+        self.assertEqual(ticket.label, TICKET_LABEL)
+        self.assertEqual(
+            ticket.date_expires,
+            datetime.strptime(self.date_expires, '%Y-%m-%dT%H:%M:%S.%f%z'),
+        )
+        self.assertEqual(ticket.user, self.user)
+        self.assertEqual(ticket.study, self.study)
+        self.assertEqual(ticket.assay, self.assay)
+        self.assert_alert_count(CREATE_ALERT, self.user, 0)
+        self.assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
+        self.assertEqual(self.get_tl_event_count('create'), 1)
+        self.assertEqual(self.get_app_alert_count('create'), 2)
+        self.assertEqual(
+            self.app_alert_model.objects.filter(
+                alert_name='irods_ticket_create'
+            )
+            .first()
+            .user,
+            self.user_delegate,
+        )
+
+        # Assert ticket state in iRODS
+        irods_ticket = self.get_irods_ticket(ticket)
+        self.assertEqual(irods_ticket[TicketQuery.Ticket.type], 'read')
+        self.assertIsNotNone(irods_ticket[TicketQuery.Ticket.expiry_ts])
+        self.assertEqual(
+            irods_ticket[TicketQuery.Collection.name], self.coll.path
+        )
+
+    def test_create_contributor(self):
+        """Test POST IrodsAccessTicketCreateAPIView as contributor"""
+        self.assertEqual(IrodsAccessTicket.objects.count(), 0)
+        self.assert_alert_count(CREATE_ALERT, self.user, 0)
+        self.assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
+        self.assertEqual(self.get_tl_event_count('create'), 0)
+        self.assertEqual(self.get_app_alert_count('create'), 0)
+        response = self.request_knox(
+            self.url, 'POST', data=self.post_data, token=self.token_contrib
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        ticket = IrodsAccessTicket.objects.first()
+        self.assertEqual(ticket.user, self.user_contributor)
+        self.assert_alert_count(CREATE_ALERT, self.user, 0)
+        self.assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
+        self.assertEqual(self.get_tl_event_count('create'), 1)
+        self.assertEqual(self.get_app_alert_count('create'), 3)
+        self.assertEqual(
+            self.app_alert_model.objects.filter(
+                alert_name='irods_ticket_create'
+            )
+            .first()
+            .user,
+            self.user_delegate,
+        )
+
+    def test_create_no_expiry(self):
+        """Test POST IrodsAccessTicketCreateAPIView with no expiry date"""
+        self.post_data['date_expires'] = None
+        self.assertEqual(IrodsAccessTicket.objects.count(), 0)
+        response = self.request_knox(self.url, 'POST', data=self.post_data)
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        ticket = IrodsAccessTicket.objects.first()
+        self.assertIsNone(ticket.date_expires)
+
+    def test_create_invalid_path(self):
+        """Test POST IrodsAccessTicketCreateAPIView with invalid path"""
+        self.post_data['path'] = '/invalid/path'
+        response = self.request_knox(self.url, 'POST', data=self.post_data)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(IrodsAccessTicket.objects.count(), 0)
+        self.assertEqual(self.get_tl_event_count('create'), 0)
+        self.assertEqual(self.get_app_alert_count('create'), 0)
+
+    def test_create_expired(self):
+        """Test POST IrodsAccessTicketCreateAPIView with expired date"""
+        self.post_data['date_expires'] = (
+            timezone.localtime() - timedelta(days=1)
+        ).isoformat()
+        response = self.request_knox(self.url, 'POST', data=self.post_data)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(IrodsAccessTicket.objects.count(), 0)
+        self.assertEqual(self.get_tl_event_count('create'), 0)
+        self.assertEqual(self.get_app_alert_count('create'), 0)
+
+    def test_create_assay_root(self):
+        """Test POST IrodsAccessTicketCreateAPIView with assay root"""
+        self.post_data['path'] = self.irods_backend.get_path(self.assay)
+        response = self.request_knox(self.url, 'POST', data=self.post_data)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(IrodsAccessTicket.objects.count(), 0)
+        self.assertEqual(self.get_tl_event_count('create'), 0)
+        self.assertEqual(self.get_app_alert_count('create'), 0)
+
+    def test_create_study_path(self):
+        """Test POST IrodsAccessTicketCreateAPIView with study path"""
+        self.post_data['path'] = self.irods_backend.get_path(self.study)
+        response = self.request_knox(self.url, 'POST', data=self.post_data)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(IrodsAccessTicket.objects.count(), 0)
+        self.assertEqual(self.get_tl_event_count('create'), 0)
+        self.assertEqual(self.get_app_alert_count('create'), 0)
+
+    def test_create_existing_ticket(self):
+        """Test POST IrodsAccessTicketCreateAPIView for the same path"""
+        self.make_irods_ticket(
+            study=self.study,
+            assay=self.assay,
+            ticket=TICKET_STR,
+            path=self.coll.path,
+            label='OldTicket',
+            user=self.user,
+        )
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        response = self.request_knox(self.url, 'POST', data=self.post_data)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        self.assertEqual(self.get_tl_event_count('create'), 0)
+        self.assertEqual(self.get_app_alert_count('create'), 0)
+
+
+class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
+    """Tests for IrodsAccessTicketUpdateAPIView"""
+
+    def setUp(self):
+        super().setUp()
+        self.ticket = self.make_irods_ticket(
+            study=self.study,
+            assay=self.assay,
+            ticket=TICKET_STR,
+            path=self.coll.path,
+            label=TICKET_LABEL,
+            user=self.user,
+            date_expires=None,
+        )
+        self.url = reverse(
+            'samplesheets:api_irods_ticket_update',
+            kwargs={'irodsaccessticket': self.ticket.sodar_uuid},
+        )
+        self.date_expires_update = (
+            timezone.localtime() + timedelta(days=1)
+        ).isoformat()
+
+    def test_put(self):
+        """Test IrodsAccessTicketUpdateAPIView PUT"""
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        self.assertEqual(self.get_tl_event_count('update'), 0)
+        self.assertEqual(self.get_app_alert_count('update'), 0)
+        self.post_data = {
+            'label': LABEL_UPDATE,
+            'date_expires': self.date_expires_update,
+            'path': self.coll.path,
+        }
+        response = self.request_knox(
+            self.url, 'PUT', data=self.post_data, token=self.token_contrib
+        )
+        self.assertEqual(response.status_code, 200)
+        local_date_created = self.ticket.date_created.astimezone(
+            timezone.get_current_timezone()
+        )
+        expected = {
+            'sodar_uuid': str(self.ticket.sodar_uuid),
+            'label': LABEL_UPDATE,
+            'ticket': self.ticket.ticket,
+            'study': str(self.study.sodar_uuid),
+            'assay': str(self.assay.sodar_uuid),
+            'path': self.ticket.path,  # Path should not be updated
+            'date_created': local_date_created.isoformat(),
+            'date_expires': self.date_expires_update,
+            'user': self.get_serialized_user(self.user),
+            'is_active': self.ticket.is_active(),
+        }
+        self.assertEqual(response.json(), expected)
+        self.assertEqual(self.get_tl_event_count('update'), 1)
+        self.assertEqual(self.get_app_alert_count('update'), 3)
+        self.assertEqual(
+            self.app_alert_model.objects.filter(
+                alert_name='irods_ticket_update'
+            )
+            .first()
+            .user,
+            self.user_delegate,
+        )
+
+    def test_put_with_path(self):
+        """Test PUT in IrodsAccessTicketUpdateAPIView with path"""
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        self.assertEqual(self.get_tl_event_count('update'), 0)
+        self.assertEqual(self.get_app_alert_count('update'), 0)
+        self.post_data = {
+            'path': self.coll.path,
+        }
+        response = self.request_knox(
+            self.url, 'PUT', data=self.post_data, token=self.token_contrib
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(self.get_tl_event_count('update'), 0)
+        self.assertEqual(self.get_app_alert_count('update'), 0)
+
+    def test_put_invalid_date(self):
+        """Test PUT in IrodsAccessTicketUpdateAPIView with invalid date"""
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        self.assertEqual(self.get_tl_event_count('update'), 0)
+        self.assertEqual(self.get_app_alert_count('update'), 0)
+        invalid_date = 'invalid'
+        self.post_data = {
+            'date_expires': invalid_date,
+        }
+        response = self.request_knox(
+            self.url, 'PUT', data=self.post_data, token=self.token_contrib
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(self.get_tl_event_count('update'), 0)
+        self.assertEqual(self.get_app_alert_count('update'), 0)
+
+    def test_patch(self):
+        """Test IrodsAccessTicketUpdateAPIView PATCH"""
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        self.assertEqual(self.get_tl_event_count('update'), 0)
+        self.assertEqual(self.get_app_alert_count('update'), 0)
+        self.post_data = {'date_expires': self.date_expires_update}
+        response = self.request_knox(
+            self.url, 'PATCH', data=self.post_data, token=self.token_contrib
+        )
+
+        self.assertEqual(response.status_code, 200)
+        local_date_created = self.ticket.date_created.astimezone(
+            timezone.get_current_timezone()
+        )
+        expected = {
+            'sodar_uuid': str(self.ticket.sodar_uuid),
+            'label': TICKET_LABEL,
+            'ticket': self.ticket.ticket,
+            'study': str(self.study.sodar_uuid),
+            'assay': str(self.assay.sodar_uuid),
+            'path': self.ticket.path,
+            'date_created': local_date_created.isoformat(),
+            'date_expires': self.date_expires_update,
+            'user': self.get_serialized_user(self.user),
+            'is_active': self.ticket.is_active(),
+        }
+        self.assertEqual(response.json(), expected)
+        self.assertEqual(self.get_tl_event_count('update'), 1)
+        self.assertEqual(self.get_app_alert_count('update'), 3)
+        self.assertEqual(
+            self.app_alert_model.objects.filter(
+                alert_name='irods_ticket_update'
+            )
+            .first()
+            .user,
+            self.user_delegate,
+        )
+
+    def test_patch_with_path(self):
+        """Test PATCH in IrodsAccessTicketUpdateAPIView with path"""
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        self.assertEqual(self.get_tl_event_count('update'), 0)
+        self.assertEqual(self.get_app_alert_count('update'), 0)
+        self.post_data = {'path': self.coll.path}
+        response = self.request_knox(
+            self.url, 'PATCH', data=self.post_data, token=self.token_contrib
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(self.get_tl_event_count('update'), 0)
+        self.assertEqual(self.get_app_alert_count('update'), 0)
+
+    def test_patch_invalid_date(self):
+        """Test PATCH in IrodsAccessTicketUpdateAPIView with invalid date"""
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        self.assertEqual(self.get_tl_event_count('update'), 0)
+        self.assertEqual(self.get_app_alert_count('update'), 0)
+        invalid_date = 'invalid'
+        self.post_data = {'date_expires': invalid_date}
+        response = self.request_knox(
+            self.url, 'PATCH', data=self.post_data, token=self.token_contrib
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(self.get_tl_event_count('update'), 0)
+        self.assertEqual(self.get_app_alert_count('update'), 0)
+
+
+class TestIrodsAccessTicketDestroyAPIView(IrodsAccessTicketAPIViewTestBase):
+    """Tests for IrodsAccessTicketDeleteAPIView"""
+
+    def setUp(self):
+        super().setUp()
+        self.date_expires = (
+            timezone.localtime() + timedelta(days=1)
+        ).isoformat()
+        # Create ticket in database and iRODS
+        self.ticket = self.make_irods_ticket(
+            study=self.study,
+            assay=self.assay,
+            path=self.coll.path,
+            user=self.user,
+            ticket=TICKET_STR,
+            label=TICKET_LABEL,
+            date_expires=timezone.localtime() + timedelta(days=1),
+        )
+        self.irods_backend.issue_ticket(
+            self.irods,
+            'read',
+            self.coll.path,
+            ticket_str=TICKET_STR,
+            expiry_date=None,
+        )
+        self.url = reverse(
+            'samplesheets:api_irods_ticket_delete',
+            kwargs={'irodsaccessticket': self.ticket.sodar_uuid},
+        )
+
+    def test_delete(self):
+        """Test IrodsAccessTicketDeleteAPIView DELETE"""
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        self.assertEqual(self.get_tl_event_count('delete'), 0)
+        self.assertEqual(self.get_app_alert_count('delete'), 0)
+        response = self.request_knox(
+            self.url, 'DELETE', token=self.token_contrib
+        )
+
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual(IrodsAccessTicket.objects.count(), 0)
+        self.assertEqual(self.get_tl_event_count('delete'), 1)
+        self.assertEqual(self.get_app_alert_count('delete'), 3)
+        self.assertEqual(
+            self.app_alert_model.objects.filter(
+                alert_name='irods_ticket_delete'
+            )
+            .first()
+            .user,
+            self.user_delegate,
+        )
+
+    def test_delete_invalid_url(self):
+        """Test DELETE IrodsAccessTicketDeleteAPIView with invalid URL"""
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        self.assertEqual(self.get_tl_event_count('delete'), 0)
+        self.assertEqual(self.get_app_alert_count('delete'), 0)
+        invalid_url = reverse(
+            'samplesheets:api_irods_ticket_delete',
+            kwargs={'irodsaccessticket': DUMMY_UUID},
+        )
+        response = self.request_knox(
+            invalid_url, 'DELETE', token=self.token_contrib
+        )
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        self.assertEqual(self.get_tl_event_count('delete'), 0)
+        self.assertEqual(self.get_app_alert_count('delete'), 0)
+
+
+# NOTE: For TestIrodsDataRequestRetrieveAPIView, see test_views_api
+# NOTE: For TestIrodsDataRequestListAPIView, see test_views_api
+
+
+class TestIrodsDataRequestCreateAPIView(TestIrodsDataRequestAPIViewBase):
+    """Tests for IrodsDataRequestCreateAPIView"""
+
+    def test_create(self):
+        """Test IrodsDataRequestCreateAPIView POST"""
+        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+        self.assert_alert_count(CREATE_ALERT, self.user, 0)
+        self.assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
+        response = self.request_knox(
+            self.url, 'POST', data=self.post_data, token=self.token_contrib
+        )
+        self.assertEqual(response.status_code, 201)
+        obj = IrodsDataRequest.objects.first()
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        expected = {
+            'id': obj.pk,
+            'project': self.project.pk,
+            'action': IRODS_REQUEST_ACTION_DELETE,
+            'target_path': None,
+            'path': self.obj_path,
+            'user': self.user_contributor.pk,
+            'status': IRODS_REQUEST_STATUS_ACTIVE,
+            'status_info': '',
+            'description': IRODS_REQUEST_DESC,
+            'sodar_uuid': obj.sodar_uuid,
+        }
+        self.assertEqual(model_to_dict(obj), expected)
+        self.assert_alert_count(CREATE_ALERT, self.user, 1)
+        self.assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
+        self.assert_alert_count(CREATE_ALERT, self.user_contributor, 0)
+        self.assert_alert_count(CREATE_ALERT, self.user_guest, 0)
+
+    def test_create_no_description(self):
+        """Test POST without description"""
+        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+        self.post_data['description'] = ''
+        response = self.request_knox(
+            self.url, 'POST', data=self.post_data, token=self.token_contrib
+        )
+        self.assertEqual(response.status_code, 201)
+        obj = IrodsDataRequest.objects.first()
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        self.assertEqual(obj.description, '')
+
+    def test_create_trailing_slash(self):
+        """Test POST with trailing slash in path"""
+        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+        self.post_data['path'] += '/'
+        response = self.request_knox(
+            self.url, 'POST', data=self.post_data, token=self.token_contrib
+        )
+        self.assertEqual(response.status_code, 201)
+        obj = IrodsDataRequest.objects.first()
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        self.assertEqual(obj.path, self.obj_path + '/')
+        self.assertEqual(obj.description, IRODS_REQUEST_DESC)
+
+    def test_create_invalid_data(self):
+        """Test POST with invalid data"""
+        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+        self.assert_alert_count(CREATE_ALERT, self.user, 0)
+        self.assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
+        self.post_data['path'] = '/sodarZone/does/not/exist'
+        response = self.request_knox(
+            self.url, 'POST', data=self.post_data, token=self.token_contrib
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+
+    def test_create_invalid_path_assay_collection(self):
+        """Test POST with assay path (should fail)"""
+        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+        self.post_data['path'] = self.assay_path
+        response = self.request_knox(
+            self.url, 'POST', data=self.post_data, token=self.token_contrib
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+
+    def test_create_multiple(self):
+        """Test creating multiple requests for same path"""
+        path2 = os.path.join(self.assay_path, IRODS_FILE_NAME2)
+        self.irods.data_objects.create(path2)
+        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+        self.assert_alert_count(CREATE_ALERT, self.user, 0)
+        self.assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
+        response = self.request_knox(
+            self.url, 'POST', data=self.post_data, token=self.token_contrib
+        )
+        self.assertEqual(response.status_code, 201)
+        self.post_data['path'] = path2
+        response = self.request_knox(
+            self.url, 'POST', data=self.post_data, token=self.token_contrib
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(IrodsDataRequest.objects.count(), 2)
+        self.assert_alert_count(CREATE_ALERT, self.user, 1)
+        self.assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
+
+
+class TestIrodsDataRequestUpdateAPIView(
+    IrodsDataRequestMixin, TestIrodsDataRequestAPIViewBase
+):
+    """Tests for IrodsDataRequestUpdateAPIView"""
+
+    def _assert_tl_count(self, count):
+        """Assert timeline ProjectEvent count"""
+        self.assertEqual(
+            ProjectEvent.objects.filter(
+                event_name='irods_request_update'
+            ).count(),
+            count,
+        )
+
+    def setUp(self):
+        super().setUp()
+        self.request = self.make_irods_request(
+            project=self.project,
+            action=IRODS_REQUEST_ACTION_DELETE,
+            path=self.obj_path,
+            status=IRODS_REQUEST_STATUS_ACTIVE,
+            description='',
+            user=self.user_contributor,
+        )
+        self.url = reverse(
+            'samplesheets:api_irods_request_update',
+            kwargs={'irodsdatarequest': self.request.sodar_uuid},
+        )
+        self.update_data = {
+            'path': self.obj_path,
+            'description': IRODS_REQUEST_DESC_UPDATED,
+        }
+
+    def test_put(self):
+        """Test IrodsDataRequestUpdateAPIView PUT"""
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        self._assert_tl_count(0)
+        response = self.request_knox(
+            self.url, 'PUT', data=self.update_data, token=self.token_contrib
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        self.request.refresh_from_db()
+        expected = {
+            'id': self.request.pk,
+            'project': self.project.pk,
+            'action': IRODS_REQUEST_ACTION_DELETE,
+            'target_path': '',
+            'path': self.obj_path,
+            'user': self.user_contributor.pk,
+            'status': IRODS_REQUEST_STATUS_ACTIVE,
+            'status_info': '',
+            'description': IRODS_REQUEST_DESC_UPDATED,
+            'sodar_uuid': self.request.sodar_uuid,
+        }
+        self.assertEqual(model_to_dict(self.request), expected)
+        self._assert_tl_count(1)
+
+    def test_put_empty_description(self):
+        """Test PUT with empty description"""
+        self.update_data['description'] = ''
+        response = self.request_knox(
+            self.url, 'PUT', data=self.update_data, token=self.token_contrib
+        )
+        self.assertEqual(response.status_code, 200)
+        self.request.refresh_from_db()
+        self.assertEqual(self.request.description, '')
+
+    def test_put_invalid_path(self):
+        """Test PUT to update request with invalid path"""
+        self._assert_tl_count(0)
+        self.update_data['path'] = '/sodarZone/does/not/exist'
+        response = self.request_knox(
+            self.url, 'PUT', data=self.update_data, token=self.token_contrib
+        )
+        self.assertEqual(response.status_code, 400)
+        self.request.refresh_from_db()
+        self.assertEqual(self.request.description, '')
+        self.assertEqual(self.request.path, self.obj_path)
+        self._assert_tl_count(0)
+
+    def test_put_assay_path(self):
+        """Test PUT to update request with assay path (should fail)"""
+        self.update_data['path'] = self.irods_backend.get_path(self.assay)
+        response = self.request_knox(
+            self.url, 'PUT', data=self.update_data, token=self.token_contrib
+        )
+        self.assertEqual(response.status_code, 400)
+        self.request.refresh_from_db()
+        self.assertEqual(self.request.path, self.obj_path)
+
+    def test_patch(self):
+        """Test PATCH to update request"""
+        self._assert_tl_count(0)
+        update_data = {'description': IRODS_REQUEST_DESC_UPDATED}
+        response = self.request_knox(
+            self.url, 'PATCH', data=update_data, token=self.token_contrib
+        )
+        self.assertEqual(response.status_code, 200)
+        self.request.refresh_from_db()
+        self.assertEqual(self.request.description, IRODS_REQUEST_DESC_UPDATED)
+        self.assertEqual(self.request.path, self.obj_path)
+        self._assert_tl_count(1)
+
+
+# NOTE: For TestIrodsDataRequestDestroyAPIView, see test_views_api
+
+
+class TestIrodsDataRequestAcceptAPIView(
+    IrodsDataRequestMixin, TestIrodsDataRequestAPIViewBase
+):
+    """Tests for IrodsDataRequestAcceptAPIView"""
+
+    def setUp(self):
+        super().setUp()
+        self.request = self.make_irods_request(
+            project=self.project,
+            action=IRODS_REQUEST_ACTION_DELETE,
+            path=self.obj_path,
+            status=IRODS_REQUEST_STATUS_ACTIVE,
+            description=IRODS_REQUEST_DESC,
+            user=self.user_contributor,
+        )
+        self.url = reverse(
+            'samplesheets:api_irods_request_accept',
+            kwargs={'irodsdatarequest': self.request.sodar_uuid},
+        )
+
+    def test_accept(self):
+        """Test IrodsDataRequestAcceptAPIView POST"""
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_contributor, 0)
+        response = self.request_knox(self.url, 'POST')
+        self.assertEqual(response.status_code, 200)
+        self.request.refresh_from_db()
+        self.assertEqual(self.request.status, IRODS_REQUEST_STATUS_ACCEPTED)
+        self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_contributor, 1)
+        self.assert_irods_obj(self.obj_path, False)
+
+    def test_accept_no_request(self):
+        """Test POST to accept non-existing request"""
+        url = reverse(
+            'samplesheets:api_irods_request_accept',
+            kwargs={'irodsdatarequest': self.category.sodar_uuid},
+        )
+        response = self.request_knox(url, 'POST')
+        self.assertEqual(response.status_code, 404)
+
+    def test_accept_delegate(self):
+        """Test POST to accept request as delegate"""
+        self.assert_irods_obj(self.obj_path)
+        self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_contributor, 0)
+        response = self.request_knox(
+            self.url, 'POST', token=self.get_token(self.user_delegate)
+        )
+        self.assertEqual(response.status_code, 200)
+        self.request.refresh_from_db()
+        self.assertEqual(self.request.status, IRODS_REQUEST_STATUS_ACCEPTED)
+        self.assert_irods_obj(self.obj_path, False)
+        self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_contributor, 1)
+
+    def test_accept_contributor(self):
+        """Test POST to accept request as contributor (should fail)"""
+        self.assert_irods_obj(self.obj_path)
+        self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_contributor, 0)
+        response = self.request_knox(
+            self.url, 'POST', token=self.get_token(self.user_contributor)
+        )
+        self.assertEqual(response.status_code, 403)
+        self.request.refresh_from_db()
+        self.assertEqual(self.request.status, IRODS_REQUEST_STATUS_ACTIVE)
+        self.assert_irods_obj(self.obj_path)
+        self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_contributor, 0)
+
+    @override_settings(REDIS_URL=INVALID_REDIS_URL)
+    def test_accept_lock_failure(self):
+        """Test POST toa ccept request with project lock failure"""
+        self.assert_irods_obj(self.obj_path)
+        response = self.request_knox(self.url, 'POST')
+        self.assertEqual(response.status_code, 400)
+        self.request.refresh_from_db()
+        self.assertEqual(self.request.status, IRODS_REQUEST_STATUS_FAILED)
+        self.assert_irods_obj(self.obj_path)
+        self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_contributor, 0)
+
+    def test_accept_already_accepted(self):
+        """Test accepting already accepted request (should fail)"""
+        self.assertEqual(self.request.status, IRODS_REQUEST_STATUS_ACTIVE)
+        response = self.request_knox(self.url, 'POST')
+        self.assertEqual(response.status_code, 200)
+        self.request.refresh_from_db()
+        self.assertEqual(self.request.status, IRODS_REQUEST_STATUS_ACCEPTED)
+        response = self.request_knox(self.url, 'POST')
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(self.request.status, IRODS_REQUEST_STATUS_ACCEPTED)
+
+
+class TestIrodsDataRequestRejectAPIView(
+    IrodsDataRequestMixin, TestIrodsDataRequestAPIViewBase
+):
+    """Tests for IrodsDataRequestRejectAPIView"""
+
+    def setUp(self):
+        super().setUp()
+        self.request = self.make_irods_request(
+            project=self.project,
+            action=IRODS_REQUEST_ACTION_DELETE,
+            path=self.obj_path,
+            status=IRODS_REQUEST_STATUS_ACTIVE,
+            description=IRODS_REQUEST_DESC,
+            user=self.user_contributor,
+        )
+        self.url = reverse(
+            'samplesheets:api_irods_request_reject',
+            kwargs={'irodsdatarequest': self.request.sodar_uuid},
+        )
+
+    def test_reject(self):
+        """Test IrodsDataRequestRejectAPIView POST"""
+        self.assert_alert_count(REJECT_ALERT, self.user, 0)
+        self.assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
+        self.assert_alert_count(REJECT_ALERT, self.user_contributor, 0)
+        response = self.request_knox(self.url, 'POST')
+        self.assertEqual(response.status_code, 200)
+        self.request.refresh_from_db()
+        self.assertEqual(self.request.status, IRODS_REQUEST_STATUS_REJECTED)
+        self.assert_irods_obj(self.obj_path)
+        self.assert_alert_count(REJECT_ALERT, self.user, 0)
+        self.assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
+        self.assert_alert_count(REJECT_ALERT, self.user_contributor, 1)
+
+    def test_reject_delegate(self):
+        """Test POST to reject request as delegate"""
+        self.assert_alert_count(REJECT_ALERT, self.user, 0)
+        self.assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
+        self.assert_alert_count(REJECT_ALERT, self.user_contributor, 0)
+        response = self.request_knox(
+            self.url, 'POST', token=self.get_token(self.user_delegate)
+        )
+        self.assertEqual(response.status_code, 200)
+        self.request.refresh_from_db()
+        self.assertEqual(self.request.status, IRODS_REQUEST_STATUS_REJECTED)
+        self.assert_alert_count(REJECT_ALERT, self.user, 0)
+        self.assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
+        self.assert_alert_count(REJECT_ALERT, self.user_contributor, 1)
+
+    def test_reject_contributor(self):
+        """Test POST to reject request as contributor"""
+        self.assert_alert_count(REJECT_ALERT, self.user, 0)
+        self.assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
+        self.assert_alert_count(REJECT_ALERT, self.user_contributor, 0)
+        response = self.request_knox(self.url, 'POST', token=self.token_contrib)
+        self.assertEqual(response.status_code, 403)
+        self.request.refresh_from_db()
+        self.assertEqual(self.request.status, IRODS_REQUEST_STATUS_ACTIVE)
+        self.assert_irods_obj(self.obj_path)
+        self.assert_alert_count(REJECT_ALERT, self.user, 0)
+        self.assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
+        self.assert_alert_count(REJECT_ALERT, self.user_contributor, 0)
+
+    def test_reject_no_request(self):
+        """Test POST to reject non-existing request"""
+        url = reverse(
+            'samplesheets:api_irods_request_reject',
+            kwargs={'irodsdatarequest': self.category.sodar_uuid},
+        )
+        response = self.request_knox(url, 'POST')
+        self.assertEqual(response.status_code, 404)
+
+
+class TestSampleDataFileExistsAPIView(SampleSheetAPITaskflowTestBase):
     """Tests for SampleDataFileExistsAPIView"""
 
     def setUp(self):
         super().setUp()
         self.make_irods_colls(self.investigation)
 
-    def test_get(self):
-        """Test getting file existence info with no file uploaded"""
+    def test_get_no_file(self):
+        """Test GET with no file uploaded"""
         url = reverse('samplesheets:api_file_exists')
         response = self.request_knox(url, data={'checksum': IRODS_FILE_MD5})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(json.loads(response.content)['status'], False)
 
     def test_get_file(self):
-        """Test getting file existence info with an uploaded file"""
+        """Test GET with uploaded file"""
         coll_path = self.irods_backend.get_sample_path(self.project) + '/'
         self.irods.data_objects.put(
             IRODS_FILE_PATH, coll_path, **{REG_CHKSUM_KW: ''}
@@ -170,7 +1134,7 @@ class TestSampleDataFileExistsAPIView(TestSampleSheetAPITaskflowBase):
         self.assertEqual(json.loads(response.content)['status'], True)
 
     def test_get_file_sub_coll(self):
-        """Test getting file existence info in a sub collection"""
+        """Test GET with file in a sub collection"""
         coll_path = self.irods_backend.get_sample_path(self.project) + '/sub'
         self.irods.collections.create(coll_path)
         self.irods.data_objects.put(
@@ -182,19 +1146,19 @@ class TestSampleDataFileExistsAPIView(TestSampleSheetAPITaskflowBase):
         self.assertEqual(json.loads(response.content)['status'], True)
 
     def test_get_no_checksum(self):
-        """Test getting file existence info with no checksum (should fail)"""
+        """Test GET with no checksum (should fail)"""
         url = reverse('samplesheets:api_file_exists')
         response = self.request_knox(url, data={'checksum': ''})
         self.assertEqual(response.status_code, 400)
 
     def test_get_invalid_checksum(self):
-        """Test getting file existence info with an invalid checksum (should fail)"""
+        """Test GET with invalid checksum (should fail)"""
         url = reverse('samplesheets:api_file_exists')
-        response = self.request_knox(url, data={'checksum': 'Notvalid MD5!'})
+        response = self.request_knox(url, data={'checksum': 'Invalid MD5!'})
         self.assertEqual(response.status_code, 400)
 
 
-class TestProjectIrodsFileListAPIView(TestSampleSheetAPITaskflowBase):
+class TestProjectIrodsFileListAPIView(SampleSheetAPITaskflowTestBase):
     """Tests for ProjectIrodsFileListAPIView"""
 
     def setUp(self):
@@ -218,7 +1182,7 @@ class TestProjectIrodsFileListAPIView(TestSampleSheetAPITaskflowBase):
         self.assay = self.study.assays.first()
 
     def test_get_no_collection(self):
-        """Test GET request in ProjectIrodsFileListAPIView without collection"""
+        """Test ProjectIrodsFileListAPIView GET without collection"""
         url = reverse(
             'samplesheets:api_file_list',
             kwargs={'project': self.project.sodar_uuid},
@@ -234,7 +1198,7 @@ class TestProjectIrodsFileListAPIView(TestSampleSheetAPITaskflowBase):
         )
 
     def test_get_empty_collection(self):
-        """Test GET request in ProjectIrodsFileListAPIView"""
+        """Test GET with empty collection"""
         # Set up iRODS collections
         self.make_irods_colls(self.investigation)
         url = reverse(
@@ -247,7 +1211,7 @@ class TestProjectIrodsFileListAPIView(TestSampleSheetAPITaskflowBase):
         self.assertEqual(response.data['irods_data'], [])
 
     def test_get_collection_with_files(self):
-        """Test GET request in ProjectIrodsFileListAPIView"""
+        """Test GET with files"""
         # Set up iRODS collections
         self.make_irods_colls(self.investigation)
         coll_path = self.irods_backend.get_sample_path(self.project) + '/'

@@ -10,6 +10,7 @@ from django.utils.timezone import localtime
 from projectroles.management.logging import ManagementCommandLogger
 from projectroles.plugins import get_backend_api
 
+from landingzones.constants import ZONE_STATUS_MOVED, ZONE_STATUS_DELETED
 from landingzones.models import LandingZone
 
 
@@ -20,7 +21,7 @@ def get_inactive_zones(weeks=2):
     """Return landing zones last modified over n weeks ago"""
     return LandingZone.objects.filter(
         date_modified__lte=localtime() - timedelta(weeks=weeks)
-    ).exclude(status__in=('DELETED', 'MOVED'))
+    ).exclude(status__in=(ZONE_STATUS_MOVED, ZONE_STATUS_DELETED))
 
 
 def get_output(zones, irods_backend, irods):

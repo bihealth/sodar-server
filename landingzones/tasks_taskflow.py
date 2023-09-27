@@ -17,8 +17,14 @@ from samplesheets.tasks_celery import update_project_cache_task
 # Taskflowbackend dependency
 from taskflowbackend.tasks.sodar_tasks import SODARBaseTask
 
-from landingzones.models import STATUS_BUSY
-
+from landingzones.constants import (
+    STATUS_BUSY,
+    ZONE_STATUS_FAILED,
+    ZONE_STATUS_NOT_CREATED,
+    ZONE_STATUS_MOVED,
+    ZONE_STATUS_ACTIVE,
+    ZONE_STATUS_DELETED,
+)
 
 User = auth.get_user_model()
 logger = logging.getLogger(__name__)
@@ -88,14 +94,16 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
     ):
         """Add app alert for zone owner for finished actions"""
         alert_level = (
-            'DANGER' if zone.status in ['FAILED', 'NOT CREATED'] else 'SUCCESS'
+            'DANGER'
+            if zone.status in [ZONE_STATUS_FAILED, ZONE_STATUS_NOT_CREATED]
+            else 'SUCCESS'
         )
         alert_url = reverse(
             'landingzones:list',
             kwargs={'project': zone.project.sodar_uuid},
         )
 
-        if zone.status == 'MOVED':
+        if zone.status == ZONE_STATUS_MOVED:
             alert_msg = 'Successfully moved {} file{} from landing zone'.format(
                 file_count, 's' if file_count != 1 else ''
             )
@@ -103,15 +111,21 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
                 'samplesheets:project_sheets',
                 kwargs={'project': zone.project.sodar_uuid},
             )
-        elif validate_only and zone.status == 'ACTIVE':
+        elif validate_only and zone.status == ZONE_STATUS_ACTIVE:
             alert_msg = 'Successfully validated files in landing zone'
-        elif validate_only and zone.status == 'FAILED':
+        elif validate_only and zone.status == ZONE_STATUS_FAILED:
             alert_msg = 'Validation failed for landing zone'
-        elif flow_name == 'landing_zone_move' and zone.status == 'FAILED':
+        elif (
+            flow_name == 'landing_zone_move'
+            and zone.status == ZONE_STATUS_FAILED
+        ):
             alert_msg = 'Failed to move files from landing zone'
-        elif zone.status == 'DELETED':
+        elif zone.status == ZONE_STATUS_DELETED:
             alert_msg = 'Deleted landing zone'
-        elif flow_name == 'landing_zone_delete' and zone.status == 'FAILED':
+        elif (
+            flow_name == 'landing_zone_delete'
+            and zone.status == ZONE_STATUS_FAILED
+        ):
             alert_msg = 'Failed to delete landing zone'
         else:
             logger.error(
@@ -169,17 +183,9 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
             zone.project.title,
             zone.title,
         )
-        if zone.status == 'MOVED':
+        if zone.status == ZONE_STATUS_MOVED:
             message_body = EMAIL_MSG_MOVED
-            email_url = (
-                server_host
-                + reverse(
-                    'samplesheets:project_sheets',
-                    kwargs={'project': zone.project.sodar_uuid},
-                )
-                + '#/assay/'
-                + str(zone.assay.sodar_uuid)
-            )
+            email_url = server_host + zone.assay.get_url()
         else:  # FAILED
             message_body = EMAIL_MSG_FAILED
             email_url = (
@@ -211,15 +217,7 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
             zone.user.get_full_name(),
         )
         message_body = EMAIL_MSG_MEMBER
-        email_url = (
-            server_host
-            + reverse(
-                'samplesheets:project_sheets',
-                kwargs={'project': zone.project.sodar_uuid},
-            )
-            + '#/assay/'
-            + str(zone.assay.sodar_uuid)
-        )
+        email_url = server_host + zone.assay.get_url()
         message_body = message_body.format(
             project=zone.project.title,
             assay=zone.assay.get_display_name(),
@@ -267,7 +265,7 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
         if (
             zone.status not in STATUS_BUSY
             and flow_name != 'landing_zone_create'
-            and (file_count > 0 or zone.status != 'MOVED')
+            and (file_count > 0 or zone.status != ZONE_STATUS_MOVED)
         ):
             if app_alerts:
                 try:
@@ -299,12 +297,16 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
         member_notify = app_settings.get(
             APP_NAME, 'member_notify_move', project=zone.project
         )
-        if member_notify and zone.status == 'MOVED' and file_count > 0:
+        if (
+            member_notify
+            and zone.status == ZONE_STATUS_MOVED
+            and file_count > 0
+        ):
             members = list(
                 set(
                     [
                         r.user
-                        for r in zone.project.get_all_roles()
+                        for r in zone.project.get_roles()
                         if r.user != zone.user
                     ]
                 )
@@ -336,7 +338,7 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
 
         # If zone is removed by moving or deletion, call plugin function
         # TODO: TBD: Move into separate task?
-        if status in ['MOVED', 'DELETED']:
+        if status in [ZONE_STATUS_MOVED, ZONE_STATUS_DELETED]:
             from .plugins import get_zone_config_plugin  # See issue #269
 
             config_plugin = get_zone_config_plugin(zone)
@@ -351,7 +353,7 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
 
         # Update cache
         # TODO: TBD: Move into separate task?
-        if status == 'MOVED' and settings.SHEETS_ENABLE_CACHE:
+        if status == ZONE_STATUS_MOVED and settings.SHEETS_ENABLE_CACHE:
             try:
                 update_project_cache_task.delay(
                     project_uuid=str(zone.project.sodar_uuid),
@@ -405,7 +407,7 @@ class RevertLandingZoneFailTask(BaseLandingZoneStatusTask):
         landing_zone,
         flow_name,
         info_prefix,
-        status='FAILED',
+        status=ZONE_STATUS_FAILED,
         extra_data=None,
         *args,
         **kwargs
@@ -417,7 +419,7 @@ class RevertLandingZoneFailTask(BaseLandingZoneStatusTask):
         landing_zone,
         flow_name,
         info_prefix,
-        status='FAILED',
+        status=ZONE_STATUS_FAILED,
         extra_data=None,
         *args,
         **kwargs

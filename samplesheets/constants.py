@@ -7,14 +7,3 @@
 DEFAULT_EXTERNAL_LINK_LABELS = {
     'x-generic-remote': {'label': 'External ID'},
 }
-
-# Hide template fields listed here from the template UI (see issue #1443)
-HIDDEN_SHEET_TEMPLATE_FIELDS = [
-    'a_measurement_types',
-    'a_technology_types',
-    'assay_technology_types',
-    'instruments',
-    'lib_kits',
-    'organisms',
-    'terms',
-]

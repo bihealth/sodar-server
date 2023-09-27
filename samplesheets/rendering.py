@@ -12,6 +12,8 @@ from packaging import version
 from altamisa.constants import table_headers as th
 from altamisa.isatab.write_assay_study import RefTableBuilder
 
+from django.conf import settings
+
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.plugins import get_backend_api
@@ -298,7 +300,7 @@ class SampleSheetTableBuilder:
         attributes. To be used with altamISA v0.1+, requires the "headers"
         field in each object.
 
-        :param obj: GenericMaterial or Pocess object
+        :param obj: GenericMaterial or Process object
         """
         old_header_len = len(self._field_header)
         headers = [h for h in obj.headers if h not in IGNORED_HEADERS]
@@ -320,7 +322,6 @@ class SampleSheetTableBuilder:
                             header_type=LIST_ATTR_MAP[h_type],
                             obj=obj,
                         )
-
             # Basic fields we can simply map using BASIC_FIELD_MAP
             elif h in BASIC_FIELD_MAP and hasattr(obj, BASIC_FIELD_MAP[h]):
                 self._add_cell(
@@ -329,11 +330,9 @@ class SampleSheetTableBuilder:
                     header_type=BASIC_FIELD_MAP[h],
                     obj=obj,
                 )
-
             # Special case: Name
             elif h in ALTAMISA_MATERIAL_NAMES or h in th.DATA_FILE_HEADERS:
                 self._add_cell(obj.name, 'Name', header_type='name', obj=obj)
-
             # Special case: Labeled Extract Name & Label
             elif h == th.LABELED_EXTRACT_NAME and hasattr(obj, 'extract_label'):
                 self._add_cell(obj.name, 'Name', header_type='name', obj=obj)
@@ -343,13 +342,11 @@ class SampleSheetTableBuilder:
                     header_type='extract_label',
                     obj=obj,
                 )
-
             # Special case: Array Design REF (NOTE: not actually a reference!)
             elif h == th.ARRAY_DESIGN_REF and hasattr(obj, 'array_design_ref'):
                 self._add_cell(
                     obj.array_design_ref, 'Array Design REF', obj=obj
                 )
-
             # Special case: Protocol Name
             elif (
                 h == th.PROTOCOL_REF
@@ -362,11 +359,9 @@ class SampleSheetTableBuilder:
                     header_type='protocol',
                     obj=obj,
                 )
-
             # Special case: Process Name
             elif isinstance(obj, Process) and h in th.PROCESS_NAME_HEADERS:
                 self._add_cell(obj.name, h, header_type='process_name', obj=obj)
-
             # Special case: First Dimension
             elif isinstance(obj, Process) and h == th.FIRST_DIMENSION:
                 self._add_annotation(
@@ -375,8 +370,7 @@ class SampleSheetTableBuilder:
                     header_type='first_dimension',
                     obj=obj,
                 )
-
-            # Special case: First Dimension
+            # Special case: Second Dimension
             elif isinstance(obj, Process) and h == th.SECOND_DIMENSION:
                 self._add_annotation(
                     {'value': obj.second_dimension},
@@ -397,7 +391,7 @@ class SampleSheetTableBuilder:
         :param ann: Annotation value (string or Dict)
         :param header: Name of the column header (string)
         :param header_type: Header type (string or None)
-        :param obj: GenericMaterial or Pocess object the annotation belongs to
+        :param obj: GenericMaterial or Process object the annotation belongs to
         """
         unit = None
         # Special case: Comments as parsed in SODAR v0.5.2 (see #629)
@@ -549,7 +543,7 @@ class SampleSheetTableBuilder:
                 header_len = 0  # Header length is not comparable
                 max_cell_len = max(
                     [
-                        _get_length(x[i]['value'], col_type)
+                        len(x[i]['value'])
                         if (x[i]['value'] and isinstance(x[i]['value'], list))
                         else 0
                         for x in self._table_data
@@ -854,17 +848,23 @@ class SampleSheetTableBuilder:
         cache_backend = get_backend_api('sodar_cache')
         item_name = STUDY_TABLE_CACHE_ITEM.format(study=study.sodar_uuid)
         project = study.get_project()
-        # Get cached tables
-        if cache_backend:
-            item = cache_backend.get_cache_item(
-                app_name=APP_NAME,
-                name=item_name,
-                project=project,
+        if settings.SHEETS_ENABLE_STUDY_TABLE_CACHE:
+            # Get cached tables
+            if cache_backend:
+                item = cache_backend.get_cache_item(
+                    app_name=APP_NAME,
+                    name=item_name,
+                    project=project,
+                )
+                if item and item.data:
+                    logger.debug('Returning cached study tables')
+                    return item.data
+                logger.debug('Cache item "{}" not set'.format(item_name))
+        else:
+            logger.debug(
+                'Study table cache disabled in settings, building new tables'
             )
-            if item and item.data:
-                logger.debug('Returning cached study tables')
-                return item.data
-            logger.debug('Cache item "{}" not set'.format(item_name))
+
         # If not found in cache, build and save tables
         study_tables = self.build_study_tables(study, use_config=True)
         if cache_backend:

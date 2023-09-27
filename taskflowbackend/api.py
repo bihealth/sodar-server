@@ -3,12 +3,12 @@
 import json
 import logging
 
-from irods.models import TicketQuery, UserGroup
-
-from django.conf import settings
-from django.core.exceptions import ImproperlyConfigured
-
 # Landingzones dependency
+from landingzones.constants import (
+    ZONE_STATUS_NOT_CREATED,
+    ZONE_STATUS_CREATING,
+    ZONE_STATUS_FAILED,
+)
 from landingzones.models import LandingZone
 
 # Projectroles dependency
@@ -28,7 +28,6 @@ logger = logging.getLogger(__name__)
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 # Local constants
-DEFAULT_PERMANENT_USERS = ['client_user', 'rods', 'rodsadmin', 'public']
 UNKNOWN_RUN_ERROR = 'Running flow failed: unknown error, see server log'
 LOCK_FAIL_MSG = 'Unable to acquire project lock'
 
@@ -51,10 +50,14 @@ class TaskflowAPI:
         :raise: FlowSubmitException
         """
         if tl_event:
-            tl_event.set_status('FAILED', ex_msg)
+            tl_event.set_status(ZONE_STATUS_FAILED, ex_msg)
         # Update landing zone
         if zone:
-            status = 'NOT CREATED' if zone.status == 'CREATING' else 'FAILED'
+            status = (
+                ZONE_STATUS_NOT_CREATED
+                if zone.status == ZONE_STATUS_CREATING
+                else ZONE_STATUS_FAILED
+            )
             zone.set_status(status, ex_msg)
         # TODO: Create app alert for failure if async (see #1499)
         raise cls.FlowSubmitException(ex_msg)
@@ -248,51 +251,6 @@ class TaskflowAPI:
             async_mode=False,
             tl_event=tl_event,
         )
-
-    @classmethod
-    def cleanup(cls):
-        """
-        Send a cleanup command to SODAR Taskflow. Only allowed in test mode.
-
-        :return: Boolean
-        :raise: ImproperlyConfigured if TASKFLOW_TEST_MODE is not set True
-        :raise: Exception if iRODS cleanup fails
-        """
-        if not settings.TASKFLOW_TEST_MODE:
-            raise ImproperlyConfigured(
-                'TASKFLOW_TEST_MODE not True, cleanup command not allowed'
-            )
-        irods_backend = get_backend_api('omics_irods')
-        projects_root = irods_backend.get_projects_path()
-        permanent_users = getattr(
-            settings, 'TASKFLOW_TEST_PERMANENT_USERS', DEFAULT_PERMANENT_USERS
-        )
-        # TODO: Remove stuff from user folders
-        # TODO: Remove stuff from trash
-
-        with irods_backend.get_session() as irods:
-            # Remove project folders
-            try:
-                irods.collections.remove(
-                    projects_root, recurse=True, force=True
-                )
-                logger.debug('Removed projects root: {}'.format(projects_root))
-            except Exception:
-                pass  # This is OK, the root just wasn't there
-                # Remove created user groups and users
-
-            # NOTE: user_groups.remove does both
-            for g in irods.query(UserGroup).all():
-                if g[UserGroup.name] not in permanent_users:
-                    irods.user_groups.remove(user_name=g[UserGroup.name])
-                    logger.debug('Removed user: {}'.format(g[UserGroup.name]))
-
-            # Remove all tickets
-            ticket_query = irods.query(TicketQuery.Ticket).all()
-            for ticket in ticket_query:
-                ticket_str = ticket[TicketQuery.Ticket.string]
-                irods_backend.delete_ticket(irods, ticket_str)
-                logger.debug('Deleted ticket: {}'.format(ticket_str))
 
     @classmethod
     def get_error_msg(cls, flow_name, submit_info):

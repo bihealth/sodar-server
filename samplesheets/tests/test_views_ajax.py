@@ -31,7 +31,6 @@ from samplesheets.models import (
     Process,
     GenericMaterial,
     ISATab,
-    IrodsAccessTicket,
     IrodsDataRequest,
 )
 from samplesheets.rendering import (
@@ -39,12 +38,13 @@ from samplesheets.rendering import (
     STUDY_TABLE_CACHE_ITEM,
 )
 from samplesheets.sheet_config import SheetConfigAPI
+from samplesheets.tests.test_models import IrodsAccessTicketMixin
 from samplesheets.tests.test_sheet_config import (
     SheetConfigMixin,
     CONFIG_STUDY_UUID,
 )
 from samplesheets.tests.test_views import (
-    TestViewsBase,
+    SamplesheetsViewTestBase,
     SHEET_DIR_SPECIAL,
     SHEET_PATH,
     SHEET_PATH_SMALL2,
@@ -55,7 +55,12 @@ from samplesheets.tests.test_views import (
 )
 from samplesheets.utils import get_node_obj, get_ext_link_labels
 from samplesheets.views import SheetImportMixin
-from samplesheets.views_ajax import ALERT_ACTIVE_REQS
+from samplesheets.views_ajax import (
+    ALERT_ACTIVE_REQS,
+    RENDER_HEIGHT_HEADERS,
+    RENDER_HEIGHT_ROW,
+    RENDER_HEIGHT_SCROLLBAR,
+)
 
 
 conf_api = SheetConfigAPI()
@@ -164,27 +169,7 @@ class RowEditMixin:
                 n_uuid = self.row_uuids[i]
 
 
-class IrodsAccessTicketMixin:
-    """Helpers for creating IrodsAccessTicket object"""
-
-    @classmethod
-    def make_ticket(
-        cls, path, user, project, assay, study, label=None, date_expires=None
-    ):
-        obj = IrodsAccessTicket(
-            path=path,
-            project=project,
-            user=user,
-            assay=assay,
-            study=study,
-            label=label,
-            date_expires=date_expires,
-        )
-        obj.save()
-        return obj
-
-
-class TestSheetContextAjaxView(TestViewsBase):
+class TestSheetContextAjaxView(SamplesheetsViewTestBase):
     """Tests for SheetContextAjaxView"""
 
     # TODO: Test with realistic ISA-Tab examples using BIH configs (see #434)
@@ -215,6 +200,7 @@ class TestSheetContextAjaxView(TestViewsBase):
             'configuration': self.investigation.get_configuration(),
             'inv_file_name': self.investigation.file_name.split('/')[-1],
             'irods_status': False,
+            'irods_path': None,
             'irods_backend_enabled': True if self.irods_backend else False,
             'parser_version': self.investigation.parser_version,
             'parser_warnings': True
@@ -225,7 +211,6 @@ class TestSheetContextAjaxView(TestViewsBase):
             'external_link_labels': get_ext_link_labels(),
             'ontology_url_template': settings.SHEETS_ONTOLOGY_URL_TEMPLATE,
             'ontology_url_skip': settings.SHEETS_ONTOLOGY_URL_SKIP,
-            'table_height': settings.SHEETS_TABLE_HEIGHT,
             'min_col_width': settings.SHEETS_MIN_COLUMN_WIDTH,
             'max_col_width': settings.SHEETS_MAX_COLUMN_WIDTH,
             'allow_editing': app_settings.get_default(
@@ -241,6 +226,7 @@ class TestSheetContextAjaxView(TestViewsBase):
                 'description': None,
                 'comments': None,
             },
+            'project_uuid': str(self.project.sodar_uuid),
             'user_uuid': str(self.user.sodar_uuid),
             'studies': {
                 str(self.study.sodar_uuid): {
@@ -329,7 +315,6 @@ class TestSheetContextAjaxView(TestViewsBase):
             'irods_webdav_enabled': settings.IRODS_WEBDAV_ENABLED,
             'irods_webdav_url': settings.IRODS_WEBDAV_URL,
             'external_link_labels': None,
-            'table_height': settings.SHEETS_TABLE_HEIGHT,
             'min_col_width': settings.SHEETS_MIN_COLUMN_WIDTH,
             'max_col_width': settings.SHEETS_MAX_COLUMN_WIDTH,
             'allow_editing': app_settings.get_default(
@@ -340,6 +325,7 @@ class TestSheetContextAjaxView(TestViewsBase):
             ),
             'alerts': [],
             'investigation': {},
+            'project_uuid': str(self.project.sodar_uuid),
             'user_uuid': str(self.user.sodar_uuid),
             'studies': {},
             'perms': {
@@ -437,10 +423,12 @@ class TestSheetContextAjaxView(TestViewsBase):
             path=self.irods_backend.get_path(self.assay) + '/test/xxx.bam',
             user=self.user,
         )
-        contrib_user = self.make_user('user_contributor')
-        self.make_assignment(self.project, contrib_user, self.role_contributor)
+        user_contributor = self.make_user('user_contributor')
+        self.make_assignment(
+            self.project, user_contributor, self.role_contributor
+        )
 
-        with self.login(contrib_user):
+        with self.login(user_contributor):
             response = self.client.get(
                 reverse(
                     'samplesheets:ajax_context',
@@ -469,14 +457,13 @@ class TestSheetContextAjaxView(TestViewsBase):
         self.assertEqual(response_data['perms']['edit_config'], True)
 
 
-class TestStudyTablesAjaxView(IrodsAccessTicketMixin, TestViewsBase):
+class TestStudyTablesAjaxView(IrodsAccessTicketMixin, SamplesheetsViewTestBase):
     """Tests for StudyTablesAjaxView"""
 
     # TODO: Test with realistic ISA-Tab examples using BIH configs (see #434)
 
     def setUp(self):
         super().setUp()
-        # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
@@ -507,6 +494,21 @@ class TestStudyTablesAjaxView(IrodsAccessTicketMixin, TestViewsBase):
         self.assertNotIn('shortcuts', ret_data['tables']['study'])
         self.assertEqual(len(ret_data['tables']['assays']), 1)
         self.assertIn('uuid', ret_data['tables']['study']['table_data'][0][0])
+        self.assertIn('table_heights', ret_data)
+        self.assertEqual(
+            ret_data['table_heights']['study'],
+            RENDER_HEIGHT_HEADERS
+            + len(ret_data['tables']['study']['table_data']) * RENDER_HEIGHT_ROW
+            + RENDER_HEIGHT_SCROLLBAR,
+        )
+        a_uuid = str(self.assay.sodar_uuid)
+        self.assertEqual(
+            ret_data['table_heights']['assays'][a_uuid],
+            RENDER_HEIGHT_HEADERS
+            + len(ret_data['tables']['assays'][a_uuid]['table_data'])
+            * RENDER_HEIGHT_ROW
+            + RENDER_HEIGHT_SCROLLBAR,
+        )
         self.assertIn('display_config', ret_data)
         self.assertNotIn('edit_context', ret_data)
 
@@ -530,34 +532,21 @@ class TestStudyTablesAjaxView(IrodsAccessTicketMixin, TestViewsBase):
         self.assertNotIn('shortcuts', ret_data['tables']['study'])
         self.assertEqual(len(ret_data['tables']['assays']), 1)
         self.assertIn('uuid', ret_data['tables']['study']['table_data'][0][0])
+        self.assertIn('table_heights', ret_data)
+        default_height = app_settings.get(
+            APP_NAME, 'sheet_table_height', user=self.user
+        )
+        self.assertEqual(ret_data['table_heights']['study'], default_height)
+        a_uuid = str(self.assay.sodar_uuid)
+        self.assertEqual(
+            ret_data['table_heights']['assays'][a_uuid], default_height
+        )
         self.assertIn('display_config', ret_data)
         self.assertIn('study_config', ret_data)
         self.assertIn('edit_context', ret_data)
         self.assertIn('sodar_ontologies', ret_data['edit_context'])
         self.assertIsNotNone(ret_data['edit_context']['samples'])
         self.assertIsNotNone(ret_data['edit_context']['protocols'])
-
-    def test_get_track_hubs(self):
-        """Test study tables retrieval with track hubs"""
-        self.make_ticket(
-            path='/some/path',
-            project=self.project,
-            assay=self.assay,
-            study=self.study,
-            user=self.user,
-        )
-        self.investigation.irods_status = True
-        self.investigation.save()
-
-        with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:ajax_study_tables',
-                    kwargs={'study': self.study.sodar_uuid},
-                )
-            )
-        self.assertEqual(response.status_code, 200)
-        # TODO fill out ... assays are not yet tested, as well as shortcuts
 
     def test_get_study_cache(self):
         """Test cached study table creation on retrieval"""
@@ -601,14 +590,13 @@ class TestStudyTablesAjaxView(IrodsAccessTicketMixin, TestViewsBase):
         self.assertEqual(JSONCacheItem.objects.count(), 1)
 
 
-class TestStudyLinksAjaxView(TestViewsBase):
+class TestStudyLinksAjaxView(SamplesheetsViewTestBase):
     """Tests for StudyLinksAjaxView"""
 
     # TODO: Test with realistic ISA-Tab examples using BIH configs (see #434)
 
     def setUp(self):
         super().setUp()
-        # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
@@ -625,14 +613,13 @@ class TestStudyLinksAjaxView(TestViewsBase):
         self.assertEqual(response.status_code, 404)  # No plugin for ISA-Tab
 
 
-class TestSheetWarningsAjaxView(TestViewsBase):
+class TestSheetWarningsAjaxView(SamplesheetsViewTestBase):
     """Tests for SheetWarningsAjaxView"""
 
     # TODO: Test with realistic ISA-Tab examples using BIH configs (see #434)
 
     def setUp(self):
         super().setUp()
-        # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
 
     def test_get(self):
@@ -650,12 +637,11 @@ class TestSheetWarningsAjaxView(TestViewsBase):
         )
 
 
-class TestSheetCellEditAjaxView(TestViewsBase):
+class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
     """Tests for SheetCellEditAjaxView"""
 
     def setUp(self):
         super().setUp()
-        # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         # Set up POST data
@@ -1261,17 +1247,15 @@ class TestSheetCellEditAjaxView(TestViewsBase):
         self.assertEqual(JSONCacheItem.objects.count(), 1)
 
 
-class TestSheetCellEditAjaxViewSpecial(TestViewsBase):
+class TestSheetCellEditAjaxViewSpecial(SamplesheetsViewTestBase):
     """Tests for SheetCellEditAjaxView with special columns"""
 
     def setUp(self):
         super().setUp()
-        # Import investigation
         self.investigation = self.import_isa_from_file(
             SHEET_PATH_SMALL2, self.project
         )
         self.study = self.investigation.studies.first()
-        # Set up POST data
         self.values = {'updated_cells': []}
 
     def test_edit_extract_label_string(self):
@@ -1307,12 +1291,13 @@ class TestSheetCellEditAjaxViewSpecial(TestViewsBase):
         self.assertEqual(obj.extract_label, label)
 
 
-class TestSheetRowInsertAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
+class TestSheetRowInsertAjaxView(
+    RowEditMixin, SheetConfigMixin, SamplesheetsViewTestBase
+):
     """Tests for SheetRowInsertAjaxView"""
 
     def setUp(self):
         super().setUp()
-        # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         # Set up UUIDs and default config
         self.update_uuids(self.investigation, CONFIG_DATA_DEFAULT)
@@ -1520,7 +1505,9 @@ class TestSheetRowInsertAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
         self.assertEqual(JSONCacheItem.objects.count(), 1)
 
 
-class TestSheetRowDeleteAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
+class TestSheetRowDeleteAjaxView(
+    RowEditMixin, SheetConfigMixin, SamplesheetsViewTestBase
+):
     """Tests for SheetRowDeleteAjaxView"""
 
     def setUp(self):
@@ -1646,7 +1633,7 @@ class TestSheetRowDeleteAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
         self.assertEqual(JSONCacheItem.objects.count(), 1)
 
 
-class TestSheetVersionSaveAjaxView(TestViewsBase):
+class TestSheetVersionSaveAjaxView(SamplesheetsViewTestBase):
     """Tests for SheetVersionSaveAjaxView"""
 
     def setUp(self):
@@ -1672,7 +1659,7 @@ class TestSheetVersionSaveAjaxView(TestViewsBase):
         self.assertEqual(new_version.description, VERSION_DESC)
 
 
-class TestSheetEditFinishAjaxView(TestViewsBase):
+class TestSheetEditFinishAjaxView(SamplesheetsViewTestBase):
     """Tests for SheetEditFinishAjaxView"""
 
     def setUp(self):
@@ -1726,7 +1713,7 @@ class TestSheetEditFinishAjaxView(TestViewsBase):
         self.assertEqual(ISATab.objects.count(), 1)
 
 
-class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
+class TestSheetEditConfigAjaxView(SheetConfigMixin, SamplesheetsViewTestBase):
     """Tests for SheetEditConfigAjaxView"""
 
     # TODO: Test with assay updates (needs a better test ISA-Tab)
@@ -1736,9 +1723,9 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
         # Set up category owner
         self.user_cat = self.make_user('user_cat')
         self.make_assignment(self.category, self.user_cat, self.role_owner)
-
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+
         # Set up UUIDs and default config
         self.update_uuids(self.investigation, CONFIG_DATA_DEFAULT)
         app_settings.set(
@@ -1778,8 +1765,6 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
                 }
             ]
         }
-
-        # Set up helpers
         self.cache_backend = get_backend_api('sodar_cache')
         self.cache_name = STUDY_TABLE_CACHE_ITEM.format(
             study=self.study.sodar_uuid
@@ -1963,12 +1948,13 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
         self.assertEqual(JSONCacheItem.objects.count(), 1)
 
 
-class TestStudyDisplayConfigAjaxView(SheetConfigMixin, TestViewsBase):
+class TestStudyDisplayConfigAjaxView(
+    SheetConfigMixin, SamplesheetsViewTestBase
+):
     """Tests for StudyDisplayConfigAjaxView"""
 
     def setUp(self):
         super().setUp()
-        # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.s_uuid = str(self.investigation.studies.first().sodar_uuid)
@@ -2085,13 +2071,14 @@ class TestStudyDisplayConfigAjaxView(SheetConfigMixin, TestViewsBase):
         )
 
 
-class TestSheetVersionCompareAjaxView(SheetImportMixin, TestViewsBase):
+class TestSheetVersionCompareAjaxView(
+    SheetImportMixin, SamplesheetsViewTestBase
+):
     """Tests for SheetVersionCompareAjaxView"""
 
     def setUp(self):
         super().setUp()
         self.import_isa_from_file(SHEET_PATH_SMALL2, self.project)
-
         with open(SHEET_PATH_SMALL2_ALT, 'rb') as file, self.login(self.user):
             values = {'file_upload': file}
             self.client.post(
@@ -2101,7 +2088,6 @@ class TestSheetVersionCompareAjaxView(SheetImportMixin, TestViewsBase):
                 ),
                 values,
             )
-
         self.isa1 = ISATab.objects.first()
         self.isa2 = ISATab.objects.last()
         self.isa2.data['studies']['s_small2.txt'] = self.isa2.data[

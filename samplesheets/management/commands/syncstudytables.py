@@ -31,7 +31,7 @@ class Command(BaseCommand):
 
     @classmethod
     def _get_log_study(cls, study):
-        """Return logging-friendly project title"""
+        """Return logging-friendly study title"""
         return '"{}" ({})'.format(study.get_title(), study.sodar_uuid)
 
     def add_arguments(self, parser):

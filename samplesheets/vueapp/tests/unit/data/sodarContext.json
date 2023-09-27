@@ -2,6 +2,7 @@
   "configuration": null,
   "inv_file_name": "i_small.txt",
   "irods_status": true,
+  "irods_path": "/sodarZone/projects/00/00000000-0000-0000-0000-000000000000/sample_data",
   "irods_backend_enabled": true,
   "parser_version": "0.2.7",
   "parser_warnings": true,
@@ -19,7 +20,6 @@
   "ontology_url_template": "https://bioportal.bioontology.org/ontologies/{ontology_name}/?p=classes&conceptid={accession}",
   "ontology_url_skip": ["bioontology.org"]
   },
-  "table_height": 400,
   "min_col_width": 100,
   "max_col_width": 300,
   "allow_editing": true,

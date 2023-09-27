@@ -5,7 +5,6 @@ import io
 from datetime import timedelta
 from unittest import mock
 
-from django.conf import settings
 from django.core.management import call_command
 from django.utils.timezone import localtime
 
@@ -13,13 +12,22 @@ from test_plus.test import TestCase
 
 # Projectroles dependency
 from projectroles.constants import SODAR_CONSTANTS
-from projectroles.models import Role
 from projectroles.plugins import get_backend_api
-from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
+from projectroles.tests.test_models import (
+    ProjectMixin,
+    RoleMixin,
+    RoleAssignmentMixin,
+)
 
 from landingzones.management.commands.inactivezones import (
     get_inactive_zones,
     get_output,
+)
+from landingzones.constants import (
+    ZONE_STATUS_MOVED,
+    ZONE_STATUS_DELETED,
+    ZONE_STATUS_ACTIVE,
+    ZONE_STATUS_MOVING,
 )
 from landingzones.tests.test_models import LandingZoneMixin
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
@@ -33,33 +41,27 @@ ZONE_DESC = 'description'
 ZONE2_TITLE = '20201123_143323_test_zone'
 ZONE3_TITLE = '20201218_172740_test_zone_moved'
 ZONE4_TITLE = '20201218_172743_test_zone_deleted'
-IRODS_BACKEND_ENABLED = (
-    True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
-)
-IRODS_BACKEND_SKIP_MSG = 'iRODS backend not enabled in settings'
 LOGGER_BUSY_ZONES = 'landingzones.management.commands.busyzones'
 
 
-class TestCommandBase(
+class LandingzonesCommandTestBase(
     ProjectMixin,
-    SampleSheetIOMixin,
+    RoleMixin,
     RoleAssignmentMixin,
+    SampleSheetIOMixin,
     LandingZoneMixin,
     TestCase,
 ):
     """Base class for command tests"""
 
     def setUp(self):
-        super().setUp()
-
+        # Init roles
+        self.init_roles()
         # Init superuser
         self.user = self.make_user('user')
         self.user.is_superuser = True
         self.user.is_staff = True
         self.user.save()
-
-        # Init roles
-        self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
         # Init project with owner
         self.project = self.make_project(
             'TestProject', PROJECT_TYPE_PROJECT, None
@@ -67,13 +69,12 @@ class TestCommandBase(
         self.owner_as = self.make_assignment(
             self.project, self.user, self.role_owner
         )
-
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
 
-class TestInactiveZones(TestCommandBase):
+class TestInactiveZones(LandingzonesCommandTestBase):
     """Tests for the inactivezones command"""
 
     def setUp(self):
@@ -102,7 +103,7 @@ class TestInactiveZones(TestCommandBase):
                 description=ZONE_DESC,
                 configuration=None,
                 config_data={},
-                status='MOVED',
+                status=ZONE_STATUS_MOVED,
             )
             # Create landing zone 3 from 3 weeks ago but status DELETED
             self.zone4 = self.make_landing_zone(
@@ -113,7 +114,7 @@ class TestInactiveZones(TestCommandBase):
                 description=ZONE_DESC,
                 configuration=None,
                 config_data={},
-                status='DELETED',
+                status=ZONE_STATUS_DELETED,
             )
             mock_now.return_value = testtime2
             # Create landing zone 2 from 1 week ago
@@ -130,15 +131,11 @@ class TestInactiveZones(TestCommandBase):
         self.irods_backend = get_backend_api('omics_irods')
         self.irods = self.irods_backend.get_session_obj()
 
-        # Create the irods collections
+        # Create iRODS collections
         self.irods.collections.create(self.irods_backend.get_path(self.zone))
         self.irods.collections.create(self.irods_backend.get_path(self.zone2))
         self.irods.collections.create(self.irods_backend.get_path(self.zone3))
         self.irods.collections.create(self.irods_backend.get_path(self.zone4))
-
-    def tearDown(self):
-        self.irods.collections.get('/sodarZone/projects').remove(force=True)
-        self.irods.cleanup()
 
     def test_get_inactive_zones(self):
         """Test get_inactive_zones()"""
@@ -175,13 +172,12 @@ class TestInactiveZones(TestCommandBase):
         self.assertIn(expected, cm.output[0])
 
 
-class TestBusyZones(TestCommandBase):
+class TestBusyZones(LandingzonesCommandTestBase):
     """Tests for the busyzones command"""
 
     def setUp(self):
         super().setUp()
-
-        # Create LandingZone 1 from 3 weeks ago
+        # Create zones
         self.zone = self.make_landing_zone(
             title=ZONE1_TITLE,
             project=self.project,
@@ -190,7 +186,7 @@ class TestBusyZones(TestCommandBase):
             description=ZONE_DESC,
             configuration=None,
             config_data={},
-            status='ACTIVE',
+            status=ZONE_STATUS_ACTIVE,
         )
         self.zone2 = self.make_landing_zone(
             title=ZONE2_TITLE,
@@ -200,7 +196,7 @@ class TestBusyZones(TestCommandBase):
             description=ZONE_DESC,
             configuration=None,
             config_data={},
-            status='ACTIVE',
+            status=ZONE_STATUS_ACTIVE,
         )
 
     def test_active_zones(self):
@@ -211,7 +207,7 @@ class TestBusyZones(TestCommandBase):
 
     def test_command(self):
         """Test command with a busy zone"""
-        self.zone2.status = 'MOVING'
+        self.zone2.status = ZONE_STATUS_MOVING
         self.zone2.save()
         with self.assertLogs(LOGGER_BUSY_ZONES, level='INFO') as cm:
             call_command('busyzones')

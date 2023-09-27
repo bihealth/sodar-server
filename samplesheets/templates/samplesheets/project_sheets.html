@@ -24,40 +24,35 @@
 
 {% block javascript %}
   {{ block.super }}
-
   {# Tour content #}
   <script type="text/javascript">
     tourEnabled = true;
-
     tour.addStep('sheet_info', {
         title: 'Sample Sheets',
-        text: 'In this app you are able to access meta data regarding ' +
-              'project samples, along with links to sample file mass storage ' +
-              'in iRODS.',
+        text: 'In this app you are able to access the project\'s study design ' +
+              'metadata regarding and project samples. The metadata links to ' +
+              'study files in iRODS mass storage.',
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
-
     tour.addStep('sheet_isa', {
         title: 'ISA Model',
-        text: 'Sample data is represented according to the ISA ' +
-              '(Investigation/Study/Assay) specification. One project is ' +
-              'expected to contain one investigation, which contains one ' +
-              'or more studies, which in turn can consist of one or more ' +
-              'assays. One study and its assays are visualized per page ' +
-              'in this application.',
+        text: 'The study design is represented according to the ISA ' +
+              '(Investigation/Study/Assay) specification. One project can ' +
+              'contain one investigation, which contains one or more ' +
+              'studies. The studies can consist of one or more assays. One ' +
+              'study and its assays are visualized per view in this ' +
+              'application.',
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
-
     tour.addStep('sheet_navigation', {
         title: 'Sample Sheet Navigation',
         text: 'Navigate between studies and data overview using the ' +
-            'navigation bar on the top of the page.',
+              'navigation bar on the top of the page.',
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
-
     tour.addStep('sheet_operations', {
         title: 'Sheet Operations',
         text: 'Authorized users can perform sheet-wide operations ' +
@@ -65,7 +60,6 @@
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
-
     tour.addStep('data_links', {
         title: 'iRODS Links',
         text: 'Links to sample files in iRODS can be accessed in ' +
@@ -76,38 +70,29 @@
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
-
     tour.addStep('study_shortcuts', {
         title: 'Study Shortcuts',
-        text: 'Study shortcuts such as IGV links are no longer found in a ' +
-              'separate table, but instead in the rightmost column of the ' +
-              'study table. Links will be inactive if no related files are ' +
-              'currently stored in iRODS.',
+        text: 'Study shortcuts such as IGV links can be found in the ' +
+              'rightmost column of the study table. Links will be inactive ' +
+              'if no related files are currently stored in iRODS.',
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
-
     tour.addStep('cell_copying', {
         title: 'Cell Copying',
         text: 'You can copy one or several cells by clicking on a ' +
               'study/assay table and painting a selection with your mouse. ' +
-              'Then press CTRL+C to copy the cells into your clipboard. ' +
-              'This feature is still experimental and bugs may appear.',
+              'Then press CTRL+C to copy the cells into your clipboard.',
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
-
     tour.addStep('sheet_edit', {
         title: 'Sheet Editing',
-        text: 'New in SODAR v0.7.0+: Limited sample sheet editing is ' +
-              'available. Currently, editing must be allowed per project by ' +
-              'project owner, delegate or a superuser in the Update ' +
-              'Project form. Further documentation is available once "Edit ' +
-              'Sheets" is selected from the Sheet Operations menu.',
+        text: 'Certain aspects of the sample sheets can be edited. See the ' +
+              'SODAR manual for more information and detailed instructions ' +
+              'on sample sheet editing.',
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
-
   </script>
-
 {% endblock javascript %}

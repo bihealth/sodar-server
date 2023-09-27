@@ -19,6 +19,11 @@ urls_ui = [
         name='create',
     ),
     path(
+        route='update/<uuid:landingzone>',
+        view=views.ZoneUpdateView.as_view(),
+        name='update',
+    ),
+    path(
         route='move/<uuid:landingzone>',
         view=views.ZoneMoveView.as_view(),
         name='move',
@@ -53,6 +58,11 @@ urls_api = [
         name='api_create',
     ),
     path(
+        route='api/update/<uuid:landingzone>',
+        view=views_api.ZoneUpdateAPIView.as_view(),
+        name='api_update',
+    ),
+    path(
         route='api/submit/delete/<uuid:landingzone>',
         view=views_api.ZoneSubmitDeleteAPIView.as_view(),
         name='api_submit_delete',
@@ -72,7 +82,7 @@ urls_api = [
 # Ajax API views
 urls_ajax = [
     path(
-        route='ajax/status/retrieve/<uuid:landingzone>',
+        route='ajax/status/retrieve/<uuid:project>',
         view=views_ajax.ZoneStatusRetrieveAjaxView.as_view(),
         name='ajax_status',
     )

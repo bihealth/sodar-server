@@ -13,10 +13,10 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 
 # Projectroles dependency
+from projectroles.forms import MultipleFileField
 from projectroles.models import Project
 from projectroles.plugins import get_backend_api
 
-from samplesheets.constants import HIDDEN_SHEET_TEMPLATE_FIELDS
 from samplesheets.io import SampleSheetIO, ARCHIVE_TYPES
 from samplesheets.utils import clean_sheet_dir_name
 from samplesheets.models import (
@@ -26,6 +26,8 @@ from samplesheets.models import (
     ISATab,
     IrodsAccessTicket,
     IrodsDataRequest,
+    IRODS_REQUEST_STATUS_ACTIVE,
+    IRODS_REQUEST_STATUS_FAILED,
 )
 
 
@@ -33,24 +35,142 @@ from samplesheets.models import (
 ERROR_MSG_INVALID_PATH = 'Not a valid iRODS path for this project'
 ERROR_MSG_EXISTING = 'An active request already exists for this path'
 TPL_DIR_FIELD = '__output_dir'
+TPL_DIR_LABEL = 'Output directory'
 
 
-class MultipleFileInput(forms.ClearableFileInput):
-    allow_multiple_selected = True
+# Mixins and Helpers -----------------------------------------------------------
+class IrodsAccessTicketValidateMixin:
+    """Validation helpers for iRODS access tickets"""
+
+    def validate_data(self, irods_backend, project, instance, data):
+        """
+        Validate iRODS access ticket data.
+
+        :param irods_backend: IrodsAPI object
+        :param project: Project object
+        :param instance: IrodsAccessTicket object (None if creating)
+        :param data: Dict of data to validate
+        :return: Field name and error message tuple or None
+        """
+        # Validate path (only if creating)
+        if not instance.pk if instance else not instance:
+            try:
+                data['path'] = irods_backend.sanitize_path(data['path'])
+            except Exception as ex:
+                return 'path', 'Invalid iRODS path: {}'.format(ex)
+            # Ensure path is within project
+            if not data['path'].startswith(irods_backend.get_path(project)):
+                return 'path', 'Path is not within the project'
+            # Ensure path is a collection
+            with irods_backend.get_session() as irods:
+                if not irods.collections.exists(data['path']):
+                    return (
+                        'path',
+                        'Path does not point to a collection or '
+                        'the collection doesn\'t exist',
+                    )
+            # Ensure path is within a project assay
+            match = re.search(
+                r'/assay_([0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12})',
+                data['path'],
+            )
+            if not match:
+                return 'path', 'Not a valid assay path'
+            else:
+                try:
+                    # Set assay if successful
+                    data['assay'] = Assay.objects.get(
+                        study__investigation__project=project,
+                        sodar_uuid=match.group(1),
+                    )
+                except ObjectDoesNotExist:
+                    return 'path', 'Assay not found in project'
+            # Ensure path is not assay root
+            if data['path'] == irods_backend.get_path(data['assay']):
+                return (
+                    'path',
+                    'Ticket creation for assay root path is not ' 'allowed',
+                )
+
+        # Check if expiry date is in the past
+        if (
+            data.get('date_expires')
+            and data.get('date_expires') <= timezone.now()
+        ):
+            return 'date_expires', 'Expiry date in the past not allowed'
+
+        # Check if unexpired ticket already exists for path
+        if (
+            not instance.pk if instance else not instance
+        ) and IrodsAccessTicket.objects.filter(path=data['path']).first():
+            return 'path', 'Ticket already exists for this path'
+        return None
 
 
-class MultipleFileField(forms.FileField):
-    def __init__(self, *args, **kwargs):
-        kwargs.setdefault('widget', MultipleFileInput())
-        super().__init__(*args, **kwargs)
+class IrodsDataRequestValidateMixin:
+    """Validation helpers for iRODS data requests"""
 
-    def clean(self, data, initial=None):
-        single_file_clean = super().clean
-        if isinstance(data, (list, tuple)):
-            result = [single_file_clean(d, initial) for d in data]
-        else:
-            result = single_file_clean(data, initial)
-        return result
+    def validate_request_path(self, irods_backend, project, instance, path):
+        """
+        Validate path for IrodsAccessRequest.
+
+        :param irods_backend: IrodsAPI object
+        :param project: Project object
+        :param instance: Existing instance in case of update or None
+        :param path: Full iRODS path to a collection or a data object (string)
+        :raises: ValueError if path is incorrect
+        """
+        old_request = IrodsDataRequest.objects.filter(
+            path=path,
+            status__in=[
+                IRODS_REQUEST_STATUS_ACTIVE,
+                IRODS_REQUEST_STATUS_FAILED,
+            ],
+        ).first()
+        if old_request and old_request != instance:
+            raise ValueError(ERROR_MSG_EXISTING)
+
+        path_re = re.compile(
+            '^' + irods_backend.get_projects_path() + '/[0-9a-f]{2}/'
+            '(?P<project_uuid>[0-9a-f-]{36})/'
+            + settings.IRODS_SAMPLE_COLL
+            + '/study_(?P<study_uuid>[0-9a-f-]{36})/'
+            'assay_(?P<assay_uuid>[0-9a-f-]{36})/.+$'
+        )
+        match = re.search(path_re, path)
+        if not match:
+            raise ValueError(ERROR_MSG_INVALID_PATH)
+
+        project_path = irods_backend.get_path(project)
+        if not path.startswith(project_path):
+            raise ValueError('Path does not belong in project')
+
+        try:
+            Study.objects.get(
+                sodar_uuid=match.group('study_uuid'),
+                investigation__project__sodar_uuid=match.group('project_uuid'),
+            )
+        except Study.DoesNotExist:
+            raise ValueError('Study not found in project with UUID')
+        try:
+            Assay.objects.get(
+                sodar_uuid=match.group('assay_uuid'),
+                study__sodar_uuid=match.group('study_uuid'),
+            )
+        except Assay.DoesNotExist:
+            raise ValueError('Assay not found in this project with UUID')
+
+        with irods_backend.get_session() as irods:
+            if path and not (
+                irods.data_objects.exists(path)
+                or irods.collections.exists(path)
+            ):
+                raise ValueError(
+                    'Path to collection or data object doesn\'t exist in iRODS',
+                )
+
+
+# Forms ------------------------------------------------------------------------
 
 
 class SheetImportForm(forms.Form):
@@ -154,7 +274,7 @@ class SheetImportForm(forms.Form):
 
 
 class SheetTemplateCreateForm(forms.Form):
-    """Form for creating sample sheets from an ISA-Tab template."""
+    """Form for creating sample sheets from an ISA-Tab template"""
 
     @classmethod
     def _get_tsv_data(cls, path, file_names):
@@ -176,14 +296,21 @@ class SheetTemplateCreateForm(forms.Form):
         self.current_user = current_user
         self.sheet_tpl = sheet_tpl
         self.json_fields = []
+        prompts = sheet_tpl.configuration.get('__prompts__')
 
         for k, v in sheet_tpl.configuration.items():
             # Skip fields generated by cookiecutter
             if isinstance(v, str) and ('{{' in v or '{%' in v):
                 continue
-            field_kwargs = {
-                'label': k if k != TPL_DIR_FIELD else 'Output Directory'
-            }
+            # Get label
+            if k == TPL_DIR_FIELD:
+                label = TPL_DIR_LABEL
+            elif prompts and k in prompts:
+                label = prompts[k]
+            else:
+                label = k
+            field_kwargs = {'label': label}
+            # Set field and initial value
             if k == TPL_DIR_FIELD:
                 field_kwargs[
                     'help_text'
@@ -192,14 +319,18 @@ class SheetTemplateCreateForm(forms.Form):
                 self.initial[k] = clean_sheet_dir_name(project.title)
             elif isinstance(v, str):
                 if not v:  # Allow empty value if default is not set
-                    field_kwargs = {'required': False}
+                    field_kwargs['required'] = False
                 self.fields[k] = forms.CharField(**field_kwargs)
                 self.initial[k] = v
             elif isinstance(v, list):
                 field_kwargs['choices'] = [(x, x) for x in v]
                 if not all(v):  # Allow empty value if in options
-                    field_kwargs = {'required': False}
+                    field_kwargs['required'] = False
                 self.fields[k] = forms.ChoiceField(**field_kwargs)
+            elif isinstance(v, bool):
+                field_kwargs['required'] = False
+                self.fields[k] = forms.BooleanField(**field_kwargs)
+                self.initial[k] = v
             elif isinstance(v, dict):
                 field_kwargs['widget'] = forms.Textarea(
                     {'class': 'sodar-json-input'}
@@ -207,8 +338,8 @@ class SheetTemplateCreateForm(forms.Form):
                 self.fields[k] = forms.CharField(**field_kwargs)
                 self.initial[k] = json.dumps(v)
                 self.json_fields.append(k)
-            # Hide fields not intended to be edited (see issue #1443)
-            if k in HIDDEN_SHEET_TEMPLATE_FIELDS:
+            # Hide fields not intended to be edited (see #1733)
+            if k.startswith('_') and k != TPL_DIR_FIELD:
                 self.fields[k].widget = forms.widgets.HiddenInput()
 
     def clean(self):
@@ -235,10 +366,6 @@ class SheetTemplateCreateForm(forms.Form):
         for k in self.json_fields:
             if not isinstance(extra_context[k], dict):
                 extra_context[k] = json.loads(extra_context[k])
-        if 'is_triplet' in self.sheet_tpl.configuration:
-            extra_context['is_triplet'] = self.sheet_tpl.configuration[
-                'is_triplet'
-            ]
 
         with tempfile.TemporaryDirectory() as td:
             cookiecutter(
@@ -273,52 +400,32 @@ class SheetTemplateCreateForm(forms.Form):
                 project=self.project,
                 archive_name=None,
                 user=self.current_user,
+                from_template=True,
             )
 
 
-class IrodsAccessTicketForm(forms.ModelForm):
-    """Form for the irods access ticket creation and editing."""
+class IrodsAccessTicketForm(IrodsAccessTicketValidateMixin, forms.ModelForm):
+    """Form for the irods access ticket creation and editing"""
 
     class Meta:
         model = IrodsAccessTicket
         fields = ('path', 'label', 'date_expires')
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, project=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        from samplesheets.views import TRACK_HUBS_COLL
-
-        # Add selection to path field
-        irods_backend = get_backend_api('omics_irods')
-        assays = Assay.objects.filter(
-            study__investigation__project=kwargs['initial']['project']
-        )
-        if irods_backend:
-            with irods_backend.get_session() as irods:
-                choices = [
-                    (
-                        track_hub.path,
-                        "{} / {}".format(
-                            assay.get_display_name(), track_hub.name
-                        ),
-                    )
-                    for assay in assays
-                    for track_hub in irods_backend.get_child_colls(
-                        irods,
-                        os.path.join(
-                            irods_backend.get_path(assay), TRACK_HUBS_COLL
-                        ),
-                    )
-                ]
+        if self.instance.pk:
+            self.project = self.instance.get_project()
         else:
-            choices = []
-
-        # Hide path in update or make it a dropdown with available track hubs
-        # on creation
+            self.project = project
+        # Update path help and hide in update
+        path_help = (
+            'Full path to iRODS collection: collection must be within '
+            'an assay of the project'
+        )
+        self.fields['path'].help_text = path_help
         if self.instance.path:
             self.fields['path'].widget = forms.widgets.HiddenInput()
-        else:
-            self.fields['path'].widget = forms.widgets.Select(choices=choices)
-
+            self.fields['path'].required = False
         # Add date input widget to expiry date field
         self.fields['date_expires'].label = 'Expiry date'
         self.fields['date_expires'].widget = forms.widgets.DateInput(
@@ -326,127 +433,59 @@ class IrodsAccessTicketForm(forms.ModelForm):
         )
 
     def clean(self):
+        cleaned_data = super().clean()
         irods_backend = get_backend_api('omics_irods')
-        # Check if expiry date is in the past
-        if (
-            self.cleaned_data.get('date_expires')
-            and self.cleaned_data.get('date_expires') <= timezone.now()
-        ):
-            self.add_error(
-                'date_expires', 'Expiry date in the past not allowed'
-            )
-        # Check path validity
-        try:
-            self.cleaned_data['path'] = irods_backend.sanitize_path(
-                self.cleaned_data['path']
-            )
-        except Exception as ex:
-            self.add_error('path', 'Invalid iRODS path: {}'.format(ex))
-            return self.cleaned_data
-        # Check if path corresponds to a track hub path
-        match = re.search(
-            r'/assay_([0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12})/',
-            self.cleaned_data['path'],
+        if self.instance.pk:
+            cleaned_data['path'] = self.instance.path
+        error = self.validate_data(
+            irods_backend, self.project, self.instance, cleaned_data
         )
-        if not match:
-            self.add_error('path', 'Not a valid TrackHubs path')
-        else:
-            try:
-                self.cleaned_data['assay'] = Assay.objects.get(
-                    sodar_uuid=match.group(1)
-                )
-            except ObjectDoesNotExist:
-                self.add_error('path', 'Assay not found')
+        if error:
+            self.add_error(*error)
         return self.cleaned_data
 
 
-class IrodsRequestForm(forms.ModelForm):
-    """Form for the iRODS delete request creation and editing"""
+class IrodsDataRequestForm(IrodsDataRequestValidateMixin, forms.ModelForm):
+    """Form for iRODS data request creation and editing"""
 
     class Meta:
         model = IrodsDataRequest
         fields = ['path', 'description']
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, project=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if project:
+            self.project = Project.objects.filter(sodar_uuid=project).first()
         self.fields['description'].required = False
 
     def clean(self):
         cleaned_data = super().clean()
         irods_backend = get_backend_api('omics_irods')
-        # Remove trailing slashes as irodspython client does not recognize
-        # this as a collection
-        cleaned_data['path'] = cleaned_data['path'].rstrip('/')
-
-        old_request = IrodsDataRequest.objects.filter(
-            path=cleaned_data['path'], status__in=['ACTIVE', 'FAILED']
-        ).first()
-        if old_request and old_request != self.instance:
-            self.add_error('path', ERROR_MSG_EXISTING)
-            return cleaned_data
-
-        path_re = re.compile(
-            '^' + irods_backend.get_projects_path() + '/[0-9a-f]{2}/'
-            '(?P<project_uuid>[0-9a-f-]{36})/'
-            + settings.IRODS_SAMPLE_COLL
-            + '/study_(?P<study_uuid>[0-9a-f-]{36})/'
-            'assay_(?P<assay_uuid>[0-9a-f-]{36})/.+$'
-        )
-        match = re.search(
-            path_re,
-            cleaned_data['path'],
-        )
-        if not match:
-            self.add_error('path', ERROR_MSG_INVALID_PATH)
-        else:
-            try:
-                cleaned_data['project'] = Project.objects.get(
-                    sodar_uuid=match.group('project_uuid')
-                )
-            except Project.DoesNotExist:
-                self.add_error('path', 'Project not found')
-            try:
-                Study.objects.get(
-                    sodar_uuid=match.group('study_uuid'),
-                    investigation__project__sodar_uuid=match.group(
-                        'project_uuid'
-                    ),
-                )
-            except Study.DoesNotExist:
-                self.add_error('path', 'Study not found in project with UUID')
-            try:
-                Assay.objects.get(
-                    sodar_uuid=match.group('assay_uuid'),
-                    study__sodar_uuid=match.group('study_uuid'),
-                )
-            except Assay.DoesNotExist:
-                self.add_error(
-                    'path', 'Assay not found in this project with UUID'
-                )
-
-        with irods_backend.get_session() as irods:
-            if 'path' in cleaned_data and not (
-                irods.data_objects.exists(cleaned_data['path'])
-                or irods.collections.exists(cleaned_data['path'])
-            ):
-                self.add_error(
-                    'path',
-                    'Path to collection or data object doesn\'t exist in iRODS',
-                )
+        cleaned_data['path'] = irods_backend.sanitize_path(cleaned_data['path'])
+        try:
+            self.validate_request_path(
+                irods_backend, self.project, self.instance, cleaned_data['path']
+            )
+        except Exception as ex:
+            self.add_error('path', str(ex))
         return cleaned_data
 
 
-class IrodsRequestAcceptForm(forms.Form):
-    """Form accepting an iRODS delete request."""
+class IrodsDataRequestAcceptForm(forms.Form):
+    """Form for accepting an iRODS data request"""
 
-    confirm = forms.BooleanField(
-        label='I accept the iRODS delete request',
-        required=True,
-    )
+    confirm = forms.BooleanField(required=True)
+
+    def __init__(self, *args, **kwargs):
+        num_requests = kwargs.pop('num_requests', None)
+        super().__init__(*args, **kwargs)
+        self.fields['confirm'].label = 'I accept the iRODS delete request'
+        if num_requests > 1:
+            self.fields['confirm'].label += 's'
 
 
 class SheetVersionEditForm(forms.ModelForm):
-    """Form for editing a saved ISA-Tab version of the sample sheets."""
+    """Form for editing a saved ISA-Tab version of sample sheets"""
 
     class Meta:
         model = ISATab

@@ -3,7 +3,7 @@
 from django.urls import reverse
 
 # Projectroles dependency
-from projectroles.tests.test_permissions import TestPermissionBase
+from projectroles.tests.test_permissions import TestSiteAppPermissionBase
 
 from ontologyaccess.models import DEFAULT_TERM_URL
 from ontologyaccess.tests.test_models import OBOFormatOntologyModelMixin
@@ -28,22 +28,15 @@ OBO_TERM_NAMESPACE = 'specific_namespace'
 OBO_TERM_COMMENT = 'This is not a real term.'
 
 
-class TestOntologyAccessPermissionBase(
-    OBOFormatOntologyModelMixin, TestPermissionBase
+class OntologyAccessPermissionTestBase(
+    OBOFormatOntologyModelMixin, TestSiteAppPermissionBase
 ):
     """Base class for ontologyaccess UI view permission tests"""
 
     def setUp(self):
-        # Create users
-        self.superuser = self.make_user('superuser')
-        self.superuser.is_superuser = True
-        self.superuser.is_staff = True
-        self.superuser.save()
-        self.regular_user = self.make_user('regular_user')
-        # No user
-        self.anonymous = None
+        super().setUp()
         # Create Ontology and term
-        self.ontology = self._make_obo_ontology(
+        self.ontology = self.make_obo_ontology(
             name=OBO_NAME,
             file=OBO_FILE,
             ontology_id=OBO_ONTOLOGY_ID,
@@ -54,7 +47,7 @@ class TestOntologyAccessPermissionBase(
             default_namespace=OBO_DEFAULT_NAMESPACE,
             term_url=DEFAULT_TERM_URL,
         )
-        self.term = self._make_obo_term(
+        self.term = self.make_obo_term(
             ontology=self.ontology,
             term_id=OBO_TERM_ID,
             name=OBO_TERM_NAME,
@@ -66,19 +59,19 @@ class TestOntologyAccessPermissionBase(
         )
 
 
-class TestOntologyAccessPermissions(TestOntologyAccessPermissionBase):
+class TestOntologyAccessPermissions(OntologyAccessPermissionTestBase):
     """Tests for ontologyaccess UI view permissions"""
 
-    def test_ontology_list(self):
-        """Test permissions for OBOFormatOntologyListView"""
+    def test_get_ontology_list(self):
+        """Test OBOFormatOntologyListView GET"""
         url = reverse('ontologyaccess:list')
         good_users = [self.superuser]
         bad_users = [self.anonymous, self.regular_user]
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 302)
 
-    def test_ontology_detail(self):
-        """Test permissions for OBOFormatOntologyDetailView"""
+    def test_get_ontology_detail(self):
+        """Test OBOFormatOntologyDetailView GET"""
         url = reverse(
             'ontologyaccess:obo_detail',
             kwargs={'oboformatontology': self.ontology.sodar_uuid},
@@ -88,16 +81,16 @@ class TestOntologyAccessPermissions(TestOntologyAccessPermissionBase):
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 302)
 
-    def test_ontology_import(self):
-        """Test permissions for OBOFormatOntologyImportView"""
+    def test_get_ontology_import(self):
+        """Test OBOFormatOntologyImportView GET"""
         url = reverse('ontologyaccess:obo_import')
         good_users = [self.superuser]
         bad_users = [self.anonymous, self.regular_user]
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 302)
 
-    def test_ontology_update(self):
-        """Test permissions for OBOFormatOntologyUpdateView"""
+    def test_get_ontology_update(self):
+        """Test OBOFormatOntologyUpdateView GET"""
         url = reverse(
             'ontologyaccess:obo_update',
             kwargs={'oboformatontology': self.ontology.sodar_uuid},
@@ -108,7 +101,7 @@ class TestOntologyAccessPermissions(TestOntologyAccessPermissionBase):
         self.assert_response(url, bad_users, 302)
 
     def test_ontology_delete(self):
-        """Test permissions for OBOFormatOntologyDeleteView"""
+        """Test OBOFormatOntologyDeleteView GET"""
         url = reverse(
             'ontologyaccess:obo_delete',
             kwargs={'oboformatontology': self.ontology.sodar_uuid},

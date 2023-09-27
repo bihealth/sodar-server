@@ -6,7 +6,8 @@ from django.urls import reverse
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
 
-from landingzones.models import LandingZone, STATUS_STYLES, STATUS_FINISHED
+from landingzones.constants import STATUS_STYLES, STATUS_FINISHED
+from landingzones.models import LandingZone
 from landingzones.plugins import get_zone_config_plugin
 
 
@@ -46,20 +47,6 @@ def get_zone_desc_html(zone):
     """Return zone description as HTML"""
     return '<div><strong>Description</strong><br />{}</div>'.format(
         zone.description
-    )
-
-
-@register.simple_tag
-def get_zone_samples_url(zone):
-    """Return URL for samples related to zone"""
-    # TODO: TBD: Inherit this from samplesheets instead?
-    return (
-        reverse(
-            'samplesheets:project_sheets',
-            kwargs={'project': zone.project.sodar_uuid},
-        )
-        + '#/assay/'
-        + str(zone.assay.sodar_uuid)
     )
 
 

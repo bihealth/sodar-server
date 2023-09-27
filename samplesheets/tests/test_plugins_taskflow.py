@@ -11,7 +11,7 @@ from projectroles.plugins import ProjectAppPluginPoint
 
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import (
-    TaskflowbackendTestBase,
+    TaskflowViewTestBase,
     IRODS_ACCESS_READ,
     IRODS_GROUP_PUBLIC,
 )
@@ -40,7 +40,7 @@ APP_NAME = 'samplesheets'
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 
 
-class TestSamplesheetsModifyAPIMixin:
+class SamplesheetsModifyAPITestMixin:
     """
     Mixin with test helpers for the samplesheets project modify API
     implementation.
@@ -68,11 +68,11 @@ class TestSamplesheetsModifyAPIMixin:
 
 
 class TestPerformProjectModify(
-    TestSamplesheetsModifyAPIMixin,
+    SamplesheetsModifyAPITestMixin,
     SampleSheetIOMixin,
     SampleSheetPublicAccessMixin,
     SampleSheetTaskflowMixin,
-    TaskflowbackendTestBase,
+    TaskflowViewTestBase,
 ):
     """Tests for perform_project_modify()"""
 
@@ -213,11 +213,11 @@ class TestPerformProjectModify(
 
 
 class TestPerformProjectSync(
-    TestSamplesheetsModifyAPIMixin,
+    SamplesheetsModifyAPITestMixin,
     SampleSheetIOMixin,
     SampleSheetPublicAccessMixin,
     SampleSheetTaskflowMixin,
-    TaskflowbackendTestBase,
+    TaskflowViewTestBase,
 ):
     """Tests for perform_project_sync()"""
 

@@ -2,6 +2,7 @@
 
 import logging
 import math
+import os
 import random
 import re
 import string
@@ -53,7 +54,8 @@ ENV_INT_PARAMS = [
     'irods_encryption_salt_size',
     'irods_port',
 ]
-USER_GROUP_PREFIX = 'omics_project_'
+USER_GROUP_TEMPLATE = 'omics_project_{uuid}'
+TRASH_COLL_NAME = 'trash'
 PATH_PARENT_SUBSTRING = '/..'
 ERROR_PATH_PARENT = 'Use of parent not allowed in path'
 ERROR_PATH_UNSET = 'Path is not set'
@@ -146,7 +148,7 @@ class IrodsAPI:
         :return: Response
         :raise: Exception if iRODS is not initialized
         """
-        msg_body = TicketAdminRequest(irods)(*args)
+        msg_body = TicketAdminRequest(*args)
         msg = iRODSMessage(
             'RODS_API_REQ', msg=msg_body, int_info=api_number[api_id]
         )
@@ -351,6 +353,11 @@ class IrodsAPI:
         return cls.get_root_path() + '/projects'
 
     @classmethod
+    def get_trash_path(cls):
+        """Return the trash path in the current zone"""
+        return '/' + os.path.join(settings.IRODS_ZONE, TRASH_COLL_NAME)
+
+    @classmethod
     def get_uuid_from_path(cls, path, obj_type):
         """
         Return project, study or assay UUID from iRODS path or None if not
@@ -393,7 +400,7 @@ class IrodsAPI:
         else:
             cls._validate_project(project)
             project_uuid = project.sodar_uuid
-        return '{}{}'.format(USER_GROUP_PREFIX, project_uuid)
+        return USER_GROUP_TEMPLATE.format(uuid=project_uuid)
 
     # TODO: Add tests
     @classmethod

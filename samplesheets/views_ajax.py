@@ -16,7 +16,7 @@ from rest_framework.response import Response
 
 # Projectroles dependency
 from projectroles.constants import SODAR_CONSTANTS
-from projectroles.models import Role, RoleAssignment
+from projectroles.models import Role
 from projectroles.plugins import get_backend_api
 from projectroles.views_ajax import SODARBaseProjectAjaxView
 
@@ -47,7 +47,7 @@ from samplesheets.utils import (
     get_ext_link_labels,
 )
 from samplesheets.views import (
-    IrodsRequestModifyMixin,
+    IrodsDataRequestModifyMixin,
     app_settings,
     APP_NAME,
     TARGET_ALTAMISA_VERSION,
@@ -69,6 +69,10 @@ EDIT_FIELD_MAP = {
     'label': 'extract_label',
     'performer': 'performer',
 }
+# Approximate magic numbers for header/row height
+RENDER_HEIGHT_HEADERS = 79
+RENDER_HEIGHT_ROW = 39
+RENDER_HEIGHT_SCROLLBAR = 12
 
 ALERT_ACTIVE_REQS = (
     'Active iRODS delete requests in this project require your attention. '
@@ -250,7 +254,7 @@ class EditConfigMixin:
                 name=SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
             ).first()
         else:
-            role_as = RoleAssignment.objects.get_assignment(user, project)
+            role_as = project.get_role(user)
             if not role_as:
                 return False
             user_role = role_as.role
@@ -261,12 +265,12 @@ class SheetVersionMixin:
     """Mixin for sheet version saving"""
 
     @classmethod
-    def save_version(cls, investigation, request, description=None):
+    def save_version(cls, investigation, request=None, description=None):
         """
         Save current version of an investigation as ISA-Tab into the database.
 
         :param investigation: Investigation object
-        :param request: HTTP request
+        :param request: HTTP request or None
         :param description: Version description (string, optional)
         :return: ISATab object
         :raise: Exception if ISA-Tab saving fails
@@ -283,7 +287,7 @@ class SheetVersionMixin:
             inv_uuid=investigation.sodar_uuid,
             isa_data=isa_data,
             tags=['EDIT'],
-            user=request.user,
+            user=request.user if request else None,
             archive_name=investigation.archive_name,
             description=description,
         )
@@ -315,7 +319,6 @@ class SheetContextAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
             'irods_webdav_enabled': settings.IRODS_WEBDAV_ENABLED,
             'irods_webdav_url': get_webdav_url(project, request.user),
             'external_link_labels': None,
-            'table_height': settings.SHEETS_TABLE_HEIGHT,
             'min_col_width': settings.SHEETS_MIN_COLUMN_WIDTH,
             'max_col_width': settings.SHEETS_MAX_COLUMN_WIDTH,
             'allow_editing': app_settings.get(
@@ -324,6 +327,7 @@ class SheetContextAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
             'alerts': [],
             'csrf_token': get_token(request),
             'investigation': {},
+            'project_uuid': str(project.sodar_uuid),
             'user_uuid': str(request.user.sodar_uuid)
             if hasattr(request.user, 'sodar_uuid')
             else None,
@@ -344,6 +348,9 @@ class SheetContextAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
                 'configuration': inv.get_configuration(),
                 'inv_file_name': inv.file_name.split('/')[-1],
                 'irods_status': inv.irods_status,
+                'irods_path': irods_backend.get_path(project)
+                if irods_backend and inv.irods_status
+                else None,
                 'parser_version': inv.parser_version or 'LEGACY',
                 'parser_warnings': True
                 if inv.parser_warnings
@@ -498,12 +505,27 @@ class SheetContextAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
 class StudyTablesAjaxView(SODARBaseProjectAjaxView):
     """View to retrieve study tables built from the sample sheet graph"""
 
-    def get_permission_required(self):
-        """Override get_permisson_required() to provide the approrpiate perm"""
-        if bool(self.request.GET.get('edit')):
-            return 'samplesheets.edit_sheet'
+    def _get_table_height(self, table, user, edit):
+        """
+        Return table height in pixels.
 
-        return 'samplesheets.view_sheet'
+        :param table: Study or assay render table
+        :param user: User object making the request
+        :param edit: Edit mode enabled (boolean)
+        :return: Integer
+        """
+        default_height = app_settings.get(
+            APP_NAME, 'sheet_table_height', user=user
+        )
+        if edit:  # When editing we always set tables to fixed user setting
+            return default_height
+        # Else limit return value to user setting
+        return min(
+            RENDER_HEIGHT_HEADERS
+            + RENDER_HEIGHT_SCROLLBAR
+            + len(table['table_data']) * RENDER_HEIGHT_ROW,
+            default_height,
+        )
 
     def _get_display_config(self, investigation, user, sheet_config=None):
         """Get or create display configuration for an investigation"""
@@ -567,6 +589,12 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
             )
         return display_config
 
+    def get_permission_required(self):
+        """Override get_permisson_required() to provide the approrpiate perm"""
+        if bool(self.request.GET.get('edit')):
+            return 'samplesheets.edit_sheet'
+        return 'samplesheets.view_sheet'
+
     def get(self, request, *args, **kwargs):
         from samplesheets.plugins import get_irods_content
 
@@ -608,6 +636,18 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
             ret_data['render_error'] = str(ex)
             return Response(ret_data, status=200)
 
+        # Add table heights
+        ret_data['table_heights'] = {
+            'study': self._get_table_height(
+                ret_data['tables']['study'], request.user, edit
+            ),
+            'assays': {},
+        }
+        for k, v in ret_data['tables']['assays'].items():
+            ret_data['table_heights']['assays'][k] = self._get_table_height(
+                v, request.user, edit
+            )
+
         # Get iRODS content if NOT editing and collections have been created
         if not edit:
             logger.debug('Retrieving iRODS content for study..')
@@ -639,7 +679,6 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
                 'samples': {},
                 'protocols': [],
             }
-
             # Add sample info
             s_assays = {}
             for assay in study.assays.all().order_by('pk'):
@@ -660,7 +699,6 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
                     if sample.unique_name in s_assays
                     else [],
                 }
-
             # Add Protocol info
             for protocol in Protocol.objects.filter(study=study).order_by(
                 'name'
@@ -1807,8 +1845,8 @@ class StudyDisplayConfigAjaxView(SODARBaseProjectAjaxView):
         )
 
 
-class IrodsRequestCreateAjaxView(
-    IrodsRequestModifyMixin, SODARBaseProjectAjaxView
+class IrodsDataRequestCreateAjaxView(
+    IrodsDataRequestModifyMixin, SODARBaseProjectAjaxView
 ):
     """Ajax view for creating an iRODS data request"""
 
@@ -1848,8 +1886,8 @@ class IrodsRequestCreateAjaxView(
         )
 
 
-class IrodsRequestDeleteAjaxView(
-    IrodsRequestModifyMixin, SODARBaseProjectAjaxView
+class IrodsDataRequestDeleteAjaxView(
+    IrodsDataRequestModifyMixin, SODARBaseProjectAjaxView
 ):
     """Ajax view for deleting an iRODS data request"""
 

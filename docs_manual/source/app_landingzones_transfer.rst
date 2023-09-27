@@ -49,15 +49,18 @@ that assay.
 File Checksums
 --------------
 
-Checksums for each file should be calculated when uploading. In iCommands, this
-is usually done with the ``-k`` argument when uploading, or afterwards using the
-``ichksum`` command.
+SODAR requires for an MD5 checksum file to accompany each file when uploaded to
+the server. This file is used to verify the original checksum against the one
+calculated in iRODS once the upload is complete. The file should be named with a
+``.md5`` suffix following the name of the data file. E.g. a file named
+``filename.bam`` should be uploaded together with a checksum file called
+``filename.bam.md5`` in the same collection.
 
-In addition to the calculated checksum, an MD5 checksum file should accompany
-each file when uploaded to the server to verify the original checksum. The file
-should be named with a ``.md5`` suffix following the name of the data file.
-In other words, a file named ``filename.bam`` should be uploaded together with
-a checksum file called ``filename.bam.md5`` in the same collection.
+From SODAR v0.14 onwards, iRODS checksums not present after the upload are
+automatically calculated prior to validating the landing zone. This means
+uploading with the ``-k`` argument or separately calling ``ichksum`` are no
+longer required. The calculation step may take some time with large landing
+zones.
 
 Collection Structure
 --------------------
@@ -68,9 +71,9 @@ set true when creating the zone, these expected collections are created
 automatically. If collections are left empty in the landing zone, they will not
 be created in the sample repository.
 
-SODAR allows uploading data into root level collections other than the expected
-ones. However, these will **not** be visible in the Sample Sheets user
-interface. Thus, this is not recommended.
+If the *Restrict Collections* option is unset, SODAR allows uploading data into
+root level collections other than the expected ones. However, these will **not**
+be visible in the Sample Sheets user interface. Thus, this is not recommended.
 
 There are three common root level collections for all assays:
 
@@ -118,7 +121,8 @@ Clicking the link will temporarily lock the landing zone for read-only access
 and start the validation process in the background. Duration of validation
 depends on the amount of files in your zone. You can monitor the status of this
 process in the landing zone list view. You will also receive an alert once the
-validation is done.
+validation is done. In the validation phase, missing iRODS checksums are also
+calculated so they can be compared to the corresponding ``.md5`` files.
 
 .. figure:: _static/app_landingzones/zone_status_validating.png
     :align: center
@@ -159,11 +163,11 @@ Moving Files
 
 Once you have finished uploading files into your landing zone and wish to
 transfer the files into the read-only sample data repository, you should open
-the dropdown next to your landing zones and select ``Validate and Move``. This
-will trigger the validation process as described above and if successful,
-automatically proceed to move the files under the assay. As with validation this
-is done in the background and you can monitor the process in the landing zone
-list.
+the dropdown next to your landing zones and select
+:guilabel:`Validate and Move`. This will trigger the validation process as
+described above and if successful, automatically proceed to move the files under
+the assay. As with validation this is done in the background and you can monitor
+the process in the landing zone list.
 
 .. hint::
 

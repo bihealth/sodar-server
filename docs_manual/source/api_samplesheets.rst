@@ -11,17 +11,53 @@ API Views
 
 .. currentmodule:: samplesheets.views_api
 
-.. autoclass:: InvestigationRetrieveAPIView
+Sample Sheet Management
+-----------------------
 
-.. autoclass:: IrodsCollsCreateAPIView
+.. autoclass:: InvestigationRetrieveAPIView
 
 .. autoclass:: SheetImportAPIView
 
 .. autoclass:: SheetISAExportAPIView
 
+iRODS Data Objects and Collections
+----------------------------------
+
+.. autoclass:: IrodsCollsCreateAPIView
+
 .. autoclass:: SampleDataFileExistsAPIView
 
 .. autoclass:: ProjectIrodsFileListAPIView
+
+iRODS Access Tickets
+--------------------
+
+.. autoclass:: IrodsAccessTicketRetrieveAPIView
+
+.. autoclass:: IrodsAccessTicketListAPIView
+
+.. autoclass:: IrodsAccessTicketCreateAPIView
+
+.. autoclass:: IrodsAccessTicketUpdateAPIView
+
+.. autoclass:: IrodsAccessTicketDestroyAPIView
+
+iRODS Data Requests
+-------------------
+
+.. autoclass:: IrodsDataRequestRetrieveAPIView
+
+.. autoclass:: IrodsDataRequestListAPIView
+
+.. autoclass:: IrodsDataRequestCreateAPIView
+
+.. autoclass:: IrodsDataRequestUpdateAPIView
+
+.. autoclass:: IrodsDataRequestDestroyAPIView
+
+.. autoclass:: IrodsDataRequestAcceptAPIView
+
+.. autoclass:: IrodsDataRequestRejectAPIView
 
 
 Versioning
@@ -32,4 +68,4 @@ SODAR version:
 
 .. code-block:: console
 
-    Accept: application/vnd.bihealth.sodar+json; version=0.13.4
+    Accept: application/vnd.bihealth.sodar+json; version=0.14.0

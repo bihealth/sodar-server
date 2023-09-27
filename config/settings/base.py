@@ -53,6 +53,7 @@ DJANGO_APPS = [
 ]
 THIRD_PARTY_APPS = [
     'crispy_forms',  # Form layouts
+    'crispy_bootstrap4',  # Bootstrap4 theme for Crispy
     'rules.apps.AutodiscoverRulesConfig',  # Django rules engine
     'djangoplugins',  # Django plugins
     'pagedown',  # For markdown
@@ -100,6 +101,7 @@ LOCAL_APPS = [
     'samplesheets.assayapps.meta_ms.apps.MetaMsConfig',
     'samplesheets.assayapps.microarray.apps.MicroarrayConfig',
     'samplesheets.assayapps.pep_ms.apps.PepMsConfig',
+    'samplesheets.assayapps.cytof.apps.CytofConfig',
     # Landingzones config sub-apps
     'landingzones.configapps.bih_proteomics_smb.apps.BihProteomicsSmbConfig',
     # Admin apps
@@ -144,8 +146,8 @@ EMAIL_SUBJECT_PREFIX = env('EMAIL_SUBJECT_PREFIX', default='')
 
 # MANAGER CONFIGURATION
 # ------------------------------------------------------------------------------
-ADMINS = [("""Mikko Nieminen""", 'mikko.nieminen@bih-charite.de')]
-
+# Provide ADMINS as: Name:email,Name:email
+ADMINS = [x.split(':') for x in env.list('ADMINS', default=[])]
 # See: https://docs.djangoproject.com/en/3.2/ref/settings/#managers
 MANAGERS = ADMINS
 
@@ -212,6 +214,7 @@ TEMPLATES = [
                 'projectroles.context_processors.urls_processor',
                 'projectroles.context_processors.site_app_processor',
                 'projectroles.context_processors.app_alerts_processor',
+                'projectroles.context_processors.sidebar_processor',
             ],
         },
     }
@@ -355,7 +358,6 @@ if ENABLE_LDAP:
 
     # Default values
     LDAP_DEFAULT_CONN_OPTIONS = {ldap.OPT_REFERRALS: 0}
-    LDAP_DEFAULT_FILTERSTR = '(sAMAccountName=%(user)s)'
     LDAP_DEFAULT_ATTR_MAP = {
         'first_name': 'givenName',
         'last_name': 'sn',
@@ -366,12 +368,22 @@ if ENABLE_LDAP:
     AUTH_LDAP_SERVER_URI = env.str('AUTH_LDAP_SERVER_URI', None)
     AUTH_LDAP_BIND_DN = env.str('AUTH_LDAP_BIND_DN', None)
     AUTH_LDAP_BIND_PASSWORD = env.str('AUTH_LDAP_BIND_PASSWORD', None)
-    AUTH_LDAP_CONNECTION_OPTIONS = LDAP_DEFAULT_CONN_OPTIONS
+    AUTH_LDAP_START_TLS = env.str('AUTH_LDAP_START_TLS', False)
+    AUTH_LDAP_CA_CERT_FILE = env.str('AUTH_LDAP_CA_CERT_FILE', None)
+    AUTH_LDAP_CONNECTION_OPTIONS = {**LDAP_DEFAULT_CONN_OPTIONS}
+    if AUTH_LDAP_CA_CERT_FILE is not None:
+        AUTH_LDAP_CONNECTION_OPTIONS[
+            ldap.OPT_X_TLS_CACERTFILE
+        ] = AUTH_LDAP_CA_CERT_FILE
+        AUTH_LDAP_CONNECTION_OPTIONS[ldap.OPT_X_TLS_NEWCTX] = 0
+    AUTH_LDAP_USER_FILTER = env.str(
+        'AUTH_LDAP_USER_FILTER', '(sAMAccountName=%(user)s)'
+    )
 
     AUTH_LDAP_USER_SEARCH = LDAPSearch(
         env.str('AUTH_LDAP_USER_SEARCH_BASE', None),
         ldap.SCOPE_SUBTREE,
-        LDAP_DEFAULT_FILTERSTR,
+        AUTH_LDAP_USER_FILTER,
     )
     AUTH_LDAP_USER_ATTR_MAP = LDAP_DEFAULT_ATTR_MAP
     AUTH_LDAP_USERNAME_DOMAIN = env.str('AUTH_LDAP_USERNAME_DOMAIN', None)
@@ -391,12 +403,22 @@ if ENABLE_LDAP:
         AUTH_LDAP2_SERVER_URI = env.str('AUTH_LDAP2_SERVER_URI', None)
         AUTH_LDAP2_BIND_DN = env.str('AUTH_LDAP2_BIND_DN', None)
         AUTH_LDAP2_BIND_PASSWORD = env.str('AUTH_LDAP2_BIND_PASSWORD', None)
-        AUTH_LDAP2_CONNECTION_OPTIONS = LDAP_DEFAULT_CONN_OPTIONS
+        AUTH_LDAP2_START_TLS = env.str('AUTH_LDAP2_START_TLS', False)
+        AUTH_LDAP2_CA_CERT_FILE = env.str('AUTH_LDAP2_CA_CERT_FILE', None)
+        AUTH_LDAP2_CONNECTION_OPTIONS = {**LDAP_DEFAULT_CONN_OPTIONS}
+        if AUTH_LDAP2_CA_CERT_FILE is not None:
+            AUTH_LDAP2_CONNECTION_OPTIONS[
+                ldap.OPT_X_TLS_CACERTFILE
+            ] = AUTH_LDAP2_CA_CERT_FILE
+            AUTH_LDAP2_CONNECTION_OPTIONS[ldap.OPT_X_TLS_NEWCTX] = 0
+        AUTH_LDAP2_USER_FILTER = env.str(
+            'AUTH_LDAP2_USER_FILTER', '(sAMAccountName=%(user)s)'
+        )
 
         AUTH_LDAP2_USER_SEARCH = LDAPSearch(
             env.str('AUTH_LDAP2_USER_SEARCH_BASE', None),
             ldap.SCOPE_SUBTREE,
-            LDAP_DEFAULT_FILTERSTR,
+            AUTH_LDAP2_USER_FILTER,
         )
         AUTH_LDAP2_USER_ATTR_MAP = LDAP_DEFAULT_ATTR_MAP
         AUTH_LDAP2_USERNAME_DOMAIN = env.str('AUTH_LDAP2_USERNAME_DOMAIN')
@@ -586,7 +608,7 @@ SITE_INSTANCE_TITLE = env.str('SITE_INSTANCE_TITLE', 'CUBI SODAR')
 
 
 # General API settings
-SODAR_API_DEFAULT_VERSION = '0.13.4'
+SODAR_API_DEFAULT_VERSION = '0.14.0'
 SODAR_API_ALLOWED_VERSIONS = [
     '0.7.0',
     '0.7.1',
@@ -605,6 +627,7 @@ SODAR_API_ALLOWED_VERSIONS = [
     '0.13.2',
     '0.13.3',
     '0.13.4',
+    '0.14.0',
 ]
 SODAR_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar+json'
 SODAR_API_DEFAULT_HOST = env.url(
@@ -614,6 +637,10 @@ SODAR_API_DEFAULT_HOST = env.url(
 
 # Projectroles app settings
 PROJECTROLES_SITE_MODE = env.str('PROJECTROLES_SITE_MODE', 'SOURCE')
+PROJECTROLES_TEMPLATE_INCLUDE_PATH = env.path(
+    'PROJECTROLES_TEMPLATE_INCLUDE_PATH',
+    os.path.join(APPS_DIR, 'templates', 'include'),
+)
 PROJECTROLES_SECRET_LENGTH = env.int('PROJECTROLES_SECRET_LENGTH', 32)
 PROJECTROLES_INVITE_EXPIRY_DAYS = env.int('PROJECTROLES_INVITE_EXPIRY_DAYS', 14)
 PROJECTROLES_SEND_EMAIL = env.bool('PROJECTROLES_SEND_EMAIL', False)
@@ -712,6 +739,8 @@ IRODS_CERT_PATH = env.str('IRODS_CERT_PATH', None)
 
 
 # Taskflow backend settings
+# Connection timeout for taskflowbackend flows (other sessions not affected)
+TASKFLOW_IRODS_CONN_TIMEOUT = env.int('TASKFLOW_IRODS_CONN_TIMEOUT', 480)
 TASKFLOW_LOCK_RETRY_COUNT = env.int('TASKFLOW_LOCK_RETRY_COUNT', 2)
 TASKFLOW_LOCK_RETRY_INTERVAL = env.int('TASKFLOW_LOCK_RETRY_INTERVAL', 3)
 TASKFLOW_LOCK_ENABLED = True
@@ -740,10 +769,12 @@ IRODS_QUERY_BATCH_SIZE = env.int('IRODS_QUERY_BATCH_SIZE', 24)
 SHEETS_ALLOW_CRITICAL = env.bool('SHEETS_ALLOW_CRITICAL', False)
 # Temporary, see issue #556
 SHEETS_ENABLE_CACHE = True
+# Enable study table cache
+SHEETS_ENABLE_STUDY_TABLE_CACHE = env.bool(
+    'SHEETS_ENABLE_STUDY_TABLE_CACHE', True
+)
 # iRODS file query limit
 SHEETS_IRODS_LIMIT = env.int('SHEETS_IRODS_LIMIT', 50)
-# Study/assay table height
-SHEETS_TABLE_HEIGHT = env.int('SHEETS_TABLE_HEIGHT', 400)
 # Minimum edit config version
 SHEETS_CONFIG_VERSION = '0.8.0'
 # Min default column width
@@ -773,17 +804,6 @@ SHEETS_EXTERNAL_LINK_PATH = env.str(
     'SHEETS_EXTERNAL_LINK_PATH',
     os.path.join(ROOT_DIR, 'samplesheets/config/ext_links.json'),
 )
-
-# HACK: Supported cubi-tk templates, excluding ones which altamISA cannot parse
-SHEETS_ENABLED_TEMPLATES = [
-    'bulk_rnaseq',
-    'generic',
-    'germline',
-    'microarray',
-    'ms_meta_biocrates',
-    'single_cell_rnaseq',
-    'tumor_normal_triplets',
-]
 
 # Remote sample sheet sync interval in minutes
 SHEETS_SYNC_INTERVAL = env.int('SHEETS_SYNC_INTERVAL', 5)

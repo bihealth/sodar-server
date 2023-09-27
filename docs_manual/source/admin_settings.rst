@@ -111,12 +111,15 @@ iRODS Settings
 Taskflow Backend Settings
 -------------------------
 
+``TASKFLOW_IRODS_CONN_TIMEOUT``
+    Connection timeout for taskflows in seconds, other SODAR iRODS sessions are
+    not affected (int, default: 480).
 ``TASKFLOW_LOCK_RETRY_COUNT``
     Retry count for project lock retrieval for Taskflow operations (int,
-    default: 2)
+    default: 2).
 ``TASKFLOW_LOCK_RETRY_INTERVAL``
     Retry interval for project lock retrieval for Taskflow operations (int,
-    default: 3)
+    default: 3).
 
 iRODS WebDAV Settings
 ---------------------
@@ -154,8 +157,8 @@ Sample Sheets Settings
     Allow critical altamISA warnings on import (boolean).
 ``SHEETS_IRODS_LIMIT``
     iRODS file query limit (integer).
-``SHEETS_TABLE_HEIGHT``
-    Default study/assay table height.
+``SHEETS_ENABLE_STUDY_TABLE_CACHE``
+    Enable caching of study tables unless set false (boolean).
 ``SHEETS_MIN_COLUMN_WIDTH``
     Minimum default column width in study/assay tables (integer).
 ``SHEETS_MAX_COLUMN_WIDTH``

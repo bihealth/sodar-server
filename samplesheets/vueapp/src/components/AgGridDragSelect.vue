@@ -101,7 +101,7 @@ export default {
         // Get left padding
         // TODO: Only calculate this when viewport is resized
         const leftContent = document.querySelector('.sodar-content-left')
-        const appContent = document.querySelector('.sodar-app-content')
+        const appContent = document.querySelector('#sodar-app-content')
         const leftContentPadding = parseFloat(
           window.getComputedStyle(appContent, null).getPropertyValue(
             'padding-left'))

@@ -22,6 +22,45 @@ from projectroles.views import LoggedInPermissionMixin, HTTPRefererMixin
 logger = logging.getLogger(__name__)
 
 
+class IrodsConfigMixin:
+    """Mixin for iRODS configuration views"""
+
+    @staticmethod
+    def get_irods_client_env(user, irods_backend):
+        """
+        Create iRODS configuration file for the current user.
+        """
+        user_name = user.username
+        # Just in case Django mangles the user name case, as it might
+        if user_name.find('@') != -1:
+            user_name = (
+                user_name.split('@')[0] + '@' + user_name.split('@')[1].upper()
+            )
+        home_path = '/{}/home/{}'.format(settings.IRODS_ZONE, user_name)
+        cert_file_name = settings.IRODS_HOST + '.crt'
+
+        # Set up irods_environment.json
+        irods_env = dict(settings.IRODS_ENV_DEFAULT)
+        irods_env.update(
+            {
+                'irods_authentication_scheme': 'PAM',
+                'irods_cwd': home_path,
+                'irods_home': home_path,
+                'irods_host': settings.IRODS_HOST_FQDN,
+                'irods_port': settings.IRODS_PORT,
+                'irods_user_name': user_name,
+                'irods_zone_name': settings.IRODS_ZONE,
+            }
+        )
+        if settings.IRODS_CERT_PATH:
+            irods_env['irods_ssl_certificate_file'] = cert_file_name
+        # Get optional client environment overrides
+        irods_env.update(dict(settings.IRODS_ENV_CLIENT))
+        irods_env = irods_backend.format_env(irods_env)
+        logger.debug('iRODS environment: {}'.format(irods_env))
+        return irods_env
+
+
 class IrodsInfoView(LoggedInPermissionMixin, HTTPRefererMixin, TemplateView):
     """iRODS Information View"""
 
@@ -66,7 +105,9 @@ class IrodsInfoView(LoggedInPermissionMixin, HTTPRefererMixin, TemplateView):
         return context
 
 
-class IrodsConfigView(LoggedInPermissionMixin, HTTPRefererMixin, View):
+class IrodsConfigView(
+    IrodsConfigMixin, LoggedInPermissionMixin, HTTPRefererMixin, View
+):
     """iRODS Configuration file download view"""
 
     permission_required = 'irodsinfo.get_config'
@@ -77,34 +118,8 @@ class IrodsConfigView(LoggedInPermissionMixin, HTTPRefererMixin, View):
             messages.error(request, 'iRODS Backend not enabled.')
             return redirect(reverse('irodsinfo:info'))
 
-        user_name = request.user.username
-        # Just in case Django mangles the user name case, as it might
-        if user_name.find('@') != -1:
-            user_name = (
-                user_name.split('@')[0] + '@' + user_name.split('@')[1].upper()
-            )
-        home_path = '/{}/home/{}'.format(settings.IRODS_ZONE, user_name)
-        cert_file_name = settings.IRODS_HOST + '.crt'
-
-        # Set up irods_environment.json
-        irods_env = dict(settings.IRODS_ENV_DEFAULT)
-        irods_env.update(
-            {
-                'irods_authentication_scheme': 'PAM',
-                'irods_cwd': home_path,
-                'irods_home': home_path,
-                'irods_host': settings.IRODS_HOST_FQDN,
-                'irods_port': settings.IRODS_PORT,
-                'irods_user_name': user_name,
-                'irods_zone_name': settings.IRODS_ZONE,
-            }
-        )
-        if settings.IRODS_CERT_PATH:
-            irods_env['irods_ssl_certificate_file'] = cert_file_name
-        # Get optional client environment overrides
-        irods_env.update(dict(settings.IRODS_ENV_CLIENT))
-        irods_env = irods_backend.format_env(irods_env)
-        logger.debug('iRODS environment: {}'.format(irods_env))
+        # Create iRODS environment file
+        irods_env = self.get_irods_client_env(request.user, irods_backend)
         env_json = json.dumps(irods_env, indent=2)
 
         # Create zip archive
@@ -117,6 +132,7 @@ class IrodsConfigView(LoggedInPermissionMixin, HTTPRefererMixin, View):
         if settings.IRODS_CERT_PATH:
             try:
                 with open(settings.IRODS_CERT_PATH) as cert_file:
+                    cert_file_name = irods_env['irods_ssl_certificate_file']
                     zip_file.writestr(cert_file_name, cert_file.read())
             except FileNotFoundError:
                 logger.warning(

@@ -78,6 +78,9 @@ class BackendPlugin(BackendPluginPoint):
                 project_stats = irods_backend.get_object_stats(
                     irods, irods_backend.get_projects_path()
                 )
+                trash_stats = irods_backend.get_object_stats(
+                    irods, irods_backend.get_trash_path()
+                )
         except Exception:
             return {}
         return {
@@ -86,5 +89,9 @@ class BackendPlugin(BackendPluginPoint):
                 'value': filesizeformat(project_stats['total_size']),
                 'description': 'Total file size including sample repositories '
                 'and landing zones.',
-            }
+            },
+            'irods_trash_size': {
+                'label': 'Data in iRODS Trash',
+                'value': filesizeformat(trash_stats['total_size']),
+            },
         }

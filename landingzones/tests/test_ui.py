@@ -1,5 +1,7 @@
 """UI tests for the landingzones app"""
 
+import time
+
 from django.test import override_settings
 from django.urls import reverse
 
@@ -8,17 +10,18 @@ from selenium.webdriver.common.by import By
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.models import RoleAssignment
 from projectroles.tests.test_ui import TestUIBase
 
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_sheet_config import SheetConfigMixin
 
+from landingzones.constants import ZONE_STATUS_CREATING
 from landingzones.tests.test_models import LandingZoneMixin
 
 
 app_settings = AppSettingAPI()
+
 
 # Local constants
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
@@ -54,18 +57,20 @@ class TestProjectZoneView(
         else:
             self.assertIn('disabled', element.get_attribute('class'))
 
+    def _wait_for_status_update(self):
+        """Wait for JQuery landing zone status updates to finish"""
+        for i in range(0, 20):
+            if self.selenium.execute_script('return window.zoneStatusUpdated'):
+                return
+            time.sleep(0.5)
+
     def setUp(self):
         super().setUp()
-        # NOTE: Temp inherited owner override, see bihealth/sodar-core#1103
-        self.user_owner_cat = self.make_user('user_owner_cat')
-        self.owner_as_cat = RoleAssignment.objects.get(
-            project=self.category, role=self.role_owner
-        )
-        self.owner_as_cat.user = self.user_owner_cat
-        self.owner_as_cat.save()
         # Users with access to landing zones
         self.zone_users = [
             self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
             self.user_owner,
             self.user_delegate,
             self.user_contributor,
@@ -289,6 +294,7 @@ class TestProjectZoneView(
             'contrib_zone', self.project, self.user_contributor, self.assay
         )
         self.login_and_redirect(self.user_contributor, self.url)
+        self._wait_for_status_update()
         zone = self.selenium.find_elements(
             By.CLASS_NAME, 'sodar-lz-zone-tr-existing'
         )[0]
@@ -319,6 +325,7 @@ class TestProjectZoneView(
         )
         self.project.set_archive()
         self.login_and_redirect(self.user_contributor, self.url)
+        self._wait_for_status_update()
         zone = self.selenium.find_elements(
             By.CLASS_NAME, 'sodar-lz-zone-tr-existing'
         )[0]
@@ -337,4 +344,79 @@ class TestProjectZoneView(
         self._assert_btn_enabled(
             zone.find_element(By.CLASS_NAME, 'sodar-lz-zone-btn-delete'),
             True,
+        )
+
+    def test_zone_locked_superuser(self):
+        """Test ProjectZoneView zone rendering for locked zone as superuser"""
+        self._setup_investigation()
+        self.investigation.irods_status = True
+        self.investigation.save()
+        zone = self.make_landing_zone(
+            'contrib_zone', self.project, self.user_contributor, self.assay
+        )
+        self.assertEqual(zone.status, ZONE_STATUS_CREATING)
+        self.login_and_redirect(self.superuser, self.url)
+        self._wait_for_status_update()
+        zone_elem = self.selenium.find_elements(
+            By.CLASS_NAME, 'sodar-lz-zone-tr-existing'
+        )[0]
+        self.assertNotIn(
+            'disabled',
+            zone_elem.find_element(
+                By.CLASS_NAME, 'sodar-list-dropdown'
+            ).get_attribute('class'),
+        )
+        self.assertNotIn(
+            'text-muted',
+            zone_elem.find_element(
+                By.CLASS_NAME, 'sodar-lz-zone-title'
+            ).get_attribute('class'),
+        )
+        self.assertNotIn(
+            'text-muted',
+            zone_elem.find_element(
+                By.CLASS_NAME, 'sodar-lz-zone-status-info'
+            ).get_attribute('class'),
+        )
+        class_names = [
+            'sodar-lz-zone-btn-validate',
+            'sodar-lz-zone-btn-move',
+            'sodar-lz-zone-btn-copy',
+            'sodar-lz-zone-btn-delete',
+        ]
+        for c in class_names:
+            self._assert_btn_enabled(
+                zone_elem.find_element(By.CLASS_NAME, c), True
+            )
+
+    def test_zone_locked_contributor(self):
+        """Test ProjectZoneView zone rendering for locked zone as contributor"""
+        self._setup_investigation()
+        self.investigation.irods_status = True
+        self.investigation.save()
+        self.make_landing_zone(
+            'contrib_zone', self.project, self.user_contributor, self.assay
+        )
+        self.login_and_redirect(self.user_contributor, self.url)
+        self._wait_for_status_update()
+        zone_elem = self.selenium.find_elements(
+            By.CLASS_NAME, 'sodar-lz-zone-tr-existing'
+        )[0]
+        self.assertIn(
+            'disabled',
+            zone_elem.find_element(
+                By.CLASS_NAME, 'sodar-list-dropdown'
+            ).get_attribute('class'),
+        )
+        self.assertIn(
+            'text-muted',
+            zone_elem.find_element(
+                By.CLASS_NAME, 'sodar-lz-zone-title'
+            ).get_attribute('class'),
+        )
+        self.assertIn(
+            'text-muted',
+            zone_elem.find_element(
+                By.CLASS_NAME, 'sodar-lz-zone-status-info'
+            ).get_attribute('class'),
         )

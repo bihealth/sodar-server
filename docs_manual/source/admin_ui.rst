@@ -52,6 +52,8 @@ These new applications are as follows:
 `Site Info <https://sodar-core.readthedocs.io/en/latest/app_siteinfo.html#usage>`_
     Display information related to this SODAR instance, including statistics,
     enabled applications and back-end server settings.
+`All Timeline Events <https://sodar-core.readthedocs.io/en/latest/app_timeline_usage.html>`_
+    Browse a list of all timeline events on the site.
 Django Admin
     Access the Django admin UI.
 

@@ -349,17 +349,17 @@ export default Vue.extend({
   beforeDestroy () {
     if (!this.destroyCalled) {
       this.destroyCalled = true // HACK for issue #869
-
       // Convert to list value if applicable
-      if (this.editValue.includes(';') && (this.isValueArray ||
-          (!['integer', 'double'].includes(this.editConfig.format) &&
-          !this.value.unit))) { // TODO: More constraints for list values?
+      if (this.editValue.includes(';') &&
+        this.headerInfo.header_type !== 'comments' && (
+        this.isValueArray || (
+          !['integer', 'double'].includes(this.editConfig.format) &&
+          !this.value.unit))) {
         this.value.value = this.editValue.split(';')
         for (let i = 0; i < this.value.value.length; i++) {
           this.value.value[i] = this.value.value[i].trim()
         }
       }
-
       // Check if we're in a named process without a protocol
       let namedProcess = false
       if (this.headerInfo.header_type === 'process_name') {

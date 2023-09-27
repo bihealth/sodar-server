@@ -1,12 +1,17 @@
 """Tests for samplesheets.rendering"""
 
+from django.test import override_settings
 from test_plus.test import TestCase
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.models import Role, SODAR_CONSTANTS
+from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
-from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
+from projectroles.tests.test_models import (
+    ProjectMixin,
+    RoleMixin,
+    RoleAssignmentMixin,
+)
 
 from samplesheets.models import GenericMaterial
 from samplesheets.rendering import (
@@ -32,22 +37,21 @@ SHEET_PATH_ALT = SHEET_DIR + 'i_small2.zip'
 
 
 # TODO: Unify with TestTableBuilder if no other classes are needed
-class TestRenderingBase(
-    ProjectMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase
+class SamplesheetsRenderingTestBase(
+    ProjectMixin, RoleMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase
 ):
-    """Base class for rendering tests"""
+    """Base class for samplesheets rendering tests"""
 
     def setUp(self):
+        # Init roles
+        self.init_roles()
         # Make owner user
         self.user_owner = self.make_user('owner')
-        # Init project, role and assignment
+        # Init project and assignment
         self.project = self.make_project(
             'TestProject', SODAR_CONSTANTS['PROJECT_TYPE_PROJECT'], None
         )
-        self.role_owner = Role.objects.get_or_create(
-            name=SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
-        )[0]
-        self.assignment_owner = self.make_assignment(
+        self.owner_as = self.make_assignment(
             self.project, self.user_owner, self.role_owner
         )
         # Import investigation
@@ -62,7 +66,7 @@ class TestRenderingBase(
         self.cache_args = [APP_NAME, self.cache_name, self.project]
 
 
-class TestTableBuilder(SheetConfigMixin, TestRenderingBase):
+class TestTableBuilder(SheetConfigMixin, SamplesheetsRenderingTestBase):
     """Tests for SampleSheetTableBuilder"""
 
     def _assert_row_length(self, table):
@@ -198,6 +202,53 @@ class TestTableBuilder(SheetConfigMixin, TestRenderingBase):
         )
         study_tables = self.tb.get_study_tables(self.study)
         self.assertEqual(study_tables, cache_item.data)
+
+    @override_settings(SHEETS_ENABLE_STUDY_TABLE_CACHE=False)
+    def test_get_study_tables_update_no_cache(self):
+        """Test get_study_tables() with SHEETS_ENABLE_STUDY_TABLE_CACHE=False"""
+        tables = self.tb.get_study_tables(self.study)
+        t_field = tables['study']['field_header'][2]
+        self.assertEqual(t_field['value'], 'Age')
+        self.sheet_config = self.build_sheet_config(self.investigation)
+
+        # Change name in a model
+        characteristics = (
+            GenericMaterial.objects.filter(study=self.study, item_type='SOURCE')
+            .first()
+            .characteristics
+        )
+        self.assertEqual(characteristics['age']['value'], '90')
+        characteristics['age']['value'] = '70'
+        GenericMaterial.objects.filter(
+            study=self.study, item_type='SOURCE'
+        ).update(characteristics=characteristics)
+
+        tables = self.tb.get_study_tables(self.study)
+        val_field = tables['study']['table_data'][2]
+        self.assertEqual(val_field[2]['value'], '70')
+
+    def test_get_study_tables_update_cache(self):
+        """Test get_study_tables() with SHEETS_ENABLE_STUDY_TABLE_CACHE=True"""
+        tables = self.tb.get_study_tables(self.study)
+        t_field = tables['study']['field_header'][2]
+        self.assertEqual(t_field['value'], 'Age')
+        self.build_sheet_config(self.investigation)
+
+        # Change name in a model
+        characteristics = (
+            GenericMaterial.objects.filter(study=self.study, item_type='SOURCE')
+            .first()
+            .characteristics
+        )
+        self.assertEqual(characteristics['age']['value'], '90')
+        characteristics['age']['value'] = '70'
+        GenericMaterial.objects.filter(
+            study=self.study, item_type='SOURCE'
+        ).first().characteristics = characteristics
+
+        tables = self.tb.get_study_tables(self.study)
+        val_field = tables['study']['table_data'][2]
+        self.assertEqual(val_field[2]['value'], '90')
 
     def test_clear_study_cache(self):
         """Test clear_study_cache()"""

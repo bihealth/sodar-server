@@ -7,7 +7,6 @@ from cubi_isa_templates import _TEMPLATES as ISA_TEMPLATES
 from urllib.parse import urlencode
 from zipfile import ZipFile
 
-from django.conf import settings
 from django.contrib.messages import get_messages
 from django.test import LiveServerTestCase, override_settings
 from django.urls import reverse
@@ -17,9 +16,13 @@ from test_plus.test import TestCase
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.models import Role, AppSetting, SODAR_CONSTANTS
+from projectroles.models import AppSetting, SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
-from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
+from projectroles.tests.test_models import (
+    ProjectMixin,
+    RoleMixin,
+    RoleAssignmentMixin,
+)
 from projectroles.tests.test_views_api import SODARAPIViewTestMixin
 from projectroles.utils import build_secret
 
@@ -27,12 +30,20 @@ from projectroles.utils import build_secret
 from sodarcache.models import JSONCacheItem
 
 # Landingzones dependency
+from landingzones.constants import ZONE_STATUS_ACTIVE
 from landingzones.models import LandingZone
 from landingzones.tests.test_models import LandingZoneMixin
 
 from samplesheets.forms import TPL_DIR_FIELD
 from samplesheets.io import SampleSheetIO
-from samplesheets.models import Investigation, Assay, ISATab
+from samplesheets.models import (
+    Investigation,
+    Assay,
+    ISATab,
+    IrodsDataRequest,
+    IRODS_REQUEST_ACTION_DELETE,
+    IRODS_REQUEST_STATUS_ACTIVE,
+)
 from samplesheets.rendering import (
     SampleSheetTableBuilder,
     STUDY_TABLE_CACHE_ITEM,
@@ -43,7 +54,10 @@ from samplesheets.tests.test_io import (
     SHEET_DIR,
     SHEET_DIR_SPECIAL,
 )
-from samplesheets.tests.test_models import SampleSheetModelMixin
+from samplesheets.tests.test_models import (
+    SampleSheetModelMixin,
+    IrodsDataRequestMixin,
+)
 from samplesheets.tests.test_sheet_config import CONFIG_PATH_DEFAULT
 
 # TODO: This should not be required (see issue #1578)
@@ -105,34 +119,23 @@ REMOTE_SITE_DESC = 'description'
 REMOTE_SITE_SECRET = build_secret()
 EDIT_NEW_VALUE_STR = 'edited value'
 DUMMY_UUID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
+IRODS_FILE_PATH = '/sodarZone/path/test1.txt'
 with open(CONFIG_PATH_DEFAULT) as fp:
     CONFIG_DATA_DEFAULT = json.load(fp)
-IRODS_BACKEND_ENABLED = (
-    True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
-)
-IRODS_BACKEND_SKIP_MSG = 'iRODS backend not enabled in settings'
 
 
 # TODO: Add testing for study table cache updates
 
 
-class TestViewsBase(
-    ProjectMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase
+class SamplesheetsViewTestBase(
+    ProjectMixin, RoleMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase
 ):
     """Base view for samplesheets views tests"""
 
     def setUp(self):
         # Init roles
-        self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
-        self.role_delegate = Role.objects.get_or_create(
-            name=PROJECT_ROLE_DELEGATE
-        )[0]
-        self.role_contributor = Role.objects.get_or_create(
-            name=PROJECT_ROLE_CONTRIBUTOR
-        )[0]
-        self.role_guest = Role.objects.get_or_create(name=PROJECT_ROLE_GUEST)[0]
-
-        # Init suusers
+        self.init_roles()
+        # Init users
         self.user = self.make_user('superuser')
         self.user.is_staff = True
         self.user.is_superuser = True
@@ -142,7 +145,6 @@ class TestViewsBase(
         self.user_contributor = self.make_user('contributor')
         self.user_guest = self.make_user('guest')
         self.user_no_roles = self.make_user('user_no_roles')
-
         # Init projects
         self.category = self.make_project(
             'TestCategory', PROJECT_TYPE_CATEGORY, None
@@ -164,7 +166,7 @@ class TestViewsBase(
         )
 
 
-class TestProjectSheetsView(TestViewsBase):
+class TestProjectSheetsView(SamplesheetsViewTestBase):
     """Tests for the project sheets view"""
 
     def setUp(self):
@@ -192,7 +194,9 @@ class TestProjectSheetsView(TestViewsBase):
         self.assertNotIn('tables', response.context)
 
 
-class TestSheetImportView(SheetImportMixin, LandingZoneMixin, TestViewsBase):
+class TestSheetImportView(
+    SheetImportMixin, LandingZoneMixin, SamplesheetsViewTestBase
+):
     """Tests for the investigation import view"""
 
     def setUp(self):
@@ -392,7 +396,7 @@ class TestSheetImportView(SheetImportMixin, LandingZoneMixin, TestViewsBase):
             self.project,
             self.user,
             inv.get_assays().first(),
-            status='ACTIVE',
+            status=ZONE_STATUS_ACTIVE,
         )
 
         self.assertEqual(Investigation.objects.count(), 1)
@@ -659,7 +663,7 @@ class TestSheetImportView(SheetImportMixin, LandingZoneMixin, TestViewsBase):
         )
 
 
-class TestSheetTemplateSelectView(TestViewsBase):
+class TestSheetTemplateSelectView(SamplesheetsViewTestBase):
     """Tests for SheetTemplateSelectView"""
 
     def test_render(self):
@@ -674,7 +678,7 @@ class TestSheetTemplateSelectView(TestViewsBase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             len(response.context['sheet_templates']),
-            len(settings.SHEETS_ENABLED_TEMPLATES),
+            len(ISA_TEMPLATES),
         )
 
     def test_render_with_sheets(self):
@@ -696,22 +700,16 @@ class TestSheetTemplateSelectView(TestViewsBase):
             )
 
 
-class TestSheetTemplateCreateFormView(TestViewsBase):
-    """Tests for SheetTemplateCreateFormView"""
+class TestSheetTemplateCreateView(SamplesheetsViewTestBase):
+    """Tests for SheetTemplateCreateView"""
 
-    def _get_post_data(self, tpl_name):
+    def _get_post_data(self, sheet_tpl):
         """
         Return POST data for creation from template
 
-        :param tpl_name: Template name (string)
+        :param sheet_tpl: IsaTabTemplate object
         :return: Dict
         """
-        templates = {
-            t.name: t
-            for t in ISA_TEMPLATES
-            if t.name in settings.SHEETS_ENABLED_TEMPLATES
-        }
-        sheet_tpl = templates[tpl_name]
         ret = {TPL_DIR_FIELD: clean_sheet_dir_name(self.project.title)}
         for k, v in sheet_tpl.configuration.items():
             if isinstance(v, str):
@@ -726,16 +724,16 @@ class TestSheetTemplateCreateFormView(TestViewsBase):
 
     def test_render_batch(self):
         """Test rendering the view with supported templates"""
-        for t in settings.SHEETS_ENABLED_TEMPLATES:
+        for t in ISA_TEMPLATES:
             with self.login(self.user):
                 response = self.client.get(
                     reverse(
                         'samplesheets:template_create',
                         kwargs={'project': self.project.sodar_uuid},
                     ),
-                    data={'sheet_tpl': t},
+                    data={'sheet_tpl': t.name},
                 )
-            self.assertEqual(response.status_code, 200, msg=t)
+            self.assertEqual(response.status_code, 200, msg=t.name)
 
     def test_render_invalid_template(self):
         """Test rendering the view with invalid template (should redirect)"""
@@ -777,8 +775,7 @@ class TestSheetTemplateCreateFormView(TestViewsBase):
 
     def test_post_batch(self):
         """Test POST request with supported templates and default values"""
-
-        for t in settings.SHEETS_ENABLED_TEMPLATES:
+        for t in ISA_TEMPLATES:
             self.assertIsNone(self.project.investigations.first())
             post_data = self._get_post_data(t)
             with self.login(self.user):
@@ -788,22 +785,26 @@ class TestSheetTemplateCreateFormView(TestViewsBase):
                         kwargs={'project': self.project.sodar_uuid},
                     )
                     + '?sheet_tpl='
-                    + t,
+                    + t.name,
                     data=post_data,
                 )
-            self.assertEqual(response.status_code, 302, msg=t)
-            self.assertIsNotNone(self.project.investigations.first())
+            isa_tab = ISATab.objects.first()
+            self.assertEqual(isa_tab.tags, ['CREATE'])
+            self.assertEqual(response.status_code, 302, msg=t.name)
+            self.assertIsNotNone(
+                self.project.investigations.first(), msg=t.name
+            )
             self.project.investigations.first().delete()
 
     def test_post_multiple(self):
         """Test multiple requests to add multiple sample sheets (should fail)"""
-        tpl_name = settings.SHEETS_ENABLED_TEMPLATES[0]
+        tpl = ISA_TEMPLATES[0]
         url = reverse(
             'samplesheets:template_create',
             kwargs={'project': self.project.sodar_uuid},
         )
-        url += '?sheet_tpl=' + tpl_name
-        post_data = self._get_post_data(tpl_name)
+        url += '?sheet_tpl=' + tpl.name
+        post_data = self._get_post_data(tpl)
         with self.login(self.user):
             response = self.client.post(url, data=post_data)
             self.assertEqual(response.status_code, 302)
@@ -813,7 +814,7 @@ class TestSheetTemplateCreateFormView(TestViewsBase):
             self.assertEqual(self.project.investigations.count(), 1)
 
 
-class TestSheetExcelExportView(TestViewsBase):
+class TestSheetExcelExportView(SamplesheetsViewTestBase):
     """Tests for the sample sheet Excel export view"""
 
     def setUp(self):
@@ -834,11 +835,6 @@ class TestSheetExcelExportView(TestViewsBase):
                 )
             )
         self.assertEqual(response.status_code, 200)
-        # Assert data in timeline event
-        tl_event = self.timeline.get_project_events(
-            self.project, classified=True
-        ).order_by('-pk')[0]
-        self.assertEqual(tl_event.event_name, 'sheet_export_excel')
 
     def test_render_assay(self):
         """Test rendering the Excel file for a assay table"""
@@ -850,14 +846,9 @@ class TestSheetExcelExportView(TestViewsBase):
                 )
             )
         self.assertEqual(response.status_code, 200)
-        # Assert data in timeline event
-        tl_event = self.timeline.get_project_events(
-            self.project, classified=True
-        ).order_by('-pk')[0]
-        self.assertEqual(tl_event.event_name, 'sheet_export_excel')
 
 
-class TestSheetISAExportView(TestViewsBase):
+class TestSheetISAExportView(SamplesheetsViewTestBase):
     """Tests for the investigation ISA-Tab export view"""
 
     def setUp(self):
@@ -880,12 +871,6 @@ class TestSheetISAExportView(TestViewsBase):
             response.get('Content-Disposition'),
             'attachment; filename="{}"'.format(self.investigation.archive_name),
         )
-        # Assert data in timeline event
-        tl_event = self.timeline.get_project_events(
-            self.project, classified=True
-        ).order_by('-pk')[0]
-        tl_status = tl_event.get_status()
-        self.assertIsNotNone(tl_status.extra_data['warnings'])
 
     def test_get_no_investigation(self):
         """Test requesting an ISA-Tab export with no investigation provided"""
@@ -924,7 +909,7 @@ class TestSheetISAExportView(TestViewsBase):
         )
 
 
-class TestSheetDeleteView(TestViewsBase):
+class TestSheetDeleteView(SamplesheetsViewTestBase):
     """Tests for the investigation delete view"""
 
     def setUp(self):
@@ -1050,7 +1035,7 @@ class TestSheetDeleteView(TestViewsBase):
         self.assertEqual(JSONCacheItem.objects.count(), 0)
 
 
-class TestSheetVersionListView(TestViewsBase):
+class TestSheetVersionListView(SamplesheetsViewTestBase):
     """Tests for the sample sheet version list view"""
 
     def test_render(self):
@@ -1088,12 +1073,11 @@ class TestSheetVersionListView(TestViewsBase):
                 )
             )
         self.assertEqual(response.status_code, 200)
-        # Assert context data
         self.assertEqual(response.context['object_list'].count(), 0)
         self.assertIsNone(response.context['current_version'])
 
 
-class TestSheetVersionRestoreView(TestViewsBase):
+class TestSheetVersionRestoreView(SamplesheetsViewTestBase):
     """Tests for the sample sheet version restore view"""
 
     def setUp(self):
@@ -1179,7 +1163,7 @@ class TestSheetVersionRestoreView(TestViewsBase):
         self.assertEqual(JSONCacheItem.objects.count(), 1)
 
 
-class TestSheetVersionUpdateView(TestViewsBase):
+class TestSheetVersionUpdateView(SamplesheetsViewTestBase):
     """Tests for the sample sheet version update view"""
 
     def setUp(self):
@@ -1224,7 +1208,7 @@ class TestSheetVersionUpdateView(TestViewsBase):
         self.assertEqual(self.isatab.date_created, date_created)
 
 
-class TestSheetVersionDeleteView(TestViewsBase):
+class TestSheetVersionDeleteView(SamplesheetsViewTestBase):
     """Tests for the sample sheet version delete view"""
 
     def setUp(self):
@@ -1262,7 +1246,9 @@ class TestSheetVersionDeleteView(TestViewsBase):
         self.assertEqual(ISATab.objects.count(), 0)
 
 
-class TestSheetVersionDeleteBatchView(SampleSheetModelMixin, TestViewsBase):
+class TestSheetVersionDeleteBatchView(
+    SampleSheetModelMixin, SamplesheetsViewTestBase
+):
     """Tests for the sample sheet version batch delete view"""
 
     def setUp(self):
@@ -1329,8 +1315,8 @@ class TestSheetVersionDeleteBatchView(SampleSheetModelMixin, TestViewsBase):
         self.assertEqual(ISATab.objects.count(), 0)
 
 
-class TestProjectSearchView(TestViewsBase):
-    """Tests for the search results view with sample sheet input"""
+class TestProjectSearchResultsView(SamplesheetsViewTestBase):
+    """Tests for ProjectSearchResultsView view with sample sheet input"""
 
     def _get_items(self, response):
         return response.context['app_results'][0]['results']['materials'][
@@ -1427,24 +1413,22 @@ class TestProjectSearchView(TestViewsBase):
 
     def test_search_multi(self):
         """Test simple search with multiple terms"""
+        post_data = {'m': self.source.name + '\r\n' + self.sample.name}
         with self.login(self.user):
-            response = self.client.get(
-                reverse('projectroles:search')
-                + '?'
-                + urlencode({'m': self.source.name + '\r\n' + self.sample.name})
+            response = self.client.post(
+                reverse('projectroles:search'), data=post_data
             )
         self.assertEqual(response.status_code, 200)
         items = self._get_items(response)
         self.assertEqual(len(items), 2)
 
 
-class TestSheetVersionCompareView(TestViewsBase):
+class TestSheetVersionCompareView(SamplesheetsViewTestBase):
     """Tests for the SheetVersionCompareView"""
 
     def setUp(self):
         super().setUp()
         self.import_isa_from_file(SHEET_PATH_SMALL2, self.project)
-
         with open(SHEET_PATH_SMALL2_ALT, 'rb') as file, self.login(self.user):
             values = {'file_upload': file}
             self.client.post(
@@ -1454,7 +1438,6 @@ class TestSheetVersionCompareView(TestViewsBase):
                 ),
                 values,
             )
-
         self.isa1 = ISATab.objects.first()
         self.isa2 = ISATab.objects.last()
         self.isa2.data['studies']['s_small2.txt'] = self.isa2.data[
@@ -1499,13 +1482,12 @@ class TestSheetVersionCompareView(TestViewsBase):
         self.assertRedirects(response, reverse('home'))
 
 
-class TestSheetVersionCompareFileView(TestViewsBase):
+class TestSheetVersionCompareFileView(SamplesheetsViewTestBase):
     """Tests for the SheetVersionCompareFileView"""
 
     def setUp(self):
         super().setUp()
         self.import_isa_from_file(SHEET_PATH_SMALL2, self.project)
-
         with open(SHEET_PATH_SMALL2_ALT, 'rb') as file, self.login(self.user):
             values = {'file_upload': file}
             self.client.post(
@@ -1515,7 +1497,6 @@ class TestSheetVersionCompareFileView(TestViewsBase):
                 ),
                 values,
             )
-
         self.isa1 = ISATab.objects.first()
         self.isa2 = ISATab.objects.last()
         self.isa2.data['studies']['s_small2.txt'] = self.isa2.data[
@@ -1566,8 +1547,91 @@ class TestSheetVersionCompareFileView(TestViewsBase):
         self.assertRedirects(response, reverse('home'))
 
 
+class TestIrodsDataRequestListView(
+    IrodsDataRequestMixin, SamplesheetsViewTestBase
+):
+    """Tests for IrodsDataRequestListView"""
+
+    def test_list(self):
+        """Test GET request for listing delete requests"""
+        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+        request = self.make_irods_request(
+            project=self.project,
+            action=IRODS_REQUEST_ACTION_DELETE,
+            path=IRODS_FILE_PATH,
+            status=IRODS_REQUEST_STATUS_ACTIVE,
+            user=self.user,
+        )
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:irods_requests',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['object_list']), 1)
+        self.assertEqual(response.context['object_list'][0], request)
+
+    def test_list_as_contributor_by_superuser(self):
+        """Test GET as contibutor with request created by superuser"""
+        self.make_irods_request(
+            project=self.project,
+            action=IRODS_REQUEST_ACTION_DELETE,
+            path=IRODS_FILE_PATH,
+            status=IRODS_REQUEST_STATUS_ACTIVE,
+            user=self.user,
+        )
+        with self.login(self.user_contributor):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:irods_requests',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['object_list']), 0)
+
+    def test_list_as_contributor2_by_contributor(self):
+        """Test GET as contributor2 with request created by contributor"""
+        user_contributor2 = self.make_user('user_contributor2')
+        self.make_assignment(
+            self.project, user_contributor2, self.role_contributor
+        )
+        self.make_irods_request(
+            project=self.project,
+            action=IRODS_REQUEST_ACTION_DELETE,
+            path=IRODS_FILE_PATH,
+            status=IRODS_REQUEST_STATUS_ACTIVE,
+            user=self.user_contributor,
+        )
+        with self.login(user_contributor2):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:irods_requests',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['object_list']), 0)
+
+    def test_list_empty(self):
+        """Test GET request for empty list of delete requests"""
+        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:irods_requests',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['object_list']), 0)
+
+
 class TestSheetRemoteSyncBase(
     ProjectMixin,
+    RoleMixin,
     RoleAssignmentMixin,
     SODARAPIViewTestMixin,
     SampleSheetIOMixin,
@@ -1578,7 +1642,7 @@ class TestSheetRemoteSyncBase(
 
     def setUp(self):
         super().setUp()
-        self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
+        self.init_roles()
         self.user = self.make_user('user')
         self.user.save()
         self.category = self.make_project(
@@ -1665,7 +1729,6 @@ class TestSheetRemoteSyncView(TestSheetRemoteSyncBase):
             False,
             project=self.project_target,
         )
-
         with self.login(self.user):
             response = self.client.get(
                 reverse(
@@ -1695,7 +1758,6 @@ class TestSheetRemoteSyncView(TestSheetRemoteSyncBase):
             'WRONGTOKEN',
             project=self.project_target,
         )
-
         with self.login(self.user):
             response = self.client.get(
                 reverse(
@@ -1725,7 +1787,6 @@ class TestSheetRemoteSyncView(TestSheetRemoteSyncBase):
             '',
             project=self.project_target,
         )
-
         with self.login(self.user):
             response = self.client.get(
                 reverse(

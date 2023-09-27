@@ -17,9 +17,14 @@ from projectroles.plugins import (
 # Samplesheets dependency
 from samplesheets.models import Investigation, Assay
 
-from landingzones.models import LandingZone, STATUS_ALLOW_UPDATE
+from landingzones.constants import (
+    STATUS_ALLOW_UPDATE,
+    ZONE_STATUS_MOVED,
+    ZONE_STATUS_DELETED,
+)
+from landingzones.models import LandingZone
 from landingzones.urls import urlpatterns
-from landingzones.views import ZoneCreateMixin
+from landingzones.views import ZoneModifyMixin
 
 
 logger = logging.getLogger(__name__)
@@ -38,7 +43,7 @@ LANDINGZONES_INFO_SETTINGS = [
 
 
 class ProjectAppPlugin(
-    ZoneCreateMixin, ProjectModifyPluginMixin, ProjectAppPluginPoint
+    ZoneModifyMixin, ProjectModifyPluginMixin, ProjectAppPluginPoint
 ):
     """Plugin for registering app with Projectroles"""
 
@@ -75,7 +80,9 @@ class ProjectAppPlugin(
     entry_point_url_id = 'landingzones:list'
 
     #: Description string
-    description = 'Management of sample data landing zones in iRODS'
+    description = (
+        'Landing zone management for uploading sample data files to iRODS'
+    )
 
     #: Required permission for accessing the app
     app_permission = 'landingzones.view_zone_own'
@@ -125,7 +132,7 @@ class ProjectAppPlugin(
         obj = self.get_object(eval(model_str), uuid)
         if not obj:
             return None
-        if obj.__class__ == LandingZone and obj.status != 'MOVED':
+        if obj.__class__ == LandingZone and obj.status != ZONE_STATUS_MOVED:
             return {
                 'url': reverse(
                     'landingzones:list',
@@ -137,12 +144,7 @@ class ProjectAppPlugin(
             }
         elif obj.__class__ == Assay:
             return {
-                'url': reverse(
-                    'samplesheets:project_sheets',
-                    kwargs={'project': obj.get_project().sodar_uuid},
-                )
-                + '#/assay/'
-                + str(obj.sodar_uuid),
+                'url': obj.get_url(),
                 'label': obj.get_display_name(),
             }
 
@@ -166,7 +168,9 @@ class ProjectAppPlugin(
             zones = LandingZone.objects.filter(project=project)
         else:
             zones = LandingZone.objects.filter(project=project, user=user)
-        active_count = zones.exclude(status__in=['MOVED', 'DELETED']).count()
+        active_count = zones.exclude(
+            status__in=[ZONE_STATUS_MOVED, ZONE_STATUS_DELETED]
+        ).count()
 
         if investigation and investigation.irods_status and active_count > 0:
             return (
@@ -235,7 +239,8 @@ class ProjectAppPlugin(
                 zone_path = irods_backend.get_path(zone)
                 if irods.collections.exists(zone_path):
                     continue  # Skip if already there
-                self.submit_create(zone, False)
+                logger.info('Syncing landing zone "{}"..'.format(zone.title))
+                self.submit_create(zone, create_colls=True, sync=True)
 
 
 # Landingzones configuration sub-app plugin ------------------------------------

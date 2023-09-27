@@ -11,6 +11,7 @@ from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.timezone import localtime
 
@@ -67,11 +68,11 @@ ISATAB_TAGS = {
     'REPLACE': 'Replacing a previous ISA-Tab',
 }
 
-IRODS_DATA_REQUEST_STATUS_CHOICES = [
-    ('ACTIVE', 'active'),
-    ('ACCEPTED', 'accepted'),
-    ('FAILED', 'failed'),
-]
+IRODS_REQUEST_ACTION_DELETE = 'DELETE'
+IRODS_REQUEST_STATUS_ACCEPTED = 'ACCEPTED'
+IRODS_REQUEST_STATUS_ACTIVE = 'ACTIVE'
+IRODS_REQUEST_STATUS_FAILED = 'FAILED'
+IRODS_REQUEST_STATUS_REJECTED = 'REJECTED'
 
 # ISA-Tab SODAR metadata comment key for assay plugin override
 ISA_META_ASSAY_PLUGIN = 'SODAR Assay Plugin'
@@ -276,6 +277,13 @@ class Investigation(BaseSampleSheet):
             Q(study__investigation=self) | Q(assay__study__investigation=self),
         ).count()
 
+    def get_url(self):
+        """Return the URL for this investigation"""
+        return reverse(
+            'samplesheets:project_sheets',
+            kwargs={'project': self.get_project().sodar_uuid},
+        )
+
 
 # Study ------------------------------------------------------------------------
 
@@ -398,6 +406,13 @@ class Study(BaseSampleSheet):
         for plugin in SampleSheetStudyPluginPoint.get_plugins():
             if plugin.config_name == self.investigation.get_configuration():
                 return plugin
+
+    def get_url(self):
+        """Return the URL for this study"""
+        return reverse(
+            'samplesheets:project_sheets',
+            kwargs={'project': self.get_project().sodar_uuid},
+        ) + '#/study/{}'.format(self.sodar_uuid)
 
 
 # Protocol ---------------------------------------------------------------------
@@ -537,9 +552,7 @@ class Assay(BaseSampleSheet):
         return ' '.join(s for s in self.get_name().split('_')).title()
 
     def get_plugin(self):
-        """
-        Get active assay app plugin or None if not found.
-        """
+        """Return the active assay app plugin or None if not found"""
         # TODO: Log warning if there are multiple plugins found?
         from samplesheets.plugins import SampleSheetAssayPluginPoint
 
@@ -563,6 +576,13 @@ class Assay(BaseSampleSheet):
         for plugin in SampleSheetAssayPluginPoint.get_plugins():
             if search_fields in plugin.assay_fields:
                 return plugin
+
+    def get_url(self):
+        """Return the URL for this assay"""
+        return reverse(
+            'samplesheets:project_sheets',
+            kwargs={'project': self.get_project().sodar_uuid},
+        ) + '#/assay/{}'.format(self.sodar_uuid)
 
 
 # Materials and data files -----------------------------------------------------
@@ -1116,44 +1136,23 @@ class IrodsAccessTicketActiveManager(models.Manager):
 
 
 class IrodsAccessTicket(models.Model):
-    """
-    Model for managing tickets in irods
-    """
-
-    class Meta:
-        ordering = ['-date_created']
-
-    objects = models.Manager()
-    active_objects = IrodsAccessTicketActiveManager()
-
-    #: Internal UUID for the object
-    sodar_uuid = models.UUIDField(
-        default=uuid.uuid4, unique=True, help_text='SODAR UUID for the object'
-    )
-
-    #: Project the ticket belongs to
-    project = models.ForeignKey(
-        Project,
-        related_name='irods_access_ticket',
-        help_text='Project the ticket belongs to',
-        on_delete=models.CASCADE,
-    )
+    """Model for managing access tickets in iRODS"""
 
     #: Study the ticket belongs to
     study = models.ForeignKey(
         Study,
-        related_name='irods_access_ticket',
-        help_text='Study the ticket belongs to',
+        related_name='irods_access_tickets',
+        help_text='Study in which the ticket belongs',
         on_delete=models.CASCADE,
     )
 
     #: Assay the ticket belongs to (optional)
     assay = models.ForeignKey(
         Assay,
-        related_name='irods_access_ticket',
+        related_name='irods_access_tickets',
         null=True,
         blank=True,
-        help_text='Assay the ticket belongs to (optional)',
+        help_text='Assay in which the ticket belongs (optional)',
         on_delete=models.CASCADE,
     )
 
@@ -1178,7 +1177,7 @@ class IrodsAccessTicket(models.Model):
     #: User that created the ticket
     user = models.ForeignKey(
         AUTH_USER_MODEL,
-        related_name='irods_access_ticket',
+        related_name='irods_access_tickets',
         null=True,
         help_text='User that created the ticket',
         on_delete=models.CASCADE,
@@ -1193,11 +1192,50 @@ class IrodsAccessTicket(models.Model):
     date_expires = models.DateTimeField(
         null=True,
         blank=True,
-        help_text='DateTime of ticket expiration (leave unset to never '
-        'expire; click x on righthand-side of field to unset)',
+        help_text='DateTime of ticket expiration (leave unset to never expire)',
     )
 
-    def get_track_hub_name(self):
+    #: SODAR UUID for the object
+    sodar_uuid = models.UUIDField(
+        default=uuid.uuid4, unique=True, help_text='SODAR UUID for the object'
+    )
+
+    #: Standard manager
+    objects = models.Manager()
+
+    #: Active objects manager
+    active_objects = IrodsAccessTicketActiveManager()
+
+    class Meta:
+        ordering = ['-date_created']
+
+    def __str__(self):
+        return '{} / {} / {} / {}'.format(
+            self.study.investigation.project.title,
+            self.assay.get_display_name(),
+            self.get_coll_name(),
+            self.get_label(),
+        )
+
+    def __repr__(self):
+        values = (
+            self.study.investigation.project.title,
+            self.assay.get_display_name(),
+            self.get_coll_name(),
+            self.get_label(),
+        )
+        return 'IrodsAccessTicket({})'.format(
+            ', '.join(repr(v) for v in values)
+        )
+
+    def get_project(self):
+        return self.study.investigation.project
+
+    @classmethod
+    def get_project_filter_key(cls):
+        return 'study__investigation__project'
+
+    def get_coll_name(self):
         return os.path.basename(self.path)
 
     def get_date_created(self):
@@ -1215,13 +1253,13 @@ class IrodsAccessTicket(models.Model):
         assay_name = ''
         if (
             Assay.objects.filter(
-                study__investigation__project=self.project
+                study__investigation__project=self.study.investigation.project
             ).count()
             > 1
         ):
             assay_name = '{} / '.format(self.assay.get_display_name())
         return '{}{} / {}'.format(
-            assay_name, self.get_track_hub_name(), self.get_label()
+            assay_name, self.get_coll_name(), self.get_label()
         )
 
     def get_webdav_link(self):
@@ -1233,25 +1271,6 @@ class IrodsAccessTicket(models.Model):
 
     def is_active(self):
         return self.date_expires is None or self.date_expires >= timezone.now()
-
-    def __str__(self):
-        return '{} / {} / {} / {}'.format(
-            self.project.title,
-            self.assay.get_display_name(),
-            self.get_track_hub_name(),
-            self.get_label(),
-        )
-
-    def __repr__(self):
-        values = (
-            self.project.title,
-            self.assay.get_display_name(),
-            self.get_track_hub_name(),
-            self.get_label(),
-        )
-        return 'IrodsAccessTicket({})'.format(
-            ', '.join(repr(v) for v in values)
-        )
 
 
 class IrodsDataRequest(models.Model):
@@ -1267,16 +1286,16 @@ class IrodsDataRequest(models.Model):
         Project,
         null=False,
         related_name='irods_data_request',
-        help_text='Project to which the iRODS delete request belongs',
+        help_text='Project to which the iRODS data request belongs',
         on_delete=models.CASCADE,
     )
 
-    #: Action to be performed (default currently supported)
+    #: Action to be performed (only DELETE is currently supported)
     action = models.CharField(
         max_length=64,
         unique=False,
         blank=False,
-        default='delete',
+        default=IRODS_REQUEST_ACTION_DELETE,
         help_text='Action to be performed',
     )
 
@@ -1310,8 +1329,7 @@ class IrodsDataRequest(models.Model):
     status = models.CharField(
         max_length=16,
         null=False,
-        choices=IRODS_DATA_REQUEST_STATUS_CHOICES,
-        default=IRODS_DATA_REQUEST_STATUS_CHOICES[0][0],
+        default=IRODS_REQUEST_STATUS_ACTIVE,
         help_text='Status of the request',
     )
 
@@ -1322,7 +1340,10 @@ class IrodsDataRequest(models.Model):
 
     #: Request description (optional)
     description = models.CharField(
-        max_length=1024, help_text='Request description'
+        blank=True,
+        null=True,
+        max_length=1024,
+        help_text='Request description (optional)',
     )
 
     #: DateTime of request creation
@@ -1350,6 +1371,33 @@ class IrodsDataRequest(models.Model):
         )
         return 'IrodsDataRequest({})'.format(', '.join(repr(v) for v in values))
 
+    # Saving and validation
+
+    def save(self, *args, **kwargs):
+        """Custom validation and saving method"""
+        self._validate_action()
+        self._validate_status()
+        super().save(*args, **kwargs)
+
+    def _validate_action(self):
+        """Validate the action field"""
+        if self.action != IRODS_REQUEST_ACTION_DELETE:
+            raise ValidationError(
+                'This model currently only supports the action "{}"'.format(
+                    IRODS_REQUEST_ACTION_DELETE
+                )
+            )
+
+    def _validate_status(self):
+        """Validate the status field"""
+        if self.status not in [
+            IRODS_REQUEST_STATUS_ACCEPTED,
+            IRODS_REQUEST_STATUS_ACTIVE,
+            IRODS_REQUEST_STATUS_FAILED,
+            IRODS_REQUEST_STATUS_REJECTED,
+        ]:
+            raise ValidationError('Unknown status "{}"'.format(self.status))
+
     # Custom row-level functions
 
     def get_display_name(self):
@@ -1373,14 +1421,19 @@ class IrodsDataRequest(models.Model):
             return irods.collections.exists(self.path)
 
     def get_short_path(self):
-        """Return shortened layout-friendly path"""
-        return '/'.join(self.path.split('/')[-2:])
+        """
+        Return shortened layout-friendly path, omitting the full path to the
+        assay root.
+        """
+        irods_backend = get_backend_api('omics_irods')
+        pp_len = len(irods_backend.get_projects_path().split('/'))
+        # NOTE: This only works for assays, needs to be changed if studies are
+        #       supported
+        return '/'.join(self.path.split('/')[pp_len + 5 :])
 
     def get_assay(self):
         """Return Assay object for request path or None if not found"""
         irods_backend = get_backend_api('omics_irods')
-        if not irods_backend:
-            return None
         a_uuid = irods_backend.get_uuid_from_path(self.path, 'assay')
         return Assay.objects.filter(sodar_uuid=a_uuid).first()
 

@@ -2,7 +2,6 @@
 
 from django import template
 from django.conf import settings
-from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
@@ -17,6 +16,7 @@ from samplesheets.models import (
 
 # Local constants
 TAG_COLORS = {
+    'CREATE': 'info',
     'IMPORT': 'info',
     'EDIT': 'warning',
     'REPLACE': 'danger',
@@ -80,13 +80,7 @@ def get_irods_tree(investigation):
 @register.simple_tag
 def get_material_search_url(item):
     """Return search URL for source or sample material"""
-    url = reverse(
-        'samplesheets:project_sheets',
-        kwargs={'project': item['study'].get_project().sodar_uuid},
-    )
-    url += '#/study/{}'.format(item['study'].sodar_uuid)
-    url += '/filter/{}'.format(item['name'])
-    return url
+    return item['study'].get_url() + '/filter/{}'.format(item['name'])
 
 
 # Table rendering --------------------------------------------------------------
@@ -145,8 +139,17 @@ def get_isatab_tag_html(isatab):
 
 
 @register.simple_tag
+def get_request_path_html(irods_request):
+    """Return IrodsDataRequest short path as HTML"""
+    ps = irods_request.get_short_path().split('/')
+    ret = '<span class="text-muted">{}/</span>'.format('/'.join(ps[:-1]))
+    ret += ps[-1]
+    return ret
+
+
+@register.simple_tag
 def get_request_status_class(irods_request):
-    """Return class(es) for iRODS request table status cell"""
+    """Return IrodsDataRequest status classes"""
     if irods_request.status not in REQUEST_STATUS_CLASSES:
         return ''
     return REQUEST_STATUS_CLASSES[irods_request.status]

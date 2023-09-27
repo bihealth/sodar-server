@@ -18,6 +18,11 @@ TEMPLATES[0]['OPTIONS']['debug'] = True
 # Note: This key only used for development and testing.
 SECRET_KEY = env('DJANGO_SECRET_KEY', default='CHANGEME!!!')
 
+# MANAGER CONFIGURATION
+# ------------------------------------------------------------------------------
+ADMINS = [('Admin User', 'admin@example.com')]
+MANAGERS = ADMINS
+
 # Mail settings
 # ------------------------------------------------------------------------------
 EMAIL_HOST = 'localhost'
@@ -98,6 +103,7 @@ PROJECTROLES_ALLOW_LOCAL_USERS = True
 
 # Samplesheets app settings
 SHEETS_ENABLE_CACHE = False  # Temporarily disabled to fix CI, see issue #556
+SHEETS_ENABLE_STUDY_TABLE_CACHE = True
 SHEETS_EXTERNAL_LINK_PATH = os.path.join(
     ROOT_DIR, 'samplesheets/tests/config/ext_links.json'
 )

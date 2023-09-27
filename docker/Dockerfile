@@ -25,14 +25,18 @@ RUN apt-get update && \
     apt-get install -y apt-utils gcc ldap-utils libldap2-dev libsasl2-dev \
         make postgresql-client wget
 
+# Install Nodejs v18
+RUN apt-get install -y ca-certificates curl gnupg && \
+    mkdir -p /etc/apt/keyrings && \
+    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
+RUN echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_18.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
+RUN apt-get update && \
+    apt-get install nodejs -y
+
 # Install Python dependencies
 RUN cd /usr/src/app && \
     pip install --no-cache-dir -r requirements/production.txt && \
     pip install --no-cache-dir -r requirements/local.txt
-
-# Install modern nodejs
-RUN curl -sL https://deb.nodesource.com/setup_16.x | bash - && \
-    apt-get install nodejs
 
 # Install npm dependencies
 RUN cd /usr/src/app/samplesheets/vueapp && \

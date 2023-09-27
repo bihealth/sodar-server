@@ -12,14 +12,17 @@ from projectroles.tests.test_views_api import TestAPIViewsBase
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
-from landingzones.tests.test_models import LandingZoneMixin
-from landingzones.tests.test_views_taskflow import (
-    ZONE_TITLE,
-    ZONE_DESC,
+from landingzones.constants import (
+    ZONE_STATUS_ACTIVE,
+    ZONE_STATUS_MOVED,
+    ZONE_STATUS_MOVING,
+    ZONE_STATUS_VALIDATING,
 )
+from landingzones.tests.test_models import LandingZoneMixin
+from landingzones.tests.test_views_taskflow import ZONE_TITLE, ZONE_DESC
 
 
-# Global constants
+# SODAR constants
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
 PROJECT_ROLE_CONTRIBUTOR = SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR']
@@ -29,7 +32,7 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 # Local constants
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
-ZONE_STATUS = 'VALIDATING'
+ZONE_STATUS = ZONE_STATUS_VALIDATING
 ZONE_STATUS_INFO = 'Testing'
 INVALID_UUID = '11111111-1111-1111-1111-111111111111'
 
@@ -41,18 +44,15 @@ class TestLandingZoneAPIViewsBase(
 
     def setUp(self):
         super().setUp()
-
         # Init contributor user and assignment
-        self.user_contrib = self.make_user('user_contrib')
-        self.contrib_as = self.make_assignment(
-            self.project, self.user_contrib, self.role_contributor
+        self.user_contributor = self.make_user('user_contributor')
+        self.contributor_as = self.make_assignment(
+            self.project, self.user_contributor, self.role_contributor
         )
-
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-
         # Create LandingZone
         self.landing_zone = self.make_landing_zone(
             title=ZONE_TITLE,
@@ -60,7 +60,7 @@ class TestLandingZoneAPIViewsBase(
             user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
-            status='ACTIVE',
+            status=ZONE_STATUS_ACTIVE,
         )
 
 
@@ -104,20 +104,20 @@ class TestLandingZoneListAPIView(TestLandingZoneAPIViewsBase):
             'landingzones:api_list', kwargs={'project': self.project.sodar_uuid}
         )
         response = self.request_knox(
-            url, token=self.get_token(self.user_contrib)
+            url, token=self.get_token(self.user_contributor)
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 0)
 
     def test_get_finished_default(self):
-        """Test get() with a finished zone and no finished parameter"""
+        """Test get() with finished zone and no finished parameter"""
         self.make_landing_zone(
             title=ZONE_TITLE + '_moved',
             project=self.project,
             user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
-            status='MOVED',
+            status=ZONE_STATUS_MOVED,
         )
         url = reverse(
             'landingzones:api_list', kwargs={'project': self.project.sodar_uuid}
@@ -131,14 +131,14 @@ class TestLandingZoneListAPIView(TestLandingZoneAPIViewsBase):
         )
 
     def test_get_finished_false(self):
-        """Test get() with a finished zone and finished=0"""
+        """Test get() with finished zone and finished=0"""
         self.make_landing_zone(
             title=ZONE_TITLE + '_moved',
             project=self.project,
             user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
-            status='MOVED',
+            status=ZONE_STATUS_MOVED,
         )
         url = (
             reverse(
@@ -156,14 +156,14 @@ class TestLandingZoneListAPIView(TestLandingZoneAPIViewsBase):
         )
 
     def test_get_finished_true(self):
-        """Test get() with a finished zone and finished=1"""
+        """Test get() with finished zone and finished=1"""
         self.make_landing_zone(
             title=ZONE_TITLE + '_moved',
             project=self.project,
             user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
-            status='MOVED',
+            status=ZONE_STATUS_MOVED,
         )
         url = (
             reverse(
@@ -212,7 +212,7 @@ class TestLandingZoneRetrieveAPIView(TestLandingZoneAPIViewsBase):
 
     def test_get_locked(self):
         """Test get() with locked landing zone status"""
-        self.landing_zone.status = 'MOVING'
+        self.landing_zone.status = ZONE_STATUS_MOVING
         self.landing_zone.save()
         url = reverse(
             'landingzones:api_retrieve',
@@ -221,3 +221,65 @@ class TestLandingZoneRetrieveAPIView(TestLandingZoneAPIViewsBase):
         response = self.request_knox(url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(json.loads(response.content)['status_locked'], True)
+
+
+class TestLandingZoneUpdateAPIView(TestLandingZoneAPIViewsBase):
+    """Tests for LandingZoneUpdateAPIView"""
+
+    def test_patch(self):
+        """Test LandingZoneUpdateAPIView patch() as zone owner"""
+        url = reverse(
+            'landingzones:api_update',
+            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+        )
+        data = {
+            'description': 'New description',
+            'user_message': 'New user message',
+        }
+        response = self.request_knox(url, method='PATCH', data=data)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            json.loads(response.content)['description'], 'New description'
+        )
+        self.assertEqual(
+            json.loads(response.content)['user_message'], 'New user message'
+        )
+
+    def test_patch_title(self):
+        """Test updating title with patch() (should fail)"""
+        url = reverse(
+            'landingzones:api_update',
+            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+        )
+        data = {'title': 'New title'}
+        response = self.request_knox(url, method='PATCH', data=data)
+        self.assertEqual(response.status_code, 400)
+
+    def test_put(self):
+        """Test LandingZoneUpdateAPIView put() as zone owner"""
+        url = reverse(
+            'landingzones:api_update',
+            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+        )
+        data = {
+            'description': 'New description',
+            'user_message': 'New user message',
+        }
+        response = self.request_knox(url, method='PUT', data=data)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            json.loads(response.content)['description'], 'New description'
+        )
+        self.assertEqual(
+            json.loads(response.content)['user_message'], 'New user message'
+        )
+
+    def test_put_title(self):
+        """Test updating title with put() (should fail)"""
+        url = reverse(
+            'landingzones:api_update',
+            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+        )
+        data = {'title': 'New title'}
+        response = self.request_knox(url, method='PUT', data=data)
+        self.assertEqual(response.status_code, 400)

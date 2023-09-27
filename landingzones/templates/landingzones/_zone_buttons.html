@@ -56,6 +56,14 @@
       Copy Zone UUID
     </a>
 
+    {% if zone.status != 'MOVED' and can_update_all or zone.user == request.user and can_update_own %}
+      <a class="dropdown-item sodar-lz-zone-btn-update"
+         href="{% url 'landingzones:update' landingzone=zone.sodar_uuid %}">
+        <i class="iconify" data-icon="mdi:lead-pencil"></i>
+        Update Zone
+      </a>
+    {% endif %}
+
     {% if zone.status != 'MOVED' and can_delete_all or zone.user == request.user and can_delete_own %}
       <a class="dropdown-item text-danger sodar-lz-zone-btn-delete"
          href="{% url 'landingzones:delete' landingzone=zone.sodar_uuid %}">

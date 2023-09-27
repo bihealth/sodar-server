@@ -17,6 +17,8 @@ API Views
 
 .. autoclass:: ZoneCreateAPIView
 
+.. autoclass:: ZoneUpdateAPIView
+
 .. autoclass:: ZoneSubmitDeleteAPIView
 
 .. autoclass:: ZoneSubmitMoveAPIView
@@ -30,4 +32,4 @@ SODAR version:
 
 .. code-block:: console
 
-    Accept: application/vnd.bihealth.sodar+json; version=0.13.4
+    Accept: application/vnd.bihealth.sodar+json; version=0.14.0

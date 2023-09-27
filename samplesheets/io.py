@@ -518,6 +518,7 @@ class SampleSheetIO:
         replace=False,
         replace_uuid=None,
         save_isa=True,
+        from_template=False,
     ):
         """
         Import ISA investigation and its studies/assays from a dictionary of
@@ -530,6 +531,7 @@ class SampleSheetIO:
         :param replace: Whether replacing an existing sheet (bool)
         :param replace_uuid: Investigation UUID if replacing (UUID or string)
         :param save_isa: Save ISA-Tab as backup after importing (bool)
+        :param from_template: Whether importing from a template (bool)
         :return: Investigation
         :raise: SampleSheetExportException if critical warnings are raised
         """
@@ -820,7 +822,7 @@ class SampleSheetIO:
         # Save original ISA-Tab data
         # TODO: TBD: Prevent saving if previous data matches current one?
         if save_isa:
-            tags = ['IMPORT']
+            tags = ['CREATE'] if from_template else ['IMPORT']
             if replace:
                 tags.append('REPLACE')
             self.save_isa(
@@ -888,6 +890,7 @@ class SampleSheetIO:
         :param comments: Dict from a comments JSONField
         :return: Tuple of Comment NamedTuples
         """
+
         # TODO: Remove once reimporting sample sheets (#629, #631)
         def _get_comment_val(v):
             if isinstance(v, dict):

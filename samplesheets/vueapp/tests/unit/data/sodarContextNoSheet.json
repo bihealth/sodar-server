@@ -8,7 +8,6 @@
   "irods_webdav_enabled": true,
   "irods_webdav_url": "http://davrods.local",
   "external_link_labels": null,
-  "table_height": 400,
   "min_col_width": 100,
   "max_col_width": 300,
   "allow_editing": false,

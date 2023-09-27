@@ -1,6 +1,13 @@
 from django.conf import settings
 
 # Landingzones dependency
+from landingzones.constants import (
+    ZONE_STATUS_MOVED,
+    ZONE_STATUS_ACTIVE,
+    ZONE_STATUS_PREPARING,
+    ZONE_STATUS_VALIDATING,
+    ZONE_STATUS_MOVING,
+)
 import landingzones.tasks_taskflow as lz_tasks
 from landingzones.models import LandingZone
 
@@ -37,7 +44,7 @@ class Flow(BaseLinearFlow):
 
         # HACK: Set zone status in the Django site
         zone.set_status(
-            'PREPARING',
+            ZONE_STATUS_PREPARING,
             'Preparing transaction for validation{}'.format(
                 ' and moving' if not validate_only else ''
             ),
@@ -104,7 +111,7 @@ class Flow(BaseLinearFlow):
                 project=self.project,
                 inject={
                     'landing_zone': zone,
-                    'status': 'VALIDATING',
+                    'status': ZONE_STATUS_VALIDATING,
                     'status_info': 'Validating {} file{}, '
                     'write access disabled'.format(
                         file_count, 's' if file_count != 1 else ''
@@ -117,6 +124,16 @@ class Flow(BaseLinearFlow):
         # VALIDATE_ONLY
         # If "validate_only" is set, return without moving and set status
         if validate_only:
+            self.add_task(
+                irods_tasks.BatchCalculateChecksumTask(
+                    name='Batch calculate missing checksums in iRODS',
+                    irods=self.irods,
+                    inject={
+                        'file_paths': zone_objects_nomd5,
+                        'force': False,
+                    },
+                )
+            )
             self.add_task(
                 irods_tasks.BatchCheckFilesTask(
                     name='Batch check file and MD5 checksum file existence for '
@@ -146,7 +163,7 @@ class Flow(BaseLinearFlow):
                     project=self.project,
                     inject={
                         'landing_zone': zone,
-                        'status': 'ACTIVE',
+                        'status': ZONE_STATUS_ACTIVE,
                         'status_info': 'Successfully validated '
                         '{} file{}'.format(
                             file_count,
@@ -211,6 +228,16 @@ class Flow(BaseLinearFlow):
                 )
             )
         self.add_task(
+            irods_tasks.BatchCalculateChecksumTask(
+                name='Batch calculate missing checksums in iRODS',
+                irods=self.irods,
+                inject={
+                    'file_paths': zone_objects_nomd5,
+                    'force': False,
+                },
+            )
+        )
+        self.add_task(
             irods_tasks.BatchCheckFilesTask(
                 name='Batch check file and MD5 checksum file existence for '
                 'zone data objects',
@@ -237,7 +264,7 @@ class Flow(BaseLinearFlow):
                 project=self.project,
                 inject={
                     'landing_zone': zone,
-                    'status': 'MOVING',
+                    'status': ZONE_STATUS_MOVING,
                     'status_info': 'Validation OK, '
                     'moving {} files into {}'.format(file_count, SAMPLE_COLL),
                     'flow_name': self.flow_name,
@@ -306,7 +333,7 @@ class Flow(BaseLinearFlow):
                 project=self.project,
                 inject={
                     'landing_zone': zone,
-                    'status': 'MOVED',
+                    'status': ZONE_STATUS_MOVED,
                     'status_info': 'Successfully moved {} file{}, landing zone '
                     'removed'.format(
                         file_count, 's' if file_count != 1 else ''

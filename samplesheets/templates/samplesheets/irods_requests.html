@@ -12,19 +12,16 @@
 {% block css %}
   {{ block.super }}
   <style type="text/css">
-
     table#sodar-ss-request-table thead tr th:nth-child(3),
     table#sodar-ss-request-table tbody tr td:nth-child(3),
     table#sodar-ss-request-table thead tr th:nth-child(4),
     table#sodar-ss-request-table tbody tr td:nth-child(4) {
       white-space: nowrap;
     }
-
     table#sodar-ss-request-table thead tr th:nth-child(3),
     table#sodar-ss-request-table tbody tr td:nth-child(3) {
       width: 150px;
     }
-
     table#sodar-ss-request-table thead tr th:nth-child(4),
     table#sodar-ss-request-table tbody tr td:nth-child(4) {
       width: 120px;
@@ -32,9 +29,8 @@
 
     table#sodar-ss-request-table thead tr th:nth-child(5),
     table#sodar-ss-request-table tbody tr td:nth-child(5) {
-  width: 75px;
+      width: 75px;
     }
-
     /* Date column */
     @media screen and (max-width: 900px) {
       table#sodar-ss-request-table thead tr th:nth-child(3),
@@ -42,7 +38,6 @@
         display: none;
       }
     }
-
     /* User column */
     @media screen and (max-width: 700px) {
       table#sodar-ss-request-table thead tr th:nth-child(2),
@@ -50,7 +45,6 @@
         display: none;
       }
     }
-
     /* Status column */
     @media screen and (max-width: 550px) {
       table#sodar-ss-request-table thead tr th:nth-child(4),
@@ -62,26 +56,47 @@
 {% endblock css %}
 
 {% block projectroles_extend %}
-{% has_perm 'samplesheets.manage_sheet' request.user project as can_manage_request %}
+{% has_perm 'samplesheets.manage_sheet' request.user project as can_manage_requests %}
 
 <div class="row sodar-subtitle-container">
   <h3>iRODS Delete Requests</h3>
-    <div class="ml-auto">
-      <a href="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}"
-         class="btn btn-secondary mr-1" role="button">
-        <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Project Sheets
-      </a>
-      <a href="{% url 'samplesheets:irods_request_create' project=project.sodar_uuid %}"
-         class="btn btn-primary" role="button">
-       <i class="iconify" data-icon="mdi:plus-thick"></i> Create Request
-      </a>
+  <div class="ml-auto">
+    <a href="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}"
+       class="btn btn-secondary mr-1" role="button"
+       id="sodar-ss-btn-back">
+      <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Project Sheets
+    </a>
+    <div class="btn-group ml-auto" id="sodar-ss-request-ops-dropdown">
+      {% csrf_token %}
+      <button class="btn btn-primary dropdown-toggle"
+              type="button" data-toggle="dropdown"
+              aria-haspopup="true" aria-expanded="false">
+        Request Operations
+      </button>
+      <div class="dropdown-menu dropdown-menu-right">
+        <a href="{% url 'samplesheets:irods_request_create' project=project.sodar_uuid %}"
+           class="dropdown-item" role="button">
+          <i class="iconify" data-icon="mdi:plus-thick"></i> Create Request
+        </a>
+        <a class="dropdown-item" id="sodar-ss-accept-selected"
+           href="javascript:{}"
+           onclick="sendRequest('{% url 'samplesheets:irods_request_accept_batch' project=project.sodar_uuid %}');">
+          <i class="iconify" data-icon="mdi:check-bold"></i> Accept Selected
+        </a>
+        <a class="dropdown-item" id="sodar-ss-reject-selected"
+           href="javascript:{}"
+           onclick="sendRequest('{% url 'samplesheets:irods_request_reject_batch' project=project.sodar_uuid %}');">
+          <i class="iconify" data-icon="mdi:close-thick"></i> Reject Selected
+        </a>
+      </div>
     </div>
+  </div>
 </div>
 
 <div class="container-fluid sodar-page-container">
 
 {% if object_list.count > 0 %}
-  <div class="card" id="sodar-ss-irods-request-list">
+  <div class="card" id="sodar-ss-request-list">
     <div class="card-body p-0">
       <table class="table table-striped sodar-card-table"
              id="sodar-ss-request-table">
@@ -91,20 +106,46 @@
             <th>User</th>
             <th>Created</th>
             <th>Status</th>
-            <th></th>
+            {% if irods_webdav_enabled %}
+              <th></th>
+            {% endif %}
+            <th id="sodar-ss-request-header-select">
+              {% if can_manage_requests %}
+                <input class="sodar-checkbox" type="checkbox"
+                       onchange="checkAll(this)" name="check_all"
+                       id="sodar-ss-request-check-all" title="Check/uncheck all" />
+              {% endif %}
+            </th>
           </tr>
         </thead>
         <tbody>
           {% for irods_request in object_list %}
-            <tr>
+            <tr class="sodar-ss-request-item">
               <td>
-                <span title="Assay: {{ irods_request.get_assay.get_display_name }}"
-                      data-toggle="tooltip">
-                  {{ irods_request.get_short_path }}
+                <a href="{{ irods_request.get_assay.get_url }}"
+                   title="{{ irods_request.get_assay.get_display_name }}"
+                   class="sodar-ss-request-item-assay-link"
+                   data-tooltip="tooltip" data-placement="top">
+                  <i class="iconify text-danger" data-icon="mdi:table-large"></i>
+                </a>
+                <span class="sodar-ss-request-item-path">
+                  {% get_request_path_html irods_request as req_path %}
+                  {{ req_path | safe }}
                 </span>
                 {% if irods_request.description %}
-                  {% get_info_link irods_request.description as info_link %}
-                  {{ info_link | safe }}
+                  <span class="sodar-ss-request-item-description">
+                    {% get_info_link irods_request.description as info_link %}
+                    {{ info_link | safe }}
+                  </span>
+                {% endif %}
+                {% if irods_webdav_enabled %}
+                  <a href="{{ irods_request.webdav_url }}" id="sodar-ss-davrods-link"
+                     class="btn ml-1 btn-secondary sodar-list-btn pull-right"
+                     target="_blank" role="button"
+                     data-toggle="tooltip" data-placement="top"
+                     title="Open collection or data object in WebDAV">
+                    <i class="iconify" data-icon="mdi:open-in-new"></i>
+                  </a>
                 {% endif %}
                 <button
                     role="submit"
@@ -120,16 +161,17 @@
                 {{ user_html | safe }}
               </td>
               <td>{{ irods_request.get_date_created }}</td>
-              <td class="{% get_request_status_class irods_request %}">
+              <td class="sodar-ss-request-item-status {% get_request_status_class irods_request %}">
                 {{ irods_request.status }}
               </td>
               <td class="text-right">
-                <button class="btn btn-secondary dropdown-toggle sodar-list-dropdown"
+                <button class="btn btn-secondary dropdown-toggle
+                               sodar-list-dropdown sodar-ss-request-item-dropdown"
                         type="button" data-toggle="dropdown" aria-expanded="false">
                   <i class="iconify" data-icon="mdi:cog"></i>
                 </button>
                 <div class="dropdown-menu dropdown-menu-right">
-                  {% if can_manage_request %}
+                  {% if can_manage_requests %}
                     <a class="dropdown-item"
                        href="{% url 'samplesheets:irods_request_accept' irodsdatarequest=irods_request.sodar_uuid %}">
                       <i class="iconify" data-icon="mdi:check-bold"></i> Accept Request
@@ -152,6 +194,14 @@
                     </a>
                   {% endif %}
                 </div>
+              </td>
+              <td>
+                {% if can_manage_requests %}
+                  <input class="sodar-checkbox sodar-ss-checkbox-item sodar-ss-request-item-check" type="checkbox"
+                         id="sodar-ss-checkbox-item-{{ irods_request.sodar_uuid }}"
+                         name="batch_item_{{ irods_request.sodar_uuid }}" value="{{ irods_request.sodar_uuid }}"
+                         {% if irods_request.is_collection %}disabled{% endif %} />
+                {% endif %}
               </td>
             </tr>
           {% endfor %}
@@ -177,11 +227,11 @@
 
 {% block javascript %}
   {{ block.super }}
+  <script type="text/javascript" src="{% static 'samplesheets/js/irods_request.js' %}"></script>
 
   {# Tour content #}
   <script type="text/javascript">
     tourEnabled = true;
-
     tour.addStep('irods_req_info', {
         title: 'iRODS Delete Requests',
         text: 'In this view you can manage requests for deleting specific ' +
@@ -190,7 +240,6 @@
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
-
     tour.addStep('irods_req_contributor', {
         title: 'As Project Contributor',
         text: 'As a project contributor, you can see your own requests along ' +
@@ -201,7 +250,6 @@
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
-
     tour.addStep('irods_req_owner', {
         title: 'As Project Owner or Delegate',
         text: 'As a project owner or delegate, you see a list of all active ' +
@@ -213,6 +261,84 @@
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
+    if ($('.sodar-ss-request-item').length) {
+        tour.addStep('irods_req_assay', {
+            title: 'Request assay',
+            text: 'This icon displays the assay for the request and links to ' +
+                  'it in the main sample sheets view.',
+            attachTo: '.sodar-ss-request-item-assay-link right',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+        tour.addStep('irods_req_path', {
+            title: 'Request Path',
+            text: 'The partial path of the request is displayed here, ' +
+                  'including the collection or data object targeted for ' +
+                  'deletion. The column also includes links for copying the ' +
+                  'targeted iRODS path to the clipboard and opening the ' +
+                  'associated data object or collection in WebDAV.',
+            attachTo: '.sodar-ss-request-item-path top',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+        if ($('.sodar-ss-request-item-description').length) {
+            tour.addStep('irods_req_desc', {
+                title: 'Request Description',
+                text: 'Clicking on this icon will display an optional ' +
+                      'description for the request, which may e.g. explain ' +
+                      'why deletion was requested.',
+                attachTo: '.sodar-ss-request-item-description right',
+                advanceOn: '.docs-link click',
+                showCancelLink: true
+             });
+         }
+        tour.addStep('irods_req_status', {
+            title: 'Request Status',
+            text: 'The current status of the request is displayed here.',
+            attachTo: '.sodar-ss-request-item-status left',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+        tour.addStep('irods_req_dropdown', {
+            title: 'Request Dropdown',
+            text: 'This dropdown contains links to actions the user is ' +
+                  'permitted to take on the corresponding request.',
+            attachTo: '.sodar-ss-request-item-dropdown left',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+        if ($('.sodar-ss-request-item-check').length) {
+            tour.addStep('irods_req_check', {
+                title: 'Batch Accepting or Rejecting Requests',
+                text: 'As owner or delegate you can accept or reject ' +
+                      'multiple request at once by checking them using the ' +
+                      'checkboxes in this column. Note that requests which ' +
+                      'target entire collections must be accepted or ' +
+                      'rejected separately. Once you have selected desired ' +
+                      'requests, open the "Request Operations" dropdown to ' +
+                      'select the appropriate action.',
+                attachTo: '.sodar-ss-request-item-check left',
+                advanceOn: '.docs-link click',
+                showCancelLink: true
+             });
+         }
+    }
+    tour.addStep('irods_req_ops_dropdown', {
+        title: 'Request Operations Dropdown',
+        text: 'This dropdown lists operations you can perform on requests. ' +
+              'From here you can create a new request or, if you are an ' +
+              'owner or a delegate, batch accepting or rejecting selected ' +
+              'requests.',
+        attachTo: '#sodar-ss-request-ops-dropdown left',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+    });
+    tour.addStep('sheets_btn_back', {
+        title: 'Back to Project Sample Sheets',
+        text: 'Click on this button to return to the project sample sheets.',
+        attachTo: '#sodar-ss-btn-back left',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+    });
   </script>
-
 {% endblock javascript %}

@@ -220,6 +220,8 @@ within assays based on the assay type. They are placed under
 
 The following assay sub-apps currently exist:
 
+cytof
+    Protein expression profiling / mass cytometry assay app.
 dna_sequencing
     DNA sequencing assay app.
 generic_raw

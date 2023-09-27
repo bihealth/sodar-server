@@ -43,7 +43,7 @@ class OBOFormatOntologyModelMixin:
     """Helpers for OBOFormatOntology models creation"""
 
     @classmethod
-    def _make_obo_ontology(
+    def make_obo_ontology(
         cls,
         name,
         file,
@@ -72,7 +72,7 @@ class OBOFormatOntologyModelMixin:
         return OBOFormatOntology.objects.create(**values)
 
     @classmethod
-    def _make_obo_term(
+    def make_obo_term(
         cls,
         ontology,
         term_id,
@@ -101,11 +101,11 @@ class OBOFormatOntologyModelMixin:
         return OBOFormatOntologyTerm.objects.create(**values)
 
 
-class TestOBOFormatOntologyBase(OBOFormatOntologyModelMixin, TestCase):
+class OBOFormatOntologyTestBase(OBOFormatOntologyModelMixin, TestCase):
     """Base class for OBOFormatOntology model tests"""
 
     def setUp(self):
-        self.ontology = self._make_obo_ontology(
+        self.ontology = self.make_obo_ontology(
             ontology_id=OBO_ONTOLOGY_ID,
             name=OBO_NAME,
             file=OBO_FILE,
@@ -116,7 +116,7 @@ class TestOBOFormatOntologyBase(OBOFormatOntologyModelMixin, TestCase):
             default_namespace=OBO_DEFAULT_NAMESPACE,
             term_url=DEFAULT_TERM_URL,
         )
-        self.term = self._make_obo_term(
+        self.term = self.make_obo_term(
             ontology=self.ontology,
             term_id=OBO_TERM_ID,
             name=OBO_TERM_NAME,
@@ -128,7 +128,7 @@ class TestOBOFormatOntologyBase(OBOFormatOntologyModelMixin, TestCase):
         )
 
 
-class TestOBOFormatOntology(TestOBOFormatOntologyBase):
+class TestOBOFormatOntology(OBOFormatOntologyTestBase):
     """Tests for the OBOFormatOntology model"""
 
     def test_initialization(self):
@@ -169,7 +169,7 @@ class TestOBOFormatOntology(TestOBOFormatOntologyBase):
         self.assertEqual(self.ontology.get_term_by_id('Not an ID'), None)
 
 
-class TestOBOFormatOntologyTerm(TestOBOFormatOntologyBase):
+class TestOBOFormatOntologyTerm(OBOFormatOntologyTestBase):
     """Tests for the OBOFormatOntologyTerm model"""
 
     def test_initialization(self):

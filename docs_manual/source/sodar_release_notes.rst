@@ -8,6 +8,39 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v0.14.0 (2023-09-27)
+====================
+
+Major feature update.
+
+- Add general read-only iRODS access tickets for assay collections
+- Add support for additional sample sheet templates
+- Add landing zone updating
+- Add automated checksum calculation in landing zone validation and moving
+- Add iRODS delete request REST API views
+- Add iRODS delete request batch handling in UI
+- Add iRODS access ticket REST API views
+- Add iRODS environment retrieval REST API view
+- Add cytof assay plugin
+- Add "create" tag for sample sheet versions
+- Add user setting for maximum sample sheet table height
+- Add "normalizesheets" management command to clean up existing sample sheets
+- Improve sheet template creation form
+- Landingzones UI improvements
+- Sample sheet table resizing and rendering improvements
+- Add study table cache disabling
+- Minor updates and bug fixes
+- Upgrade to SODAR Core v0.13.2
+- SODAR Core v0.13 updates: full role inheritance, finder role, etc.
+
+Migration Guide
+---------------
+
+Upon deploying this release on an existing instance, admins must run the
+``syncmodifyapi`` management command. This will update project user access in
+iRODS according to the role inheritance update introduced in SODAR Core v0.13.
+
+
 v0.13.4 (2023-05-15)
 ====================
 

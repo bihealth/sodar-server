@@ -12,7 +12,7 @@
       </p>
       <p>
         To ensure access to all files, please use third party software such as
-        <a href="https://www.7-zip.org" target="_blank">7-Zip</a>
+        <a href="https://apps.microsoft.com/store/detail/nanazip/9N8G7TSCL18R" target="_blank">NanaZip</a>
         to unarchive the export.
       </p>
       <b-button

@@ -8,9 +8,13 @@ from test_plus.test import TestCase
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.models import Role, SODAR_CONSTANTS
+from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
-from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
+from projectroles.tests.test_models import (
+    ProjectMixin,
+    RoleMixin,
+    RoleAssignmentMixin,
+)
 
 from samplesheets.constants import DEFAULT_EXTERNAL_LINK_LABELS
 from samplesheets.models import GenericMaterial, Process
@@ -50,22 +54,21 @@ IRODS_TICKET_STR = 'ooChaa1t'
 EXT_LINK_PATH_INVALID = '/tmp/NON_EXISTING_EXT_LINK_FILE.json'
 
 
-class TestUtilsBase(
-    ProjectMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase
+class SamplesheetsUtilsTestBase(
+    ProjectMixin, RoleMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase
 ):
     """Base class for samplesheets utils tests"""
 
     def setUp(self):
+        # Init roles
+        self.init_roles()
         # Make owner user
         self.user_owner = self.make_user('owner')
-        # Init project, role and assignment
+        # Init project and assignment
         self.project = self.make_project(
             'TestProject', SODAR_CONSTANTS['PROJECT_TYPE_PROJECT'], None
         )
-        self.role_owner = Role.objects.get_or_create(
-            name=SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
-        )[0]
-        self.assignment_owner = self.make_assignment(
+        self.owner_as = self.make_assignment(
             self.project, self.user_owner, self.role_owner
         )
         # Import investigation
@@ -77,7 +80,7 @@ class TestUtilsBase(
         self.tb = SampleSheetTableBuilder()
 
 
-class TestGetAltNames(TestUtilsBase):
+class TestGetAltNames(SamplesheetsUtilsTestBase):
     """Tests for get_alt_names()"""
 
     def test_get_alt_names(self):
@@ -92,7 +95,7 @@ class TestGetAltNames(TestUtilsBase):
         )
 
 
-class TestGetSampleColls(TestUtilsBase):
+class TestGetSampleColls(SamplesheetsUtilsTestBase):
     """Tests for get_sample_colls()"""
 
     def setUp(self):
@@ -108,7 +111,7 @@ class TestGetSampleColls(TestUtilsBase):
         self.assertEqual(get_sample_colls(self.investigation), expected)
 
 
-class TestCompareInvReplace(TestUtilsBase):
+class TestCompareInvReplace(SamplesheetsUtilsTestBase):
     """Tests for compare_inv_replace()"""
 
     def test_inserted_rows(self):
@@ -138,7 +141,7 @@ class TestCompareInvReplace(TestUtilsBase):
         self.assertFalse(compare_inv_replace(inv1, inv2))
 
 
-class TestGetIndexByHeader(TestUtilsBase):
+class TestGetIndexByHeader(SamplesheetsUtilsTestBase):
     """Tests for get_index_by_header()"""
 
     def setUp(self):
@@ -193,7 +196,7 @@ class TestGetIndexByHeader(TestUtilsBase):
         )
 
 
-class TestGetLastMaterialName(TestUtilsBase):
+class TestGetLastMaterialName(SamplesheetsUtilsTestBase):
     """Tests for get_last_material_name()"""
 
     def setUp(self):
@@ -211,7 +214,7 @@ class TestGetLastMaterialName(TestUtilsBase):
         )
 
 
-class TestGetWebdavUrl(TestUtilsBase):
+class TestGetWebdavUrl(SamplesheetsUtilsTestBase):
     """Tests for get_webdav_url()"""
 
     def setUp(self):
@@ -267,7 +270,7 @@ class TestGetWebdavUrl(TestUtilsBase):
         self.assertIsNone(get_webdav_url(self.project, self.user_owner))
 
 
-class TestGetExtLinkLabels(TestUtilsBase):
+class TestGetExtLinkLabels(SamplesheetsUtilsTestBase):
     """Tests for get_ext_link_labels()"""
 
     def test_get(self):

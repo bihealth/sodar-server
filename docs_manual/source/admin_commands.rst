@@ -31,8 +31,8 @@ These commands originate in SODAR Core. More information can be found in the
 ``syncgroups``
     Synchronize user groups.
 ``syncmodifyapi``
-    Submit missing project metadata to iRODS. Generally should only be used in
-    development.
+    Synchronize project metadata and user access in iRODS. Generally should only
+    be used in development.
 ``syncremote``
     Synchronize project and user data from a remote site if remote project sync
     is enabled.
@@ -54,6 +54,10 @@ operations regarding sample sheets, landing zones, iRODS data and ontologies.
     Return list of landing zones last modified over two weeks ago.
 ``irodsorphans``
     Find orphans in iRODS project collections.
+``normalizesheets``
+    Clean up and normalize previously imported sample sheets for
+    non-standard data or other issues. Also updates render tables and creates a
+    backup ISA-Tab version of the normalized sheets.
 ``syncnames``
     Synchronize alternative names for sample sheet material search.
 ``syncstudytables``

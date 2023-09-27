@@ -64,19 +64,20 @@ SHEETS_INFO_SETTINGS = [
     'SHEETS_ALLOW_CRITICAL',
     'SHEETS_CONFIG_VERSION',
     'SHEETS_ENABLE_CACHE',
-    'SHEETS_ENABLED_TEMPLATES',
+    'SHEETS_ENABLE_STUDY_TABLE_CACHE',
     'SHEETS_IRODS_LIMIT',
     'SHEETS_IRODS_REQUEST_PAGINATION',
     'SHEETS_IRODS_TICKET_PAGINATION',
     'SHEETS_MAX_COLUMN_WIDTH',
     'SHEETS_MIN_COLUMN_WIDTH',
     'SHEETS_SYNC_INTERVAL',
-    'SHEETS_TABLE_HEIGHT',
     'SHEETS_VERSION_PAGINATION',
     'SHEETS_IGV_OMIT_BAM',
     'SHEETS_IGV_OMIT_VCF',
 ]
 MATERIAL_SEARCH_TYPES = ['source', 'sample']
+SKIP_MSG_NO_INV = 'No investigation for project'
+SKIP_MSG_NO_COLLS = 'Investigation collections not created in iRODS'
 
 
 # Samplesheets project app plugin ----------------------------------------------
@@ -171,6 +172,16 @@ class ProjectAppPlugin(
             'source project',
             'user_modifiable': True,
         },
+        'sheet_table_height': {
+            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_USER'],
+            'type': 'INTEGER',
+            'label': 'Sample sheet table height',
+            'options': [250, 400, 600, 800],
+            'default': 400,
+            'description': 'Maximum display height for study and assay tables '
+            'in pixels',
+            'user_modifiable': True,
+        },
         'public_access_ticket': {
             'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
             'type': 'STRING',
@@ -222,9 +233,7 @@ class ProjectAppPlugin(
 
     #: Description string
     description = (
-        'Sample sheets contain your donors/patients, samples, and '
-        'links to assays (such as NGS data), with ISA-Tools '
-        'compatibility'
+        'Study design metadata with access to assay data files in iRODS'
     )
 
     #: Required permission for accessing the app
@@ -281,26 +290,33 @@ class ProjectAppPlugin(
         :return: Dict or None if not found
         """
         obj = self.get_object(eval(model_str), uuid)
-        if obj and obj.__class__ in [Investigation, Study, Assay]:
+        if not obj:
+            return None
+        if obj.__class__ == IrodsAccessTicket:
             return {
-                'url': get_sheets_url(obj),
+                'url': reverse(
+                    'samplesheets:irods_tickets',
+                    kwargs={'project': obj.get_project().sodar_uuid},
+                ),
+                'label': obj.get_display_name(),
+            }
+        if obj.__class__ in [Investigation, Study, Assay]:
+            return {
+                'url': obj.get_url(),
                 'label': obj.title
                 if obj.__class__ == Investigation
                 else obj.get_display_name(),
             }
-        elif obj and obj.__class__ == ISATab:
+        url_kwargs = {'project': obj.project.sodar_uuid}
+        if obj.__class__ == ISATab:
             return {
-                'url': reverse(
-                    'samplesheets:versions',
-                    kwargs={'project': obj.project.sodar_uuid},
-                ),
+                'url': reverse('samplesheets:versions', kwargs=url_kwargs),
                 'label': obj.get_full_name(),
             }
-        elif obj and obj.__class__ == IrodsDataRequest:
+        elif obj.__class__ == IrodsDataRequest:
             return {
                 'url': reverse(
-                    'samplesheets:irods_requests',
-                    kwargs={'project': obj.project.sodar_uuid},
+                    'samplesheets:irods_requests', kwargs=url_kwargs
                 ),
                 'label': obj.get_display_name(),
             }
@@ -608,9 +624,9 @@ class ProjectAppPlugin(
             project=project, active=True
         ).first()
         if not investigation:
-            return _skip('Investigation not found')
+            return _skip(SKIP_MSG_NO_INV)
         if not investigation.irods_status:
-            return _skip('Investigation collections not created in iRODS')
+            return _skip(SKIP_MSG_NO_COLLS)
 
         # Submit flow
         logger.info(
@@ -640,13 +656,16 @@ class ProjectAppPlugin(
             project=project, active=True
         ).first()
         if not investigation:
-            logger.debug('Skipping: No investigation for project')
+            logger.debug('Skipping: {}'.format(SKIP_MSG_NO_INV))
             return
         if investigation.irods_status:
-            logger.info('Creating iRODS collections..')
-            self.create_colls(investigation)
+            logger.info('Syncing iRODS sample data collections..')
+            self.create_colls(investigation, sync=True)
 
         # Sync public guest access
+        if not investigation.irods_status:
+            logger.debug('Skipping: {}'.format(SKIP_MSG_NO_COLLS))
+            return
         self._update_public_access(project, taskflow, irods_backend)
 
     def update_cache(self, name=None, project=None, user=None):

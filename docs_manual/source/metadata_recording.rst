@@ -380,15 +380,22 @@ with appropriate ontology identifier and sources.
 4. Uploading
 ============
 
-The upload/integration of metadata into a SODAR project can be facilitated by
-CUBI (e.g. after validation) or any project member with appropriate rights
-(owner, delegate, contributor).
+Uploading metadata into a SODAR project can be facilitated by CUBI (e.g. after
+validation) or any project member with appropriate role (owner, delegate, or
+contributor).
 
-All related ISA-Tab files need be bundled as a one-file zip archive. Then, in
-the corresponding SODAR project go to **Sample Sheets**, **Sheet Operations**,
-and **Add/Replace ISA-Tab** to upload the metadata.
+To upload sample sheets into SODAR, first navigate into the **Sample Sheets**
+application within the corresponding project. In the
+:guilabel:`Sheet Operations` dropdown, select :guilabel:`Import ISA-Tab`. If you
+are replacing existing sheets in the project, this option will appear as
+:guilabel:`Replace ISA-Tab`.
 
-After uploading, it is recommended to compare/validate the number of
-study/assay rows between the SODAR project and ISA-Tab files to exclude
+In the import form, the ISA-Tab TSV files can either be imported as separate
+files, or a Zip archive containing all of the files in the same directory.
+
+.. include:: _include/sheets_zip_warning.rst
+
+After uploading, it is recommended to compare and validate the number of
+study and assay rows between the SODAR project and ISA-Tab files to exclude
 mistakes in metadata recording, in particular with respect to splitting and
 pooling.
