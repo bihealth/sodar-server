@@ -222,8 +222,7 @@ class TestIrodsOrphans(
         )
         output = out.getvalue()
         sys.stdout = sys.__stdout__
-
-        self.assertEqual('', output)
+        self.assertEqual(output, '')
 
     def test_get_orphans_assay(self):
         """Test get_orphans() with orphan assay"""
@@ -249,7 +248,7 @@ class TestIrodsOrphans(
             + orphan_path
             + ';0;0 bytes\n'
         )
-        self.assertEqual(expected, output)
+        self.assertEqual(output, expected)
 
     def test_get_orphans_study(self):
         """Test get_orphans() with orphan study"""
@@ -275,7 +274,7 @@ class TestIrodsOrphans(
             + orphan_path
             + ';0;0 bytes\n'
         )
-        self.assertEqual(expected, output)
+        self.assertEqual(output, expected)
 
     def test_get_output_zone(self):
         """Test get_orphans() with orphan landing zone"""
@@ -306,7 +305,7 @@ class TestIrodsOrphans(
             + orphan_path
             + ';0;0 bytes\n'
         )
-        self.assertEqual(expected, output)
+        self.assertEqual(output, expected)
 
     def test_get_output_project(self):
         """Test get_orphans() with orphan project"""
@@ -332,7 +331,7 @@ class TestIrodsOrphans(
         expected = (
             collection[3:] + ';' + DELETED + ';' + orphan_path + ';0;0 bytes\n'
         )
-        self.assertEqual(expected, output)
+        self.assertEqual(output, expected)
 
     def test_get_output_assay_subs(self):
         """Test get_orphans() with orphan assay subcollections"""
@@ -360,7 +359,7 @@ class TestIrodsOrphans(
             + orphan_path
             + ';0;0 bytes\n'
         )
-        self.assertEqual(expected, output)
+        self.assertEqual(output, expected)
 
     def test_get_output_deleted_project(self):
         """Test get_output() with a deleted project"""
@@ -387,7 +386,7 @@ class TestIrodsOrphans(
         expected = (
             project_uuid + ';' + DELETED + ';' + orphan_path + ';0;0 bytes\n'
         )
-        self.assertEqual(expected, output)
+        self.assertEqual(output, expected)
 
     def test_command_no_orphans(self):
         """Test command with no orphans"""
@@ -396,7 +395,7 @@ class TestIrodsOrphans(
         call_command('irodsorphans', stdout=out)
         output = out.getvalue()
         sys.stdout = sys.__stdout__
-        self.assertEqual('', output)
+        self.assertEqual(output, '')
 
     def test_command_orphan_assay(self):
         """Test command with orphan assay"""
@@ -410,7 +409,7 @@ class TestIrodsOrphans(
             self.project.full_title,
             orphan_path,
         )
-        self.assertEqual(expected, output)
+        self.assertEqual(output, expected)
 
     def test_command_orphan_study(self):
         """Test command with orphan study"""
@@ -424,7 +423,7 @@ class TestIrodsOrphans(
             self.project.full_title,
             orphan_path,
         )
-        self.assertEqual(expected, output)
+        self.assertEqual(output, expected)
 
     def test_command_orphan_zone(self):
         """Test command with orphan landing zone"""
@@ -442,7 +441,7 @@ class TestIrodsOrphans(
             self.project.full_title,
             orphan_path,
         )
-        self.assertEqual(expected, output)
+        self.assertEqual(output, expected)
 
     def test_command_orphan_project(self):
         """Test command with orphan project"""
@@ -459,7 +458,7 @@ class TestIrodsOrphans(
         expected = '{};{};{};0;0 bytes\n'.format(
             project_uuid, DELETED, orphan_path
         )
-        self.assertEqual(expected, output)
+        self.assertEqual(output, expected)
 
     def test_command_orphan_assay_sub(self):
         """Test command with orphan assay subcollection"""
@@ -474,7 +473,7 @@ class TestIrodsOrphans(
             self.project.full_title,
             orphan_path,
         )
-        self.assertEqual(expected, output)
+        self.assertEqual(output, expected)
 
     def test_command_multiple(self):
         """Test command with multiple orphans"""
@@ -501,7 +500,7 @@ class TestIrodsOrphans(
             self.project.full_title,
             orphan_path,
         )
-        self.assertEqual(expected, output)
+        self.assertEqual(output, expected)
 
     def test_command_ordering(self):
         """Test ordering of orphans in command output"""
@@ -510,25 +509,22 @@ class TestIrodsOrphans(
         )
         self.irods.collections.create(orphan_path)
 
-        project1 = self.make_project('A_Project', PROJECT_TYPE_PROJECT, None)
-        self.make_assignment(project1, self.user, self.role_owner)
+        project2 = self.make_project('TestProject2', PROJECT_TYPE_PROJECT, None)
+        self.make_assignment(project2, self.user, self.role_owner)
         orphan_path2 = '{}/sample_data/study_{}'.format(
-            self.irods_backend.get_path(project1), str(uuid.uuid4())
+            self.irods_backend.get_path(project2), str(uuid.uuid4())
         )
         self.irods.collections.create(orphan_path2)
 
-        # Run the orphans management command
         output = self.catch_stdout()
-        # As the title of self.project is 'Test Project', it should be ordered
-        # after project1 with title 'A_Project'
         expected = '{};{};{};0;0 bytes\n'.format(
-            str(project1.sodar_uuid),
-            project1.full_title,
-            orphan_path2,
-        )
-        expected += '{};{};{};0;0 bytes\n'.format(
             str(self.project.sodar_uuid),
             self.project.full_title,
             orphan_path,
         )
-        self.assertEqual(expected, output)
+        expected += '{};{};{};0;0 bytes\n'.format(
+            str(project2.sodar_uuid),
+            project2.full_title,
+            orphan_path2,
+        )
+        self.assertEqual(output, expected)

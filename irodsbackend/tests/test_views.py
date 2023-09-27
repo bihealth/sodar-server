@@ -46,8 +46,6 @@ class IrodsbackendViewTestBase(TaskflowViewTestBase):
     def setUp(self):
         super().setUp()
         self.req_factory = RequestFactory()
-        # self.irods_backend = get_backend_api('omics_irods')
-        # self.irods = self.irods_backend.get_session_obj()
         # Init project with owner in taskflow
         self.project, self.owner_as = self.make_project_taskflow(
             'TestProject', PROJECT_TYPE_PROJECT, self.category, self.user

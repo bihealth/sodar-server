@@ -45,7 +45,8 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
     #: Toggle displaying of row-based iRODS links in the assay table
     display_row_links = True
 
-    def __get_mc_assay_name(self, row, table):
+    @classmethod
+    def _get_mc_assay_name(cls, row, table):
         """
         Return assay name of last mass cytometry process.
         Also works when there are consecutive processes of the same name.
@@ -66,8 +67,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             ):
                 top_header = get_top_header(table, i)
                 span_end = i + top_header['colspan']
-
-            # consider only columns of mass cytometry process
+            # Consider only columns of mass cytometry process
             if i < span_end and header['value'].lower() == 'assay name':
                 name = cell['value']
         return name
@@ -85,7 +85,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         :return: String with full iRODS path or None
         """
         # Get the value of Mass cytometry Assay Name column
-        mc_assay_name = self.__get_mc_assay_name(row, table)
+        mc_assay_name = self._get_mc_assay_name(row, table)
         if mc_assay_name:
             return assay_path + '/' + mc_assay_name
 
@@ -100,14 +100,11 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         """
         if not settings.IRODS_WEBDAV_ENABLED or not assay:
             return row
-
         assay_path = self.get_assay_path(assay)
         if not assay_path:
             return row
-
         # Get the value of Mass cytometry Assay Name column
-        mc_assay_name = self.__get_mc_assay_name(row, table)
-
+        mc_assay_name = self._get_mc_assay_name(row, table)
         if not mc_assay_name:
             return row
 
@@ -157,7 +154,6 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                 row[i]['link'] = (
                     base_url + '/' + mc_assay_name + '/' + row[i]['value']
                 )
-
         return row
 
     def update_cache(self, name=None, project=None, user=None):

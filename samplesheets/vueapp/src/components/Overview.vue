@@ -34,10 +34,12 @@
           <dt class="col-md-3">iRODS Repository</dt>
           <dd class="col-md-9">
             <span v-if="sodarContext.irods_status">
-              <IrodsStatsBadge
+              <irods-stats-badge
+                ref="invStatsBadge"
                 :projectUuid="sodarContext.project_uuid"
                 :irodsStatus="sodarContext.irods_status"
-                :irodsPath="sodarContext.irods_path" />
+                :irodsPath="sodarContext.irods_path">
+              </irods-stats-badge>
             </span>
             <span v-else class="badge badge-pill badge-danger">
               Not Created
@@ -121,7 +123,12 @@ import IrodsStatsBadge from './IrodsStatsBadge.vue'
 export default {
   name: 'Overview',
   components: { ListRow, IrodsStatsBadge },
-  props: ['sodarContext']
+  props: ['sodarContext'],
+  mounted () {
+    if (this.$refs.invStatsBadge) {
+      this.$refs.invStatsBadge.updateStats()
+    }
+  }
 }
 </script>
 

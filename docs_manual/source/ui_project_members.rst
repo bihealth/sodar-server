@@ -61,10 +61,10 @@ inherited roles is not allowed. Inherited roles are marked in the member list
 with a downwards arrow along with a link to the category from which the role is
 inherited.
 
-Each project must have exactly one "local" (or non-inherited) owner. The amount
-of allowed delegates is set by the server administrators. The number of
-inherited owners and delegates are not limited. For contributors and guests, the
-amount per project or category is not limited.
+Each project must have exactly one "local" (non-inherited) owner. The amount of
+allowed delegates is set by the server administrators. The number of inherited
+owners and delegates are not limited. For contributors and guests, the amount
+per project or category is not limited.
 
 .. figure:: _static/sodar_ui/project_members_inherit.png
     :align: center

@@ -647,7 +647,6 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
             ret_data['table_heights']['assays'][k] = self._get_table_height(
                 v, request.user, edit
             )
-        # logger.debug('Table heights = {}'.format(ret_data['table_heights']))
 
         # Get iRODS content if NOT editing and collections have been created
         if not edit:

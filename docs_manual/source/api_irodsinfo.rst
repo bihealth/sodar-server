@@ -1,9 +1,9 @@
 .. _api_irodsinfo:
 
 Irods Info API
-^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
 
-The REST API for irods info operations is described in this document.
+The REST API for the iRODS Info app is described in this document.
 
 
 API Views
@@ -22,4 +22,4 @@ SODAR version:
 
 .. code-block:: console
 
-    Accept: application/vnd.bihealth.sodar+json; version=0.13.4
+    Accept: application/vnd.bihealth.sodar+json; version=0.14.0

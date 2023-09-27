@@ -253,7 +253,6 @@ class TaskflowTestMixin(ProjectMixin, RoleMixin, RoleAssignmentMixin):
         self.taskflow = get_backend_api('taskflow', force=True)
         self.irods_backend = get_backend_api('omics_irods')
         self.irods = self.irods_backend.get_session_obj()
-
         # Init roles
         self.init_roles()
         # Init users
@@ -348,7 +347,6 @@ class TaskflowProjectTestMixin:
         public_guest_access=False,
     ):
         """Make Project with taskflow for UI view tests"""
-
         post_data = {
             'title': title,
             'type': type,

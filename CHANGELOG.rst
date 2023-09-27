@@ -5,14 +5,15 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
-Unreleased
-==========
+v0.14.0 (2023-09-27)
+====================
 
 Added
 -----
 
 - **General**
     - Release cleanup issue template (#1797)
+    - LDAP settings for TLS and user filter (#1803)
 - **Irodsbackend**
     - ``get_trash_path()`` helper (#1658)
     - iRODS trash statistics for siteinfo (#1658)
