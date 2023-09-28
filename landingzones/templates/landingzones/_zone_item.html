@@ -10,6 +10,7 @@
 {% endif %}
 
 {% is_zone_enabled zone as zone_enabled %}
+{% disable_zone_ui zone request.user as disable_zone_ui %}
 
 <tr class="{% get_zone_row_class zone %}"
     id="{{ zone.sodar_uuid }}"
@@ -91,15 +92,12 @@
         <span class="sodar-lz-control">
           {% get_irods_path zone as zone_irods_path %}
           {% get_zone_list_url zone as zone_list_url %}
-          {% is_zone_disabled zone as disable_all %}
-          {% include 'irodsbackend/_irods_buttons.html' with project=project irods_colls=True irods_path=zone_irods_path list_url=zone_list_url data_table=False show_file_list=True disable_all=disable_all %}
+          {% include 'irodsbackend/_irods_buttons.html' with project=project irods_colls=True irods_path=zone_irods_path list_url=zone_list_url data_table=False show_file_list=True disable_all=disable_zone_ui %}
         </span>
       {% endif %}
     </td>
     <td class="sodar-lz-zone-edit">
-      <span class="sodar-lz-control">
-        {% include 'landingzones/_zone_buttons.html' %}
-      </span>
+      {% include 'landingzones/_zone_dropdown.html' %}
     </td>
   {% endif %}
 </tr>

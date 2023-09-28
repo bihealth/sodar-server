@@ -7,7 +7,6 @@ var isSuperuser = false;
 var updateZoneStatus = function() {
     window.zoneStatusUpdated = false;
     var zoneUuids = [];
-
     $('.sodar-lz-zone-tr-existing').each(function() {
         var trId = $(this).attr('id');
         var zoneTr = $('#' + trId);
@@ -18,7 +17,6 @@ var updateZoneStatus = function() {
             zoneUuids.push(zoneUuid);
         }
     });
-
     // Make the POST request to retrieve zone statuses
     if (zoneUuids.length > 0) {
         $.ajax({
@@ -46,11 +44,9 @@ var updateZoneStatus = function() {
                     'DELETING': 'bg-warning',
                     'DELETED': 'bg-secondary'
                 };
-
                 if (data[zoneUuid]) {
                     var zoneStatus = data[zoneUuid].status;
                     var zoneStatusInfo = data[zoneUuid].status_info;
-
                     if (
                         statusTd.text() !== zoneStatus ||
                         statusInfoSpan.text() !== zoneStatusInfo
@@ -59,13 +55,11 @@ var updateZoneStatus = function() {
                         statusTd.removeClass();
                         statusTd.addClass(statusStyles[zoneStatus] + ' text-white');
                         statusInfoSpan.text(zoneStatusInfo);
-
                         if (['PREPARING', 'VALIDATING', 'MOVING', 'DELETING'].includes(zoneStatus)) {
                             statusTd.append(
                                 '<span class="pull-right"><i class="iconify" data-icon="mdi:lock"></i></span>'
                             );
                         }
-
                         if (['CREATING', 'NOT CREATED', 'MOVED', 'DELETED'].includes(zoneStatus)) {
                             zoneTr.find('p#sodar-lz-zone-stats-container-' + zoneUuid).hide();
 
@@ -84,8 +78,8 @@ var updateZoneStatus = function() {
                         }
 
                         // Button modification
-                        if (zoneStatus !== 'ACTIVE' && zoneStatus !== 'FAILED' && isSuperuser) {}
-                        else if (zoneStatus !== 'ACTIVE' && zoneStatus !== 'FAILED') {
+                        // if (zoneStatus !== 'ACTIVE' && zoneStatus !== 'FAILED' && isSuperuser) {}
+                        if (zoneStatus !== 'ACTIVE' && zoneStatus !== 'FAILED' && !isSuperuser) {
                             zoneTr.find('td.sodar-lz-zone-title').addClass('text-muted');
                             zoneTr.find('td.sodar-lz-zone-assay').addClass('text-muted');
                             zoneTr.find('td.sodar-lz-zone-status-info').addClass('text-muted');
@@ -124,28 +118,28 @@ $(document).ready(function() {
     /*********************
      Get superuser status
      *********************/
-    $.ajax({
-        url: currentUserURL,
-        method: "GET",
-        success: function(response) {
-            isSuperuser = response.is_superuser;
-        },
-        error: function(response) {
-            isSuperuser = false;
-        }
-    });
-
-    /******************
-     Update zone status
-     ******************/
-    updateZoneStatus();
-    var statusInterval = window.statusInterval;
-
-    // Poll and update active zones
-    setInterval(function() {
+    $.when(
+        $.ajax({
+            url: currentUserURL,
+            method: 'GET',
+            success: function(response) {
+                isSuperuser = response.is_superuser;
+            },
+            error: function(response) {
+                isSuperuser = false;
+            }
+        })
+    ).then(function() {
+        /******************
+         Update zone status
+         ******************/
         updateZoneStatus();
-    }, statusInterval);
-
+        var statusInterval = window.statusInterval;
+        // Poll and update active zones
+        setInterval(function() {
+            updateZoneStatus();
+        }, statusInterval);
+    });
     // Set up zone UUID copy button
     new ClipboardJS('.sodar-lz-zone-btn-copy');
 });

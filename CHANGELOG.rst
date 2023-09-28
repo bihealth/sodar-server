@@ -5,6 +5,23 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+Unreleased
+==========
+
+Changed
+-------
+
+- **Landingzones**
+    - Disable locked zone controls in template for non-superusers (#1808)
+    - Rename and refactor ``disable_zone_ui()`` template tag (#1808)
+
+Fixed
+-----
+
+- **Landingzones**
+    - No wait for async ``CurrentUserRetrieveAPIView`` call result (#1732, #1807)
+
+
 v0.14.0 (2023-09-27)
 ====================
 
