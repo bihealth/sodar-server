@@ -78,6 +78,7 @@ SHEETS_INFO_SETTINGS = [
 MATERIAL_SEARCH_TYPES = ['source', 'sample']
 SKIP_MSG_NO_INV = 'No investigation for project'
 SKIP_MSG_NO_COLLS = 'Investigation collections not created in iRODS'
+IGV_DEFAULT_GENOME = 'b37_1kg'
 
 
 # Samplesheets project app plugin ----------------------------------------------
@@ -195,7 +196,7 @@ class ProjectAppPlugin(
             'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
             'type': 'STRING',
             'label': 'IGV session genome',
-            'default': 'b37',
+            'default': IGV_DEFAULT_GENOME,
             'description': 'Genome used in generating IGV session files for '
             'the project. The name needs to be in a format accepted by IGV. '
             'Affects cancer and germline projects.',
