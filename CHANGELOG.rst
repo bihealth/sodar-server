@@ -11,9 +11,13 @@ Unreleased
 Changed
 -------
 
+- **General**
+    - Upgrade to django-sodar-core v0.13.3-WIP (#1810)
 - **Landingzones**
     - Disable locked zone controls in template for non-superusers (#1808)
     - Rename and refactor ``disable_zone_ui()`` template tag (#1808)
+- **Samplesheets**
+    - Upgrade Vue app dependencies (#1811)
 
 Fixed
 -----

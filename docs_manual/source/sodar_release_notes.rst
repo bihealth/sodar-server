@@ -8,10 +8,14 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
-v1.0.0 (WIP)
-============
+v0.14.1 (WIP)
+=============
 
-TBA
+Release for minor updates, maintenance and bug fixes.
+
+- Fix landing zone locking controls for non-superusers
+- Minor updates and bug fixes
+- Upgrade to SODAR Core v0.13.3
 
 
 v0.14.0 (2023-09-27)
