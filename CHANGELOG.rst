@@ -18,6 +18,8 @@ Changed
     - Rename and refactor ``disable_zone_ui()`` template tag (#1808)
 - **Samplesheets**
     - Upgrade Vue app dependencies (#1811)
+    - Change default IGV genome to ``b37_1kg`` (#1812)
+    - Update existing ``b37`` IGV genome settings with a migration (#1812)
 
 Fixed
 -----

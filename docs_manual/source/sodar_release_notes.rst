@@ -13,9 +13,19 @@ v0.14.1 (WIP)
 
 Release for minor updates, maintenance and bug fixes.
 
+- Change default IGV genome to "b37_1kg"
 - Fix landing zone locking controls for non-superusers
 - Minor updates and bug fixes
 - Upgrade to SODAR Core v0.13.3
+
+Migration Guide
+---------------
+
+The default IGV genome for cancer and germline projects has been changed from
+"b37" to "b37_1kg", as the former is no longer supported by new versions of IGV.
+Existing settings referring the now-unavailble genome will be automatically
+updated. Users should be advised to upgrade their IGV software to a recent
+version.
 
 
 v0.14.0 (2023-09-27)
