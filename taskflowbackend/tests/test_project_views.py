@@ -19,10 +19,7 @@ from projectroles.models import (
 )
 from projectroles.tests.test_models import ProjectInviteMixin
 
-from taskflowbackend.tests.base import (
-    TaskflowViewTestBase,
-    IRODS_ACCESS_READ,
-)
+from taskflowbackend.tests.base import TaskflowViewTestBase
 
 
 app_settings = AppSettingAPI()
@@ -37,7 +34,6 @@ PROJECT_ROLE_GUEST = SODAR_CONSTANTS['PROJECT_ROLE_GUEST']
 PROJECT_TYPE_CATEGORY = SODAR_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 APP_SETTING_SCOPE_PROJECT = SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT']
-
 
 # Local constants
 INVITE_EMAIL = 'test@example.com'
@@ -126,7 +122,9 @@ class TestProjectCreateView(TaskflowViewTestBase):
         group_name = self.irods_backend.get_user_group_name(self.project)
         group = self.irods.user_groups.get(group_name)
         self.assertIsInstance(group, iRODSUserGroup)
-        self.assert_irods_access(group_name, project_coll, IRODS_ACCESS_READ)
+        self.assert_irods_access(
+            group_name, project_coll, self.irods_access_read
+        )
         self.assertIsInstance(
             self.irods.users.get(self.user.username), iRODSUser
         )

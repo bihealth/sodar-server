@@ -80,6 +80,7 @@ class Flow(BaseLinearFlow):
                     'access_name': 'read',
                     'path': project_path,
                     'user_name': project_group,
+                    'irods_backend': self.irods_backend,
                 },
             )
         )

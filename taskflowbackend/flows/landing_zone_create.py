@@ -54,6 +54,7 @@ class Flow(BaseLinearFlow):
                     'access_name': 'read',
                     'path': zone_root,
                     'user_name': project_group,
+                    'irods_backend': self.irods_backend,
                     'recursive': False,
                 },
             )
@@ -84,6 +85,7 @@ class Flow(BaseLinearFlow):
                     'access_name': 'read',
                     'path': user_path,
                     'user_name': zone.user.username,
+                    'irods_backend': self.irods_backend,
                     'recursive': False,
                 },
             )
@@ -114,6 +116,7 @@ class Flow(BaseLinearFlow):
                     'access_name': root_access,
                     'path': zone_path,
                     'user_name': zone.user.username,
+                    'irods_backend': self.irods_backend,
                 },
             )
         )
@@ -129,6 +132,7 @@ class Flow(BaseLinearFlow):
                         'access_name': 'write',
                         'path': zone_path,
                         'user_name': self.flow_data['script_user'],
+                        'irods_backend': self.irods_backend,
                     },
                 )
             )
@@ -166,6 +170,7 @@ class Flow(BaseLinearFlow):
                             'access_name': 'own',
                             'path': coll_path,
                             'user_name': zone.user.username,
+                            'irods_backend': self.irods_backend,
                         },
                     )
                 )

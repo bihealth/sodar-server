@@ -21,16 +21,6 @@ from taskflowbackend.tasks.base_task import BaseTask
 logger = logging.getLogger('__name__')
 
 
-# NOTE: Yes, we really need this for the python irods client
-# TODO: Come up with a more elegant solution..
-ACCESS_CONVERSION = {
-    'read': 'read object',
-    'read object': 'read',
-    'write': 'modify object',
-    'modify object': 'write',
-    'null': 'null',
-    'own': 'own',
-}
 INHERIT_STRINGS = {True: 'inherit', False: 'noinherit'}
 META_EMPTY_VALUE = 'N/A'
 MD5_RE = re.compile(r'([^\w.])')
@@ -46,8 +36,11 @@ class IrodsBaseTask(BaseTask):
         self.name = '<iRODS> {} ({})'.format(name, self.__class__.__name__)
         self.irods = kwargs['irods']
 
-    # For when taskflow won't catch a proper exception from the client
     def _raise_irods_exception(self, ex, info=None):
+        """
+        Raise an exception when taskflow doesn't catch a proper exception from
+        the iRODS client.
+        """
         desc = '{} failed: {}'.format(
             self.__class__.__name__,
             (str(ex) if str(ex) not in ['', 'None'] else ex.__class__.__name__),
@@ -56,6 +49,21 @@ class IrodsBaseTask(BaseTask):
             desc += ' ({})'.format(info)
         logger.error(desc)
         raise Exception(desc)
+
+    def _get_access_conversion(self, irods_backend):
+        """
+        Return the access conversion dict compatible with the currently used
+        iRODS server version (4.2 and 4.3 supported).
+        """
+        d = '_' if irods_backend.is_irods_version(self.irods, '4.3') else ' '
+        return {
+            'read': 'read{}object'.format(d),
+            'read{}object'.format(d): 'read',
+            'write': 'modify{}object'.format(d),
+            'modify{}object'.format(d): 'write',
+            'null': 'null',
+            'own': 'own',
+        }
 
 
 class CreateCollectionTask(IrodsBaseTask):
@@ -292,11 +300,13 @@ class SetAccessTask(IrodsBaseTask):
         access_name,
         path,
         user_name,
+        irods_backend,
         obj_target=False,
         recursive=True,
         *args,
         **kwargs
     ):
+        ac = self._get_access_conversion(irods_backend)
         if obj_target:
             target = self.irods.data_objects.get(path)
             recursive = False
@@ -308,13 +318,8 @@ class SetAccessTask(IrodsBaseTask):
         user_access = next(
             (x for x in target_access if x.user_name == user_name), None
         )
-        if (
-            user_access
-            and user_access.access_name != ACCESS_CONVERSION[access_name]
-        ):
-            self.execute_data['access_name'] = ACCESS_CONVERSION[
-                user_access.access_name
-            ]
+        if user_access and user_access.access_name != ac[access_name]:
+            self.execute_data['access_name'] = ac[user_access.access_name]
             modifying_data = True
         elif not user_access:
             self.execute_data['access_name'] = 'null'
@@ -342,6 +347,7 @@ class SetAccessTask(IrodsBaseTask):
         access_name,
         path,
         user_name,
+        irods_backend,
         obj_target=False,
         recursive=True,
         *args,
@@ -626,9 +632,11 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
         src_paths,
         access_name,
         user_name,
+        irods_backend,
         *args,
         **kwargs
     ):
+        ac = self._get_access_conversion(irods_backend)
         self.execute_data['moved_objects'] = []
 
         for src_path in src_paths:
@@ -649,7 +657,6 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
                         src_path, dest_obj_path
                     )
                 self._raise_irods_exception(ex, msg)
-
             try:
                 target = self.irods.data_objects.get(dest_obj_path)
             except Exception as ex:
@@ -671,11 +678,8 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
                 (x for x in target_access if x.user_name == user_name), None
             )
             prev_access = None
-            if (
-                user_access
-                and user_access.access_name != ACCESS_CONVERSION[access_name]
-            ):
-                prev_access = ACCESS_CONVERSION[user_access.access_name]
+            if user_access and user_access.access_name != ac[access_name]:
+                prev_access = ac[user_access.access_name]
                 modifying_access = True
             elif not user_access:
                 prev_access = 'null'
@@ -703,7 +707,14 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
         super().execute(*args, **kwargs)
 
     def revert(
-        self, src_root, dest_root, access_name, user_name, *args, **kwargs
+        self,
+        src_root,
+        dest_root,
+        access_name,
+        user_name,
+        irods_backend,
+        *args,
+        **kwargs
     ):
         for moved_object in self.execute_data['moved_objects']:
             src_path = moved_object[0]
@@ -716,7 +727,6 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
             )
             new_dest = '/'.join(src_path.split('/')[:-1])
             new_dest_obj = new_dest + '/' + src_path.split('/')[-1]
-
             self.irods.data_objects.move(src_path=new_src, dest_path=new_dest)
 
             acl = iRODSAccess(

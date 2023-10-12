@@ -13,6 +13,7 @@ v0.14.1 (WIP)
 
 Release for minor updates, maintenance and bug fixes.
 
+- Add iRODS v4.3 support
 - Change default IGV genome to "b37_1kg"
 - Fix landing zone locking controls for non-superusers
 - Minor updates and bug fixes

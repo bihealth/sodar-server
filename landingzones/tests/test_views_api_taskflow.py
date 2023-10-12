@@ -19,11 +19,7 @@ from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 from samplesheets.views import RESULTS_COLL, MISC_FILES_COLL
 
 # Taskflowbackend dependency
-from taskflowbackend.tests.base import (
-    TaskflowAPIViewTestBase,
-    IRODS_ACCESS_READ,
-    IRODS_ACCESS_OWN,
-)
+from taskflowbackend.tests.base import TaskflowAPIViewTestBase, IRODS_ACCESS_OWN
 
 from landingzones.constants import (
     DEFAULT_STATUS_INFO,
@@ -266,7 +262,7 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
         zone_path = self.irods_backend.get_path(zone)
         # Read access to root path
         self.assert_irods_access(
-            self.user.username, zone_path, IRODS_ACCESS_READ
+            self.user.username, zone_path, self.irods_access_read
         )
         for c in ZONE_ALL_COLLS:
             self.assert_irods_access(
@@ -534,10 +530,10 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
         self.assert_irods_access(
             self.group_name,
             sample_obj_path,
-            IRODS_ACCESS_READ,
+            self.irods_access_read,
         )
         self.assert_irods_access(
             self.group_name,
             sample_obj_path + '.md5',
-            IRODS_ACCESS_READ,
+            self.irods_access_read,
         )

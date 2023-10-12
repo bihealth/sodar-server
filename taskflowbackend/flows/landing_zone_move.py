@@ -196,6 +196,7 @@ class Flow(BaseLinearFlow):
                     'access_name': 'own',
                     'path': zone_path,
                     'user_name': admin_name,
+                    'irods_backend': self.irods_backend,
                 },
             )
         )
@@ -209,6 +210,7 @@ class Flow(BaseLinearFlow):
                     'access_name': 'read',
                     'path': zone_path,
                     'user_name': zone.user.username,
+                    'irods_backend': self.irods_backend,
                 },
             )
         )
@@ -224,6 +226,7 @@ class Flow(BaseLinearFlow):
                         'access_name': 'read',
                         'path': zone_path,
                         'user_name': self.flow_data['script_user'],
+                        'irods_backend': self.irods_backend,
                     },
                 )
             )
@@ -290,6 +293,7 @@ class Flow(BaseLinearFlow):
                     'src_paths': zone_objects,
                     'access_name': 'read',
                     'user_name': project_group,
+                    'irods_backend': self.irods_backend,
                 },
             )
         )
@@ -303,6 +307,7 @@ class Flow(BaseLinearFlow):
                     'access_name': 'null',
                     'path': sample_path,
                     'user_name': zone.user.username,
+                    'irods_backend': self.irods_backend,
                 },
             )
         )
@@ -317,6 +322,7 @@ class Flow(BaseLinearFlow):
                         'access_name': 'null',
                         'path': sample_path,
                         'user_name': self.flow_data['script_user'],
+                        'irods_backend': self.irods_backend,
                     },
                 )
             )

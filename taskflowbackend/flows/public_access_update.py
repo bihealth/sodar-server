@@ -27,6 +27,7 @@ class Flow(BaseLinearFlow):
                     'access_name': access_name,
                     'path': self.flow_data['path'],
                     'user_name': PUBLIC_GROUP,
+                    'irods_backend': self.irods_backend,
                 },
                 force_fail=force_fail if not ticket_str else False,
             )

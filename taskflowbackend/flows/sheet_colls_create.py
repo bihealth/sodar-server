@@ -48,6 +48,7 @@ class Flow(BaseLinearFlow):
                     'access_name': 'read',
                     'path': sample_path,
                     'user_name': project_group,
+                    'irods_backend': self.irods_backend,
                 },
             )
         )
@@ -70,6 +71,7 @@ class Flow(BaseLinearFlow):
                         'access_name': 'read',
                         'path': sample_path,
                         'user_name': PUBLIC_GROUP,
+                        'irods_backend': self.irods_backend,
                     },
                 )
             )

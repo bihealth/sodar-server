@@ -9,6 +9,7 @@ import string
 import uuid
 
 from contextlib import contextmanager
+from packaging import version
 
 import pytz
 
@@ -494,6 +495,19 @@ class IrodsAPI:
                 str(x) for x in irods.pool.get_connection().server_version
             ),
         }
+
+    @classmethod
+    def is_irods_version(cls, irods, min_ver):
+        """
+        Return true if version of iRODS server in session is equal or greater
+        than the expected version.
+
+        :param irods: iRODSSession object
+        :param min_ver: String
+        :return: Boolean
+        """
+        irods_ver = version.parse(cls.get_info(irods).get('server_version'))
+        return irods_ver >= version.parse(min_ver)
 
     def get_object_stats(self, irods, path):
         """

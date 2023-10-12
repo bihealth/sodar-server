@@ -15,7 +15,6 @@ from projectroles.models import Project, RoleAssignment, SODAR_CONSTANTS
 from projectroles.views_api import CORE_API_MEDIA_TYPE, CORE_API_DEFAULT_VERSION
 
 from taskflowbackend.tests.base import TaskflowAPIViewTestBase
-from taskflowbackend.tests.test_project_views import IRODS_ACCESS_READ
 
 
 app_settings = AppSettingAPI()
@@ -86,7 +85,9 @@ class TestProjectCreateAPIView(CoreTaskflowAPITestBase):
         group_name = self.irods_backend.get_user_group_name(project)
         group = self.irods.user_groups.get(group_name)
         self.assertIsInstance(group, iRODSUserGroup)
-        self.assert_irods_access(group_name, project_coll, IRODS_ACCESS_READ)
+        self.assert_irods_access(
+            group_name, project_coll, self.irods_access_read
+        )
         self.assertIsInstance(
             self.irods.users.get(self.user.username), iRODSUser
         )

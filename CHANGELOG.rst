@@ -8,6 +8,12 @@ Changelog for the SODAR project. Loosely follows the
 Unreleased
 ==========
 
+Added
+-----
+
+- **Irodsbackend**
+    - ``is_irods_version()`` helper (#1592)
+
 Changed
 -------
 
@@ -20,6 +26,8 @@ Changed
     - Upgrade Vue app dependencies (#1811)
     - Change default IGV genome to ``b37_1kg`` (#1812)
     - Update existing ``b37`` IGV genome settings with a migration (#1812)
+- **Taskflowbackend**
+    - iRODS v4.3 support (#1592)
 
 Fixed
 -----

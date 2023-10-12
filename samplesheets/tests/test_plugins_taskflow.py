@@ -10,16 +10,9 @@ from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import ProjectAppPluginPoint
 
 # Taskflowbackend dependency
-from taskflowbackend.tests.base import (
-    TaskflowViewTestBase,
-    IRODS_ACCESS_READ,
-    IRODS_GROUP_PUBLIC,
-)
+from taskflowbackend.tests.base import TaskflowViewTestBase, IRODS_GROUP_PUBLIC
 
-from samplesheets.tests.test_io import (
-    SampleSheetIOMixin,
-    SHEET_DIR,
-)
+from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_views_taskflow import (
     SampleSheetPublicAccessMixin,
     SampleSheetTaskflowMixin,
@@ -117,7 +110,7 @@ class TestPerformProjectModify(
             request=self.request,
         )
         self.assert_irods_access(
-            IRODS_GROUP_PUBLIC, self.sample_path, IRODS_ACCESS_READ
+            IRODS_GROUP_PUBLIC, self.sample_path, self.irods_access_read
         )
         self.assert_ticket_access(self.project, True)
 
@@ -135,7 +128,7 @@ class TestPerformProjectModify(
             request=self.request,
         )
         self.assert_irods_access(
-            IRODS_GROUP_PUBLIC, self.sample_path, IRODS_ACCESS_READ
+            IRODS_GROUP_PUBLIC, self.sample_path, self.irods_access_read
         )
         # Access should not be granted
         self.assert_ticket_access(self.project, False)
@@ -153,7 +146,7 @@ class TestPerformProjectModify(
             request=self.request,
         )
         self.assert_irods_access(
-            IRODS_GROUP_PUBLIC, self.sample_path, IRODS_ACCESS_READ
+            IRODS_GROUP_PUBLIC, self.sample_path, self.irods_access_read
         )
         self.assert_ticket_access(self.project, True)
         ticket_str = app_settings.get(
@@ -189,7 +182,7 @@ class TestPerformProjectModify(
                 request=self.request,
             )
         self.assert_irods_access(
-            IRODS_GROUP_PUBLIC, self.sample_path, IRODS_ACCESS_READ
+            IRODS_GROUP_PUBLIC, self.sample_path, self.irods_access_read
         )
         self.assert_ticket_access(self.project, True)
         ticket_str = app_settings.get(
@@ -207,7 +200,7 @@ class TestPerformProjectModify(
             request=self.request,
         )
         self.assert_irods_access(
-            IRODS_GROUP_PUBLIC, self.sample_path, IRODS_ACCESS_READ
+            IRODS_GROUP_PUBLIC, self.sample_path, self.irods_access_read
         )
         self.assert_ticket_access(self.project, False, ticket_str)
 
@@ -283,7 +276,7 @@ class TestPerformProjectSync(
 
         self.assertEqual(self.irods.collections.exists(self.sample_path), True)
         self.assert_irods_access(
-            IRODS_GROUP_PUBLIC, self.sample_path, IRODS_ACCESS_READ
+            IRODS_GROUP_PUBLIC, self.sample_path, self.irods_access_read
         )
         self.assertEqual(
             app_settings.get(APP_NAME, 'public_access_ticket', self.project),
@@ -306,7 +299,7 @@ class TestPerformProjectSync(
 
         self.assertEqual(self.irods.collections.exists(self.sample_path), True)
         self.assert_irods_access(
-            IRODS_GROUP_PUBLIC, self.sample_path, IRODS_ACCESS_READ
+            IRODS_GROUP_PUBLIC, self.sample_path, self.irods_access_read
         )
         ticket_str = app_settings.get(
             APP_NAME, 'public_access_ticket', self.project

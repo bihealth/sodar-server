@@ -16,10 +16,7 @@ from irodsbackend.api import USER_GROUP_TEMPLATE
 # Timeline dependency
 from timeline.models import ProjectEvent
 
-from taskflowbackend.tests.base import (
-    TaskflowViewTestBase,
-    IRODS_ACCESS_READ,
-)
+from taskflowbackend.tests.base import TaskflowViewTestBase
 
 
 app_settings = AppSettingAPI()
@@ -80,7 +77,9 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
         group = self.irods.user_groups.get(group_name)
         self.assertIsInstance(group, iRODSUserGroup)
         self.assert_irods_access(
-            group_name, self.irods_backend.get_path(project), IRODS_ACCESS_READ
+            group_name,
+            self.irods_backend.get_path(project),
+            self.irods_access_read,
         )
         self.assertIsInstance(
             self.irods.users.get(self.user.username), iRODSUser
@@ -1222,7 +1221,9 @@ class TestPerformProjectSync(ModifyAPITaskflowTestBase):
         group = self.irods.user_groups.get(group_name)
         self.assertIsInstance(group, iRODSUserGroup)
         self.assert_irods_access(
-            group_name, self.irods_backend.get_path(project), IRODS_ACCESS_READ
+            group_name,
+            self.irods_backend.get_path(project),
+            self.irods_access_read,
         )
         self.assertIsInstance(
             self.irods.users.get(self.user.username), iRODSUser
@@ -1258,7 +1259,9 @@ class TestPerformProjectSync(ModifyAPITaskflowTestBase):
         group = self.irods.user_groups.get(group_name)
         self.assertIsInstance(group, iRODSUserGroup)
         self.assert_irods_access(
-            group_name, self.irods_backend.get_path(project), IRODS_ACCESS_READ
+            group_name,
+            self.irods_backend.get_path(project),
+            self.irods_access_read,
         )
         self.assert_group_member(project, self.user, True)
         self.assert_group_member(project, self.user_owner_cat, True)
@@ -1267,7 +1270,9 @@ class TestPerformProjectSync(ModifyAPITaskflowTestBase):
 
         self.assert_irods_coll(project, expected=True)
         self.assert_irods_access(
-            group_name, self.irods_backend.get_path(project), IRODS_ACCESS_READ
+            group_name,
+            self.irods_backend.get_path(project),
+            self.irods_access_read,
         )
         self.assert_group_member(project, self.user, True)
         self.assert_group_member(project, self.user_owner_cat, True)
