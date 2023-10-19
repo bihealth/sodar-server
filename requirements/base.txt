@@ -71,7 +71,7 @@ django-autocomplete-light==3.9.4
 
 # SODAR Core
 # django-sodar-core==0.13.2
--e git+https://github.com/bihealth/sodar-core.git@bd3d834f3ff5512e16d743a1d8cbb706dc173b65#egg=django-sodar-core
+-e git+https://github.com/bihealth/sodar-core.git@4657a3c9e24fa338444e44a0865996fd63abadc3#egg=django-sodar-core
 
 # Celery
 celery==5.2.7

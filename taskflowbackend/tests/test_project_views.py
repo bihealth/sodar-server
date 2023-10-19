@@ -19,6 +19,9 @@ from projectroles.models import (
 )
 from projectroles.tests.test_models import ProjectInviteMixin
 
+# Timeline dependency
+from timeline.models import ProjectEvent
+
 from taskflowbackend.tests.base import TaskflowViewTestBase
 
 
@@ -56,7 +59,6 @@ class TestProjectCreateView(TaskflowViewTestBase):
             ),
             False,
         )
-
         # Make project with owner in Taskflow and Django
         self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
@@ -134,6 +136,15 @@ class TestProjectCreateView(TaskflowViewTestBase):
             self.irods.users.get(self.user_owner_cat.username), iRODSUser
         )
         self.assertEqual(group.hasmember(self.user_owner_cat.username), True)
+        # Assert timeline event
+        tl_events = ProjectEvent.objects.filter(
+            project=project,
+            plugin='taskflow',
+            user=self.user,
+            event_name='project_create',
+        )
+        self.assertEqual(tl_events.count(), 1)
+        self.assertEqual(tl_events.first().get_status().status_type, 'OK')
 
 
 class TestProjectUpdateView(TaskflowViewTestBase):
@@ -222,6 +233,14 @@ class TestProjectUpdateView(TaskflowViewTestBase):
         )
         self.assert_group_member(self.project, self.user, True)
         self.assert_group_member(self.project, self.user_owner_cat, True)
+        tl_events = ProjectEvent.objects.filter(
+            project=self.project,
+            plugin='taskflow',
+            user=self.user,
+            event_name='project_update',
+        )
+        self.assertEqual(tl_events.count(), 1)
+        self.assertEqual(tl_events.first().get_status().status_type, 'OK')
 
     def test_update_parent(self):
         """Test project update with changed parent"""

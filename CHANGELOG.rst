@@ -34,6 +34,8 @@ Fixed
 
 - **Landingzones**
     - No wait for async ``CurrentUserRetrieveAPIView`` call result (#1732, #1807)
+- **Taskflowbackend**
+    - ``project_create`` timeline event user reference (bihealth/sodar_core#1301, #1819)
 
 
 v0.14.0 (2023-09-27)
