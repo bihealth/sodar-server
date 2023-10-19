@@ -3,15 +3,13 @@
 import logging
 import math
 import os
+import pytz
 import random
 import re
 import string
 import uuid
 
 from contextlib import contextmanager
-from packaging import version
-
-import pytz
 
 from irods.api_number import api_number
 from irods.collection import iRODSCollection
@@ -491,23 +489,20 @@ class IrodsAPI:
             'server_host': irods.host,
             'server_port': irods.port,
             'server_zone': irods.zone,
-            'server_version': '.'.join(
-                str(x) for x in irods.pool.get_connection().server_version
-            ),
+            'server_version': cls.get_version(irods),
         }
 
     @classmethod
-    def is_irods_version(cls, irods, min_ver):
+    def get_version(cls, irods):
         """
-        Return true if version of iRODS server in session is equal or greater
-        than the expected version.
+        Return the version of the iRODS server SODAR is connected to.
 
         :param irods: iRODSSession object
-        :param min_ver: String
-        :return: Boolean
+        :return: String
         """
-        irods_ver = version.parse(cls.get_info(irods).get('server_version'))
-        return irods_ver >= version.parse(min_ver)
+        return '.'.join(
+            str(x) for x in irods.pool.get_connection().server_version
+        )
 
     def get_object_stats(self, irods, path):
         """

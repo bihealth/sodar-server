@@ -15,11 +15,11 @@ import hashlib
 import logging
 import os
 
-
 from irods.exception import CollectionDoesNotExist
 from irods.keywords import REG_CHKSUM_KW
 from irods.models import TicketQuery, UserGroup
 from irods.test.helpers import make_object
+from packaging import version
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
@@ -267,8 +267,8 @@ class TaskflowTestMixin(ProjectMixin, RoleMixin, RoleAssignmentMixin):
             self.category, self.user_owner_cat, self.role_owner
         )
         # Set iRODS 4.2/4.3 compatible ACL params
-        new_ver = self.irods_backend.is_irods_version(self.irods, '4.3')
-        acl_dl = '_' if new_ver else ' '
+        v = version.parse(self.irods_backend.get_version(self.irods))
+        acl_dl = '_' if v >= version.parse('4.3') else ' '
         self.irods_access_read = 'read{}object'.format(acl_dl)
         self.irods_access_write = 'modify{}object'.format(acl_dl)
 

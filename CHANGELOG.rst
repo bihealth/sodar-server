@@ -12,7 +12,7 @@ Added
 -----
 
 - **Irodsbackend**
-    - ``is_irods_version()`` helper (#1592)
+    - ``get_version()`` helper (#1592, #1817)
 
 Changed
 -------
@@ -27,7 +27,7 @@ Changed
     - Change default IGV genome to ``b37_1kg`` (#1812)
     - Update existing ``b37`` IGV genome settings with a migration (#1812)
 - **Taskflowbackend**
-    - iRODS v4.3 support (#1592)
+    - iRODS v4.3 support (#1592, #1817)
 
 Fixed
 -----

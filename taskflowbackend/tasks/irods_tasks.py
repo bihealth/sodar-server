@@ -14,6 +14,7 @@ from irods.exception import (
     CAT_SUCCESS_BUT_WITH_NO_INFO,
 )
 from irods.models import Collection
+from packaging import version
 
 from taskflowbackend.tasks.base_task import BaseTask
 
@@ -55,7 +56,8 @@ class IrodsBaseTask(BaseTask):
         Return the access conversion dict compatible with the currently used
         iRODS server version (4.2 and 4.3 supported).
         """
-        d = '_' if irods_backend.is_irods_version(self.irods, '4.3') else ' '
+        v = version.parse(irods_backend.get_version(self.irods))
+        d = '_' if v >= version.parse('4.3') else ' '
         return {
             'read': 'read{}object'.format(d),
             'read{}object'.format(d): 'read',
