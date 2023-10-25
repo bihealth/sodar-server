@@ -2,10 +2,12 @@
 
 import logging
 import os
+import re
 import time
 
 from copy import deepcopy
 from irods.exception import NetworkException
+from urllib.parse import urlparse
 
 from django.conf import settings
 from django.urls import reverse
@@ -79,6 +81,10 @@ MATERIAL_SEARCH_TYPES = ['source', 'sample']
 SKIP_MSG_NO_INV = 'No investigation for project'
 SKIP_MSG_NO_COLLS = 'Investigation collections not created in iRODS'
 IGV_DEFAULT_GENOME = 'b37_1kg'
+SYNC_URL_RE = (
+    r'/samplesheets/sync/[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]'
+    r'{3}-?[a-f0-9]{12}'
+)
 
 
 # Samplesheets project app plugin ----------------------------------------------
@@ -528,6 +534,39 @@ class ProjectAppPlugin(
                     else 'iRODS WebDAV unavailable'
                 )
             )
+
+    # TODO: Add tests
+    def validate_form_app_settings(self, app_settings, project=None, user=None):
+        """
+        Validate app settings form data and return a dict of errors.
+
+        :param app_settings: Dict of app settings
+        :param project: Project object or None
+        :param user: User object
+        :return: dict in format of {setting_name: 'Error string'}
+        """
+        ret = {}
+        # Ensure all sheet sync settings are set if sync is enabled
+        if project and app_settings.get('sheet_sync_enable') is not None:
+            enable = app_settings['sheet_sync_enable']
+            msg = 'must be set if sheet sync is enabled'
+            if enable and not app_settings['sheet_sync_token']:
+                ret['sheet_sync_token'] = 'Token ' + msg
+            if enable and not app_settings['sheet_sync_url']:
+                ret['sheet_sync_url'] = 'URL ' + msg
+        # Validate sync URL
+        if project and app_settings.get('sheet_sync_url'):
+            try:
+                urlparse(app_settings['sheet_sync_url'])
+            except Exception:
+                ret['sheet_sync_url'] = 'Invalid URL'
+            if 'sheet_sync_url' not in ret and not re.findall(
+                SYNC_URL_RE, app_settings['sheet_sync_url']
+            ):
+                ret[
+                    'sheet_sync_url'
+                ] = 'URL does not point to a sheet sync endpoint'
+        return ret
 
     # Project Modify API Implementation ----------------------------------------
 

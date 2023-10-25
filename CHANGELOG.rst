@@ -13,6 +13,8 @@ Added
 
 - **Irodsbackend**
     - ``get_version()`` helper (#1592, #1817)
+- **Samplesheets**
+    - Custom validation for ``sheet_sync_url`` and ``sheet_sync_token`` (#1310, #1384)
 
 Changed
 -------
