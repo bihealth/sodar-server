@@ -20,6 +20,7 @@ Changed
 -------
 
 - **General**
+    - Upgrade to Django v3.2.23 (#1811)
     - Upgrade to django-sodar-core v0.13.3-WIP (#1810)
 - **Landingzones**
     - Disable locked zone controls in template for non-superusers (#1808)
