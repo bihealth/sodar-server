@@ -15,6 +15,8 @@ Added
     - ``get_version()`` helper (#1592, #1817)
 - **Samplesheets**
     - Custom validation for ``sheet_sync_url`` and ``sheet_sync_token`` (#1310, #1384)
+    - ``hpo.jax.org`` in ``SHEETS_ONTOLOGY_URL_SKIP`` (#1821)
+    - Missing Django settings in siteinfo (#1830)
 
 Changed
 -------

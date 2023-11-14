@@ -793,7 +793,7 @@ SHEETS_ONTOLOGY_URL_TEMPLATE = env.str(
 )
 # Skip URL template modification if substring found in accession
 SHEETS_ONTOLOGY_URL_SKIP = env.list(
-    'SHEETS_ONTOLOGY_URL_SKIP', default=['bioontology.org']
+    'SHEETS_ONTOLOGY_URL_SKIP', default=['bioontology.org', 'hpo.jax.org']
 )
 
 # Labels and URL patterns for external link columns
