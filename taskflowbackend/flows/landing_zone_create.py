@@ -25,6 +25,7 @@ class Flow(BaseLinearFlow):
         user_path = os.path.join(zone_root, zone.user.username)
         zone_path = self.irods_backend.get_path(zone)
         root_access = 'read' if self.flow_data['restrict_colls'] else 'own'
+        access_lookup = self.irods_backend.get_access_lookup(self.irods)
 
         self.add_task(
             lz_tasks.RevertLandingZoneFailTask(
@@ -54,6 +55,7 @@ class Flow(BaseLinearFlow):
                     'access_name': 'read',
                     'path': zone_root,
                     'user_name': project_group,
+                    'access_lookup': access_lookup,
                     'irods_backend': self.irods_backend,
                     'recursive': False,
                 },
@@ -85,6 +87,7 @@ class Flow(BaseLinearFlow):
                     'access_name': 'read',
                     'path': user_path,
                     'user_name': zone.user.username,
+                    'access_lookup': access_lookup,
                     'irods_backend': self.irods_backend,
                     'recursive': False,
                 },
@@ -116,6 +119,7 @@ class Flow(BaseLinearFlow):
                     'access_name': root_access,
                     'path': zone_path,
                     'user_name': zone.user.username,
+                    'access_lookup': access_lookup,
                     'irods_backend': self.irods_backend,
                 },
             )
@@ -132,6 +136,7 @@ class Flow(BaseLinearFlow):
                         'access_name': 'write',
                         'path': zone_path,
                         'user_name': self.flow_data['script_user'],
+                        'access_lookup': access_lookup,
                         'irods_backend': self.irods_backend,
                     },
                 )
@@ -170,6 +175,7 @@ class Flow(BaseLinearFlow):
                             'access_name': 'own',
                             'path': coll_path,
                             'user_name': zone.user.username,
+                            'access_lookup': access_lookup,
                             'irods_backend': self.irods_backend,
                         },
                     )

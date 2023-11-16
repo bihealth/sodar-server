@@ -14,7 +14,6 @@ from irods.exception import (
     CAT_SUCCESS_BUT_WITH_NO_INFO,
 )
 from irods.models import Collection
-from packaging import version
 
 from taskflowbackend.tasks.base_task import BaseTask
 
@@ -50,22 +49,6 @@ class IrodsBaseTask(BaseTask):
             desc += ' ({})'.format(info)
         logger.error(desc)
         raise Exception(desc)
-
-    def _get_access_conversion(self, irods_backend):
-        """
-        Return the access conversion dict compatible with the currently used
-        iRODS server version (4.2 and 4.3 supported).
-        """
-        v = version.parse(irods_backend.get_version(self.irods))
-        d = '_' if v >= version.parse('4.3') else ' '
-        return {
-            'read': 'read{}object'.format(d),
-            'read{}object'.format(d): 'read',
-            'write': 'modify{}object'.format(d),
-            'modify{}object'.format(d): 'write',
-            'null': 'null',
-            'own': 'own',
-        }
 
 
 class CreateCollectionTask(IrodsBaseTask):
@@ -302,13 +285,13 @@ class SetAccessTask(IrodsBaseTask):
         access_name,
         path,
         user_name,
+        access_lookup,
         irods_backend,
         obj_target=False,
         recursive=True,
         *args,
         **kwargs
     ):
-        ac = self._get_access_conversion(irods_backend)
         if obj_target:
             target = self.irods.data_objects.get(path)
             recursive = False
@@ -320,8 +303,13 @@ class SetAccessTask(IrodsBaseTask):
         user_access = next(
             (x for x in target_access if x.user_name == user_name), None
         )
-        if user_access and user_access.access_name != ac[access_name]:
-            self.execute_data['access_name'] = ac[user_access.access_name]
+        if (
+            user_access
+            and user_access.access_name != access_lookup[access_name]
+        ):
+            self.execute_data['access_name'] = access_lookup[
+                user_access.access_name
+            ]
             modifying_data = True
         elif not user_access:
             self.execute_data['access_name'] = 'null'
@@ -349,6 +337,7 @@ class SetAccessTask(IrodsBaseTask):
         access_name,
         path,
         user_name,
+        access_lookup,
         irods_backend,
         obj_target=False,
         recursive=True,
@@ -634,11 +623,11 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
         src_paths,
         access_name,
         user_name,
+        access_lookup,
         irods_backend,
         *args,
         **kwargs
     ):
-        ac = self._get_access_conversion(irods_backend)
         self.execute_data['moved_objects'] = []
 
         for src_path in src_paths:
@@ -680,8 +669,11 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
                 (x for x in target_access if x.user_name == user_name), None
             )
             prev_access = None
-            if user_access and user_access.access_name != ac[access_name]:
-                prev_access = ac[user_access.access_name]
+            if (
+                user_access
+                and user_access.access_name != access_lookup[access_name]
+            ):
+                prev_access = access_lookup[user_access.access_name]
                 modifying_access = True
             elif not user_access:
                 prev_access = 'null'
@@ -714,6 +706,7 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
         dest_root,
         access_name,
         user_name,
+        access_lookup,
         irods_backend,
         *args,
         **kwargs

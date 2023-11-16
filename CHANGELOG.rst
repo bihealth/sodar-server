@@ -12,7 +12,8 @@ Added
 -----
 
 - **Irodsbackend**
-    - ``get_version()`` helper (#1592, #1817)
+    - ``get_version()`` helper (#1592, #1817, #1831)
+    - ``get_access_lookup()`` helper (#1832)
 - **Samplesheets**
     - Custom validation for ``sheet_sync_url`` and ``sheet_sync_token`` (#1310, #1384)
     - ``hpo.jax.org`` in ``SHEETS_ONTOLOGY_URL_SKIP`` (#1821)
@@ -32,15 +33,23 @@ Changed
     - Change default IGV genome to ``b37_1kg`` (#1812)
     - Update existing ``b37`` IGV genome settings with a migration (#1812)
 - **Taskflowbackend**
-    - iRODS v4.3 support (#1592, #1817)
+    - iRODS v4.3 support (#1592, #1817, #1832)
 
 Fixed
 -----
 
+- **Irodsbackend**
+    - Opening redundant iRODS connection in server version retrieval (#1831)
 - **Landingzones**
     - No wait for async ``CurrentUserRetrieveAPIView`` call result (#1732, #1807)
 - **Taskflowbackend**
     - ``project_create`` timeline event user reference (bihealth/sodar_core#1301, #1819)
+
+Removed
+-------
+
+- **Taskflowbackend**
+    - Duplicate ``SetAccessTask`` tests (#1833)
 
 
 v0.14.0 (2023-09-27)
