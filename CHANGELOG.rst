@@ -14,10 +14,14 @@ Added
 - **Irodsbackend**
     - ``get_version()`` helper (#1592, #1817, #1831)
     - ``get_access_lookup()`` helper (#1832)
+- **Irodsinfo**
+    - iRODS v4.3 auth scheme support in client environment (#1834)
 - **Samplesheets**
     - Custom validation for ``sheet_sync_url`` and ``sheet_sync_token`` (#1310, #1384)
     - ``hpo.jax.org`` in ``SHEETS_ONTOLOGY_URL_SKIP`` (#1821)
     - Missing Django settings in siteinfo (#1830)
+- **Taskflowbackend**
+    - iRODS v4.3 support (#1592, #1817, #1832)
 
 Changed
 -------
@@ -32,8 +36,6 @@ Changed
     - Upgrade Vue app dependencies (#1811)
     - Change default IGV genome to ``b37_1kg`` (#1812)
     - Update existing ``b37`` IGV genome settings with a migration (#1812)
-- **Taskflowbackend**
-    - iRODS v4.3 support (#1592, #1817, #1832)
 
 Fixed
 -----
