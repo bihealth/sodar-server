@@ -44,6 +44,7 @@ Fixed
     - Opening redundant iRODS connection in server version retrieval (#1831)
 - **Landingzones**
     - No wait for async ``CurrentUserRetrieveAPIView`` call result (#1732, #1807)
+    - ``BaseLandingZoneStatusTask.set_status()`` failure with concurrent sheet replacing (#1839)
 - **Taskflowbackend**
     - ``project_create`` timeline event user reference (bihealth/sodar_core#1301, #1819)
 

@@ -249,11 +249,12 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
                 status_info[: STATUS_INFO_LEN - len(STATUS_TRUNCATE_MSG)]
                 + STATUS_TRUNCATE_MSG
             )
+        # Refresh in case sheets have been replaced (see issue #1839)
+        zone.refresh_from_db()
         zone.set_status(
             status=status,
             status_info=status_info if status_info else None,
         )
-        zone.refresh_from_db()
 
         if not extra_data:
             extra_data = {}
