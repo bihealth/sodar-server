@@ -738,16 +738,22 @@ class BatchCalculateChecksumTask(IrodsBaseTask):
 
     def execute(self, file_paths, force, *args, **kwargs):
         for path in file_paths:
-            if self.irods.data_objects.exists(path):
-                data_obj = self.irods.data_objects.get(path)
-                for replica in data_obj.replicas:
-                    if force or not replica.checksum:
-                        try:
-                            data_obj.chksum(
-                                **{kw.RESC_HIER_STR_KW: replica.resc_hier}
+            if not self.irods.data_objects.exists(path):
+                continue
+            data_obj = self.irods.data_objects.get(path)
+            for replica in data_obj.replicas:
+                if force or not replica.checksum:
+                    try:
+                        data_obj.chksum(
+                            **{kw.RESC_HIER_STR_KW: replica.resc_hier}
+                        )
+                    except Exception as ex:
+                        logger.error(
+                            'Exception in BatchCalculateChecksumTask for path '
+                            '"{}" in replica "{}": {}'.format(
+                                path, replica.resc_hier, ex
                             )
-                        except Exception:
-                            pass  # TBD: How to handle an exception for this?
+                        )  # NOTE: No raise, only log
         super().execute(*args, **kwargs)
 
     # NOTE: We don't need revert for this

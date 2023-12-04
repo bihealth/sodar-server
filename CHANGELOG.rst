@@ -22,6 +22,7 @@ Added
     - Missing Django settings in siteinfo (#1830)
 - **Taskflowbackend**
     - iRODS v4.3 support (#1592, #1817, #1832)
+    - ``BatchCalculateChecksumTask`` exception logging (#1843)
 
 Changed
 -------
@@ -36,6 +37,8 @@ Changed
     - Upgrade Vue app dependencies (#1811)
     - Change default IGV genome to ``b37_1kg`` (#1812)
     - Update existing ``b37`` IGV genome settings with a migration (#1812)
+- **Taskflowbackend**
+    - Improve ``landing_zone_move`` zone status info messages for validation (#1840)
 
 Fixed
 -----
@@ -47,6 +50,7 @@ Fixed
     - ``BaseLandingZoneStatusTask.set_status()`` failure with concurrent sheet replacing (#1839)
 - **Taskflowbackend**
     - ``project_create`` timeline event user reference (bihealth/sodar_core#1301, #1819)
+    - Incorrect write access messages in ``landing_zone_move`` when validating only (#1845)
 
 Removed
 -------
