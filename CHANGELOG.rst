@@ -30,6 +30,8 @@ Changed
 - **General**
     - Upgrade to Django v3.2.23 (#1811)
     - Upgrade to django-sodar-core v0.13.3 (#1810)
+- **Irodsbackend**
+    - iRODS collection modal copy button icon (#1851)
 - **Landingzones**
     - Disable locked zone controls in template for non-superusers (#1808)
     - Rename and refactor ``disable_zone_ui()`` template tag (#1808)

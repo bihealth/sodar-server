@@ -243,7 +243,7 @@ $(document).ready(function() {
                         'title="Copy iRODS path into clipboard" data-tooltip="tooltip" ' +
                         'data-placement="top" onclick="copyModalPath(\'' + obj['path'] +
                         '\', \'' + elemId + '\')">' +
-                        '<i class="iconify" data-icon="mdi:clipboard-text-multiple"></i>' +
+                        '<i class="iconify" data-icon="mdi:console-line"></i>' +
                         '</button>';
                     var iconHtml = '<i class="iconify mr-1" data-icon="' + icon + '"' +
                         ' title="' + toolTip + '"></i>';
