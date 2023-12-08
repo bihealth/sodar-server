@@ -1231,7 +1231,6 @@ export default {
     },
 
     getGridOptionsByUuid (uuid) {
-      // TODO: Make sure this new method works! (If not, use $refs)
       if (uuid === this.currentStudyUuid) {
         return this.gridOptions.study
       } else if (uuid in this.columnDefs.assays) {

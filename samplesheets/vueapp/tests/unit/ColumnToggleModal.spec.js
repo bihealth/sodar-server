@@ -234,7 +234,7 @@ describe('ColumnToggleModal.vue', () => {
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    await wrapper.findAll('.sodar-ss-toggle-node-check').at(0).vm.$emit('change')
+    await wrapper.findAll('.sodar-ss-toggle-node-btn').at(0).trigger('click')
     expect(spyOnGroupChange).toBeCalled()
   })
 

@@ -45,13 +45,14 @@
             {{ topHeader.headerName }}
           </th>
           <th :class="getTopHeaderClasses(topHeader)">
-            <b-checkbox
-                indeterminate plain
-                class="sodar-ss-toggle-node-check"
-                v-if="topHeader.children.length > 0 && !filterActive"
-                :checked="false"
-                @change="onGroupChange($event, topHeader, topIdx)">
-            </b-checkbox>
+            <b-button
+              variant="secondary"
+              class="sodar-list-btn sodar-ss-toggle-node-btn"
+              title="Toggle all"
+              @click="onGroupChange(topHeader, topIdx)"
+              v-b-tooltip.hover.d300>
+              <i class="iconify" data-icon="mdi:checkbox-multiple-marked"></i>
+            </b-button>
           </th>
         </tr>
         <tr v-for="(header, headerIdx) in topHeader.children"
@@ -71,11 +72,12 @@
               No data
             </span>
           </td>
-          <td>
+          <td class="text-center">
             <b-checkbox
                 plain
                 :checked="getColumnVisibility(header)"
                 class="sodar-ss-toggle-field-check"
+                :key="getCheckboxKey()"
                 @change="onColumnChange($event, header, topIdx, headerIdx)">
             </b-checkbox>
           </td>
@@ -117,15 +119,19 @@ export default {
       return topHeader.headerClass.join(' ')
     },
     getColumnVisibility (header) {
-      if (this.gridOptions && this.gridOptions.columnApi) {
-        return this.gridOptions.columnApi.getColumn(header.field).visible
+      if (this.columnApi) {
+        return this.columnApi.getColumn(header.field).visible
       }
     },
     getColumnEditability (header) {
-      if (this.gridOptions && this.gridOptions.columnApi) {
-        return this.gridOptions.columnApi.getColumn(
+      if (this.columnApi) {
+        return this.columnApi.getColumn(
           header.field).colDef.cellRendererParams.fieldEditable
       }
+    },
+    getCheckboxKey () {
+      // HACK: Generate random key for checkbox to force refresh (see #1848)
+      return Math.random().toString(36).substring(3)
     },
     onFilterInput (event) {
       const inputVal = event.toLowerCase()
@@ -150,15 +156,25 @@ export default {
       this.displayConfig.nodes[topIdx].fields[headerIdx].visible = event
       this.columnsChanged = true
     },
-    onGroupChange (event, topHeader, topIdx) {
+    onGroupChange (topHeader, topIdx) {
+      let toggle = false
       for (let i = 0; i < topHeader.children.length; i++) {
-        this.columnApi.setColumnVisible(topHeader.children[i].field, event)
+        if (!this.columnApi.getColumn(topHeader.children[i].field).visible) {
+          toggle = true
+          break
+        }
+      }
+      for (let i = 0; i < topHeader.children.length; i++) {
+        this.columnApi.setColumnVisible(topHeader.children[i].field, toggle)
       }
       // Update user display config
       const fieldLength = this.displayConfig.nodes[topIdx].fields.length
       for (let i = 1; i < fieldLength; i++) {
-        this.displayConfig.nodes[topIdx].fields[i].visible = event
+        this.displayConfig.nodes[topIdx].fields[i].visible = toggle
       }
+      // Force update to refresh group columns in UI (see #1849)
+      // TODO: Better method?
+      this.$forceUpdate()
       this.columnsChanged = true
     },
     onModalHide () {
@@ -275,7 +291,6 @@ export default {
       for (let i = firstTopIdx; i < topColLen; i++) {
         this.columnList.push(this.getListGroup(this.columnDefs[i], 1))
       }
-
       // Show element
       this.$refs.columnToggleModal.show()
     },
