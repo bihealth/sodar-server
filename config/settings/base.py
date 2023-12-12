@@ -365,6 +365,8 @@ if ENABLE_LDAP:
         'last_name': 'sn',
         'email': 'mail',
     }
+    # Temporarily disable cert checking (see issue #1853)
+    ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
 
     # Primary LDAP server
     AUTH_LDAP_SERVER_URI = env.str('AUTH_LDAP_SERVER_URI', None)
@@ -373,7 +375,7 @@ if ENABLE_LDAP:
     AUTH_LDAP_START_TLS = env.str('AUTH_LDAP_START_TLS', False)
     AUTH_LDAP_CA_CERT_FILE = env.str('AUTH_LDAP_CA_CERT_FILE', None)
     AUTH_LDAP_CONNECTION_OPTIONS = {**LDAP_DEFAULT_CONN_OPTIONS}
-    if AUTH_LDAP_CA_CERT_FILE is not None:
+    if AUTH_LDAP_CA_CERT_FILE:
         AUTH_LDAP_CONNECTION_OPTIONS[
             ldap.OPT_X_TLS_CACERTFILE
         ] = AUTH_LDAP_CA_CERT_FILE
@@ -408,7 +410,7 @@ if ENABLE_LDAP:
         AUTH_LDAP2_START_TLS = env.str('AUTH_LDAP2_START_TLS', False)
         AUTH_LDAP2_CA_CERT_FILE = env.str('AUTH_LDAP2_CA_CERT_FILE', None)
         AUTH_LDAP2_CONNECTION_OPTIONS = {**LDAP_DEFAULT_CONN_OPTIONS}
-        if AUTH_LDAP2_CA_CERT_FILE is not None:
+        if AUTH_LDAP2_CA_CERT_FILE:
             AUTH_LDAP2_CONNECTION_OPTIONS[
                 ldap.OPT_X_TLS_CACERTFILE
             ] = AUTH_LDAP2_CA_CERT_FILE

@@ -45,6 +45,8 @@ Changed
 Fixed
 -----
 
+- **General**
+    - Add workaround for ``AUTH_LDAP_CONNECTION_OPTIONS`` duplication (#1853)
 - **Irodsbackend**
     - Opening redundant iRODS connection in server version retrieval (#1831)
 - **Landingzones**
