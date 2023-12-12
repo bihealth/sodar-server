@@ -19,11 +19,9 @@
   table#sodar-ss-details-table tr td:nth-child(2) {
     width: 220px;
   }
-
   table#sodar-ss-details-table tr td:nth-child(3) {
     width: 110px;
   }
-
   /* Responsive modifications */
   @media screen and (max-width: 800px) {
     table#sodar-ss-details-table tr th:nth-child(2) {
@@ -37,11 +35,11 @@
 
 {% if not investigation %}
   <div class="card-body bg-faded font-italic text-center">
-    <p>No sample sheets available</p>
+    <p>No sample sheets available.</p>
   </div>
 {% elif investigation and not investigation.irods_status %}
   <div class="card-body bg-faded font-italic text-center">
-    <p>Sample sheets available, sample repository not created in iRODS</p>
+    <p>Sample sheets available, sample repository not created in iRODS.</p>
   </div>
 {% elif investigation and can_view_sheet %}
   <!-- Irodsbackend -->

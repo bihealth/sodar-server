@@ -145,10 +145,10 @@ displayed in the screenshot below.
 
     Table header with column visibility toggle button highlighted
 
-Clicking the button opens a modal in which you can hide or unhide columns by
-clicking the accompanying check boxes. Columns can be toggled individually
-or by an entire node. The node name columns, or protocol columns in the case of
-unnamed processes, will always be displayed.
+Clicking the button opens a modal in which you can hide or unhide columns using
+the accompanying checkboxes. Columns can be toggled individually or for an
+entire material or process. Name columns, or protocol columns in the case of
+unnamed processes, will always be displayed and can't be hidden.
 
 .. figure:: _static/app_samplesheets/column_toggle_modal.png
     :align: center

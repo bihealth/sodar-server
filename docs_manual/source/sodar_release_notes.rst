@@ -8,8 +8,8 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
-v0.14.1 (WIP)
-=============
+v0.14.1 (2023-12-12)
+====================
 
 Release for minor updates, maintenance and bug fixes.
 
@@ -18,6 +18,7 @@ Release for minor updates, maintenance and bug fixes.
 - Change default IGV genome to "b37_1kg"
 - Fix landing zone locking controls for non-superusers
 - Fix access to new HP ontology URLs
+- Fix sheet column toggle modal UI issues
 - Minor updates and bug fixes
 - Upgrade to SODAR Core v0.13.3
 

@@ -537,7 +537,6 @@ class ProjectAppPlugin(
                 )
             )
 
-    # TODO: Add tests
     def validate_form_app_settings(self, app_settings, project=None, user=None):
         """
         Validate app settings form data and return a dict of errors.

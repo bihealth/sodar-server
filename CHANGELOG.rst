@@ -5,8 +5,8 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
-Unreleased
-==========
+v0.14.1 (2023-12-12)
+====================
 
 Added
 -----
@@ -50,6 +50,9 @@ Fixed
 - **Landingzones**
     - No wait for async ``CurrentUserRetrieveAPIView`` call result (#1732, #1807)
     - ``BaseLandingZoneStatusTask.set_status()`` failure with concurrent sheet replacing (#1839)
+- **Samplesheets**
+    - ``ColumnToggleModal`` study checkbox states rendered under assay (#1848)
+    - ``ColumnToggleModal`` group toggle not updating checkboxes in UI (#1849)
 - **Taskflowbackend**
     - ``project_create`` timeline event user reference (bihealth/sodar_core#1301, #1819)
     - Incorrect write access messages in ``landing_zone_move`` when validating only (#1845)

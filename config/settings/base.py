@@ -347,7 +347,7 @@ REST_FRAMEWORK = {
 # Enable LDAP if configured
 ENABLE_LDAP = env.bool('ENABLE_LDAP', False)
 ENABLE_LDAP_SECONDARY = env.bool('ENABLE_LDAP_SECONDARY', False)
-
+LDAP_DEBUG = env.bool('LDAP_DEBUG', False)
 # Alternative domains for detecting LDAP access by email address
 LDAP_ALT_DOMAINS = env.list('LDAP_ALT_DOMAINS', None, default=[])
 
@@ -356,6 +356,8 @@ if ENABLE_LDAP:
     import ldap
     from django_auth_ldap.config import LDAPSearch
 
+    if LDAP_DEBUG:
+        ldap.set_option(ldap.OPT_DEBUG_LEVEL, 255)
     # Default values
     LDAP_DEFAULT_CONN_OPTIONS = {ldap.OPT_REFERRALS: 0}
     LDAP_DEFAULT_ATTR_MAP = {
@@ -608,7 +610,7 @@ SITE_INSTANCE_TITLE = env.str('SITE_INSTANCE_TITLE', 'CUBI SODAR')
 
 
 # General API settings
-SODAR_API_DEFAULT_VERSION = '0.14.0'
+SODAR_API_DEFAULT_VERSION = '0.14.1'
 SODAR_API_ALLOWED_VERSIONS = [
     '0.7.0',
     '0.7.1',
@@ -628,6 +630,7 @@ SODAR_API_ALLOWED_VERSIONS = [
     '0.13.3',
     '0.13.4',
     '0.14.0',
+    '0.14.1',
 ]
 SODAR_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar+json'
 SODAR_API_DEFAULT_HOST = env.url(

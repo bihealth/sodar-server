@@ -379,9 +379,12 @@ variables. The modal content varies based on the column type, but all share a
 few common elements:
 
 - Configuration copy/paste elements in the top right corner
-- The *Editable* checkbox for enabling or disabling editing for this column
-- The *Cancel* and *Update* buttons for committing the configuration change or
-  cancelling it.
+- The :guilabel:`Editable` checkbox for enabling or disabling editing for this
+  column. This is disabled by default. When disabled, users are only able to
+  enter data in mandatory fields such as material names or process protocols
+  when inserting new rows.
+- The :guilabel:`Cancel` and :guilabel:`Update` buttons for committing the
+  configuration change or cancelling it.
 
 Upon first importing or creating the sample sheets, the initial type and
 configuration of a column is automatically determined by SODAR. The modal

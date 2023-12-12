@@ -27,7 +27,7 @@ from samplesheets.tasks_celery import (
     CACHE_UPDATE_EVENT,
 )
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
-from samplesheets.tests.test_views import TestSheetRemoteSyncBase
+from samplesheets.tests.test_views import SheetRemoteSyncTestBase
 from samplesheets.tests.test_views_taskflow import (
     SampleSheetTaskflowMixin,
 )
@@ -154,7 +154,7 @@ class TestUpdateProjectCacheTask(
         self.assertEqual(ProjectEvent.objects.count(), 3)
 
 
-class TestSheetRemoteSyncTask(TestSheetRemoteSyncBase):
+class TestSheetRemoteSyncTask(SheetRemoteSyncTestBase):
     """Tests for periodic sample sheet sync task"""
 
     def setUp(self):

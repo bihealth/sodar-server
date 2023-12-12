@@ -1629,7 +1629,7 @@ class TestIrodsDataRequestListView(
         self.assertEqual(len(response.context['object_list']), 0)
 
 
-class TestSheetRemoteSyncBase(
+class SheetRemoteSyncTestBase(
     ProjectMixin,
     RoleMixin,
     RoleAssignmentMixin,
@@ -1694,7 +1694,7 @@ class TestSheetRemoteSyncBase(
         )
 
 
-class TestSheetRemoteSyncView(TestSheetRemoteSyncBase):
+class TestSheetRemoteSyncView(SheetRemoteSyncTestBase):
     """Tests for SheetRemoteSyncView"""
 
     def test_sync(self):
