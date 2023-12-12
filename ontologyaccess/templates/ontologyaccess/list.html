@@ -14,12 +14,10 @@
       width: 170px;
       white-space: nowrap;
     }
-
     table#sodar-oa-list-table thead tr th:nth-child(6),
     table#sodar-oa-list-table tbody tr td:nth-child(6) {
       width: 75px;
     }
-
     /* Responsive modifications */
     @media screen and (max-width: 1200px) {
       table#sodar-oa-list-table thead tr th:nth-child(5),
@@ -27,14 +25,12 @@
         display: none;
       }
     }
-
     @media screen and (max-width: 1100px) {
       table#sodar-oa-list-table thead tr th:nth-child(4),
       table#sodar-oa-list-table tbody tr td:nth-child(4) {
         display: none;
       }
     }
-
     @media screen and (max-width: 650px) {
       table#sodar-oa-list-table thead tr th:nth-child(3),
       table#sodar-oa-list-table tbody tr td:nth-child(3) {
@@ -44,20 +40,17 @@
   </style>
 {% endblock css %}
 
-
 {% block projectroles %}
 
 <div class="row sodar-subtitle-container bg-white sticky-top">
   <h2><i class="iconify" data-icon="mdi:tags"></i> Ontology Access</h2>
-
   <a role="button" class="btn btn-primary ml-auto"
      href="{% url 'ontologyaccess:obo_import' %}">
-    <i class="iconify" data-icon="mdi:upload"></i> Import  Ontology
+    <i class="iconify" data-icon="mdi:upload"></i> Import Ontology
   </a>
 </div>
 
 <div class="container-fluid sodar-page-container">
-
   {% if object_list.count > 0 %}
     <div class="card" id="sodar-oa-alert-list">
       <div class="card-header">
@@ -109,7 +102,6 @@
         </table>
       </div>
     </div>
-
   {% else %} {# if object_list.count == 0 #}
     <div class="container-fluid">
       <div class="alert alert-info" role="alert">
@@ -117,7 +109,6 @@
       </div>
     </div>
   {% endif %}
-
 </div>
 
 {% endblock projectroles %}

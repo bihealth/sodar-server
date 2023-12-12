@@ -6,7 +6,11 @@ from django.urls import reverse
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
 
-from landingzones.constants import STATUS_STYLES, STATUS_FINISHED
+from landingzones.constants import (
+    STATUS_STYLES,
+    STATUS_FINISHED,
+    STATUS_ALLOW_UPDATE,
+)
 from landingzones.models import LandingZone
 from landingzones.plugins import get_zone_config_plugin
 
@@ -50,6 +54,7 @@ def get_zone_desc_html(zone):
     )
 
 
+# TODO: Remove
 @register.simple_tag
 def is_zone_enabled(zone):
     """Return True/False if the zone can be enabled in the UI"""
@@ -57,10 +62,13 @@ def is_zone_enabled(zone):
 
 
 @register.simple_tag
-def is_zone_disabled(zone):
-    """Return True/False if the zone can be enabled in the UI"""
-    # NOTE: Have to do this silly hack because limitations of Django templates
-    return False if zone.status not in STATUS_FINISHED else True
+def disable_zone_ui(zone, user):
+    """Return True/False if the zone controls can be enabled in the UI"""
+    if user.is_superuser and zone.status not in STATUS_FINISHED:
+        return False
+    elif not user.is_superuser and zone.status in STATUS_ALLOW_UPDATE:
+        return False
+    return True
 
 
 @register.simple_tag

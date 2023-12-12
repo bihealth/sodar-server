@@ -86,8 +86,10 @@ Title
     Optional title for the ontology, mostly for easy recognizing in the Ontology
     Access UI.
 Term URL
-    The URL for linking terms to their online specifications. This expects two
-    parameters, ``{id_space}`` and ``{local_id}}``.
+    The URL pattern for linking terms to their online specifications. This
+    expects two parameters, ``{id_space}`` and ``{local_id}}``. If the ontology
+    can be found in obolibrary, it is recommended to provide the pattern in the
+    form of ``http://purl.obolibrary.org/obo/{id_space}_{local_id}``.
 
 .. figure:: _static/admin/ontologyaccess_form.png
     :align: center

@@ -8,6 +8,38 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v0.14.1 (2023-12-12)
+====================
+
+Release for minor updates, maintenance and bug fixes.
+
+- Add iRODS v4.3 support
+- Add sheet sync setting validation
+- Change default IGV genome to "b37_1kg"
+- Fix landing zone locking controls for non-superusers
+- Fix access to new HP ontology URLs
+- Fix sheet column toggle modal UI issues
+- Minor updates and bug fixes
+- Upgrade to SODAR Core v0.13.3
+
+Migration Guide
+---------------
+
+Default IGV Genome
+    The default IGV genome for cancer and germline projects has been changed
+    from "b37" to "b37_1kg", as the former is no longer supported by new
+    versions of IGV. Existing settings referring the now-unavailble genome will
+    be automatically updated. Users should be advised to upgrade their IGV
+    software to a recent version.
+HPO Term Accession
+    The official API for the Human Phenotype Ontology has changed. It is
+    recommended to set the default URL pattern in the Ontology Access app to
+    ``https://hpo.jax.org/app/browse/term/{id_space}:{local_id}``. Furthermore,
+    ``hpo.jax.org`` should be included in ``SHEETS_ONTOLOGY_URL_SKIP`` as
+    bioontology.org-wrapped URLs to the new API do not work at the time of
+    writing.
+
+
 v0.14.0 (2023-09-27)
 ====================
 

@@ -21,16 +21,6 @@ from taskflowbackend.tasks.base_task import BaseTask
 logger = logging.getLogger('__name__')
 
 
-# NOTE: Yes, we really need this for the python irods client
-# TODO: Come up with a more elegant solution..
-ACCESS_CONVERSION = {
-    'read': 'read object',
-    'read object': 'read',
-    'write': 'modify object',
-    'modify object': 'write',
-    'null': 'null',
-    'own': 'own',
-}
 INHERIT_STRINGS = {True: 'inherit', False: 'noinherit'}
 META_EMPTY_VALUE = 'N/A'
 MD5_RE = re.compile(r'([^\w.])')
@@ -46,8 +36,11 @@ class IrodsBaseTask(BaseTask):
         self.name = '<iRODS> {} ({})'.format(name, self.__class__.__name__)
         self.irods = kwargs['irods']
 
-    # For when taskflow won't catch a proper exception from the client
     def _raise_irods_exception(self, ex, info=None):
+        """
+        Raise an exception when taskflow doesn't catch a proper exception from
+        the iRODS client.
+        """
         desc = '{} failed: {}'.format(
             self.__class__.__name__,
             (str(ex) if str(ex) not in ['', 'None'] else ex.__class__.__name__),
@@ -292,6 +285,8 @@ class SetAccessTask(IrodsBaseTask):
         access_name,
         path,
         user_name,
+        access_lookup,
+        irods_backend,
         obj_target=False,
         recursive=True,
         *args,
@@ -310,9 +305,9 @@ class SetAccessTask(IrodsBaseTask):
         )
         if (
             user_access
-            and user_access.access_name != ACCESS_CONVERSION[access_name]
+            and user_access.access_name != access_lookup[access_name]
         ):
-            self.execute_data['access_name'] = ACCESS_CONVERSION[
+            self.execute_data['access_name'] = access_lookup[
                 user_access.access_name
             ]
             modifying_data = True
@@ -342,6 +337,8 @@ class SetAccessTask(IrodsBaseTask):
         access_name,
         path,
         user_name,
+        access_lookup,
+        irods_backend,
         obj_target=False,
         recursive=True,
         *args,
@@ -626,6 +623,8 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
         src_paths,
         access_name,
         user_name,
+        access_lookup,
+        irods_backend,
         *args,
         **kwargs
     ):
@@ -649,7 +648,6 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
                         src_path, dest_obj_path
                     )
                 self._raise_irods_exception(ex, msg)
-
             try:
                 target = self.irods.data_objects.get(dest_obj_path)
             except Exception as ex:
@@ -673,9 +671,9 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
             prev_access = None
             if (
                 user_access
-                and user_access.access_name != ACCESS_CONVERSION[access_name]
+                and user_access.access_name != access_lookup[access_name]
             ):
-                prev_access = ACCESS_CONVERSION[user_access.access_name]
+                prev_access = access_lookup[user_access.access_name]
                 modifying_access = True
             elif not user_access:
                 prev_access = 'null'
@@ -703,7 +701,15 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
         super().execute(*args, **kwargs)
 
     def revert(
-        self, src_root, dest_root, access_name, user_name, *args, **kwargs
+        self,
+        src_root,
+        dest_root,
+        access_name,
+        user_name,
+        access_lookup,
+        irods_backend,
+        *args,
+        **kwargs
     ):
         for moved_object in self.execute_data['moved_objects']:
             src_path = moved_object[0]
@@ -716,7 +722,6 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
             )
             new_dest = '/'.join(src_path.split('/')[:-1])
             new_dest_obj = new_dest + '/' + src_path.split('/')[-1]
-
             self.irods.data_objects.move(src_path=new_src, dest_path=new_dest)
 
             acl = iRODSAccess(
@@ -733,16 +738,22 @@ class BatchCalculateChecksumTask(IrodsBaseTask):
 
     def execute(self, file_paths, force, *args, **kwargs):
         for path in file_paths:
-            if self.irods.data_objects.exists(path):
-                data_obj = self.irods.data_objects.get(path)
-                for replica in data_obj.replicas:
-                    if force or not replica.checksum:
-                        try:
-                            data_obj.chksum(
-                                **{kw.RESC_HIER_STR_KW: replica.resc_hier}
+            if not self.irods.data_objects.exists(path):
+                continue
+            data_obj = self.irods.data_objects.get(path)
+            for replica in data_obj.replicas:
+                if force or not replica.checksum:
+                    try:
+                        data_obj.chksum(
+                            **{kw.RESC_HIER_STR_KW: replica.resc_hier}
+                        )
+                    except Exception as ex:
+                        logger.error(
+                            'Exception in BatchCalculateChecksumTask for path '
+                            '"{}" in replica "{}": {}'.format(
+                                path, replica.resc_hier, ex
                             )
-                        except Exception:
-                            pass  # TBD: How to handle an exception for this?
+                        )  # NOTE: No raise, only log
         super().execute(*args, **kwargs)
 
     # NOTE: We don't need revert for this

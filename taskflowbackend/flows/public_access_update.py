@@ -18,6 +18,7 @@ class Flow(BaseLinearFlow):
         # TODO: Use project.public_guest_access instead of flow_data['access']?
         access_name = 'read' if self.flow_data['access'] else 'null'
         ticket_str = self.flow_data.get('ticket_str')
+        access_lookup = self.irods_backend.get_access_lookup(self.irods)
 
         self.add_task(
             irods_tasks.SetAccessTask(
@@ -27,6 +28,8 @@ class Flow(BaseLinearFlow):
                     'access_name': access_name,
                     'path': self.flow_data['path'],
                     'user_name': PUBLIC_GROUP,
+                    'access_lookup': access_lookup,
+                    'irods_backend': self.irods_backend,
                 },
                 force_fail=force_fail if not ticket_str else False,
             )

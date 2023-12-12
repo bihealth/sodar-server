@@ -1,6 +1,5 @@
 """Tests for Taskflow tasks in the taskflowbackend app"""
 
-import os
 import uuid
 
 from irods.collection import iRODSCollection
@@ -44,12 +43,11 @@ TEST_VAL = 'test_val'
 TEST_UNITS = 'test_units'
 TEST_USER_GROUP = USER_PREFIX + 'group2'
 
-# NOTE: Yes, we really need this for the python irods client
-TEST_ACCESS_READ_IN = 'read'
-TEST_ACCESS_READ_OUT = 'read object'
-TEST_ACCESS_WRITE_IN = 'write'
-TEST_ACCESS_WRITE_OUT = 'modify object'
-TEST_ACCESS_NULL = 'null'
+# iRODS access control values
+# NOTE: input values set in base class for iRODS 4.2/4.3 support
+IRODS_ACCESS_READ_IN = 'read'
+IRODS_ACCESS_WRITE_IN = 'write'
+IRODS_ACCESS_NULL = 'null'
 
 BATCH_SRC_NAME = 'batch_src'
 BATCH_DEST_NAME = 'batch_dest'
@@ -769,6 +767,7 @@ class TestSetAccessTask(IRODSTaskTestBase):
         self.sub_coll_path = os.path.join(self.test_coll_path, SUB_COLL_NAME)
         # Init default user group
         self.irods.user_groups.create(DEFAULT_USER_GROUP)
+        self.access_lookup = self.irods_backend.get_access_lookup(self.irods)
 
     def test_execute_read(self):
         """Test access setting for read"""
@@ -776,9 +775,11 @@ class TestSetAccessTask(IRODSTaskTestBase):
             cls=SetAccessTask,
             name='Set access',
             inject={
-                'access_name': TEST_ACCESS_READ_IN,
+                'access_name': IRODS_ACCESS_READ_IN,
                 'path': self.test_coll_path,
                 'user_name': DEFAULT_USER_GROUP,
+                'access_lookup': self.access_lookup,
+                'irods_backend': self.irods_backend,
             },
         )
         user_access = self._get_user_access(
@@ -792,7 +793,7 @@ class TestSetAccessTask(IRODSTaskTestBase):
             target=self._get_test_coll(), user_name=DEFAULT_USER_GROUP
         )
         self.assertIsInstance(user_access, iRODSAccess)
-        self.assertEqual(user_access.access_name, TEST_ACCESS_READ_OUT)
+        self.assertEqual(user_access.access_name, self.irods_access_read)
 
     def test_execute_write(self):
         """Test access setting for write/modify"""
@@ -800,9 +801,11 @@ class TestSetAccessTask(IRODSTaskTestBase):
             cls=SetAccessTask,
             name='Set access',
             inject={
-                'access_name': TEST_ACCESS_WRITE_IN,
+                'access_name': IRODS_ACCESS_WRITE_IN,
                 'path': self.test_coll_path,
                 'user_name': DEFAULT_USER_GROUP,
+                'access_lookup': self.access_lookup,
+                'irods_backend': self.irods_backend,
             },
         )
         user_access = self._get_user_access(
@@ -817,7 +820,7 @@ class TestSetAccessTask(IRODSTaskTestBase):
             target=self._get_test_coll(), user_name=DEFAULT_USER_GROUP
         )
         self.assertIsInstance(user_access, iRODSAccess)
-        self.assertEqual(user_access.access_name, TEST_ACCESS_WRITE_OUT)
+        self.assertEqual(user_access.access_name, self.irods_access_write)
 
     def test_execute_twice(self):
         """Test access setting twice"""
@@ -825,9 +828,11 @@ class TestSetAccessTask(IRODSTaskTestBase):
             cls=SetAccessTask,
             name='Set access',
             inject={
-                'access_name': TEST_ACCESS_READ_IN,
+                'access_name': IRODS_ACCESS_READ_IN,
                 'path': self.test_coll_path,
                 'user_name': DEFAULT_USER_GROUP,
+                'access_lookup': self.access_lookup,
+                'irods_backend': self.irods_backend,
             },
         )
         result = self._run_flow()
@@ -838,9 +843,11 @@ class TestSetAccessTask(IRODSTaskTestBase):
             cls=SetAccessTask,
             name='Set access',
             inject={
-                'access_name': TEST_ACCESS_READ_IN,
+                'access_name': IRODS_ACCESS_READ_IN,
                 'path': self.test_coll_path,
                 'user_name': DEFAULT_USER_GROUP,
+                'access_lookup': self.access_lookup,
+                'irods_backend': self.irods_backend,
             },
         )
         result = self._run_flow()
@@ -850,7 +857,7 @@ class TestSetAccessTask(IRODSTaskTestBase):
             target=self._get_test_coll(), user_name=DEFAULT_USER_GROUP
         )
         self.assertIsInstance(user_access, iRODSAccess)
-        self.assertEqual(user_access.access_name, TEST_ACCESS_READ_OUT)
+        self.assertEqual(user_access.access_name, self.irods_access_read)
 
     def test_revert_created(self):
         """Test access setting"""
@@ -858,9 +865,11 @@ class TestSetAccessTask(IRODSTaskTestBase):
             cls=SetAccessTask,
             name='Set access',
             inject={
-                'access_name': TEST_ACCESS_READ_IN,
+                'access_name': IRODS_ACCESS_READ_IN,
                 'path': self.test_coll_path,
                 'user_name': DEFAULT_USER_GROUP,
+                'access_lookup': self.access_lookup,
+                'irods_backend': self.irods_backend,
             },
             force_fail=True,
         )  # FAIL
@@ -879,9 +888,11 @@ class TestSetAccessTask(IRODSTaskTestBase):
             cls=SetAccessTask,
             name='Set access',
             inject={
-                'access_name': TEST_ACCESS_READ_IN,
+                'access_name': IRODS_ACCESS_READ_IN,
                 'path': self.test_coll_path,
                 'user_name': DEFAULT_USER_GROUP,
+                'access_lookup': self.access_lookup,
+                'irods_backend': self.irods_backend,
             },
         )
         self._run_flow()
@@ -891,9 +902,11 @@ class TestSetAccessTask(IRODSTaskTestBase):
             cls=SetAccessTask,
             name='Set access',
             inject={
-                'access_name': TEST_ACCESS_WRITE_IN,
+                'access_name': IRODS_ACCESS_WRITE_IN,
                 'path': self.test_coll_path,
                 'user_name': DEFAULT_USER_GROUP,
+                'access_lookup': self.access_lookup,
+                'irods_backend': self.irods_backend,
             },
             force_fail=True,
         )  # FAIL
@@ -904,7 +917,7 @@ class TestSetAccessTask(IRODSTaskTestBase):
             target=self._get_test_coll(), user_name=DEFAULT_USER_GROUP
         )
         self.assertIsInstance(user_access, iRODSAccess)
-        self.assertEqual(user_access.access_name, TEST_ACCESS_READ_OUT)
+        self.assertEqual(user_access.access_name, self.irods_access_read)
 
     def test_revert_not_modified(self):
         """Test access setting reverting without modification"""
@@ -912,9 +925,11 @@ class TestSetAccessTask(IRODSTaskTestBase):
             cls=SetAccessTask,
             name='Set access',
             inject={
-                'access_name': TEST_ACCESS_READ_IN,
+                'access_name': IRODS_ACCESS_READ_IN,
                 'path': self.test_coll_path,
                 'user_name': DEFAULT_USER_GROUP,
+                'access_lookup': self.access_lookup,
+                'irods_backend': self.irods_backend,
             },
         )
         result = self._run_flow()
@@ -925,9 +940,11 @@ class TestSetAccessTask(IRODSTaskTestBase):
             cls=SetAccessTask,
             name='Set access',
             inject={
-                'access_name': TEST_ACCESS_READ_IN,
+                'access_name': IRODS_ACCESS_READ_IN,
                 'path': self.test_coll_path,
                 'user_name': DEFAULT_USER_GROUP,
+                'access_lookup': self.access_lookup,
+                'irods_backend': self.irods_backend,
             },
             force_fail=True,
         )  # FAIL
@@ -938,7 +955,7 @@ class TestSetAccessTask(IRODSTaskTestBase):
             target=self._get_test_coll(), user_name=DEFAULT_USER_GROUP
         )
         self.assertIsInstance(user_access, iRODSAccess)
-        self.assertEqual(user_access.access_name, TEST_ACCESS_READ_OUT)
+        self.assertEqual(user_access.access_name, self.irods_access_read)
 
     def test_execute_no_recursion(self):
         """Test access setting for a collection with recursive=False"""
@@ -953,9 +970,11 @@ class TestSetAccessTask(IRODSTaskTestBase):
             cls=SetAccessTask,
             name='Set access',
             inject={
-                'access_name': TEST_ACCESS_READ_IN,
+                'access_name': IRODS_ACCESS_READ_IN,
                 'path': self.test_coll_path,
                 'user_name': TEST_USER,
+                'access_lookup': self.access_lookup,
+                'irods_backend': self.irods_backend,
                 'recursive': False,
             },
         )
@@ -976,7 +995,7 @@ class TestSetAccessTask(IRODSTaskTestBase):
             target=self._get_test_coll(), user_name=TEST_USER
         )
         self.assertIsInstance(user_access, iRODSAccess)
-        self.assertEqual(user_access.access_name, TEST_ACCESS_READ_OUT)
+        self.assertEqual(user_access.access_name, self.irods_access_read)
 
         user_access = self._get_user_access(
             target=sub_coll, user_name=TEST_USER
@@ -996,9 +1015,11 @@ class TestSetAccessTask(IRODSTaskTestBase):
             cls=SetAccessTask,
             name='Set access',
             inject={
-                'access_name': TEST_ACCESS_READ_IN,
+                'access_name': IRODS_ACCESS_READ_IN,
                 'path': self.test_coll_path,
                 'user_name': TEST_USER,
+                'access_lookup': self.access_lookup,
+                'irods_backend': self.irods_backend,
                 'recursive': False,
             },
             force_fail=True,
@@ -1041,7 +1062,7 @@ class TestIssueTicketTask(IRODSTaskTestBase):
             cls=IssueTicketTask,
             name='Issue ticket',
             inject={
-                'access_name': TEST_ACCESS_READ_IN,
+                'access_name': IRODS_ACCESS_READ_IN,
                 'path': self.test_coll_path,
                 'ticket_str': TICKET_STR,
                 'irods_backend': self.irods_backend,
@@ -1059,7 +1080,7 @@ class TestIssueTicketTask(IRODSTaskTestBase):
             cls=IssueTicketTask,
             name='Issue ticket',
             inject={
-                'access_name': TEST_ACCESS_READ_IN,
+                'access_name': IRODS_ACCESS_READ_IN,
                 'path': self.test_coll_path,
                 'ticket_str': TICKET_STR,
                 'irods_backend': self.irods_backend,
@@ -1076,7 +1097,7 @@ class TestIssueTicketTask(IRODSTaskTestBase):
             cls=IssueTicketTask,
             name='Issue ticket',
             inject={
-                'access_name': TEST_ACCESS_READ_IN,
+                'access_name': IRODS_ACCESS_READ_IN,
                 'path': self.test_coll_path,
                 'ticket_str': TICKET_STR,
                 'irods_backend': self.irods_backend,
@@ -1095,7 +1116,7 @@ class TestIssueTicketTask(IRODSTaskTestBase):
             cls=IssueTicketTask,
             name='Issue ticket',
             inject={
-                'access_name': TEST_ACCESS_READ_IN,
+                'access_name': IRODS_ACCESS_READ_IN,
                 'path': self.test_coll_path,
                 'ticket_str': TICKET_STR,
                 'irods_backend': self.irods_backend,
@@ -1109,7 +1130,7 @@ class TestIssueTicketTask(IRODSTaskTestBase):
     def test_revert_not_modified(self):
         """Test reverting a ticket issuing with no modification"""
         self.irods_backend.issue_ticket(
-            self.irods, TEST_ACCESS_READ_IN, self.test_coll_path, TICKET_STR
+            self.irods, IRODS_ACCESS_READ_IN, self.test_coll_path, TICKET_STR
         )
         self.assertIsInstance(
             self.irods_backend.get_ticket(self.irods, TICKET_STR), Ticket
@@ -1118,7 +1139,7 @@ class TestIssueTicketTask(IRODSTaskTestBase):
             cls=IssueTicketTask,
             name='Issue ticket',
             inject={
-                'access_name': TEST_ACCESS_READ_IN,
+                'access_name': IRODS_ACCESS_READ_IN,
                 'path': self.test_coll_path,
                 'ticket_str': TICKET_STR,
                 'irods_backend': self.irods_backend,
@@ -1138,7 +1159,7 @@ class TestDeleteTicketTask(IRODSTaskTestBase):
     def test_execute(self):
         """Test deleting a ticket"""
         self.irods_backend.issue_ticket(
-            self.irods, TEST_ACCESS_READ_IN, self.test_coll_path, TICKET_STR
+            self.irods, IRODS_ACCESS_READ_IN, self.test_coll_path, TICKET_STR
         )
         self.assertIsInstance(
             self.irods_backend.get_ticket(self.irods, TICKET_STR), Ticket
@@ -1147,7 +1168,7 @@ class TestDeleteTicketTask(IRODSTaskTestBase):
             cls=DeleteTicketTask,
             name='Delete ticket',
             inject={
-                'access_name': TEST_ACCESS_READ_IN,
+                'access_name': IRODS_ACCESS_READ_IN,
                 'path': self.test_coll_path,
                 'ticket_str': TICKET_STR,
                 'irods_backend': self.irods_backend,
@@ -1160,7 +1181,7 @@ class TestDeleteTicketTask(IRODSTaskTestBase):
     def test_execute_twice(self):
         """Test deleting a ticket twice"""
         self.irods_backend.issue_ticket(
-            self.irods, TEST_ACCESS_READ_IN, self.test_coll_path, TICKET_STR
+            self.irods, IRODS_ACCESS_READ_IN, self.test_coll_path, TICKET_STR
         )
         self.assertIsInstance(
             self.irods_backend.get_ticket(self.irods, TICKET_STR), Ticket
@@ -1169,7 +1190,7 @@ class TestDeleteTicketTask(IRODSTaskTestBase):
             cls=DeleteTicketTask,
             name='Delete ticket',
             inject={
-                'access_name': TEST_ACCESS_READ_IN,
+                'access_name': IRODS_ACCESS_READ_IN,
                 'path': self.test_coll_path,
                 'ticket_str': TICKET_STR,
                 'irods_backend': self.irods_backend,
@@ -1184,7 +1205,7 @@ class TestDeleteTicketTask(IRODSTaskTestBase):
             cls=DeleteTicketTask,
             name='Delete ticket',
             inject={
-                'access_name': TEST_ACCESS_READ_IN,
+                'access_name': IRODS_ACCESS_READ_IN,
                 'path': self.test_coll_path,
                 'ticket_str': TICKET_STR,
                 'irods_backend': self.irods_backend,
@@ -1197,7 +1218,7 @@ class TestDeleteTicketTask(IRODSTaskTestBase):
     def test_revert_modified(self):
         """Test reverting ticket deletion"""
         self.irods_backend.issue_ticket(
-            self.irods, TEST_ACCESS_READ_IN, self.test_coll_path, TICKET_STR
+            self.irods, IRODS_ACCESS_READ_IN, self.test_coll_path, TICKET_STR
         )
         self.assertIsInstance(
             self.irods_backend.get_ticket(self.irods, TICKET_STR), Ticket
@@ -1206,7 +1227,7 @@ class TestDeleteTicketTask(IRODSTaskTestBase):
             cls=DeleteTicketTask,
             name='Delete ticket',
             inject={
-                'access_name': TEST_ACCESS_READ_IN,
+                'access_name': IRODS_ACCESS_READ_IN,
                 'path': self.test_coll_path,
                 'ticket_str': TICKET_STR,
                 'irods_backend': self.irods_backend,
@@ -1226,7 +1247,7 @@ class TestDeleteTicketTask(IRODSTaskTestBase):
             cls=DeleteTicketTask,
             name='Delete ticket',
             inject={
-                'access_name': TEST_ACCESS_READ_IN,
+                'access_name': IRODS_ACCESS_READ_IN,
                 'path': self.test_coll_path,
                 'ticket_str': TICKET_STR,
                 'irods_backend': self.irods_backend,
@@ -1236,201 +1257,6 @@ class TestDeleteTicketTask(IRODSTaskTestBase):
         result = self._run_flow()
         self.assertEqual(result, False)
         self.assertIsNone(self.irods_backend.get_ticket(self.irods, TICKET_STR))
-
-
-class TestSetDataObjAccessTask(IRODSTaskTestBase):
-    """Tests for SetDataObjAccessTask"""
-
-    def _get_test_obj(self):
-        return self.irods.data_objects.get(self.obj_path)
-
-    def setUp(self):
-        super().setUp()
-        # Init default user group
-        self.irods.user_groups.create(DEFAULT_USER_GROUP)
-        # Init object to be copied
-        self.obj_path = os.path.join(self.test_coll_path, TEST_OBJ_NAME)
-        self.obj = self.irods.data_objects.create(self.obj_path)
-
-    def test_execute_read(self):
-        """Test access setting for read"""
-        self._add_task(
-            cls=SetAccessTask,
-            name='Set access',
-            inject={
-                'access_name': TEST_ACCESS_READ_IN,
-                'path': self.obj_path,
-                'user_name': DEFAULT_USER_GROUP,
-                'obj_target': True,
-            },
-        )
-        user_access = self._get_user_access(
-            target=self._get_test_obj(), user_name=DEFAULT_USER_GROUP
-        )
-        self.assertEqual(user_access, None)
-
-        result = self._run_flow()
-
-        self.assertEqual(result, True)
-        user_access = self._get_user_access(
-            target=self._get_test_obj(), user_name=DEFAULT_USER_GROUP
-        )
-        self.assertIsInstance(user_access, iRODSAccess)
-        self.assertEqual(user_access.access_name, TEST_ACCESS_READ_OUT)
-
-    def test_execute_write(self):
-        """Test access setting for write/modify"""
-        self._add_task(
-            cls=SetAccessTask,
-            name='Set access',
-            inject={
-                'access_name': TEST_ACCESS_WRITE_IN,
-                'path': self.obj_path,
-                'user_name': DEFAULT_USER_GROUP,
-                'obj_target': True,
-            },
-        )
-        user_access = self._get_user_access(
-            target=self._get_test_obj(), user_name=DEFAULT_USER_GROUP
-        )
-        self.assertEqual(user_access, None)
-
-        result = self._run_flow()
-
-        self.assertEqual(result, True)
-        user_access = self._get_user_access(
-            target=self._get_test_obj(), user_name=DEFAULT_USER_GROUP
-        )
-        self.assertIsInstance(user_access, iRODSAccess)
-        self.assertEqual(user_access.access_name, TEST_ACCESS_WRITE_OUT)
-
-    def test_execute_twice(self):
-        """Test access setting twice"""
-        self._add_task(
-            cls=SetAccessTask,
-            name='Set access',
-            inject={
-                'access_name': TEST_ACCESS_READ_IN,
-                'path': self.obj_path,
-                'user_name': DEFAULT_USER_GROUP,
-                'obj_target': True,
-            },
-        )
-        result = self._run_flow()
-
-        self.assertEqual(result, True)
-
-        self.flow = self._init_flow()
-        self._add_task(
-            cls=SetAccessTask,
-            name='Set access',
-            inject={
-                'access_name': TEST_ACCESS_READ_IN,
-                'path': self.obj_path,
-                'user_name': DEFAULT_USER_GROUP,
-                'obj_target': True,
-            },
-        )
-        result = self._run_flow()
-
-        self.assertEqual(result, True)
-        user_access = self._get_user_access(
-            target=self._get_test_obj(), user_name=DEFAULT_USER_GROUP
-        )
-        self.assertIsInstance(user_access, iRODSAccess)
-        self.assertEqual(user_access.access_name, TEST_ACCESS_READ_OUT)
-
-    def test_revert_created(self):
-        """Test access setting"""
-        self._add_task(
-            cls=SetAccessTask,
-            name='Set access',
-            inject={
-                'access_name': TEST_ACCESS_READ_IN,
-                'path': self.obj_path,
-                'user_name': DEFAULT_USER_GROUP,
-                'obj_target': True,
-            },
-            force_fail=True,
-        )  # FAIL
-        result = self._run_flow()
-
-        self.assertNotEqual(result, True)
-        user_access = self._get_user_access(
-            target=self._get_test_obj(), user_name=DEFAULT_USER_GROUP
-        )
-        self.assertIsNone(user_access)
-
-    def test_revert_modified(self):
-        """Test access setting reverting after modification"""
-        self._add_task(
-            cls=SetAccessTask,
-            name='Set access',
-            inject={
-                'access_name': TEST_ACCESS_READ_IN,
-                'path': self.obj_path,
-                'user_name': DEFAULT_USER_GROUP,
-                'obj_target': True,
-            },
-        )
-        self._run_flow()
-
-        self.flow = self._init_flow()
-        self._add_task(
-            cls=SetAccessTask,
-            name='Set access',
-            inject={
-                'access_name': TEST_ACCESS_WRITE_IN,
-                'path': self.obj_path,
-                'user_name': DEFAULT_USER_GROUP,
-                'obj_target': True,
-            },
-            force_fail=True,
-        )  # FAIL
-        result = self._run_flow()
-
-        self.assertNotEqual(result, True)
-        user_access = self._get_user_access(
-            target=self._get_test_obj(), user_name=DEFAULT_USER_GROUP
-        )
-        self.assertIsInstance(user_access, iRODSAccess)
-        self.assertEqual(user_access.access_name, TEST_ACCESS_READ_OUT)
-
-    def test_revert_not_modified(self):
-        """Test access setting reverting without modification"""
-        self._add_task(
-            cls=SetAccessTask,
-            name='Set access',
-            inject={
-                'access_name': TEST_ACCESS_READ_IN,
-                'path': self.obj_path,
-                'user_name': DEFAULT_USER_GROUP,
-                'obj_target': True,
-            },
-        )
-        result = self._run_flow()
-        self.assertEqual(result, True)
-
-        self.flow = self._init_flow()
-        self._add_task(
-            cls=SetAccessTask,
-            name='Set access',
-            inject={
-                'access_name': TEST_ACCESS_READ_IN,
-                'path': self.obj_path,
-                'user_name': DEFAULT_USER_GROUP,
-                'obj_target': True,
-            },
-            force_fail=True,
-        )  # FAIL
-        result = self._run_flow()
-
-        self.assertNotEqual(result, True)
-        user_access = self._get_user_access(
-            target=self._get_test_obj(), user_name=DEFAULT_USER_GROUP
-        )
-        self.assertIsInstance(user_access, iRODSAccess)
-        self.assertEqual(user_access.access_name, TEST_ACCESS_READ_OUT)
 
 
 class TestCreateUserTask(IRODSTaskTestBase):
@@ -2011,6 +1837,7 @@ class TestBatchMoveDataObjectsTask(IRODSTaskTestBase):
         self.dest_obj2_path = os.path.join(
             self.batch_dest_path, BATCH_OBJ2_NAME
         )
+        self.access_lookup = self.irods_backend.get_access_lookup(self.irods)
 
     def test_execute(self):
         """Test moving data objects and setting access"""
@@ -2021,8 +1848,10 @@ class TestBatchMoveDataObjectsTask(IRODSTaskTestBase):
                 'src_root': self.batch_src_path,
                 'dest_root': self.batch_dest_path,
                 'src_paths': [self.batch_obj_path, self.batch_obj2_path],
-                'access_name': TEST_ACCESS_READ_IN,
+                'access_name': IRODS_ACCESS_READ_IN,
                 'user_name': DEFAULT_USER_GROUP,
+                'access_lookup': self.access_lookup,
+                'irods_backend': self.irods_backend,
             },
         )
         self.assertFalse(self.irods.data_objects.exists(self.dest_obj_path))
@@ -2056,13 +1885,13 @@ class TestBatchMoveDataObjectsTask(IRODSTaskTestBase):
             user_name=DEFAULT_USER_GROUP,
         )
         self.assertIsInstance(obj_access, iRODSAccess)
-        self.assertEqual(obj_access.access_name, TEST_ACCESS_READ_OUT)
+        self.assertEqual(obj_access.access_name, self.irods_access_read)
         obj_access = self._get_user_access(
             target=self.irods.data_objects.get(self.dest_obj_path),
             user_name=DEFAULT_USER_GROUP,
         )
         self.assertIsInstance(obj_access, iRODSAccess)
-        self.assertEqual(obj_access.access_name, TEST_ACCESS_READ_OUT)
+        self.assertEqual(obj_access.access_name, self.irods_access_read)
 
     def test_revert(self):
         """Test reverting the moving of data objects"""
@@ -2073,8 +1902,10 @@ class TestBatchMoveDataObjectsTask(IRODSTaskTestBase):
                 'src_root': self.batch_src_path,
                 'dest_root': self.batch_dest_path,
                 'src_paths': [self.batch_obj_path, self.batch_obj2_path],
-                'access_name': TEST_ACCESS_READ_IN,
+                'access_name': IRODS_ACCESS_READ_IN,
                 'user_name': DEFAULT_USER_GROUP,
+                'access_lookup': self.access_lookup,
+                'irods_backend': self.irods_backend,
             },
             force_fail=True,
         )  # FAILS
@@ -2108,8 +1939,10 @@ class TestBatchMoveDataObjectsTask(IRODSTaskTestBase):
                 'src_root': self.batch_src_path,
                 'dest_root': self.batch_dest_path,
                 'src_paths': [self.batch_obj_path, self.batch_obj2_path],
-                'access_name': TEST_ACCESS_READ_IN,
+                'access_name': IRODS_ACCESS_READ_IN,
                 'user_name': DEFAULT_USER_GROUP,
+                'access_lookup': self.access_lookup,
+                'irods_backend': self.irods_backend,
             },
         )
         with self.assertRaises(Exception):

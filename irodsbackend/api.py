@@ -3,14 +3,14 @@
 import logging
 import math
 import os
+import pytz
 import random
 import re
 import string
 import uuid
 
 from contextlib import contextmanager
-
-import pytz
+from packaging import version
 
 from irods.api_number import api_number
 from irods.collection import iRODSCollection
@@ -490,9 +490,37 @@ class IrodsAPI:
             'server_host': irods.host,
             'server_port': irods.port,
             'server_zone': irods.zone,
-            'server_version': '.'.join(
-                str(x) for x in irods.pool.get_connection().server_version
-            ),
+            'server_version': cls.get_version(irods),
+        }
+
+    @classmethod
+    def get_version(cls, irods):
+        """
+        Return the version of the iRODS server SODAR is connected to.
+
+        :param irods: iRODSSession object
+        :return: String
+        """
+        return '.'.join(str(x) for x in irods.server_version)
+
+    @classmethod
+    def get_access_lookup(cls, irods):
+        """
+        Return an ACL lookup dict compatible with the currently used iRODS
+        server version (4.2 and 4.3 supported).
+
+        :param irods: iRODSSession object
+        :return: Dict
+        """
+        v = version.parse(cls.get_version(irods))
+        d = '_' if v >= version.parse('4.3') else ' '
+        return {
+            'read': 'read{}object'.format(d),
+            'read{}object'.format(d): 'read',
+            'write': 'modify{}object'.format(d),
+            'modify{}object'.format(d): 'write',
+            'null': 'null',
+            'own': 'own',
         }
 
     def get_object_stats(self, irods, path):

@@ -76,7 +76,21 @@ class TestIrodsBackendAPITaskflow(
         self.assertEqual(info['server_host'], IRODS_HOST)
         self.assertEqual(info['server_port'], IRODS_PORT)
         self.assertEqual(info['server_zone'], IRODS_ZONE)
-        self.assertIsNotNone(info['server_version'])
+        self.assertEqual(
+            info['server_version'],
+            '.'.join(
+                str(x) for x in self.irods.pool.get_connection().server_version
+            ),
+        )
+
+    def test_get_version(self):
+        """Test get_irods_version()"""
+        self.assertEqual(
+            self.irods_backend.get_version(self.irods),
+            '.'.join(
+                str(x) for x in self.irods.pool.get_connection().server_version
+            ),
+        )
 
     def test_get_objects(self):
         """Test get_objects() with files in a sample collection"""

@@ -24,11 +24,8 @@ from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 from samplesheets.views import RESULTS_COLL, MISC_FILES_COLL, TRACK_HUBS_COLL
 
 # Taskflowbackend dependency
-from taskflowbackend.tests.base import (
-    TaskflowViewTestBase,
-    IRODS_ACCESS_READ,
-    IRODS_ACCESS_OWN,
-)
+from taskflowbackend.tests.base import TaskflowViewTestBase, IRODS_ACCESS_OWN
+
 
 # Timeline dependency
 from timeline.models import ProjectEvent
@@ -345,7 +342,7 @@ class TestZoneCreateView(
         zone_path = self.irods_backend.get_path(zone)
         # Read access to root path
         self.assert_irods_access(
-            self.user.username, zone_path, IRODS_ACCESS_READ
+            self.user.username, zone_path, self.irods_access_read
         )
         for c in ZONE_ALL_COLLS:
             self.assert_irods_access(
@@ -739,12 +736,12 @@ class TestZoneMoveView(
         self.assert_irods_access(
             self.group_name,
             sample_obj_path,
-            IRODS_ACCESS_READ,
+            self.irods_access_read,
         )
         self.assert_irods_access(
             self.group_name,
             sample_obj_path + '.md5',
-            IRODS_ACCESS_READ,
+            self.irods_access_read,
         )
 
 

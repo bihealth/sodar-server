@@ -22,6 +22,7 @@ class Flow(BaseLinearFlow):
     def build(self, force_fail=False):
         sample_path = self.irods_backend.get_sample_path(self.project)
         project_group = self.irods_backend.get_user_group_name(self.project)
+        access_lookup = self.irods_backend.get_access_lookup(self.irods)
 
         self.add_task(
             irods_tasks.CreateCollectionTask(
@@ -48,6 +49,8 @@ class Flow(BaseLinearFlow):
                     'access_name': 'read',
                     'path': sample_path,
                     'user_name': project_group,
+                    'access_lookup': access_lookup,
+                    'irods_backend': self.irods_backend,
                 },
             )
         )
@@ -70,6 +73,8 @@ class Flow(BaseLinearFlow):
                         'access_name': 'read',
                         'path': sample_path,
                         'user_name': PUBLIC_GROUP,
+                        'access_lookup': access_lookup,
+                        'irods_backend': self.irods_backend,
                     },
                 )
             )

@@ -6,6 +6,7 @@ import logging
 import zipfile
 
 from irods.exception import NetworkException, CAT_INVALID_AUTHENTICATION
+from packaging import version
 
 from django.conf import settings
 from django.contrib import messages
@@ -43,7 +44,6 @@ class IrodsConfigMixin:
         irods_env = dict(settings.IRODS_ENV_DEFAULT)
         irods_env.update(
             {
-                'irods_authentication_scheme': 'PAM',
                 'irods_cwd': home_path,
                 'irods_home': home_path,
                 'irods_host': settings.IRODS_HOST_FQDN,
@@ -56,6 +56,14 @@ class IrodsConfigMixin:
             irods_env['irods_ssl_certificate_file'] = cert_file_name
         # Get optional client environment overrides
         irods_env.update(dict(settings.IRODS_ENV_CLIENT))
+        # Update authentication scheme with iRODS v4.3+ support
+        with irods_backend.get_session() as irods:
+            irods_version = irods_backend.get_version(irods)
+            if version.parse(irods_version) >= version.parse('4.3'):
+                auth_scheme = 'pam_password'
+            else:
+                auth_scheme = 'PAM'
+            irods_env['irods_authentication_scheme'] = auth_scheme
         irods_env = irods_backend.format_env(irods_env)
         logger.debug('iRODS environment: {}'.format(irods_env))
         return irods_env

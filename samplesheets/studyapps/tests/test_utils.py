@@ -13,6 +13,7 @@ from projectroles.models import Role, SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
 
+from samplesheets.plugins import IGV_DEFAULT_GENOME
 from samplesheets.studyapps.utils import get_igv_xml
 from samplesheets.tests.test_io import SampleSheetIOMixin
 
@@ -78,7 +79,7 @@ class TestGetIGVXML(TestStudyAppUtilsBase):
             self.request,
             False,
         )
-        self.assertEqual(xml.get('genome'), 'b37')
+        self.assertEqual(xml.get('genome'), IGV_DEFAULT_GENOME)
         resources = xml.find('Resources')
         for r in resources.findall('Resource'):
             self.assertIn(r.get('path'), self.paths)

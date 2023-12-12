@@ -1,6 +1,7 @@
 """View tests in the samplesheets Django app with taskflow"""
 
 import os
+import uuid
 
 from datetime import timedelta
 from irods.exception import CollectionDoesNotExist, NoResultFound
@@ -71,10 +72,10 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 # Local constants
 APP_NAME = 'samplesheets'
+DUMMY_UUID = str(uuid.uuid4())
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 IRODS_FILE_NAME = 'test1.txt'
 IRODS_FILE_NAME2 = 'test2.txt'
-DUMMY_UUID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
 PUBLIC_USER_NAME = 'user_no_roles'
 PUBLIC_USER_PASS = 'password'
 SOURCE_ID = '0815'
@@ -84,6 +85,9 @@ TICKET_LABEL = 'TestTicket'
 TICKET_LABEL_UPDATED = 'TestTicketUpdated'
 TICKET_STR = 'q657xxx3i2x2b8vj'
 IRODS_REQUEST_DESC_UPDATE = 'Updated'
+SHEET_SYNC_URL = 'https://sodar.instance/samplesheets/sync/' + DUMMY_UUID
+SHEET_SYNC_URL_INVALID = 'https://some.sodar/not-valid-url'
+SHEET_SYNC_TOKEN = 'dohdai4EZie0xooF'
 
 
 class SampleSheetTaskflowMixin:
@@ -2573,3 +2577,152 @@ class TestProjectSearchView(
         self.assertEqual(
             data['results']['files']['items'][0]['name'], self.file_name
         )
+
+
+class TestProjectUpdateView(TaskflowViewTestBase):
+    """Tests for samplesheets app settings in ProjectUpdateView"""
+
+    def setUp(self):
+        super().setUp()
+        self.project, self.owner_as = self.make_project_taskflow(
+            title='TestProject',
+            type=PROJECT_TYPE_PROJECT,
+            parent=self.category,
+            owner=self.user,
+            description='description',
+        )
+        self.values = model_to_dict(self.project)
+        self.values['parent'] = self.category.sodar_uuid
+        self.values['owner'] = self.user.sodar_uuid
+        self.values.update(
+            app_settings.get_all(project=self.project, post_safe=True)
+        )
+        self.url = reverse(
+            'projectroles:update',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+
+    def test_post_sync_default(self):
+        """Test POST with default sheet sync values"""
+        self.values['description'] = 'updated description'
+        with self.login(self.user):
+            response = self.client.post(self.url, self.values)
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(
+            app_settings.get(
+                APP_NAME, 'sheet_sync_enable', project=self.project
+            )
+        )
+        self.assertEqual(
+            app_settings.get(APP_NAME, 'sheet_sync_url', project=self.project),
+            '',
+        )
+        self.assertEqual(
+            app_settings.get(
+                APP_NAME, 'sheet_sync_token', project=self.project
+            ),
+            '',
+        )
+
+    def test_post_sync_enable(self):
+        """Test POST with enabled sync and correct url/token"""
+        self.values['description'] = 'updated description'
+        self.assertFalse(
+            app_settings.get(
+                APP_NAME, 'sheet_sync_enable', project=self.project
+            )
+        )
+        self.assertEqual(
+            app_settings.get(APP_NAME, 'sheet_sync_url', project=self.project),
+            '',
+        )
+        self.assertEqual(
+            app_settings.get(
+                APP_NAME, 'sheet_sync_token', project=self.project
+            ),
+            '',
+        )
+
+        self.values['settings.samplesheets.sheet_sync_enable'] = True
+        self.values['settings.samplesheets.sheet_sync_url'] = SHEET_SYNC_URL
+        self.values['settings.samplesheets.sheet_sync_token'] = SHEET_SYNC_TOKEN
+        with self.login(self.user):
+            response = self.client.post(self.url, self.values)
+            self.assertRedirects(
+                response,
+                reverse(
+                    'projectroles:detail',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
+
+        self.assertEqual(response.status_code, 302)
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.description, 'updated description')
+        self.assertTrue(
+            app_settings.get(
+                APP_NAME, 'sheet_sync_enable', project=self.project
+            )
+        )
+        self.assertEqual(
+            app_settings.get(APP_NAME, 'sheet_sync_url', project=self.project),
+            SHEET_SYNC_URL,
+        )
+        self.assertEqual(
+            app_settings.get(
+                APP_NAME, 'sheet_sync_token', project=self.project
+            ),
+            SHEET_SYNC_TOKEN,
+        )
+
+    def test_post_sync_no_url_or_token(self):
+        """Test POST with enabled sync and no URL or token"""
+        self.values['settings.samplesheets.sheet_sync_enable'] = True
+        with self.login(self.user):
+            response = self.client.post(self.url, self.values)
+        self.assertEqual(response.status_code, 200)
+
+    def test_post_sync_no_token(self):
+        """Test POST with enabled sync and no token"""
+        self.values['settings.samplesheets.sheet_sync_enable'] = True
+        self.values['settings.samplesheets.sheet_sync_url'] = SHEET_SYNC_URL
+        with self.login(self.user):
+            response = self.client.post(self.url, self.values)
+        self.assertEqual(response.status_code, 200)
+
+    def test_post_sync_no_url(self):
+        """Test POST with enabled sync and no URL or token"""
+        self.values['settings.samplesheets.sheet_sync_enable'] = True
+        self.values['settings.samplesheets.sheet_sync_token'] = SHEET_SYNC_TOKEN
+        with self.login(self.user):
+            response = self.client.post(self.url, self.values)
+        self.assertEqual(response.status_code, 200)
+
+    def test_post_sync_invalid_url(self):
+        """Test POST with enabled sync and no token"""
+        self.values['settings.samplesheets.sheet_sync_enable'] = True
+        self.values[
+            'settings.samplesheets.sheet_sync_url'
+        ] = SHEET_SYNC_URL_INVALID
+        with self.login(self.user):
+            response = self.client.post(self.url, self.values)
+        self.assertEqual(response.status_code, 200)
+
+    def test_post_sync_disabled(self):
+        """Test POST with disabled sync and valid input"""
+        self.values['settings.samplesheets.sheet_sync_enable'] = False
+        self.values['settings.samplesheets.sheet_sync_url'] = SHEET_SYNC_URL
+        self.values['settings.samplesheets.sheet_sync_token'] = SHEET_SYNC_TOKEN
+        with self.login(self.user):
+            response = self.client.post(self.url, self.values)
+        self.assertEqual(response.status_code, 302)
+
+    def test_post_sync_disabled_invalid_url(self):
+        """Test POST with disabled sync and invalid input"""
+        self.values['settings.samplesheets.sheet_sync_enable'] = False
+        self.values[
+            'settings.samplesheets.sheet_sync_url'
+        ] = SHEET_SYNC_URL_INVALID
+        with self.login(self.user):
+            response = self.client.post(self.url, self.values)
+        self.assertEqual(response.status_code, 200)

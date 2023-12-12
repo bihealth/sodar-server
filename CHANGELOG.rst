@@ -5,6 +5,67 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+v0.14.1 (2023-12-12)
+====================
+
+Added
+-----
+
+- **Irodsbackend**
+    - ``get_version()`` helper (#1592, #1817, #1831)
+    - ``get_access_lookup()`` helper (#1832)
+- **Irodsinfo**
+    - iRODS v4.3 auth scheme support in client environment (#1834)
+- **Samplesheets**
+    - Custom validation for ``sheet_sync_url`` and ``sheet_sync_token`` (#1310, #1384)
+    - ``hpo.jax.org`` in ``SHEETS_ONTOLOGY_URL_SKIP`` (#1821)
+    - Missing Django settings in siteinfo (#1830)
+- **Taskflowbackend**
+    - iRODS v4.3 support (#1592, #1817, #1832)
+    - ``BatchCalculateChecksumTask`` exception logging (#1843)
+
+Changed
+-------
+
+- **General**
+    - Upgrade to Django v3.2.23 (#1811)
+    - Upgrade to django-sodar-core v0.13.3 (#1810)
+- **Irodsbackend**
+    - iRODS collection modal copy button icon (#1851)
+- **Landingzones**
+    - Disable locked zone controls in template for non-superusers (#1808)
+    - Rename and refactor ``disable_zone_ui()`` template tag (#1808)
+- **Samplesheets**
+    - Upgrade Vue app dependencies (#1811)
+    - Change default IGV genome to ``b37_1kg`` (#1812)
+    - Update existing ``b37`` IGV genome settings with a migration (#1812)
+- **Taskflowbackend**
+    - Improve ``landing_zone_move`` zone status info messages for validation (#1840)
+
+Fixed
+-----
+
+- **General**
+    - Add workaround for ``AUTH_LDAP_CONNECTION_OPTIONS`` duplication (#1853)
+- **Irodsbackend**
+    - Opening redundant iRODS connection in server version retrieval (#1831)
+- **Landingzones**
+    - No wait for async ``CurrentUserRetrieveAPIView`` call result (#1732, #1807)
+    - ``BaseLandingZoneStatusTask.set_status()`` failure with concurrent sheet replacing (#1839)
+- **Samplesheets**
+    - ``ColumnToggleModal`` study checkbox states rendered under assay (#1848)
+    - ``ColumnToggleModal`` group toggle not updating checkboxes in UI (#1849)
+- **Taskflowbackend**
+    - ``project_create`` timeline event user reference (bihealth/sodar_core#1301, #1819)
+    - Incorrect write access messages in ``landing_zone_move`` when validating only (#1845)
+
+Removed
+-------
+
+- **Taskflowbackend**
+    - Duplicate ``SetAccessTask`` tests (#1833)
+
+
 v0.14.0 (2023-09-27)
 ====================
 

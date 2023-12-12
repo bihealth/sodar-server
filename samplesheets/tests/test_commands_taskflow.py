@@ -9,10 +9,7 @@ from projectroles.management.commands.syncmodifyapi import (
 from projectroles.models import SODAR_CONSTANTS
 
 # Taskflowbackend dependency
-from taskflowbackend.tests.base import (
-    TaskflowViewTestBase,
-    IRODS_ACCESS_READ,
-)
+from taskflowbackend.tests.base import TaskflowViewTestBase
 
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_plugins_taskflow import (
@@ -68,7 +65,7 @@ class TestSyncModifyAPI(
         self.command.handle()
         self.assertTrue(self.irods.collections.exists(self.sample_path))
         self.assert_irods_access(
-            self.group_name, self.sample_path, IRODS_ACCESS_READ
+            self.group_name, self.sample_path, self.irods_access_read
         )
         self.assert_ticket_access(self.project, False)
 
@@ -83,7 +80,7 @@ class TestSyncModifyAPI(
         self.command.handle()
         self.assertTrue(self.irods.collections.exists(self.sample_path))
         self.assert_irods_access(
-            self.group_name, self.sample_path, IRODS_ACCESS_READ
+            self.group_name, self.sample_path, self.irods_access_read
         )
         # Anonymous access not granted, ticket should not be created
         self.assert_ticket_access(self.project, False)
@@ -100,7 +97,7 @@ class TestSyncModifyAPI(
         self.command.handle()
         self.assertTrue(self.irods.collections.exists(self.sample_path))
         self.assert_irods_access(
-            self.group_name, self.sample_path, IRODS_ACCESS_READ
+            self.group_name, self.sample_path, self.irods_access_read
         )
         # Ticket access should be granted with anonymous access
         self.assert_ticket_access(self.project, True)
@@ -114,13 +111,13 @@ class TestSyncModifyAPI(
         self.command.handle()
         self.assertTrue(self.irods.collections.exists(self.sample_path))
         self.assert_irods_access(
-            self.group_name, self.sample_path, IRODS_ACCESS_READ
+            self.group_name, self.sample_path, self.irods_access_read
         )
         self.assert_ticket_access(self.project, False)
         self.project.public_guest_access = False
         self.project.save()
         self.assert_irods_access(
-            self.group_name, self.sample_path, IRODS_ACCESS_READ
+            self.group_name, self.sample_path, self.irods_access_read
         )
         self.assert_ticket_access(self.project, False)
 
@@ -134,13 +131,13 @@ class TestSyncModifyAPI(
         self.command.handle()
         self.assertTrue(self.irods.collections.exists(self.sample_path))
         self.assert_irods_access(
-            self.group_name, self.sample_path, IRODS_ACCESS_READ
+            self.group_name, self.sample_path, self.irods_access_read
         )
         self.assert_ticket_access(self.project, True)
         self.project.public_guest_access = False
         self.project.save()
         self.command.handle()
         self.assert_irods_access(
-            self.group_name, self.sample_path, IRODS_ACCESS_READ
+            self.group_name, self.sample_path, self.irods_access_read
         )
         self.assert_ticket_access(self.project, False)

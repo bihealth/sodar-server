@@ -19,10 +19,10 @@ from projectroles.models import (
 )
 from projectroles.tests.test_models import ProjectInviteMixin
 
-from taskflowbackend.tests.base import (
-    TaskflowViewTestBase,
-    IRODS_ACCESS_READ,
-)
+# Timeline dependency
+from timeline.models import ProjectEvent
+
+from taskflowbackend.tests.base import TaskflowViewTestBase
 
 
 app_settings = AppSettingAPI()
@@ -37,7 +37,6 @@ PROJECT_ROLE_GUEST = SODAR_CONSTANTS['PROJECT_ROLE_GUEST']
 PROJECT_TYPE_CATEGORY = SODAR_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 APP_SETTING_SCOPE_PROJECT = SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT']
-
 
 # Local constants
 INVITE_EMAIL = 'test@example.com'
@@ -60,7 +59,6 @@ class TestProjectCreateView(TaskflowViewTestBase):
             ),
             False,
         )
-
         # Make project with owner in Taskflow and Django
         self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
@@ -126,7 +124,9 @@ class TestProjectCreateView(TaskflowViewTestBase):
         group_name = self.irods_backend.get_user_group_name(self.project)
         group = self.irods.user_groups.get(group_name)
         self.assertIsInstance(group, iRODSUserGroup)
-        self.assert_irods_access(group_name, project_coll, IRODS_ACCESS_READ)
+        self.assert_irods_access(
+            group_name, project_coll, self.irods_access_read
+        )
         self.assertIsInstance(
             self.irods.users.get(self.user.username), iRODSUser
         )
@@ -136,6 +136,15 @@ class TestProjectCreateView(TaskflowViewTestBase):
             self.irods.users.get(self.user_owner_cat.username), iRODSUser
         )
         self.assertEqual(group.hasmember(self.user_owner_cat.username), True)
+        # Assert timeline event
+        tl_events = ProjectEvent.objects.filter(
+            project=project,
+            plugin='taskflow',
+            user=self.user,
+            event_name='project_create',
+        )
+        self.assertEqual(tl_events.count(), 1)
+        self.assertEqual(tl_events.first().get_status().status_type, 'OK')
 
 
 class TestProjectUpdateView(TaskflowViewTestBase):
@@ -224,6 +233,14 @@ class TestProjectUpdateView(TaskflowViewTestBase):
         )
         self.assert_group_member(self.project, self.user, True)
         self.assert_group_member(self.project, self.user_owner_cat, True)
+        tl_events = ProjectEvent.objects.filter(
+            project=self.project,
+            plugin='taskflow',
+            user=self.user,
+            event_name='project_update',
+        )
+        self.assertEqual(tl_events.count(), 1)
+        self.assertEqual(tl_events.first().get_status().status_type, 'OK')
 
     def test_update_parent(self):
         """Test project update with changed parent"""
