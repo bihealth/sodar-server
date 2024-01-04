@@ -99,6 +99,7 @@ Table of Contents
 
     ext_tool_igv_setup
     ext_tool_igv_opening
+    ext_tool_cyberduck
     ext_tool_winscp
 
 .. toctree::

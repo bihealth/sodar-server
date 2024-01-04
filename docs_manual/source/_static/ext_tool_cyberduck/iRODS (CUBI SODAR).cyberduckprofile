@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+    <dict>
+        <key>Protocol</key>
+        <string>irods</string>
+        <key>Vendor</key>
+        <string>BIH CUBI</string>
+        <key>Description</key>
+        <string>SODAR Data Store</string>
+        <key>Hostname Configurable</key>
+        <false/>
+        <key>Port Configurable</key>
+        <false/>
+        <key>Default Hostname</key>
+        <string>sodar.bihealth.org</string>
+        <key>Region</key>
+        <string>sodarZone</string>
+        <key>Default Port</key>
+        <string>1247</string>
+        <key>Username Placeholder</key>
+        <string>SODAR username</string>
+        <key>Password Placeholder</key>
+        <string>SODAR password</string>
+        <key>Authorization</key>
+        <string>PAM</string>
+        <key>Default Path</key>
+        <string>/sodarZone/home</string>
+    </dict>
+</plist>
