@@ -1323,9 +1323,13 @@ class TestIrodsDataRequestUpdateView(
             user=self.user_contributor,
             description=IRODS_REQUEST_DESC,
         )
+        self.url = reverse(
+            'samplesheets:irods_request_update',
+            kwargs={'irodsdatarequest': self.request.sodar_uuid},
+        )
 
-    def test_update(self):
-        """Test POST request for updating a delete request"""
+    def test_post(self):
+        """Test IrodsDataRequestUpdateView POST"""
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         self._assert_tl_count(EVENT_UPDATE, 0)
 
@@ -1334,13 +1338,7 @@ class TestIrodsDataRequestUpdateView(
             'description': IRODS_REQUEST_DESC_UPDATE,
         }
         with self.login(self.user_contributor):
-            response = self.client.post(
-                reverse(
-                    'samplesheets:irods_request_update',
-                    kwargs={'irodsdatarequest': self.request.sodar_uuid},
-                ),
-                update_data,
-            )
+            response = self.client.post(self.url, update_data)
             self.assertRedirects(
                 response,
                 reverse(
@@ -1361,8 +1359,28 @@ class TestIrodsDataRequestUpdateView(
         self.assertEqual(self.request.description, IRODS_REQUEST_DESC_UPDATE)
         self._assert_tl_count(EVENT_UPDATE, 1)
 
-    def test_post_update_invalid_form_data(self):
-        """Test updating a delete request with invalid form data"""
+    def test_post_superuser(self):
+        """Test POST as superuser"""
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        self._assert_tl_count(EVENT_UPDATE, 0)
+
+        update_data = {
+            'path': self.obj_path,
+            'description': IRODS_REQUEST_DESC_UPDATE,
+        }
+        with self.login(self.user):
+            self.client.post(self.url, update_data)
+
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        self.request.refresh_from_db()
+        self.assertEqual(self.request.path, self.obj_path)
+        self.assertEqual(self.request.description, IRODS_REQUEST_DESC_UPDATE)
+        # Assert user is not updated when superuser updates the request
+        self.assertEqual(self.request.user, self.user_contributor)
+        self._assert_tl_count(EVENT_UPDATE, 1)
+
+    def test_post_invalid_form_data(self):
+        """Test POST with invalid form data"""
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         self._assert_tl_count(EVENT_UPDATE, 0)
 
@@ -1371,13 +1389,7 @@ class TestIrodsDataRequestUpdateView(
             'description': IRODS_REQUEST_DESC_UPDATE,
         }
         with self.login(self.user_contributor):
-            response = self.client.post(
-                reverse(
-                    'samplesheets:irods_request_update',
-                    kwargs={'irodsdatarequest': self.request.sodar_uuid},
-                ),
-                update_data,
-            )
+            response = self.client.post(self.url, update_data)
 
         self.assertEqual(
             response.context['form'].errors['path'][0],

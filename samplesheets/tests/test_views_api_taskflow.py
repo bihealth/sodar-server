@@ -928,6 +928,20 @@ class TestIrodsDataRequestUpdateAPIView(
         self.assertEqual(self.request.path, self.obj_path)
         self._assert_tl_count(1)
 
+    def test_patch_superuser(self):
+        """Test PATCH as superuser"""
+        self._assert_tl_count(0)
+        update_data = {'description': IRODS_REQUEST_DESC_UPDATED}
+        response = self.request_knox(
+            self.url, 'PATCH', data=update_data, token=self.get_token(self.user)
+        )
+        self.assertEqual(response.status_code, 200)
+        self.request.refresh_from_db()
+        self.assertEqual(self.request.description, IRODS_REQUEST_DESC_UPDATED)
+        self.assertEqual(self.request.path, self.obj_path)
+        self.assertEqual(self.request.user, self.user_contributor)
+        self._assert_tl_count(1)
+
 
 # NOTE: For TestIrodsDataRequestDestroyAPIView, see test_views_api
 

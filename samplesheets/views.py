@@ -2381,6 +2381,76 @@ class IrodsAccessTicketDeleteView(
         return super().delete(request, *args, **kwargs)
 
 
+class IrodsDataRequestListView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    InvestigationContextMixin,
+    ListView,
+):
+    """View for listing iRODS data requests"""
+
+    model = IrodsDataRequest
+    permission_required = 'samplesheets.edit_sheet'
+    template_name = 'samplesheets/irods_requests.html'
+    paginate_by = settings.SHEETS_IRODS_REQUEST_PAGINATION
+
+    @classmethod
+    def get_item_extra_data(cls, irods_session, item):
+        if settings.IRODS_WEBDAV_ENABLED:
+            item.webdav_url = urljoin(settings.IRODS_WEBDAV_URL, item.path)
+        else:
+            item.webdav_url = None
+        item.is_collection = irods_session.collections.exists(item.path)
+
+    def get_context_data(self, *args, **kwargs):
+        context_data = super().get_context_data(*args, **kwargs)
+        irods = get_backend_api('omics_irods')
+        with irods.get_session() as irods_session:
+            if settings.IRODS_WEBDAV_ENABLED:
+                for item in context_data['object_list']:
+                    self.get_item_extra_data(irods_session, item)
+        assign = RoleAssignment.objects.filter(
+            project=self.get_project(),
+            user=self.request.user,
+            role__name=SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR'],
+        )
+        context_data['is_contributor'] = bool(assign)
+        context_data['irods_webdav_enabled'] = settings.IRODS_WEBDAV_ENABLED
+        return context_data
+
+    def get_queryset(self):
+        project = self.get_project()
+        queryset = self.model.objects.filter(project=project)
+        # For superusers, owners and delegates,
+        # display active/failed requests from all users
+        if (
+            self.request.user.is_superuser
+            or project.is_delegate(self.request.user)
+            or project.is_owner(self.request.user)
+        ):
+            return queryset.filter(
+                status__in=[
+                    IRODS_REQUEST_STATUS_ACTIVE,
+                    IRODS_REQUEST_STATUS_FAILED,
+                ]
+            )
+        # For regular users, dispaly their own requests regardless of status
+        return queryset.filter(user=self.request.user)
+
+    def get(self, request, *args, **kwargs):
+        irods_backend = get_backend_api('omics_irods')
+        if not irods_backend:
+            messages.error(request, 'iRODS backend not enabled')
+            return redirect(
+                reverse(
+                    'samplesheets:project_sheets',
+                    kwargs={'project': self.get_project().sodar_uuid},
+                )
+            )
+        return super().get(request, *args, **kwargs)
+
+
 class IrodsDataRequestCreateView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
@@ -2405,6 +2475,7 @@ class IrodsDataRequestCreateView(
         project = self.get_project()
         # Create database object
         obj = form.save(commit=False)
+        # TODO: These should happen in the form instead (see #1865)
         obj.user = self.request.user
         obj.project = project
         obj.save()
@@ -2456,10 +2527,7 @@ class IrodsDataRequestUpdateView(
         return kwargs
 
     def form_valid(self, form):
-        obj = form.save(commit=False)
-        obj.user = self.request.user
-        obj.project = self.get_project()
-        obj.save()
+        obj = form.save()
         self.add_tl_update(obj)
         messages.success(
             self.request,
@@ -2849,76 +2917,6 @@ class IrodsDataRequestRejectBatchView(
                     kwargs={'project': self.get_project().sodar_uuid},
                 )
             )
-
-
-class IrodsDataRequestListView(
-    LoginRequiredMixin,
-    LoggedInPermissionMixin,
-    ProjectPermissionMixin,
-    InvestigationContextMixin,
-    ListView,
-):
-    """View for listing iRODS data requests"""
-
-    model = IrodsDataRequest
-    permission_required = 'samplesheets.edit_sheet'
-    template_name = 'samplesheets/irods_requests.html'
-    paginate_by = settings.SHEETS_IRODS_REQUEST_PAGINATION
-
-    @classmethod
-    def get_item_extra_data(cls, irods_session, item):
-        if settings.IRODS_WEBDAV_ENABLED:
-            item.webdav_url = urljoin(settings.IRODS_WEBDAV_URL, item.path)
-        else:
-            item.webdav_url = None
-        item.is_collection = irods_session.collections.exists(item.path)
-
-    def get_context_data(self, *args, **kwargs):
-        context_data = super().get_context_data(*args, **kwargs)
-        irods = get_backend_api('omics_irods')
-        with irods.get_session() as irods_session:
-            if settings.IRODS_WEBDAV_ENABLED:
-                for item in context_data['object_list']:
-                    self.get_item_extra_data(irods_session, item)
-        assign = RoleAssignment.objects.filter(
-            project=self.get_project(),
-            user=self.request.user,
-            role__name=SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR'],
-        )
-        context_data['is_contributor'] = bool(assign)
-        context_data['irods_webdav_enabled'] = settings.IRODS_WEBDAV_ENABLED
-        return context_data
-
-    def get_queryset(self):
-        project = self.get_project()
-        queryset = self.model.objects.filter(project=project)
-        # For superusers, owners and delegates,
-        # display active/failed requests from all users
-        if (
-            self.request.user.is_superuser
-            or project.is_delegate(self.request.user)
-            or project.is_owner(self.request.user)
-        ):
-            return queryset.filter(
-                status__in=[
-                    IRODS_REQUEST_STATUS_ACTIVE,
-                    IRODS_REQUEST_STATUS_FAILED,
-                ]
-            )
-        # For regular users, dispaly their own requests regardless of status
-        return queryset.filter(user=self.request.user)
-
-    def get(self, request, *args, **kwargs):
-        irods_backend = get_backend_api('omics_irods')
-        if not irods_backend:
-            messages.error(request, 'iRODS backend not enabled')
-            return redirect(
-                reverse(
-                    'samplesheets:project_sheets',
-                    kwargs={'project': self.get_project().sodar_uuid},
-                )
-            )
-        return super().get(request, *args, **kwargs)
 
 
 class SheetRemoteSyncView(
