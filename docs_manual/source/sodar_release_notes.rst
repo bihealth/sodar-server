@@ -8,6 +8,14 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v0.14.2 (WIP)
+============
+
+Release for minor updates, maintenance and bug fixes.
+
+- Fix iRODS data request view issues
+
+
 v0.14.1 (2023-12-12)
 ====================
 

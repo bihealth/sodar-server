@@ -5,6 +5,16 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+Unreleased
+==========
+
+Fixed
+-----
+
+- **Samplesheets**
+    - Invalid WebDAV URLs generated in ``IrodsDataRequestListView`` (#1860)
+
+
 v0.14.1 (2023-12-12)
 ====================
 

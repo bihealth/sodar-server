@@ -1552,10 +1552,10 @@ class TestIrodsDataRequestListView(
 ):
     """Tests for IrodsDataRequestListView"""
 
-    def test_list(self):
-        """Test GET request for listing delete requests"""
+    def test_get(self):
+        """Test IrodsDataRequestListView GET"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
-        request = self.make_irods_request(
+        irods_request = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
             path=IRODS_FILE_PATH,
@@ -1571,9 +1571,14 @@ class TestIrodsDataRequestListView(
             )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['object_list']), 1)
-        self.assertEqual(response.context['object_list'][0], request)
+        context_obj = response.context['object_list'][0]
+        self.assertEqual(context_obj, irods_request)
+        self.assertEqual(
+            context_obj.webdav_url, 'https://127.0.0.1' + IRODS_FILE_PATH
+        )  # Ensure no extra slash is between host and iRODS path
+        self.assertEqual(context_obj.is_collection, False)
 
-    def test_list_as_contributor_by_superuser(self):
+    def test_get_as_contributor_by_superuser(self):
         """Test GET as contibutor with request created by superuser"""
         self.make_irods_request(
             project=self.project,
@@ -1592,7 +1597,7 @@ class TestIrodsDataRequestListView(
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['object_list']), 0)
 
-    def test_list_as_contributor2_by_contributor(self):
+    def test_get_as_contributor2_by_contributor(self):
         """Test GET as contributor2 with request created by contributor"""
         user_contributor2 = self.make_user('user_contributor2')
         self.make_assignment(

@@ -12,6 +12,7 @@ import zipfile
 from cubi_isa_templates import _TEMPLATES as ISA_TEMPLATES
 from irods.exception import CollectionDoesNotExist
 from packaging import version
+from urllib.parse import urljoin
 
 from django.conf import settings
 from django.contrib import messages
@@ -2864,13 +2865,21 @@ class IrodsDataRequestListView(
     template_name = 'samplesheets/irods_requests.html'
     paginate_by = settings.SHEETS_IRODS_REQUEST_PAGINATION
 
+    @classmethod
+    def get_item_extra_data(cls, irods_session, item):
+        if settings.IRODS_WEBDAV_ENABLED:
+            item.webdav_url = urljoin(settings.IRODS_WEBDAV_URL, item.path)
+        else:
+            item.webdav_url = None
+        item.is_collection = irods_session.collections.exists(item.path)
+
     def get_context_data(self, *args, **kwargs):
         context_data = super().get_context_data(*args, **kwargs)
         irods = get_backend_api('omics_irods')
         with irods.get_session() as irods_session:
             if settings.IRODS_WEBDAV_ENABLED:
                 for item in context_data['object_list']:
-                    self.get_extra_item_data(irods_session, item)
+                    self.get_item_extra_data(irods_session, item)
         assign = RoleAssignment.objects.filter(
             project=self.get_project(),
             user=self.request.user,
@@ -2898,18 +2907,6 @@ class IrodsDataRequestListView(
             )
         # For regular users, dispaly their own requests regardless of status
         return queryset.filter(user=self.request.user)
-
-    def build_webdav_url(self, item):
-        return '{}/{}'.format(settings.IRODS_WEBDAV_URL, item.path)
-
-    def get_extra_item_data(self, irods_session, item):
-        # Add webdav URL to the item
-        if settings.IRODS_WEBDAV_ENABLED:
-            item.webdav_url = self.build_webdav_url(item)
-        else:
-            item.webdav_url = None
-        # Check if the item is a collection
-        item.is_collection = irods_session.collections.exists(item.path)
 
     def get(self, request, *args, **kwargs):
         irods_backend = get_backend_api('omics_irods')
