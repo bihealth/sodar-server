@@ -1161,6 +1161,21 @@ class IrodsDataRequestModifyMixin:
             return IrodsDataRequest.objects.none()
         return IrodsDataRequest.objects.filter(sodar_uuid__in=request_ids)
 
+    def add_error_message(self, obj, ex):
+        """
+        Add Django error message for iRODS data request exception.
+
+        :param obj: IrodsDataRequest object
+        :param ex: Exception
+        """
+        ex_msg = '; '.join(ex) if isinstance(ex, list) else str(ex)
+        messages.error(
+            self.request,
+            'Accepting iRODS data request "{}" failed: {}'.format(
+                obj.get_display_name(), ex_msg
+            ),
+        )
+
 
 class SheetRemoteSyncAPI(SheetImportMixin):
     """
@@ -2667,12 +2682,7 @@ class IrodsDataRequestAcceptView(
                 ),
             )
         except Exception as ex:
-            messages.error(
-                self.request,
-                'Accepting iRODS data request "{}" failed: {}'.format(
-                    obj.get_display_name(), ex
-                ),
-            )
+            self.add_error_message(obj, ex)
         return redirect(
             reverse(
                 'samplesheets:irods_requests',
@@ -2766,12 +2776,7 @@ class IrodsDataRequestAcceptBatchView(
                         ),
                     )
                 except Exception as ex:
-                    messages.error(
-                        self.request,
-                        'Accepting iRODS data request "{}" failed: {}'.format(
-                            obj.get_display_name(), ex
-                        ),
-                    )
+                    self.add_error_message(obj, ex)
 
             return redirect(
                 reverse(

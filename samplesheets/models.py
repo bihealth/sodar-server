@@ -1381,7 +1381,8 @@ class IrodsDataRequest(models.Model):
 
     def _validate_action(self):
         """Validate the action field"""
-        if self.action != IRODS_REQUEST_ACTION_DELETE:
+        # Compare against uppercase string to support legacy requests
+        if self.action.upper() != IRODS_REQUEST_ACTION_DELETE:
             raise ValidationError(
                 'This model currently only supports the action "{}"'.format(
                     IRODS_REQUEST_ACTION_DELETE

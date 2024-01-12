@@ -8,6 +8,13 @@ Changelog for the SODAR project. Loosely follows the
 Unreleased
 ==========
 
+Changed
+-------
+
+- **Samplesheets**
+    - Improve Django messages for ``IrodsDataRequest`` exceptions (#1858)
+    - Change ``IrodsDataRequest`` description if created in Ajax view (#1862)
+
 Fixed
 -----
 
@@ -15,6 +22,7 @@ Fixed
     - Invalid WebDAV URLs generated in ``IrodsDataRequestListView`` (#1860)
     - Superuser not allowed to edit iRODS request from other users in UI (#1863)
     - ``IrodsDataRequest`` user changed on object update (#1864)
+    - ``IrodsDataRequest._validate_action()`` failing with ``delete`` action (#1858)
 
 
 v0.14.1 (2023-12-12)

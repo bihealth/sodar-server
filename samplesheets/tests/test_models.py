@@ -1602,11 +1602,16 @@ class TestIrodsDataRequest(IrodsDataRequestMixin, SamplesheetsModelTestBase):
         )
         self.assertEqual(repr(self.request), expected)
 
-    def test_validate_action(self):
-        """Test _validate_action()"""
+    def test_validate_action_move(self):
+        """Test _validate_action() with MOVE status"""
         with self.assertRaises(ValidationError):
             self.request.action = 'MOVE'
             self.request.save()
+
+    def test_validate_action_legacy(self):
+        """Test _validate_action() with legacy lowercase status"""
+        self.request.action = 'delete'
+        self.request.save()  # No exception
 
     def test_validate_status(self):
         """Test _validate_status()"""

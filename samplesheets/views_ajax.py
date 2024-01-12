@@ -1869,7 +1869,7 @@ class IrodsDataRequestCreateAjaxView(
             path=path,
             user=request.user,
             project=project,
-            description='Request created via Ajax API',
+            description='Request created in iRODS file list',
         )
 
         # Create timeline event
