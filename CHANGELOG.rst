@@ -18,11 +18,19 @@ Changed
 Fixed
 -----
 
+- **General**
+    - Invalid env var retrieval for ``AUTH_LDAP*_START_TLS`` (#1853)
 - **Samplesheets**
     - Invalid WebDAV URLs generated in ``IrodsDataRequestListView`` (#1860)
     - Superuser not allowed to edit iRODS request from other users in UI (#1863)
     - ``IrodsDataRequest`` user changed on object update (#1864)
     - ``IrodsDataRequest._validate_action()`` failing with ``delete`` action (#1858)
+
+Removed
+-------
+
+- **General**
+    - LDAP settings ``OPT_X_TLS_REQUIRE_CERT`` workaround (#1853)
 
 
 v0.14.1 (2023-12-12)
