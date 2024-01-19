@@ -11,6 +11,8 @@ Unreleased
 Changed
 -------
 
+- **General**
+    - Upgrade critical Vue app dependencies (#1854)
 - **Samplesheets**
     - Improve Django messages for ``IrodsDataRequest`` exceptions (#1858)
     - Change ``IrodsDataRequest`` description if created in Ajax view (#1862)
