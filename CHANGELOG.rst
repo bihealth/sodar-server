@@ -22,6 +22,8 @@ Fixed
 
 - **General**
     - Invalid env var retrieval for ``AUTH_LDAP*_START_TLS`` (#1853)
+- **Landingzones**
+    - Stats badge displayed to superusers for ``DELETED`` zones (#1866)
 - **Samplesheets**
     - Invalid WebDAV URLs generated in ``IrodsDataRequestListView`` (#1860)
     - Superuser not allowed to edit iRODS request from other users in UI (#1863)

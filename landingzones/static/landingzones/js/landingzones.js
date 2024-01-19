@@ -62,7 +62,6 @@ var updateZoneStatus = function() {
                         }
                         if (['CREATING', 'NOT CREATED', 'MOVED', 'DELETED'].includes(zoneStatus)) {
                             zoneTr.find('p#sodar-lz-zone-stats-container-' + zoneUuid).hide();
-
                             if (zoneStatus === 'MOVED') {
                                 var statusMovedSpan = zoneTr.find(
                                     'span#sodar-lz-zone-status-moved-' + zoneUuid
@@ -78,7 +77,6 @@ var updateZoneStatus = function() {
                         }
 
                         // Button modification
-                        // if (zoneStatus !== 'ACTIVE' && zoneStatus !== 'FAILED' && isSuperuser) {}
                         if (zoneStatus !== 'ACTIVE' && zoneStatus !== 'FAILED' && !isSuperuser) {
                             zoneTr.find('td.sodar-lz-zone-title').addClass('text-muted');
                             zoneTr.find('td.sodar-lz-zone-assay').addClass('text-muted');
@@ -96,7 +94,9 @@ var updateZoneStatus = function() {
                             zoneTr.find('td.sodar-lz-zone-title').removeClass('text-muted');
                             zoneTr.find('td.sodar-lz-zone-assay').removeClass('text-muted');
                             zoneTr.find('td.sodar-lz-zone-status-info').removeClass('text-muted');
-                            zoneTr.find('p#sodar-lz-zone-stats-container-' + zoneUuid).show();
+                            if (zoneStatus !== 'DELETED') {
+                                zoneTr.find('p#sodar-lz-zone-stats-container-' + zoneUuid).show();
+                            }
                             zoneTr.find('.btn').each(function() {
                                 if ($(this).is('button')) {
                                     $(this).removeAttr('disabled');
