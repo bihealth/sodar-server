@@ -97,10 +97,28 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                     label=row[i]['value'],
                     url=base_url + '/' + MISC_FILES_COLL + '/' + row[i]['value'],
                 )
+            # Method file links within processes
+            if (
+                header['obj_cls'] == 'Process'
+                and header['value'].lower().endswith('method file')
+            ):
+                row[i]['value'] = SIMPLE_LINK_TEMPLATE.format(
+                    label=row[i]['value'],
+                    url=base_url + '/' + MISC_FILES_COLL + '/' + row[i]['value'],
+                )
             # Report file links within processes
             elif (
                 header['obj_cls'] == 'Process'
                 and header['value'].lower() == 'report file'
+            ):
+                row[i]['value'] = SIMPLE_LINK_TEMPLATE.format(
+                    label=row[i]['value'],
+                    url=base_url + '/' + RESULTS_COLL + '/' + row[i]['value'],
+                )
+            # Log file links within processes
+            elif (
+                header['obj_cls'] == 'Process'
+                and header['value'].lower() == 'log file'
             ):
                 row[i]['value'] = SIMPLE_LINK_TEMPLATE.format(
                     label=row[i]['value'],
@@ -118,8 +136,19 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                     coll_name = MISC_FILES_COLL
                 else:
                     coll_name = RAW_DATA_COLL
-                row[i]['link'] = (
-                    base_url + '/' + coll_name + '/' + row[i]['value']
+                row[i]['value'] = SIMPLE_LINK_TEMPLATE.format(
+                    label=row[i]['value'],
+                    url=base_url + '/' + coll_name + '/' + row[i]['value']
+                )
+            elif (
+                header['obj_cls'] == 'GenericMaterial'
+                and header['item_type'] == 'DATA'
+                and header['value'].lower() == 'name'
+                and top_header['value'].lower() == 'derived data file'
+            ):
+                row[i]['value'] = SIMPLE_LINK_TEMPLATE.format(
+                    label=row[i]['value'],
+                    url=base_url + '/' + RESULTS_COLL + '/' + row[i]['value'],
                 )
 
         return row
