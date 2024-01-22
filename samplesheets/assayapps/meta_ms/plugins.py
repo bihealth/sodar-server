@@ -88,20 +88,23 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             if not top_header or i >= th_colspan:
                 top_header = get_top_header(table, i)
                 th_colspan += top_header['colspan']
-            # Data files
+            # Protocol file links within processes
             if (
-                header['obj_cls'] == 'GenericMaterial'
-                and header['item_type'] == 'DATA'
-                and header['value'].lower() == 'name'
-                and top_header['value'].lower()
-                in ['metabolite assignment file', 'raw spectral data file']
+                header['obj_cls'] == 'Process'
+                and header['value'].lower() == 'protocol file'
             ):
-                if top_header['value'].lower() == 'metabolite assignment file':
-                    coll_name = MISC_FILES_COLL
-                else:
-                    coll_name = RAW_DATA_COLL
-                row[i]['link'] = (
-                    base_url + '/' + coll_name + '/' + row[i]['value']
+                row[i]['value'] = SIMPLE_LINK_TEMPLATE.format(
+                    label=row[i]['value'],
+                    url=base_url + '/' + MISC_FILES_COLL + '/' + row[i]['value'],
+                )
+            # Method file links within processes
+            if (
+                header['obj_cls'] == 'Process'
+                and header['value'].lower().endswith('method file')
+            ):
+                row[i]['value'] = SIMPLE_LINK_TEMPLATE.format(
+                    label=row[i]['value'],
+                    url=base_url + '/' + MISC_FILES_COLL + '/' + row[i]['value'],
                 )
             # Report file links within processes
             elif (
@@ -112,6 +115,42 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                     label=row[i]['value'],
                     url=base_url + '/' + RESULTS_COLL + '/' + row[i]['value'],
                 )
+            # Log file links within processes
+            elif (
+                header['obj_cls'] == 'Process'
+                and header['value'].lower() == 'log file'
+            ):
+                row[i]['value'] = SIMPLE_LINK_TEMPLATE.format(
+                    label=row[i]['value'],
+                    url=base_url + '/' + RESULTS_COLL + '/' + row[i]['value'],
+                )
+            # Data files
+            elif (
+                header['obj_cls'] == 'GenericMaterial'
+                and header['item_type'] == 'DATA'
+                and header['value'].lower() == 'name'
+                and top_header['value'].lower()
+                in ['metabolite assignment file', 'raw spectral data file']
+            ):
+                if top_header['value'].lower() == 'metabolite assignment file':
+                    coll_name = MISC_FILES_COLL
+                else:
+                    coll_name = RAW_DATA_COLL
+                row[i]['value'] = SIMPLE_LINK_TEMPLATE.format(
+                    label=row[i]['value'],
+                    url=base_url + '/' + coll_name + '/' + row[i]['value']
+                )
+            elif (
+                header['obj_cls'] == 'GenericMaterial'
+                and header['item_type'] == 'DATA'
+                and header['value'].lower() == 'name'
+                and top_header['value'].lower() == 'derived data file'
+            ):
+                row[i]['value'] = SIMPLE_LINK_TEMPLATE.format(
+                    label=row[i]['value'],
+                    url=base_url + '/' + RESULTS_COLL + '/' + row[i]['value'],
+                )
+
         return row
 
     def get_shortcuts(self, assay):
