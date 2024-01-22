@@ -88,8 +88,26 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             if not top_header or i >= th_colspan:
                 top_header = get_top_header(table, i)
                 th_colspan += top_header['colspan']
-            # Data files
+            # Protocol file links within processes
             if (
+                header['obj_cls'] == 'Process'
+                and header['value'].lower() == 'protocol file'
+            ):
+                row[i]['value'] = SIMPLE_LINK_TEMPLATE.format(
+                    label=row[i]['value'],
+                    url=base_url + '/' + MISC_FILES_COLL + '/' + row[i]['value'],
+                )
+            # Report file links within processes
+            elif (
+                header['obj_cls'] == 'Process'
+                and header['value'].lower() == 'report file'
+            ):
+                row[i]['value'] = SIMPLE_LINK_TEMPLATE.format(
+                    label=row[i]['value'],
+                    url=base_url + '/' + RESULTS_COLL + '/' + row[i]['value'],
+                )
+            # Data files
+            elif (
                 header['obj_cls'] == 'GenericMaterial'
                 and header['item_type'] == 'DATA'
                 and header['value'].lower() == 'name'
@@ -103,15 +121,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                 row[i]['link'] = (
                     base_url + '/' + coll_name + '/' + row[i]['value']
                 )
-            # Report file links within processes
-            elif (
-                header['obj_cls'] == 'Process'
-                and header['value'].lower() == 'report file'
-            ):
-                row[i]['value'] = SIMPLE_LINK_TEMPLATE.format(
-                    label=row[i]['value'],
-                    url=base_url + '/' + RESULTS_COLL + '/' + row[i]['value'],
-                )
+
         return row
 
     def get_shortcuts(self, assay):
