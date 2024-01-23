@@ -95,16 +95,23 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             ):
                 row[i]['value'] = SIMPLE_LINK_TEMPLATE.format(
                     label=row[i]['value'],
-                    url=base_url + '/' + MISC_FILES_COLL + '/' + row[i]['value'],
+                    url=base_url
+                    + '/'
+                    + MISC_FILES_COLL
+                    + '/'
+                    + row[i]['value'],
                 )
             # Method file links within processes
-            if (
-                header['obj_cls'] == 'Process'
-                and header['value'].lower().endswith('method file')
-            ):
+            if header['obj_cls'] == 'Process' and header[
+                'value'
+            ].lower().endswith('method file'):
                 row[i]['value'] = SIMPLE_LINK_TEMPLATE.format(
                     label=row[i]['value'],
-                    url=base_url + '/' + MISC_FILES_COLL + '/' + row[i]['value'],
+                    url=base_url
+                    + '/'
+                    + MISC_FILES_COLL
+                    + '/'
+                    + row[i]['value'],
                 )
             # Report file links within processes
             elif (
@@ -138,7 +145,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                     coll_name = RAW_DATA_COLL
                 row[i]['value'] = SIMPLE_LINK_TEMPLATE.format(
                     label=row[i]['value'],
-                    url=base_url + '/' + coll_name + '/' + row[i]['value']
+                    url=base_url + '/' + coll_name + '/' + row[i]['value'],
                 )
             elif (
                 header['obj_cls'] == 'GenericMaterial'
