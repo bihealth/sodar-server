@@ -31,13 +31,19 @@ Docker Compose network if e.g. you already have a separate iRODS server running.
     - ``traefik``: Reverse proxy for TLS/SSL routing.
     - ``sssd``: System Security Service Daemon for LDAP/AD authentication.
 
+.. note::
+
+    Currently the sodar-docker-compose environment only supports iRODS v4.2.
+    Support for v4.3 is being worked on. iRODS v4.3 will be the default
+    supported version from SODAR v1.0 onwards.
+
 
 Quickstart Guide
 ================
 
 For a guide on how to try out and evaluate SODAR on your Linux workstation, see
 the `README file <https://github.com/bihealth/sodar-docker-compose#readme>`_ of
-the SODAR Docker Compose repository.
+the sodar-docker-compose repository.
 
 
 Installation Guide
@@ -70,7 +76,7 @@ requirements.
 1. Clone the Repository
 -----------------------
 
-Clone the ``sodar-docker-compose`` repository as follows:
+Clone the sodar-docker-compose repository as follows:
 
 .. code-block:: bash
 
@@ -141,7 +147,7 @@ settings. Note that in the Docker Compose environment, settings specific to the
 SODAR web server are prefixed with ``SODAR_*``. This does not include e.g. iRODS
 settings commonly used by multiple components.
 
-For more information on the iRODS settings, see the
+For more information on iRODS settings, see the
 `iRODS documentation <https://docs.irods.org/master/system_overview/configuration/>`_.
 
 Note that for certain settings to take effect, you need to run the Docker
@@ -160,12 +166,12 @@ following command:
     $ ./run.sh
 
 If you have the need to modify the default configuration, you can alternatively
-launch the network with the ``docker-compose up`` command with appropriate
+launch the network with the ``docker compose up`` command with appropriate
 parameters:
 
 .. code-block:: bash
 
-    $ docker-compose -f docker-compose.yml \
+    $ docker compose -f docker-compose.yml \
         -f docker-compose.override.yml.irods \
         -f docker-compose.override.yml.davrods \
         -f docker-compose.override.yml.provided-cert \
@@ -237,28 +243,45 @@ restart. If the network is running in the background, enter the following:
 
 .. code-block:: bash
 
-    $ docker-compose down && docker-compose up -d
+    $ docker compose down && docker compose up -d
 
 For updating all the images to their latest version, run the following:
 
 .. code-block:: bash
 
-    $ docker-compose pull
+    $ docker compose pull
 
 To only update a specific image, you can do the following:
 
 .. code-block:: bash
 
-    $ docker-compose pull IMAGE-NAME
-    $ docker-compose up -d --no-deps --build IMAGE-NAME
+    $ docker compose pull IMAGE-NAME
+    $ docker compose up -d --no-deps --build IMAGE-NAME
 
 Whenever updating your SODAR environment, it is strongly recommend to ensure
-your ``sodar-docker-compose`` repository is up-to-date with the latest version
-with the following command:
+your sodar-docker-compose repository is up-to-date with the latest version with
+the following command:
 
 .. code-block:: bash
 
     $ git pull origin main
+
+The ``main`` branch of the repository will contain the latest release version of
+the environment, which corresponds to the latest SODAR server release. If you
+want to deploy an older version of SODAR than the most recent release, check out
+the corresponding sodar-docker-compose release according to its git tag.
+
+If you are installing the "bleeding edge" development version of SODAR ``dev``
+with the ``dev-0`` tag, you should correspondingly use the ``dev`` branch
+version of sodar-docker-compose. Note that these versions may contain breaking
+changes and/or not yet fully documented features. Deploying the dev version in
+production is generally recommended only for experienced SODAR admins.
+
+.. note::
+
+    SODAR v1.0 will be upgraded to use iRODS 4.3 and Postgres v16. This version
+    may require special steps for upgrading an existing environment. Make sure
+    to refer to the sodar-docker-compose README for instructions.
 
 
 .. _admin_install_advanced_config:
@@ -313,15 +336,17 @@ command.
 Deploying in Production
 =======================
 
-This section details issues specific to deploying SODAR in production.
+Deploying the SODAR environment in production is mostly considered out of scope
+for this documentation, as the exact method of deployment depends on your
+organization's infrastructure and practices. The sodar-docker-compose
+environment can be set up for production using e.g. Ansible playbooks. In this
+section we present certain guidelines and recommendations for deployment.
 
 Production Prerequisites
 ------------------------
 
 In addition to the :ref:`general prerequisites <admin_install_prerequisites>`,
 we recommend the following for a production deployment of SODAR:
-
-**TODO:** Update these
 
 - Recommended Hardware
     - Memory: 64 GB of RAM

@@ -9,12 +9,13 @@ list of changes in current and previous releases, see the
 
 
 v0.14.2 (WIP)
-============
+=============
 
 Release for minor updates, maintenance and bug fixes.
 
 - Fix iRODS data request issues
 - Fix LDAP TLS settings
+- Minor updates and bug fixes
 
 
 v0.14.1 (2023-12-12)

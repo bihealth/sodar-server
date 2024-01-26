@@ -111,7 +111,7 @@ use OpenSSL as demonstrated below. Ensure the file is placed under
 ----------------------------
 
 Copy the file ``env.example.dev`` into ``.env`` to use the default
-``sodar-docker-compose`` configuration for development.
+sodar-docker-compose configuration for development.
 
 .. code-block:: bash
 
@@ -121,7 +121,7 @@ In the case of the development setup, this environment only includes variables
 available to the external SODAR components. The ``sodar-server`` settings will
 be set up in a local ``.env`` file we will describe further on in this document.
 
-5. Bring up the Environment
+5. Bring Up the Environment
 ---------------------------
 
 To run the environment in the development configuration, use the following
@@ -141,7 +141,7 @@ SODAR Server Setup
 With the required external components running in Docker, you can set up and run
 the SODAR Django server and other local components.
 
-1. Set up the Repository
+1. Set Up the Repository
 ------------------------
 
 First, clone the ``sodar-server`` repository and install the OS dependencies
