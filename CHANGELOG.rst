@@ -8,6 +8,12 @@ Changelog for the SODAR project. Loosely follows the
 Unreleased
 ==========
 
+Added
+-----
+
+- **Landingzones**
+    - Create assay plugin shortcut collections for zones (#1869)
+
 Changed
 -------
 

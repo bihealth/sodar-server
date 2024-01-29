@@ -187,6 +187,7 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
         colls = []
         if create_colls:
             logger.debug('Creating default landing zone collections..')
+            assay_path = irods_backend.get_path(zone.assay)
             colls = [RESULTS_COLL, MISC_FILES_COLL, TRACK_HUBS_COLL]
             plugin = zone.assay.get_plugin()
             # First try the cache
@@ -199,14 +200,24 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
                     project=zone.project,
                 )
                 if cache_obj and cache_obj.data:
-                    assay_path = irods_backend.get_path(zone.assay)
                     colls += [
                         p.replace(assay_path + '/', '')
                         for p in cache_obj.data['paths'].keys()
                     ]
                     logger.debug('Retrieved collections from cache')
-            elif plugin:
-                pass  # TODO: Build tables, get rows directly from plugin?
+            # TODO: If no cache, build tables and get rows directly from plugin?
+            # Add shortcut paths
+            if plugin:
+                shortcuts = plugin.get_shortcuts(zone.assay) or []
+                for s in shortcuts:
+                    path = s.get('path')
+                    if path:
+                        path = path.replace(assay_path + '/', '')
+                    if path and path not in colls:
+                        colls.append(path)
+                        logger.debug(
+                            'Added shorctut collection "{}"'.format(s.get('id'))
+                        )
 
         logger.debug('Collections to be created: {}'.format(', '.join(colls)))
         flow_name = 'landing_zone_create'
