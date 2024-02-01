@@ -36,6 +36,7 @@ Fixed
     - Superuser not allowed to edit iRODS request from other users in UI (#1863)
     - ``IrodsDataRequest`` user changed on object update (#1864)
     - ``IrodsDataRequest._validate_action()`` failing with ``delete`` action (#1858)
+    - Protocol ref editable for new row if disabled in column config (#1875)
 
 Removed
 -------

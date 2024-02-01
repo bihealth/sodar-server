@@ -759,7 +759,6 @@ export default {
         let enableNextIdx = null
 
         // If the next node is a material, enable editing its name
-        // Else if it's a process, enable editing for all cells (if available)
         if (nextNodeCls === 'GenericMaterial') {
           const itemType = cols[startIdx].colDef.cellEditorParams.headerInfo.item_type
           const headerType = cols[startIdx].colDef.cellEditorParams.headerInfo.header_type
@@ -810,7 +809,7 @@ export default {
               rowNode.setDataValue(cols[i].colId, value)
             }
           }
-        } else if (nextNodeCls === 'Process') {
+        } else if (nextNodeCls === 'Process') { // Handle process node enabling
           let i = startIdx
           let processActive = false
           let newInit = true
@@ -821,9 +820,10 @@ export default {
             nextColId = cols[i].colId
             const value = this.getDefaultValue(nextColId, gridOptions, newInit, forceEmpty)
             const headerType = cols[i].colDef.cellEditorParams.headerInfo.header_type
+            const fieldEditable = cols[i].colDef.cellRendererParams.fieldEditable
 
             if (headerType === 'protocol') {
-              value.editable = true
+              value.editable = fieldEditable
               if ('uuid_ref' in value && value.uuid_ref) {
                 processActive = true
                 newInit = false
@@ -842,13 +842,12 @@ export default {
             } else {
               // Only allow editing the rest of the cells if protocol is set
               if (processActive) {
-                value.editable = cols[i].colDef.cellRendererParams.fieldEditable
+                value.editable = fieldEditable
               } else value.editable = false
             }
             rowNode.setDataValue(nextColId, value)
             i += 1
           }
-
           // If default protocol or name was filled, enable the next node(s) too
           if (processActive) enableNextIdx = i
         }
