@@ -190,18 +190,31 @@ class IrodsObjectListAjaxView(BaseIrodsAjaxView):
     permission_required = 'irodsbackend.view_files'
 
     def get(self, request, *args, **kwargs):
-        md5 = request.GET.get('md5')
-        colls = request.GET.get('colls')
+        check_md5 = bool(int(request.GET.get('md5')))
+        include_colls = bool(int(request.GET.get('colls')))
         # Get files
         try:
             with self.irods_backend.get_session() as irods:
-                ret_data = self.irods_backend.get_objects(
+                objs = self.irods_backend.get_objects(
                     irods,
                     self.path,
-                    check_md5=bool(int(md5)),
-                    include_colls=bool(int(colls)),
+                    include_md5=check_md5,
+                    include_colls=include_colls,
                 )
-            return Response(ret_data, status=200)
+                ret = []
+                md5_paths = []
+                if check_md5:
+                    md5_paths = [
+                        o['path'] for o in objs if o['path'].endswith('.md5')
+                    ]
+                for o in objs:
+                    if o['type'] == 'coll' and include_colls:
+                        ret.append(o)
+                    elif o['type'] == 'obj' and not o['path'].endswith('.md5'):
+                        if check_md5:
+                            o['md5_file'] = o['path'] + '.md5' in md5_paths
+                        ret.append(o)
+            return Response({'irods_data': ret}, status=200)
         except Exception as ex:
             return Response(self._get_detail(ex), status=500)
 

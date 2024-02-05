@@ -20,9 +20,14 @@ Changed
 - **General**
     - Upgrade critical Vue app dependencies (#1854)
     - Update installation documentation (#1871)
+- **Irodsbackend**
+    - Reduce redundant object queries (#1883)
+    - Change method logic in ``get_objects()`` and ``get_objs_recursively()`` (#1883)
 - **Samplesheets**
     - Improve Django messages for ``IrodsDataRequest`` exceptions (#1858)
     - Change ``IrodsDataRequest`` description if created in Ajax view (#1862)
+- **Taskflowbackend**
+    - Optimize ``landing_zone_move`` iRODS path retrieval (#1882)
 
 Fixed
 -----
@@ -43,6 +48,8 @@ Removed
 
 - **General**
     - LDAP settings ``OPT_X_TLS_REQUIRE_CERT`` workaround (#1853)
+- **Taskflowbackend**
+    - ``get_subcoll_obj_paths()`` and ``get_subcoll_paths()`` helpers (#1882)
 
 
 v0.14.1 (2023-12-12)

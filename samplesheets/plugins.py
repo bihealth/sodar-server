@@ -360,7 +360,7 @@ class ProjectAppPlugin(
         ret = []
         try:
             with irods_backend.get_session() as irods:
-                obj_data = irods_backend.get_objects(
+                obj_list = irods_backend.get_objects(
                     irods=irods,
                     path=irods_backend.get_projects_path(),
                     name_like=search_terms,
@@ -386,7 +386,7 @@ class ProjectAppPlugin(
             for a in Assay.objects.filter(study__in=studies.values())
         }
 
-        for o in obj_data['irods_data']:
+        for o in obj_list:
             project_uuid = irods_backend.get_uuid_from_path(
                 o['path'], obj_type='project'
             )

@@ -1942,18 +1942,18 @@ class IrodsObjectListAjaxView(BaseIrodsAjaxView):
         # Get files
         try:
             with irods_backend.get_session() as irods:
-                ret_data = irods_backend.get_objects(irods, self.path)
+                obj_list = irods_backend.get_objects(irods, self.path)
         except Exception as ex:
             return Response({'detail': str(ex)}, status=400)
-        for data_obj in ret_data.get('irods_data', []):
-            obj = IrodsDataRequest.objects.filter(
-                path=data_obj['path'], status__in=['ACTIVE', 'FAILED']
+        for o in obj_list:
+            db_obj = IrodsDataRequest.objects.filter(
+                path=o['path'], status__in=['ACTIVE', 'FAILED']
             ).first()
-            data_obj['irods_request_status'] = obj.status if obj else None
-            data_obj['irods_request_user'] = (
-                str(obj.user.sodar_uuid) if obj else None
+            o['irods_request_status'] = db_obj.status if db_obj else None
+            o['irods_request_user'] = (
+                str(db_obj.user.sodar_uuid) if db_obj else None
             )
-        return Response(ret_data, status=200)
+        return Response({'irods_data': obj_list}, status=200)
 
 
 class SheetVersionCompareAjaxView(SODARBaseProjectAjaxView):

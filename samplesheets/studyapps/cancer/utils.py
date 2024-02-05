@@ -28,7 +28,7 @@ def get_library_file_path(assay, library_name, file_type, irods_backend, irods):
     override = get_igv_omit_override(assay.get_project(), file_type)
     try:
         obj_list = irods_backend.get_objects(irods, query_path)
-        for obj in obj_list['irods_data']:
+        for obj in obj_list:
             if obj['name'].lower().endswith(
                 FILE_TYPE_SUFFIXES[file_type]
             ) and check_igv_file_name(obj['name'], file_type, override):

@@ -81,7 +81,7 @@ def get_pedigree_file_path(file_type, source, study_tables):
         obj_list = None
     if obj_list:
         for query_path in query_paths:
-            for obj in obj_list['irods_data']:
+            for obj in obj_list:
                 if (
                     obj['path'].startswith(query_path + '/')
                     and obj['name']

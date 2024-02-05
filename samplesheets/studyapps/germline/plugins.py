@@ -310,7 +310,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 study_objs = irods_backend.get_objects(
                     irods, irods_backend.get_path(study)
                 )
-            obj_len = len(study_objs['irods_data'])
+            obj_len = len(study_objs)
             logger.debug(
                 'Query returned {} data object{}'.format(
                     obj_len, 's' if obj_len != 1 else ''
@@ -349,7 +349,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 if obj_len > 0 and path not in bam_paths[source_name]:
                     bam_paths[source_name] += [
                         o['path']
-                        for o in study_objs['irods_data']
+                        for o in study_objs
                         if o['path'].startswith(path + '/')
                         and o['name'].lower().endswith('bam')
                         and check_igv_file_name(o['name'], 'bam', bam_override)
@@ -365,7 +365,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 if obj_len > 0 and path not in vcf_paths[vcf_query_id]:
                     vcf_paths[vcf_query_id] += [
                         o['path']
-                        for o in study_objs['irods_data']
+                        for o in study_objs
                         if o['path'].startswith(path + '/')
                         and o['name'].lower().endswith('vcf.gz')
                         and check_igv_file_name(o['name'], 'vcf', vcf_override)

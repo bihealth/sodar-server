@@ -236,9 +236,8 @@ class TaskflowTestMixin(ProjectMixin, RoleMixin, RoleAssignmentMixin):
                     )
             obj_paths = [
                 o['path']
-                for o in irods_backend.get_objs_recursively(irods, trash_coll)
-                + irods_backend.get_objs_recursively(
-                    irods, trash_coll, md5=True
+                for o in irods_backend.get_objs_recursively(
+                    irods, trash_coll, include_md5=True
                 )
             ]
             for path in obj_paths:
