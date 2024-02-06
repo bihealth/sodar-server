@@ -11,6 +11,8 @@ Unreleased
 Added
 -----
 
+- **Irodsbackend**
+    - Sanitize and validate ``IRODS_ROOT_PATH`` in ``get_root_path()`` (#1891)
 - **Landingzones**
     - Create assay plugin shortcut collections for zones (#1869)
 
@@ -23,6 +25,7 @@ Changed
 - **Irodsbackend**
     - Reduce redundant object queries (#1883)
     - Change method logic in ``get_objects()`` and ``get_objs_recursively()`` (#1883)
+    - Use ``get_root_path()`` within ``IrodsAPI`` (#1890)
 - **Samplesheets**
     - Improve Django messages for ``IrodsDataRequest`` exceptions (#1858)
     - Change ``IrodsDataRequest`` description if created in Ajax view (#1862)
@@ -34,6 +37,8 @@ Fixed
 
 - **General**
     - Invalid env var retrieval for ``AUTH_LDAP*_START_TLS`` (#1853)
+- **Irodsbackend**
+    - Invalid path returned by ``get_path()`` if ``IRODS_ROOT_PATH`` is set (#1889)
 - **Landingzones**
     - Stats badge displayed to superusers for ``DELETED`` zones (#1866)
 - **Samplesheets**
@@ -42,6 +47,8 @@ Fixed
     - ``IrodsDataRequest`` user changed on object update (#1864)
     - ``IrodsDataRequest._validate_action()`` failing with ``delete`` action (#1858)
     - Protocol ref editable for new row if disabled in column config (#1875)
+- **Taskflowbackend**
+    - Hardcoded iRODS path length in ``landing_zone_move`` (#1888)
 
 Removed
 -------

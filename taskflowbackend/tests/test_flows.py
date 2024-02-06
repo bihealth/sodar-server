@@ -80,6 +80,7 @@ SHEET_PATH = SHEET_DIR + 'i_small.zip'
 UPDATED_TITLE = 'NewTitle'
 UPDATED_DESC = 'updated description'
 SCRIPT_USER_NAME = 'script_user'
+IRODS_ROOT_PATH = 'sodar/root'
 
 
 class TaskflowbackendFlowTestBase(TaskflowViewTestBase):
@@ -975,6 +976,115 @@ class TestLandingZoneMove(
         sample_empty_path = os.path.join(
             self.sample_path, RESULTS_COLL, COLL_NAME
         )
+        # An empty collection should not be created by moving
+        self.assertEqual(
+            self.irods.collections.exists(sample_empty_path), False
+        )
+        self.assertEqual(self.irods.data_objects.exists(sample_obj_path), True)
+        self.assertEqual(
+            self.irods.data_objects.exists(sample_obj_path + '.md5'),
+            True,
+        )
+        self.assert_irods_access(
+            self.group_name,
+            sample_obj_path,
+            self.irods_access_read,
+        )
+        self.assert_irods_access(
+            self.group_name,
+            sample_obj_path + '.md5',
+            self.irods_access_read,
+        )
+
+
+@override_settings(IRODS_ROOT_PATH=IRODS_ROOT_PATH)
+class TestLandingZoneMoveAltRootPath(
+    LandingZoneMixin,
+    LandingZoneTaskflowMixin,
+    SampleSheetIOMixin,
+    SampleSheetTaskflowMixin,
+    TaskflowbackendFlowTestBase,
+):
+    """Tests for the landing_zone_move flow with IRODS_ROOT_PATH set"""
+
+    def setUp(self):
+        super().setUp()
+        self.project, self.owner_as = self.make_project_taskflow(
+            'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
+        )
+        self.group_name = self.irods_backend.get_user_group_name(self.project)
+        self.project_path = self.irods_backend.get_path(self.project)
+        # Import investigation
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+        # Create iRODS collections
+        self.make_irods_colls(self.investigation)
+        # Create zone
+        self.zone = self.make_landing_zone(
+            title=ZONE_TITLE,
+            project=self.project,
+            user=self.user,
+            assay=self.assay,
+            description=ZONE_DESC,
+            status=ZONE_STATUS_CREATING,
+        )
+        self.make_zone_taskflow(self.zone)
+        self.sample_path = self.irods_backend.get_path(self.assay)
+        self.zone_path = self.irods_backend.get_path(self.zone)
+        self.group_name = self.irods_backend.get_user_group_name(self.project)
+
+    def test_move_alt_root_path(self):
+        """Test landing_zone_move with IRODS_ROOT_PATH set"""
+        # Assert alt path have been set correctly and returned for all paths
+        root_path = self.irods_backend.get_root_path()
+        self.assertEqual(
+            root_path, '/{}/{}'.format(settings.IRODS_ZONE, IRODS_ROOT_PATH)
+        )
+        self.assertTrue(self.project_path.startswith(root_path))
+        self.assertTrue(self.sample_path.startswith(root_path))
+        self.assertTrue(self.zone_path.startswith(root_path))
+        self.assertEqual(self.irods.collections.exists(self.project_path), True)
+        self.assertEqual(self.irods.collections.exists(self.sample_path), True)
+        self.assertEqual(self.irods.collections.exists(self.zone_path), True)
+
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        empty_coll_path = os.path.join(self.zone_path, COLL_NAME)
+        self.irods.collections.create(empty_coll_path)
+        obj_coll_path = os.path.join(self.zone_path, OBJ_COLL_NAME)
+        obj_coll = self.irods.collections.create(obj_coll_path)
+        obj = self.make_irods_object(obj_coll, OBJ_NAME)
+        self.make_irods_md5_object(obj)
+        obj_path = os.path.join(obj_coll_path, OBJ_NAME)
+        sample_obj_path = os.path.join(
+            self.sample_path, OBJ_COLL_NAME, OBJ_NAME
+        )
+
+        self.assertEqual(self.irods.collections.exists(empty_coll_path), True)
+        self.assertEqual(self.irods.collections.exists(obj_coll_path), True)
+        self.assertEqual(self.irods.data_objects.exists(obj_path), True)
+        self.assertEqual(
+            self.irods.data_objects.exists(obj_path + '.md5'), True
+        )
+        self.assertEqual(self.irods.data_objects.exists(sample_obj_path), False)
+        self.assertEqual(
+            self.irods.data_objects.exists(sample_obj_path + '.md5'),
+            False,
+        )
+
+        flow_data = {'zone_uuid': str(self.zone.sodar_uuid)}
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='landing_zone_move',
+            flow_data=flow_data,
+        )
+        self._build_and_run(flow)
+
+        self.zone.refresh_from_db()
+        self.assertEqual(self.zone.status, ZONE_STATUS_MOVED)
+        self.assertEqual(self.irods.collections.exists(self.zone_path), False)
+        sample_empty_path = os.path.join(self.sample_path, COLL_NAME)
         # An empty collection should not be created by moving
         self.assertEqual(
             self.irods.collections.exists(sample_empty_path), False

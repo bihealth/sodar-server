@@ -68,11 +68,12 @@ class Flow(BaseLinearFlow):
         zone_all_colls += [o['path'] for o in zone_all if o['type'] == 'coll']
         # Get list of collections containing files (ignore empty colls)
         zone_object_colls = list(set([p[: p.rfind('/')] for p in zone_objects]))
-        # Convert these to collections inside sample collection
+        # Convert paths to collections inside sample collection
+        zone_path_len = len(zone_path.split('/'))
         sample_colls = [
-            sample_path + '/' + '/'.join(p.split('/')[10:])
+            sample_path + '/' + '/'.join(p.split('/')[zone_path_len:])
             for p in zone_object_colls
-            if len(p.split('/')) > 10
+            if len(p.split('/')) > zone_path_len
         ]
 
         # print('sample_path: {}'.format(sample_path))                # DEBUG

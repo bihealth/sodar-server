@@ -41,6 +41,7 @@ ZONE_TITLE = '20180503_172456_test_zone'
 ZONE_DESC = 'description'
 IRODS_ZONE = settings.IRODS_ZONE
 IRODS_ROOT_PATH = 'sodar/root'
+IRODS_ROOT_PATH_INVALID = 'sodar/../root'
 SAMPLE_COLL = settings.IRODS_SAMPLE_COLL
 LANDING_ZONE_COLL = settings.IRODS_LANDING_ZONE_COLL
 IRODS_ENV = {
@@ -142,9 +143,9 @@ class TestIrodsbackendAPI(
         self.assertEqual(expected, path)
 
     @override_settings(IRODS_ROOT_PATH=IRODS_ROOT_PATH)
-    def test_get_path_project_root_path(self):
+    def test_get_path_project_root(self):
         """Test get_irods_path() with Project object and root path"""
-        expected = '/{zone}/projects/{root_path}/{uuid_prefix}/{uuid}'.format(
+        expected = '/{zone}/{root_path}/projects/{uuid_prefix}/{uuid}'.format(
             zone=IRODS_ZONE,
             root_path=IRODS_ROOT_PATH,
             uuid_prefix=str(self.project.sodar_uuid)[:2],
@@ -230,6 +231,24 @@ class TestIrodsbackendAPI(
         expected = '/{}/{}'.format(IRODS_ZONE, IRODS_ROOT_PATH)
         self.assertEqual(self.irods_backend.get_root_path(), expected)
 
+    @override_settings(IRODS_ROOT_PATH=IRODS_ROOT_PATH + '/')
+    def test_get_root_path_trailing_slash(self):
+        """Test get_root_path() with root path setting and trailing slash"""
+        expected = '/{}/{}'.format(IRODS_ZONE, IRODS_ROOT_PATH)
+        self.assertEqual(self.irods_backend.get_root_path(), expected)
+
+    @override_settings(IRODS_ROOT_PATH=IRODS_ROOT_PATH_INVALID)
+    def test_get_root_path_invalid(self):
+        """Test get_root_path() with invalid root path"""
+        with self.assertRaises(ValueError):
+            self.irods_backend.get_root_path()
+
+    @override_settings(IRODS_ROOT_PATH=IRODS_ROOT_PATH_INVALID)
+    def test_get_root_path_with_zone(self):
+        """Test get_root_path() with value containing the zone"""
+        with self.assertRaises(ValueError):
+            self.irods_backend.get_root_path()
+
     def test_get_projects_path(self):
         """Test get_projects_path() with default settings"""
         expected = '/{}/projects'.format(IRODS_ZONE)
@@ -262,7 +281,6 @@ class TestIrodsbackendAPI(
     def test_get_uuid_from_path_wrong_type(self):
         """Test get_uuid_from_path() with invalid type (should fail)"""
         path = self.irods_backend.get_path(self.study)
-
         with self.assertRaises(ValueError):
             self.irods_backend.get_uuid_from_path(path, 'investigation')
 

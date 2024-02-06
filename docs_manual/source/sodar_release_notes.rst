@@ -15,6 +15,7 @@ Release for minor updates, maintenance and bug fixes.
 
 - Add assay plugin shortcut collection creation in landing zones
 - Fix iRODS data request issues
+- Fix IRODS_ROOT_PATH issues
 - Fix LDAP TLS settings
 - Minor updates and bug fixes
 

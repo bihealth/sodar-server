@@ -194,7 +194,8 @@ class IrodsAPI:
         """
         Validate and sanitize iRODS path.
 
-        :param path: iRODS collection or data object path (string)
+        :param path: Full or partial iRODS path to collection or data object
+                     (string)
         :raise: ValueError if iRODS path is invalid or unacceptable
         :return: Sanitized iRODS path (string)
         """
@@ -261,7 +262,6 @@ class IrodsAPI:
                     obj_class, ', '.join(ACCEPTED_PATH_TYPES)
                 )
             )
-
         if obj_class == 'Project':
             project = obj
         else:
@@ -270,10 +270,8 @@ class IrodsAPI:
             raise ValueError('Project not found for given object')
 
         # Base path (project)
-        rp = settings.IRODS_ROOT_PATH
-        path = '/{zone}/projects/{root_prefix}{uuid_prefix}/{uuid}'.format(
-            root_prefix=rp + '/' if rp else '',
-            zone=settings.IRODS_ZONE,
+        path = '{root_path}/projects/{uuid_prefix}/{uuid}'.format(
+            root_path=cls.get_root_path(),
             uuid_prefix=str(project.sodar_uuid)[:2],
             uuid=project.sodar_uuid,
         )
@@ -341,11 +339,16 @@ class IrodsAPI:
 
     @classmethod
     def get_root_path(cls):
-        """Return the root path for SODAR data"""
-        root_prefix = (
-            '/' + settings.IRODS_ROOT_PATH if settings.IRODS_ROOT_PATH else ''
-        )
-        return '/{}{}'.format(settings.IRODS_ZONE, root_prefix)
+        """Return the SODAR root path in iRODS"""
+        irods_zone = settings.IRODS_ZONE
+        root_path = ''
+        if settings.IRODS_ROOT_PATH:
+            root_path = cls.sanitize_path(settings.IRODS_ROOT_PATH)
+            if root_path.startswith('/' + irods_zone):
+                raise ValueError(
+                    'iRODS zone must not be included in IRODS_ROOT_PATH'
+                )
+        return '/{}{}'.format(irods_zone, root_path)
 
     @classmethod
     def get_projects_path(cls):
@@ -368,13 +371,9 @@ class IrodsAPI:
         :return: String or None
         :raise: ValueError if obj_type is not accepted
         """
-        root_prefix = (
-            settings.IRODS_ROOT_PATH + '/' if settings.IRODS_ROOT_PATH else ''
-        )
         path_regex = {
-            'project': '/{}/'.format(settings.IRODS_ZONE)
-            + root_prefix
-            + 'projects/[a-zA-Z0-9]{2}/(.+?)(?:/|$)',
+            'project': cls.get_root_path()
+            + '/projects/[a-zA-Z0-9]{2}/(.+?)(?:/|$)',
             'study': '/study_(.+?)(?:/|$)',
             'assay': '/assay_(.+?)(?:/|$)',
         }

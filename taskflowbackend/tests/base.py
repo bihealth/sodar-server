@@ -192,19 +192,30 @@ class TaskflowTestMixin(ProjectMixin, RoleMixin, RoleAssignmentMixin):
                 'TASKFLOW_TEST_MODE not True, cleanup command not allowed'
             )
         irods_backend = get_backend_api('omics_irods')
-        projects_root = irods_backend.get_projects_path()
         permanent_users = getattr(
             settings, 'TASKFLOW_TEST_PERMANENT_USERS', DEFAULT_PERMANENT_USERS
         )
         # TODO: Remove stuff from user home collections
 
         with irods_backend.get_session() as irods:
-            # Remove project folders
+            # Remove SODAR project and root collections
+            rm_kwargs = {'recurse': True, 'force': True}
             try:
-                irods.collections.remove(
-                    projects_root, recurse=True, force=True
-                )
-                logger.debug('Removed projects root: {}'.format(projects_root))
+                if settings.IRODS_ROOT_PATH:
+                    sodar_root = '/{}/{}'.format(
+                        settings.IRODS_ZONE,
+                        settings.IRODS_ROOT_PATH.split('/')[0],
+                    )
+                    irods.collections.remove(sodar_root, **rm_kwargs)
+                    logger.debug(
+                        'Removed root collection: {}'.format(sodar_root)
+                    )
+                else:
+                    projects_root = irods_backend.get_projects_path()
+                    irods.collections.remove(projects_root, **rm_kwargs)
+                    logger.debug(
+                        'Removed projects root: {}'.format(projects_root)
+                    )
             except Exception:
                 pass  # This is OK, the root just wasn't there
                 # Remove created user groups and users
