@@ -20,6 +20,7 @@ Changed
 -------
 
 - **General**
+    - Upgrade to Django v3.2.24 (#1854)
     - Upgrade critical Vue app dependencies (#1854)
     - Update installation documentation (#1871)
 - **Irodsbackend**
