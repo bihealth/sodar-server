@@ -49,6 +49,7 @@ Fixed
     - ``IrodsDataRequest`` user changed on object update (#1864)
     - ``IrodsDataRequest._validate_action()`` failing with ``delete`` action (#1858)
     - Protocol ref editable for new row if disabled in column config (#1875)
+    - Sheet template creation failure with slash characters in title/ID fields (#1896)
 - **Taskflowbackend**
     - Hardcoded iRODS path length in ``landing_zone_move`` (#1888)
 

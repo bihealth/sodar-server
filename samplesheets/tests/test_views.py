@@ -120,6 +120,11 @@ REMOTE_SITE_SECRET = build_secret()
 EDIT_NEW_VALUE_STR = 'edited value'
 DUMMY_UUID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
 IRODS_FILE_PATH = '/sodarZone/path/test1.txt'
+TPL_FILE_NAME_FIELDS = [
+    'investigation_title',
+    'investigation_id',
+    'study_title',
+]
 with open(CONFIG_PATH_DEFAULT) as fp:
     CONFIG_DATA_DEFAULT = json.load(fp)
 
@@ -790,6 +795,30 @@ class TestSheetTemplateCreateView(SamplesheetsViewTestBase):
                 )
             isa_tab = ISATab.objects.first()
             self.assertEqual(isa_tab.tags, ['CREATE'])
+            self.assertEqual(response.status_code, 302, msg=t.name)
+            self.assertIsNotNone(
+                self.project.investigations.first(), msg=t.name
+            )
+            self.project.investigations.first().delete()
+
+    def test_post_batch_file_name_slash(self):
+        """Test POST with slashes in values used for file names"""
+        for t in ISA_TEMPLATES:
+            self.assertIsNone(self.project.investigations.first())
+            post_data = self._get_post_data(t)
+            for k in TPL_FILE_NAME_FIELDS:
+                if k in post_data:
+                    post_data[k] += '/test'
+            with self.login(self.user):
+                response = self.client.post(
+                    reverse(
+                        'samplesheets:template_create',
+                        kwargs={'project': self.project.sodar_uuid},
+                    )
+                    + '?sheet_tpl='
+                    + t.name,
+                    data=post_data,
+                )
             self.assertEqual(response.status_code, 302, msg=t.name)
             self.assertIsNotNone(
                 self.project.investigations.first(), msg=t.name
