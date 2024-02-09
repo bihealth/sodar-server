@@ -32,6 +32,7 @@ Changed
     - Change ``IrodsDataRequest`` description if created in Ajax view (#1862)
 - **Taskflowbackend**
     - Optimize ``landing_zone_move`` iRODS path retrieval (#1882)
+    - Set zone status on uncaught errors in ``run_flow()`` (#1458)
 
 Fixed
 -----

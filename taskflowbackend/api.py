@@ -125,7 +125,7 @@ class TaskflowAPI:
         ex_msg = None
         coordinator = None
         lock = None
-        # Get zone if present in flow
+        # Get landing zone if present in flow
         zone = None
         if flow.flow_data.get('zone_uuid'):
             zone = LandingZone.objects.filter(
@@ -185,9 +185,18 @@ class TaskflowAPI:
 
         # Raise exception if failed, otherwise return result
         if ex_msg:
-            logger.error(ex_msg)  # TODO: Isn't this redundant?
-            # NOTE: Not providing zone here since it's handled by flow
-            cls._raise_flow_exception(ex_msg, tl_event, None)
+            logger.error(ex_msg)
+            # Provide landing zone if error occurs but status has not been set
+            # (This means a failure has not been properly handled in the flow)
+            ex_zone = None
+            if zone:
+                zone.refresh_from_db()
+                if zone.status not in [
+                    ZONE_STATUS_NOT_CREATED,
+                    ZONE_STATUS_FAILED,
+                ]:
+                    ex_zone = zone
+            cls._raise_flow_exception(ex_msg, tl_event, ex_zone)
         return flow_result
 
     def submit(
