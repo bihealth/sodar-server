@@ -34,6 +34,7 @@ Changed
 - **Taskflowbackend**
     - Optimize ``landing_zone_move`` iRODS path retrieval (#1882)
     - Set zone status on uncaught errors in ``run_flow()`` (#1458)
+    - Change ``TASKFLOW_IRODS_CONN_TIMEOUT`` default value to ``960`` (#1900)
 
 Fixed
 -----
