@@ -18,6 +18,7 @@ Release for minor updates, maintenance and bug fixes.
 - Fix IRODS_ROOT_PATH issues
 - Fix LDAP TLS settings
 - Minor updates and bug fixes
+- Upgrade to SODAR Core v0.13.4
 
 
 v0.14.1 (2023-12-12)

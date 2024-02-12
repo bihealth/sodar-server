@@ -21,6 +21,7 @@ Changed
 
 - **General**
     - Upgrade to Django v3.2.24 (#1854)
+    - Upgrade to django-sodar-core v0.13.4-WIP (#1899)
     - Upgrade critical Vue app dependencies (#1854)
     - Update installation documentation (#1871)
 - **Irodsbackend**
