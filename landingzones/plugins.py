@@ -19,6 +19,8 @@ from samplesheets.models import Investigation, Assay
 
 from landingzones.constants import (
     STATUS_ALLOW_UPDATE,
+    STATUS_BUSY,
+    STATUS_FINISHED,
     ZONE_STATUS_MOVED,
     ZONE_STATUS_DELETED,
 )
@@ -147,6 +149,43 @@ class ProjectAppPlugin(
                 'url': obj.get_url(),
                 'label': obj.get_display_name(),
             }
+
+    def get_statistics(self):
+        """
+        Return app statistics as a dict. Should take the form of
+        {id: {label, value, url (optional), description (optional)}}.
+
+        :return: Dict
+        """
+        return {
+            'zones_total': {
+                'label': 'Total zones',
+                'value': LandingZone.objects.count(),
+            },
+            'zones_active': {
+                'label': 'Active zones',
+                'value': LandingZone.objects.filter(
+                    status__in=STATUS_ALLOW_UPDATE
+                ).count(),
+                'description': 'Landing zones available for use (active or '
+                'failed)',
+            },
+            'zones_finished': {
+                'label': 'Finished zones',
+                'value': LandingZone.objects.filter(
+                    status__in=STATUS_FINISHED
+                ).count(),
+                'description': 'Landing zones finished successfully, deleted '
+                'or not created',
+            },
+            'zones_busy': {
+                'label': 'Busy zones',
+                'value': LandingZone.objects.filter(
+                    status__in=STATUS_BUSY
+                ).count(),
+                'description': 'Landing zones with an ongoing transaction',
+            },
+        }
 
     def get_project_list_value(self, column_id, project, user):
         """
