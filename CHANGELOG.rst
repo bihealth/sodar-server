@@ -15,6 +15,8 @@ Added
     - Sanitize and validate ``IRODS_ROOT_PATH`` in ``get_root_path()`` (#1891)
 - **Landingzones**
     - Create assay plugin shortcut collections for zones (#1869)
+- **Taskflowbackend**
+    - Django settings in siteinfo (#1901)
 
 Changed
 -------
