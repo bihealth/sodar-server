@@ -20,12 +20,10 @@ var updateZoneStatus = function() {
     // Make the POST request to retrieve zone statuses
     if (zoneUuids.length > 0) {
         $.ajax({
-            url: zoneStatusUrl,
+            url: zoneStatusURL,
             method: 'POST',
             dataType: 'JSON',
-            data: {
-                zone_uuids: zoneUuids
-            }
+            data: {zone_uuids: zoneUuids}
         }).done(function(data) {
             $('.sodar-lz-zone-tr-existing').each(function() {
                 var zoneUuid = $(this).attr('data-zone-uuid');
@@ -67,9 +65,7 @@ var updateZoneStatus = function() {
                                     'span#sodar-lz-zone-status-moved-' + zoneUuid
                                 );
                                 statusMovedSpan.html(
-                                    '<p class="mb-0"><a href="' +
-                                    sampleUrl +
-                                    '">' +
+                                    '<p class="mb-0"><a href="' + sampleUrl + '">' +
                                     '<i class="iconify" data-icon="mdi:arrow-right-circle"></i> ' +
                                     'Browse files in sample sheet</a></p>'
                                 );

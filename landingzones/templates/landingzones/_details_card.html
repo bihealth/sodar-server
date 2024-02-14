@@ -17,16 +17,13 @@
   .sodar-lz-detail-table td:first-child {
     border-left: 0;
   }
-
   .sodar-lz-detail-table thead tr th:nth-child(1) {
     width: 250px;
   }
-
   .sodar-lz-detail-table thead tr th:nth-child(3) {
     white-space: nowrap;
     width: 150px;
   }
-
   /* Responsive modifications */
   @media screen and (max-width: 1000px) {
     .table.sodar-lz-detail-table tr th:nth-child(2) {
@@ -41,6 +38,8 @@
 <!-- Settings for Javascript -->
 <script type="text/javascript">
   window.statusInterval = {{ zone_status_interval }} * 5000;
+  var zoneStatusURL = "{% url 'landingzones:ajax_status' project=project.sodar_uuid %}";
+  var currentUserURL = "{% url 'projectroles:ajax_user_current' %}";
 </script>
 
 <!-- Landingzones Javascript -->
@@ -61,7 +60,7 @@
         {% include 'landingzones/_zone_item.html' with item=zone details_card_mode=True %}
       {% endfor %}
     {% else %}
-      <tr>
+      <tr id="sodar-lz-detail-table-no-zones">
         <td class="bg-faded font-italic text-center" colspan="4">
           No active landing zones found.
         </td>

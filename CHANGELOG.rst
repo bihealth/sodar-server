@@ -16,6 +16,7 @@ Added
 - **Landingzones**
     - Create assay plugin shortcut collections for zones (#1869)
     - Zone statistics for siteinfo (#1898)
+    - UI tests for project details card (#1902)
 - **Taskflowbackend**
     - Django settings in siteinfo (#1901)
 
@@ -50,6 +51,7 @@ Fixed
     - Stats badge stuck in updating with non-200 POST status (#1327, #1886)
 - **Landingzones**
     - Stats badge displayed to superusers for ``DELETED`` zones (#1866)
+    - Zone status updating not working in project details card (#1902)
 - **Samplesheets**
     - Invalid WebDAV URLs generated in ``IrodsDataRequestListView`` (#1860)
     - Superuser not allowed to edit iRODS request from other users in UI (#1863)

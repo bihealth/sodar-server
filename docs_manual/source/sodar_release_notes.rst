@@ -19,6 +19,7 @@ Release for minor updates, maintenance and bug fixes.
 - Fix IRODS_ROOT_PATH issues
 - Fix LDAP TLS settings
 - Fix iRODS stats badge stuck in "updating"
+- Fix landing zone status updating not working in project details card
 - Minor updates and bug fixes
 - Upgrade to SODAR Core v0.13.4
 
