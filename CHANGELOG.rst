@@ -31,6 +31,7 @@ Changed
     - Reduce redundant object queries (#1883)
     - Change method logic in ``get_objects()`` and ``get_objs_recursively()`` (#1883)
     - Use ``get_root_path()`` within ``IrodsAPI`` (#1890)
+    - Refactor ``IrodsStatisticsAjaxView`` and related JQuery (#1903)
 - **Samplesheets**
     - Improve Django messages for ``IrodsDataRequest`` exceptions (#1858)
     - Change ``IrodsDataRequest`` description if created in Ajax view (#1862)
@@ -46,6 +47,7 @@ Fixed
     - Invalid env var retrieval for ``AUTH_LDAP*_START_TLS`` (#1853)
 - **Irodsbackend**
     - Invalid path returned by ``get_path()`` if ``IRODS_ROOT_PATH`` is set (#1889)
+    - Stats badge stuck in updating with non-200 POST status (#1327, #1886)
 - **Landingzones**
     - Stats badge displayed to superusers for ``DELETED`` zones (#1866)
 - **Samplesheets**

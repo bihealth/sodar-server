@@ -148,40 +148,31 @@ class IrodsStatisticsAjaxView(BaseIrodsAjaxView):
             return Response(self._get_detail(ex), status=500)
 
     def post(self, request, *args, **kwargs):
-        data = {'coll_objects': []}
-        q_dict = request.POST
+        ret = {}
         project_path = self.irods_backend.get_path(self.project)
         try:
             irods = self.irods_backend.get_session_obj()
         except Exception as ex:
             return JsonResponse(self._get_detail(ex), status=500)
-        for path in q_dict.getlist('paths'):
-            if project_path not in path:
-                data['coll_objects'].append(
-                    {'path': path, 'status': '400', 'stats': {}}
-                )
-                break
-            if not self._check_collection_perm(path, request.user, irods):
-                data['coll_objects'].append(
-                    {'path': path, 'status': '403', 'stats': {}}
-                )
-                break
-            try:
-                if not irods.collections.exists(path):
-                    data['coll_objects'].append(
-                        {'path': path, 'status': '404', 'stats': {}}
-                    )
-                else:
-                    ret_data = self.irods_backend.get_object_stats(irods, path)
-                    data['coll_objects'].append(
-                        {'path': path, 'status': '200', 'stats': ret_data}
-                    )
-            except Exception:
-                data['coll_objects'].append(
-                    {'path': path, 'status': '500', 'stats': {}}
-                )
+        for p in request.POST.getlist('paths'):
+            d = {}
+            if not p.startswith(project_path):
+                d['status'] = 400
+            elif not self._check_collection_perm(p, request.user, irods):
+                d['status'] = 403
+            else:
+                try:
+                    if irods.collections.exists(p):
+                        stats = self.irods_backend.get_object_stats(irods, p)
+                        d.update(stats)
+                        d['status'] = 200
+                    else:
+                        d['status'] = 404
+                except Exception:
+                    d['status'] = 500
+            ret[p] = d
         irods.cleanup()
-        return Response(data, status=200)
+        return Response({'irods_stats': ret}, status=200)
 
 
 class IrodsObjectListAjaxView(BaseIrodsAjaxView):

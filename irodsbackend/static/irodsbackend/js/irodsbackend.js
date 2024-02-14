@@ -2,54 +2,48 @@
  Collection statistics updating function
  ***************************************/
 var updateCollectionStats = function() {
-    var statsPaths = [];
-    var projectUUID = null;
+    var paths = {};
 
     $('span.sodar-irods-stats').each(function () {
-        var currentPath = decodeURIComponent($(this).attr(
-            'data-stats-url').split('=')[1]);
-        if (!projectUUID) {
-            projectUUID = currentPath.split('/')[4];
+        var projectUUID = $(this).attr('data-project-uuid');
+        if (!paths.hasOwnProperty(projectUUID)) {
+            paths[projectUUID] = [];
         }
-        if (!(statsPaths.includes(currentPath))){
-            statsPaths.push(currentPath);
+        var currentPath = $(this).attr('data-stats-path');
+        if (!(paths[projectUUID].includes(currentPath))) {
+            paths[projectUUID].push(currentPath);
         }
     });
 
-    var d = {paths: statsPaths};
-
-    if (projectUUID) {
+    $.each(paths, function(projectUUID, paths) {
         $.ajax({
             url: '/irodsbackend/ajax/stats/' + projectUUID,
             method: 'POST',
             dataType: 'json',
-            data: d,
+            data: {paths: paths},
             contentType: "application/x-www-form-urlencoded; charset=UTF-8",
             traditional: true
         }).done(function (data) {
             $('span.sodar-irods-stats').each(function () {
                 var statsSpan = $(this);
-                var irodsPath = decodeURIComponent(statsSpan.attr(
-                    'data-stats-url')).split('=')[1];
-                var fileSuffix = 's';
-                for (idx in data['coll_objects']) {
-                    if (data['coll_objects'].hasOwnProperty(idx)) {
-                        if (irodsPath === data['coll_objects'][idx]['path']
-                                && data['coll_objects'][idx]['status'] === '200') {
-                            var stats = data['coll_objects'][idx]['stats'];
-                            if (stats['file_count'] === 1) {
-                                fileSuffix = '';
-                            }
-                            statsSpan.text(
-                                stats['file_count'] + ' file' + fileSuffix +
-                                ' ('+ humanFileSize(stats['total_size'], true) + ')');
-                            break;
-                        }
-                    }
+                var path = statsSpan.attr('data-stats-path');
+                var s = 's';
+                if (path in data['irods_stats']) {
+                    var status = data['irods_stats'][path]['status'];
+                    if (status === 200) {
+                        var fileCount = data['irods_stats'][path]['file_count'];
+                        var totalSize = data['irods_stats'][path]['total_size'];
+                        if (fileCount === 1) s = '';
+                        statsSpan.text(
+                            fileCount + ' file' + s +
+                            ' (' + humanFileSize(totalSize, true) + ')');
+                    } else if (status === 404) statsSpan.text('Not found');
+                    else if (status === 403) statsSpan.text('Denied');
+                    else statsSpan.text('Error');
                 }
             });
         });
-    }
+    });
 };
 
 /***************************************
