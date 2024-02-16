@@ -20,6 +20,7 @@ from django.utils import timezone
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
+from projectroles.views import MSG_NO_AUTH
 
 # Appalerts dependency
 from appalerts.models import AppAlert
@@ -2248,8 +2249,7 @@ class TestIrodsDataRequestRejectView(
             self.assertRedirects(response, reverse('home'))
 
         self.assertEqual(
-            list(get_messages(response.wsgi_request))[-1].message,
-            'User not authorized for requested action.',
+            list(get_messages(response.wsgi_request))[-1].message, MSG_NO_AUTH
         )
         request.refresh_from_db()
         self.assertEqual(request.status, IRODS_REQUEST_STATUS_ACTIVE)
