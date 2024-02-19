@@ -292,17 +292,21 @@ class SetAccessTask(IrodsBaseTask):
         *args,
         **kwargs
     ):
-        if obj_target:
-            target = self.irods.data_objects.get(path)
-            recursive = False
-        else:
-            target = self.irods.collections.get(path)
-            recursive = recursive
+        try:
+            if obj_target:
+                target = self.irods.data_objects.get(path)
+                recursive = False
+            else:
+                target = self.irods.collections.get(path)
+                recursive = recursive
+            target_access = self.irods.permissions.get(target=target)
+        except Exception as ex:
+            self._raise_irods_exception(ex, path)
 
-        target_access = self.irods.permissions.get(target=target)
         user_access = next(
             (x for x in target_access if x.user_name == user_name), None
         )
+        modifying_data = False
         if (
             user_access
             and user_access.access_name != access_lookup[access_name]
@@ -314,8 +318,6 @@ class SetAccessTask(IrodsBaseTask):
         elif not user_access:
             self.execute_data['access_name'] = 'null'
             modifying_data = True
-        else:
-            modifying_data = False
 
         if modifying_data:
             acl = iRODSAccess(
@@ -327,8 +329,7 @@ class SetAccessTask(IrodsBaseTask):
             try:
                 self.irods.permissions.set(acl, recursive=recursive)
             except Exception as ex:
-                ex_info = user_name
-                self._raise_irods_exception(ex, ex_info)
+                self._raise_irods_exception(ex, user_name)
             self.data_modified = True
         super().execute(*args, **kwargs)
 

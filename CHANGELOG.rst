@@ -61,6 +61,7 @@ Fixed
     - Sheet template creation failure with slash characters in title/ID fields (#1896)
 - **Taskflowbackend**
     - Hardcoded iRODS path length in ``landing_zone_move`` (#1888)
+    - Uncaught exceptions in ``SetAccessTask`` (#1906)
 
 Removed
 -------
