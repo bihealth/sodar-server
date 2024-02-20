@@ -19,6 +19,8 @@ Added
     - UI tests for project details card (#1902)
 - **Taskflowbackend**
     - Django settings in siteinfo (#1901)
+    - ``BatchSetAccessTask`` in iRODS tasks (#1905)
+    - ``IrodsAccessMixin`` task helper mixin (#1905)
 
 Changed
 -------
@@ -62,6 +64,7 @@ Fixed
 - **Taskflowbackend**
     - Hardcoded iRODS path length in ``landing_zone_move`` (#1888)
     - Uncaught exceptions in ``SetAccessTask`` (#1906)
+    - Crash in ``landing_zone_create`` with large amount of collections (#1905)
 
 Removed
 -------
