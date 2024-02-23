@@ -17,6 +17,8 @@ Added
     - Create assay plugin shortcut collections for zones (#1869)
     - Zone statistics for siteinfo (#1898)
     - UI tests for project details card (#1902)
+- **Samplesheets**
+    - ``IrodsDataRequest`` timeline event extra data (#1912)
 - **Taskflowbackend**
     - Django settings in siteinfo (#1901)
     - ``BatchSetAccessTask`` in iRODS tasks (#1905)
@@ -38,6 +40,7 @@ Changed
 - **Samplesheets**
     - Improve Django messages for ``IrodsDataRequest`` exceptions (#1858)
     - Change ``IrodsDataRequest`` description if created in Ajax view (#1862)
+    - Refactor ``IrodsDataRequestModifyMixin`` timeline helpers (#1913)
 - **Taskflowbackend**
     - Optimize ``landing_zone_move`` iRODS path retrieval (#1882)
     - Set zone status on uncaught errors in ``run_flow()`` (#1458)

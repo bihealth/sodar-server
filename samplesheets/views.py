@@ -794,70 +794,35 @@ class IrodsDataRequestModifyMixin:
 
     # Timeline helpers ---------------------------------------------------------
 
-    def add_tl_create(self, irods_request):
+    def add_tl_event(self, irods_request, action):
         """
-        Create timeline event for iRODS data request creation.
+        Create timeline event for iRODS data request modification.
 
         :param irods_request: IrodsDataRequest object
+        :param action: 'create', 'update' or 'delete' (string)
         """
         if not self.timeline:
             return
+        extra_data = {}
+        if action in ['create', 'update']:
+            extra_data = {
+                'action': irods_request.action,
+                'path': irods_request.path,
+                'description': irods_request.description,
+            }
         tl_event = self.timeline.add_event(
             project=irods_request.project,
             app_name=APP_NAME,
             user=irods_request.user,
-            event_name=IRODS_REQUEST_EVENT_CREATE,
-            description='create iRODS data request {irods_request}',
+            event_name='irods_request_{}'.format(action),
+            description=action + ' iRODS data request {irods_request}',
             status_type='OK',
+            extra_data=extra_data,
         )
         tl_event.add_object(
             obj=irods_request,
             label='irods_request',
             name=irods_request.get_display_name(),
-        )
-
-    def add_tl_update(self, irods_request):
-        """
-        Create timeline event for iRODS data request update.
-
-        :param irods_request: IrodsDataRequest object
-        """
-        if not self.timeline:
-            return
-        tl_event = self.timeline.add_event(
-            project=irods_request.project,
-            app_name=APP_NAME,
-            user=irods_request.user,
-            event_name=IRODS_REQUEST_EVENT_UPDATE,
-            description='update iRODS data request {irods_request}',
-            status_type='OK',
-        )
-        tl_event.add_object(
-            obj=irods_request,
-            label='irods_request',
-            name=irods_request.get_display_name(),
-        )
-
-    def add_tl_delete(self, irods_request):
-        """
-        Create timeline event for iRODS data request deletion.
-
-        :param irods_request: IrodsDataRequest object
-        """
-        if not self.timeline:
-            return
-        tl_event = self.timeline.add_event(
-            project=irods_request.project,
-            app_name=APP_NAME,
-            user=irods_request.user,
-            event_name=IRODS_REQUEST_EVENT_DELETE,
-            description='delete iRODS data request {irods_request}',
-            status_type='OK',
-        )
-        tl_event.add_object(
-            obj=irods_request,
-            label='irods_request',
-            name=str(irods_request),
         )
 
     # App Alert Helpers --------------------------------------------------------
@@ -2495,7 +2460,7 @@ class IrodsDataRequestCreateView(
         obj.project = project
         obj.save()
         # Create timeline event
-        self.add_tl_create(obj)
+        self.add_tl_event(obj, 'create')
         # Add app alerts to owners/delegates
         self.add_alerts_create(project)
         messages.success(
@@ -2543,7 +2508,7 @@ class IrodsDataRequestUpdateView(
 
     def form_valid(self, form):
         obj = form.save()
-        self.add_tl_update(obj)
+        self.add_tl_event(obj, 'update')
         messages.success(
             self.request,
             'iRODS data request "{}" updated.'.format(obj.get_display_name()),
@@ -2582,7 +2547,7 @@ class IrodsDataRequestDeleteView(
 
     def get_success_url(self):
         # Add timeline event
-        self.add_tl_delete(self.object)
+        self.add_tl_event(self.object, 'delete')
         # Handle project alerts
         self.handle_alerts_deactivate(self.object)
         messages.success(self.request, 'iRODS data request deleted.')

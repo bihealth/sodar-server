@@ -1873,7 +1873,7 @@ class IrodsDataRequestCreateAjaxView(
         )
 
         # Create timeline event
-        self.add_tl_create(irods_request)
+        self.add_tl_event(irods_request, 'create')
         # Add app alerts to owners/delegates
         self.add_alerts_create(project)
         return Response(
@@ -1911,16 +1911,12 @@ class IrodsDataRequestDeleteAjaxView(
             )
 
         # Add timeline event
-        self.add_tl_delete(irods_request)
+        self.add_tl_event(irods_request, 'delete')
         # Handle project alerts
         self.handle_alerts_deactivate(irods_request)
         irods_request.delete()
         return Response(
-            {
-                'detail': 'ok',
-                'status': None,
-                'user': None,
-            },
+            {'detail': 'ok', 'status': None, 'user': None},
             status=200,
         )
 

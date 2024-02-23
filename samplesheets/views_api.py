@@ -588,7 +588,7 @@ class IrodsDataRequestCreateAPIView(
     def perform_create(self, serializer):
         serializer.save()
         # Create timeline event
-        self.add_tl_create(serializer.instance)
+        self.add_tl_event(serializer.instance, 'create')
         # Add app alerts to owners/delegates
         self.add_alerts_create(serializer.instance.project)
 
@@ -620,7 +620,7 @@ class IrodsDataRequestUpdateAPIView(
             raise PermissionDenied
         serializer.save()
         # Add timeline event
-        self.add_tl_update(serializer.instance)
+        self.add_tl_event(serializer.instance, 'update')
 
 
 class IrodsDataRequestDestroyAPIView(
@@ -647,7 +647,7 @@ class IrodsDataRequestDestroyAPIView(
             raise PermissionDenied
         instance.delete()
         # Add timeline event
-        self.add_tl_delete(instance)
+        self.add_tl_event(instance, 'delete')
         # Handle project alerts
         self.handle_alerts_deactivate(instance)
 

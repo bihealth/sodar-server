@@ -1161,10 +1161,10 @@ class IrodsDataRequestViewTestBase(
 
 
 class TestIrodsDataRequestCreateView(IrodsDataRequestViewTestBase):
-    """Test IrodsDataRequestCreateView"""
+    """Tests for IrodsDataRequestCreateView"""
 
-    def test_create(self):
-        """Test creating a delete request"""
+    def test_post(self):
+        """Test IrodsDataRequestCreateView POST"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         self._assert_tl_count(EVENT_CREATE, 0)
         self._assert_alert_count(EVENT_CREATE, self.user, 0)
@@ -1195,11 +1195,19 @@ class TestIrodsDataRequestCreateView(IrodsDataRequestViewTestBase):
         self.assertEqual(obj.path, self.obj_path)
         self.assertEqual(obj.description, IRODS_REQUEST_DESC)
         self._assert_tl_count(EVENT_CREATE, 1)
+        self.assertEqual(
+            ProjectEvent.objects.get(event_name=EVENT_CREATE).extra_data,
+            {
+                'action': IRODS_REQUEST_ACTION_DELETE,
+                'path': obj.path,
+                'description': obj.description,
+            },
+        )
         self._assert_alert_count(EVENT_CREATE, self.user, 1)
         self._assert_alert_count(EVENT_CREATE, self.user_delegate, 1)
 
-    def test_create_trailing_slash(self):
-        """Test creating a delete request with trailing slash in path"""
+    def test_post_trailing_slash(self):
+        """Test POST with trailing slash in path"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         post_data = {
             'path': self.obj_path + '/',
@@ -1231,8 +1239,8 @@ class TestIrodsDataRequestCreateView(IrodsDataRequestViewTestBase):
         self.assertEqual(obj.path, self.obj_path)
         self.assertEqual(obj.description, IRODS_REQUEST_DESC)
 
-    def test_create_invalid_form_data(self):
-        """Test creating a delete request with invalid form data"""
+    def test_post_invalid_data(self):
+        """Test POST with invalid form data"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         self._assert_tl_count(EVENT_CREATE, 0)
         self._assert_alert_count(EVENT_CREATE, self.user, 0)
@@ -1257,8 +1265,8 @@ class TestIrodsDataRequestCreateView(IrodsDataRequestViewTestBase):
         self._assert_alert_count(EVENT_CREATE, self.user, 0)
         self._assert_alert_count(EVENT_CREATE, self.user_delegate, 0)
 
-    def test_create_invalid_path_assay_collection(self):
-        """Test creating a delete request with assay path (should fail)"""
+    def test_post_assay_path(self):
+        """Test POST with assay path (should fail)"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         post_data = {'path': self.assay_path, 'description': IRODS_REQUEST_DESC}
 
@@ -1278,7 +1286,7 @@ class TestIrodsDataRequestCreateView(IrodsDataRequestViewTestBase):
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
 
     def test_create_multiple(self):
-        """Test creating multiple_requests"""
+        """Test POST with multiple requests for same path"""
         path2 = os.path.join(self.assay_path, IRODS_FILE_NAME2)
         self.irods.data_objects.create(path2)
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
@@ -1359,6 +1367,14 @@ class TestIrodsDataRequestUpdateView(
         self.assertEqual(self.request.path, self.obj_path)
         self.assertEqual(self.request.description, IRODS_REQUEST_DESC_UPDATE)
         self._assert_tl_count(EVENT_UPDATE, 1)
+        self.assertEqual(
+            ProjectEvent.objects.get(event_name=EVENT_UPDATE).extra_data,
+            {
+                'action': IRODS_REQUEST_ACTION_DELETE,
+                'path': self.request.path,
+                'description': self.request.description,
+            },
+        )
 
     def test_post_superuser(self):
         """Test POST as superuser"""
@@ -1406,7 +1422,7 @@ class TestIrodsDataRequestUpdateView(
 class TestIrodsDataRequestDeleteView(
     IrodsDataRequestMixin, IrodsDataRequestViewTestBase
 ):
-    """Tests for IrodsDataRequestUpdateView"""
+    """Tests for IrodsDataRequestDeleteView"""
 
     def setUp(self):
         super().setUp()
@@ -1415,8 +1431,8 @@ class TestIrodsDataRequestDeleteView(
             kwargs={'project': self.project.sodar_uuid},
         )
 
-    def test_delete_contributor(self):
-        """Test POST request for deleting a request"""
+    def test_post(self):
+        """Test IrodsDataRequestDeleteView POST"""
         # NOTE: We use post() to ensure alerts are created
         with self.login(self.user_contributor):
             self.client.post(self.create_url, self.post_data)
@@ -1448,13 +1464,16 @@ class TestIrodsDataRequestDeleteView(
         )
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         self.assert_irods_obj(self.obj_path)
-        # Create requests should be deleted
         self._assert_tl_count(EVENT_DELETE, 1)
+        self.assertEqual(
+            ProjectEvent.objects.get(event_name=EVENT_DELETE).extra_data, {}
+        )
+        # Create alerts should be deleted
         self._assert_alert_count(EVENT_CREATE, self.user, 0)
         self._assert_alert_count(EVENT_CREATE, self.user_delegate, 0)
 
-    def test_delete_one_of_multiple(self):
-        """Test deleting one of multiple requests"""
+    def test_post_one_of_multiple(self):
+        """Test POST for one of multiple requests"""
         self._assert_tl_count(EVENT_DELETE, 0)
         obj_path2 = os.path.join(self.assay_path, IRODS_FILE_NAME2)
         self.irods.data_objects.create(obj_path2)
@@ -1500,8 +1519,8 @@ class TestIrodsDataRequestAcceptView(
             kwargs={'project': self.project.sodar_uuid},
         )
 
-    def test_render(self):
-        """Test rendering IrodsDataRequestAcceptView"""
+    def test_get(self):
+        """Test IrodsDataRequestAcceptView GET"""
         self.assert_irods_obj(self.obj_path)
         self.make_irods_request(
             project=self.project,
@@ -1523,8 +1542,8 @@ class TestIrodsDataRequestAcceptView(
             )
         self.assertEqual(response.context['request_objects'][0], obj)
 
-    def test_render_coll(self):
-        """Test rendering IrodsDataRequestAcceptView with collection request"""
+    def test_get_coll(self):
+        """Test GET with collection request"""
         coll_path = os.path.join(self.assay_path, 'request_coll')
         self.irods.collections.create(coll_path)
         self.assertEqual(self.irods.collections.exists(coll_path), True)
@@ -1547,8 +1566,8 @@ class TestIrodsDataRequestAcceptView(
             )
         self.assertEqual(response.context['request_objects'][0], request)
 
-    def test_accept(self):
-        """Test accepting a delete request"""
+    def test_post(self):
+        """Test POST to accept delete request"""
         self.assert_irods_obj(self.obj_path)
         with self.login(self.user_contributor):
             self.client.post(self.create_url, self.post_data)
@@ -1589,8 +1608,8 @@ class TestIrodsDataRequestAcceptView(
         self._assert_alert_count(EVENT_ACCEPT, self.user_delegate, 0)
         self.assert_irods_obj(self.obj_path, False)
 
-    def test_accept_no_request(self):
-        """Test accepting non-existing delete request"""
+    def test_post_no_request(self):
+        """Test POST with non-existing delete request"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         with self.login(self.user_owner_cat):
             response = self.client.post(
@@ -1602,8 +1621,8 @@ class TestIrodsDataRequestAcceptView(
             )
         self.assertEqual(response.status_code, 404)
 
-    def test_accept_invalid_form_data(self):
-        """Test accepting delete request with invalid form data"""
+    def test_post_invalid_data(self):
+        """Test POST with invalid form data"""
         self.assert_irods_obj(self.obj_path)
         with self.login(self.user_contributor):
             self.client.post(self.create_url, self.post_data)
@@ -1636,8 +1655,8 @@ class TestIrodsDataRequestAcceptView(
         self._assert_alert_count(EVENT_ACCEPT, self.user_delegate, 0)
         self.assert_irods_obj(self.obj_path)
 
-    def test_accept_owner(self):
-        """Test accepting delete request as owner"""
+    def test_post_as_owner(self):
+        """Test POST as owner"""
         self.assert_irods_obj(self.obj_path)
         request = self.make_irods_request(
             project=self.project,
@@ -1666,8 +1685,8 @@ class TestIrodsDataRequestAcceptView(
         self._assert_alert_count(EVENT_ACCEPT, self.user_delegate, 0)
         self._assert_alert_count(EVENT_ACCEPT, self.user_contributor, 1)
 
-    def test_accept_delegate(self):
-        """Test accepting delete request as delegate"""
+    def test_post_delegate(self):
+        """Test POST as delegate"""
         self.assert_irods_obj(self.obj_path)
         request = self.make_irods_request(
             project=self.project,
@@ -1696,8 +1715,8 @@ class TestIrodsDataRequestAcceptView(
         self._assert_alert_count(EVENT_ACCEPT, self.user_delegate, 0)
         self._assert_alert_count(EVENT_ACCEPT, self.user_contributor, 1)
 
-    def test_accept_contributor(self):
-        """Test accepting delete request as contributor"""
+    def test_post_contributor(self):
+        """Test POST as contributor"""
         self.assert_irods_obj(self.obj_path)
         request = self.make_irods_request(
             project=self.project,
@@ -1727,8 +1746,8 @@ class TestIrodsDataRequestAcceptView(
         self._assert_alert_count(EVENT_ACCEPT, self.user_delegate, 0)
         self._assert_alert_count(EVENT_ACCEPT, self.user_contributor, 0)
 
-    def test_accept_one_of_multiple(self):
-        """Test accepting one of multiple requests"""
+    def test_post_one_of_multiple(self):
+        """Test POST for one of multiple requests"""
         obj_path2 = os.path.join(self.assay_path, IRODS_FILE_NAME2)
         self.irods.data_objects.create(obj_path2)
         self.assert_irods_obj(self.obj_path)
@@ -1772,8 +1791,8 @@ class TestIrodsDataRequestAcceptView(
         self.assert_irods_obj(obj_path2, False)
 
     @override_settings(REDIS_URL=INVALID_REDIS_URL)
-    def test_accept_lock_failure(self):
-        """Test accepting a delete request with project lock failure"""
+    def test_post_lock_failure(self):
+        """Test POST with project lock failure"""
         self.assert_irods_obj(self.obj_path)
         with self.login(self.user_contributor):
             self.client.post(self.create_url, self.post_data)
@@ -1804,8 +1823,8 @@ class TestIrodsDataRequestAcceptView(
         self._assert_alert_count(EVENT_CREATE, self.user_delegate, 1)
         self.assert_irods_obj(self.obj_path, True)
 
-    def test_accept_collection(self):
-        """Test accepting a collection request with multiple objects inside"""
+    def test_post_collection(self):
+        """Test POST with multiple objects in collection"""
         coll_path = os.path.join(self.assay_path, 'request_coll')
         obj_path2 = os.path.join(coll_path, IRODS_FILE_NAME)
         self.irods.collections.create(coll_path)
@@ -1858,8 +1877,8 @@ class TestIrodsDataRequestAcceptBatchView(
             kwargs={'project': self.project.sodar_uuid},
         )
 
-    def test_render(self):
-        """Test rendering IrodsDataRequestAcceptBatchView"""
+    def test_get(self):
+        """Test IrodsDataRequestAcceptBatchView GET"""
         self.assert_irods_obj(self.obj_path)
         self.make_irods_request(
             project=self.project,
@@ -1911,8 +1930,8 @@ class TestIrodsDataRequestAcceptBatchView(
             IrodsDataRequest.objects.last(),
         )
 
-    def test_render_coll(self):
-        """Test rendering IrodsDataRequestAcceptBatchView for a collection"""
+    def test_get_coll(self):
+        """Test GET with collection"""
         coll_path = os.path.join(self.assay_path, 'request_coll')
         self.irods.collections.create(coll_path)
         self.assertEqual(self.irods.collections.exists(coll_path), True)
@@ -1946,8 +1965,8 @@ class TestIrodsDataRequestAcceptBatchView(
             response.context['affected_object_paths'][0], coll_path
         )
 
-    def test_accept(self):
-        """Test accepting a delete request"""
+    def test_post(self):
+        """Test POST to accept delete requests"""
         self.assert_irods_obj(self.obj_path)
         self.assert_irods_obj(self.obj_path2)
 
@@ -2014,8 +2033,8 @@ class TestIrodsDataRequestAcceptBatchView(
         self.assert_irods_obj(self.obj_path, False)
         self.assert_irods_obj(self.obj_path2, False)
 
-    def test_accept_no_request(self):
-        """Test accepting a delete request that doesn't exist"""
+    def test_post_no_request(self):
+        """Test POST with non-existing delete request"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         with self.login(self.user_owner_cat):
             response = self.client.post(
@@ -2031,8 +2050,8 @@ class TestIrodsDataRequestAcceptBatchView(
             NO_REQUEST_MSG,
         )
 
-    def test_accept_invalid_form_data(self):
-        """Test accepting a delete request with invalid form data"""
+    def test_post_invalid_data(self):
+        """Test POST with invalid form data"""
         self.assert_irods_obj(self.obj_path)
         self.assert_irods_obj(self.obj_path2)
 
@@ -2074,8 +2093,8 @@ class TestIrodsDataRequestAcceptBatchView(
         self.assert_irods_obj(self.obj_path2)
 
     @override_settings(REDIS_URL=INVALID_REDIS_URL)
-    def test_accept_lock_failure(self):
-        """Test accepting a delete request with redis lock failure"""
+    def test_post_lock_failure(self):
+        """Test POST with project lock failure"""
         self.assert_irods_obj(self.obj_path)
         self.assert_irods_obj(self.obj_path2)
 
@@ -2135,8 +2154,8 @@ class TestIrodsDataRequestRejectView(
             kwargs={'project': self.project.sodar_uuid},
         )
 
-    def test_reject_admin(self):
-        """Test rejecting delete request as admin"""
+    def test_get_admin(self):
+        """Test IrodsDataRequestRejectView GET as admin"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         self.assert_irods_obj(self.obj_path)
         self._assert_alert_count(EVENT_REJECT, self.user, 0)
@@ -2178,8 +2197,8 @@ class TestIrodsDataRequestRejectView(
         self._assert_alert_count(EVENT_REJECT, self.user_delegate, 0)
         self._assert_alert_count(EVENT_REJECT, self.user_contributor, 1)
 
-    def test_reject_owner(self):
-        """Test rejecting delete request as owner"""
+    def test_get_owner(self):
+        """Test GET as owner"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         request = self.make_irods_request(
             project=self.project,
@@ -2203,8 +2222,8 @@ class TestIrodsDataRequestRejectView(
         self._assert_alert_count(EVENT_REJECT, self.user_delegate, 0)
         self._assert_alert_count(EVENT_REJECT, self.user_contributor, 1)
 
-    def test_reject_delegate(self):
-        """Test rejecting delete request as delegate"""
+    def test_get_delegate(self):
+        """Test GET as delegate"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         request = self.make_irods_request(
             project=self.project,
@@ -2228,8 +2247,8 @@ class TestIrodsDataRequestRejectView(
         self._assert_alert_count(EVENT_REJECT, self.user_delegate, 0)
         self._assert_alert_count(EVENT_REJECT, self.user_contributor, 1)
 
-    def test_reject_contributor(self):
-        """Test rejecting delete request as contributor"""
+    def test_get_contributor(self):
+        """Test GET as contributor"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         request = self.make_irods_request(
             project=self.project,
@@ -2257,8 +2276,8 @@ class TestIrodsDataRequestRejectView(
         self._assert_alert_count(EVENT_REJECT, self.user_delegate, 0)
         self._assert_alert_count(EVENT_REJECT, self.user_contributor, 0)
 
-    def test_reject_one_of_multiple(self):
-        """Test rejecting one of multiple requests"""
+    def test_get_one_of_multiple(self):
+        """Test GET with one of multiple requests"""
         obj_path2 = os.path.join(self.assay_path, IRODS_FILE_NAME2)
         self.irods.data_objects.create(obj_path2)
         self.assert_irods_obj(self.obj_path)
@@ -2299,8 +2318,8 @@ class TestIrodsDataRequestRejectView(
         self._assert_alert_count(EVENT_REJECT, self.user_delegate, 0)
         self._assert_alert_count(EVENT_REJECT, self.user_contributor, 1)
 
-    def test_reject_no_request(self):
-        """Test rejecting delete request that doesn't exist"""
+    def test_get_no_request(self):
+        """Test GET with non-existing delete request"""
         with self.login(self.user_owner_cat):
             response = self.client.get(
                 reverse(
@@ -2327,8 +2346,8 @@ class TestIrodsDataRequestRejectBatchView(
             kwargs={'project': self.project.sodar_uuid},
         )
 
-    def test_reject(self):
-        """Test rejecting delete request"""
+    def test_post(self):
+        """Test IrodsDataRequestRejectBatchView POST"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         self._assert_alert_count(EVENT_REJECT, self.user, 0)
         self._assert_alert_count(EVENT_REJECT, self.user_delegate, 0)
@@ -2378,8 +2397,8 @@ class TestIrodsDataRequestRejectBatchView(
         self._assert_alert_count(EVENT_REJECT, self.user_delegate, 0)
         self._assert_alert_count(EVENT_REJECT, self.user_contributor, 0)
 
-    def test_reject_no_request(self):
-        """Test rejecting delete request that doesn't exist"""
+    def test_post_no_request(self):
+        """Test POST with non-existing request"""
         with self.login(self.user_owner_cat):
             response = self.client.post(
                 self.reject_url,

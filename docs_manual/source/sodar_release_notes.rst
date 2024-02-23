@@ -14,6 +14,7 @@ v0.14.2 (WIP)
 Release for minor updates, maintenance and bug fixes.
 
 - Add assay plugin shortcut collection creation in landing zones
+- Add iRODS data request details in timeline events
 - Add landing zone statistics in siteinfo
 - Fix iRODS data request issues
 - Fix IRODS_ROOT_PATH issues
