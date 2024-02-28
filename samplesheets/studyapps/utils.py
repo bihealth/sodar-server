@@ -17,6 +17,7 @@ app_settings = AppSettingAPI()
 # Constants
 IGV_URL_BASE = 'http://127.0.0.1:60151'
 FILE_TYPE_SUFFIXES = {'bam': '.bam', 'vcf': '.vcf.gz'}
+FILE_TYPE_SUFFIX_CRAM = '.cram'  # Special case grouped together with bam
 INVALID_TYPE_MSG = 'Invalid value for file_type'
 
 
@@ -26,7 +27,7 @@ def get_igv_omit_override(project, file_type):
     method to avoid redundant database queries.
 
     :param project: Project object
-    :param file_type: String ("bam" or "vcf")
+    :param file_type: String ("bam" or "vcf", "bam" is also used for CRAM)
     :return: List or None
     """
     ft = file_type.lower()
@@ -40,19 +41,37 @@ def get_igv_omit_override(project, file_type):
     return None
 
 
+def check_igv_file_suffix(file_name, file_type):
+    """
+    Check if file name corresponds to the specified file type.
+
+    :param file_name: String
+    :param file_type: String ("bam" or "vcf", "bam" is also used for CRAM)
+    :raise: ValueError if file_type is incorrect
+    :return: Boolean (True if suffix matches the file type)
+    """
+    if file_type.lower() not in ['bam', 'vcf']:
+        raise ValueError(INVALID_TYPE_MSG)
+    fn = file_name.lower()  # Just in case suffix is in upper case
+    return (
+        fn.endswith(FILE_TYPE_SUFFIXES[file_type])
+        or file_type == 'bam'
+        and fn.endswith(FILE_TYPE_SUFFIX_CRAM)
+    )
+
+
 def check_igv_file_name(file_name, file_type, override=None):
     """
     Check if file is acceptable for IGV session inclusion. Returns False if
     suffix is found in env vars of omittable files.
 
     :param file_name: String
-    :param file_type: String ("bam" or "vcf")
+    :param file_type: String ("bam" or "vcf", "bam" is also used for CRAM)
     :param override: File suffixes to override site-wide setting (list or None)
     :raise: ValueError if file_type is incorrect
     :return: Boolean (True if name is OK)
     """
-    ft = file_type.lower()
-    if ft not in ['bam', 'vcf']:
+    if file_type.lower() not in ['bam', 'vcf']:
         raise ValueError(INVALID_TYPE_MSG)
     fn = file_name.lower()
     if override:
@@ -79,10 +98,7 @@ def get_igv_session_url(source, app_name, merge=False):
         '{}:igv'.format(app_name), kwargs={'genericmaterial': source.sodar_uuid}
     )
     return '{}/load?merge={}&file={}{}.xml'.format(
-        IGV_URL_BASE,
-        str(merge).lower(),
-        file_prefix,
-        file_url,
+        IGV_URL_BASE, str(merge).lower(), file_prefix, file_url
     )
 
 
@@ -104,7 +120,7 @@ def get_igv_xml(project, bam_urls, vcf_urls, vcf_title, request, string=True):
     Build IGV session XML file.
 
     :param project: Project object
-    :param bam_urls: BAM file URLs (dict {name: url})
+    :param bam_urls: BAM/CRAM file URLs (dict {name: url})
     :param vcf_urls: VCF file URLs (dict {name: url})
     :param vcf_title: VCF title to prefix to VCF title strings (string)
     :param request: Django request
@@ -164,7 +180,7 @@ def get_igv_xml(project, bam_urls, vcf_urls, vcf_title, request, string=True):
                 'windowFunction': 'count',
             },
         )
-    # BAM panels
+    # BAM/CRAM panels
     for bam_name, bam_url in bam_urls.items():
         # Generating unique panel name with hashlib
         xml_bam_panel = ET.SubElement(

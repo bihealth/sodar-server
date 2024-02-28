@@ -14,7 +14,7 @@ from projectroles.plugins import get_backend_api
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
 
 from samplesheets.plugins import IGV_DEFAULT_GENOME
-from samplesheets.studyapps.utils import get_igv_xml
+from samplesheets.studyapps.utils import check_igv_file_suffix, get_igv_xml
 from samplesheets.tests.test_io import SampleSheetIOMixin
 
 
@@ -39,6 +39,39 @@ class TestStudyAppUtilsBase(
         self.owner_as = self.make_assignment(
             self.project, self.user_owner, self.role_owner
         )
+
+
+class TestCheckIGVFileSuffix(TestCase):
+    """Tests for check_igv_file_suffix()"""
+
+    def test_check_bam(self):
+        """Test checking with BAM type and valid name"""
+        self.assertTrue(check_igv_file_suffix('test.bam', 'bam'))
+
+    def test_check_bam_invalid_name(self):
+        """Test checking with BAM type and invalid name"""
+        self.assertFalse(check_igv_file_suffix('test.vcf', 'bam'))
+
+    def test_check_bam_cram(self):
+        """Test checking with BAM type and CRAM name"""
+        self.assertTrue(check_igv_file_suffix('test.cram', 'bam'))
+
+    def test_check_bam_uppercase(self):
+        """Test checking with BAM type and uppercase name"""
+        self.assertTrue(check_igv_file_suffix('TEST.BAM', 'bam'))
+
+    def test_check_vcf(self):
+        """Test checking with VCF type and valid name"""
+        self.assertTrue(check_igv_file_suffix('test.vcf.gz', 'vcf'))
+
+    def test_check_vcf_no_gz(self):
+        """Test checking with VCF type and name without .gz suffix"""
+        self.assertFalse(check_igv_file_suffix('test.vcf', 'vcf'))
+
+    def test_check_invalid_type(self):
+        """Test checking with invalid_type"""
+        with self.assertRaises(ValueError):
+            check_igv_file_suffix('test.bam', 'INVALID')
 
 
 class TestGetIGVXML(TestStudyAppUtilsBase):

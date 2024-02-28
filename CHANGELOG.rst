@@ -19,6 +19,8 @@ Added
     - UI tests for project details card (#1902)
 - **Samplesheets**
     - ``IrodsDataRequest`` timeline event extra data (#1912)
+    - CRAM file support in study apps (#1908)
+    - ``check_igv_file_suffix()`` helper in ``studyapps.utils`` (#1908)
 - **Taskflowbackend**
     - Django settings in siteinfo (#1901)
     - ``BatchSetAccessTask`` in iRODS tasks (#1905)
@@ -64,6 +66,7 @@ Fixed
     - ``IrodsDataRequest._validate_action()`` failing with ``delete`` action (#1858)
     - Protocol ref editable for new row if disabled in column config (#1875)
     - Sheet template creation failure with slash characters in title/ID fields (#1896)
+    - ``get_pedigree_file_path()`` used in cancer study app tests (#1914)
 - **Taskflowbackend**
     - Hardcoded iRODS path length in ``landing_zone_move`` (#1888)
     - Uncaught exceptions in ``SetAccessTask`` (#1906)

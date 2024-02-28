@@ -81,7 +81,7 @@ Notable Features
     * Sample sheet generation from templates
     * Sample sheet editing and version control
     * Sample sheet export in ISA-Tab and Excel formats
-    * Automated iRODS shortcut generation for e.g. BAM/VCF files
+    * Automated iRODS shortcut generation for BAM/CRAM/VCF files
     * Automated Integrative Genomics Viewer (IGV) session file generation and
       merging
     * Track hub management for UCSC Genome Browser integration

@@ -193,7 +193,7 @@ Sample Sheets Settings
 ``SHEETS_SYNC_INTERVAL``
     Interval for remote sheet synchronization in minutes (integer).
 ``SHEETS_IGV_OMIT_BAM``
-    BAM file name suffixes to omit from study shortcuts and IGV session
+    BAM and CRAM file name suffixes to omit from study shortcuts and IGV session
     generation.
 ``SHEETS_IGV_OMIT_VCF``
     VCF file name suffixes to omit from study shortcuts and IGV session

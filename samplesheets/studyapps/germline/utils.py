@@ -9,7 +9,7 @@ from samplesheets.models import GenericMaterial
 from samplesheets.studyapps.utils import (
     get_igv_omit_override,
     check_igv_file_name,
-    FILE_TYPE_SUFFIXES,
+    check_igv_file_suffix,
 )
 from samplesheets.utils import get_index_by_header
 
@@ -22,7 +22,7 @@ def get_pedigree_file_path(file_type, source, study_tables):
     Return iRODS path for the most recent file of type "bam" or "vcf"
     linked to the source.
 
-    :param file_type: String ("bam" or "vcf")
+    :param file_type: String ("bam" or "vcf", "bam" is also used for CRAM)
     :param source: GenericMaterial of type SOURCE
     :param study_tables: Render study tables
     :return: String
@@ -84,9 +84,7 @@ def get_pedigree_file_path(file_type, source, study_tables):
             for obj in obj_list:
                 if (
                     obj['path'].startswith(query_path + '/')
-                    and obj['name']
-                    .lower()
-                    .endswith(FILE_TYPE_SUFFIXES[file_type])
+                    and check_igv_file_suffix(obj['name'], file_type)
                     and check_igv_file_name(obj['name'], file_type, override)
                 ):
                     file_paths.append(obj['path'])

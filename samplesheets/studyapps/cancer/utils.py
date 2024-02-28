@@ -4,8 +4,8 @@ import os
 
 from samplesheets.studyapps.utils import (
     get_igv_omit_override,
+    check_igv_file_suffix,
     check_igv_file_name,
-    FILE_TYPE_SUFFIXES,
 )
 from samplesheets.utils import get_latest_file_path
 
@@ -13,11 +13,11 @@ from samplesheets.utils import get_latest_file_path
 def get_library_file_path(assay, library_name, file_type, irods_backend, irods):
     """
     Return iRODS path for the most recent file of type "bam" or "vcf"
-    linked to the library.
+    linked to the library. CRAM files are included in "bam" searches.
 
     :param assay: Assay object
     :param library_name: Library name (string)
-    :param file_type: String ("bam" or "vcf")
+    :param file_type: String ("bam" or "vcf", "bam" is also used for CRAM)
     :param irods_backend: IrodsAPI object
     :param irods: IRODSSession object
     :return: String
@@ -29,9 +29,10 @@ def get_library_file_path(assay, library_name, file_type, irods_backend, irods):
     try:
         obj_list = irods_backend.get_objects(irods, query_path)
         for obj in obj_list:
-            if obj['name'].lower().endswith(
-                FILE_TYPE_SUFFIXES[file_type]
-            ) and check_igv_file_name(obj['name'], file_type, override):
+            obj_name = obj['name'].lower()
+            if check_igv_file_suffix(
+                obj_name, file_type
+            ) and check_igv_file_name(obj_name, file_type, override):
                 file_paths.append(obj['path'])
     except Exception:
         pass

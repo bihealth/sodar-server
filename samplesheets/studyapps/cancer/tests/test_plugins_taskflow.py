@@ -3,6 +3,7 @@
 import os
 
 from django.conf import settings
+from django.test import override_settings
 from django.urls import reverse
 
 # Projectroles dependency
@@ -18,7 +19,7 @@ from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_models import SampleSheetModelMixin
 from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 from samplesheets.plugins import SampleSheetStudyPluginPoint
-from samplesheets.studyapps.germline.utils import get_pedigree_file_path
+from samplesheets.studyapps.cancer.utils import get_library_file_path
 from samplesheets.studyapps.utils import get_igv_session_url
 
 
@@ -143,6 +144,28 @@ class TestCancerPlugin(
             self.assertEqual(sc['data'][i]['igv']['enabled'], False)
             self.assertEqual(sc['data'][i]['files']['enabled'], False)
 
+    def test_get_shortcut_column_cram(self):
+        """Test get_shortcut_column() with CRAM file in iRODS"""
+        self.irods.collections.create(self.source_path)
+        cram_path = os.path.join(
+            self.source_path, '{}_test.cram'.format(SAMPLE_ID_NORMAL)
+        )
+        vcf_path = os.path.join(
+            self.source_path, '{}_test.vcf.gz'.format(SAMPLE_ID_NORMAL)
+        )
+        self.irods.data_objects.create(cram_path)
+        self.irods.data_objects.create(vcf_path)
+
+        self.plugin.update_cache(self.cache_name, self.project)
+        study_tables = self.tb.build_study_tables(self.study)
+        sc = self.plugin.get_shortcut_column(self.study, study_tables)
+
+        self.assertEqual(sc['data'][0]['igv']['enabled'], True)
+        self.assertEqual(sc['data'][0]['files']['enabled'], True)
+        for i in range(1, 4):
+            self.assertEqual(sc['data'][i]['igv']['enabled'], False)
+            self.assertEqual(sc['data'][i]['files']['enabled'], False)
+
     def test_get_shortcut_links(self):
         """Test get_shortcut_links() with no cache item or files"""
         study_tables = self.tb.build_study_tables(self.study)
@@ -197,21 +220,84 @@ class TestCancerPlugin(
         self.assertEqual(
             sl['data']['bam']['files'][0]['url'],
             settings.IRODS_WEBDAV_URL
-            + get_pedigree_file_path('bam', self.source, study_tables),
+            + get_library_file_path(
+                self.assay,
+                LIBRARY_ID_NORMAL,
+                'bam',
+                self.irods_backend,
+                self.irods,
+            ),
         )
         self.assertEqual(
             sl['data']['vcf']['files'][0]['url'],
             settings.IRODS_WEBDAV_URL
-            + get_pedigree_file_path('vcf', self.source, study_tables),
+            + get_library_file_path(
+                self.assay,
+                LIBRARY_ID_NORMAL,
+                'vcf',
+                self.irods_backend,
+                self.irods,
+            ),
+        )
+
+    def test_get_shortcut_links_cram(self):
+        """Test get_shortcut_links() with CRAM file in iRODS"""
+        self.irods.collections.create(self.source_path)
+        cram_path = os.path.join(
+            self.source_path, '{}_test.cram'.format(SAMPLE_ID_NORMAL)
+        )
+        vcf_path = os.path.join(
+            self.source_path, '{}_test.vcf.gz'.format(SAMPLE_ID_NORMAL)
+        )
+        self.irods.data_objects.create(cram_path)
+        self.irods.data_objects.create(vcf_path)
+
+        self.plugin.update_cache(self.cache_name, self.project)
+        study_tables = self.tb.build_study_tables(self.study)
+        sl = self.plugin.get_shortcut_links(
+            self.study, study_tables, case=[SOURCE_ID_NORMAL]
+        )
+
+        self.assertEqual(len(sl['data']['session']['files']), 1)
+        self.assertEqual(len(sl['data']['bam']['files']), 1)
+        self.assertEqual(len(sl['data']['vcf']['files']), 1)
+        self.assertEqual(
+            sl['data']['session']['files'][0]['url'],
+            reverse(
+                'samplesheets.studyapps.cancer:igv',
+                kwargs={'genericmaterial': self.source.sodar_uuid},
+            ),
+        )
+        self.assertEqual(
+            sl['data']['bam']['files'][0]['url'],
+            settings.IRODS_WEBDAV_URL
+            + get_library_file_path(
+                self.assay,
+                LIBRARY_ID_NORMAL,
+                'bam',
+                self.irods_backend,
+                self.irods,
+            ),
+        )
+        self.assertEqual(
+            sl['data']['vcf']['files'][0]['url'],
+            settings.IRODS_WEBDAV_URL
+            + get_library_file_path(
+                self.assay,
+                LIBRARY_ID_NORMAL,
+                'vcf',
+                self.irods_backend,
+                self.irods,
+            ),
         )
 
     def test_get_shortcut_links_multiple(self):
         """Test get_shortcut_links() with multiple BAM/VCF files"""
         self.irods.collections.create(self.source_path)
-        bam_path = os.path.join(
-            self.source_path, '{}_test_2022-11-06.bam'.format(SAMPLE_ID_NORMAL)
+        cram_path = os.path.join(
+            self.source_path, '{}_test_2022-11-06.cram'.format(SAMPLE_ID_NORMAL)
         )
-        bam_path2 = os.path.join(
+        bam_path = os.path.join(
             self.source_path, '{}_test_2022-11-07.bam'.format(SAMPLE_ID_NORMAL)
         )
         vcf_path = os.path.join(
@@ -222,8 +308,8 @@ class TestCancerPlugin(
             self.source_path,
             '{}_test.vcf_2022-11-07.vcf.gz'.format(SAMPLE_ID_NORMAL),
         )
+        self.irods.data_objects.create(cram_path)
         self.irods.data_objects.create(bam_path)
-        self.irods.data_objects.create(bam_path2)
         self.irods.data_objects.create(vcf_path)
         self.irods.data_objects.create(vcf_path2)
 
@@ -237,14 +323,12 @@ class TestCancerPlugin(
         # Only the most recent bam and vcf should be returned
         self.assertEqual(len(sl['data']['bam']['files']), 1)
         self.assertEqual(len(sl['data']['vcf']['files']), 1)
-        self.assertTrue(
-            sl['data']['bam']['files'][0]['url'].endswith(bam_path2)
-        )
+        self.assertTrue(sl['data']['bam']['files'][0]['url'].endswith(bam_path))
         self.assertTrue(
             sl['data']['vcf']['files'][0]['url'].endswith(vcf_path2)
         )
 
-    def test_get_shortcut_links_bam(self):
+    def test_get_shortcut_links_bam_only(self):
         """Test get_shortcut_links() with BAM file only"""
         self.irods.collections.create(self.source_path)
         bam_path = os.path.join(
@@ -260,7 +344,23 @@ class TestCancerPlugin(
         self.assertEqual(len(sl['data']['bam']['files']), 1)
         self.assertEqual(len(sl['data']['vcf']['files']), 0)
 
-    def test_get_shortcut_links_vcf(self):
+    def test_get_shortcut_links_cram_only(self):
+        """Test get_shortcut_links() with CRAM file only"""
+        self.irods.collections.create(self.source_path)
+        cram_path = os.path.join(
+            self.source_path, '{}_test.cram'.format(SAMPLE_ID_NORMAL)
+        )
+        self.irods.data_objects.create(cram_path)
+        self.plugin.update_cache(self.cache_name, self.project)
+        study_tables = self.tb.build_study_tables(self.study)
+        sl = self.plugin.get_shortcut_links(
+            self.study, study_tables, case=[SOURCE_ID_NORMAL]
+        )
+        self.assertEqual(len(sl['data']['session']['files']), 1)
+        self.assertEqual(len(sl['data']['bam']['files']), 1)
+        self.assertEqual(len(sl['data']['vcf']['files']), 0)
+
+    def test_get_shortcut_links_vcf_only(self):
         """Test get_shortcut_links() with VCF file only"""
         self.irods.collections.create(self.source_path)
         vcf_path = os.path.join(
@@ -332,12 +432,24 @@ class TestCancerPlugin(
         self.assertEqual(
             sl['data']['bam']['files'][0]['url'],
             settings.IRODS_WEBDAV_URL
-            + get_pedigree_file_path('bam', self.source, study_tables),
+            + get_library_file_path(
+                self.assay,
+                LIBRARY_ID_NORMAL,
+                'bam',
+                self.irods_backend,
+                self.irods,
+            ),
         )
         self.assertEqual(
             sl['data']['vcf']['files'][0]['url'],
             settings.IRODS_WEBDAV_URL
-            + get_pedigree_file_path('vcf', self.source, study_tables),
+            + get_library_file_path(
+                self.assay,
+                LIBRARY_ID_NORMAL,
+                'vcf',
+                self.irods_backend,
+                self.irods,
+            ),
         )
 
     def test_get_shortcut_links_files_omit_only(self):
@@ -351,6 +463,23 @@ class TestCancerPlugin(
         )
         self.irods.data_objects.create(bam_path_omit)
         self.irods.data_objects.create(vcf_path_omit)
+        self.plugin.update_cache(self.cache_name, self.project)
+        study_tables = self.tb.build_study_tables(self.study)
+        sl = self.plugin.get_shortcut_links(
+            self.study, study_tables, case=[SOURCE_ID_NORMAL]
+        )
+        self.assertEqual(len(sl['data']['session']['files']), 0)
+        self.assertEqual(len(sl['data']['bam']['files']), 0)
+        self.assertEqual(len(sl['data']['vcf']['files']), 0)
+
+    @override_settings(SHEETS_IGV_OMIT_BAM=['omit.cram'])
+    def test_get_shortcut_links_files_omit_only_cram(self):
+        """Test get_shortcut_links() with omittable CRAM file in iRODS"""
+        self.irods.collections.create(self.source_path)
+        cram_path_omit = os.path.join(
+            self.source_path, '{}_omit.cram'.format(SAMPLE_ID_NORMAL)
+        )
+        self.irods.data_objects.create(cram_path_omit)
         self.plugin.update_cache(self.cache_name, self.project)
         study_tables = self.tb.build_study_tables(self.study)
         sl = self.plugin.get_shortcut_links(
@@ -425,6 +554,27 @@ class TestCancerPlugin(
             self.assertEqual(ci['bam'][CASE_IDS[i]], None)
             self.assertEqual(ci['vcf'][CASE_IDS[i]], None)
 
+    def test_update_cache_files_cram(self):
+        """Test update_cache() with CRAM file in iRODS"""
+        self.irods.collections.create(self.source_path)
+        cram_path = os.path.join(
+            self.source_path, '{}_test.cram'.format(SAMPLE_ID_NORMAL)
+        )
+        vcf_path = os.path.join(
+            self.source_path, '{}_test.vcf.gz'.format(SAMPLE_ID_NORMAL)
+        )
+        self.irods.data_objects.create(cram_path)
+        self.irods.data_objects.create(vcf_path)
+        self.plugin.update_cache(self.cache_name, self.project)
+        ci = self.cache_backend.get_cache_item(
+            APP_NAME, self.cache_name, self.project
+        ).data
+        self.assertEqual(ci['bam'][CASE_IDS[0]], cram_path)
+        self.assertEqual(ci['vcf'][CASE_IDS[0]], vcf_path)
+        for i in range(1, len(CASE_IDS) - 1):
+            self.assertEqual(ci['bam'][CASE_IDS[i]], None)
+            self.assertEqual(ci['vcf'][CASE_IDS[i]], None)
+
     def test_update_cache_files_omit(self):
         """Test update_cache() with omittable files in iRODS"""
         self.irods.collections.create(self.source_path)
@@ -458,7 +608,6 @@ class TestCancerPlugin(
     def test_update_cache_files_omit_only(self):
         """Test update_cache() with only omittable files in iRODS"""
         self.irods.collections.create(self.source_path)
-        # Create omittable files which come before real ones alphabetically
         bam_path_omit = os.path.join(
             self.source_path, '{}_dragen_evidence.bam'.format(SAMPLE_ID_NORMAL)
         )
@@ -466,6 +615,26 @@ class TestCancerPlugin(
             self.source_path, '{}_cnv.vcf.gz'.format(SAMPLE_ID_NORMAL)
         )
         self.irods.data_objects.create(bam_path_omit)
+        self.irods.data_objects.create(vcf_path_omit)
+        self.plugin.update_cache(self.cache_name, self.project)
+        ci = self.cache_backend.get_cache_item(
+            APP_NAME, self.cache_name, self.project
+        ).data
+        for i in range(0, len(CASE_IDS) - 1):
+            self.assertEqual(ci['bam'][CASE_IDS[i]], None)
+            self.assertEqual(ci['vcf'][CASE_IDS[i]], None)
+
+    @override_settings(SHEETS_IGV_OMIT_BAM=['omit.cram'])
+    def test_update_cache_files_omit_only_cram(self):
+        """Test update_cache() with omittable CRAM file in iRODS"""
+        self.irods.collections.create(self.source_path)
+        cram_path_omit = os.path.join(
+            self.source_path, '{}_omit.cram'.format(SAMPLE_ID_NORMAL)
+        )
+        vcf_path_omit = os.path.join(
+            self.source_path, '{}_cnv.vcf.gz'.format(SAMPLE_ID_NORMAL)
+        )
+        self.irods.data_objects.create(cram_path_omit)
         self.irods.data_objects.create(vcf_path_omit)
         self.plugin.update_cache(self.cache_name, self.project)
         ci = self.cache_backend.get_cache_item(

@@ -15,6 +15,7 @@ from samplesheets.plugins import SampleSheetStudyPluginPoint
 from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.studyapps.utils import (
     get_igv_omit_override,
+    check_igv_file_suffix,
     check_igv_file_name,
     get_igv_session_url,
     get_igv_irods_url,
@@ -86,8 +87,8 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 'files': {
                     'type': 'modal',
                     'icon': 'mdi:folder-open-outline',
-                    'title': 'View links to pedigree BAM, VCF and IGV session '
-                    'files',
+                    'title': 'View links to pedigree BAM/CRAM, VCF and IGV '
+                    'session files',
                 },
             },
             'data': [],
@@ -179,7 +180,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             'title': 'Pedigree-Wise Links for {}'.format(query_id),
             'data': {
                 'session': {'title': 'IGV Session File', 'files': []},
-                'bam': {'title': 'BAM Files', 'files': []},
+                'bam': {'title': 'BAM/CRAM Files', 'files': []},
                 'vcf': {'title': 'VCF File', 'files': []},
             },
         }
@@ -197,7 +198,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 project=study.get_project(),
             )
 
-        # BAM links
+        # BAM/CRAM links
         for source in sources:
             # Use cached value if present
             if cache_item and source.name in cache_item.data['bam']:
@@ -211,10 +212,10 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                     {
                         'label': source.name,
                         'url': webdav_url + bam_path,
-                        'title': 'Download BAM file',
+                        'title': 'Download BAM/CRAM file',
                         'extra_links': [
                             {
-                                'label': 'Add BAM file to IGV',
+                                'label': 'Add BAM/CRAM file to IGV',
                                 'icon': 'mdi:plus-thick',
                                 'url': get_igv_irods_url(bam_path, merge=True),
                             }
@@ -342,7 +343,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 source_name = row[0]['value']
                 if source_name not in bam_paths:
                     bam_paths[source_name] = []
-                # Add BAM objects
+                # Add BAM/CRAM objects
                 path = assay_plugin.get_row_path(
                     row, assay_table, assay, assay_path
                 )
@@ -351,7 +352,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                         o['path']
                         for o in study_objs
                         if o['path'].startswith(path + '/')
-                        and o['name'].lower().endswith('bam')
+                        and check_igv_file_suffix(o['name'], 'bam')
                         and check_igv_file_name(o['name'], 'bam', bam_override)
                     ]
                 row_fam = row[fam_idx]['value']

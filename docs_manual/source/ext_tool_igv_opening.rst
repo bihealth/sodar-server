@@ -35,8 +35,8 @@ The IGV session can be opened replacing the currently open session in IGV.
 Another option is to merge the session into the currently open one with the
 button displaying a plus icon.
 
-BAM and VCF files can be similarly loaded into the currently open IGV session by
-clicking the corresponding button with a plus icon.
+BAM/CRAM and VCF files can be similarly loaded into the currently open IGV
+session by clicking the corresponding button with a plus icon.
 
 .. image:: _static/ext_tool_igv/IGV_Study_Shortcuts.png
     :width: 75%
@@ -49,8 +49,8 @@ Obtaining File URLs
 You can also obtain URLs into the SODAR file serving sub system.
 
 The donor or pedigree names in the IGV links window depicted above link directly
-to the BAM and VCF files in the file serving sub system. Right-click the link
-and use the "copy link location" context menu entry to copy the File URL.
+to the BAM/CRAM and VCF files in the file serving sub system. Right-click the
+link and use the "copy link location" context menu entry to copy the File URL.
 
 You can then open this link in IGV using the "File" > "Load from URL" command.
 Paste the URL that you just copied into the "File URL" field of the window that
