@@ -19,6 +19,7 @@ from taskflowbackend.tasks.sodar_tasks import SODARBaseTask
 
 from landingzones.constants import (
     STATUS_BUSY,
+    STATUS_FINISHED,
     ZONE_STATUS_FAILED,
     ZONE_STATUS_NOT_CREATED,
     ZONE_STATUS_MOVED,
@@ -381,10 +382,13 @@ class SetLandingZoneStatusTask(BaseLandingZoneStatusTask):
         *args,
         **kwargs
     ):
-        self.set_status(
-            landing_zone, flow_name, status, status_info, extra_data
-        )
-        self.data_modified = True
+        # Prevent setting status if already finished (see #1909)
+        landing_zone.refresh_from_db()
+        if landing_zone.status not in STATUS_FINISHED:
+            self.set_status(
+                landing_zone, flow_name, status, status_info, extra_data
+            )
+            self.data_modified = True
         super().execute(*args, **kwargs)
 
     def revert(

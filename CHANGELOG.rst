@@ -59,6 +59,7 @@ Fixed
 - **Landingzones**
     - Stats badge displayed to superusers for ``DELETED`` zones (#1866)
     - Zone status updating not working in project details card (#1902)
+    - Modifying finished lock status allowed in ``SetLandingZoneStatusTask`` (#1909)
 - **Samplesheets**
     - Invalid WebDAV URLs generated in ``IrodsDataRequestListView`` (#1860)
     - Superuser not allowed to edit iRODS request from other users in UI (#1863)
@@ -71,6 +72,7 @@ Fixed
     - Hardcoded iRODS path length in ``landing_zone_move`` (#1888)
     - Uncaught exceptions in ``SetAccessTask`` (#1906)
     - Crash in ``landing_zone_create`` with large amount of collections (#1905)
+    - Finished landing zone status modified by lock exception (#1909)
 
 Removed
 -------

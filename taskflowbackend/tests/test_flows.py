@@ -81,6 +81,7 @@ UPDATED_TITLE = 'NewTitle'
 UPDATED_DESC = 'updated description'
 SCRIPT_USER_NAME = 'script_user'
 IRODS_ROOT_PATH = 'sodar/root'
+INVALID_REDIS_URL = 'redis://127.0.0.1:6666/0'
 
 
 class TaskflowbackendFlowTestBase(TaskflowViewTestBase):
@@ -454,7 +455,7 @@ class TestLandingZoneDelete(
         self.make_irods_colls(self.investigation)
 
     def test_delete(self):
-        """Test landing_zone_delete with an empty landing zone"""
+        """Test landing_zone_delete with empty landing zone"""
         zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
@@ -560,6 +561,54 @@ class TestLandingZoneDelete(
         self.assertEqual(self.irods.collections.exists(coll_path), False)
         self.assertEqual(self.irods.data_objects.exists(obj_path), False)
         self.assertEqual(self.irods.collections.exists(zone_path), False)
+
+    def test_delete_finished(self):
+        """Test landing_zone_delete with finished zone"""
+        # NOTE: This may happen with concurrent requests. See #1909, #1910
+        zone = self.make_landing_zone(
+            title=ZONE_TITLE,
+            project=self.project,
+            user=self.user,
+            assay=self.assay,
+            description=ZONE_DESC,
+            status=ZONE_STATUS_DELETED,
+        )
+        # Do not create in taskflow
+        self.assertEqual(zone.status, ZONE_STATUS_DELETED)
+        flow_data = {'zone_uuid': str(zone.sodar_uuid)}
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='landing_zone_delete',
+            flow_data=flow_data,
+        )
+        self._build_and_run(flow)
+        zone.refresh_from_db()
+        # This should still be deleted, not failed
+        self.assertEqual(zone.status, ZONE_STATUS_DELETED)
+
+    @override_settings(REDIS_URL=INVALID_REDIS_URL)
+    def test_delete_finished_lock_failure(self):
+        """Test landing_zone_delete with finished zone and lock failure"""
+        zone = self.make_landing_zone(
+            title=ZONE_TITLE,
+            project=self.project,
+            user=self.user,
+            assay=self.assay,
+            description=ZONE_DESC,
+            status=ZONE_STATUS_DELETED,
+        )
+        self.assertEqual(zone.status, ZONE_STATUS_DELETED)
+        flow_data = {'zone_uuid': str(zone.sodar_uuid)}
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='landing_zone_delete',
+            flow_data=flow_data,
+        )
+        self._build_and_run(flow)
+        zone.refresh_from_db()
+        self.assertEqual(zone.status, ZONE_STATUS_DELETED)
 
 
 class TestLandingZoneMove(
