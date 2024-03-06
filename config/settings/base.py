@@ -807,13 +807,14 @@ SHEETS_EXTERNAL_LINK_PATH = env.str(
 # Remote sample sheet sync interval in minutes
 SHEETS_SYNC_INTERVAL = env.int('SHEETS_SYNC_INTERVAL', 5)
 
-# BAM/CRAM file name suffixes to omit from study shortcuts and IGV sessions
+# BAM/CRAM file path glob patterns to omit from study shortcuts and IGV sessions
 SHEETS_IGV_OMIT_BAM = env.list(
-    'SHEETS_IGV_OMIT_BAM', default=['dragen_evidence.bam']
+    'SHEETS_IGV_OMIT_BAM', default=['*dragen_evidence.bam']
 )
-# VCF file name suffixes to omit from study shortcuts and IGV sessions
+# VCF file path glob patterns to omit from study shortcuts and IGV sessions
 SHEETS_IGV_OMIT_VCF = env.list(
-    'SHEETS_IGV_OMIT_VCF', default=['cnv.vcf.gz', 'ploidy.vcf.gz', 'sv.vcf.gz']
+    'SHEETS_IGV_OMIT_VCF',
+    default=['*cnv.vcf.gz', '*ploidy.vcf.gz', '*sv.vcf.gz'],
 )
 
 # Landingzones app settings

@@ -13,20 +13,19 @@ from projectroles.plugins import get_backend_api
 from samplesheets.models import Investigation, Study, GenericMaterial
 from samplesheets.plugins import SampleSheetStudyPluginPoint
 from samplesheets.rendering import SampleSheetTableBuilder
-from samplesheets.studyapps.utils import (
-    get_igv_omit_override,
-    check_igv_file_suffix,
-    check_igv_file_name,
-    get_igv_session_url,
-    get_igv_irods_url,
-)
-from samplesheets.utils import get_index_by_header
-
 from samplesheets.studyapps.germline.utils import (
     get_pedigree_file_path,
     get_families,
     get_family_sources,
 )
+from samplesheets.studyapps.utils import (
+    get_igv_omit_list,
+    check_igv_file_suffix,
+    check_igv_file_path,
+    get_igv_session_url,
+    get_igv_irods_url,
+)
+from samplesheets.utils import get_index_by_header
 
 
 logger = logging.getLogger(__name__)
@@ -36,7 +35,6 @@ User = auth.get_user_model()
 
 # SODAR constants
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
-
 # Local constants
 APP_NAME = 'samplesheets.studyapps.germline'
 
@@ -323,8 +321,8 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             logger.error('Error querying for study objects: {}'.format(ex))
 
         project = study.get_project()
-        bam_override = get_igv_omit_override(project, 'bam')
-        vcf_override = get_igv_omit_override(project, 'vcf')
+        bam_omit_list = get_igv_omit_list(project, 'bam')
+        vcf_omit_list = get_igv_omit_list(project, 'vcf')
 
         for assay in study.assays.all():
             assay_plugin = assay.get_plugin()
@@ -353,7 +351,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                         for o in study_objs
                         if o['path'].startswith(path + '/')
                         and check_igv_file_suffix(o['name'], 'bam')
-                        and check_igv_file_name(o['name'], 'bam', bam_override)
+                        and check_igv_file_path(o['path'], bam_omit_list)
                     ]
                 row_fam = row[fam_idx]['value']
                 # Add VCF objects
@@ -369,7 +367,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                         for o in study_objs
                         if o['path'].startswith(path + '/')
                         and o['name'].lower().endswith('vcf.gz')
-                        and check_igv_file_name(o['name'], 'vcf', vcf_override)
+                        and check_igv_file_path(o['path'], vcf_omit_list)
                     ]
 
         # Update data

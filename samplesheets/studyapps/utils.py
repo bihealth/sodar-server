@@ -3,6 +3,7 @@
 import hashlib
 
 from lxml import etree as ET
+from pathlib import PurePosixPath
 
 from django.conf import settings
 from django.urls import reverse
@@ -21,24 +22,27 @@ FILE_TYPE_SUFFIX_CRAM = '.cram'  # Special case grouped together with bam
 INVALID_TYPE_MSG = 'Invalid value for file_type'
 
 
-def get_igv_omit_override(project, file_type):
+def get_igv_omit_list(project, file_type):
     """
-    Get IGV omit override setting for a project. NOTE: Added as a separate
-    method to avoid redundant database queries.
+    Get list of IGV omit glob patterns for a specific file type in a project.
+    NOTE: Added as a separate method to avoid redundant database queries.
 
     :param project: Project object
     :param file_type: String ("bam" or "vcf", "bam" is also used for CRAM)
-    :return: List or None
+    :return: List (appends * in front of each path if missing)
     """
     ft = file_type.lower()
     if ft not in ['bam', 'vcf']:
         raise ValueError(INVALID_TYPE_MSG)
-    setting = app_settings.get(
+    setting_val = app_settings.get(
         'samplesheets', 'igv_omit_{}'.format(ft), project=project
     )
-    if setting:
-        return [s.strip() for s in setting.split(',')]
-    return None
+    if not setting_val:
+        return []
+    return [
+        '{}{}'.format('*' if not s.strip().startswith('*') else '', s.strip())
+        for s in setting_val.split(',')
+    ]
 
 
 def check_igv_file_suffix(file_name, file_type):
@@ -60,24 +64,18 @@ def check_igv_file_suffix(file_name, file_type):
     )
 
 
-def check_igv_file_name(file_name, file_type, override=None):
+def check_igv_file_path(path, omit_list):
     """
-    Check if file is acceptable for IGV session inclusion. Returns False if
-    suffix is found in env vars of omittable files.
+    Check if file path is acceptable for IGV session inclusion. Returns False if
+    pattern is found in IGV omit settings.
 
-    :param file_name: String
-    :param file_type: String ("bam" or "vcf", "bam" is also used for CRAM)
-    :param override: File suffixes to override site-wide setting (list or None)
-    :raise: ValueError if file_type is incorrect
-    :return: Boolean (True if name is OK)
+    :param path: Full or partial iRODS path (string)
+    :param omit_list: List of path glob patterns to omit (list)
+    :return: Boolean (True if path is OK)
     """
-    if file_type.lower() not in ['bam', 'vcf']:
-        raise ValueError(INVALID_TYPE_MSG)
-    fn = file_name.lower()
-    if override:
-        return not any([s.lower() for s in override if fn.endswith(s)])
-    ol = getattr(settings, 'SHEETS_IGV_OMIT_' + file_type.upper(), [])
-    return not any([s.lower() for s in ol if fn.endswith(s)])
+    return not any(
+        [p for p in omit_list if PurePosixPath(path.lower()).match(p.lower())]
+    )
 
 
 def get_igv_session_url(source, app_name, merge=False):

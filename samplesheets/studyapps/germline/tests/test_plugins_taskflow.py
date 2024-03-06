@@ -3,7 +3,6 @@
 import os
 
 from django.conf import settings
-from django.test import override_settings
 from django.urls import reverse
 
 # Projectroles dependency
@@ -290,7 +289,7 @@ class TestGermlinePlugin(
             + get_pedigree_file_path('vcf', self.source, study_tables),
         )
 
-    def test_get_shortcut_links_files_cram(self):
+    def test_get_shortcut_links_cram(self):
         """Test get_shortcut_links() with CRAM file in iRODS"""
         self.irods.collections.create(self.source_path)
         cram_path = os.path.join(
@@ -430,7 +429,7 @@ class TestGermlinePlugin(
         self.assertEqual(len(sl['data']['bam']['files']), 0)
         self.assertEqual(len(sl['data']['vcf']['files']), 0)
 
-    def test_get_shortcut_links_files_omit(self):
+    def test_get_shortcut_links_omit(self):
         """Test get_shortcut_links() with omittable files in iRODS"""
         self.irods.collections.create(self.source_path)
         bam_path = os.path.join(
@@ -477,7 +476,7 @@ class TestGermlinePlugin(
             + get_pedigree_file_path('vcf', self.source, study_tables),
         )
 
-    def test_get_shortcut_links_files_omit_only(self):
+    def test_get_shortcut_links_omit_only(self):
         """Test get_shortcut_links() with only omittable files in iRODS"""
         self.irods.collections.create(self.source_path)
         bam_path_omit = os.path.join(
@@ -498,9 +497,38 @@ class TestGermlinePlugin(
         self.assertEqual(len(sl['data']['bam']['files']), 0)
         self.assertEqual(len(sl['data']['vcf']['files']), 0)
 
-    @override_settings(SHEETS_IGV_OMIT_BAM=['omit.cram'])
-    def test_get_shortcut_links_files_omit_cram(self):
+    def test_get_shortcut_links_omit_only_empty_overrides(self):
+        """Test get_shortcut_links() with empty project overrides"""
+        app_settings.set(
+            'samplesheets', 'igv_omit_bam', '', project=self.project
+        )
+        app_settings.set(
+            'samplesheets', 'igv_omit_vcf', '', project=self.project
+        )
+        self.irods.collections.create(self.source_path)
+        bam_path_omit = os.path.join(
+            self.source_path, '{}_dragen_evidence.bam'.format(SAMPLE_ID)
+        )
+        vcf_path_omit = os.path.join(
+            self.source_path, '{}_cnv.vcf.gz'.format(FAMILY_ID)
+        )
+        self.irods.data_objects.create(bam_path_omit)
+        self.irods.data_objects.create(vcf_path_omit)
+
+        self.plugin.update_cache(self.cache_name, self.project)
+        study_tables = self.tb.build_study_tables(self.study)
+        sl = self.plugin.get_shortcut_links(
+            self.study, study_tables, family=[FAMILY_ID]
+        )
+        self.assertEqual(len(sl['data']['session']['files']), 1)
+        self.assertEqual(len(sl['data']['bam']['files']), 1)
+        self.assertEqual(len(sl['data']['vcf']['files']), 1)
+
+    def test_get_shortcut_links_omit_cram(self):
         """Test get_shortcut_links() with omittable CRAM file in iRODS"""
+        app_settings.set(
+            'samplesheets', 'igv_omit_bam', '*omit.cram', project=self.project
+        )
         self.irods.collections.create(self.source_path)
         cram_path_omit = os.path.join(
             self.source_path, '{}_omit.cram'.format(SAMPLE_ID)
@@ -520,18 +548,18 @@ class TestGermlinePlugin(
         self.assertEqual(len(sl['data']['bam']['files']), 0)
         self.assertEqual(len(sl['data']['vcf']['files']), 0)
 
-    def test_get_shortcut_links_files_omit_override(self):
+    def test_get_shortcut_links_omit_override(self):
         """Test get_shortcut_links() with project-specific omit override"""
         app_settings.set(
             'samplesheets',
             'igv_omit_bam',
-            'test.bam, xxx.bam',
+            '*test.bam,*xxx.bam',
             project=self.project,
         )
         app_settings.set(
             'samplesheets',
             'igv_omit_vcf',
-            'test.vcf.gz, yyy.vcf.gz',
+            '*test.vcf.gz,*yyy.vcf.gz',
             project=self.project,
         )
         self.irods.collections.create(self.source_path)
@@ -584,7 +612,7 @@ class TestGermlinePlugin(
         self.assertEqual(ci['vcf'][FAMILY_ID], vcf_path)
         self.assertIsNone(ci['vcf'][FAMILY_ID2])
 
-    def test_update_cache_files_cram(self):
+    def test_update_cache_cram(self):
         """Test update_cache() with CRAM file in iRODS"""
         self.irods.collections.create(self.source_path)
         cram_path = os.path.join(
@@ -603,7 +631,7 @@ class TestGermlinePlugin(
         self.assertEqual(ci['vcf'][FAMILY_ID], vcf_path)
         self.assertIsNone(ci['vcf'][FAMILY_ID2])
 
-    def test_update_cache_files_omit(self):
+    def test_update_cache_omit(self):
         """Test update_cache() with omittable files in iRODS"""
         self.irods.collections.create(self.source_path)
         # Create omittable files which come before real ones alphabetically
@@ -631,7 +659,7 @@ class TestGermlinePlugin(
         self.assertEqual(ci['bam'][self.source.name], bam_path)
         self.assertEqual(ci['vcf'][FAMILY_ID], vcf_path)
 
-    def test_update_cache_files_omit_only(self):
+    def test_update_cache_omit_only(self):
         """Test update_cache() with only omittable files in iRODS"""
         self.irods.collections.create(self.source_path)
         bam_path_omit = os.path.join(
@@ -650,9 +678,36 @@ class TestGermlinePlugin(
         self.assertIsNone(ci['bam'][self.source.name])
         self.assertIsNone(ci['vcf'][FAMILY_ID])
 
-    @override_settings(SHEETS_IGV_OMIT_BAM=['omit.cram'])
-    def test_update_cache_files_omit_only_cram(self):
+    def test_update_cache_omit_only_empty_overrides(self):
+        """Test update_cache() with empty project overrides"""
+        app_settings.set(
+            'samplesheets', 'igv_omit_bam', '', project=self.project
+        )
+        app_settings.set(
+            'samplesheets', 'igv_omit_vcf', '', project=self.project
+        )
+        self.irods.collections.create(self.source_path)
+        bam_path_omit = os.path.join(
+            self.source_path, '{}_dragen_evidence.bam'.format(SAMPLE_ID)
+        )
+        vcf_path_omit = os.path.join(
+            self.source_path, '{}_cnv.vcf.gz'.format(FAMILY_ID)
+        )
+        self.irods.data_objects.create(bam_path_omit)
+        self.irods.data_objects.create(vcf_path_omit)
+        self.plugin.update_cache(self.cache_name, self.project)
+        ci = self.cache_backend.get_cache_item(
+            APP_NAME, self.cache_name, self.project
+        ).data
+        # Omitted files should not be returned
+        self.assertEqual(ci['bam'][self.source.name], bam_path_omit)
+        self.assertEqual(ci['vcf'][FAMILY_ID], vcf_path_omit)
+
+    def test_update_cache_omit_only_cram(self):
         """Test update_cache() with omittable CRAM file in iRODS"""
+        app_settings.set(
+            'samplesheets', 'igv_omit_bam', '*omit.cram', project=self.project
+        )
         self.irods.collections.create(self.source_path)
         cram_path_omit = os.path.join(
             self.source_path, '{}_omit.cram'.format(SAMPLE_ID)
@@ -669,18 +724,18 @@ class TestGermlinePlugin(
         self.assertIsNone(ci['bam'][self.source.name])
         self.assertIsNone(ci['vcf'][FAMILY_ID])
 
-    def test_update_cache_files_omit_override(self):
+    def test_update_cache_omit_override(self):
         """Test update_cache() with project-specific omit override"""
         app_settings.set(
             'samplesheets',
             'igv_omit_bam',
-            'test.bam, xxx.bam',
+            '*test.bam,*xxx.bam',
             project=self.project,
         )
         app_settings.set(
             'samplesheets',
             'igv_omit_vcf',
-            'test.vcf.gz, yyy.vcf.gz',
+            '*test.vcf.gz,*yyy.vcf.gz',
             project=self.project,
         )
         self.irods.collections.create(self.source_path)

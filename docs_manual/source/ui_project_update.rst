@@ -53,12 +53,22 @@ Token for Sheet Synchronization
 IGV session genome
     Genome used in generating IGV session files for the project. The name needs
     to be in a format accepted by IGV. Affects cancer and germline projects.
-BAM and CRAM files to omit from IGV sessions
-    Comma separated list of BAM and CRAM file suffixes to omit from IGV
-    sessions. Overrides site-wide setting, affects cancer and germline projects.
-VCF files to omit from IGV sessions
-    Comma separated list of VCF file suffixes to omit from IGV sessions.
-    Overrides site-wide setting, affects cancer and germline projects.
+BAM and CRAM paths to omit from IGV sessions
+    Comma-separated list of iRODS path glob patterns for omitting BAM and CRAM
+    files from IGV sessions and study shortcuts. Overrides site-wide setting,
+    affects cancer and germline projects. You can input paths to subcollections
+    under project sample data as well as file names. Using wildcards like ``*``
+    and ``?`` is permitted. Providing full iRODS paths is not necessary: each
+    pattern is assumed to start with a ``*`` wildcard. An empty setting means no
+    files or collections are excluded. You need to run
+    :guilabel:`Update Sheet Cache` in the Sample Sheet application for changes
+    to take effect.
+VCF paths to omit from IGV sessions
+    Comma-separated list of iRODS path glob patterns for omitting VCF files from
+    IGV sessions and study shortcuts. Overrides site-wide setting, affects
+    cancer and germline projects. Behaves similarly to the related BAM/CRAM
+    setting. You need to run :guilabel:`Update Sheet Cache` in the Sample Sheet
+    application for changes to take effect.
 IP Restrict
     Restrict project access to specific IP addresses if this is set.
 IP Allow List

@@ -14,6 +14,7 @@ v0.14.2 (WIP)
 Release for minor updates, maintenance and bug fixes.
 
 - Add CRAM file support for cancer/germline study links and IGV sessions
+- Add path glob pattern support for IGV session BAM/VCF omit settings
 - Add assay plugin shortcut collection creation in landing zones
 - Add iRODS data request details in timeline events
 - Add landing zone statistics in siteinfo

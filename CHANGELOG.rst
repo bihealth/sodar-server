@@ -21,6 +21,8 @@ Added
     - ``IrodsDataRequest`` timeline event extra data (#1912)
     - CRAM file support in study apps (#1908)
     - ``check_igv_file_suffix()`` helper in ``studyapps.utils`` (#1908)
+    - Path checking for IGV omit settings (#1923)
+    - Glob pattern support for IGV omit settings (#1923)
 - **Taskflowbackend**
     - Django settings in siteinfo (#1901)
     - ``BatchSetAccessTask`` in iRODS tasks (#1905)
@@ -43,6 +45,8 @@ Changed
     - Improve Django messages for ``IrodsDataRequest`` exceptions (#1858)
     - Change ``IrodsDataRequest`` description if created in Ajax view (#1862)
     - Refactor ``IrodsDataRequestModifyMixin`` timeline helpers (#1913)
+    - Rename ``get_igv_omit_override()`` to ``get_igv_omit_list()`` (#1924)
+    - Rename ``check_igv_file_name()`` to ``check_igv_file_path()`` (#1923)
 - **Taskflowbackend**
     - Optimize ``landing_zone_move`` iRODS path retrieval (#1882)
     - Set zone status on uncaught errors in ``run_flow()`` (#1458)
@@ -68,6 +72,7 @@ Fixed
     - Protocol ref editable for new row if disabled in column config (#1875)
     - Sheet template creation failure with slash characters in title/ID fields (#1896)
     - ``get_pedigree_file_path()`` used in cancer study app tests (#1914)
+    - IGV omit settings not correctly set on project creation (#1925)
 - **Taskflowbackend**
     - Hardcoded iRODS path length in ``landing_zone_move`` (#1888)
     - Uncaught exceptions in ``SetAccessTask`` (#1906)

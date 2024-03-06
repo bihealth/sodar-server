@@ -18,10 +18,7 @@ from samplesheets.studyapps.cancer.utils import (
     get_latest_file_path,
 )
 from samplesheets.studyapps.utils import get_igv_session_url, get_igv_irods_url
-from samplesheets.utils import (
-    get_isa_field_name,
-    get_last_material_index,
-)
+from samplesheets.utils import get_isa_field_name, get_last_material_index
 
 
 logger = logging.getLogger(__name__)
