@@ -353,11 +353,10 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                         and check_igv_file_suffix(o['name'], 'bam')
                         and check_igv_file_path(o['path'], bam_omit_list)
                     ]
-                row_fam = row[fam_idx]['value']
                 # Add VCF objects
-                if row_fam:
-                    vcf_query_id = row_fam
-                else:
+                if fam_idx and row[fam_idx].get('value'):
+                    vcf_query_id = row[fam_idx]['value']
+                else:  # If family column isn't present/filled, use source name
                     vcf_query_id = source_name
                 if vcf_query_id not in vcf_paths:
                     vcf_paths[vcf_query_id] = []

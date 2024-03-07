@@ -73,6 +73,7 @@ Fixed
     - Sheet template creation failure with slash characters in title/ID fields (#1896)
     - ``get_pedigree_file_path()`` used in cancer study app tests (#1914)
     - IGV omit settings not correctly set on project creation (#1925)
+    - Germline study cache build crash with no family column (#1921)
 - **Taskflowbackend**
     - Hardcoded iRODS path length in ``landing_zone_move`` (#1888)
     - Uncaught exceptions in ``SetAccessTask`` (#1906)

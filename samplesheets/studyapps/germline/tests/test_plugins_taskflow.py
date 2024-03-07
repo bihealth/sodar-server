@@ -13,6 +13,7 @@ from projectroles.plugins import get_backend_api
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import TaskflowViewTestBase
 
+from samplesheets.models import GenericMaterial
 from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_models import SampleSheetModelMixin
@@ -763,3 +764,28 @@ class TestGermlinePlugin(
         # Omitted files should not be returned
         self.assertEqual(ci['bam'][self.source.name], bam_path_omit)
         self.assertEqual(ci['vcf'][FAMILY_ID], vcf_path_omit)
+
+    def test_update_cache_no_family(self):
+        """Test update_cache() with no family characteristic in source"""
+        # Clear the family characteristics and header
+        for m in GenericMaterial.objects.filter(
+            study=self.study, item_type='SOURCE'
+        ):
+            m.characteristics.pop('Family')
+            m.headers.remove('Characteristics[Family]')
+            m.save()
+        self.irods.collections.create(self.source_path)
+        bam_path = os.path.join(
+            self.source_path, '{}_test.bam'.format(SAMPLE_ID)
+        )
+        vcf_path = os.path.join(
+            self.source_path, '{}_test.vcf.gz'.format(SAMPLE_ID)
+        )
+        self.irods.data_objects.create(bam_path)
+        self.irods.data_objects.create(vcf_path)
+        self.plugin.update_cache(self.cache_name, self.project)
+        ci = self.cache_backend.get_cache_item(
+            APP_NAME, self.cache_name, self.project
+        ).data
+        self.assertEqual(ci['bam'][self.source.name], bam_path)
+        self.assertEqual(ci['vcf'][self.source.name], vcf_path)
