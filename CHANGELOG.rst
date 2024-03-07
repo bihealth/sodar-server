@@ -35,6 +35,7 @@ Changed
     - Upgrade to Django v3.2.24 (#1854)
     - Upgrade to django-sodar-core v0.13.4 (#1899)
     - Upgrade critical Vue app dependencies (#1854)
+    - Upgrade to cubi-isa-templates v0.1.2 (#1854)
     - Update installation documentation (#1871)
 - **Irodsbackend**
     - Reduce redundant object queries (#1883)
