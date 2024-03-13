@@ -313,23 +313,17 @@ export default Vue.extend({
       let groupId = cols[startIdx].originalParent.groupId
       let fieldIdx = 0 // Field index within node
       let nodeCells = []
-      let nodeClass
+      // let nodeClass
       let nodeStartIdx = startIdx
 
       for (let i = startIdx; i < cols.length - 1; i++) {
-        if (fieldIdx === 0) {
-          nodeStartIdx = i
-          nodeClass = cols[i].colDef.cellEditorParams.headerInfo.obj_cls
-        }
-
+        if (fieldIdx === 0) nodeStartIdx = i
         // Add cells for new nodes, only the first node for existing ones
-        if (nodeClass === 'Process' ||
-            fieldIdx === 0 ||
+        if (fieldIdx === 0 ||
             (!this.rowNode.data[cols[i].colId].uuid &&
             !(this.assayMode && inSampleNode))) {
           nodeCells.push(this.getCellData(cols[i]))
         }
-
         if (i === cols.length - 1 ||
             groupId !== cols[i + 1].originalParent.groupId) {
           groupId = cols[i + 1].originalParent.groupId

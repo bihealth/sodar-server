@@ -1,6 +1,7 @@
 import { createLocalVue, mount } from '@vue/test-utils'
 import {
   studyUuid,
+  assayUuid,
   copy,
   getAppStub,
   getSheetTableComponents,
@@ -819,6 +820,53 @@ describe('DataCellEditor.vue', () => {
     expect(wrapper.find('.sodar-ss-data').text()).toBe('-')
   })
 
+  it('updates value in process assay name column', async () => {
+    const value = '0815-N1-DNA1-WES1-UPDATED'
+    const table = copy(studyTablesOneCol).tables.assays[assayUuid]
+    table.field_header[0] = studyTablesEdit.tables.assays[assayUuid].field_header[13]
+    table.table_data[0][0] = copy(studyTablesEdit).tables.assays[assayUuid].table_data[0][13]
+    const wrapper = mountSheetTable({
+      table: table,
+      editStudyConfig: {
+        nodes: [{ fields: [studyEditConfig.assays[assayUuid].nodes[2].fields[1]] }]
+      }
+    })
+    await waitAG(wrapper)
+    await waitRAF()
+
+    await wrapper.find('.sodar-ss-data-cell').trigger('dblclick')
+    const input = wrapper.find('.ag-cell-edit-input')
+    input.element.value = value
+    await input.trigger('input')
+    await gridOptions.api.stopEditing()
+    expect(wrapper.find('.ag-cell-edit-input').exists()).toBe(false)
+    expect(wrapper.find('.sodar-ss-data').text()).toBe(value)
+  })
+
+  it('updates process assay name column with empty value', async () => {
+    const value = '' // NOTE: For named processes this IS allowed
+    const table = copy(studyTablesOneCol).tables.assays[assayUuid]
+    table.field_header[0] = studyTablesEdit.tables.assays[assayUuid].field_header[13]
+    table.table_data[0][0] = copy(studyTablesEdit).tables.assays[assayUuid].table_data[0][13]
+    const wrapper = mountSheetTable({
+      table: table,
+      editStudyConfig: {
+        nodes: [{ fields: [studyEditConfig.assays[assayUuid].nodes[2].fields[1]] }]
+      }
+    })
+    await waitAG(wrapper)
+    await waitRAF()
+
+    await wrapper.find('.sodar-ss-data-cell').trigger('dblclick')
+    const input = wrapper.find('.ag-cell-edit-input')
+    input.element.value = value
+    await input.trigger('input')
+    await gridOptions.api.stopEditing()
+    expect(wrapper.find('.ag-cell-edit-input').exists()).toBe(false)
+    expect(wrapper.find('.sodar-ss-data').text()).toBe('-') // Empty value
+  })
+
+  // TODO: Test renaming to assay name already existing in table for new/old row
   // TODO: Test update propagation for multiple rows
   // TODO: Test value updating for new rows
 })

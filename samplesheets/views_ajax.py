@@ -999,10 +999,11 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
         """
         if node['cells'][0]['obj_cls'] == 'Process':
             for cell in node['cells']:
-                if cell['header_type'] == 'process_name':
+                if cell.get('header_type') == 'process_name':
                     return cell['value']
         else:  # Material
             return node['cells'][0]['value']
+        return None
 
     @classmethod
     def _add_node_attr(cls, node_obj, cell):
@@ -1191,8 +1192,15 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
             )
         )
 
+        # TODO: We create duplicate rows with named processes, fix!
+
         # Check if we'll need to consider collapsing of unnamed nodes
-        if len([n for n in row['nodes'] if not self._get_name(n)]) > 0:
+        # (References to existing nodes with UUID will not have to be collapsed)
+        if [
+            n
+            for n in row['nodes']
+            if not n['cells'][0].get('uuid') and not self._get_name(n)
+        ]:
             logger.debug('Unnamed node(s) in row, will attempt collapsing')
             collapse = True
             try:
@@ -1390,6 +1398,8 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
                 except Exception as ex:
                     return Response({'detail': str(ex)}, status=500)
             except Exception as ex:
+                if settings.DEBUG:
+                    raise (ex)
                 return Response({'detail': str(ex)}, status=500)
         return Response(self.ok_data, status=200)
 

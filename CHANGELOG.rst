@@ -48,6 +48,7 @@ Changed
     - Refactor ``IrodsDataRequestModifyMixin`` timeline helpers (#1913)
     - Rename ``get_igv_omit_override()`` to ``get_igv_omit_list()`` (#1924)
     - Rename ``check_igv_file_name()`` to ``check_igv_file_path()`` (#1923)
+    - Named process pooling and renaming in sheet editor (#1904)
 - **Taskflowbackend**
     - Optimize ``landing_zone_move`` iRODS path retrieval (#1882)
     - Set zone status on uncaught errors in ``run_flow()`` (#1458)
