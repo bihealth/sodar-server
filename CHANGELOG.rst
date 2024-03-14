@@ -76,6 +76,7 @@ Fixed
     - ``get_pedigree_file_path()`` used in cancer study app tests (#1914)
     - IGV omit settings not correctly set on project creation (#1925)
     - Germline study cache build crash with no family column (#1921)
+    - Source name editing failing in assay table after row insert (#1928)
 - **Taskflowbackend**
     - Hardcoded iRODS path length in ``landing_zone_move`` (#1888)
     - Uncaught exceptions in ``SetAccessTask`` (#1906)

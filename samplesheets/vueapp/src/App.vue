@@ -1055,10 +1055,16 @@ export default {
               if (this.sourceColSpan > 1) lastSourceGroupIdx = 2 // 2nd source group
               const lastSourceGroupId = cols[lastSourceGroupIdx].originalParent.groupId
               let groupId = cols[1].originalParent.groupId
-              // Modify starting index and group id for assay table updating
-              if (assayMode) {
+
+              if (assayMode) { // Assay table modifications
+                // Modify starting index and group id for assay table
                 startIdx = this.sampleIdx
                 groupId = cols[startIdx].originalParent.groupId
+                // Update newRow for source cells
+                for (let i = 1; i < startIdx; i++) {
+                  const value = rowNode.data[cols[i].colId]
+                  value.newRow = false
+                }
               }
 
               // Set cell data to match an existing row

@@ -24,6 +24,7 @@ Release for minor updates, maintenance and bug fixes.
 - Fix iRODS stats badge stuck in "updating"
 - Fix landing zone status updating not working in project details card
 - Fix landing zone creation crash with large amount of created collections
+- Fix multiple sheet editor issues
 - Minor updates and bug fixes
 - Upgrade to SODAR Core v0.13.4
 
