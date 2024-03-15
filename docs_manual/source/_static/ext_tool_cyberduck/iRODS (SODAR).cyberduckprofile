@@ -12,8 +12,6 @@
         <false/>
         <key>Port Configurable</key>
         <false/>
-        <key>Default Hostname</key>
-        <string>sodar.bihealth.org</string>
         <key>Region</key>
         <string>sodarZone</string>
         <key>Default Port</key>
