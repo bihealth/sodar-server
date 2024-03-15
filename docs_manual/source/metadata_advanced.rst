@@ -26,11 +26,13 @@ SODAR currently supports the following study configurations:
 - **Cancer**
     * Indended for: Cancer studies
     * Configuration: ``bih_cancer``
-    * Provides: **sample specific** shortcuts to the latest BAM and VCF files.
+    * Provides: **sample specific** shortcuts to the latest BAM/CRAM and VCF
+      files.
 - **Germline**
     * Indended for: Germline studies
     * Configuration: ``bih_germline``
-    * Provides: **pedigree specific** shortcuts to the latest BAM and VCF files.
+    * Provides: **pedigree specific** shortcuts to the latest BAM/CRAM and VCF
+      files.
 
 If the configuration is not specified or is not known to SODAR, the shortcut
 column will not be visible.
@@ -44,11 +46,12 @@ Placement of files in subcollections under the row-specific collection does not
 affect study shortcuts or IGV session inclusion. This also means files can be
 freely organized within desired subcollections.
 
-If there is need to omit BAM or VCF files with certain file name patterns from
-shortcuts and IGV sessions, file name suffixes can be defined in the
+If there is need to omit BAM/CRAM or VCF files with certain file name patterns
+from shortcuts and IGV sessions, file name suffixes can be defined in the
 :ref:`project update view <ui_project_update>`. Administrators can also define
 site-wide file suffixes to omit via :ref:`Django settings <admin_settings>`
-under ``SHEETS_IGV_OMIT_BAM`` and ``SHEETS_IGV_OMIT_VCF``.
+under ``SHEETS_IGV_OMIT_BAM`` (also affects CRAM files) and
+``SHEETS_IGV_OMIT_VCF``.
 
 
 Assay iRODS Data Linking

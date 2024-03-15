@@ -107,8 +107,8 @@ SHEETS_ENABLE_STUDY_TABLE_CACHE = True
 SHEETS_EXTERNAL_LINK_PATH = os.path.join(
     ROOT_DIR, 'samplesheets/tests/config/ext_links.json'
 )
-SHEETS_IGV_OMIT_BAM = ['dragen_evidence.bam']
-SHEETS_IGV_OMIT_VCF = ['cnv.vcf.gz', 'ploidy.vcf.gz', 'sv.vcf.gz']
+SHEETS_IGV_OMIT_BAM = ['*dragen_evidence.bam']
+SHEETS_IGV_OMIT_VCF = ['*cnv.vcf.gz', '*ploidy.vcf.gz', '*sv.vcf.gz']
 
 # Landingzones app settings
 LANDINGZONES_TRIGGER_ENABLE = True

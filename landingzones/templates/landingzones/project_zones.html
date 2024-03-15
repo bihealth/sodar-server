@@ -56,13 +56,11 @@
         display: none;
       }
     }
-
     @media screen and (max-width: 1200px) {
       .table.sodar-lz-table thead tr th:nth-child(1) {
         width: 250px;
       }
     }
-
     @media screen and (max-width: 900px) {
       .table.sodar-lz-table thead tr th:nth-child(2) {
         display: none;
@@ -71,7 +69,6 @@
         display: none;
       }
     }
-
     @media screen and (max-width: 450px) {
       .table.sodar-lz-table thead tr th:nth-child(4) {
         display: none;
@@ -157,8 +154,7 @@
     window.zoneStatusUpdated = false;
     window.statusInterval = {{ zone_status_interval }} * 1000;
     window.irodsShowChecksumCol = true;
-    var zoneStatusUrl = "{% url 'landingzones:ajax_status' project=project.sodar_uuid %}";
-    <!-- Superuser status variable -->
+    var zoneStatusURL = "{% url 'landingzones:ajax_status' project=project.sodar_uuid %}";
     var currentUserURL = "{% url 'projectroles:ajax_user_current' %}";
   </script>
 

@@ -8,6 +8,7 @@ from landingzones.constants import (
     ZONE_STATUS_NOT_CREATED,
     ZONE_STATUS_CREATING,
     ZONE_STATUS_FAILED,
+    STATUS_FINISHED,
 )
 from landingzones.models import LandingZone
 
@@ -61,6 +62,29 @@ class TaskflowAPI:
             zone.set_status(status, ex_msg)
         # TODO: Create app alert for failure if async (see #1499)
         raise cls.FlowSubmitException(ex_msg)
+
+    @classmethod
+    def _raise_lock_exception(cls, ex_msg, tl_event=None, zone=None):
+        """
+        Raise exception specifically for project lock errors. Updates the status
+        of the landing zone only if zone has not yet been finished by a
+        concurrent taskflow.
+
+        :param ex_msg: Exception message (string)
+        :param tl_event: Timeline event or None
+        :param zone: LandingZone object or None
+        :raise: FlowSubmitException
+        """
+        lock_zone = None
+        if zone:
+            zone.refresh_from_db()
+            if zone.status not in STATUS_FINISHED:
+                lock_zone = zone  # Exclude zone if already finished (see #1909)
+        cls._raise_flow_exception(
+            LOCK_FAIL_MSG + ': ' + str(ex_msg),
+            tl_event,
+            lock_zone,
+        )
 
     @classmethod
     def get_flow(
@@ -125,7 +149,7 @@ class TaskflowAPI:
         ex_msg = None
         coordinator = None
         lock = None
-        # Get zone if present in flow
+        # Get landing zone if present in flow
         zone = None
         if flow.flow_data.get('zone_uuid'):
             zone = LandingZone.objects.filter(
@@ -137,10 +161,8 @@ class TaskflowAPI:
             # Acquire lock
             coordinator = lock_api.get_coordinator()
             if not coordinator:
-                cls._raise_flow_exception(
-                    LOCK_FAIL_MSG + ': Failed to retrieve lock coordinator',
-                    tl_event,
-                    zone,
+                cls._raise_lock_exception(
+                    'Failed to retrieve lock coordinator', tl_event, zone
                 )
             else:
                 lock_id = str(project.sodar_uuid)
@@ -148,11 +170,7 @@ class TaskflowAPI:
                 try:
                     lock_api.acquire(lock)
                 except Exception as ex:
-                    cls._raise_flow_exception(
-                        LOCK_FAIL_MSG + ': {}'.format(ex),
-                        tl_event,
-                        zone,
-                    )
+                    cls._raise_lock_exception(str(ex), tl_event, zone)
         else:
             logger.info('Lock not required (flow.require_lock=False)')
 
@@ -185,9 +203,18 @@ class TaskflowAPI:
 
         # Raise exception if failed, otherwise return result
         if ex_msg:
-            logger.error(ex_msg)  # TODO: Isn't this redundant?
-            # NOTE: Not providing zone here since it's handled by flow
-            cls._raise_flow_exception(ex_msg, tl_event, None)
+            logger.error(ex_msg)
+            # Provide landing zone if error occurs but status has not been set
+            # (This means a failure has not been properly handled in the flow)
+            ex_zone = None
+            if zone:
+                zone.refresh_from_db()
+                if zone.status not in [
+                    ZONE_STATUS_NOT_CREATED,
+                    ZONE_STATUS_FAILED,
+                ]:
+                    ex_zone = zone
+            cls._raise_flow_exception(ex_msg, tl_event, ex_zone)
         return flow_result
 
     def submit(

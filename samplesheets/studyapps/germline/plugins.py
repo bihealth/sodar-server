@@ -13,19 +13,19 @@ from projectroles.plugins import get_backend_api
 from samplesheets.models import Investigation, Study, GenericMaterial
 from samplesheets.plugins import SampleSheetStudyPluginPoint
 from samplesheets.rendering import SampleSheetTableBuilder
-from samplesheets.studyapps.utils import (
-    get_igv_omit_override,
-    check_igv_file_name,
-    get_igv_session_url,
-    get_igv_irods_url,
-)
-from samplesheets.utils import get_index_by_header
-
 from samplesheets.studyapps.germline.utils import (
     get_pedigree_file_path,
     get_families,
     get_family_sources,
 )
+from samplesheets.studyapps.utils import (
+    get_igv_omit_list,
+    check_igv_file_suffix,
+    check_igv_file_path,
+    get_igv_session_url,
+    get_igv_irods_url,
+)
+from samplesheets.utils import get_index_by_header
 
 
 logger = logging.getLogger(__name__)
@@ -35,7 +35,6 @@ User = auth.get_user_model()
 
 # SODAR constants
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
-
 # Local constants
 APP_NAME = 'samplesheets.studyapps.germline'
 
@@ -86,8 +85,8 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 'files': {
                     'type': 'modal',
                     'icon': 'mdi:folder-open-outline',
-                    'title': 'View links to pedigree BAM, VCF and IGV session '
-                    'files',
+                    'title': 'View links to pedigree BAM/CRAM, VCF and IGV '
+                    'session files',
                 },
             },
             'data': [],
@@ -179,7 +178,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             'title': 'Pedigree-Wise Links for {}'.format(query_id),
             'data': {
                 'session': {'title': 'IGV Session File', 'files': []},
-                'bam': {'title': 'BAM Files', 'files': []},
+                'bam': {'title': 'BAM/CRAM Files', 'files': []},
                 'vcf': {'title': 'VCF File', 'files': []},
             },
         }
@@ -197,7 +196,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 project=study.get_project(),
             )
 
-        # BAM links
+        # BAM/CRAM links
         for source in sources:
             # Use cached value if present
             if cache_item and source.name in cache_item.data['bam']:
@@ -211,10 +210,10 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                     {
                         'label': source.name,
                         'url': webdav_url + bam_path,
-                        'title': 'Download BAM file',
+                        'title': 'Download BAM/CRAM file',
                         'extra_links': [
                             {
-                                'label': 'Add BAM file to IGV',
+                                'label': 'Add BAM/CRAM file to IGV',
                                 'icon': 'mdi:plus-thick',
                                 'url': get_igv_irods_url(bam_path, merge=True),
                             }
@@ -310,7 +309,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 study_objs = irods_backend.get_objects(
                     irods, irods_backend.get_path(study)
                 )
-            obj_len = len(study_objs['irods_data'])
+            obj_len = len(study_objs)
             logger.debug(
                 'Query returned {} data object{}'.format(
                     obj_len, 's' if obj_len != 1 else ''
@@ -322,8 +321,8 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             logger.error('Error querying for study objects: {}'.format(ex))
 
         project = study.get_project()
-        bam_override = get_igv_omit_override(project, 'bam')
-        vcf_override = get_igv_omit_override(project, 'vcf')
+        bam_omit_list = get_igv_omit_list(project, 'bam')
+        vcf_omit_list = get_igv_omit_list(project, 'vcf')
 
         for assay in study.assays.all():
             assay_plugin = assay.get_plugin()
@@ -342,33 +341,32 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 source_name = row[0]['value']
                 if source_name not in bam_paths:
                     bam_paths[source_name] = []
-                # Add BAM objects
+                # Add BAM/CRAM objects
                 path = assay_plugin.get_row_path(
                     row, assay_table, assay, assay_path
                 )
                 if obj_len > 0 and path not in bam_paths[source_name]:
                     bam_paths[source_name] += [
                         o['path']
-                        for o in study_objs['irods_data']
+                        for o in study_objs
                         if o['path'].startswith(path + '/')
-                        and o['name'].lower().endswith('bam')
-                        and check_igv_file_name(o['name'], 'bam', bam_override)
+                        and check_igv_file_suffix(o['name'], 'bam')
+                        and check_igv_file_path(o['path'], bam_omit_list)
                     ]
-                row_fam = row[fam_idx]['value']
                 # Add VCF objects
-                if row_fam:
-                    vcf_query_id = row_fam
-                else:
+                if fam_idx and row[fam_idx].get('value'):
+                    vcf_query_id = row[fam_idx]['value']
+                else:  # If family column isn't present/filled, use source name
                     vcf_query_id = source_name
                 if vcf_query_id not in vcf_paths:
                     vcf_paths[vcf_query_id] = []
                 if obj_len > 0 and path not in vcf_paths[vcf_query_id]:
                     vcf_paths[vcf_query_id] += [
                         o['path']
-                        for o in study_objs['irods_data']
+                        for o in study_objs
                         if o['path'].startswith(path + '/')
                         and o['name'].lower().endswith('vcf.gz')
-                        and check_igv_file_name(o['name'], 'vcf', vcf_override)
+                        and check_igv_file_path(o['path'], vcf_omit_list)
                     ]
 
         # Update data

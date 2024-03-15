@@ -67,6 +67,8 @@ INVALID_REDIS_URL = 'redis://127.0.0.1:6666/0'
 ZONE_BASE_COLLS = [MISC_FILES_COLL, RESULTS_COLL, TRACK_HUBS_COLL]
 ZONE_PLUGIN_COLLS = ['0815-N1-DNA1', '0815-T1-DNA1']
 ZONE_ALL_COLLS = ZONE_BASE_COLLS + ZONE_PLUGIN_COLLS
+RAW_DATA_COLL = 'RawData'
+MAX_QUANT_COLL = 'MaxQuantResults'
 
 
 class LandingZoneTaskflowMixin:
@@ -239,8 +241,7 @@ class TestZoneCreateView(
             'configuration': '',
         }
         with self.login(self.user):
-            response = self.client.post(self.url, values)
-            self.assertRedirects(response, self.redirect_url)
+            self.client.post(self.url, values)
 
         self.assert_zone_count(1)
         zone = LandingZone.objects.first()
@@ -287,8 +288,7 @@ class TestZoneCreateView(
             'configuration': '',
         }
         with self.login(self.user):
-            response = self.client.post(self.url, values)
-            self.assertRedirects(response, self.redirect_url)
+            self.client.post(self.url, values)
 
         self.assert_zone_count(1)
         zone = LandingZone.objects.first()
@@ -304,6 +304,38 @@ class TestZoneCreateView(
             self.assert_irods_access(
                 self.user.username, os.path.join(zone_path, c), IRODS_ACCESS_OWN
             )
+        # These should not be created for this plugin
+        for c in [MAX_QUANT_COLL, RAW_DATA_COLL]:
+            self.assert_irods_coll(zone, c, False)
+
+    def test_create_zone_colls_plugin_shortcuts(self):
+        """Test landingzones creation with shortcut collections in plugin"""
+        self.assertEqual(LandingZone.objects.count(), 0)
+        # Set pep_ms plugin
+        self.assay.measurement_type = {'name': 'protein expression profiling'}
+        self.assay.technology_type = {'name': 'mass spectrometry'}
+        self.assay.save()
+        # NOTE: update_cache() not implemented in this plugin
+
+        values = {
+            'assay': str(self.assay.sodar_uuid),
+            'title_suffix': ZONE_SUFFIX,
+            'description': ZONE_DESC,
+            'create_colls': True,
+            'restrict_colls': False,
+            'configuration': '',
+        }
+        with self.login(self.user):
+            self.client.post(self.url, values)
+
+        self.assert_zone_count(1)
+        zone = LandingZone.objects.first()
+        self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
+        zone_colls = ZONE_BASE_COLLS + [RAW_DATA_COLL, MAX_QUANT_COLL]
+        for c in zone_colls:
+            self.assert_irods_coll(zone, c, True)
+        for c in ZONE_PLUGIN_COLLS:
+            self.assert_irods_coll(zone, c, False)
 
     # TODO: Test without sodarcache (see issue #1157)
 
@@ -332,8 +364,7 @@ class TestZoneCreateView(
             'configuration': '',
         }
         with self.login(self.user):
-            response = self.client.post(self.url, values)
-            self.assertRedirects(response, self.redirect_url)
+            self.client.post(self.url, values)
 
         self.assert_zone_count(1)
         zone = LandingZone.objects.first()

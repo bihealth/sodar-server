@@ -103,18 +103,17 @@ class TestIrodsBackendAPITaskflow(
         self.irods.data_objects.create(path + '/' + TEST_FILE_NAME)
         self.irods.data_objects.create(path + '/{}.md5'.format(TEST_FILE_NAME))
         obj_list = self.irods_backend.get_objects(
-            self.irods, path, check_md5=True
+            self.irods, path, include_md5=True
         )
         self.assertIsNotNone(obj_list)
-        self.assertEqual(len(obj_list['irods_data']), 1)  # md5 not listed
+        self.assertEqual(len(obj_list), 2)
 
-        obj = obj_list['irods_data'][0]
+        obj = obj_list[0]
         expected = {
             'name': TEST_FILE_NAME,
             'type': 'obj',
             'path': path + '/' + TEST_FILE_NAME,
             'size': 0,
-            'md5_file': True,
             'modify_time': obj['modify_time'],
         }
         self.assertEqual(obj, expected)
@@ -127,10 +126,10 @@ class TestIrodsBackendAPITaskflow(
         self.irods.data_objects.create(path + '/{}.md5'.format(TEST_FILE_NAME))
         self.irods.collections.create(path + '/subcoll')
         obj_list = self.irods_backend.get_objects(
-            self.irods, path, include_colls=True, check_md5=True
+            self.irods, path, include_md5=True, include_colls=True
         )
         self.assertIsNotNone(obj_list)
-        self.assertEqual(len(obj_list['irods_data']), 2)  # md5 not listed
+        self.assertEqual(len(obj_list), 3)
 
         expected = [
             {
@@ -143,11 +142,17 @@ class TestIrodsBackendAPITaskflow(
                 'type': 'obj',
                 'path': path + '/' + TEST_FILE_NAME,
                 'size': 0,
-                'md5_file': True,
-                'modify_time': obj_list['irods_data'][1]['modify_time'],
+                'modify_time': obj_list[1]['modify_time'],
+            },
+            {
+                'name': TEST_FILE_NAME + '.md5',
+                'type': 'obj',
+                'path': path + '/' + TEST_FILE_NAME + '.md5',
+                'size': 0,
+                'modify_time': obj_list[2]['modify_time'],
             },
         ]
-        self.assertEqual(obj_list['irods_data'], expected)
+        self.assertEqual(obj_list, expected)
 
     def test_get_objects_multi(self):
         """Test get_objects() with multiple search terms"""
@@ -161,30 +166,10 @@ class TestIrodsBackendAPITaskflow(
             self.irods,
             path,
             name_like=[TEST_FILE_NAME, TEST_FILE_NAME2],
-            check_md5=True,
+            include_md5=True,
         )
         self.assertIsNotNone(obj_list)
-        self.assertEqual(len(obj_list['irods_data']), 2)  # md5 not listed
-
-        expected = [
-            {
-                'name': TEST_FILE_NAME,
-                'type': 'obj',
-                'path': path + '/' + TEST_FILE_NAME,
-                'size': 0,
-                'md5_file': True,
-                'modify_time': obj_list['irods_data'][0]['modify_time'],
-            },
-            {
-                'name': TEST_FILE_NAME2,
-                'type': 'obj',
-                'path': path + '/' + TEST_FILE_NAME2,
-                'size': 0,
-                'md5_file': True,
-                'modify_time': obj_list['irods_data'][1]['modify_time'],
-            },
-        ]
-        self.assertEqual(obj_list['irods_data'], expected)
+        self.assertEqual(len(obj_list), 4)
 
     def test_get_objects_long_query(self):
         """Test get_objects() with a long query"""
@@ -212,30 +197,10 @@ class TestIrodsBackendAPITaskflow(
             self.irods,
             path,
             name_like=[TEST_FILE_NAME, TEST_FILE_NAME2],
-            check_md5=True,
+            include_md5=True,
         )
         self.assertIsNotNone(obj_list)
-        self.assertEqual(len(obj_list['irods_data']), 2)  # md5 not listed
-
-        expected = [
-            {
-                'name': TEST_FILE_NAME,
-                'type': 'obj',
-                'path': path + '/' + TEST_FILE_NAME,
-                'size': 0,
-                'md5_file': True,
-                'modify_time': obj_list['irods_data'][0]['modify_time'],
-            },
-            {
-                'name': TEST_FILE_NAME2,
-                'type': 'obj',
-                'path': path + '/' + TEST_FILE_NAME2,
-                'size': 0,
-                'md5_file': True,
-                'modify_time': obj_list['irods_data'][1]['modify_time'],
-            },
-        ]
-        self.assertEqual(obj_list['irods_data'], expected)
+        self.assertEqual(len(obj_list), 4)
 
     def test_get_objects_empty_coll(self):
         """Test get_objects() with an empty sample collection"""
@@ -243,7 +208,7 @@ class TestIrodsBackendAPITaskflow(
         path = self.irods_backend.get_path(self.project) + '/' + SAMPLE_COLL
         obj_list = self.irods_backend.get_objects(self.irods, path)
         self.assertIsNotNone(obj_list)
-        self.assertEqual(len(obj_list['irods_data']), 0)
+        self.assertEqual(len(obj_list), 0)
 
     def test_get_objects_no_coll(self):
         """Test get_objects() with no created collections"""
@@ -258,10 +223,10 @@ class TestIrodsBackendAPITaskflow(
         self.irods.data_objects.create(path + '/' + TEST_FILE_NAME)
         self.irods.data_objects.create(path + '/' + TEST_FILE_NAME2)
         obj_list = self.irods_backend.get_objects(
-            self.irods, path, check_md5=False, limit=1
+            self.irods, path, include_md5=False, limit=1
         )
         self.assertIsNotNone(obj_list)
-        self.assertEqual(len(obj_list['irods_data']), 1)  # Limited to 1
+        self.assertEqual(len(obj_list), 1)  # Limited to 1
 
     def test_issue_ticket(self):
         """Test issue_ticket()"""

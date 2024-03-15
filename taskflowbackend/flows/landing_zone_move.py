@@ -12,15 +12,11 @@ import landingzones.tasks_taskflow as lz_tasks
 from landingzones.models import LandingZone
 
 from taskflowbackend.flows.base_flow import BaseLinearFlow
-from taskflowbackend.irods_utils import (
-    get_subcoll_obj_paths,
-    get_subcoll_paths,
-)
 from taskflowbackend.tasks import irods_tasks
 
 
 SAMPLE_COLL = settings.IRODS_SAMPLE_COLL
-ZONE_INFO_CALC = 'Finding and calculating missing checksums in iRODS'
+ZONE_INFO_CALC = 'Calculating missing checksums in iRODS'
 ZONE_INFO_VALIDATE = 'Validating {count} file{plural}'
 ZONE_INFO_READ_ONLY = ', write access disabled'
 
@@ -37,7 +33,6 @@ class Flow(BaseLinearFlow):
         return super().validate()
 
     def build(self, force_fail=False):
-        # Setup
         validate_only = self.flow_data.get('validate_only', False)
         zone = LandingZone.objects.get(sodar_uuid=self.flow_data['zone_uuid'])
         project_group = self.irods_backend.get_user_group_name(self.project)
@@ -54,39 +49,32 @@ class Flow(BaseLinearFlow):
             ),
         )
 
-        # Get landing zone file paths (without .md5 files) from iRODS
-        zone_coll = self.irods.collections.get(zone_path)
-        zone_objects = get_subcoll_obj_paths(zone_coll)
-        zone_objects_nomd5 = list(
-            set(
-                [
-                    p
-                    for p in zone_objects
-                    if p[p.rfind('.') + 1 :].lower() != 'md5'
-                ]
-            )
+        # Get landing zone data object and collection paths from iRODS
+        zone_all = self.irods_backend.get_objects(
+            self.irods, zone_path, include_md5=True, include_colls=True
         )
-        zone_objects_md5 = list(
-            set([p for p in zone_objects if p not in zone_objects_nomd5])
-        )
+        zone_objects = [o['path'] for o in zone_all if o['type'] == 'obj']
+        zone_objects_nomd5 = [
+            p for p in zone_objects if p[p.rfind('.') + 1 :].lower() != 'md5'
+        ]
+        zone_objects_md5 = [
+            p for p in zone_objects if p not in zone_objects_nomd5
+        ]
         file_count = len(zone_objects_nomd5)
         file_count_msg_plural = 's' if file_count != 1 else ''
 
         # Get all collections with root path
         zone_all_colls = [zone_path]
-        zone_all_colls += get_subcoll_paths(zone_coll)
+        zone_all_colls += [o['path'] for o in zone_all if o['type'] == 'coll']
         # Get list of collections containing files (ignore empty colls)
         zone_object_colls = list(set([p[: p.rfind('/')] for p in zone_objects]))
-        # Convert these to collections inside sample collection
-        sample_colls = list(
-            set(
-                [
-                    sample_path + '/' + '/'.join(p.split('/')[10:])
-                    for p in zone_object_colls
-                    if len(p.split('/')) > 10
-                ]
-            )
-        )
+        # Convert paths to collections inside sample collection
+        zone_path_len = len(zone_path.split('/'))
+        sample_colls = [
+            sample_path + '/' + '/'.join(p.split('/')[zone_path_len:])
+            for p in zone_object_colls
+            if len(p.split('/')) > zone_path_len
+        ]
 
         # print('sample_path: {}'.format(sample_path))                # DEBUG
         # print('zone_objects: {}'.format(zone_objects))              # DEBUG

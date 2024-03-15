@@ -85,7 +85,8 @@ iRODS Settings
 ``IRODS_ZONE``
     iRODS zone (string).
 ``IRODS_ROOT_PATH``
-    iRODS root path, if something else than ``/{IRODS_ZONE}/`` (string).
+    iRODS root path, without the zone. Used if the SODAR projects collection is
+    not intended to be placed directly under ``IRODS_ZONE`` (string).
 ``IRODS_USER``
     Name of iRODS admin user to be used by backend processes (string).
 ``IRODS_PASS``
@@ -107,6 +108,13 @@ iRODS Settings
 ``IRODS_SODAR_AUTH``
     Enable local basic auth endpoint for iRODS if an external LDAP/AD server is
     not used (boolean, default: ``False``).
+
+.. warning::
+
+    Changing path settings such as ``IRODS_ROOT_PATH``, ``IRODS_SAMPLE_COLL``
+    and ``IRODS_LANDING_ZONE_COLL`` is **not** recommended on an existing SODAR
+    installation. In that case, manual moving of existing iRODS collections is
+    required or links to iRODS will not work as expected.
 
 Taskflow Backend Settings
 -------------------------
@@ -185,7 +193,7 @@ Sample Sheets Settings
 ``SHEETS_SYNC_INTERVAL``
     Interval for remote sheet synchronization in minutes (integer).
 ``SHEETS_IGV_OMIT_BAM``
-    BAM file name suffixes to omit from study shortcuts and IGV session
+    BAM and CRAM file name suffixes to omit from study shortcuts and IGV session
     generation.
 ``SHEETS_IGV_OMIT_VCF``
     VCF file name suffixes to omit from study shortcuts and IGV session

@@ -18,10 +18,7 @@ from samplesheets.studyapps.cancer.utils import (
     get_latest_file_path,
 )
 from samplesheets.studyapps.utils import get_igv_session_url, get_igv_irods_url
-from samplesheets.utils import (
-    get_isa_field_name,
-    get_last_material_index,
-)
+from samplesheets.utils import get_isa_field_name, get_last_material_index
 
 
 logger = logging.getLogger(__name__)
@@ -85,8 +82,8 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 'files': {
                     'type': 'modal',
                     'icon': 'mdi:folder-open-outline',
-                    'title': 'View links to BAM, VCF and IGV session files '
-                    'for the case',
+                    'title': 'View links to BAM/CRAM, VCF and IGV session '
+                    'files for the case',
                 },
             },
             'data': [],
@@ -172,7 +169,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             'title': 'Case-Wise Links for {}'.format(case_id),
             'data': {
                 'session': {'title': 'IGV Session File', 'files': []},
-                'bam': {'title': 'BAM Files', 'files': []},
+                'bam': {'title': 'BAM/CRAM Files', 'files': []},
                 'vcf': {'title': 'VCF Files', 'files': []},
             },
         }
@@ -190,7 +187,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                         'extra_links': [
                             {
                                 'label': 'Add {} file to IGV'.format(
-                                    file_type.upper()
+                                    'BAM/CRAM' if file_type == 'bam' else 'VCF'
                                 ),
                                 'icon': 'mdi:plus-thick',
                                 'url': get_igv_irods_url(path, merge=True),

@@ -120,6 +120,11 @@ REMOTE_SITE_SECRET = build_secret()
 EDIT_NEW_VALUE_STR = 'edited value'
 DUMMY_UUID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
 IRODS_FILE_PATH = '/sodarZone/path/test1.txt'
+TPL_FILE_NAME_FIELDS = [
+    'investigation_title',
+    'investigation_id',
+    'study_title',
+]
 with open(CONFIG_PATH_DEFAULT) as fp:
     CONFIG_DATA_DEFAULT = json.load(fp)
 
@@ -790,6 +795,30 @@ class TestSheetTemplateCreateView(SamplesheetsViewTestBase):
                 )
             isa_tab = ISATab.objects.first()
             self.assertEqual(isa_tab.tags, ['CREATE'])
+            self.assertEqual(response.status_code, 302, msg=t.name)
+            self.assertIsNotNone(
+                self.project.investigations.first(), msg=t.name
+            )
+            self.project.investigations.first().delete()
+
+    def test_post_batch_file_name_slash(self):
+        """Test POST with slashes in values used for file names"""
+        for t in ISA_TEMPLATES:
+            self.assertIsNone(self.project.investigations.first())
+            post_data = self._get_post_data(t)
+            for k in TPL_FILE_NAME_FIELDS:
+                if k in post_data:
+                    post_data[k] += '/test'
+            with self.login(self.user):
+                response = self.client.post(
+                    reverse(
+                        'samplesheets:template_create',
+                        kwargs={'project': self.project.sodar_uuid},
+                    )
+                    + '?sheet_tpl='
+                    + t.name,
+                    data=post_data,
+                )
             self.assertEqual(response.status_code, 302, msg=t.name)
             self.assertIsNotNone(
                 self.project.investigations.first(), msg=t.name
@@ -1552,10 +1581,10 @@ class TestIrodsDataRequestListView(
 ):
     """Tests for IrodsDataRequestListView"""
 
-    def test_list(self):
-        """Test GET request for listing delete requests"""
+    def test_get(self):
+        """Test IrodsDataRequestListView GET"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
-        request = self.make_irods_request(
+        irods_request = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
             path=IRODS_FILE_PATH,
@@ -1571,9 +1600,14 @@ class TestIrodsDataRequestListView(
             )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['object_list']), 1)
-        self.assertEqual(response.context['object_list'][0], request)
+        context_obj = response.context['object_list'][0]
+        self.assertEqual(context_obj, irods_request)
+        self.assertEqual(
+            context_obj.webdav_url, 'https://127.0.0.1' + IRODS_FILE_PATH
+        )  # Ensure no extra slash is between host and iRODS path
+        self.assertEqual(context_obj.is_collection, False)
 
-    def test_list_as_contributor_by_superuser(self):
+    def test_get_as_contributor_by_superuser(self):
         """Test GET as contibutor with request created by superuser"""
         self.make_irods_request(
             project=self.project,
@@ -1592,7 +1626,7 @@ class TestIrodsDataRequestListView(
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['object_list']), 0)
 
-    def test_list_as_contributor2_by_contributor(self):
+    def test_get_as_contributor2_by_contributor(self):
         """Test GET as contributor2 with request created by contributor"""
         user_contributor2 = self.make_user('user_contributor2')
         self.make_assignment(

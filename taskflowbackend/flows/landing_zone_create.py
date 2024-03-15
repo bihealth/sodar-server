@@ -154,26 +154,30 @@ class Flow(BaseLinearFlow):
                 )
             )
         # Create collections
-        for d in self.flow_data['colls']:
-            coll_path = os.path.join(zone_path, d)
+        if self.flow_data['colls']:
+            colls_full_path = [
+                os.path.join(zone_path, c) for c in self.flow_data['colls']
+            ]
+            coll_count = len(self.flow_data['colls'])
             self.add_task(
-                irods_tasks.CreateCollectionTask(
-                    name='Create collection {}'.format(coll_path),
+                irods_tasks.BatchCreateCollectionsTask(
+                    name='Batch create {} collection{}'.format(
+                        coll_count, 's' if coll_count != 1 else ''
+                    ),
                     irods=self.irods,
-                    inject={'path': coll_path},
+                    inject={'paths': colls_full_path},
                 )
             )
             # Enforce collection access if set
             if self.flow_data['restrict_colls']:
                 self.add_task(
-                    irods_tasks.SetAccessTask(
-                        name='Set user owner access to collection {}'.format(
-                            coll_path
-                        ),
+                    irods_tasks.BatchSetAccessTask(
+                        name='Batch set user owner access to created '
+                        'collections',
                         irods=self.irods,
                         inject={
                             'access_name': 'own',
-                            'path': coll_path,
+                            'paths': colls_full_path,
                             'user_name': zone.user.username,
                             'access_lookup': access_lookup,
                             'irods_backend': self.irods_backend,

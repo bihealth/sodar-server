@@ -194,7 +194,8 @@ class IrodsAPI:
         """
         Validate and sanitize iRODS path.
 
-        :param path: iRODS collection or data object path (string)
+        :param path: Full or partial iRODS path to collection or data object
+                     (string)
         :raise: ValueError if iRODS path is invalid or unacceptable
         :return: Sanitized iRODS path (string)
         """
@@ -261,7 +262,6 @@ class IrodsAPI:
                     obj_class, ', '.join(ACCEPTED_PATH_TYPES)
                 )
             )
-
         if obj_class == 'Project':
             project = obj
         else:
@@ -270,10 +270,8 @@ class IrodsAPI:
             raise ValueError('Project not found for given object')
 
         # Base path (project)
-        rp = settings.IRODS_ROOT_PATH
-        path = '/{zone}/projects/{root_prefix}{uuid_prefix}/{uuid}'.format(
-            root_prefix=rp + '/' if rp else '',
-            zone=settings.IRODS_ZONE,
+        path = '{root_path}/projects/{uuid_prefix}/{uuid}'.format(
+            root_path=cls.get_root_path(),
             uuid_prefix=str(project.sodar_uuid)[:2],
             uuid=project.sodar_uuid,
         )
@@ -341,11 +339,16 @@ class IrodsAPI:
 
     @classmethod
     def get_root_path(cls):
-        """Return the root path for SODAR data"""
-        root_prefix = (
-            '/' + settings.IRODS_ROOT_PATH if settings.IRODS_ROOT_PATH else ''
-        )
-        return '/{}{}'.format(settings.IRODS_ZONE, root_prefix)
+        """Return the SODAR root path in iRODS"""
+        irods_zone = settings.IRODS_ZONE
+        root_path = ''
+        if settings.IRODS_ROOT_PATH:
+            root_path = cls.sanitize_path(settings.IRODS_ROOT_PATH)
+            if root_path.startswith('/' + irods_zone):
+                raise ValueError(
+                    'iRODS zone must not be included in IRODS_ROOT_PATH'
+                )
+        return '/{}{}'.format(irods_zone, root_path)
 
     @classmethod
     def get_projects_path(cls):
@@ -368,13 +371,9 @@ class IrodsAPI:
         :return: String or None
         :raise: ValueError if obj_type is not accepted
         """
-        root_prefix = (
-            settings.IRODS_ROOT_PATH + '/' if settings.IRODS_ROOT_PATH else ''
-        )
         path_regex = {
-            'project': '/{}/'.format(settings.IRODS_ZONE)
-            + root_prefix
-            + 'projects/[a-zA-Z0-9]{2}/(.+?)(?:/|$)',
+            'project': cls.get_root_path()
+            + '/projects/[a-zA-Z0-9]{2}/(.+?)(?:/|$)',
             'study': '/study_(.+?)(?:/|$)',
             'assay': '/assay_(.+?)(?:/|$)',
         }
@@ -582,7 +581,7 @@ class IrodsAPI:
         return [iRODSCollection(coll.manager, row) for row in query]
 
     def get_objs_recursively(
-        self, irods, coll, md5=False, name_like=None, limit=None
+        self, irods, coll, include_md5=False, name_like=None, limit=None
     ):
         """
         Return objects below a coll recursively. Replacement for the
@@ -591,13 +590,13 @@ class IrodsAPI:
 
         :param irods: iRODSSession object
         :param coll: Collection object
-        :param md5: if True, return .md5 files, otherwise anything but them
+        :param include_md5: if True, include .md5 files
         :param name_like: Filtering of file names (string or list of strings)
-        :param limit: Limit search to n rows (int)
+        :param limit: Limit retrieval to n rows (int)
         :return: List
         """
         ret = []
-        md5_filter = 'LIKE' if md5 else 'NOT LIKE'
+        md5_filter = '' if include_md5 else 'AND data_name NOT LIKE \'%.md5\''
         path_lookup = []
         q_count = 1
 
@@ -607,8 +606,7 @@ class IrodsAPI:
                 'r_data_main.modify_ts as modify_ts, coll_name '
                 'FROM r_data_main JOIN r_coll_main USING (coll_id) '
                 'WHERE (coll_name = \'{coll_path}\' '
-                'OR coll_name LIKE \'{coll_path}/%\') '
-                'AND data_name {md5_filter} \'%.md5\''.format(
+                'OR coll_name LIKE \'{coll_path}/%\') {md5_filter}'.format(
                     coll_path=coll.path, md5_filter=md5_filter
                 )
             )
@@ -621,7 +619,8 @@ class IrodsAPI:
                         sql += ' OR '
                     sql += 'data_name LIKE \'%{}%\''.format(n)
                 sql += ')'
-            if not md5 and limit:
+            # TODO: Shouldn't we also allow limit if including .md5 files?
+            if not include_md5 and limit:
                 sql += ' LIMIT {}'.format(limit)
 
             # logger.debug('Object list query = "{}"'.format(sql))
@@ -680,21 +679,21 @@ class IrodsAPI:
         self,
         irods,
         path,
-        check_md5=False,
+        include_md5=False,
         include_colls=False,
         name_like=None,
         limit=None,
     ):
         """
-        Return an iRODS object list.
+        Return a flat iRODS object list recursively under a given path.
 
         :param irods: iRODSSession object
         :param path: Full path to iRODS collection
-        :param check_md5: Whether to add md5 checksum file info (bool)
+        :param include_md5: Include .md5 checksum files (bool)
         :param include_colls: Include collections (bool)
         :param name_like: Filtering of file names (string or list of strings)
         :param limit: Limit search to n rows (int)
-        :return: Dict
+        :return: List
         :raise: FileNotFoundError if collection is not found
         """
         try:
@@ -706,43 +705,21 @@ class IrodsAPI:
             if not isinstance(name_like, list):
                 name_like = [name_like]
             name_like = [n.replace('_', '\_') for n in name_like]  # noqa
-        ret = {'irods_data': []}
-        md5_paths = None
-
-        data_objs = self.get_objs_recursively(
-            irods, coll, name_like=name_like, limit=limit
+        ret = self.get_objs_recursively(
+            irods,
+            coll,
+            include_md5=include_md5,
+            name_like=name_like,
+            limit=limit,
         )
-        if data_objs and check_md5:
-            md5_paths = [
-                o['path']
-                for o in self.get_objs_recursively(
-                    irods, coll, md5=True, name_like=name_like
-                )
-            ]
-
-        for o in data_objs:
-            if check_md5:
-                if o['path'] + '.md5' in md5_paths:
-                    o['md5_file'] = True
-                else:
-                    o['md5_file'] = False
-            ret['irods_data'].append(o)
 
         # Add collections if enabled
-        # TODO: Combine into a single query?
+        # TODO: Combine into a single query? (see issues #1440, #1883)
         if include_colls:
             colls = self.get_colls_recursively(coll)
             for c in colls:
-                ret['irods_data'].append(
-                    {
-                        'name': c.name,
-                        'type': 'coll',
-                        'path': c.path,
-                    }
-                )
-            ret['irods_data'] = sorted(
-                ret['irods_data'], key=lambda x: x['path']
-            )
+                ret.append({'name': c.name, 'type': 'coll', 'path': c.path})
+            ret = sorted(ret, key=lambda x: x['path'])
         return ret
 
     @classmethod

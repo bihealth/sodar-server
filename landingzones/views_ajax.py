@@ -24,21 +24,17 @@ class ZoneStatusRetrieveAjaxView(SODARBaseProjectAjaxView):
     def post(self, request, *args, **kwargs):
         zone_uuids = request.data.getlist('zone_uuids[]')
         project = self.get_project()
-
         # Filter landing zones based on UUIDs and project
         zones = LandingZone.objects.filter(
             sodar_uuid__in=zone_uuids, project=project
         )
-
         status_dict = {}
         for zone in zones:
             # Check permissions
             if not self.check_zone_permission(zone, self.request.user):
                 continue
-
             status_dict[str(zone.sodar_uuid)] = {
                 'status': zone.status,
                 'status_info': zone.status_info,
             }
-
         return Response(status_dict, status=200)

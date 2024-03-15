@@ -27,6 +27,7 @@ from samplesheets.utils import (
     compare_inv_replace,
     get_webdav_url,
     get_ext_link_labels,
+    get_latest_file_path,
 )
 from samplesheets.tests.test_io import (
     SampleSheetIOMixin,
@@ -52,6 +53,9 @@ CONFIG_PROTOCOL_UUIDS = [
 ]
 IRODS_TICKET_STR = 'ooChaa1t'
 EXT_LINK_PATH_INVALID = '/tmp/NON_EXISTING_EXT_LINK_FILE.json'
+BAM_PATH = '/sodarZone/coll_z/file_2023-02-28.bam'
+BAM_PATH2 = '/sodarZone/coll_x/file_2023-03-01.bam'
+CRAM_PATH = '/sodarZone/coll_y/file_2023-02-29.cram'
 
 
 class SamplesheetsUtilsTestBase(
@@ -289,6 +293,20 @@ class TestGetExtLinkLabels(SamplesheetsUtilsTestBase):
 
     @override_settings(SHEETS_EXTERNAL_LINK_PATH=EXT_LINK_PATH_INVALID)
     def test_get_default(self):
-        """Test retrievint default labels"""
+        """Test retrieving default labels"""
         labels = get_ext_link_labels()
         self.assertEqual(labels, DEFAULT_EXTERNAL_LINK_LABELS)
+
+
+class TestGetLatestFilePath(SamplesheetsUtilsTestBase):
+    """Tests for get_latest_file_path()"""
+
+    def test_get_bam(self):
+        """Test retrieval with two BAM paths"""
+        self.assertEqual(get_latest_file_path([BAM_PATH, BAM_PATH2]), BAM_PATH2)
+
+    def test_get_mixed(self):
+        """Test retrieval with mixed BAM and CRAM paths"""
+        self.assertEqual(
+            get_latest_file_path([BAM_PATH, BAM_PATH2, CRAM_PATH]), BAM_PATH2
+        )

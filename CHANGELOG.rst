@@ -5,6 +5,95 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+v0.14.2 (2024-03-15)
+====================
+
+Added
+-----
+
+- **General**
+    - Django settings for reverse proxy setup (#1917)
+- **Irodsbackend**
+    - Sanitize and validate ``IRODS_ROOT_PATH`` in ``get_root_path()`` (#1891)
+- **Landingzones**
+    - Create assay plugin shortcut collections for zones (#1869)
+    - Zone statistics for siteinfo (#1898)
+    - UI tests for project details card (#1902)
+- **Samplesheets**
+    - ``IrodsDataRequest`` timeline event extra data (#1912)
+    - CRAM file support in study apps (#1908)
+    - ``check_igv_file_suffix()`` helper in ``studyapps.utils`` (#1908)
+    - Path checking for IGV omit settings (#1923)
+    - Glob pattern support for IGV omit settings (#1923)
+- **Taskflowbackend**
+    - Django settings in siteinfo (#1901)
+    - ``BatchSetAccessTask`` in iRODS tasks (#1905)
+    - ``IrodsAccessMixin`` task helper mixin (#1905)
+
+Changed
+-------
+
+- **General**
+    - Upgrade to Django v3.2.25 (#1854)
+    - Upgrade to django-sodar-core v0.13.4 (#1899)
+    - Upgrade critical Vue app dependencies (#1854)
+    - Upgrade to cubi-isa-templates v0.1.2 (#1854)
+    - Update installation documentation (#1871)
+- **Irodsbackend**
+    - Reduce redundant object queries (#1883)
+    - Change method logic in ``get_objects()`` and ``get_objs_recursively()`` (#1883)
+    - Use ``get_root_path()`` within ``IrodsAPI`` (#1890)
+    - Refactor ``IrodsStatisticsAjaxView`` and related JQuery (#1903)
+- **Samplesheets**
+    - Improve Django messages for ``IrodsDataRequest`` exceptions (#1858)
+    - Change ``IrodsDataRequest`` description if created in Ajax view (#1862)
+    - Refactor ``IrodsDataRequestModifyMixin`` timeline helpers (#1913)
+    - Rename ``get_igv_omit_override()`` to ``get_igv_omit_list()`` (#1924)
+    - Rename ``check_igv_file_name()`` to ``check_igv_file_path()`` (#1923)
+    - Named process pooling and renaming in sheet editor (#1904)
+- **Taskflowbackend**
+    - Optimize ``landing_zone_move`` iRODS path retrieval (#1882)
+    - Set zone status on uncaught errors in ``run_flow()`` (#1458)
+    - Change ``TASKFLOW_IRODS_CONN_TIMEOUT`` default value to ``960`` (#1900)
+
+Fixed
+-----
+
+- **General**
+    - Invalid env var retrieval for ``AUTH_LDAP*_START_TLS`` (#1853)
+- **Irodsbackend**
+    - Invalid path returned by ``get_path()`` if ``IRODS_ROOT_PATH`` is set (#1889)
+    - Stats badge stuck in updating with non-200 POST status (#1327, #1886)
+- **Landingzones**
+    - Stats badge displayed to superusers for ``DELETED`` zones (#1866)
+    - Zone status updating not working in project details card (#1902)
+    - Modifying finished lock status allowed in ``SetLandingZoneStatusTask`` (#1909)
+- **Samplesheets**
+    - Invalid WebDAV URLs generated in ``IrodsDataRequestListView`` (#1860)
+    - Superuser not allowed to edit iRODS request from other users in UI (#1863)
+    - ``IrodsDataRequest`` user changed on object update (#1864)
+    - ``IrodsDataRequest._validate_action()`` failing with ``delete`` action (#1858)
+    - Protocol ref editable for new row if disabled in column config (#1875)
+    - Sheet template creation failure with slash characters in title/ID fields (#1896)
+    - ``get_pedigree_file_path()`` used in cancer study app tests (#1914)
+    - IGV omit settings not correctly set on project creation (#1925)
+    - Germline study cache build crash with no family column (#1921)
+    - Source name editing failing in assay table after row insert (#1928)
+- **Taskflowbackend**
+    - Hardcoded iRODS path length in ``landing_zone_move`` (#1888)
+    - Uncaught exceptions in ``SetAccessTask`` (#1906)
+    - Crash in ``landing_zone_create`` with large amount of collections (#1905)
+    - Finished landing zone status modified by lock exception (#1909)
+
+Removed
+-------
+
+- **General**
+    - LDAP settings ``OPT_X_TLS_REQUIRE_CERT`` workaround (#1853)
+- **Taskflowbackend**
+    - ``get_subcoll_obj_paths()`` and ``get_subcoll_paths()`` helpers (#1882)
+
+
 v0.14.1 (2023-12-12)
 ====================
 

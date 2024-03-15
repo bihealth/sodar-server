@@ -3,6 +3,7 @@
 import hashlib
 
 from lxml import etree as ET
+from pathlib import PurePosixPath
 
 from django.conf import settings
 from django.urls import reverse
@@ -17,48 +18,64 @@ app_settings = AppSettingAPI()
 # Constants
 IGV_URL_BASE = 'http://127.0.0.1:60151'
 FILE_TYPE_SUFFIXES = {'bam': '.bam', 'vcf': '.vcf.gz'}
+FILE_TYPE_SUFFIX_CRAM = '.cram'  # Special case grouped together with bam
 INVALID_TYPE_MSG = 'Invalid value for file_type'
 
 
-def get_igv_omit_override(project, file_type):
+def get_igv_omit_list(project, file_type):
     """
-    Get IGV omit override setting for a project. NOTE: Added as a separate
-    method to avoid redundant database queries.
+    Get list of IGV omit glob patterns for a specific file type in a project.
+    NOTE: Added as a separate method to avoid redundant database queries.
 
     :param project: Project object
-    :param file_type: String ("bam" or "vcf")
-    :return: List or None
+    :param file_type: String ("bam" or "vcf", "bam" is also used for CRAM)
+    :return: List (appends * in front of each path if missing)
     """
     ft = file_type.lower()
     if ft not in ['bam', 'vcf']:
         raise ValueError(INVALID_TYPE_MSG)
-    setting = app_settings.get(
+    setting_val = app_settings.get(
         'samplesheets', 'igv_omit_{}'.format(ft), project=project
     )
-    if setting:
-        return [s.strip() for s in setting.split(',')]
-    return None
+    if not setting_val:
+        return []
+    return [
+        '{}{}'.format('*' if not s.strip().startswith('*') else '', s.strip())
+        for s in setting_val.split(',')
+    ]
 
 
-def check_igv_file_name(file_name, file_type, override=None):
+def check_igv_file_suffix(file_name, file_type):
     """
-    Check if file is acceptable for IGV session inclusion. Returns False if
-    suffix is found in env vars of omittable files.
+    Check if file name corresponds to the specified file type.
 
     :param file_name: String
-    :param file_type: String ("bam" or "vcf")
-    :param override: File suffixes to override site-wide setting (list or None)
+    :param file_type: String ("bam" or "vcf", "bam" is also used for CRAM)
     :raise: ValueError if file_type is incorrect
-    :return: Boolean (True if name is OK)
+    :return: Boolean (True if suffix matches the file type)
     """
-    ft = file_type.lower()
-    if ft not in ['bam', 'vcf']:
+    if file_type.lower() not in ['bam', 'vcf']:
         raise ValueError(INVALID_TYPE_MSG)
-    fn = file_name.lower()
-    if override:
-        return not any([s.lower() for s in override if fn.endswith(s)])
-    ol = getattr(settings, 'SHEETS_IGV_OMIT_' + file_type.upper(), [])
-    return not any([s.lower() for s in ol if fn.endswith(s)])
+    fn = file_name.lower()  # Just in case suffix is in upper case
+    return (
+        fn.endswith(FILE_TYPE_SUFFIXES[file_type])
+        or file_type == 'bam'
+        and fn.endswith(FILE_TYPE_SUFFIX_CRAM)
+    )
+
+
+def check_igv_file_path(path, omit_list):
+    """
+    Check if file path is acceptable for IGV session inclusion. Returns False if
+    pattern is found in IGV omit settings.
+
+    :param path: Full or partial iRODS path (string)
+    :param omit_list: List of path glob patterns to omit (list)
+    :return: Boolean (True if path is OK)
+    """
+    return not any(
+        [p for p in omit_list if PurePosixPath(path.lower()).match(p.lower())]
+    )
 
 
 def get_igv_session_url(source, app_name, merge=False):
@@ -79,10 +96,7 @@ def get_igv_session_url(source, app_name, merge=False):
         '{}:igv'.format(app_name), kwargs={'genericmaterial': source.sodar_uuid}
     )
     return '{}/load?merge={}&file={}{}.xml'.format(
-        IGV_URL_BASE,
-        str(merge).lower(),
-        file_prefix,
-        file_url,
+        IGV_URL_BASE, str(merge).lower(), file_prefix, file_url
     )
 
 
@@ -104,7 +118,7 @@ def get_igv_xml(project, bam_urls, vcf_urls, vcf_title, request, string=True):
     Build IGV session XML file.
 
     :param project: Project object
-    :param bam_urls: BAM file URLs (dict {name: url})
+    :param bam_urls: BAM/CRAM file URLs (dict {name: url})
     :param vcf_urls: VCF file URLs (dict {name: url})
     :param vcf_title: VCF title to prefix to VCF title strings (string)
     :param request: Django request
@@ -164,7 +178,7 @@ def get_igv_xml(project, bam_urls, vcf_urls, vcf_title, request, string=True):
                 'windowFunction': 'count',
             },
         )
-    # BAM panels
+    # BAM/CRAM panels
     for bam_name, bam_url in bam_urls.items():
         # Generating unique panel name with hashlib
         xml_bam_panel = ET.SubElement(

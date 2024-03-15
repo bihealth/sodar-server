@@ -88,6 +88,7 @@ export default Vue.extend({
       nameValues: [],
       nameUuids: {},
       sampleColId: null,
+      nameColumn: false,
       destroyCalled: false // HACK for issue #869
     }
   },
@@ -138,7 +139,7 @@ export default Vue.extend({
       return ''
     },
     getValidState () {
-      if (this.headerInfo.header_type === 'name') { // Name is a special case
+      if (this.nameColumn) { // Name is a special case
         // TODO: Cleanup/simplify
         // NOTE: Empty value is allowed for DATA materials
         if ((this.editValue.length === 0 &&
@@ -233,7 +234,6 @@ export default Vue.extend({
   created () {
     this.app = this.params.app
     this.gridOptions = this.app.getGridOptionsByUuid(this.params.gridUuid)
-
     // Cancel editing if editingCell is true
     if (this.app.editingCell) {
       this.editAllowed = false
@@ -248,18 +248,18 @@ export default Vue.extend({
       this.isValueArray = true
       this.editValue = this.editValue.join('; ')
     }
-
     if (this.value.value) {
       this.ogEditValue = Object.assign(this.value.value)
     } else {
       this.ogEditValue = null
     }
-
     this.headerInfo = this.params.headerInfo
     this.renderInfo = this.params.renderInfo
     this.editConfig = this.params.editConfig
     this.sampleColId = this.params.sampleColId
-
+    if (['name', 'process_name'].includes(this.headerInfo.header_type)) {
+      this.nameColumn = true
+    }
     // console.log('Edit colId/field: ' + this.params.colDef.field) // DEBUG
 
     // Set up unit value
@@ -322,7 +322,7 @@ export default Vue.extend({
     }
 
     // Special setup for the name column
-    if (this.headerInfo.header_type === 'name') {
+    if (this.nameColumn) {
       if (this.value.newRow) this.containerTitle = 'Enter name of new or existing node'
       else this.containerTitle = 'Rename node'
       // If name, get other current values for comparison in validation
@@ -360,20 +360,6 @@ export default Vue.extend({
           this.value.value[i] = this.value.value[i].trim()
         }
       }
-      // Check if we're in a named process without a protocol
-      let namedProcess = false
-      if (this.headerInfo.header_type === 'process_name') {
-        namedProcess = true
-        const groupId = this.params.column.originalParent.groupId
-        const cols = this.gridOptions.columnApi.getColumns()
-        for (let i = 1; i < cols.length - 1; i++) {
-          if (cols[i].originalParent.groupId === groupId &&
-              cols[i].colDef.cellEditorParams.headerInfo.header_type === 'protocol') {
-            namedProcess = false
-            break
-          }
-        }
-      }
 
       // Reject invalid value
       if (!this.valid) {
@@ -385,7 +371,7 @@ export default Vue.extend({
       }
 
       // Confirm renaming node into an existing node and overwriting values
-      if ((this.headerInfo.header_type === 'name' || namedProcess) &&
+      if ((this.nameColumn) &&
           this.value.newRow &&
           this.ogEditValue &&
           this.nameValues.includes(this.editValue)) {
@@ -402,12 +388,11 @@ export default Vue.extend({
       }
 
       // Proceed with setting values and saving
-      if ((this.headerInfo.header_type === 'name' || namedProcess) &&
-            (!this.value.uuid || this.value.newRow)) {
+      if (this.nameColumn && (!this.value.uuid || this.value.newRow)) {
         // Set UUID if we are referring to an existing node (only if material)
-        if (!namedProcess && this.nameValues.includes(this.value.value)) {
+        if (this.nameValues.includes(this.value.value)) {
           this.value.uuid = this.nameUuids[this.value.value]
-        } else if (!namedProcess) {
+        } else {
           // Clear UUID in case user switched from existing to new while editing
           this.value.uuid = null
         }
@@ -419,6 +404,7 @@ export default Vue.extend({
         else this.value.unit = this.editUnit
 
         // Handle updating/initiating node
+        // TODO: Ensure this works also if setting process name value to empty
         this.app.handleNodeUpdate(
           this.value,
           this.params.column,
@@ -434,7 +420,6 @@ export default Vue.extend({
         // Update cell (only if we already have the UUID!)
         if (this.value.uuid) {
           this.app.handleCellEdit(this.getUpdateData(), true)
-
           // If a sample has been renamed, update sample list for assay
           if (this.headerInfo.header_type === 'name' &&
               this.params.colDef.field === this.sampleColId) {

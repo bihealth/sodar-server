@@ -22,7 +22,7 @@ APPS_DIR = ROOT_DIR.path(SITE_PACKAGE)
 env = environ.Env()
 
 # .env file, should load only in development environment
-READ_DOT_ENV_FILE = env.bool('DJANGO_READ_DOT_ENV_FILE', default=False)
+READ_DOT_ENV_FILE = env.bool('DJANGO_READ_DOT_ENV_FILE', False)
 
 if READ_DOT_ENV_FILE:
     # Operating System Environment variables have precedence over variables
@@ -35,6 +35,7 @@ if READ_DOT_ENV_FILE:
 # ------------------------------------------------------------------------------
 # Hosts/domain names that are valid for this site
 ALLOWED_HOSTS = env.list('DJANGO_ALLOWED_HOSTS', default=['*'])
+USE_X_FORWARDED_HOST = env.bool('DJANGO_USE_X_FORWARDED_HOST', False)
 
 # APP CONFIGURATION
 # ------------------------------------------------------------------------------
@@ -156,7 +157,7 @@ MANAGERS = ADMINS
 # See: https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 # Uses django-environ to accept uri format
 # See: https://django-environ.readthedocs.io/en/latest/#supported-types
-DATABASES = {'default': env.db('DATABASE_URL', default='postgres:///sodar')}
+DATABASES = {'default': env.db('DATABASE_URL', 'postgres:///sodar')}
 DATABASES['default']['ATOMIC_REQUESTS'] = False
 
 # Set default auto field (for Django 3.2+)
@@ -365,14 +366,12 @@ if ENABLE_LDAP:
         'last_name': 'sn',
         'email': 'mail',
     }
-    # Temporarily disable cert checking (see issue #1853)
-    ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
 
     # Primary LDAP server
     AUTH_LDAP_SERVER_URI = env.str('AUTH_LDAP_SERVER_URI', None)
     AUTH_LDAP_BIND_DN = env.str('AUTH_LDAP_BIND_DN', None)
     AUTH_LDAP_BIND_PASSWORD = env.str('AUTH_LDAP_BIND_PASSWORD', None)
-    AUTH_LDAP_START_TLS = env.str('AUTH_LDAP_START_TLS', False)
+    AUTH_LDAP_START_TLS = env.bool('AUTH_LDAP_START_TLS', False)
     AUTH_LDAP_CA_CERT_FILE = env.str('AUTH_LDAP_CA_CERT_FILE', None)
     AUTH_LDAP_CONNECTION_OPTIONS = {**LDAP_DEFAULT_CONN_OPTIONS}
     if AUTH_LDAP_CA_CERT_FILE:
@@ -383,7 +382,6 @@ if ENABLE_LDAP:
     AUTH_LDAP_USER_FILTER = env.str(
         'AUTH_LDAP_USER_FILTER', '(sAMAccountName=%(user)s)'
     )
-
     AUTH_LDAP_USER_SEARCH = LDAPSearch(
         env.str('AUTH_LDAP_USER_SEARCH_BASE', None),
         ldap.SCOPE_SUBTREE,
@@ -394,7 +392,6 @@ if ENABLE_LDAP:
     AUTH_LDAP_DOMAIN_PRINTABLE = env.str(
         'AUTH_LDAP_DOMAIN_PRINTABLE', AUTH_LDAP_USERNAME_DOMAIN
     )
-
     AUTHENTICATION_BACKENDS = tuple(
         itertools.chain(
             ('projectroles.auth_backends.PrimaryLDAPBackend',),
@@ -407,7 +404,7 @@ if ENABLE_LDAP:
         AUTH_LDAP2_SERVER_URI = env.str('AUTH_LDAP2_SERVER_URI', None)
         AUTH_LDAP2_BIND_DN = env.str('AUTH_LDAP2_BIND_DN', None)
         AUTH_LDAP2_BIND_PASSWORD = env.str('AUTH_LDAP2_BIND_PASSWORD', None)
-        AUTH_LDAP2_START_TLS = env.str('AUTH_LDAP2_START_TLS', False)
+        AUTH_LDAP2_START_TLS = env.bool('AUTH_LDAP2_START_TLS', False)
         AUTH_LDAP2_CA_CERT_FILE = env.str('AUTH_LDAP2_CA_CERT_FILE', None)
         AUTH_LDAP2_CONNECTION_OPTIONS = {**LDAP_DEFAULT_CONN_OPTIONS}
         if AUTH_LDAP2_CA_CERT_FILE:
@@ -418,7 +415,6 @@ if ENABLE_LDAP:
         AUTH_LDAP2_USER_FILTER = env.str(
             'AUTH_LDAP2_USER_FILTER', '(sAMAccountName=%(user)s)'
         )
-
         AUTH_LDAP2_USER_SEARCH = LDAPSearch(
             env.str('AUTH_LDAP2_USER_SEARCH_BASE', None),
             ldap.SCOPE_SUBTREE,
@@ -429,7 +425,6 @@ if ENABLE_LDAP:
         AUTH_LDAP2_DOMAIN_PRINTABLE = env.str(
             'AUTH_LDAP2_DOMAIN_PRINTABLE', AUTH_LDAP2_USERNAME_DOMAIN
         )
-
         AUTHENTICATION_BACKENDS = tuple(
             itertools.chain(
                 ('projectroles.auth_backends.SecondaryLDAPBackend',),
@@ -612,7 +607,7 @@ SITE_INSTANCE_TITLE = env.str('SITE_INSTANCE_TITLE', 'CUBI SODAR')
 
 
 # General API settings
-SODAR_API_DEFAULT_VERSION = '0.14.1'
+SODAR_API_DEFAULT_VERSION = '0.14.2'
 SODAR_API_ALLOWED_VERSIONS = [
     '0.7.0',
     '0.7.1',
@@ -633,6 +628,7 @@ SODAR_API_ALLOWED_VERSIONS = [
     '0.13.4',
     '0.14.0',
     '0.14.1',
+    '0.14.2',
 ]
 SODAR_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar+json'
 SODAR_API_DEFAULT_HOST = env.url(
@@ -745,7 +741,7 @@ IRODS_CERT_PATH = env.str('IRODS_CERT_PATH', None)
 
 # Taskflow backend settings
 # Connection timeout for taskflowbackend flows (other sessions not affected)
-TASKFLOW_IRODS_CONN_TIMEOUT = env.int('TASKFLOW_IRODS_CONN_TIMEOUT', 480)
+TASKFLOW_IRODS_CONN_TIMEOUT = env.int('TASKFLOW_IRODS_CONN_TIMEOUT', 960)
 TASKFLOW_LOCK_RETRY_COUNT = env.int('TASKFLOW_LOCK_RETRY_COUNT', 2)
 TASKFLOW_LOCK_RETRY_INTERVAL = env.int('TASKFLOW_LOCK_RETRY_INTERVAL', 3)
 TASKFLOW_LOCK_ENABLED = True
@@ -813,13 +809,14 @@ SHEETS_EXTERNAL_LINK_PATH = env.str(
 # Remote sample sheet sync interval in minutes
 SHEETS_SYNC_INTERVAL = env.int('SHEETS_SYNC_INTERVAL', 5)
 
-# BAM file name suffixes to omit from study shortcuts and IGV session generation
+# BAM/CRAM file path glob patterns to omit from study shortcuts and IGV sessions
 SHEETS_IGV_OMIT_BAM = env.list(
-    'SHEETS_IGV_OMIT_BAM', default=['dragen_evidence.bam']
+    'SHEETS_IGV_OMIT_BAM', default=['*dragen_evidence.bam']
 )
-# VCF file name suffixes to omit from study shortcuts and IGV session generation
+# VCF file path glob patterns to omit from study shortcuts and IGV sessions
 SHEETS_IGV_OMIT_VCF = env.list(
-    'SHEETS_IGV_OMIT_VCF', default=['cnv.vcf.gz', 'ploidy.vcf.gz', 'sv.vcf.gz']
+    'SHEETS_IGV_OMIT_VCF',
+    default=['*cnv.vcf.gz', '*ploidy.vcf.gz', '*sv.vcf.gz'],
 )
 
 # Landingzones app settings

@@ -185,14 +185,12 @@ class SheetISAExportAPIView(
         ).first()
         if not investigation:
             raise NotFound()
-
         export_format = 'json'
         if self.request.get_full_path() == reverse(
             'samplesheets:api_export_zip',
             kwargs={'project': project.sodar_uuid},
         ):
             export_format = 'zip'
-
         try:
             return self.get_isa_export(project, request, export_format)
         except Exception as ex:
@@ -588,7 +586,7 @@ class IrodsDataRequestCreateAPIView(
     def perform_create(self, serializer):
         serializer.save()
         # Create timeline event
-        self.add_tl_create(serializer.instance)
+        self.add_tl_event(serializer.instance, 'create')
         # Add app alerts to owners/delegates
         self.add_alerts_create(serializer.instance.project)
 
@@ -620,7 +618,7 @@ class IrodsDataRequestUpdateAPIView(
             raise PermissionDenied
         serializer.save()
         # Add timeline event
-        self.add_tl_update(serializer.instance)
+        self.add_tl_event(serializer.instance, 'update')
 
 
 class IrodsDataRequestDestroyAPIView(
@@ -647,7 +645,7 @@ class IrodsDataRequestDestroyAPIView(
             raise PermissionDenied
         instance.delete()
         # Add timeline event
-        self.add_tl_delete(instance)
+        self.add_tl_event(instance, 'delete')
         # Handle project alerts
         self.handle_alerts_deactivate(instance)
 
@@ -838,13 +836,13 @@ class ProjectIrodsFileListAPIView(SODARAPIBaseProjectMixin, APIView):
         path = irods_backend.get_sample_path(project)
         try:
             with irods_backend.get_session() as irods:
-                irods_data = irods_backend.get_objects(irods, path)
+                obj_list = irods_backend.get_objects(irods, path)
         except Exception as ex:
             return Response(
                 {'detail': '{}: {}'.format(IRODS_QUERY_ERROR_MSG, ex)},
                 status=status.HTTP_404_NOT_FOUND,
             )
-        return Response(irods_data, status=status.HTTP_200_OK)
+        return Response({'irods_data': obj_list}, status=status.HTTP_200_OK)
 
 
 # TODO: Temporary HACK, should be replaced by proper API view

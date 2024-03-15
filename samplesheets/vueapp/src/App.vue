@@ -759,19 +759,18 @@ export default {
         let enableNextIdx = null
 
         // If the next node is a material, enable editing its name
-        // Else if it's a process, enable editing for all cells (if available)
         if (nextNodeCls === 'GenericMaterial') {
           const itemType = cols[startIdx].colDef.cellEditorParams.headerInfo.item_type
           const headerType = cols[startIdx].colDef.cellEditorParams.headerInfo.header_type
           let value = this.getDefaultValue(nextColId, gridOptions, true)
 
           // If default name suffix is set, fill name, enable node and continue
+          // TODO: Remove repetition with named process (see below)
           if (headerType === 'name' &&
               !(['SOURCE', 'DATA'].includes(itemType)) &&
               value.value) {
             value.value = this.getNamePrefix(rowNode, cols, startIdx) + value.value
             let createNew = true
-
             // Check if name already appears in column, update UUID if found
             gridOptions.api.forEachNode(function (r) {
               if (r.data[nextColId].value === value.value) {
@@ -779,7 +778,6 @@ export default {
                 value.uuid = r.data[nextColId].uuid
               }
             })
-
             value.newInit = false
             value.editable = true
             rowNode.setDataValue(nextColId, value)
@@ -810,7 +808,7 @@ export default {
               rowNode.setDataValue(cols[i].colId, value)
             }
           }
-        } else if (nextNodeCls === 'Process') {
+        } else if (nextNodeCls === 'Process') { // Handle process node enabling
           let i = startIdx
           let processActive = false
           let newInit = true
@@ -821,9 +819,10 @@ export default {
             nextColId = cols[i].colId
             const value = this.getDefaultValue(nextColId, gridOptions, newInit, forceEmpty)
             const headerType = cols[i].colDef.cellEditorParams.headerInfo.header_type
+            const fieldEditable = cols[i].colDef.cellRendererParams.fieldEditable
 
             if (headerType === 'protocol') {
-              value.editable = true
+              value.editable = fieldEditable
               if ('uuid_ref' in value && value.uuid_ref) {
                 processActive = true
                 newInit = false
@@ -831,24 +830,41 @@ export default {
               } else forceEmpty = true
             } else if (headerType === 'process_name') {
               // Fill process name with default suffix if set
+              // TODO: Remove repetition with material name
               const namePrefix = this.getNamePrefix(rowNode, cols, i)
               if (namePrefix && value.value) {
                 value.value = namePrefix + value.value
+                let createNew = true
+                // Check if name already appears in column, update UUID if found
+                gridOptions.api.forEachNode(function (r) {
+                  if (r.data[nextColId].value === value.value) {
+                    createNew = false
+                    value.uuid = r.data[nextColId].uuid
+                  }
+                })
                 newInit = false
                 value.newInit = false
                 processActive = true
+                rowNode.setDataValue(nextColId, value)
+                this.handleNodeUpdate(
+                  value,
+                  cols[i],
+                  rowNode,
+                  gridOptions,
+                  gridUuid,
+                  createNew)
+                return
               } else value.value = '' // HACK: Reset default value if not filled
               value.editable = true // Process name should always be editable
             } else {
               // Only allow editing the rest of the cells if protocol is set
               if (processActive) {
-                value.editable = cols[i].colDef.cellRendererParams.fieldEditable
+                value.editable = fieldEditable
               } else value.editable = false
             }
             rowNode.setDataValue(nextColId, value)
             i += 1
           }
-
           // If default protocol or name was filled, enable the next node(s) too
           if (processActive) enableNextIdx = i
         }
@@ -860,14 +876,13 @@ export default {
     },
 
     handleNodeUpdate (
-      firstCellValue, column, rowNode, gridOptions, gridUuid, createNew
+      nameCellValue, column, rowNode, gridOptions, gridUuid, createNew
     ) {
       // console.log('handleNodeUpdate() called; colId=' + column.colId) // DEBUG
       const gridApi = gridOptions.api
       const columnApi = gridOptions.columnApi
-      const firstColId = column.colId // ID of the identifying node column
+      const nameColId = column.colId // ID of the identifying node column
       let assayMode = false
-
       if (gridUuid in this.sodarContext.studies[this.currentStudyUuid].assays) {
         assayMode = true
       }
@@ -879,23 +894,22 @@ export default {
         const studyCols = studyOptions.columnApi.getColumns()
         let studyCopyRow = null
         const sampleColId = this.sampleColId
-
         // Get sample row from study table
         studyApi.forEachNode(function (rowNode) {
           if (!studyCopyRow &&
-              rowNode.data[sampleColId].uuid === firstCellValue.uuid_ref) {
+              rowNode.data[sampleColId].uuid === nameCellValue.uuid_ref) {
             studyCopyRow = rowNode
           }
         })
-
-        // Fill in preceeding nodes
+        // Fill in preceeding nodes for sample
         for (let i = 1; i < this.sampleIdx; i++) {
           // TODO: Create a generic helper for copying
           const copyColId = studyCols[i].colId
           const copyData = Object.assign(studyCopyRow.data[copyColId])
           copyData.newRow = true
           copyData.newInit = false
-          copyData.editable = columnApi.getColumn(copyColId).colDef.cellRendererParams.fieldEditable
+          copyData.editable = columnApi.getColumn(
+            copyColId).colDef.cellRendererParams.fieldEditable
           rowNode.setDataValue(copyColId, copyData)
         }
       }
@@ -909,47 +923,57 @@ export default {
       let groupId = parent.groupId
       if (groupId === '1' && this.sourceColSpan > 1) groupId = '2'
       let startIdx
-
       for (let i = 1; i < cols.length - 1; i++) {
-        if (cols[i].colId === firstColId) {
+        if (cols[i].colId === nameColId) {
           startIdx = i + 1
           break
         }
       }
-
       for (let i = startIdx; i < cols.length - 1; i++) {
         const col = cols[i]
         // NOTE: Must use originalParent to work with hidden columns
         if (col.originalParent.groupId === groupId) {
           nodeCols.push(col)
-        } else if (col.colId !== firstColId &&
+        } else if (col.colId !== nameColId &&
               col.originalParent.groupId !== groupId) {
           nextNodeStartIdx = i
           break
         }
       }
 
-      // IF node is new THEN fill out other cells with default/empty values
+      // If the node is new, fill out other cells with default/empty values
       if (createNew) {
         for (let i = 0; i < nodeCols.length; i++) {
           const newColId = nodeCols[i].colId
           const value = this.getDefaultValue(nodeCols[i].colId, gridOptions)
           rowNode.setDataValue(newColId, value)
         }
-      } else { // ELSE set UUIDs and update cell values (only in the same table)
+      } else { // Else set UUIDs and update cell values (only in the same table)
         let copyRowNode = null
         gridApi.forEachNode(function (rowNode) {
-          if (!copyRowNode && rowNode.data[firstColId].value === firstCellValue.value) {
+          if (!copyRowNode &&
+              rowNode.data[nameColId].value === nameCellValue.value) {
             copyRowNode = rowNode
           }
         })
-
         for (let i = 0; i < nodeCols.length; i++) {
           const copyColId = nodeCols[i].colId
           const copyData = Object.assign(copyRowNode.data[copyColId])
           copyData.newInit = false
-          copyData.editable = columnApi.getColumn(copyColId).colDef.cellRendererParams.fieldEditable
+          copyData.editable = columnApi.getColumn(
+            copyColId).colDef.cellRendererParams.fieldEditable
           rowNode.setDataValue(copyColId, copyData)
+        }
+      }
+      // When updating protocol name column, update preceeding protocol UUID
+      if (startIdx > 2) {
+        const headerType = column.colDef.cellEditorParams.headerInfo.header_type
+        const prevCol = cols[startIdx - 2]
+        const prevHeaderType = prevCol.colDef.cellEditorParams.headerInfo.header_type
+        if (headerType === 'process_name' &&
+            prevHeaderType === 'protocol' &&
+            cols[startIdx - 2].originalParent.groupId === groupId) {
+          rowNode.data[prevCol.colId].uuid = rowNode.data[nameColId].uuid
         }
       }
 
@@ -957,7 +981,6 @@ export default {
       if (nextNodeStartIdx) {
         this.enableNextNodes(rowNode, gridOptions, gridUuid, nextNodeStartIdx)
       }
-
       // Redraw row node for all changes to be displayed
       gridApi.redrawRows({ rows: [rowNode] })
     },
@@ -1033,10 +1056,14 @@ export default {
               const lastSourceGroupId = cols[lastSourceGroupIdx].originalParent.groupId
               let groupId = cols[1].originalParent.groupId
 
-              // Modify starting index and group id for assay table updating
-              if (assayMode) {
+              if (assayMode) { // Assay table modifications
+                // Modify starting index and group id for assay table
                 startIdx = this.sampleIdx
                 groupId = cols[startIdx].originalParent.groupId
+                // Update newRow for source cells
+                for (let i = 1; i < startIdx; i++) {
+                  rowNode.data[cols[i].colId].newRow = false
+                }
               }
 
               // Set cell data to match an existing row
@@ -1047,13 +1074,11 @@ export default {
                 value.newInit = false
                 value.editable = cols[i].colDef.cellRendererParams.fieldEditable
                 rowNode.setDataValue(cols[i].colId, value)
-
                 // Save sample info if new sample was added in study
                 if (!assayMode && cols[i].colId === this.sampleColId) {
                   sampleUuid = data.node_uuids[nodeIdx]
                   sampleName = rowNode.data[cols[i].colId].value
                 }
-
                 if (i < cols.length - 2 &&
                     groupId !== cols[i + 1].originalParent.groupId &&
                     cols[i + 1].originalParent.groupId !== lastSourceGroupId) {
@@ -1091,7 +1116,6 @@ export default {
               console.log('Row insert status: ' + data.detail) // DEBUG
               this.showNotification('Insert Failed', 'danger', 1000)
             }
-
             finishCallback()
             this.updatingRow = false
           }

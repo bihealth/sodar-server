@@ -213,23 +213,23 @@ class ProjectAppPlugin(
         'igv_omit_bam': {
             'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
             'type': 'STRING',
-            'label': 'BAM files to omit from IGV sessions',
-            'default': '',
-            'placeholder': ', '.join(settings.SHEETS_IGV_OMIT_BAM),
-            'description': 'Comma separated list of BAM file suffixes to omit '
-            'from generated IGV sessions. Overrides site-wide setting, affects '
-            'cancer and germline projects.',
+            'label': 'BAM and CRAM paths to omit from IGV sessions',
+            'default': ', '.join(settings.SHEETS_IGV_OMIT_BAM),
+            'description': 'Comma-separated list of iRODS path glob patterns '
+            'for omitting BAM and CRAM files from IGV sessions and study '
+            'shortcuts. Overrides site-wide setting, affects cancer and '
+            'germline projects. Update sheet cache after updating this value.',
             'user_modifiable': True,
         },
         'igv_omit_vcf': {
             'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
             'type': 'STRING',
-            'label': 'VCF files to omit from IGV sessions',
-            'default': '',
-            'placeholder': ', '.join(settings.SHEETS_IGV_OMIT_VCF),
-            'description': 'Comma separated list of VCF file suffixes to omit '
-            'from generated IGV sessions. Overrides site-wide setting, affects '
-            'cancer and germline projects.',
+            'label': 'VCF paths to omit from IGV sessions',
+            'default': ', '.join(settings.SHEETS_IGV_OMIT_VCF),
+            'description': 'Comma-separated list of iRODS path glob patterns '
+            'for omitting VCF files from IGV sessions and study shortcuts. '
+            'Overrides site-wide setting, affects cancer and germline '
+            'projects. Update sheet cache after updating this value.',
             'user_modifiable': True,
         },
     }
@@ -360,7 +360,7 @@ class ProjectAppPlugin(
         ret = []
         try:
             with irods_backend.get_session() as irods:
-                obj_data = irods_backend.get_objects(
+                obj_list = irods_backend.get_objects(
                     irods=irods,
                     path=irods_backend.get_projects_path(),
                     name_like=search_terms,
@@ -386,7 +386,7 @@ class ProjectAppPlugin(
             for a in Assay.objects.filter(study__in=studies.values())
         }
 
-        for o in obj_data['irods_data']:
+        for o in obj_list:
             project_uuid = irods_backend.get_uuid_from_path(
                 o['path'], obj_type='project'
             )

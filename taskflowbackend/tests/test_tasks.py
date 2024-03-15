@@ -34,6 +34,7 @@ NEW_COLL_NAME = 'test_new'
 NEW_COLL2_NAME = 'test_new2'
 TEST_OBJ_NAME = 'move_obj'
 SUB_COLL_NAME = 'sub'
+SUB_COLL_NAME2 = 'sub2'
 MOVE_COLL_NAME = 'move_coll'
 
 TEST_USER = USER_PREFIX + 'user3'
@@ -860,7 +861,7 @@ class TestSetAccessTask(IRODSTaskTestBase):
         self.assertEqual(user_access.access_name, self.irods_access_read)
 
     def test_revert_created(self):
-        """Test access setting"""
+        """Test reverting created access"""
         self._add_task(
             cls=SetAccessTask,
             name='Set access',
@@ -883,7 +884,7 @@ class TestSetAccessTask(IRODSTaskTestBase):
         # self.assertEqual(user_access.access_name, TEST_ACCESS_NULL)
 
     def test_revert_modified(self):
-        """Test access setting reverting after modification"""
+        """Test reverting modified access"""
         self._add_task(
             cls=SetAccessTask,
             name='Set access',
@@ -1605,6 +1606,218 @@ class TestMoveDataObjectTask(IRODSTaskTestBase):
 
 
 # TODO: Test Checksum verifying
+
+
+class TestBatchSetAccessTask(IRODSTaskTestBase):
+    """Tests for BatchSetAccessTask"""
+
+    def setUp(self):
+        super().setUp()
+        self.sub_coll_path = os.path.join(self.test_coll_path, SUB_COLL_NAME)
+        self.sub_coll_path2 = os.path.join(self.test_coll_path, SUB_COLL_NAME2)
+        self.irods.collections.create(self.sub_coll_path)
+        self.irods.collections.create(self.sub_coll_path2)
+        self.paths = [self.sub_coll_path, self.sub_coll_path2]
+        # Init default user group
+        self.irods.user_groups.create(DEFAULT_USER_GROUP)
+        self.access_lookup = self.irods_backend.get_access_lookup(self.irods)
+
+    def test_execute_read(self):
+        """Test access setting for read"""
+        self._add_task(
+            cls=BatchSetAccessTask,
+            name='Set access',
+            inject={
+                'access_name': IRODS_ACCESS_READ_IN,
+                'paths': self.paths,
+                'user_name': DEFAULT_USER_GROUP,
+                'access_lookup': self.access_lookup,
+                'irods_backend': self.irods_backend,
+            },
+        )
+        self.assert_irods_access(DEFAULT_USER_GROUP, self.sub_coll_path, None)
+        self.assert_irods_access(DEFAULT_USER_GROUP, self.sub_coll_path2, None)
+        result = self._run_flow()
+
+        self.assertEqual(result, True)
+        self.assert_irods_access(
+            DEFAULT_USER_GROUP, self.sub_coll_path, self.irods_access_read
+        )
+        self.assert_irods_access(
+            DEFAULT_USER_GROUP, self.sub_coll_path2, self.irods_access_read
+        )
+
+    def test_execute_write(self):
+        """Test access setting for write/modify"""
+        self._add_task(
+            cls=BatchSetAccessTask,
+            name='Set access',
+            inject={
+                'access_name': IRODS_ACCESS_WRITE_IN,
+                'paths': self.paths,
+                'user_name': DEFAULT_USER_GROUP,
+                'access_lookup': self.access_lookup,
+                'irods_backend': self.irods_backend,
+            },
+        )
+        self.assert_irods_access(DEFAULT_USER_GROUP, self.sub_coll_path, None)
+        self.assert_irods_access(DEFAULT_USER_GROUP, self.sub_coll_path2, None)
+        result = self._run_flow()
+
+        self.assertEqual(result, True)
+        self.assert_irods_access(
+            DEFAULT_USER_GROUP, self.sub_coll_path, self.irods_access_write
+        )
+        self.assert_irods_access(
+            DEFAULT_USER_GROUP, self.sub_coll_path2, self.irods_access_write
+        )
+
+    def test_execute_mixed(self):
+        """Test access setting for both new and previously set access levels"""
+        self._add_task(
+            cls=SetAccessTask,
+            name='Set access',
+            inject={
+                'access_name': IRODS_ACCESS_READ_IN,
+                'path': self.sub_coll_path,
+                'user_name': DEFAULT_USER_GROUP,
+                'access_lookup': self.access_lookup,
+                'irods_backend': self.irods_backend,
+            },
+        )
+        self._run_flow()
+        self.assert_irods_access(
+            DEFAULT_USER_GROUP, self.sub_coll_path, self.irods_access_read
+        )
+        self.assert_irods_access(DEFAULT_USER_GROUP, self.sub_coll_path2, None)
+
+        self.flow = self._init_flow()
+        self._add_task(
+            cls=BatchSetAccessTask,
+            name='Set access',
+            inject={
+                'access_name': IRODS_ACCESS_WRITE_IN,
+                'paths': self.paths,
+                'user_name': DEFAULT_USER_GROUP,
+                'access_lookup': self.access_lookup,
+                'irods_backend': self.irods_backend,
+            },
+        )
+        result = self._run_flow()
+
+        self.assertEqual(result, True)
+        self.assert_irods_access(
+            DEFAULT_USER_GROUP, self.sub_coll_path, self.irods_access_write
+        )
+        self.assert_irods_access(
+            DEFAULT_USER_GROUP, self.sub_coll_path2, self.irods_access_write
+        )
+
+    def test_revert_created(self):
+        """Test reverting created access"""
+        self._add_task(
+            cls=BatchSetAccessTask,
+            name='Set access',
+            inject={
+                'access_name': IRODS_ACCESS_READ_IN,
+                'paths': self.paths,
+                'user_name': DEFAULT_USER_GROUP,
+                'access_lookup': self.access_lookup,
+                'irods_backend': self.irods_backend,
+            },
+            force_fail=True,
+        )  # FAIL
+        self.assert_irods_access(DEFAULT_USER_GROUP, self.sub_coll_path, None)
+        self.assert_irods_access(DEFAULT_USER_GROUP, self.sub_coll_path2, None)
+        result = self._run_flow()
+
+        self.assertNotEqual(result, True)
+        self.assert_irods_access(DEFAULT_USER_GROUP, self.sub_coll_path, None)
+        self.assert_irods_access(DEFAULT_USER_GROUP, self.sub_coll_path2, None)
+
+    def test_revert_modified(self):
+        """Test reverting modified access"""
+        self._add_task(
+            cls=BatchSetAccessTask,
+            name='Set access',
+            inject={
+                'access_name': IRODS_ACCESS_READ_IN,
+                'paths': self.paths,
+                'user_name': DEFAULT_USER_GROUP,
+                'access_lookup': self.access_lookup,
+                'irods_backend': self.irods_backend,
+            },
+        )
+        self._run_flow()
+        self.assert_irods_access(
+            DEFAULT_USER_GROUP, self.sub_coll_path, self.irods_access_read
+        )
+        self.assert_irods_access(
+            DEFAULT_USER_GROUP, self.sub_coll_path2, self.irods_access_read
+        )
+
+        self.flow = self._init_flow()
+        self._add_task(
+            cls=BatchSetAccessTask,
+            name='Set access',
+            inject={
+                'access_name': IRODS_ACCESS_WRITE_IN,
+                'paths': self.paths,
+                'user_name': DEFAULT_USER_GROUP,
+                'access_lookup': self.access_lookup,
+                'irods_backend': self.irods_backend,
+            },
+            force_fail=True,
+        )  # FAIL
+        result = self._run_flow()
+
+        self.assertNotEqual(result, True)
+        self.assert_irods_access(
+            DEFAULT_USER_GROUP, self.sub_coll_path, self.irods_access_read
+        )
+        self.assert_irods_access(
+            DEFAULT_USER_GROUP, self.sub_coll_path2, self.irods_access_read
+        )
+
+    def test_revert_mixed(self):
+        """Test reverting access for both new and existing access levels"""
+        self._add_task(
+            cls=SetAccessTask,
+            name='Set access',
+            inject={
+                'access_name': IRODS_ACCESS_READ_IN,
+                'path': self.sub_coll_path,
+                'user_name': DEFAULT_USER_GROUP,
+                'access_lookup': self.access_lookup,
+                'irods_backend': self.irods_backend,
+            },
+        )
+        self._run_flow()
+        self.assert_irods_access(
+            DEFAULT_USER_GROUP, self.sub_coll_path, self.irods_access_read
+        )
+        self.assert_irods_access(DEFAULT_USER_GROUP, self.sub_coll_path2, None)
+
+        self.flow = self._init_flow()
+        self._add_task(
+            cls=BatchSetAccessTask,
+            name='Set access',
+            inject={
+                'access_name': IRODS_ACCESS_WRITE_IN,
+                'paths': self.paths,
+                'user_name': DEFAULT_USER_GROUP,
+                'access_lookup': self.access_lookup,
+                'irods_backend': self.irods_backend,
+            },
+            force_fail=True,
+        )  # FAIL
+        result = self._run_flow()
+
+        self.assertNotEqual(result, True)
+        self.assert_irods_access(
+            DEFAULT_USER_GROUP, self.sub_coll_path, self.irods_access_read
+        )
+        self.assert_irods_access(DEFAULT_USER_GROUP, self.sub_coll_path2, None)
 
 
 class TestBatchCreateCollectionsTask(IRODSTaskTestBase):

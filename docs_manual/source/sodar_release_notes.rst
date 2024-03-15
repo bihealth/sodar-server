@@ -8,6 +8,38 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v0.14.2 (2024-03-15)
+====================
+
+Release for minor updates, maintenance and bug fixes.
+
+- Add CRAM file support for cancer/germline study links and IGV sessions
+- Add path glob pattern support for IGV session BAM/VCF omit settings
+- Add assay plugin shortcut collection creation in landing zones
+- Add iRODS data request details in timeline events
+- Add landing zone statistics in siteinfo
+- Fix iRODS data request issues
+- Fix IRODS_ROOT_PATH issues
+- Fix LDAP TLS settings
+- Fix iRODS stats badge stuck in "updating"
+- Fix landing zone status updating not working in project details card
+- Fix landing zone creation crash with large amount of created collections
+- Fix multiple sheet editor issues
+- Minor updates and bug fixes
+- Upgrade to SODAR Core v0.13.4
+
+Migration Guide
+---------------
+
+CRAM File Support
+    This release adds support for CRAM files. They are linked in studies and IGV
+    sessions similar to BAM files. If your project contains CRAM files uploaded
+    prior to this release, you will have to run :guilabel:`Update Sheet Cache`
+    in the Sample Sheets app to enable the files in study links and generated
+    IGV sessions. Alternatively, an administrator can run the ``synccache``
+    management command to update all projects or a specific project.
+
+
 v0.14.1 (2023-12-12)
 ====================
 

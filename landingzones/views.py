@@ -32,7 +32,6 @@ from landingzones.constants import (
     STATUS_ALLOW_UPDATE,
     STATUS_FINISHED,
     STATUS_INFO_DELETE_NO_COLL,
-    ZONE_STATUS_OK,
     ZONE_STATUS_DELETED,
 )
 from landingzones.forms import LandingZoneForm
@@ -174,9 +173,7 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
             )
             tl_event.add_object(obj=zone, label='zone', name=zone.title)
             tl_event.add_object(
-                obj=zone.user,
-                label='user',
-                name=zone.user.username,
+                obj=zone.user, label='user', name=zone.user.username
             )
             tl_event.add_object(
                 obj=zone.assay, label='assay', name=zone.assay.get_name()
@@ -187,6 +184,7 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
         colls = []
         if create_colls:
             logger.debug('Creating default landing zone collections..')
+            assay_path = irods_backend.get_path(zone.assay)
             colls = [RESULTS_COLL, MISC_FILES_COLL, TRACK_HUBS_COLL]
             plugin = zone.assay.get_plugin()
             # First try the cache
@@ -199,14 +197,24 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
                     project=zone.project,
                 )
                 if cache_obj and cache_obj.data:
-                    assay_path = irods_backend.get_path(zone.assay)
                     colls += [
                         p.replace(assay_path + '/', '')
                         for p in cache_obj.data['paths'].keys()
                     ]
                     logger.debug('Retrieved collections from cache')
-            elif plugin:
-                pass  # TODO: Build tables, get rows directly from plugin?
+            # TODO: If no cache, build tables and get rows directly from plugin?
+            # Add shortcut paths
+            if plugin:
+                shortcuts = plugin.get_shortcuts(zone.assay) or []
+                for s in shortcuts:
+                    path = s.get('path')
+                    if path:
+                        path = path.replace(assay_path + '/', '')
+                    if path and path not in colls:
+                        colls.append(path)
+                        logger.debug(
+                            'Added shorctut collection "{}"'.format(s.get('id'))
+                        )
 
         logger.debug('Collections to be created: {}'.format(', '.join(colls)))
         flow_name = 'landing_zone_create'
@@ -257,15 +265,11 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
                 user=user,
                 event_name='zone_update',
                 description=description,
-                status_type=ZONE_STATUS_OK,
+                status_type='OK',
                 extra_data=tl_extra,
             )
             tl_event.add_object(obj=zone, label='zone', name=zone.title)
-            tl_event.add_object(
-                obj=user,
-                label='user',
-                name=user.username,
-            )
+            tl_event.add_object(obj=user, label='user', name=user.username)
             tl_event.add_object(
                 obj=zone.assay, label='assay', name=zone.assay.get_name()
             )
@@ -318,11 +322,7 @@ class ZoneDeleteMixin(ZoneConfigPluginMixin):
         if zone_exists:  # Submit with taskflow
             flow_name = 'landing_zone_delete'
             flow_data = self.get_flow_data(
-                zone,
-                flow_name,
-                {
-                    'zone_uuid': str(zone.sodar_uuid),
-                },
+                zone, flow_name, {'zone_uuid': str(zone.sodar_uuid)}
             )
             taskflow.submit(
                 project=project,

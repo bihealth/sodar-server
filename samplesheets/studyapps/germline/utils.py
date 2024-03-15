@@ -7,9 +7,9 @@ from projectroles.plugins import get_backend_api
 
 from samplesheets.models import GenericMaterial
 from samplesheets.studyapps.utils import (
-    get_igv_omit_override,
-    check_igv_file_name,
-    FILE_TYPE_SUFFIXES,
+    get_igv_omit_list,
+    check_igv_file_path,
+    check_igv_file_suffix,
 )
 from samplesheets.utils import get_index_by_header
 
@@ -22,7 +22,7 @@ def get_pedigree_file_path(file_type, source, study_tables):
     Return iRODS path for the most recent file of type "bam" or "vcf"
     linked to the source.
 
-    :param file_type: String ("bam" or "vcf")
+    :param file_type: String ("bam" or "vcf", "bam" is also used for CRAM)
     :param source: GenericMaterial of type SOURCE
     :param study_tables: Render study tables
     :return: String
@@ -32,7 +32,7 @@ def get_pedigree_file_path(file_type, source, study_tables):
         raise Exception('iRODS Backend not available')
 
     query_paths = []
-    override = get_igv_omit_override(source.study.get_project(), file_type)
+    omit_list = get_igv_omit_list(source.study.get_project(), file_type)
 
     def _get_val_by_index(row, idx):
         return row[idx]['value'] if idx else None
@@ -81,13 +81,11 @@ def get_pedigree_file_path(file_type, source, study_tables):
         obj_list = None
     if obj_list:
         for query_path in query_paths:
-            for obj in obj_list['irods_data']:
+            for obj in obj_list:
                 if (
                     obj['path'].startswith(query_path + '/')
-                    and obj['name']
-                    .lower()
-                    .endswith(FILE_TYPE_SUFFIXES[file_type])
-                    and check_igv_file_name(obj['name'], file_type, override)
+                    and check_igv_file_suffix(obj['name'], file_type)
+                    and check_igv_file_path(obj['path'], omit_list)
                 ):
                     file_paths.append(obj['path'])
                     logger.debug('Added path: {}'.format(obj['path']))

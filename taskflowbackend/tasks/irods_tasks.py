@@ -26,6 +26,96 @@ META_EMPTY_VALUE = 'N/A'
 MD5_RE = re.compile(r'([^\w.])')
 
 
+# Mixins -----------------------------------------------------------------------
+
+
+class IrodsAccessMixin:
+    """Mixin for iRODS access helpers"""
+
+    def execute_set_access(
+        self,
+        access_name,
+        path,
+        user_name,
+        access_lookup,
+        obj_target,
+        recursive,
+    ):
+        """
+        Set access for user in a single data object or collection.
+
+        :param access_name: Access level to set (string)
+        :param path: Full iRODS path to collection or data object (string)
+        :param user_name: Name of user or group (string)
+        :param access_lookup: Access level lookup for iRODS compatibility (dict)
+        :param obj_target: Whether target is a data object (boolean)
+        :param recursive: Set collection access recursively if True (boolean)
+        """
+        if not self.execute_data.get('access_names'):
+            self.execute_data['access_names'] = {}
+        if obj_target:
+            target = self.irods.data_objects.get(path)
+            recursive = False
+        else:
+            target = self.irods.collections.get(path)
+            recursive = recursive
+        target_access = self.irods.permissions.get(target=target)
+
+        user_access = next(
+            (x for x in target_access if x.user_name == user_name), None
+        )
+        modifying_data = False
+        if (
+            user_access
+            and user_access.access_name != access_lookup[access_name]
+        ):
+            self.execute_data['access_names'][path] = access_lookup[
+                user_access.access_name
+            ]
+            modifying_data = True
+        elif not user_access:
+            self.execute_data['access_names'][path] = 'null'
+            modifying_data = True
+
+        if modifying_data:
+            acl = iRODSAccess(
+                access_name=access_name,
+                path=path,
+                user_name=user_name,
+                user_zone=self.irods.zone,
+            )
+            self.irods.permissions.set(acl, recursive=recursive)
+            self.data_modified = True  # Access was modified
+
+    def revert_set_access(
+        self,
+        path,
+        user_name,
+        obj_target,
+        recursive,
+    ):
+        """
+        Revert setting access for user in a single collection or data object.
+
+        :param path: Full iRODS path to collection or data object (string)
+        :param user_name: Name of user or group (string)
+        :param obj_target: Whether target is a data object (boolean)
+        :param recursive: Set collection access recursively if True (boolean)
+        """
+        if self.data_modified:
+            acl = iRODSAccess(
+                access_name=self.execute_data['access_names'][path],
+                path=path,
+                user_name=user_name,
+                user_zone=self.irods.zone,
+            )
+            recursive = False if obj_target else recursive
+            self.irods.permissions.set(acl, recursive=recursive)
+
+
+# Base Task --------------------------------------------------------------------
+
+
 class IrodsBaseTask(BaseTask):
     """Base iRODS task"""
 
@@ -49,6 +139,9 @@ class IrodsBaseTask(BaseTask):
             desc += ' ({})'.format(info)
         logger.error(desc)
         raise Exception(desc)
+
+
+# Tasks ------------------------------------------------------------------------
 
 
 class CreateCollectionTask(IrodsBaseTask):
@@ -274,7 +367,7 @@ class SetInheritanceTask(IrodsBaseTask):
         '''
 
 
-class SetAccessTask(IrodsBaseTask):
+class SetAccessTask(IrodsAccessMixin, IrodsBaseTask):
     """
     Set user/group access to target (ichmod). If the target is a data object
     (obj_target=True), the recursive argument will be ignored.
@@ -292,44 +385,17 @@ class SetAccessTask(IrodsBaseTask):
         *args,
         **kwargs
     ):
-        if obj_target:
-            target = self.irods.data_objects.get(path)
-            recursive = False
-        else:
-            target = self.irods.collections.get(path)
-            recursive = recursive
-
-        target_access = self.irods.permissions.get(target=target)
-        user_access = next(
-            (x for x in target_access if x.user_name == user_name), None
-        )
-        if (
-            user_access
-            and user_access.access_name != access_lookup[access_name]
-        ):
-            self.execute_data['access_name'] = access_lookup[
-                user_access.access_name
-            ]
-            modifying_data = True
-        elif not user_access:
-            self.execute_data['access_name'] = 'null'
-            modifying_data = True
-        else:
-            modifying_data = False
-
-        if modifying_data:
-            acl = iRODSAccess(
-                access_name=access_name,
-                path=path,
-                user_name=user_name,
-                user_zone=self.irods.zone,
+        try:
+            self.execute_set_access(
+                access_name,
+                path,
+                user_name,
+                access_lookup,
+                obj_target,
+                recursive,
             )
-            try:
-                self.irods.permissions.set(acl, recursive=recursive)
-            except Exception as ex:
-                ex_info = user_name
-                self._raise_irods_exception(ex, ex_info)
-            self.data_modified = True
+        except Exception as ex:
+            self._raise_irods_exception(ex, user_name)
         super().execute(*args, **kwargs)
 
     def revert(
@@ -344,15 +410,10 @@ class SetAccessTask(IrodsBaseTask):
         *args,
         **kwargs
     ):
-        if self.data_modified:
-            acl = iRODSAccess(
-                access_name=self.execute_data['access_name'],
-                path=path,
-                user_name=user_name,
-                user_zone=self.irods.zone,
-            )
-            recursive = False if obj_target else recursive
-            self.irods.permissions.set(acl, recursive=recursive)
+        try:
+            self.revert_set_access(path, user_name, obj_target, recursive)
+        except Exception:
+            pass  # TODO: Log revert() exceptions?
 
 
 class IssueTicketTask(IrodsBaseTask):
@@ -495,7 +556,53 @@ class MoveDataObjectTask(IrodsBaseTask):
             self.irods.data_objects.move(src_path=new_src, dest_path=new_dest)
 
 
-# Batch file tasks -------------------------------------------------------------
+# Batch Tasks ------------------------------------------------------------------
+
+
+class BatchSetAccessTask(IrodsAccessMixin, IrodsBaseTask):
+    """
+    Set user/group access to multiple targets (ichmod). If a target is a data
+    object (obj_target=True), the recursive argument will be ignored.
+    """
+
+    def execute(
+        self,
+        access_name,
+        paths,
+        user_name,
+        access_lookup,
+        irods_backend,
+        obj_target=False,
+        recursive=True,
+        *args,
+        **kwargs
+    ):
+        # NOTE: Exception handling is done within execute_set_access()
+        for path in paths:
+            self.execute_set_access(
+                access_name,
+                path,
+                user_name,
+                access_lookup,
+                obj_target,
+                recursive,
+            )
+        super().execute(*args, **kwargs)
+
+    def revert(
+        self,
+        access_name,
+        paths,
+        user_name,
+        access_lookup,
+        irods_backend,
+        obj_target=False,
+        recursive=True,
+        *args,
+        **kwargs
+    ):
+        for path in paths:
+            self.revert_set_access(path, user_name, obj_target, recursive)
 
 
 class BatchCheckFilesTask(IrodsBaseTask):
@@ -665,6 +772,7 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
                     'Error getting permissions of target "{}"'.format(target),
                 )
 
+            # TODO: Remove repetition, use IrodsAccessMixin
             user_access = next(
                 (x for x in target_access if x.user_name == user_name), None
             )

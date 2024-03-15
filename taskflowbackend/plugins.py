@@ -34,9 +34,14 @@ PROJECT_ACTION_UPDATE = SODAR_CONSTANTS['PROJECT_ACTION_UPDATE']
 
 # Local constants
 APP_NAME = 'taskflowbackend'
-TL_SUBMIT_DESC = 'Job submitted to Taskflow'
 IRODS_CAT_SKIP_MSG = 'Categories are not synchronized into iRODS'
 RANK_FINDER = ROLE_RANKING[PROJECT_ROLE_FINDER]
+TASKFLOW_INFO_SETTINGS = [
+    'TASKFLOW_IRODS_CONN_TIMEOUT',
+    'TASKFLOW_LOCK_RETRY_COUNT',
+    'TASKFLOW_LOCK_RETRY_INTERVAL',
+]
+TL_SUBMIT_DESC = 'Job submitted to Taskflow'
 
 
 class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
@@ -53,6 +58,9 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
 
     #: Description string
     description = 'SODAR Taskflow backend for iRODS data transactions'
+
+    #: Names of plugin specific Django settings to display in siteinfo
+    info_settings = TASKFLOW_INFO_SETTINGS
 
     # Internal helpers ---------------------------------------------------------
 

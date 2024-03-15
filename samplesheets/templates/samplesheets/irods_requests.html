@@ -181,7 +181,7 @@
                       <i class="iconify" data-icon="mdi:cancel"></i> Reject Request
                     </a>
                   {% endif %}
-                  {% if irods_request.user == request.user %}
+                  {% if request.user.is_superuser or irods_request.user == request.user %}
                     {% if irods_request.status == 'ACTIVE' or irods_request.status == 'FAILED' %}
                       <a class="dropdown-item"
                          href="{% url 'samplesheets:irods_request_update' irodsdatarequest=irods_request.sodar_uuid %}">

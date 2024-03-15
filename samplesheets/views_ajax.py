@@ -544,9 +544,7 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
                 'using default..'.format(user.username)
             )
             display_config = app_settings.get(
-                APP_NAME,
-                'display_config_default',
-                project=project,
+                APP_NAME, 'display_config_default', project=project
             )
 
         # If default display configuration is not found, build it
@@ -999,10 +997,11 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
         """
         if node['cells'][0]['obj_cls'] == 'Process':
             for cell in node['cells']:
-                if cell['header_type'] == 'process_name':
+                if cell.get('header_type') == 'process_name':
                     return cell['value']
         else:  # Material
             return node['cells'][0]['value']
+        return None
 
     @classmethod
     def _add_node_attr(cls, node_obj, cell):
@@ -1191,8 +1190,15 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
             )
         )
 
+        # TODO: We create duplicate rows with named processes, fix!
+
         # Check if we'll need to consider collapsing of unnamed nodes
-        if len([n for n in row['nodes'] if not self._get_name(n)]) > 0:
+        # (References to existing nodes with UUID will not have to be collapsed)
+        if [
+            n
+            for n in row['nodes']
+            if not n['cells'][0].get('uuid') and not self._get_name(n)
+        ]:
             logger.debug('Unnamed node(s) in row, will attempt collapsing')
             collapse = True
             try:
@@ -1390,6 +1396,8 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
                 except Exception as ex:
                     return Response({'detail': str(ex)}, status=500)
             except Exception as ex:
+                if settings.DEBUG:
+                    raise (ex)
                 return Response({'detail': str(ex)}, status=500)
         return Response(self.ok_data, status=200)
 
@@ -1869,11 +1877,11 @@ class IrodsDataRequestCreateAjaxView(
             path=path,
             user=request.user,
             project=project,
-            description='Request created via Ajax API',
+            description='Request created in iRODS file list',
         )
 
         # Create timeline event
-        self.add_tl_create(irods_request)
+        self.add_tl_event(irods_request, 'create')
         # Add app alerts to owners/delegates
         self.add_alerts_create(project)
         return Response(
@@ -1911,16 +1919,12 @@ class IrodsDataRequestDeleteAjaxView(
             )
 
         # Add timeline event
-        self.add_tl_delete(irods_request)
+        self.add_tl_event(irods_request, 'delete')
         # Handle project alerts
         self.handle_alerts_deactivate(irods_request)
         irods_request.delete()
         return Response(
-            {
-                'detail': 'ok',
-                'status': None,
-                'user': None,
-            },
+            {'detail': 'ok', 'status': None, 'user': None},
             status=200,
         )
 
@@ -1942,18 +1946,18 @@ class IrodsObjectListAjaxView(BaseIrodsAjaxView):
         # Get files
         try:
             with irods_backend.get_session() as irods:
-                ret_data = irods_backend.get_objects(irods, self.path)
+                obj_list = irods_backend.get_objects(irods, self.path)
         except Exception as ex:
             return Response({'detail': str(ex)}, status=400)
-        for data_obj in ret_data.get('irods_data', []):
-            obj = IrodsDataRequest.objects.filter(
-                path=data_obj['path'], status__in=['ACTIVE', 'FAILED']
+        for o in obj_list:
+            db_obj = IrodsDataRequest.objects.filter(
+                path=o['path'], status__in=['ACTIVE', 'FAILED']
             ).first()
-            data_obj['irods_request_status'] = obj.status if obj else None
-            data_obj['irods_request_user'] = (
-                str(obj.user.sodar_uuid) if obj else None
+            o['irods_request_status'] = db_obj.status if db_obj else None
+            o['irods_request_user'] = (
+                str(db_obj.user.sodar_uuid) if db_obj else None
             )
-        return Response(ret_data, status=200)
+        return Response({'irods_data': obj_list}, status=200)
 
 
 class SheetVersionCompareAjaxView(SODARBaseProjectAjaxView):

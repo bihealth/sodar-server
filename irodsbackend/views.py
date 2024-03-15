@@ -148,40 +148,31 @@ class IrodsStatisticsAjaxView(BaseIrodsAjaxView):
             return Response(self._get_detail(ex), status=500)
 
     def post(self, request, *args, **kwargs):
-        data = {'coll_objects': []}
-        q_dict = request.POST
+        ret = {}
         project_path = self.irods_backend.get_path(self.project)
         try:
             irods = self.irods_backend.get_session_obj()
         except Exception as ex:
             return JsonResponse(self._get_detail(ex), status=500)
-        for path in q_dict.getlist('paths'):
-            if project_path not in path:
-                data['coll_objects'].append(
-                    {'path': path, 'status': '400', 'stats': {}}
-                )
-                break
-            if not self._check_collection_perm(path, request.user, irods):
-                data['coll_objects'].append(
-                    {'path': path, 'status': '403', 'stats': {}}
-                )
-                break
-            try:
-                if not irods.collections.exists(path):
-                    data['coll_objects'].append(
-                        {'path': path, 'status': '404', 'stats': {}}
-                    )
-                else:
-                    ret_data = self.irods_backend.get_object_stats(irods, path)
-                    data['coll_objects'].append(
-                        {'path': path, 'status': '200', 'stats': ret_data}
-                    )
-            except Exception:
-                data['coll_objects'].append(
-                    {'path': path, 'status': '500', 'stats': {}}
-                )
+        for p in request.POST.getlist('paths'):
+            d = {}
+            if not p.startswith(project_path):
+                d['status'] = 400
+            elif not self._check_collection_perm(p, request.user, irods):
+                d['status'] = 403
+            else:
+                try:
+                    if irods.collections.exists(p):
+                        stats = self.irods_backend.get_object_stats(irods, p)
+                        d.update(stats)
+                        d['status'] = 200
+                    else:
+                        d['status'] = 404
+                except Exception:
+                    d['status'] = 500
+            ret[p] = d
         irods.cleanup()
-        return Response(data, status=200)
+        return Response({'irods_stats': ret}, status=200)
 
 
 class IrodsObjectListAjaxView(BaseIrodsAjaxView):
@@ -190,18 +181,31 @@ class IrodsObjectListAjaxView(BaseIrodsAjaxView):
     permission_required = 'irodsbackend.view_files'
 
     def get(self, request, *args, **kwargs):
-        md5 = request.GET.get('md5')
-        colls = request.GET.get('colls')
+        check_md5 = bool(int(request.GET.get('md5')))
+        include_colls = bool(int(request.GET.get('colls')))
         # Get files
         try:
             with self.irods_backend.get_session() as irods:
-                ret_data = self.irods_backend.get_objects(
+                objs = self.irods_backend.get_objects(
                     irods,
                     self.path,
-                    check_md5=bool(int(md5)),
-                    include_colls=bool(int(colls)),
+                    include_md5=check_md5,
+                    include_colls=include_colls,
                 )
-            return Response(ret_data, status=200)
+                ret = []
+                md5_paths = []
+                if check_md5:
+                    md5_paths = [
+                        o['path'] for o in objs if o['path'].endswith('.md5')
+                    ]
+                for o in objs:
+                    if o['type'] == 'coll' and include_colls:
+                        ret.append(o)
+                    elif o['type'] == 'obj' and not o['path'].endswith('.md5'):
+                        if check_md5:
+                            o['md5_file'] = o['path'] + '.md5' in md5_paths
+                        ret.append(o)
+            return Response({'irods_data': ret}, status=200)
         except Exception as ex:
             return Response(self._get_detail(ex), status=500)
 
