@@ -91,17 +91,11 @@
            href="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}">
           <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Cancel
         </a>
-        {% if replace_sheets %}
-          <button type="submit" class="btn btn-primary sodar-btn-submit-once"
-                  id="sodar-ss-btn-import-submit">
-            <i class="iconify" data-icon="mdi:refresh"></i> Replace
-          </button>
-        {% else %}
-          <button type="submit" class="btn btn-primary sodar-btn-submit-once"
-                  id="sodar-ss-btn-import-submit">
-            <i class="iconify" data-icon="mdi:upload"></i> Import
-          </button>
-        {% endif %}
+        <button type="submit" class="btn btn-primary sodar-btn-submit-once"
+                id="sodar-ss-btn-import-submit">
+          <i class="iconify" data-icon="mdi:upload"></i>
+          {% if replace_sheets %}Replace{% else %}Import{% endif %}
+        </button>
       </div>
     </div>
   </form>

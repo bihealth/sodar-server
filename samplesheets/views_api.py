@@ -185,14 +185,12 @@ class SheetISAExportAPIView(
         ).first()
         if not investigation:
             raise NotFound()
-
         export_format = 'json'
         if self.request.get_full_path() == reverse(
             'samplesheets:api_export_zip',
             kwargs={'project': project.sodar_uuid},
         ):
             export_format = 'zip'
-
         try:
             return self.get_isa_export(project, request, export_format)
         except Exception as ex:

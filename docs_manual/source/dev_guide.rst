@@ -16,12 +16,14 @@ for development and is always the latest "bleeding edge" version of SODAR. The
 
 When naming your work branches, prefix them with the issue ID, preferably
 followed by a verb depicting the action: "add", "update", "fix", "remove",
-"refactor", "upgrade", "deprecate" or something else if none of these ar
-applicable.
+"refactor", "upgrade", "deprecate" or something else if none of these are
+applicable. If a relevant issue does not exist yet, please create one in the
+repository's issue tracker. This will make changes and pull requests much easier
+to track.
 
 The rest of the branch name should *concisely* represent the change. It is not
 necessary (and often not recommended) to include the entire name of the issue
-as they may be verbose.
+as they may be overly verbose.
 
 If a branch and pull request tackles multiple issues at once, including the ID
 of the most major issue is enough.
@@ -49,7 +51,7 @@ Pull Requests
 Please add the related issue ID(s) to the title of your pull request and ensure
 the pull request is set against the ``dev`` branch.
 
-It is strongly recommended to use descriptive commit messages even in work
+It is strongly recommended to use descriptive commit messages even for work
 commits that are to be squashed in merging. This will aid the review process.
 
 Before submitting a pull request for review, ensure the following:

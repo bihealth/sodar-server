@@ -5,12 +5,14 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
-Unreleased
-==========
+v0.14.2 (2024-03-15)
+====================
 
 Added
 -----
 
+- **General**
+    - Django settings for reverse proxy setup (#1917)
 - **Irodsbackend**
     - Sanitize and validate ``IRODS_ROOT_PATH`` in ``get_root_path()`` (#1891)
 - **Landingzones**
@@ -32,7 +34,7 @@ Changed
 -------
 
 - **General**
-    - Upgrade to Django v3.2.24 (#1854)
+    - Upgrade to Django v3.2.25 (#1854)
     - Upgrade to django-sodar-core v0.13.4 (#1899)
     - Upgrade critical Vue app dependencies (#1854)
     - Upgrade to cubi-isa-templates v0.1.2 (#1854)

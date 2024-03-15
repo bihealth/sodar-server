@@ -1062,8 +1062,7 @@ export default {
                 groupId = cols[startIdx].originalParent.groupId
                 // Update newRow for source cells
                 for (let i = 1; i < startIdx; i++) {
-                  const value = rowNode.data[cols[i].colId]
-                  value.newRow = false
+                  rowNode.data[cols[i].colId].newRow = false
                 }
               }
 

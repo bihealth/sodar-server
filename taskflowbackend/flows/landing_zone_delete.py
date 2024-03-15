@@ -54,7 +54,7 @@ class Flow(BaseLinearFlow):
                 inject={'path': zone_path},
             )
         )
-        # Set zone status to DELETING
+        # Set zone status to DELETED
         self.add_task(
             lz_tasks.SetLandingZoneStatusTask(
                 name='Set landing zone status to DELETED',

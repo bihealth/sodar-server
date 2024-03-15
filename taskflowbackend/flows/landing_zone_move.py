@@ -16,7 +16,7 @@ from taskflowbackend.tasks import irods_tasks
 
 
 SAMPLE_COLL = settings.IRODS_SAMPLE_COLL
-ZONE_INFO_CALC = 'Finding and calculating missing checksums in iRODS'
+ZONE_INFO_CALC = 'Calculating missing checksums in iRODS'
 ZONE_INFO_VALIDATE = 'Validating {count} file{plural}'
 ZONE_INFO_READ_ONLY = ', write access disabled'
 

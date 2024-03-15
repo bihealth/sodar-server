@@ -280,7 +280,6 @@ class ZoneUpdateAPIView(
         if not self._validate_update_fields(serializer):
             # Should raise 400 Bad Request
             raise ValidationError('{}Invalid update fields'.format(ex_msg))
-
         # If all is OK, go forward with object update and taskflow submission
         super().perform_update(serializer)
         try:

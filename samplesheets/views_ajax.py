@@ -544,9 +544,7 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
                 'using default..'.format(user.username)
             )
             display_config = app_settings.get(
-                APP_NAME,
-                'display_config_default',
-                project=project,
+                APP_NAME, 'display_config_default', project=project
             )
 
         # If default display configuration is not found, build it

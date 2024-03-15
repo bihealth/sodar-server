@@ -686,15 +686,10 @@ class IrodsCollsCreateViewMixin:
             'ticket_str': ticket_str,
         }
         taskflow.submit(
-            project=project,
-            flow_name='sheet_colls_create',
-            flow_data=flow_data,
+            project=project, flow_name='sheet_colls_create', flow_data=flow_data
         )
         app_settings.set(
-            APP_NAME,
-            'public_access_ticket',
-            ticket_str,
-            project=project,
+            APP_NAME, 'public_access_ticket', ticket_str, project=project
         )
         if tl_event:
             tl_event.set_status('OK')
@@ -1472,12 +1467,8 @@ class SheetTemplateCreateView(
     def get_form_kwargs(self):
         """Pass kwargs to form"""
         kwargs = super().get_form_kwargs()
-        kwargs.update(
-            {
-                'project': self.get_project(),
-                'sheet_tpl': self._get_sheet_template(),
-            }
-        )
+        kwargs['project'] = self.get_project()
+        kwargs['sheet_tpl'] = self._get_sheet_template()
         return kwargs
 
     def form_valid(self, form):
@@ -1744,9 +1735,7 @@ class SheetDeleteView(
                 tl_event.set_status('SUBMIT')
             try:
                 taskflow.submit(
-                    project=project,
-                    flow_name='sheet_delete',
-                    flow_data={},
+                    project=project, flow_name='sheet_delete', flow_data={}
                 )
             except taskflow.FlowSubmitException as ex:
                 delete_success = False
@@ -2184,17 +2173,14 @@ class SheetVersionDeleteBatchView(
                     status_type='OK',
                 )
                 tl_event.add_object(
-                    obj=sv,
-                    label='isatab',
-                    name=sv.get_full_name(),
+                    obj=sv, label='isatab', name=sv.get_full_name()
                 )
 
         context['sheet_versions'].delete()
         messages.success(
             request,
             'Deleted {} sample sheet version{}.'.format(
-                version_count,
-                's' if version_count != 1 else '',
+                version_count, 's' if version_count != 1 else ''
             ),
         )
         return redirect(
@@ -2840,10 +2826,7 @@ class IrodsDataRequestRejectBatchView(
         try:
             batch = self.get_irods_request_objects()
             if not batch:
-                messages.error(
-                    self.request,
-                    NO_REQUEST_MSG,
-                )
+                messages.error(self.request, NO_REQUEST_MSG)
                 return redirect(
                     reverse(
                         'samplesheets:irods_requests',

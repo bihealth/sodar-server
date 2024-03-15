@@ -670,8 +670,7 @@ class TestLandingZoneMove(
         )
         self.assertEqual(self.irods.data_objects.exists(sample_obj_path), False)
         self.assertEqual(
-            self.irods.data_objects.exists(sample_obj_path + '.md5'),
-            False,
+            self.irods.data_objects.exists(sample_obj_path + '.md5'), False
         )
 
         flow_data = {'zone_uuid': str(self.zone.sodar_uuid)}
@@ -694,18 +693,13 @@ class TestLandingZoneMove(
         )
         self.assertEqual(self.irods.data_objects.exists(sample_obj_path), True)
         self.assertEqual(
-            self.irods.data_objects.exists(sample_obj_path + '.md5'),
-            True,
+            self.irods.data_objects.exists(sample_obj_path + '.md5'), True
         )
         self.assert_irods_access(
-            self.group_name,
-            sample_obj_path,
-            self.irods_access_read,
+            self.group_name, sample_obj_path, self.irods_access_read
         )
         self.assert_irods_access(
-            self.group_name,
-            sample_obj_path + '.md5',
-            self.irods_access_read,
+            self.group_name, sample_obj_path + '.md5', self.irods_access_read
         )
 
     def test_move_no_checksum(self):
@@ -728,8 +722,7 @@ class TestLandingZoneMove(
         )
         self.assertEqual(self.irods.data_objects.exists(sample_obj_path), False)
         self.assertEqual(
-            self.irods.data_objects.exists(sample_obj_path + '.md5'),
-            False,
+            self.irods.data_objects.exists(sample_obj_path + '.md5'), False
         )
         self.assertIsNone(obj.replicas[0].checksum)
 
@@ -748,8 +741,7 @@ class TestLandingZoneMove(
         self.assertEqual(self.irods.collections.exists(self.zone_path), False)
         self.assertEqual(self.irods.data_objects.exists(sample_obj_path), True)
         self.assertEqual(
-            self.irods.data_objects.exists(sample_obj_path + '.md5'),
-            True,
+            self.irods.data_objects.exists(sample_obj_path + '.md5'), True
         )
         obj = self.irods.data_objects.get(sample_obj_path)  # Reload object
         self.assertIsNotNone(obj.replicas[0].checksum)
@@ -821,8 +813,7 @@ class TestLandingZoneMove(
         sample_obj_path = os.path.join(self.sample_path, COLL_NAME, OBJ_NAME)
         self.assertEqual(self.irods.data_objects.exists(sample_obj_path), True)
         self.assertEqual(
-            self.irods.data_objects.exists(sample_obj_path + '.md5'),
-            True,
+            self.irods.data_objects.exists(sample_obj_path + '.md5'), True
         )
 
     def test_move_obj_exists(self):
@@ -958,8 +949,7 @@ class TestLandingZoneMove(
         sample_obj_path = os.path.join(self.sample_path, COLL_NAME, OBJ_NAME)
         self.assertEqual(self.irods.data_objects.exists(sample_obj_path), False)
         self.assertEqual(
-            self.irods.data_objects.exists(sample_obj_path + '.md5'),
-            False,
+            self.irods.data_objects.exists(sample_obj_path + '.md5'), False
         )
         self.assert_irods_access(
             self.user.username, zone_coll, IRODS_ACCESS_OWN
@@ -1006,8 +996,7 @@ class TestLandingZoneMove(
         )
         self.assertEqual(self.irods.data_objects.exists(sample_obj_path), False)
         self.assertEqual(
-            self.irods.data_objects.exists(sample_obj_path + '.md5'),
-            False,
+            self.irods.data_objects.exists(sample_obj_path + '.md5'), False
         )
 
         flow_data = {'zone_uuid': str(new_zone.sodar_uuid)}
@@ -1031,18 +1020,13 @@ class TestLandingZoneMove(
         )
         self.assertEqual(self.irods.data_objects.exists(sample_obj_path), True)
         self.assertEqual(
-            self.irods.data_objects.exists(sample_obj_path + '.md5'),
-            True,
+            self.irods.data_objects.exists(sample_obj_path + '.md5'), True
         )
         self.assert_irods_access(
-            self.group_name,
-            sample_obj_path,
-            self.irods_access_read,
+            self.group_name, sample_obj_path, self.irods_access_read
         )
         self.assert_irods_access(
-            self.group_name,
-            sample_obj_path + '.md5',
-            self.irods_access_read,
+            self.group_name, sample_obj_path + '.md5', self.irods_access_read
         )
 
 
@@ -1117,8 +1101,7 @@ class TestLandingZoneMoveAltRootPath(
         )
         self.assertEqual(self.irods.data_objects.exists(sample_obj_path), False)
         self.assertEqual(
-            self.irods.data_objects.exists(sample_obj_path + '.md5'),
-            False,
+            self.irods.data_objects.exists(sample_obj_path + '.md5'), False
         )
 
         flow_data = {'zone_uuid': str(self.zone.sodar_uuid)}
@@ -1140,18 +1123,13 @@ class TestLandingZoneMoveAltRootPath(
         )
         self.assertEqual(self.irods.data_objects.exists(sample_obj_path), True)
         self.assertEqual(
-            self.irods.data_objects.exists(sample_obj_path + '.md5'),
-            True,
+            self.irods.data_objects.exists(sample_obj_path + '.md5'), True
         )
         self.assert_irods_access(
-            self.group_name,
-            sample_obj_path,
-            self.irods_access_read,
+            self.group_name, sample_obj_path, self.irods_access_read
         )
         self.assert_irods_access(
-            self.group_name,
-            sample_obj_path + '.md5',
-            self.irods_access_read,
+            self.group_name, sample_obj_path + '.md5', self.irods_access_read
         )
 
 
@@ -1200,12 +1178,10 @@ class TestProjectCreate(TaskflowbackendFlowTestBase):
             self.irods_backend.get_path(project)
         )
         self.assertEqual(
-            project_coll.metadata.get_one('title').value,
-            project.title,
+            project_coll.metadata.get_one('title').value, project.title
         )
         self.assertEqual(
-            project_coll.metadata.get_one('description').value,
-            META_EMPTY_VALUE,
+            project_coll.metadata.get_one('description').value, META_EMPTY_VALUE
         )
         self.assertEqual(
             project_coll.metadata.get_one('parent_uuid').value,
@@ -1234,12 +1210,10 @@ class TestProjectUpdate(TaskflowbackendFlowTestBase):
         self.assertNotEqual(self.project.description, UPDATED_DESC)
         project_coll = self.irods.collections.get(self.project_path)
         self.assertEqual(
-            project_coll.metadata.get_one('title').value,
-            self.project.title,
+            project_coll.metadata.get_one('title').value, self.project.title
         )
         self.assertEqual(
-            project_coll.metadata.get_one('description').value,
-            META_EMPTY_VALUE,
+            project_coll.metadata.get_one('description').value, META_EMPTY_VALUE
         )
 
         self.project.title = UPDATED_TITLE
@@ -1256,12 +1230,10 @@ class TestProjectUpdate(TaskflowbackendFlowTestBase):
 
         project_coll = self.irods.collections.get(self.project_path)
         self.assertEqual(
-            project_coll.metadata.get_one('title').value,
-            UPDATED_TITLE,
+            project_coll.metadata.get_one('title').value, UPDATED_TITLE
         )
         self.assertEqual(
-            project_coll.metadata.get_one('description').value,
-            UPDATED_DESC,
+            project_coll.metadata.get_one('description').value, UPDATED_DESC
         )
 
     def test_update_parent(self):
@@ -1339,7 +1311,10 @@ class TestPublicAccessUpdate(
         )
         self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
 
-        flow_data = {'path': self.sample_path, 'access': True}
+        flow_data = {
+            'path': self.sample_path,
+            'access': True,
+        }
         flow = self.taskflow.get_flow(
             irods_backend=self.irods_backend,
             project=self.project,
@@ -1370,7 +1345,10 @@ class TestPublicAccessUpdate(
             PUBLIC_GROUP, self.sample_path, self.irods_access_read
         )
 
-        flow_data = {'path': self.sample_path, 'access': False}
+        flow_data = {
+            'path': self.sample_path,
+            'access': False,
+        }
         flow = self.taskflow.get_flow(
             irods_backend=self.irods_backend,
             project=self.project,
@@ -1393,7 +1371,10 @@ class TestPublicAccessUpdate(
         )
         self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
 
-        flow_data = {'path': self.sample_path, 'access': True}
+        flow_data = {
+            'path': self.sample_path,
+            'access': True,
+        }
         flow = self.taskflow.get_flow(
             irods_backend=self.irods_backend,
             project=self.project,
@@ -1834,12 +1815,11 @@ class TestSheetDelete(
                 project=self.project, active=True
             ).first()
         )
-        flow_data = {}
         flow = self.taskflow.get_flow(
             irods_backend=self.irods_backend,
             project=self.project,
             flow_name='sheet_delete',
-            flow_data=flow_data,
+            flow_data={},
         )
         self.assertEqual(type(flow), SheetDeleteFlow)
         self._build_and_run(flow)
@@ -1859,12 +1839,11 @@ class TestSheetDelete(
         self.make_irods_colls(self.investigation)
         self.assertEqual(self.irods.collections.exists(self.sample_path), True)
 
-        flow_data = {}
         flow = self.taskflow.get_flow(
             irods_backend=self.irods_backend,
             project=self.project,
             flow_name='sheet_delete',
-            flow_data=flow_data,
+            flow_data={},
         )
         self.assertEqual(type(flow), SheetDeleteFlow)
         self._build_and_run(flow)
@@ -1898,12 +1877,11 @@ class TestSheetDelete(
         zone_path = self.irods_backend.get_path(zone)
         self.assertEqual(self.irods.collections.exists(zone_path), True)
 
-        flow_data = {}
         flow = self.taskflow.get_flow(
             irods_backend=self.irods_backend,
             project=self.project,
             flow_name='sheet_delete',
-            flow_data=flow_data,
+            flow_data={},
         )
         self.assertEqual(type(flow), SheetDeleteFlow)
         self._build_and_run(flow)

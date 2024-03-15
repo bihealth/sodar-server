@@ -22,7 +22,7 @@ APPS_DIR = ROOT_DIR.path(SITE_PACKAGE)
 env = environ.Env()
 
 # .env file, should load only in development environment
-READ_DOT_ENV_FILE = env.bool('DJANGO_READ_DOT_ENV_FILE', default=False)
+READ_DOT_ENV_FILE = env.bool('DJANGO_READ_DOT_ENV_FILE', False)
 
 if READ_DOT_ENV_FILE:
     # Operating System Environment variables have precedence over variables
@@ -157,7 +157,7 @@ MANAGERS = ADMINS
 # See: https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 # Uses django-environ to accept uri format
 # See: https://django-environ.readthedocs.io/en/latest/#supported-types
-DATABASES = {'default': env.db('DATABASE_URL', default='postgres:///sodar')}
+DATABASES = {'default': env.db('DATABASE_URL', 'postgres:///sodar')}
 DATABASES['default']['ATOMIC_REQUESTS'] = False
 
 # Set default auto field (for Django 3.2+)
@@ -607,7 +607,7 @@ SITE_INSTANCE_TITLE = env.str('SITE_INSTANCE_TITLE', 'CUBI SODAR')
 
 
 # General API settings
-SODAR_API_DEFAULT_VERSION = '0.14.1'
+SODAR_API_DEFAULT_VERSION = '0.14.2'
 SODAR_API_ALLOWED_VERSIONS = [
     '0.7.0',
     '0.7.1',
@@ -628,6 +628,7 @@ SODAR_API_ALLOWED_VERSIONS = [
     '0.13.4',
     '0.14.0',
     '0.14.1',
+    '0.14.2',
 ]
 SODAR_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar+json'
 SODAR_API_DEFAULT_HOST = env.url(

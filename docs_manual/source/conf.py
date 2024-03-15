@@ -22,11 +22,11 @@ django.setup()
 # -- Project information -----------------------------------------------------
 
 project = 'SODAR'
-copyright = '2018-2023, BIH Core Unit Bioinformatics'
+copyright = '2018-2024, BIH Core Unit Bioinformatics'
 author = 'BIH Core Unit Bioinformatics'
 
 # The full version, including alpha/beta/rc tags
-release = '0.14.2-WIP'
+release = '0.14.2'
 
 
 # -- General configuration ---------------------------------------------------

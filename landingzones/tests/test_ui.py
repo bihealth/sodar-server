@@ -20,6 +20,7 @@ from landingzones.constants import (
     ZONE_STATUS_CREATING,
     ZONE_STATUS_ACTIVE,
     ZONE_STATUS_VALIDATING,
+    ZONE_STATUS_DELETED,
 )
 from landingzones.tests.test_models import LandingZoneMixin
 
@@ -324,6 +325,75 @@ class TestProjectZoneView(LandingZoneUITestBase):
         contrib_zone.set_status(ZONE_STATUS_VALIDATING)
         self._wait_for_status(zone_status, ZONE_STATUS_VALIDATING)
         self.assertEqual(zone_status.text, ZONE_STATUS_VALIDATING)
+
+    def test_stats_deleted_owner(self):
+        """Test ProjectZoneView stats badge on DELETED zone as owner"""
+        self._setup_investigation()
+        self.investigation.irods_status = True
+        self.investigation.save()
+        zone = self.make_landing_zone(
+            'contrib_zone',
+            self.project,
+            self.user_contributor,
+            self.assay,
+            status=ZONE_STATUS_ACTIVE,
+        )
+        self.login_and_redirect(self.user_contributor, self.url)
+
+        zone_status = self.selenium.find_element(
+            By.CLASS_NAME, 'sodar-lz-zone-status'
+        )
+        zone_status_info = self.selenium.find_element(
+            By.CLASS_NAME, 'sodar-lz-zone-status-info'
+        )
+        self._wait_for_status(zone_status, ZONE_STATUS_ACTIVE)
+        self.assertTrue(
+            zone_status_info.find_element(
+                By.CLASS_NAME, 'sodar-irods-stats'
+            ).is_displayed()
+        )
+        # Update status to deleted, stats badge should no longer be rendered
+        zone.set_status(ZONE_STATUS_DELETED)
+        self._wait_for_status(zone_status, ZONE_STATUS_DELETED)
+        self.assertFalse(
+            zone_status_info.find_element(
+                By.CLASS_NAME, 'sodar-irods-stats'
+            ).is_displayed()
+        )
+
+    def test_stats_deleted_superuser(self):
+        """Test ProjectZoneView stats badge on DELETED zone as superuser"""
+        self._setup_investigation()
+        self.investigation.irods_status = True
+        self.investigation.save()
+        zone = self.make_landing_zone(
+            'contrib_zone',
+            self.project,
+            self.user_contributor,
+            self.assay,
+            status=ZONE_STATUS_ACTIVE,
+        )
+        self.login_and_redirect(self.superuser, self.url)
+
+        zone_status = self.selenium.find_element(
+            By.CLASS_NAME, 'sodar-lz-zone-status'
+        )
+        zone_status_info = self.selenium.find_element(
+            By.CLASS_NAME, 'sodar-lz-zone-status-info'
+        )
+        self._wait_for_status(zone_status, ZONE_STATUS_ACTIVE)
+        self.assertTrue(
+            zone_status_info.find_element(
+                By.CLASS_NAME, 'sodar-irods-stats'
+            ).is_displayed()
+        )
+        zone.set_status(ZONE_STATUS_DELETED)
+        self._wait_for_status(zone_status, ZONE_STATUS_DELETED)
+        self.assertFalse(
+            zone_status_info.find_element(
+                By.CLASS_NAME, 'sodar-irods-stats'
+            ).is_displayed()
+        )
 
     def test_zone_buttons(self):
         """Test ProjectZoneView zone buttons"""
