@@ -1,17 +1,19 @@
 SODAR
 =====
 
-.. image:: https://github.com/bihealth/sodar-server/actions/workflows/build.yml/badge.svg
+.. |b1| image:: https://github.com/bihealth/sodar-server/actions/workflows/build.yml/badge.svg
     :target: https://github.com/bihealth/sodar-server/actions/workflows/build.yml
 
-.. image:: https://coveralls.io/repos/github/bihealth/sodar-server/badge.svg?branch=main
+.. |b2| image:: https://coveralls.io/repos/github/bihealth/sodar-server/badge.svg?branch=main
     :target: https://coveralls.io/github/bihealth/sodar-server?branch=main
 
-.. image:: https://img.shields.io/badge/License-MIT-green.svg
+.. |b3| image:: https://img.shields.io/badge/License-MIT-green.svg
     :target: https://opensource.org/licenses/MIT
 
-.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
+.. |b4| image:: https://img.shields.io/badge/code%20style-black-000000.svg
     :target: https://github.com/ambv/black
+
+|b1| |b2| |b3| |b4|
 
 SODAR (System for Omics Data Access and Retrieval) is a specialized system for
 managing data in omics research projects. SODAR provides biomedical scientists

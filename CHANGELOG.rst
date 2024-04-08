@@ -16,6 +16,12 @@ Changed
     - Upgrade to black v24.3.0 (#1930)
     - Reformat with black (#1930)
 
+Fixed
+-----
+
+- **General**
+    - ``README.rst`` badge rendering (#1938)
+
 
 v0.14.2 (2024-03-15)
 ====================
