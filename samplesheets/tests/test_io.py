@@ -88,15 +88,17 @@ class SampleSheetIOMixin:
         for study_info in isa_inv.studies:
             study_id = 'p{}-s{}'.format(project.pk, study_count)
             with warnings.catch_warnings(record=True):
-                isa_studies[
-                    str(study_info.info.path)
-                ] = StudyReader.from_stream(
-                    input_file=sheet_io.get_import_file(
-                        zf,
-                        sheet_io._get_zip_path(inv_dir, study_info.info.path),
-                    ),
-                    study_id=study_id,
-                ).read()
+                isa_studies[str(study_info.info.path)] = (
+                    StudyReader.from_stream(
+                        input_file=sheet_io.get_import_file(
+                            zf,
+                            sheet_io._get_zip_path(
+                                inv_dir, study_info.info.path
+                            ),
+                        ),
+                        study_id=study_id,
+                    ).read()
+                )
             # Read assays for study
             assay_paths = sorted([a.path for a in study_info.assays])
             for assay_path in assay_paths:
@@ -567,9 +569,11 @@ class TestSampleSheetIOExport(SampleSheetIOTestBase):
         expected = tuple(
             isa_models.Characteristics(
                 name=k,
-                value=[self.sheet_io._export_val(v['value'])]
-                if not isinstance(v['value'], list)
-                else self.sheet_io._export_val(v['value']),
+                value=(
+                    [self.sheet_io._export_val(v['value'])]
+                    if not isinstance(v['value'], list)
+                    else self.sheet_io._export_val(v['value'])
+                ),
                 unit=self.sheet_io._export_val(v['unit']),
             )
             for k, v in in_data.items()
@@ -626,9 +630,11 @@ class TestSampleSheetIOExport(SampleSheetIOTestBase):
         expected = tuple(
             isa_models.ParameterValue(
                 name=k,
-                value=[self.sheet_io._export_val(v['value'])]
-                if not isinstance(v['value'], list)
-                else self.sheet_io._export_val(v['value']),
+                value=(
+                    [self.sheet_io._export_val(v['value'])]
+                    if not isinstance(v['value'], list)
+                    else self.sheet_io._export_val(v['value'])
+                ),
                 unit=self.sheet_io._export_val(v['unit']),
             )
             for k, v in in_data.items()

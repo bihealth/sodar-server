@@ -8,6 +8,16 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v0.14.3 (WIP)
+=============
+
+Release for minor updates, maintenance and bug fixes.
+
+- Add Cyberduck documentation
+- Upgrade critical dependencies
+- Minor updates and bug fixes
+
+
 v0.14.2 (2024-03-15)
 ====================
 

@@ -369,9 +369,11 @@ class SheetImportMixin:
         if ui_mode:
             success_msg = '{}d sample sheets from {}'.format(
                 action.capitalize(),
-                'version {}'.format(isa_version.get_full_name())
-                if action == 'restore'
-                else 'ISA-Tab import',
+                (
+                    'version {}'.format(isa_version.get_full_name())
+                    if action == 'restore'
+                    else 'ISA-Tab import'
+                ),
             )
             if investigation.parser_warnings:
                 success_msg += (
@@ -610,9 +612,9 @@ class SheetISAExportMixin:
             response = HttpResponse(
                 zip_io.getvalue(), content_type='application/zip'
             )
-            response[
-                'Content-Disposition'
-            ] = 'attachment; filename="{}"'.format(file_name)
+            response['Content-Disposition'] = (
+                'attachment; filename="{}"'.format(file_name)
+            )
             return response
         elif format == 'json':
             export_data['date_modified'] = str(investigation.date_modified)
@@ -1576,10 +1578,8 @@ class SheetExcelExportView(
 
         # Set up response
         response = HttpResponse(content_type='text/tab-separated-values')
-        response[
-            'Content-Disposition'
-        ] = 'attachment; filename="{}.xlsx"'.format(
-            input_name.split('.')[0]
+        response['Content-Disposition'] = (
+            'attachment; filename="{}.xlsx"'.format(input_name.split('.')[0])
         )  # TODO: TBD: Output file name?
         # Build Excel file
         write_excel_table(table, response, display_name)
@@ -1649,10 +1649,9 @@ class SheetDeleteView(
             except FileNotFoundError:
                 context['irods_file_count'] = 0
         if context['irods_file_count'] > 0:
-            context[
-                'can_delete_sheets'
-            ] = self.request.user.is_superuser or project.is_owner_or_delegate(
-                self.request.user
+            context['can_delete_sheets'] = (
+                self.request.user.is_superuser
+                or project.is_owner_or_delegate(self.request.user)
             )
         else:
             context['can_delete_sheets'] = self.request.user.has_perm(

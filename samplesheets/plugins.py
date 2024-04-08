@@ -312,9 +312,11 @@ class ProjectAppPlugin(
         if obj.__class__ in [Investigation, Study, Assay]:
             return {
                 'url': obj.get_url(),
-                'label': obj.title
-                if obj.__class__ == Investigation
-                else obj.get_display_name(),
+                'label': (
+                    obj.title
+                    if obj.__class__ == Investigation
+                    else obj.get_display_name()
+                ),
             }
         url_kwargs = {'project': obj.project.sodar_uuid}
         if obj.__class__ == ISATab:
@@ -564,9 +566,9 @@ class ProjectAppPlugin(
             if 'sheet_sync_url' not in ret and not re.findall(
                 SYNC_URL_RE, app_settings['sheet_sync_url']
             ):
-                ret[
-                    'sheet_sync_url'
-                ] = 'URL does not point to a sheet sync endpoint'
+                ret['sheet_sync_url'] = (
+                    'URL does not point to a sheet sync endpoint'
+                )
         return ret
 
     # Project Modify API Implementation ----------------------------------------
@@ -770,9 +772,9 @@ class ProjectAppPlugin(
                 if assay_plugin:
                     plugin_shortcuts = assay_plugin.get_shortcuts(assay) or []
                     for sc in plugin_shortcuts:
-                        cache_data['shortcuts'][
-                            sc['id']
-                        ] = irods.collections.exists(sc['path'])
+                        cache_data['shortcuts'][sc['id']] = (
+                            irods.collections.exists(sc['path'])
+                        )
                 cache_data['shortcuts']['track_hubs'] = [
                     c.path
                     for c in irods_backend.get_child_colls(
@@ -1037,9 +1039,9 @@ class SampleSheetAssayPluginPoint(PluginPoint):
                 with irods_backend.get_session() as irods:
                     for path in row_paths:
                         try:
-                            cache_data['paths'][
-                                path
-                            ] = irods_backend.get_object_stats(irods, path)
+                            cache_data['paths'][path] = (
+                                irods_backend.get_object_stats(irods, path)
+                            )
                         except FileNotFoundError:
                             cache_data['paths'][path] = None
                 cache_backend.set_cache_item(
@@ -1183,18 +1185,20 @@ def get_irods_content(inv, study, irods_backend, ret_data):
                     'title': 'Track Hub',
                     'assay_plugin': False,
                     'path': track_hub,
-                    'extra_links': [
-                        {
-                            'url': ticket.get_webdav_link(),
-                            'icon': 'mdi:ticket',
-                            'id': 'ticket_access_%d' % i,
-                            'class': 'sodar-irods-ticket-access-%d-btn' % i,
-                            'title': ' iRODS Access Ticket',
-                            'enabled': ticket.is_active(),
-                        }
-                    ]
-                    if ticket
-                    else [],
+                    'extra_links': (
+                        [
+                            {
+                                'url': ticket.get_webdav_link(),
+                                'icon': 'mdi:ticket',
+                                'id': 'ticket_access_%d' % i,
+                                'class': 'sodar-irods-ticket-access-%d-btn' % i,
+                                'title': ' iRODS Access Ticket',
+                                'enabled': ticket.is_active(),
+                            }
+                        ]
+                        if ticket
+                        else []
+                    ),
                 }
             )
         for i in range(len(a_data['shortcuts'])):

@@ -5,6 +5,18 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+Unreleased
+==========
+
+Changed
+-------
+
+- **General**
+    - Upgrade critical Vue app dependencies (#1930)
+    - Upgrade to black v24.3.0 (#1930)
+    - Reformat with black (#1930)
+
+
 v0.14.2 (2024-03-15)
 ====================
 

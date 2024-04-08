@@ -328,9 +328,11 @@ class SheetContextAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
             'csrf_token': get_token(request),
             'investigation': {},
             'project_uuid': str(project.sodar_uuid),
-            'user_uuid': str(request.user.sodar_uuid)
-            if hasattr(request.user, 'sodar_uuid')
-            else None,
+            'user_uuid': (
+                str(request.user.sodar_uuid)
+                if hasattr(request.user, 'sodar_uuid')
+                else None
+            ),
             'sheet_sync_enabled': app_settings.get(
                 APP_NAME, 'sheet_sync_enable', project=project
             ),
@@ -348,20 +350,26 @@ class SheetContextAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
                 'configuration': inv.get_configuration(),
                 'inv_file_name': inv.file_name.split('/')[-1],
                 'irods_status': inv.irods_status,
-                'irods_path': irods_backend.get_path(project)
-                if irods_backend and inv.irods_status
-                else None,
+                'irods_path': (
+                    irods_backend.get_path(project)
+                    if irods_backend and inv.irods_status
+                    else None
+                ),
                 'parser_version': inv.parser_version or 'LEGACY',
-                'parser_warnings': True
-                if inv.parser_warnings
-                and 'use_file_names' in inv.parser_warnings
-                else False,
+                'parser_warnings': (
+                    True
+                    if inv.parser_warnings
+                    and 'use_file_names' in inv.parser_warnings
+                    else False
+                ),
                 'investigation': {
                     'identifier': inv.identifier,
                     'title': inv.title,
-                    'description': inv.description
-                    if inv.description != project.description
-                    else None,
+                    'description': (
+                        inv.description
+                        if inv.description != project.description
+                        else None
+                    ),
                     'comments': get_comments(inv),
                 },
             }
@@ -418,9 +426,9 @@ class SheetContextAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
                 'identifier': s.identifier,
                 'description': s.description,
                 'comments': get_comments(s),
-                'irods_path': irods_backend.get_path(s)
-                if irods_backend
-                else None,
+                'irods_path': (
+                    irods_backend.get_path(s) if irods_backend else None
+                ),
                 'table_url': request.build_absolute_uri(
                     reverse(
                         'samplesheets:ajax_study_tables',
@@ -439,12 +447,12 @@ class SheetContextAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
                 ] = {
                     'name': a.get_name(),
                     'display_name': a.get_display_name(),
-                    'irods_path': irods_backend.get_path(a)
-                    if irods_backend
-                    else None,
-                    'display_row_links': assay_plugin.display_row_links
-                    if assay_plugin
-                    else True,
+                    'irods_path': (
+                        irods_backend.get_path(a) if irods_backend else None
+                    ),
+                    'display_row_links': (
+                        assay_plugin.display_row_links if assay_plugin else True
+                    ),
                     'plugin': assay_plugin.title if assay_plugin else None,
                 }
 
@@ -671,9 +679,11 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
             ]
             # Set up study edit context
             ret_data['edit_context'] = {
-                'sodar_ontologies': ontology_backend.get_obo_dict(key='name')
-                if ontology_backend
-                else {},
+                'sodar_ontologies': (
+                    ontology_backend.get_obo_dict(key='name')
+                    if ontology_backend
+                    else {}
+                ),
                 'samples': {},
                 'protocols': [],
             }
@@ -693,9 +703,11 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
             ).order_by('name'):
                 ret_data['edit_context']['samples'][str(sample.sodar_uuid)] = {
                     'name': sample.name,
-                    'assays': s_assays[sample.unique_name]
-                    if sample.unique_name in s_assays
-                    else [],
+                    'assays': (
+                        s_assays[sample.unique_name]
+                        if sample.unique_name in s_assays
+                        else []
+                    ),
                 }
             # Add Protocol info
             for protocol in Protocol.objects.filter(study=study).order_by(
@@ -850,9 +862,11 @@ class SheetCellEditAjaxView(BaseSheetEditAjaxView):
                 node_obj.name_type = cell['header_name']
             ok_msg = 'Edited process name: {}{}'.format(
                 cell['value'],
-                ' ({})'.format(cell['header_name'])
-                if cell['header_name'] in th.PROCESS_NAME_HEADERS
-                else '',
+                (
+                    ' ({})'.format(cell['header_name'])
+                    if cell['header_name'] in th.PROCESS_NAME_HEADERS
+                    else ''
+                ),
             )
 
         # Protocol field (special case)

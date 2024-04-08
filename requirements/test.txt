@@ -18,8 +18,7 @@ selenium==4.8.2
 beautifulsoup4==4.11.2
 
 # Black for formatting
-black==23.1.0
+black==24.3.0
 
 # Coveralls for coverage reporting
 coveralls==3.3.1
-

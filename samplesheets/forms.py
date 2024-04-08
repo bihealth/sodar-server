@@ -312,9 +312,9 @@ class SheetTemplateCreateForm(forms.Form):
             field_kwargs = {'label': label}
             # Set field and initial value
             if k == TPL_DIR_FIELD:
-                field_kwargs[
-                    'help_text'
-                ] = 'Investigation directory and assay prefix'
+                field_kwargs['help_text'] = (
+                    'Investigation directory and assay prefix'
+                )
                 self.fields[k] = forms.CharField(**field_kwargs)
                 self.initial[k] = clean_sheet_dir_name(project.title)
             elif isinstance(v, str):

@@ -122,9 +122,9 @@ class OBOFormatOntologyIO:
                 isinstance(h, fh.PropertyValueClause)
                 and str(h.property_value.relation) in OBO_PROPERTY_MAP
             ):
-                o_kwargs[
-                    OBO_PROPERTY_MAP[str(h.property_value.relation)]
-                ] = h.property_value.value
+                o_kwargs[OBO_PROPERTY_MAP[str(h.property_value.relation)]] = (
+                    h.property_value.value
+                )
 
         if title:  # If manually enforcing a title, set here
             o_kwargs['title'] = title

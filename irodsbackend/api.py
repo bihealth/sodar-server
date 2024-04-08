@@ -82,9 +82,9 @@ class IrodsAPI:
         # Set up additional iRODS environment variables
         irods_env = dict(settings.IRODS_ENV_DEFAULT)
         if settings.IRODS_CERT_PATH:
-            irods_env[
-                'irods_ssl_ca_certificate_file'
-            ] = settings.IRODS_CERT_PATH
+            irods_env['irods_ssl_ca_certificate_file'] = (
+                settings.IRODS_CERT_PATH
+            )
         irods_env.update(dict(settings.IRODS_ENV_BACKEND))
         # HACK: Clean up environment to avoid python-irodsclient crash
         irods_env = self.format_env(irods_env)
@@ -304,9 +304,9 @@ class IrodsAPI:
                     user=obj.user.username,
                     study_assay=cls.get_sub_path(obj.assay, landing_zone=True),
                     zone_title=obj.title,
-                    zone_config='_' + obj.configuration
-                    if obj.configuration
-                    else '',
+                    zone_config=(
+                        '_' + obj.configuration if obj.configuration else ''
+                    ),
                 )
             )
         return path

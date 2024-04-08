@@ -241,13 +241,13 @@ class SheetConfigAPI:
             )
             for assay in study.assays.all():
                 a_uuid = str(assay.sodar_uuid)
-                sheet_config['studies'][s_uuid]['assays'][
-                    a_uuid
-                ] = cls._restore_config_table(
-                    investigation,
-                    study_tables['assays'][a_uuid],
-                    sheet_config['studies'][s_uuid]['assays'][a_uuid],
-                    start_idx=len(study_tables['study']['field_header']),
+                sheet_config['studies'][s_uuid]['assays'][a_uuid] = (
+                    cls._restore_config_table(
+                        investigation,
+                        study_tables['assays'][a_uuid],
+                        sheet_config['studies'][s_uuid]['assays'][a_uuid],
+                        start_idx=len(study_tables['study']['field_header']),
+                    )
                 )
         app_settings.set(
             APP_NAME,

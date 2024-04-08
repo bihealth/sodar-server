@@ -42,9 +42,11 @@ class Flow(BaseLinearFlow):
                 inject={
                     'path': project_path,
                     'name': 'parent_uuid',
-                    'value': str(self.project.parent.sodar_uuid)
-                    if self.project.parent
-                    else '',
+                    'value': (
+                        str(self.project.parent.sodar_uuid)
+                        if self.project.parent
+                        else ''
+                    ),
                 },
             )
         )

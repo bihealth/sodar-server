@@ -312,9 +312,11 @@ class SampleSheetIO:
         ret = {}
         for v in vals:
             ret[v.name] = {
-                'unit': cls._import_multi_val(v.unit)
-                if hasattr(v, 'unit')
-                else None,
+                'unit': (
+                    cls._import_multi_val(v.unit)
+                    if hasattr(v, 'unit')
+                    else None
+                ),
                 'value': cls._import_multi_val(v.value),
             }
         return ret
@@ -465,12 +467,16 @@ class SampleSheetIO:
                 'performer': p.performer,
                 'perform_date': p.date if p.date else None,
                 'array_design_ref': p.array_design_ref,
-                'first_dimension': cls._import_multi_val(p.first_dimension)
-                if p.first_dimension
-                else {},
-                'second_dimension': cls._import_multi_val(p.second_dimension)
-                if p.second_dimension
-                else {},
+                'first_dimension': (
+                    cls._import_multi_val(p.first_dimension)
+                    if p.first_dimension
+                    else {}
+                ),
+                'second_dimension': (
+                    cls._import_multi_val(p.second_dimension)
+                    if p.second_dimension
+                    else {}
+                ),
                 'headers': p.headers,
                 'comments': cls._import_comments(p.comments),
             }
@@ -827,9 +833,11 @@ class SampleSheetIO:
                 tags.append('REPLACE')
             self.save_isa(
                 project=project,
-                inv_uuid=replace_uuid
-                if replace and replace_uuid
-                else db_investigation.sodar_uuid,
+                inv_uuid=(
+                    replace_uuid
+                    if replace and replace_uuid
+                    else db_investigation.sodar_uuid
+                ),
                 isa_data=isa_data,
                 tags=tags,
                 user=user,
@@ -1021,9 +1029,11 @@ class SampleSheetIO:
         return tuple(
             isa_models.Characteristics(
                 name=k,
-                value=[cls._export_val(v['value'])]
-                if not isinstance(v['value'], list)
-                else cls._export_val(v['value']),
+                value=(
+                    [cls._export_val(v['value'])]
+                    if not isinstance(v['value'], list)
+                    else cls._export_val(v['value'])
+                ),
                 unit=cls._export_val(v['unit']),
             )
             for k, v in characteristics.items()
@@ -1088,9 +1098,11 @@ class SampleSheetIO:
         return tuple(
             isa_models.ParameterValue(
                 name=k,
-                value=[cls._export_val(v['value'])]
-                if not isinstance(v['value'], list)
-                else cls._export_val(v['value']),
+                value=(
+                    [cls._export_val(v['value'])]
+                    if not isinstance(v['value'], list)
+                    else cls._export_val(v['value'])
+                ),
                 unit=cls._export_val(v['unit']),
             )
             for k, v in param_values.items()
@@ -1133,21 +1145,29 @@ class SampleSheetIO:
             else:
                 extract_label = cls._export_val(m.extract_label)
             ret[m.unique_name] = isa_models.Material(
-                type=m.material_type
-                if m.material_type
-                else MATERIAL_TYPE_EXPORT_MAP[m.item_type],
+                type=(
+                    m.material_type
+                    if m.material_type
+                    else MATERIAL_TYPE_EXPORT_MAP[m.item_type]
+                ),
                 unique_name=m.unique_name,
                 name=m.name,
                 extract_label=extract_label,
-                characteristics=cls._export_characteristics(m.characteristics)
-                if not sample_in_assay
-                else (),
-                comments=cls._export_comments(m.comments)
-                if not sample_in_assay
-                else (),
-                factor_values=cls._export_factor_vals(m.factor_values)
-                if study_data
-                else tuple(),
+                characteristics=(
+                    cls._export_characteristics(m.characteristics)
+                    if not sample_in_assay
+                    else ()
+                ),
+                comments=(
+                    cls._export_comments(m.comments)
+                    if not sample_in_assay
+                    else ()
+                ),
+                factor_values=(
+                    cls._export_factor_vals(m.factor_values)
+                    if study_data
+                    else tuple()
+                ),
                 material_type=cls._export_val(m.extra_material_type),
                 headers=headers,
             )
@@ -1169,9 +1189,9 @@ class SampleSheetIO:
             else:
                 perform_date = p.perform_date
             ret[p.unique_name] = isa_models.Process(
-                protocol_ref=p.protocol.name
-                if p.protocol
-                else PROTOCOL_UNKNOWN_NAME,
+                protocol_ref=(
+                    p.protocol.name if p.protocol else PROTOCOL_UNKNOWN_NAME
+                ),
                 unique_name=p.unique_name,
                 name=p.name,
                 name_type=p.name_type,

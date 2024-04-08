@@ -208,9 +208,9 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
             'irods_path': None,
             'irods_backend_enabled': True if self.irods_backend else False,
             'parser_version': self.investigation.parser_version,
-            'parser_warnings': True
-            if self.investigation.parser_warnings
-            else False,
+            'parser_warnings': (
+                True if self.investigation.parser_warnings else False
+            ),
             'irods_webdav_enabled': settings.IRODS_WEBDAV_ENABLED,
             'irods_webdav_url': settings.IRODS_WEBDAV_URL,
             'external_link_labels': get_ext_link_labels(),
