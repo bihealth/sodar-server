@@ -12,7 +12,7 @@ Changed
 -------
 
 - **General**
-    - Upgrade critical Vue app dependencies (#1930)
+    - Upgrade critical Python and Vue app dependencies (#1930)
     - Upgrade to black v24.3.0 (#1930)
     - Reformat with black (#1930)
 
