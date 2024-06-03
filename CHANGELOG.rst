@@ -8,6 +8,12 @@ Changelog for the SODAR project. Loosely follows the
 Unreleased
 ==========
 
+Added
+-----
+
+- **Taskflowbackend**
+    - ``BatchCalculateChecksumTask`` retrying in case of timeouts (#1941)
+
 Changed
 -------
 

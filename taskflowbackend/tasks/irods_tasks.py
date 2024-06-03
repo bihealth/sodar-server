@@ -24,6 +24,7 @@ logger = logging.getLogger('__name__')
 INHERIT_STRINGS = {True: 'inherit', False: 'noinherit'}
 META_EMPTY_VALUE = 'N/A'
 MD5_RE = re.compile(r'([^\w.])')
+CHECKSUM_RETRY = 5
 
 
 # Mixins -----------------------------------------------------------------------
@@ -850,18 +851,22 @@ class BatchCalculateChecksumTask(IrodsBaseTask):
                 continue
             data_obj = self.irods.data_objects.get(path)
             for replica in data_obj.replicas:
-                if force or not replica.checksum:
+                if replica.checksum and not force:
+                    continue
+                for i in range(CHECKSUM_RETRY):
+                    if i > 0:  # Retry if iRODS times out (see #1941)
+                        logger.info('Retrying ({})..'.format(i + 1))
                     try:
                         data_obj.chksum(
                             **{kw.RESC_HIER_STR_KW: replica.resc_hier}
                         )
+                        break  # Skip retries on success
                     except Exception as ex:
                         logger.error(
                             'Exception in BatchCalculateChecksumTask for path '
                             '"{}" in replica "{}": {}'.format(
-                                path, replica.resc_hier, ex
+                                data_obj.path, replica.resc_hier, ex
                             )
                         )  # NOTE: No raise, only log
         super().execute(*args, **kwargs)
-
-    # NOTE: We don't need revert for this
+        # NOTE: We don't need revert for this

@@ -13,6 +13,7 @@ v0.14.3 (WIP)
 
 Release for minor updates, maintenance and bug fixes.
 
+- Add iRODS checksum calculation retrying
 - Add Cyberduck documentation
 - Upgrade critical dependencies
 - Minor updates and bug fixes
