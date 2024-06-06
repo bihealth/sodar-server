@@ -29,6 +29,8 @@ Fixed
 
 - **General**
     - ``README.rst`` badge rendering (#1938)
+- **Taskflowbackend**
+    - Malformed exception message in ``BatchValidateChecksumsTask`` (#1943)
 
 
 v0.14.2 (2024-03-15)

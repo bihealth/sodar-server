@@ -663,18 +663,16 @@ class BatchValidateChecksumsTask(IrodsBaseTask):
     def execute(self, paths, zone_path, *args, **kwargs):
         zone_path_len = len(zone_path.split('/'))
         for path in paths:
+            md5_path = path + '.md5'
             try:
-                md5_path = path + '.md5'
-                try:
-                    md5_file = self.irods.data_objects.open(md5_path, mode='r')
-                    file_sum = re.split(
-                        MD5_RE, md5_file.read().decode('utf-8')
-                    )[0]
-                except Exception as ex:
-                    msg = 'Unable to read checksum file "{}"'.format(
-                        '/'.join(md5_path.split('/')[zone_path_len:])
-                    )
-                    self._raise_irods_exception(ex, msg)
+                md5_file = self.irods.data_objects.open(md5_path, mode='r')
+                file_sum = re.split(MD5_RE, md5_file.read().decode('utf-8'))[0]
+            except Exception as ex:
+                msg = 'Unable to read checksum file "{}"'.format(
+                    '/'.join(md5_path.split('/')[zone_path_len:])
+                )
+                self._raise_irods_exception(ex, msg)
+            try:
                 self._compare_checksums(
                     self.irods.data_objects.get(path), file_sum
                 )
