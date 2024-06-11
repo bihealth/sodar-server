@@ -15,6 +15,7 @@ Release for minor updates, maintenance and bug fixes.
 
 - Add iRODS checksum calculation retrying
 - Add Cyberduck documentation
+- Upgrade to python-irodsclient v2.0
 - Upgrade critical dependencies
 - Minor updates and bug fixes
 

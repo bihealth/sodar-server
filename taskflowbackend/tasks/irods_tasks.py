@@ -60,7 +60,7 @@ class IrodsAccessMixin:
         else:
             target = self.irods.collections.get(path)
             recursive = recursive
-        target_access = self.irods.permissions.get(target=target)
+        target_access = self.irods.acls.get(target=target)
 
         user_access = next(
             (x for x in target_access if x.user_name == user_name), None
@@ -85,7 +85,7 @@ class IrodsAccessMixin:
                 user_name=user_name,
                 user_zone=self.irods.zone,
             )
-            self.irods.permissions.set(acl, recursive=recursive)
+            self.irods.acls.set(acl, recursive=recursive)
             self.data_modified = True  # Access was modified
 
     def revert_set_access(
@@ -111,7 +111,7 @@ class IrodsAccessMixin:
                 user_zone=self.irods.zone,
             )
             recursive = False if obj_target else recursive
-            self.irods.permissions.set(acl, recursive=recursive)
+            self.irods.acls.set(acl, recursive=recursive)
 
 
 # Base Task --------------------------------------------------------------------
@@ -353,7 +353,7 @@ class SetInheritanceTask(IrodsBaseTask):
             user_name='',
             user_zone=self.irods.zone,
         )
-        self.irods.permissions.set(acl, recursive=True)
+        self.irods.acls.set(acl, recursive=True)
 
     def revert(self, path, inherit=True, *args, **kwargs):
         # TODO: Add checks for inheritance status prior to execute
@@ -364,7 +364,7 @@ class SetInheritanceTask(IrodsBaseTask):
             path=path,
             user_name='',
             user_zone=self.irods.zone)
-        self.irods.permissions.set(acl, recursive=True)
+        self.irods.acls.set(acl, recursive=True)
         '''
 
 
@@ -764,7 +764,7 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
                     ),
                 )
             try:
-                target_access = self.irods.permissions.get(target=target)
+                target_access = self.irods.acls.get(target=target)
             except Exception as ex:
                 self._raise_irods_exception(
                     ex,
@@ -797,7 +797,7 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
                     user_zone=self.irods.zone,
                 )
                 try:
-                    self.irods.permissions.set(acl, recursive=False)
+                    self.irods.acls.set(acl, recursive=False)
                 except Exception as ex:
                     self._raise_irods_exception(
                         ex,
@@ -837,7 +837,7 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
                 user_name=user_name,
                 user_zone=self.irods.zone,
             )
-            self.irods.permissions.set(acl, recursive=False)
+            self.irods.acls.set(acl, recursive=False)
 
 
 class BatchCalculateChecksumTask(IrodsBaseTask):
