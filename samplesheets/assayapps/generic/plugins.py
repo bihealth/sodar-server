@@ -12,6 +12,11 @@ from samplesheets.views import MISC_FILES_COLL, RESULTS_COLL
 APP_NAME = 'samplesheets.assayapps.generic'
 RESULTS_REPORTS_COMMENT = 'SODAR Assay Plugin ResRep'
 MISC_FILES_COMMENT = 'SODAR Assay Plugin MiscFiles'
+DATA_COMMENTS = [
+    'SODAR Assay Plugin Data1',
+    'SODAR Assay Plugin Data2',
+    'SODAR Assay Plugin Data3',
+]
 
 
 class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
@@ -41,7 +46,55 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
     permission = None
 
     #: Toggle displaying of row-based iRODS links in the assay table
-    display_row_links = False
+    display_row_links = True
+
+    @classmethod
+    def _get_col_value(cls, colname, row, table):
+        """
+        Return value of last matched column.
+
+        :param colname: Column name to look for
+        :param row: List of dicts (a row returned by SampleSheetTableBuilder)
+        :param table: Full table with headers (dict returned by
+                      SampleSheetTableBuilder)
+        :return: String with cell value of last matched column
+        """
+        # returns last match of row
+        value = ''
+        for i in range(len(row)):
+            header = table['field_header'][i]
+            if header['value'].lower() == colname.lower():
+                value = row[i]['value']
+        return value
+
+    def get_row_path(self, row, table, assay, assay_path):
+        """
+        Return iRODS path for an assay row in a sample sheet. If None,
+        display default path. Used if display_row_links = True.
+
+        :param row: List of dicts (a row returned by SampleSheetTableBuilder)
+        :param table: Full table with headers (dict returned by
+                      SampleSheetTableBuilder)
+        :param assay: Assay object
+        :param assay_path: Root path for assay
+        :return: String with full iRODS path or None
+        """
+        data_cols = []
+        for c in DATA_COMMENTS:
+            data_col = assay.comments.get(c)
+            data_cols.append(self._get_col_value(data_col, row, table))
+
+        # Build iRODS path from list and stop at first None value
+        data_path = ''
+        for c in data_cols:
+            if c:
+                data_path += '/' + c
+            else:
+                break
+
+        if data_path:
+            return assay_path + data_path
+        return None
 
     def update_row(self, row, table, assay):
         """
