@@ -13,6 +13,7 @@ APP_NAME = 'samplesheets.assayapps.generic'
 RESULTS_REPORTS_COMMENT = 'SODAR Assay Plugin ResRep'
 MISC_FILES_COMMENT = 'SODAR Assay Plugin MiscFiles'
 
+
 class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
     """Plugin for generic assays in sample sheets"""
 
@@ -42,7 +43,6 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
     #: Toggle displaying of row-based iRODS links in the assay table
     display_row_links = False
 
-
     def update_row(self, row, table, assay):
         """
         Update render table row with e.g. links. Return the modified row.
@@ -71,15 +71,13 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             # TODO: Check if two comments reference the same column header?
             # Create Results & Reports links
             if assay.comments.get(RESULTS_REPORTS_COMMENT):
-                ResRepCols = assay.comments.get(RESULTS_REPORTS_COMMENT).lower().split(';')
+                ResRepCols = (
+                    assay.comments.get(RESULTS_REPORTS_COMMENT).lower().split(';')
+                )
                 if header['value'].lower() in ResRepCols:
                     row[i]['value'] = SIMPLE_LINK_TEMPLATE.format(
                         label=row[i]['value'],
-                        url=base_url
-                        + '/'
-                        + RESULTS_COLL
-                        + '/'
-                        + row[i]['value'],
+                        url=base_url + '/' + RESULTS_COLL + '/' + row[i]['value'],
                     )
                 if top_header['value'].lower() in ResRepCols:
                     row[i]['link'] = (
@@ -88,15 +86,13 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
 
             # Create MiscFiles links
             if assay.comments.get(MISC_FILES_COMMENT):
-                MiscFilesCols = assay.comments.get(MISC_FILES_COMMENT).lower().split(';')
+                MiscFilesCols = (
+                    assay.comments.get(MISC_FILES_COMMENT).lower().split(';')
+                )
                 if header['value'].lower() in MiscFilesCols:
                     row[i]['value'] = SIMPLE_LINK_TEMPLATE.format(
                         label=row[i]['value'],
-                        url=base_url
-                        + '/'
-                        + MISC_FILES_COLL
-                        + '/'
-                        + row[i]['value'],
+                        url=base_url + '/' + MISC_FILES_COLL + '/' + row[i]['value'],
                     )
                 if top_header['value'].lower() in MiscFilesCols:
                     row[i]['link'] = (
@@ -104,7 +100,6 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                     )
 
         return row
-
 
     def update_cache(self, name=None, project=None, user=None):
         """
