@@ -72,12 +72,18 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             # Create Results & Reports links
             if assay.comments.get(RESULTS_REPORTS_COMMENT):
                 ResRepCols = (
-                    assay.comments.get(RESULTS_REPORTS_COMMENT).lower().split(';')
+                    assay.comments.get(RESULTS_REPORTS_COMMENT)
+                    .lower()
+                    .split(';')
                 )
                 if header['value'].lower() in ResRepCols:
                     row[i]['value'] = SIMPLE_LINK_TEMPLATE.format(
                         label=row[i]['value'],
-                        url=base_url + '/' + RESULTS_COLL + '/' + row[i]['value'],
+                        url=base_url
+                        + '/'
+                        + RESULTS_COLL
+                        + '/'
+                        + row[i]['value'],
                     )
                 if top_header['value'].lower() in ResRepCols:
                     row[i]['link'] = (
@@ -92,7 +98,11 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                 if header['value'].lower() in MiscFilesCols:
                     row[i]['value'] = SIMPLE_LINK_TEMPLATE.format(
                         label=row[i]['value'],
-                        url=base_url + '/' + MISC_FILES_COLL + '/' + row[i]['value'],
+                        url=base_url
+                        + '/'
+                        + MISC_FILES_COLL
+                        + '/'
+                        + row[i]['value'],
                     )
                 if top_header['value'].lower() in MiscFilesCols:
                     row[i]['link'] = (
