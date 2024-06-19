@@ -10,7 +10,7 @@ from samplesheets.views import MISC_FILES_COLL, RESULTS_COLL
 
 # Local constants
 APP_NAME = 'samplesheets.assayapps.generic'
-RESULTS_REPORTS_COMMENT = 'SODAR Assay Plugin ResRep'
+RESULTS_COMMENT = 'SODAR Assay Plugin ResRep'
 MISC_FILES_COMMENT = 'SODAR Assay Plugin MiscFiles'
 DATA_COMMENTS = [
     'SODAR Assay Plugin Data1',
@@ -20,7 +20,7 @@ DATA_COMMENTS = [
 
 
 class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
-    """Plugin for generic assays in sample sheets"""
+    """Plugin for generic data linking in sample sheets"""
 
     #: Name (used in code and as unique idenfitier)
     name = 'samplesheets_assay_generic'
@@ -49,22 +49,43 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
     display_row_links = True
 
     @classmethod
-    def _get_col_value(cls, colname, row, table):
+    def _create_linked_cols_from_comment(cls, cell, header, top_header, comment, collection):
+        """
+        Creates collection links for targeted columns.
+
+        :param cell: Dict (obtained by iterating over a row)
+        :param comment: Semicolon separated list of columns.
+        :param collection: Target collection for links.
+        """
+
+        target_cols = assay.comments.get(comment).lower().split(';')
+
+        if header['value'].lower() in target_cols:
+            cell['value'] = SIMPLE_LINK_TEMPLATE.format(
+                label=cell['value'],
+                url=f"{base_url}/{collection}/{cell['value']}",
+            )
+        if top_header['value'].lower() in target_cols:
+            cell['link'] = f"{base_url}/{collection}/{cell['value']}"
+
+    @classmethod
+    def _get_col_value(cls, target_col, row, table):
         """
         Return value of last matched column.
 
-        :param colname: Column name to look for
+        :param target_col: Column name to look for
         :param row: List of dicts (a row returned by SampleSheetTableBuilder)
         :param table: Full table with headers (dict returned by
                       SampleSheetTableBuilder)
         :return: String with cell value of last matched column
         """
         # returns last match of row
-        value = ''
-        for i in range(len(row)):
-            header = table['field_header'][i]
-            if header['value'].lower() == colname.lower():
-                value = row[i]['value']
+        value = None
+        if target_col:
+            for i in range(len(row)):
+                header = table['field_header'][i]
+                if header['value'].lower() == target_col.lower():
+                    value = row[i]['value']
         return value
 
     def get_row_path(self, row, table, assay, assay_path):
@@ -122,45 +143,13 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                 th_colspan += top_header['colspan']
 
             # TODO: Check if two comments reference the same column header?
-            # Create Results & Reports links
-            if assay.comments.get(RESULTS_REPORTS_COMMENT):
-                ResRepCols = (
-                    assay.comments.get(RESULTS_REPORTS_COMMENT)
-                    .lower()
-                    .split(';')
-                )
-                if header['value'].lower() in ResRepCols:
-                    row[i]['value'] = SIMPLE_LINK_TEMPLATE.format(
-                        label=row[i]['value'],
-                        url=base_url
-                        + '/'
-                        + RESULTS_COLL
-                        + '/'
-                        + row[i]['value'],
-                    )
-                if top_header['value'].lower() in ResRepCols:
-                    row[i]['link'] = (
-                        base_url + '/' + RESULTS_COLL + '/' + row[i]['value']
-                    )
+            # Create value links in columns
+            #if assay.comments.get(RESULTS_COMMENT):
+                #self._create_linked_cols_from_comment(row[i], header, top_header, RESULTS_COMMENT, RESULTS_COLL)
 
             # Create MiscFiles links
-            if assay.comments.get(MISC_FILES_COMMENT):
-                MiscFilesCols = (
-                    assay.comments.get(MISC_FILES_COMMENT).lower().split(';')
-                )
-                if header['value'].lower() in MiscFilesCols:
-                    row[i]['value'] = SIMPLE_LINK_TEMPLATE.format(
-                        label=row[i]['value'],
-                        url=base_url
-                        + '/'
-                        + MISC_FILES_COLL
-                        + '/'
-                        + row[i]['value'],
-                    )
-                if top_header['value'].lower() in MiscFilesCols:
-                    row[i]['link'] = (
-                        base_url + '/' + MISC_FILES_COLL + '/' + row[i]['value']
-                    )
+            #if assay.comments.get(MISC_FILES_COMMENT):
+                #self._create_linked_cols_from_comment(row[i], header, top_header, MISC_FILES_COMMENT, MISC_FILES_COLL)
 
         return row
 
