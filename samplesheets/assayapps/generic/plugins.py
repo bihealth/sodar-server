@@ -44,25 +44,25 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
     #: Toggle displaying of row-based iRODS links in the assay table
     display_row_links = True
 
-    @classmethod
-    def _create_linked_cols_from_comment(cls, cell, header, top_header, comment, collection):
+    @staticmethod
+    def _link_from_comment(cell, header, top_header, target_cols, url):
         """
         Creates collection links for targeted columns.
 
         :param cell: Dict (obtained by iterating over a row)
-        :param comment: Semicolon separated list of columns.
-        :param collection: Target collection for links.
+        :param header: Column header
+        :param top_header: Column top header
+        :param target_cols: List of column names.
+        :param url: Base URL for link target.
         """
-
-        target_cols = assay.comments.get(comment).lower().split(';')
 
         if header['value'].lower() in target_cols:
             cell['value'] = SIMPLE_LINK_TEMPLATE.format(
                 label=cell['value'],
-                url=f"{base_url}/{collection}/{cell['value']}",
+                url=f"{url}/{cell['value']}",
             )
-        if top_header['value'].lower() in target_cols:
-            cell['link'] = f"{base_url}/{collection}/{cell['value']}"
+        elif top_header['value'].lower() in target_cols:
+            cell['link'] = f"{url}/{cell['value']}"
 
     @classmethod
     def _get_col_value(cls, target_col, row, table):
@@ -140,6 +140,13 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         top_header = None
         th_colspan = 0
 
+        results_cols = assay.comments.get(RESULTS_COMMENT)
+        if results_cols:
+            results_cols = results_cols.lower().split(';')
+        misc_cols = assay.comments.get(MISC_FILES_COMMENT)
+        if misc_cols:
+            misc_cols = misc_cols.lower().split(';')
+
         for i in range(len(row)):
             header = table['field_header'][i]
             if not top_header or i >= th_colspan:
@@ -147,13 +154,24 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                 th_colspan += top_header['colspan']
 
             # TODO: Check if two comments reference the same column header?
-            # Create value links in columns
-            #if assay.comments.get(RESULTS_COMMENT):
-                #self._create_linked_cols_from_comment(row[i], header, top_header, RESULTS_COMMENT, RESULTS_COLL)
-
+            # Create Results links
+            if results_cols:
+                self._link_from_comment(
+                    row[i],
+                    header,
+                    top_header,
+                    results_cols,
+                    f'{base_url}/{RESULTS_COLL}',
+                )
             # Create MiscFiles links
-            #if assay.comments.get(MISC_FILES_COMMENT):
-                #self._create_linked_cols_from_comment(row[i], header, top_header, MISC_FILES_COMMENT, MISC_FILES_COLL)
+            if misc_cols:
+                self._link_from_comment(
+                    row[i],
+                    header,
+                    top_header,
+                    misc_cols,
+                    f'{base_url}/{MISC_FILES_COLL}',
+                )
 
         return row
 
