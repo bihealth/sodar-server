@@ -32,7 +32,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
     assay_fields = []
 
     #: Description string
-    description = 'Creates data links via special comments in ISA investigation file'
+    description = 'Creates data links from comments in ISA investigation file'
 
     #: Template for assay addition (Assay object as "assay" in context)
     assay_template = None
