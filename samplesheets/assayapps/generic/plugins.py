@@ -100,16 +100,17 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         :param assay_path: Root path for assay
         :return: String with full iRODS path or None
         """
+        # TODO: Rebuild for arbitrary number of comments. Check for continuity!
         data_cols = []
-        for c in DATA_COMMENTS:
-            data_col = assay.comments.get(c)
+        for comment in DATA_COMMENTS:
+            data_col = assay.comments.get(comment)
             data_cols.append(self._get_col_value(data_col, row, table))
 
         # Build iRODS path from list and stop at first None value
-        data_path = ''
-        for c in data_cols:
-            if c:
-                data_path += '/' + c
+        data_path = None
+        for col in data_cols:
+            if col:
+                data_path += f'/{col}'
             else:
                 break
 
