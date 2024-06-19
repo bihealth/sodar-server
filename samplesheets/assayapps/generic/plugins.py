@@ -12,11 +12,7 @@ from samplesheets.views import MISC_FILES_COLL, RESULTS_COLL
 APP_NAME = 'samplesheets.assayapps.generic'
 RESULTS_COMMENT = 'SODAR Assay Plugin ResRep'
 MISC_FILES_COMMENT = 'SODAR Assay Plugin MiscFiles'
-DATA_COMMENTS = [
-    'SODAR Assay Plugin Data1',
-    'SODAR Assay Plugin Data2',
-    'SODAR Assay Plugin Data3',
-]
+DATA_COMMENT_PREFIX = 'SODAR Assay Plugin Data'
 
 
 class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
@@ -100,15 +96,22 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         :param assay_path: Root path for assay
         :return: String with full iRODS path or None
         """
-        # TODO: Rebuild for arbitrary number of comments. Check for continuity!
-        data_cols = []
-        for comment in DATA_COMMENTS:
-            data_col = assay.comments.get(comment)
-            data_cols.append(self._get_col_value(data_col, row, table))
+        # Extract comments starting with DATA_COMMENT_PREFIX; sorted
+        data_columns = [
+            value
+            for name, value in sorted(assay.comments.items())
+            if name.startswith(DATA_COMMENT_PREFIX)
+        ]
+
+        data_collections = []
+        for column_name in data_columns:
+            data_collections.append(
+                self._get_col_value(column_name, row, table)
+            )
 
         # Build iRODS path from list and stop at first None value
-        data_path = None
-        for col in data_cols:
+        data_path = ''
+        for col in data_collections:
             if col:
                 data_path += f'/{col}'
             else:
