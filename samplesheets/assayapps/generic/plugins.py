@@ -10,7 +10,7 @@ from samplesheets.views import MISC_FILES_COLL, RESULTS_COLL
 
 # Local constants
 APP_NAME = 'samplesheets.assayapps.generic'
-RESULTS_COMMENT = 'SODAR Assay Plugin ResRep'
+RESULTS_COMMENT = 'SODAR Assay Plugin Results'
 MISC_FILES_COMMENT = 'SODAR Assay Plugin MiscFiles'
 DATA_COMMENT_PREFIX = 'SODAR Assay Plugin Data'
 
@@ -32,7 +32,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
     assay_fields = []
 
     #: Description string
-    description = 'Sample sheets generic assay app'
+    description = 'Creates data links via special comments in ISA investigation file'
 
     #: Template for assay addition (Assay object as "assay" in context)
     assay_template = None
