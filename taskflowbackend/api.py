@@ -59,7 +59,8 @@ class TaskflowAPI:
                 if zone.status == ZONE_STATUS_CREATING
                 else ZONE_STATUS_FAILED
             )
-            zone.set_status(status, ex_msg)
+            # Truncate to 1024 characters to not exceed limit (see #1953)
+            zone.set_status(status, ex_msg[:1024])
         # TODO: Create app alert for failure if async (see #1499)
         raise cls.FlowSubmitException(ex_msg)
 
