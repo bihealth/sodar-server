@@ -26,6 +26,8 @@ Changed
     - Remove Bootstrap tooltips from iRODS buttons (#1949)
 - **Landingzones**
     - Remove Bootstrap tooltip updating for iRODS buttons (#1949)
+- **Samplesheets**
+    - Sanitize iRODS paths in ``get_row_path()`` calls (#1947)
 - **Taskflowbackend**
     - Increase default for ``TASKFLOW_IRODS_CONN_TIMEOUT`` (#1900)
     - Disable lock requirement for role and project update flows (#1948)

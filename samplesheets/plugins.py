@@ -1032,7 +1032,7 @@ class SampleSheetAssayPluginPoint(PluginPoint):
                         row, assay_table, assay, assay_path
                     )
                     if path and path not in row_paths:
-                        row_paths.append(path)
+                        row_paths.append(irods_backend.sanitize_path(path))
 
                 # Build cache for paths
                 cache_data = {'paths': {}}
@@ -1134,6 +1134,8 @@ def get_irods_content(inv, study, irods_backend, ret_data):
             for row in a_data['table_data']:
                 # Update assay links column
                 path = assay_plugin.get_row_path(row, a_data, assay, assay_path)
+                if path:
+                    path = irods_backend.sanitize_path(path)
                 enabled = True
                 # Set initial state to disabled by cached value
                 if (
