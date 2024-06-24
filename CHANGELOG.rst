@@ -28,6 +28,7 @@ Changed
     - Remove Bootstrap tooltip updating for iRODS buttons (#1949)
 - **Taskflowbackend**
     - Increase default for ``TASKFLOW_IRODS_CONN_TIMEOUT`` (#1900)
+    - Disable lock requirement for role and project update flows (#1948)
 
 Fixed
 -----
