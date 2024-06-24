@@ -22,6 +22,10 @@ Changed
     - Upgrade to black v24.3.0 (#1930)
     - Reformat with black (#1930)
     - Upgrade to python-irodsclient v2.0.1 (#1944)
+- **Irodsbackend**
+    - Remove Bootstrap tooltips from iRODS buttons (#1949)
+- **Landingzones**
+    - Remove Bootstrap tooltip updating for iRODS buttons (#1949)
 - **Taskflowbackend**
     - Increase default for ``TASKFLOW_IRODS_CONN_TIMEOUT`` (#1900)
 
@@ -30,6 +34,8 @@ Fixed
 
 - **General**
     - ``README.rst`` badge rendering (#1938)
+- **Landingzones**
+    - Bootstrap tooltips preventing zone button clicking with certain conditions (#1949)
 - **Taskflowbackend**
     - Malformed exception message in ``BatchValidateChecksumsTask`` (#1943)
 

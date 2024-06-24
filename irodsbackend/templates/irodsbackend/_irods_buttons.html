@@ -22,7 +22,6 @@
             data-webdav-url="{{ irods_webdav_url }}"
             role="submit"
             {# NOTE: Modal not triggered here as data is async, see JQuery #}
-            data-tooltip="tooltip" data-placement="top"
             title="List files"
             {% if not irods_colls or disable_all %} disabled{% endif %}>
       <i class="iconify" data-icon="mdi:folder-open-outline"></i>
@@ -31,7 +30,6 @@
   <button class="btn btn-secondary sodar-list-btn sodar-irods-btn sodar-irods-copy-btn sodar-irods-path-btn
           {% if not irods_webdav_enabled or not irods_colls or disable_all %} no-colls {% endif %}"
           data-clipboard-text="{{ irods_path }}" role="submit"
-          data-tooltip="tooltip" data-placement="top"
           title="Copy iRODS path into clipboard"
           {% if not irods_colls or disable_all %} disabled{% endif %}>
     <i class="iconify" data-icon="mdi:console-line"></i>
@@ -39,7 +37,6 @@
   <button class="btn btn-secondary sodar-list-btn sodar-irods-btn sodar-irods-copy-btn
           {% if not irods_webdav_enabled or not irods_colls or disable_all %} no-colls {% endif %}"
           data-clipboard-text="{{ irods_webdav_url }}{{ irods_path }}" role="submit"
-          data-tooltip="tooltip" data-placement="top"
           title="Copy WebDAV URL into clipboard"
           {% if not irods_colls or disable_all %} disabled{% endif %}>
     <i class="iconify" data-icon="mdi:clipboard-text-multiple"></i>
@@ -47,7 +44,6 @@
   <a class="btn btn-secondary sodar-list-btn sodar-irods-btn sodar-irods-dav-btn
      {% if not irods_webdav_enabled or not irods_colls or disable_all %} no-colls disabled {% endif %}"
      href="{{ irods_webdav_url }}{{ irods_path }}" role="button"
-     data-tooltip="tooltip" data-placement="top"
      title="Browse files in WebDAV">
     <i class="iconify" data-icon="mdi:open-in-new"></i>
   </a>
