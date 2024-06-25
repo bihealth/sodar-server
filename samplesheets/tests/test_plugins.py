@@ -55,9 +55,6 @@ class SamplesheetsPluginTestBase(
         self.investigation.save()
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-        # HACK: Force correct measurement type for assay (see #1954)
-        self.assay.measurement_type = 'exome sequencing'
-        self.assay.save()
         self.tb = SampleSheetTableBuilder()
         self.ret_data = dict(
             study={'display_name': self.study.get_display_name()}

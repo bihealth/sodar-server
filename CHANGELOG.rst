@@ -39,6 +39,8 @@ Fixed
     - ``README.rst`` badge rendering (#1938)
 - **Landingzones**
     - Bootstrap tooltips preventing zone button clicking with certain conditions (#1949)
+- **Samplesheets**
+    - Invalid assay measurement type in ``i_minimal*`` test data (#1954)
 - **Taskflowbackend**
     - Malformed exception message in ``BatchValidateChecksumsTask`` (#1943)
     - Exceeded zone status info char limit in ``_raise_flow_exception()`` (#1953)
