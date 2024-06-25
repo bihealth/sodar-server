@@ -81,13 +81,15 @@ class BaseIrodsAjaxView(SODARBaseProjectAjaxView):
             coll = irods.collections.get(path)
         except Exception:
             return False
-        perms = irods.acls.get(coll)
+        # perms = irods.acls.get(coll)  # 2.0+
+        perms = irods.permissions.get(coll)
         perm_users = [p.user_name for p in perms]
         if user.username in perm_users:
             return True
         # In python-irodsclient v2.0+, acls don't return users based on group
         # membership. Instead, we need to check against project user group and
         # then verify membership.
+        '''
         group_name = self.irods_backend.get_user_group_name(self.project)
         try:
             group = irods.groups.get(group_name)
@@ -97,6 +99,7 @@ class BaseIrodsAjaxView(SODARBaseProjectAjaxView):
             m.name for m in group.members
         ]:
             return True
+        '''
         return False
 
     def dispatch(self, request, *args, **kwargs):

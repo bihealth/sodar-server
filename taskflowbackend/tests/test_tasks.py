@@ -85,7 +85,8 @@ class IRODSTaskTestBase(TaskflowViewTestBase):
         return self.irods.collections.get(self.test_coll_path)
 
     def _get_user_access(self, target, user_name):
-        target_access = self.irods.acls.get(target=target)
+        # target_access = self.irods.acls.get(target=target)  # 2.0+
+        target_access = self.irods.permissions.get(target=target)
         return next(
             (x for x in target_access if x.user_name == user_name), None
         )

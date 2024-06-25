@@ -909,6 +909,13 @@ class SampleSheetAssayPluginPoint(PluginPoint):
     # TODO: Implement this in your assay plugin
     display_row_links = True
 
+    #: Irodsbackend IrodsAPI object
+    irods_backend = None
+
+    def __init__(self):
+        super().__init__()
+        self.irods_backend = get_backend_api('omics_irods')
+
     def get_assay_path(self, assay):
         """
         Helper for getting the assay path.
@@ -916,10 +923,9 @@ class SampleSheetAssayPluginPoint(PluginPoint):
         :param assay: Assay object
         :return: Full iRODS path for the assay
         """
-        irods_backend = get_backend_api('omics_irods')
-        if not irods_backend:
+        if not self.irods_backend:
             return None
-        return irods_backend.get_path(assay)
+        return self.irods_backend.get_path(assay)
 
     def get_row_path(self, row, table, assay, assay_path):
         """
@@ -986,10 +992,9 @@ class SampleSheetAssayPluginPoint(PluginPoint):
             return
         try:
             cache_backend = get_backend_api('sodar_cache')
-            irods_backend = get_backend_api('omics_irods')
         except Exception:
             return
-        if not cache_backend or not irods_backend:
+        if not cache_backend or not self.irods_backend:
             return
 
         projects = (
@@ -1023,7 +1028,7 @@ class SampleSheetAssayPluginPoint(PluginPoint):
             study_tables = table_builder.get_study_tables(study)
             for assay in [a for a in study.assays.all() if a in config_assays]:
                 assay_table = study_tables['assays'][str(assay.sodar_uuid)]
-                assay_path = irods_backend.get_path(assay)
+                assay_path = self.irods_backend.get_path(assay)
                 row_paths = []
                 item_name = 'irods/rows/{}'.format(assay.sodar_uuid)
 
@@ -1032,15 +1037,15 @@ class SampleSheetAssayPluginPoint(PluginPoint):
                         row, assay_table, assay, assay_path
                     )
                     if path and path not in row_paths:
-                        row_paths.append(irods_backend.sanitize_path(path))
+                        row_paths.append(self.irods_backend.sanitize_path(path))
 
                 # Build cache for paths
                 cache_data = {'paths': {}}
-                with irods_backend.get_session() as irods:
+                with self.irods_backend.get_session() as irods:
                     for path in row_paths:
                         try:
                             cache_data['paths'][path] = (
-                                irods_backend.get_object_stats(irods, path)
+                                self.irods_backend.get_object_stats(irods, path)
                             )
                         except FileNotFoundError:
                             cache_data['paths'][path] = None

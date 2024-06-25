@@ -21,7 +21,6 @@ Changed
     - Upgrade critical Python and Vue app dependencies (#1930)
     - Upgrade to black v24.3.0 (#1930)
     - Reformat with black (#1930)
-    - Upgrade to python-irodsclient v2.0.1 (#1944)
 - **Irodsbackend**
     - Remove Bootstrap tooltips from iRODS buttons (#1949)
 - **Landingzones**
