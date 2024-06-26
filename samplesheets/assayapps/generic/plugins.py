@@ -104,19 +104,13 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
 
         data_collections = []
         for column_name in data_columns:
-            data_collections.append(
-                self._get_col_value(column_name, row, table)
-            )
+            col_value = self._get_col_value(column_name, row, table)
+            if col_value:
+                data_collections.append(col_value)
 
         # Build iRODS path from list and stop at first None value
-        data_path = ''
-        for col in data_collections:
-            if col:
-                data_path += f'/{col}'
-            else:
-                break
-
-        if data_path:
+        if data_collections:
+            data_path = '/' + '/'.join(data_collections)
             return assay_path + data_path
         return None
 
