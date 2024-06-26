@@ -55,7 +55,6 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         :param target_cols: List of column names.
         :param url: Base URL for link target.
         """
-
         if header['value'].lower() in target_cols:
             cell['value'] = SIMPLE_LINK_TEMPLATE.format(
                 label=cell['value'],
@@ -75,7 +74,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                       SampleSheetTableBuilder)
         :return: String with cell value of last matched column
         """
-        # returns last match of row
+        # Returns last match of row
         value = None
         if target_col:
             for i in range(len(row)):
@@ -172,7 +171,6 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                     misc_cols,
                     f'{base_url}/{MISC_FILES_COLL}',
                 )
-
         return row
 
     def update_cache(self, name=None, project=None, user=None):
