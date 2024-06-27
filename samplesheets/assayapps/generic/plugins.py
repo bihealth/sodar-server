@@ -15,6 +15,7 @@ APP_NAME = 'samplesheets.assayapps.generic'
 RESULTS_COMMENT = 'SODAR Assay Plugin Results'
 MISC_FILES_COMMENT = 'SODAR Assay Plugin MiscFiles'
 DATA_COMMENT_PREFIX = 'SODAR Assay Plugin Data'
+DATA_LINK_COMMENT = 'SODAR Assay Plugin RowPath'
 
 
 class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
@@ -124,13 +125,14 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             return assay_path + data_path
         return None
 
-    def update_row(self, row, table, assay):
+    def update_row(self, row, table, assay, index):
         """
         Update render table row with e.g. links. Return the modified row.
 
         :param row: Original row (list of dicts)
         :param table: Full table (dict)
         :param assay: Assay object
+        :param index: Row index (int)
         :return: List of dicts
         """
         if not settings.IRODS_WEBDAV_ENABLED or not assay:
@@ -149,6 +151,13 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         misc_cols = assay.comments.get(MISC_FILES_COMMENT)
         if misc_cols:
             misc_cols = misc_cols.lower().split(';')
+        data_cols = assay.comments.get(DATA_LINK_COMMENT)
+        if data_cols:
+            data_cols = data_cols.lower().split(';')
+            if table['irods_paths'][index]:
+                row_path = table['irods_paths'][index]['path']
+            else:
+                row_path = self.get_row_path(row, table, assay, assay_path)
 
         for i in range(len(row)):
             header = table['field_header'][i]
@@ -174,6 +183,15 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                     top_header,
                     misc_cols,
                     f'{base_url}/{MISC_FILES_COLL}',
+                )
+            # Create DataCollection links
+            if data_cols:
+                self._link_from_comment(
+                    row[i],
+                    header,
+                    top_header,
+                    data_cols,
+                    f'{settings.IRODS_WEBDAV_URL}{row_path}',
                 )
         return row
 
