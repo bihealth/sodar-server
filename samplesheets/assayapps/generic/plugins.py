@@ -2,6 +2,7 @@
 
 from django.conf import settings
 
+from altamisa.constants import table_headers as th
 from samplesheets.plugins import SampleSheetAssayPluginPoint
 from samplesheets.rendering import SIMPLE_LINK_TEMPLATE
 from samplesheets.utils import get_top_header
@@ -55,13 +56,17 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         :param target_cols: List of column names.
         :param url: Base URL for link target.
         """
-        if header['value'].lower() in target_cols:
+        # Special case for Material Names
+        if (
+            top_header['value']
+            in th.DATA_FILE_HEADERS + th.MATERIAL_NAME_HEADERS
+        ) and (header['value'] == 'Name'):
+            cell['link'] = f"{url}/{cell['value']}"
+        elif header['value'].lower() in target_cols:
             cell['value'] = SIMPLE_LINK_TEMPLATE.format(
                 label=cell['value'],
                 url=f"{url}/{cell['value']}",
             )
-        elif top_header['value'].lower() in target_cols:
-            cell['link'] = f"{url}/{cell['value']}"
 
     @classmethod
     def _get_col_value(cls, target_col, row, table):
