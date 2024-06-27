@@ -7,6 +7,7 @@ class Flow(BaseLinearFlow):
 
     def validate(self):
         self.required_fields = []
+        self.require_lock = False  # Project lock not required for this flow
         return super().validate()
 
     def build(self, force_fail=False):

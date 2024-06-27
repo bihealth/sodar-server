@@ -21,17 +21,29 @@ Changed
     - Upgrade critical Python and Vue app dependencies (#1930)
     - Upgrade to black v24.3.0 (#1930)
     - Reformat with black (#1930)
-    - Upgrade to python-irodsclient v2.0.1 (#1944)
+- **Irodsbackend**
+    - Remove Bootstrap tooltips from iRODS buttons (#1949)
+- **Landingzones**
+    - Remove Bootstrap tooltip updating for iRODS buttons (#1949)
+- **Samplesheets**
+    - Sanitize iRODS paths in ``get_row_path()`` calls (#1947)
+    - ``index`` arg in ``SampleSheetAssayPluginPoint.update_row()`` (#1957)
 - **Taskflowbackend**
     - Increase default for ``TASKFLOW_IRODS_CONN_TIMEOUT`` (#1900)
+    - Disable lock requirement for role and project update flows (#1948)
 
 Fixed
 -----
 
 - **General**
     - ``README.rst`` badge rendering (#1938)
+- **Landingzones**
+    - Bootstrap tooltips preventing zone button clicking with certain conditions (#1949)
+- **Samplesheets**
+    - Invalid assay measurement type in ``i_minimal*`` test data (#1954)
 - **Taskflowbackend**
     - Malformed exception message in ``BatchValidateChecksumsTask`` (#1943)
+    - Exceeded zone status info char limit in ``_raise_flow_exception()`` (#1953)
 
 
 v0.14.2 (2024-03-15)

@@ -89,13 +89,14 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         if mc_assay_name:
             return assay_path + '/' + mc_assay_name
 
-    def update_row(self, row, table, assay):
+    def update_row(self, row, table, assay, index):
         """
         Update render table row with e.g. links. Return the modified row.
 
         :param row: Original row (list of dicts)
-        :param table: Full table (dict)
+        :param table: Full table (list of lists)
         :param assay: Assay object
+        :param index: Row index (int)
         :return: List of dicts
         """
         if not settings.IRODS_WEBDAV_ENABLED or not assay:

@@ -128,7 +128,8 @@ class TaskflowTestMixin(ProjectMixin, RoleMixin, RoleAssignmentMixin):
                 target = self.irods.collections.get(target)
             except CollectionDoesNotExist:
                 target = self.irods.data_objects.get(target)
-        access_list = self.irods.acls.get(target=target)
+        # access_list = self.irods.acls.get(target=target)  # 2.0+
+        access_list = self.irods.permissions.get(target=target)
         access = next(
             (x for x in access_list if x.user_name == user_name), None
         )

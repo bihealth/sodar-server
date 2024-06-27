@@ -76,9 +76,7 @@ var toggleButtons = function(row, status, stats) {
                 $(this).attr('disabled', 'disabled');
             } else if ($(this).is('a')) {
                 $(this).addClass('disabled');
-                $(this).tooltip('disable');
             }
-            // $(this).tooltip('disable');
         }
     });
 };
@@ -98,15 +96,6 @@ var updateButtons = function() {
                 ipaths.push(buttonPath);
             }
         }
-
-        // disable tooltip if dirs are empty
-        else {
-            $(this).closest('span').find('.sodar-list-btn').each(
-                function () {
-                    $(this).tooltip('disable');
-                });
-        }
-
     });
     var pathCount = ipaths.length;
     var batchSize = window.irodsQueryBatchSize;
@@ -156,12 +145,6 @@ var updateButtons = function() {
 *************************/
 function displayCopyStatus(elem) {
     elem.addClass('text-warning');
-    var realTitle = elem.tooltip().attr('data-original-title');
-    elem.attr('title', 'Copied!')
-        .tooltip('_fixTitle')
-        .tooltip('show')
-        .attr('title', realTitle)
-        .tooltip('_fixTitle');
     elem.delay(250).queue(function() {
         elem.removeClass('text-warning').dequeue();
     });
@@ -234,7 +217,7 @@ $(document).ready(function() {
                     var elemId = 'sodar-irods-copy-btn-' + i.toString();
                     var copyButton = '<button class="btn btn-secondary sodar-list-btn pull-right" ' +
                         'id="' + elemId + '"' +
-                        'title="Copy iRODS path into clipboard" data-tooltip="tooltip" ' +
+                        'title="Copy iRODS path into clipboard" ' +
                         'data-placement="top" onclick="copyModalPath(\'' + obj['path'] +
                         '\', \'' + elemId + '\')">' +
                         '<i class="iconify" data-icon="mdi:console-line"></i>' +
