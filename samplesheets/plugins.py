@@ -942,13 +942,14 @@ class SampleSheetAssayPluginPoint(PluginPoint):
         # TODO: Implement this in your assay plugin if display_row_links=True
         return None
 
-    def update_row(self, row, table, assay):
+    def update_row(self, row, table, assay, index):
         """
         Update render table row with e.g. links. Return the modified row.
 
         :param row: Original row (list of dicts)
         :param table: Full table (list of lists)
         :param assay: Assay object
+        :param index: Row index (int)
         :return: List of dicts
         """
         # TODO: Implement this in your assay plugin
@@ -1136,7 +1137,7 @@ def get_irods_content(inv, study, irods_backend, ret_data):
                 project=assay.get_project(),
             )
 
-            for row in a_data['table_data']:
+            for idx, row in enumerate(a_data['table_data']):
                 # Update assay links column
                 path = assay_plugin.get_row_path(row, a_data, assay, assay_path)
                 if path:
@@ -1154,7 +1155,7 @@ def get_irods_content(inv, study, irods_backend, ret_data):
                     enabled = False
                 a_data['irods_paths'].append({'path': path, 'enabled': enabled})
                 # Update row links
-                assay_plugin.update_row(row, a_data, assay)
+                assay_plugin.update_row(row, a_data, assay, idx)
 
             # Add visual notification to all shortcuts coming from assay plugin
             assay_shortcuts = assay_plugin.get_shortcuts(assay) or []
