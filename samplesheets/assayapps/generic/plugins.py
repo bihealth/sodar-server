@@ -1,5 +1,6 @@
 """Assay app plugin for samplesheets"""
 
+import re
 from django.conf import settings
 
 from altamisa.constants import table_headers as th
@@ -57,7 +58,11 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         :param url: Base URL for link target.
         """
         # Special case for Material Names
-        if (
+        if not isinstance(cell['value'], str) or re.search(
+            '.+ <.*>', cell['value']
+        ):
+            return None
+        elif (
             top_header['value']
             in th.DATA_FILE_HEADERS + th.MATERIAL_NAME_HEADERS
         ) and (header['value'] == 'Name'):
