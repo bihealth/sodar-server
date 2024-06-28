@@ -942,6 +942,36 @@ class TestLandingZoneMove(
         )
         self.assertEqual(self.irods.data_objects.exists(sample_obj.path), True)
 
+    def test_move_obj_with_coll_name_exists(self):
+        """Test landing_zone_move with existing object sharing name with zone collection"""
+        coll_path = os.path.join(self.zone_path, COLL_NAME)
+        zone_coll = self.irods.collections.create(coll_path)
+        obj = self.make_irods_object(zone_coll, OBJ_NAME)
+        obj_path = obj.path
+        self.make_irods_md5_object(obj)
+        sample_coll_path = os.path.join(self.sample_path)
+        sample_coll = self.irods.collections.create(sample_coll_path)
+        # NOTE: Using collection name for the data object
+        sample_obj = self.make_irods_object(sample_coll, COLL_NAME)
+        flow_data = {'zone_uuid': str(self.zone.sodar_uuid)}
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='landing_zone_move',
+            flow_data=flow_data,
+        )
+        flow.build()
+        with self.assertRaisesRegex(Exception, 'CAT_NAME_EXISTS_AS_DATAOBJ'):
+            flow.run()
+        self.zone.refresh_from_db()
+        self.assertEqual(self.zone.status, ZONE_STATUS_FAILED)
+        self.assertEqual(self.irods.collections.exists(coll_path), True)
+        self.assertEqual(self.irods.data_objects.exists(obj_path), True)
+        self.assertEqual(
+            self.irods.data_objects.exists(obj_path + '.md5'), True
+        )
+        self.assertEqual(self.irods.data_objects.exists(sample_obj.path), True)
+
     def test_validate(self):
         """Test landing_zone_move with validate_only=True"""
         coll_path = os.path.join(self.zone_path, COLL_NAME)

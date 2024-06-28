@@ -44,6 +44,7 @@ Fixed
 - **Taskflowbackend**
     - Malformed exception message in ``BatchValidateChecksumsTask`` (#1943)
     - Exceeded zone status info char limit in ``_raise_flow_exception()`` (#1953)
+    - Uncaught exception in ``BatchCreateCollectionsTask`` (#1958)
 
 
 v0.14.2 (2024-03-15)
