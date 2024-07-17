@@ -16,6 +16,7 @@ Release for minor updates, maintenance and bug fixes.
 - Add iRODS checksum calculation retrying
 - Add Cyberduck documentation
 - Disable lock requirement for project and role update taskflows
+- Make sheet template output dir field visibility optional
 - Upgrade critical dependencies
 - Minor updates and bug fixes
 

@@ -13,6 +13,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 
 # Projectroles dependency
+from projectroles.app_settings import AppSettingAPI
 from projectroles.forms import MultipleFileField
 from projectroles.models import Project
 from projectroles.plugins import get_backend_api
@@ -31,7 +32,11 @@ from samplesheets.models import (
 )
 
 
+app_settings = AppSettingAPI()
+
+
 # Local constants
+APP_NAME = 'samplesheets'
 ERROR_MSG_INVALID_PATH = 'Not a valid iRODS path for this project'
 ERROR_MSG_EXISTING = 'An active request already exists for this path'
 TPL_DIR_FIELD = '__output_dir'
@@ -317,6 +322,12 @@ class SheetTemplateCreateForm(forms.Form):
                 )
                 self.fields[k] = forms.CharField(**field_kwargs)
                 self.initial[k] = clean_sheet_dir_name(project.title)
+                if not app_settings.get(
+                    APP_NAME,
+                    'template_output_dir_display',
+                    user=self.current_user,
+                ):
+                    self.fields[k].widget = forms.widgets.HiddenInput()
             elif isinstance(v, str):
                 if not v:  # Allow empty value if default is not set
                     field_kwargs['required'] = False

@@ -232,6 +232,15 @@ class ProjectAppPlugin(
             'projects. Update sheet cache after updating this value.',
             'user_modifiable': True,
         },
+        'template_output_dir_display': {
+            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_USER'],
+            'type': 'BOOLEAN',
+            'label': 'Display template output directory field',
+            'default': False,
+            'description': 'Display output directory field for sample sheet '
+            'templates.',
+            'user_modifiable': True,
+        },
     }
 
     #: Iconify icon

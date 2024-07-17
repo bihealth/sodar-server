@@ -11,6 +11,8 @@ Unreleased
 Added
 -----
 
+- **Samplesheets**
+    - ``template_output_dir_display`` user setting (#1960)
 - **Taskflowbackend**
     - ``BatchCalculateChecksumTask`` retrying in case of timeouts (#1941)
 
@@ -28,6 +30,7 @@ Changed
 - **Samplesheets**
     - Sanitize iRODS paths in ``get_row_path()`` calls (#1947)
     - ``index`` arg in ``SampleSheetAssayPluginPoint.update_row()`` (#1957)
+    - Hide template output dir field by default (#1960)
 - **Taskflowbackend**
     - Increase default for ``TASKFLOW_IRODS_CONN_TIMEOUT`` (#1900)
     - Disable lock requirement for role and project update flows (#1948)
