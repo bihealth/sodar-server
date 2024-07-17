@@ -42,6 +42,7 @@ Fixed
     - ``README.rst`` badge rendering (#1938)
 - **Landingzones**
     - Bootstrap tooltips preventing zone button clicking with certain conditions (#1949)
+    - Zone with ``NOT CREATED`` status displayed as active in project list (#1962)
 - **Samplesheets**
     - Invalid assay measurement type in ``i_minimal*`` test data (#1954)
 - **Taskflowbackend**
