@@ -14,6 +14,7 @@ Added
 - **Samplesheets**
     - ``template_output_dir_display`` user setting (#1960)
     - Display BAM/CRAM/VCF omit patterns in study shortcut modal (#1963)
+    - Row links display override using assay comment (#1968)
 - **Taskflowbackend**
     - ``BatchCalculateChecksumTask`` retrying in case of timeouts (#1941)
 

@@ -61,6 +61,7 @@ from samplesheets.views_ajax import (
     RENDER_HEIGHT_ROW,
     RENDER_HEIGHT_SCROLLBAR,
     STUDY_PLUGIN_NOT_FOUND_MSG,
+    ROW_LINK_DISPLAY_COMMENT,
 )
 
 
@@ -461,6 +462,26 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
         self.assertEqual(response.status_code, 200)
         response_data = json.loads(response.data)
         self.assertEqual(response_data['perms']['edit_config'], True)
+
+    def test_get_display_row_links_override(self):
+        """Test GET with assay row link display override"""
+        self.assay.comments[ROW_LINK_DISPLAY_COMMENT] = 'false'
+        self.assay.save()
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:ajax_context',
+                    kwargs={'project': self.project.sodar_uuid},
+                )
+            )
+        self.assertEqual(response.status_code, 200)
+        response_data = json.loads(response.data)
+        # Initial value was True
+        self.assertFalse(
+            response_data['studies'][str(self.study.sodar_uuid)]['assays'][
+                str(self.assay.sodar_uuid)
+            ]['display_row_links']
+        )
 
 
 class TestStudyTablesAjaxView(IrodsAccessTicketMixin, SamplesheetsViewTestBase):

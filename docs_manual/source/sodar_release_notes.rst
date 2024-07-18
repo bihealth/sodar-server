@@ -14,6 +14,7 @@ v0.15.0 (WIP)
 Feature update.
 
 - Add BAM/CRAM/VCF omit pattern display in study shortcut modal
+- Add row links display override using assay comment
 - Add iRODS checksum calculation retrying
 - Add Cyberduck documentation
 - Disable lock requirement for project and role update taskflows

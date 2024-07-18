@@ -45,6 +45,7 @@ from samplesheets.utils import (
     get_node_obj,
     get_webdav_url,
     get_ext_link_labels,
+    get_bool,
 )
 from samplesheets.views import (
     IrodsDataRequestModifyMixin,
@@ -86,6 +87,7 @@ ERROR_NOT_IN_PROJECT = 'Collection does not belong to project'
 ERROR_NOT_FOUND = 'Collection not found'
 ERROR_NO_AUTH = 'User not authorized for iRODS collection'
 STUDY_PLUGIN_NOT_FOUND_MSG = 'Plugin not found for study'
+ROW_LINK_DISPLAY_COMMENT = 'SODAR Assay Row Display'
 
 
 # Base Ajax View Classes and Mixins --------------------------------------------
@@ -443,6 +445,24 @@ class SheetContextAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
             # Set up assay data
             for a in s.assays.all().order_by('pk'):
                 assay_plugin = a.get_plugin()
+                row_links = True
+                if ROW_LINK_DISPLAY_COMMENT in a.comments:
+                    try:
+                        row_links = get_bool(
+                            a.comments[ROW_LINK_DISPLAY_COMMENT]
+                        )
+                    except Exception as ex:
+                        logger.error(
+                            'Exception in retrieving row display comment "{}" '
+                            'for assay "{} ({})": {}'.format(
+                                ROW_LINK_DISPLAY_COMMENT,
+                                a.get_display_name(),
+                                a.sodar_uuid,
+                                ex,
+                            )
+                        )
+                elif assay_plugin:
+                    row_links = assay_plugin.display_row_links
                 ret_data['studies'][str(s.sodar_uuid)]['assays'][
                     str(a.sodar_uuid)
                 ] = {
@@ -451,9 +471,7 @@ class SheetContextAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
                     'irods_path': (
                         irods_backend.get_path(a) if irods_backend else None
                     ),
-                    'display_row_links': (
-                        assay_plugin.display_row_links if assay_plugin else True
-                    ),
+                    'display_row_links': row_links,
                     'plugin': assay_plugin.title if assay_plugin else None,
                 }
 
