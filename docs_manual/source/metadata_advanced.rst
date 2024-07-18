@@ -97,7 +97,7 @@ to true, the assay plugin used for the assay should implement the
 
     STUDY ASSAYS
     Study Assay File Name   a_assay.txt
-    Comment[SODAR Assay Row Display] false
+    Comment[SODAR Assay Row Link Display] false
 
 SODAR currently supports the following assay plugins:
 

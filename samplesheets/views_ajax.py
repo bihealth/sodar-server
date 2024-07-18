@@ -87,7 +87,7 @@ ERROR_NOT_IN_PROJECT = 'Collection does not belong to project'
 ERROR_NOT_FOUND = 'Collection not found'
 ERROR_NO_AUTH = 'User not authorized for iRODS collection'
 STUDY_PLUGIN_NOT_FOUND_MSG = 'Plugin not found for study'
-ROW_LINK_DISPLAY_COMMENT = 'SODAR Assay Row Display'
+ROW_LINK_DISPLAY_COMMENT = 'SODAR Assay Row Link Display'
 
 
 # Base Ajax View Classes and Mixins --------------------------------------------
