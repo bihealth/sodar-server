@@ -8,10 +8,10 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
-v0.14.3 (WIP)
+v0.15.0 (WIP)
 =============
 
-Release for minor updates, maintenance and bug fixes.
+Feature update.
 
 - Add BAM/CRAM/VCF omit pattern display in study shortcut modal
 - Add iRODS checksum calculation retrying
