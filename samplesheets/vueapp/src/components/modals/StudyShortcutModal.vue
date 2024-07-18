@@ -13,7 +13,15 @@
           class="table sodar-card-table pb-3 sodar-ss-shortcut-table">
         <thead>
           <tr>
-            <th colspan="2">{{ cat.title }}</th>
+            <th colspan="2">
+              {{ cat.title }}
+              <span v-if="cat.omit_info && cat.omit_info.length"
+                    class="text-info sodar-ss-shortcut-info"
+                    :title="'Omitted from IGV: ' + cat.omit_info"
+                    v-b-tooltip.hover.right>
+                <i class="iconify" data-icon="mdi:info"></i>
+              </span>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -96,8 +104,8 @@ export default {
         }
         if (filesFound) this.modalData = response.data
         else this.message = 'No files found'
-      } else if ('detail' in response) {
-        this.message = response.detail
+      } else if ('error' in response) {
+        this.message = response.error
       }
     },
     getShortcuts (query) {

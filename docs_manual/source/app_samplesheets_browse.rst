@@ -220,6 +220,12 @@ The buttons consist of:
 In the modal, you can both access the URLs of files directly, or merge them into
 your currently open IGV session.
 
+If certain file path patterns are omitted from IGV inclusion in project
+settings, a blue info icon will be displayed next to the BAM/CRAM or VCF
+section. Hovering your mouse on this icon will display the list of patterns
+omitted. These settings can be changed by the project owner or delegate in the
+:guilabel:`Update Project` view.
+
 For more detailed information on using IGV with SODAR, see
 :ref:`ext_tool_igv_setup` as well as :ref:`ext_tool_igv_opening`.
 

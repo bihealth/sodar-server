@@ -13,6 +13,7 @@ v0.14.3 (WIP)
 
 Release for minor updates, maintenance and bug fixes.
 
+- Add BAM/CRAM/VCF omit pattern display in study shortcut modal
 - Add iRODS checksum calculation retrying
 - Add Cyberduck documentation
 - Disable lock requirement for project and role update taskflows

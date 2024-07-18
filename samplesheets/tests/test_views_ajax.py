@@ -60,6 +60,7 @@ from samplesheets.views_ajax import (
     RENDER_HEIGHT_HEADERS,
     RENDER_HEIGHT_ROW,
     RENDER_HEIGHT_SCROLLBAR,
+    STUDY_PLUGIN_NOT_FOUND_MSG,
 )
 
 
@@ -598,7 +599,7 @@ class TestStudyTablesAjaxView(IrodsAccessTicketMixin, SamplesheetsViewTestBase):
 class TestStudyLinksAjaxView(SamplesheetsViewTestBase):
     """Tests for StudyLinksAjaxView"""
 
-    # TODO: Test with realistic ISA-Tab examples using BIH configs (see #434)
+    # NOTE: See test_views_ajax_taskflow for more tests
 
     def setUp(self):
         super().setUp()
@@ -606,7 +607,7 @@ class TestStudyLinksAjaxView(SamplesheetsViewTestBase):
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
-    def test_get(self):
+    def test_get_plugin_not_found(self):
         """Test StudyLinksAjaxView GET without plugin"""
         with self.login(self.user):
             response = self.client.get(
@@ -616,6 +617,8 @@ class TestStudyLinksAjaxView(SamplesheetsViewTestBase):
                 )
             )
         self.assertEqual(response.status_code, 404)  # No plugin for ISA-Tab
+        self.assertEqual(response.data, {'error': STUDY_PLUGIN_NOT_FOUND_MSG})
+        self.assertNotIn('data', response.data)
 
 
 class TestSheetWarningsAjaxView(SamplesheetsViewTestBase):

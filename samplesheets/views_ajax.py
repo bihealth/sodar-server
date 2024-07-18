@@ -85,6 +85,7 @@ ALERT_LIB_FILES_EXIST = (
 ERROR_NOT_IN_PROJECT = 'Collection does not belong to project'
 ERROR_NOT_FOUND = 'Collection not found'
 ERROR_NO_AUTH = 'User not authorized for iRODS collection'
+STUDY_PLUGIN_NOT_FOUND_MSG = 'Plugin not found for study'
 
 
 # Base Ajax View Classes and Mixins --------------------------------------------
@@ -722,27 +723,34 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
 class StudyLinksAjaxView(SODARBaseProjectAjaxView):
     """View to retrieve data for shortcut links from study apps"""
 
-    # TODO: Also do this for assay apps?
     permission_required = 'samplesheets.view_sheet'
 
     def get(self, request, *args, **kwargs):
         study = Study.objects.filter(sodar_uuid=self.kwargs['study']).first()
         study_plugin = study.get_plugin()
         if not study_plugin:
-            return Response(
-                {'detail': 'Plugin not found for study'}, status=404
-            )
-        ret_data = {'study': {'display_name': study.get_display_name()}}
+            return Response({'error': STUDY_PLUGIN_NOT_FOUND_MSG}, status=404)
+        ret_data = {}
         try:
             study_tables = table_builder.get_study_tables(study)
         except Exception as ex:
-            # TODO: Log error
-            ret_data['render_error'] = str(ex)
+            ret_data['error'] = 'Error retrieving study tables: {}'.format(ex)
+            return Response(ret_data, status=500)
+        try:
+            ret_data = study_plugin.get_shortcut_links(
+                study, study_tables, **request.GET
+            )
+            # Add project BAM/VCF omit pattern information
+            p = study.investigation.project
+            for t in ['bam', 'vcf']:
+                if not ret_data.get('data') or t not in ret_data['data']:
+                    continue
+                s = app_settings.get(APP_NAME, 'igv_omit_' + t, project=p)
+                ret_data['data'][t]['omit_info'] = s
             return Response(ret_data, status=200)
-        ret_data = study_plugin.get_shortcut_links(
-            study, study_tables, **request.GET
-        )
-        return Response(ret_data, status=200)
+        except Exception as ex:
+            ret_data['error'] = 'Error retrieving shortcut links: {}'.format(ex)
+            return Response(ret_data, status=500)
 
 
 class SheetWarningsAjaxView(SODARBaseProjectAjaxView):
