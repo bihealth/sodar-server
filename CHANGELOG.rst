@@ -11,6 +11,10 @@ Unreleased
 Added
 -----
 
+- **Samplesheets**
+    - ``template_output_dir_display`` user setting (#1960)
+    - Display BAM/CRAM/VCF omit patterns in study shortcut modal (#1963)
+    - Row links display override using assay comment (#1968)
 - **Taskflowbackend**
     - ``BatchCalculateChecksumTask`` retrying in case of timeouts (#1941)
 
@@ -28,6 +32,8 @@ Changed
 - **Samplesheets**
     - Sanitize iRODS paths in ``get_row_path()`` calls (#1947)
     - ``index`` arg in ``SampleSheetAssayPluginPoint.update_row()`` (#1957)
+    - Hide template output dir field by default (#1960)
+    - Improve ``StudyLinksAjaxView`` return data (#1963, #1966)
 - **Taskflowbackend**
     - Increase default for ``TASKFLOW_IRODS_CONN_TIMEOUT`` (#1900)
     - Disable lock requirement for role and project update flows (#1948)
@@ -39,11 +45,14 @@ Fixed
     - ``README.rst`` badge rendering (#1938)
 - **Landingzones**
     - Bootstrap tooltips preventing zone button clicking with certain conditions (#1949)
+    - Zone with ``NOT CREATED`` status displayed as active in project list (#1962)
 - **Samplesheets**
     - Invalid assay measurement type in ``i_minimal*`` test data (#1954)
+    - Error message handling in ``StudyShortcutModal`` (#1965)
 - **Taskflowbackend**
     - Malformed exception message in ``BatchValidateChecksumsTask`` (#1943)
     - Exceeded zone status info char limit in ``_raise_flow_exception()`` (#1953)
+    - Uncaught exception in ``BatchCreateCollectionsTask`` (#1958)
 
 
 v0.14.2 (2024-03-15)

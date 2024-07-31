@@ -87,6 +87,18 @@ override the latter. Example:
     Study Assay File Name   a_assay.txt
     Comment[SODAR Assay Plugin] samplesheets_assay_generic_raw
 
+Similarly, you can override the assay table row link display with the comment
+``SODAR Assay Row Display``. Set it to "true" or "false" (or 1/0) to control
+whether row links should be displayed for this assay. Note that if you set this
+to true, the assay plugin used for the assay should implement the
+``get_row_path()`` method.
+
+.. code-block::
+
+    STUDY ASSAYS
+    Study Assay File Name   a_assay.txt
+    Comment[SODAR Assay Row Link Display] false
+
 SODAR currently supports the following assay plugins:
 
 - **DNA Sequencing**

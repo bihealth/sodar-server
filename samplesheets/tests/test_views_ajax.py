@@ -60,6 +60,8 @@ from samplesheets.views_ajax import (
     RENDER_HEIGHT_HEADERS,
     RENDER_HEIGHT_ROW,
     RENDER_HEIGHT_SCROLLBAR,
+    STUDY_PLUGIN_NOT_FOUND_MSG,
+    ROW_LINK_DISPLAY_COMMENT,
 )
 
 
@@ -461,6 +463,26 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
         response_data = json.loads(response.data)
         self.assertEqual(response_data['perms']['edit_config'], True)
 
+    def test_get_display_row_links_override(self):
+        """Test GET with assay row link display override"""
+        self.assay.comments[ROW_LINK_DISPLAY_COMMENT] = 'false'
+        self.assay.save()
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:ajax_context',
+                    kwargs={'project': self.project.sodar_uuid},
+                )
+            )
+        self.assertEqual(response.status_code, 200)
+        response_data = json.loads(response.data)
+        # Initial value was True
+        self.assertFalse(
+            response_data['studies'][str(self.study.sodar_uuid)]['assays'][
+                str(self.assay.sodar_uuid)
+            ]['display_row_links']
+        )
+
 
 class TestStudyTablesAjaxView(IrodsAccessTicketMixin, SamplesheetsViewTestBase):
     """Tests for StudyTablesAjaxView"""
@@ -598,7 +620,7 @@ class TestStudyTablesAjaxView(IrodsAccessTicketMixin, SamplesheetsViewTestBase):
 class TestStudyLinksAjaxView(SamplesheetsViewTestBase):
     """Tests for StudyLinksAjaxView"""
 
-    # TODO: Test with realistic ISA-Tab examples using BIH configs (see #434)
+    # NOTE: See test_views_ajax_taskflow for more tests
 
     def setUp(self):
         super().setUp()
@@ -606,7 +628,7 @@ class TestStudyLinksAjaxView(SamplesheetsViewTestBase):
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
-    def test_get(self):
+    def test_get_plugin_not_found(self):
         """Test StudyLinksAjaxView GET without plugin"""
         with self.login(self.user):
             response = self.client.get(
@@ -616,6 +638,8 @@ class TestStudyLinksAjaxView(SamplesheetsViewTestBase):
                 )
             )
         self.assertEqual(response.status_code, 404)  # No plugin for ISA-Tab
+        self.assertEqual(response.data, {'error': STUDY_PLUGIN_NOT_FOUND_MSG})
+        self.assertNotIn('data', response.data)
 
 
 class TestSheetWarningsAjaxView(SamplesheetsViewTestBase):

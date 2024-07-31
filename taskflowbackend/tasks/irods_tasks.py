@@ -697,10 +697,16 @@ class BatchCreateCollectionsTask(IrodsBaseTask):
         for path in paths:
             for i in range(2, len(path.split('/')) + 1):
                 sub_path = '/'.join(path.split('/')[:i])
-                if not self.irods.collections.exists(sub_path):
-                    self.irods.collections.create(sub_path)
-                    self.execute_data['created_colls'].append(sub_path)
-                    self.data_modified = True
+                try:
+                    if not self.irods.collections.exists(sub_path):
+                        self.irods.collections.create(sub_path)
+                        self.execute_data['created_colls'].append(sub_path)
+                        self.data_modified = True
+                except Exception as ex:
+                    self._raise_irods_exception(
+                        ex,
+                        'Failed to create collection: {}'.format(sub_path),
+                    )
         super().execute(*args, **kwargs)
 
     def revert(self, paths, *args, **kwargs):

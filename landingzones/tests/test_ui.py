@@ -7,6 +7,8 @@ from django.urls import reverse
 
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as ec
+from selenium.webdriver.support.ui import WebDriverWait
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
@@ -18,6 +20,7 @@ from samplesheets.tests.test_sheet_config import SheetConfigMixin
 
 from landingzones.constants import (
     ZONE_STATUS_CREATING,
+    ZONE_STATUS_NOT_CREATED,
     ZONE_STATUS_ACTIVE,
     ZONE_STATUS_VALIDATING,
     ZONE_STATUS_DELETED,
@@ -640,3 +643,117 @@ class TestProjectDetailView(LandingZoneUITestBase):
         contrib_zone.set_status(ZONE_STATUS_VALIDATING)
         self._wait_for_status(zone_status, ZONE_STATUS_VALIDATING)
         self.assertEqual(zone_status.text, ZONE_STATUS_VALIDATING)
+
+
+class TestHomeView(LandingZoneUITestBase):
+    """Tests for HomeView landingzones content"""
+
+    def _wait_for_elem(self, suffix):
+        WebDriverWait(self.selenium, self.wait_time).until(
+            ec.presence_of_element_located(
+                (By.CLASS_NAME, 'sodar-lz-project-list-' + suffix)
+            )
+        )
+
+    def _assert_list_elem(self, suffix, expected):
+        self._assert_element(
+            By.CLASS_NAME, 'sodar-lz-project-list-' + suffix, expected
+        )
+
+    def setUp(self):
+        super().setUp()
+        self.url = reverse('home')
+
+    def test_render_no_sheets(self):
+        """Test project list rendering with no sheets"""
+        self.login_and_redirect(self.user_owner, self.url)
+        self._wait_for_elem('none')
+        self._assert_list_elem('active', False)
+        self._assert_list_elem('create', False)
+        self._assert_list_elem('none', True)
+
+    def test_render_no_colls(self):
+        """Test project list rendering with sheets and no colls"""
+        self._setup_investigation()
+        self.login_and_redirect(self.user_owner, self.url)
+        self._wait_for_elem('none')
+        self._assert_list_elem('active', False)
+        self._assert_list_elem('create', False)
+        self._assert_list_elem('none', True)
+
+    def test_render_no_zones(self):
+        """Test project list rendering with iRODS enabled and no zones"""
+        self._setup_investigation()
+        self.investigation.irods_status = True
+        self.investigation.save()
+        self.login_and_redirect(self.user_owner, self.url)
+        self._wait_for_elem('create')
+        self._assert_list_elem('active', False)
+        self._assert_list_elem('create', True)
+        self._assert_list_elem('none', False)
+
+    def test_render_no_zones_guest(self):
+        """Test project list rendering with no zones as guest"""
+        self._setup_investigation()
+        self.investigation.irods_status = True
+        self.investigation.save()
+        self.login_and_redirect(self.user_guest, self.url)
+        self._wait_for_elem('none')
+        self._assert_list_elem('active', False)
+        # Guest doesn't have perms to create
+        self._assert_list_elem('create', False)
+        self._assert_list_elem('none', True)
+
+    def test_render_zone_own_active(self):
+        """Test project list rendering with own active zone"""
+        self._setup_investigation()
+        self.investigation.irods_status = True
+        self.investigation.save()
+        self.make_landing_zone(
+            'contrib_zone',
+            self.project,
+            self.user_contributor,
+            self.assay,
+            status=ZONE_STATUS_ACTIVE,
+        )
+        self.login_and_redirect(self.user_contributor, self.url)
+        self._wait_for_elem('active')
+        self._assert_list_elem('active', True)
+        self._assert_list_elem('create', False)
+        self._assert_list_elem('none', False)
+
+    def test_render_zone_own_finished(self):
+        """Test project list rendering with own finished zone"""
+        self._setup_investigation()
+        self.investigation.irods_status = True
+        self.investigation.save()
+        self.make_landing_zone(
+            'contrib_zone',
+            self.project,
+            self.user_contributor,
+            self.assay,
+            status=ZONE_STATUS_NOT_CREATED,
+        )
+        self.login_and_redirect(self.user_contributor, self.url)
+        self._wait_for_elem('create')
+        self._assert_list_elem('active', False)
+        self._assert_list_elem('create', True)
+        self._assert_list_elem('none', False)
+
+    def test_render_zone_other_as_contributor(self):
+        """Test project list rendering with other user's zone as contributor"""
+        self._setup_investigation()
+        self.investigation.irods_status = True
+        self.investigation.save()
+        self.make_landing_zone(
+            'owner_zone',
+            self.project,
+            self.user_owner,
+            self.assay,
+            status=ZONE_STATUS_ACTIVE,
+        )
+        self.login_and_redirect(self.user_contributor, self.url)
+        self._wait_for_elem('create')
+        self._assert_list_elem('active', False)
+        self._assert_list_elem('create', True)
+        self._assert_list_elem('none', False)

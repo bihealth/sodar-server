@@ -8,14 +8,17 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
-v0.14.3 (WIP)
+v0.15.0 (WIP)
 =============
 
-Release for minor updates, maintenance and bug fixes.
+Feature update.
 
+- Add BAM/CRAM/VCF omit pattern display in study shortcut modal
+- Add row links display override using assay comment
 - Add iRODS checksum calculation retrying
 - Add Cyberduck documentation
 - Disable lock requirement for project and role update taskflows
+- Make sheet template output dir field visibility optional
 - Upgrade critical dependencies
 - Minor updates and bug fixes
 
