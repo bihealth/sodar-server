@@ -1,4 +1,5 @@
 .. _metadata_advanced:
+.. include::  <isonum.txt>
 
 Advanced Metadata Topics
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -107,6 +108,7 @@ SODAR currently supports the following assay plugins:
 - **Microarray**
 - **Protein Expression Profiling / Mass Cytometry**
 - **Protein Expression Profiling / Mass Spectrometry**
+- **Universal Assay Plugin**
 
 Common links as well as plugin specific links are detailed below.
 
@@ -150,7 +152,7 @@ Generic Raw Data Assay Plugin
 - Inline links
     * *Raw data files* are linked to ``RawData``
 - Used with measurement type / technology type
-    * N/A (can be used with the ``SODAR Assay Plugin`` comment override)
+    * N/A (can only be used with the ``SODAR Assay Plugin`` comment override)
 
 Metabolite Profiling / Mass Spectrometry Plugin
 -----------------------------------------------
@@ -216,3 +218,40 @@ Protein Expression Profiling / Mass Cytometry Plugin
     * *Raw Data Files* and *Derived Data Files* are linked to ``{Assay Name}``
 - Used with measurement type / technology type
     * protein expression profiling / mass cytometry
+
+Universal Assay Plugin
+----------------------
+
+This plugin enables the user to define row-specific and inline links to
+iRODS collections via comments in the ``STUDY ASSAYS`` section of the ISA-Tab
+investigation file.
+
+- Internal name: ``samplesheets_assay_generic``
+- Row-specific links
+    * Place one or multiple comments starting with ``SODAR Assay Row Path``.
+    * Each comment should define one column name.
+    * Values of those columns are used to define the ``RowPath``.
+    * For example:
+        .. code-block::
+
+            STUDY ASSAYS
+            Comment[SODAR Assay Row Path 1]    Pool ID
+            Comment[SODAR Assay Row Path 2]    Extract Name
+
+        + Resulting row links:
+        ``/sodarZone/projects/xxx/sample_data/study_yyy/assay_zzz/<pool_id>/<extract_name>/``
+- Inline links
+    * Comments define semicolon-separated lists of columns to be linked to collections.
+    * *SODAR Assay Link Results* |rarr| ``ResultsReports``
+    * *SODAR Assay Link MiscFiles* |rarr| ``MiscFiles``
+    * *SODAR Assay Link Row* |rarr| ``RowPath``
+    * For example:
+        .. code-block::
+
+            STUDY ASSAYS
+            Comment[SODAR Assay Link Results]    Report File;Derived Data File
+            Comment[SODAR Assay Link MiscFiles]  Protocol File;Antibody Panel
+            Comment[SODAR Assay Link Row]        Raw Data File
+
+- Used with measurement type / technology type
+    * N/A (can only be used with the ``SODAR Assay Plugin`` comment override)
