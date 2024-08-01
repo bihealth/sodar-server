@@ -131,6 +131,7 @@ Table of Contents
     admin_install
     admin_user
     admin_ui
+    admin_isatemplates
     admin_ontologyaccess
     admin_commands
     admin_settings

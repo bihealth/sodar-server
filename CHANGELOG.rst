@@ -11,6 +11,9 @@ Unreleased
 Added
 -----
 
+- **Isatemplates**
+    - ``isatemplates`` app for custom ISA-Tab template management (#1961)
+    - ``isatemplates_backend`` plugin for template retrieval (#1961)
 - **Samplesheets**
     - ``template_output_dir_display`` user setting (#1960)
     - Display BAM/CRAM/VCF omit patterns in study shortcut modal (#1963)

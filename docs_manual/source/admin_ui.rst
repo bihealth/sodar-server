@@ -42,6 +42,9 @@ These new applications are as follows:
 `Admin Alerts <https://sodar-core.readthedocs.io/en/latest/app_adminalerts.html#usage>`_
     Manage :ref:`administrator alerts <ui_alerts_admin>` displayed to all users
     in case of e.g. server downtime.
+:ref:`ISA-Tab Templates <admin_isatemplates>`
+    Manage optional custom ISA-Tab templates, to be used with the Sample Sheets
+    app.
 :ref:`Ontology Access <admin_ontologyaccess>`
     Locally import and manage OBO format ontologies for ontology term lookup in
     the Sample Sheets app. This application will be detailed in the following

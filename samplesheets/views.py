@@ -9,7 +9,7 @@ import pytz
 import requests
 import zipfile
 
-from cubi_isa_templates import _TEMPLATES as ISA_TEMPLATES
+from cubi_isa_templates import _TEMPLATES as CUBI_TEMPLATES
 from irods.exception import CollectionDoesNotExist
 from packaging import version
 from urllib.parse import urljoin
@@ -129,7 +129,7 @@ SYNC_FAIL_UNSET_TOKEN = 'Remote sync token not set'
 SYNC_FAIL_UNSET_URL = 'Remote sync URL not set'
 SYNC_FAIL_INVALID_URL = 'Invalid API URL'
 SYNC_FAIL_STATUS_CODE = 'Source API responded with status code'
-TPL_DICT = {t.name: t for t in ISA_TEMPLATES}
+CUBI_TPL_DICT = {t.name: t for t in CUBI_TEMPLATES}
 
 EMAIL_DELETE_REQUEST_ACCEPT = r'''
 Your delete request has been accepted.
@@ -1408,17 +1408,22 @@ class SheetTemplateSelectView(
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        templates = []
-        for t in ISA_TEMPLATES:
-            templates.append(
-                {
-                    'name': t.name,
-                    'description': t.description[0].upper() + t.description[1:],
-                }
+        tpl_backend = get_backend_api('isatemplates_backend')
+        if tpl_backend:
+            context['sheet_templates'] = tpl_backend.get_list()
+        else:
+            templates = []
+            for t in CUBI_TEMPLATES:
+                templates.append(
+                    {
+                        'name': t.name,
+                        'description': t.description[0].upper()
+                        + t.description[1:],
+                    }
+                )
+            context['sheet_templates'] = sorted(
+                templates, key=lambda x: x['description'].lower()
             )
-        context['sheet_templates'] = sorted(
-            templates, key=lambda x: x['description']
-        )
         return context
 
     def get(self, request, *args, **kwargs):
@@ -1456,7 +1461,10 @@ class SheetTemplateCreateView(
 
     def _get_sheet_template(self):
         t_name = self.request.GET.get('sheet_tpl')
-        return TPL_DICT[t_name] if t_name in TPL_DICT else None
+        tpl_backend = get_backend_api('isatemplates_backend')
+        if tpl_backend:
+            return tpl_backend.get_template(t_name)
+        return CUBI_TPL_DICT[t_name] if t_name in CUBI_TPL_DICT else None
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
@@ -1512,6 +1520,7 @@ class SheetTemplateCreateView(
         return redirect(redirect_url)
 
     def get(self, request, *args, **kwargs):
+        tpl_backend = get_backend_api('isatemplates_backend')
         redirect_url = reverse(
             'samplesheets:template_select',
             kwargs={'project': self.get_project().sodar_uuid},
@@ -1520,7 +1529,9 @@ class SheetTemplateCreateView(
         if not t_name:
             messages.error(request, 'Template name not provided.')
             return redirect(redirect_url)
-        if t_name not in TPL_DICT:
+        if (tpl_backend and not tpl_backend.is_template(t_name)) or (
+            not tpl_backend and t_name not in CUBI_TPL_DICT
+        ):
             messages.error(request, 'Template not found.')
             return redirect(redirect_url)
         return super().render_to_response(self.get_context_data())

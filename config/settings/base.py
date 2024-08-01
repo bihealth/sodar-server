@@ -93,6 +93,7 @@ LOCAL_APPS = [
     'siteinfo.apps.SiteinfoConfig',
     'irodsinfo.apps.IrodsinfoConfig',
     'ontologyaccess.apps.OntologyaccessConfig',
+    'isatemplates.apps.IsatemplatesConfig',
     # Samplesheets study sub-apps
     'samplesheets.studyapps.germline.apps.GermlineConfig',
     'samplesheets.studyapps.cancer.apps.CancerConfig',
@@ -518,6 +519,7 @@ LOGGING_APPS = env.list(
         'irodsadmin',
         'irodsbackend',
         'irodsinfo',
+        'isatemplates',
         'landingzones',
         'ontologyaccess',
         'projectroles',
@@ -594,6 +596,7 @@ ENABLED_BACKEND_PLUGINS = env.list(
         'appalerts_backend',
         'sodar_cache',
         'ontologyaccess_backend',
+        'isatemplates_backend',
         # 'taskflow',
         # 'omics_irods',
     ],
@@ -850,6 +853,13 @@ LZ_BIH_PROTEOMICS_SMB_PASS = env.str('LZ_BIH_PROTEOMICS_SMB_PASS', 'CHANGE ME!')
 # Ontologyaccess settings
 ONTOLOGYACCESS_BULK_CREATE = env.int('ONTOLOGYACCESS_BULK_CREATE', 5000)
 ONTOLOGYACCESS_QUERY_LIMIT = env.int('ONTOLOGYACCESS_QUERY_LIMIT', 250)
+
+
+# Isatemplates settings
+# Enable templates from cubi-isa-templates
+ISATEMPLATES_ENABLE_CUBI_TEMPLATES = env.bool(
+    'ISATEMPLATES_ENABLE_CUBI_TEMPLATES', True
+)
 
 
 # Settings for HTTP AuthBasic

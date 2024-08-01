@@ -1,0 +1,30 @@
+{% extends 'projectroles/base.html' %}
+
+{% block title %}Confirm ISA-Tab Template Deletion{% endblock %}
+
+{% block projectroles %}
+
+<div class="container-fluid sodar-subtitle-container">
+  <h2>Confirm ISA-Tab Template Deletion</h2>
+</div>
+
+<div class="container-fluid sodar-page-container">
+  <div class="alert alert-warning" role="alert">
+    Are you sure you want to delete the ISA-Tab template
+    "{{ object.description }}"? This can <strong>not</strong> be undone!
+  </div>
+  <form method="post">
+    {% csrf_token %}
+    <div class="btn-group pull-right" role="group">
+      <a role="button" class="btn btn-secondary"
+         href="{% url 'isatemplates:list' %}">
+        <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Cancel
+      </a>
+      <button type="submit" class="btn btn-danger sodar-btn-submit-once">
+        <i class="iconify" data-icon="mdi:close-thick"></i> Delete
+      </button>
+    </div>
+  </form>
+</div>
+
+{% endblock projectroles %}

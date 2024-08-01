@@ -46,15 +46,16 @@ urlpatterns = [
     path('siteinfo/', include('siteinfo.urls')),
     path('irods/', include('irodsinfo.urls')),
     path('tokens/', include('tokens.urls')),
-    path('ontology/', include('ontologyaccess.urls')),
     # Projectroles URLs
     path('project/', include('projectroles.urls')),
     # App plugin URLs
     # TODO: See if plugin URLs can be made to work now (Flynn no longer used)
     # url(r'^', include_plugins(ProjectAppPluginPoint)),
-    path('timeline/', include('timeline.urls')),
-    path('samplesheets/', include('samplesheets.urls')),
+    path('isatemplates/', include('isatemplates.urls')),
     path('landingzones/', include('landingzones.urls')),
+    path('ontology/', include('ontologyaccess.urls')),
+    path('samplesheets/', include('samplesheets.urls')),
+    path('timeline/', include('timeline.urls')),
     # Backend apps with API URLs
     path('irodsbackend/', include('irodsbackend.urls')),
     # Samplesheets study sub-app URLs

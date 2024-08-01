@@ -3,10 +3,11 @@
 import json
 import os
 
-from cubi_isa_templates import _TEMPLATES as ISA_TEMPLATES
+from cubi_isa_templates import IsaTabTemplate, _TEMPLATES as ISA_TEMPLATES
 from urllib.parse import urlencode
 from zipfile import ZipFile
 
+from django.conf import settings
 from django.contrib.messages import get_messages
 from django.test import LiveServerTestCase, override_settings
 from django.urls import reverse
@@ -26,13 +27,23 @@ from projectroles.tests.test_models import (
 from projectroles.tests.test_views_api import SODARAPIViewTestMixin
 from projectroles.utils import build_secret
 
-# Sodarcache dependency
-from sodarcache.models import JSONCacheItem
+# Isatemplates dependency
+from isatemplates.tests.test_models import (
+    CookiecutterISATemplateMixin,
+    CookiecutterISAFileMixin,
+    TEMPLATE_JSON_PATH,
+    TEMPLATE_NAME,
+    TEMPLATE_DESC,
+)
+from isatemplates.tests.test_views import ISA_FILE_NAMES, ISA_FILE_PATH
 
 # Landingzones dependency
 from landingzones.constants import ZONE_STATUS_ACTIVE
 from landingzones.models import LandingZone
 from landingzones.tests.test_models import LandingZoneMixin
+
+# Sodarcache dependency
+from sodarcache.models import JSONCacheItem
 
 from samplesheets.forms import TPL_DIR_FIELD
 from samplesheets.io import SampleSheetIO
@@ -127,6 +138,8 @@ TPL_FILE_NAME_FIELDS = [
 ]
 with open(CONFIG_PATH_DEFAULT) as fp:
     CONFIG_DATA_DEFAULT = json.load(fp)
+BACKEND_PLUGINS_NO_TPL = settings.ENABLED_BACKEND_PLUGINS.copy()
+BACKEND_PLUGINS_NO_TPL.remove('isatemplates_backend')
 
 
 # TODO: Add testing for study table cache updates
@@ -668,34 +681,40 @@ class TestSheetImportView(
         )
 
 
-class TestSheetTemplateSelectView(SamplesheetsViewTestBase):
+class TestSheetTemplateSelectView(
+    CookiecutterISATemplateMixin, SamplesheetsViewTestBase
+):
     """Tests for SheetTemplateSelectView"""
 
-    def test_render(self):
-        """Test rendering the template select view"""
-        with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:template_select',
-                    kwargs={'project': self.project.sodar_uuid},
-                )
-            )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            len(response.context['sheet_templates']),
-            len(ISA_TEMPLATES),
+    def setUp(self):
+        super().setUp()
+        self.url = reverse(
+            'samplesheets:template_select',
+            kwargs={'project': self.project.sodar_uuid},
         )
 
-    def test_render_with_sheets(self):
-        """Test rendering with sheets in project (should fail)"""
+    def test_get(self):
+        """Test SheetTemplateSelectView GET"""
+        with self.login(self.user):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        expected = [
+            {
+                'name': t.name,
+                'description': t.description[0].upper() + t.description[1:],
+            }
+            for t in ISA_TEMPLATES
+        ]
+        self.assertEqual(
+            response.context['sheet_templates'],
+            sorted(expected, key=lambda x: x['description'].lower()),
+        )
+
+    def test_get_with_sheets(self):
+        """Test GET with sheets in project (should fail)"""
         self.import_isa_from_file(SHEET_PATH, self.project)
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:template_select',
-                    kwargs={'project': self.project.sodar_uuid},
-                )
-            )
+            response = self.client.get(self.url)
             self.assertRedirects(
                 response,
                 reverse(
@@ -704,8 +723,93 @@ class TestSheetTemplateSelectView(SamplesheetsViewTestBase):
                 ),
             )
 
+    def test_get_custom(self):
+        """Test GET with custom template"""
+        tpl = self.make_isa_template(
+            name=TEMPLATE_NAME,
+            description=TEMPLATE_DESC,
+            configuration='{}',
+            active=True,
+            user=self.user,
+        )
+        with self.login(self.user):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        expected = [
+            {
+                'name': t.name,
+                'description': t.description[0].upper() + t.description[1:],
+            }
+            for t in ISA_TEMPLATES
+        ]
+        expected.append({'name': tpl.name, 'description': tpl.description})
+        self.assertEqual(
+            response.context['sheet_templates'],
+            sorted(expected, key=lambda x: x['description'].lower()),
+        )
 
-class TestSheetTemplateCreateView(SamplesheetsViewTestBase):
+    @override_settings(ISATEMPLATES_ENABLE_CUBI_TEMPLATES=False)
+    def test_get_custom_only(self):
+        """Test GET with custom template only"""
+        tpl = self.make_isa_template(
+            name=TEMPLATE_NAME,
+            description=TEMPLATE_DESC,
+            configuration='{}',
+            active=True,
+            user=self.user,
+        )
+        with self.login(self.user):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        expected = [{'name': tpl.name, 'description': tpl.description}]
+        self.assertEqual(response.context['sheet_templates'], expected)
+
+    @override_settings(ISATEMPLATES_ENABLE_CUBI_TEMPLATES=False)
+    def test_get_custom_only_inactive(self):
+        """Test GET with inactive custom template only"""
+        self.make_isa_template(
+            name=TEMPLATE_NAME,
+            description=TEMPLATE_DESC,
+            configuration='{}',
+            active=False,
+            user=self.user,
+        )
+        with self.login(self.user):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['sheet_templates'], [])
+
+    @override_settings(ENABLED_BACKEND_PLUGINS=BACKEND_PLUGINS_NO_TPL)
+    def test_get_custom_backend_disabled(self):
+        """Test GET with custom template and disabled backend"""
+        self.make_isa_template(
+            name=TEMPLATE_NAME,
+            description=TEMPLATE_DESC,
+            configuration='{}',
+            active=True,
+            user=self.user,
+        )
+        with self.login(self.user):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        expected = [
+            {
+                'name': t.name,
+                'description': t.description[0].upper() + t.description[1:],
+            }
+            for t in ISA_TEMPLATES
+        ]
+        self.assertEqual(
+            response.context['sheet_templates'],
+            sorted(expected, key=lambda x: x['description'].lower()),
+        )
+
+
+class TestSheetTemplateCreateView(
+    CookiecutterISATemplateMixin,
+    CookiecutterISAFileMixin,
+    SamplesheetsViewTestBase,
+):
     """Tests for SheetTemplateCreateView"""
 
     def _get_post_data(self, sheet_tpl):
@@ -716,7 +820,11 @@ class TestSheetTemplateCreateView(SamplesheetsViewTestBase):
         :return: Dict
         """
         ret = {TPL_DIR_FIELD: clean_sheet_dir_name(self.project.title)}
-        for k, v in sheet_tpl.configuration.items():
+        if not isinstance(sheet_tpl, IsaTabTemplate):  # Custom template
+            tpl_config = json.loads(sheet_tpl.configuration)
+        else:  # CUBI template
+            tpl_config = sheet_tpl.configuration
+        for k, v in tpl_config.items():
             if isinstance(v, str):
                 if '{{' in v or '{%' in v:
                     continue
@@ -727,27 +835,45 @@ class TestSheetTemplateCreateView(SamplesheetsViewTestBase):
                 ret[k] = json.dumps(v)
         return ret
 
-    def test_render_batch(self):
-        """Test rendering the view with supported templates"""
+    def _make_custom_template(self):
+        """Make custom template with data"""
+        with open(TEMPLATE_JSON_PATH, 'rb') as f:
+            configuration = f.read().decode('utf-8')
+        self.template = self.make_isa_template(
+            name=TEMPLATE_NAME,
+            description=TEMPLATE_DESC,
+            configuration=configuration,
+            user=self.user,
+        )
+        self.file_data = {}
+        for fn in ISA_FILE_NAMES:
+            fp = os.path.join(str(ISA_FILE_PATH), fn)
+            with open(fp, 'rb') as f:
+                fd = f.read().decode('utf-8')
+                self.file_data[fn] = fd
+                self.make_isa_file(
+                    template=self.template, file_name=fn, content=fd
+                )
+
+    def setUp(self):
+        super().setUp()
+        self.url = reverse(
+            'samplesheets:template_create',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+
+    def test_get_batch_cubi(self):
+        """Test SheetTemplateCreateView GET with CUBI templates"""
         for t in ISA_TEMPLATES:
             with self.login(self.user):
-                response = self.client.get(
-                    reverse(
-                        'samplesheets:template_create',
-                        kwargs={'project': self.project.sodar_uuid},
-                    ),
-                    data={'sheet_tpl': t.name},
-                )
+                response = self.client.get(self.url, data={'sheet_tpl': t.name})
             self.assertEqual(response.status_code, 200, msg=t.name)
 
-    def test_render_invalid_template(self):
-        """Test rendering the view with invalid template (should redirect)"""
+    def test_get_invalid_template(self):
+        """Test GET with invalid template (should redirect)"""
         with self.login(self.user):
             response = self.client.get(
-                reverse(
-                    'samplesheets:template_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
+                self.url,
                 data={'sheet_tpl': 'NOT_A_REAL_TEMPLATE'},
             )
         self.assertEqual(response.status_code, 302)
@@ -759,16 +885,10 @@ class TestSheetTemplateCreateView(SamplesheetsViewTestBase):
             ),
         )
 
-    def test_render_no_template(self):
-        """Test rendering the view with out template name (should redirect)"""
+    def test_get_no_template(self):
+        """Test GET view with out template name (should redirect)"""
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:template_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                data={'sheet_tpl': ''},
-            )
+            response = self.client.get(self.url, data={'sheet_tpl': ''})
         self.assertEqual(response.status_code, 302)
         self.assertEqual(
             response.url,
@@ -778,19 +898,42 @@ class TestSheetTemplateCreateView(SamplesheetsViewTestBase):
             ),
         )
 
-    def test_post_batch(self):
-        """Test POST request with supported templates and default values"""
+    def test_get_custom(self):
+        """Test GET with custom template"""
+        self._make_custom_template()
+        with self.login(self.user):
+            response = self.client.get(
+                self.url, data={'sheet_tpl': self.template.name}
+            )
+        self.assertEqual(response.status_code, 200)
+        form = response.context['form']
+        self.assertIsNotNone(form)
+        expected = [
+            k
+            for k, v in json.loads(self.template.configuration).items()
+            if not (isinstance(v, str) and ('{{' in v or '{%' in v))
+        ]
+        self.assertEqual(list(form.fields.keys()), expected)
+
+    def test_get_custom_inactive(self):
+        """Test GET with inactive custom template (should fail)"""
+        self._make_custom_template()
+        self.template.active = False
+        self.template.save()
+        with self.login(self.user):
+            response = self.client.get(
+                self.url, data={'sheet_tpl': self.template.name}
+            )
+        self.assertEqual(response.status_code, 302)
+
+    def test_post_batch_cubi(self):
+        """Test POST with supported templates and default values"""
         for t in ISA_TEMPLATES:
             self.assertIsNone(self.project.investigations.first())
             post_data = self._get_post_data(t)
             with self.login(self.user):
                 response = self.client.post(
-                    reverse(
-                        'samplesheets:template_create',
-                        kwargs={'project': self.project.sodar_uuid},
-                    )
-                    + '?sheet_tpl='
-                    + t.name,
+                    self.url + '?sheet_tpl=' + t.name,
                     data=post_data,
                 )
             isa_tab = ISATab.objects.first()
@@ -811,12 +954,7 @@ class TestSheetTemplateCreateView(SamplesheetsViewTestBase):
                     post_data[k] += '/test'
             with self.login(self.user):
                 response = self.client.post(
-                    reverse(
-                        'samplesheets:template_create',
-                        kwargs={'project': self.project.sodar_uuid},
-                    )
-                    + '?sheet_tpl='
-                    + t.name,
+                    self.url + '?sheet_tpl=' + t.name,
                     data=post_data,
                 )
             self.assertEqual(response.status_code, 302, msg=t.name)
@@ -826,13 +964,9 @@ class TestSheetTemplateCreateView(SamplesheetsViewTestBase):
             self.project.investigations.first().delete()
 
     def test_post_multiple(self):
-        """Test multiple requests to add multiple sample sheets (should fail)"""
+        """Test POST with multiple requests (should fail)"""
         tpl = ISA_TEMPLATES[0]
-        url = reverse(
-            'samplesheets:template_create',
-            kwargs={'project': self.project.sodar_uuid},
-        )
-        url += '?sheet_tpl=' + tpl.name
+        url = self.url + '?sheet_tpl=' + tpl.name
         post_data = self._get_post_data(tpl)
         with self.login(self.user):
             response = self.client.post(url, data=post_data)
@@ -841,6 +975,21 @@ class TestSheetTemplateCreateView(SamplesheetsViewTestBase):
             response = self.client.post(url, data=post_data)
             self.assertEqual(response.status_code, 200)
             self.assertEqual(self.project.investigations.count(), 1)
+
+    def test_post_custom(self):
+        """Test POST with custom template"""
+        self._make_custom_template()
+        self.assertIsNone(self.project.investigations.first())
+        post_data = self._get_post_data(self.template)
+        with self.login(self.user):
+            response = self.client.post(
+                self.url + '?sheet_tpl=' + self.template.name,
+                data=post_data,
+            )
+        isa_tab = ISATab.objects.first()
+        self.assertEqual(isa_tab.tags, ['CREATE'])
+        self.assertEqual(response.status_code, 302)
+        self.assertIsNotNone(self.project.investigations.first())
 
 
 class TestSheetExcelExportView(SamplesheetsViewTestBase):

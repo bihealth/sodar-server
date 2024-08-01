@@ -13,6 +13,7 @@ v0.15.0 (WIP)
 
 Feature update.
 
+- Add isatemplates app for management of custom ISA-Tab templates
 - Add BAM/CRAM/VCF omit pattern display in study shortcut modal
 - Add row links display override using assay comment
 - Add iRODS checksum calculation retrying
@@ -21,6 +22,14 @@ Feature update.
 - Make sheet template output dir field visibility optional
 - Upgrade critical dependencies
 - Minor updates and bug fixes
+
+Migration Guide
+---------------
+
+Isatemplates Backend
+    To enable support for custom ISA-Tab templates, make sure to add
+    ``isatemplates_backend`` to ``ENABLED_BACKEND_PLUGINS`` in your site's
+    Django settings.
 
 
 v0.14.2 (2024-03-15)
