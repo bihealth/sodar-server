@@ -25,7 +25,7 @@ Changed
 -------
 
 - **General**
-    - Upgrade critical Python and Vue app dependencies (#1930)
+    - Upgrade critical Python dependencies (#1930)
     - Upgrade to black v24.3.0 (#1930)
     - Reformat with black (#1930)
 - **Irodsbackend**
@@ -33,6 +33,7 @@ Changed
 - **Landingzones**
     - Remove Bootstrap tooltip updating for iRODS buttons (#1949)
 - **Samplesheets**
+    - Upgrade Vue app dependencies (#1930, #1971, #1972)
     - Sanitize iRODS paths in ``get_row_path()`` calls (#1947)
     - ``index`` arg in ``SampleSheetAssayPluginPoint.update_row()`` (#1957)
     - Hide template output dir field by default (#1960)

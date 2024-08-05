@@ -1,5 +1,12 @@
 import { createLocalVue, mount } from '@vue/test-utils'
-import { projectUuid, copy, getAppStub, waitNT, waitRAF } from '../testUtils.js'
+import {
+  projectUuid,
+  copy,
+  getAppStub,
+  waitNT,
+  waitRAF,
+  displayNone
+} from '../testUtils.js'
 import BootstrapVue from 'bootstrap-vue'
 import IrodsDirModal from '@/components/modals/IrodsDirModal.vue'
 import irodsObjectList from './data/irodsObjectList.json'
@@ -63,7 +70,8 @@ describe('IrodsDirModal.vue', () => {
     expect(wrapper.find('#sodar-ss-irods-wait').exists()).toBe(false)
     expect(wrapper.findAll('.sodar-ss-request-delete-btn').length).toBe(1)
     expect(wrapper.findAll('.sodar-ss-request-cancel-btn').length).toBe(1)
-    expect(wrapper.find('.sodar-ss-irods-stats').isVisible()).toBe(true)
+    // expect(wrapper.find('.sodar-ss-irods-stats').isVisible()).toBe(true)
+    expect(wrapper.find('.sodar-ss-irods-stats').attributes('style')).not.toBe(displayNone)
   })
 
   it('renders modal with empty object list', async () => {
@@ -128,11 +136,11 @@ describe('IrodsDirModal.vue', () => {
     await wrapper.vm.onFilterUpdate('test2')
     expect(wrapper.find('.sodar-irods-obj-table').exists()).toBe(true)
     expect(wrapper.findAll('.sodar-ss-irods-obj').length).toBe(2)
-    expect(wrapper.findAll('.sodar-ss-irods-obj').at(0).isVisible()).toBe(false)
-    expect(wrapper.findAll('.sodar-ss-irods-obj').at(1).isVisible()).toBe(true)
+    expect(wrapper.findAll('.sodar-ss-irods-obj').at(0).attributes('style')).toBe(displayNone)
+    expect(wrapper.findAll('.sodar-ss-irods-obj').at(1).attributes('style')).not.toBe(displayNone)
     await wrapper.vm.onFilterUpdate('')
-    expect(wrapper.findAll('.sodar-ss-irods-obj').at(0).isVisible()).toBe(true)
-    expect(wrapper.findAll('.sodar-ss-irods-obj').at(1).isVisible()).toBe(true)
+    expect(wrapper.findAll('.sodar-ss-irods-obj').at(0).attributes('style')).not.toBe(displayNone)
+    expect(wrapper.findAll('.sodar-ss-irods-obj').at(1).attributes('style')).not.toBe(displayNone)
   })
 
   it('clears filter input on modal re-open', async () => {
@@ -169,12 +177,12 @@ describe('IrodsDirModal.vue', () => {
 
     expect(wrapper.find('#sodar-ss-irods-filter-empty').exists()).toBe(false)
     expect(wrapper.findAll('.sodar-ss-irods-obj').length).toBe(2)
-    expect(wrapper.findAll('.sodar-ss-irods-obj').at(0).isVisible()).toBe(true)
-    expect(wrapper.findAll('.sodar-ss-irods-obj').at(1).isVisible()).toBe(true)
+    expect(wrapper.findAll('.sodar-ss-irods-obj').at(0).attributes('style')).not.toBe(displayNone)
+    expect(wrapper.findAll('.sodar-ss-irods-obj').at(1).attributes('style')).not.toBe(displayNone)
     await wrapper.vm.onFilterUpdate('jee8ITh2')
     expect(wrapper.find('#sodar-ss-irods-filter-empty').exists()).toBe(true)
-    expect(wrapper.findAll('.sodar-ss-irods-obj').at(0).isVisible()).toBe(false)
-    expect(wrapper.findAll('.sodar-ss-irods-obj').at(1).isVisible()).toBe(false)
+    expect(wrapper.findAll('.sodar-ss-irods-obj').at(0).attributes('style')).toBe(displayNone)
+    expect(wrapper.findAll('.sodar-ss-irods-obj').at(1).attributes('style')).toBe(displayNone)
   })
 
   it('updates modal title on setTitle()', async () => {

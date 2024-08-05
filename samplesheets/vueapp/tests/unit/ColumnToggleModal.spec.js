@@ -7,7 +7,8 @@ import {
   getAppStub,
   getSheetTablePropsData,
   waitNT,
-  waitRAF
+  waitRAF,
+  displayNone
 } from '../testUtils.js'
 import { initGridOptions } from '@/utils/gridUtils.js'
 import BootstrapVue from 'bootstrap-vue'
@@ -205,9 +206,10 @@ describe('ColumnToggleModal.vue', () => {
     await wrapper.vm.onFilterInput('treatment')
     const fields = wrapper.findAll('.sodar-ss-toggle-field')
     for (let i = 0; i < fields.length - 1; i++) {
-      expect(fields.at(i).isVisible()).toBe(false)
+      expect(fields.at(i).attributes('style')).toBe(displayNone)
     }
-    expect(fields.at(6).isVisible()).toBe(true) // Treatment is true
+    // Treatment is true
+    expect(fields.at(6).attributes('style')).not.toBe(displayNone)
   })
 
   it('calls onColumnChange() on column hide/show click', async () => {
