@@ -652,7 +652,8 @@ describe('OntologyEditModal.vue', () => {
     termItems = wrapper.findAll('.sodar-ss-ontology-term-item')
     expect(termItems.length).toBe(1)
     expect(termItems.at(0).find('td').text()).toBe(ontologyTermResponseHp.terms[0].name)
-    expect(wrapper.find('#sodar-ss-ontology-no-list').exists()).toBe(true)
+    // Initial value was false, so this should not be displayed
+    expect(wrapper.find('#sodar-ss-ontology-no-list').exists()).toBe(false)
     expect(wrapper.find('.sodar-ss-ontology-term-item').exists()).toBe(true)
     expect(wrapper.find('#sodar-ss-ontology-free-row').exists()).toBe(false)
     expect(wrapper.find('#sodar-ss-btn-update').attributes().disabled).toBe(undefined)

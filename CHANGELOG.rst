@@ -53,6 +53,7 @@ Fixed
 - **Samplesheets**
     - Invalid assay measurement type in ``i_minimal*`` test data (#1954)
     - Error message handling in ``StudyShortcutModal`` (#1965)
+    - Overwrite warning displayed in ``OntologyEditModal`` with empty initial value (#1973)
 - **Taskflowbackend**
     - Malformed exception message in ``BatchValidateChecksumsTask`` (#1943)
     - Exceeded zone status info char limit in ``_raise_flow_exception()`` (#1953)
