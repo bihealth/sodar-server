@@ -62,7 +62,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         if not isinstance(cell['value'], str) or re.search(
             '.+ <.*>', cell['value']
         ):
-            return None
+            return True
         elif (
             top_header['value']
             in th.DATA_FILE_HEADERS + th.MATERIAL_NAME_HEADERS
@@ -73,6 +73,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                 label=cell['value'],
                 url=f"{url}/{cell['value']}",
             )
+        return True
 
     @classmethod
     def _get_col_value(cls, target_col, row, table):
@@ -168,31 +169,34 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             # TODO: Check if two comments reference the same column header?
             # Create Results links
             if results_cols:
-                self._link_from_comment(
+                if self._link_from_comment(
                     row[i],
                     header,
                     top_header,
                     results_cols,
                     f'{base_url}/{RESULTS_COLL}',
-                )
+                ):
+                    continue
             # Create MiscFiles links
             if misc_cols:
-                self._link_from_comment(
+                if self._link_from_comment(
                     row[i],
                     header,
                     top_header,
                     misc_cols,
                     f'{base_url}/{MISC_FILES_COLL}',
-                )
+                ):
+                    continue
             # Create DataCollection links
             if data_cols:
-                self._link_from_comment(
+                if self._link_from_comment(
                     row[i],
                     header,
                     top_header,
                     data_cols,
                     f'{settings.IRODS_WEBDAV_URL}{row_path}',
-                )
+                ):
+                    continue
         return row
 
     def update_cache(self, name=None, project=None, user=None):
