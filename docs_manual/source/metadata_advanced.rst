@@ -58,12 +58,12 @@ under ``SHEETS_IGV_OMIT_BAM`` (also affects CRAM files) and
 Assay iRODS Data Linking
 ========================
 
-Similar to study data linking, SODAR also displays iRODS links specific to
-assays according to an **assay plugin**. The selected plugin affects the
+Similar to study data linking, SODAR also displays iRODS links in the assay
+section according to an **assay plugin**. The selected plugin affects the
 following types of iRODS links:
 
-- **Assay shortcuts** card above each assay table
-- **Row-specific links** in the right hand column of each row
+- **Assay shortcuts** card above each assay table.
+- **Row-specific links** in the right hand column of each row.
 - **Inline links** which are file names stored in the table itself, under e.g.
   "data file" materials.
 
@@ -103,30 +103,55 @@ to true, the assay plugin used for the assay should implement the
 SODAR currently supports the following assay plugins:
 
 - **DNA Sequencing**
+- **Generic Assay Plugin**
 - **Generic Raw Data Plugin**
 - **Metabolite Profiling / Mass Spectrometry**
 - **Microarray**
 - **Protein Expression Profiling / Mass Cytometry**
 - **Protein Expression Profiling / Mass Spectrometry**
-- **Generic Assay Plugin**
 
-Common links as well as plugin specific links are detailed below.
+General Concepts
+----------------
 
-Common Links
-------------
-
-Links to the following iRODS collections are provided for *all* assay
+Links to the following iRODS collections are provided for all assay
 configurations in the assay shortcuts card:
 
-- ``ResultsReports``: Collection for assay specific result and report files
+- ``ResultsReports``: Collection for assay specific result and report files.
 - ``MiscFiles``: Miscellaneous files
 - ``TrackHubs``: Track hubs for UCSC Genome Browser integration (displayed if
-  track hubs have been created)
+  track hubs have been created).
+
+Assay plugins can create the following additional links to connect samplesheet
+metadata to files stored in iRODS:
+
+1. Additional assay-wide collections and shortcuts (e. g. ``RawData``).
+2. Creating row-specific collections and shortcuts (i. e. ``RowPath``).
+3. Converting cell values within the Samplesheets table into iRODS/WebDAV
+   links (i. e. **inline links**).
+
+DNA Sequencing Plugin
+---------------------
+
+- Internal name: ``samplesheets_assay_dna_sequencing``
+- Additional assay shortcuts
+    * N/A
+- Row-specific links
+    * Each row links to the **last material name** in the row, not counting
+      "data file" materials.
+    * Creates collections in Landing Zones according to this ``RowPath``.
+- Inline links
+    * N/A
+- Used with measurement type / technology type
+    * genome sequencing / nucleotide sequencing
+    * exome sequencing / nucleotide sequencing
+    * transcription profiling / nucleotide sequencing
+    * transcriptome profiling / nucleotide sequencing
+    * panel sequencing / nucleotide sequencing
 
 Generic Assay Plugin
 --------------------
 
-This plugin can be used with any assay i.e. measurement/technology configuration.
+This plugin can be used with any assay i. e. measurement/technology configuration.
 It enables the user to define row-specific and inline links to iRODS collections
 via comments in the ``STUDY ASSAYS`` section of the ISA-Tab investigation file.
 
@@ -159,26 +184,7 @@ via comments in the ``STUDY ASSAYS`` section of the ISA-Tab investigation file.
             Comment[SODAR Assay Link Row]        Raw Data File
 
 - Used with measurement type / technology type
-    * N/A (can only be used with the ``SODAR Assay Plugin`` comment override)
-
-DNA Sequencing Plugin
----------------------
-
-- Internal name: ``samplesheets_assay_dna_sequencing``
-- Additional assay shortcuts
-    * N/A
-- Row-specific links
-    * Each row links to the **last material name** in the row, not counting
-      "data file" materials.
-    * Creates collections in Landing Zones according to this ``RowPath``.
-- Inline links
-    * N/A
-- Used with measurement type / technology type
-    * genome sequencing / nucleotide sequencing
-    * exome sequencing / nucleotide sequencing
-    * transcription profiling / nucleotide sequencing
-    * transcriptome profiling / nucleotide sequencing
-    * panel sequencing / nucleotide sequencing
+    * N/A (is only used when the ``SODAR Assay Plugin`` comment is set)
 
 Generic Raw Data Assay Plugin
 -----------------------------
@@ -191,7 +197,7 @@ Generic Raw Data Assay Plugin
 - Inline links
     * *Raw data files* are linked to ``RawData``
 - Used with measurement type / technology type
-    * N/A (can only be used with the ``SODAR Assay Plugin`` comment override)
+    * N/A (is only used when the ``SODAR Assay Plugin`` comment is set)
 
 Metabolite Profiling / Mass Spectrometry Plugin
 -----------------------------------------------
