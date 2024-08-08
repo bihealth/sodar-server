@@ -35,7 +35,6 @@ Documentation on settings is linked below.
 - `Projectroles (the core project and site framework) <https://sodar-core.readthedocs.io/en/latest/app_projectroles_settings.html#general-site-settings>`_
 - `Admin Alerts <https://sodar-core.readthedocs.io/en/latest/app_adminalerts.html#optional-settings>`_
 - `App Alerts <https://sodar-core.readthedocs.io/en/latest/app_appalerts.html#django-settings>`_
-- `Taskflow Backend <https://sodar-core.readthedocs.io/en/latest/app_taskflow.html#django-settings>`_
 - `Timeline <https://sodar-core.readthedocs.io/en/latest/app_timeline_install.html#optional-settings>`_
 
 .. _admin_settings_backend:

@@ -41,7 +41,7 @@ class BackendPlugin(BackendPluginPoint):
     #: Title (used in templates)
     title = 'iRODS Backend'
 
-    #: FontAwesome icon ID string
+    #: Iconify icon
     icon = 'mdi:database-search'
 
     #: Description string

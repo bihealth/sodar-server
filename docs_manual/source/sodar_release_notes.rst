@@ -8,12 +8,13 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
-v0.15.0 (WIP)
-=============
+v0.15.0 (2024-08-08)
+====================
 
-Feature update.
+Feature release.
 
 - Add isatemplates app for management of custom ISA-Tab templates
+- Add generic assay plugin
 - Add BAM/CRAM/VCF omit pattern display in study shortcut modal
 - Add row links display override using assay comment
 - Add iRODS checksum calculation retrying

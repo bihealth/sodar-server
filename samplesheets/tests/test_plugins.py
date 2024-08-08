@@ -113,7 +113,7 @@ class TestUpdateCacheRows(SamplesheetsPluginTestBase):
     def test_update_cache_rows(self):
         """Test update_cache_rows()"""
         self.assertIsNone(self.cache_backend.get_cache_item(**self.item_kwargs))
-        self.plugin._update_cache_rows(ASSAY_PLUGIN_NAME, project=self.project)
+        self.plugin.update_cache_rows(ASSAY_PLUGIN_NAME, project=self.project)
         cache_item = self.cache_backend.get_cache_item(**self.item_kwargs)
         self.assertIsNotNone(cache_item)
         self.assertTrue(
@@ -128,6 +128,6 @@ class TestUpdateCacheRows(SamplesheetsPluginTestBase):
         m.name = 'invalid/../path'
         m.save()
         with self.assertRaises(ValueError):
-            self.plugin._update_cache_rows(
+            self.plugin.update_cache_rows(
                 ASSAY_PLUGIN_NAME, project=self.project
             )

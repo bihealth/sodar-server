@@ -42,7 +42,7 @@ class BackendPlugin(BackendPluginPoint):
     #: Title (used in templates)
     title = 'Ontology Access Backend'
 
-    #: FontAwesome icon ID string
+    #: Iconify icon
     icon = 'mdi:tags'
 
     #: Description string
@@ -58,11 +58,11 @@ class BackendPlugin(BackendPluginPoint):
     def get_statistics(self):
         return {
             'obo_ontology_count': {
-                'label': 'OBO ontologies',
+                'label': 'OBO Ontologies',
                 'value': OBOFormatOntology.objects.count(),
             },
             'obo_term_count': {
-                'label': 'OBO ontology terms',
+                'label': 'OBO Ontology Terms',
                 'value': OBOFormatOntologyTerm.objects.count(),
             },
         }

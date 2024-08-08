@@ -45,7 +45,7 @@ expected version.
 
 .. code-block:: console
 
-    Accept: application/vnd.bihealth.sodar+json; version=0.14.2
+    Accept: application/vnd.bihealth.sodar+json; version=0.15.0
 
 Specific sections of the SODAR API may require their own accept header. See the
 exact header requirement in the respective documentation on each section of the

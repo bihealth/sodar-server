@@ -987,7 +987,7 @@ class SampleSheetAssayPluginPoint(PluginPoint):
 
     # Common cache update utilities --------------------------------------
 
-    def _update_cache_rows(self, app_name, name=None, project=None, user=None):
+    def update_cache_rows(self, app_name, name=None, project=None, user=None):
         """
         Update cache for row-based iRODS links using get_row_path().
 

@@ -5,12 +5,14 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
-Unreleased
-==========
+v0.15.0 (2024-08-08)
+====================
 
 Added
 -----
 
+- **General**
+    - Cyberduck documentation (#1931)
 - **Isatemplates**
     - ``isatemplates`` app for custom ISA-Tab template management (#1961)
     - ``isatemplates_backend`` plugin for template retrieval (#1961)
@@ -18,6 +20,7 @@ Added
     - ``template_output_dir_display`` user setting (#1960)
     - Display BAM/CRAM/VCF omit patterns in study shortcut modal (#1963)
     - Row links display override using assay comment (#1968)
+    - ``generic`` assay app plugin (#1946)
 - **Taskflowbackend**
     - ``BatchCalculateChecksumTask`` retrying in case of timeouts (#1941)
 
@@ -38,6 +41,7 @@ Changed
     - ``index`` arg in ``SampleSheetAssayPluginPoint.update_row()`` (#1957)
     - Hide template output dir field by default (#1960)
     - Improve ``StudyLinksAjaxView`` return data (#1963, #1966)
+    - Optimize ``irodsbackend`` API retrieval in ``plugins`` (#1952)
 - **Taskflowbackend**
     - Increase default for ``TASKFLOW_IRODS_CONN_TIMEOUT`` (#1900)
     - Disable lock requirement for role and project update flows (#1948)

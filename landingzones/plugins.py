@@ -158,11 +158,11 @@ class ProjectAppPlugin(
         """
         return {
             'zones_total': {
-                'label': 'Total zones',
+                'label': 'Total Zones',
                 'value': LandingZone.objects.count(),
             },
             'zones_active': {
-                'label': 'Active zones',
+                'label': 'Active Zones',
                 'value': LandingZone.objects.filter(
                     status__in=STATUS_ALLOW_UPDATE
                 ).count(),
@@ -170,7 +170,7 @@ class ProjectAppPlugin(
                 'failed)',
             },
             'zones_finished': {
-                'label': 'Finished zones',
+                'label': 'Finished Zones',
                 'value': LandingZone.objects.filter(
                     status__in=STATUS_FINISHED
                 ).count(),
@@ -178,7 +178,7 @@ class ProjectAppPlugin(
                 'or not created',
             },
             'zones_busy': {
-                'label': 'Busy zones',
+                'label': 'Busy Zones',
                 'value': LandingZone.objects.filter(
                     status__in=STATUS_BUSY
                 ).count(),

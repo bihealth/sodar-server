@@ -25,8 +25,6 @@ class OBOFormatOntologyListView(LoggedInPermissionMixin, ListView):
 
     model = OBOFormatOntology
     permission_required = 'ontologyaccess.view_list'
-    slug_url_kwarg = 'bioontology'
-    slug_field = 'sodar_uuid'
     template_name = 'ontologyaccess/list.html'
 
     def get_queryset(self):

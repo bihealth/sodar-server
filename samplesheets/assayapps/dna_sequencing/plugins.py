@@ -100,4 +100,4 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         :param project: Project object to limit update to (optional)
         :param user: User object to denote user triggering the update (optional)
         """
-        self._update_cache_rows(APP_NAME, name, project, user)
+        self.update_cache_rows(APP_NAME, name, project, user)
