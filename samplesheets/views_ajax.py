@@ -45,6 +45,7 @@ from samplesheets.utils import (
     get_node_obj,
     get_webdav_url,
     get_ext_link_labels,
+    get_bool,
 )
 from samplesheets.views import (
     IrodsDataRequestModifyMixin,
@@ -85,6 +86,8 @@ ALERT_LIB_FILES_EXIST = (
 ERROR_NOT_IN_PROJECT = 'Collection does not belong to project'
 ERROR_NOT_FOUND = 'Collection not found'
 ERROR_NO_AUTH = 'User not authorized for iRODS collection'
+STUDY_PLUGIN_NOT_FOUND_MSG = 'Plugin not found for study'
+ROW_LINK_DISPLAY_COMMENT = 'SODAR Assay Row Link Display'
 
 
 # Base Ajax View Classes and Mixins --------------------------------------------
@@ -328,9 +331,11 @@ class SheetContextAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
             'csrf_token': get_token(request),
             'investigation': {},
             'project_uuid': str(project.sodar_uuid),
-            'user_uuid': str(request.user.sodar_uuid)
-            if hasattr(request.user, 'sodar_uuid')
-            else None,
+            'user_uuid': (
+                str(request.user.sodar_uuid)
+                if hasattr(request.user, 'sodar_uuid')
+                else None
+            ),
             'sheet_sync_enabled': app_settings.get(
                 APP_NAME, 'sheet_sync_enable', project=project
             ),
@@ -348,20 +353,26 @@ class SheetContextAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
                 'configuration': inv.get_configuration(),
                 'inv_file_name': inv.file_name.split('/')[-1],
                 'irods_status': inv.irods_status,
-                'irods_path': irods_backend.get_path(project)
-                if irods_backend and inv.irods_status
-                else None,
+                'irods_path': (
+                    irods_backend.get_path(project)
+                    if irods_backend and inv.irods_status
+                    else None
+                ),
                 'parser_version': inv.parser_version or 'LEGACY',
-                'parser_warnings': True
-                if inv.parser_warnings
-                and 'use_file_names' in inv.parser_warnings
-                else False,
+                'parser_warnings': (
+                    True
+                    if inv.parser_warnings
+                    and 'use_file_names' in inv.parser_warnings
+                    else False
+                ),
                 'investigation': {
                     'identifier': inv.identifier,
                     'title': inv.title,
-                    'description': inv.description
-                    if inv.description != project.description
-                    else None,
+                    'description': (
+                        inv.description
+                        if inv.description != project.description
+                        else None
+                    ),
                     'comments': get_comments(inv),
                 },
             }
@@ -418,9 +429,9 @@ class SheetContextAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
                 'identifier': s.identifier,
                 'description': s.description,
                 'comments': get_comments(s),
-                'irods_path': irods_backend.get_path(s)
-                if irods_backend
-                else None,
+                'irods_path': (
+                    irods_backend.get_path(s) if irods_backend else None
+                ),
                 'table_url': request.build_absolute_uri(
                     reverse(
                         'samplesheets:ajax_study_tables',
@@ -434,17 +445,33 @@ class SheetContextAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
             # Set up assay data
             for a in s.assays.all().order_by('pk'):
                 assay_plugin = a.get_plugin()
+                row_links = True
+                if ROW_LINK_DISPLAY_COMMENT in a.comments:
+                    try:
+                        row_links = get_bool(
+                            a.comments[ROW_LINK_DISPLAY_COMMENT]
+                        )
+                    except Exception as ex:
+                        logger.error(
+                            'Exception in retrieving row display comment "{}" '
+                            'for assay "{} ({})": {}'.format(
+                                ROW_LINK_DISPLAY_COMMENT,
+                                a.get_display_name(),
+                                a.sodar_uuid,
+                                ex,
+                            )
+                        )
+                elif assay_plugin:
+                    row_links = assay_plugin.display_row_links
                 ret_data['studies'][str(s.sodar_uuid)]['assays'][
                     str(a.sodar_uuid)
                 ] = {
                     'name': a.get_name(),
                     'display_name': a.get_display_name(),
-                    'irods_path': irods_backend.get_path(a)
-                    if irods_backend
-                    else None,
-                    'display_row_links': assay_plugin.display_row_links
-                    if assay_plugin
-                    else True,
+                    'irods_path': (
+                        irods_backend.get_path(a) if irods_backend else None
+                    ),
+                    'display_row_links': row_links,
                     'plugin': assay_plugin.title if assay_plugin else None,
                 }
 
@@ -671,9 +698,11 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
             ]
             # Set up study edit context
             ret_data['edit_context'] = {
-                'sodar_ontologies': ontology_backend.get_obo_dict(key='name')
-                if ontology_backend
-                else {},
+                'sodar_ontologies': (
+                    ontology_backend.get_obo_dict(key='name')
+                    if ontology_backend
+                    else {}
+                ),
                 'samples': {},
                 'protocols': [],
             }
@@ -693,9 +722,11 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
             ).order_by('name'):
                 ret_data['edit_context']['samples'][str(sample.sodar_uuid)] = {
                     'name': sample.name,
-                    'assays': s_assays[sample.unique_name]
-                    if sample.unique_name in s_assays
-                    else [],
+                    'assays': (
+                        s_assays[sample.unique_name]
+                        if sample.unique_name in s_assays
+                        else []
+                    ),
                 }
             # Add Protocol info
             for protocol in Protocol.objects.filter(study=study).order_by(
@@ -710,27 +741,34 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
 class StudyLinksAjaxView(SODARBaseProjectAjaxView):
     """View to retrieve data for shortcut links from study apps"""
 
-    # TODO: Also do this for assay apps?
     permission_required = 'samplesheets.view_sheet'
 
     def get(self, request, *args, **kwargs):
         study = Study.objects.filter(sodar_uuid=self.kwargs['study']).first()
         study_plugin = study.get_plugin()
         if not study_plugin:
-            return Response(
-                {'detail': 'Plugin not found for study'}, status=404
-            )
-        ret_data = {'study': {'display_name': study.get_display_name()}}
+            return Response({'error': STUDY_PLUGIN_NOT_FOUND_MSG}, status=404)
+        ret_data = {}
         try:
             study_tables = table_builder.get_study_tables(study)
         except Exception as ex:
-            # TODO: Log error
-            ret_data['render_error'] = str(ex)
+            ret_data['error'] = 'Error retrieving study tables: {}'.format(ex)
+            return Response(ret_data, status=500)
+        try:
+            ret_data = study_plugin.get_shortcut_links(
+                study, study_tables, **request.GET
+            )
+            # Add project BAM/VCF omit pattern information
+            p = study.investigation.project
+            for t in ['bam', 'vcf']:
+                if not ret_data.get('data') or t not in ret_data['data']:
+                    continue
+                s = app_settings.get(APP_NAME, 'igv_omit_' + t, project=p)
+                ret_data['data'][t]['omit_info'] = s
             return Response(ret_data, status=200)
-        ret_data = study_plugin.get_shortcut_links(
-            study, study_tables, **request.GET
-        )
-        return Response(ret_data, status=200)
+        except Exception as ex:
+            ret_data['error'] = 'Error retrieving shortcut links: {}'.format(ex)
+            return Response(ret_data, status=500)
 
 
 class SheetWarningsAjaxView(SODARBaseProjectAjaxView):
@@ -850,9 +888,11 @@ class SheetCellEditAjaxView(BaseSheetEditAjaxView):
                 node_obj.name_type = cell['header_name']
             ok_msg = 'Edited process name: {}{}'.format(
                 cell['value'],
-                ' ({})'.format(cell['header_name'])
-                if cell['header_name'] in th.PROCESS_NAME_HEADERS
-                else '',
+                (
+                    ' ({})'.format(cell['header_name'])
+                    if cell['header_name'] in th.PROCESS_NAME_HEADERS
+                    else ''
+                ),
             )
 
         # Protocol field (special case)

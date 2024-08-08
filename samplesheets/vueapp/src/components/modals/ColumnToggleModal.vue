@@ -47,7 +47,7 @@
           <th :class="getTopHeaderClasses(topHeader)">
             <b-button
               variant="secondary"
-              class="sodar-list-btn sodar-ss-toggle-node-btn"
+              class="sodar-list-btn sodar-ss-toggle-node-btn pull-right"
               title="Toggle all"
               @click="onGroupChange(topHeader, topIdx)"
               v-b-tooltip.hover.d300>

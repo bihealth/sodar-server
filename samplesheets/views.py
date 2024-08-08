@@ -9,7 +9,7 @@ import pytz
 import requests
 import zipfile
 
-from cubi_isa_templates import _TEMPLATES as ISA_TEMPLATES
+from cubi_isa_templates import _TEMPLATES as CUBI_TEMPLATES
 from irods.exception import CollectionDoesNotExist
 from packaging import version
 from urllib.parse import urljoin
@@ -129,7 +129,7 @@ SYNC_FAIL_UNSET_TOKEN = 'Remote sync token not set'
 SYNC_FAIL_UNSET_URL = 'Remote sync URL not set'
 SYNC_FAIL_INVALID_URL = 'Invalid API URL'
 SYNC_FAIL_STATUS_CODE = 'Source API responded with status code'
-TPL_DICT = {t.name: t for t in ISA_TEMPLATES}
+CUBI_TPL_DICT = {t.name: t for t in CUBI_TEMPLATES}
 
 EMAIL_DELETE_REQUEST_ACCEPT = r'''
 Your delete request has been accepted.
@@ -369,9 +369,11 @@ class SheetImportMixin:
         if ui_mode:
             success_msg = '{}d sample sheets from {}'.format(
                 action.capitalize(),
-                'version {}'.format(isa_version.get_full_name())
-                if action == 'restore'
-                else 'ISA-Tab import',
+                (
+                    'version {}'.format(isa_version.get_full_name())
+                    if action == 'restore'
+                    else 'ISA-Tab import'
+                ),
             )
             if investigation.parser_warnings:
                 success_msg += (
@@ -610,9 +612,9 @@ class SheetISAExportMixin:
             response = HttpResponse(
                 zip_io.getvalue(), content_type='application/zip'
             )
-            response[
-                'Content-Disposition'
-            ] = 'attachment; filename="{}"'.format(file_name)
+            response['Content-Disposition'] = (
+                'attachment; filename="{}"'.format(file_name)
+            )
             return response
         elif format == 'json':
             export_data['date_modified'] = str(investigation.date_modified)
@@ -1406,17 +1408,22 @@ class SheetTemplateSelectView(
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        templates = []
-        for t in ISA_TEMPLATES:
-            templates.append(
-                {
-                    'name': t.name,
-                    'description': t.description[0].upper() + t.description[1:],
-                }
+        tpl_backend = get_backend_api('isatemplates_backend')
+        if tpl_backend:
+            context['sheet_templates'] = tpl_backend.get_list()
+        else:
+            templates = []
+            for t in CUBI_TEMPLATES:
+                templates.append(
+                    {
+                        'name': t.name,
+                        'description': t.description[0].upper()
+                        + t.description[1:],
+                    }
+                )
+            context['sheet_templates'] = sorted(
+                templates, key=lambda x: x['description'].lower()
             )
-        context['sheet_templates'] = sorted(
-            templates, key=lambda x: x['description']
-        )
         return context
 
     def get(self, request, *args, **kwargs):
@@ -1454,7 +1461,10 @@ class SheetTemplateCreateView(
 
     def _get_sheet_template(self):
         t_name = self.request.GET.get('sheet_tpl')
-        return TPL_DICT[t_name] if t_name in TPL_DICT else None
+        tpl_backend = get_backend_api('isatemplates_backend')
+        if tpl_backend:
+            return tpl_backend.get_template(t_name)
+        return CUBI_TPL_DICT[t_name] if t_name in CUBI_TPL_DICT else None
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
@@ -1510,6 +1520,7 @@ class SheetTemplateCreateView(
         return redirect(redirect_url)
 
     def get(self, request, *args, **kwargs):
+        tpl_backend = get_backend_api('isatemplates_backend')
         redirect_url = reverse(
             'samplesheets:template_select',
             kwargs={'project': self.get_project().sodar_uuid},
@@ -1518,7 +1529,9 @@ class SheetTemplateCreateView(
         if not t_name:
             messages.error(request, 'Template name not provided.')
             return redirect(redirect_url)
-        if t_name not in TPL_DICT:
+        if (tpl_backend and not tpl_backend.is_template(t_name)) or (
+            not tpl_backend and t_name not in CUBI_TPL_DICT
+        ):
             messages.error(request, 'Template not found.')
             return redirect(redirect_url)
         return super().render_to_response(self.get_context_data())
@@ -1576,10 +1589,8 @@ class SheetExcelExportView(
 
         # Set up response
         response = HttpResponse(content_type='text/tab-separated-values')
-        response[
-            'Content-Disposition'
-        ] = 'attachment; filename="{}.xlsx"'.format(
-            input_name.split('.')[0]
+        response['Content-Disposition'] = (
+            'attachment; filename="{}.xlsx"'.format(input_name.split('.')[0])
         )  # TODO: TBD: Output file name?
         # Build Excel file
         write_excel_table(table, response, display_name)
@@ -1649,10 +1660,9 @@ class SheetDeleteView(
             except FileNotFoundError:
                 context['irods_file_count'] = 0
         if context['irods_file_count'] > 0:
-            context[
-                'can_delete_sheets'
-            ] = self.request.user.is_superuser or project.is_owner_or_delegate(
-                self.request.user
+            context['can_delete_sheets'] = (
+                self.request.user.is_superuser
+                or project.is_owner_or_delegate(self.request.user)
             )
         else:
             context['can_delete_sheets'] = self.request.user.has_perm(

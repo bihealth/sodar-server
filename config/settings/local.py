@@ -91,6 +91,7 @@ ENABLED_BACKEND_PLUGINS = [
     'timeline_backend',
     'appalerts_backend',
     'ontologyaccess_backend',
+    'isatemplates_backend',
     'taskflow',
     'omics_irods',
     'sodar_cache',

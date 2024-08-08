@@ -232,6 +232,15 @@ class ProjectAppPlugin(
             'projects. Update sheet cache after updating this value.',
             'user_modifiable': True,
         },
+        'template_output_dir_display': {
+            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_USER'],
+            'type': 'BOOLEAN',
+            'label': 'Display template output directory field',
+            'default': False,
+            'description': 'Display output directory field for sample sheet '
+            'templates.',
+            'user_modifiable': True,
+        },
     }
 
     #: Iconify icon
@@ -312,9 +321,11 @@ class ProjectAppPlugin(
         if obj.__class__ in [Investigation, Study, Assay]:
             return {
                 'url': obj.get_url(),
-                'label': obj.title
-                if obj.__class__ == Investigation
-                else obj.get_display_name(),
+                'label': (
+                    obj.title
+                    if obj.__class__ == Investigation
+                    else obj.get_display_name()
+                ),
             }
         url_kwargs = {'project': obj.project.sodar_uuid}
         if obj.__class__ == ISATab:
@@ -564,9 +575,9 @@ class ProjectAppPlugin(
             if 'sheet_sync_url' not in ret and not re.findall(
                 SYNC_URL_RE, app_settings['sheet_sync_url']
             ):
-                ret[
-                    'sheet_sync_url'
-                ] = 'URL does not point to a sheet sync endpoint'
+                ret['sheet_sync_url'] = (
+                    'URL does not point to a sheet sync endpoint'
+                )
         return ret
 
     # Project Modify API Implementation ----------------------------------------
@@ -770,9 +781,9 @@ class ProjectAppPlugin(
                 if assay_plugin:
                     plugin_shortcuts = assay_plugin.get_shortcuts(assay) or []
                     for sc in plugin_shortcuts:
-                        cache_data['shortcuts'][
-                            sc['id']
-                        ] = irods.collections.exists(sc['path'])
+                        cache_data['shortcuts'][sc['id']] = (
+                            irods.collections.exists(sc['path'])
+                        )
                 cache_data['shortcuts']['track_hubs'] = [
                     c.path
                     for c in irods_backend.get_child_colls(
@@ -907,6 +918,13 @@ class SampleSheetAssayPluginPoint(PluginPoint):
     # TODO: Implement this in your assay plugin
     display_row_links = True
 
+    #: Irodsbackend IrodsAPI object
+    irods_backend = None
+
+    def __init__(self):
+        super().__init__()
+        self.irods_backend = get_backend_api('omics_irods')
+
     def get_assay_path(self, assay):
         """
         Helper for getting the assay path.
@@ -914,10 +932,9 @@ class SampleSheetAssayPluginPoint(PluginPoint):
         :param assay: Assay object
         :return: Full iRODS path for the assay
         """
-        irods_backend = get_backend_api('omics_irods')
-        if not irods_backend:
+        if not self.irods_backend:
             return None
-        return irods_backend.get_path(assay)
+        return self.irods_backend.get_path(assay)
 
     def get_row_path(self, row, table, assay, assay_path):
         """
@@ -934,13 +951,14 @@ class SampleSheetAssayPluginPoint(PluginPoint):
         # TODO: Implement this in your assay plugin if display_row_links=True
         return None
 
-    def update_row(self, row, table, assay):
+    def update_row(self, row, table, assay, index):
         """
         Update render table row with e.g. links. Return the modified row.
 
         :param row: Original row (list of dicts)
         :param table: Full table (list of lists)
         :param assay: Assay object
+        :param index: Row index (int)
         :return: List of dicts
         """
         # TODO: Implement this in your assay plugin
@@ -969,7 +987,7 @@ class SampleSheetAssayPluginPoint(PluginPoint):
 
     # Common cache update utilities --------------------------------------
 
-    def _update_cache_rows(self, app_name, name=None, project=None, user=None):
+    def update_cache_rows(self, app_name, name=None, project=None, user=None):
         """
         Update cache for row-based iRODS links using get_row_path().
 
@@ -984,10 +1002,9 @@ class SampleSheetAssayPluginPoint(PluginPoint):
             return
         try:
             cache_backend = get_backend_api('sodar_cache')
-            irods_backend = get_backend_api('omics_irods')
         except Exception:
             return
-        if not cache_backend or not irods_backend:
+        if not cache_backend or not self.irods_backend:
             return
 
         projects = (
@@ -1021,7 +1038,7 @@ class SampleSheetAssayPluginPoint(PluginPoint):
             study_tables = table_builder.get_study_tables(study)
             for assay in [a for a in study.assays.all() if a in config_assays]:
                 assay_table = study_tables['assays'][str(assay.sodar_uuid)]
-                assay_path = irods_backend.get_path(assay)
+                assay_path = self.irods_backend.get_path(assay)
                 row_paths = []
                 item_name = 'irods/rows/{}'.format(assay.sodar_uuid)
 
@@ -1030,16 +1047,16 @@ class SampleSheetAssayPluginPoint(PluginPoint):
                         row, assay_table, assay, assay_path
                     )
                     if path and path not in row_paths:
-                        row_paths.append(path)
+                        row_paths.append(self.irods_backend.sanitize_path(path))
 
                 # Build cache for paths
                 cache_data = {'paths': {}}
-                with irods_backend.get_session() as irods:
+                with self.irods_backend.get_session() as irods:
                     for path in row_paths:
                         try:
-                            cache_data['paths'][
-                                path
-                            ] = irods_backend.get_object_stats(irods, path)
+                            cache_data['paths'][path] = (
+                                self.irods_backend.get_object_stats(irods, path)
+                            )
                         except FileNotFoundError:
                             cache_data['paths'][path] = None
                 cache_backend.set_cache_item(
@@ -1129,9 +1146,11 @@ def get_irods_content(inv, study, irods_backend, ret_data):
                 project=assay.get_project(),
             )
 
-            for row in a_data['table_data']:
+            for idx, row in enumerate(a_data['table_data']):
                 # Update assay links column
                 path = assay_plugin.get_row_path(row, a_data, assay, assay_path)
+                if path:
+                    path = irods_backend.sanitize_path(path)
                 enabled = True
                 # Set initial state to disabled by cached value
                 if (
@@ -1145,7 +1164,7 @@ def get_irods_content(inv, study, irods_backend, ret_data):
                     enabled = False
                 a_data['irods_paths'].append({'path': path, 'enabled': enabled})
                 # Update row links
-                assay_plugin.update_row(row, a_data, assay)
+                assay_plugin.update_row(row, a_data, assay, idx)
 
             # Add visual notification to all shortcuts coming from assay plugin
             assay_shortcuts = assay_plugin.get_shortcuts(assay) or []
@@ -1183,18 +1202,20 @@ def get_irods_content(inv, study, irods_backend, ret_data):
                     'title': 'Track Hub',
                     'assay_plugin': False,
                     'path': track_hub,
-                    'extra_links': [
-                        {
-                            'url': ticket.get_webdav_link(),
-                            'icon': 'mdi:ticket',
-                            'id': 'ticket_access_%d' % i,
-                            'class': 'sodar-irods-ticket-access-%d-btn' % i,
-                            'title': ' iRODS Access Ticket',
-                            'enabled': ticket.is_active(),
-                        }
-                    ]
-                    if ticket
-                    else [],
+                    'extra_links': (
+                        [
+                            {
+                                'url': ticket.get_webdav_link(),
+                                'icon': 'mdi:ticket',
+                                'id': 'ticket_access_%d' % i,
+                                'class': 'sodar-irods-ticket-access-%d-btn' % i,
+                                'title': ' iRODS Access Ticket',
+                                'enabled': ticket.is_active(),
+                            }
+                        ]
+                        if ticket
+                        else []
+                    ),
                 }
             )
         for i in range(len(a_data['shortcuts'])):

@@ -1,0 +1,202 @@
+{% extends 'projectroles/base.html' %}
+{% load rules %}
+
+{# Projectroles dependency #}
+{% load projectroles_common_tags %}
+
+{% block title %}ISA-Tab Templates{% endblock %}
+
+{% block css %}
+  {{ block.super }}
+  <style type="text/css">
+    table#sodar-it-list-table thead tr th:nth-child(2),
+    table#sodar-it-list-table tbody tr td:nth-child(2) {
+      max-width: 350px;
+    }
+    table#sodar-it-list-table thead tr th:nth-child(4),
+    table#sodar-it-list-table tbody tr td:nth-child(4) {
+      width: 170px;
+    }
+    table#sodar-it-list-table thead tr th:nth-child(5),
+    table#sodar-it-list-table tbody tr td:nth-child(5) {
+      width: 100px;
+    }
+    table#sodar-it-list-table thead tr th:nth-child(6),
+    table#sodar-it-list-table tbody tr td:nth-child(6) {
+      width: 75px;
+    }
+    /* Responsive modifications */
+    @media screen and (max-width: 1200px) {
+      table#sodar-it-list-table thead tr th:nth-child(4),
+      table#sodar-it-list-table tbody tr td:nth-child(4) {
+        display: none;
+      }
+    }
+    @media screen and (max-width: 1000px) {
+      table#sodar-it-list-table thead tr th:nth-child(3),
+      table#sodar-it-list-table tbody tr td:nth-child(3) {
+        display: none;
+      }
+    }
+    @media screen and (max-width: 750px) {
+      table#sodar-it-list-table thead tr th:nth-child(2),
+      table#sodar-it-list-table tbody tr td:nth-child(2) {
+        display: none;
+      }
+    }
+    @media screen and (max-width: 900px) {
+      table#sodar-it-cubi-table thead tr th:nth-child(2),
+      table#sodar-it-cubi-table tbody tr td:nth-child(2) {
+        display: none;
+      }
+    }
+  </style>
+{% endblock css %}
+
+{% block projectroles %}
+
+<div class="row sodar-subtitle-container bg-white sticky-top">
+  <h2><i class="iconify" data-icon="mdi:file-table"></i> ISA-Tab Templates</h2>
+  <a role="button" class="btn btn-primary ml-auto"
+     href="{% url 'isatemplates:create' %}">
+    <i class="iconify" data-icon="mdi:upload"></i> Import Template
+  </a>
+</div>
+
+<div class="container-fluid sodar-page-container">
+  {% if not backend_enabled %}
+    <div class="alert alert-warning mb-4" id="sodar-it-alert-backend">
+      The ISA-Tab Templates backend plugin is not enabled. Imported templates
+      will not be selectable in the Sample Sheets app. Add
+      <code>isatemplates_backend</code> in <code>ENABLED_BACKEND_PLUGINS</code>
+      to enable the plugin.
+    </div>
+  {% endif %}
+  <div class="card" id="sodar-it-template-list">
+    <div class="card-header">
+      <h4>
+        <i class="iconify" data-icon="mdi:file-table-box-multiple"></i>
+        Custom Templates
+      </h4>
+    </div>
+    <div class="card-body p-0">
+      <table class="table table-striped sodar-card-table" id="sodar-it-list-table">
+        <thead>
+          <tr>
+            <th>Description</th>
+            <th>Name</th>
+            <th>User</th>
+            <th>Modified</th>
+            <th>Active</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in templates %}
+            <tr class="sodar-it-list-item">
+              <td>
+                <a href="{% url 'isatemplates:detail' cookiecutterisatemplate=t.sodar_uuid %}">
+                  {{ t.description }}
+                </a>
+              </td>
+              <td class="text-monospace text-nowrap">
+                <div class="sodar-overflow-container">
+                  {{ t.name }}
+                </div>
+              </td>
+              {% if t.user %}
+                <td>
+                  {% get_user_html t.user as t_user %}
+                  {{ t_user | safe }}
+                </td>
+              {% else %}
+                <td class="text-muted">N/A</td>
+              {% endif %}
+              <td>{{ t.date_modified | date:'Y-m-d H:i' }}</td>
+              {% if t.active %}
+                <td class="text-success">True</td>
+              {% else %}
+                <td class="text-danger">False</td>
+              {% endif %}
+              <td>
+                <div class="btn-group sodar-list-btn-group"
+                     id="sodar-it-op-buttons-{{ t.sodar_uuid }}">
+                  <button class="btn btn-secondary dropdown-toggle sodar-list-dropdown"
+                          type="button" data-toggle="dropdown" aria-expanded="false">
+                    <i class="iconify" data-icon="mdi:cog"></i>
+                  </button>
+                  <div class="dropdown-menu dropdown-menu-right">
+                    <a class="dropdown-item"
+                       href="{% url 'isatemplates:update' cookiecutterisatemplate=t.sodar_uuid %}">
+                      <i class="iconify" data-icon="mdi:lead-pencil"></i>
+                      Update Template
+                    </a>
+                    <a class="dropdown-item"
+                       href="{% url 'isatemplates:export' cookiecutterisatemplate=t.sodar_uuid %}">
+                      <i class="iconify" data-icon="mdi:download"></i>
+                      Export Template
+                    </a>
+                    <a class="dropdown-item text-danger"
+                       href="{% url 'isatemplates:delete' cookiecutterisatemplate=t.sodar_uuid %}">
+                      <i class="iconify" data-icon="mdi:close-thick"></i>
+                      Delete Template
+                    </a>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+          {% if templates.count == 0 %}
+            <tr id="sodar-it-list-empty">
+              <td class="bg-faded font-italic text-center" colspan="6">
+                No custom ISA-Tab templates imported.
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card" id="sodar-it-cubi-list">
+    <div class="card-header">
+      <h4>
+        <i class="iconify" data-icon="mdi:file-table-box-multiple-outline"></i>
+        CUBI Templates
+        {% get_info_link "Templates from the cubi-isa-templates repository" as info_link %}
+        {{ info_link | safe }}
+      </h4>
+    </div>
+    <div class="card-body p-0">
+      <table class="table table-striped sodar-card-table" id="sodar-it-cubi-table">
+        <thead>
+          <tr>
+            <th>Description</th>
+            <th>Name</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in cubi_templates %}
+            <tr class="sodar-it-cubi-item">
+              <td>
+                <a href="{% url 'isatemplates:detail_cubi' name=t.name %}">
+                  {{ t.description | capfirst }}
+                </a>
+              </td>
+              <td class="text-monospace text-nowrap">{{ t.name }}</td>
+            </tr>
+          {% endfor %}
+          {% if not cubi_templates %}
+            <tr id="sodar-it-cubi-empty">
+              <td class="bg-faded font-italic text-center" colspan="2">
+                CUBI templates are disabled in the site Django settings.
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

@@ -7,6 +7,7 @@ from django.conf import settings
 from django.urls import reverse
 
 # Projectroles dependency
+from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
 
 # Taskflowbackend dependency
@@ -32,6 +33,7 @@ from samplesheets.views import IRODS_REQUEST_EVENT_CREATE as CREATE_ALERT
 from samplesheets.views_ajax import ALERT_LIB_FILES_EXIST
 
 
+app_settings = AppSettingAPI()
 table_builder = SampleSheetTableBuilder()
 
 
@@ -40,8 +42,10 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 # Local constants
 APP_NAME = 'samplesheets'
 GERMLINE_SHEET_PATH = os.path.join(SHEET_DIR, 'bih_germline.zip')
-LIBRARY_NAME = 'p1-N1-DNA1-WES1'
-LIBRARY_NAME_EDIT = 'p1-N1-DNA1-WES1-EDITED'
+SAMPLE_ID = 'p1-N1'
+FAMILY_ID = 'FAM_p1'
+LIBRARY_ID = 'p1-N1-DNA1-WES1'
+LIBRARY_ID_EDIT = 'p1-N1-DNA1-WES1-EDITED'
 LIBRARY_FIELD = 'p1'
 LIBRARY_FIELD_EDIT = 'p1-EDITED'
 DATA_OBJ_NAME = 'p1-N1.bam'
@@ -49,6 +53,91 @@ IRODS_NON_PROJECT_PATH = (
     '/' + settings.IRODS_ZONE + '/home/' + settings.IRODS_USER
 )
 IRODS_FAIL_COLL = 'xeiJ1Vie'
+
+
+class TestStudyLinksAjaxView(
+    SampleSheetIOMixin, SampleSheetTaskflowMixin, TaskflowViewTestBase
+):
+    """Tests for StudyLinksAjaxView with iRODS and taskflow"""
+
+    def setUp(self):
+        super().setUp()
+        # Make project with owner
+        self.project, self.owner_as = self.make_project_taskflow(
+            title='TestProject',
+            type=PROJECT_TYPE_PROJECT,
+            parent=self.category,
+            owner=self.user,
+            description='description',
+        )
+        # Import investigation
+        self.investigation = self.import_isa_from_file(
+            GERMLINE_SHEET_PATH, self.project
+        )
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+        # Create iRODS collections
+        self.make_irods_colls(self.investigation)
+        # Set up other variables
+        self.assay_path = self.irods_backend.get_path(self.assay)
+        self.source_path = os.path.join(self.assay_path, LIBRARY_ID)
+        self.url = reverse(
+            'samplesheets:ajax_study_links',
+            kwargs={'study': self.study.sodar_uuid},
+        ) + '?family={}'.format(FAMILY_ID)
+
+    def test_get(self):
+        """Test StudyLinksAjaxView GET with no files in iRODS"""
+        with self.login(self.user):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        rd = response.data
+        self.assertEqual(rd['data']['session']['files'], [])
+        self.assertEqual(rd['data']['bam']['files'], [])
+        self.assertEqual(rd['data']['vcf']['files'], [])
+        omit_bam = app_settings.get(
+            APP_NAME, 'igv_omit_bam', project=self.project
+        )
+        omit_vcf = app_settings.get(
+            APP_NAME, 'igv_omit_vcf', project=self.project
+        )
+        self.assertEqual(rd['data']['bam']['omit_info'], omit_bam)
+        self.assertEqual(rd['data']['vcf']['omit_info'], omit_vcf)
+        self.assertNotIn('error', rd)
+
+    def test_get_files(self):
+        """Test GET with files in iRODS"""
+        self.irods.collections.create(self.source_path)
+        bam_path = os.path.join(
+            self.source_path, '{}_test.bam'.format(SAMPLE_ID)
+        )
+        vcf_path = os.path.join(
+            self.source_path, '{}_test.vcf.gz'.format(FAMILY_ID)
+        )
+        self.irods.data_objects.create(bam_path)
+        self.irods.data_objects.create(vcf_path)
+        with self.login(self.user):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        rd = response.data
+        # NOTE: Link content tested in TestGermlinePlugin
+        self.assertEqual(len(rd['data']['session']['files']), 1)
+        self.assertEqual(len(rd['data']['bam']['files']), 1)
+        self.assertEqual(len(rd['data']['vcf']['files']), 1)
+        self.assertIsNotNone(rd['data']['bam']['omit_info'])
+        self.assertIsNotNone(rd['data']['vcf']['omit_info'])
+        self.assertNotIn('error', rd)
+
+    def test_get_no_empty_omit_values(self):
+        """Test GET with empty BAM/VCF omit values"""
+        app_settings.set(APP_NAME, 'igv_omit_bam', '', project=self.project)
+        app_settings.set(APP_NAME, 'igv_omit_vcf', '', project=self.project)
+        with self.login(self.user):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        rd = response.data
+        self.assertEqual(rd['data']['bam']['omit_info'], '')
+        self.assertEqual(rd['data']['vcf']['omit_info'], '')
 
 
 class TestSheetCellEditAjaxView(
@@ -75,7 +164,7 @@ class TestSheetCellEditAjaxView(
         self.assay_plugin = self.assay.get_plugin()
         # Set up library
         self.library = GenericMaterial.objects.get(
-            assay=self.assay, name=LIBRARY_NAME
+            assay=self.assay, name=LIBRARY_ID
         )
         self.library_path = os.path.join(
             self.irods_backend.get_path(self.assay), self.library.name
@@ -87,20 +176,20 @@ class TestSheetCellEditAjaxView(
         self.values['updated_cells'].append(
             {
                 'uuid': str(self.library.sodar_uuid),
-                'value': LIBRARY_NAME_EDIT,
+                'value': LIBRARY_ID_EDIT,
                 'colType': 'NAME',
                 'header_name': 'Name',
                 'header_type': 'name',
                 'header_field': 'col51',
                 'obj_cls': 'GenericMaterial',
                 'item_type': 'MATERIAL',
-                'og_value': LIBRARY_NAME,
+                'og_value': LIBRARY_ID,
             }
         )
 
     def test_update_library_name(self):
         """Test updating library name with no collection or files in iRODS"""
-        self.assertEqual(self.library.name, LIBRARY_NAME)
+        self.assertEqual(self.library.name, LIBRARY_ID)
         self.assay_plugin.update_cache(project=self.project, user=self.user)
         with self.login(self.user):
             response = self.client.post(
@@ -114,7 +203,7 @@ class TestSheetCellEditAjaxView(
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['detail'], 'ok')
         self.library.refresh_from_db()
-        self.assertEqual(self.library.name, LIBRARY_NAME_EDIT)
+        self.assertEqual(self.library.name, LIBRARY_ID_EDIT)
 
     def test_update_library_name_coll(self):
         """Test updating library name with empty collection"""
@@ -134,7 +223,7 @@ class TestSheetCellEditAjaxView(
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['detail'], 'ok')
         self.library.refresh_from_db()
-        self.assertEqual(self.library.name, LIBRARY_NAME_EDIT)
+        self.assertEqual(self.library.name, LIBRARY_ID_EDIT)
 
     def test_update_library_name_file(self):
         """Test updating library name with file in iRODS (should fail)"""
@@ -161,7 +250,7 @@ class TestSheetCellEditAjaxView(
             ALERT_LIB_FILES_EXIST.format(name=self.library.name),
         )
         self.library.refresh_from_db()
-        self.assertEqual(self.library.name, LIBRARY_NAME)
+        self.assertEqual(self.library.name, LIBRARY_ID)
 
     def test_update_library_name_file_no_verify(self):
         """Test updating library name with file in iRODS and no verify"""
@@ -185,7 +274,7 @@ class TestSheetCellEditAjaxView(
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['detail'], 'ok')
         self.library.refresh_from_db()
-        self.assertEqual(self.library.name, LIBRARY_NAME_EDIT)
+        self.assertEqual(self.library.name, LIBRARY_ID_EDIT)
 
     def test_update_library_field(self):
         """Test updating library characteristics field with file in iRODS"""

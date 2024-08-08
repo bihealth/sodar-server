@@ -35,8 +35,9 @@ Documentation on settings is linked below.
 - `Projectroles (the core project and site framework) <https://sodar-core.readthedocs.io/en/latest/app_projectroles_settings.html#general-site-settings>`_
 - `Admin Alerts <https://sodar-core.readthedocs.io/en/latest/app_adminalerts.html#optional-settings>`_
 - `App Alerts <https://sodar-core.readthedocs.io/en/latest/app_appalerts.html#django-settings>`_
-- `Taskflow Backend <https://sodar-core.readthedocs.io/en/latest/app_taskflow.html#django-settings>`_
 - `Timeline <https://sodar-core.readthedocs.io/en/latest/app_timeline_install.html#optional-settings>`_
+
+.. _admin_settings_backend:
 
 Enabled Backend Plugins
 -----------------------
@@ -50,6 +51,9 @@ follows:
     Creation and management of :ref:`user alerts <ui_alerts>`.
 ``omics_irods``
     iRODS backend for iRODS connections.
+``isatemplates_backend``
+    Provide access to custom ISA-Tab templates in the
+    :ref:`Sample Sheets <app_samplesheets>` app.
 ``ontologyaccess_backend``
     Provide ontology lookup for the :ref:`Sample Sheets <app_samplesheets>` app.
 ``sodar_cache``
@@ -228,6 +232,14 @@ Ontology Access Settings
     Bulk term creation limit for ontology import (integer).
 ``ONTOLOGYACCESS_QUERY_LIMIT``
     Term query limit (integer).
+
+ISA Templates Settings
+----------------------
+
+``ISATEMPLATES_ENABLE_CUBI_TEMPLATES``
+    Enable templates from the
+    `cubi-isa-templates <https://github.com/bihealth/cubi-isa-templates/>`_
+    repository (boolean).
 
 
 SODAR Docker Compose Settings

@@ -1,0 +1,96 @@
+{% extends 'projectroles/base.html' %}
+
+{% load rules %}
+{% load crispy_forms_filters %}
+{% load projectroles_common_tags %}
+
+{% block title %}
+  ISA-Tab Template "{{ object.description }}"
+{% endblock title %}
+
+{% block projectroles %}
+
+<div class="row sodar-subtitle-container">
+  <h2>
+    <i class="iconify" data-icon="mdi:file-table"></i>
+    {{ object.description }}
+  </h2>
+  <a role="button" class="btn btn-secondary ml-auto"
+     href="{% url 'isatemplates:list' %}">
+    <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Back
+  </a>
+</div>
+
+<div class="container-fluid sodar-page-container">
+  <div class="card" id="sodar-it-template-detail-info">
+    <div class="card-header">
+      <h4>
+        <i class="iconify" data-icon="mdi:info"></i>
+        Template Information
+      </h4>
+    </div>
+    <div class="card-body px-0">
+      <dl class="row pb-0">
+        <dt class="col-md-2">Description</dt>
+        <dd class="col-md-10">{{ object.description }}</dd>
+        <dt class="col-md-2">Name</dt>
+        <dd class="col-md-10">
+          <code>{{ object.name }}</code>
+        </dd>
+        <dt class="col-md-2">Active</dt>
+        {% if object.active %}
+          <dd class="col-md-10 text-success">True</dd>
+        {% else %}
+          <dd class="col-md-10 text-danger">False</dd>
+        {% endif %}
+        <dt class="col-md-2">
+          {% get_info_link 'User who last edited this template' as info_link %}
+          User {{ info_link | safe }}
+        </dt>
+        {% if object.user %}
+          <dd class="col-md-10">
+            {% get_user_html object.user as user_html %}
+            {{ user_html | safe }}
+          </dd>
+        {% else %}
+          <dd class="col-md-10 text-muted">N/A</dd>
+        {% endif %}
+        <dt class="col-md-2">Created</dt>
+        <dd class="col-md-10">{{ object.date_created | date:'Y-m-d H:i' }}</dd>
+        <dt class="col-md-2">Updated</dt>
+        <dd class="col-md-10">{{ object.date_modified | date:'Y-m-d H:i' }}</dd>
+        <dt class="col-md-2">UUID</dt>
+        <dd class="col-md-10"><code>{{ object.sodar_uuid }}</code></dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="card" id="sodar-it-template-detail-config">
+    <div class="card-header">
+      <h4>
+        <i class="iconify" data-icon="mdi:file-table-outline"></i>
+        Configuration (cookiecutter.json)
+      </h4>
+    </div>
+    <div class="card-body p-0">
+      <pre>{{ object.configuration }}</pre>
+    </div>
+  </div>
+
+  {% for f in files %}
+    <div class="card sodar-it-template-detail-file"
+         id="sodar-it-template-detail-file-{{ f.sodar_uuid }}">
+      <div class="card-header">
+        <h4>
+          <i class="iconify" data-icon="mdi:file-table-outline"></i>
+          File: {{ f.file_name }}
+        </h4>
+      </div>
+      <div class="card-body p-0">
+        <pre>{{ f.content }}</pre>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+
+{% endblock projectroles %}

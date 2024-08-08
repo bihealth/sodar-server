@@ -1,5 +1,7 @@
 .. _metadata_advanced:
 
+.. include::  <isonum.txt>
+
 Advanced Metadata Topics
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -57,12 +59,12 @@ under ``SHEETS_IGV_OMIT_BAM`` (also affects CRAM files) and
 Assay iRODS Data Linking
 ========================
 
-Similar to study data linking, SODAR also displays iRODS links specific to
-assays according to an **assay plugin**. The selected plugin affects the
+Similar to study data linking, SODAR also displays iRODS links in the assay
+section according to an **assay plugin**. The selected plugin affects the
 following types of iRODS links:
 
-- **Assay shortcuts** card above each assay table
-- **Row-specific links** in the right hand column of each row
+- **Assay shortcuts** card above each assay table.
+- **Row-specific links** in the right hand column of each row.
 - **Inline links** which are file names stored in the table itself, under e.g.
   "data file" materials.
 
@@ -87,30 +89,51 @@ override the latter. Example:
     Study Assay File Name   a_assay.txt
     Comment[SODAR Assay Plugin] samplesheets_assay_generic_raw
 
+Similarly, you can override the assay table row link display with the comment
+``SODAR Assay Row Display``. Set it to "true" or "false" (or 1/0) to control
+whether row links should be displayed for this assay. Note that if you set this
+to true, the assay plugin used for the assay should implement the
+``get_row_path()`` method.
+
+.. code-block::
+
+    STUDY ASSAYS
+    Study Assay File Name   a_assay.txt
+    Comment[SODAR Assay Row Link Display] false
+
 SODAR currently supports the following assay plugins:
 
 - **DNA Sequencing**
-- **Generic Raw Data Plugin**
+- **Generic Assay Plugin**
 - **Metabolite Profiling / Mass Spectrometry**
 - **Microarray**
 - **Protein Expression Profiling / Mass Cytometry**
 - **Protein Expression Profiling / Mass Spectrometry**
+- **Raw Data Plugin**
 
-Common links as well as plugin specific links are detailed below.
+General Concepts
+----------------
 
-Common Links
-------------
-
-Links to the following iRODS collections are provided for *all* assay
+Links to the following iRODS collections are provided for all assay
 configurations in the assay shortcuts card:
 
-- ``ResultsReports``: Collection for assay specific result and report files
+- ``ResultsReports``: Collection for assay specific result and report files.
 - ``MiscFiles``: Miscellaneous files
 - ``TrackHubs``: Track hubs for UCSC Genome Browser integration (displayed if
-  track hubs have been created)
+  track hubs have been created).
+
+Assay plugins can create the following additional links to connect samplesheet
+metadata to files stored in iRODS:
+
+1. Additional assay-wide collections and shortcuts (e. g. ``RawData``).
+2. Creating row-specific collections and shortcuts (i. e. ``RowPath``).
+3. Converting cell values within the Samplesheets table into iRODS/WebDAV
+   links (i. e. **inline links**).
 
 DNA Sequencing Plugin
 ---------------------
+
+Plugin for different DNA sequencing configurations.
 
 - Internal name: ``samplesheets_assay_dna_sequencing``
 - Additional assay shortcuts
@@ -118,6 +141,7 @@ DNA Sequencing Plugin
 - Row-specific links
     * Each row links to the **last material name** in the row, not counting
       "data file" materials.
+    * Creates collections in Landing Zones according to this ``RowPath``.
 - Inline links
     * N/A
 - Used with measurement type / technology type
@@ -127,21 +151,52 @@ DNA Sequencing Plugin
     * transcriptome profiling / nucleotide sequencing
     * panel sequencing / nucleotide sequencing
 
-Generic Raw Data Assay Plugin
------------------------------
+.. _metadata_advanced_assay_generic:
 
-- Internal name: ``samplesheets_assay_generic_raw``
-- Additional assay shortcuts
-    * ``RawData``: Assay-wide raw data files
+Generic Assay Plugin
+--------------------
+
+Generic plugin which can be used with any measurement and technology type
+configuration. It enables the user to define row-specific and inline links to
+iRODS collections via comments in the ``STUDY ASSAYS`` section of the ISA-Tab
+investigation file.
+
+- Internal name: ``samplesheets_assay_generic``
 - Row-specific links
-    * N/A
+    * Place one or multiple comments starting with ``SODAR Assay Row Path``.
+    * Each comment should define one column name.
+    * The comments are evaluated in alphabetical order.
+    * Values within these columns are used to define the ``RowPath``.
+    * For example:
+        .. code-block::
+
+            STUDY ASSAYS
+            Comment[SODAR Assay Row Path 1]    Pool ID
+            Comment[SODAR Assay Row Path 2]    Extract Name
+
+    * Resulting row links:
+        ``/sodarZone/projects/xxx/sample_data/study_yyy/assay_zzz/<pool_id>/<extract_name>/``
 - Inline links
-    * *Raw data files* are linked to ``RawData``
+    * Comments define semicolon-separated lists of columns to be linked to
+      collections.
+    * *SODAR Assay Link Results* |rarr| ``ResultsReports``
+    * *SODAR Assay Link MiscFiles* |rarr| ``MiscFiles``
+    * *SODAR Assay Link Row* |rarr| ``RowPath``
+    * For example:
+        .. code-block::
+
+            STUDY ASSAYS
+            Comment[SODAR Assay Link Results]    Report File;Derived Data File
+            Comment[SODAR Assay Link MiscFiles]  Protocol File;Antibody Panel
+            Comment[SODAR Assay Link Row]        Raw Data File
+
 - Used with measurement type / technology type
-    * N/A (can be used with the ``SODAR Assay Plugin`` comment override)
+    * N/A (is only used when the ``SODAR Assay Plugin`` comment is set)
 
 Metabolite Profiling / Mass Spectrometry Plugin
 -----------------------------------------------
+
+Plugin for metabolite profiling assays.
 
 - Internal name: ``samplesheets_assay_meta_ms``
 - Additional assay shortcuts
@@ -157,6 +212,8 @@ Metabolite Profiling / Mass Spectrometry Plugin
 
 Microarray Plugin
 -----------------
+
+Plugin for microarray assays.
 
 - Internal name: ``samplesheets_assay_microarray``
 - Additional assay shortcuts
@@ -176,6 +233,8 @@ Microarray Plugin
 Protein Expression Profiling / Mass Spectrometry Plugin
 -------------------------------------------------------
 
+Plugin for protein expression profiling assays with mass spectrometry.
+
 - Internal name: ``samplesheets_assay_pep_ms``
 - Additional assay shortcuts
     * ``RawData``: Assay-wide raw data files
@@ -188,7 +247,9 @@ Protein Expression Profiling / Mass Spectrometry Plugin
     * protein expression profiling / mass spectrometry
 
 Protein Expression Profiling / Mass Cytometry Plugin
--------------------------------------------------------
+----------------------------------------------------
+
+Plugin for protein expression profiling assays with mass cytometry.
 
 - Internal name: ``samplesheets_assay_cytof``
 - Additional assay shortcuts
@@ -204,3 +265,25 @@ Protein Expression Profiling / Mass Cytometry Plugin
     * *Raw Data Files* and *Derived Data Files* are linked to ``{Assay Name}``
 - Used with measurement type / technology type
     * protein expression profiling / mass cytometry
+
+Raw Data Assay Plugin
+---------------------
+
+Generic plugin for adding a raw data collection to assays not configured with
+avspecific measurement type and technology type.
+
+- Internal name: ``samplesheets_assay_generic_raw``
+- Additional assay shortcuts
+    * ``RawData``: Assay-wide raw data files
+- Row-specific links
+    * N/A
+- Inline links
+    * *Raw data files* are linked to ``RawData``
+- Used with measurement type / technology type
+    * N/A (is only used when the ``SODAR Assay Plugin`` comment is set)
+
+.. warning::
+
+    This plugin is a candidate for deprecation and may be removed in a
+    subsequent release. It is recommended to use the
+    :ref:`metadata_advanced_assay_generic` instead.

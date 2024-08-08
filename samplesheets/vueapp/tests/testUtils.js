@@ -16,6 +16,7 @@ import {buildColDef, buildRowData, initGridOptions} from "@/utils/gridUtils";
 export const projectUuid = '00000000-0000-0000-0000-000000000000'
 export const studyUuid = '11111111-1111-1111-1111-111111111111'
 export const assayUuid = '22222222-2222-2222-2222-222222222222'
+export const displayNone = 'display: none;'
 
 // App.vue stub to be provided as prop for callbacks and general data access
 // TODO: Update to get full params

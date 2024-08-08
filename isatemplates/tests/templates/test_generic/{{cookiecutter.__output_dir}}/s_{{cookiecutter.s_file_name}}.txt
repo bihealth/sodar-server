@@ -1,0 +1,5 @@
+Source Name	Characteristics[UUID]	Characteristics[External links]	Characteristics[Batch]	Characteristics[Organism]	Term Source REF	Term Accession Number	Characteristics[Sex]	Characteristics[Disease status]	Characteristics[OMIM disease]	Term Source REF	Term Accession Number	Characteristics[Orphanet disease]	Term Source REF	Term Accession Number	Characteristics[HPO terms]	Term Source REF	Term Accession Number	Comment[Disease notes]	Protocol REF	Performer	Sample Name	Characteristics[External links]	Characteristics[Cell origin]	Term Source REF	Term Accession Number	Characteristics[Cell type]	Term Source REF	Term Accession Number
+{% set sample_names = cookiecutter.sample_names.split(",") -%}
+{%- for sample_name in sample_names -%}
+{{sample_name|replace("-", "_")}}		{{cookiecutter.sample_type}}:{{sample_name}}	{{cookiecutter.batch}}	{{cookiecutter._organisms[cookiecutter.organism].name}}	NCBITAXON	http://purl.bioontology.org/ontology/NCBITAXON/{{cookiecutter._organisms[cookiecutter.organism].taxon}}	UNKNOWN	UNKNOWN											Sample collection		{{sample_name|replace("-", "_")}}-N1							
+{% endfor %}

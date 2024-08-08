@@ -93,11 +93,13 @@ LOCAL_APPS = [
     'siteinfo.apps.SiteinfoConfig',
     'irodsinfo.apps.IrodsinfoConfig',
     'ontologyaccess.apps.OntologyaccessConfig',
+    'isatemplates.apps.IsatemplatesConfig',
     # Samplesheets study sub-apps
     'samplesheets.studyapps.germline.apps.GermlineConfig',
     'samplesheets.studyapps.cancer.apps.CancerConfig',
     # Samplesheets assay sub-apps
     'samplesheets.assayapps.dna_sequencing.apps.DnaSequencingConfig',
+    'samplesheets.assayapps.generic.apps.GenericConfig',
     'samplesheets.assayapps.generic_raw.apps.GenericRawConfig',
     'samplesheets.assayapps.meta_ms.apps.MetaMsConfig',
     'samplesheets.assayapps.microarray.apps.MicroarrayConfig',
@@ -375,9 +377,9 @@ if ENABLE_LDAP:
     AUTH_LDAP_CA_CERT_FILE = env.str('AUTH_LDAP_CA_CERT_FILE', None)
     AUTH_LDAP_CONNECTION_OPTIONS = {**LDAP_DEFAULT_CONN_OPTIONS}
     if AUTH_LDAP_CA_CERT_FILE:
-        AUTH_LDAP_CONNECTION_OPTIONS[
-            ldap.OPT_X_TLS_CACERTFILE
-        ] = AUTH_LDAP_CA_CERT_FILE
+        AUTH_LDAP_CONNECTION_OPTIONS[ldap.OPT_X_TLS_CACERTFILE] = (
+            AUTH_LDAP_CA_CERT_FILE
+        )
         AUTH_LDAP_CONNECTION_OPTIONS[ldap.OPT_X_TLS_NEWCTX] = 0
     AUTH_LDAP_USER_FILTER = env.str(
         'AUTH_LDAP_USER_FILTER', '(sAMAccountName=%(user)s)'
@@ -408,9 +410,9 @@ if ENABLE_LDAP:
         AUTH_LDAP2_CA_CERT_FILE = env.str('AUTH_LDAP2_CA_CERT_FILE', None)
         AUTH_LDAP2_CONNECTION_OPTIONS = {**LDAP_DEFAULT_CONN_OPTIONS}
         if AUTH_LDAP2_CA_CERT_FILE:
-            AUTH_LDAP2_CONNECTION_OPTIONS[
-                ldap.OPT_X_TLS_CACERTFILE
-            ] = AUTH_LDAP2_CA_CERT_FILE
+            AUTH_LDAP2_CONNECTION_OPTIONS[ldap.OPT_X_TLS_CACERTFILE] = (
+                AUTH_LDAP2_CA_CERT_FILE
+            )
             AUTH_LDAP2_CONNECTION_OPTIONS[ldap.OPT_X_TLS_NEWCTX] = 0
         AUTH_LDAP2_USER_FILTER = env.str(
             'AUTH_LDAP2_USER_FILTER', '(sAMAccountName=%(user)s)'
@@ -518,6 +520,7 @@ LOGGING_APPS = env.list(
         'irodsadmin',
         'irodsbackend',
         'irodsinfo',
+        'isatemplates',
         'landingzones',
         'ontologyaccess',
         'projectroles',
@@ -537,7 +540,7 @@ def set_logging(level=None):
     app_logger_config = {
         'level': level,
         'handlers': ['console', 'file'] if LOGGING_FILE_PATH else ['console'],
-        'propagate': True,
+        'propagate': False,  # python-irodsclient>=1.1.9 fix
     }
     log_handlers = {
         'console': {
@@ -555,7 +558,7 @@ def set_logging(level=None):
         }
     return {
         'version': 1,
-        'disable_existing_loggers': False,
+        'disable_existing_loggers': True,  # python-irodsclient>=1.1.9 fix
         'formatters': {
             'simple': {
                 'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
@@ -594,6 +597,7 @@ ENABLED_BACKEND_PLUGINS = env.list(
         'appalerts_backend',
         'sodar_cache',
         'ontologyaccess_backend',
+        'isatemplates_backend',
         # 'taskflow',
         # 'omics_irods',
     ],
@@ -607,7 +611,7 @@ SITE_INSTANCE_TITLE = env.str('SITE_INSTANCE_TITLE', 'CUBI SODAR')
 
 
 # General API settings
-SODAR_API_DEFAULT_VERSION = '0.14.2'
+SODAR_API_DEFAULT_VERSION = '0.15.0'
 SODAR_API_ALLOWED_VERSIONS = [
     '0.7.0',
     '0.7.1',
@@ -629,6 +633,7 @@ SODAR_API_ALLOWED_VERSIONS = [
     '0.14.0',
     '0.14.1',
     '0.14.2',
+    '0.15.0',
 ]
 SODAR_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar+json'
 SODAR_API_DEFAULT_HOST = env.url(
@@ -741,7 +746,7 @@ IRODS_CERT_PATH = env.str('IRODS_CERT_PATH', None)
 
 # Taskflow backend settings
 # Connection timeout for taskflowbackend flows (other sessions not affected)
-TASKFLOW_IRODS_CONN_TIMEOUT = env.int('TASKFLOW_IRODS_CONN_TIMEOUT', 960)
+TASKFLOW_IRODS_CONN_TIMEOUT = env.int('TASKFLOW_IRODS_CONN_TIMEOUT', 3600)
 TASKFLOW_LOCK_RETRY_COUNT = env.int('TASKFLOW_LOCK_RETRY_COUNT', 2)
 TASKFLOW_LOCK_RETRY_INTERVAL = env.int('TASKFLOW_LOCK_RETRY_INTERVAL', 3)
 TASKFLOW_LOCK_ENABLED = True
@@ -850,6 +855,13 @@ LZ_BIH_PROTEOMICS_SMB_PASS = env.str('LZ_BIH_PROTEOMICS_SMB_PASS', 'CHANGE ME!')
 # Ontologyaccess settings
 ONTOLOGYACCESS_BULK_CREATE = env.int('ONTOLOGYACCESS_BULK_CREATE', 5000)
 ONTOLOGYACCESS_QUERY_LIMIT = env.int('ONTOLOGYACCESS_QUERY_LIMIT', 250)
+
+
+# Isatemplates settings
+# Enable templates from cubi-isa-templates
+ISATEMPLATES_ENABLE_CUBI_TEMPLATES = env.bool(
+    'ISATEMPLATES_ENABLE_CUBI_TEMPLATES', True
+)
 
 
 # Settings for HTTP AuthBasic

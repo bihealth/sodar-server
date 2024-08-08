@@ -373,15 +373,19 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         # NOTE: We get the last file name, assuming files are named by date
         updated_data = {
             'bam': {
-                k: sorted(v, key=lambda x: x.split('/')[-1], reverse=True)[0]
-                if v and len(v) > 0
-                else None
+                k: (
+                    sorted(v, key=lambda x: x.split('/')[-1], reverse=True)[0]
+                    if v and len(v) > 0
+                    else None
+                )
                 for k, v in bam_paths.items()
             },
             'vcf': {
-                k: sorted(v, key=lambda x: x.split('/')[-1], reverse=True)[0]
-                if v and len(v) > 0
-                else None
+                k: (
+                    sorted(v, key=lambda x: x.split('/')[-1], reverse=True)[0]
+                    if v and len(v) > 0
+                    else None
+                )
                 for k, v in vcf_paths.items()
             },
         }

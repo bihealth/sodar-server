@@ -48,6 +48,7 @@ app_settings = AppSettingAPI()
 
 
 # Local constants
+APP_NAME = 'samplesheets'
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 DEFAULT_WAIT_ID = 'sodar-ss-vue-content'
 IRODS_REQUEST_PATH = '/some/path/to/a/file'
@@ -208,17 +209,17 @@ class TestProjectSheetsView(IrodsDataRequestMixin, SamplesheetsUITestBase):
 class TestSheetTemplateCreateView(SamplesheetsUITestBase):
     """Tests for the sheet template creation view UI"""
 
-    def test_render_field_visibility(self):
+    def setUp(self):
+        super().setUp()
+        self.url = reverse(
+            'samplesheets:template_create',
+            kwargs={'project': self.project.sodar_uuid},
+        )  # NOTE: Needs sheet_tpl querystring in test
+
+    def test_render_fields(self):
         """Test field visibility in sheet template form"""
         for t in ISA_TEMPLATES:
-            url = (
-                reverse(
-                    'samplesheets:template_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                )
-                + '?sheet_tpl='
-                + t.name
-            )
+            url = self.url + '?sheet_tpl=' + t.name
             self.login_and_redirect(self.superuser, url)
             form_elems = self.selenium.find_elements(
                 By.CLASS_NAME, 'form-control'
@@ -226,7 +227,7 @@ class TestSheetTemplateCreateView(SamplesheetsUITestBase):
             for e in form_elems:
                 e_name = e.get_attribute('name')
                 msg = '{}/{}'.format(t.name, e_name)
-                if e_name.startswith('_') and e_name != TPL_DIR_FIELD:
+                if e_name.startswith('_'):
                     self.assertEqual(e.get_attribute('type'), 'hidden', msg=msg)
                 else:
                     self.assertNotEqual(
@@ -237,14 +238,7 @@ class TestSheetTemplateCreateView(SamplesheetsUITestBase):
         """Test label rendering"""
         for t in ISA_TEMPLATES:
             prompts = t.configuration.get('__prompts__')
-            url = (
-                reverse(
-                    'samplesheets:template_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                )
-                + '?sheet_tpl='
-                + t.name
-            )
+            url = self.url + '?sheet_tpl=' + t.name
             self.login_and_redirect(self.superuser, url)
             label_elems = self.selenium.find_elements(By.TAG_NAME, 'label')
             for e in label_elems:
@@ -258,6 +252,37 @@ class TestSheetTemplateCreateView(SamplesheetsUITestBase):
                     self.assertIn(prompts[e_name], label_text, msg=msg)
                 else:
                     self.assertIn(e_name, label_text, msg=msg)
+
+    def test_render_output_dir_field(self):
+        """Test output dir field visibility with default user setting"""
+        self.assertFalse(
+            app_settings.get(
+                APP_NAME, 'template_output_dir_display', user=self.superuser
+            )
+        )
+        t = ISA_TEMPLATES[0]
+        url = self.url + '?sheet_tpl=' + t.name
+        self.login_and_redirect(self.superuser, url)
+        elem = self.selenium.find_element(By.NAME, TPL_DIR_FIELD)
+        self.assertEqual(elem.get_attribute('type'), 'hidden')
+
+    def test_render_output_dir_field_enabled(self):
+        """Test output dir field visibility with enabled user setting"""
+        app_settings.set(
+            APP_NAME, 'template_output_dir_display', True, user=self.superuser
+        )
+        t = ISA_TEMPLATES[0]
+        url = self.url + '?sheet_tpl=' + t.name
+        self.login_and_redirect(self.superuser, url)
+        form_elems = self.selenium.find_elements(By.CLASS_NAME, 'form-control')
+        # Assert other internal fields remain hidden
+        for e in form_elems:
+            e_name = e.get_attribute('name')
+            msg = '{}/{}'.format(t.name, e_name)
+            if e_name.startswith('_') and e_name != TPL_DIR_FIELD:
+                self.assertEqual(e.get_attribute('type'), 'hidden', msg=msg)
+        elem = self.selenium.find_element(By.NAME, TPL_DIR_FIELD)
+        self.assertEqual(elem.get_attribute('type'), 'text')
 
 
 class TestSheetVersionListView(SamplesheetsUITestBase):

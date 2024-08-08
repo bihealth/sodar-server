@@ -1,0 +1,38 @@
+{% extends 'projectroles/base.html' %}
+
+{% load rules %}
+{% load crispy_forms_filters %}
+
+{% block title %}
+  {% if object.pk %}Update{% else %}Import{% endif %} ISA-Tab Template
+{% endblock title %}
+
+{% block projectroles %}
+
+<div class="row sodar-subtitle-container">
+  <h2>{% if object.pk %}Update{% else %}Import{% endif %} ISA-Tab Template</h2>
+</div>
+
+<div class="container-fluid sodar-page-container">
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form | crispy }}
+    <div class="row">
+      <div class="btn-group ml-auto" role="group">
+        <a role="button" class="btn btn-secondary"
+           href="{% url 'isatemplates:list' %}">
+          <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Cancel
+        </a>
+        <button type="submit" class="btn btn-primary sodar-btn-submit-once">
+          {% if object.pk %}
+            <i class="iconify" data-icon="mdi:check-bold"></i> Update
+          {% else %}
+            <i class="iconify" data-icon="mdi:upload"></i> Import
+          {% endif %}
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+{% endblock projectroles %}

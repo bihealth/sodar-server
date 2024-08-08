@@ -2732,9 +2732,9 @@ class TestProjectUpdateView(TaskflowViewTestBase):
     def test_post_sync_invalid_url(self):
         """Test POST with enabled sync and no token"""
         self.values['settings.samplesheets.sheet_sync_enable'] = True
-        self.values[
-            'settings.samplesheets.sheet_sync_url'
-        ] = SHEET_SYNC_URL_INVALID
+        self.values['settings.samplesheets.sheet_sync_url'] = (
+            SHEET_SYNC_URL_INVALID
+        )
         with self.login(self.user):
             response = self.client.post(self.url, self.values)
         self.assertEqual(response.status_code, 200)
@@ -2751,9 +2751,9 @@ class TestProjectUpdateView(TaskflowViewTestBase):
     def test_post_sync_disabled_invalid_url(self):
         """Test POST with disabled sync and invalid input"""
         self.values['settings.samplesheets.sheet_sync_enable'] = False
-        self.values[
-            'settings.samplesheets.sheet_sync_url'
-        ] = SHEET_SYNC_URL_INVALID
+        self.values['settings.samplesheets.sheet_sync_url'] = (
+            SHEET_SYNC_URL_INVALID
+        )
         with self.login(self.user):
             response = self.client.post(self.url, self.values)
         self.assertEqual(response.status_code, 200)

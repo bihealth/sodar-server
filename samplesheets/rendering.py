@@ -175,9 +175,9 @@ class SampleSheetTableBuilder:
             'name': name,  # Store original field name
             'type': header_type,
             'obj_cls': obj.__class__.__name__,
-            'item_type': obj.item_type
-            if isinstance(obj, GenericMaterial)
-            else None,
+            'item_type': (
+                obj.item_type if isinstance(obj, GenericMaterial) else None
+            ),
         }
         field_config = None
 
@@ -543,9 +543,14 @@ class SampleSheetTableBuilder:
                 header_len = 0  # Header length is not comparable
                 max_cell_len = max(
                     [
-                        len(x[i]['value'])
-                        if (x[i]['value'] and isinstance(x[i]['value'], list))
-                        else 0
+                        (
+                            len(x[i]['value'])
+                            if (
+                                x[i]['value']
+                                and isinstance(x[i]['value'], list)
+                            )
+                            else 0
+                        )
                         for x in self._table_data
                     ]
                 )

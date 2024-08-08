@@ -89,6 +89,7 @@ ENABLED_BACKEND_PLUGINS = [
     'appalerts_backend',
     'sodar_cache',
     'ontologyaccess_backend',
+    'isatemplates_backend',
     'taskflow',
     'omics_irods',
 ]
@@ -130,6 +131,9 @@ TASKFLOW_TEST_PERMANENT_USERS = [
     'public',
     'bih_proteomics_smb',
 ]
+
+# Isatemplates app settings
+ISATEMPLATES_ENABLE_CUBI_TEMPLATES = True
 
 # UI test settings
 PROJECTROLES_TEST_UI_CHROME_OPTIONS = [

@@ -375,3 +375,22 @@ def get_latest_file_path(paths):
     :param paths: List of strings
     """
     return sorted(paths, key=lambda x: x.split('/')[-1], reverse=True)[0]
+
+
+def get_bool(bool_string):
+    """
+    Return freeform string as boolean.
+
+    NOTE: Doing this as distutils is deprecated/removed..
+
+    :param bool_string: String
+    :raise: ValueError if value is not a string or can't be parsed
+    :return: bool
+    """
+    if not isinstance(bool_string, str):
+        raise ValueError('Value is not a string')
+    if bool_string.strip().lower() in ['1', 't', 'true', 'y', 'yes']:
+        return True
+    if bool_string.strip().lower() in ['0', 'f', 'false', 'n', 'no']:
+        return False
+    raise ValueError('Unable to parse value: {}'.format(bool_string))

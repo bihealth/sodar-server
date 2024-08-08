@@ -64,26 +64,42 @@ class BaseIrodsAjaxView(SODARBaseProjectAjaxView):
         :param irods: iRODSSession object
         :return: Boolean
         """
-        # Superuser and project users
-        if user and (
-            user.is_superuser or self.project.is_owner_or_delegate(user)
+        # Public guest access
+        if (
+            path.startswith(self.irods_backend.get_sample_path(self.project))
+            and self.project.public_guest_access
+            and (user.is_authenticated or settings.PROJECTROLES_ALLOW_ANONYMOUS)
         ):
             return True
-        # iRODS access
+        if not user:
+            return False
+        # Superuser and project users
+        if user.is_superuser or self.project.is_owner_or_delegate(user):
+            return True
+        # iRODS collection access
         try:
             coll = irods.collections.get(path)
         except Exception:
             return False
+        # perms = irods.acls.get(coll)  # 2.0+
         perms = irods.permissions.get(coll)
-        if user.username in [p.user_name for p in perms]:
+        perm_users = [p.user_name for p in perms]
+        if user.username in perm_users:
             return True
-        # Public guest access
-        if (
-            self.project.public_guest_access
-            and (user.is_authenticated or settings.PROJECTROLES_ALLOW_ANONYMOUS)
-            and self.irods_backend.get_sample_path(self.project) in path
-        ):
+        # In python-irodsclient v2.0+, acls don't return users based on group
+        # membership. Instead, we need to check against project user group and
+        # then verify membership.
+        '''
+        group_name = self.irods_backend.get_user_group_name(self.project)
+        try:
+            group = irods.groups.get(group_name)
+        except Exception:
+            return False
+        if group_name in perm_users and user.username in [
+            m.name for m in group.members
+        ]:
             return True
+        '''
         return False
 
     def dispatch(self, request, *args, **kwargs):

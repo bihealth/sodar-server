@@ -20,6 +20,10 @@ Sample Sheet Table Height
     from a set of options. In browsing mode, table height will fit the table
     content if the height of content is lower than the setting. In edit mode,
     the chosen table height will be maintained regardless of content.
+Display Template Output Directory Field
+    Display or hide the "output directory" field in sample sheet template
+    creation form. This can be enabled if there is need to control the output
+    directory in sample sheet ISA-Tab exports. Defaults to false.
 Display Project UUID Copying Link
     Enabling this will add an icon next to the project title on each project
     view. Clicking it will copy the project identifier (UUID) into the

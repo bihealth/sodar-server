@@ -5,6 +5,10 @@ from django.test import override_settings
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
 
+# Landingzones dependency
+from landingzones.tests.test_models import LandingZoneMixin
+from landingzones.tests.test_views_taskflow import LandingZoneTaskflowMixin
+
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
@@ -35,6 +39,8 @@ class IrodsbackendPermissionsTestBase(
         super().setUp()
         # Set up investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
         # Create iRODS collections
         self.make_irods_colls(self.investigation)
         # Set up test paths
@@ -42,7 +48,9 @@ class IrodsbackendPermissionsTestBase(
         self.sample_path = self.irods_backend.get_sample_path(self.project)
 
 
-class TestIrodsStatisticsAjaxView(IrodsbackendPermissionsTestBase):
+class TestIrodsStatisticsAjaxView(
+    LandingZoneMixin, LandingZoneTaskflowMixin, IrodsbackendPermissionsTestBase
+):
     """Tests for IrodsStatisticsAjaxView permissions"""
 
     def setUp(self):
@@ -179,6 +187,45 @@ class TestIrodsStatisticsAjaxView(IrodsbackendPermissionsTestBase):
             url, good_users, 200, method='POST', data=post_data
         )
         self.assert_response(url, bad_users, 403, method='POST', data=post_data)
+
+    def test_get_landing_zone(self):
+        """Test GET with landing zone collection"""
+        zone = self.make_landing_zone(
+            title='20240611_135942',
+            project=self.project,
+            user=self.user_contributor,
+            assay=self.assay,
+            description='description',
+            configuration=None,
+            config_data={},
+        )
+        self.make_zone_taskflow(zone)
+        url = self.irods_backend.get_url(
+            view='stats',
+            project=self.project,
+            path=self.irods_backend.get_path(zone),
+        )
+        good_users = [
+            self.superuser,
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+        ]
+        bad_users = [
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_guest,
+            self.user_no_roles,
+            self.anonymous,
+        ]
+        self.assert_response(url, good_users, 200)
+        self.assert_response(url, bad_users, 403)
+        self.project.set_public()
+        self.assert_response(url, self.user_no_roles, 403)
+        self.assert_response(url, self.anonymous, 403)
 
 
 class TestIrodsObjectListAjaxView(IrodsbackendPermissionsTestBase):

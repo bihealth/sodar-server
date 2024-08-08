@@ -24,6 +24,7 @@ logger = logging.getLogger('__name__')
 INHERIT_STRINGS = {True: 'inherit', False: 'noinherit'}
 META_EMPTY_VALUE = 'N/A'
 MD5_RE = re.compile(r'([^\w.])')
+CHECKSUM_RETRY = 5
 
 
 # Mixins -----------------------------------------------------------------------
@@ -59,6 +60,7 @@ class IrodsAccessMixin:
         else:
             target = self.irods.collections.get(path)
             recursive = recursive
+        # target_access = self.irods.acls.get(target=target)  # 2.0+
         target_access = self.irods.permissions.get(target=target)
 
         user_access = next(
@@ -84,6 +86,7 @@ class IrodsAccessMixin:
                 user_name=user_name,
                 user_zone=self.irods.zone,
             )
+            # self.irods.acls.set(acl, recursive=recursive)  # 2.0+
             self.irods.permissions.set(acl, recursive=recursive)
             self.data_modified = True  # Access was modified
 
@@ -110,6 +113,7 @@ class IrodsAccessMixin:
                 user_zone=self.irods.zone,
             )
             recursive = False if obj_target else recursive
+            # self.irods.acls.set(acl, recursive=recursive)  # 2.0+
             self.irods.permissions.set(acl, recursive=recursive)
 
 
@@ -352,6 +356,7 @@ class SetInheritanceTask(IrodsBaseTask):
             user_name='',
             user_zone=self.irods.zone,
         )
+        # self.irods.acls.set(acl, recursive=True)  # 2.0+
         self.irods.permissions.set(acl, recursive=True)
 
     def revert(self, path, inherit=True, *args, **kwargs):
@@ -363,7 +368,7 @@ class SetInheritanceTask(IrodsBaseTask):
             path=path,
             user_name='',
             user_zone=self.irods.zone)
-        self.irods.permissions.set(acl, recursive=True)
+        self.irods.acls.set(acl, recursive=True)
         '''
 
 
@@ -662,18 +667,16 @@ class BatchValidateChecksumsTask(IrodsBaseTask):
     def execute(self, paths, zone_path, *args, **kwargs):
         zone_path_len = len(zone_path.split('/'))
         for path in paths:
+            md5_path = path + '.md5'
             try:
-                md5_path = path + '.md5'
-                try:
-                    md5_file = self.irods.data_objects.open(md5_path, mode='r')
-                    file_sum = re.split(
-                        MD5_RE, md5_file.read().decode('utf-8')
-                    )[0]
-                except Exception as ex:
-                    msg = 'Unable to read checksum file "{}"'.format(
-                        '/'.join(md5_path.split('/')[zone_path_len:])
-                    )
-                    self._raise_irods_exception(ex, msg)
+                md5_file = self.irods.data_objects.open(md5_path, mode='r')
+                file_sum = re.split(MD5_RE, md5_file.read().decode('utf-8'))[0]
+            except Exception as ex:
+                msg = 'Unable to read checksum file "{}"'.format(
+                    '/'.join(md5_path.split('/')[zone_path_len:])
+                )
+                self._raise_irods_exception(ex, msg)
+            try:
                 self._compare_checksums(
                     self.irods.data_objects.get(path), file_sum
                 )
@@ -694,10 +697,16 @@ class BatchCreateCollectionsTask(IrodsBaseTask):
         for path in paths:
             for i in range(2, len(path.split('/')) + 1):
                 sub_path = '/'.join(path.split('/')[:i])
-                if not self.irods.collections.exists(sub_path):
-                    self.irods.collections.create(sub_path)
-                    self.execute_data['created_colls'].append(sub_path)
-                    self.data_modified = True
+                try:
+                    if not self.irods.collections.exists(sub_path):
+                        self.irods.collections.create(sub_path)
+                        self.execute_data['created_colls'].append(sub_path)
+                        self.data_modified = True
+                except Exception as ex:
+                    self._raise_irods_exception(
+                        ex,
+                        'Failed to create collection: {}'.format(sub_path),
+                    )
         super().execute(*args, **kwargs)
 
     def revert(self, paths, *args, **kwargs):
@@ -765,6 +774,7 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
                     ),
                 )
             try:
+                # target_access = self.irods.acls.get(target=target)  # 2.0+
                 target_access = self.irods.permissions.get(target=target)
             except Exception as ex:
                 self._raise_irods_exception(
@@ -798,6 +808,7 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
                     user_zone=self.irods.zone,
                 )
                 try:
+                    # self.irods.acls.set(acl, recursive=False)  # 2.0+
                     self.irods.permissions.set(acl, recursive=False)
                 except Exception as ex:
                     self._raise_irods_exception(
@@ -838,6 +849,7 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
                 user_name=user_name,
                 user_zone=self.irods.zone,
             )
+            # self.irods.acls.set(acl, recursive=False)  # 2.0+
             self.irods.permissions.set(acl, recursive=False)
 
 
@@ -850,18 +862,22 @@ class BatchCalculateChecksumTask(IrodsBaseTask):
                 continue
             data_obj = self.irods.data_objects.get(path)
             for replica in data_obj.replicas:
-                if force or not replica.checksum:
+                if replica.checksum and not force:
+                    continue
+                for i in range(CHECKSUM_RETRY):
+                    if i > 0:  # Retry if iRODS times out (see #1941)
+                        logger.info('Retrying ({})..'.format(i + 1))
                     try:
                         data_obj.chksum(
                             **{kw.RESC_HIER_STR_KW: replica.resc_hier}
                         )
+                        break  # Skip retries on success
                     except Exception as ex:
                         logger.error(
                             'Exception in BatchCalculateChecksumTask for path '
                             '"{}" in replica "{}": {}'.format(
-                                path, replica.resc_hier, ex
+                                data_obj.path, replica.resc_hier, ex
                             )
                         )  # NOTE: No raise, only log
         super().execute(*args, **kwargs)
-
-    # NOTE: We don't need revert for this
+        # NOTE: We don't need revert for this

@@ -5,6 +5,66 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+v0.15.0 (2024-08-08)
+====================
+
+Added
+-----
+
+- **General**
+    - Cyberduck documentation (#1931)
+- **Isatemplates**
+    - ``isatemplates`` app for custom ISA-Tab template management (#1961)
+    - ``isatemplates_backend`` plugin for template retrieval (#1961)
+- **Samplesheets**
+    - ``template_output_dir_display`` user setting (#1960)
+    - Display BAM/CRAM/VCF omit patterns in study shortcut modal (#1963)
+    - Row links display override using assay comment (#1968)
+    - ``generic`` assay app plugin (#1946)
+- **Taskflowbackend**
+    - ``BatchCalculateChecksumTask`` retrying in case of timeouts (#1941)
+
+Changed
+-------
+
+- **General**
+    - Upgrade critical Python dependencies (#1930)
+    - Upgrade to black v24.3.0 (#1930)
+    - Reformat with black (#1930)
+- **Irodsbackend**
+    - Remove Bootstrap tooltips from iRODS buttons (#1949)
+- **Landingzones**
+    - Remove Bootstrap tooltip updating for iRODS buttons (#1949)
+- **Samplesheets**
+    - Upgrade Vue app dependencies (#1930, #1971, #1972)
+    - Sanitize iRODS paths in ``get_row_path()`` calls (#1947)
+    - ``index`` arg in ``SampleSheetAssayPluginPoint.update_row()`` (#1957)
+    - Hide template output dir field by default (#1960)
+    - Improve ``StudyLinksAjaxView`` return data (#1963, #1966)
+    - Optimize ``irodsbackend`` API retrieval in ``plugins`` (#1952)
+- **Taskflowbackend**
+    - Increase default for ``TASKFLOW_IRODS_CONN_TIMEOUT`` (#1900)
+    - Disable lock requirement for role and project update flows (#1948)
+
+Fixed
+-----
+
+- **General**
+    - ``README.rst`` badge rendering (#1938)
+- **Landingzones**
+    - Bootstrap tooltips preventing zone button clicking with certain conditions (#1949)
+    - Zone with ``NOT CREATED`` status displayed as active in project list (#1962)
+- **Samplesheets**
+    - Invalid assay measurement type in ``i_minimal*`` test data (#1954)
+    - Error message handling in ``StudyShortcutModal`` (#1965)
+    - Overwrite warning displayed in ``OntologyEditModal`` with empty initial value (#1973)
+    - ``ColumnToggleModal`` "toggle all" button misaligned with filtering enabled (#1975)
+- **Taskflowbackend**
+    - Malformed exception message in ``BatchValidateChecksumsTask`` (#1943)
+    - Exceeded zone status info char limit in ``_raise_flow_exception()`` (#1953)
+    - Uncaught exception in ``BatchCreateCollectionsTask`` (#1958)
+
+
 v0.14.2 (2024-03-15)
 ====================
 

@@ -1,6 +1,5 @@
 """Taskflow tasks for the samplesheets app"""
 
-
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
 

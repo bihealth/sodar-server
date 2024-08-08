@@ -52,7 +52,7 @@
 
 <div class="container-fluid sodar-page-container">
   {% if object_list.count > 0 %}
-    <div class="card" id="sodar-oa-alert-list">
+    <div class="card" id="sodar-oa-ontology-list">
       <div class="card-header">
         <h4><i class="iconify" data-icon="mdi:tag"></i> OBO Format Ontologies</h4>
       </div>
@@ -77,7 +77,8 @@
                 <td class="text-right">{{ o.terms.all.count }}</td>
                 <td>{{ o.date_created | date:'Y-m-d H:i' }}</td>
                 <td>
-                  <div class="btn-group sodar-list-btn-group" id="sodar-oa-alert-buttons-{{ a.pk }}">
+                  <div class="btn-group sodar-list-btn-group"
+                       id="sodar-oa-item-dropdown-{{ a.pk }}">
                     <button class="btn btn-secondary dropdown-toggle sodar-list-dropdown"
                             type="button" data-toggle="dropdown" aria-expanded="false">
                       <i class="iconify" data-icon="mdi:cog"></i>

@@ -158,6 +158,7 @@ ENABLED_BACKEND_PLUGINS = env.list(
         'timeline_backend',
         'appalerts_backend',
         'ontologyaccess_backend',
+        'isatemplates_backend',
         'sodar_cache',
         'taskflow',
         'omics_irods',

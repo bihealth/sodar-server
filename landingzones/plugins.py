@@ -22,7 +22,6 @@ from landingzones.constants import (
     STATUS_BUSY,
     STATUS_FINISHED,
     ZONE_STATUS_MOVED,
-    ZONE_STATUS_DELETED,
 )
 from landingzones.models import LandingZone
 from landingzones.urls import urlpatterns
@@ -159,11 +158,11 @@ class ProjectAppPlugin(
         """
         return {
             'zones_total': {
-                'label': 'Total zones',
+                'label': 'Total Zones',
                 'value': LandingZone.objects.count(),
             },
             'zones_active': {
-                'label': 'Active zones',
+                'label': 'Active Zones',
                 'value': LandingZone.objects.filter(
                     status__in=STATUS_ALLOW_UPDATE
                 ).count(),
@@ -171,7 +170,7 @@ class ProjectAppPlugin(
                 'failed)',
             },
             'zones_finished': {
-                'label': 'Finished zones',
+                'label': 'Finished Zones',
                 'value': LandingZone.objects.filter(
                     status__in=STATUS_FINISHED
                 ).count(),
@@ -179,7 +178,7 @@ class ProjectAppPlugin(
                 'or not created',
             },
             'zones_busy': {
-                'label': 'Busy zones',
+                'label': 'Busy Zones',
                 'value': LandingZone.objects.filter(
                     status__in=STATUS_BUSY
                 ).count(),
@@ -199,21 +198,21 @@ class ProjectAppPlugin(
         """
         if not user or user.is_anonymous or column_id != 'zones':
             return ''
-
         investigation = Investigation.objects.filter(
             project=project, active=True
         ).first()
-        if user.is_superuser:
-            zones = LandingZone.objects.filter(project=project)
-        else:
-            zones = LandingZone.objects.filter(project=project, user=user)
-        active_count = zones.exclude(
-            status__in=[ZONE_STATUS_MOVED, ZONE_STATUS_DELETED]
-        ).count()
+        kw = {'project': project}
+        if not user.is_superuser:
+            kw['user'] = user
+        active_count = (
+            LandingZone.objects.filter(**kw)
+            .exclude(status__in=STATUS_FINISHED)
+            .count()
+        )
 
         if investigation and investigation.irods_status and active_count > 0:
             return (
-                '<a href="{}" title="{}">'
+                '<a href="{}" title="{}" class="sodar-lz-project-list-active">'
                 # 'data-toggle="tooltip" data-placement="top">'
                 '<i class="iconify text-success" data-icon="mdi:briefcase">'
                 '</i></a>'.format(
@@ -234,7 +233,8 @@ class ProjectAppPlugin(
             and user.has_perm('landingzones.create_zone', project)
         ):
             return (
-                '<a href="{}" title="Create landing zone in project">'
+                '<a href="{}" title="Create landing zone in project" '
+                'class="sodar-lz-project-list-create">'
                 # 'data-toggle="tooltip" data-placement="top">'
                 '<i class="iconify" data-icon="mdi:plus-thick"></i>'
                 '</a>'.format(
@@ -244,12 +244,13 @@ class ProjectAppPlugin(
                     )
                 )
             )
-        else:
-            return (
-                '<i class="iconify text-muted" data-icon="mdi:briefcase" '
-                'title="No available landing zones"></i>'
-                # 'data-toggle="tooltip" data-placement="top"></i>'
-            )
+        return (
+            '<span class="sodar-lz-project-list-none">'
+            '<i class="iconify text-muted" data-icon="mdi:briefcase" '
+            'class="sodar-lz-project-list-none" '
+            'title="No available landing zones"></i></span>'
+            # 'data-toggle="tooltip" data-placement="top"></i>'
+        )
 
     def perform_project_sync(self, project):
         """

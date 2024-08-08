@@ -20,6 +20,7 @@ TBA
 - [ ] Review code style and cleanup
 - [ ] Review and update docs entries
 - [ ] Update `SODAR_API_DEFAULT_VERSION` and `SODAR_API_ALLOWED_VERSIONS`
+- [ ] Run `npx update-browserslist-db@latest` for Vue app
 - [ ] Update Vue app version with `npm version`
 - [ ] Update version in CHANGELOG and SODAR Release Notes doc
 - [ ] Update version in docs conf.py

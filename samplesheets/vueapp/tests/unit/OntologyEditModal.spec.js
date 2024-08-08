@@ -453,7 +453,7 @@ describe('OntologyEditModal.vue', () => {
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    const termOptions = wrapper.find('#sodar-ss-ontology-select-term').findAll('Option')
+    const termOptions = wrapper.find('#sodar-ss-ontology-select-term').findAll('option')
     expect(termOptions.length).toBe(4)
 
     for (let i = 0; i < ontologyTermResponseHp.terms.length; i++) {
@@ -481,7 +481,7 @@ describe('OntologyEditModal.vue', () => {
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    const termOptions = wrapper.find('#sodar-ss-ontology-select-term').findAll('Option')
+    const termOptions = wrapper.find('#sodar-ss-ontology-select-term').findAll('option')
     expect(termOptions.length).toBe(1)
     expect(termOptions.at(0).text()).toContain('<OBSOLETE>')
   })
@@ -500,7 +500,7 @@ describe('OntologyEditModal.vue', () => {
 
     let termItems = wrapper.findAll('.sodar-ss-ontology-term-item')
     expect(termItems.length).toBe(3)
-    const termOptions = wrapper.find('#sodar-ss-ontology-select-term').findAll('Option')
+    const termOptions = wrapper.find('#sodar-ss-ontology-select-term').findAll('option')
     await termOptions.at(0).trigger('dblclick')
     await waitNT(wrapper.vm)
     await waitRAF()
@@ -530,7 +530,7 @@ describe('OntologyEditModal.vue', () => {
 
     let termItems = wrapper.findAll('.sodar-ss-ontology-term-item')
     expect(termItems.length).toBe(3)
-    const termOptions = wrapper.find('#sodar-ss-ontology-select-term').findAll('Option')
+    const termOptions = wrapper.find('#sodar-ss-ontology-select-term').findAll('option')
     await termOptions.at(0).trigger('dblclick')
     await waitNT(wrapper.vm)
     await waitRAF()
@@ -612,7 +612,7 @@ describe('OntologyEditModal.vue', () => {
 
     let termItems = wrapper.findAll('.sodar-ss-ontology-term-item')
     expect(termItems.length).toBe(1)
-    const termOptions = wrapper.find('#sodar-ss-ontology-select-term').findAll('Option')
+    const termOptions = wrapper.find('#sodar-ss-ontology-select-term').findAll('option')
     await termOptions.at(0).trigger('dblclick')
     await waitNT(wrapper.vm)
     await waitRAF()
@@ -644,7 +644,7 @@ describe('OntologyEditModal.vue', () => {
     expect(wrapper.find('.sodar-ss-ontology-term-item').exists()).toBe(false)
     expect(wrapper.find('#sodar-ss-ontology-free-row').exists()).toBe(true)
 
-    const termOptions = wrapper.find('#sodar-ss-ontology-select-term').findAll('Option')
+    const termOptions = wrapper.find('#sodar-ss-ontology-select-term').findAll('option')
     await termOptions.at(0).trigger('dblclick')
     await waitNT(wrapper.vm)
     await waitRAF()
@@ -652,7 +652,8 @@ describe('OntologyEditModal.vue', () => {
     termItems = wrapper.findAll('.sodar-ss-ontology-term-item')
     expect(termItems.length).toBe(1)
     expect(termItems.at(0).find('td').text()).toBe(ontologyTermResponseHp.terms[0].name)
-    expect(wrapper.find('#sodar-ss-ontology-no-list').exists()).toBe(true)
+    // Initial value was false, so this should not be displayed
+    expect(wrapper.find('#sodar-ss-ontology-no-list').exists()).toBe(false)
     expect(wrapper.find('.sodar-ss-ontology-term-item').exists()).toBe(true)
     expect(wrapper.find('#sodar-ss-ontology-free-row').exists()).toBe(false)
     expect(wrapper.find('#sodar-ss-btn-update').attributes().disabled).toBe(undefined)

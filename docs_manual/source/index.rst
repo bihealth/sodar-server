@@ -99,6 +99,7 @@ Table of Contents
 
     ext_tool_igv_setup
     ext_tool_igv_opening
+    ext_tool_cyberduck
     ext_tool_winscp
 
 .. toctree::
@@ -130,6 +131,7 @@ Table of Contents
     admin_install
     admin_user
     admin_ui
+    admin_isatemplates
     admin_ontologyaccess
     admin_commands
     admin_settings

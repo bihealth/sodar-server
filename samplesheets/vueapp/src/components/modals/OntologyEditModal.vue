@@ -116,7 +116,7 @@
           {{ responseDetail }}
         </div>
         <div
-            v-else-if="!enableInsert()"
+            v-else-if="!enableInsert() && !initialEmpty"
             class="alert alert-warning sodar-ss-ontology-alert"
             id="sodar-ss-ontology-no-list">
           Multiple terms not allowed in this column, current entry will be
@@ -332,6 +332,7 @@ export default {
   data () {
     return {
       value: null,
+      initialEmpty: false,
       nodeName: null,
       headerName: null,
       editConfig: null,
@@ -733,9 +734,10 @@ export default {
           this.value.push(Object.assign(params.value[i], { editing: false }))
         }
       } else this.value = [Object.assign(params.value, { editing: false })]
-
       // Clear empty value if it exists
       if (this.value.length === 1 && !this.value[0].name) this.value = []
+      if (this.value.length === 0) this.initialEmpty = true
+      else this.initialEmpty = false
 
       this.nodeName = params.nodeName
       this.headerName = params.headerName

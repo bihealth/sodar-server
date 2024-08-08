@@ -1,0 +1,70 @@
+{% extends 'projectroles/base.html' %}
+
+{% load rules %}
+{% load crispy_forms_filters %}
+{% load projectroles_common_tags %}
+
+{% block title %}
+  CUBI ISA-Tab Template "{{ description }}"
+{% endblock title %}
+
+{% block projectroles %}
+
+<div class="row sodar-subtitle-container">
+  <h2>
+    <i class="iconify" data-icon="mdi:file-table"></i>
+    {{ description }}
+  </h2>
+  <a role="button" class="btn btn-secondary ml-auto"
+     href="{% url 'isatemplates:list' %}">
+    <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Back
+  </a>
+</div>
+
+<div class="container-fluid sodar-page-container">
+  <div class="card" id="sodar-it-template-detail-info">
+    <div class="card-header">
+      <h4>
+        <i class="iconify" data-icon="mdi:info"></i>
+        Template Information
+      </h4>
+    </div>
+    <div class="card-body px-0">
+      <dl class="row pb-0">
+        <dt class="col-md-2">Description</dt>
+        <dd class="col-md-10">{{ description }}</dd>
+        <dt class="col-md-2">Name</dt>
+        <dd class="col-md-10"><code>{{ name }}</code></dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="card" id="sodar-it-template-detail-config">
+    <div class="card-header">
+      <h4>
+        <i class="iconify" data-icon="mdi:file-table-outline"></i>
+        Configuration (cookiecutter.json)
+      </h4>
+    </div>
+    <div class="card-body p-0">
+      <pre>{{ configuration }}</pre>
+    </div>
+  </div>
+
+  {% for f in files %}
+    <div class="card sodar-it-template-detail-file"
+         id="sodar-it-template-detail-file-{{ f.file_name }}">
+      <div class="card-header">
+        <h4>
+          <i class="iconify" data-icon="mdi:file-table-outline"></i>
+          File: {{ f.file_name }}
+        </h4>
+      </div>
+      <div class="card-body p-0">
+        <pre>{{ f.content }}</pre>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+
+{% endblock projectroles %}

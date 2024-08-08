@@ -42,6 +42,7 @@ selenium-debug.log
 nosetests.xml
 htmlcov
 coverage.xml
+coverage.lcov
 
 # Translations
 *.mo

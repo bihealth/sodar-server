@@ -639,7 +639,7 @@ class ZoneDeleteView(
     http_method_names = ['get', 'post']
     template_name = 'landingzones/landingzone_confirm_delete.html'
     zone_action = 'delete'
-    # NOTE: permission_required comes from ZoneUpdateRequiredPermissionMixin
+    # NOTE: permission_required comes from ZoneModifyPermissionMixin
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
@@ -706,7 +706,7 @@ class ZoneMoveView(
     http_method_names = ['get', 'post']
     template_name = 'landingzones/landingzone_confirm_move.html'
     zone_action = 'move'
-    # NOTE: permission_required comes from ZoneUpdateRequiredPermissionMixin
+    # NOTE: permission_required comes from ZoneModifyPermissionMixin
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)

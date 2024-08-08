@@ -1,0 +1,93 @@
+ONTOLOGY SOURCE REFERENCE
+Term Source Name	UO	OBI	NCBITAXON	OMIM	HP	ORPHA	CL
+Term Source File	http://data.bioontology.org/ontologies/UO	http://data.bioontology.org/ontologies/OBI	http://data.bioontology.org/ontologies/NCBITAXON	http://data.bioontology.org/ontologies/OMIM	http://data.bioontology.org/ontologies/HP	http://data.bioontology.org/ontologies/ORDO	http://data.bioontology.org/ontologies/CL
+Term Source Version	48	35	10	12	570	2.8	2019-08-12
+Term Source Description	Units of Measurement Ontology	Ontology for Biomedical Investigations	National Center for Biotechnology Information (NCBI) Organismal Classification	Online Mendelian Inheritance in Man	Human Phenotype Ontology	Orphanet Rare Disease Ontology	Cell Ontology
+INVESTIGATION
+Investigation Identifier	""
+Investigation Title	{{cookiecutter.investigation_title}}
+Investigation Description	""
+Investigation Submission Date	""
+Investigation Public Release Date	""
+INVESTIGATION PUBLICATIONS
+Investigation PubMed ID
+Investigation Publication DOI
+Investigation Publication Author List
+Investigation Publication Title
+Investigation Publication Status
+Investigation Publication Status Term Accession Number
+Investigation Publication Status Term Source REF
+INVESTIGATION CONTACTS
+Investigation Person Last Name
+Investigation Person First Name
+Investigation Person Mid Initials
+Investigation Person Email
+Investigation Person Phone
+Investigation Person Fax
+Investigation Person Address
+Investigation Person Affiliation
+Investigation Person Roles
+Investigation Person Roles Term Accession Number
+Investigation Person Roles Term Source REF
+STUDY
+Study Identifier	{{cookiecutter.s_file_name}}
+Study Title	{{cookiecutter.investigation_title}}
+Study Description	""
+Comment[Study Grant Number]	""
+Comment[Study Funding Agency]	""
+Study Submission Date	""
+Study Public Release Date	""
+Study File Name	s_{{cookiecutter.s_file_name}}.txt
+STUDY DESIGN DESCRIPTORS
+Study Design Type
+Study Design Type Term Accession Number
+Study Design Type Term Source REF
+STUDY PUBLICATIONS
+Study PubMed ID
+Study Publication DOI
+Study Publication Author List
+Study Publication Title
+Study Publication Status
+Study Publication Status Term Accession Number
+Study Publication Status Term Source REF
+STUDY FACTORS
+Study Factor Name
+Study Factor Type
+Study Factor Type Term Accession Number
+Study Factor Type Term Source REF
+STUDY ASSAYS
+Study Assay File Name	a_{{cookiecutter.assay_prefix}}_{{cookiecutter.assay_name}}.txt
+Study Assay Measurement Type	{{cookiecutter.a_measurement_type}}
+Study Assay Measurement Type Term Accession Number	{{cookiecutter._measurement_types[cookiecutter.a_measurement_type].accession}}
+Study Assay Measurement Type Term Source REF	{{cookiecutter._measurement_types[cookiecutter.a_measurement_type].source}}
+Study Assay Technology Type	{{cookiecutter.a_technology_type}}
+Study Assay Technology Type Term Accession Number	{{cookiecutter._technology_types[cookiecutter.a_technology_type].accession}}
+Study Assay Technology Type Term Source REF	{{cookiecutter._technology_types[cookiecutter.a_technology_type].source}}
+Study Assay Technology Platform	Illumina
+STUDY PROTOCOLS
+Study Protocol Name	Sample collection	Nucleic acid extraction {{cookiecutter.a_measurement_abbreviation}}	Library construction {{cookiecutter.a_measurement_abbreviation}}	Nucleic acid sequencing {{cookiecutter.a_measurement_abbreviation}}
+Study Protocol Type	Sample collection	Nucleic acid extraction {{cookiecutter.a_measurement_abbreviation}}	Library construction {{cookiecutter.a_measurement_abbreviation}}	Nucleic acid sequencing {{cookiecutter.a_measurement_abbreviation}}
+Study Protocol Type Term Accession Number	""	""	""	""
+Study Protocol Type Term Source REF	""	""	""	""
+Study Protocol Description	""	""	""	""
+Study Protocol URI	""	""	""	""
+Study Protocol Version	""	""	""	""
+Study Protocol Parameters Name	""	Concentration measurement	"Provider project ID;Library source;Library selection;Library layout;Barcode sequence;Wet-lab insert size;Requestor contact;Library kit;Barcode name;Provider contact;Concentration measurement;Provider sample ID;Target insert size;Provider name;Requestor project;Requestor sample ID;Barcode kit;Barcode kit catalogue ID;Provider QC status;Library strategy"	"Base quality encoding;Platform;Center contact;Instrument model;Center name"
+Study Protocol Parameters Name Term Accession Number	""	""	";;;;;;;;;;;;;;;;;;;"	";;;;"
+Study Protocol Parameters Name Term Source REF	""	""	";;;;;;;;;;;;;;;;;;;"	";;;;"
+Study Protocol Components Name	""	""	""	""
+Study Protocol Components Type	""	""	""	""
+Study Protocol Components Type Term Accession Number	""	""	""	""
+Study Protocol Components Type Term Source REF	""	""	""	""
+STUDY CONTACTS
+Study Person Last Name
+Study Person First Name
+Study Person Mid Initials
+Study Person Email
+Study Person Phone
+Study Person Fax
+Study Person Address
+Study Person Affiliation
+Study Person Roles
+Study Person Roles Term Accession Number
+Study Person Roles Term Source REF
