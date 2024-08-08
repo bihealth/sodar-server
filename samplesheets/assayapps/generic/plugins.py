@@ -58,22 +58,25 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         :param target_cols: List of column names.
         :param url: Base URL for link target.
         """
-        # Special case for Material Names
+        # Do nothing if not string or link
         if not isinstance(cell['value'], str) or re.search(
             '.+ <.*>', cell['value']
         ):
             return True
-        elif (
+        # Special case for Material Names
+        if (
             top_header['value']
             in th.DATA_FILE_HEADERS + th.MATERIAL_NAME_HEADERS
         ) and (header['value'] == 'Name'):
             cell['link'] = f"{url}/{cell['value']}"
-        elif header['value'].lower() in target_cols:
+            return True
+        # Handle everything else
+        if header['value'].lower() in target_cols:
             cell['value'] = SIMPLE_LINK_TEMPLATE.format(
                 label=cell['value'],
                 url=f"{url}/{cell['value']}",
             )
-        return True
+            return True
 
     @classmethod
     def _get_col_value(cls, target_col, row, table):
@@ -189,14 +192,13 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                     continue
             # Create DataCollection links
             if data_cols:
-                if self._link_from_comment(
+                self._link_from_comment(
                     row[i],
                     header,
                     top_header,
                     data_cols,
                     f'{settings.IRODS_WEBDAV_URL}{row_path}',
-                ):
-                    continue
+                )
         return row
 
     def update_cache(self, name=None, project=None, user=None):
