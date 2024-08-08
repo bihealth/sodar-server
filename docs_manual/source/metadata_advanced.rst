@@ -1,4 +1,5 @@
 .. _metadata_advanced:
+.. include::  <isonum.txt>
 
 Advanced Metadata Topics
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -57,12 +58,12 @@ under ``SHEETS_IGV_OMIT_BAM`` (also affects CRAM files) and
 Assay iRODS Data Linking
 ========================
 
-Similar to study data linking, SODAR also displays iRODS links specific to
-assays according to an **assay plugin**. The selected plugin affects the
+Similar to study data linking, SODAR also displays iRODS links in the assay
+section according to an **assay plugin**. The selected plugin affects the
 following types of iRODS links:
 
-- **Assay shortcuts** card above each assay table
-- **Row-specific links** in the right hand column of each row
+- **Assay shortcuts** card above each assay table.
+- **Row-specific links** in the right hand column of each row.
 - **Inline links** which are file names stored in the table itself, under e.g.
   "data file" materials.
 
@@ -102,24 +103,31 @@ to true, the assay plugin used for the assay should implement the
 SODAR currently supports the following assay plugins:
 
 - **DNA Sequencing**
+- **Generic Assay Plugin**
 - **Generic Raw Data Plugin**
 - **Metabolite Profiling / Mass Spectrometry**
 - **Microarray**
 - **Protein Expression Profiling / Mass Cytometry**
 - **Protein Expression Profiling / Mass Spectrometry**
 
-Common links as well as plugin specific links are detailed below.
+General Concepts
+----------------
 
-Common Links
-------------
-
-Links to the following iRODS collections are provided for *all* assay
+Links to the following iRODS collections are provided for all assay
 configurations in the assay shortcuts card:
 
-- ``ResultsReports``: Collection for assay specific result and report files
+- ``ResultsReports``: Collection for assay specific result and report files.
 - ``MiscFiles``: Miscellaneous files
 - ``TrackHubs``: Track hubs for UCSC Genome Browser integration (displayed if
-  track hubs have been created)
+  track hubs have been created).
+
+Assay plugins can create the following additional links to connect samplesheet
+metadata to files stored in iRODS:
+
+1. Additional assay-wide collections and shortcuts (e. g. ``RawData``).
+2. Creating row-specific collections and shortcuts (i. e. ``RowPath``).
+3. Converting cell values within the Samplesheets table into iRODS/WebDAV
+   links (i. e. **inline links**).
 
 DNA Sequencing Plugin
 ---------------------
@@ -130,6 +138,7 @@ DNA Sequencing Plugin
 - Row-specific links
     * Each row links to the **last material name** in the row, not counting
       "data file" materials.
+    * Creates collections in Landing Zones according to this ``RowPath``.
 - Inline links
     * N/A
 - Used with measurement type / technology type
@@ -138,6 +147,44 @@ DNA Sequencing Plugin
     * transcription profiling / nucleotide sequencing
     * transcriptome profiling / nucleotide sequencing
     * panel sequencing / nucleotide sequencing
+
+Generic Assay Plugin
+--------------------
+
+This plugin can be used with any assay i. e. measurement/technology configuration.
+It enables the user to define row-specific and inline links to iRODS collections
+via comments in the ``STUDY ASSAYS`` section of the ISA-Tab investigation file.
+
+- Internal name: ``samplesheets_assay_generic``
+- Row-specific links
+    * Place one or multiple comments starting with ``SODAR Assay Row Path``.
+    * Each comment should define one column name.
+    * The comments are evaluated in alphabetical order.
+    * Values within these columns are used to define the ``RowPath``.
+    * For example:
+        .. code-block::
+
+            STUDY ASSAYS
+            Comment[SODAR Assay Row Path 1]    Pool ID
+            Comment[SODAR Assay Row Path 2]    Extract Name
+
+        + Resulting row links:
+          ``/sodarZone/projects/xxx/sample_data/study_yyy/assay_zzz/<pool_id>/<extract_name>/``
+- Inline links
+    * Comments define semicolon-separated lists of columns to be linked to collections.
+    * *SODAR Assay Link Results* |rarr| ``ResultsReports``
+    * *SODAR Assay Link MiscFiles* |rarr| ``MiscFiles``
+    * *SODAR Assay Link Row* |rarr| ``RowPath``
+    * For example:
+        .. code-block::
+
+            STUDY ASSAYS
+            Comment[SODAR Assay Link Results]    Report File;Derived Data File
+            Comment[SODAR Assay Link MiscFiles]  Protocol File;Antibody Panel
+            Comment[SODAR Assay Link Row]        Raw Data File
+
+- Used with measurement type / technology type
+    * N/A (is only used when the ``SODAR Assay Plugin`` comment is set)
 
 Generic Raw Data Assay Plugin
 -----------------------------
@@ -150,7 +197,7 @@ Generic Raw Data Assay Plugin
 - Inline links
     * *Raw data files* are linked to ``RawData``
 - Used with measurement type / technology type
-    * N/A (can be used with the ``SODAR Assay Plugin`` comment override)
+    * N/A (is only used when the ``SODAR Assay Plugin`` comment is set)
 
 Metabolite Profiling / Mass Spectrometry Plugin
 -----------------------------------------------
