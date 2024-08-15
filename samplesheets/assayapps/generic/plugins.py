@@ -65,9 +65,13 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             return True
         # Special case for Material Names
         if (
-            top_header['value']
-            in th.DATA_FILE_HEADERS + th.MATERIAL_NAME_HEADERS
-        ) and (header['value'] == 'Name'):
+            (
+                top_header['value']
+                in th.DATA_FILE_HEADERS + th.MATERIAL_NAME_HEADERS
+            )
+            and top_header['value'].lower() in target_cols
+            and (header['value'] == 'Name')
+        ):
             cell['link'] = f"{url}/{cell['value']}"
             return True
         # Handle everything else
