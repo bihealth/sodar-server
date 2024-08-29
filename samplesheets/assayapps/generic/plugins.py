@@ -12,7 +12,7 @@ from samplesheets.views import MISC_FILES_COLL, RESULTS_COLL
 
 # Local constants
 APP_NAME = 'samplesheets.assayapps.generic'
-RESULTS_COMMENT = 'SODAR Assay Link Results'
+RESULTS_COMMENT = 'SODAR Assay Link ResultsReports'
 MISC_FILES_COMMENT = 'SODAR Assay Link MiscFiles'
 DATA_COMMENT_PREFIX = 'SODAR Assay Row Path'
 DATA_LINK_COMMENT = 'SODAR Assay Link Row'
