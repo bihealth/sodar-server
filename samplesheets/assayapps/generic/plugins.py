@@ -87,11 +87,11 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         """
         Return value of last matched column.
 
-        :param target_col: Column name to look for
+        :param target_col: Column name string to look for.
         :param row: List of dicts (a row returned by SampleSheetTableBuilder)
         :param table: Full table with headers (dict returned by
                       SampleSheetTableBuilder)
-        :return: String with cell value of last matched column
+        :return: String with cell value of last matched column.
         """
         # Returns last match of row
         value = None
@@ -100,7 +100,13 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                 header = table['field_header'][i]
                 if header['value'].lower() == target_col.lower():
                     value = row[i]['value']
-        return value
+
+        if isinstance(value, str):
+            return value
+        elif isinstance(value, list) and len(value) == 1:  # OntologyTermRefs
+            return value[0]['name']
+        else:
+            return None
 
     def get_row_path(self, row, table, assay, assay_path):
         """
