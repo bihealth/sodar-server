@@ -105,8 +105,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             return value
         elif isinstance(value, list) and len(value) == 1:  # OntologyTermRefs
             return value[0]['name']
-        else:
-            return None
+        return None
 
     def get_row_path(self, row, table, assay, assay_path):
         """
