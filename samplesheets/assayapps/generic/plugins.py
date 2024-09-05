@@ -12,7 +12,7 @@ from samplesheets.views import MISC_FILES_COLL, RESULTS_COLL
 
 # Local constants
 APP_NAME = 'samplesheets.assayapps.generic'
-RESULTS_COMMENT = 'SODAR Assay Link Results'
+RESULTS_COMMENT = 'SODAR Assay Link ResultsReports'
 MISC_FILES_COMMENT = 'SODAR Assay Link MiscFiles'
 DATA_COMMENT_PREFIX = 'SODAR Assay Row Path'
 DATA_LINK_COMMENT = 'SODAR Assay Link Row'
@@ -65,9 +65,13 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             return True
         # Special case for Material Names
         if (
-            top_header['value']
-            in th.DATA_FILE_HEADERS + th.MATERIAL_NAME_HEADERS
-        ) and (header['value'] == 'Name'):
+            (
+                top_header['value']
+                in th.DATA_FILE_HEADERS + th.MATERIAL_NAME_HEADERS
+            )
+            and top_header['value'].lower() in target_cols
+            and (header['value'] == 'Name')
+        ):
             cell['link'] = f"{url}/{cell['value']}"
             return True
         # Handle everything else
@@ -83,11 +87,11 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         """
         Return value of last matched column.
 
-        :param target_col: Column name to look for
+        :param target_col: Column name string to look for.
         :param row: List of dicts (a row returned by SampleSheetTableBuilder)
         :param table: Full table with headers (dict returned by
                       SampleSheetTableBuilder)
-        :return: String with cell value of last matched column
+        :return: String with cell value of last matched column.
         """
         # Returns last match of row
         value = None
@@ -96,7 +100,12 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                 header = table['field_header'][i]
                 if header['value'].lower() == target_col.lower():
                     value = row[i]['value']
-        return value
+
+        if isinstance(value, str):
+            return value
+        elif isinstance(value, list) and len(value) == 1:  # OntologyTermRefs
+            return value[0]['name']
+        return None
 
     def get_row_path(self, row, table, assay, assay_path):
         """
