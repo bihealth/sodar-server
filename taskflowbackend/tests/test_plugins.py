@@ -14,7 +14,7 @@ from projectroles.plugins import BackendPluginPoint
 from irodsbackend.api import USER_GROUP_TEMPLATE
 
 # Timeline dependency
-from timeline.models import ProjectEvent
+from timeline.models import TimelineEvent
 
 from taskflowbackend.tests.base import TaskflowViewTestBase
 
@@ -97,7 +97,7 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
             self.irods.users.get(self.user_owner_cat.username), iRODSUser
         )
         self.assert_group_member(project, self.user_owner_cat, True)
-        tl_events = ProjectEvent.objects.filter(
+        tl_events = TimelineEvent.objects.filter(
             project=project,
             plugin='taskflow',
             user=self.user,
@@ -256,7 +256,7 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
         with self.assertRaises(UserGroupDoesNotExist):
             self.irods.user_groups.get(group_name)
         self.assertEqual(
-            ProjectEvent.objects.filter(
+            TimelineEvent.objects.filter(
                 project=category,
                 plugin='taskflow',
                 user=self.user,
@@ -446,7 +446,7 @@ class TestRevertProjectModify(ModifyAPITaskflowTestBase):
         self.assert_irods_coll(self.project, expected=False)
         with self.assertRaises(UserGroupDoesNotExist):
             self.irods.user_groups.get(self.group_name)
-        tl_events = ProjectEvent.objects.filter(
+        tl_events = TimelineEvent.objects.filter(
             project=self.project,
             plugin='taskflow',
             user=self.user,
@@ -485,7 +485,7 @@ class TestPerformRoleModify(ModifyAPITaskflowTestBase):
         )
 
         self.assert_group_member(self.project, self.user_new, True)
-        tl_events = ProjectEvent.objects.filter(
+        tl_events = TimelineEvent.objects.filter(
             project=self.project,
             plugin='taskflow',
             user=self.user,
@@ -508,7 +508,7 @@ class TestPerformRoleModify(ModifyAPITaskflowTestBase):
         )
 
         self.assert_group_member(self.project, self.user_new, True)
-        tl_events = ProjectEvent.objects.filter(
+        tl_events = TimelineEvent.objects.filter(
             project=self.category,
             plugin='taskflow',
             user=self.user,
@@ -532,7 +532,7 @@ class TestPerformRoleModify(ModifyAPITaskflowTestBase):
 
         # Should still be False
         self.assert_group_member(self.project, self.user_new, False)
-        tl_events = ProjectEvent.objects.filter(
+        tl_events = TimelineEvent.objects.filter(
             project=self.category,
             plugin='taskflow',
             user=self.user,
@@ -595,7 +595,7 @@ class TestPerformRoleModify(ModifyAPITaskflowTestBase):
 
         self.assert_group_member(self.project, self.user_new, True)
         self.assertEqual(
-            ProjectEvent.objects.filter(
+            TimelineEvent.objects.filter(
                 project=self.project,
                 plugin='taskflow',
                 user=self.user,
@@ -698,7 +698,7 @@ class TestPerformRoleModify(ModifyAPITaskflowTestBase):
         )
 
         self.assert_group_member(self.project, self.user_new, False)
-        tl_events = ProjectEvent.objects.filter(
+        tl_events = TimelineEvent.objects.filter(
             project=self.project,
             plugin='taskflow',
             user=self.user,
@@ -721,7 +721,7 @@ class TestPerformRoleModify(ModifyAPITaskflowTestBase):
         )
 
         self.assert_group_member(self.project, self.user_new, False)
-        tl_events = ProjectEvent.objects.filter(
+        tl_events = TimelineEvent.objects.filter(
             project=self.category,
             plugin='taskflow',
             user=self.user,
@@ -816,7 +816,7 @@ class TestPerformRoleModify(ModifyAPITaskflowTestBase):
         )
         self.assert_group_member(self.project, self.user_new, True)
         self.assertEqual(
-            ProjectEvent.objects.filter(
+            TimelineEvent.objects.filter(
                 project=self.project,
                 plugin='taskflow',
                 user=self.user,
@@ -900,7 +900,7 @@ class TestPerformRoleDelete(ModifyAPITaskflowTestBase):
         self.assert_group_member(self.project, self.user_new, True)
         self.plugin.perform_role_delete(self.role_as, self.request)
         self.assert_group_member(self.project, self.user_new, False)
-        tl_events = ProjectEvent.objects.filter(
+        tl_events = TimelineEvent.objects.filter(
             project=self.project,
             plugin='taskflow',
             user=self.user,
@@ -917,7 +917,7 @@ class TestPerformRoleDelete(ModifyAPITaskflowTestBase):
         self.assert_group_member(self.project, self.user_new, True)
         self.plugin.perform_role_delete(self.role_as, self.request)
         self.assert_group_member(self.project, self.user_new, False)
-        tl_events = ProjectEvent.objects.filter(
+        tl_events = TimelineEvent.objects.filter(
             project=self.category,
             plugin='taskflow',
             user=self.user,
@@ -984,7 +984,7 @@ class TestPerformRoleDelete(ModifyAPITaskflowTestBase):
 
         self.plugin.revert_role_delete(self.role_as, self.request)
         self.assert_group_member(self.project, self.user_new, True)
-        tl_events = ProjectEvent.objects.filter(
+        tl_events = TimelineEvent.objects.filter(
             project=self.project,
             plugin='taskflow',
             user=self.user,
@@ -1004,7 +1004,7 @@ class TestPerformRoleDelete(ModifyAPITaskflowTestBase):
 
         self.plugin.revert_role_delete(self.role_as, self.request)
         self.assert_group_member(self.project, self.user_new, True)
-        tl_events = ProjectEvent.objects.filter(
+        tl_events = TimelineEvent.objects.filter(
             project=self.category,
             plugin='taskflow',
             user=self.user,
@@ -1102,7 +1102,7 @@ class TestPerformOwnerTransfer(ModifyAPITaskflowTestBase):
         self.assert_group_member(self.project, self.user, True)
         self.assert_group_member(self.project, self.user_new, True)
         self.assert_group_member(self.project, self.user_owner_cat, True)
-        tl_events = ProjectEvent.objects.filter(
+        tl_events = TimelineEvent.objects.filter(
             project=self.category,
             plugin='taskflow',
             user=self.user,
@@ -1241,7 +1241,7 @@ class TestPerformProjectSync(ModifyAPITaskflowTestBase):
             self.irods.users.get(self.user_owner_cat.username), iRODSUser
         )
         self.assert_group_member(project, self.user_owner_cat, True)
-        tl_events = ProjectEvent.objects.filter(
+        tl_events = TimelineEvent.objects.filter(
             project=project,
             plugin='taskflow',
             user=None,
@@ -1276,7 +1276,7 @@ class TestPerformProjectSync(ModifyAPITaskflowTestBase):
         )
         self.assert_group_member(project, self.user, True)
         self.assert_group_member(project, self.user_owner_cat, True)
-        tl_events = ProjectEvent.objects.filter(
+        tl_events = TimelineEvent.objects.filter(
             project=project,
             plugin='taskflow',
             user=None,

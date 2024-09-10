@@ -5,7 +5,7 @@ from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.tests.test_permissions import TestProjectPermissionBase
+from projectroles.tests.test_permissions import ProjectPermissionTestBase
 
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
@@ -33,7 +33,7 @@ TEST_OBJ_NAME = 'test1.txt'
 class LandingzonesPermissionTestBase(
     LandingZoneMixin,
     SampleSheetIOMixin,
-    TestProjectPermissionBase,
+    ProjectPermissionTestBase,
 ):
     """Base class for landingzones permissions tests"""
 

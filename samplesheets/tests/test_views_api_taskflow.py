@@ -20,7 +20,7 @@ from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 
 # Timeline dependency
-from timeline.models import ProjectEvent
+from timeline.models import TimelineEvent
 
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import (
@@ -830,9 +830,9 @@ class TestIrodsDataRequestUpdateAPIView(
     """Tests for IrodsDataRequestUpdateAPIView"""
 
     def _assert_tl_count(self, count):
-        """Assert timeline ProjectEvent count"""
+        """Assert timeline TimelineEvent count"""
         self.assertEqual(
-            ProjectEvent.objects.filter(
+            TimelineEvent.objects.filter(
                 event_name='irods_request_update'
             ).count(),
             count,

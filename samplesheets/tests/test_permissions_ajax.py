@@ -5,7 +5,7 @@ from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.tests.test_permissions import TestProjectPermissionBase
+from projectroles.tests.test_permissions import ProjectPermissionTestBase
 from projectroles.utils import build_secret
 
 from samplesheets.models import (
@@ -31,7 +31,7 @@ IRODS_FILE_PATH = '/sodarZone/path/test1.txt'
 
 
 class SampleSheetsAjaxPermissionTestBase(
-    SampleSheetIOMixin, TestProjectPermissionBase
+    SampleSheetIOMixin, ProjectPermissionTestBase
 ):
     """Base test class for samplesheets Ajax view permissions"""
 

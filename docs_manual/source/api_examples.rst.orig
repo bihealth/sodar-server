@@ -40,12 +40,19 @@ the SODAR API:
     # Headers for requests:
     # Token authorization header (required)
     auth_header = {'Authorization': 'token {}'.format(api_token)}
+<<<<<<< HEAD
+    # Use core_headers for project management API endpoints
+    core_headers = {**auth_header, 'Accept': 'application/vnd.bihealth.sodar-core+json; version=0.13.4'}
+    # Use sodar_headers for sample sheet and landing zone API endpoints
+    sodar_headers = {**auth_header, 'Accept': 'application/vnd.bihealth.sodar+json; version=0.15.1'}
+=======
     # Use project_headers for project management API endpoints
     project_headers = {**auth_header, 'Accept': 'application/vnd.bihealth.sodar-core.projectroles+json; version=1.0'}
     # Use the following headers for sample sheet and landing zone API endpoints
     sheet_headers = {**auth_header, 'Accept': 'application/vnd.bihealth.sodar.samplesheets+json; version=1.0'}
     zone_headers = {**auth_header, 'Accept': 'application/vnd.bihealth.sodar.landingzones+json; version=1.0'}
 
+>>>>>>> upgrade to django-sodar-core v1.0.2 (#1922)
 
 .. note::
 

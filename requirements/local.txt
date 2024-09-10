@@ -1,9 +1,14 @@
 # Local development dependencies go here
 -r base.txt
 
-django-extensions==3.2.1
+django-extensions==3.2.3
 Werkzeug==3.0.3
-django-debug-toolbar==3.8.1
+django-debug-toolbar==4.3.0
 
 # improved REPL
 ipdb==0.13.13
+
+# OpenAPI support
+inflection>=0.5.1, <0.6
+pyyaml>=6.0.1, <6.1
+uritemplate>=4.1.1, <4.2

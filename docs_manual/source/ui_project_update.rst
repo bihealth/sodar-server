@@ -23,7 +23,8 @@ Project Metadata
 The following project metadata and settings are available for updating:
 
 Title
-    Update the project title.
+    Update the project title. The title must be unique within the parent
+    category.
 Parent
     Move the project to another category. Options only contain categories for
     which you have sufficient access.
@@ -32,23 +33,29 @@ Description
 ReadMe
     Set an optional ReadMe document with for the project. MarkDown notation can
     be used.
-Public Guest Access
+Public guest access
     Enable public guest access to the project for anyone using SODAR. This
     should be used with caution and is generally intended for demonstration
     projects. If your SODAR server allows anonymous users, this will grant guest
     access to anyone browsing the site.
-Notify Members of Landing Zone Uploads
+Enable project on {target remote site}
+    Enable access to project for project members on the selected target site.
+    Target sites for which project owner/delegation modifying is enabled by an
+    administrator are listed here. Deselecting a previously selected site will
+    revoke access on the target site. For more information, see
+    `Remote Site Access documentation <https://sodar-core.readthedocs.io/en/latest/app_projectroles_usage.html#remote-projects>`_.
+Notify members of landing zone uploads
     Send project members email updates for file uploads using landing zones. For
     more information, see the
     :ref:`Landing Zones app documentation <app_landingzones>`.
-Allow Sample Sheet Editing
+Allow sample sheet editing
     Enable or disable editability of sample sheets in the project.
-Enable Sheet Synchronization
+Enable sheet synchronization
     Enable sample sheet synchronization. For more information, see
     :ref:`app_samplesheets_sync`.
-URL for Sheet Synchronization
+URL for sheet synchronization
     REST API URL of remote project for sample sheet synchronization.
-Token for Sheet Synchronization
+Token for sheet synchronization
     Token string for sample sheet synchronization.
 IGV session genome
     Genome used in generating IGV session files for the project. The name needs
@@ -69,9 +76,9 @@ VCF paths to omit from IGV sessions
     cancer and germline projects. Behaves similarly to the related BAM/CRAM
     setting. You need to run :guilabel:`Update Sheet Cache` in the Sample Sheet
     application for changes to take effect.
-IP Restrict
+IP restrict
     Restrict project access to specific IP addresses if this is set.
-IP Allow List
+IP allow list
     List of accepted IP addresses for the IP Restrict setting.
 
 When creating a new project, the following fields are included:

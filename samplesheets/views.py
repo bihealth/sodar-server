@@ -182,7 +182,7 @@ class SheetImportMixin:
         :param project: Project object
         :param action: "import", "create" or "replace" (string)
         :param tpl_name: Optional template name (string)
-        :return: ProjectEvent object
+        :return: TimelineEvent object
         """
         if action not in ['create', 'import', 'replace']:
             raise ValueError('Invalid action "{}"'.format(action))
@@ -2326,13 +2326,7 @@ class IrodsAccessTicketDeleteView(
     slug_url_kwarg = 'irodsaccessticket'
     slug_field = 'sodar_uuid'
 
-    def get_success_url(self):
-        return reverse(
-            'samplesheets:irods_tickets',
-            kwargs={'project': self.object.get_project().sodar_uuid},
-        )
-
-    def delete(self, request, *args, **kwargs):
+    def form_valid(self, form):
         obj = self.get_object()
         irods_backend = get_backend_api('omics_irods')
         try:
@@ -2340,7 +2334,8 @@ class IrodsAccessTicketDeleteView(
                 irods_backend.delete_ticket(irods, obj.ticket)
         except Exception as ex:
             messages.error(
-                request, 'Error deleting iRODS access ticket: {}'.format(ex)
+                self.request,
+                'Error deleting iRODS access ticket: {}'.format(ex),
             )
             return redirect(
                 reverse(
@@ -2349,12 +2344,18 @@ class IrodsAccessTicketDeleteView(
                 )
             )
         self.add_tl_event(obj, 'delete')
-        self.create_app_alerts(obj, 'delete', request.user)
+        self.create_app_alerts(obj, 'delete', self.request.user)
+        obj.delete()
         messages.success(
-            request,
+            self.request,
             'iRODS access ticket "{}" deleted.'.format(obj.get_display_name()),
         )
-        return super().delete(request, *args, **kwargs)
+        return redirect(
+            reverse(
+                'samplesheets:irods_tickets',
+                kwargs={'project': self.object.get_project().sodar_uuid},
+            )
+        )
 
 
 class IrodsDataRequestListView(

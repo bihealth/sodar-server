@@ -116,7 +116,7 @@ Table of Contents
     :name: api_docs
 
     api_documentation
-    Project Management API <api_projectroles>
+    Project Management APIs <api_projectroles>
     Sample Sheets API <api_samplesheets>
     Landing Zones API <api_landingzones>
     iRODS Info API <api_irodsinfo>

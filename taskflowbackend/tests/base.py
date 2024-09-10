@@ -37,10 +37,13 @@ from projectroles.tests.test_models import (
     RoleMixin,
     RoleAssignmentMixin,
 )
-from projectroles.tests.test_permissions import TestPermissionMixin
+from projectroles.tests.test_permissions import PermissionTestMixin
 from projectroles.tests.test_permissions_api import SODARAPIPermissionTestMixin
 from projectroles.tests.test_views_api import SODARAPIViewTestMixin
-from projectroles.views_api import CORE_API_MEDIA_TYPE, CORE_API_DEFAULT_VERSION
+from projectroles.views_api import (
+    PROJECTROLES_API_MEDIA_TYPE,
+    PROJECTROLES_API_DEFAULT_VERSION,
+)
 
 
 app_settings = AppSettingAPI()
@@ -433,8 +436,8 @@ class TaskflowAPIProjectTestMixin:
             reverse('projectroles:api_project_create'),
             method='POST',
             data=post_data,
-            media_type=CORE_API_MEDIA_TYPE,
-            version=CORE_API_DEFAULT_VERSION,
+            media_type=PROJECTROLES_API_MEDIA_TYPE,
+            version=PROJECTROLES_API_DEFAULT_VERSION,
         )
         # Assert response and object status
         self.assertEqual(response.status_code, 201, msg=response.content)
@@ -452,8 +455,8 @@ class TaskflowAPIProjectTestMixin:
             url,
             method='POST',
             data=request_data,
-            media_type=CORE_API_MEDIA_TYPE,
-            version=CORE_API_DEFAULT_VERSION,
+            media_type=PROJECTROLES_API_MEDIA_TYPE,
+            version=PROJECTROLES_API_DEFAULT_VERSION,
         )
         self.assertEqual(response.status_code, 201, msg=response.content)
         return RoleAssignment.objects.get(project=project, user=user, role=role)
@@ -485,7 +488,7 @@ class TaskflowAPIViewTestBase(
 class TaskflowPermissionTestBase(
     TaskflowProjectTestMixin,
     TaskflowPermissionTestMixin,
-    TestPermissionMixin,
+    PermissionTestMixin,
     TestCase,
 ):
     """Base class for testing UI and Ajax view permissions with taskflow"""

@@ -19,7 +19,7 @@ from projectroles.tests.test_models import (
 from sodarcache.models import JSONCacheItem
 
 # Timeline dependency
-from timeline.models import ProjectEvent
+from timeline.models import TimelineEvent
 
 from samplesheets.management.commands.normalizesheets import (
     LIB_NAME,
@@ -80,7 +80,7 @@ class TestNormalizesheets(
 
     def _assert_tl_event(self, expected):
         self.assertEqual(
-            ProjectEvent.objects.filter(
+            TimelineEvent.objects.filter(
                 event_name='sheet_normalize', project=self.project
             ).count(),
             expected,

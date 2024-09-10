@@ -20,7 +20,7 @@ from projectroles.models import (
 from projectroles.tests.test_models import ProjectInviteMixin
 
 # Timeline dependency
-from timeline.models import ProjectEvent
+from timeline.models import TimelineEvent
 
 from taskflowbackend.tests.base import TaskflowViewTestBase
 
@@ -137,7 +137,7 @@ class TestProjectCreateView(TaskflowViewTestBase):
         )
         self.assertEqual(group.hasmember(self.user_owner_cat.username), True)
         # Assert timeline event
-        tl_events = ProjectEvent.objects.filter(
+        tl_events = TimelineEvent.objects.filter(
             project=project,
             plugin='taskflow',
             user=self.user,
@@ -233,7 +233,7 @@ class TestProjectUpdateView(TaskflowViewTestBase):
         )
         self.assert_group_member(self.project, self.user, True)
         self.assert_group_member(self.project, self.user_owner_cat, True)
-        tl_events = ProjectEvent.objects.filter(
+        tl_events = TimelineEvent.objects.filter(
             project=self.project,
             plugin='taskflow',
             user=self.user,
@@ -771,7 +771,7 @@ class TestProjectInviteAcceptView(ProjectInviteMixin, TaskflowViewTestBase):
                 [
                     (
                         reverse(
-                            'projectroles:invite_process_ldap',
+                            'projectroles:invite_process_login',
                             kwargs={'secret': invite.secret},
                         ),
                         302,
@@ -823,7 +823,7 @@ class TestProjectInviteAcceptView(ProjectInviteMixin, TaskflowViewTestBase):
                 [
                     (
                         reverse(
-                            'projectroles:invite_process_ldap',
+                            'projectroles:invite_process_login',
                             kwargs={'secret': invite.secret},
                         ),
                         302,
@@ -862,7 +862,7 @@ class TestProjectInviteAcceptView(ProjectInviteMixin, TaskflowViewTestBase):
                 [
                     (
                         reverse(
-                            'projectroles:invite_process_local',
+                            'projectroles:invite_process_new_user',
                             kwargs={'secret': invite.secret},
                         ),
                         302,
@@ -904,7 +904,7 @@ class TestProjectInviteAcceptView(ProjectInviteMixin, TaskflowViewTestBase):
                 [
                     (
                         reverse(
-                            'projectroles:invite_process_local',
+                            'projectroles:invite_process_new_user',
                             kwargs={'secret': invite.secret},
                         ),
                         302,

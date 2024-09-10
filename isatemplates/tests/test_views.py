@@ -16,7 +16,7 @@ from django.utils.text import slugify
 from test_plus.test import TestCase
 
 # Timeline dependency
-from timeline.models import ProjectEvent
+from timeline.models import TimelineEvent
 
 from isatemplates.forms import (
     NO_JSON_MSG,
@@ -250,7 +250,8 @@ class TestISATemplateCreateView(ISATemplateViewTestBase):
         self.assertEqual(CookiecutterISATemplate.objects.count(), 0)
         self.assertEqual(CookiecutterISAFile.objects.count(), 0)
         self.assertEqual(
-            ProjectEvent.objects.filter(event_name='template_create').count(), 0
+            TimelineEvent.objects.filter(event_name='template_create').count(),
+            0,
         )
 
         data = {
@@ -290,7 +291,8 @@ class TestISATemplateCreateView(ISATemplateViewTestBase):
                 }
                 self.assertEqual(model_to_dict(file_obj), expected)
         self.assertEqual(
-            ProjectEvent.objects.filter(event_name='template_create').count(), 1
+            TimelineEvent.objects.filter(event_name='template_create').count(),
+            1,
         )
 
     def test_post_zip_no_json(self):
@@ -615,7 +617,8 @@ class TestISATemplateUpdateView(ISATemplateViewTestBase):
         for f in self._get_files():
             self.assertEqual(f.content, '')
         self.assertEqual(
-            ProjectEvent.objects.filter(event_name='template_update').count(), 0
+            TimelineEvent.objects.filter(event_name='template_update').count(),
+            0,
         )
 
         data = {
@@ -642,7 +645,8 @@ class TestISATemplateUpdateView(ISATemplateViewTestBase):
             with open(fp, 'rb') as f:
                 self.assertEqual(file_obj.content, f.read().decode('utf-8'))
         self.assertEqual(
-            ProjectEvent.objects.filter(event_name='template_update').count(), 1
+            TimelineEvent.objects.filter(event_name='template_update').count(),
+            1,
         )
 
     def test_post_no_file(self):
@@ -655,7 +659,8 @@ class TestISATemplateUpdateView(ISATemplateViewTestBase):
         for f in self._get_files():
             self.assertEqual(f.content, '')
         self.assertEqual(
-            ProjectEvent.objects.filter(event_name='template_update').count(), 0
+            TimelineEvent.objects.filter(event_name='template_update').count(),
+            0,
         )
         data = {
             'description': TEMPLATE_DESC_UPDATE,
@@ -673,7 +678,8 @@ class TestISATemplateUpdateView(ISATemplateViewTestBase):
         for f in self._get_files():
             self.assertEqual(f.content, '')
         self.assertEqual(
-            ProjectEvent.objects.filter(event_name='template_update').count(), 1
+            TimelineEvent.objects.filter(event_name='template_update').count(),
+            1,
         )
 
     def test_post_no_name(self):
@@ -712,7 +718,8 @@ class TestISATemplateUpdateView(ISATemplateViewTestBase):
         for f in self._get_files():
             self.assertEqual(f.content, '')
         self.assertEqual(
-            ProjectEvent.objects.filter(event_name='template_update').count(), 0
+            TimelineEvent.objects.filter(event_name='template_update').count(),
+            0,
         )
 
     def test_post_no_investigation(self):
@@ -817,7 +824,8 @@ class TestISATemplateDeleteView(ISATemplateViewTestBase):
     def test_post(self):
         """Test POST"""
         self.assertEqual(
-            ProjectEvent.objects.filter(event_name='template_delete').count(), 0
+            TimelineEvent.objects.filter(event_name='template_delete').count(),
+            0,
         )
         self.assertEqual(CookiecutterISATemplate.objects.count(), 1)
         self.assertEqual(CookiecutterISAFile.objects.count(), 3)
@@ -827,7 +835,8 @@ class TestISATemplateDeleteView(ISATemplateViewTestBase):
         self.assertEqual(CookiecutterISATemplate.objects.count(), 0)
         self.assertEqual(CookiecutterISAFile.objects.count(), 0)
         self.assertEqual(
-            ProjectEvent.objects.filter(event_name='template_delete').count(), 1
+            TimelineEvent.objects.filter(event_name='template_delete').count(),
+            1,
         )
 
 

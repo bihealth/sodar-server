@@ -1497,9 +1497,7 @@ class TestProjectSearchResultsView(SamplesheetsViewTestBase):
     """Tests for ProjectSearchResultsView view with sample sheet input"""
 
     def _get_items(self, response):
-        return response.context['app_results'][0]['results']['materials'][
-            'items'
-        ]
+        return response.context['app_results'][0]['results']['materials'].items
 
     def setUp(self):
         super().setUp()

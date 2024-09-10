@@ -203,8 +203,9 @@ class ISATemplateDeleteView(
     slug_field = 'sodar_uuid'
     template_name = 'isatemplates/template_confirm_delete.html'
 
-    def get_success_url(self):
-        return self.handle_modify(self.object, 'delete')
+    def form_valid(self, form):
+        self.object.delete()
+        return redirect(self.handle_modify(self.object, 'delete'))
 
 
 class ISATemplateExportView(LoggedInPermissionMixin, View):

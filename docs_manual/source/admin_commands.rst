@@ -19,6 +19,9 @@ These commands originate in SODAR Core. More information can be found in the
     Add remote site for remote project synchronization.
 ``batchupdateroles``
     Batch update project roles and send invites.
+``checkusers``
+    Check the status of LDAP users. Returns info on users whose accounts are
+    disabled or removed on an LDAP server.
 ``cleanappsettings``
     Clean up unused application settings.
 ``deletecache``

@@ -3,7 +3,7 @@
 from django.urls import reverse
 
 # Projectroles dependency
-from projectroles.tests.test_permissions import TestSiteAppPermissionBase
+from projectroles.tests.test_permissions import SiteAppPermissionTestBase
 
 from ontologyaccess.models import DEFAULT_TERM_URL
 from ontologyaccess.tests.test_models import OBOFormatOntologyModelMixin
@@ -29,7 +29,7 @@ OBO_TERM_COMMENT = 'This is not a real term.'
 
 
 class OntologyAccessPermissionTestBase(
-    OBOFormatOntologyModelMixin, TestSiteAppPermissionBase
+    OBOFormatOntologyModelMixin, SiteAppPermissionTestBase
 ):
     """Base class for ontologyaccess UI view permission tests"""
 

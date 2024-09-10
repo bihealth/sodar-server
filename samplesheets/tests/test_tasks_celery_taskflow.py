@@ -18,7 +18,7 @@ from sodarcache.models import JSONCacheItem
 from taskflowbackend.tests.base import TaskflowViewTestBase
 
 # Timeline dependency
-from timeline.models import ProjectEvent
+from timeline.models import TimelineEvent
 
 from samplesheets.models import ISATab
 from samplesheets.tasks_celery import (
@@ -79,7 +79,7 @@ class TestUpdateProjectCacheTask(
         self.assertEqual(
             AppAlert.objects.filter(alert_name=CACHE_UPDATE_EVENT).count(), 0
         )
-        self.assertEqual(ProjectEvent.objects.count(), 2)
+        self.assertEqual(TimelineEvent.objects.count(), 2)
 
         update_project_cache_task(
             self.project.sodar_uuid,
@@ -109,7 +109,7 @@ class TestUpdateProjectCacheTask(
         )
         alert = AppAlert.objects.order_by('-pk').first()
         self.assertTrue(alert.message.endswith(CACHE_ALERT_MESSAGE))
-        self.assertEqual(ProjectEvent.objects.count(), 3)
+        self.assertEqual(TimelineEvent.objects.count(), 3)
 
     def test_update_cache_no_alert(self):
         """Test cache update with app alert disabled"""
@@ -119,7 +119,7 @@ class TestUpdateProjectCacheTask(
         self.assertEqual(
             AppAlert.objects.filter(alert_name=CACHE_UPDATE_EVENT).count(), 0
         )
-        self.assertEqual(ProjectEvent.objects.count(), 2)
+        self.assertEqual(TimelineEvent.objects.count(), 2)
 
         update_project_cache_task(
             self.project.sodar_uuid, self.user.sodar_uuid, add_alert=False
@@ -131,7 +131,7 @@ class TestUpdateProjectCacheTask(
         self.assertEqual(
             AppAlert.objects.filter(alert_name=CACHE_UPDATE_EVENT).count(), 0
         )
-        self.assertEqual(ProjectEvent.objects.count(), 3)
+        self.assertEqual(TimelineEvent.objects.count(), 3)
 
     def test_update_cache_no_user(self):
         """Test cache update with no user"""
@@ -141,7 +141,7 @@ class TestUpdateProjectCacheTask(
         self.assertEqual(
             AppAlert.objects.filter(alert_name=CACHE_UPDATE_EVENT).count(), 0
         )
-        self.assertEqual(ProjectEvent.objects.count(), 2)
+        self.assertEqual(TimelineEvent.objects.count(), 2)
 
         update_project_cache_task(self.project.sodar_uuid, None, add_alert=True)
 
@@ -151,7 +151,7 @@ class TestUpdateProjectCacheTask(
         self.assertEqual(
             AppAlert.objects.filter(alert_name=CACHE_UPDATE_EVENT).count(), 0
         )
-        self.assertEqual(ProjectEvent.objects.count(), 3)
+        self.assertEqual(TimelineEvent.objects.count(), 3)
 
 
 class TestSheetRemoteSyncTask(SheetRemoteSyncTestBase):

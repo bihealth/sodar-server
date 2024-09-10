@@ -11,8 +11,8 @@ from django.utils import timezone
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.tests.test_models import RemoteSiteMixin, RemoteProjectMixin
-from projectroles.tests.test_permissions import TestProjectPermissionBase
-from projectroles.tests.test_permissions_api import TestProjectAPIPermissionBase
+from projectroles.tests.test_permissions import ProjectPermissionTestBase
+from projectroles.tests.test_permissions_api import ProjectAPIPermissionTestBase
 
 from samplesheets.models import (
     Investigation,
@@ -40,7 +40,7 @@ LABEL_CREATE = 'label'
 
 class TestInvestigationRetrieveAPIView(
     SampleSheetIOMixin,
-    TestProjectAPIPermissionBase,
+    ProjectAPIPermissionTestBase,
 ):
     """Tests for InvestigationRetrieveAPIView permissions"""
 
@@ -120,7 +120,7 @@ class TestInvestigationRetrieveAPIView(
         self.assert_response_api(url, self.anonymous, 401)
 
 
-class TestSheetImportAPIView(SampleSheetIOMixin, TestProjectAPIPermissionBase):
+class TestSheetImportAPIView(SampleSheetIOMixin, ProjectAPIPermissionTestBase):
     """Tests for SheetImportAPIView permissions"""
 
     def _cleanup_import(self):
@@ -291,7 +291,7 @@ class TestSheetImportAPIView(SampleSheetIOMixin, TestProjectAPIPermissionBase):
 
 class TestSheetISAExportAPIView(
     SampleSheetIOMixin,
-    TestProjectAPIPermissionBase,
+    ProjectAPIPermissionTestBase,
 ):
     """Tests for SheetISAExportAPIView permissions"""
 
@@ -364,7 +364,7 @@ class TestSheetISAExportAPIView(
 
 
 class TestIrodsAccessTicketListAPIView(
-    SampleSheetIOMixin, IrodsAccessTicketMixin, TestProjectAPIPermissionBase
+    SampleSheetIOMixin, IrodsAccessTicketMixin, ProjectAPIPermissionTestBase
 ):
     """Test permissions for IrodsAccessTicketListAPIView"""
 
@@ -438,7 +438,7 @@ class TestIrodsAccessTicketListAPIView(
 
 
 class TestIrodsAccessTicketRetrieveAPIView(
-    SampleSheetIOMixin, IrodsAccessTicketMixin, TestProjectAPIPermissionBase
+    SampleSheetIOMixin, IrodsAccessTicketMixin, ProjectAPIPermissionTestBase
 ):
     """Test permissions for IrodsAccessTicketRetrieveAPIView"""
 
@@ -509,7 +509,7 @@ class TestIrodsAccessTicketRetrieveAPIView(
 
 
 class TestIrodsDataRequestRetrieveAPIView(
-    IrodsDataRequestMixin, TestProjectAPIPermissionBase
+    IrodsDataRequestMixin, ProjectAPIPermissionTestBase
 ):
     """Tests for TestIrodsDataRequestRetrieveAPIView permissions"""
 
@@ -581,7 +581,7 @@ class TestIrodsDataRequestRetrieveAPIView(
         self.assert_response_api(self.url, self.anonymous, 401)
 
 
-class TestIrodsDataRequestListAPIView(TestProjectAPIPermissionBase):
+class TestIrodsDataRequestListAPIView(ProjectAPIPermissionTestBase):
     """Tests for TestIrodsDataRequestListAPIView permissions"""
 
     def setUp(self):
@@ -646,7 +646,7 @@ class TestIrodsDataRequestListAPIView(TestProjectAPIPermissionBase):
 
 
 class TestIrodsDataRequestRejectAPIView(
-    IrodsDataRequestMixin, TestProjectAPIPermissionBase
+    IrodsDataRequestMixin, ProjectAPIPermissionTestBase
 ):
     """Test permissions for TestIrodsDataRequestRejectAPIView"""
 
@@ -728,7 +728,7 @@ class TestIrodsDataRequestRejectAPIView(
 
 
 class TestIrodsDataRequestDestroyAPIView(
-    SampleSheetIOMixin, IrodsDataRequestMixin, TestProjectAPIPermissionBase
+    SampleSheetIOMixin, IrodsDataRequestMixin, ProjectAPIPermissionTestBase
 ):
     """Test permissions for IrodsDataRequestDestroyAPIView"""
 
@@ -816,7 +816,7 @@ class TestRemoteSheetGetAPIView(
     SampleSheetIOMixin,
     RemoteSiteMixin,
     RemoteProjectMixin,
-    TestProjectPermissionBase,
+    ProjectPermissionTestBase,
 ):
     """Tests for RemoteSheetGetAPIView permissions"""
 

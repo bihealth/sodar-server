@@ -7,7 +7,7 @@ from django.urls import reverse
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
-from projectroles.tests.test_views_api import TestAPIViewsBase
+from projectroles.tests.test_views_api import APIViewTestBase
 
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
@@ -38,7 +38,7 @@ INVALID_UUID = '11111111-1111-1111-1111-111111111111'
 
 
 class TestLandingZoneAPIViewsBase(
-    LandingZoneMixin, SampleSheetIOMixin, TestAPIViewsBase
+    LandingZoneMixin, SampleSheetIOMixin, APIViewTestBase
 ):
     """Base class for Landingzones API view testing"""
 

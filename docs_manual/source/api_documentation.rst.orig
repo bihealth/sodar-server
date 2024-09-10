@@ -55,10 +55,14 @@ Example for the SODAR Server samplesheets API:
 
 .. code-block:: console
 
+<<<<<<< HEAD
+    Accept: application/vnd.bihealth.sodar+json; version=0.15.1
+=======
     Accept: application/vnd.bihealth.sodar.samplesheets+json; version=1.0
 
 For detailed media types and versioning information of each API, see the
 respective application API documentation.
+>>>>>>> upgrade to django-sodar-core v1.0.2 (#1922)
 
 
 Model Access and Permissions

@@ -20,6 +20,8 @@ from projectroles.models import Project, SODAR_CONSTANTS
 from projectroles.plugins import (
     ProjectAppPluginPoint,
     ProjectModifyPluginMixin,
+    PluginObjectLink,
+    PluginSearchResult,
     get_backend_api,
 )
 from projectroles.utils import build_secret
@@ -300,46 +302,44 @@ class ProjectAppPlugin(
 
     def get_object_link(self, model_str, uuid):
         """
-        Return URL for referring to a object used by the app, along with a
-        label to be shown to the user for linking.
+        Return URL referring to an object used by the app, along with a name to
+        be shown to the user for linking.
 
         :param model_str: Object class (string)
         :param uuid: sodar_uuid of the referred object
-        :return: Dict or None if not found
+        :return: PluginObjectLink or None if not found
         """
         obj = self.get_object(eval(model_str), uuid)
         if not obj:
             return None
         if obj.__class__ == IrodsAccessTicket:
-            return {
-                'url': reverse(
+            return PluginObjectLink(
+                url=reverse(
                     'samplesheets:irods_tickets',
                     kwargs={'project': obj.get_project().sodar_uuid},
                 ),
-                'label': obj.get_display_name(),
-            }
+                name=obj.get_display_name(),
+            )
         if obj.__class__ in [Investigation, Study, Assay]:
-            return {
-                'url': obj.get_url(),
-                'label': (
+            return PluginObjectLink(
+                url=obj.get_url(),
+                name=(
                     obj.title
                     if obj.__class__ == Investigation
                     else obj.get_display_name()
                 ),
-            }
+            )
         url_kwargs = {'project': obj.project.sodar_uuid}
         if obj.__class__ == ISATab:
-            return {
-                'url': reverse('samplesheets:versions', kwargs=url_kwargs),
-                'label': obj.get_full_name(),
-            }
-        elif obj.__class__ == IrodsDataRequest:
-            return {
-                'url': reverse(
-                    'samplesheets:irods_requests', kwargs=url_kwargs
-                ),
-                'label': obj.get_display_name(),
-            }
+            return PluginObjectLink(
+                url=reverse('samplesheets:versions', kwargs=url_kwargs),
+                name=obj.get_full_name(),
+            )
+        if obj.__class__ == IrodsDataRequest:
+            return PluginObjectLink(
+                url=reverse('samplesheets:versions', kwargs=url_kwargs),
+                name=obj.get_full_name(),
+            )
 
     @classmethod
     def _get_search_materials(cls, search_terms, user, keywords, item_types):
@@ -449,32 +449,34 @@ class ProjectAppPlugin(
         :param user: User object for user initiating the search
         :param search_type: String
         :param keywords: List (optional)
-        :return: Dict
+        :return: List of PluginSearchResult objects
         """
         irods_backend = get_backend_api('omics_irods')
-        results = {}
+        ret = []
         # Materials
         if not search_type or search_type in MATERIAL_SEARCH_TYPES:
             item_types = ['SOURCE', 'SAMPLE']
             if search_type in MATERIAL_SEARCH_TYPES:
                 item_types = [search_type.upper()]
-            results['materials'] = {
-                'title': 'Sources and Samples',
-                'search_types': ['source', 'sample'],
-                'items': self._get_search_materials(
+            r = PluginSearchResult(
+                category='materials',
+                title='Sources and Samples',
+                search_types=['source', 'sample'],
+                items=self._get_search_materials(
                     search_terms, user, keywords, item_types
                 ),
-            }
+            )
+            ret.append(r)
         # iRODS files
         if irods_backend and (not search_type or search_type == 'file'):
-            results['files'] = {
-                'title': 'Sample Files in iRODS',
-                'search_types': ['file'],
-                'items': self._get_search_files(
-                    search_terms, user, irods_backend
-                ),
-            }
-        return results
+            r = PluginSearchResult(
+                category='files',
+                title='Sample Files in iRODS',
+                search_types=['file'],
+                items=self._get_search_files(search_terms, user, irods_backend),
+            )
+            ret.append(r)
+        return ret
 
     def get_project_list_value(self, column_id, project, user):
         """

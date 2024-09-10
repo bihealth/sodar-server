@@ -1,4 +1,4 @@
-from django.conf.urls import url
+from django.urls import path
 
 from . import views
 
@@ -6,8 +6,8 @@ from . import views
 app_name = 'samplesheets.studyapps.germline'
 
 urlpatterns = [
-    url(
-        regex=r'^render/igv/(?P<genericmaterial>[0-9a-f-]+)(\..*)?$',
+    path(
+        route='render/igv/<uuid:genericmaterial>',
         view=views.IGVSessionFileRenderView.as_view(),
         name='igv',
     )

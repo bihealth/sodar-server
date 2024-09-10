@@ -20,13 +20,13 @@ from django.utils import timezone
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
-from projectroles.views import MSG_NO_AUTH
+from projectroles.views import NO_AUTH_MSG
 
 # Appalerts dependency
 from appalerts.models import AppAlert
 
 # Timeline dependency
-from timeline.models import ProjectEvent
+from timeline.models import TimelineEvent
 
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import TaskflowViewTestBase
@@ -185,7 +185,7 @@ class IrodsAccessTicketViewTestMixin:
         :param action: "create", "update" or "delete" (string)
         :return: Integer
         """
-        return ProjectEvent.objects.filter(
+        return TimelineEvent.objects.filter(
             event_name='irods_ticket_' + action
         ).count()
 
@@ -1099,9 +1099,9 @@ class IrodsDataRequestViewTestBase(
         :param kwargs: Extra kwargs for query (dict, optional)
         """
         timeline = get_backend_api('timeline_backend')
-        ProjectEvent, _ = timeline.get_models()
+        TimelineEvent, _ = timeline.get_models()
         self.assertEqual(
-            ProjectEvent.objects.filter(
+            TimelineEvent.objects.filter(
                 event_name=event_name, **kwargs
             ).count(),
             count,
@@ -1196,7 +1196,7 @@ class TestIrodsDataRequestCreateView(IrodsDataRequestViewTestBase):
         self.assertEqual(obj.description, IRODS_REQUEST_DESC)
         self._assert_tl_count(EVENT_CREATE, 1)
         self.assertEqual(
-            ProjectEvent.objects.get(event_name=EVENT_CREATE).extra_data,
+            TimelineEvent.objects.get(event_name=EVENT_CREATE).extra_data,
             {
                 'action': IRODS_REQUEST_ACTION_DELETE,
                 'path': obj.path,
@@ -1368,7 +1368,7 @@ class TestIrodsDataRequestUpdateView(
         self.assertEqual(self.request.description, IRODS_REQUEST_DESC_UPDATE)
         self._assert_tl_count(EVENT_UPDATE, 1)
         self.assertEqual(
-            ProjectEvent.objects.get(event_name=EVENT_UPDATE).extra_data,
+            TimelineEvent.objects.get(event_name=EVENT_UPDATE).extra_data,
             {
                 'action': IRODS_REQUEST_ACTION_DELETE,
                 'path': self.request.path,
@@ -1466,7 +1466,7 @@ class TestIrodsDataRequestDeleteView(
         self.assert_irods_obj(self.obj_path)
         self._assert_tl_count(EVENT_DELETE, 1)
         self.assertEqual(
-            ProjectEvent.objects.get(event_name=EVENT_DELETE).extra_data, {}
+            TimelineEvent.objects.get(event_name=EVENT_DELETE).extra_data, {}
         )
         # Create alerts should be deleted
         self._assert_alert_count(EVENT_CREATE, self.user, 0)
@@ -2268,7 +2268,7 @@ class TestIrodsDataRequestRejectView(
             self.assertRedirects(response, reverse('home'))
 
         self.assertEqual(
-            list(get_messages(response.wsgi_request))[-1].message, MSG_NO_AUTH
+            list(get_messages(response.wsgi_request))[-1].message, NO_AUTH_MSG
         )
         request.refresh_from_db()
         self.assertEqual(request.status, IRODS_REQUEST_STATUS_ACTIVE)
@@ -2552,13 +2552,13 @@ class TestProjectSearchView(
         self.assertEqual(response.status_code, 200)
         data = response.context['app_results'][0]
         self.assertEqual(len(data['results']), 2)
-        self.assertEqual(len(data['results']['materials']['items']), 1)
+        self.assertEqual(len(data['results']['materials'].items), 1)
         self.assertEqual(
-            data['results']['materials']['items'][0]['name'], SAMPLE_ID
+            data['results']['materials'].items[0]['name'], SAMPLE_ID
         )
-        self.assertEqual(len(data['results']['files']['items']), 1)
+        self.assertEqual(len(data['results']['files'].items), 1)
         self.assertEqual(
-            data['results']['files']['items'][0]['name'], self.file_name
+            data['results']['files'].items[0]['name'], self.file_name
         )
 
     def test_search_limit_source(self):
@@ -2572,9 +2572,9 @@ class TestProjectSearchView(
         self.assertEqual(response.status_code, 200)
         data = response.context['app_results'][0]
         self.assertEqual(len(data['results']), 1)
-        self.assertEqual(len(data['results']['materials']['items']), 1)
+        self.assertEqual(len(data['results']['materials'].items), 1)
         self.assertEqual(
-            data['results']['materials']['items'][0]['name'], SOURCE_ID
+            data['results']['materials'].items[0]['name'], SOURCE_ID
         )
 
     def test_search_limit_sample(self):
@@ -2588,9 +2588,9 @@ class TestProjectSearchView(
         self.assertEqual(response.status_code, 200)
         data = response.context['app_results'][0]
         self.assertEqual(len(data['results']), 1)
-        self.assertEqual(len(data['results']['materials']['items']), 1)
+        self.assertEqual(len(data['results']['materials'].items), 1)
         self.assertEqual(
-            data['results']['materials']['items'][0]['name'], SAMPLE_ID
+            data['results']['materials'].items[0]['name'], SAMPLE_ID
         )
 
     def test_search_limit_file(self):
@@ -2604,9 +2604,9 @@ class TestProjectSearchView(
         self.assertEqual(response.status_code, 200)
         data = response.context['app_results'][0]
         self.assertEqual(len(data['results']), 1)
-        self.assertEqual(len(data['results']['files']['items']), 1)
+        self.assertEqual(len(data['results']['files'].items), 1)
         self.assertEqual(
-            data['results']['files']['items'][0]['name'], self.file_name
+            data['results']['files'].items[0]['name'], self.file_name
         )
 
 

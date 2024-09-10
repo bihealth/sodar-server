@@ -28,7 +28,7 @@ from taskflowbackend.tests.base import TaskflowViewTestBase, IRODS_ACCESS_OWN
 
 
 # Timeline dependency
-from timeline.models import ProjectEvent
+from timeline.models import TimelineEvent
 
 from landingzones.constants import (
     ZONE_STATUS_CREATING,
@@ -188,7 +188,7 @@ class TestZoneCreateView(
         """Test landingzones creation with taskflow"""
         self.assertEqual(LandingZone.objects.count(), 0)
         self.assertEqual(
-            ProjectEvent.objects.filter(event_name='zone_create').count(), 0
+            TimelineEvent.objects.filter(event_name='zone_create').count(), 0
         )
         self.assertEqual(len(mail.outbox), 1)
 
@@ -210,7 +210,9 @@ class TestZoneCreateView(
         self.assert_irods_coll(zone)
         for c in ZONE_BASE_COLLS:
             self.assert_irods_coll(zone, c, False)
-        tl_event = ProjectEvent.objects.filter(event_name='zone_create').first()
+        tl_event = TimelineEvent.objects.filter(
+            event_name='zone_create'
+        ).first()
         expected_extra = {
             'title': zone.title,
             'assay': str(zone.assay.sodar_uuid),
@@ -246,7 +248,9 @@ class TestZoneCreateView(
         self.assert_zone_count(1)
         zone = LandingZone.objects.first()
         self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
-        tl_event = ProjectEvent.objects.filter(event_name='zone_create').first()
+        tl_event = TimelineEvent.objects.filter(
+            event_name='zone_create'
+        ).first()
         self.assertEqual(tl_event.extra_data['create_colls'], True)
         self.assertEqual(tl_event.extra_data['restrict_colls'], False)
         self.assert_irods_coll(zone)
@@ -660,7 +664,7 @@ class TestZoneMoveView(
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(
-            ProjectEvent.objects.filter(event_name='zone_move').count(), 0
+            TimelineEvent.objects.filter(event_name='zone_move').count(), 0
         )
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_move').count(), 0
@@ -678,7 +682,7 @@ class TestZoneMoveView(
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(len(mail.outbox), 1)
-        tl_event = ProjectEvent.objects.filter(event_name='zone_move').first()
+        tl_event = TimelineEvent.objects.filter(event_name='zone_move').first()
         self.assertIsNone(tl_event)
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_move').count(), 0
@@ -695,7 +699,7 @@ class TestZoneMoveView(
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(
-            ProjectEvent.objects.filter(event_name='zone_move').count(), 0
+            TimelineEvent.objects.filter(event_name='zone_move').count(), 0
         )
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_move').count(), 0
@@ -709,8 +713,8 @@ class TestZoneMoveView(
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(len(mail.outbox), 1)  # TODO: Should this send email?
-        tl_event = ProjectEvent.objects.filter(event_name='zone_move').first()
-        self.assertIsInstance(tl_event, ProjectEvent)
+        tl_event = TimelineEvent.objects.filter(event_name='zone_move').first()
+        self.assertIsInstance(tl_event, TimelineEvent)
         self.assertEqual(tl_event.get_status().status_type, ZONE_STATUS_FAILED)
         # TODO: Create app alerts for async failures (see #1499)
         self.assertEqual(

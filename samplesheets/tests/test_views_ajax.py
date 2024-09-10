@@ -17,7 +17,7 @@ from projectroles.plugins import get_backend_api
 from sodarcache.models import JSONCacheItem
 
 # Timeline dependency
-from timeline.models import ProjectEvent
+from timeline.models import TimelineEvent
 
 # Ontologyaccess dependency
 from ontologyaccess.io import OBOFormatOntologyIO
@@ -1834,7 +1834,7 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, SamplesheetsViewTestBase):
         )
         self.assertEqual(sheet_config, CONFIG_DATA_DEFAULT)
         self.assertEqual(
-            ProjectEvent.objects.filter(
+            TimelineEvent.objects.filter(
                 project=self.project,
                 app=APP_NAME,
                 event_name='field_update',
@@ -1871,7 +1871,7 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, SamplesheetsViewTestBase):
             expected,
         )
         self.assertEqual(
-            ProjectEvent.objects.filter(
+            TimelineEvent.objects.filter(
                 project=self.project,
                 app=APP_NAME,
                 event_name='field_update',

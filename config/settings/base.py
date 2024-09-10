@@ -8,6 +8,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
+import itertools
 import os
 import re
 
@@ -61,6 +62,7 @@ THIRD_PARTY_APPS = [
     'markupfield',  # For markdown
     'rest_framework',  # For API views
     'knox',  # For token auth
+    'social_django',  # For OIDC authentication
     'docs',  # For the online user documentation/manual
     'dal',  # For user search combo box
     'dal_select2',
@@ -304,7 +306,7 @@ LOGIN_URL = 'login'
 AUTOSLUG_SLUGIFY_FUNCTION = 'slugify.slugify'
 
 # Location of root django.contrib.admin URL, use {% url 'admin:index' %}
-ADMIN_URL = r'^admin/'
+ADMIN_URL = 'admin/'
 
 
 # Celery
@@ -326,6 +328,8 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERYD_TASK_TIME_LIMIT = 5 * 60
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#task-soft-time-limit
 CELERYD_TASK_SOFT_TIME_LIMIT = 60
+# https://docs.celeryq.dev/en/latest/userguide/configuration.html#broker-connection-retry-on-startup
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = False
 CELERY_IMPORTS = [
     'landingzones.tasks_celery',
     'samplesheets.tasks_celery',
@@ -355,7 +359,6 @@ LDAP_DEBUG = env.bool('LDAP_DEBUG', False)
 LDAP_ALT_DOMAINS = env.list('LDAP_ALT_DOMAINS', None, default=[])
 
 if ENABLE_LDAP:
-    import itertools
     import ldap
     from django_auth_ldap.config import LDAPSearch
 
@@ -384,8 +387,9 @@ if ENABLE_LDAP:
     AUTH_LDAP_USER_FILTER = env.str(
         'AUTH_LDAP_USER_FILTER', '(sAMAccountName=%(user)s)'
     )
+    AUTH_LDAP_USER_SEARCH_BASE = env.str('AUTH_LDAP_USER_SEARCH_BASE', None)
     AUTH_LDAP_USER_SEARCH = LDAPSearch(
-        env.str('AUTH_LDAP_USER_SEARCH_BASE', None),
+        AUTH_LDAP_USER_SEARCH_BASE,
         ldap.SCOPE_SUBTREE,
         AUTH_LDAP_USER_FILTER,
     )
@@ -417,8 +421,11 @@ if ENABLE_LDAP:
         AUTH_LDAP2_USER_FILTER = env.str(
             'AUTH_LDAP2_USER_FILTER', '(sAMAccountName=%(user)s)'
         )
+        AUTH_LDAP2_USER_SEARCH_BASE = env.str(
+            'AUTH_LDAP2_USER_SEARCH_BASE', None
+        )
         AUTH_LDAP2_USER_SEARCH = LDAPSearch(
-            env.str('AUTH_LDAP2_USER_SEARCH_BASE', None),
+            AUTH_LDAP2_USER_SEARCH_BASE,
             ldap.SCOPE_SUBTREE,
             AUTH_LDAP2_USER_FILTER,
         )
@@ -435,79 +442,40 @@ if ENABLE_LDAP:
         )
 
 
-# SAML configuration
+# OpenID Connect (OIDC) configuration
 # ------------------------------------------------------------------------------
 
-ENABLE_SAML = env.bool('ENABLE_SAML', False)
-SAML2_AUTH = {
-    # Required setting
-    # Pysaml2 Saml client settings
-    # See: https://pysaml2.readthedocs.io/en/latest/howto/config.html
-    'SAML_CLIENT_SETTINGS': {
-        # Optional entity ID string to be passed in the 'Issuer' element of
-        # authn request, if required by the IDP.
-        'entityid': env.str('SAML_CLIENT_ENTITY_ID', 'SODAR'),
-        'entitybaseurl': env.str(
-            'SAML_CLIENT_ENTITY_URL', 'https://localhost:8000'
-        ),
-        # The auto(dynamic) metadata configuration URL of SAML2
-        'metadata': {
-            'local': [
-                env.str('SAML_CLIENT_METADATA_FILE', 'metadata.xml'),
-            ],
-        },
-        'service': {
-            'sp': {
-                'idp': env.str(
-                    'SAML_CLIENT_IPD',
-                    'https://sso.hpc.bihealth.org/auth/realms/cubi',
-                ),
-                # Keycloak expects client signature
-                'authn_requests_signed': 'true',
-                # Enforce POST binding which is required by keycloak
-                'binding': 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST',
-            },
-        },
-        'key_file': env.str('SAML_CLIENT_KEY_FILE', 'key.pem'),
-        'cert_file': env.str('SAML_CLIENT_CERT_FILE', 'cert.pem'),
-        'xmlsec_binary': env.str('SAML_CLIENT_XMLSEC1', '/usr/bin/xmlsec1'),
-        'encryption_keypairs': [
-            {
-                'key_file': env.str('SAML_CLIENT_KEY_FILE', 'key.pem'),
-                'cert_file': env.str('SAML_CLIENT_CERT_FILE', 'cert.pem'),
-            }
-        ],
-    },
-    # Custom target redirect URL after the user get logged in.
-    # Defaults to /admin if not set. This setting will be overwritten if you
-    # have parameter ?next= specificed in the login URL.
-    'DEFAULT_NEXT_URL': '/',
-    # # Optional settings below
-    # 'NEW_USER_PROFILE': {
-    #     'USER_GROUPS': [],  # The default group name when a new user logs in
-    #     'ACTIVE_STATUS': True,  # The default active status for new users
-    #     'STAFF_STATUS': True,  # The staff status for new users
-    #     'SUPERUSER_STATUS': False,  # The superuser status for new users
-    # },
-    'ATTRIBUTES_MAP': env.dict(
-        'SAML_ATTRIBUTES_MAP',
-        default={
-            # Change values to corresponding SAML2 userprofile attributes.
-            'email': 'Email',
-            'username': 'UserName',
-            'first_name': 'FirstName',
-            'last_name': 'LastName',
-        },
-    ),
-    # 'TRIGGER': {
-    #     'FIND_USER': 'path.to.your.find.user.hook.method',
-    #     'NEW_USER': 'path.to.your.new.user.hook.method',
-    #     'CREATE_USER': 'path.to.your.create.user.hook.method',
-    #     'BEFORE_LOGIN': 'path.to.your.login.hook.method',
-    # },
-    # Custom URL to validate incoming SAML requests against
-    # 'ASSERTION_URL': 'https://your.url.here',
-}
+ENABLE_OIDC = env.bool('ENABLE_OIDC', False)
+
+if ENABLE_OIDC:
+    AUTHENTICATION_BACKENDS = tuple(
+        itertools.chain(
+            ('social_core.backends.open_id_connect.OpenIdConnectAuth',),
+            AUTHENTICATION_BACKENDS,
+        )
+    )
+    TEMPLATES[0]['OPTIONS']['context_processors'] += [
+        'social_django.context_processors.backends',
+        'social_django.context_processors.login_redirect',
+    ]
+    SOCIAL_AUTH_JSONFIELD_ENABLED = True
+    SOCIAL_AUTH_JSONFIELD_CUSTOM = 'django.db.models.JSONField'
+    SOCIAL_AUTH_USER_MODEL = AUTH_USER_MODEL
+    SOCIAL_AUTH_ADMIN_USER_SEARCH_FIELDS = [
+        'username',
+        'name',
+        'first_name',
+        'last_name',
+        'email',
+    ]
+    SOCIAL_AUTH_OIDC_OIDC_ENDPOINT = env.str(
+        'SOCIAL_AUTH_OIDC_OIDC_ENDPOINT', None
+    )
+    SOCIAL_AUTH_OIDC_KEY = env.str('SOCIAL_AUTH_OIDC_KEY', 'CHANGEME')
+    SOCIAL_AUTH_OIDC_SECRET = env.str('SOCIAL_AUTH_OIDC_SECRET', 'CHANGEME')
+    SOCIAL_AUTH_OIDC_USERNAME_KEY = env.str(
+        'SOCIAL_AUTH_OIDC_USERNAME_KEY', 'username'
+    )
 
 
 # Logging

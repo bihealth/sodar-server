@@ -12,7 +12,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.tests.test_ui import TestUIBase
+from projectroles.tests.test_ui import UITestBase
 
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
@@ -36,7 +36,7 @@ SHEET_PATH = SHEET_DIR + 'i_small.zip'
 
 
 class LandingZoneUITestBase(
-    SampleSheetIOMixin, SheetConfigMixin, LandingZoneMixin, TestUIBase
+    SampleSheetIOMixin, SheetConfigMixin, LandingZoneMixin, UITestBase
 ):
     """Base class for landingzones UI tests"""
 
@@ -51,7 +51,7 @@ class LandingZoneUITestBase(
 
     def _assert_element(self, by, element, expected=True):
         """Assert element existence for an already logged in user"""
-        # TODO: Add this into TestUIBase (see bihealth/sodar-core#1104)
+        # TODO: Add this into UITestBase (see bihealth/sodar-core#1104)
         if expected:
             self.assertIsNotNone(self.selenium.find_element(by, element))
         else:

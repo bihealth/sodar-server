@@ -3,10 +3,10 @@
 from django.urls import reverse
 
 # Projectroles dependency
-from projectroles.tests.test_permissions import TestSiteAppPermissionBase
+from projectroles.tests.test_permissions import SiteAppPermissionTestBase
 
 
-class TestIrodsConfigRetrieveAPIView(TestSiteAppPermissionBase):
+class TestIrodsConfigRetrieveAPIView(SiteAppPermissionTestBase):
     """Tests for irodsinfo API"""
 
     def test_get_irods_config(self):

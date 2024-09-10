@@ -105,7 +105,7 @@ class TaskflowAPI:
         :param flow_name: Name of flow (string)
         :param flow_data: Flow parameters (dict)
         :param async_mode: Set up flow asynchronously if True (boolean)
-        :param tl_event: ProjectEvent object for timeline updating or None
+        :param tl_event: TimelineEvent object for timeline updating or None
         """
         flow_cls = flows.get_flow(flow_name)
         if not flow_cls:
@@ -142,8 +142,8 @@ class TaskflowAPI:
         :param project: Project object
         :param force_fail: Force failure (boolean, for testing)
         :param async_mode: Submit in async mode (boolean, default=False)
-        :param tl_event: Timeline ProjectEvent object or None. Event status will
-                         be updated if the flow is run in async mode
+        :param tl_event: TimelineEvent object or None. Event status will be
+                         updated if the flow is run in async mode
         :return: Dict
         """
         flow_result = None
@@ -235,7 +235,7 @@ class TaskflowAPI:
         :param flow_data: Input data for flow execution (dict, must be JSON
                           serializable)
         :param async_mode: Run flow asynchronously (boolean, default False)
-        :param tl_event: Corresponding timeline ProjectEvent (optional)
+        :param tl_event: Corresponding TimelineEvent (optional)
         :param force_fail: Make flow fail on purpose (boolean, default False)
         :return: Boolean
         :raise: FlowSubmitException if submission fails

@@ -5,7 +5,7 @@ from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.tests.test_permissions_api import TestProjectAPIPermissionBase
+from projectroles.tests.test_permissions_api import ProjectAPIPermissionTestBase
 
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
@@ -32,7 +32,7 @@ SHEET_PATH = SHEET_DIR + 'i_small.zip'
 class ZoneAPIPermissionTestBase(
     LandingZoneMixin,
     SampleSheetIOMixin,
-    TestProjectAPIPermissionBase,
+    ProjectAPIPermissionTestBase,
 ):
     """Base class for landingzones REST API view permission tests"""
 

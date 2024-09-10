@@ -12,7 +12,7 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 
 # Projectroles dependency
-from projectroles.tests.test_ui import TestUIBase
+from projectroles.tests.test_ui import UITestBase
 
 from isatemplates.models import ISA_FILE_PREFIXES
 from isatemplates.tests.test_models import (
@@ -29,7 +29,7 @@ BACKEND_PLUGINS_NO_TPL = settings.ENABLED_BACKEND_PLUGINS.copy()
 BACKEND_PLUGINS_NO_TPL.remove('isatemplates_backend')
 
 
-class TestISATemplateListView(CookiecutterISATemplateMixin, TestUIBase):
+class TestISATemplateListView(CookiecutterISATemplateMixin, UITestBase):
     """Tests for ISATemplateListView UI"""
 
     def setUp(self):
@@ -106,7 +106,7 @@ class TestISATemplateListView(CookiecutterISATemplateMixin, TestUIBase):
 
 
 class TestISATemplateDetailView(
-    CookiecutterISATemplateMixin, CookiecutterISAFileMixin, TestUIBase
+    CookiecutterISATemplateMixin, CookiecutterISAFileMixin, UITestBase
 ):
     """Tests for ISATemplateDetailView UI"""
 
@@ -156,7 +156,7 @@ class TestISATemplateDetailView(
 
 
 class TestCUBIISATemplateDetailView(
-    CookiecutterISATemplateMixin, CookiecutterISAFileMixin, TestUIBase
+    CookiecutterISATemplateMixin, CookiecutterISAFileMixin, UITestBase
 ):
     """Tests for CUBIISATemplateDetailView UI"""
 

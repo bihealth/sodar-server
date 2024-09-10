@@ -14,13 +14,13 @@ from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 from projectroles.tests.test_models import RemoteSiteMixin, RemoteProjectMixin
-from projectroles.tests.test_views_api import TestAPIViewsBase
+from projectroles.tests.test_views_api import APIViewTestBase
 
 # Sodarcache dependency
 from sodarcache.models import JSONCacheItem
 
 # Timeline dependency
-from timeline.models import ProjectEvent
+from timeline.models import TimelineEvent
 
 # Landingzones dependency
 from landingzones.models import LandingZone
@@ -93,7 +93,7 @@ TICKET_PATH = '/test/path'
 # TODO: Add testing for study table cache updates
 
 
-class SampleSheetAPIViewTestBase(SampleSheetIOMixin, TestAPIViewsBase):
+class SampleSheetAPIViewTestBase(SampleSheetIOMixin, APIViewTestBase):
     """Base view for samplesheets API views tests"""
 
 
@@ -923,9 +923,9 @@ class TestIrodsDataRequestDestroyAPIView(
     """Tests for IrodsDataRequestDestroyAPIView"""
 
     def _assert_tl_count(self, count):
-        """Assert timeline ProjectEvent count"""
+        """Assert timeline TimelineEvent count"""
         self.assertEqual(
-            ProjectEvent.objects.filter(
+            TimelineEvent.objects.filter(
                 event_name='irods_request_delete'
             ).count(),
             count,

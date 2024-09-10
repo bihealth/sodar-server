@@ -19,13 +19,14 @@ TBA
 
 - [ ] Review code style and cleanup
 - [ ] Review and update docs entries
-- [ ] Update `SODAR_API_DEFAULT_VERSION` and `SODAR_API_ALLOWED_VERSIONS`
+- [ ] Ensure REST API versions are up to date and documented
 - [ ] Run `npx update-browserslist-db@latest` for Vue app
 - [ ] Update Vue app version with `npm version`
 - [ ] Update version in CHANGELOG and SODAR Release Notes doc
 - [ ] Update version in docs conf.py
 - [ ] Ensure both SODAR and SODAR Core API versioning is correct in API docs
 - [ ] Ensure docs can be built without errors
+- [ ] Ensure `generateschema` runs without errors or warnings (until in CI)
 
 ## Notes
 

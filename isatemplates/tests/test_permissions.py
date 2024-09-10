@@ -6,7 +6,7 @@ from django.test import override_settings
 from django.urls import reverse
 
 # Projectroles dependency
-from projectroles.tests.test_permissions import TestSiteAppPermissionBase
+from projectroles.tests.test_permissions import SiteAppPermissionTestBase
 
 from isatemplates.tests.test_models import (
     CookiecutterISATemplateMixin,
@@ -16,7 +16,7 @@ from isatemplates.tests.test_models import (
 
 
 class TestISATemplatesPermissions(
-    CookiecutterISATemplateMixin, TestSiteAppPermissionBase
+    CookiecutterISATemplateMixin, SiteAppPermissionTestBase
 ):
     """Tests for isatemplates UI view permissions"""
 
