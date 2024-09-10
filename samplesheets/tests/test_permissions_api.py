@@ -31,6 +31,10 @@ from samplesheets.tests.test_permissions import (
     REMOTE_SITE_SECRET,
     INVALID_SECRET,
 )
+from samplesheets.views_api import (
+    SAMPLESHEETS_API_MEDIA_TYPE,
+    SAMPLESHEETS_API_DEFAULT_VERSION,
+)
 
 
 # Local constants
@@ -38,9 +42,16 @@ IRODS_FILE_PATH = '/sodarZone/path/test1.txt'
 LABEL_CREATE = 'label'
 
 
+class SamplesheetsAPIPermissionTestBase(ProjectAPIPermissionTestBase):
+    """Base class for samplesheets REST API view permission tests"""
+
+    media_type = SAMPLESHEETS_API_MEDIA_TYPE
+    api_version = SAMPLESHEETS_API_DEFAULT_VERSION
+
+
 class TestInvestigationRetrieveAPIView(
     SampleSheetIOMixin,
-    ProjectAPIPermissionTestBase,
+    SamplesheetsAPIPermissionTestBase,
 ):
     """Tests for InvestigationRetrieveAPIView permissions"""
 
@@ -120,7 +131,9 @@ class TestInvestigationRetrieveAPIView(
         self.assert_response_api(url, self.anonymous, 401)
 
 
-class TestSheetImportAPIView(SampleSheetIOMixin, ProjectAPIPermissionTestBase):
+class TestSheetImportAPIView(
+    SampleSheetIOMixin, SamplesheetsAPIPermissionTestBase
+):
     """Tests for SheetImportAPIView permissions"""
 
     def _cleanup_import(self):
@@ -291,7 +304,7 @@ class TestSheetImportAPIView(SampleSheetIOMixin, ProjectAPIPermissionTestBase):
 
 class TestSheetISAExportAPIView(
     SampleSheetIOMixin,
-    ProjectAPIPermissionTestBase,
+    SamplesheetsAPIPermissionTestBase,
 ):
     """Tests for SheetISAExportAPIView permissions"""
 
@@ -364,7 +377,9 @@ class TestSheetISAExportAPIView(
 
 
 class TestIrodsAccessTicketListAPIView(
-    SampleSheetIOMixin, IrodsAccessTicketMixin, ProjectAPIPermissionTestBase
+    SampleSheetIOMixin,
+    IrodsAccessTicketMixin,
+    SamplesheetsAPIPermissionTestBase,
 ):
     """Test permissions for IrodsAccessTicketListAPIView"""
 
@@ -438,7 +453,9 @@ class TestIrodsAccessTicketListAPIView(
 
 
 class TestIrodsAccessTicketRetrieveAPIView(
-    SampleSheetIOMixin, IrodsAccessTicketMixin, ProjectAPIPermissionTestBase
+    SampleSheetIOMixin,
+    IrodsAccessTicketMixin,
+    SamplesheetsAPIPermissionTestBase,
 ):
     """Test permissions for IrodsAccessTicketRetrieveAPIView"""
 
@@ -509,7 +526,7 @@ class TestIrodsAccessTicketRetrieveAPIView(
 
 
 class TestIrodsDataRequestRetrieveAPIView(
-    IrodsDataRequestMixin, ProjectAPIPermissionTestBase
+    IrodsDataRequestMixin, SamplesheetsAPIPermissionTestBase
 ):
     """Tests for TestIrodsDataRequestRetrieveAPIView permissions"""
 
@@ -581,7 +598,7 @@ class TestIrodsDataRequestRetrieveAPIView(
         self.assert_response_api(self.url, self.anonymous, 401)
 
 
-class TestIrodsDataRequestListAPIView(ProjectAPIPermissionTestBase):
+class TestIrodsDataRequestListAPIView(SamplesheetsAPIPermissionTestBase):
     """Tests for TestIrodsDataRequestListAPIView permissions"""
 
     def setUp(self):
@@ -646,7 +663,7 @@ class TestIrodsDataRequestListAPIView(ProjectAPIPermissionTestBase):
 
 
 class TestIrodsDataRequestRejectAPIView(
-    IrodsDataRequestMixin, ProjectAPIPermissionTestBase
+    IrodsDataRequestMixin, SamplesheetsAPIPermissionTestBase
 ):
     """Test permissions for TestIrodsDataRequestRejectAPIView"""
 
@@ -728,7 +745,7 @@ class TestIrodsDataRequestRejectAPIView(
 
 
 class TestIrodsDataRequestDestroyAPIView(
-    SampleSheetIOMixin, IrodsDataRequestMixin, ProjectAPIPermissionTestBase
+    SampleSheetIOMixin, IrodsDataRequestMixin, SamplesheetsAPIPermissionTestBase
 ):
     """Test permissions for IrodsDataRequestDestroyAPIView"""
 

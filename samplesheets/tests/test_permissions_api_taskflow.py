@@ -33,6 +33,10 @@ from samplesheets.tests.test_views_taskflow import (
     SampleSheetTaskflowMixin,
     IRODS_FILE_NAME,
 )
+from samplesheets.views_api import (
+    SAMPLESHEETS_API_MEDIA_TYPE,
+    SAMPLESHEETS_API_DEFAULT_VERSION,
+)
 
 
 # Local constants
@@ -43,11 +47,20 @@ LABEL_UPDATE = 'label_update'
 # Base Classes and Mixins ------------------------------------------------------
 
 
-class IrodsAccessTicketAPIViewTestBase(
+class SheetTaskflowAPIPermissionTestBase(
     SampleSheetIOMixin,
-    IrodsAccessTicketMixin,
     SampleSheetTaskflowMixin,
     TaskflowAPIPermissionTestBase,
+):
+    """Base class for samplesheets REST API view permission tests"""
+
+    media_type = SAMPLESHEETS_API_MEDIA_TYPE
+    api_version = SAMPLESHEETS_API_DEFAULT_VERSION
+
+
+class IrodsAccessTicketAPIViewTestBase(
+    IrodsAccessTicketMixin,
+    SheetTaskflowAPIPermissionTestBase,
 ):
     """Base class for iRODS access ticket API view permission tests"""
 
@@ -65,9 +78,7 @@ class IrodsAccessTicketAPIViewTestBase(
         )
 
 
-class IrodsDataRequestAPIViewTestBase(
-    SampleSheetIOMixin, SampleSheetTaskflowMixin, TaskflowAPIPermissionTestBase
-):
+class IrodsDataRequestAPIViewTestBase(SheetTaskflowAPIPermissionTestBase):
     """Base class for iRODS data request API view permission tests"""
 
     def setUp(self):
@@ -89,9 +100,7 @@ class IrodsDataRequestAPIViewTestBase(
 # Test Classes -----------------------------------------------------------------
 
 
-class TestSampleDataFileExistsAPIView(
-    SampleSheetIOMixin, SampleSheetTaskflowMixin, TaskflowAPIPermissionTestBase
-):
+class TestSampleDataFileExistsAPIView(SheetTaskflowAPIPermissionTestBase):
     """Tests for SampleDataFileExistsAPIView permissions"""
 
     def setUp(self):
@@ -434,9 +443,7 @@ class TestIrodsAccessTicketDestroyAPIView(IrodsAccessTicketAPIViewTestBase):
         self.assert_response_api(self.url, self.anonymous, 401, method='DELETE')
 
 
-class TestIrodsDataRequestListAPIView(
-    SampleSheetIOMixin, SampleSheetTaskflowMixin, TaskflowAPIPermissionTestBase
-):
+class TestIrodsDataRequestListAPIView(SheetTaskflowAPIPermissionTestBase):
     """Tests for IrodsDataRequestListAPIView permissions"""
 
     def setUp(self):

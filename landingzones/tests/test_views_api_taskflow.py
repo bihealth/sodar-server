@@ -41,6 +41,10 @@ from landingzones.tests.test_views_taskflow import (
     ZONE_ALL_COLLS,
     TEST_OBJ_NAME,
 )
+from landingzones.views_api import (
+    LANDINGZONES_API_MEDIA_TYPE,
+    LANDINGZONES_API_DEFAULT_VERSION,
+)
 
 
 # SODAR constants
@@ -64,6 +68,9 @@ class ZoneAPIViewTaskflowTestBase(
     TaskflowAPIViewTestBase,
 ):
     """Base landing zone API view test class with Taskflow enabled"""
+
+    media_type = LANDINGZONES_API_MEDIA_TYPE
+    api_version = LANDINGZONES_API_DEFAULT_VERSION
 
     def setUp(self):
         super().setUp()

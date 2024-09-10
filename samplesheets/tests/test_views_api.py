@@ -67,6 +67,10 @@ from samplesheets.tests.test_views_taskflow import (
     IrodsAccessTicketViewTestMixin,
 )
 from samplesheets.views import SheetImportMixin
+from samplesheets.views_api import (
+    SAMPLESHEETS_API_MEDIA_TYPE,
+    SAMPLESHEETS_API_DEFAULT_VERSION,
+)
 
 
 app_settings = AppSettingAPI()
@@ -95,6 +99,9 @@ TICKET_PATH = '/test/path'
 
 class SampleSheetAPIViewTestBase(SampleSheetIOMixin, APIViewTestBase):
     """Base view for samplesheets API views tests"""
+
+    media_type = SAMPLESHEETS_API_MEDIA_TYPE
+    api_version = SAMPLESHEETS_API_DEFAULT_VERSION
 
 
 class IrodsAccessTicketAPITestBase(

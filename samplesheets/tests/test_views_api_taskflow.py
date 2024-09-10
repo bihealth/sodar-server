@@ -36,15 +36,6 @@ from samplesheets.models import (
     IRODS_REQUEST_STATUS_REJECTED,
     IRODS_REQUEST_ACTION_DELETE,
 )
-from samplesheets.views import (
-    IRODS_REQUEST_EVENT_CREATE as CREATE_ALERT,
-    IRODS_REQUEST_EVENT_ACCEPT as ACCEPT_ALERT,
-    IRODS_REQUEST_EVENT_REJECT as REJECT_ALERT,
-)
-from samplesheets.views_api import (
-    IRODS_QUERY_ERROR_MSG,
-)
-
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_models import (
     IrodsAccessTicketMixin,
@@ -59,6 +50,16 @@ from samplesheets.tests.test_views_taskflow import (
     INVALID_REDIS_URL,
     TICKET_STR,
     TICKET_LABEL,
+)
+from samplesheets.views import (
+    IRODS_REQUEST_EVENT_CREATE as CREATE_ALERT,
+    IRODS_REQUEST_EVENT_ACCEPT as ACCEPT_ALERT,
+    IRODS_REQUEST_EVENT_REJECT as REJECT_ALERT,
+)
+from samplesheets.views_api import (
+    IRODS_QUERY_ERROR_MSG,
+    SAMPLESHEETS_API_MEDIA_TYPE,
+    SAMPLESHEETS_API_DEFAULT_VERSION,
 )
 
 # SODAR constants
@@ -84,6 +85,9 @@ class SampleSheetAPITaskflowTestBase(
 ):
     """Base samplesheets API view test class with Taskflow enabled"""
 
+    media_type = SAMPLESHEETS_API_MEDIA_TYPE
+    api_version = SAMPLESHEETS_API_DEFAULT_VERSION
+
     def setUp(self):
         super().setUp()
         # Make project with owner in Taskflow and Django
@@ -108,6 +112,9 @@ class IrodsAccessTicketAPIViewTestBase(
     TaskflowAPIViewTestBase,
 ):
     """Base samplesheets API view test class for iRODS access ticket requests"""
+
+    media_type = SAMPLESHEETS_API_MEDIA_TYPE
+    api_version = SAMPLESHEETS_API_DEFAULT_VERSION
 
     def assert_alert_count(self, alert_name, user, count, project=None):
         """
@@ -170,6 +177,9 @@ class TestIrodsDataRequestAPIViewBase(
     SampleSheetIOMixin, SampleSheetTaskflowMixin, TaskflowAPIViewTestBase
 ):
     """Base samplesheets API view test class for iRODS delete requests"""
+
+    media_type = SAMPLESHEETS_API_MEDIA_TYPE
+    api_version = SAMPLESHEETS_API_DEFAULT_VERSION
 
     # TODO: Retrieve this from a common base/helper class instead of redef
     def assert_alert_count(self, alert_name, user, count, project=None):

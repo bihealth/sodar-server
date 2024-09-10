@@ -7,10 +7,17 @@ from rest_framework import status
 from test_plus.test import TestCase
 
 from irodsinfo.tests.test_views import PLUGINS_DISABLE_IRODS
+from irodsinfo.views_api import (
+    IRODSINFO_API_MEDIA_TYPE,
+    IRODSINFO_API_DEFAULT_VERSION,
+)
 
 
 class TestIrodsConfigRetrieveAPIView(TestCase):
     """Tests for IrodsConfigRetrieveAPIView"""
+
+    media_type = IRODSINFO_API_MEDIA_TYPE
+    api_version = IRODSINFO_API_DEFAULT_VERSION
 
     def setUp(self):
         # Create users

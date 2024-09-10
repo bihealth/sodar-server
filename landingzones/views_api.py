@@ -11,9 +11,11 @@ from rest_framework.generics import (
     CreateAPIView,
     UpdateAPIView,
 )
+from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.serializers import ValidationError
+from rest_framework.versioning import AcceptHeaderVersioning
 from rest_framework.views import APIView
 
 # Projectroles dependency
@@ -41,11 +43,37 @@ from landingzones.views import (
 logger = logging.getLogger(__name__)
 
 
+# Local constants
+LANDINGZONES_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar.landingzones+json'
+LANDINGZONES_API_ALLOWED_VERSIONS = ['1.0']
+LANDINGZONES_API_DEFAULT_VERSION = '1.0'
+
+
 # Mixins and Base Views --------------------------------------------------------
 
 
+class LandingzonesAPIVersioningMixin:
+    """
+    Landingzones API view versioning mixin for overriding media type and
+    accepted versions.
+    """
+
+    class LandingzonesAPIRenderer(JSONRenderer):
+        media_type = LANDINGZONES_API_MEDIA_TYPE
+
+    class LandingzonesAPIVersioning(AcceptHeaderVersioning):
+        allowed_versions = LANDINGZONES_API_ALLOWED_VERSIONS
+        default_version = LANDINGZONES_API_DEFAULT_VERSION
+
+    renderer_classes = [LandingzonesAPIRenderer]
+    versioning_class = LandingzonesAPIVersioning
+
+
 class ZoneSubmitBaseAPIView(
-    ZoneModifyPermissionMixin, SODARAPIBaseProjectMixin, APIView
+    ZoneModifyPermissionMixin,
+    LandingzonesAPIVersioningMixin,
+    SODARAPIBaseProjectMixin,
+    APIView,
 ):
     """
     Base API view for initiating LandingZone operations via SODAR Taskflow.
@@ -80,7 +108,9 @@ class ZoneSubmitBaseAPIView(
 # API Views --------------------------------------------------------------------
 
 
-class ZoneListAPIView(SODARAPIGenericProjectMixin, ListAPIView):
+class ZoneListAPIView(
+    LandingzonesAPIVersioningMixin, SODARAPIGenericProjectMixin, ListAPIView
+):
     """
     List the landing zones in a project.
 
@@ -120,7 +150,9 @@ class ZoneListAPIView(SODARAPIGenericProjectMixin, ListAPIView):
         return ret
 
 
-class ZoneRetrieveAPIView(SODARAPIGenericProjectMixin, RetrieveAPIView):
+class ZoneRetrieveAPIView(
+    LandingzonesAPIVersioningMixin, SODARAPIGenericProjectMixin, RetrieveAPIView
+):
     """
     Retrieve the details of a landing zone.
 
@@ -163,7 +195,10 @@ class ZoneRetrieveAPIView(SODARAPIGenericProjectMixin, RetrieveAPIView):
 
 
 class ZoneCreateAPIView(
-    ZoneModifyMixin, SODARAPIGenericProjectMixin, CreateAPIView
+    ZoneModifyMixin,
+    LandingzonesAPIVersioningMixin,
+    SODARAPIGenericProjectMixin,
+    CreateAPIView,
 ):
     """
     Create a landing zone.
@@ -231,7 +266,10 @@ class ZoneCreateAPIView(
 
 
 class ZoneUpdateAPIView(
-    ZoneModifyMixin, SODARAPIGenericProjectMixin, UpdateAPIView
+    ZoneModifyMixin,
+    LandingzonesAPIVersioningMixin,
+    SODARAPIGenericProjectMixin,
+    UpdateAPIView,
 ):
     """
     Update a landing zone description and user message.

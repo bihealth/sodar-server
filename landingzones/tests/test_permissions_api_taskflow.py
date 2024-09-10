@@ -26,6 +26,10 @@ from landingzones.tests.test_views_taskflow import (
     ZONE_TITLE,
     ZONE_DESC,
 )
+from landingzones.views_api import (
+    LANDINGZONES_API_MEDIA_TYPE,
+    LANDINGZONES_API_DEFAULT_VERSION,
+)
 
 
 # Local constants
@@ -40,6 +44,9 @@ class ZoneAPIPermissionTaskflowTestBase(
     TaskflowAPIPermissionTestBase,
 ):
     """Base class for landing zone permission tests with Taskflow"""
+
+    media_type = LANDINGZONES_API_MEDIA_TYPE
+    api_version = LANDINGZONES_API_DEFAULT_VERSION
 
     def setUp(self):
         super().setUp()

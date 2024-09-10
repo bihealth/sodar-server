@@ -20,6 +20,10 @@ from landingzones.constants import (
 )
 from landingzones.tests.test_models import LandingZoneMixin
 from landingzones.tests.test_views_taskflow import ZONE_TITLE, ZONE_DESC
+from landingzones.views_api import (
+    LANDINGZONES_API_MEDIA_TYPE,
+    LANDINGZONES_API_DEFAULT_VERSION,
+)
 
 
 # SODAR constants
@@ -41,6 +45,9 @@ class TestLandingZoneAPIViewsBase(
     LandingZoneMixin, SampleSheetIOMixin, APIViewTestBase
 ):
     """Base class for Landingzones API view testing"""
+
+    media_type = LANDINGZONES_API_MEDIA_TYPE
+    api_version = LANDINGZONES_API_DEFAULT_VERSION
 
     def setUp(self):
         super().setUp()

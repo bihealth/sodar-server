@@ -15,6 +15,10 @@ from landingzones.tests.test_models import (
     ZONE_TITLE,
     ZONE_DESC,
 )
+from landingzones.views_api import (
+    LANDINGZONES_API_MEDIA_TYPE,
+    LANDINGZONES_API_DEFAULT_VERSION,
+)
 
 
 # SODAR constants
@@ -35,6 +39,9 @@ class ZoneAPIPermissionTestBase(
     ProjectAPIPermissionTestBase,
 ):
     """Base class for landingzones REST API view permission tests"""
+
+    media_type = LANDINGZONES_API_MEDIA_TYPE
+    api_version = LANDINGZONES_API_DEFAULT_VERSION
 
 
 class TestZoneListAPIView(ZoneAPIPermissionTestBase):

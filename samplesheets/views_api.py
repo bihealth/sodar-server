@@ -25,7 +25,9 @@ from rest_framework.generics import (
     UpdateAPIView,
 )
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
+from rest_framework.versioning import AcceptHeaderVersioning
 from rest_framework.views import APIView
 
 # Projectroles dependency
@@ -70,6 +72,10 @@ logger = logging.getLogger(__name__)
 table_builder = SampleSheetTableBuilder()
 
 
+# Local constants
+SAMPLESHEETS_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar.samplesheets+json'
+SAMPLESHEETS_API_ALLOWED_VERSIONS = ['1.0']
+SAMPLESHEETS_API_DEFAULT_VERSION = '1.0'
 MD5_RE = re.compile(r'([a-fA-F\d]{32})')
 APP_NAME = 'samplesheets'
 IRODS_QUERY_ERROR_MSG = 'Exception querying iRODS objects'
@@ -78,11 +84,31 @@ IRODS_TICKET_EX_MSG = 'iRODS access ticket failed'
 IRODS_TICKET_NO_UPDATE_FIELDS_MSG = 'No fields to update'
 
 
+# Base Classes and Mixins ------------------------------------------------------
+
+
+class SamplesheetsAPIVersioningMixin:
+    """
+    Samplesheets API view versioning mixin for overriding media type and
+    accepted versions.
+    """
+
+    class SamplesheetsAPIRenderer(JSONRenderer):
+        media_type = SAMPLESHEETS_API_MEDIA_TYPE
+
+    class SamplesheetsAPIVersioning(AcceptHeaderVersioning):
+        allowed_versions = SAMPLESHEETS_API_ALLOWED_VERSIONS
+        default_version = SAMPLESHEETS_API_DEFAULT_VERSION
+
+    renderer_classes = [SamplesheetsAPIRenderer]
+    versioning_class = SamplesheetsAPIVersioning
+
+
 # API Views --------------------------------------------------------------------
 
 
 class InvestigationRetrieveAPIView(
-    SODARAPIGenericProjectMixin, RetrieveAPIView
+    SamplesheetsAPIVersioningMixin, SODARAPIGenericProjectMixin, RetrieveAPIView
 ):
     """
     Retrieve metadata of an investigation with its studies and assays.
@@ -116,7 +142,10 @@ class InvestigationRetrieveAPIView(
 
 
 class IrodsCollsCreateAPIView(
-    IrodsCollsCreateViewMixin, SODARAPIBaseProjectMixin, APIView
+    IrodsCollsCreateViewMixin,
+    SamplesheetsAPIVersioningMixin,
+    SODARAPIBaseProjectMixin,
+    APIView,
 ):
     """
     Create iRODS collections for a project.
@@ -162,7 +191,10 @@ class IrodsCollsCreateAPIView(
 
 
 class SheetISAExportAPIView(
-    SheetISAExportMixin, SODARAPIBaseProjectMixin, APIView
+    SheetISAExportMixin,
+    SamplesheetsAPIVersioningMixin,
+    SODARAPIBaseProjectMixin,
+    APIView,
 ):
     """
     Export sample sheets as ISA-Tab TSV files, either packed in a zip archive or
@@ -197,7 +229,12 @@ class SheetISAExportAPIView(
             raise APIException('Unable to export ISA-Tab: {}'.format(ex))
 
 
-class SheetImportAPIView(SheetImportMixin, SODARAPIBaseProjectMixin, APIView):
+class SheetImportAPIView(
+    SheetImportMixin,
+    SamplesheetsAPIVersioningMixin,
+    SODARAPIBaseProjectMixin,
+    APIView,
+):
     """
     Upload sample sheet as separate ISA-Tab TSV files or a zip archive. Will
     replace existing sheets if valid.
@@ -315,7 +352,7 @@ class SheetImportAPIView(SheetImportMixin, SODARAPIBaseProjectMixin, APIView):
 
 
 class IrodsAccessTicketRetrieveAPIView(
-    SODARAPIGenericProjectMixin, RetrieveAPIView
+    SamplesheetsAPIVersioningMixin, SODARAPIGenericProjectMixin, RetrieveAPIView
 ):
     """
     Retrieve an iRODS access ticket for a project.
@@ -345,7 +382,9 @@ class IrodsAccessTicketRetrieveAPIView(
     queryset_project_field = 'study__investigation__project'
 
 
-class IrodsAccessTicketListAPIView(SODARAPIBaseProjectMixin, ListAPIView):
+class IrodsAccessTicketListAPIView(
+    SamplesheetsAPIVersioningMixin, SODARAPIBaseProjectMixin, ListAPIView
+):
     """
     List iRODS access tickets for a project.
 
@@ -376,7 +415,10 @@ class IrodsAccessTicketListAPIView(SODARAPIBaseProjectMixin, ListAPIView):
 
 
 class IrodsAccessTicketCreateAPIView(
-    IrodsAccessTicketModifyMixin, SODARAPIGenericProjectMixin, CreateAPIView
+    IrodsAccessTicketModifyMixin,
+    SamplesheetsAPIVersioningMixin,
+    SODARAPIGenericProjectMixin,
+    CreateAPIView,
 ):
     """
     Create an iRODS access ticket for a project.
@@ -429,7 +471,10 @@ class IrodsAccessTicketCreateAPIView(
 
 
 class IrodsAccessTicketUpdateAPIView(
-    IrodsAccessTicketModifyMixin, SODARAPIGenericProjectMixin, UpdateAPIView
+    IrodsAccessTicketModifyMixin,
+    SamplesheetsAPIVersioningMixin,
+    SODARAPIGenericProjectMixin,
+    UpdateAPIView,
 ):
     """
     Update an iRODS access ticket for a project.
@@ -463,7 +508,10 @@ class IrodsAccessTicketUpdateAPIView(
 
 
 class IrodsAccessTicketDestroyAPIView(
-    IrodsAccessTicketModifyMixin, SODARAPIGenericProjectMixin, DestroyAPIView
+    IrodsAccessTicketModifyMixin,
+    SamplesheetsAPIVersioningMixin,
+    SODARAPIGenericProjectMixin,
+    DestroyAPIView,
 ):
     """
     Delete an iRODS access ticket.
@@ -497,7 +545,7 @@ class IrodsAccessTicketDestroyAPIView(
 
 
 class IrodsDataRequestRetrieveAPIView(
-    SODARAPIGenericProjectMixin, RetrieveAPIView
+    SamplesheetsAPIVersioningMixin, SODARAPIGenericProjectMixin, RetrieveAPIView
 ):
     """
     Retrieve a iRODS data request.
@@ -526,7 +574,9 @@ class IrodsDataRequestRetrieveAPIView(
     serializer_class = IrodsDataRequestSerializer
 
 
-class IrodsDataRequestListAPIView(SODARAPIBaseProjectMixin, ListAPIView):
+class IrodsDataRequestListAPIView(
+    SamplesheetsAPIVersioningMixin, SODARAPIBaseProjectMixin, ListAPIView
+):
     """
     List the iRODS data requests for a project.
 
@@ -561,7 +611,10 @@ class IrodsDataRequestListAPIView(SODARAPIBaseProjectMixin, ListAPIView):
 
 
 class IrodsDataRequestCreateAPIView(
-    IrodsDataRequestModifyMixin, SODARAPIGenericProjectMixin, CreateAPIView
+    IrodsDataRequestModifyMixin,
+    SamplesheetsAPIVersioningMixin,
+    SODARAPIGenericProjectMixin,
+    CreateAPIView,
 ):
     """
     Create an iRODS delete request for a project.
@@ -592,7 +645,10 @@ class IrodsDataRequestCreateAPIView(
 
 
 class IrodsDataRequestUpdateAPIView(
-    IrodsDataRequestModifyMixin, SODARAPIGenericProjectMixin, UpdateAPIView
+    IrodsDataRequestModifyMixin,
+    SamplesheetsAPIVersioningMixin,
+    SODARAPIGenericProjectMixin,
+    UpdateAPIView,
 ):
     """
     Update an iRODS data request for a project.
@@ -622,7 +678,10 @@ class IrodsDataRequestUpdateAPIView(
 
 
 class IrodsDataRequestDestroyAPIView(
-    IrodsDataRequestModifyMixin, SODARAPIGenericProjectMixin, DestroyAPIView
+    IrodsDataRequestModifyMixin,
+    SamplesheetsAPIVersioningMixin,
+    SODARAPIGenericProjectMixin,
+    DestroyAPIView,
 ):
     """
     Delete an iRODS data request object.
@@ -651,7 +710,10 @@ class IrodsDataRequestDestroyAPIView(
 
 
 class IrodsDataRequestAcceptAPIView(
-    IrodsDataRequestModifyMixin, SODARAPIBaseProjectMixin, APIView
+    IrodsDataRequestModifyMixin,
+    SamplesheetsAPIVersioningMixin,
+    SODARAPIBaseProjectMixin,
+    APIView,
 ):
     """
     Accept an iRODS data request for a project.
@@ -696,7 +758,10 @@ class IrodsDataRequestAcceptAPIView(
 
 
 class IrodsDataRequestRejectAPIView(
-    IrodsDataRequestModifyMixin, SODARAPIBaseProjectMixin, APIView
+    IrodsDataRequestModifyMixin,
+    SamplesheetsAPIVersioningMixin,
+    SODARAPIBaseProjectMixin,
+    APIView,
 ):
     """
     Reject an iRODS data request for a project.
@@ -738,7 +803,9 @@ class IrodsDataRequestRejectAPIView(
         )
 
 
-class SampleDataFileExistsAPIView(SODARAPIBaseMixin, APIView):
+class SampleDataFileExistsAPIView(
+    SamplesheetsAPIVersioningMixin, SODARAPIBaseMixin, APIView
+):
     """
     Return status of data object existing in SODAR iRODS by MD5 checksum.
     Includes all projects in search regardless of user permissions.
@@ -812,7 +879,9 @@ class SampleDataFileExistsAPIView(SODARAPIBaseMixin, APIView):
         return Response(ret, status=status.HTTP_200_OK)
 
 
-class ProjectIrodsFileListAPIView(SODARAPIBaseProjectMixin, APIView):
+class ProjectIrodsFileListAPIView(
+    SamplesheetsAPIVersioningMixin, SODARAPIBaseProjectMixin, APIView
+):
     """
     Return a list of files in the project sample data repository.
 
