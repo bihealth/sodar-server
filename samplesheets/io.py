@@ -281,7 +281,7 @@ class SampleSheetIO:
     @classmethod
     def _get_study(cls, o):
         """Return study for a potentially unknown type of object"""
-        if type(o) == Study:
+        if isinstance(o, Study):
             return o
         elif hasattr(o, 'study'):
             return o.study
@@ -329,7 +329,7 @@ class SampleSheetIO:
     @classmethod
     def _import_tuple_list(cls, tuples):
         """Get list of dicts from tuples for JSONField"""
-        if type(tuples) == dict:
+        if isinstance(tuples, dict):
             return [cls._import_multi_val(v) for v in tuples.values()]
         elif type(tuples) in [tuple, list]:
             return [cls._import_multi_val(v) for v in tuples]
@@ -407,7 +407,7 @@ class SampleSheetIO:
                 'study': study,
                 'headers': m.headers,
             }
-            if type(db_parent) == Assay:
+            if isinstance(db_parent, Assay):
                 values['assay'] = db_parent
             # NOTE: Extract label stored as JSON since altamISA 0.1 update
             if m.extract_label:
@@ -462,7 +462,7 @@ class SampleSheetIO:
                 'unique_name': p.unique_name,
                 'name_type': p.name_type,
                 'protocol': protocol,
-                'assay': db_parent if type(db_parent) == Assay else None,
+                'assay': db_parent if isinstance(db_parent, Assay) else None,
                 'study': study,
                 'performer': p.performer,
                 'perform_date': p.date if p.date else None,

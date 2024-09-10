@@ -119,16 +119,16 @@ class BaseSampleSheet(models.Model):
             return self.assay.study
         elif hasattr(self, 'study') and self.study:
             return self.study
-        elif type(self) == Study:
+        elif isinstance(self, Study):
             return self
 
     def get_project(self):
         """Return associated project"""
-        if type(self) == Investigation:
+        if isinstance(self, Investigation):
             return self.project
-        elif type(self) == Study:
+        elif isinstance(self, Study):
             return self.investigation.project
-        elif type(self) == Protocol:
+        elif isinstance(self, Protocol):
             return self.study.investigation.project
         elif type(self) in [Assay, GenericMaterial, Process]:
             if self.study:

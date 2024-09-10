@@ -140,7 +140,7 @@ def get_isa_field_name(field):
     :param field: Field of an ISA Django model
     :return: String
     """
-    if type(field) == dict:
+    if isinstance(field, dict):
         return field['name']
     return field
 
