@@ -38,6 +38,7 @@ from projectroles.views_api import (
     SODARAPIBaseMixin,
     SODARAPIBaseProjectMixin,
     SODARAPIGenericProjectMixin,
+    SODARPageNumberPagination,
 )
 from projectroles.utils import build_secret
 
@@ -388,6 +389,10 @@ class IrodsAccessTicketListAPIView(
     """
     List iRODS access tickets for a project.
 
+    Supports optional pagination for listing by providing the ``page`` query
+    string. This will return results in the Django Rest Framework
+    ``PageNumberPagination`` format.
+
     **URL:** ``/samplesheets/api/irods/ticket/list/{Project.sodar_uuid}``
 
     **Methods:** ``GET``
@@ -395,10 +400,12 @@ class IrodsAccessTicketListAPIView(
     **Query parameters:**
 
     - ``active`` (boolean, optional, default=false)
+    - ``page``: Page number for paginated results (int, optional)
 
     **Returns:** List of ticket dicts, see ``IrodsAccessTicketRetrieveAPIView``
     """
 
+    pagination_class = SODARPageNumberPagination
     permission_required = 'samplesheets.edit_sheet'
     serializer_class = IrodsAccessTicketSerializer
 
@@ -584,13 +591,22 @@ class IrodsDataRequestListAPIView(
     all requests with the status of ACTIVE or FAILED. If called as a
     contributor, returns the user's own requests regardless of the state.
 
+    Supports optional pagination for listing by providing the ``page`` query
+    string. This will return results in the Django Rest Framework
+    ``PageNumberPagination`` format.
+
     **URL:** ``/samplesheets/api/irods/requests/{Project.sodar_uuid}``
 
     **Methods:** ``GET``
 
+    **Query parameters:**
+
+    - ``page``: Page number for paginated results (int, optional)
+
     **Returns:** List of iRODS data requests (list of dicts)
     """
 
+    pagination_class = SODARPageNumberPagination
     permission_required = 'samplesheets.edit_sheet'
     serializer_class = IrodsDataRequestSerializer
 
@@ -879,6 +895,7 @@ class SampleDataFileExistsAPIView(
         return Response(ret, status=status.HTTP_200_OK)
 
 
+# TODO: Add pagination (see #1996, #1997)
 class ProjectIrodsFileListAPIView(
     SamplesheetsAPIVersioningMixin, SODARAPIBaseProjectMixin, APIView
 ):

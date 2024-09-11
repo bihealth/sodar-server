@@ -345,6 +345,9 @@ REST_FRAMEWORK = {
         'knox.auth.TokenAuthentication',
     ),
     'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
+    'DEFAULT_PAGINATION_CLASS': (
+        'rest_framework.pagination.PageNumberPagination'
+    ),
     'PAGE_SIZE': env.int('SODAR_API_PAGE_SIZE', 100),
 }
 

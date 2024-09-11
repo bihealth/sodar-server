@@ -23,6 +23,7 @@ from projectroles.plugins import get_backend_api
 from projectroles.views_api import (
     SODARAPIBaseProjectMixin,
     SODARAPIGenericProjectMixin,
+    SODARPageNumberPagination,
 )
 
 # Samplesheets dependency
@@ -119,6 +120,10 @@ class ZoneListAPIView(
     finished (meaning moved or deleted) zones if the "finished" parameter is
     set.
 
+    Supports optional pagination for listing by providing the ``page`` query
+    string. This will return results in the Django Rest Framework
+    ``PageNumberPagination`` format.
+
     **URL:** ``/landingzones/api/list/{Project.sodar_uuid}?finished={integer}``
 
     **Methods:** ``GET``
@@ -126,10 +131,12 @@ class ZoneListAPIView(
     **Parameters:**
 
     - ``finished``: Include finished zones if 1 (integer)
+    - ``page``: Page number for paginated results (int, optional)
 
     **Returns:** List of landing zone details (see ``ZoneRetrieveAPIView``)
     """
 
+    pagination_class = SODARPageNumberPagination
     permission_required = 'landingzones.view_zone_own'
     serializer_class = LandingZoneSerializer
 
