@@ -1,6 +1,7 @@
 """REST API views for the landingzones app"""
 
 import logging
+import sys
 
 from django.urls import reverse
 
@@ -15,6 +16,7 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.serializers import ValidationError
+from rest_framework.schemas.openapi import AutoSchema
 from rest_framework.versioning import AcceptHeaderVersioning
 from rest_framework.views import APIView
 
@@ -138,6 +140,7 @@ class ZoneListAPIView(
 
     pagination_class = SODARPageNumberPagination
     permission_required = 'landingzones.view_zone_own'
+    schema = AutoSchema(operation_id_base='listZone')
     serializer_class = LandingZoneSerializer
 
     def get_queryset(self):
@@ -187,6 +190,7 @@ class ZoneRetrieveAPIView(
 
     lookup_field = 'sodar_uuid'
     lookup_url_kwarg = 'landingzone'
+    schema = AutoSchema(operation_id_base='retrieveZone')
     serializer_class = LandingZoneSerializer
 
     def get_permission_required(self):
@@ -300,6 +304,8 @@ class ZoneUpdateAPIView(
 
     def get_serializer_context(self, *args, **kwargs):
         context = super().get_serializer_context(*args, **kwargs)
+        if sys.argv[1:2] == ['generateschema']:
+            return context
         landing_zone = self.get_object()
         context['assay'] = landing_zone.assay.sodar_uuid
         return context
@@ -385,6 +391,13 @@ class ZoneSubmitMoveAPIView(ZoneMoveMixin, ZoneSubmitBaseAPIView):
     **Methods:** ``POST``
     """
 
+    class ZoneSubmitMoveSchema(AutoSchema):
+        def get_operation_id_base(self, path, method, action):
+            if '/validate' in path:
+                return 'submitZoneValidate'
+            return 'submitZoneValidateMove'
+
+    schema = ZoneSubmitMoveSchema()
     zone_action = 'move'
 
     def post(self, request, *args, **kwargs):

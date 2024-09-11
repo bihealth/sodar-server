@@ -2,6 +2,7 @@
 
 import logging
 import re
+import sys
 
 from irods.exception import CAT_NO_ROWS_FOUND
 from irods.models import DataObject
@@ -27,6 +28,7 @@ from rest_framework.generics import (
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
+from rest_framework.schemas.openapi import AutoSchema
 from rest_framework.versioning import AcceptHeaderVersioning
 from rest_framework.views import APIView
 
@@ -208,8 +210,15 @@ class SheetISAExportAPIView(
     **Methods:** ``GET``
     """
 
+    class SheetISAExportSchema(AutoSchema):
+        def get_operation_id_base(self, path, method, action):
+            if '/zip/' in path:
+                return 'retrieveSheetISAExportZip'
+            return 'retrieveSheetISAExportJSON'
+
     http_method_names = ['get']
     permission_required = 'samplesheets.export_sheet'
+    schema = SheetISAExportSchema()
 
     def get(self, request, *args, **kwargs):
         project = self.get_project()
@@ -379,6 +388,7 @@ class IrodsAccessTicketRetrieveAPIView(
     lookup_field = 'sodar_uuid'
     lookup_url_kwarg = 'irodsaccessticket'
     permission_required = 'samplesheets.edit_sheet'
+    schema = AutoSchema(operation_id_base='retrieveIrodsAccessTicket')
     serializer_class = IrodsAccessTicketSerializer
     queryset_project_field = 'study__investigation__project'
 
@@ -407,6 +417,7 @@ class IrodsAccessTicketListAPIView(
 
     pagination_class = SODARPageNumberPagination
     permission_required = 'samplesheets.edit_sheet'
+    schema = AutoSchema(operation_id_base='listIrodsAccessTicket')
     serializer_class = IrodsAccessTicketSerializer
 
     def get_queryset(self):
@@ -448,6 +459,8 @@ class IrodsAccessTicketCreateAPIView(
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
+        if sys.argv[1:2] == ['generateschema']:
+            return context
         context['project'] = self.get_project()
         context['user'] = self.request.user
         return context
@@ -578,6 +591,7 @@ class IrodsDataRequestRetrieveAPIView(
     lookup_field = 'sodar_uuid'
     lookup_url_kwarg = 'irodsdatarequest'
     permission_required = 'samplesheets.edit_sheet'
+    schema = AutoSchema(operation_id_base='retrieveIrodsDataRequest')
     serializer_class = IrodsDataRequestSerializer
 
 
@@ -608,6 +622,7 @@ class IrodsDataRequestListAPIView(
 
     pagination_class = SODARPageNumberPagination
     permission_required = 'samplesheets.edit_sheet'
+    schema = AutoSchema(operation_id_base='listIrodsDataRequest')
     serializer_class = IrodsDataRequestSerializer
 
     def get_queryset(self):
