@@ -8,6 +8,16 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v0.15.1 (2024-09-12)
+====================
+
+Release for minor updates, maintenance and bug fixes.
+
+- Fix generic assay plugin issues
+- Upgrade critical dependencies
+- Minor updates and bug fixes
+
+
 v0.15.0 (2024-08-08)
 ====================
 

@@ -179,7 +179,7 @@ investigation file.
 - Inline links
     * Comments define semicolon-separated lists of columns to be linked to
       collections.
-    * *SODAR Assay Link Results* |rarr| ``ResultsReports``
+    * *SODAR Assay Link ResultsReports* |rarr| ``ResultsReports``
     * *SODAR Assay Link MiscFiles* |rarr| ``MiscFiles``
     * *SODAR Assay Link Row* |rarr| ``RowPath``
     * For example:

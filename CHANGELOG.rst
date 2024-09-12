@@ -5,6 +5,25 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+v0.15.1 (2024-09-12)
+====================
+
+Changed
+-------
+
+- **Samplesheets**
+    - Upgrade Vue app dependencies (#1986)
+
+Fixed
+-----
+
+- **Landingzones**
+    - Invalid CSS classes set by zone status update (#1995)
+- **Samplesheets**
+    - ``generic`` assay plugin inline links pointing to ``ResultsReports`` (#1982)
+    - ``generic`` assay plugin cache update crash with row path built from ontology column (#1984)
+
+
 v0.15.0 (2024-08-08)
 ====================
 

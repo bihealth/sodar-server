@@ -51,7 +51,8 @@ var updateZoneStatus = function() {
                     ) {
                         statusTd.text(zoneStatus);
                         statusTd.removeClass();
-                        statusTd.addClass(statusStyles[zoneStatus] + ' text-white');
+                        statusTd.addClass(
+                            'sodar-lz-zone-status ' + statusStyles[zoneStatus] + ' text-white');
                         statusInfoSpan.text(zoneStatusInfo);
                         if (['PREPARING', 'VALIDATING', 'MOVING', 'DELETING'].includes(zoneStatus)) {
                             statusTd.append(
