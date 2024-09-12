@@ -8,6 +8,51 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v1.0.0 (WIP)
+============
+
+Release for SODAR Core v1.0 upgrade and feature updates.
+
+- Add Python v3.11 support
+- Add REST API list view pagination
+- Update REST API versioning
+- Update REST API views for OpenAPI support
+- Upgrade to Postgres v16
+- Upgrade to SODAR Core v1.0.2
+- SODAR Core v1.0 updates: OIDC auth support, new REST API versioning,
+  owner/delegate remote sync controls etc.
+- Upgrade to Django v4.2
+- Remove Python v3.8 support
+- Remove Postgres <12 support
+
+Migration Guide
+---------------
+
+Python Version Support
+    Python v3.11 is now the recommended Python version. Support for v3.8 has
+    been dropped. It is recommended to upgrade your deployment for Python v3.11.
+PostgreSQL Version Support
+    This release drops support for Postgres versions below v12. The recommended
+    version is v16. Note that if you run both the SODAR Server and the iRODS
+    iCAT server on the same PostgreSQL database server, you may need to upgrade
+    your iRODS server. The CUBI iRODS v4.2 Docker image does not support
+    Postgres >11. See the latest dev version of sodar-docker-compose for more
+    information.
+REST API Versioning Changes
+    REST API versioning has changed in SODAR Core v1.0 and SODAR Server v1.0.
+    Accept header versioning is now specific to each Django app providing their
+    own API. The APIs now use semantic versioning and have individual version
+    numbers starting at ``1.0``. There is no backwards compatibility for old
+    version numbers. If your clients or scripts make use of the versioning, you
+    will need to consult the REST API documentation and update them accordingly.
+
+.. warning::
+
+    It is strongly recommended to backup your SODAR and iRODS databases before
+    upgrading to this version due to the changed database requirements. Also it
+    is strongly recommended to go through all documentation before upgrading.
+
+
 v0.15.1 (2024-09-12)
 ====================
 

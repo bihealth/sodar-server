@@ -5,6 +5,43 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+Unreleased
+==========
+
+Added
+-----
+
+- **General**
+    - Python v3.11 support (#1922, #1978)
+- **Landingzones**
+    - REST API list view pagination (#1994)
+- **Samplesheets**
+    - REST API list view pagination (#1994)
+
+Changed
+-------
+
+- **General**
+    - Upgrade to django-sodar-core v1.0.2 (#1922)
+    - Upgrade to Postgres v16 (#1922)
+    - Upgrade Python and Vue app dependencies (#1922, #1959)
+- **Irodsinfo**
+    - Update REST API versioning (#1936)
+- **Landingzones**
+    - Update REST API versioning (#1936)
+    - Update REST API views for OpenAPI compatibility (#1951)
+- **Samplesheets**
+    - Update REST API versioning (#1936)
+    - Update REST API views for OpenAPI compatibility (#1951)
+
+Removed
+-------
+
+- **General**
+    - Python v3.8 support (#1922)
+    - Postgres <v12 support (#1922)
+
+
 v0.15.1 (2024-09-12)
 ====================
 
