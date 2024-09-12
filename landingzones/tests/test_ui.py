@@ -378,12 +378,6 @@ class TestProjectZoneView(LandingZoneUITestBase):
         )
         self.login_and_redirect(self.superuser, self.url)
 
-        # NOTE: Attempt to fix #1995
-        WebDriverWait(self.selenium, self.wait_time).until(
-            ec.presence_of_element_located(
-                (By.CLASS_NAME, 'sodar-lz-zone-status')
-            )
-        )
         zone_status = self.selenium.find_element(
             By.CLASS_NAME, 'sodar-lz-zone-status'
         )
