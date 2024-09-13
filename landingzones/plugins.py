@@ -72,7 +72,16 @@ class ProjectAppPlugin(
             'new files are uploaded from landing zones',
             'user_modifiable': True,
             'default': True,
-        }
+        },
+        'notify_email_zone_status': {
+            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_USER'],
+            'type': 'BOOLEAN',
+            'default': True,
+            'label': 'Receive email for landing zone status updates',
+            'description': 'Receive email notifications for status changes in '
+            'your landing zones',
+            'user_modifiable': True,
+        },
     }
 
     #: Iconify icon

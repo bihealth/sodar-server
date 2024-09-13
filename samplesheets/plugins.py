@@ -62,6 +62,11 @@ table_builder = SampleSheetTableBuilder()
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 PROJECT_ACTION_CREATE = SODAR_CONSTANTS['PROJECT_ACTION_CREATE']
 PROJECT_ACTION_UPDATE = SODAR_CONSTANTS['PROJECT_ACTION_UPDATE']
+APP_SETTING_SCOPE_PROJECT = SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT']
+APP_SETTING_SCOPE_USER = SODAR_CONSTANTS['APP_SETTING_SCOPE_USER']
+APP_SETTING_SCOPE_PROJECT_USER = SODAR_CONSTANTS[
+    'APP_SETTING_SCOPE_PROJECT_USER'
+]
 
 # Local constants
 SHEETS_INFO_SETTINGS = [
@@ -113,7 +118,7 @@ class ProjectAppPlugin(
     #: App settings definition
     app_settings = {
         'allow_editing': {
-            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'scope': APP_SETTING_SCOPE_PROJECT,
             'type': 'BOOLEAN',
             'label': 'Allow sample sheet editing',
             'description': 'Allow editing of project sample sheets by '
@@ -122,14 +127,14 @@ class ProjectAppPlugin(
             'default': True,
         },
         'display_config': {
-            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT_USER'],
+            'scope': APP_SETTING_SCOPE_PROJECT_USER,
             'type': 'JSON',
             'label': 'Sample sheet display configuration',
             'description': 'User specific JSON configuration for column '
             'display in project sample sheets',
         },
         'display_config_default': {
-            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'scope': APP_SETTING_SCOPE_PROJECT,
             'type': 'JSON',
             'label': 'Default sample sheet display configuration',
             'description': 'Default JSON configuration for column display in '
@@ -137,14 +142,14 @@ class ProjectAppPlugin(
             'user_modifiable': False,
         },
         'sheet_config': {
-            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'scope': APP_SETTING_SCOPE_PROJECT,
             'type': 'JSON',
             'label': 'Sample sheet editing configuration',
             'description': 'JSON configuration for sample sheet editing',
             'user_modifiable': False,
         },
         'edit_config_min_role': {
-            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'scope': APP_SETTING_SCOPE_PROJECT,
             'type': 'STRING',
             'options': [
                 'superuser',
@@ -159,7 +164,7 @@ class ProjectAppPlugin(
             'user_modifiable': True,
         },
         'sheet_sync_enable': {
-            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'scope': APP_SETTING_SCOPE_PROJECT,
             'type': 'BOOLEAN',
             'default': False,
             'label': 'Enable sheet synchronization',
@@ -167,7 +172,7 @@ class ProjectAppPlugin(
             'user_modifiable': True,
         },
         'sheet_sync_url': {
-            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'scope': APP_SETTING_SCOPE_PROJECT,
             'type': 'STRING',
             'label': 'URL for sheet synchronization',
             'default': '',
@@ -175,7 +180,7 @@ class ProjectAppPlugin(
             'user_modifiable': True,
         },
         'sheet_sync_token': {
-            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'scope': APP_SETTING_SCOPE_PROJECT,
             'type': 'STRING',
             'label': 'Token for sheet synchronization',
             'default': '',
@@ -184,7 +189,7 @@ class ProjectAppPlugin(
             'user_modifiable': True,
         },
         'sheet_table_height': {
-            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_USER'],
+            'scope': APP_SETTING_SCOPE_USER,
             'type': 'INTEGER',
             'label': 'Sample sheet table height',
             'options': [250, 400, 600, 800],
@@ -194,7 +199,7 @@ class ProjectAppPlugin(
             'user_modifiable': True,
         },
         'public_access_ticket': {
-            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'scope': APP_SETTING_SCOPE_PROJECT,
             'type': 'STRING',
             'label': 'iRODS public access ticket',
             'default': '',
@@ -203,7 +208,7 @@ class ProjectAppPlugin(
             'user_modifiable': False,
         },
         'igv_genome': {
-            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'scope': APP_SETTING_SCOPE_PROJECT,
             'type': 'STRING',
             'label': 'IGV session genome',
             'default': IGV_DEFAULT_GENOME,
@@ -213,7 +218,7 @@ class ProjectAppPlugin(
             'user_modifiable': True,
         },
         'igv_omit_bam': {
-            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'scope': APP_SETTING_SCOPE_PROJECT,
             'type': 'STRING',
             'label': 'BAM and CRAM paths to omit from IGV sessions',
             'default': ', '.join(settings.SHEETS_IGV_OMIT_BAM),
@@ -224,7 +229,7 @@ class ProjectAppPlugin(
             'user_modifiable': True,
         },
         'igv_omit_vcf': {
-            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'scope': APP_SETTING_SCOPE_PROJECT,
             'type': 'STRING',
             'label': 'VCF paths to omit from IGV sessions',
             'default': ', '.join(settings.SHEETS_IGV_OMIT_VCF),
@@ -235,12 +240,21 @@ class ProjectAppPlugin(
             'user_modifiable': True,
         },
         'template_output_dir_display': {
-            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_USER'],
+            'scope': APP_SETTING_SCOPE_USER,
             'type': 'BOOLEAN',
             'label': 'Display template output directory field',
             'default': False,
             'description': 'Display output directory field for sample sheet '
             'templates.',
+            'user_modifiable': True,
+        },
+        'notify_email_irods_request': {
+            'scope': APP_SETTING_SCOPE_USER,
+            'type': 'BOOLEAN',
+            'default': True,
+            'label': 'Receive email for iRODS data requests',
+            'description': 'Receive email notifications for iRODS data '
+            'request accepting and rejecting',
             'user_modifiable': True,
         },
     }

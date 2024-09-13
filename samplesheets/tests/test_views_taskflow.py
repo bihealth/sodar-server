@@ -11,6 +11,7 @@ from urllib.parse import urlencode
 from django.conf import settings
 from django.contrib import auth
 from django.contrib.messages import get_messages
+from django.core import mail
 from django.forms.models import model_to_dict
 from django.test import override_settings
 from django.urls import reverse
@@ -1522,7 +1523,7 @@ class TestIrodsDataRequestAcceptView(
     def test_get(self):
         """Test IrodsDataRequestAcceptView GET"""
         self.assert_irods_obj(self.obj_path)
-        self.make_irods_request(
+        request = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
             path=self.obj_path,
@@ -1530,17 +1531,15 @@ class TestIrodsDataRequestAcceptView(
             user=self.user_contributor,
         )
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
-        obj = IrodsDataRequest.objects.first()
-
         with self.login(self.user):
             response = self.client.get(
                 reverse(
                     'samplesheets:irods_request_accept',
-                    kwargs={'irodsdatarequest': obj.sodar_uuid},
+                    kwargs={'irodsdatarequest': request.sodar_uuid},
                 ),
                 {'confirm': True},
             )
-        self.assertEqual(response.context['request_objects'][0], obj)
+        self.assertEqual(response.context['request_objects'][0], request)
 
     def test_get_coll(self):
         """Test GET with collection request"""
@@ -1577,6 +1576,7 @@ class TestIrodsDataRequestAcceptView(
         self._assert_alert_count(EVENT_CREATE, self.user_delegate, 1)
         self._assert_alert_count(EVENT_ACCEPT, self.user, 0)
         self._assert_alert_count(EVENT_ACCEPT, self.user_delegate, 0)
+        mail_count = len(mail.outbox)
 
         obj = IrodsDataRequest.objects.first()
         with self.login(self.user):
@@ -1607,6 +1607,10 @@ class TestIrodsDataRequestAcceptView(
         self._assert_alert_count(EVENT_ACCEPT, self.user, 0)
         self._assert_alert_count(EVENT_ACCEPT, self.user_delegate, 0)
         self.assert_irods_obj(self.obj_path, False)
+        self.assertEqual(len(mail.outbox), mail_count + 1)
+        self.assertEqual(
+            mail.outbox[-1].recipients(), [self.user_contributor.email]
+        )
 
     def test_post_no_request(self):
         """Test POST with non-existing delete request"""
@@ -1859,6 +1863,36 @@ class TestIrodsDataRequestAcceptView(
         self._assert_alert_count(EVENT_ACCEPT, self.user_contributor, 1)
         self.assertEqual(self.irods.collections.exists(coll_path), False)
         self.assert_irods_obj(obj_path2, False)
+
+    def test_post_disable_email_notify(self):
+        """Test POST wth disabled email notifications"""
+        app_settings.set(
+            APP_NAME,
+            'notify_email_irods_request',
+            False,
+            user=self.user_contributor,
+        )
+        self.assert_irods_obj(self.obj_path)
+        request = self.make_irods_request(
+            project=self.project,
+            action=IRODS_REQUEST_ACTION_DELETE,
+            path=self.obj_path,
+            status=IRODS_REQUEST_STATUS_ACTIVE,
+            user=self.user_contributor,
+        )
+        mail_count = len(mail.outbox)
+        with self.login(self.user):
+            self.client.post(
+                reverse(
+                    'samplesheets:irods_request_accept',
+                    kwargs={'irodsdatarequest': request.sodar_uuid},
+                ),
+                {'confirm': True},
+            )
+        request.refresh_from_db()
+        self.assertEqual(request.status, IRODS_REQUEST_STATUS_ACCEPTED)
+        self.assert_irods_obj(self.obj_path, False)
+        self.assertEqual(len(mail.outbox), mail_count)  # No new mail
 
 
 class TestIrodsDataRequestAcceptBatchView(
@@ -2154,8 +2188,8 @@ class TestIrodsDataRequestRejectView(
             kwargs={'project': self.project.sodar_uuid},
         )
 
-    def test_get_admin(self):
-        """Test IrodsDataRequestRejectView GET as admin"""
+    def test_get_superuser(self):
+        """Test IrodsDataRequestRejectView GET as superuser"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         self.assert_irods_obj(self.obj_path)
         self._assert_alert_count(EVENT_REJECT, self.user, 0)
@@ -2168,6 +2202,7 @@ class TestIrodsDataRequestRejectView(
             status=IRODS_REQUEST_STATUS_ACTIVE,
             user=self.user_contributor,
         )
+        mail_count = len(mail.outbox)
 
         with self.login(self.user):
             response = self.client.get(
@@ -2196,10 +2231,13 @@ class TestIrodsDataRequestRejectView(
         self._assert_alert_count(EVENT_REJECT, self.user, 0)
         self._assert_alert_count(EVENT_REJECT, self.user_delegate, 0)
         self._assert_alert_count(EVENT_REJECT, self.user_contributor, 1)
+        self.assertEqual(len(mail.outbox), mail_count + 1)
+        self.assertEqual(
+            mail.outbox[-1].recipients(), [self.user_contributor.email]
+        )
 
     def test_get_owner(self):
         """Test GET as owner"""
-        self.assertEqual(IrodsDataRequest.objects.count(), 0)
         request = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
@@ -2224,7 +2262,6 @@ class TestIrodsDataRequestRejectView(
 
     def test_get_delegate(self):
         """Test GET as delegate"""
-        self.assertEqual(IrodsDataRequest.objects.count(), 0)
         request = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
@@ -2249,7 +2286,6 @@ class TestIrodsDataRequestRejectView(
 
     def test_get_contributor(self):
         """Test GET as contributor"""
-        self.assertEqual(IrodsDataRequest.objects.count(), 0)
         request = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
@@ -2328,6 +2364,35 @@ class TestIrodsDataRequestRejectView(
                 ),
             )
         self.assertEqual(response.status_code, 404)
+
+    def test_get_disable_email_notify(self):
+        """Test GET with disabled email notifications"""
+        app_settings.set(
+            APP_NAME,
+            'notify_email_irods_request',
+            False,
+            user=self.user_contributor,
+        )
+        self.assert_irods_obj(self.obj_path)
+        request = self.make_irods_request(
+            project=self.project,
+            action=IRODS_REQUEST_ACTION_DELETE,
+            path=self.obj_path,
+            status=IRODS_REQUEST_STATUS_ACTIVE,
+            user=self.user_contributor,
+        )
+        mail_count = len(mail.outbox)
+        with self.login(self.user):
+            self.client.get(
+                reverse(
+                    'samplesheets:irods_request_reject',
+                    kwargs={'irodsdatarequest': request.sodar_uuid},
+                ),
+            )
+        request.refresh_from_db()
+        self.assertEqual(request.status, IRODS_REQUEST_STATUS_REJECTED)
+        self.assert_irods_obj(self.obj_path)
+        self.assertEqual(len(mail.outbox), mail_count)
 
 
 class TestIrodsDataRequestRejectBatchView(

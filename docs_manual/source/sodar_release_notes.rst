@@ -13,14 +13,15 @@ v1.0.0 (WIP)
 
 Release for SODAR Core v1.0 upgrade and feature updates.
 
-- Add Python v3.11 support
+- Add opt-out settings for iRODS data request and zone status update emails
 - Add REST API list view pagination
+- Add Python v3.11 support
 - Update REST API versioning
 - Update REST API views for OpenAPI support
 - Upgrade to Postgres v16
 - Upgrade to SODAR Core v1.0.2
 - SODAR Core v1.0 updates: OIDC auth support, new REST API versioning,
-  owner/delegate remote sync controls etc.
+  owner/delegate remote sync controls, etc
 - Upgrade to Django v4.2
 - Remove Python v3.8 support
 - Remove Postgres <12 support

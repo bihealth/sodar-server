@@ -67,6 +67,7 @@ class LandingZoneMixin:
             'description': description,
             'user_message': user_message,
             'status': status,
+            'status_info': DEFAULT_STATUS_INFO[status],
             'configuration': configuration,
             'config_data': config_data,
         }

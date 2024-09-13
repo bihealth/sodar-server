@@ -994,6 +994,9 @@ class IrodsDataRequestModifyMixin:
         if (
             settings.PROJECTROLES_SEND_EMAIL
             and irods_request.user != request.user
+            and app_settings.get(
+                APP_NAME, 'notify_email_irods_request', user=irods_request.user
+            )
         ):
             subject_body = 'iRODS delete request accepted'
             message_body = EMAIL_DELETE_REQUEST_ACCEPT.format(
@@ -1068,6 +1071,9 @@ class IrodsDataRequestModifyMixin:
         if (
             settings.PROJECTROLES_SEND_EMAIL
             and irods_request.user != request.user
+            and app_settings.get(
+                APP_NAME, 'notify_email_irods_request', user=irods_request.user
+            )
         ):
             subject_body = 'iRODS delete request rejected'
             message_body = EMAIL_DELETE_REQUEST_REJECT.format(

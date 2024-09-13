@@ -15,8 +15,11 @@ Added
     - Python v3.11 support (#1922, #1978)
 - **Landingzones**
     - REST API list view pagination (#1994)
+    - ``notify_email_zone_status`` user app setting (#1939)
+    - Tests for taskflow tasks (#1916)
 - **Samplesheets**
     - REST API list view pagination (#1994)
+    - ``notify_email_irods_request`` user app setting (#1939)
 
 Changed
 -------
