@@ -1003,7 +1003,7 @@ class IrodsDataRequestModifyMixin:
                 path=irods_request.path,
             )
             send_generic_mail(
-                subject_body, message_body, [irods_request.user.email], request
+                subject_body, message_body, [irods_request.user], request
             )
 
         # Create app alert
@@ -1077,7 +1077,7 @@ class IrodsDataRequestModifyMixin:
                 path=irods_request.path,
             )
             send_generic_mail(
-                subject_body, message_body, [irods_request.user.email], request
+                subject_body, message_body, [irods_request.user], request
             )
 
         # Create app alert

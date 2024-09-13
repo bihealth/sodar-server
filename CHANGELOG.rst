@@ -33,6 +33,7 @@ Changed
 - **Samplesheets**
     - Update REST API versioning (#1936)
     - Update REST API views for OpenAPI compatibility (#1951)
+    - Send iRODS delete request emails to all addresses of user (#2000)
 
 Removed
 -------
