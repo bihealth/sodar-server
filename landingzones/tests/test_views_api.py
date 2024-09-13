@@ -41,7 +41,7 @@ ZONE_STATUS_INFO = 'Testing'
 INVALID_UUID = '11111111-1111-1111-1111-111111111111'
 
 
-class TestLandingZoneAPIViewsBase(
+class LandingZoneAPIViewTestBase(
     LandingZoneMixin, SampleSheetIOMixin, APIViewTestBase
 ):
     """Base class for Landingzones API view testing"""
@@ -71,7 +71,7 @@ class TestLandingZoneAPIViewsBase(
         )
 
 
-class TestLandingZoneListAPIView(TestLandingZoneAPIViewsBase):
+class TestLandingZoneListAPIView(LandingZoneAPIViewTestBase):
     """Tests for LandingZoneListAPIView"""
 
     def setUp(self):
@@ -198,7 +198,7 @@ class TestLandingZoneListAPIView(TestLandingZoneAPIViewsBase):
         self.assertEqual(len(response.data), 2)
 
 
-class TestLandingZoneRetrieveAPIView(TestLandingZoneAPIViewsBase):
+class TestLandingZoneRetrieveAPIView(LandingZoneAPIViewTestBase):
     """Tests for LandingZoneRetrieveAPIView"""
 
     def test_get(self):
@@ -242,7 +242,7 @@ class TestLandingZoneRetrieveAPIView(TestLandingZoneAPIViewsBase):
         self.assertEqual(json.loads(response.content)['status_locked'], True)
 
 
-class TestLandingZoneUpdateAPIView(TestLandingZoneAPIViewsBase):
+class TestLandingZoneUpdateAPIView(LandingZoneAPIViewTestBase):
     """Tests for LandingZoneUpdateAPIView"""
 
     def setUp(self):

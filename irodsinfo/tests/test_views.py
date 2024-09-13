@@ -20,7 +20,7 @@ if 'omics_irods' in PLUGINS_DISABLE_IRODS:
     PLUGINS_DISABLE_IRODS.remove('omics_irods')
 
 
-class TestIrodsinfoViewBase(TestCase):
+class IrodsinfoViewTestBase(TestCase):
     """Base class for irodsinfo view tests"""
 
     def setUp(self):
@@ -33,7 +33,7 @@ class TestIrodsinfoViewBase(TestCase):
         self.anonymous = None
 
 
-class TestIrodsInfoView(TestIrodsinfoViewBase):
+class TestIrodsInfoView(IrodsinfoViewTestBase):
     """Tests for IrodsInfoView"""
 
     def test_render(self):
@@ -52,7 +52,7 @@ class TestIrodsInfoView(TestIrodsinfoViewBase):
         self.assertFalse(response.context['irods_backend_enabled'])
 
 
-class TestIrodsConfigView(TestIrodsinfoViewBase):
+class TestIrodsConfigView(IrodsinfoViewTestBase):
     """Tests for IrodsConfigView"""
 
     def test_serve(self):

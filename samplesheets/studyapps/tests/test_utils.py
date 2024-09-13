@@ -30,7 +30,7 @@ app_settings = AppSettingAPI()
 INVALID_FILE_TYPE = 'INVALID_TYPE'
 
 
-class TestStudyAppUtilsBase(
+class StudyAppUtilsTestBase(
     ProjectMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase
 ):
     """Base class for samplesheets study app utils tests"""
@@ -50,7 +50,7 @@ class TestStudyAppUtilsBase(
         )
 
 
-class TestGetIGVOmitList(TestStudyAppUtilsBase):
+class TestGetIGVOmitList(StudyAppUtilsTestBase):
     """Tests for get_igv_omit_list()"""
 
     def test_get(self):
@@ -206,7 +206,7 @@ class TestCheckIGVFilePath(TestCase):
         self.assertFalse(check_igv_file_path(path, omit_list))
 
 
-class TestGetIGVXML(TestStudyAppUtilsBase):
+class TestGetIGVXML(StudyAppUtilsTestBase):
     """Tests for get_igv_xml()"""
 
     def _get_all_paths(self):

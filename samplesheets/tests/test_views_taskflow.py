@@ -1900,6 +1900,12 @@ class TestIrodsDataRequestAcceptBatchView(
 ):
     """Tests for IrodsDataRequestAcceptBatchView"""
 
+    @classmethod
+    def _get_request_uuids(cls):
+        return ','.join(
+            [str(r.sodar_uuid) for r in IrodsDataRequest.objects.all()]
+        )
+
     def setUp(self):
         super().setUp()
         self.create_url = reverse(
@@ -1908,6 +1914,10 @@ class TestIrodsDataRequestAcceptBatchView(
         )
         self.accept_url = reverse(
             'samplesheets:irods_request_accept_batch',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        self.list_url = reverse(
+            'samplesheets:irods_requests',
             kwargs={'project': self.project.sodar_uuid},
         )
 
@@ -1932,27 +1942,12 @@ class TestIrodsDataRequestAcceptBatchView(
 
         with self.login(self.user):
             response = self.client.post(
-                self.accept_url,
-                {
-                    'irods_requests': ','.join(
-                        [
-                            str(irods_request.sodar_uuid)
-                            for irods_request in IrodsDataRequest.objects.all()
-                        ]
-                    ),
-                },
+                self.accept_url, {'irods_requests': self._get_request_uuids()}
             )
         self.assertEqual(response.status_code, 200)
+        paths = [r.path for r in IrodsDataRequest.objects.all()]
         self.assertEqual(
-            response.context['affected_object_paths'],
-            sorted(
-                set(
-                    [
-                        irods_request.path
-                        for irods_request in IrodsDataRequest.objects.all()
-                    ]
-                )
-            ),
+            response.context['affected_object_paths'], sorted(set(paths))
         )
         self.assertEqual(len(response.context['request_objects']), 2)
         self.assertEqual(
@@ -1981,14 +1976,7 @@ class TestIrodsDataRequestAcceptBatchView(
         with self.login(self.user):
             response = self.client.post(
                 self.accept_url,
-                {
-                    'irods_requests': ','.join(
-                        [
-                            str(irods_request.sodar_uuid)
-                            for irods_request in IrodsDataRequest.objects.all()
-                        ]
-                    ),
-                },
+                {'irods_requests': self._get_request_uuids()},
             )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
@@ -2007,10 +1995,7 @@ class TestIrodsDataRequestAcceptBatchView(
         with self.login(self.user_contributor):
             self.client.post(self.create_url, self.post_data)
             self.client.post(
-                reverse(
-                    'samplesheets:irods_request_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
+                self.create_url,
                 self.post_data2,
             )
 
@@ -2024,23 +2009,12 @@ class TestIrodsDataRequestAcceptBatchView(
             response = self.client.post(
                 self.accept_url,
                 {
-                    'irods_requests': ','.join(
-                        [
-                            str(irods_request.sodar_uuid)
-                            for irods_request in IrodsDataRequest.objects.all()
-                        ]
-                    )
+                    'irods_requests': self._get_request_uuids()
                     + ',',  # Add trailing comma to test for correct splitting
                     'confirm': True,
                 },
             )
-            self.assertRedirects(
-                response,
-                reverse(
-                    'samplesheets:irods_requests',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-            )
+            self.assertRedirects(response, self.list_url)
         self.assertEqual(len(list(get_messages(response.wsgi_request))), 2)
         self.assertEqual(
             list(get_messages(response.wsgi_request))[-1].message,
@@ -2104,12 +2078,7 @@ class TestIrodsDataRequestAcceptBatchView(
             response = self.client.post(
                 self.accept_url,
                 {
-                    'irods_requests': ','.join(
-                        [
-                            str(irods_request.sodar_uuid)
-                            for irods_request in IrodsDataRequest.objects.all()
-                        ]
-                    )
+                    'irods_requests': self._get_request_uuids()
                     + ',',  # Add trailing comma to test for correct splitting
                     'confirm': False,
                 },
@@ -2147,23 +2116,12 @@ class TestIrodsDataRequestAcceptBatchView(
             response = self.client.post(
                 self.accept_url,
                 {
-                    'irods_requests': ','.join(
-                        [
-                            str(irods_request.sodar_uuid)
-                            for irods_request in IrodsDataRequest.objects.all()
-                        ]
-                    )
+                    'irods_requests': self._get_request_uuids()
                     + ',',  # Add trailing comma to test for correct splitting
                     'confirm': True,
                 },
             )
-            self.assertRedirects(
-                response,
-                reverse(
-                    'samplesheets:irods_requests',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-            )
+            self.assertRedirects(response, self.list_url)
         obj = IrodsDataRequest.objects.first()
         obj.refresh_from_db()
         self.assertEqual(obj.status, IRODS_REQUEST_STATUS_FAILED)

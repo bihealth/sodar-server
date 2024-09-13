@@ -13,7 +13,7 @@ from appalerts.models import AppAlert
 
 import landingzones.constants as lc
 from landingzones.tasks_taskflow import SetLandingZoneStatusTask
-from landingzones.tests.test_views import TestViewsBase
+from landingzones.tests.test_views import ViewTestBase
 
 
 app_settings = AppSettingAPI()
@@ -24,7 +24,7 @@ APP_NAME = 'landingzones'
 TASK_NAME = 'set landing zone status'
 
 
-class TestSetLandingZoneStatusTask(TestViewsBase):
+class TestSetLandingZoneStatusTask(ViewTestBase):
     """Tests for SetLandingZoneStatusTask"""
 
     def _get_task(self, force_fail=False):

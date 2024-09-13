@@ -173,7 +173,7 @@ class IrodsAccessTicketAPIViewTestBase(
         self.app_alert_model = self.app_alerts.get_model()
 
 
-class TestIrodsDataRequestAPIViewBase(
+class IrodsDataRequestAPIViewTestBase(
     SampleSheetIOMixin, SampleSheetTaskflowMixin, TaskflowAPIViewTestBase
 ):
     """Base samplesheets API view test class for iRODS delete requests"""
@@ -734,7 +734,7 @@ class TestIrodsAccessTicketDestroyAPIView(IrodsAccessTicketAPIViewTestBase):
 # NOTE: For TestIrodsDataRequestListAPIView, see test_views_api
 
 
-class TestIrodsDataRequestCreateAPIView(TestIrodsDataRequestAPIViewBase):
+class TestIrodsDataRequestCreateAPIView(IrodsDataRequestAPIViewTestBase):
     """Tests for IrodsDataRequestCreateAPIView"""
 
     def test_create(self):
@@ -835,7 +835,7 @@ class TestIrodsDataRequestCreateAPIView(TestIrodsDataRequestAPIViewBase):
 
 
 class TestIrodsDataRequestUpdateAPIView(
-    IrodsDataRequestMixin, TestIrodsDataRequestAPIViewBase
+    IrodsDataRequestMixin, IrodsDataRequestAPIViewTestBase
 ):
     """Tests for IrodsDataRequestUpdateAPIView"""
 
@@ -957,7 +957,7 @@ class TestIrodsDataRequestUpdateAPIView(
 
 
 class TestIrodsDataRequestAcceptAPIView(
-    IrodsDataRequestMixin, TestIrodsDataRequestAPIViewBase
+    IrodsDataRequestMixin, IrodsDataRequestAPIViewTestBase
 ):
     """Tests for IrodsDataRequestAcceptAPIView"""
 
@@ -1060,7 +1060,7 @@ class TestIrodsDataRequestAcceptAPIView(
 
 
 class TestIrodsDataRequestRejectAPIView(
-    IrodsDataRequestMixin, TestIrodsDataRequestAPIViewBase
+    IrodsDataRequestMixin, IrodsDataRequestAPIViewTestBase
 ):
     """Tests for IrodsDataRequestRejectAPIView"""
 

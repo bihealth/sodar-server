@@ -39,7 +39,7 @@ SHEET_PATH = SHEET_DIR + 'i_small.zip'
 ZONE_STATUS_INFO = 'Testing'
 
 
-class TestViewsBase(
+class ViewTestBase(
     ProjectMixin,
     RoleMixin,
     RoleAssignmentMixin,
@@ -47,7 +47,7 @@ class TestViewsBase(
     LandingZoneMixin,
     TestCase,
 ):
-    """Base class for view testing"""
+    """Base class for landingzones view testing"""
 
     def setUp(self):
         # Init roles
@@ -83,7 +83,7 @@ class TestViewsBase(
         )
 
 
-class TestProjectZonesView(TestViewsBase):
+class TestProjectZonesView(ViewTestBase):
     """Tests for the project zones list view"""
 
     def test_render_owner(self):
@@ -143,7 +143,7 @@ class TestProjectZonesView(TestViewsBase):
         self.assertEqual(response.context['zone_access_disabled'], False)
 
 
-class TestLandingZoneCreateView(TestViewsBase):
+class TestLandingZoneCreateView(ViewTestBase):
     """Tests for the landing zone creation view"""
 
     def test_render(self):
@@ -165,7 +165,7 @@ class TestLandingZoneCreateView(TestViewsBase):
         self.assertIsNotNone(form.fields['configuration'])
 
 
-class TestLandingZoneUpdateView(TestViewsBase):
+class TestLandingZoneUpdateView(ViewTestBase):
     """Tests for the landing zone update view"""
 
     def test_render(self):
@@ -255,7 +255,7 @@ class TestLandingZoneUpdateView(TestViewsBase):
         self.assertEqual(landing_zone.description, 'description')
 
 
-class TestLandingZoneMoveView(TestViewsBase):
+class TestLandingZoneMoveView(ViewTestBase):
     """Tests for the landing zone validation and moving view"""
 
     def test_render_invalid_status(self):
@@ -273,7 +273,7 @@ class TestLandingZoneMoveView(TestViewsBase):
         self.assertEqual(response.status_code, 302)
 
 
-class TestLandingZoneDeleteView(TestViewsBase):
+class TestLandingZoneDeleteView(ViewTestBase):
     """Tests for the landing zone deletion view"""
 
     def test_render(self):

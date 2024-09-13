@@ -28,6 +28,7 @@ Changed
     - Upgrade to django-sodar-core v1.0.2 (#1922)
     - Upgrade to Postgres v16 (#1922)
     - Upgrade Python and Vue app dependencies (#1922, #1959)
+    - Unify base test class naming (#2001)
 - **Irodsinfo**
     - Update REST API versioning (#1936)
 - **Landingzones**
@@ -37,6 +38,8 @@ Changed
     - Update REST API versioning (#1936)
     - Update REST API views for OpenAPI compatibility (#1951)
     - Send iRODS delete request emails to all addresses of user (#2000)
+- **Taskflowbackend**
+    - Refactor task tests (#2002)
 
 Removed
 -------
