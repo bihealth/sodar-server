@@ -6,7 +6,7 @@ class Flow(BaseLinearFlow):
     """Flow for updating an user's role in project"""
 
     def validate(self):
-        self.required_fields = ['username']
+        self.required_fields = ['user_name']
         self.require_lock = False  # Project lock not required for this flow
         return super().validate()
 
@@ -18,7 +18,7 @@ class Flow(BaseLinearFlow):
                 name='Create user in irods',
                 irods=self.irods,
                 inject={
-                    'user_name': self.flow_data['username'],
+                    'user_name': self.flow_data['user_name'],
                     'user_type': 'rodsuser',
                 },
             )
@@ -29,7 +29,7 @@ class Flow(BaseLinearFlow):
                 irods=self.irods,
                 inject={
                     'group_name': project_group,
-                    'user_name': self.flow_data['username'],
+                    'user_name': self.flow_data['user_name'],
                 },
             )
         )

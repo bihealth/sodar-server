@@ -1642,7 +1642,7 @@ class TestRoleDelete(TaskflowbackendFlowTestBase):
     def test_delete(self):
         """Test role_delete for deleting a role assignment"""
         self.assert_group_member(self.project, self.user_new, True)
-        flow_data = {'username': self.user_new.username}
+        flow_data = {'user_name': self.user_new.username}
         flow = self.taskflow.get_flow(
             irods_backend=self.irods_backend,
             project=self.project,
@@ -1656,7 +1656,7 @@ class TestRoleDelete(TaskflowbackendFlowTestBase):
     def test_delete_locked(self):
         """Test role_delete with locked project"""
         self.assert_group_member(self.project, self.user_new, True)
-        flow_data = {'username': self.user_new.username}
+        flow_data = {'user_name': self.user_new.username}
         flow = self.taskflow.get_flow(
             irods_backend=self.irods_backend,
             project=self.project,
@@ -1683,7 +1683,7 @@ class TestRoleUpdate(TaskflowbackendFlowTestBase):
         user_new = self.make_user('user_new')
         self.make_assignment(self.project, user_new, self.role_contributor)
         self.assert_group_member(self.project, user_new, False)
-        flow_data = {'username': user_new.username}
+        flow_data = {'user_name': user_new.username}
         flow = self.taskflow.get_flow(
             irods_backend=self.irods_backend,
             project=self.project,
@@ -1699,7 +1699,7 @@ class TestRoleUpdate(TaskflowbackendFlowTestBase):
         user_new = self.make_user('user_new')
         self.make_assignment(self.project, user_new, self.role_contributor)
         self.assert_group_member(self.project, user_new, False)
-        flow_data = {'username': user_new.username}
+        flow_data = {'user_name': user_new.username}
         flow = self.taskflow.get_flow(
             irods_backend=self.irods_backend,
             project=self.project,

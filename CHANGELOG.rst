@@ -40,6 +40,7 @@ Changed
     - Send iRODS delete request emails to all addresses of user (#2000)
 - **Taskflowbackend**
     - Refactor task tests (#2002)
+    - Unify user name parameter naming in flows (#1653)
 
 Removed
 -------

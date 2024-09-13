@@ -271,7 +271,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         children = self._get_child_projects(project)
 
         if project.type == PROJECT_TYPE_PROJECT:
-            flow_data = {'username': user.username}
+            flow_data = {'user_name': user.username}
             taskflow.submit(
                 project=project, flow_name='role_update', flow_data=flow_data
             )

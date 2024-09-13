@@ -12,14 +12,14 @@ class Flow(BaseLinearFlow):
 
     def build(self, force_fail=False):
         # Add roles
-        for username in set(
+        for user_name in set(
             [r['user_name'] for r in self.flow_data['roles_add']]
         ):
             self.add_task(
                 irods_tasks.CreateUserTask(
-                    name='Create user "{}" in irods'.format(username),
+                    name='Create user "{}" in irods'.format(user_name),
                     irods=self.irods,
-                    inject={'user_name': username, 'user_type': 'rodsuser'},
+                    inject={'user_name': user_name, 'user_type': 'rodsuser'},
                 )
             )
         for role_add in self.flow_data['roles_add']:
