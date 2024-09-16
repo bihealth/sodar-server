@@ -29,7 +29,7 @@ Changed
     - Upgrade to Postgres v16 (#1922)
     - Upgrade Python and Vue app dependencies (#1922, #1959)
     - Unify base test class naming (#2001)
-    - Update ``Dockerfile`` for v1.0 upgrades (#2003)
+    - Update ``Dockerfile`` for v1.0 upgrades (#2003, #2004)
 - **Irodsinfo**
     - Update REST API versioning (#1936)
 - **Landingzones**
