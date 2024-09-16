@@ -21,7 +21,7 @@ RUN git clone --depth $app_git_depth --branch $app_git_tag $app_git_url /usr/src
 # Install system dependencies
 RUN apt-get update && \
     apt-get install -y apt-utils gcc ldap-utils libldap2-dev libsasl2-dev \
-        make postgresql-client wget python3.11-gdbm
+        make postgresql-client wget
 
 # Install Nodejs v18
 RUN apt-get install -y ca-certificates curl gnupg && \
