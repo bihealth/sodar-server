@@ -1,4 +1,4 @@
-FROM python:3.8-buster
+FROM python:3.11-buster
 
 LABEL org.opencontainers.image.source=https://github.com/bihealth/sodar-server
 LABEL org.opencontainers.image.authors="Mikko Nieminen <mikko.nieminen@bih-charite.de>"
@@ -9,11 +9,9 @@ ARG app_git_depth=1
 
 ENV DEBIAN_FRONTEND noninteractive
 ENV CUSTOM_STATIC_DIR /usr/src/app/local-static
-# As long as we serve from internal cubi-gitlab via SSH
-ENV GIT_SSH_COMMAND "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
 
 ## Add the wait script to the image
-ADD https://github.com/ufoscout/docker-compose-wait/releases/download/2.7.3/wait /usr/local/bin/wait
+ADD https://github.com/ufoscout/docker-compose-wait/releases/download/2.12.1/wait /usr/local/bin/wait
 RUN chmod +x /usr/local/bin/wait
 
 # Copy source code into Docker image
@@ -23,7 +21,7 @@ RUN git clone --depth $app_git_depth --branch $app_git_tag $app_git_url /usr/src
 # Install system dependencies
 RUN apt-get update && \
     apt-get install -y apt-utils gcc ldap-utils libldap2-dev libsasl2-dev \
-        make postgresql-client wget
+        make postgresql-client wget python3.11-gdbm
 
 # Install Nodejs v18
 RUN apt-get install -y ca-certificates curl gnupg && \
