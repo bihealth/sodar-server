@@ -30,6 +30,7 @@ Changed
     - Upgrade Python and Vue app dependencies (#1922, #1959)
     - Unify base test class naming (#2001)
     - Update ``Dockerfile`` for v1.0 upgrades (#2003, #2004)
+    - Upgrade to iRODS v4.3.3 in CI (#1815)
 - **Irodsinfo**
     - Update REST API versioning (#1936)
 - **Landingzones**

@@ -24,17 +24,6 @@ jobs:
           --health-retries 10
         ports:
           - 5432:5432
-      # TODO: Remove temporary iRODS postgres server once on iRODS 4.3
-      postgres-irods:
-        image: postgres:11
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
       redis:
         image: redis
         options: >-
@@ -45,12 +34,11 @@ jobs:
         ports:
           - 6379:6379
       irods:
-        # TODO: Update image to 4.3 once its made default
-        image: ghcr.io/bihealth/irods-docker:4.2.11-1
+        image: ghcr.io/bihealth/irods-docker:4.3.3-wip
         env:
           IRODS_AUTHENTICATION_SCHEME: native
           IRODS_DEFAULT_HASH_SCHEME: MD5
-          IRODS_ICAT_DBSERVER: postgres-irods  # TODO: Use main postgres on 4.3
+          IRODS_ICAT_DBSERVER: postgres
           IRODS_ICAT_DBUSER: postgres
           IRODS_ICAT_DBPASS: postgres
           IRODS_ZONE_NAME: sodarZone
