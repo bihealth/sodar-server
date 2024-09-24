@@ -230,7 +230,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
             try:
                 irods.user_groups.get(group_name)
                 logger.debug('Removing user group: {}'.format(group_name))
-                irods.user_groups.remove(group_name)
+                irods.users.remove(group_name)
             except UserGroupDoesNotExist:
                 pass
 

@@ -11,20 +11,23 @@ list of changes in current and previous releases, see the
 v1.0.0 (WIP)
 ============
 
-Release for SODAR Core v1.0 upgrade and feature updates.
+Release for SODAR Core v1.0 upgrade, iRODS v4.3 upgrade and feature updates.
 
 - Add opt-out settings for iRODS data request and zone status update emails
 - Add REST API list view pagination
 - Add Python v3.11 support
+- Update minimum supported iRODS version to v4.3.3
 - Update REST API versioning
 - Update REST API views for OpenAPI support
 - Upgrade to Postgres v16
+- Upgrade to python-irodsclient v2.1.0
 - Upgrade to SODAR Core v1.0.2
 - SODAR Core v1.0 updates: OIDC auth support, new REST API versioning,
   owner/delegate remote sync controls, etc
 - Upgrade to Django v4.2
 - Remove Python v3.8 support
 - Remove Postgres <12 support
+- Remove iRODS <4.3 support
 
 Migration Guide
 ---------------
@@ -39,6 +42,10 @@ PostgreSQL Version Support
     your iRODS server. The CUBI iRODS v4.2 Docker image does not support
     Postgres >11. See the latest dev version of sodar-docker-compose for more
     information.
+iRODS Version Support
+    The minimum supported version of iRODS from this version onwards is v4.3.3.
+    Please upgrade the iRODS servers used in your SODAR installation. If using
+    sodar-docker-compose, see upgrading instructions in the repository.
 REST API Versioning Changes
     REST API versioning has changed in SODAR Core v1.0 and SODAR Server v1.0.
     Accept header versioning is now specific to each Django app providing their

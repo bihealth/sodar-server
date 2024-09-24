@@ -31,6 +31,8 @@ Changed
     - Unify base test class naming (#2001)
     - Update ``Dockerfile`` for v1.0 upgrades (#2003, #2004)
     - Upgrade to iRODS v4.3.3 in CI (#1815)
+    - Upgrade to python-irodsclient v2.1.0 (#2007)
+    - Upgrade minimum supported iRODS version to v4.3.3 (#1815, #2007)
 - **Irodsinfo**
     - Update REST API versioning (#1936)
 - **Landingzones**
@@ -50,6 +52,7 @@ Removed
 - **General**
     - Python v3.8 support (#1922)
     - Postgres <v12 support (#1922)
+    - iRODS <v4.3 support (#1815, #2007)
 
 
 v0.15.1 (2024-09-12)

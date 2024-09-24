@@ -314,3 +314,28 @@ Navigate to SODAR
 Now you should have all the required components running for developing SODAR.
 Use your web browser to open http://127.0.0.1:8000 and you should see your local
 SODAR development site.
+
+
+Run SODAR Tests
+===============
+
+You can run the SODAR Django server tests using the following command:
+
+.. code-block:: bash
+
+    $ make test
+
+In addition to unit tests, this will run tests against the test iRODS server
+running in the Docker Compose network.
+
+.. note::
+
+    If some tests connecting to iRODS fail with
+    ``irods.exception.NetworkException``, you may need to add the line
+    ``127.0.0.1 irods-test`` into your ``/etc/hosts`` file.
+
+For testing the Sample Sheets Vue app, run the following command:
+
+.. code-block:: bash
+
+    $ make test_samplesheets_vue

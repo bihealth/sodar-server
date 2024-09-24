@@ -43,6 +43,8 @@ jobs:
           IRODS_ICAT_DBPASS: postgres
           IRODS_ZONE_NAME: sodarZone
           NO_WAIT: 1
+        options: >-
+          --hostname "irods"
         ports:
           - 4488:1247
     env:
@@ -78,6 +80,10 @@ jobs:
         run: python manage.py geticons
       - name: Run collectstatic
         run: python manage.py collectstatic --noinput
+      # NOTE: Workaround for python-irodsclient>1.1.9 redirect issue
+      - name: Add irods to /etc/hosts
+        run: |
+          sudo echo "127.0.0.1 irods" | sudo tee -a /etc/hosts
       - name: Run Django tests
         run: |
           coverage run --rcfile=.coveragerc manage.py test -v 2 --settings=config.settings.test
