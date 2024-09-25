@@ -98,7 +98,7 @@ class LandingZoneTaskflowMixin:
             user=user,
             event_name='zone_create',
             description='create landing zone',
-            status_type='SUBMIT',
+            status_type=timeline.TL_STATUS_SUBMIT,
         )
 
         flow_data = {
@@ -396,6 +396,7 @@ class TestZoneMoveView(
 
     def setUp(self):
         super().setUp()
+        self.timeline = get_backend_api('timeline_backend')
         # Make project with owner in Taskflow and Django
         self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
@@ -715,7 +716,9 @@ class TestZoneMoveView(
         self.assertEqual(len(mail.outbox), 1)  # TODO: Should this send email?
         tl_event = TimelineEvent.objects.filter(event_name='zone_move').first()
         self.assertIsInstance(tl_event, TimelineEvent)
-        self.assertEqual(tl_event.get_status().status_type, ZONE_STATUS_FAILED)
+        self.assertEqual(
+            tl_event.get_status().status_type, self.timeline.TL_STATUS_FAILED
+        )
         # TODO: Create app alerts for async failures (see #1499)
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_move').count(), 0

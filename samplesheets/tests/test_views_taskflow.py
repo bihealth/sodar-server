@@ -418,6 +418,7 @@ class TestSheetDeleteView(
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
+        self.timeline = get_backend_api('timeline_backend')
         self.url = reverse(
             'samplesheets:delete',
             kwargs={'project': self.project.sodar_uuid},
@@ -483,7 +484,9 @@ class TestSheetDeleteView(
         # Assert timeline event status
         self._assert_tl_event_count(1)
         tl_event = TimelineEvent.objects.get(event_name='sheet_delete')
-        self.assertEqual(tl_event.get_status().status_type, 'OK')
+        self.assertEqual(
+            tl_event.get_status().status_type, self.timeline.TL_STATUS_OK
+        )
 
     def test_post_colls(self):
         """Test POST with collections created"""
@@ -503,7 +506,9 @@ class TestSheetDeleteView(
         )
         self._assert_tl_event_count(1)
         tl_event = TimelineEvent.objects.get(event_name='sheet_delete')
-        self.assertEqual(tl_event.get_status().status_type, 'OK')
+        self.assertEqual(
+            tl_event.get_status().status_type, self.timeline.TL_STATUS_OK
+        )
 
     def test_post_files_owner(self):
         """Test sheet deleting with files as owner"""

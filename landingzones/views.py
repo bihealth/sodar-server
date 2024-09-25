@@ -168,7 +168,7 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
                 event_name='zone_{}'.format(tl_action),
                 description='{} landing zone {{{}}}{} for {{{}}} in '
                 '{{{}}}'.format(tl_action, 'zone', config_str, 'user', 'assay'),
-                status_type='SUBMIT',
+                status_type=timeline.TL_STATUS_SUBMIT,
                 extra_data=tl_extra,
             )
             tl_event.add_object(obj=zone, label='zone', name=zone.title)
@@ -265,7 +265,7 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
                 user=user,
                 event_name='zone_update',
                 description=description,
-                status_type='OK',
+                status_type=timeline.TL_STATUS_OK,
                 extra_data=tl_extra,
             )
             tl_event.add_object(obj=zone, label='zone', name=zone.title)
@@ -312,7 +312,7 @@ class ZoneDeleteMixin(ZoneConfigPluginMixin):
             tl_event.add_object(
                 obj=zone.user, label='user', name=zone.user.username
             )
-            tl_event.set_status('SUBMIT')
+            tl_event.set_status(timeline.TL_STATUS_SUBMIT)
 
         # Check zone root collection status
         zone_path = irods_backend.get_path(zone)
@@ -380,7 +380,7 @@ class ZoneMoveMixin(ZoneConfigPluginMixin):
                 label='assay',
                 name=zone.assay.get_display_name(),
             )
-            tl_event.set_status('SUBMIT')
+            tl_event.set_status(timeline.TL_STATUS_SUBMIT)
 
         flow_data = self.get_flow_data(
             zone,

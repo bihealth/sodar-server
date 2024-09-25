@@ -175,6 +175,9 @@ class SheetImportMixin:
     #: Whether configs should be regenerated on sheet replace
     replace_configs = True
 
+    #: TimelineAPI
+    timeline = None
+
     def add_tl_event(self, project, action, tpl_name=None):
         """
         Add timeline event for sample sheet import, replace or create.
@@ -186,8 +189,9 @@ class SheetImportMixin:
         """
         if action not in ['create', 'import', 'replace']:
             raise ValueError('Invalid action "{}"'.format(action))
-        timeline = get_backend_api('timeline_backend')
-        if not timeline:
+        if not self.timeline:
+            self.timeline = get_backend_api('timeline_backend')
+        if not self.timeline:
             return None
 
         if action == 'replace':
@@ -199,7 +203,7 @@ class SheetImportMixin:
             if tpl_name:
                 tl_desc += ' from template "{}"'.format(tpl_name)
 
-        return timeline.add_event(
+        return self.timeline.add_event(
             project=project,
             app_name=APP_NAME,
             user=self.request.user,
@@ -334,9 +338,11 @@ class SheetImportMixin:
             if ui_mode:
                 messages.error(self.request, ex_msg)
 
-        if tl_event:
+        if tl_event and self.timeline:
             tl_event.set_status(
-                'FAILED', status_desc=ex_msg, extra_data=extra_data
+                self.timeline.TL_STATUS_FAILED,
+                status_desc=ex_msg,
+                extra_data=extra_data,
             )
 
     def finalize_import(
@@ -354,7 +360,7 @@ class SheetImportMixin:
         investigation.save()
 
         # Add investigation data in Timeline
-        if tl_event:
+        if tl_event and self.timeline:
             extra_data = (
                 {'warnings': investigation.parser_warnings}
                 if investigation.parser_warnings
@@ -363,7 +369,9 @@ class SheetImportMixin:
             )
             status_desc = WARNING_STATUS_MSG if extra_data else None
             tl_event.set_status(
-                'OK', status_desc=status_desc, extra_data=extra_data
+                self.timeline.TL_STATUS_OK,
+                status_desc=status_desc,
+                extra_data=extra_data,
             )
 
         if ui_mode:
@@ -666,7 +674,7 @@ class IrodsCollsCreateViewMixin:
                 event_name='sheet_colls_' + tl_action,
                 description=tl_action + ' iRODS collection structure for '
                 '{investigation}',
-                status_type='SUBMIT',
+                status_type=timeline.TL_STATUS_SUBMIT,
             )
             tl_event.add_object(
                 obj=investigation,
@@ -694,7 +702,7 @@ class IrodsCollsCreateViewMixin:
             APP_NAME, 'public_access_ticket', ticket_str, project=project
         )
         if tl_event:
-            tl_event.set_status('OK')
+            tl_event.set_status(timeline.TL_STATUS_OK)
 
         if settings.SHEETS_ENABLE_CACHE:
             from samplesheets.tasks_celery import update_project_cache_task
@@ -739,7 +747,7 @@ class IrodsAccessTicketModifyMixin:
             event_name='irods_ticket_{}'.format(action),
             description=tl_desc,
             extra_data=extra_data,
-            status_type='OK',
+            status_type=timeline.TL_STATUS_OK,
         )
         tl_event.add_object(ticket, 'ticket', ticket.get_display_name())
         tl_event.add_object(
@@ -813,7 +821,7 @@ class IrodsDataRequestModifyMixin:
             user=irods_request.user,
             event_name='irods_request_{}'.format(action),
             description=action + ' iRODS data request {irods_request}',
-            status_type='OK',
+            status_type=self.timeline.TL_STATUS_OK,
             extra_data=extra_data,
         )
         tl_event.add_object(
@@ -942,7 +950,7 @@ class IrodsDataRequestModifyMixin:
             status = IRODS_REQUEST_STATUS_FAILED
         else:
             description = 'accept iRODS data request {irods_request}'
-            status = 'OK'
+            status = timeline.TL_STATUS_OK if timeline else 'OK'
         if timeline:
             tl_event = timeline.add_event(
                 project=project,
@@ -1738,7 +1746,8 @@ class SheetDeleteView(
                 'Incorrect host name for confirming sheet '
                 'deletion: "{}"'.format(host_confirm)
             )
-            tl_event.set_status('FAILED', msg)
+            if tl_event:
+                tl_event.set_status(timeline.TL_STATUS_FAILED, msg)
             logger.error(msg + ' (correct={})'.format(actual_host))
             messages.error(
                 request, 'Host name input incorrect, deletion cancelled.'
@@ -1748,25 +1757,30 @@ class SheetDeleteView(
         delete_success = True
         if taskflow and investigation.irods_status:
             if tl_event:
-                tl_event.set_status('SUBMIT')
+                tl_event.set_status(timeline.TL_STATUS_SUBMIT)
             try:
                 taskflow.submit(
                     project=project, flow_name='sheet_delete', flow_data={}
                 )
-                tl_event.set_status('OK')
+                if tl_event:
+                    tl_event.set_status(timeline.TL_STATUS_OK)
             except taskflow.FlowSubmitException as ex:
                 delete_success = False
                 messages.error(
                     self.request,
                     'Failed to delete sample sheets: {}'.format(ex),
                 )
-                tl_event.set_status('FAILED', status_info=str(ex))
+                if tl_event:
+                    tl_event.set_status(
+                        timeline.TL_STATUS_FAILED, status_info=str(ex)
+                    )
         else:
             # Clear cached study tables (force delete)
             for study in investigation.studies.all():
                 table_builder.clear_study_cache(study, delete=True)
             investigation.delete()
-            tl_event.set_status('OK')
+            if tl_event:
+                tl_event.set_status(timeline.TL_STATUS_OK)
 
         if delete_success:
             # Delete ISA-Tab versions
@@ -2130,7 +2144,7 @@ class SheetVersionDeleteView(
                 user=self.request.user,
                 event_name='version_delete',
                 description='delete sample sheet version {isatab}',
-                status_type='OK',
+                status_type=timeline.TL_STATUS_OK,
             )
             tl_event.add_object(
                 obj=self.object,
@@ -2188,7 +2202,7 @@ class SheetVersionDeleteBatchView(
                     user=self.request.user,
                     event_name='version_delete',
                     description='delete sample sheet version {isatab}',
-                    status_type='OK',
+                    status_type=timeline.TL_STATUS_OK,
                 )
                 tl_event.add_object(
                     obj=sv, label='isatab', name=sv.get_full_name()
@@ -2914,7 +2928,7 @@ class SheetRemoteSyncView(
         project = self.get_project()
         timeline = get_backend_api('timeline_backend')
         tl_add = False
-        tl_status_type = 'OK'
+        tl_status_type = timeline.TL_STATUS_OK if timeline else 'OK'
         tl_status_desc = 'Sync OK'
         sheet_sync_enable = app_settings.get(
             APP_NAME, 'sheet_sync_enable', project=project
@@ -2936,7 +2950,7 @@ class SheetRemoteSyncView(
                     request, 'Sample sheet sync skipped, no changes detected.'
                 )
         except Exception as ex:
-            tl_status_type = 'FAILED'
+            tl_status_type = timeline.TL_STATUS_FAILED if timeline else 'FAILED'
             tl_status_desc = 'Sync failed: {}'.format(ex)
             messages.error(request, '{}: {}'.format(SYNC_FAIL_PREFIX, ex))
             tl_add = True  # Add timeline event

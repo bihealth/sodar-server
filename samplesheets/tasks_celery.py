@@ -55,7 +55,7 @@ def update_project_cache_task(
             user=user,
             event_name=CACHE_UPDATE_EVENT,
             description='update cache for project sheets',
-            status_type='SUBMIT',
+            status_type=timeline.TL_STATUS_SUBMIT,
             status_desc='Asynchronous update started',
         )
 
@@ -68,8 +68,12 @@ def update_project_cache_task(
 
     try:
         app_plugin.update_cache(project=project, user=user)
-        tl_status_type = 'OK'
-        tl_status_desc = 'Update OK'
+        if tl_event:
+            tl_status_type = timeline.TL_STATUS_OK
+            tl_status_desc = 'Update OK'
+            tl_event.set_status(
+                status_type=tl_status_type, status_desc=tl_status_desc
+            )
         app_level = 'INFO'
         app_msg = 'Sample sheet iRODS cache updated'
         if alert_msg:
@@ -78,8 +82,12 @@ def update_project_cache_task(
             'Cache update OK for project {}'.format(project.get_log_title())
         )
     except Exception as ex:
-        tl_status_type = 'FAILED'
-        tl_status_desc = 'Update failed: {}'.format(ex)
+        if tl_event:
+            tl_status_type = timeline.TL_STATUS_FAILED
+            tl_status_desc = 'Update failed: {}'.format(ex)
+            tl_event.set_status(
+                status_type=tl_status_type, status_desc=tl_status_desc
+            )
         app_level = 'DANGER'
         app_msg = 'Sample sheet iRODS cache update failed: {}'.format(ex)
         logger.error(
@@ -88,10 +96,6 @@ def update_project_cache_task(
             )
         )
 
-    if tl_event:
-        tl_event.set_status(
-            status_type=tl_status_type, status_desc=tl_status_desc
-        )
     if add_alert and user:
         app_alerts = get_backend_api('appalerts_backend')
         if app_alerts:
@@ -116,7 +120,7 @@ def sheet_sync_task(_self):
 
     timeline = get_backend_api('timeline_backend')
     tl_add = False
-    tl_status_type = 'OK'
+    tl_status_type = timeline.TL_STATUS_OK if timeline else 'OK'
     tl_status_desc = 'Sync OK'
 
     for project in Project.objects.filter(type=PROJECT_TYPE_PROJECT):
@@ -135,7 +139,7 @@ def sheet_sync_task(_self):
             fail_msg = 'Sync failed: {}'.format(ex)
             logger.error(fail_msg)
             tl_add = True  # Add timeline event
-            tl_status_type = 'FAILED'
+            tl_status_type = timeline.TL_STATUS_FAILED if timeline else 'FAILED'
             tl_status_desc = fail_msg
 
         if timeline and tl_add:

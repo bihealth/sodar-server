@@ -1616,7 +1616,11 @@ class SheetVersionSaveAjaxView(SheetVersionMixin, SODARBaseProjectAjaxView):
             export_ex = str(ex)
 
         if timeline:
-            tl_status = 'FAILED' if export_ex else 'OK'
+            tl_status = (
+                timeline.TL_STATUS_FAILED
+                if export_ex
+                else timeline.TL_STATUS_OK
+            )
             tl_desc = 'save sheet version'
             if not export_ex and isa_version:
                 tl_desc += ' as {isatab}'
@@ -1627,7 +1631,11 @@ class SheetVersionSaveAjaxView(SheetVersionMixin, SODARBaseProjectAjaxView):
                 event_name='sheet_version_save',
                 description=tl_desc,
                 status_type=tl_status,
-                status_desc=export_ex if tl_status == 'FAILED' else None,
+                status_desc=(
+                    export_ex
+                    if tl_status == timeline.TL_STATUS_FAILED
+                    else None
+                ),
             )
             if not export_ex and isa_version:
                 tl_event.add_object(
@@ -1672,7 +1680,11 @@ class SheetEditFinishAjaxView(SheetVersionMixin, SODARBaseProjectAjaxView):
                 export_ex = str(ex)
 
         if timeline:
-            tl_status = 'FAILED' if export_ex else 'OK'
+            tl_status = (
+                timeline.TL_STATUS_FAILED
+                if export_ex
+                else timeline.TL_STATUS_OK
+            )
             tl_desc = 'finish editing sheets'
             if not export_ex and isa_version:
                 tl_desc += ' and save version as {isatab}'
@@ -1683,7 +1695,11 @@ class SheetEditFinishAjaxView(SheetVersionMixin, SODARBaseProjectAjaxView):
                 event_name='sheet_edit_finish',
                 description=tl_desc,
                 status_type=tl_status,
-                status_desc=export_ex if tl_status == 'FAILED' else None,
+                status_desc=(
+                    export_ex
+                    if tl_status == timeline.TL_STATUS_FAILED
+                    else None
+                ),
             )
             if not export_ex and isa_version:
                 tl_event.add_object(
@@ -1815,7 +1831,7 @@ class SheetEditConfigAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
                     event_name='field_update',
                     description='update field configuration for "{}" '
                     'in {{{}}}'.format(c['name'].title(), tl_label),
-                    status_type='OK',
+                    status_type=timeline.TL_STATUS_OK,
                     extra_data={'config': c},
                 )
                 tl_event.add_object(
@@ -1869,7 +1885,7 @@ class StudyDisplayConfigAjaxView(SODARBaseProjectAjaxView):
                     event_name='display_update',
                     description='update default column display configuration '
                     'for {study}',
-                    status_type='OK',
+                    status_type=timeline.TL_STATUS_OK,
                 )
                 tl_event.add_object(
                     obj=study, label='study', name=study.get_display_name()

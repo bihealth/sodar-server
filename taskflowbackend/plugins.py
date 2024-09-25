@@ -191,7 +191,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                 description='{} {} in iRODS'.format(
                     tl_action, project.type.lower()
                 ),
-                status_type='OK',
+                status_type=timeline.TL_STATUS_OK,
             )
 
     def revert_project_modify(
@@ -242,7 +242,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                 user=request.user if request else None,
                 event_name='project_create_revert',
                 description='revert project creation in iRODS',
-                status_type='OK',
+                status_type=timeline.TL_STATUS_OK,
             )
 
     def perform_role_modify(self, role_as, action, old_role=None, request=None):
@@ -301,7 +301,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                 description='update {} iRODS access for user {{{}}}'.format(
                     project.type.lower(), 'user'
                 ),
-                status_type='OK',
+                status_type=timeline.TL_STATUS_OK,
             )
             tl_event.add_object(obj=user, label='user', name=user.username)
 
@@ -365,7 +365,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                 event_name='role_update_revert',
                 description='revert adding iRODS access for '
                 'user {{{}}}'.format('user'),
-                status_type='OK',
+                status_type=timeline.TL_STATUS_OK,
             )
             tl_event.add_object(user, 'user', user_name)
 
@@ -426,7 +426,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                 user=request.user if request else None,
                 event_name='role_delete',
                 description='remove project iRODS access from user {user}',
-                status_type='OK',
+                status_type=timeline.TL_STATUS_OK,
             )
             tl_event.add_object(obj=user, label='user', name=user_name)
 
@@ -488,7 +488,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                 event_name='role_delete_revert',
                 description='revert removing iRODS access from '
                 'user {{{}}}'.format('user'),
-                status_type='OK',
+                status_type=timeline.TL_STATUS_OK,
             )
             tl_event.add_object(role_as.user, 'user', user_name)
 
@@ -539,7 +539,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                 event_name='role_owner_transfer',
                 description='update iRODS access for ownership transfer '
                 'from {old_owner} to {new_owner}',
-                status_type='OK',
+                status_type=timeline.TL_STATUS_OK,
             )
             tl_event.add_object(
                 obj=old_owner, label='old_owner', name=o_user_name

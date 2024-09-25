@@ -17,6 +17,7 @@ from projectroles.models import (
     ProjectInvite,
     SODAR_CONSTANTS,
 )
+from projectroles.plugins import get_backend_api
 from projectroles.tests.test_models import ProjectInviteMixin
 
 # Timeline dependency
@@ -49,6 +50,10 @@ TASKFLOW_TEST_MODE = getattr(settings, 'TASKFLOW_TEST_MODE', False)
 
 class TestProjectCreateView(TaskflowViewTestBase):
     """Tests for Project creation view with taskflow"""
+
+    def setUp(self):
+        super().setUp()
+        self.timeline = get_backend_api('timeline_backend')
 
     def test_create_project(self):
         """Test Project creation with taskflow"""
@@ -144,7 +149,10 @@ class TestProjectCreateView(TaskflowViewTestBase):
             event_name='project_create',
         )
         self.assertEqual(tl_events.count(), 1)
-        self.assertEqual(tl_events.first().get_status().status_type, 'OK')
+        self.assertEqual(
+            tl_events.first().get_status().status_type,
+            self.timeline.TL_STATUS_OK,
+        )
 
 
 class TestProjectUpdateView(TaskflowViewTestBase):
@@ -161,6 +169,7 @@ class TestProjectUpdateView(TaskflowViewTestBase):
             description='description',
         )
         self.user_new = self.make_user('user_new')
+        self.timeline = get_backend_api('timeline_backend')
 
     def test_update(self):
         """Test project update with taskflow"""
@@ -240,7 +249,10 @@ class TestProjectUpdateView(TaskflowViewTestBase):
             event_name='project_update',
         )
         self.assertEqual(tl_events.count(), 1)
-        self.assertEqual(tl_events.first().get_status().status_type, 'OK')
+        self.assertEqual(
+            tl_events.first().get_status().status_type,
+            self.timeline.TL_STATUS_OK,
+        )
 
     def test_update_parent(self):
         """Test project update with changed parent"""
