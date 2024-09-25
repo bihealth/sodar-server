@@ -1753,12 +1753,14 @@ class SheetDeleteView(
                 taskflow.submit(
                     project=project, flow_name='sheet_delete', flow_data={}
                 )
+                tl_event.set_status('OK')
             except taskflow.FlowSubmitException as ex:
                 delete_success = False
                 messages.error(
                     self.request,
                     'Failed to delete sample sheets: {}'.format(ex),
                 )
+                tl_event.set_status('FAILED', status_info=str(ex))
         else:
             # Clear cached study tables (force delete)
             for study in investigation.studies.all():

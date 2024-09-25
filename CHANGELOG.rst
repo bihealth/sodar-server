@@ -46,6 +46,12 @@ Changed
     - Refactor task tests (#2002)
     - Unify user name parameter naming in flows (#1653)
 
+Fixed
+-----
+
+- **Samplesheets**
+    - Timeline event status not updated in ``SheetDeleteVieW`` with iRODS collections enabled (#1798)
+
 Removed
 -------
 
