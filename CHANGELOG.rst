@@ -43,6 +43,7 @@ Changed
     - Update REST API versioning (#1936)
     - Update REST API views for OpenAPI compatibility (#1951)
     - Send iRODS delete request emails to all addresses of user (#2000)
+    - Disable ontology term select box while querying (#1974)
 - **Taskflowbackend**
     - Refactor task tests (#2002)
     - Unify user name parameter naming in flows (#1653)

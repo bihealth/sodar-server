@@ -511,7 +511,7 @@ export default {
       return JSON.stringify(copyVal)
     },
     enableSearch () {
-      return this.editIdx === null
+      return this.editIdx === null && !this.querying
     },
     enableUpdate () {
       return this.editIdx === null && this.updated
