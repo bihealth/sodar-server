@@ -20,6 +20,8 @@ Added
 - **Samplesheets**
     - REST API list view pagination (#1994)
     - ``notify_email_irods_request`` user app setting (#1939)
+    - Assay app unit tests (#1980)
+    - Missing assay plugin ``__init__.py`` files (#2014)
 
 Changed
 -------
@@ -53,6 +55,7 @@ Fixed
 
 - **Samplesheets**
     - Timeline event status not updated in ``SheetDeleteVieW`` with iRODS collections enabled (#1798)
+    - Assay plugin ``update_row()`` setting links for empty file names (#2017)
 
 Removed
 -------

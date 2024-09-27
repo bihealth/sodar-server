@@ -13,8 +13,10 @@ MAX_QUANT_COLL = 'MaxQuantResults'
 
 
 class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
-    """Plugin for protein expression profiling / mass spectrometry in sample
-    sheets"""
+    """
+    Plugin for protein expression profiling / mass spectrometry in sample
+    sheets
+    """
 
     #: Name (used in code and as unique idenfitier)
     name = 'samplesheets_assay_pep_ms'
@@ -84,50 +86,20 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             return row
         base_url = settings.IRODS_WEBDAV_URL + assay_path
 
-        # Check if MaxQuant is found
-        # NOTE: Currently disabled
-        '''
-        max_quant_found = False
-
         for i in range(len(row)):
             header = table['field_header'][i]
-
-            if (
-                header['obj_cls'] == 'Process'
-                and header['value'].lower() == 'analysis software name'
-                and row[i]['value'] == 'MaxQuant'
-            ):
-                max_quant_found = True
-                break
-        '''
-
-        for i in range(len(row)):
-            header = table['field_header'][i]
-
             # Data files
             if (
                 header['obj_cls'] == 'GenericMaterial'
                 and header['item_type'] == 'DATA'
                 and header['value'].lower() == 'name'
+                and row[i]['value']
+                and isinstance(row[i]['value'], str)
             ):
                 # We assume all files to be in RawData
                 row[i]['link'] = (
                     base_url + '/' + RAW_DATA_COLL + '/' + row[i]['value']
                 )
-
-            # Process parameter files
-            # NOTE: Currently disabled
-            '''
-            elif (
-                max_quant_found
-                and header['obj_cls'] == 'Process'
-                and header['value'].lower() == 'analysis database file'
-            ):
-                row[i]['link'] = (
-                    base_url + '/' + MAX_QUANT_COLL + '/' + row[i]['value']
-                )
-            '''
-
         return row
 
     def get_shortcuts(self, assay):

@@ -100,7 +100,6 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                     [assay_path, RAW_DATA_COLL, hybrid_name, scan_name]
                 )
                 return row_path
-
         return None
 
     def update_row(self, row, table, assay, index):
@@ -114,11 +113,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         :return: List of dicts
         """
         assay_path = self.get_assay_path(assay)
-        if (
-            not settings.IRODS_WEBDAV_ENABLED
-            or not assay.study.investigation.irods_status
-            or not assay_path
-        ):
+        if not settings.IRODS_WEBDAV_ENABLED or not assay_path:
             return row
         row_path = self.get_row_path(row, table, assay, assay_path)
         if not row_path:
@@ -132,12 +127,8 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                 and row[i]['value']
             ):
                 top_header = get_top_header(table, i)
-                if (
-                    top_header['value'].lower() in LINKED_FILES
-                    and row[i]['value']
-                ):
+                if top_header['value'].lower() in LINKED_FILES:
                     row[i]['link'] = base_url + '/' + row[i]['value']
-
         return row
 
     def update_cache(self, name=None, project=None, user=None):

@@ -145,6 +145,54 @@ BACKEND_PLUGINS_NO_TPL.remove('isatemplates_backend')
 # TODO: Add testing for study table cache updates
 
 
+# Base Classes and Mixins ------------------------------------------------------
+
+
+class SheetTemplateCreateMixin:
+    """Sheet template creation helpers"""
+
+    def get_tpl_post_data(self, sheet_tpl):
+        """
+        Return POST data for creating sheet from template.
+
+        :param sheet_tpl: IsaTabTemplate object
+        :return: Dict
+        """
+        ret = {TPL_DIR_FIELD: clean_sheet_dir_name(self.project.title)}
+        if not isinstance(sheet_tpl, IsaTabTemplate):  # Custom template
+            tpl_config = json.loads(sheet_tpl.configuration)
+        else:  # CUBI template
+            tpl_config = sheet_tpl.configuration
+        for k, v in tpl_config.items():
+            if isinstance(v, str):
+                if '{{' in v or '{%' in v:
+                    continue
+                ret[k] = v
+            elif isinstance(v, list):
+                ret[k] = v[0]
+            elif isinstance(v, dict):
+                ret[k] = json.dumps(v)
+        return ret
+
+    def make_sheets_from_cubi_tpl(self, sheet_tpl):
+        """
+        Create investigation from CUBI templates by posting to the template
+        create view.
+
+        :param sheet_tpl: IsaTabTemplate object
+        """
+        url = reverse(
+            'samplesheets:template_create',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        with self.login(self.user):
+            response = self.client.post(
+                url + '?sheet_tpl=' + sheet_tpl.name,
+                data=self.get_tpl_post_data(sheet_tpl),
+            )
+        self.assertEqual(response.status_code, 302, msg=sheet_tpl.name)
+
+
 class SamplesheetsViewTestBase(
     ProjectMixin, RoleMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase
 ):
@@ -182,6 +230,9 @@ class SamplesheetsViewTestBase(
         self.guest_as = self.make_assignment(
             self.project, self.user_guest, self.role_guest
         )
+
+
+# Test Cases -------------------------------------------------------------------
 
 
 class TestProjectSheetsView(SamplesheetsViewTestBase):
@@ -806,34 +857,12 @@ class TestSheetTemplateSelectView(
 
 
 class TestSheetTemplateCreateView(
+    SheetTemplateCreateMixin,
     CookiecutterISATemplateMixin,
     CookiecutterISAFileMixin,
     SamplesheetsViewTestBase,
 ):
     """Tests for SheetTemplateCreateView"""
-
-    def _get_post_data(self, sheet_tpl):
-        """
-        Return POST data for creation from template
-
-        :param sheet_tpl: IsaTabTemplate object
-        :return: Dict
-        """
-        ret = {TPL_DIR_FIELD: clean_sheet_dir_name(self.project.title)}
-        if not isinstance(sheet_tpl, IsaTabTemplate):  # Custom template
-            tpl_config = json.loads(sheet_tpl.configuration)
-        else:  # CUBI template
-            tpl_config = sheet_tpl.configuration
-        for k, v in tpl_config.items():
-            if isinstance(v, str):
-                if '{{' in v or '{%' in v:
-                    continue
-                ret[k] = v
-            elif isinstance(v, list):
-                ret[k] = v[0]
-            elif isinstance(v, dict):
-                ret[k] = json.dumps(v)
-        return ret
 
     def _make_custom_template(self):
         """Make custom template with data"""
@@ -930,15 +959,9 @@ class TestSheetTemplateCreateView(
         """Test POST with supported templates and default values"""
         for t in ISA_TEMPLATES:
             self.assertIsNone(self.project.investigations.first())
-            post_data = self._get_post_data(t)
-            with self.login(self.user):
-                response = self.client.post(
-                    self.url + '?sheet_tpl=' + t.name,
-                    data=post_data,
-                )
+            self.make_sheets_from_cubi_tpl(t)
             isa_tab = ISATab.objects.first()
             self.assertEqual(isa_tab.tags, ['CREATE'])
-            self.assertEqual(response.status_code, 302, msg=t.name)
             self.assertIsNotNone(
                 self.project.investigations.first(), msg=t.name
             )
@@ -948,7 +971,7 @@ class TestSheetTemplateCreateView(
         """Test POST with slashes in values used for file names"""
         for t in ISA_TEMPLATES:
             self.assertIsNone(self.project.investigations.first())
-            post_data = self._get_post_data(t)
+            post_data = self.get_tpl_post_data(t)
             for k in TPL_FILE_NAME_FIELDS:
                 if k in post_data:
                     post_data[k] += '/test'
@@ -967,7 +990,7 @@ class TestSheetTemplateCreateView(
         """Test POST with multiple requests (should fail)"""
         tpl = ISA_TEMPLATES[0]
         url = self.url + '?sheet_tpl=' + tpl.name
-        post_data = self._get_post_data(tpl)
+        post_data = self.get_tpl_post_data(tpl)
         with self.login(self.user):
             response = self.client.post(url, data=post_data)
             self.assertEqual(response.status_code, 302)
@@ -980,7 +1003,7 @@ class TestSheetTemplateCreateView(
         """Test POST with custom template"""
         self._make_custom_template()
         self.assertIsNone(self.project.investigations.first())
-        post_data = self._get_post_data(self.template)
+        post_data = self.get_tpl_post_data(self.template)
         with self.login(self.user):
             response = self.client.post(
                 self.url + '?sheet_tpl=' + self.template.name,
