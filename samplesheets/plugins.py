@@ -937,20 +937,27 @@ class SampleSheetAssayPluginPoint(PluginPoint):
     #: Irodsbackend IrodsAPI object
     irods_backend = None
 
+    #: iRDOS path for the assay for which the plugin is initialized
+    assay_path = None
+
     def __init__(self):
         super().__init__()
         self.irods_backend = get_backend_api('omics_irods')
 
     def get_assay_path(self, assay):
         """
-        Helper for getting the assay path.
+        Return the iRODS path for the given assay.
 
         :param assay: Assay object
         :return: Full iRODS path for the assay
         """
-        if not self.irods_backend:
-            return None
-        return self.irods_backend.get_path(assay)
+        if not self.assay_path:
+            self.assay_path = (
+                self.irods_backend.get_path(assay)
+                if self.irods_backend and assay
+                else None
+            )
+        return self.assay_path
 
     def get_row_path(self, row, table, assay, assay_path):
         """
