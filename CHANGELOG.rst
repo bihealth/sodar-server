@@ -51,6 +51,7 @@ Changed
 - **Taskflowbackend**
     - Refactor task tests (#2002)
     - Unify user name parameter naming in flows (#1653)
+    - Refactor ``landing_zone_move`` flow (#1846)
 
 Fixed
 -----
