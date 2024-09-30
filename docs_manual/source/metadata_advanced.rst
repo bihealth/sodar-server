@@ -39,6 +39,24 @@ SODAR currently supports the following study configurations:
 If the configuration is not specified or is not known to SODAR, the shortcut
 column will not be visible.
 
+It is possible to override the plugin to be used for a study. This allows for
+e.g. having different types of studies within a single investigation. The
+overriding can be done by adding a ``SODAR Study Plugin`` comment within the
+``STUDY`` section of the ISA-Tab investigation file. As the value, the full
+internal study plugin name (e.g. ``samplesheets_study_cancer``) should be used.
+If both the study plugin comment and investigation configuration comment are
+present, the former will override the latter.
+
+Example:
+
+.. code-block::
+
+    STUDY
+    Study Identifier	s_small2
+    Study Title	Small Germline Study
+    Study Description
+    Comment[SODAR Study Plugin] samplesheets_study_cancer
+
 Study plugins will search for the "latest" BAM and VCF files for shortcuts and
 IGV session generation. This is determined by file name: in case of multiple
 files, the last file sorted by file name is returned. Hence to ensure the most

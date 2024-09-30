@@ -39,10 +39,12 @@ from samplesheets.models import (
     IrodsDataRequest,
     NOT_AVAILABLE_STR,
     CONFIG_LABEL_CREATE,
+    ISA_META_STUDY_PLUGIN,
     ISA_META_ASSAY_PLUGIN,
     IRODS_REQUEST_ACTION_DELETE,
     IRODS_REQUEST_STATUS_ACTIVE,
 )
+from samplesheets.plugins import SampleSheetStudyPluginPoint
 from samplesheets.utils import get_alt_names
 
 
@@ -612,6 +614,52 @@ class TestStudy(SamplesheetsModelTestBase):
             kwargs={'project': self.project.sodar_uuid},
         ) + '#/study/{}'.format(self.study.sodar_uuid)
         self.assertEqual(self.study.get_url(), expected)
+
+    def test_get_plugin_unset(self):
+        """Test get_plugin() with no config set"""
+        self.assertIsNone(self.study.get_plugin())
+
+    def test_get_plugin_investigation(self):
+        """Test get_plugin() with config set in investigation"""
+        self.investigation.comments = {CONFIG_LABEL_CREATE: 'bih_germline'}
+        self.assertIsInstance(
+            self.study.get_plugin(),
+            SampleSheetStudyPluginPoint.get_plugin(
+                name='samplesheets_study_germline'
+            ).__class__,
+        )
+
+    def test_get_plugin_override(self):
+        """Test get_plugin() with config set in study override"""
+        self.study.comments = {
+            ISA_META_STUDY_PLUGIN: 'samplesheets_study_germline'
+        }
+        self.assertIsInstance(
+            self.study.get_plugin(),
+            SampleSheetStudyPluginPoint.get_plugin(
+                name='samplesheets_study_germline'
+            ).__class__,
+        )
+
+    def test_get_plugin_override_invalid(self):
+        """Test get_plugin() with invalid config name set in study override"""
+        self.study.comments = {
+            ISA_META_STUDY_PLUGIN: 'samplesheets_study_NONEXISTENT_NAME'
+        }
+        self.assertIsNone(self.study.get_plugin())
+
+    def test_get_plugin_both(self):
+        """Test get_plugin() with investigation and study configs"""
+        self.investigation.comments = {CONFIG_LABEL_CREATE: 'bih_germline'}
+        self.study.comments = {
+            ISA_META_STUDY_PLUGIN: 'samplesheets_study_cancer'
+        }
+        self.assertIsInstance(
+            self.study.get_plugin(),
+            SampleSheetStudyPluginPoint.get_plugin(
+                name='samplesheets_study_cancer'
+            ).__class__,
+        )
 
 
 class TestProtocol(SamplesheetsModelTestBase):

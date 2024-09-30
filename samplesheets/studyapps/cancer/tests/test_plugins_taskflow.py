@@ -13,13 +13,14 @@ from projectroles.plugins import get_backend_api
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import TaskflowViewTestBase
 
+from samplesheets.models import ISA_META_STUDY_PLUGIN
+from samplesheets.plugins import SampleSheetStudyPluginPoint
 from samplesheets.rendering import SampleSheetTableBuilder
+from samplesheets.studyapps.cancer.utils import get_library_file_path
+from samplesheets.studyapps.utils import get_igv_session_url
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_models import SampleSheetModelMixin
 from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
-from samplesheets.plugins import SampleSheetStudyPluginPoint
-from samplesheets.studyapps.cancer.utils import get_library_file_path
-from samplesheets.studyapps.utils import get_igv_session_url
 
 
 app_settings = AppSettingAPI()
@@ -560,8 +561,48 @@ class TestCancerPlugin(
             self.assertIsNone(ci['bam'][c])
             self.assertIsNone(ci['vcf'][c])
 
+    def test_update_cache_no_config(self):
+        """Test update_cache() without config"""
+        # Clear investigation configuration comments
+        self.investigation.comments = {}
+        self.investigation.save()
+        self.plugin.update_cache(self.cache_name, self.project)
+        self.assertIsNone(
+            self.cache_backend.get_cache_item(
+                APP_NAME, self.cache_name, self.project
+            )
+        )
+
     def test_update_cache_files(self):
         """Test update_cache() with files in iRODS"""
+        self.irods.collections.create(self.source_path)
+        bam_path = os.path.join(
+            self.source_path, '{}_test.bam'.format(SAMPLE_ID_NORMAL)
+        )
+        vcf_path = os.path.join(
+            self.source_path, '{}_test.vcf.gz'.format(SAMPLE_ID_NORMAL)
+        )
+        self.irods.data_objects.create(bam_path)
+        self.irods.data_objects.create(vcf_path)
+        self.plugin.update_cache(self.cache_name, self.project)
+        ci = self.cache_backend.get_cache_item(
+            APP_NAME, self.cache_name, self.project
+        ).data
+        self.assertEqual(ci['bam'][CASE_IDS[0]], bam_path)
+        self.assertEqual(ci['vcf'][CASE_IDS[0]], vcf_path)
+        for i in range(1, len(CASE_IDS) - 1):
+            self.assertEqual(ci['bam'][CASE_IDS[i]], None)
+            self.assertEqual(ci['vcf'][CASE_IDS[i]], None)
+
+    def test_update_cache_files_override(self):
+        """Test update_cache() with files in iRODS and study override"""
+        # Clear investigation configuration comments and set study override
+        self.investigation.comments = {}
+        self.investigation.save()
+        self.study.comments = {
+            ISA_META_STUDY_PLUGIN: 'samplesheets_study_cancer'
+        }
+        self.study.save()
         self.irods.collections.create(self.source_path)
         bam_path = os.path.join(
             self.source_path, '{}_test.bam'.format(SAMPLE_ID_NORMAL)

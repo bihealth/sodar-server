@@ -424,8 +424,6 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             if not investigation:
                 continue
             # Only apply for investigations with the correct configuration
-            if investigation.get_configuration() != self.config_name:
-                continue
             logger.debug(
                 'Updating cache for project {}..'.format(
                     project.get_log_title()
@@ -438,6 +436,12 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             else:
                 studies = Study.objects.filter(investigation=investigation)
             for study in studies:
+                # Only apply for studies using this plugin
+                if (
+                    not study.get_plugin()
+                    or study.get_plugin().__class__ != self.__class__
+                ):
+                    continue
                 logger.debug(
                     'Updating cache for study "{}" ({})..'.format(
                         study.get_display_name(), study.sodar_uuid

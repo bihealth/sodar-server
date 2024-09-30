@@ -74,7 +74,8 @@ IRODS_REQUEST_STATUS_ACTIVE = 'ACTIVE'
 IRODS_REQUEST_STATUS_FAILED = 'FAILED'
 IRODS_REQUEST_STATUS_REJECTED = 'REJECTED'
 
-# ISA-Tab SODAR metadata comment key for assay plugin override
+# ISA-Tab SODAR metadata comment keys for study and assay plugin overrides
+ISA_META_STUDY_PLUGIN = 'SODAR Study Plugin'
 ISA_META_ASSAY_PLUGIN = 'SODAR Assay Plugin'
 
 
@@ -403,9 +404,19 @@ class Study(BaseSampleSheet):
         """Return active study app plugin or None if not found"""
         from samplesheets.plugins import SampleSheetStudyPluginPoint
 
+        inv_config = self.investigation.get_configuration()
+        study_override = self.comments.get(ISA_META_STUDY_PLUGIN)
+        if study_override:
+            try:
+                return SampleSheetStudyPluginPoint.get_plugin(
+                    name=study_override
+                )
+            except Exception:
+                return None
         for plugin in SampleSheetStudyPluginPoint.get_plugins():
-            if plugin.config_name == self.investigation.get_configuration():
+            if plugin.config_name == inv_config:
                 return plugin
+        return None
 
     def get_url(self):
         """Return the URL for this study"""

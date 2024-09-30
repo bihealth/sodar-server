@@ -326,9 +326,6 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 )
             except Investigation.DoesNotExist:
                 continue
-            # Only apply for investigations with the correct configuration
-            if investigation.get_configuration() != self.config_name:
-                continue
             # If a name is given, only update that specific CacheItem
             if name:
                 study_uuid = name.split('/')[-1]
@@ -336,6 +333,12 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             else:
                 studies = Study.objects.filter(investigation=investigation)
             for study in studies:
+                # Only apply for studies using this plugin
+                if (
+                    not study.get_plugin()
+                    or study.get_plugin().__class__ != self.__class__
+                ):
+                    continue
                 if self._has_only_ms_assays(study):
                     continue
                 self._update_study_cache(study, user, cache_backend)
