@@ -13,6 +13,7 @@ Added
 
 - **General**
     - Python v3.11 support (#1922, #1978)
+    - ``SESSION_COOKIE_AGE`` and ``SESSION_EXPIRE_AT_BROWSER_CLOSE`` Django settings (#2015)
 - **Landingzones**
     - REST API list view pagination (#1994)
     - ``notify_email_zone_status`` user app setting (#1939)

@@ -258,6 +258,8 @@ MEDIA_URL = '/media/'
 # ------------------------------------------------------------------------------
 ROOT_URLCONF = 'config.urls'
 WSGI_APPLICATION = 'config.wsgi.application'
+# Location of root django.contrib.admin URL, use {% url 'admin:index' %}
+ADMIN_URL = 'admin/'
 
 # PASSWORD STORAGE SETTINGS
 # ------------------------------------------------------------------------------
@@ -305,9 +307,12 @@ LOGIN_URL = 'login'
 # SLUGLIFIER
 AUTOSLUG_SLUGIFY_FUNCTION = 'slugify.slugify'
 
-# Location of root django.contrib.admin URL, use {% url 'admin:index' %}
-ADMIN_URL = 'admin/'
-
+# The age of session cookies in seconds
+SESSION_COOKIE_AGE = env.int('DJANGO_SESSION_COOKIE_AGE', 1209600)
+# Whether to expire the session when the user closes their browser
+SESSION_EXPIRE_AT_BROWSER_CLOSE = env.bool(
+    'DJANGO_SESSION_EXPIRE_AT_BROWSER_CLOSE', False
+)
 
 # Celery
 # ------------------------------------------------------------------------------

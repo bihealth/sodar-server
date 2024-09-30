@@ -16,6 +16,7 @@ Release for SODAR Core v1.0 upgrade, iRODS v4.3 upgrade and feature updates.
 - Add opt-out settings for iRODS data request and zone status update emails
 - Add REST API list view pagination
 - Add Python v3.11 support
+- Add session control in Django settings and environment variables
 - Update minimum supported iRODS version to v4.3.3
 - Update REST API versioning
 - Update REST API views for OpenAPI support
