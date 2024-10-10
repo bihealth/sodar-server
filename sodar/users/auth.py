@@ -4,6 +4,7 @@ Django session.
 """
 
 import base64
+
 from functools import wraps
 
 from django.conf import settings
@@ -12,11 +13,14 @@ from django.http import HttpResponse
 from django.utils.decorators import method_decorator, decorator_from_middleware
 from django.utils.deprecation import MiddlewareMixin
 
+from knox.auth import TokenAuthentication
+
 
 class FallbackToAuthBasicMiddleware(MiddlewareMixin):
     """
     Authentication middleware that allows users to use HTTP Auth Basic instead
-    of requiring the user to be in the session.
+    of requiring the user to be in the session. Allows using of a Knox token in
+    place of password.
     """
 
     def process_request(self, request):
@@ -30,17 +34,30 @@ class FallbackToAuthBasicMiddleware(MiddlewareMixin):
         # Allow disabling of basic auth alltogether in configuration.
         if getattr(settings, 'BASICAUTH_DISABLE', False):
             return
-
         # When user is not logged in, try to login via HTTP_AUTHORIZATION
         # header. If this header is not set, send the response to ask for
         # Auth Basic.
-        if 'HTTP_AUTHORIZATION' in request.META:
-            auth = request.META['HTTP_AUTHORIZATION'].split()
-            if len(auth) == 2 and auth[0].lower() == 'basic':
-                uname, passwd = base64.b64decode(auth[1]).decode().split(':')
-                user = authenticate(username=uname, password=passwd)
-                if user:
-                    login(request, user)
+        if 'HTTP_AUTHORIZATION' not in request.META:
+            return
+        auth = request.META['HTTP_AUTHORIZATION'].split()
+        if len(auth) == 2 and auth[0].lower() == 'basic':
+            uname, passwd = base64.b64decode(auth[1]).decode().split(':')
+            user = authenticate(username=uname, password=passwd)
+            if user:
+                login(request, user)
+                return
+            # If not authenticated, try token
+            token_auth = TokenAuthentication()
+            try:
+                user, _ = token_auth.authenticate_credentials(
+                    passwd.encode('utf-8')
+                )
+            except Exception:
+                return
+            if user and user.is_authenticated and user.username == uname:
+                user.backend = 'django.contrib.auth.backends.ModelBackend'
+                login(request, user)
+                return
 
     def process_response(self, request, response):
         if not request.user.is_authenticated:

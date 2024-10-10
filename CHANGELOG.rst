@@ -14,6 +14,11 @@ Added
 - **General**
     - Python v3.11 support (#1922, #1978)
     - ``SESSION_COOKIE_AGE`` and ``SESSION_EXPIRE_AT_BROWSER_CLOSE`` Django settings (#2015)
+- **Irodsbackend**
+    - Token auth support in ``BasicAuthView`` (#1999)
+    - Django checks for enabled authentication methods (#1999)
+- **Irodsinfo**
+    - Alert on token usage for OIDC users (#1999)
 - **Landingzones**
     - REST API list view pagination (#1994)
     - ``notify_email_zone_status`` user app setting (#1939)
@@ -24,6 +29,7 @@ Added
     - Assay app unit tests (#1980)
     - Missing assay plugin ``__init__.py`` files (#2014)
     - Study plugin override via ISA-Tab comments (#1885)
+    - Token auth support in study plugin IGV XML serving views (#1999, #2021)
 
 Changed
 -------
@@ -38,6 +44,9 @@ Changed
     - Upgrade to python-irodsclient v2.1.0 (#2007)
     - Upgrade minimum supported iRODS version to v4.3.3 (#1815, #2007)
     - Use constants for timeline event status types (#2010)
+- **Irodsbackend**
+    - Rename ``LocalAuthAPIView`` to ``BasicAuthView`` (#1999)
+    - Change ``BasicAuthView`` request to ``GET`` (#1999)
 - **Irodsinfo**
     - Update REST API versioning (#1936)
 - **Landingzones**

@@ -47,6 +47,8 @@ You will be prompted for your password, which is the same one you use to access
 this web site. After this, you should be successfully logged on to iRODS and can
 access data on the storage in your terminal.
 
+.. include:: _include/oidc_irods_token.rst
+
 See `iRODS documentation <https://docs.irods.org/master/icommands/user/>`_
 for iCommands reference.
 

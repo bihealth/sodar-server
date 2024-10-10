@@ -3,18 +3,17 @@
 import logging
 
 from django.conf import settings
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
+from django.views.generic import View
 
-from rest_framework.exceptions import NotAuthenticated
 from rest_framework.response import Response
-from rest_framework.views import APIView
+
+from sodar.users.auth import fallback_to_auth_basic
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 from projectroles.views_ajax import SODARBaseProjectAjaxView
-
-from sodar.users.auth import fallback_to_auth_basic
 
 
 logger = logging.getLogger(__name__)
@@ -32,6 +31,11 @@ ERROR_NO_BACKEND = (
     'Unable to initialize omics_irods backend, iRODS server '
     'possibly unavailable'
 )
+BASIC_AUTH_LOG_PREFIX = 'Basic auth'
+BASIC_AUTH_NOT_ENABLED_MSG = 'IRODS_SODAR_AUTH not enabled'
+
+
+# Ajax Views -------------------------------------------------------------------
 
 
 class BaseIrodsAjaxView(SODARBaseProjectAjaxView):
@@ -223,30 +227,40 @@ class IrodsObjectListAjaxView(BaseIrodsAjaxView):
             return Response(self._get_detail(ex), status=500)
 
 
+# Basic Auth View --------------------------------------------------------------
+
+
 @fallback_to_auth_basic
-class LocalAuthAPIView(APIView):
+class BasicAuthView(View):
     """
-    REST API view for verifying login credentials for local users in iRODS.
+    View for verifying login credentials for local users in iRODS. Allows using
+    Knox token in place of password.
 
     Should only be used in local development and testing situations or when an
     external LDAP/AD login is not available.
     """
 
-    def post(self, request, *args, **kwargs):
-        # TODO: Limit access to iRODS host?
-        log_prefix = 'Local auth'
+    http_method_names = ['get']
+
+    def dispatch(self, request, *args, **kwargs):
         if not settings.IRODS_SODAR_AUTH:
-            not_enabled_msg = 'IRODS_SODAR_AUTH not enabled'
-            logger.error('{} failed: {}'.format(log_prefix, not_enabled_msg))
-            return JsonResponse({'detail': not_enabled_msg}, status=500)
+            logger.error(
+                '{} failed: {}'.format(
+                    BASIC_AUTH_LOG_PREFIX, BASIC_AUTH_NOT_ENABLED_MSG
+                )
+            )
+            return HttpResponse(BASIC_AUTH_NOT_ENABLED_MSG, status=500)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
         if request.user.is_authenticated:
             logger.info(
-                '{} successful: {}'.format(log_prefix, request.user.username)
+                '{} successful: {}'.format(
+                    BASIC_AUTH_LOG_PREFIX, request.user.username
+                )
             )
-            return JsonResponse({'detail': 'ok'}, status=200)
+            return HttpResponse('Authenticated', status=200)
         logger.error(
-            '{} failed: User {} not authenticated'.format(
-                log_prefix, request.user.username
-            )
+            '{} failed: User not authenticated'.format(BASIC_AUTH_LOG_PREFIX)
         )
-        raise NotAuthenticated()
+        return HttpResponse('Unauthorized', status=401)

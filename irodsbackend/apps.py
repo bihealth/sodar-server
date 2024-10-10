@@ -5,4 +5,5 @@ class IrodsbackendConfig(AppConfig):
     name = 'irodsbackend'
 
     def ready(self):
+        import irodsbackend.checks  # noqa
         import irodsbackend.signals  # noqa

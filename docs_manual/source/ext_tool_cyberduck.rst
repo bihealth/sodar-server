@@ -28,6 +28,8 @@ https://cyberduck.io/download/
    onto the Cyberduck window. A new dialog should appear. Fill in your
    SODAR username and password in the respective fields.
 
+   .. include:: _include/oidc_irods_token.rst
+
    .. image:: _static/ext_tool_cyberduck/Cyberduck_new_profile.png
 
 

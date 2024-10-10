@@ -110,8 +110,9 @@ iRODS Settings
 ``IRODS_CERT_PATH``
     iRODS certificate path on server (string).
 ``IRODS_SODAR_AUTH``
-    Enable local basic auth endpoint for iRODS if an external LDAP/AD server is
-    not used (boolean, default: ``False``).
+    Enable local basic auth endpoint for iRODS. **NOTE:** This **must** be set
+    ``True`` if OIDC is enabled, or if both OIDC and LDAP auth are disabled
+    (boolean, default: ``False``).
 
 .. warning::
 

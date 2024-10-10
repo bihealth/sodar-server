@@ -18,6 +18,7 @@ Release for SODAR Core v1.0 upgrade, iRODS v4.3 upgrade and feature updates.
 - Add Python v3.11 support
 - Add study plugin override via ISA-Tab comments
 - Add session control in Django settings and environment variables
+- Add token-based iRODS/IGV basic auth support for OIDC users
 - Update minimum supported iRODS version to v4.3.3
 - Update REST API versioning
 - Update REST API views for OpenAPI support
