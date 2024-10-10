@@ -330,9 +330,10 @@ running in the Docker Compose network.
 
 .. note::
 
-    If some tests connecting to iRODS fail with
-    ``irods.exception.NetworkException``, you may need to add the line
-    ``127.0.0.1 irods-test`` into your ``/etc/hosts`` file.
+    If the current dev branch uses ``python-irodsclient`` between versions 1.1.9
+    and 2.1.0, you will have to add the line ``127.0.0.1 irods irods-test`` into
+    your ``/etc/hosts`` file. Otherwise functionality and tests involving
+    opening files in iRODS will fail.
 
 For testing the Sample Sheets Vue app, run the following command:
 
