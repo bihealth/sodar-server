@@ -69,6 +69,7 @@ Fixed
 - **Samplesheets**
     - Timeline event status not updated in ``SheetDeleteVieW`` with iRODS collections enabled (#1798)
     - Assay plugin ``update_row()`` setting links for empty file names (#2017)
+    - Sporadic test failure in ``TestIrodsAccessTicketCreateView`` (#2026)
 
 Removed
 -------

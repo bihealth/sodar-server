@@ -778,13 +778,11 @@ class TestIrodsAccessTicketCreateView(
         self.assertEqual(self.get_tl_event_count('create'), 1)
         # Both owners should receive alert
         self.assertEqual(self.get_app_alert_count('create'), 2)
-        self.assertListEqual(
-            [
-                a.user
-                for a in AppAlert.objects.filter(
-                    alert_name='irods_ticket_create'
-                )
-            ],
+        alerts = AppAlert.objects.filter(
+            alert_name='irods_ticket_create'
+        ).order_by('user__username')
+        self.assertEqual(
+            [a.user for a in alerts],
             [self.user, self.user_owner_cat],
         )
 
