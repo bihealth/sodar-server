@@ -36,6 +36,8 @@ Documentation on settings is linked below.
 - `Admin Alerts <https://sodar-core.readthedocs.io/en/latest/app_adminalerts.html#optional-settings>`_
 - `App Alerts <https://sodar-core.readthedocs.io/en/latest/app_appalerts.html#django-settings>`_
 - `Timeline <https://sodar-core.readthedocs.io/en/latest/app_timeline_install.html#optional-settings>`_
+- `LDAP auth settings <https://sodar-core.readthedocs.io/en/latest/app_projectroles_settings.html#ldap-ad-configuration-optional>`_
+- `OIDC auth settings <https://sodar-core.readthedocs.io/en/latest/app_projectroles_settings.html#openid-connect-oidc-configuration-optional>`_
 
 .. _admin_settings_backend:
 
