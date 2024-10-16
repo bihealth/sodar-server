@@ -23,7 +23,7 @@ Release for SODAR Core v1.0 upgrade, iRODS v4.3 upgrade and feature updates.
 - Update REST API versioning
 - Update REST API views for OpenAPI support
 - Upgrade to Postgres v16
-- Upgrade to python-irodsclient v2.1.0
+- Upgrade to python-irodsclient v2.2.0
 - Upgrade to SODAR Core v1.0.2
 - SODAR Core v1.0 updates: OIDC auth support, new REST API versioning,
   owner/delegate remote sync controls, etc

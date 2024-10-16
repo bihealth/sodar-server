@@ -43,8 +43,6 @@ jobs:
           IRODS_ICAT_DBPASS: postgres
           IRODS_ZONE_NAME: sodarZone
           NO_WAIT: 1
-        options: >-
-          --hostname "irods"
         ports:
           - 4488:1247
     env:

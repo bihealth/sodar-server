@@ -41,7 +41,7 @@ Changed
     - Unify base test class naming (#2001)
     - Update ``Dockerfile`` for v1.0 upgrades (#2003, #2004)
     - Upgrade to iRODS v4.3.3 in CI (#1815)
-    - Upgrade to python-irodsclient v2.1.0 (#2007)
+    - Upgrade to python-irodsclient v2.2.0 (#2007, #2023)
     - Upgrade minimum supported iRODS version to v4.3.3 (#1815, #2007)
     - Use constants for timeline event status types (#2010)
 - **Irodsbackend**
