@@ -384,6 +384,8 @@ class ZoneSubmitMoveAPIView(ZoneMoveMixin, ZoneSubmitBaseAPIView):
     For validating data without moving it to the sample repository, this view
     should be called with ``submit/validate``.
 
+    Returns ``503`` if the project is currently locked by another operation.
+
     **URL for Validation:** ``/landingzones/api/submit/validate/{LandingZone.sodar_uuid}``
 
     **URL for Moving:** ``/landingzones/api/submit/move/{LandingZone.sodar_uuid}``
@@ -402,6 +404,7 @@ class ZoneSubmitMoveAPIView(ZoneMoveMixin, ZoneSubmitBaseAPIView):
 
     def post(self, request, *args, **kwargs):
         """POST request for initiating landing zone validation/moving"""
+        taskflow = get_backend_api('taskflow')
         zone = LandingZone.objects.filter(
             sodar_uuid=self.kwargs['landingzone']
         ).first()
@@ -423,9 +426,10 @@ class ZoneSubmitMoveAPIView(ZoneMoveMixin, ZoneSubmitBaseAPIView):
         try:
             self._submit_validate_move(zone, validate_only)
         except Exception as ex:
-            raise APIException(
-                'Initiating landing zone {} failed: {}'.format(action_msg, ex)
-            )
+            ex_msg = 'Initiating landing zone {} failed: '.format(action_msg)
+            if taskflow:
+                taskflow.raise_submit_api_exception(ex_msg, ex)
+            raise APIException('{}{}'.format(ex_msg, ex))
         return Response(
             {
                 'detail': 'Landing zone {} initiated'.format(action_msg),

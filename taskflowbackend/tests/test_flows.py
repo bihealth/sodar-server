@@ -59,16 +59,12 @@ from taskflowbackend.flows.sheet_colls_create import (
     PUBLIC_GROUP,
 )
 from taskflowbackend.flows.sheet_delete import Flow as SheetDeleteFlow
-from taskflowbackend.lock_api import ProjectLockAPI
 from taskflowbackend.tasks.irods_tasks import META_EMPTY_VALUE
 from taskflowbackend.tests.base import (
     TaskflowViewTestBase,
     IRODS_ACCESS_OWN,
     TICKET_STR,
 )
-
-
-lock_api = ProjectLockAPI()
 
 
 # SODAR constants
@@ -95,12 +91,6 @@ class TaskflowbackendFlowTestBase(TaskflowViewTestBase):
         """Build and run flow"""
         flow.build(force_fail)
         flow.run()
-
-    def lock_project(self, project):
-        self.coordinator = lock_api.get_coordinator()
-        lock_id = str(project.sodar_uuid)
-        lock = self.coordinator.get_lock(lock_id)
-        lock_api.acquire(lock)
 
 
 class TestDataDelete(TaskflowbackendFlowTestBase):

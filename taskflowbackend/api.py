@@ -3,6 +3,8 @@
 import json
 import logging
 
+from rest_framework.exceptions import APIException
+
 # Landingzones dependency
 from landingzones.constants import (
     ZONE_STATUS_NOT_CREATED,
@@ -17,7 +19,7 @@ from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 
 from taskflowbackend import flows
-from taskflowbackend.lock_api import ProjectLockAPI
+from taskflowbackend.lock_api import ProjectLockAPI, PROJECT_LOCKED_MSG
 from taskflowbackend.tasks_celery import submit_flow_task
 
 
@@ -38,6 +40,9 @@ class TaskflowAPI:
 
     class FlowSubmitException(Exception):
         """SODAR Taskflow submission exception"""
+
+    #: Exception message for locked project
+    project_locked_msg = PROJECT_LOCKED_MSG
 
     @classmethod
     def _raise_flow_exception(cls, ex_msg, tl_event=None, zone=None):
@@ -86,6 +91,27 @@ class TaskflowAPI:
             tl_event,
             lock_zone,
         )
+
+    # HACK for returning 503 if project is locked (see #1505, #1847)
+    @classmethod
+    def raise_submit_api_exception(
+        cls, msg_prefix, ex, default_class=APIException
+    ):
+        """
+        Raise zone submit API exception. Selects appropriate API response based
+        on exception type.
+
+        :param msg_prefix: API response prefix
+        :param ex: Exception object
+        :param default_class: Default API exception class to be returned
+        :raises: Exception of varying type
+        """
+        msg = '{}{}'.format(msg_prefix, ex)
+        if PROJECT_LOCKED_MSG in msg:
+            ex = APIException(msg)
+            ex.status_code = 503
+            raise ex
+        raise default_class(msg)
 
     @classmethod
     def get_flow(

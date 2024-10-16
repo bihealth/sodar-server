@@ -311,14 +311,17 @@ class TestInvestigationRetrieveAPIView(SampleSheetAPITaskflowTestBase):
 class TestIrodsCollsCreateAPIView(SampleSheetAPITaskflowTestBase):
     """Tests for IrodsCollsCreateAPIView"""
 
-    def test_post(self):
-        """Test IrodsCollsCreateAPIView POST"""
-        self.assertEqual(self.investigation.irods_status, False)
-        url = reverse(
+    def setUp(self):
+        super().setUp()
+        self.url = reverse(
             'samplesheets:api_irods_colls_create',
             kwargs={'project': self.project.sodar_uuid},
         )
-        response = self.request_knox(url, method='POST')
+
+    def test_post(self):
+        """Test IrodsCollsCreateAPIView POST"""
+        self.assertEqual(self.investigation.irods_status, False)
+        response = self.request_knox(self.url, method='POST')
         self.assertEqual(response.status_code, 200)
         self.investigation.refresh_from_db()
         self.assertEqual(self.investigation.irods_status, True)
@@ -331,12 +334,17 @@ class TestIrodsCollsCreateAPIView(SampleSheetAPITaskflowTestBase):
         # Set up iRODS collections
         self.make_irods_colls(self.investigation)
         self.assertEqual(self.investigation.irods_status, True)
-        url = reverse(
-            'samplesheets:api_irods_colls_create',
-            kwargs={'project': self.project.sodar_uuid},
-        )
-        response = self.request_knox(url, method='POST')
+        response = self.request_knox(self.url, method='POST')
         self.assertEqual(response.status_code, 400)
+
+    def test_post_locked(self):
+        """Test POST with locked project (should fail)"""
+        self.lock_project(self.project)
+        self.assertEqual(self.investigation.irods_status, False)
+        response = self.request_knox(self.url, method='POST')
+        self.assertEqual(response.status_code, 503)
+        self.investigation.refresh_from_db()
+        self.assertEqual(self.investigation.irods_status, False)
 
 
 # NOTE: For TestIrodsAccessTicketListAPIView, see test_views_api
@@ -1034,9 +1042,22 @@ class TestIrodsDataRequestAcceptAPIView(
         self.assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
         self.assert_alert_count(ACCEPT_ALERT, self.user_contributor, 0)
 
+    def test_accept_locked(self):
+        """Test POST to accept request with locked project (should fail)"""
+        self.lock_project(self.project)
+        self.assert_irods_obj(self.obj_path)
+        response = self.request_knox(self.url, 'POST')
+        self.assertEqual(response.status_code, 503)
+        self.request.refresh_from_db()
+        self.assertEqual(self.request.status, IRODS_REQUEST_STATUS_FAILED)
+        self.assert_irods_obj(self.obj_path)
+        self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_contributor, 0)
+
     @override_settings(REDIS_URL=INVALID_REDIS_URL)
     def test_accept_lock_failure(self):
-        """Test POST toa ccept request with project lock failure"""
+        """Test POST to accept request with project lock failure"""
         self.assert_irods_obj(self.obj_path)
         response = self.request_knox(self.url, 'POST')
         self.assertEqual(response.status_code, 400)

@@ -153,6 +153,8 @@ class IrodsCollsCreateAPIView(
     """
     Create iRODS collections for a project.
 
+    Returns ``503`` if the project is currently locked by another operation.
+
     **URL:** ``/samplesheets/api/irods/collections/create/{Project.sodar_uuid}``
 
     **Methods:** ``POST``
@@ -168,6 +170,7 @@ class IrodsCollsCreateAPIView(
     def post(self, request, *args, **kwargs):
         """POST request for creating iRODS collections"""
         irods_backend = get_backend_api('omics_irods')
+        taskflow = get_backend_api('taskflow')
         ex_msg = 'Creating iRODS collections failed: '
         investigation = Investigation.objects.filter(
             project__sodar_uuid=self.kwargs.get('project'), active=True
@@ -183,6 +186,8 @@ class IrodsCollsCreateAPIView(
         try:
             self.create_colls(investigation, request)
         except Exception as ex:
+            if taskflow:
+                taskflow.raise_submit_api_exception(ex_msg, ex)
             raise APIException('{}{}'.format(ex_msg, ex))
         return Response(
             {
@@ -750,7 +755,9 @@ class IrodsDataRequestAcceptAPIView(
     Accept an iRODS data request for a project.
 
     Accepting will delete the iRODS collection or data object targeted by the
-    request. This action can not  be undone.
+    request. This action can not be undone.
+
+    Returns ``503`` if the project is currently locked by another operation.
 
     **URL:** ``/samplesheets/api/irods/request/accept/{IrodsDataRequest.sodar_uuid}``
 
@@ -780,9 +787,10 @@ class IrodsDataRequestAcceptAPIView(
                 app_alerts=app_alerts,
             )
         except Exception as ex:
-            raise ValidationError(
-                '{} {}'.format('Accepting ' + IRODS_REQUEST_EX_MSG + ':', ex)
-            )
+            ex_msg = 'Accepting ' + IRODS_REQUEST_EX_MSG + ': '
+            if taskflow:
+                taskflow.raise_submit_api_exception(ex_msg, ex, ValidationError)
+            raise ValidationError('{}{}'.format(ex_msg, ex))
         return Response(
             {'detail': 'iRODS data request accepted'}, status=status.HTTP_200_OK
         )

@@ -30,6 +30,8 @@ Added
     - Missing assay plugin ``__init__.py`` files (#2014)
     - Study plugin override via ISA-Tab comments (#1885)
     - Token auth support in study plugin IGV XML serving views (#1999, #2021)
+- **Taskflowbackend**
+    - ``TaskflowAPI.raise_submit_api_exception()`` helper (#1847)
 
 Changed
 -------
@@ -52,16 +54,20 @@ Changed
 - **Landingzones**
     - Update REST API versioning (#1936)
     - Update REST API views for OpenAPI compatibility (#1951)
+    - Return ``503`` in ``ZoneSubmitMoveAPIView`` if project is locked (#1847)
 - **Samplesheets**
     - Update REST API versioning (#1936)
     - Update REST API views for OpenAPI compatibility (#1951)
     - Send iRODS delete request emails to all addresses of user (#2000)
     - Disable ontology term select box while querying (#1974)
     - Refactor ``SampleSheetAssayPluginPoint.get_assay_path()`` (#2016)
+    - Return ``503`` in ``IrodsCollsCreateAPIView`` if project is locked (#1847)
+    - Return ``503`` in ``IrodsDataRequestAcceptAPIView`` if project is locked (#1847)
 - **Taskflowbackend**
     - Refactor task tests (#2002)
     - Unify user name parameter naming in flows (#1653)
     - Refactor ``landing_zone_move`` flow (#1846)
+    - Move ``lock_project()`` into ``TaskflowTestMixin`` (#1847)
 
 Fixed
 -----

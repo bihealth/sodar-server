@@ -22,6 +22,7 @@ Release for SODAR Core v1.0 upgrade, iRODS v4.3 upgrade and feature updates.
 - Update minimum supported iRODS version to v4.3.3
 - Update REST API versioning
 - Update REST API views for OpenAPI support
+- Update lock requiring REST API views to return 503 if project is locked
 - Upgrade to Postgres v16
 - Upgrade to python-irodsclient v2.2.0
 - Upgrade to SODAR Core v1.0.2
@@ -62,6 +63,18 @@ REST API Versioning Changes
     It is strongly recommended to backup your SODAR and iRODS databases before
     upgrading to this version due to the changed database requirements. Also it
     is strongly recommended to go through all documentation before upgrading.
+
+REST API Updates
+----------------
+
+- Sample Sheets API
+    * ``IrodsCollsCreateAPIView``
+        + Return ``503`` if project is locked
+    * ``IrodsDataRequestAcceptAPIView``
+        + Return ``503`` if project is locked
+- Landing Zones API
+    * ``ZoneSubmitMoveAPIView``
+        + Return ``503`` if project is locked
 
 
 v0.15.1 (2024-09-12)

@@ -448,6 +448,15 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
             'Successfully validated 0 files',
         )
 
+    def test_post_validate_locked(self):
+        """Test POST for validation with locked project (should fail)"""
+        self.lock_project(self.project)
+        self.landing_zone.status = ZONE_STATUS_FAILED
+        self.landing_zone.save()
+        response = self.request_knox(self.url, method='POST')
+        # NOTE: This should be updated to not require lock, see #1850
+        self.assertEqual(response.status_code, 503)
+
     def test_post_validate_invalid_status(self):
         """Test POST for validation with invalid zone status (should fail)"""
         self.landing_zone.status = ZONE_STATUS_MOVED
@@ -485,6 +494,15 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
         self.assertEqual(
             LandingZone.objects.first().status, ZONE_STATUS_DELETED
         )
+
+    def test_post_move_locked(self):
+        """Test POST for moving with locked project (should fail)"""
+        self.lock_project(self.project)
+        response = self.request_knox(self.url_move, method='POST')
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(LandingZone.objects.count(), 1)
+        zone = LandingZone.objects.first()
+        self.assert_zone_status(zone, ZONE_STATUS_FAILED)
 
     @override_settings(REDIS_URL=INVALID_REDIS_URL)
     def test_post_move_lock_failure(self):

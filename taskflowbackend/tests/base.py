@@ -45,8 +45,11 @@ from projectroles.views_api import (
     PROJECTROLES_API_DEFAULT_VERSION,
 )
 
+from taskflowbackend.lock_api import ProjectLockAPI
+
 
 app_settings = AppSettingAPI()
+lock_api = ProjectLockAPI()
 logger = logging.getLogger(__name__)
 
 
@@ -73,10 +76,18 @@ DEFAULT_PERMANENT_USERS = ['client_user', 'rods', 'rodsadmin', 'public']
 class TaskflowTestMixin(ProjectMixin, RoleMixin, RoleAssignmentMixin):
     """Setup/teardown methods and helpers for taskflow tests"""
 
+    #: Project lock coordinator
+    coordinator = None
     #: iRODS backend object
     irods_backend = None
     #: iRODS session object
     irods = None
+
+    def lock_project(self, project):
+        self.coordinator = lock_api.get_coordinator()
+        lock_id = str(project.sodar_uuid)
+        lock = self.coordinator.get_lock(lock_id)
+        lock_api.acquire(lock)
 
     def make_irods_object(
         self, coll, obj_name, content=None, content_length=1024, checksum=True
