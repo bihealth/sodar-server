@@ -6,6 +6,7 @@ from irods.exception import (
     UserDoesNotExist,
     UserGroupDoesNotExist,
 )
+from irods.test.helpers import make_object
 from irods.ticket import Ticket
 from irods.user import iRODSUser, iRODSUserGroup
 
@@ -995,8 +996,30 @@ class TestLandingZoneMove(
         sample_coll_path = os.path.join(self.sample_path, COLL_NAME)
         self.assertEqual(self.irods.collections.exists(sample_coll_path), False)
 
+    def test_validate_upper_case(self):
+        """Test landing_zone_move validation with upper case checksum in file"""
+        coll_path = os.path.join(self.zone_path, COLL_NAME)
+        zone_coll = self.irods.collections.create(coll_path)
+        obj = self.make_irods_object(zone_coll, OBJ_NAME)
+        md5_path = obj.path + '.md5'
+        md5_content = self.get_md5_checksum(obj).upper()
+        make_object(self.irods, md5_path, md5_content)
+        flow_data = {
+            'zone_uuid': str(self.zone.sodar_uuid),
+            'validate_only': True,
+        }
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='landing_zone_move',
+            flow_data=flow_data,
+        )
+        self.build_and_run(flow)
+        self.zone.refresh_from_db()
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+
     def test_validate_no_checksum(self):
-        """Test landing_zone_validation with missing checksum"""
+        """Test landing_zone_move validation with missing checksum"""
         coll_path = os.path.join(self.zone_path, COLL_NAME)
         zone_coll = self.irods.collections.create(coll_path)
         obj = self.make_irods_object(zone_coll, OBJ_NAME, checksum=False)

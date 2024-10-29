@@ -68,6 +68,7 @@ Changed
     - Unify user name parameter naming in flows (#1653)
     - Refactor ``landing_zone_move`` flow (#1846)
     - Move ``lock_project()`` into ``TaskflowTestMixin`` (#1847)
+    - Make MD5 checksum comparison case insensitive (#2032)
 
 Fixed
 -----

@@ -647,7 +647,11 @@ class BatchValidateChecksumsTask(IrodsBaseTask):
         :raises: Exception if checksums do not match
         """
         for replica in data_obj.replicas:
-            if checksum != replica.checksum:
+            if (
+                not checksum
+                or not replica.checksum
+                or checksum.lower() != replica.checksum.lower()
+            ):
                 msg = (
                     'Checksums do not match for "{}" in resource "{}" '
                     '(File: {}; iRODS: {})'.format(
