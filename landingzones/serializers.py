@@ -1,6 +1,7 @@
 """API view model serializers for the landingzone app"""
 
 from rest_framework import serializers
+from rest_framework.exceptions import APIException
 
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
@@ -10,7 +11,7 @@ from projectroles.serializers import (
 )
 
 # Samplesheets dependency
-from samplesheets.models import Assay
+from samplesheets.models import Investigation, Assay
 
 from landingzones.constants import (
     ZONE_STATUS_OK,
@@ -19,6 +20,10 @@ from landingzones.constants import (
 )
 from landingzones.models import LandingZone
 from landingzones.utils import get_zone_title
+
+
+# Local constants
+ZONE_NO_INV_MSG = 'No investigation found for project'
 
 
 class LandingZoneSerializer(SODARProjectModelSerializer):
@@ -68,6 +73,15 @@ class LandingZoneSerializer(SODARProjectModelSerializer):
             return irods_backend.get_path(obj)
 
     def validate(self, attrs):
+        # If there is no investigation, we can't have a landing zone
+        investigation = Investigation.objects.filter(
+            project=self.context.get('project'), active=True
+        ).first()
+        if not investigation:
+            ex = APIException(ZONE_NO_INV_MSG)
+            ex.status_code = 503
+            raise ex
+        # Else continue validating the input
         try:
             if 'assay' in attrs:
                 assay = Assay.objects.get(

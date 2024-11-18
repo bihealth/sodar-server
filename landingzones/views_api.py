@@ -5,6 +5,7 @@ import sys
 
 from django.urls import reverse
 
+from rest_framework import status
 from rest_framework.exceptions import APIException, NotFound
 from rest_framework.generics import (
     ListAPIView,
@@ -14,7 +15,6 @@ from rest_framework.generics import (
 )
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
-from rest_framework import status
 from rest_framework.serializers import ValidationError
 from rest_framework.schemas.openapi import AutoSchema
 from rest_framework.versioning import AcceptHeaderVersioning
@@ -50,6 +50,8 @@ logger = logging.getLogger(__name__)
 LANDINGZONES_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar.landingzones+json'
 LANDINGZONES_API_ALLOWED_VERSIONS = ['1.0']
 LANDINGZONES_API_DEFAULT_VERSION = '1.0'
+
+ZONE_NO_COLLS_MSG = 'iRODS collections not created for project'
 
 
 # Mixins and Base Views --------------------------------------------------------
@@ -214,6 +216,9 @@ class ZoneCreateAPIView(
     """
     Create a landing zone.
 
+    Returns ``503`` if an investigation for the project is not found or project
+    iRODS collections have not been created.
+
     **URL:** ``/landingzones/api/create/{Project.sodar_uuid}``
 
     **Methods:** ``POST``
@@ -237,29 +242,29 @@ class ZoneCreateAPIView(
     permission_required = 'landingzones.create_zone'
     serializer_class = LandingZoneSerializer
 
+    @classmethod
+    def _raise_503(cls, msg):
+        ex = APIException(msg)
+        ex.status_code = 503
+        raise ex
+
     def perform_create(self, serializer):
         """
         Override perform_create() to add timeline event and initiate taskflow.
         """
-        ex_msg = 'Creating landing zone failed: '
+        ex_prefix = 'Creating landing zone failed: '
         # Check taskflow status
         if not get_backend_api('taskflow'):
-            raise APIException('{}Taskflow not enabled'.format(ex_msg))
+            self._raise_503('{}Taskflow not enabled'.format(ex_prefix))
 
         # Ensure project has investigation with iRODS collections created
         project = self.get_project()
         investigation = Investigation.objects.filter(
             active=True, project=project
         ).first()
-
-        if not investigation:
-            raise ValidationError(
-                '{}No investigation found for project'.format(ex_msg)
-            )
+        # NOTE: Lack of investigation is already caught in serializer
         if not investigation.irods_status:
-            raise ValidationError(
-                '{}iRODS collections not created for project'.format(ex_msg)
-            )
+            self._raise_503('{}{}'.format(ex_prefix, ZONE_NO_COLLS_MSG))
 
         # If all is OK, go forward with object creation and taskflow submission
         create_colls = serializer.validated_data.pop('create_colls')
@@ -273,7 +278,7 @@ class ZoneCreateAPIView(
                 request=self.request,
             )
         except Exception as ex:
-            raise APIException('{}{}'.format(ex_msg, ex))
+            raise APIException('{}{}'.format(ex_prefix, ex))
 
 
 class ZoneUpdateAPIView(

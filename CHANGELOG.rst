@@ -55,6 +55,7 @@ Changed
     - Update REST API versioning (#1936)
     - Update REST API views for OpenAPI compatibility (#1951)
     - Return ``503`` in ``ZoneSubmitMoveAPIView`` if project is locked (#1847)
+    - Return ``503`` in ``ZoneCreateAPIView`` if no investigation or iRODS collections (#2036)
 - **Samplesheets**
     - Update REST API versioning (#1936)
     - Update REST API views for OpenAPI compatibility (#1951)

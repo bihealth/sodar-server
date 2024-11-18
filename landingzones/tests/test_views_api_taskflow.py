@@ -30,6 +30,7 @@ from landingzones.constants import (
     ZONE_STATUS_FAILED,
 )
 from landingzones.models import LandingZone
+from landingzones.serializers import ZONE_NO_INV_MSG
 from landingzones.tests.test_models import LandingZoneMixin
 from landingzones.tests.test_views_taskflow import (
     LandingZoneTaskflowMixin,
@@ -44,6 +45,7 @@ from landingzones.tests.test_views_taskflow import (
 from landingzones.views_api import (
     LANDINGZONES_API_MEDIA_TYPE,
     LANDINGZONES_API_DEFAULT_VERSION,
+    ZONE_NO_COLLS_MSG,
 )
 
 
@@ -290,7 +292,8 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
             'config_data': {},
         }
         response = self.request_knox(self.url, method='POST', data=request_data)
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(ZONE_NO_INV_MSG, response.data['detail'])
         self.assertEqual(LandingZone.objects.count(), 0)
 
     def test_post_no_irods_collections(self):
@@ -306,7 +309,8 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
             'config_data': {},
         }
         response = self.request_knox(self.url, method='POST', data=request_data)
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 503)
+        self.assertIn(ZONE_NO_COLLS_MSG, response.data['detail'])
         self.assertEqual(LandingZone.objects.count(), 0)
 
 
