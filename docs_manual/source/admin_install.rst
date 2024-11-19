@@ -198,8 +198,12 @@ override(s) and update your ``.env`` file to point to the existing resources
 instead. Similarly, you may add or replace overrides for different desired
 features. For more information, see :ref:`admin_install_advanced_config`.
 
-6. Create Superuser Account
----------------------------
+6. Create User Accounts
+-----------------------
+
+Certain user accounts need to be created to enable using SODAR and all its
+features. In production deployment, it is recommended to automate the user
+creation in your deployment scripts.
 
 To gain access to the SODAR web UI, you must first create a superuser account.
 The user name should be given as ``admin``, otherwise you will need to edit the
@@ -208,15 +212,25 @@ prompt:
 
 .. code-block:: bash
 
-    $ docker exec -it sodar-docker-compose_sodar-web_1 \
+    $ docker exec -it sodar-docker-compose-sodar-web-1 \
         python /usr/src/app/manage.py createsuperuser \
         --skip-checks --username admin
+
+To enable anonymous iRODS access via ticket URLs, the user ``anonymous`` must
+exist in iRODS. This user can be created by accessing the iRODS iCAT server
+container and running the following commands:
+
+.. code-block:: bash
+
+    $ docker exec -it sodar-docker-compose-sodar-irods-1 /bin/bash -i
+    $ su - irods
+    $ iadmin mkuser anonymous rodsuser
 
 7. Use SODAR
 ------------
 
-Once the superuser has been created, you can navigate to the SODAR web UI at
-``https://<your-host>/`` and log in with the superuser credentials you provided.
+You can now navigate to the SODAR web UI at ``https://<your-host>/`` and log in
+with the superuser credentials you provided.
 
 Typically, the first step when logging to a newly installed SODAR site is to
 :ref:`create a top level category <ui_project_update>` under which projects can
