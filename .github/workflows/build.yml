@@ -64,8 +64,8 @@ jobs:
       - name: Install project Python dependencies
         run: |
           pip install wheel==0.42.0
-          pip install -r requirements/local.txt
-          pip install -r requirements/test.txt
+          pip install -r requirements/local.txt --use-pep517
+          pip install -r requirements/test.txt --use-pep517
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
