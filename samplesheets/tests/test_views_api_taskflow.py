@@ -4,6 +4,7 @@ Tests for REST API views in the samplesheets app with SODAR Taskflow enabled
 
 import json
 import os
+import pytz
 
 from datetime import timedelta, datetime
 
@@ -1208,11 +1209,9 @@ class TestProjectIrodsFileListAPIView(SampleSheetAPITaskflowTestBase):
 
     def setUp(self):
         super().setUp()
-
         self.taskflow = get_backend_api('taskflow', force=True)
         self.irods_backend = get_backend_api('omics_irods')
         self.irods = self.irods_backend.get_session_obj()
-
         # Make project with owner in Taskflow and Django
         self.project, self.owner_as = self.make_project_taskflow(
             title='TaskProject',
@@ -1225,15 +1224,15 @@ class TestProjectIrodsFileListAPIView(SampleSheetAPITaskflowTestBase):
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-
-    def test_get_no_collection(self):
-        """Test ProjectIrodsFileListAPIView GET without collection"""
-        url = reverse(
+        self.url = reverse(
             'samplesheets:api_file_list',
             kwargs={'project': self.project.sodar_uuid},
         )
+
+    def test_get_no_collection(self):
+        """Test ProjectIrodsFileListAPIView GET without collection"""
         with self.login(self.user):
-            response = self.client.get(url)
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 404)
         self.assertEqual(
             response.data['detail'],
@@ -1246,16 +1245,12 @@ class TestProjectIrodsFileListAPIView(SampleSheetAPITaskflowTestBase):
         """Test GET with empty collection"""
         # Set up iRODS collections
         self.make_irods_colls(self.investigation)
-        url = reverse(
-            'samplesheets:api_file_list',
-            kwargs={'project': self.project.sodar_uuid},
-        )
         with self.login(self.user):
-            response = self.client.get(url)
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['irods_data'], [])
+        self.assertEqual(response.data, [])
 
-    def test_get_collection_with_files(self):
+    def test_get_files(self):
         """Test GET with files"""
         # Set up iRODS collections
         self.make_irods_colls(self.investigation)
@@ -1263,15 +1258,16 @@ class TestProjectIrodsFileListAPIView(SampleSheetAPITaskflowTestBase):
         self.irods.data_objects.put(
             IRODS_FILE_PATH, coll_path, **{REG_CHKSUM_KW: ''}
         )
-        url = reverse(
-            'samplesheets:api_file_list',
-            kwargs={'project': self.project.sodar_uuid},
-        )
         with self.login(self.user):
-            response = self.client.get(url)
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data['irods_data']), 1)
-        self.assertEqual(
-            response.data['irods_data'][0]['name'], IRODS_FILE_NAME
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['name'], IRODS_FILE_NAME)
+        self.assertEqual(response.data[0]['type'], 'obj')
+        data_obj = self.irods.data_objects.get(coll_path + '/' + 'test1.txt')
+        aware_dt = timezone.make_aware(
+            data_obj.modify_time, pytz.timezone('GMT')
         )
-        self.assertEqual(response.data['irods_data'][0]['type'], 'obj')
+        self.assertEqual(
+            response.data[0]['modify_time'], self.get_drf_datetime(aware_dt)
+        )

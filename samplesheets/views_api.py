@@ -931,7 +931,13 @@ class ProjectIrodsFileListAPIView(
 
     **Returns:**
 
-    - ``irods_data``: List of iRODS data objects (list of dicts)
+    List of iRODS data objects (list of dicts). Each object dict contains:
+
+    - ``name``: File name
+    - ``type``: iRODS item type type (``obj`` for file)
+    - ``path``: Full path to file
+    - ``size``: Size in bytes
+    - ``modify_time``: Datetime of last modification (YYYY-MM-DDThh:mm:ssZ)
     """
 
     http_method_names = ['get']
@@ -945,13 +951,15 @@ class ProjectIrodsFileListAPIView(
         path = irods_backend.get_sample_path(project)
         try:
             with irods_backend.get_session() as irods:
-                obj_list = irods_backend.get_objects(irods, path)
+                obj_list = irods_backend.get_objects(
+                    irods, path, api_format=True
+                )
         except Exception as ex:
             return Response(
                 {'detail': '{}: {}'.format(IRODS_QUERY_ERROR_MSG, ex)},
                 status=status.HTTP_404_NOT_FOUND,
             )
-        return Response({'irods_data': obj_list}, status=status.HTTP_200_OK)
+        return Response(obj_list, status=status.HTTP_200_OK)
 
 
 # TODO: Temporary HACK, should be replaced by proper API view

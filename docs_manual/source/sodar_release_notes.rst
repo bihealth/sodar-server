@@ -76,6 +76,9 @@ REST API Updates
         + Return ``503`` if project is locked
     * ``IrodsDataRequestAcceptAPIView``
         + Return ``503`` if project is locked
+    * ``ProjectIrodsFileListAPIView``
+        + Return results as list without ``irods_data`` object
+        + Return ``modify_time`` field in standard REST API format
 - Landing Zones API
     * ``ZoneCreateAPIView``
         + Return ``503`` if Taskflow is not enabled

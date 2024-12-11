@@ -17,6 +17,8 @@ Added
 - **Irodsbackend**
     - Token auth support in ``BasicAuthView`` (#1999)
     - Django checks for enabled authentication methods (#1999)
+    - ``api_format`` arg in ``get_objects()`` and ``get_objs_recursively()`` (#2045)
+    - REST API compatible date format support in ``get_objects()`` (#2045)
 - **Irodsinfo**
     - Alert on token usage for OIDC users (#1999)
 - **Landingzones**
@@ -65,6 +67,7 @@ Changed
     - Refactor ``SampleSheetAssayPluginPoint.get_assay_path()`` (#2016)
     - Return ``503`` in ``IrodsCollsCreateAPIView`` if project is locked (#1847)
     - Return ``503`` in ``IrodsDataRequestAcceptAPIView`` if project is locked (#1847)
+    - Return ``ProjectIrodsFileListAPIView`` results as list without ``irods_data`` object (#2040)
 - **Taskflowbackend**
     - Refactor task tests (#2002)
     - Unify user name parameter naming in flows (#1653)

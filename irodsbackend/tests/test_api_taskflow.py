@@ -1,5 +1,6 @@
 """Tests for the API in the irodsbackend app with Taskflow and iRODS"""
 
+import pytz
 import random
 import string
 
@@ -108,15 +109,20 @@ class TestIrodsBackendAPITaskflow(
         self.assertIsNotNone(obj_list)
         self.assertEqual(len(obj_list), 2)
 
-        obj = obj_list[0]
+        data_obj = self.irods.data_objects.get(path + '/' + TEST_FILE_NAME)
+        modify_time = (
+            data_obj.modify_time.replace(tzinfo=pytz.timezone('GMT'))
+            .astimezone(pytz.timezone(settings.TIME_ZONE))
+            .strftime('%Y-%m-%d %H:%M')
+        )
         expected = {
             'name': TEST_FILE_NAME,
             'type': 'obj',
             'path': path + '/' + TEST_FILE_NAME,
             'size': 0,
-            'modify_time': obj['modify_time'],
+            'modify_time': modify_time,
         }
-        self.assertEqual(obj, expected)
+        self.assertEqual(obj_list[0], expected)
 
     def test_get_objects_with_colls(self):
         """Test get_objects() with collections included"""
@@ -227,6 +233,30 @@ class TestIrodsBackendAPITaskflow(
         )
         self.assertIsNotNone(obj_list)
         self.assertEqual(len(obj_list), 1)  # Limited to 1
+
+    def test_get_objects_api_format(self):
+        """Test get_objects() with api_format=True"""
+        self.make_irods_colls(self.investigation)
+        path = self.irods_backend.get_path(self.assay)
+        self.irods.data_objects.create(path + '/' + TEST_FILE_NAME)
+        obj_list = self.irods_backend.get_objects(
+            self.irods, path, api_format=True
+        )
+        self.assertEqual(len(obj_list), 1)
+        data_obj = self.irods.data_objects.get(path + '/' + TEST_FILE_NAME)
+        modify_time = (
+            data_obj.modify_time.replace(tzinfo=pytz.timezone('GMT'))
+            .astimezone(pytz.timezone(settings.TIME_ZONE))
+            .isoformat()
+        )
+        expected = {
+            'name': TEST_FILE_NAME,
+            'type': 'obj',
+            'path': path + '/' + TEST_FILE_NAME,
+            'size': 0,
+            'modify_time': modify_time,
+        }
+        self.assertEqual(obj_list[0], expected)
 
     def test_issue_ticket(self):
         """Test issue_ticket()"""
