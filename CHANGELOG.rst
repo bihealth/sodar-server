@@ -51,6 +51,7 @@ Changed
     - Change ``BasicAuthView`` request to ``GET`` (#1999)
 - **Irodsinfo**
     - Update REST API versioning (#1936)
+    - Return iRODS environment as JSON file if client-side cert not set (#2044)
 - **Landingzones**
     - Update REST API versioning (#1936)
     - Update REST API views for OpenAPI compatibility (#1951)

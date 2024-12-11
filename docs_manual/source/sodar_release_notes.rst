@@ -25,6 +25,8 @@ Release for SODAR Core v1.0 upgrade, iRODS v4.3 upgrade and feature updates.
 - Update lock requiring REST API views to return 503 if project is locked
 - Update landing zone creation REST API view to return 503 if no investigation
   or iRODS collections
+- Update irodsinfo configuration download to return JSON without Zip archive if
+  client-side cert is not set
 - Upgrade to Postgres v16
 - Upgrade to python-irodsclient v2.2.0
 - Upgrade to SODAR Core v1.0.2

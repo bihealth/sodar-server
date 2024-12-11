@@ -60,16 +60,12 @@ class TestIrodsConfigView(IrodsinfoViewTestBase):
         with self.login(self.regular_user):
             response = self.client.get(reverse('irodsinfo:config'))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response['content-type'], 'application/zip')
+        self.assertEqual(response['content-type'], 'application/json')
         self.assertEqual(
             response.get('Content-Disposition'),
-            'attachment; filename={}'.format('irods_config.zip'),
+            'attachment; filename={}'.format('irods_environment.json'),
         )
-        zip_file = zipfile.ZipFile(io.BytesIO(response.content))
-        self.assertNotEqual(len(zip_file.infolist()), 0)
-        env_data = json.loads(
-            zip_file.read(zip_file.infolist()[0]).decode('utf8')
-        )
+        env_data = json.loads(response.content)
         self.assertEqual(('test', 1) in env_data.items(), False)
 
     @override_settings(IRODS_ENV_CLIENT=IRODS_ENV)
@@ -78,21 +74,17 @@ class TestIrodsConfigView(IrodsinfoViewTestBase):
         with self.login(self.regular_user):
             response = self.client.get(reverse('irodsinfo:config'))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response['content-type'], 'application/zip')
+        self.assertEqual(response['content-type'], 'application/json')
         self.assertEqual(
             response.get('Content-Disposition'),
-            'attachment; filename={}'.format('irods_config.zip'),
+            'attachment; filename={}'.format('irods_environment.json'),
         )
-        zip_file = zipfile.ZipFile(io.BytesIO(response.content))
-        self.assertNotEqual(len(zip_file.infolist()), 0)
-        env_data = json.loads(
-            zip_file.read(zip_file.infolist()[0]).decode('utf8')
-        )
+        env_data = json.loads(response.content)
         self.assertEqual(('test', 1) in env_data.items(), True)
 
     @override_settings(IRODS_CERT_PATH=CERT_PATH)
     def test_serve_cert(self):
-        """Test serving irods config with server cert"""
+        """Test serving irods config with client side server cert"""
         with self.login(self.regular_user):
             response = self.client.get(reverse('irodsinfo:config'))
         self.assertEqual(response.status_code, 200)

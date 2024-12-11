@@ -29,23 +29,41 @@ information.
 
 To configure your iCommands connection, open the
 :ref:`ui_irods_info` application. In the app, click the
-:guilabel:`Download Configuration` button to download a configuration file
-archive. This archive contains the ``irods_environment.json`` file
-pre-configured for your user account. A server certificate file for secure
-connections is also included, if applicable.
+:guilabel:`Download Configuration` button to download the required configuration
+file(s). These include the ``irods_environment.json`` file pre-configured for
+your user account and an optional client-side server certificate file, if
+applicable.
 
-Enter the directory where you saved the downloaded archive and enter the
-following commands:
+To set up the environment, open your terminal, enter the directory where you
+saved the downloaded configuration file and ensure the iRODS configuration
+directory has been created:
 
-.. code-block:: console
+.. code-block:: bash
 
-    mkdir -p ~/.irods
-    unzip irods_config.zip -d ~/.irods
-    iinit
+    $ mkdir -p ~/.irods
+
+Next, either copy the returned ``irods_environment.json`` file to the directory:
+
+.. code-block:: bash
+
+    $ cp irods_environment.json ~/.irods/
+
+Alternatively, if you received an ``irods_config.zip`` archive from SODAR, unzip
+it into the configuration directory:
+
+.. code-block:: bash
+
+    $ unzip irods_config.zip -d ~/.irods
+
+Now you can initialize your connection to iRODS:
+
+.. code-block:: bash
+
+    $ iinit
 
 You will be prompted for your password, which is the same one you use to access
-this web site. After this, you should be successfully logged on to iRODS and can
-access data on the storage in your terminal.
+the SODAR web server. After this, you should be successfully logged on to iRODS
+and can access data on the storage in your terminal.
 
 .. include:: _include/oidc_irods_token.rst
 
