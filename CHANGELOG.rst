@@ -14,6 +14,7 @@ Added
 - **General**
     - Python v3.11 support (#1922, #1978)
     - ``SESSION_COOKIE_AGE`` and ``SESSION_EXPIRE_AT_BROWSER_CLOSE`` Django settings (#2015)
+    - Administrator upgrade guide in documentation (#2047)
 - **Irodsbackend**
     - Token auth support in ``BasicAuthView`` (#1999)
     - Django checks for enabled authentication methods (#1999)

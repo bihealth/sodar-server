@@ -25,17 +25,3 @@ API Views
 .. currentmodule:: irodsinfo.views_api
 
 .. autoclass:: IrodsEnvRetrieveAPIView
-<<<<<<< HEAD
-
-
-Versioning
-==========
-
-For accept header versioning, the following header is expected in the current
-SODAR version:
-
-.. code-block:: console
-
-    Accept: application/vnd.bihealth.sodar+json; version=0.15.1
-=======
->>>>>>> update rest api versioning (#1936)

@@ -30,30 +30,26 @@ Release for SODAR Core v1.0 upgrade, iRODS v4.3 upgrade and feature updates.
 - Upgrade to Postgres v16
 - Upgrade to python-irodsclient v2.2.0
 - Upgrade to SODAR Core v1.0.3
-- SODAR Core v1.0 updates: OIDC auth support, new REST API versioning,
-  owner/delegate remote sync controls, etc
+- `SODAR Core v1.0 updates <https://sodar-core.readthedocs.io/en/latest/major_changes.html#v1-0-3-2024-12-12>`_:
+  OIDC auth support, new REST API versioning, owner/delegate remote sync
+  controls, etc
 - Upgrade to Django v4.2
 - Remove Python v3.8 support
 - Remove Postgres <12 support
 - Remove iRODS <4.3 support
 
-Migration Guide
----------------
+:ref:`Administrator upgrade guide for v1.0 <admin_upgrade_v1.0>`
 
-Python Version Support
-    Python v3.11 is now the recommended Python version. Support for v3.8 has
-    been dropped. It is recommended to upgrade your deployment for Python v3.11.
-PostgreSQL Version Support
-    This release drops support for Postgres versions below v12. The recommended
-    version is v16. Note that if you run both the SODAR Server and the iRODS
-    iCAT server on the same PostgreSQL database server, you may need to upgrade
-    your iRODS server. The CUBI iRODS v4.2 Docker image does not support
-    Postgres >11. See the latest dev version of sodar-docker-compose for more
-    information.
-iRODS Version Support
+User Upgrade Guide
+------------------
+
+iRODS v4.3 Required
     The minimum supported version of iRODS from this version onwards is v4.3.3.
-    Please upgrade the iRODS servers used in your SODAR installation. If using
-    sodar-docker-compose, see upgrading instructions in the repository.
+    Please ensure your iCommands package is upgraded to the latest version.
+    Your ``irods_environment.json`` file also needs to be updated. It is
+    recommended to download a new environment file in the :ref:`ui_irods_info`
+    application. Alternatively, edit the JSON file and change the value of
+    ``irods_authentication_scheme`` from ``PAM`` to ``pam_password``.
 REST API Versioning Changes
     REST API versioning has changed in SODAR Core v1.0 and SODAR Server v1.0.
     Accept header versioning is now specific to each Django app providing their
@@ -61,12 +57,6 @@ REST API Versioning Changes
     numbers starting at ``1.0``. There is no backwards compatibility for old
     version numbers. If your clients or scripts make use of the versioning, you
     will need to consult the REST API documentation and update them accordingly.
-
-.. warning::
-
-    It is strongly recommended to backup your SODAR and iRODS databases before
-    upgrading to this version due to the changed database requirements. Also it
-    is strongly recommended to go through all documentation before upgrading.
 
 REST API Updates
 ----------------
@@ -114,13 +104,7 @@ Feature release.
 - Upgrade critical dependencies
 - Minor updates and bug fixes
 
-Migration Guide
----------------
-
-Isatemplates Backend
-    To enable support for custom ISA-Tab templates, make sure to add
-    ``isatemplates_backend`` to ``ENABLED_BACKEND_PLUGINS`` in your site's
-    Django settings.
+:ref:`Administrator upgrade guide for v0.15 <admin_upgrade_v0.15>`
 
 
 v0.14.2 (2024-03-15)
@@ -143,8 +127,8 @@ Release for minor updates, maintenance and bug fixes.
 - Minor updates and bug fixes
 - Upgrade to SODAR Core v0.13.4
 
-Migration Guide
----------------
+User Upgrade Guide
+------------------
 
 CRAM File Support
     This release adds support for CRAM files. They are linked in studies and IGV
@@ -169,8 +153,8 @@ Release for minor updates, maintenance and bug fixes.
 - Minor updates and bug fixes
 - Upgrade to SODAR Core v0.13.3
 
-Migration Guide
----------------
+User Upgrade Guide
+------------------
 
 Default IGV Genome
     The default IGV genome for cancer and germline projects has been changed
@@ -212,12 +196,7 @@ Major feature update.
 - Upgrade to SODAR Core v0.13.2
 - SODAR Core v0.13 updates: full role inheritance, finder role, etc.
 
-Migration Guide
----------------
-
-Upon deploying this release on an existing instance, admins must run the
-``syncmodifyapi`` management command. This will update project user access in
-iRODS according to the role inheritance update introduced in SODAR Core v0.13.
+:ref:`Administrator upgrade guide for v0.14 <admin_upgrade_v0.14>`
 
 
 v0.13.4 (2023-05-15)

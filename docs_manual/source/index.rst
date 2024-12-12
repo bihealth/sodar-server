@@ -136,6 +136,7 @@ Table of Contents
     admin_commands
     admin_settings
     admin_custom
+    admin_upgrade
 
 .. toctree::
     :maxdepth: 1
@@ -156,4 +157,4 @@ Table of Contents
     :name: sodar_history
 
     Release Notes <sodar_release_notes>
-    Full Changelog <sodar_changelog>
+    Changelog <sodar_changelog>

@@ -28,3 +28,5 @@ access any project data in iRODS you will need to be explicitly granted project
 access in SODAR.
 
 .. include:: _include/oidc_irods_token.rst
+
+.. include:: _include/irods_env_update.rst

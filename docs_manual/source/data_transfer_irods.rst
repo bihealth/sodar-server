@@ -67,6 +67,8 @@ and can access data on the storage in your terminal.
 
 .. include:: _include/oidc_irods_token.rst
 
+.. include:: _include/irods_env_update.rst
+
 See `iRODS documentation <https://docs.irods.org/master/icommands/user/>`_
 for iCommands reference.
 
