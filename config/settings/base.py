@@ -588,12 +588,6 @@ SITE_INSTANCE_TITLE = env.str('SITE_INSTANCE_TITLE', 'CUBI SODAR')
 
 
 # General API settings
-# NOTE: All except SODAR_API_DEFAULT_HOST are deprecated
-# TODO: Remove after upgrading to SODAR Core v1.0.3
-#       (see bihealth/sodar-core#1495)
-SODAR_API_DEFAULT_VERSION = '1.0'
-SODAR_API_ALLOWED_VERSIONS = ['1.0']
-SODAR_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar+json'
 SODAR_API_DEFAULT_HOST = env.url(
     'SODAR_API_DEFAULT_HOST', 'http://127.0.0.1:8000'
 )
