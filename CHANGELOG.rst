@@ -91,6 +91,10 @@ Removed
     - Python v3.8 support (#1922)
     - Postgres <v12 support (#1922)
     - iRODS <v4.3 support (#1815, #2007)
+- **Irodsbackend**
+    - ``get_access_lookup()`` helper (#2009)
+- **Taskflowbackend**
+    - iRODS <v4.3 ACL support (#2009)
 
 
 v0.15.1 (2024-09-12)

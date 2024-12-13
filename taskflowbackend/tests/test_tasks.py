@@ -768,7 +768,6 @@ class TestSetAccessTask(IRODSTaskTestBase):
         self.sub_coll_path = os.path.join(self.test_coll_path, SUB_COLL_NAME)
         # Init default user group
         self.irods.user_groups.create(DEFAULT_USER_GROUP)
-        self.access_lookup = self.irods_backend.get_access_lookup(self.irods)
 
     def test_execute_read(self):
         """Test access setting for read"""
@@ -779,7 +778,6 @@ class TestSetAccessTask(IRODSTaskTestBase):
                 'access_name': IRODS_ACCESS_READ_IN,
                 'path': self.test_coll_path,
                 'user_name': DEFAULT_USER_GROUP,
-                'access_lookup': self.access_lookup,
                 'irods_backend': self.irods_backend,
             },
         )
@@ -805,7 +803,6 @@ class TestSetAccessTask(IRODSTaskTestBase):
                 'access_name': IRODS_ACCESS_WRITE_IN,
                 'path': self.test_coll_path,
                 'user_name': DEFAULT_USER_GROUP,
-                'access_lookup': self.access_lookup,
                 'irods_backend': self.irods_backend,
             },
         )
@@ -832,7 +829,6 @@ class TestSetAccessTask(IRODSTaskTestBase):
                 'access_name': IRODS_ACCESS_READ_IN,
                 'path': self.test_coll_path,
                 'user_name': DEFAULT_USER_GROUP,
-                'access_lookup': self.access_lookup,
                 'irods_backend': self.irods_backend,
             },
         )
@@ -847,7 +843,6 @@ class TestSetAccessTask(IRODSTaskTestBase):
                 'access_name': IRODS_ACCESS_READ_IN,
                 'path': self.test_coll_path,
                 'user_name': DEFAULT_USER_GROUP,
-                'access_lookup': self.access_lookup,
                 'irods_backend': self.irods_backend,
             },
         )
@@ -869,7 +864,6 @@ class TestSetAccessTask(IRODSTaskTestBase):
                 'access_name': IRODS_ACCESS_READ_IN,
                 'path': self.test_coll_path,
                 'user_name': DEFAULT_USER_GROUP,
-                'access_lookup': self.access_lookup,
                 'irods_backend': self.irods_backend,
             },
             force_fail=True,
@@ -892,7 +886,6 @@ class TestSetAccessTask(IRODSTaskTestBase):
                 'access_name': IRODS_ACCESS_READ_IN,
                 'path': self.test_coll_path,
                 'user_name': DEFAULT_USER_GROUP,
-                'access_lookup': self.access_lookup,
                 'irods_backend': self.irods_backend,
             },
         )
@@ -906,7 +899,6 @@ class TestSetAccessTask(IRODSTaskTestBase):
                 'access_name': IRODS_ACCESS_WRITE_IN,
                 'path': self.test_coll_path,
                 'user_name': DEFAULT_USER_GROUP,
-                'access_lookup': self.access_lookup,
                 'irods_backend': self.irods_backend,
             },
             force_fail=True,
@@ -929,7 +921,6 @@ class TestSetAccessTask(IRODSTaskTestBase):
                 'access_name': IRODS_ACCESS_READ_IN,
                 'path': self.test_coll_path,
                 'user_name': DEFAULT_USER_GROUP,
-                'access_lookup': self.access_lookup,
                 'irods_backend': self.irods_backend,
             },
         )
@@ -944,7 +935,6 @@ class TestSetAccessTask(IRODSTaskTestBase):
                 'access_name': IRODS_ACCESS_READ_IN,
                 'path': self.test_coll_path,
                 'user_name': DEFAULT_USER_GROUP,
-                'access_lookup': self.access_lookup,
                 'irods_backend': self.irods_backend,
             },
             force_fail=True,
@@ -974,7 +964,6 @@ class TestSetAccessTask(IRODSTaskTestBase):
                 'access_name': IRODS_ACCESS_READ_IN,
                 'path': self.test_coll_path,
                 'user_name': TEST_USER,
-                'access_lookup': self.access_lookup,
                 'irods_backend': self.irods_backend,
                 'recursive': False,
             },
@@ -1015,7 +1004,6 @@ class TestSetAccessTask(IRODSTaskTestBase):
                 'access_name': IRODS_ACCESS_READ_IN,
                 'path': self.test_coll_path,
                 'user_name': TEST_USER,
-                'access_lookup': self.access_lookup,
                 'irods_backend': self.irods_backend,
                 'recursive': False,
             },
@@ -1612,7 +1600,6 @@ class TestBatchSetAccessTask(IRODSTaskTestBase):
         self.paths = [self.sub_coll_path, self.sub_coll_path2]
         # Init default user group
         self.irods.user_groups.create(DEFAULT_USER_GROUP)
-        self.access_lookup = self.irods_backend.get_access_lookup(self.irods)
 
     def test_execute_read(self):
         """Test access setting for read"""
@@ -1623,7 +1610,6 @@ class TestBatchSetAccessTask(IRODSTaskTestBase):
                 'access_name': IRODS_ACCESS_READ_IN,
                 'paths': self.paths,
                 'user_name': DEFAULT_USER_GROUP,
-                'access_lookup': self.access_lookup,
                 'irods_backend': self.irods_backend,
             },
         )
@@ -1648,7 +1634,6 @@ class TestBatchSetAccessTask(IRODSTaskTestBase):
                 'access_name': IRODS_ACCESS_WRITE_IN,
                 'paths': self.paths,
                 'user_name': DEFAULT_USER_GROUP,
-                'access_lookup': self.access_lookup,
                 'irods_backend': self.irods_backend,
             },
         )
@@ -1673,7 +1658,6 @@ class TestBatchSetAccessTask(IRODSTaskTestBase):
                 'access_name': IRODS_ACCESS_READ_IN,
                 'path': self.sub_coll_path,
                 'user_name': DEFAULT_USER_GROUP,
-                'access_lookup': self.access_lookup,
                 'irods_backend': self.irods_backend,
             },
         )
@@ -1691,7 +1675,6 @@ class TestBatchSetAccessTask(IRODSTaskTestBase):
                 'access_name': IRODS_ACCESS_WRITE_IN,
                 'paths': self.paths,
                 'user_name': DEFAULT_USER_GROUP,
-                'access_lookup': self.access_lookup,
                 'irods_backend': self.irods_backend,
             },
         )
@@ -1714,7 +1697,6 @@ class TestBatchSetAccessTask(IRODSTaskTestBase):
                 'access_name': IRODS_ACCESS_READ_IN,
                 'paths': self.paths,
                 'user_name': DEFAULT_USER_GROUP,
-                'access_lookup': self.access_lookup,
                 'irods_backend': self.irods_backend,
             },
             force_fail=True,
@@ -1736,7 +1718,6 @@ class TestBatchSetAccessTask(IRODSTaskTestBase):
                 'access_name': IRODS_ACCESS_READ_IN,
                 'paths': self.paths,
                 'user_name': DEFAULT_USER_GROUP,
-                'access_lookup': self.access_lookup,
                 'irods_backend': self.irods_backend,
             },
         )
@@ -1756,7 +1737,6 @@ class TestBatchSetAccessTask(IRODSTaskTestBase):
                 'access_name': IRODS_ACCESS_WRITE_IN,
                 'paths': self.paths,
                 'user_name': DEFAULT_USER_GROUP,
-                'access_lookup': self.access_lookup,
                 'irods_backend': self.irods_backend,
             },
             force_fail=True,
@@ -1780,7 +1760,6 @@ class TestBatchSetAccessTask(IRODSTaskTestBase):
                 'access_name': IRODS_ACCESS_READ_IN,
                 'path': self.sub_coll_path,
                 'user_name': DEFAULT_USER_GROUP,
-                'access_lookup': self.access_lookup,
                 'irods_backend': self.irods_backend,
             },
         )
@@ -1798,7 +1777,6 @@ class TestBatchSetAccessTask(IRODSTaskTestBase):
                 'access_name': IRODS_ACCESS_WRITE_IN,
                 'paths': self.paths,
                 'user_name': DEFAULT_USER_GROUP,
-                'access_lookup': self.access_lookup,
                 'irods_backend': self.irods_backend,
             },
             force_fail=True,
@@ -2042,7 +2020,6 @@ class TestBatchMoveDataObjectsTask(IRODSTaskTestBase):
         self.dest_obj2_path = os.path.join(
             self.batch_dest_path, BATCH_OBJ2_NAME
         )
-        self.access_lookup = self.irods_backend.get_access_lookup(self.irods)
 
     def test_execute(self):
         """Test moving data objects and setting access"""
@@ -2055,7 +2032,6 @@ class TestBatchMoveDataObjectsTask(IRODSTaskTestBase):
                 'src_paths': [self.batch_obj_path, self.batch_obj2_path],
                 'access_name': IRODS_ACCESS_READ_IN,
                 'user_name': DEFAULT_USER_GROUP,
-                'access_lookup': self.access_lookup,
                 'irods_backend': self.irods_backend,
             },
         )
@@ -2109,7 +2085,6 @@ class TestBatchMoveDataObjectsTask(IRODSTaskTestBase):
                 'src_paths': [self.batch_obj_path, self.batch_obj2_path],
                 'access_name': IRODS_ACCESS_READ_IN,
                 'user_name': DEFAULT_USER_GROUP,
-                'access_lookup': self.access_lookup,
                 'irods_backend': self.irods_backend,
             },
             force_fail=True,
@@ -2146,7 +2121,6 @@ class TestBatchMoveDataObjectsTask(IRODSTaskTestBase):
                 'src_paths': [self.batch_obj_path, self.batch_obj2_path],
                 'access_name': IRODS_ACCESS_READ_IN,
                 'user_name': DEFAULT_USER_GROUP,
-                'access_lookup': self.access_lookup,
                 'irods_backend': self.irods_backend,
             },
         )

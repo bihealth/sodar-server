@@ -39,7 +39,6 @@ class Flow(BaseLinearFlow):
         sample_path = self.irods_backend.get_path(zone.assay)
         zone_path = self.irods_backend.get_path(zone)
         admin_name = self.irods.username
-        access_lookup = self.irods_backend.get_access_lookup(self.irods)
 
         # HACK: Set zone status in the Django site
         zone.set_status(
@@ -118,7 +117,6 @@ class Flow(BaseLinearFlow):
                         'access_name': 'own',
                         'path': zone_path,
                         'user_name': admin_name,
-                        'access_lookup': access_lookup,
                         'irods_backend': self.irods_backend,
                     },
                 )
@@ -132,7 +130,6 @@ class Flow(BaseLinearFlow):
                         'access_name': 'read',
                         'path': zone_path,
                         'user_name': zone.user.username,
-                        'access_lookup': access_lookup,
                         'irods_backend': self.irods_backend,
                     },
                 )
@@ -149,7 +146,6 @@ class Flow(BaseLinearFlow):
                             'access_name': 'read',
                             'path': zone_path,
                             'user_name': self.flow_data['script_user'],
-                            'access_lookup': access_lookup,
                             'irods_backend': self.irods_backend,
                         },
                     )
@@ -269,7 +265,6 @@ class Flow(BaseLinearFlow):
                     'src_paths': zone_objects,
                     'access_name': 'read',
                     'user_name': project_group,
-                    'access_lookup': access_lookup,
                     'irods_backend': self.irods_backend,
                 },
             )
@@ -284,7 +279,6 @@ class Flow(BaseLinearFlow):
                     'access_name': 'null',
                     'path': sample_path,
                     'user_name': zone.user.username,
-                    'access_lookup': access_lookup,
                     'irods_backend': self.irods_backend,
                 },
             )
@@ -300,7 +294,6 @@ class Flow(BaseLinearFlow):
                         'access_name': 'null',
                         'path': sample_path,
                         'user_name': self.flow_data['script_user'],
-                        'access_lookup': access_lookup,
                         'irods_backend': self.irods_backend,
                     },
                 )
