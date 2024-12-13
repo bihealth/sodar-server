@@ -22,7 +22,6 @@ from landingzones.constants import (
     STATUS_ALLOW_UPDATE,
     STATUS_BUSY,
     STATUS_FINISHED,
-    ZONE_STATUS_MOVED,
 )
 from landingzones.models import LandingZone
 from landingzones.urls import urlpatterns
@@ -143,7 +142,7 @@ class ProjectAppPlugin(
         obj = self.get_object(eval(model_str), uuid)
         if not obj:
             return None
-        if obj.__class__ == LandingZone and obj.status != ZONE_STATUS_MOVED:
+        if obj.__class__ == LandingZone and obj.status not in STATUS_FINISHED:
             return PluginObjectLink(
                 url=reverse(
                     'landingzones:list',
