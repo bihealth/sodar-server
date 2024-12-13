@@ -672,8 +672,8 @@ class BatchValidateChecksumsTask(IrodsBaseTask):
         for path in paths:
             md5_path = path + '.md5'
             try:
-                md5_file = self.irods.data_objects.open(md5_path, mode='r')
-                file_sum = re.split(MD5_RE, md5_file.read().decode('utf-8'))[0]
+                with self.irods.data_objects.open(md5_path, mode='r') as f:
+                    file_sum = re.split(MD5_RE, f.read().decode('utf-8'))[0]
             except Exception as ex:
                 msg = 'Unable to read checksum file "{}"'.format(
                     '/'.join(md5_path.split('/')[zone_path_len:])
