@@ -75,6 +75,7 @@ Changed
     - Refactor ``landing_zone_move`` flow (#1846)
     - Move ``lock_project()`` into ``TaskflowTestMixin`` (#1847)
     - Make MD5 checksum comparison case insensitive (#2032)
+    - Improve ``BatchValidateChecksumsTask`` error display on empty MD5 value in file (#2050)
 
 Fixed
 -----

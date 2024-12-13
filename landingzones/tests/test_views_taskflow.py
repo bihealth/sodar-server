@@ -24,6 +24,7 @@ from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 from samplesheets.views import RESULTS_COLL, MISC_FILES_COLL, TRACK_HUBS_COLL
 
 # Taskflowbackend dependency
+from taskflowbackend.tasks.irods_tasks import NO_FILE_CHECKSUM_LABEL
 from taskflowbackend.tests.base import TaskflowViewTestBase, IRODS_ACCESS_OWN
 
 
@@ -595,7 +596,7 @@ class TestZoneMoveView(
         )
 
     def test_validate_invalid_md5(self):
-        """Test validating with invalid checksum file (should fail)"""
+        """Test validating with invalid checksum in file (should fail)"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         make_object(self.irods, irods_obj.path + '.md5', INVALID_MD5)
         zone = LandingZone.objects.first()
@@ -619,7 +620,28 @@ class TestZoneMoveView(
             AppAlert.objects.filter(alert_name='zone_validate').count(), 1
         )
 
-    def test_validate_no_md5(self):
+    def test_validate_empty_md5(self):
+        """Test validating with empty checksum in file (should fail)"""
+        irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
+        make_object(self.irods, irods_obj.path + '.md5', '')
+        zone = LandingZone.objects.first()
+        self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(len(self.zone_coll.data_objects), 2)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_validate').count(), 0
+        )
+
+        with self.login(self.user):
+            self.client.post(self.url_validate)
+
+        self.assert_zone_status(zone, ZONE_STATUS_FAILED)
+        self.assertTrue('BatchValidateChecksumsTask' in zone.status_info)
+        self.assertTrue('File: {};'.format(NO_FILE_CHECKSUM_LABEL))
+        self.assertEqual(len(self.zone_coll.data_objects), 2)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+
+    def test_validate_no_md5_file(self):
         """Test validating without checksum file (should fail)"""
         self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         # No md5
@@ -636,7 +658,7 @@ class TestZoneMoveView(
         self.assertEqual(len(self.zone_coll.data_objects), 1)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
 
-    def test_validate_md5_only(self):
+    def test_validate_md5_file_only(self):
         """Test validating zone with no file for MD5 file (should fail)"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         self.md5_obj = self.make_irods_md5_object(irods_obj)

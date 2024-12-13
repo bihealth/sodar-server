@@ -36,6 +36,7 @@ INHERIT_STRINGS = {True: 'inherit', False: 'noinherit'}
 META_EMPTY_VALUE = 'N/A'
 MD5_RE = re.compile(r'([^\w.])')
 CHECKSUM_RETRY = 5
+NO_FILE_CHECKSUM_LABEL = 'None'
 
 
 # Mixins -----------------------------------------------------------------------
@@ -660,7 +661,7 @@ class BatchValidateChecksumsTask(IrodsBaseTask):
                     '(File: {}; iRODS: {})'.format(
                         os.path.basename(data_obj.path),
                         replica.resource_name,
-                        checksum,
+                        checksum or NO_FILE_CHECKSUM_LABEL,
                         replica.checksum,
                     )
                 )
