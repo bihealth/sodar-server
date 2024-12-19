@@ -947,15 +947,15 @@ class IrodsDataRequestModifyMixin:
         :raise: FlowSubmitException if taskflow submission fails
         """
         tl_event = None
-        if irods_request.status == IRODS_REQUEST_STATUS_ACCEPTED:
-            description = (
-                'iRODS data request {irods_request} is already accepted'
-            )
-            status = IRODS_REQUEST_STATUS_FAILED
-        else:
-            description = 'accept iRODS data request {irods_request}'
-            status = timeline.TL_STATUS_OK if timeline else 'OK'
         if timeline:
+            if irods_request.status == IRODS_REQUEST_STATUS_ACCEPTED:
+                description = (
+                    'iRODS data request {irods_request} is already accepted'
+                )
+                status = IRODS_REQUEST_STATUS_FAILED
+            else:
+                description = 'accept iRODS data request {irods_request}'
+                status = timeline.TL_STATUS_INIT
             tl_event = timeline.add_event(
                 project=project,
                 app_name=APP_NAME,
@@ -969,7 +969,6 @@ class IrodsDataRequestModifyMixin:
                 label='irods_request',
                 name=irods_request.get_display_name(),
             )
-
         if irods_request.status == IRODS_REQUEST_STATUS_ACCEPTED:
             raise IrodsDataRequest.DoesNotExist('Request is already accepted')
 
@@ -988,6 +987,8 @@ class IrodsDataRequestModifyMixin:
             )
             irods_request.status = IRODS_REQUEST_STATUS_ACCEPTED
             irods_request.save()
+            if tl_event:
+                tl_event.set_status(timeline.TL_STATUS_OK)
         except taskflow.FlowSubmitException as ex:
             irods_request.status = IRODS_REQUEST_STATUS_FAILED
             irods_request.save()

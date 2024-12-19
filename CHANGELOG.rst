@@ -91,6 +91,7 @@ Fixed
     - Timeline event status not updated in ``SheetDeleteVieW`` with iRODS collections enabled (#1798)
     - Assay plugin ``update_row()`` setting links for empty file names (#2017)
     - Sporadic test failure in ``TestIrodsAccessTicketCreateView`` (#2026)
+    - ``IrodsDataRequestModifyMixin.accept_request()`` always sets OK status for timeline event (#2027)
 - **Taskflowbackend**
     - ``BatchValidateChecksumsTask`` file opening handling (#2049)
 

@@ -1396,6 +1396,7 @@ class TestIrodsDataRequestAcceptView(
 
     def setUp(self):
         super().setUp()
+        self.timeline = get_backend_api('timeline_backend')
         self.url_create = reverse(
             'samplesheets:irods_request_create',
             kwargs={'project': self.project.sodar_uuid},
@@ -1488,6 +1489,11 @@ class TestIrodsDataRequestAcceptView(
         self._assert_alert_count(EVENT_ACCEPT, self.user, 0)
         self._assert_alert_count(EVENT_ACCEPT, self.user_delegate, 0)
         self.assert_irods_obj(self.obj_path, False)
+        tl_event = TimelineEvent.objects.filter(event_name=EVENT_ACCEPT).first()
+        self.assertEqual(tl_event.status_changes.count(), 2)
+        self.assertEqual(
+            tl_event.get_status().status_type, self.timeline.TL_STATUS_OK
+        )
         self.assertEqual(len(mail.outbox), mail_count + 1)
         self.assertEqual(
             mail.outbox[-1].recipients(), [self.user_contributor.email]
@@ -1707,6 +1713,11 @@ class TestIrodsDataRequestAcceptView(
         self._assert_alert_count(EVENT_CREATE, self.user, 1)
         self._assert_alert_count(EVENT_CREATE, self.user_delegate, 1)
         self.assert_irods_obj(self.obj_path, True)
+        tl_event = TimelineEvent.objects.filter(event_name=EVENT_ACCEPT).first()
+        self.assertEqual(tl_event.status_changes.count(), 2)
+        self.assertEqual(
+            tl_event.get_status().status_type, self.timeline.TL_STATUS_FAILED
+        )
 
     def test_post_collection(self):
         """Test POST with multiple objects in collection"""
