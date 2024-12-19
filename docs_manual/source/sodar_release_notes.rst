@@ -19,6 +19,8 @@ Release for SODAR Core v1.0 upgrade, iRODS v4.3 upgrade and feature updates.
 - Add study plugin override via ISA-Tab comments
 - Add session control in Django settings and environment variables
 - Add token-based iRODS/IGV basic auth support for OIDC users
+- Add support for comment, performer and contact field values as list
+- Add support for numeric field values as list
 - Update minimum supported iRODS version to v4.3.3
 - Update REST API versioning
 - Update REST API views for OpenAPI support
@@ -29,14 +31,15 @@ Release for SODAR Core v1.0 upgrade, iRODS v4.3 upgrade and feature updates.
   client-side cert is not set
 - Upgrade to Postgres v16
 - Upgrade to python-irodsclient v2.2.0
+- Upgrade to altamISA v0.3.0
 - Upgrade to SODAR Core v1.0.3
-- `SODAR Core v1.0 updates <https://sodar-core.readthedocs.io/en/latest/major_changes.html#v1-0-3-2024-12-12>`_:
-  OIDC auth support, new REST API versioning, owner/delegate remote sync
-  controls, etc
 - Upgrade to Django v4.2
 - Remove Python v3.8 support
 - Remove Postgres <12 support
 - Remove iRODS <4.3 support
+- `SODAR Core v1.0 updates <https://sodar-core.readthedocs.io/en/latest/major_changes.html#v1-0-3-2024-12-12>`_:
+  OIDC auth support, new REST API versioning, owner/delegate remote sync
+  controls, etc
 
 :ref:`Administrator upgrade guide for v1.0 <admin_upgrade_v1.0>`
 

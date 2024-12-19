@@ -326,9 +326,8 @@ class TestSampleSheetIOImport(SampleSheetIOTestBase):
         )
         self.p_id = 'p{}'.format(self.project.pk)
 
-    def test_import_ref_val(self):
-        """Test _import_ref_val()"""
-        # Ontology value
+    def test_import_ref_val_ontology(self):
+        """Test _import_ref_val() with ontology value"""
         in_data = (
             self.isa_studies['s_BII-S-1.txt']
             .materials['{}-s0-source-culture1'.format(self.p_id)]
@@ -343,21 +342,15 @@ class TestSampleSheetIOImport(SampleSheetIOTestBase):
         }
         self.assertEqual(out_data, expected)
 
-        # String value
-        in_data = (
-            self.isa_studies['s_BII-S-2.txt']
-            .materials[
-                '{}-s1-sample-NZ_4hrs_Grow1_Drug_Sample_1'.format(self.p_id)
-            ]
-            .factor_values[0]
-            .value
-        )
+    def test_import_ref_val_string(self):
+        """Test _import_ref_val() with string value"""
+        in_data = ' string '
         out_data = self.sheet_io._import_ref_val(in_data)
-        self.assertEqual(out_data, in_data)
+        self.assertEqual(out_data, in_data.strip())
 
-    def test_import_multi_val(self):
-        """Test _import_multi_val()"""
-        # List with a single ontology value (should return just a single dict)
+    def test_import_multi_val_single(self):
+        """Test _import_multi_val() with single ontology value"""
+        # Should return just a single dict
         in_data = (
             self.isa_studies['s_BII-S-1.txt']
             .materials['{}-s0-source-culture1'.format(self.p_id)]
@@ -372,9 +365,33 @@ class TestSampleSheetIOImport(SampleSheetIOTestBase):
         }
         self.assertEqual(out_data, expected)
 
-        # TODO: List with multiple values (see issue #434)
+    def test_import_multi_val_list(self):
+        """Test _import_multi_val() with list of ontology values"""
+        in_data = [
+            isa_models.OntologyTermRef(
+                name='n1', accession='https://n1', ontology_name='TEST1'
+            ),
+            isa_models.OntologyTermRef(
+                name='n2', accession='https://n2', ontology_name='TEST2'
+            ),
+        ]
+        out_data = self.sheet_io._import_multi_val(in_data)
+        expected = [
+            {
+                'name': in_data[0].name,
+                'accession': in_data[0].accession,
+                'ontology_name': in_data[0].ontology_name,
+            },
+            {
+                'name': in_data[1].name,
+                'accession': in_data[1].accession,
+                'ontology_name': in_data[1].ontology_name,
+            },
+        ]
+        self.assertEqual(out_data, expected)
 
-        # Single ontology value
+    def test_import_multi_val_factor_value(self):
+        """Test _import_multi_val() with factor value"""
         in_data = (
             self.isa_studies['s_BII-S-1.txt']
             .materials['{}-s0-sample-C-0.07-aliquot9'.format(self.p_id)]
@@ -383,13 +400,14 @@ class TestSampleSheetIOImport(SampleSheetIOTestBase):
         )
         out_data = self.sheet_io._import_multi_val(in_data)
         expected = {
-            'name': in_data.name,
-            'accession': in_data.accession,
-            'ontology_name': in_data.ontology_name,
+            'name': in_data[0].name,
+            'accession': in_data[0].accession,
+            'ontology_name': in_data[0].ontology_name,
         }
         self.assertEqual(out_data, expected)
 
-        # Ontology unit
+    def test_import_multi_val_ontology_unit(self):
+        """Test _import_multi_val() with ontology unit"""
         in_data = (
             self.isa_studies['s_BII-S-1.txt']
             .materials['{}-s0-sample-C-0.07-aliquot9'.format(self.p_id)]
@@ -595,8 +613,8 @@ class TestSampleSheetIOExport(SampleSheetIOTestBase):
         }
         self.assertEqual(out_data, expected)
 
-    def test_export_factor_values(self):
-        """Test _export_factor_values()"""
+    def test_export_factor_vals(self):
+        """Test _export_factor_vals()"""
         study = self.investigation.studies.get(identifier='BII-S-1')
         in_data = study.materials.get(
             unique_name='{}-s0-sample-C-0.07-aliquot1'.format(self.p_id)
@@ -605,7 +623,7 @@ class TestSampleSheetIOExport(SampleSheetIOTestBase):
         expected = tuple(
             isa_models.FactorValue(
                 name=k,
-                value=self.sheet_io._export_val(v['value']),
+                value=[self.sheet_io._export_val(v['value'])],
                 unit=self.sheet_io._export_val(v['unit']),
             )
             for k, v in in_data.items()

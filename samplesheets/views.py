@@ -130,6 +130,7 @@ SYNC_FAIL_UNSET_URL = 'Remote sync URL not set'
 SYNC_FAIL_INVALID_URL = 'Invalid API URL'
 SYNC_FAIL_STATUS_CODE = 'Source API responded with status code'
 CUBI_TPL_DICT = {t.name: t for t in CUBI_TEMPLATES}
+ISA_ERROR_REPLACE_ARGS = ['\\n', '<br />']
 
 EMAIL_DELETE_REQUEST_ACCEPT = r'''
 Your delete request has been accepted.
@@ -329,6 +330,7 @@ class SheetImportMixin:
                     ex_msg = _add_crits(k, v, ex_msg)
                 ex_msg += '</ul>'
             if ui_mode:
+                ex_msg = ex_msg.replace(*ISA_ERROR_REPLACE_ARGS)
                 messages.error(self.request, mark_safe(ex_msg))
 
         else:
@@ -336,6 +338,8 @@ class SheetImportMixin:
             extra_data = None
             logger.error(ex_msg)
             if ui_mode:
+                if '\\n' in ex_msg:
+                    ex_msg = mark_safe(ex_msg.replace(*ISA_ERROR_REPLACE_ARGS))
                 messages.error(self.request, ex_msg)
 
         if tl_event and self.timeline:

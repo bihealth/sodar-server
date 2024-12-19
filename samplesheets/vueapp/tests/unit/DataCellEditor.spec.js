@@ -306,7 +306,7 @@ describe('DataCellEditor.vue', () => {
   })
 
   it('updates value in unit column', async () => {
-    const oldValue = '90 day'
+    const oldValue = '90'
     const newValue = '100'
     const table = copy(studyTablesOneCol).tables.study
     table.field_header[0] = studyTablesEdit.tables.study.field_header[2]
@@ -320,18 +320,50 @@ describe('DataCellEditor.vue', () => {
     await waitAG(wrapper)
     await waitRAF()
 
-    expect(wrapper.find('.sodar-ss-data').text()).toBe(oldValue)
+    // NOTE: Vue inserts line breaks and spaces between words in spans, so we
+    //       have to test these with toContain() (or modify the text)
+    expect(wrapper.find('.sodar-ss-data').text()).toContain(oldValue)
+    expect(wrapper.find('.sodar-ss-data').text()).toContain('day')
     await wrapper.find('.sodar-ss-data-cell').trigger('dblclick')
     const input = wrapper.find('.ag-cell-edit-input')
     input.element.value = newValue
     await input.trigger('input')
     await gridOptions.api.stopEditing()
     expect(wrapper.find('.ag-cell-edit-input').exists()).toBe(false)
-    expect(wrapper.find('.sodar-ss-data').text()).toBe(newValue + ' day')
+    expect(wrapper.find('.sodar-ss-data').text()).toContain(newValue)
+    expect(wrapper.find('.sodar-ss-data').text()).toContain('day')
+  })
+
+  it('updates value in unit column to a list', async () => {
+    const oldValue = '90'
+    const newValue = '100;101'
+    const table = copy(studyTablesOneCol).tables.study
+    table.field_header[0] = studyTablesEdit.tables.study.field_header[2]
+    table.table_data[0][0] = copy(studyTablesEdit).tables.study.table_data[0][2]
+    const wrapper = mountSheetTable({
+      table: table,
+      editStudyConfig: {
+        nodes: [{ fields: [studyEditConfig.nodes[0].fields[2]] }]
+      }
+    })
+    await waitAG(wrapper)
+    await waitRAF()
+
+    expect(wrapper.find('.sodar-ss-data').text()).toContain(oldValue)
+    expect(wrapper.find('.sodar-ss-data').text()).not.toContain('100; 101')
+    expect(wrapper.find('.sodar-ss-data').text()).toContain('day')
+    await wrapper.find('.sodar-ss-data-cell').trigger('dblclick')
+    const input = wrapper.find('.ag-cell-edit-input')
+    input.element.value = newValue
+    await input.trigger('input')
+    await gridOptions.api.stopEditing()
+    expect(wrapper.find('.ag-cell-edit-input').exists()).toBe(false)
+    expect(wrapper.find('.sodar-ss-data').text()).toContain('100; 101')
+    expect(wrapper.find('.sodar-ss-data').text()).toContain('day')
   })
 
   it('updates value in unit column outside range (should fail)', async () => {
-    const oldValue = '90 day'
+    const oldValue = '90'
     const newValue = '170' // max = 150
     const table = copy(studyTablesOneCol).tables.study
     table.field_header[0] = studyTablesEdit.tables.study.field_header[2]
@@ -345,7 +377,7 @@ describe('DataCellEditor.vue', () => {
     await waitAG(wrapper)
     await waitRAF()
 
-    expect(wrapper.find('.sodar-ss-data').text()).toBe(oldValue)
+    expect(wrapper.find('.sodar-ss-data').text()).toContain(oldValue)
     await wrapper.find('.sodar-ss-data-cell').trigger('dblclick')
     const input = wrapper.find('.ag-cell-edit-input')
     input.element.value = newValue
@@ -354,11 +386,12 @@ describe('DataCellEditor.vue', () => {
     expect(wrapper.find('.ag-cell-edit-input').classes()).toContain('text-danger')
     await gridOptions.api.stopEditing()
     expect(wrapper.find('.ag-cell-edit-input').exists()).toBe(false)
-    expect(wrapper.find('.sodar-ss-data').text()).toBe(oldValue)
+    expect(wrapper.find('.sodar-ss-data').text()).toContain(oldValue)
   })
 
-  it('updates unit in unit column', async () => {
-    const oldValue = '90 day'
+  it('updates list value in unit column outside range (should fail)', async () => {
+    const oldValue = '90'
+    const newValue = '100;170'
     const table = copy(studyTablesOneCol).tables.study
     table.field_header[0] = studyTablesEdit.tables.study.field_header[2]
     table.table_data[0][0] = copy(studyTablesEdit).tables.study.table_data[0][2]
@@ -371,13 +404,41 @@ describe('DataCellEditor.vue', () => {
     await waitAG(wrapper)
     await waitRAF()
 
-    expect(wrapper.find('.sodar-ss-data').text()).toBe(oldValue)
+    expect(wrapper.find('.sodar-ss-data').text()).toContain(oldValue)
+    await wrapper.find('.sodar-ss-data-cell').trigger('dblclick')
+    const input = wrapper.find('.ag-cell-edit-input')
+    input.element.value = newValue
+    await input.trigger('input')
+    await gridOptions.api.stopEditing()
+    expect(wrapper.find('.ag-cell-edit-input').exists()).toBe(false)
+    expect(wrapper.find('.sodar-ss-data').text()).toContain(oldValue)
+  })
+
+  it('updates unit in unit column', async () => {
+    const oldValue = '90'
+    const table = copy(studyTablesOneCol).tables.study
+    table.field_header[0] = studyTablesEdit.tables.study.field_header[2]
+    table.table_data[0][0] = copy(studyTablesEdit).tables.study.table_data[0][2]
+    const wrapper = mountSheetTable({
+      table: table,
+      editStudyConfig: {
+        nodes: [{ fields: [studyEditConfig.nodes[0].fields[2]] }]
+      }
+    })
+    await waitAG(wrapper)
+    await waitRAF()
+
+    expect(wrapper.find('.sodar-ss-data').text()).toContain(oldValue)
+    expect(wrapper.find('.sodar-ss-data').text()).toContain('day')
+    expect(wrapper.find('.sodar-ss-data').text()).not.toContain('year')
     await wrapper.find('.sodar-ss-data-cell').trigger('dblclick')
     const unitInput = wrapper.find('#sodar-ss-data-cell-unit')
     await unitInput.findAll('option').at(2).setSelected()
     await gridOptions.api.stopEditing()
     expect(wrapper.find('.ag-cell-edit-input').exists()).toBe(false)
-    expect(wrapper.find('.sodar-ss-data').text()).toBe('90 year')
+    expect(wrapper.find('.sodar-ss-data').text()).toContain('90')
+    expect(wrapper.find('.sodar-ss-data').text()).toContain('year')
+    expect(wrapper.find('.sodar-ss-data').text()).not.toContain('day')
   })
 
   it('updates value in unit column with empty value', async () => {
@@ -403,7 +464,7 @@ describe('DataCellEditor.vue', () => {
   })
 
   it('updates unit in unit column to empty unit', async () => {
-    const oldValue = '90 day'
+    const oldValue = '90'
     const table = copy(studyTablesOneCol).tables.study
     table.field_header[0] = studyTablesEdit.tables.study.field_header[2]
     table.table_data[0][0] = copy(studyTablesEdit).tables.study.table_data[0][2]
@@ -416,7 +477,8 @@ describe('DataCellEditor.vue', () => {
     await waitAG(wrapper)
     await waitRAF()
 
-    expect(wrapper.find('.sodar-ss-data').text()).toBe(oldValue)
+    expect(wrapper.find('.sodar-ss-data').text()).toContain(oldValue)
+    expect(wrapper.find('.sodar-ss-data').text()).toContain('day')
     await wrapper.find('.sodar-ss-data-cell').trigger('dblclick')
     const unitInput = wrapper.find('#sodar-ss-data-cell-unit')
     await unitInput.findAll('option').at(0).setSelected()

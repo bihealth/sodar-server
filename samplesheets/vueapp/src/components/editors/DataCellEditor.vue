@@ -138,6 +138,15 @@ export default Vue.extend({
       if (this.isPopup() && this.editUnitEnabled) return text
       return ''
     },
+    testListRegex () { // Test regex with semicolon-separated list support
+      // Don't need to add this to multiple regexes this way..
+      if (this.editValue.slice(-1) === ';') return false
+      const valSplit = this.editValue.split(';')
+      for (let i = 0; i < valSplit.length; i++) {
+        if (!this.regex.test(valSplit[i].trim())) return false
+      }
+      return true
+    },
     getValidState () {
       if (this.nameColumn) { // Name is a special case
         // TODO: Cleanup/simplify
@@ -163,12 +172,15 @@ export default Vue.extend({
             'range' in this.editConfig &&
             this.editConfig.range.length === 2) {
           const range = this.editConfig.range
-          const valNum = parseFloat(this.editValue)
-          if (valNum < parseFloat(range[0]) ||
-              valNum > parseFloat(range[1])) {
-            this.invalidMsg = 'Not in Range (' +
-              parseInt(range[0]) + '-' + parseInt(range[1]) + ')'
-            return false
+          const valSplit = this.editValue.split(';')
+          for (let i = 0; i < valSplit.length; i++) {
+            const valNum = parseFloat(valSplit[i].trim())
+            if (valNum < parseFloat(range[0]) ||
+                valNum > parseFloat(range[1])) {
+              this.invalidMsg = 'Not in Range (' +
+                  parseInt(range[0]) + '-' + parseInt(range[1]) + ')'
+              return false
+            }
           }
         } else if (this.editConfig.format === 'date') {
           if (!dateRegex.test(this.editValue)) {
@@ -187,10 +199,7 @@ export default Vue.extend({
         }
       }
       // Test Regex
-      return !(this.editValue !== '' &&
-          this.regex &&
-          !this.regex.test(this.editValue)
-      )
+      return !(this.editValue !== '' && this.regex && !this.testListRegex())
     },
     getUpdateData () {
       return Object.assign(
@@ -206,7 +215,6 @@ export default Vue.extend({
       for (let i = 0; i < gridUuids.length; i++) {
         const gridOptions = this.app.getGridOptionsByUuid(gridUuids[i])
         const gridApi = gridOptions.api
-
         if (!gridOptions.columnApi.getColumn(this.params.colDef.field)) {
           continue // Skip this grid if the column is not present
         }
@@ -313,12 +321,10 @@ export default Vue.extend({
       this.regex = /^[\w\-.]+$/
     } else if (this.headerInfo.header_type === 'name') { // Other names
       this.regex = /^([A-Za-z0-9-_/]*)$/
-    } else { // Default regex for certain fields
-      if (this.editConfig.format === 'integer') {
-        this.regex = /^(([1-9][0-9]*)|([0]?))$/ // TODO: TBD: Allow negative?
-      } else if (this.editConfig.format === 'double') {
-        this.regex = /^-?[0-9]+\.[0-9]+?$/
-      }
+    } else if (this.editConfig.format === 'integer') {
+      this.regex = /^(([1-9][0-9]*)|([0]?))$/ // TODO: TBD: Allow negative?
+    } else if (this.editConfig.format === 'double') {
+      this.regex = /^-?[0-9]+\.[0-9]+?$/
     }
 
     // Special setup for the name column
@@ -350,11 +356,7 @@ export default Vue.extend({
     if (!this.destroyCalled) {
       this.destroyCalled = true // HACK for issue #869
       // Convert to list value if applicable
-      if (this.editValue.includes(';') &&
-        this.headerInfo.header_type !== 'comments' && (
-        this.isValueArray || (
-          !['integer', 'double'].includes(this.editConfig.format) &&
-          !this.value.unit))) {
+      if (this.editValue.includes(';')) {
         this.value.value = this.editValue.split(';')
         for (let i = 0; i < this.value.value.length; i++) {
           this.value.value[i] = this.value.value[i].trim()

@@ -944,7 +944,6 @@ class Process(NodeMixin, BaseSampleSheet):
 
     #: Process performer (optional)
     performer = models.CharField(
-        max_length=DEFAULT_LENGTH,
         unique=False,
         blank=True,
         null=True,

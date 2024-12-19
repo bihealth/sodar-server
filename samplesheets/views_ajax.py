@@ -913,7 +913,10 @@ class SheetCellEditAjaxView(BaseSheetEditAjaxView):
 
         # Performer (special case)
         elif header_type == 'performer':
-            node_obj.performer = cell['value']
+            if isinstance(cell['value'], list):
+                node_obj.performer = ';'.join(cell['value'])
+            else:
+                node_obj.performer = cell['value']
 
         # Perform date (special case)
         elif header_type == 'perform_date':

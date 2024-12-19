@@ -33,6 +33,9 @@ Added
     - Missing assay plugin ``__init__.py`` files (#2014)
     - Study plugin override via ISA-Tab comments (#1885)
     - Token auth support in study plugin IGV XML serving views (#1999, #2021)
+    - Support for newlines in altamISA error messages (#2033)
+    - Support for comment, performer and contact field values as list (#1789, #2033)
+    - Support for numeric field values as list (#1789, #2033)
 - **Taskflowbackend**
     - ``TaskflowAPI.raise_submit_api_exception()`` helper (#1847)
 
@@ -47,6 +50,7 @@ Changed
     - Update ``Dockerfile`` for v1.0 upgrades (#2003, #2004)
     - Upgrade to iRODS v4.3.3 in CI (#1815)
     - Upgrade to python-irodsclient v2.2.0 (#2007, #2023)
+    - Upgrade to altamisa v0.3.0 (#2033)
     - Upgrade minimum supported iRODS version to v4.3.3 (#1815, #2007)
     - Use constants for timeline event status types (#2010)
 - **Irodsbackend**
@@ -69,6 +73,7 @@ Changed
     - Return ``503`` in ``IrodsCollsCreateAPIView`` if project is locked (#1847)
     - Return ``503`` in ``IrodsDataRequestAcceptAPIView`` if project is locked (#1847)
     - Return ``ProjectIrodsFileListAPIView`` results as list without ``irods_data`` object (#2040)
+    - Remove length limitation from ``Process.performer`` (#1789, #1942, #2033)
 - **Taskflowbackend**
     - Refactor task tests (#2002)
     - Unify user name parameter naming in flows (#1653)

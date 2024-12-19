@@ -774,6 +774,35 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
         obj.refresh_from_db()
         self.assertEqual(obj.performer, value)
 
+    def test_post_performer_list(self):
+        """Test POST with process performer and list value"""
+        obj = Process.objects.filter(study=self.study, assay=None).first()
+        value = [
+            'Alice Example <alice@example.com>',
+            'Bob Example <bob@example.com>',
+        ]
+        self.values['updated_cells'].append(
+            {
+                'uuid': str(obj.sodar_uuid),
+                'header_name': 'Performer',
+                'header_type': 'performer',
+                'obj_cls': 'Process',
+                'value': value,
+            }
+        )
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:ajax_edit_cell',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps(self.values),
+                content_type='application/json',
+            )
+        self.assertEqual(response.status_code, 200)
+        obj.refresh_from_db()
+        self.assertEqual(obj.performer, ';'.join(value))
+
     def test_post_perform_date(self):
         """Test POST with process perform date"""
         obj = Process.objects.filter(study=self.study, assay=None).first()
@@ -1286,6 +1315,10 @@ class TestSheetCellEditAjaxViewSpecial(SamplesheetsViewTestBase):
         )
         self.study = self.investigation.studies.first()
         self.values = {'updated_cells': []}
+        self.url = reverse(
+            'samplesheets:ajax_edit_cell',
+            kwargs={'project': self.project.sodar_uuid},
+        )
 
     def test_post_extract_label_string(self):
         """Test SheetCellEditAjaxView POST with extract label and string value"""
@@ -1308,16 +1341,67 @@ class TestSheetCellEditAjaxViewSpecial(SamplesheetsViewTestBase):
         )
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_edit_cell',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
+                self.url,
                 json.dumps(self.values),
                 content_type='application/json',
             )
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
         self.assertEqual(obj.extract_label, label)
+
+    def test_post_comment_single(self):
+        """Test POST with comment and single value"""
+        name = 'Replicate'
+        obj = GenericMaterial.objects.get(
+            study=self.study, name='0815-N1-Pro1-A-114'
+        )
+        self.assertEqual(obj.comments, {name: 'A'})
+        self.values['updated_cells'].append(
+            {
+                'uuid': str(obj.sodar_uuid),
+                'header_name': name,
+                'header_type': 'comments',
+                'obj_cls': 'GenericMaterial',
+                'value': 'B',
+                'uuid_ref': str(obj.sodar_uuid),
+            }
+        )
+        with self.login(self.user):
+            response = self.client.post(
+                self.url,
+                json.dumps(self.values),
+                content_type='application/json',
+            )
+        self.assertEqual(response.status_code, 200)
+        obj.refresh_from_db()
+        self.assertEqual(obj.comments, {name: 'B'})
+
+    def test_post_comment_list(self):
+        """Test POST with comment and list value"""
+        name = 'Replicate'
+        obj = GenericMaterial.objects.get(
+            study=self.study, name='0815-N1-Pro1-A-114'
+        )
+        self.assertEqual(obj.comments, {name: 'A'})
+        self.values['updated_cells'].append(
+            {
+                'uuid': str(obj.sodar_uuid),
+                'header_name': name,
+                'header_type': 'comments',
+                'obj_cls': 'GenericMaterial',
+                'value': ['A', 'B'],
+                'uuid_ref': str(obj.sodar_uuid),
+            }
+        )
+        with self.login(self.user):
+            response = self.client.post(
+                self.url,
+                json.dumps(self.values),
+                content_type='application/json',
+            )
+        self.assertEqual(response.status_code, 200)
+        obj.refresh_from_db()
+        self.assertEqual(obj.comments, {name: ['A', 'B']})
 
 
 class TestSheetRowInsertAjaxView(
