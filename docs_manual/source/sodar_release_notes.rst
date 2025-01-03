@@ -32,7 +32,7 @@ Release for SODAR Core v1.0 upgrade, iRODS v4.3 upgrade and feature updates.
 - Upgrade to Postgres v16
 - Upgrade to python-irodsclient v2.2.0
 - Upgrade to altamISA v0.3.0
-- Upgrade to SODAR Core v1.0.3
+- Upgrade to SODAR Core v1.0.4
 - Upgrade to Django v4.2
 - Remove Python v3.8 support
 - Remove Postgres <12 support

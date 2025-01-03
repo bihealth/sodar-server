@@ -9,7 +9,7 @@ and changes to the sample sheets. The activity is displayed as a list of events.
 
 .. figure:: _static/sodar_ui/timeline.png
     :align: center
-    :scale: 55%
+    :scale: 50%
 
     Project timeline
 
