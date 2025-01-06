@@ -53,6 +53,7 @@ Changed
     - Upgrade to altamisa v0.3.0 (#2033)
     - Upgrade minimum supported iRODS version to v4.3.3 (#1815, #2007)
     - Use constants for timeline event status types (#2010)
+    - Squash migrations (#1967)
 - **Irodsbackend**
     - Rename ``LocalAuthAPIView`` to ``BasicAuthView`` (#1999)
     - Change ``BasicAuthView`` request to ``GET`` (#1999)
