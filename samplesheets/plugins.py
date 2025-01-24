@@ -351,8 +351,8 @@ class ProjectAppPlugin(
             )
         if obj.__class__ == IrodsDataRequest:
             return PluginObjectLink(
-                url=reverse('samplesheets:versions', kwargs=url_kwargs),
-                name=obj.get_full_name(),
+                url=reverse('samplesheets:irods_requests', kwargs=url_kwargs),
+                name=obj.get_display_name(),
             )
 
     @classmethod

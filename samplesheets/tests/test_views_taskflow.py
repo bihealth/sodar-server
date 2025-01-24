@@ -1786,6 +1786,66 @@ class TestIrodsDataRequestAcceptView(
         self.assert_irods_obj(self.obj_path, False)
         self.assertEqual(len(mail.outbox), mail_count)  # No new mail
 
+    def test_post_accepted(self):
+        """Test POST with previously accepted request (should fail)"""
+        obj = self.make_irods_request(
+            project=self.project,
+            action=IRODS_REQUEST_ACTION_DELETE,
+            path=self.obj_path,
+            status=IRODS_REQUEST_STATUS_ACCEPTED,
+            user=self.user_contributor,
+        )
+        self.assert_irods_obj(self.obj_path)
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:irods_request_accept',
+                    kwargs={'irodsdatarequest': obj.sodar_uuid},
+                ),
+                {'confirm': True},
+            )
+        self.assertEqual(response.status_code, 302)
+        self.assert_irods_obj(self.obj_path)
+        self.assertEqual(
+            TimelineEvent.objects.filter(event_name=EVENT_ACCEPT).count(), 1
+        )
+        self.assertEqual(
+            TimelineEvent.objects.get(event_name=EVENT_ACCEPT)
+            .get_status()
+            .status_type,
+            self.timeline.TL_STATUS_FAILED,
+        )
+
+    def test_post_rejected(self):
+        """Test POST with previously rejectted request (should fail)"""
+        obj = self.make_irods_request(
+            project=self.project,
+            action=IRODS_REQUEST_ACTION_DELETE,
+            path=self.obj_path,
+            status=IRODS_REQUEST_STATUS_REJECTED,
+            user=self.user_contributor,
+        )
+        self.assert_irods_obj(self.obj_path)
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:irods_request_accept',
+                    kwargs={'irodsdatarequest': obj.sodar_uuid},
+                ),
+                {'confirm': True},
+            )
+        self.assertEqual(response.status_code, 302)
+        self.assert_irods_obj(self.obj_path)
+        self.assertEqual(
+            TimelineEvent.objects.filter(event_name=EVENT_ACCEPT).count(), 1
+        )
+        self.assertEqual(
+            TimelineEvent.objects.get(event_name=EVENT_ACCEPT)
+            .get_status()
+            .status_type,
+            self.timeline.TL_STATUS_FAILED,
+        )
+
 
 class TestIrodsDataRequestAcceptBatchView(
     IrodsDataRequestMixin, IrodsDataRequestViewTestBase

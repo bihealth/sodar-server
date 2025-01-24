@@ -120,6 +120,8 @@ IRODS_REQUEST_EVENT_CREATE = 'irods_request_create'
 IRODS_REQUEST_EVENT_DELETE = 'irods_request_delete'
 IRODS_REQUEST_EVENT_REJECT = 'irods_request_reject'
 IRODS_REQUEST_EVENT_UPDATE = 'irods_request_update'
+IRODS_REQUEST_ACCEPT_ERR_MSG = 'iRODS data request already accepted'
+IRODS_REQUEST_REJECT_ERR_MSG = 'iRODS data request was previously rejected'
 NO_REQUEST_MSG = 'No iRODS data requests found for the given UUIDs'
 SYNC_SUCCESS_MSG = 'Sample sheet sync successful'
 SYNC_FAIL_DISABLED = 'Sample sheet sync disabled'
@@ -948,14 +950,15 @@ class IrodsDataRequestModifyMixin:
         """
         tl_event = None
         if timeline:
+            description = 'accept iRODS data request {irods_request}'
+            status = timeline.TL_STATUS_INIT
+            status_desc = None
             if irods_request.status == IRODS_REQUEST_STATUS_ACCEPTED:
-                description = (
-                    'iRODS data request {irods_request} is already accepted'
-                )
-                status = IRODS_REQUEST_STATUS_FAILED
-            else:
-                description = 'accept iRODS data request {irods_request}'
-                status = timeline.TL_STATUS_INIT
+                status = timeline.TL_STATUS_FAILED
+                status_desc = IRODS_REQUEST_ACCEPT_ERR_MSG
+            elif irods_request.status == IRODS_REQUEST_STATUS_REJECTED:
+                status = timeline.TL_STATUS_FAILED
+                status_desc = IRODS_REQUEST_REJECT_ERR_MSG
             tl_event = timeline.add_event(
                 project=project,
                 app_name=APP_NAME,
@@ -963,6 +966,7 @@ class IrodsDataRequestModifyMixin:
                 event_name=IRODS_REQUEST_EVENT_ACCEPT,
                 description=description,
                 status_type=status,
+                status_desc=status_desc,
             )
             tl_event.add_object(
                 obj=irods_request,
@@ -970,7 +974,9 @@ class IrodsDataRequestModifyMixin:
                 name=irods_request.get_display_name(),
             )
         if irods_request.status == IRODS_REQUEST_STATUS_ACCEPTED:
-            raise IrodsDataRequest.DoesNotExist('Request is already accepted')
+            raise IrodsDataRequest.DoesNotExist(IRODS_REQUEST_ACCEPT_ERR_MSG)
+        elif irods_request.status == IRODS_REQUEST_STATUS_REJECTED:
+            raise IrodsDataRequest.DoesNotExist(IRODS_REQUEST_REJECT_ERR_MSG)
 
         flow_name = 'data_delete'
         flow_data = {'paths': [irods_request.path]}

@@ -1069,8 +1069,8 @@ class TestIrodsDataRequestAcceptAPIView(
         self.assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
         self.assert_alert_count(ACCEPT_ALERT, self.user_contributor, 0)
 
-    def test_accept_already_accepted(self):
-        """Test accepting already accepted request (should fail)"""
+    def test_accept_accepted(self):
+        """Test acceptining previously accepted request (should fail)"""
         self.assertEqual(self.request.status, IRODS_REQUEST_STATUS_ACTIVE)
         response = self.request_knox(self.url, 'POST')
         self.assertEqual(response.status_code, 200)
@@ -1079,6 +1079,17 @@ class TestIrodsDataRequestAcceptAPIView(
         response = self.request_knox(self.url, 'POST')
         self.assertEqual(response.status_code, 400)
         self.assertEqual(self.request.status, IRODS_REQUEST_STATUS_ACCEPTED)
+
+    def test_accept_rejected(self):
+        """Test accepting previously rejected request (should fail)"""
+        self.assert_irods_obj(self.obj_path, True)
+        self.request.status = IRODS_REQUEST_STATUS_REJECTED
+        self.request.save()
+        response = self.request_knox(self.url, 'POST')
+        self.assertEqual(response.status_code, 400)
+        self.request.refresh_from_db()
+        self.assertEqual(self.request.status, IRODS_REQUEST_STATUS_REJECTED)
+        self.assert_irods_obj(self.obj_path, True)
 
 
 class TestIrodsDataRequestRejectAPIView(
