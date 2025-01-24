@@ -86,6 +86,8 @@ Changed
 Fixed
 -----
 
+- **Irodsbackend**
+    - iRODS file list modal content overflow with long file paths (#2056)
 - **Landingzones**
     - Timeline link active for ``DELETED`` and ``NOT_CREATED`` zones (#2005)
 - **Samplesheets**
