@@ -90,7 +90,7 @@ class TestLandingZoneListAPIView(LandingZoneAPIViewTestBase):
         expected = {
             'title': self.zone.title,
             'project': str(self.project.sodar_uuid),
-            'user': self.get_serialized_user(self.user),
+            'user': str(self.user.sodar_uuid),
             'assay': str(self.assay.sodar_uuid),
             'status': self.zone.status,
             'status_info': self.zone.status_info,
@@ -118,7 +118,7 @@ class TestLandingZoneListAPIView(LandingZoneAPIViewTestBase):
                 {
                     'title': self.zone.title,
                     'project': str(self.project.sodar_uuid),
-                    'user': self.get_serialized_user(self.user),
+                    'user': str(self.user.sodar_uuid),
                     'assay': str(self.assay.sodar_uuid),
                     'status': self.zone.status,
                     'status_info': self.zone.status_info,
@@ -214,7 +214,7 @@ class TestLandingZoneRetrieveAPIView(LandingZoneAPIViewTestBase):
         expected = {
             'title': self.zone.title,
             'project': str(self.project.sodar_uuid),
-            'user': self.get_serialized_user(self.user),
+            'user': str(self.user.sodar_uuid),
             'assay': str(self.assay.sodar_uuid),
             'status': self.zone.status,
             'status_info': self.zone.status_info,

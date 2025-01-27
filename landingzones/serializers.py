@@ -5,10 +5,7 @@ from rest_framework.exceptions import APIException
 
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
-from projectroles.serializers import (
-    SODARProjectModelSerializer,
-    SODARUserSerializer,
-)
+from projectroles.serializers import SODARProjectModelSerializer
 
 # Samplesheets dependency
 from samplesheets.models import Investigation, Assay
@@ -30,7 +27,7 @@ class LandingZoneSerializer(SODARProjectModelSerializer):
     """Serializer for the LandingZone model"""
 
     title = serializers.CharField(required=False)
-    user = SODARUserSerializer(read_only=True)
+    user = serializers.SlugRelatedField(slug_field='sodar_uuid', read_only=True)
     assay = serializers.CharField(source='assay.sodar_uuid')
     status_locked = serializers.SerializerMethodField(read_only=True)
     create_colls = serializers.BooleanField(write_only=True, default=False)

@@ -25,6 +25,7 @@ Release for SODAR Core v1.0 upgrade, iRODS v4.3 upgrade and feature updates.
 - Update REST API versioning
 - Update REST API views for OpenAPI support
 - Update lock requiring REST API views to return 503 if project is locked
+- Update REST APIs to return user UUID instead of SODARUserSerializer objects
 - Update landing zone creation REST API view to return 503 if no investigation
   or iRODS collections
 - Update irodsinfo configuration download to return JSON without Zip archive if
@@ -65,10 +66,14 @@ REST API Updates
 ----------------
 
 - Sample Sheets API
+    * ``IrodsAccessTicketRetrieveAPIView``
+        + Return ``user`` field as UUID string instead of serializer
     * ``IrodsCollsCreateAPIView``
         + Return ``503`` if project is locked
     * ``IrodsDataRequestAcceptAPIView``
         + Return ``503`` if project is locked
+    * ``IrodsDataRequestRetrieveAPIView``
+        + Return ``user`` field as UUID string instead of serializer
     * ``ProjectIrodsFileListAPIView``
         + Return results as list without ``irods_data`` object
         + Return ``modify_time`` field in standard REST API format
@@ -77,6 +82,8 @@ REST API Updates
         + Return ``503`` if Taskflow is not enabled
         + Return ``503`` if investigation for project is not found
         + Return ``503`` if project iRODS collections have not been created
+    * ``ZoneRetrieveAPIView``
+        + Return ``user`` field as UUID string instead of serializer
     * ``ZoneSubmitMoveAPIView``
         + Return ``503`` if project is locked
 

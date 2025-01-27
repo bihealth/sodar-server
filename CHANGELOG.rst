@@ -65,6 +65,7 @@ Changed
     - Update REST API views for OpenAPI compatibility (#1951)
     - Return ``503`` in ``ZoneSubmitMoveAPIView`` if project is locked (#1847)
     - Return ``503`` in ``ZoneCreateAPIView`` if no investigation or iRODS collections (#2036)
+    - Replace REST API ``SODARUserSerializer`` fields with UUID ``SlugRelatedField`` (#2057)
 - **Samplesheets**
     - Update REST API versioning (#1936)
     - Update REST API views for OpenAPI compatibility (#1951)
@@ -75,6 +76,7 @@ Changed
     - Return ``503`` in ``IrodsDataRequestAcceptAPIView`` if project is locked (#1847)
     - Return ``ProjectIrodsFileListAPIView`` results as list without ``irods_data`` object (#2040)
     - Remove length limitation from ``Process.performer`` (#1789, #1942, #2033)
+    - Replace REST API ``SODARUserSerializer`` fields with UUID ``SlugRelatedField`` (#2057)
 - **Taskflowbackend**
     - Refactor task tests (#2002)
     - Unify user name parameter naming in flows (#1653)

@@ -554,7 +554,7 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
             'path': self.ticket.path,  # Path should not be updated
             'date_created': local_date_created.isoformat(),
             'date_expires': self.date_expires_update,
-            'user': self.get_serialized_user(self.user),
+            'user': str(self.user.sodar_uuid),
             'is_active': self.ticket.is_active(),
         }
         self.assertEqual(response.json(), expected)
@@ -624,7 +624,7 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
             'path': self.ticket.path,
             'date_created': local_date_created.isoformat(),
             'date_expires': self.date_expires_update,
-            'user': self.get_serialized_user(self.user),
+            'user': str(self.user.sodar_uuid),
             'is_active': self.ticket.is_active(),
         }
         self.assertEqual(response.json(), expected)

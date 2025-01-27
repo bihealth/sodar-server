@@ -134,7 +134,7 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
         expected = {
             'title': zone.title,
             'project': str(self.project.sodar_uuid),
-            'user': self.get_serialized_user(self.user),
+            'user': str(self.user.sodar_uuid),
             'assay': str(self.assay.sodar_uuid),
             'status': ZONE_STATUS_CREATING,
             'status_info': DEFAULT_STATUS_INFO[ZONE_STATUS_CREATING],

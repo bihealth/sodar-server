@@ -187,7 +187,7 @@ class ZoneRetrieveAPIView(
     - ``status_info``: Detailed description of the landing zone status (string)
     - ``status_locked``: Whether write access to the zone is currently locked (boolean)
     - ``title``: Full title of the created landing zone (string)
-    - ``user``: User who owns the zone (dict)
+    - ``user``: UUID of user who owns the zone (string)
     """
 
     lookup_field = 'sodar_uuid'

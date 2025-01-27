@@ -708,7 +708,7 @@ class TestIrodsAccessTicketRetrieveAPIView(IrodsAccessTicketAPITestBase):
             'path': self.ticket.path,
             'date_created': local_date_created.isoformat(),
             'date_expires': self.ticket.date_expires,
-            'user': self.get_serialized_user(self.user),
+            'user': str(self.user.sodar_uuid),
             'is_active': self.ticket.is_active(),
         }
         self.assertEqual(json.loads(response.content), expected)
@@ -748,7 +748,7 @@ class TestIrodsAccessTicketListAPIView(IrodsAccessTicketAPITestBase):
             'path': self.ticket.path,
             'date_created': self.get_drf_datetime(self.ticket.date_created),
             'date_expires': self.ticket.date_expires,
-            'user': self.get_serialized_user(self.user),
+            'user': str(self.user.sodar_uuid),
             'is_active': self.ticket.is_active(),
         }
         self.assertEqual(json.loads(response.content), [expected])
@@ -777,7 +777,7 @@ class TestIrodsAccessTicketListAPIView(IrodsAccessTicketAPITestBase):
             'path': self.ticket.path,
             'date_created': self.get_drf_datetime(self.ticket.date_created),
             'date_expires': self.ticket.date_expires,
-            'user': self.get_serialized_user(self.user),
+            'user': str(self.user.sodar_uuid),
             'is_active': self.ticket.is_active(),
         }
         self.assertEqual(json.loads(response.content), [expected])
@@ -804,7 +804,7 @@ class TestIrodsAccessTicketListAPIView(IrodsAccessTicketAPITestBase):
                         self.ticket.date_created
                     ),
                     'date_expires': self.ticket.date_expires,
-                    'user': self.get_serialized_user(self.user),
+                    'user': str(self.user.sodar_uuid),
                     'is_active': self.ticket.is_active(),
                 }
             ],
@@ -852,7 +852,7 @@ class TestIrodsDataRequestRetrieveAPIView(
             'action': IRODS_REQUEST_ACTION_DELETE,
             'path': self.request.path,
             'target_path': '',
-            'user': self.get_serialized_user(self.user_contributor),
+            'user': str(self.user_contributor.sodar_uuid),
             'status': IRODS_REQUEST_STATUS_ACTIVE,
             'status_info': '',
             'description': self.request.description,
@@ -901,7 +901,7 @@ class TestIrodsDataRequestListAPIView(
             'action': IRODS_REQUEST_ACTION_DELETE,
             'path': self.request.path,
             'target_path': '',
-            'user': self.get_serialized_user(self.user_contributor),
+            'user': str(self.user_contributor.sodar_uuid),
             'status': IRODS_REQUEST_STATUS_ACTIVE,
             'status_info': '',
             'description': self.request.description,
@@ -926,7 +926,7 @@ class TestIrodsDataRequestListAPIView(
                     'action': IRODS_REQUEST_ACTION_DELETE,
                     'path': self.request.path,
                     'target_path': '',
-                    'user': self.get_serialized_user(self.user_contributor),
+                    'user': str(self.user_contributor.sodar_uuid),
                     'status': IRODS_REQUEST_STATUS_ACTIVE,
                     'status_info': '',
                     'description': self.request.description,

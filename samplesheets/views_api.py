@@ -385,7 +385,7 @@ class IrodsAccessTicketRetrieveAPIView(
     - ``study``: Study UUID (string)
     - ``date_created``: Creation datetime (YYYY-MM-DDThh:mm:ssZ)
     - ``date_expires``: Expiry datetime (YYYY-MM-DDThh:mm:ssZ or null)
-    - ``user``: User who created the request (SODARUserSerializer dict)
+    - ``user``: UUID of user who created the request (string)
     - ``is_active``: Whether the request is currently active (boolean)
     - ``sodar_uuid``: IrodsAccessTicket UUID (string)
     """
@@ -585,7 +585,7 @@ class IrodsDataRequestRetrieveAPIView(
     - ``action``: Request action (string)
     - ``path``: iRODS path to object or collection (string)
     - ``target_path``: Target path (string, currently unused)
-    - ``user``: User initiating request (dict)
+    - ``user``: UUID of user initiating request (string)
     - ``status``: Request status (string)
     - ``status_info``: Request status info (string)
     - ``description``: Request description (string)
