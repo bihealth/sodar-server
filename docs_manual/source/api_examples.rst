@@ -116,6 +116,32 @@ archived ISA-Tab.
     files = {'file': ('your_isa_tab.zip', open(sheet_path, 'rb'), 'application/zip')}
     response = requests.post(url, files=files, headers=sheet_headers)
 
+The following example demonstrates how to do the same by uploading multiple
+ISA-Tab TSV files files instead of a Zip archive. Note that the keys for the
+``files`` dictionary are arbitrary.
+
+.. code-block:: python
+
+    tsv_file_i = open(SHEET_TSV_DIR + 'i_investigation.txt', 'r')
+    tsv_file_s = open(SHEET_TSV_DIR + 's_study.txt', 'r')
+    tsv_file_a = open(SHEET_TSV_DIR + 'a_assay.txt', 'r')
+    url = sodar_url + '/samplesheets/api/import/' + project_uuid
+    files = {
+        'file1': (None, tsv_file_i, 'text/plain'),
+        'file2': (None, tsv_file_s, 'text/plain'),
+        'file3': (None, tsv_file_a, 'text/plain'),
+    }
+    response = requests.post(url, files=files, headers=sheet_headers)
+    tsv_file_i.close()
+    tsv_file_s.close()
+    tsv_file_a.close()
+
+.. note::
+
+    Importing partial investigations is not allowed. When importing data as
+    multiple ISA-Tab TSV files, all study and assay files of the investigation
+    must be present or your import will fail.
+
 To ensure your import was successful, you can retrieve investigation information
 via the API. This also returns e.g. the UUIDs for studies and assays:
 

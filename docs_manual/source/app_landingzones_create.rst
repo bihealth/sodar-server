@@ -3,16 +3,18 @@
 Landing Zone Creation
 ^^^^^^^^^^^^^^^^^^^^^
 
-Creating a landing zone and uploading data into a project requires that sample
-sheets are available in the project and the corresponding iRODS collections have
-been created. For instructions on how to set up sample sheets for a SODAR
-project, see :ref:`metadata_recording` and :ref:`app_samplesheets_create`.
+Creating a landing zone and uploading data into a project has the following
+preqrequisites:
+
+1. Sample sheets have been set up for your project. For more information, see
+   :ref:`metadata_recording` and :ref:`app_samplesheets_create`.
+2. iRODS collections have been created for your project. For more information,
+   see :ref:`app_samplesheets_create_colls`.
 
 Creating landing zones and uploading files is permitted to users with the
-project contributor access level or higher.
-
-There is no limit on how many zones you can create and multiple simultaneous
-landing zones for a single assay are allowed.
+project contributor access level or higher. There is no limit on how many zones
+you can create and multiple simultaneous landing zones for a single assay are
+allowed.
 
 Initially navigating to the Landing Zones app presents you a notification on
 no zones being available, with a :guilabel:`Create Zone` button on the right
