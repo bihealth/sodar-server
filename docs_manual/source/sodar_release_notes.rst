@@ -21,6 +21,7 @@ Release for SODAR Core v1.0 upgrade, iRODS v4.3 upgrade and feature updates.
 - Add token-based iRODS/IGV basic auth support for OIDC users
 - Add support for comment, performer and contact field values as list
 - Add support for numeric field values as list
+- Add support for UTF-8 BOM header in MD5 checksum files
 - Update minimum supported iRODS version to v4.3.3
 - Update REST API versioning
 - Update REST API views for OpenAPI support

@@ -1,5 +1,6 @@
 """iRODS tasks for Taskflow"""
 
+import codecs
 import logging
 import os
 import random
@@ -674,7 +675,12 @@ class BatchValidateChecksumsTask(IrodsBaseTask):
             md5_path = path + '.md5'
             try:
                 with self.irods.data_objects.open(md5_path, mode='r') as f:
-                    file_sum = re.split(MD5_RE, f.read().decode('utf-8'))[0]
+                    dec = 'utf-8'
+                    md5_content = f.read()
+                    # Support for BOM header forced by PowerShell (see #1818)
+                    if md5_content[:3] == codecs.BOM_UTF8:
+                        dec += '-sig'
+                    file_sum = re.split(MD5_RE, md5_content.decode(dec))[0]
             except Exception as ex:
                 msg = 'Unable to read checksum file "{}"'.format(
                     '/'.join(md5_path.split('/')[zone_path_len:])

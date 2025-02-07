@@ -38,6 +38,7 @@ Added
     - Support for numeric field values as list (#1789, #2033)
 - **Taskflowbackend**
     - ``TaskflowAPI.raise_submit_api_exception()`` helper (#1847)
+    - UTF-8 BOM header support for MD5 files (#1818)
 
 Changed
 -------
