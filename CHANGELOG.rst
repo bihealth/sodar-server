@@ -55,6 +55,7 @@ Changed
     - Upgrade minimum supported iRODS version to v4.3.3 (#1815, #2007)
     - Use constants for timeline event status types (#2010)
     - Squash migrations (#1967)
+    - Upgrade to ``coverallsapp/github-action@v2`` in CI (#2069)
 - **Irodsbackend**
     - Rename ``LocalAuthAPIView`` to ``BasicAuthView`` (#1999)
     - Change ``BasicAuthView`` request to ``GET`` (#1999)
