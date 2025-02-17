@@ -44,7 +44,7 @@ Changed
 -------
 
 - **General**
-    - Upgrade to django-sodar-core v1.0.4 (#1922, #1959)
+    - Upgrade to django-sodar-core v1.0.5 (#1922, #1959)
     - Upgrade to Postgres v16 (#1922)
     - Upgrade Python and Vue app dependencies (#1922, #1959)
     - Unify base test class naming (#2001)
