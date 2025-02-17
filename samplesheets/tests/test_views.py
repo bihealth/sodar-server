@@ -27,6 +27,9 @@ from projectroles.tests.test_models import (
 from projectroles.tests.test_views_api import SODARAPIViewTestMixin
 from projectroles.utils import build_secret
 
+# Timeline dependency
+from timeline.models import TimelineEvent
+
 # Isatemplates dependency
 from isatemplates.tests.test_models import (
     CookiecutterISATemplateMixin,
@@ -1279,7 +1282,7 @@ class TestSheetVersionListView(SamplesheetsViewTestBase):
 
 
 class TestSheetVersionRestoreView(SamplesheetsViewTestBase):
-    """Tests for the sample sheet version restore view"""
+    """Tests for SheetVersionRestoreView"""
 
     def setUp(self):
         super().setUp()
@@ -1291,9 +1294,10 @@ class TestSheetVersionRestoreView(SamplesheetsViewTestBase):
         )
         # Set up helpers
         self.cache_backend = get_backend_api('sodar_cache')
+        self.timeline = get_backend_api('timeline_backend')
 
-    def test_render(self):
-        """Test rendering the sheet version restore view"""
+    def test_get(self):
+        """Test SheetVersionRestoreView GET"""
         with self.login(self.user):
             response = self.client.get(
                 reverse(
@@ -1304,8 +1308,8 @@ class TestSheetVersionRestoreView(SamplesheetsViewTestBase):
         self.assertEqual(response.status_code, 200)
         self.assertIsNotNone(response.context['sheet_version'])
 
-    def test_restore(self):
-        """Test restoring sheet version"""
+    def test_post(self):
+        """Test POST"""
         sheet_io = SampleSheetIO()
         isatab_new = sheet_io.save_isa(
             project=self.project,
@@ -1314,6 +1318,9 @@ class TestSheetVersionRestoreView(SamplesheetsViewTestBase):
         )
         self.assertEqual(Investigation.objects.count(), 1)
         self.assertEqual(ISATab.objects.count(), 2)
+        self.assertEqual(
+            TimelineEvent.objects.filter(event_name='sheet_restore').count(), 0
+        )
 
         with self.login(self.user):
             response = self.client.post(
@@ -1330,9 +1337,14 @@ class TestSheetVersionRestoreView(SamplesheetsViewTestBase):
         )
         self.assertEqual(Investigation.objects.count(), 1)
         self.assertEqual(ISATab.objects.count(), 2)
+        self.assertEqual(
+            TimelineEvent.objects.filter(event_name='sheet_restore').count(), 1
+        )
+        e = TimelineEvent.objects.filter(event_name='sheet_restore').first()
+        self.assertEqual(e.get_status().status_type, self.timeline.TL_STATUS_OK)
 
-    def test_restore_study_cache(self):
-        """Test restoring sheet version with cached study table"""
+    def test_post_study_cache(self):
+        """Test POST with cached study table"""
         sheet_io = SampleSheetIO()
         isatab_new = sheet_io.save_isa(
             project=self.project,

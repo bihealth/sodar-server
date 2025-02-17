@@ -2008,7 +2008,8 @@ class SheetVersionRestoreView(
         return context
 
     def post(self, request, **kwargs):
-        timeline = get_backend_api('timeline_backend')
+        if not self.timeline:
+            self.timeline = get_backend_api('timeline_backend')
         tl_event = None
         project = self.get_project()
         sheet_io = SampleSheetIO(allow_critical=settings.SHEETS_ALLOW_CRITICAL)
@@ -2036,8 +2037,8 @@ class SheetVersionRestoreView(
             )
             return redirect(redirect_url)
 
-        if timeline:
-            tl_event = timeline.add_event(
+        if self.timeline:
+            tl_event = self.timeline.add_event(
                 project=project,
                 app_name=APP_NAME,
                 user=self.request.user,
