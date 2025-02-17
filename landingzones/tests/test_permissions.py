@@ -130,14 +130,69 @@ class TestProjectZoneView(LandingzonesPermissionTestBase):
 class TestZoneCreateView(LandingzonesPermissionTestBase):
     """Tests for ZoneCreateView permissions"""
 
+    def _set_up_investigation(self, colls=False):
+        """set up investigation and optional iRODS colls"""
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        if colls:
+            self.investigation.irods_status = True
+            self.investigation.save()
+
     def setUp(self):
         super().setUp()
         self.url = reverse(
             'landingzones:create', kwargs={'project': self.project.sodar_uuid}
         )
 
-    def test_get(self):
-        """Test ZoneCreateView GET"""
+    def test_get_no_sheets(self):
+        """Test ZoneCreateView GET with no sheets"""
+        good_users = [self.superuser]
+        bad_users = [
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
+            self.user_no_roles,
+            self.anonymous,
+        ]
+        self.assert_response(self.url, good_users, 200)
+        self.assert_response(self.url, bad_users, 302)
+        self.project.set_public()
+        self.assert_response(
+            self.url, [self.user_no_roles, self.anonymous], 302
+        )
+
+    def test_get_investigation(self):
+        """Test GET with investigation"""
+        self._set_up_investigation()
+        good_users = [self.superuser]
+        bad_users = [
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
+            self.user_no_roles,
+            self.anonymous,
+        ]
+        self.assert_response(self.url, good_users, 200)
+        self.assert_response(self.url, bad_users, 302)
+        self.project.set_public()
+        self.assert_response(
+            self.url, [self.user_no_roles, self.anonymous], 302
+        )
+
+    def test_get_colls(self):
+        """Test GET with investigation and collections"""
+        self._set_up_investigation(True)
         good_users = [
             self.superuser,
             self.user_owner_cat,
@@ -164,11 +219,13 @@ class TestZoneCreateView(LandingzonesPermissionTestBase):
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous access"""
+        self._set_up_investigation(True)
         self.project.set_public()
         self.assert_response(self.url, self.anonymous, 302)
 
     def test_get_archive(self):
         """Test GET with archived project"""
+        self._set_up_investigation(True)
         self.project.set_archive()
         good_users = [self.superuser]
         bad_users = [
@@ -194,6 +251,7 @@ class TestZoneCreateView(LandingzonesPermissionTestBase):
     @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
     def test_get_disable(self):
         """Test ZoneCreateView with disabled non-superuser access"""
+        self._set_up_investigation(True)
         good_users = [self.superuser]
         bad_users = [
             self.user_owner_cat,

@@ -87,7 +87,7 @@
 
 <div class="row sodar-subtitle-container bg-white sticky-top">
   <h3><i class="iconify" data-icon="mdi:briefcase-upload"></i> Landing Zones</h3>
-  {% if not zone_access_disabled and investigation and can_create_zone %}
+  {% if not zone_access_disabled and can_create_zone %}
     <div class="ml-auto">
       <a href="{% url 'landingzones:create' project=project.sodar_uuid %}"
          class="btn btn-primary" role="button" id="sodar-lz-btn-create-zone">
@@ -121,11 +121,11 @@
 
   {% elif investigation and not investigation.irods_status %}
     <div class="alert alert-danger" role="alert" id="sodar-lz-alert-no-colls">
-      The iRODS collections for the project sample sheets are not available. A
-      user authorized for sample sheet editing must enable iRODS access by
-      selecting <cite>"Create in iRODS"</cite> in the
-      <a href="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}">Sample Sheets</a> app.
-      After that landing zones can be created for the project.
+      The iRODS collections for the project sample sheets have not been created.
+      A user authorized for sample sheet editing must enable iRODS access by
+      selecting <a href="{% url 'samplesheets:collections' project=project.sodar_uuid %}">Create iRODS Collections</a>
+      in the <a href="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}">Sample Sheets</a>
+      app. After that landing zones can be created for the project.
     </div>
 
   {% elif zones_own.count == 0 and not zones_other %}

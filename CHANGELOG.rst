@@ -94,6 +94,8 @@ Fixed
     - iRODS file list modal content overflow with long file paths (#2056)
 - **Landingzones**
     - Timeline link active for ``DELETED`` and ``NOT_CREATED`` zones (#2005)
+    - Create Zone button visible with iRODS collections not created (#2066)
+    - ``ZoneCreateView`` access with iRODS collections not created (#2066)
 - **Samplesheets**
     - Timeline event status not updated in ``SheetDeleteVieW`` with iRODS collections enabled (#1798)
     - Assay plugin ``update_row()`` setting links for empty file names (#2017)

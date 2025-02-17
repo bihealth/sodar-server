@@ -112,6 +112,7 @@ class TestProjectZoneView(LandingZoneUITestBase):
         self._assert_element(By.ID, 'sodar-lz-alert-no-sheets', True)
         self._assert_element(By.ID, 'sodar-lz-alert-no-colls', False)
         self._assert_element(By.ID, 'sodar-lz-alert-no-zones', False)
+        self._assert_element(By.ID, 'sodar-lz-btn-create-zone', False)
         self._assert_element(By.ID, 'sodar-lz-zone-list-own', False)
         self._assert_element(By.ID, 'sodar-lz-zone-list-other', False)
 
@@ -124,6 +125,7 @@ class TestProjectZoneView(LandingZoneUITestBase):
         self._assert_element(By.ID, 'sodar-lz-alert-no-sheets', False)
         self._assert_element(By.ID, 'sodar-lz-alert-no-colls', True)
         self._assert_element(By.ID, 'sodar-lz-alert-no-zones', False)
+        self._assert_element(By.ID, 'sodar-lz-btn-create-zone', False)
         self._assert_element(By.ID, 'sodar-lz-zone-list-own', False)
         self._assert_element(By.ID, 'sodar-lz-zone-list-other', False)
 
@@ -137,6 +139,7 @@ class TestProjectZoneView(LandingZoneUITestBase):
         self._assert_element(By.ID, 'sodar-lz-alert-no-sheets', False)
         self._assert_element(By.ID, 'sodar-lz-alert-no-colls', False)
         self._assert_element(By.ID, 'sodar-lz-alert-no-zones', True)
+        self._assert_element(By.ID, 'sodar-lz-btn-create-zone', True)
         self._assert_element(By.ID, 'sodar-lz-zone-list-own', False)
         self._assert_element(By.ID, 'sodar-lz-zone-list-other', False)
 
@@ -151,6 +154,7 @@ class TestProjectZoneView(LandingZoneUITestBase):
         self._assert_element(By.ID, 'sodar-lz-alert-no-sheets', False)
         self._assert_element(By.ID, 'sodar-lz-alert-no-colls', False)
         self._assert_element(By.ID, 'sodar-lz-alert-no-zones', False)
+        self._assert_element(By.ID, 'sodar-lz-btn-create-zone', False)
         self._assert_element(By.ID, 'sodar-lz-zone-list-own', False)
         self._assert_element(By.ID, 'sodar-lz-zone-list-other', False)
 
@@ -168,6 +172,7 @@ class TestProjectZoneView(LandingZoneUITestBase):
         self._assert_element(By.ID, 'sodar-lz-alert-no-sheets', False)
         self._assert_element(By.ID, 'sodar-lz-alert-no-colls', False)
         self._assert_element(By.ID, 'sodar-lz-alert-no-zones', False)
+        self._assert_element(By.ID, 'sodar-lz-btn-create-zone', True)
         self._assert_element(By.ID, 'sodar-lz-zone-list-own', True)
         self._assert_element(By.ID, 'sodar-lz-zone-list-other', False)
 
@@ -184,6 +189,7 @@ class TestProjectZoneView(LandingZoneUITestBase):
         self._assert_element(By.ID, 'sodar-lz-alert-no-sheets', False)
         self._assert_element(By.ID, 'sodar-lz-alert-no-colls', False)
         self._assert_element(By.ID, 'sodar-lz-alert-no-zones', False)
+        self._assert_element(By.ID, 'sodar-lz-btn-create-zone', True)
         self._assert_element(By.ID, 'sodar-lz-zone-list-own', True)
         self._assert_element(By.ID, 'sodar-lz-zone-list-other', False)
         zones = self.selenium.find_elements(

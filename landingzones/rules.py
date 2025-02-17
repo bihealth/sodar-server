@@ -10,10 +10,19 @@ from projectroles import rules as pr_rules  # To access common predicates
 
 
 @rules.predicate
+def can_create_zone(user, obj):
+    """Allow creating a new landing zone"""
+    inv = obj.investigations.filter(active=True).first()
+    return (
+        inv is not None
+        and inv.irods_status
+        and (user.is_superuser or not settings.LANDINGZONES_DISABLE_FOR_USERS)
+    )
+
+
+@rules.predicate
 def can_modify_zone(user, obj):
-    """
-    Whether or not user can modify landing zones.
-    """
+    """Allow modifying an existing landing zone"""
     return user.is_superuser or not settings.LANDINGZONES_DISABLE_FOR_USERS
 
 
@@ -44,7 +53,7 @@ rules.add_perm(
 rules.add_perm(
     'landingzones.create_zone',
     pr_rules.can_modify_project_data
-    & can_modify_zone
+    & can_create_zone
     & (
         pr_rules.is_project_owner
         | pr_rules.is_project_delegate
