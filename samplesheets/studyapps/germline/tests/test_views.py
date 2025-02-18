@@ -66,6 +66,16 @@ class TestIGVSessionFileRenderView(
         )
         # NOTE: XML forming tested in TestGetIGVXML
 
+    def test_get_xml_suffix(self):
+        """Test GET with XML URL suffix"""
+        with self.login(self.user_contributor):
+            response = self.client.get(self.url + '.xml')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.get('Content-Disposition'),
+            'attachment; filename="{}.pedigree.igv.xml"'.format(FAMILY_ID),
+        )
+
     def test_get_basic_auth(self):
         """Test GET with basic auth"""
         response = self.client.get(
