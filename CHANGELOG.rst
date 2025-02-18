@@ -62,6 +62,7 @@ Changed
 - **Irodsinfo**
     - Update REST API versioning (#1936)
     - Return iRODS environment as JSON file if client-side cert not set (#2044)
+    - Link to ``data_transfer_irods`` in template (#2073)
 - **Landingzones**
     - Update REST API versioning (#1936)
     - Update REST API views for OpenAPI compatibility (#1951)
