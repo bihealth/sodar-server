@@ -209,7 +209,6 @@ class SampleSheetTableBuilder:
             and not obj.has_unit(name, header_type)
         ):
             header['col_type'] = 'NUMERIC'
-
         # Else detect type without config
         elif (
             name.lower() == 'name' or name in th.PROCESS_NAME_HEADERS
@@ -500,13 +499,14 @@ class SampleSheetTableBuilder:
         for i in range(len(self._field_header)):
             header_name = self._field_header[i]['value']
             # Set column type to NUMERIC if values are all numeric or empty
-            # (except if name or process name)
-            # Skip check if column is already defined as UNIT
+            # Skip check for name, process and already determined column types
+            num_skip_cols = ['NUMERIC', 'ONTOLOGY', 'UNIT']
             if (
                 header_name != 'Name'
                 and header_name not in th.PROCESS_NAME_HEADERS
                 and not self._field_configs[i]
-                and self._field_header[i]['col_type'] not in ['NUMERIC', 'UNIT']
+                and self._field_header[i]['col_type'] not in num_skip_cols
+                and any(_is_num(x[i]['value']) for x in self._table_data)
                 and all(
                     (_is_num(x[i]['value']) or not x[i]['value'])
                     for x in self._table_data
