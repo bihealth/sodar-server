@@ -59,6 +59,7 @@ Changed
 - **Irodsbackend**
     - Rename ``LocalAuthAPIView`` to ``BasicAuthView`` (#1999)
     - Change ``BasicAuthView`` request to ``GET`` (#1999)
+    - Add API token info for OIDC users in ``create_irods_user()`` (#2077)
 - **Irodsinfo**
     - Update REST API versioning (#1936)
     - Return iRODS environment as JSON file if client-side cert not set (#2044)
