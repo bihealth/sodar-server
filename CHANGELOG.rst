@@ -36,6 +36,7 @@ Added
     - Support for newlines in altamISA error messages (#2033)
     - Support for comment, performer and contact field values as list (#1789, #2033)
     - Support for numeric field values as list (#1789, #2033)
+    - ``SHEETS_API_FILE_EXISTS_RESTRICT`` Django setting (#2078)
 - **Taskflowbackend**
     - ``TaskflowAPI.raise_submit_api_exception()`` helper (#1847)
     - UTF-8 BOM header support for MD5 files (#1818)
@@ -81,6 +82,7 @@ Changed
     - Return ``ProjectIrodsFileListAPIView`` results as list without ``irods_data`` object (#2040)
     - Remove length limitation from ``Process.performer`` (#1789, #1942, #2033)
     - Replace REST API ``SODARUserSerializer`` fields with UUID ``SlugRelatedField`` (#2057)
+    - Enable ``SampleDataFileExistsAPIView`` access restriction to guests and above (#2078)
 - **Taskflowbackend**
     - Refactor task tests (#2002)
     - Unify user name parameter naming in flows (#1653)

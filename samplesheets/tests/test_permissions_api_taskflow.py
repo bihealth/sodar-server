@@ -116,7 +116,7 @@ class TestSampleDataFileExistsAPIView(SheetTaskflowAPIPermissionTestBase):
         self.irods.data_objects.put(
             IRODS_FILE_PATH, coll_path, **{REG_CHKSUM_KW: ''}
         )
-        self.post_data = {'checksum': IRODS_FILE_MD5}
+        self.get_data = {'checksum': IRODS_FILE_MD5}
         self.url = reverse('samplesheets:api_file_exists')
 
     def test_get(self):
@@ -134,9 +134,9 @@ class TestSampleDataFileExistsAPIView(SheetTaskflowAPIPermissionTestBase):
             self.user_guest,
             self.user_no_roles,
         ]
-        self.assert_response_api(self.url, good_users, 200, data=self.post_data)
+        self.assert_response_api(self.url, good_users, 200, data=self.get_data)
         self.assert_response_api(
-            self.url, self.anonymous, 401, data=self.post_data
+            self.url, self.anonymous, 401, data=self.get_data
         )
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
@@ -160,9 +160,33 @@ class TestSampleDataFileExistsAPIView(SheetTaskflowAPIPermissionTestBase):
             self.user_guest,
             self.user_no_roles,
         ]
-        self.assert_response_api(self.url, good_users, 200, data=self.post_data)
+        self.assert_response_api(self.url, good_users, 200, data=self.get_data)
         self.assert_response_api(
-            self.url, self.anonymous, 401, data=self.post_data
+            self.url, self.anonymous, 401, data=self.get_data
+        )
+
+    @override_settings(SHEETS_API_FILE_EXISTS_RESTRICT=True)
+    def test_get_restrict(self):
+        """Test GET with file exists restriction enabled"""
+        good_users = [
+            self.superuser,
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
+        ]
+        bad_users = [
+            self.user_finder_cat,
+            self.user_no_roles,
+        ]
+        self.assert_response_api(self.url, good_users, 200, data=self.get_data)
+        self.assert_response_api(self.url, bad_users, 403, data=self.get_data)
+        self.assert_response_api(
+            self.url, self.anonymous, 401, data=self.get_data
         )
 
 

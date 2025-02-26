@@ -34,7 +34,12 @@ from rest_framework.views import APIView
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.models import RemoteSite
+from projectroles.models import (
+    RoleAssignment,
+    RemoteSite,
+    SODAR_CONSTANTS,
+    ROLE_RANKING,
+)
 from projectroles.plugins import get_backend_api
 from projectroles.views_api import (
     SODARAPIBaseMixin,
@@ -75,6 +80,9 @@ logger = logging.getLogger(__name__)
 table_builder = SampleSheetTableBuilder()
 
 
+# SODAR constants
+PROJECT_ROLE_GUEST = SODAR_CONSTANTS['PROJECT_ROLE_GUEST']
+
 # Local constants
 SAMPLESHEETS_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar.samplesheets+json'
 SAMPLESHEETS_API_ALLOWED_VERSIONS = ['1.0']
@@ -85,6 +93,10 @@ IRODS_QUERY_ERROR_MSG = 'Exception querying iRODS objects'
 IRODS_REQUEST_EX_MSG = 'iRODS data request failed'
 IRODS_TICKET_EX_MSG = 'iRODS access ticket failed'
 IRODS_TICKET_NO_UPDATE_FIELDS_MSG = 'No fields to update'
+FILE_EXISTS_RESTRICT_MSG = (
+    'File exist query access restricted: user does not have guest access or '
+    'above in any project (SHEETS_API_FILE_EXISTS_RESTRICT=True)'
+)
 
 
 # Base Classes and Mixins ------------------------------------------------------
@@ -849,6 +861,10 @@ class SampleDataFileExistsAPIView(
     Return status of data object existing in SODAR iRODS by MD5 checksum.
     Includes all projects in search regardless of user permissions.
 
+    If ``SHEETS_API_FILE_EXISTS_RESTRICT`` is set True on the server, this view
+    is only accessible by users who have a guest role or above in at least one
+    category or project.
+
     **URL:** ``/samplesheets/api/file/exists``
 
     **Methods:** ``GET``
@@ -867,6 +883,16 @@ class SampleDataFileExistsAPIView(
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, *args, **kwargs):
+        if (
+            settings.SHEETS_API_FILE_EXISTS_RESTRICT
+            and not request.user.is_superuser
+        ):
+            roles = RoleAssignment.objects.filter(
+                user=request.user,
+                role__rank__lte=ROLE_RANKING[PROJECT_ROLE_GUEST],
+            )
+            if roles.count() == 0:
+                raise PermissionDenied(FILE_EXISTS_RESTRICT_MSG)
         if not settings.ENABLE_IRODS:
             raise APIException('iRODS not enabled')
         irods_backend = get_backend_api('omics_irods')

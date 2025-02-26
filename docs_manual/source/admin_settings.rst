@@ -205,6 +205,10 @@ Sample Sheets Settings
 ``SHEETS_IGV_OMIT_VCF``
     VCF file name suffixes to omit from study shortcuts and IGV session
     generation.
+``SHEETS_API_FILE_EXISTS_RESTRICT``
+    Restrict access to ``SampleDataFileExistsAPIView`` to users with the role of
+    project guest or above in any category or project. Recommended for instances
+    deployed on the public internet with general OIDC SSO access (boolean).
 
 Landing Zones Settings
 ----------------------

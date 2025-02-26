@@ -753,7 +753,6 @@ SHEETS_ONTOLOGY_URL_TEMPLATE = env.str(
 SHEETS_ONTOLOGY_URL_SKIP = env.list(
     'SHEETS_ONTOLOGY_URL_SKIP', default=['bioontology.org', 'hpo.jax.org']
 )
-
 # Labels and URL patterns for external link columns
 # Provide custom labels via a JSON file via SHEETS_EXTERNAL_LINK_PATH.
 # Each entry should have a "label" and an optional "url".
@@ -762,10 +761,8 @@ SHEETS_EXTERNAL_LINK_PATH = env.str(
     'SHEETS_EXTERNAL_LINK_PATH',
     os.path.join(ROOT_DIR, 'samplesheets/config/ext_links.json'),
 )
-
 # Remote sample sheet sync interval in minutes
 SHEETS_SYNC_INTERVAL = env.int('SHEETS_SYNC_INTERVAL', 5)
-
 # BAM/CRAM file path glob patterns to omit from study shortcuts and IGV sessions
 SHEETS_IGV_OMIT_BAM = env.list(
     'SHEETS_IGV_OMIT_BAM', default=['*dragen_evidence.bam']
@@ -774,6 +771,10 @@ SHEETS_IGV_OMIT_BAM = env.list(
 SHEETS_IGV_OMIT_VCF = env.list(
     'SHEETS_IGV_OMIT_VCF',
     default=['*cnv.vcf.gz', '*ploidy.vcf.gz', '*sv.vcf.gz'],
+)
+# Restrict SampleDataFileExistsAPIView access to users with project roles
+SHEETS_API_FILE_EXISTS_RESTRICT = env.bool(
+    'SHEETS_API_FILE_EXISTS_RESTRICT', False
 )
 
 # Landingzones app settings

@@ -22,6 +22,8 @@ Release for SODAR Core v1.0 upgrade, iRODS v4.3 upgrade and feature updates.
 - Add support for comment, performer and contact field values as list
 - Add support for numeric field values as list
 - Add support for UTF-8 BOM header in MD5 checksum files
+- Add optional SampleDataFileExistsAPIView access restricting for users with
+  project roles
 - Update minimum supported iRODS version to v4.3.3
 - Update REST API versioning
 - Update REST API views for OpenAPI support
@@ -31,11 +33,11 @@ Release for SODAR Core v1.0 upgrade, iRODS v4.3 upgrade and feature updates.
   or iRODS collections
 - Update irodsinfo configuration download to return JSON without Zip archive if
   client-side cert is not set
+- Upgrade to Django v4.2
 - Upgrade to Postgres v16
 - Upgrade to python-irodsclient v2.2.0
 - Upgrade to altamISA v0.3.0
 - Upgrade to SODAR Core v1.0.5
-- Upgrade to Django v4.2
 - Remove Python v3.8 support
 - Remove Postgres <12 support
 - Remove iRODS <4.3 support

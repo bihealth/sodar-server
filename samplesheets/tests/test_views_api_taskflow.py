@@ -61,6 +61,7 @@ from samplesheets.views_api import (
     IRODS_QUERY_ERROR_MSG,
     SAMPLESHEETS_API_MEDIA_TYPE,
     SAMPLESHEETS_API_DEFAULT_VERSION,
+    FILE_EXISTS_RESTRICT_MSG,
 )
 
 # SODAR constants
@@ -1171,11 +1172,13 @@ class TestSampleDataFileExistsAPIView(SampleSheetAPITaskflowTestBase):
     def setUp(self):
         super().setUp()
         self.make_irods_colls(self.investigation)
+        self.url = reverse('samplesheets:api_file_exists')
 
     def test_get_no_file(self):
-        """Test GET with no file uploaded"""
-        url = reverse('samplesheets:api_file_exists')
-        response = self.request_knox(url, data={'checksum': IRODS_FILE_MD5})
+        """Test SampleDataFileExistsAPIView GET with no file uploaded"""
+        response = self.request_knox(
+            self.url, data={'checksum': IRODS_FILE_MD5}
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(json.loads(response.content)['status'], False)
 
@@ -1185,34 +1188,48 @@ class TestSampleDataFileExistsAPIView(SampleSheetAPITaskflowTestBase):
         self.irods.data_objects.put(
             IRODS_FILE_PATH, coll_path, **{REG_CHKSUM_KW: ''}
         )
-        url = reverse('samplesheets:api_file_exists')
-        response = self.request_knox(url, data={'checksum': IRODS_FILE_MD5})
+        response = self.request_knox(
+            self.url, data={'checksum': IRODS_FILE_MD5}
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(json.loads(response.content)['status'], True)
 
     def test_get_file_sub_coll(self):
-        """Test GET with file in a sub collection"""
+        """Test GET with file in sub collection"""
         coll_path = self.irods_backend.get_sample_path(self.project) + '/sub'
         self.irods.collections.create(coll_path)
         self.irods.data_objects.put(
             IRODS_FILE_PATH, coll_path + '/', **{REG_CHKSUM_KW: ''}
         )
-        url = reverse('samplesheets:api_file_exists')
-        response = self.request_knox(url, data={'checksum': IRODS_FILE_MD5})
+        response = self.request_knox(
+            self.url, data={'checksum': IRODS_FILE_MD5}
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(json.loads(response.content)['status'], True)
 
     def test_get_no_checksum(self):
         """Test GET with no checksum (should fail)"""
-        url = reverse('samplesheets:api_file_exists')
-        response = self.request_knox(url, data={'checksum': ''})
+        response = self.request_knox(self.url, data={'checksum': ''})
         self.assertEqual(response.status_code, 400)
 
     def test_get_invalid_checksum(self):
         """Test GET with invalid checksum (should fail)"""
-        url = reverse('samplesheets:api_file_exists')
-        response = self.request_knox(url, data={'checksum': 'Invalid MD5!'})
+        response = self.request_knox(
+            self.url, data={'checksum': 'Invalid MD5!'}
+        )
         self.assertEqual(response.status_code, 400)
+
+    @override_settings(SHEETS_API_FILE_EXISTS_RESTRICT=True)
+    def test_get_restrict(self):
+        """Test GET with file exists restriction enabled"""
+        user_no_roles = self.make_user('user_no_roles')
+        response = self.request_knox(
+            self.url,
+            data={'checksum': IRODS_FILE_MD5},
+            token=self.get_token(user_no_roles),
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data['detail'], FILE_EXISTS_RESTRICT_MSG)
 
 
 class TestProjectIrodsFileListAPIView(SampleSheetAPITaskflowTestBase):
