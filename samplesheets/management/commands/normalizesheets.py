@@ -171,8 +171,9 @@ class Command(SheetVersionMixin, BaseCommand):
                             investigation, description=COMMAND_DESC
                         )
                 ok_count += 1
-                tl_status = 'OK'
-                tl_desc = None
+                if timeline:
+                    tl_status = timeline.TL_STATUS_OK
+                    tl_desc = None
             except Exception as ex:
                 logger.error(
                     'Error normalizing sheets in project {}: {}'.format(
@@ -180,8 +181,9 @@ class Command(SheetVersionMixin, BaseCommand):
                     )
                 )
                 err_count += 1
-                tl_status = 'FAILED'
-                tl_desc = str(ex)
+                if timeline:
+                    tl_status = timeline.TL_STATUS_FAILED
+                    tl_desc = str(ex)
             if timeline and not check and edit_count > 0:
                 tl_event = timeline.add_event(
                     project=project,

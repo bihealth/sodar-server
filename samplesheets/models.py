@@ -74,7 +74,8 @@ IRODS_REQUEST_STATUS_ACTIVE = 'ACTIVE'
 IRODS_REQUEST_STATUS_FAILED = 'FAILED'
 IRODS_REQUEST_STATUS_REJECTED = 'REJECTED'
 
-# ISA-Tab SODAR metadata comment key for assay plugin override
+# ISA-Tab SODAR metadata comment keys for study and assay plugin overrides
+ISA_META_STUDY_PLUGIN = 'SODAR Study Plugin'
 ISA_META_ASSAY_PLUGIN = 'SODAR Assay Plugin'
 
 
@@ -119,16 +120,16 @@ class BaseSampleSheet(models.Model):
             return self.assay.study
         elif hasattr(self, 'study') and self.study:
             return self.study
-        elif type(self) == Study:
+        elif isinstance(self, Study):
             return self
 
     def get_project(self):
         """Return associated project"""
-        if type(self) == Investigation:
+        if isinstance(self, Investigation):
             return self.project
-        elif type(self) == Study:
+        elif isinstance(self, Study):
             return self.investigation.project
-        elif type(self) == Protocol:
+        elif isinstance(self, Protocol):
             return self.study.investigation.project
         elif type(self) in [Assay, GenericMaterial, Process]:
             if self.study:
@@ -403,9 +404,19 @@ class Study(BaseSampleSheet):
         """Return active study app plugin or None if not found"""
         from samplesheets.plugins import SampleSheetStudyPluginPoint
 
+        inv_config = self.investigation.get_configuration()
+        study_override = self.comments.get(ISA_META_STUDY_PLUGIN)
+        if study_override:
+            try:
+                return SampleSheetStudyPluginPoint.get_plugin(
+                    name=study_override
+                )
+            except Exception:
+                return None
         for plugin in SampleSheetStudyPluginPoint.get_plugins():
-            if plugin.config_name == self.investigation.get_configuration():
+            if plugin.config_name == inv_config:
                 return plugin
+        return None
 
     def get_url(self):
         """Return the URL for this study"""
@@ -933,7 +944,6 @@ class Process(NodeMixin, BaseSampleSheet):
 
     #: Process performer (optional)
     performer = models.CharField(
-        max_length=DEFAULT_LENGTH,
         unique=False,
         blank=True,
         null=True,

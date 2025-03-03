@@ -2,10 +2,10 @@
 
 from django.urls import reverse
 
-from landingzones.tests.test_views import TestViewsBase
+from landingzones.tests.test_views import ViewTestBase
 
 
-class TestLandingZoneStatusGetAjaxView(TestViewsBase):
+class TestLandingZoneStatusGetAjaxView(ViewTestBase):
     """Tests for the landing zone status getting Ajax view"""
 
     def test_post(self):

@@ -113,6 +113,8 @@ main sample sheets view similarly to a successful importing of an existing
 ISA-Tab.
 
 
+.. _app_samplesheets_create_colls:
+
 Create iRODS Collections
 ========================
 

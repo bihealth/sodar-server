@@ -40,10 +40,12 @@ the SODAR API:
     # Headers for requests:
     # Token authorization header (required)
     auth_header = {'Authorization': 'token {}'.format(api_token)}
-    # Use core_headers for project management API endpoints
-    core_headers = {**auth_header, 'Accept': 'application/vnd.bihealth.sodar-core+json; version=0.13.4'}
-    # Use sodar_headers for sample sheet and landing zone API endpoints
-    sodar_headers = {**auth_header, 'Accept': 'application/vnd.bihealth.sodar+json; version=0.15.1'}
+    # Use project_headers for project management API endpoints
+    project_headers = {**auth_header, 'Accept': 'application/vnd.bihealth.sodar-core.projectroles+json; version=1.0'}
+    # Use the following headers for sample sheet and landing zone API endpoints
+    sheet_headers = {**auth_header, 'Accept': 'application/vnd.bihealth.sodar.samplesheets+json; version=1.0'}
+    zone_headers = {**auth_header, 'Accept': 'application/vnd.bihealth.sodar.landingzones+json; version=1.0'}
+
 
 .. note::
 
@@ -58,7 +60,7 @@ categories and projects available to you with the following request:
 .. code-block:: python
 
     url = sodar_url + '/project/api/list'
-    projects = requests.get(url, headers=core_headers).json()
+    projects = requests.get(url, headers=project_headers).json()
 
 
 Create Project
@@ -72,14 +74,15 @@ required for most subsequent operations you wish to perform on that project.
 
     url = sodar_url + '/project/api/create'
     data = {'title': 'New Project via API', 'type': 'PROJECT', 'parent': category_uuid, 'owner': user_uuid}
-    project = requests.post(url, data=data, headers=core_headers).json()
+    project = requests.post(url, data=data, headers=project_headers).json()
     project_uuid = project['sodar_uuid']
 
 .. note::
 
-    Note the use of ``core_headers`` here, as the project management API comes
+    Note the use of ``project_headers`` here, as the project management API comes
     from the `SODAR Core <https://sodar-core.readthedocs.io>`_ package, which
-    has its own API and versioning.
+    has its own API and versioning. See the related
+    `SODAR Core API documentation <https://sodar-core.readthedocs.io/en/latest/app_projectroles_api_rest.html#api-views>`_.
 
 
 Assign a Member Role
@@ -94,7 +97,7 @@ including its UUID for future updates.
     other_user_uuid = '33333333-3333-3333-3333-333333333333'
     url = sodar_url + '/project/api/roles/create/' + project_uuid
     data = {'role': 'project contributor', 'user': other_user_uuid}
-    response_data = requests.post(url, data=data, headers=core_headers).json()
+    response_data = requests.post(url, data=data, headers=project_headers).json()
     role_uuid = response_data.get('role_uuid')
 
 
@@ -111,7 +114,33 @@ archived ISA-Tab.
     url = sodar_url + '/samplesheets/api/import/' + project_uuid
     sheet_path = '/tmp/your_isa_tab.zip'
     files = {'file': ('your_isa_tab.zip', open(sheet_path, 'rb'), 'application/zip')}
-    response = requests.post(url, files=files, headers=sodar_headers)
+    response = requests.post(url, files=files, headers=sheet_headers)
+
+The following example demonstrates how to do the same by uploading multiple
+ISA-Tab TSV files files instead of a Zip archive. Note that the keys for the
+``files`` dictionary are arbitrary.
+
+.. code-block:: python
+
+    tsv_file_i = open(SHEET_TSV_DIR + 'i_investigation.txt', 'r')
+    tsv_file_s = open(SHEET_TSV_DIR + 's_study.txt', 'r')
+    tsv_file_a = open(SHEET_TSV_DIR + 'a_assay.txt', 'r')
+    url = sodar_url + '/samplesheets/api/import/' + project_uuid
+    files = {
+        'file1': (None, tsv_file_i, 'text/plain'),
+        'file2': (None, tsv_file_s, 'text/plain'),
+        'file3': (None, tsv_file_a, 'text/plain'),
+    }
+    response = requests.post(url, files=files, headers=sheet_headers)
+    tsv_file_i.close()
+    tsv_file_s.close()
+    tsv_file_a.close()
+
+.. note::
+
+    Importing partial investigations is not allowed. When importing data as
+    multiple ISA-Tab TSV files, all study and assay files of the investigation
+    must be present or your import will fail.
 
 To ensure your import was successful, you can retrieve investigation information
 via the API. This also returns e.g. the UUIDs for studies and assays:
@@ -119,7 +148,7 @@ via the API. This also returns e.g. the UUIDs for studies and assays:
 .. code-block:: python
 
     url = sodar_url + '/samplesheets/api/investigation/retrieve/' + project_uuid
-    inv_info = requests.get(url, headers=sodar_headers).json()
+    inv_info = requests.get(url, headers=sheet_headers).json()
 
 
 Export Sample Sheets
@@ -132,7 +161,7 @@ providing the TSV data to e.g. parsers for further editing.
 .. code-block:: python
 
     url = sodar_url + '/samplesheets/api/export/json/' + project_uuid
-    response_data = requests.get(url, headers=sodar_headers).json()
+    response_data = requests.get(url, headers=sheet_headers).json()
     print(response_data.keys())
     # dict_keys(['investigation', 'studies', 'assays', 'date_modified'])
 
@@ -167,7 +196,7 @@ the path to the sample repository collection in your project.
 .. code-block:: python
 
     url = sodar_url + '/samplesheets/api/irods/collections/create/' + project_uuid
-    response = requests.post(url, headers=sodar_headers)
+    response = requests.post(url, headers=sheet_headers)
     irods_path = response.json().get('path')
 
 The API request below initiates the process for creating a landing zone. You
@@ -178,7 +207,7 @@ investigation information API endpoint as detailed above.
 
     url = sodar_url + '/landingzones/api/create/' + project_uuid
     data = {'assay': assay_uuid}
-    response = requests.post(url, data=data, headers=sodar_headers)
+    response = requests.post(url, data=data, headers=zone_headers)
     zone_uuid = response.json().get('sodar_uuid')
 
 As with most landing zone operations, the landing zone creation process is
@@ -188,7 +217,7 @@ before proceeding with file uploads:
 .. code-block:: python
 
     url = sodar_url + '/landingzones/api/retrieve/' + zone_uuid
-    response_data = requests.get(url, headers=sodar_headers).json()
+    response_data = requests.get(url, headers=zone_headers).json()
     if response_data.get('status') == 'ACTIVE':
         pass  # OK to proceed
 
@@ -199,7 +228,7 @@ moving process as follows:
 .. code-block:: python
 
     url = sodar_url + '/landingzones/api/submit/move/' + zone_uuid
-    response = requests.post(url, headers=sodar_headers)
+    response = requests.post(url, headers=zone_headers)
 
 Once the landing zone status is returned as ``MOVED``, the landing zone files
 have been moved into the project sample data repository and the zone has been
@@ -208,6 +237,6 @@ deleted.
 .. code-block:: python
 
     url = sodar_url + '/landingzones/api/retrieve/' + zone_uuid
-    response_data = requests.get(url, headers=sodar_headers).json()
+    response_data = requests.get(url, headers=zone_headers).json()
     if response_data.get('status') == 'MOVED':
         pass  # Moving was successful

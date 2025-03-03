@@ -12,6 +12,7 @@ from django.conf import settings
 LOCK_ENABLED = settings.TASKFLOW_LOCK_ENABLED
 LOCK_RETRY_COUNT = settings.TASKFLOW_LOCK_RETRY_COUNT
 LOCK_RETRY_INTERVAL = settings.TASKFLOW_LOCK_RETRY_INTERVAL
+PROJECT_LOCKED_MSG = 'Project is locked by another operation'
 
 
 logger = logging.getLogger('__name__')
@@ -79,7 +80,7 @@ class ProjectLockAPI:
                     return True
                 time.sleep(retry_interval)
         cls._log_status(lock, unlock=False, failed=True)
-        raise LockAcquireException('Project is locked by another operation')
+        raise LockAcquireException(PROJECT_LOCKED_MSG)
 
     @classmethod
     def release(cls, lock):

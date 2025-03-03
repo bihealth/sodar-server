@@ -3,7 +3,11 @@
 from django.urls import reverse
 
 # Projectroles dependency
-from projectroles.plugins import SiteAppPluginPoint, BackendPluginPoint
+from projectroles.plugins import (
+    SiteAppPluginPoint,
+    BackendPluginPoint,
+    PluginObjectLink,
+)
 
 from isatemplates.api import ISATemplateAPI
 from isatemplates.models import CookiecutterISATemplate
@@ -43,24 +47,24 @@ class SiteAppPlugin(SiteAppPluginPoint):
 
     def get_object_link(self, model_str, uuid):
         """
-        Return URL for referring to a object used by the app, along with a
-        label to be shown to the user for linking.
+        Return URL referring to an object used by the app, along with a name to
+        be shown to the user for linking.
 
         :param model_str: Object class (string)
         :param uuid: sodar_uuid of the referred object
-        :return: Dict or None if not found
+        :return: PluginObjectLink or None if not found
         """
         obj = self.get_object(eval(model_str), uuid)
         if not obj:
             return None
         if obj.__class__ == CookiecutterISATemplate:
-            return {
-                'url': reverse(
+            return PluginObjectLink(
+                url=reverse(
                     'isatemplates:detail',
                     kwargs={'cookiecutterisatemplate': obj.sodar_uuid},
                 ),
-                'label': obj.description,
-            }
+                name=obj.description,
+            )
 
     def get_statistics(self):
         """

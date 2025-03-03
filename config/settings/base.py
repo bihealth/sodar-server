@@ -8,6 +8,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
+import itertools
 import os
 import re
 
@@ -61,6 +62,7 @@ THIRD_PARTY_APPS = [
     'markupfield',  # For markdown
     'rest_framework',  # For API views
     'knox',  # For token auth
+    'social_django',  # For OIDC authentication
     'docs',  # For the online user documentation/manual
     'dal',  # For user search combo box
     'dal_select2',
@@ -256,6 +258,8 @@ MEDIA_URL = '/media/'
 # ------------------------------------------------------------------------------
 ROOT_URLCONF = 'config.urls'
 WSGI_APPLICATION = 'config.wsgi.application'
+# Location of root django.contrib.admin URL, use {% url 'admin:index' %}
+ADMIN_URL = 'admin/'
 
 # PASSWORD STORAGE SETTINGS
 # ------------------------------------------------------------------------------
@@ -303,9 +307,12 @@ LOGIN_URL = 'login'
 # SLUGLIFIER
 AUTOSLUG_SLUGIFY_FUNCTION = 'slugify.slugify'
 
-# Location of root django.contrib.admin URL, use {% url 'admin:index' %}
-ADMIN_URL = r'^admin/'
-
+# The age of session cookies in seconds
+SESSION_COOKIE_AGE = env.int('DJANGO_SESSION_COOKIE_AGE', 1209600)
+# Whether to expire the session when the user closes their browser
+SESSION_EXPIRE_AT_BROWSER_CLOSE = env.bool(
+    'DJANGO_SESSION_EXPIRE_AT_BROWSER_CLOSE', False
+)
 
 # Celery
 # ------------------------------------------------------------------------------
@@ -326,6 +333,8 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERYD_TASK_TIME_LIMIT = 5 * 60
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#task-soft-time-limit
 CELERYD_TASK_SOFT_TIME_LIMIT = 60
+# https://docs.celeryq.dev/en/latest/userguide/configuration.html#broker-connection-retry-on-startup
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = False
 CELERY_IMPORTS = [
     'landingzones.tasks_celery',
     'samplesheets.tasks_celery',
@@ -341,6 +350,10 @@ REST_FRAMEWORK = {
         'knox.auth.TokenAuthentication',
     ),
     'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
+    'DEFAULT_PAGINATION_CLASS': (
+        'rest_framework.pagination.PageNumberPagination'
+    ),
+    'PAGE_SIZE': env.int('SODAR_API_PAGE_SIZE', 100),
 }
 
 
@@ -355,7 +368,6 @@ LDAP_DEBUG = env.bool('LDAP_DEBUG', False)
 LDAP_ALT_DOMAINS = env.list('LDAP_ALT_DOMAINS', None, default=[])
 
 if ENABLE_LDAP:
-    import itertools
     import ldap
     from django_auth_ldap.config import LDAPSearch
 
@@ -384,8 +396,9 @@ if ENABLE_LDAP:
     AUTH_LDAP_USER_FILTER = env.str(
         'AUTH_LDAP_USER_FILTER', '(sAMAccountName=%(user)s)'
     )
+    AUTH_LDAP_USER_SEARCH_BASE = env.str('AUTH_LDAP_USER_SEARCH_BASE', None)
     AUTH_LDAP_USER_SEARCH = LDAPSearch(
-        env.str('AUTH_LDAP_USER_SEARCH_BASE', None),
+        AUTH_LDAP_USER_SEARCH_BASE,
         ldap.SCOPE_SUBTREE,
         AUTH_LDAP_USER_FILTER,
     )
@@ -417,8 +430,11 @@ if ENABLE_LDAP:
         AUTH_LDAP2_USER_FILTER = env.str(
             'AUTH_LDAP2_USER_FILTER', '(sAMAccountName=%(user)s)'
         )
+        AUTH_LDAP2_USER_SEARCH_BASE = env.str(
+            'AUTH_LDAP2_USER_SEARCH_BASE', None
+        )
         AUTH_LDAP2_USER_SEARCH = LDAPSearch(
-            env.str('AUTH_LDAP2_USER_SEARCH_BASE', None),
+            AUTH_LDAP2_USER_SEARCH_BASE,
             ldap.SCOPE_SUBTREE,
             AUTH_LDAP2_USER_FILTER,
         )
@@ -435,79 +451,40 @@ if ENABLE_LDAP:
         )
 
 
-# SAML configuration
+# OpenID Connect (OIDC) configuration
 # ------------------------------------------------------------------------------
 
-ENABLE_SAML = env.bool('ENABLE_SAML', False)
-SAML2_AUTH = {
-    # Required setting
-    # Pysaml2 Saml client settings
-    # See: https://pysaml2.readthedocs.io/en/latest/howto/config.html
-    'SAML_CLIENT_SETTINGS': {
-        # Optional entity ID string to be passed in the 'Issuer' element of
-        # authn request, if required by the IDP.
-        'entityid': env.str('SAML_CLIENT_ENTITY_ID', 'SODAR'),
-        'entitybaseurl': env.str(
-            'SAML_CLIENT_ENTITY_URL', 'https://localhost:8000'
-        ),
-        # The auto(dynamic) metadata configuration URL of SAML2
-        'metadata': {
-            'local': [
-                env.str('SAML_CLIENT_METADATA_FILE', 'metadata.xml'),
-            ],
-        },
-        'service': {
-            'sp': {
-                'idp': env.str(
-                    'SAML_CLIENT_IPD',
-                    'https://sso.hpc.bihealth.org/auth/realms/cubi',
-                ),
-                # Keycloak expects client signature
-                'authn_requests_signed': 'true',
-                # Enforce POST binding which is required by keycloak
-                'binding': 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST',
-            },
-        },
-        'key_file': env.str('SAML_CLIENT_KEY_FILE', 'key.pem'),
-        'cert_file': env.str('SAML_CLIENT_CERT_FILE', 'cert.pem'),
-        'xmlsec_binary': env.str('SAML_CLIENT_XMLSEC1', '/usr/bin/xmlsec1'),
-        'encryption_keypairs': [
-            {
-                'key_file': env.str('SAML_CLIENT_KEY_FILE', 'key.pem'),
-                'cert_file': env.str('SAML_CLIENT_CERT_FILE', 'cert.pem'),
-            }
-        ],
-    },
-    # Custom target redirect URL after the user get logged in.
-    # Defaults to /admin if not set. This setting will be overwritten if you
-    # have parameter ?next= specificed in the login URL.
-    'DEFAULT_NEXT_URL': '/',
-    # # Optional settings below
-    # 'NEW_USER_PROFILE': {
-    #     'USER_GROUPS': [],  # The default group name when a new user logs in
-    #     'ACTIVE_STATUS': True,  # The default active status for new users
-    #     'STAFF_STATUS': True,  # The staff status for new users
-    #     'SUPERUSER_STATUS': False,  # The superuser status for new users
-    # },
-    'ATTRIBUTES_MAP': env.dict(
-        'SAML_ATTRIBUTES_MAP',
-        default={
-            # Change values to corresponding SAML2 userprofile attributes.
-            'email': 'Email',
-            'username': 'UserName',
-            'first_name': 'FirstName',
-            'last_name': 'LastName',
-        },
-    ),
-    # 'TRIGGER': {
-    #     'FIND_USER': 'path.to.your.find.user.hook.method',
-    #     'NEW_USER': 'path.to.your.new.user.hook.method',
-    #     'CREATE_USER': 'path.to.your.create.user.hook.method',
-    #     'BEFORE_LOGIN': 'path.to.your.login.hook.method',
-    # },
-    # Custom URL to validate incoming SAML requests against
-    # 'ASSERTION_URL': 'https://your.url.here',
-}
+ENABLE_OIDC = env.bool('ENABLE_OIDC', False)
+
+if ENABLE_OIDC:
+    AUTHENTICATION_BACKENDS = tuple(
+        itertools.chain(
+            ('social_core.backends.open_id_connect.OpenIdConnectAuth',),
+            AUTHENTICATION_BACKENDS,
+        )
+    )
+    TEMPLATES[0]['OPTIONS']['context_processors'] += [
+        'social_django.context_processors.backends',
+        'social_django.context_processors.login_redirect',
+    ]
+    SOCIAL_AUTH_JSONFIELD_ENABLED = True
+    SOCIAL_AUTH_JSONFIELD_CUSTOM = 'django.db.models.JSONField'
+    SOCIAL_AUTH_USER_MODEL = AUTH_USER_MODEL
+    SOCIAL_AUTH_ADMIN_USER_SEARCH_FIELDS = [
+        'username',
+        'name',
+        'first_name',
+        'last_name',
+        'email',
+    ]
+    SOCIAL_AUTH_OIDC_OIDC_ENDPOINT = env.str(
+        'SOCIAL_AUTH_OIDC_OIDC_ENDPOINT', None
+    )
+    SOCIAL_AUTH_OIDC_KEY = env.str('SOCIAL_AUTH_OIDC_KEY', 'CHANGEME')
+    SOCIAL_AUTH_OIDC_SECRET = env.str('SOCIAL_AUTH_OIDC_SECRET', 'CHANGEME')
+    SOCIAL_AUTH_OIDC_USERNAME_KEY = env.str(
+        'SOCIAL_AUTH_OIDC_USERNAME_KEY', 'username'
+    )
 
 
 # Logging
@@ -606,37 +583,11 @@ ENABLED_BACKEND_PLUGINS = env.list(
 
 # General site settings
 SITE_TITLE = 'SODAR'
-SITE_SUBTITLE = env.str('SITE_SUBTITLE', 'Beta')
+SITE_SUBTITLE = env.str('SITE_SUBTITLE', None)
 SITE_INSTANCE_TITLE = env.str('SITE_INSTANCE_TITLE', 'CUBI SODAR')
 
 
 # General API settings
-SODAR_API_DEFAULT_VERSION = '0.15.1'
-SODAR_API_ALLOWED_VERSIONS = [
-    '0.7.0',
-    '0.7.1',
-    '0.8.0',
-    '0.9.0',
-    '0.10.0',
-    '0.10.1',
-    '0.11.0',
-    '0.11.1',
-    '0.11.2',
-    '0.11.3',
-    '0.12.0',
-    '0.12.1',
-    '0.13.0',
-    '0.13.1',
-    '0.13.2',
-    '0.13.3',
-    '0.13.4',
-    '0.14.0',
-    '0.14.1',
-    '0.14.2',
-    '0.15.0',
-    '0.15.1',
-]
-SODAR_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar+json'
 SODAR_API_DEFAULT_HOST = env.url(
     'SODAR_API_DEFAULT_HOST', 'http://127.0.0.1:8000'
 )
@@ -802,7 +753,6 @@ SHEETS_ONTOLOGY_URL_TEMPLATE = env.str(
 SHEETS_ONTOLOGY_URL_SKIP = env.list(
     'SHEETS_ONTOLOGY_URL_SKIP', default=['bioontology.org', 'hpo.jax.org']
 )
-
 # Labels and URL patterns for external link columns
 # Provide custom labels via a JSON file via SHEETS_EXTERNAL_LINK_PATH.
 # Each entry should have a "label" and an optional "url".
@@ -811,10 +761,8 @@ SHEETS_EXTERNAL_LINK_PATH = env.str(
     'SHEETS_EXTERNAL_LINK_PATH',
     os.path.join(ROOT_DIR, 'samplesheets/config/ext_links.json'),
 )
-
 # Remote sample sheet sync interval in minutes
 SHEETS_SYNC_INTERVAL = env.int('SHEETS_SYNC_INTERVAL', 5)
-
 # BAM/CRAM file path glob patterns to omit from study shortcuts and IGV sessions
 SHEETS_IGV_OMIT_BAM = env.list(
     'SHEETS_IGV_OMIT_BAM', default=['*dragen_evidence.bam']
@@ -823,6 +771,10 @@ SHEETS_IGV_OMIT_BAM = env.list(
 SHEETS_IGV_OMIT_VCF = env.list(
     'SHEETS_IGV_OMIT_VCF',
     default=['*cnv.vcf.gz', '*ploidy.vcf.gz', '*sv.vcf.gz'],
+)
+# Restrict SampleDataFileExistsAPIView access to users with project roles
+SHEETS_API_FILE_EXISTS_RESTRICT = env.bool(
+    'SHEETS_API_FILE_EXISTS_RESTRICT', False
 )
 
 # Landingzones app settings

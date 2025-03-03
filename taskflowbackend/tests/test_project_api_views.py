@@ -12,7 +12,10 @@ from django.urls import reverse
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import Project, RoleAssignment, SODAR_CONSTANTS
 
-from projectroles.views_api import CORE_API_MEDIA_TYPE, CORE_API_DEFAULT_VERSION
+from projectroles.views_api import (
+    PROJECTROLES_API_MEDIA_TYPE,
+    PROJECTROLES_API_DEFAULT_VERSION,
+)
 
 from taskflowbackend.tests.base import TaskflowAPIViewTestBase
 
@@ -47,8 +50,8 @@ UPDATED_README = 'Updated readme'
 class CoreTaskflowAPITestBase(TaskflowAPIViewTestBase):
     """Override of TestTaskflowAPIBase for SODAR Core API views"""
 
-    media_type = CORE_API_MEDIA_TYPE
-    api_version = CORE_API_DEFAULT_VERSION
+    media_type = PROJECTROLES_API_MEDIA_TYPE
+    api_version = PROJECTROLES_API_DEFAULT_VERSION
 
 
 class TestProjectCreateAPIView(CoreTaskflowAPITestBase):

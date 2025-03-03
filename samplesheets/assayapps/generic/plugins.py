@@ -1,9 +1,11 @@
 """Assay app plugin for samplesheets"""
 
 import re
-from django.conf import settings
 
 from altamisa.constants import table_headers as th
+
+from django.conf import settings
+
 from samplesheets.plugins import SampleSheetAssayPluginPoint
 from samplesheets.rendering import SIMPLE_LINK_TEMPLATE
 from samplesheets.utils import get_top_header
@@ -16,6 +18,7 @@ RESULTS_COMMENT = 'SODAR Assay Link ResultsReports'
 MISC_FILES_COMMENT = 'SODAR Assay Link MiscFiles'
 DATA_COMMENT_PREFIX = 'SODAR Assay Row Path'
 DATA_LINK_COMMENT = 'SODAR Assay Link Row'
+LINK_NAME_HEADERS = th.DATA_FILE_HEADERS + th.MATERIAL_NAME_HEADERS
 
 
 class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
@@ -58,19 +61,11 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         :param target_cols: List of column names.
         :param url: Base URL for link target.
         """
-        # Do nothing if not string or link
-        if not isinstance(cell['value'], str) or re.search(
-            '.+ <.*>', cell['value']
-        ):
-            return True
-        # Special case for Material Names
+        # Special case for material names
         if (
-            (
-                top_header['value']
-                in th.DATA_FILE_HEADERS + th.MATERIAL_NAME_HEADERS
-            )
+            top_header['value'] in LINK_NAME_HEADERS
             and top_header['value'].lower() in target_cols
-            and (header['value'] == 'Name')
+            and (header['value'].lower() == 'name')
         ):
             cell['link'] = f"{url}/{cell['value']}"
             return True
@@ -81,6 +76,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                 url=f"{url}/{cell['value']}",
             )
             return True
+        return False
 
     @classmethod
     def _get_col_value(cls, target_col, row, table):
@@ -125,13 +121,11 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             for name, value in sorted(assay.comments.items())
             if name.startswith(DATA_COMMENT_PREFIX)
         ]
-
         data_collections = []
         for column_name in data_columns:
             col_value = self._get_col_value(column_name, row, table)
             if col_value:
                 data_collections.append(col_value)
-
         # Build iRODS path from list and stop at first None value
         if data_collections:
             data_path = '/' + '/'.join(data_collections)
@@ -167,7 +161,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         data_cols = assay.comments.get(DATA_LINK_COMMENT)
         if data_cols:
             data_cols = data_cols.lower().split(';')
-            if table['irods_paths'][index]:
+            if 'irods_paths' in table and table['irods_paths'][index]:
                 row_path = table['irods_paths'][index]['path']
             else:
                 row_path = self.get_row_path(row, table, assay, assay_path)
@@ -177,29 +171,33 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             if not top_header or i >= th_colspan:
                 top_header = get_top_header(table, i)
                 th_colspan += top_header['colspan']
-
+            # Skip if value is empty, not a string or already contains a link
+            if (
+                not row[i]['value']
+                or not isinstance(row[i]['value'], str)
+                or re.search('.+ <.*>', row[i]['value'])
+            ):
+                continue
             # TODO: Check if two comments reference the same column header?
-            # Create Results links
-            if results_cols:
-                if self._link_from_comment(
-                    row[i],
-                    header,
-                    top_header,
-                    results_cols,
-                    f'{base_url}/{RESULTS_COLL}',
-                ):
-                    continue
-            # Create MiscFiles links
-            if misc_cols:
-                if self._link_from_comment(
-                    row[i],
-                    header,
-                    top_header,
-                    misc_cols,
-                    f'{base_url}/{MISC_FILES_COLL}',
-                ):
-                    continue
-            # Create DataCollection links
+            # Create Results link
+            if results_cols and self._link_from_comment(
+                row[i],
+                header,
+                top_header,
+                results_cols,
+                f'{base_url}/{RESULTS_COLL}',
+            ):
+                continue
+            # Create MiscFiles link
+            if misc_cols and self._link_from_comment(
+                row[i],
+                header,
+                top_header,
+                misc_cols,
+                f'{base_url}/{MISC_FILES_COLL}',
+            ):
+                continue
+            # Create DataCollection link
             if data_cols:
                 self._link_from_comment(
                     row[i],

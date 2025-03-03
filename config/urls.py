@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.conf.urls import include, url
+from django.conf.urls import include
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
@@ -26,7 +26,7 @@ if settings.ENABLE_SENTRY and not settings.DEBUG:
 urlpatterns = [
     path(route='', view=HomeView.as_view(), name='home'),
     # Django Admin, use {% url 'admin:index' %}
-    url(settings.ADMIN_URL, admin.site.urls),
+    path(settings.ADMIN_URL, admin.site.urls),
     # Login and logout
     path(
         route='login/',
@@ -40,6 +40,8 @@ urlpatterns = [
     path('api/auth/', include('knox.urls')),
     # Iconify SVG icons
     path('icons/', include('dj_iconify.urls')),
+    # Social auth for OIDC support
+    path('social/', include('social_django.urls')),
     # General site apps
     path('alerts/adm/', include('adminalerts.urls')),
     path('alerts/app/', include('appalerts.urls')),

@@ -3,6 +3,8 @@
 import json
 import logging
 
+from rest_framework.exceptions import APIException
+
 # Landingzones dependency
 from landingzones.constants import (
     ZONE_STATUS_NOT_CREATED,
@@ -17,7 +19,7 @@ from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 
 from taskflowbackend import flows
-from taskflowbackend.lock_api import ProjectLockAPI
+from taskflowbackend.lock_api import ProjectLockAPI, PROJECT_LOCKED_MSG
 from taskflowbackend.tasks_celery import submit_flow_task
 
 
@@ -38,6 +40,9 @@ class TaskflowAPI:
 
     class FlowSubmitException(Exception):
         """SODAR Taskflow submission exception"""
+
+    #: Exception message for locked project
+    project_locked_msg = PROJECT_LOCKED_MSG
 
     @classmethod
     def _raise_flow_exception(cls, ex_msg, tl_event=None, zone=None):
@@ -87,6 +92,27 @@ class TaskflowAPI:
             lock_zone,
         )
 
+    # HACK for returning 503 if project is locked (see #1505, #1847)
+    @classmethod
+    def raise_submit_api_exception(
+        cls, msg_prefix, ex, default_class=APIException
+    ):
+        """
+        Raise zone submit API exception. Selects appropriate API response based
+        on exception type.
+
+        :param msg_prefix: API response prefix
+        :param ex: Exception object
+        :param default_class: Default API exception class to be returned
+        :raises: Exception of varying type
+        """
+        msg = '{}{}'.format(msg_prefix, ex)
+        if PROJECT_LOCKED_MSG in msg:
+            ex = APIException(msg)
+            ex.status_code = 503
+            raise ex
+        raise default_class(msg)
+
     @classmethod
     def get_flow(
         cls,
@@ -105,7 +131,7 @@ class TaskflowAPI:
         :param flow_name: Name of flow (string)
         :param flow_data: Flow parameters (dict)
         :param async_mode: Set up flow asynchronously if True (boolean)
-        :param tl_event: ProjectEvent object for timeline updating or None
+        :param tl_event: TimelineEvent object for timeline updating or None
         """
         flow_cls = flows.get_flow(flow_name)
         if not flow_cls:
@@ -142,8 +168,8 @@ class TaskflowAPI:
         :param project: Project object
         :param force_fail: Force failure (boolean, for testing)
         :param async_mode: Submit in async mode (boolean, default=False)
-        :param tl_event: Timeline ProjectEvent object or None. Event status will
-                         be updated if the flow is run in async mode
+        :param tl_event: TimelineEvent object or None. Event status will be
+                         updated if the flow is run in async mode
         :return: Dict
         """
         flow_result = None
@@ -235,7 +261,7 @@ class TaskflowAPI:
         :param flow_data: Input data for flow execution (dict, must be JSON
                           serializable)
         :param async_mode: Run flow asynchronously (boolean, default False)
-        :param tl_event: Corresponding timeline ProjectEvent (optional)
+        :param tl_event: Corresponding TimelineEvent (optional)
         :param force_fail: Make flow fail on purpose (boolean, default False)
         :return: Boolean
         :raise: FlowSubmitException if submission fails

@@ -130,14 +130,17 @@ class IrodsConfigView(
         irods_env = self.get_irods_client_env(request.user, irods_backend)
         env_json = json.dumps(irods_env, indent=2)
 
-        # Create zip archive
-        io_buf = io.BytesIO()
-        zip_file = zipfile.ZipFile(io_buf, 'w')
-        # Write environment file
-        zip_file.writestr('irods_environment.json', env_json)
-
-        # Write cert file if it exists
-        if settings.IRODS_CERT_PATH:
+        # If no client side cert file is provided, return JSON file directly
+        if not settings.IRODS_CERT_PATH:
+            response = HttpResponse(env_json, content_type='application/json')
+            attach_name = 'irods_environment.json'
+        # Else return environment JSON file and cert as zip archive
+        else:
+            io_buf = io.BytesIO()
+            zip_file = zipfile.ZipFile(io_buf, 'w')
+            # Write environment file
+            zip_file.writestr('irods_environment.json', env_json)
+            # Write cert file
             try:
                 with open(settings.IRODS_CERT_PATH) as cert_file:
                     cert_file_name = irods_env['irods_ssl_certificate_file']
@@ -149,13 +152,12 @@ class IrodsConfigView(
                         settings.IRODS_CERT_PATH
                     )
                 )
-
-        zip_file.close()
-
-        response = HttpResponse(
-            io_buf.getvalue(), content_type='application/zip'
-        )
+            zip_file.close()
+            response = HttpResponse(
+                io_buf.getvalue(), content_type='application/zip'
+            )
+            attach_name = 'irods_config.zip'
         response['Content-Disposition'] = 'attachment; filename={}'.format(
-            'irods_config.zip'
+            attach_name
         )
         return response

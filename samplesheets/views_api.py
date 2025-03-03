@@ -2,6 +2,7 @@
 
 import logging
 import re
+import sys
 
 from irods.exception import CAT_NO_ROWS_FOUND
 from irods.models import DataObject
@@ -25,17 +26,26 @@ from rest_framework.generics import (
     UpdateAPIView,
 )
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
+from rest_framework.schemas.openapi import AutoSchema
+from rest_framework.versioning import AcceptHeaderVersioning
 from rest_framework.views import APIView
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.models import RemoteSite
+from projectroles.models import (
+    RoleAssignment,
+    RemoteSite,
+    SODAR_CONSTANTS,
+    ROLE_RANKING,
+)
 from projectroles.plugins import get_backend_api
 from projectroles.views_api import (
     SODARAPIBaseMixin,
     SODARAPIBaseProjectMixin,
     SODARAPIGenericProjectMixin,
+    SODARPageNumberPagination,
 )
 from projectroles.utils import build_secret
 
@@ -70,19 +80,50 @@ logger = logging.getLogger(__name__)
 table_builder = SampleSheetTableBuilder()
 
 
+# SODAR constants
+PROJECT_ROLE_GUEST = SODAR_CONSTANTS['PROJECT_ROLE_GUEST']
+
+# Local constants
+SAMPLESHEETS_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar.samplesheets+json'
+SAMPLESHEETS_API_ALLOWED_VERSIONS = ['1.0']
+SAMPLESHEETS_API_DEFAULT_VERSION = '1.0'
 MD5_RE = re.compile(r'([a-fA-F\d]{32})')
 APP_NAME = 'samplesheets'
 IRODS_QUERY_ERROR_MSG = 'Exception querying iRODS objects'
 IRODS_REQUEST_EX_MSG = 'iRODS data request failed'
 IRODS_TICKET_EX_MSG = 'iRODS access ticket failed'
 IRODS_TICKET_NO_UPDATE_FIELDS_MSG = 'No fields to update'
+FILE_EXISTS_RESTRICT_MSG = (
+    'File exist query access restricted: user does not have guest access or '
+    'above in any project (SHEETS_API_FILE_EXISTS_RESTRICT=True)'
+)
+
+
+# Base Classes and Mixins ------------------------------------------------------
+
+
+class SamplesheetsAPIVersioningMixin:
+    """
+    Samplesheets API view versioning mixin for overriding media type and
+    accepted versions.
+    """
+
+    class SamplesheetsAPIRenderer(JSONRenderer):
+        media_type = SAMPLESHEETS_API_MEDIA_TYPE
+
+    class SamplesheetsAPIVersioning(AcceptHeaderVersioning):
+        allowed_versions = SAMPLESHEETS_API_ALLOWED_VERSIONS
+        default_version = SAMPLESHEETS_API_DEFAULT_VERSION
+
+    renderer_classes = [SamplesheetsAPIRenderer]
+    versioning_class = SamplesheetsAPIVersioning
 
 
 # API Views --------------------------------------------------------------------
 
 
 class InvestigationRetrieveAPIView(
-    SODARAPIGenericProjectMixin, RetrieveAPIView
+    SamplesheetsAPIVersioningMixin, SODARAPIGenericProjectMixin, RetrieveAPIView
 ):
     """
     Retrieve metadata of an investigation with its studies and assays.
@@ -116,10 +157,15 @@ class InvestigationRetrieveAPIView(
 
 
 class IrodsCollsCreateAPIView(
-    IrodsCollsCreateViewMixin, SODARAPIBaseProjectMixin, APIView
+    IrodsCollsCreateViewMixin,
+    SamplesheetsAPIVersioningMixin,
+    SODARAPIBaseProjectMixin,
+    APIView,
 ):
     """
     Create iRODS collections for a project.
+
+    Returns ``503`` if the project is currently locked by another operation.
 
     **URL:** ``/samplesheets/api/irods/collections/create/{Project.sodar_uuid}``
 
@@ -136,6 +182,7 @@ class IrodsCollsCreateAPIView(
     def post(self, request, *args, **kwargs):
         """POST request for creating iRODS collections"""
         irods_backend = get_backend_api('omics_irods')
+        taskflow = get_backend_api('taskflow')
         ex_msg = 'Creating iRODS collections failed: '
         investigation = Investigation.objects.filter(
             project__sodar_uuid=self.kwargs.get('project'), active=True
@@ -151,6 +198,8 @@ class IrodsCollsCreateAPIView(
         try:
             self.create_colls(investigation, request)
         except Exception as ex:
+            if taskflow:
+                taskflow.raise_submit_api_exception(ex_msg, ex)
             raise APIException('{}{}'.format(ex_msg, ex))
         return Response(
             {
@@ -162,7 +211,10 @@ class IrodsCollsCreateAPIView(
 
 
 class SheetISAExportAPIView(
-    SheetISAExportMixin, SODARAPIBaseProjectMixin, APIView
+    SheetISAExportMixin,
+    SamplesheetsAPIVersioningMixin,
+    SODARAPIBaseProjectMixin,
+    APIView,
 ):
     """
     Export sample sheets as ISA-Tab TSV files, either packed in a zip archive or
@@ -175,8 +227,15 @@ class SheetISAExportAPIView(
     **Methods:** ``GET``
     """
 
+    class SheetISAExportSchema(AutoSchema):
+        def get_operation_id_base(self, path, method, action):
+            if '/zip/' in path:
+                return 'retrieveSheetISAExportZip'
+            return 'retrieveSheetISAExportJSON'
+
     http_method_names = ['get']
     permission_required = 'samplesheets.export_sheet'
+    schema = SheetISAExportSchema()
 
     def get(self, request, *args, **kwargs):
         project = self.get_project()
@@ -197,7 +256,12 @@ class SheetISAExportAPIView(
             raise APIException('Unable to export ISA-Tab: {}'.format(ex))
 
 
-class SheetImportAPIView(SheetImportMixin, SODARAPIBaseProjectMixin, APIView):
+class SheetImportAPIView(
+    SheetImportMixin,
+    SamplesheetsAPIVersioningMixin,
+    SODARAPIBaseProjectMixin,
+    APIView,
+):
     """
     Upload sample sheet as separate ISA-Tab TSV files or a zip archive. Will
     replace existing sheets if valid.
@@ -315,7 +379,7 @@ class SheetImportAPIView(SheetImportMixin, SODARAPIBaseProjectMixin, APIView):
 
 
 class IrodsAccessTicketRetrieveAPIView(
-    SODARAPIGenericProjectMixin, RetrieveAPIView
+    SamplesheetsAPIVersioningMixin, SODARAPIGenericProjectMixin, RetrieveAPIView
 ):
     """
     Retrieve an iRODS access ticket for a project.
@@ -333,7 +397,7 @@ class IrodsAccessTicketRetrieveAPIView(
     - ``study``: Study UUID (string)
     - ``date_created``: Creation datetime (YYYY-MM-DDThh:mm:ssZ)
     - ``date_expires``: Expiry datetime (YYYY-MM-DDThh:mm:ssZ or null)
-    - ``user``: User who created the request (SODARUserSerializer dict)
+    - ``user``: UUID of user who created the request (string)
     - ``is_active``: Whether the request is currently active (boolean)
     - ``sodar_uuid``: IrodsAccessTicket UUID (string)
     """
@@ -341,13 +405,20 @@ class IrodsAccessTicketRetrieveAPIView(
     lookup_field = 'sodar_uuid'
     lookup_url_kwarg = 'irodsaccessticket'
     permission_required = 'samplesheets.edit_sheet'
+    schema = AutoSchema(operation_id_base='retrieveIrodsAccessTicket')
     serializer_class = IrodsAccessTicketSerializer
     queryset_project_field = 'study__investigation__project'
 
 
-class IrodsAccessTicketListAPIView(SODARAPIBaseProjectMixin, ListAPIView):
+class IrodsAccessTicketListAPIView(
+    SamplesheetsAPIVersioningMixin, SODARAPIBaseProjectMixin, ListAPIView
+):
     """
     List iRODS access tickets for a project.
+
+    Supports optional pagination for listing by providing the ``page`` query
+    string. This will return results in the Django Rest Framework
+    ``PageNumberPagination`` format.
 
     **URL:** ``/samplesheets/api/irods/ticket/list/{Project.sodar_uuid}``
 
@@ -356,11 +427,14 @@ class IrodsAccessTicketListAPIView(SODARAPIBaseProjectMixin, ListAPIView):
     **Query parameters:**
 
     - ``active`` (boolean, optional, default=false)
+    - ``page``: Page number for paginated results (int, optional)
 
     **Returns:** List of ticket dicts, see ``IrodsAccessTicketRetrieveAPIView``
     """
 
+    pagination_class = SODARPageNumberPagination
     permission_required = 'samplesheets.edit_sheet'
+    schema = AutoSchema(operation_id_base='listIrodsAccessTicket')
     serializer_class = IrodsAccessTicketSerializer
 
     def get_queryset(self):
@@ -376,7 +450,10 @@ class IrodsAccessTicketListAPIView(SODARAPIBaseProjectMixin, ListAPIView):
 
 
 class IrodsAccessTicketCreateAPIView(
-    IrodsAccessTicketModifyMixin, SODARAPIGenericProjectMixin, CreateAPIView
+    IrodsAccessTicketModifyMixin,
+    SamplesheetsAPIVersioningMixin,
+    SODARAPIGenericProjectMixin,
+    CreateAPIView,
 ):
     """
     Create an iRODS access ticket for a project.
@@ -399,6 +476,8 @@ class IrodsAccessTicketCreateAPIView(
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
+        if sys.argv[1:2] == ['generateschema']:
+            return context
         context['project'] = self.get_project()
         context['user'] = self.request.user
         return context
@@ -429,7 +508,10 @@ class IrodsAccessTicketCreateAPIView(
 
 
 class IrodsAccessTicketUpdateAPIView(
-    IrodsAccessTicketModifyMixin, SODARAPIGenericProjectMixin, UpdateAPIView
+    IrodsAccessTicketModifyMixin,
+    SamplesheetsAPIVersioningMixin,
+    SODARAPIGenericProjectMixin,
+    UpdateAPIView,
 ):
     """
     Update an iRODS access ticket for a project.
@@ -463,7 +545,10 @@ class IrodsAccessTicketUpdateAPIView(
 
 
 class IrodsAccessTicketDestroyAPIView(
-    IrodsAccessTicketModifyMixin, SODARAPIGenericProjectMixin, DestroyAPIView
+    IrodsAccessTicketModifyMixin,
+    SamplesheetsAPIVersioningMixin,
+    SODARAPIGenericProjectMixin,
+    DestroyAPIView,
 ):
     """
     Delete an iRODS access ticket.
@@ -497,7 +582,7 @@ class IrodsAccessTicketDestroyAPIView(
 
 
 class IrodsDataRequestRetrieveAPIView(
-    SODARAPIGenericProjectMixin, RetrieveAPIView
+    SamplesheetsAPIVersioningMixin, SODARAPIGenericProjectMixin, RetrieveAPIView
 ):
     """
     Retrieve a iRODS data request.
@@ -512,7 +597,7 @@ class IrodsDataRequestRetrieveAPIView(
     - ``action``: Request action (string)
     - ``path``: iRODS path to object or collection (string)
     - ``target_path``: Target path (string, currently unused)
-    - ``user``: User initiating request (dict)
+    - ``user``: UUID of user initiating request (string)
     - ``status``: Request status (string)
     - ``status_info``: Request status info (string)
     - ``description``: Request description (string)
@@ -523,10 +608,13 @@ class IrodsDataRequestRetrieveAPIView(
     lookup_field = 'sodar_uuid'
     lookup_url_kwarg = 'irodsdatarequest'
     permission_required = 'samplesheets.edit_sheet'
+    schema = AutoSchema(operation_id_base='retrieveIrodsDataRequest')
     serializer_class = IrodsDataRequestSerializer
 
 
-class IrodsDataRequestListAPIView(SODARAPIBaseProjectMixin, ListAPIView):
+class IrodsDataRequestListAPIView(
+    SamplesheetsAPIVersioningMixin, SODARAPIBaseProjectMixin, ListAPIView
+):
     """
     List the iRODS data requests for a project.
 
@@ -534,14 +622,24 @@ class IrodsDataRequestListAPIView(SODARAPIBaseProjectMixin, ListAPIView):
     all requests with the status of ACTIVE or FAILED. If called as a
     contributor, returns the user's own requests regardless of the state.
 
+    Supports optional pagination for listing by providing the ``page`` query
+    string. This will return results in the Django Rest Framework
+    ``PageNumberPagination`` format.
+
     **URL:** ``/samplesheets/api/irods/requests/{Project.sodar_uuid}``
 
     **Methods:** ``GET``
 
+    **Query parameters:**
+
+    - ``page``: Page number for paginated results (int, optional)
+
     **Returns:** List of iRODS data requests (list of dicts)
     """
 
+    pagination_class = SODARPageNumberPagination
     permission_required = 'samplesheets.edit_sheet'
+    schema = AutoSchema(operation_id_base='listIrodsDataRequest')
     serializer_class = IrodsDataRequestSerializer
 
     def get_queryset(self):
@@ -561,7 +659,10 @@ class IrodsDataRequestListAPIView(SODARAPIBaseProjectMixin, ListAPIView):
 
 
 class IrodsDataRequestCreateAPIView(
-    IrodsDataRequestModifyMixin, SODARAPIGenericProjectMixin, CreateAPIView
+    IrodsDataRequestModifyMixin,
+    SamplesheetsAPIVersioningMixin,
+    SODARAPIGenericProjectMixin,
+    CreateAPIView,
 ):
     """
     Create an iRODS delete request for a project.
@@ -592,7 +693,10 @@ class IrodsDataRequestCreateAPIView(
 
 
 class IrodsDataRequestUpdateAPIView(
-    IrodsDataRequestModifyMixin, SODARAPIGenericProjectMixin, UpdateAPIView
+    IrodsDataRequestModifyMixin,
+    SamplesheetsAPIVersioningMixin,
+    SODARAPIGenericProjectMixin,
+    UpdateAPIView,
 ):
     """
     Update an iRODS data request for a project.
@@ -622,7 +726,10 @@ class IrodsDataRequestUpdateAPIView(
 
 
 class IrodsDataRequestDestroyAPIView(
-    IrodsDataRequestModifyMixin, SODARAPIGenericProjectMixin, DestroyAPIView
+    IrodsDataRequestModifyMixin,
+    SamplesheetsAPIVersioningMixin,
+    SODARAPIGenericProjectMixin,
+    DestroyAPIView,
 ):
     """
     Delete an iRODS data request object.
@@ -651,13 +758,18 @@ class IrodsDataRequestDestroyAPIView(
 
 
 class IrodsDataRequestAcceptAPIView(
-    IrodsDataRequestModifyMixin, SODARAPIBaseProjectMixin, APIView
+    IrodsDataRequestModifyMixin,
+    SamplesheetsAPIVersioningMixin,
+    SODARAPIBaseProjectMixin,
+    APIView,
 ):
     """
     Accept an iRODS data request for a project.
 
     Accepting will delete the iRODS collection or data object targeted by the
-    request. This action can not  be undone.
+    request. This action can not be undone.
+
+    Returns ``503`` if the project is currently locked by another operation.
 
     **URL:** ``/samplesheets/api/irods/request/accept/{IrodsDataRequest.sodar_uuid}``
 
@@ -687,16 +799,20 @@ class IrodsDataRequestAcceptAPIView(
                 app_alerts=app_alerts,
             )
         except Exception as ex:
-            raise ValidationError(
-                '{} {}'.format('Accepting ' + IRODS_REQUEST_EX_MSG + ':', ex)
-            )
+            ex_msg = 'Accepting ' + IRODS_REQUEST_EX_MSG + ': '
+            if taskflow:
+                taskflow.raise_submit_api_exception(ex_msg, ex, ValidationError)
+            raise ValidationError('{}{}'.format(ex_msg, ex))
         return Response(
             {'detail': 'iRODS data request accepted'}, status=status.HTTP_200_OK
         )
 
 
 class IrodsDataRequestRejectAPIView(
-    IrodsDataRequestModifyMixin, SODARAPIBaseProjectMixin, APIView
+    IrodsDataRequestModifyMixin,
+    SamplesheetsAPIVersioningMixin,
+    SODARAPIBaseProjectMixin,
+    APIView,
 ):
     """
     Reject an iRODS data request for a project.
@@ -738,10 +854,16 @@ class IrodsDataRequestRejectAPIView(
         )
 
 
-class SampleDataFileExistsAPIView(SODARAPIBaseMixin, APIView):
+class SampleDataFileExistsAPIView(
+    SamplesheetsAPIVersioningMixin, SODARAPIBaseMixin, APIView
+):
     """
     Return status of data object existing in SODAR iRODS by MD5 checksum.
     Includes all projects in search regardless of user permissions.
+
+    If ``SHEETS_API_FILE_EXISTS_RESTRICT`` is set True on the server, this view
+    is only accessible by users who have a guest role or above in at least one
+    category or project.
 
     **URL:** ``/samplesheets/api/file/exists``
 
@@ -761,6 +883,16 @@ class SampleDataFileExistsAPIView(SODARAPIBaseMixin, APIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, *args, **kwargs):
+        if (
+            settings.SHEETS_API_FILE_EXISTS_RESTRICT
+            and not request.user.is_superuser
+        ):
+            roles = RoleAssignment.objects.filter(
+                user=request.user,
+                role__rank__lte=ROLE_RANKING[PROJECT_ROLE_GUEST],
+            )
+            if roles.count() == 0:
+                raise PermissionDenied(FILE_EXISTS_RESTRICT_MSG)
         if not settings.ENABLE_IRODS:
             raise APIException('iRODS not enabled')
         irods_backend = get_backend_api('omics_irods')
@@ -812,7 +944,10 @@ class SampleDataFileExistsAPIView(SODARAPIBaseMixin, APIView):
         return Response(ret, status=status.HTTP_200_OK)
 
 
-class ProjectIrodsFileListAPIView(SODARAPIBaseProjectMixin, APIView):
+# TODO: Add pagination (see #1996, #1997)
+class ProjectIrodsFileListAPIView(
+    SamplesheetsAPIVersioningMixin, SODARAPIBaseProjectMixin, APIView
+):
     """
     Return a list of files in the project sample data repository.
 
@@ -822,7 +957,13 @@ class ProjectIrodsFileListAPIView(SODARAPIBaseProjectMixin, APIView):
 
     **Returns:**
 
-    - ``irods_data``: List of iRODS data objects (list of dicts)
+    List of iRODS data objects (list of dicts). Each object dict contains:
+
+    - ``name``: File name
+    - ``type``: iRODS item type type (``obj`` for file)
+    - ``path``: Full path to file
+    - ``size``: Size in bytes
+    - ``modify_time``: Datetime of last modification (YYYY-MM-DDThh:mm:ssZ)
     """
 
     http_method_names = ['get']
@@ -836,13 +977,15 @@ class ProjectIrodsFileListAPIView(SODARAPIBaseProjectMixin, APIView):
         path = irods_backend.get_sample_path(project)
         try:
             with irods_backend.get_session() as irods:
-                obj_list = irods_backend.get_objects(irods, path)
+                obj_list = irods_backend.get_objects(
+                    irods, path, api_format=True
+                )
         except Exception as ex:
             return Response(
                 {'detail': '{}: {}'.format(IRODS_QUERY_ERROR_MSG, ex)},
                 status=status.HTTP_404_NOT_FOUND,
             )
-        return Response({'irods_data': obj_list}, status=status.HTTP_200_OK)
+        return Response(obj_list, status=status.HTTP_200_OK)
 
 
 # TODO: Temporary HACK, should be replaced by proper API view

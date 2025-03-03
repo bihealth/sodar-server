@@ -33,6 +33,10 @@ from samplesheets.tests.test_views_taskflow import (
     SampleSheetTaskflowMixin,
     IRODS_FILE_NAME,
 )
+from samplesheets.views_api import (
+    SAMPLESHEETS_API_MEDIA_TYPE,
+    SAMPLESHEETS_API_DEFAULT_VERSION,
+)
 
 
 # Local constants
@@ -43,11 +47,20 @@ LABEL_UPDATE = 'label_update'
 # Base Classes and Mixins ------------------------------------------------------
 
 
-class IrodsAccessTicketAPIViewTestBase(
+class SheetTaskflowAPIPermissionTestBase(
     SampleSheetIOMixin,
-    IrodsAccessTicketMixin,
     SampleSheetTaskflowMixin,
     TaskflowAPIPermissionTestBase,
+):
+    """Base class for samplesheets REST API view permission tests"""
+
+    media_type = SAMPLESHEETS_API_MEDIA_TYPE
+    api_version = SAMPLESHEETS_API_DEFAULT_VERSION
+
+
+class IrodsAccessTicketAPIViewTestBase(
+    IrodsAccessTicketMixin,
+    SheetTaskflowAPIPermissionTestBase,
 ):
     """Base class for iRODS access ticket API view permission tests"""
 
@@ -65,9 +78,7 @@ class IrodsAccessTicketAPIViewTestBase(
         )
 
 
-class IrodsDataRequestAPIViewTestBase(
-    SampleSheetIOMixin, SampleSheetTaskflowMixin, TaskflowAPIPermissionTestBase
-):
+class IrodsDataRequestAPIViewTestBase(SheetTaskflowAPIPermissionTestBase):
     """Base class for iRODS data request API view permission tests"""
 
     def setUp(self):
@@ -89,9 +100,7 @@ class IrodsDataRequestAPIViewTestBase(
 # Test Classes -----------------------------------------------------------------
 
 
-class TestSampleDataFileExistsAPIView(
-    SampleSheetIOMixin, SampleSheetTaskflowMixin, TaskflowAPIPermissionTestBase
-):
+class TestSampleDataFileExistsAPIView(SheetTaskflowAPIPermissionTestBase):
     """Tests for SampleDataFileExistsAPIView permissions"""
 
     def setUp(self):
@@ -107,7 +116,7 @@ class TestSampleDataFileExistsAPIView(
         self.irods.data_objects.put(
             IRODS_FILE_PATH, coll_path, **{REG_CHKSUM_KW: ''}
         )
-        self.post_data = {'checksum': IRODS_FILE_MD5}
+        self.get_data = {'checksum': IRODS_FILE_MD5}
         self.url = reverse('samplesheets:api_file_exists')
 
     def test_get(self):
@@ -125,9 +134,9 @@ class TestSampleDataFileExistsAPIView(
             self.user_guest,
             self.user_no_roles,
         ]
-        self.assert_response_api(self.url, good_users, 200, data=self.post_data)
+        self.assert_response_api(self.url, good_users, 200, data=self.get_data)
         self.assert_response_api(
-            self.url, self.anonymous, 401, data=self.post_data
+            self.url, self.anonymous, 401, data=self.get_data
         )
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
@@ -151,9 +160,33 @@ class TestSampleDataFileExistsAPIView(
             self.user_guest,
             self.user_no_roles,
         ]
-        self.assert_response_api(self.url, good_users, 200, data=self.post_data)
+        self.assert_response_api(self.url, good_users, 200, data=self.get_data)
         self.assert_response_api(
-            self.url, self.anonymous, 401, data=self.post_data
+            self.url, self.anonymous, 401, data=self.get_data
+        )
+
+    @override_settings(SHEETS_API_FILE_EXISTS_RESTRICT=True)
+    def test_get_restrict(self):
+        """Test GET with file exists restriction enabled"""
+        good_users = [
+            self.superuser,
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
+        ]
+        bad_users = [
+            self.user_finder_cat,
+            self.user_no_roles,
+        ]
+        self.assert_response_api(self.url, good_users, 200, data=self.get_data)
+        self.assert_response_api(self.url, bad_users, 403, data=self.get_data)
+        self.assert_response_api(
+            self.url, self.anonymous, 401, data=self.get_data
         )
 
 
@@ -434,9 +467,7 @@ class TestIrodsAccessTicketDestroyAPIView(IrodsAccessTicketAPIViewTestBase):
         self.assert_response_api(self.url, self.anonymous, 401, method='DELETE')
 
 
-class TestIrodsDataRequestListAPIView(
-    SampleSheetIOMixin, SampleSheetTaskflowMixin, TaskflowAPIPermissionTestBase
-):
+class TestIrodsDataRequestListAPIView(SheetTaskflowAPIPermissionTestBase):
     """Tests for IrodsDataRequestListAPIView permissions"""
 
     def setUp(self):

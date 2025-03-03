@@ -5,6 +5,7 @@ define USAGE=
 @echo -e "Usage:"
 @echo -e "\tmake black [arg=--<arg>]                    -- format python with black"
 @echo -e "\tmake serve [arg=sync]                       -- start server"
+@echo -e "\tmake flake                                  -- run flake8"
 @echo -e "\tmake celery                                 -- start celery & celerybeat"
 @echo -e "\tmake demo                                   -- start demo server"
 @echo -e "\tmake samplesheets_vue                       -- start samplesheet vue.js app"
@@ -37,6 +38,11 @@ else
 serve:
 endif
 	$(MANAGE) runserver 0.0.0.0:8000 --settings=config.settings.local
+
+
+.PHONY: flake
+flake:
+	flake8 .
 
 
 .PHONY: celery

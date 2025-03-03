@@ -281,7 +281,7 @@ class SampleSheetIO:
     @classmethod
     def _get_study(cls, o):
         """Return study for a potentially unknown type of object"""
-        if type(o) == Study:
+        if isinstance(o, Study):
             return o
         elif hasattr(o, 'study'):
             return o.study
@@ -329,7 +329,7 @@ class SampleSheetIO:
     @classmethod
     def _import_tuple_list(cls, tuples):
         """Get list of dicts from tuples for JSONField"""
-        if type(tuples) == dict:
+        if isinstance(tuples, dict):
             return [cls._import_multi_val(v) for v in tuples.values()]
         elif type(tuples) in [tuple, list]:
             return [cls._import_multi_val(v) for v in tuples]
@@ -407,7 +407,7 @@ class SampleSheetIO:
                 'study': study,
                 'headers': m.headers,
             }
-            if type(db_parent) == Assay:
+            if isinstance(db_parent, Assay):
                 values['assay'] = db_parent
             # NOTE: Extract label stored as JSON since altamISA 0.1 update
             if m.extract_label:
@@ -462,9 +462,9 @@ class SampleSheetIO:
                 'unique_name': p.unique_name,
                 'name_type': p.name_type,
                 'protocol': protocol,
-                'assay': db_parent if type(db_parent) == Assay else None,
+                'assay': db_parent if isinstance(db_parent, Assay) else None,
                 'study': study,
-                'performer': p.performer,
+                'performer': ';'.join(p.performer) if p.performer else None,
                 'perform_date': p.date if p.date else None,
                 'array_design_ref': p.array_design_ref,
                 'first_dimension': (
@@ -539,7 +539,7 @@ class SampleSheetIO:
         :param save_isa: Save ISA-Tab as backup after importing (bool)
         :param from_template: Whether importing from a template (bool)
         :return: Investigation
-        :raise: SampleSheetExportException if critical warnings are raised
+        :raise: SampleSheetImportException if critical warnings are raised
         """
         t_start = time.time()
         logger.info('altamISA version: {}'.format(altamisa.__version__))
@@ -1070,7 +1070,11 @@ class SampleSheetIO:
         return tuple(
             isa_models.FactorValue(
                 name=k,
-                value=cls._export_val(v['value']),
+                value=(
+                    [cls._export_val(v['value'])]
+                    if not isinstance(v['value'], list)
+                    else cls._export_val(v['value'])
+                ),
                 unit=cls._export_val(v['unit']),
             )
             for k, v in factor_values.items()
@@ -1188,6 +1192,7 @@ class SampleSheetIO:
                 perform_date = ''  # Empty string denotes an empty column
             else:
                 perform_date = p.perform_date
+            performer = p.performer.split(';') if p.performer else p.performer
             ret[p.unique_name] = isa_models.Process(
                 protocol_ref=(
                     p.protocol.name if p.protocol else PROTOCOL_UNKNOWN_NAME
@@ -1196,7 +1201,7 @@ class SampleSheetIO:
                 name=p.name,
                 name_type=p.name_type,
                 date=perform_date,
-                performer=p.performer,
+                performer=performer,
                 parameter_values=cls._export_param_values(p.parameter_values),
                 comments=cls._export_comments(p.comments),
                 array_design_ref=p.array_design_ref,

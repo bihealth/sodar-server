@@ -21,8 +21,8 @@ System requirements for SODAR development are as follows:
     - Other Ubuntu versions and Linux distributions may work but are not
       supported. The instructions in this section assume the use of Ubuntu
       20.04.
-- Python 3.8, 3.9 or 3.10
-    - 3.8 recommended.
+- Python 3.9, 3.10 or 3.11
+    - 3.11 is recommended.
 - `Docker <https://docs.docker.com/get-docker/>`_
 - `Docker Compose <https://docs.docker.com/compose/install/>`_
 - `OpenSSL <https://www.openssl.org/>`_
@@ -34,7 +34,7 @@ SODAR Docker Compose Setup
 In addition to the ``sodar-server`` repository, the following components are
 required for SODAR development:
 
-- PostgreSQL
+- PostgreSQL v12+ (v16 recommended)
 - Redis
 - Main iRODS server
 - Test iRODS server
@@ -314,3 +314,22 @@ Navigate to SODAR
 Now you should have all the required components running for developing SODAR.
 Use your web browser to open http://127.0.0.1:8000 and you should see your local
 SODAR development site.
+
+
+Run SODAR Tests
+===============
+
+You can run the SODAR Django server tests using the following command:
+
+.. code-block:: bash
+
+    $ make test
+
+In addition to unit tests, this will run tests against the test iRODS server
+running in the Docker Compose network.
+
+For testing the Sample Sheets Vue app, run the following command:
+
+.. code-block:: bash
+
+    $ make test_samplesheets_vue

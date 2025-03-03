@@ -11,6 +11,7 @@ from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import (
     ProjectAppPluginPoint,
     ProjectModifyPluginMixin,
+    PluginObjectLink,
     get_backend_api,
 )
 
@@ -21,7 +22,6 @@ from landingzones.constants import (
     STATUS_ALLOW_UPDATE,
     STATUS_BUSY,
     STATUS_FINISHED,
-    ZONE_STATUS_MOVED,
 )
 from landingzones.models import LandingZone
 from landingzones.urls import urlpatterns
@@ -71,7 +71,16 @@ class ProjectAppPlugin(
             'new files are uploaded from landing zones',
             'user_modifiable': True,
             'default': True,
-        }
+        },
+        'notify_email_zone_status': {
+            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_USER'],
+            'type': 'BOOLEAN',
+            'default': True,
+            'label': 'Receive email for landing zone status updates',
+            'description': 'Receive email notifications for status changes in '
+            'your landing zones',
+            'user_modifiable': True,
+        },
     }
 
     #: Iconify icon
@@ -123,31 +132,30 @@ class ProjectAppPlugin(
 
     def get_object_link(self, model_str, uuid):
         """
-        Return URL for referring to a object used by the app, along with a
-        label to be shown to the user for linking.
+        Return URL referring to an object used by the app, along with a name to
+        be shown to the user for linking.
 
         :param model_str: Object class (string)
         :param uuid: sodar_uuid of the referred object
-        :return: Dict or None if not found
+        :return: PluginObjectLink or None if not found
         """
         obj = self.get_object(eval(model_str), uuid)
         if not obj:
             return None
-        if obj.__class__ == LandingZone and obj.status != ZONE_STATUS_MOVED:
-            return {
-                'url': reverse(
+        if obj.__class__ == LandingZone and obj.status not in STATUS_FINISHED:
+            return PluginObjectLink(
+                url=reverse(
                     'landingzones:list',
                     kwargs={'project': obj.project.sodar_uuid},
                 )
                 + '#'
                 + str(obj.sodar_uuid),
-                'label': obj.title,
-            }
-        elif obj.__class__ == Assay:
-            return {
-                'url': obj.get_url(),
-                'label': obj.get_display_name(),
-            }
+                name=obj.title,
+            )
+        if obj.__class__ == Assay:
+            return PluginObjectLink(
+                url=obj.get_url(), name=obj.get_display_name()
+            )
 
     def get_statistics(self):
         """

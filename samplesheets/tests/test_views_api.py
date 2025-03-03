@@ -14,13 +14,13 @@ from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 from projectroles.tests.test_models import RemoteSiteMixin, RemoteProjectMixin
-from projectroles.tests.test_views_api import TestAPIViewsBase
+from projectroles.tests.test_views_api import APIViewTestBase
 
 # Sodarcache dependency
 from sodarcache.models import JSONCacheItem
 
 # Timeline dependency
-from timeline.models import ProjectEvent
+from timeline.models import TimelineEvent
 
 # Landingzones dependency
 from landingzones.models import LandingZone
@@ -67,6 +67,10 @@ from samplesheets.tests.test_views_taskflow import (
     IrodsAccessTicketViewTestMixin,
 )
 from samplesheets.views import SheetImportMixin
+from samplesheets.views_api import (
+    SAMPLESHEETS_API_MEDIA_TYPE,
+    SAMPLESHEETS_API_DEFAULT_VERSION,
+)
 
 
 app_settings = AppSettingAPI()
@@ -93,8 +97,11 @@ TICKET_PATH = '/test/path'
 # TODO: Add testing for study table cache updates
 
 
-class SampleSheetAPIViewTestBase(SampleSheetIOMixin, TestAPIViewsBase):
+class SampleSheetAPIViewTestBase(SampleSheetIOMixin, APIViewTestBase):
     """Base view for samplesheets API views tests"""
+
+    media_type = SAMPLESHEETS_API_MEDIA_TYPE
+    api_version = SAMPLESHEETS_API_DEFAULT_VERSION
 
 
 class IrodsAccessTicketAPITestBase(
@@ -701,7 +708,7 @@ class TestIrodsAccessTicketRetrieveAPIView(IrodsAccessTicketAPITestBase):
             'path': self.ticket.path,
             'date_created': local_date_created.isoformat(),
             'date_expires': self.ticket.date_expires,
-            'user': self.get_serialized_user(self.user),
+            'user': str(self.user.sodar_uuid),
             'is_active': self.ticket.is_active(),
         }
         self.assertEqual(json.loads(response.content), expected)
@@ -732,9 +739,6 @@ class TestIrodsAccessTicketListAPIView(IrodsAccessTicketAPITestBase):
         with self.login(self.user_contributor):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        local_date_created = self.ticket.date_created.astimezone(
-            timezone.get_current_timezone()
-        )
         expected = {
             'sodar_uuid': str(self.ticket.sodar_uuid),
             'label': self.ticket.label,
@@ -742,9 +746,9 @@ class TestIrodsAccessTicketListAPIView(IrodsAccessTicketAPITestBase):
             'study': str(self.study.sodar_uuid),
             'assay': str(self.assay.sodar_uuid),
             'path': self.ticket.path,
-            'date_created': local_date_created.isoformat(),
+            'date_created': self.get_drf_datetime(self.ticket.date_created),
             'date_expires': self.ticket.date_expires,
-            'user': self.get_serialized_user(self.user),
+            'user': str(self.user.sodar_uuid),
             'is_active': self.ticket.is_active(),
         }
         self.assertEqual(json.loads(response.content), [expected])
@@ -764,9 +768,6 @@ class TestIrodsAccessTicketListAPIView(IrodsAccessTicketAPITestBase):
         with self.login(self.user_contributor):
             response = self.client.get(self.url + '?active=1')
         self.assertEqual(response.status_code, 200)
-        local_date_created = self.ticket.date_created.astimezone(
-            timezone.get_current_timezone()
-        )
         expected = {
             'sodar_uuid': str(self.ticket.sodar_uuid),
             'label': self.ticket.label,
@@ -774,12 +775,41 @@ class TestIrodsAccessTicketListAPIView(IrodsAccessTicketAPITestBase):
             'study': str(self.study.sodar_uuid),
             'assay': str(self.assay.sodar_uuid),
             'path': self.ticket.path,
-            'date_created': local_date_created.isoformat(),
+            'date_created': self.get_drf_datetime(self.ticket.date_created),
             'date_expires': self.ticket.date_expires,
-            'user': self.get_serialized_user(self.user),
+            'user': str(self.user.sodar_uuid),
             'is_active': self.ticket.is_active(),
         }
         self.assertEqual(json.loads(response.content), [expected])
+
+    def test_get_pagination(self):
+        """Test GET with pagination"""
+        url = self.url + '?page=1'
+        with self.login(self.user_contributor):
+            response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        expected = {
+            'count': 1,
+            'next': None,
+            'previous': None,
+            'results': [
+                {
+                    'sodar_uuid': str(self.ticket.sodar_uuid),
+                    'label': self.ticket.label,
+                    'ticket': self.ticket.ticket,
+                    'study': str(self.study.sodar_uuid),
+                    'assay': str(self.assay.sodar_uuid),
+                    'path': self.ticket.path,
+                    'date_created': self.get_drf_datetime(
+                        self.ticket.date_created
+                    ),
+                    'date_expires': self.ticket.date_expires,
+                    'user': str(self.user.sodar_uuid),
+                    'is_active': self.ticket.is_active(),
+                }
+            ],
+        }
+        self.assertEqual(json.loads(response.content), expected)
 
 
 class TestIrodsDataRequestRetrieveAPIView(
@@ -822,7 +852,7 @@ class TestIrodsDataRequestRetrieveAPIView(
             'action': IRODS_REQUEST_ACTION_DELETE,
             'path': self.request.path,
             'target_path': '',
-            'user': self.get_serialized_user(self.user_contributor),
+            'user': str(self.user_contributor.sodar_uuid),
             'status': IRODS_REQUEST_STATUS_ACTIVE,
             'status_info': '',
             'description': self.request.description,
@@ -861,7 +891,7 @@ class TestIrodsDataRequestListAPIView(
         )
 
     def test_get(self):
-        """Test retrieving iRODS data request list"""
+        """Test IrodsDataRequestListAPIView GET"""
         response = self.request_knox(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
@@ -871,7 +901,7 @@ class TestIrodsDataRequestListAPIView(
             'action': IRODS_REQUEST_ACTION_DELETE,
             'path': self.request.path,
             'target_path': '',
-            'user': self.get_serialized_user(self.user_contributor),
+            'user': str(self.user_contributor.sodar_uuid),
             'status': IRODS_REQUEST_STATUS_ACTIVE,
             'status_info': '',
             'description': self.request.description,
@@ -880,8 +910,37 @@ class TestIrodsDataRequestListAPIView(
         }
         self.assertEqual(response_data[0], expected)
 
+    def test_get_pagination(self):
+        """Test GET with pagination"""
+        url = self.url + '?page=1'
+        response = self.request_knox(url)
+        self.assertEqual(response.status_code, 200)
+        response_data = json.loads(response.content)
+        expected = {
+            'count': 1,
+            'next': None,
+            'previous': None,
+            'results': [
+                {
+                    'project': str(self.project.sodar_uuid),
+                    'action': IRODS_REQUEST_ACTION_DELETE,
+                    'path': self.request.path,
+                    'target_path': '',
+                    'user': str(self.user_contributor.sodar_uuid),
+                    'status': IRODS_REQUEST_STATUS_ACTIVE,
+                    'status_info': '',
+                    'description': self.request.description,
+                    'date_created': self.get_drf_datetime(
+                        self.request.date_created
+                    ),
+                    'sodar_uuid': str(self.request.sodar_uuid),
+                }
+            ],
+        }
+        self.assertEqual(response_data, expected)
+
     def test_get_failed_as_superuser(self):
-        """Test retrieving list as superuser with failed request"""
+        """Test GET as superuser with failed request"""
         self.request.status = IRODS_REQUEST_STATUS_FAILED
         self.request.save()
         response = self.request_knox(self.url)
@@ -889,7 +948,7 @@ class TestIrodsDataRequestListAPIView(
         self.assertEqual(len(response.data), 1)
 
     def test_get_accepted_as_superuser(self):
-        """Test retrieving list as superuser with accepted request"""
+        """Test GET as superuser with accepted request"""
         self.request.status = IRODS_REQUEST_STATUS_ACCEPTED
         self.request.save()
         response = self.request_knox(self.url)
@@ -897,7 +956,7 @@ class TestIrodsDataRequestListAPIView(
         self.assertEqual(len(response.data), 0)
 
     def test_get_accepted_as_owner(self):
-        """Test retrieving list as owner with accepted request"""
+        """Test GET as owner with accepted request"""
         self.request.status = IRODS_REQUEST_STATUS_ACCEPTED
         self.request.save()
         response = self.request_knox(
@@ -907,7 +966,7 @@ class TestIrodsDataRequestListAPIView(
         self.assertEqual(len(response.data), 0)
 
     def test_get_accepted_as_request_creator(self):
-        """Test retrieving list as request creator with accepted request"""
+        """Test GET as request creator with accepted request"""
         self.request.status = IRODS_REQUEST_STATUS_ACCEPTED
         self.request.save()
         response = self.request_knox(
@@ -923,9 +982,9 @@ class TestIrodsDataRequestDestroyAPIView(
     """Tests for IrodsDataRequestDestroyAPIView"""
 
     def _assert_tl_count(self, count):
-        """Assert timeline ProjectEvent count"""
+        """Assert timeline TimelineEvent count"""
         self.assertEqual(
-            ProjectEvent.objects.filter(
+            TimelineEvent.objects.filter(
                 event_name='irods_request_delete'
             ).count(),
             count,

@@ -81,14 +81,14 @@ the value simply by typing in a standard spreadsheet fashion.
 
     String cell editing
 
-Special syntax is available for basic string values:
+Special syntax is available for basic string and/or numeric values:
 
 Value as List
     You can enter a list of values by separating single values with the
-    semicolon character (``;``).
+    semicolon character (``;``). This works for both string and numeric columns.
 Hyperlinks
     You can render the value as a hyperlink the following syntax:
-    ``Link text <https://your.url>``
+    ``Link text <https://your.url>``. This is only allowed for string columns.
 
 There are also special cases for string input and specific columns:
 
@@ -103,7 +103,9 @@ Node Names
     orphaned files.
 Contacts
     Contact cells act as string cells with the following expected syntax:
-    ``Contact Name <contact@email.org>``. The email can be omitted.
+    ``Contact Name <contact@example.com>``. The email can be omitted. Multiple
+    contacts can be provided using the semicolon character as a delimter. For
+    example: ``Contact1 <c1.example.com>;Contact1 <c2.example.com>``.
 Dates
     Date cells also provide standard string editing but enforce the ISO 8601
     ``YYYY-MM-DD`` syntax.

@@ -30,6 +30,7 @@ from landingzones.constants import (
     ZONE_STATUS_FAILED,
 )
 from landingzones.models import LandingZone
+from landingzones.serializers import ZONE_NO_INV_MSG
 from landingzones.tests.test_models import LandingZoneMixin
 from landingzones.tests.test_views_taskflow import (
     LandingZoneTaskflowMixin,
@@ -40,6 +41,11 @@ from landingzones.tests.test_views_taskflow import (
     ZONE_PLUGIN_COLLS,
     ZONE_ALL_COLLS,
     TEST_OBJ_NAME,
+)
+from landingzones.views_api import (
+    LANDINGZONES_API_MEDIA_TYPE,
+    LANDINGZONES_API_DEFAULT_VERSION,
+    ZONE_NO_COLLS_MSG,
 )
 
 
@@ -64,6 +70,9 @@ class ZoneAPIViewTaskflowTestBase(
     TaskflowAPIViewTestBase,
 ):
     """Base landing zone API view test class with Taskflow enabled"""
+
+    media_type = LANDINGZONES_API_MEDIA_TYPE
+    api_version = LANDINGZONES_API_DEFAULT_VERSION
 
     def setUp(self):
         super().setUp()
@@ -125,7 +134,7 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
         expected = {
             'title': zone.title,
             'project': str(self.project.sodar_uuid),
-            'user': self.get_serialized_user(self.user),
+            'user': str(self.user.sodar_uuid),
             'assay': str(self.assay.sodar_uuid),
             'status': ZONE_STATUS_CREATING,
             'status_info': DEFAULT_STATUS_INFO[ZONE_STATUS_CREATING],
@@ -283,7 +292,8 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
             'config_data': {},
         }
         response = self.request_knox(self.url, method='POST', data=request_data)
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(ZONE_NO_INV_MSG, response.data['detail'])
         self.assertEqual(LandingZone.objects.count(), 0)
 
     def test_post_no_irods_collections(self):
@@ -299,7 +309,8 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
             'config_data': {},
         }
         response = self.request_knox(self.url, method='POST', data=request_data)
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 503)
+        self.assertIn(ZONE_NO_COLLS_MSG, response.data['detail'])
         self.assertEqual(LandingZone.objects.count(), 0)
 
 
@@ -441,6 +452,15 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
             'Successfully validated 0 files',
         )
 
+    def test_post_validate_locked(self):
+        """Test POST for validation with locked project (should fail)"""
+        self.lock_project(self.project)
+        self.landing_zone.status = ZONE_STATUS_FAILED
+        self.landing_zone.save()
+        response = self.request_knox(self.url, method='POST')
+        # NOTE: This should be updated to not require lock, see #1850
+        self.assertEqual(response.status_code, 503)
+
     def test_post_validate_invalid_status(self):
         """Test POST for validation with invalid zone status (should fail)"""
         self.landing_zone.status = ZONE_STATUS_MOVED
@@ -478,6 +498,15 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
         self.assertEqual(
             LandingZone.objects.first().status, ZONE_STATUS_DELETED
         )
+
+    def test_post_move_locked(self):
+        """Test POST for moving with locked project (should fail)"""
+        self.lock_project(self.project)
+        response = self.request_knox(self.url_move, method='POST')
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(LandingZone.objects.count(), 1)
+        zone = LandingZone.objects.first()
+        self.assert_zone_status(zone, ZONE_STATUS_FAILED)
 
     @override_settings(REDIS_URL=INVALID_REDIS_URL)
     def test_post_move_lock_failure(self):

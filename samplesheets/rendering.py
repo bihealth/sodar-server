@@ -209,7 +209,6 @@ class SampleSheetTableBuilder:
             and not obj.has_unit(name, header_type)
         ):
             header['col_type'] = 'NUMERIC'
-
         # Else detect type without config
         elif (
             name.lower() == 'name' or name in th.PROCESS_NAME_HEADERS
@@ -394,9 +393,9 @@ class SampleSheetTableBuilder:
         :param obj: GenericMaterial or Process object the annotation belongs to
         """
         unit = None
-        # Special case: Comments as parsed in SODAR v0.5.2 (see #629)
+        # Special case: Comments as string or list
         # TODO: TBD: Should these be added in this function at all?
-        if isinstance(ann, str):
+        if isinstance(ann, (str, list)):
             val = ann
         # Ontology reference(s) (altamISA v0.1+, SODAR v0.5.2+)
         elif isinstance(ann['value'], dict) or (
@@ -483,27 +482,30 @@ class SampleSheetTableBuilder:
             return round(len(value) - nc - wc + 0.6 * nc + 1.3 * wc)
 
         def _is_num(value):
-            """Return whether a value contains an integer/double"""
-            if isinstance(value, str) and '_' in value:
-                return False  # HACK because float() accepts underscore
-            try:
-                float(value)
-                return True
-            except (ValueError, TypeError):
-                return False
+            """Return whether a value contains only integers/doubles"""
+            # Supports lists
+            values = value if isinstance(value, list) else [value]
+            for v in values:
+                if isinstance(v, str) and '_' in v:
+                    return False  # HACK because float() accepts underscore
+                try:
+                    float(v)
+                except (ValueError, TypeError):
+                    return False
+            return True
 
         top_idx = 0  # Top header index
         grp_idx = 0  # Index within current top header group
         for i in range(len(self._field_header)):
             header_name = self._field_header[i]['value']
             # Set column type to NUMERIC if values are all numeric or empty
-            # (except if name or process name)
-            # Skip check if column is already defined as UNIT
+            # Skip check for name, process and already determined column types
+            num_skip_cols = ['NUMERIC', 'ONTOLOGY', 'UNIT']
             if (
                 header_name != 'Name'
                 and header_name not in th.PROCESS_NAME_HEADERS
                 and not self._field_configs[i]
-                and self._field_header[i]['col_type'] not in ['NUMERIC', 'UNIT']
+                and self._field_header[i]['col_type'] not in num_skip_cols
                 and any(_is_num(x[i]['value']) for x in self._table_data)
                 and all(
                     (_is_num(x[i]['value']) or not x[i]['value'])
@@ -527,33 +529,34 @@ class SampleSheetTableBuilder:
 
             col_type = self._field_header[i]['col_type']
             if col_type == 'CONTACT':
-                max_cell_len = max(
-                    [
-                        (
-                            _get_length(
-                                re.findall(link_re, x[i]['value'])[0][0]
-                            )
-                            if re.findall(link_re, x[i].get('value'))
-                            else len(x[i].get('value') or '')
-                        )
-                        for x in self._table_data
-                    ]
-                )
+                contact_vals = []
+                for x in self._table_data:
+                    if not x[i].get('value'):
+                        contact_vals.append('')
+                    elif isinstance(x[i]['value'], list):
+                        contact_vals.append('; '.join(x[i]['value']))
+                    else:
+                        contact_vals.append(x[i]['value'])
+                cell_lengths = [
+                    (
+                        _get_length(re.findall(link_re, x)[0][0])
+                        if re.findall(link_re, x)
+                        else len(x or '')
+                    )
+                    for x in contact_vals
+                ]
+                max_cell_len = max(cell_lengths)
             elif col_type == 'EXTERNAL_LINKS':  # Special case, count elements
                 header_len = 0  # Header length is not comparable
-                max_cell_len = max(
-                    [
-                        (
-                            len(x[i]['value'])
-                            if (
-                                x[i]['value']
-                                and isinstance(x[i]['value'], list)
-                            )
-                            else 0
-                        )
-                        for x in self._table_data
-                    ]
-                )
+                cell_lengths = [
+                    (
+                        len(x[i]['value'])
+                        if x[i]['value'] and isinstance(x[i]['value'], list)
+                        else 0
+                    )
+                    for x in self._table_data
+                ]
+                max_cell_len = max(cell_lengths)
             else:  # Generic type
                 max_cell_len = max(
                     [

@@ -6,6 +6,7 @@ from irods.exception import (
     UserDoesNotExist,
     UserGroupDoesNotExist,
 )
+from irods.test.helpers import make_object
 from irods.ticket import Ticket
 from irods.user import iRODSUser, iRODSUserGroup
 
@@ -59,16 +60,12 @@ from taskflowbackend.flows.sheet_colls_create import (
     PUBLIC_GROUP,
 )
 from taskflowbackend.flows.sheet_delete import Flow as SheetDeleteFlow
-from taskflowbackend.lock_api import ProjectLockAPI
 from taskflowbackend.tasks.irods_tasks import META_EMPTY_VALUE
 from taskflowbackend.tests.base import (
     TaskflowViewTestBase,
     IRODS_ACCESS_OWN,
     TICKET_STR,
 )
-
-
-lock_api = ProjectLockAPI()
 
 
 # SODAR constants
@@ -95,12 +92,6 @@ class TaskflowbackendFlowTestBase(TaskflowViewTestBase):
         """Build and run flow"""
         flow.build(force_fail)
         flow.run()
-
-    def lock_project(self, project):
-        self.coordinator = lock_api.get_coordinator()
-        lock_id = str(project.sodar_uuid)
-        lock = self.coordinator.get_lock(lock_id)
-        lock_api.acquire(lock)
 
 
 class TestDataDelete(TaskflowbackendFlowTestBase):
@@ -1005,8 +996,66 @@ class TestLandingZoneMove(
         sample_coll_path = os.path.join(self.sample_path, COLL_NAME)
         self.assertEqual(self.irods.collections.exists(sample_coll_path), False)
 
+    def test_validate_upper_case(self):
+        """Test landing_zone_move validation with upper case checksum in file"""
+        coll_path = os.path.join(self.zone_path, COLL_NAME)
+        zone_coll = self.irods.collections.create(coll_path)
+        obj = self.make_irods_object(zone_coll, OBJ_NAME)
+        md5_path = obj.path + '.md5'
+        md5_content = self.get_md5_checksum(obj).upper()
+        make_object(self.irods, md5_path, md5_content)
+        flow_data = {
+            'zone_uuid': str(self.zone.sodar_uuid),
+            'validate_only': True,
+        }
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='landing_zone_move',
+            flow_data=flow_data,
+        )
+        self.build_and_run(flow)
+        self.zone.refresh_from_db()
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+
+    def test_validate_bom_header(self):
+        """Test landing_zone_move validation with BOM header in MD5 file"""
+        coll_path = os.path.join(self.zone_path, COLL_NAME)
+        zone_coll = self.irods.collections.create(coll_path)
+        obj = self.make_irods_object(zone_coll, OBJ_NAME)
+        obj_path = obj.path
+        # Make MD5 object with BOM header
+        md5_path = obj.path + '.md5'
+        md5_content = bytes(self.get_md5_checksum(obj), encoding='utf-8-sig')
+        make_object(self.irods, md5_path, md5_content)
+        self.assertEqual(self.irods.data_objects.exists(obj_path), True)
+        self.assertEqual(
+            self.irods.data_objects.exists(obj_path + '.md5'), True
+        )
+
+        flow_data = {
+            'zone_uuid': str(self.zone.sodar_uuid),
+            'validate_only': True,
+        }
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='landing_zone_move',
+            flow_data=flow_data,
+        )
+        self.build_and_run(flow)
+
+        self.zone.refresh_from_db()
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(self.irods.data_objects.exists(obj_path), True)
+        self.assertEqual(
+            self.irods.data_objects.exists(obj_path + '.md5'), True
+        )
+        sample_coll_path = os.path.join(self.sample_path, COLL_NAME)
+        self.assertEqual(self.irods.collections.exists(sample_coll_path), False)
+
     def test_validate_no_checksum(self):
-        """Test landing_zone_validation with missing checksum"""
+        """Test landing_zone_move validation with missing checksum"""
         coll_path = os.path.join(self.zone_path, COLL_NAME)
         zone_coll = self.irods.collections.create(coll_path)
         obj = self.make_irods_object(zone_coll, OBJ_NAME, checksum=False)
@@ -1642,7 +1691,7 @@ class TestRoleDelete(TaskflowbackendFlowTestBase):
     def test_delete(self):
         """Test role_delete for deleting a role assignment"""
         self.assert_group_member(self.project, self.user_new, True)
-        flow_data = {'username': self.user_new.username}
+        flow_data = {'user_name': self.user_new.username}
         flow = self.taskflow.get_flow(
             irods_backend=self.irods_backend,
             project=self.project,
@@ -1656,7 +1705,7 @@ class TestRoleDelete(TaskflowbackendFlowTestBase):
     def test_delete_locked(self):
         """Test role_delete with locked project"""
         self.assert_group_member(self.project, self.user_new, True)
-        flow_data = {'username': self.user_new.username}
+        flow_data = {'user_name': self.user_new.username}
         flow = self.taskflow.get_flow(
             irods_backend=self.irods_backend,
             project=self.project,
@@ -1683,7 +1732,7 @@ class TestRoleUpdate(TaskflowbackendFlowTestBase):
         user_new = self.make_user('user_new')
         self.make_assignment(self.project, user_new, self.role_contributor)
         self.assert_group_member(self.project, user_new, False)
-        flow_data = {'username': user_new.username}
+        flow_data = {'user_name': user_new.username}
         flow = self.taskflow.get_flow(
             irods_backend=self.irods_backend,
             project=self.project,
@@ -1699,7 +1748,7 @@ class TestRoleUpdate(TaskflowbackendFlowTestBase):
         user_new = self.make_user('user_new')
         self.make_assignment(self.project, user_new, self.role_contributor)
         self.assert_group_member(self.project, user_new, False)
-        flow_data = {'username': user_new.username}
+        flow_data = {'user_name': user_new.username}
         flow = self.taskflow.get_flow(
             irods_backend=self.irods_backend,
             project=self.project,

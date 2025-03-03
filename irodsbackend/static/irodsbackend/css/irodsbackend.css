@@ -1,4 +1,8 @@
 /* Size column */
+table.sodar-irods-obj-table tbody tr td:nth-child(1) {
+  word-break: break-all;
+}
+
 table.sodar-irods-obj-table thead tr th:nth-child(2) {
   min-width: 60px;
   text-align: right;

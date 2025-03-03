@@ -1,4 +1,4 @@
-from django.conf.urls import url
+from django.urls import path
 
 from . import views
 
@@ -6,8 +6,8 @@ from . import views
 app_name = 'landingzones.configapps.bih_proteomics_smb'
 
 urlpatterns = [
-    url(
-        regex=r'^(?P<landingzone>[0-9a-f-]+)$',
+    path(
+        route='<uuid:landingzone>',
         view=views.ZoneTicketGetView.as_view(),
         name='ticket_get',
     )

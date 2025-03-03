@@ -4,6 +4,7 @@ Tests for REST API views in the samplesheets app with SODAR Taskflow enabled
 
 import json
 import os
+import pytz
 
 from datetime import timedelta, datetime
 
@@ -20,7 +21,7 @@ from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 
 # Timeline dependency
-from timeline.models import ProjectEvent
+from timeline.models import TimelineEvent
 
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import (
@@ -36,15 +37,6 @@ from samplesheets.models import (
     IRODS_REQUEST_STATUS_REJECTED,
     IRODS_REQUEST_ACTION_DELETE,
 )
-from samplesheets.views import (
-    IRODS_REQUEST_EVENT_CREATE as CREATE_ALERT,
-    IRODS_REQUEST_EVENT_ACCEPT as ACCEPT_ALERT,
-    IRODS_REQUEST_EVENT_REJECT as REJECT_ALERT,
-)
-from samplesheets.views_api import (
-    IRODS_QUERY_ERROR_MSG,
-)
-
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_models import (
     IrodsAccessTicketMixin,
@@ -59,6 +51,17 @@ from samplesheets.tests.test_views_taskflow import (
     INVALID_REDIS_URL,
     TICKET_STR,
     TICKET_LABEL,
+)
+from samplesheets.views import (
+    IRODS_REQUEST_EVENT_CREATE as CREATE_ALERT,
+    IRODS_REQUEST_EVENT_ACCEPT as ACCEPT_ALERT,
+    IRODS_REQUEST_EVENT_REJECT as REJECT_ALERT,
+)
+from samplesheets.views_api import (
+    IRODS_QUERY_ERROR_MSG,
+    SAMPLESHEETS_API_MEDIA_TYPE,
+    SAMPLESHEETS_API_DEFAULT_VERSION,
+    FILE_EXISTS_RESTRICT_MSG,
 )
 
 # SODAR constants
@@ -84,6 +87,9 @@ class SampleSheetAPITaskflowTestBase(
 ):
     """Base samplesheets API view test class with Taskflow enabled"""
 
+    media_type = SAMPLESHEETS_API_MEDIA_TYPE
+    api_version = SAMPLESHEETS_API_DEFAULT_VERSION
+
     def setUp(self):
         super().setUp()
         # Make project with owner in Taskflow and Django
@@ -108,6 +114,9 @@ class IrodsAccessTicketAPIViewTestBase(
     TaskflowAPIViewTestBase,
 ):
     """Base samplesheets API view test class for iRODS access ticket requests"""
+
+    media_type = SAMPLESHEETS_API_MEDIA_TYPE
+    api_version = SAMPLESHEETS_API_DEFAULT_VERSION
 
     def assert_alert_count(self, alert_name, user, count, project=None):
         """
@@ -166,10 +175,13 @@ class IrodsAccessTicketAPIViewTestBase(
         self.app_alert_model = self.app_alerts.get_model()
 
 
-class TestIrodsDataRequestAPIViewBase(
+class IrodsDataRequestAPIViewTestBase(
     SampleSheetIOMixin, SampleSheetTaskflowMixin, TaskflowAPIViewTestBase
 ):
     """Base samplesheets API view test class for iRODS delete requests"""
+
+    media_type = SAMPLESHEETS_API_MEDIA_TYPE
+    api_version = SAMPLESHEETS_API_DEFAULT_VERSION
 
     # TODO: Retrieve this from a common base/helper class instead of redef
     def assert_alert_count(self, alert_name, user, count, project=None):
@@ -301,14 +313,17 @@ class TestInvestigationRetrieveAPIView(SampleSheetAPITaskflowTestBase):
 class TestIrodsCollsCreateAPIView(SampleSheetAPITaskflowTestBase):
     """Tests for IrodsCollsCreateAPIView"""
 
-    def test_post(self):
-        """Test IrodsCollsCreateAPIView POST"""
-        self.assertEqual(self.investigation.irods_status, False)
-        url = reverse(
+    def setUp(self):
+        super().setUp()
+        self.url = reverse(
             'samplesheets:api_irods_colls_create',
             kwargs={'project': self.project.sodar_uuid},
         )
-        response = self.request_knox(url, method='POST')
+
+    def test_post(self):
+        """Test IrodsCollsCreateAPIView POST"""
+        self.assertEqual(self.investigation.irods_status, False)
+        response = self.request_knox(self.url, method='POST')
         self.assertEqual(response.status_code, 200)
         self.investigation.refresh_from_db()
         self.assertEqual(self.investigation.irods_status, True)
@@ -321,12 +336,17 @@ class TestIrodsCollsCreateAPIView(SampleSheetAPITaskflowTestBase):
         # Set up iRODS collections
         self.make_irods_colls(self.investigation)
         self.assertEqual(self.investigation.irods_status, True)
-        url = reverse(
-            'samplesheets:api_irods_colls_create',
-            kwargs={'project': self.project.sodar_uuid},
-        )
-        response = self.request_knox(url, method='POST')
+        response = self.request_knox(self.url, method='POST')
         self.assertEqual(response.status_code, 400)
+
+    def test_post_locked(self):
+        """Test POST with locked project (should fail)"""
+        self.lock_project(self.project)
+        self.assertEqual(self.investigation.irods_status, False)
+        response = self.request_knox(self.url, method='POST')
+        self.assertEqual(response.status_code, 503)
+        self.investigation.refresh_from_db()
+        self.assertEqual(self.investigation.irods_status, False)
 
 
 # NOTE: For TestIrodsAccessTicketListAPIView, see test_views_api
@@ -535,7 +555,7 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
             'path': self.ticket.path,  # Path should not be updated
             'date_created': local_date_created.isoformat(),
             'date_expires': self.date_expires_update,
-            'user': self.get_serialized_user(self.user),
+            'user': str(self.user.sodar_uuid),
             'is_active': self.ticket.is_active(),
         }
         self.assertEqual(response.json(), expected)
@@ -605,7 +625,7 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
             'path': self.ticket.path,
             'date_created': local_date_created.isoformat(),
             'date_expires': self.date_expires_update,
-            'user': self.get_serialized_user(self.user),
+            'user': str(self.user.sodar_uuid),
             'is_active': self.ticket.is_active(),
         }
         self.assertEqual(response.json(), expected)
@@ -724,7 +744,7 @@ class TestIrodsAccessTicketDestroyAPIView(IrodsAccessTicketAPIViewTestBase):
 # NOTE: For TestIrodsDataRequestListAPIView, see test_views_api
 
 
-class TestIrodsDataRequestCreateAPIView(TestIrodsDataRequestAPIViewBase):
+class TestIrodsDataRequestCreateAPIView(IrodsDataRequestAPIViewTestBase):
     """Tests for IrodsDataRequestCreateAPIView"""
 
     def test_create(self):
@@ -825,14 +845,14 @@ class TestIrodsDataRequestCreateAPIView(TestIrodsDataRequestAPIViewBase):
 
 
 class TestIrodsDataRequestUpdateAPIView(
-    IrodsDataRequestMixin, TestIrodsDataRequestAPIViewBase
+    IrodsDataRequestMixin, IrodsDataRequestAPIViewTestBase
 ):
     """Tests for IrodsDataRequestUpdateAPIView"""
 
     def _assert_tl_count(self, count):
-        """Assert timeline ProjectEvent count"""
+        """Assert timeline TimelineEvent count"""
         self.assertEqual(
-            ProjectEvent.objects.filter(
+            TimelineEvent.objects.filter(
                 event_name='irods_request_update'
             ).count(),
             count,
@@ -947,7 +967,7 @@ class TestIrodsDataRequestUpdateAPIView(
 
 
 class TestIrodsDataRequestAcceptAPIView(
-    IrodsDataRequestMixin, TestIrodsDataRequestAPIViewBase
+    IrodsDataRequestMixin, IrodsDataRequestAPIViewTestBase
 ):
     """Tests for IrodsDataRequestAcceptAPIView"""
 
@@ -1024,9 +1044,22 @@ class TestIrodsDataRequestAcceptAPIView(
         self.assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
         self.assert_alert_count(ACCEPT_ALERT, self.user_contributor, 0)
 
+    def test_accept_locked(self):
+        """Test POST to accept request with locked project (should fail)"""
+        self.lock_project(self.project)
+        self.assert_irods_obj(self.obj_path)
+        response = self.request_knox(self.url, 'POST')
+        self.assertEqual(response.status_code, 503)
+        self.request.refresh_from_db()
+        self.assertEqual(self.request.status, IRODS_REQUEST_STATUS_FAILED)
+        self.assert_irods_obj(self.obj_path)
+        self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
+        self.assert_alert_count(ACCEPT_ALERT, self.user_contributor, 0)
+
     @override_settings(REDIS_URL=INVALID_REDIS_URL)
     def test_accept_lock_failure(self):
-        """Test POST toa ccept request with project lock failure"""
+        """Test POST to accept request with project lock failure"""
         self.assert_irods_obj(self.obj_path)
         response = self.request_knox(self.url, 'POST')
         self.assertEqual(response.status_code, 400)
@@ -1037,8 +1070,8 @@ class TestIrodsDataRequestAcceptAPIView(
         self.assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
         self.assert_alert_count(ACCEPT_ALERT, self.user_contributor, 0)
 
-    def test_accept_already_accepted(self):
-        """Test accepting already accepted request (should fail)"""
+    def test_accept_accepted(self):
+        """Test acceptining previously accepted request (should fail)"""
         self.assertEqual(self.request.status, IRODS_REQUEST_STATUS_ACTIVE)
         response = self.request_knox(self.url, 'POST')
         self.assertEqual(response.status_code, 200)
@@ -1048,9 +1081,20 @@ class TestIrodsDataRequestAcceptAPIView(
         self.assertEqual(response.status_code, 400)
         self.assertEqual(self.request.status, IRODS_REQUEST_STATUS_ACCEPTED)
 
+    def test_accept_rejected(self):
+        """Test accepting previously rejected request (should fail)"""
+        self.assert_irods_obj(self.obj_path, True)
+        self.request.status = IRODS_REQUEST_STATUS_REJECTED
+        self.request.save()
+        response = self.request_knox(self.url, 'POST')
+        self.assertEqual(response.status_code, 400)
+        self.request.refresh_from_db()
+        self.assertEqual(self.request.status, IRODS_REQUEST_STATUS_REJECTED)
+        self.assert_irods_obj(self.obj_path, True)
+
 
 class TestIrodsDataRequestRejectAPIView(
-    IrodsDataRequestMixin, TestIrodsDataRequestAPIViewBase
+    IrodsDataRequestMixin, IrodsDataRequestAPIViewTestBase
 ):
     """Tests for IrodsDataRequestRejectAPIView"""
 
@@ -1128,11 +1172,13 @@ class TestSampleDataFileExistsAPIView(SampleSheetAPITaskflowTestBase):
     def setUp(self):
         super().setUp()
         self.make_irods_colls(self.investigation)
+        self.url = reverse('samplesheets:api_file_exists')
 
     def test_get_no_file(self):
-        """Test GET with no file uploaded"""
-        url = reverse('samplesheets:api_file_exists')
-        response = self.request_knox(url, data={'checksum': IRODS_FILE_MD5})
+        """Test SampleDataFileExistsAPIView GET with no file uploaded"""
+        response = self.request_knox(
+            self.url, data={'checksum': IRODS_FILE_MD5}
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(json.loads(response.content)['status'], False)
 
@@ -1142,34 +1188,48 @@ class TestSampleDataFileExistsAPIView(SampleSheetAPITaskflowTestBase):
         self.irods.data_objects.put(
             IRODS_FILE_PATH, coll_path, **{REG_CHKSUM_KW: ''}
         )
-        url = reverse('samplesheets:api_file_exists')
-        response = self.request_knox(url, data={'checksum': IRODS_FILE_MD5})
+        response = self.request_knox(
+            self.url, data={'checksum': IRODS_FILE_MD5}
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(json.loads(response.content)['status'], True)
 
     def test_get_file_sub_coll(self):
-        """Test GET with file in a sub collection"""
+        """Test GET with file in sub collection"""
         coll_path = self.irods_backend.get_sample_path(self.project) + '/sub'
         self.irods.collections.create(coll_path)
         self.irods.data_objects.put(
             IRODS_FILE_PATH, coll_path + '/', **{REG_CHKSUM_KW: ''}
         )
-        url = reverse('samplesheets:api_file_exists')
-        response = self.request_knox(url, data={'checksum': IRODS_FILE_MD5})
+        response = self.request_knox(
+            self.url, data={'checksum': IRODS_FILE_MD5}
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(json.loads(response.content)['status'], True)
 
     def test_get_no_checksum(self):
         """Test GET with no checksum (should fail)"""
-        url = reverse('samplesheets:api_file_exists')
-        response = self.request_knox(url, data={'checksum': ''})
+        response = self.request_knox(self.url, data={'checksum': ''})
         self.assertEqual(response.status_code, 400)
 
     def test_get_invalid_checksum(self):
         """Test GET with invalid checksum (should fail)"""
-        url = reverse('samplesheets:api_file_exists')
-        response = self.request_knox(url, data={'checksum': 'Invalid MD5!'})
+        response = self.request_knox(
+            self.url, data={'checksum': 'Invalid MD5!'}
+        )
         self.assertEqual(response.status_code, 400)
+
+    @override_settings(SHEETS_API_FILE_EXISTS_RESTRICT=True)
+    def test_get_restrict(self):
+        """Test GET with file exists restriction enabled"""
+        user_no_roles = self.make_user('user_no_roles')
+        response = self.request_knox(
+            self.url,
+            data={'checksum': IRODS_FILE_MD5},
+            token=self.get_token(user_no_roles),
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data['detail'], FILE_EXISTS_RESTRICT_MSG)
 
 
 class TestProjectIrodsFileListAPIView(SampleSheetAPITaskflowTestBase):
@@ -1177,11 +1237,9 @@ class TestProjectIrodsFileListAPIView(SampleSheetAPITaskflowTestBase):
 
     def setUp(self):
         super().setUp()
-
         self.taskflow = get_backend_api('taskflow', force=True)
         self.irods_backend = get_backend_api('omics_irods')
         self.irods = self.irods_backend.get_session_obj()
-
         # Make project with owner in Taskflow and Django
         self.project, self.owner_as = self.make_project_taskflow(
             title='TaskProject',
@@ -1194,15 +1252,15 @@ class TestProjectIrodsFileListAPIView(SampleSheetAPITaskflowTestBase):
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-
-    def test_get_no_collection(self):
-        """Test ProjectIrodsFileListAPIView GET without collection"""
-        url = reverse(
+        self.url = reverse(
             'samplesheets:api_file_list',
             kwargs={'project': self.project.sodar_uuid},
         )
+
+    def test_get_no_collection(self):
+        """Test ProjectIrodsFileListAPIView GET without collection"""
         with self.login(self.user):
-            response = self.client.get(url)
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 404)
         self.assertEqual(
             response.data['detail'],
@@ -1215,16 +1273,12 @@ class TestProjectIrodsFileListAPIView(SampleSheetAPITaskflowTestBase):
         """Test GET with empty collection"""
         # Set up iRODS collections
         self.make_irods_colls(self.investigation)
-        url = reverse(
-            'samplesheets:api_file_list',
-            kwargs={'project': self.project.sodar_uuid},
-        )
         with self.login(self.user):
-            response = self.client.get(url)
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['irods_data'], [])
+        self.assertEqual(response.data, [])
 
-    def test_get_collection_with_files(self):
+    def test_get_files(self):
         """Test GET with files"""
         # Set up iRODS collections
         self.make_irods_colls(self.investigation)
@@ -1232,15 +1286,16 @@ class TestProjectIrodsFileListAPIView(SampleSheetAPITaskflowTestBase):
         self.irods.data_objects.put(
             IRODS_FILE_PATH, coll_path, **{REG_CHKSUM_KW: ''}
         )
-        url = reverse(
-            'samplesheets:api_file_list',
-            kwargs={'project': self.project.sodar_uuid},
-        )
         with self.login(self.user):
-            response = self.client.get(url)
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data['irods_data']), 1)
-        self.assertEqual(
-            response.data['irods_data'][0]['name'], IRODS_FILE_NAME
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['name'], IRODS_FILE_NAME)
+        self.assertEqual(response.data[0]['type'], 'obj')
+        data_obj = self.irods.data_objects.get(coll_path + '/' + 'test1.txt')
+        aware_dt = timezone.make_aware(
+            data_obj.modify_time, pytz.timezone('GMT')
         )
-        self.assertEqual(response.data['irods_data'][0]['type'], 'obj')
+        self.assertEqual(
+            response.data[0]['modify_time'], self.get_drf_datetime(aware_dt)
+        )

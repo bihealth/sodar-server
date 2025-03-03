@@ -4,12 +4,8 @@
        :data-row-id="params.node.id"
        @mouseover="onMouseOver"
        @mouseout="onMouseOut">
-    <!-- Value with unit -->
-    <span v-if="'unit' in value && value.unit">
-      {{ value.value }} <span class="text-muted">{{ value.unit }}</span>
-    </span>
     <!-- Ontology term(s) -->
-    <span v-else-if="colType === 'ONTOLOGY' && value.value.length > 0">
+    <span v-if="colType === 'ONTOLOGY' && value.value.length > 0">
       <span v-if="!params.app.editMode && headerName === 'hpo terms'">
         <b-button
             class="btn sodar-list-btn mr-1 sodar-ss-hpo-copy-btn"
@@ -22,16 +18,23 @@
         <span v-if="!params.app.editMode">
           <a :href="term.accession"
              :title="term.ontology_name"
-             target="_blank">{{ term.name }}</a><span v-if="termIndex + 1 < value.value.length">; </span>
+             target="_blank">{{ term.name }}</a><span v-if="termIndex < value.value.length - 1">; </span>
         </span>
         <span v-else>
-          {{ term.name }}<span v-if="termIndex + 1 < value.value.length">; </span>
+          {{ term.name }}<span v-if="termIndex < value.value.length - 1">; </span>
         </span>
       </span>
     </span>
     <!-- Contacts with email -->
     <span v-else-if="colType === 'CONTACT' && renderData">
-      <a :href="'mailto:' + renderData.email">{{ renderData.name }}</a>
+      <span v-for="(contact, index) in renderData" :key="index">
+        <span v-if="contact.email !== null">
+          <a :href="'mailto:' + contact.email">{{ contact.name }}</a><span v-if="index < renderData.length - 1">; </span>
+        </span>
+        <span v-else>
+          {{ contact.name }}<span v-if="index < renderData.length - 1">; </span>
+        </span>
+      </span>
     </span>
     <!-- External links -->
     <span v-else-if="colType === 'EXTERNAL_LINKS' && renderData">
@@ -68,6 +71,10 @@
     <!-- Plain/numeric/empty/undetected value -->
     <span v-else>
       {{ value.value }}
+    </span>
+    <!-- Unit -->
+    <span v-if="value && value.value && 'unit' in value && value.unit">
+      <span class="text-muted">{{ value.unit }}</span>
     </span>
   </div>
 </template>
@@ -121,11 +128,25 @@ export default Vue.extend({
       return this.params.colDef.headerName.toLowerCase()
     },
     getContact () {
-      // Return contact name and email
-      if (contactRegex.test(this.value.value) === true) {
-        const contactGroup = contactRegex.exec(this.value.value)
-        return { name: contactGroup[1], email: contactGroup[2] }
-      } else this.colType = null // Fall back to standard field
+      // Return contact name(s) and email(s)
+      const ret = []
+      if (this.value.value) {
+        // console.debug('value type = ' + typeof this.value.value)
+        let splitVal
+        if (typeof this.value.value === 'string') {
+          splitVal = this.value.value.split(';')
+        } else {
+          splitVal = this.value.value
+        }
+        for (let i = 0; i < splitVal.length; i++) {
+          if (contactRegex.test(splitVal[i]) === true) {
+            const contactGroup = contactRegex.exec(splitVal[i])
+            ret.push({ name: contactGroup[1].trim(), email: contactGroup[2] })
+          } else ret.push({ name: splitVal[i].trim(), email: null })
+        }
+      }
+      if (ret.length === 0) this.colType = null // Fall back to standard field
+      return ret
     },
     getExternalLinks () {
       // Return external links

@@ -17,10 +17,11 @@ from projectroles.models import (
     ProjectInvite,
     SODAR_CONSTANTS,
 )
+from projectroles.plugins import get_backend_api
 from projectroles.tests.test_models import ProjectInviteMixin
 
 # Timeline dependency
-from timeline.models import ProjectEvent
+from timeline.models import TimelineEvent
 
 from taskflowbackend.tests.base import TaskflowViewTestBase
 
@@ -49,6 +50,10 @@ TASKFLOW_TEST_MODE = getattr(settings, 'TASKFLOW_TEST_MODE', False)
 
 class TestProjectCreateView(TaskflowViewTestBase):
     """Tests for Project creation view with taskflow"""
+
+    def setUp(self):
+        super().setUp()
+        self.timeline = get_backend_api('timeline_backend')
 
     def test_create_project(self):
         """Test Project creation with taskflow"""
@@ -137,14 +142,17 @@ class TestProjectCreateView(TaskflowViewTestBase):
         )
         self.assertEqual(group.hasmember(self.user_owner_cat.username), True)
         # Assert timeline event
-        tl_events = ProjectEvent.objects.filter(
+        tl_events = TimelineEvent.objects.filter(
             project=project,
             plugin='taskflow',
             user=self.user,
             event_name='project_create',
         )
         self.assertEqual(tl_events.count(), 1)
-        self.assertEqual(tl_events.first().get_status().status_type, 'OK')
+        self.assertEqual(
+            tl_events.first().get_status().status_type,
+            self.timeline.TL_STATUS_OK,
+        )
 
 
 class TestProjectUpdateView(TaskflowViewTestBase):
@@ -161,6 +169,7 @@ class TestProjectUpdateView(TaskflowViewTestBase):
             description='description',
         )
         self.user_new = self.make_user('user_new')
+        self.timeline = get_backend_api('timeline_backend')
 
     def test_update(self):
         """Test project update with taskflow"""
@@ -233,14 +242,17 @@ class TestProjectUpdateView(TaskflowViewTestBase):
         )
         self.assert_group_member(self.project, self.user, True)
         self.assert_group_member(self.project, self.user_owner_cat, True)
-        tl_events = ProjectEvent.objects.filter(
+        tl_events = TimelineEvent.objects.filter(
             project=self.project,
             plugin='taskflow',
             user=self.user,
             event_name='project_update',
         )
         self.assertEqual(tl_events.count(), 1)
-        self.assertEqual(tl_events.first().get_status().status_type, 'OK')
+        self.assertEqual(
+            tl_events.first().get_status().status_type,
+            self.timeline.TL_STATUS_OK,
+        )
 
     def test_update_parent(self):
         """Test project update with changed parent"""
@@ -771,7 +783,7 @@ class TestProjectInviteAcceptView(ProjectInviteMixin, TaskflowViewTestBase):
                 [
                     (
                         reverse(
-                            'projectroles:invite_process_ldap',
+                            'projectroles:invite_process_login',
                             kwargs={'secret': invite.secret},
                         ),
                         302,
@@ -823,7 +835,7 @@ class TestProjectInviteAcceptView(ProjectInviteMixin, TaskflowViewTestBase):
                 [
                     (
                         reverse(
-                            'projectroles:invite_process_ldap',
+                            'projectroles:invite_process_login',
                             kwargs={'secret': invite.secret},
                         ),
                         302,
@@ -862,7 +874,7 @@ class TestProjectInviteAcceptView(ProjectInviteMixin, TaskflowViewTestBase):
                 [
                     (
                         reverse(
-                            'projectroles:invite_process_local',
+                            'projectroles:invite_process_new_user',
                             kwargs={'secret': invite.secret},
                         ),
                         302,
@@ -904,7 +916,7 @@ class TestProjectInviteAcceptView(ProjectInviteMixin, TaskflowViewTestBase):
                 [
                     (
                         reverse(
-                            'projectroles:invite_process_local',
+                            'projectroles:invite_process_new_user',
                             kwargs={'secret': invite.secret},
                         ),
                         302,

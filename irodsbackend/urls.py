@@ -16,9 +16,10 @@ urlpatterns = [
         view=views.IrodsObjectListAjaxView.as_view(),
         name='list',
     ),
+    # NOTE: Not exactly REST API view, but URL maintained for backwards comp
     path(
         route='api/auth',
-        view=views.LocalAuthAPIView.as_view(),
+        view=views.BasicAuthView.as_view(),
         name='api_auth',
     ),
 ]

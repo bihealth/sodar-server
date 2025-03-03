@@ -20,6 +20,8 @@ from projectroles.models import Project, SODAR_CONSTANTS
 from projectroles.plugins import (
     ProjectAppPluginPoint,
     ProjectModifyPluginMixin,
+    PluginObjectLink,
+    PluginSearchResult,
     get_backend_api,
 )
 from projectroles.utils import build_secret
@@ -60,10 +62,16 @@ table_builder = SampleSheetTableBuilder()
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 PROJECT_ACTION_CREATE = SODAR_CONSTANTS['PROJECT_ACTION_CREATE']
 PROJECT_ACTION_UPDATE = SODAR_CONSTANTS['PROJECT_ACTION_UPDATE']
+APP_SETTING_SCOPE_PROJECT = SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT']
+APP_SETTING_SCOPE_USER = SODAR_CONSTANTS['APP_SETTING_SCOPE_USER']
+APP_SETTING_SCOPE_PROJECT_USER = SODAR_CONSTANTS[
+    'APP_SETTING_SCOPE_PROJECT_USER'
+]
 
 # Local constants
 SHEETS_INFO_SETTINGS = [
     'SHEETS_ALLOW_CRITICAL',
+    'SHEETS_API_FILE_EXISTS_RESTRICT',
     'SHEETS_CONFIG_VERSION',
     'SHEETS_ENABLE_CACHE',
     'SHEETS_ENABLE_STUDY_TABLE_CACHE',
@@ -111,7 +119,7 @@ class ProjectAppPlugin(
     #: App settings definition
     app_settings = {
         'allow_editing': {
-            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'scope': APP_SETTING_SCOPE_PROJECT,
             'type': 'BOOLEAN',
             'label': 'Allow sample sheet editing',
             'description': 'Allow editing of project sample sheets by '
@@ -120,14 +128,14 @@ class ProjectAppPlugin(
             'default': True,
         },
         'display_config': {
-            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT_USER'],
+            'scope': APP_SETTING_SCOPE_PROJECT_USER,
             'type': 'JSON',
             'label': 'Sample sheet display configuration',
             'description': 'User specific JSON configuration for column '
             'display in project sample sheets',
         },
         'display_config_default': {
-            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'scope': APP_SETTING_SCOPE_PROJECT,
             'type': 'JSON',
             'label': 'Default sample sheet display configuration',
             'description': 'Default JSON configuration for column display in '
@@ -135,14 +143,14 @@ class ProjectAppPlugin(
             'user_modifiable': False,
         },
         'sheet_config': {
-            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'scope': APP_SETTING_SCOPE_PROJECT,
             'type': 'JSON',
             'label': 'Sample sheet editing configuration',
             'description': 'JSON configuration for sample sheet editing',
             'user_modifiable': False,
         },
         'edit_config_min_role': {
-            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'scope': APP_SETTING_SCOPE_PROJECT,
             'type': 'STRING',
             'options': [
                 'superuser',
@@ -157,7 +165,7 @@ class ProjectAppPlugin(
             'user_modifiable': True,
         },
         'sheet_sync_enable': {
-            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'scope': APP_SETTING_SCOPE_PROJECT,
             'type': 'BOOLEAN',
             'default': False,
             'label': 'Enable sheet synchronization',
@@ -165,7 +173,7 @@ class ProjectAppPlugin(
             'user_modifiable': True,
         },
         'sheet_sync_url': {
-            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'scope': APP_SETTING_SCOPE_PROJECT,
             'type': 'STRING',
             'label': 'URL for sheet synchronization',
             'default': '',
@@ -173,7 +181,7 @@ class ProjectAppPlugin(
             'user_modifiable': True,
         },
         'sheet_sync_token': {
-            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'scope': APP_SETTING_SCOPE_PROJECT,
             'type': 'STRING',
             'label': 'Token for sheet synchronization',
             'default': '',
@@ -182,7 +190,7 @@ class ProjectAppPlugin(
             'user_modifiable': True,
         },
         'sheet_table_height': {
-            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_USER'],
+            'scope': APP_SETTING_SCOPE_USER,
             'type': 'INTEGER',
             'label': 'Sample sheet table height',
             'options': [250, 400, 600, 800],
@@ -192,7 +200,7 @@ class ProjectAppPlugin(
             'user_modifiable': True,
         },
         'public_access_ticket': {
-            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'scope': APP_SETTING_SCOPE_PROJECT,
             'type': 'STRING',
             'label': 'iRODS public access ticket',
             'default': '',
@@ -201,7 +209,7 @@ class ProjectAppPlugin(
             'user_modifiable': False,
         },
         'igv_genome': {
-            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'scope': APP_SETTING_SCOPE_PROJECT,
             'type': 'STRING',
             'label': 'IGV session genome',
             'default': IGV_DEFAULT_GENOME,
@@ -211,7 +219,7 @@ class ProjectAppPlugin(
             'user_modifiable': True,
         },
         'igv_omit_bam': {
-            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'scope': APP_SETTING_SCOPE_PROJECT,
             'type': 'STRING',
             'label': 'BAM and CRAM paths to omit from IGV sessions',
             'default': ', '.join(settings.SHEETS_IGV_OMIT_BAM),
@@ -222,7 +230,7 @@ class ProjectAppPlugin(
             'user_modifiable': True,
         },
         'igv_omit_vcf': {
-            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'scope': APP_SETTING_SCOPE_PROJECT,
             'type': 'STRING',
             'label': 'VCF paths to omit from IGV sessions',
             'default': ', '.join(settings.SHEETS_IGV_OMIT_VCF),
@@ -233,12 +241,21 @@ class ProjectAppPlugin(
             'user_modifiable': True,
         },
         'template_output_dir_display': {
-            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_USER'],
+            'scope': APP_SETTING_SCOPE_USER,
             'type': 'BOOLEAN',
             'label': 'Display template output directory field',
             'default': False,
             'description': 'Display output directory field for sample sheet '
             'templates.',
+            'user_modifiable': True,
+        },
+        'notify_email_irods_request': {
+            'scope': APP_SETTING_SCOPE_USER,
+            'type': 'BOOLEAN',
+            'default': True,
+            'label': 'Receive email for iRODS data requests',
+            'description': 'Receive email notifications for iRODS data '
+            'request accepting and rejecting',
             'user_modifiable': True,
         },
     }
@@ -300,46 +317,44 @@ class ProjectAppPlugin(
 
     def get_object_link(self, model_str, uuid):
         """
-        Return URL for referring to a object used by the app, along with a
-        label to be shown to the user for linking.
+        Return URL referring to an object used by the app, along with a name to
+        be shown to the user for linking.
 
         :param model_str: Object class (string)
         :param uuid: sodar_uuid of the referred object
-        :return: Dict or None if not found
+        :return: PluginObjectLink or None if not found
         """
         obj = self.get_object(eval(model_str), uuid)
         if not obj:
             return None
         if obj.__class__ == IrodsAccessTicket:
-            return {
-                'url': reverse(
+            return PluginObjectLink(
+                url=reverse(
                     'samplesheets:irods_tickets',
                     kwargs={'project': obj.get_project().sodar_uuid},
                 ),
-                'label': obj.get_display_name(),
-            }
+                name=obj.get_display_name(),
+            )
         if obj.__class__ in [Investigation, Study, Assay]:
-            return {
-                'url': obj.get_url(),
-                'label': (
+            return PluginObjectLink(
+                url=obj.get_url(),
+                name=(
                     obj.title
                     if obj.__class__ == Investigation
                     else obj.get_display_name()
                 ),
-            }
+            )
         url_kwargs = {'project': obj.project.sodar_uuid}
         if obj.__class__ == ISATab:
-            return {
-                'url': reverse('samplesheets:versions', kwargs=url_kwargs),
-                'label': obj.get_full_name(),
-            }
-        elif obj.__class__ == IrodsDataRequest:
-            return {
-                'url': reverse(
-                    'samplesheets:irods_requests', kwargs=url_kwargs
-                ),
-                'label': obj.get_display_name(),
-            }
+            return PluginObjectLink(
+                url=reverse('samplesheets:versions', kwargs=url_kwargs),
+                name=obj.get_full_name(),
+            )
+        if obj.__class__ == IrodsDataRequest:
+            return PluginObjectLink(
+                url=reverse('samplesheets:irods_requests', kwargs=url_kwargs),
+                name=obj.get_display_name(),
+            )
 
     @classmethod
     def _get_search_materials(cls, search_terms, user, keywords, item_types):
@@ -449,32 +464,34 @@ class ProjectAppPlugin(
         :param user: User object for user initiating the search
         :param search_type: String
         :param keywords: List (optional)
-        :return: Dict
+        :return: List of PluginSearchResult objects
         """
         irods_backend = get_backend_api('omics_irods')
-        results = {}
+        ret = []
         # Materials
         if not search_type or search_type in MATERIAL_SEARCH_TYPES:
             item_types = ['SOURCE', 'SAMPLE']
             if search_type in MATERIAL_SEARCH_TYPES:
                 item_types = [search_type.upper()]
-            results['materials'] = {
-                'title': 'Sources and Samples',
-                'search_types': ['source', 'sample'],
-                'items': self._get_search_materials(
+            r = PluginSearchResult(
+                category='materials',
+                title='Sources and Samples',
+                search_types=['source', 'sample'],
+                items=self._get_search_materials(
                     search_terms, user, keywords, item_types
                 ),
-            }
+            )
+            ret.append(r)
         # iRODS files
         if irods_backend and (not search_type or search_type == 'file'):
-            results['files'] = {
-                'title': 'Sample Files in iRODS',
-                'search_types': ['file'],
-                'items': self._get_search_files(
-                    search_terms, user, irods_backend
-                ),
-            }
-        return results
+            r = PluginSearchResult(
+                category='files',
+                title='Sample Files in iRODS',
+                search_types=['file'],
+                items=self._get_search_files(search_terms, user, irods_backend),
+            )
+            ret.append(r)
+        return ret
 
     def get_project_list_value(self, column_id, project, user):
         """
@@ -921,20 +938,27 @@ class SampleSheetAssayPluginPoint(PluginPoint):
     #: Irodsbackend IrodsAPI object
     irods_backend = None
 
+    #: iRDOS path for the assay for which the plugin is initialized
+    assay_path = None
+
     def __init__(self):
         super().__init__()
         self.irods_backend = get_backend_api('omics_irods')
 
     def get_assay_path(self, assay):
         """
-        Helper for getting the assay path.
+        Return the iRODS path for the given assay.
 
         :param assay: Assay object
         :return: Full iRODS path for the assay
         """
-        if not self.irods_backend:
-            return None
-        return self.irods_backend.get_path(assay)
+        if not self.assay_path:
+            self.assay_path = (
+                self.irods_backend.get_path(assay)
+                if self.irods_backend and assay
+                else None
+            )
+        return self.assay_path
 
     def get_row_path(self, row, table, assay, assay_path):
         """

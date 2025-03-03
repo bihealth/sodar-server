@@ -9,7 +9,6 @@ from projectroles.plugins import get_backend_api
 from projectroles.serializers import (
     SODARProjectModelSerializer,
     SODARNestedListSerializer,
-    SODARUserSerializer,
 )
 
 from samplesheets.forms import (
@@ -106,7 +105,7 @@ class IrodsDataRequestSerializer(
 ):
     """Serializer for the IrodsDataRequest model"""
 
-    user = SODARUserSerializer(read_only=True)
+    user = serializers.SlugRelatedField(slug_field='sodar_uuid', read_only=True)
 
     class Meta:
         model = IrodsDataRequest
@@ -149,7 +148,7 @@ class IrodsAccessTicketSerializer(
     """Serializer for the IrodsAccessTicket model"""
 
     is_active = serializers.SerializerMethodField()
-    user = SODARUserSerializer(read_only=True)
+    user = serializers.SlugRelatedField(slug_field='sodar_uuid', read_only=True)
 
     class Meta:
         model = IrodsAccessTicket

@@ -9,7 +9,7 @@ and changes to the sample sheets. The activity is displayed as a list of events.
 
 .. figure:: _static/sodar_ui/timeline.png
     :align: center
-    :scale: 45%
+    :scale: 50%
 
     Project timeline
 
@@ -19,17 +19,17 @@ Timestamp
     Time of the event's creation. This doubles as a link to a modal which
     displays the event status history. This can be useful information e.g. in
     case of asynchronous background events.
-Event
-    Type of the event along with the SODAR application which created the event.
 User
     User initiating the event.
 Description
-    Description of the event. Objects included in the description have a link
-    displayed as a clock notation. Clicking this opens a list of all events
-    related to the object. The title of the object also often works as a link
-    to the related application. Possible extra JSON data is displayed as a link
-    in the right hand side of the field. The link opens a modal displaying the
-    JSON data.
+    Description of the event. The description is preceded by a badge displaying
+    the event type. Objects included in the description are linked to the
+    respective application. Objects also have a history link displayed as a
+    clock icon. Clicking on the icon opens a list of all events related to the
+    object within the project. The title of the object also often works as a
+    link to the related application. Possible extra JSON data is displayed as a
+    link in the right hand side of the field. The link opens a modal displaying
+    the JSON data.
 Status
     Current status of the event.
 

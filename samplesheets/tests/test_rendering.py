@@ -34,6 +34,29 @@ APP_NAME = 'samplesheets'
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 SHEET_PATH_INSERTED = SHEET_DIR_SPECIAL + 'i_small_insert.zip'
 SHEET_PATH_ALT = SHEET_DIR + 'i_small2.zip'
+SHEET_PATH_EMPTY_COLS = SHEET_DIR_SPECIAL + 'i_small_empty_cols.zip'
+STUDY_COL_TYPES = [
+    'NAME',
+    'ONTOLOGY',
+    'UNIT',
+    'PROTOCOL',
+    None,
+    'CONTACT',
+    'DATE',
+    'NAME',
+    'NUMERIC',
+    None,
+]
+ASSAY_COL_TYPES = STUDY_COL_TYPES + [
+    'PROTOCOL',
+    'NAME',
+    'PROTOCOL',
+    'NAME',
+    'LINK_FILE',
+    'LINK_FILE',
+    'NAME',
+    'LINK_FILE',
+]
 
 
 # TODO: Unify with TestTableBuilder if no other classes are needed
@@ -57,6 +80,7 @@ class SamplesheetsRenderingTestBase(
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
         self.tb = SampleSheetTableBuilder()
         # Set up helpers
         self.cache_backend = get_backend_api('sodar_cache')
@@ -66,7 +90,9 @@ class SamplesheetsRenderingTestBase(
         self.cache_args = [APP_NAME, self.cache_name, self.project]
 
 
-class TestTableBuilder(SheetConfigMixin, SamplesheetsRenderingTestBase):
+class TestSampleSheetTableBuilder(
+    SheetConfigMixin, SamplesheetsRenderingTestBase
+):
     """Tests for SampleSheetTableBuilder"""
 
     def _assert_row_length(self, table):
@@ -139,6 +165,39 @@ class TestTableBuilder(SheetConfigMixin, SamplesheetsRenderingTestBase):
         # Aassay tables
         for k, assay_table in tables['assays'].items():
             self._assert_row_length(assay_table)
+
+    def test_build_study_tables_col_types(self):
+        """Test build_study_tables() column types"""
+        tables = self.tb.build_study_tables(self.study)
+        self.assertEqual(
+            [h['col_type'] for h in tables['study']['field_header']],
+            STUDY_COL_TYPES,
+        )
+        assay_table = tables['assays'][str(self.assay.sodar_uuid)]
+        self.assertEqual(
+            [h['col_type'] for h in assay_table['field_header']],
+            ASSAY_COL_TYPES,
+        )
+
+    def test_build_study_tables_col_types_empty(self):
+        """Test build_study_tables() column types with empty columns"""
+        investigation2 = self.import_isa_from_file(
+            SHEET_PATH_EMPTY_COLS, self.project
+        )
+        study2 = investigation2.studies.first()
+        assay2 = study2.assays.first()
+        tables = self.tb.build_study_tables(study2)
+        expected = STUDY_COL_TYPES
+        STUDY_COL_TYPES[8] = None  # This should not be NUMERIC anymore
+        self.assertEqual(
+            [h['col_type'] for h in tables['study']['field_header']], expected
+        )
+        assay_table = tables['assays'][str(assay2.sodar_uuid)]
+        expected = ASSAY_COL_TYPES
+        ASSAY_COL_TYPES[8] = None
+        self.assertEqual(
+            [h['col_type'] for h in assay_table['field_header']], expected
+        )
 
     def test_build_study_tables_config(self):
         """Test build_study_tables() with sheet config"""

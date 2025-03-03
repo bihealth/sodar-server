@@ -6,13 +6,13 @@
 -r ldap.txt
 
 # Whitenoise for static files
-whitenoise==6.2.0
+whitenoise==6.7.0
 
 # Redis cache support
-django-redis==5.2.0
+django-redis==5.4.0
 
 # WSGI Handler
-gevent==23.9.1
+gevent==24.2.1
 gunicorn==22.0.0
 
 # Email backends for Mailgun, Postmark, SendGrid and more

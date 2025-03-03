@@ -83,11 +83,12 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                 and header['item_type'] == 'DATA'
                 and header['value'].lower() == 'name'
                 and top_header['value'].lower() == 'raw data file'
+                and row[i]['value']
+                and isinstance(row[i]['value'], str)
             ):
                 row[i]['link'] = (
                     base_url + '/' + RAW_DATA_COLL + '/' + row[i]['value']
                 )
-
         return row
 
     def get_shortcuts(self, assay):

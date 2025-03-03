@@ -1,5 +1,6 @@
 """iRODS tasks for Taskflow"""
 
+import codecs
 import logging
 import os
 import random
@@ -21,10 +22,22 @@ from taskflowbackend.tasks.base_task import BaseTask
 logger = logging.getLogger('__name__')
 
 
+# Local constants
+# NOTE: This is only compabitle with iRODS 4.3.
+# Backwards compatibility with 4.2 has been removed in SODAR v1.0.
+ACCESS_LOOKUP = {
+    'read': 'read_object',
+    'read_object': 'read',
+    'write': 'modify_object',
+    'modify_object': 'write',
+    'null': 'null',
+    'own': 'own',
+}
 INHERIT_STRINGS = {True: 'inherit', False: 'noinherit'}
 META_EMPTY_VALUE = 'N/A'
 MD5_RE = re.compile(r'([^\w.])')
 CHECKSUM_RETRY = 5
+NO_FILE_CHECKSUM_LABEL = 'None'
 
 
 # Mixins -----------------------------------------------------------------------
@@ -38,7 +51,6 @@ class IrodsAccessMixin:
         access_name,
         path,
         user_name,
-        access_lookup,
         obj_target,
         recursive,
     ):
@@ -48,7 +60,6 @@ class IrodsAccessMixin:
         :param access_name: Access level to set (string)
         :param path: Full iRODS path to collection or data object (string)
         :param user_name: Name of user or group (string)
-        :param access_lookup: Access level lookup for iRODS compatibility (dict)
         :param obj_target: Whether target is a data object (boolean)
         :param recursive: Set collection access recursively if True (boolean)
         """
@@ -60,8 +71,7 @@ class IrodsAccessMixin:
         else:
             target = self.irods.collections.get(path)
             recursive = recursive
-        # target_access = self.irods.acls.get(target=target)  # 2.0+
-        target_access = self.irods.permissions.get(target=target)
+        target_access = self.irods.acls.get(target=target)
 
         user_access = next(
             (x for x in target_access if x.user_name == user_name), None
@@ -69,9 +79,9 @@ class IrodsAccessMixin:
         modifying_data = False
         if (
             user_access
-            and user_access.access_name != access_lookup[access_name]
+            and user_access.access_name != ACCESS_LOOKUP[access_name]
         ):
-            self.execute_data['access_names'][path] = access_lookup[
+            self.execute_data['access_names'][path] = ACCESS_LOOKUP[
                 user_access.access_name
             ]
             modifying_data = True
@@ -86,8 +96,7 @@ class IrodsAccessMixin:
                 user_name=user_name,
                 user_zone=self.irods.zone,
             )
-            # self.irods.acls.set(acl, recursive=recursive)  # 2.0+
-            self.irods.permissions.set(acl, recursive=recursive)
+            self.irods.acls.set(acl, recursive=recursive)
             self.data_modified = True  # Access was modified
 
     def revert_set_access(
@@ -113,8 +122,7 @@ class IrodsAccessMixin:
                 user_zone=self.irods.zone,
             )
             recursive = False if obj_target else recursive
-            # self.irods.acls.set(acl, recursive=recursive)  # 2.0+
-            self.irods.permissions.set(acl, recursive=recursive)
+            self.irods.acls.set(acl, recursive=recursive)
 
 
 # Base Task --------------------------------------------------------------------
@@ -340,7 +348,7 @@ class CreateUserGroupTask(IrodsBaseTask):
     def revert(self, name, *args, **kwargs):
         if self.data_modified:
             # NOTE: Not group_name
-            self.irods.user_groups.remove(user_name=name)
+            self.irods.users.remove(user_name=name)
 
 
 # TODO: Improve this once inherit is properly implemented in python client
@@ -356,8 +364,7 @@ class SetInheritanceTask(IrodsBaseTask):
             user_name='',
             user_zone=self.irods.zone,
         )
-        # self.irods.acls.set(acl, recursive=True)  # 2.0+
-        self.irods.permissions.set(acl, recursive=True)
+        self.irods.acls.set(acl, recursive=True)
 
     def revert(self, path, inherit=True, *args, **kwargs):
         # TODO: Add checks for inheritance status prior to execute
@@ -383,7 +390,6 @@ class SetAccessTask(IrodsAccessMixin, IrodsBaseTask):
         access_name,
         path,
         user_name,
-        access_lookup,
         irods_backend,
         obj_target=False,
         recursive=True,
@@ -395,7 +401,6 @@ class SetAccessTask(IrodsAccessMixin, IrodsBaseTask):
                 access_name,
                 path,
                 user_name,
-                access_lookup,
                 obj_target,
                 recursive,
             )
@@ -408,7 +413,6 @@ class SetAccessTask(IrodsAccessMixin, IrodsBaseTask):
         access_name,
         path,
         user_name,
-        access_lookup,
         irods_backend,
         obj_target=False,
         recursive=True,
@@ -575,7 +579,6 @@ class BatchSetAccessTask(IrodsAccessMixin, IrodsBaseTask):
         access_name,
         paths,
         user_name,
-        access_lookup,
         irods_backend,
         obj_target=False,
         recursive=True,
@@ -588,7 +591,6 @@ class BatchSetAccessTask(IrodsAccessMixin, IrodsBaseTask):
                 access_name,
                 path,
                 user_name,
-                access_lookup,
                 obj_target,
                 recursive,
             )
@@ -599,7 +601,6 @@ class BatchSetAccessTask(IrodsAccessMixin, IrodsBaseTask):
         access_name,
         paths,
         user_name,
-        access_lookup,
         irods_backend,
         obj_target=False,
         recursive=True,
@@ -651,13 +652,17 @@ class BatchValidateChecksumsTask(IrodsBaseTask):
         :raises: Exception if checksums do not match
         """
         for replica in data_obj.replicas:
-            if checksum != replica.checksum:
+            if (
+                not checksum
+                or not replica.checksum
+                or checksum.lower() != replica.checksum.lower()
+            ):
                 msg = (
                     'Checksums do not match for "{}" in resource "{}" '
                     '(File: {}; iRODS: {})'.format(
                         os.path.basename(data_obj.path),
                         replica.resource_name,
-                        checksum,
+                        checksum or NO_FILE_CHECKSUM_LABEL,
                         replica.checksum,
                     )
                 )
@@ -669,8 +674,13 @@ class BatchValidateChecksumsTask(IrodsBaseTask):
         for path in paths:
             md5_path = path + '.md5'
             try:
-                md5_file = self.irods.data_objects.open(md5_path, mode='r')
-                file_sum = re.split(MD5_RE, md5_file.read().decode('utf-8'))[0]
+                with self.irods.data_objects.open(md5_path, mode='r') as f:
+                    dec = 'utf-8'
+                    md5_content = f.read()
+                    # Support for BOM header forced by PowerShell (see #1818)
+                    if md5_content[:3] == codecs.BOM_UTF8:
+                        dec += '-sig'
+                    file_sum = re.split(MD5_RE, md5_content.decode(dec))[0]
             except Exception as ex:
                 msg = 'Unable to read checksum file "{}"'.format(
                     '/'.join(md5_path.split('/')[zone_path_len:])
@@ -739,7 +749,6 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
         src_paths,
         access_name,
         user_name,
-        access_lookup,
         irods_backend,
         *args,
         **kwargs
@@ -774,8 +783,7 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
                     ),
                 )
             try:
-                # target_access = self.irods.acls.get(target=target)  # 2.0+
-                target_access = self.irods.permissions.get(target=target)
+                target_access = self.irods.acls.get(target=target)
             except Exception as ex:
                 self._raise_irods_exception(
                     ex,
@@ -789,9 +797,9 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
             prev_access = None
             if (
                 user_access
-                and user_access.access_name != access_lookup[access_name]
+                and user_access.access_name != ACCESS_LOOKUP[access_name]
             ):
-                prev_access = access_lookup[user_access.access_name]
+                prev_access = ACCESS_LOOKUP[user_access.access_name]
                 modifying_access = True
             elif not user_access:
                 prev_access = 'null'
@@ -808,8 +816,7 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
                     user_zone=self.irods.zone,
                 )
                 try:
-                    # self.irods.acls.set(acl, recursive=False)  # 2.0+
-                    self.irods.permissions.set(acl, recursive=False)
+                    self.irods.acls.set(acl, recursive=False)
                 except Exception as ex:
                     self._raise_irods_exception(
                         ex,
@@ -825,7 +832,6 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
         dest_root,
         access_name,
         user_name,
-        access_lookup,
         irods_backend,
         *args,
         **kwargs
@@ -849,8 +855,7 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
                 user_name=user_name,
                 user_zone=self.irods.zone,
             )
-            # self.irods.acls.set(acl, recursive=False)  # 2.0+
-            self.irods.permissions.set(acl, recursive=False)
+            self.irods.acls.set(acl, recursive=False)
 
 
 class BatchCalculateChecksumTask(IrodsBaseTask):

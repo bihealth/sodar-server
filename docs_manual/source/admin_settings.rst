@@ -36,6 +36,8 @@ Documentation on settings is linked below.
 - `Admin Alerts <https://sodar-core.readthedocs.io/en/latest/app_adminalerts.html#optional-settings>`_
 - `App Alerts <https://sodar-core.readthedocs.io/en/latest/app_appalerts.html#django-settings>`_
 - `Timeline <https://sodar-core.readthedocs.io/en/latest/app_timeline_install.html#optional-settings>`_
+- `LDAP auth settings <https://sodar-core.readthedocs.io/en/latest/app_projectroles_settings.html#ldap-ad-configuration-optional>`_
+- `OIDC auth settings <https://sodar-core.readthedocs.io/en/latest/app_projectroles_settings.html#openid-connect-oidc-configuration-optional>`_
 
 .. _admin_settings_backend:
 
@@ -110,8 +112,9 @@ iRODS Settings
 ``IRODS_CERT_PATH``
     iRODS certificate path on server (string).
 ``IRODS_SODAR_AUTH``
-    Enable local basic auth endpoint for iRODS if an external LDAP/AD server is
-    not used (boolean, default: ``False``).
+    Enable local basic auth endpoint for iRODS. **NOTE:** This **must** be set
+    ``True`` if OIDC is enabled, or if both OIDC and LDAP auth are disabled
+    (boolean, default: ``False``).
 
 .. warning::
 
@@ -202,6 +205,10 @@ Sample Sheets Settings
 ``SHEETS_IGV_OMIT_VCF``
     VCF file name suffixes to omit from study shortcuts and IGV session
     generation.
+``SHEETS_API_FILE_EXISTS_RESTRICT``
+    Restrict access to ``SampleDataFileExistsAPIView`` to users with the role of
+    project guest or above in any category or project. Recommended for instances
+    deployed on the public internet with general OIDC SSO access (boolean).
 
 Landing Zones Settings
 ----------------------

@@ -19,7 +19,6 @@ from irods.exception import CollectionDoesNotExist
 from irods.keywords import REG_CHKSUM_KW
 from irods.models import TicketQuery, UserGroup
 from irods.test.helpers import make_object
-from packaging import version
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
@@ -37,13 +36,19 @@ from projectroles.tests.test_models import (
     RoleMixin,
     RoleAssignmentMixin,
 )
-from projectroles.tests.test_permissions import TestPermissionMixin
+from projectroles.tests.test_permissions import PermissionTestMixin
 from projectroles.tests.test_permissions_api import SODARAPIPermissionTestMixin
 from projectroles.tests.test_views_api import SODARAPIViewTestMixin
-from projectroles.views_api import CORE_API_MEDIA_TYPE, CORE_API_DEFAULT_VERSION
+from projectroles.views_api import (
+    PROJECTROLES_API_MEDIA_TYPE,
+    PROJECTROLES_API_DEFAULT_VERSION,
+)
+
+from taskflowbackend.lock_api import ProjectLockAPI
 
 
 app_settings = AppSettingAPI()
+lock_api = ProjectLockAPI()
 logger = logging.getLogger(__name__)
 
 
@@ -70,10 +75,18 @@ DEFAULT_PERMANENT_USERS = ['client_user', 'rods', 'rodsadmin', 'public']
 class TaskflowTestMixin(ProjectMixin, RoleMixin, RoleAssignmentMixin):
     """Setup/teardown methods and helpers for taskflow tests"""
 
+    #: Project lock coordinator
+    coordinator = None
     #: iRODS backend object
     irods_backend = None
     #: iRODS session object
     irods = None
+
+    def lock_project(self, project):
+        self.coordinator = lock_api.get_coordinator()
+        lock_id = str(project.sodar_uuid)
+        lock = self.coordinator.get_lock(lock_id)
+        lock_api.acquire(lock)
 
     def make_irods_object(
         self, coll, obj_name, content=None, content_length=1024, checksum=True
@@ -128,8 +141,7 @@ class TaskflowTestMixin(ProjectMixin, RoleMixin, RoleAssignmentMixin):
                 target = self.irods.collections.get(target)
             except CollectionDoesNotExist:
                 target = self.irods.data_objects.get(target)
-        # access_list = self.irods.acls.get(target=target)  # 2.0+
-        access_list = self.irods.permissions.get(target=target)
+        access_list = self.irods.acls.get(target=target)
         access = next(
             (x for x in access_list if x.user_name == user_name), None
         )
@@ -219,12 +231,11 @@ class TaskflowTestMixin(ProjectMixin, RoleMixin, RoleAssignmentMixin):
                     )
             except Exception:
                 pass  # This is OK, the root just wasn't there
-                # Remove created user groups and users
 
-            # NOTE: user_groups.remove does both
+            # Remove created user groups and users
             for g in irods.query(UserGroup).all():
                 if g[UserGroup.name] not in permanent_users:
-                    irods.user_groups.remove(user_name=g[UserGroup.name])
+                    irods.users.remove(user_name=g[UserGroup.name])
                     logger.debug('Removed user: {}'.format(g[UserGroup.name]))
 
             # Remove all tickets
@@ -277,11 +288,8 @@ class TaskflowTestMixin(ProjectMixin, RoleMixin, RoleAssignmentMixin):
         self.owner_as_cat = self.make_assignment(
             self.category, self.user_owner_cat, self.role_owner
         )
-        # Set iRODS 4.2/4.3 compatible ACL params
-        v = version.parse(self.irods_backend.get_version(self.irods))
-        acl_dl = '_' if v >= version.parse('4.3') else ' '
-        self.irods_access_read = 'read{}object'.format(acl_dl)
-        self.irods_access_write = 'modify{}object'.format(acl_dl)
+        self.irods_access_read = 'read_object'
+        self.irods_access_write = 'modify_object'
 
     def tearDown(self):
         self.clear_irods_test_data()
@@ -433,8 +441,8 @@ class TaskflowAPIProjectTestMixin:
             reverse('projectroles:api_project_create'),
             method='POST',
             data=post_data,
-            media_type=CORE_API_MEDIA_TYPE,
-            version=CORE_API_DEFAULT_VERSION,
+            media_type=PROJECTROLES_API_MEDIA_TYPE,
+            version=PROJECTROLES_API_DEFAULT_VERSION,
         )
         # Assert response and object status
         self.assertEqual(response.status_code, 201, msg=response.content)
@@ -452,8 +460,8 @@ class TaskflowAPIProjectTestMixin:
             url,
             method='POST',
             data=request_data,
-            media_type=CORE_API_MEDIA_TYPE,
-            version=CORE_API_DEFAULT_VERSION,
+            media_type=PROJECTROLES_API_MEDIA_TYPE,
+            version=PROJECTROLES_API_DEFAULT_VERSION,
         )
         self.assertEqual(response.status_code, 201, msg=response.content)
         return RoleAssignment.objects.get(project=project, user=user, role=role)
@@ -485,7 +493,7 @@ class TaskflowAPIViewTestBase(
 class TaskflowPermissionTestBase(
     TaskflowProjectTestMixin,
     TaskflowPermissionTestMixin,
-    TestPermissionMixin,
+    PermissionTestMixin,
     TestCase,
 ):
     """Base class for testing UI and Ajax view permissions with taskflow"""

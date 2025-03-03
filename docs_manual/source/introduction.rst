@@ -27,6 +27,7 @@ data:
 - Large scale data storage
 - Linking files to metadata
 - Management and validation of file uploads
+- Management of study design templates
 - Tools for aiding project data management
 - Integrating data with third party tools
 
@@ -68,8 +69,7 @@ Notable Features
 ================
 
 - Accessibility
-    * User access via one or multiple LDAP/AD services, Single Sign-On via SAML
-      and/or local accounts
+    * User access via one or multiple LDAP/AD services and/or local accounts
     * Access tokens can be can be generated for REST API use
     * UUIDs and permanent URLs for all relevant objects in the system
 - iRODS Integration

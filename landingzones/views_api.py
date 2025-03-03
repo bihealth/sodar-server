@@ -1,9 +1,11 @@
 """REST API views for the landingzones app"""
 
 import logging
+import sys
 
 from django.urls import reverse
 
+from rest_framework import status
 from rest_framework.exceptions import APIException, NotFound
 from rest_framework.generics import (
     ListAPIView,
@@ -11,9 +13,11 @@ from rest_framework.generics import (
     CreateAPIView,
     UpdateAPIView,
 )
+from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
-from rest_framework import status
 from rest_framework.serializers import ValidationError
+from rest_framework.schemas.openapi import AutoSchema
+from rest_framework.versioning import AcceptHeaderVersioning
 from rest_framework.views import APIView
 
 # Projectroles dependency
@@ -21,6 +25,7 @@ from projectroles.plugins import get_backend_api
 from projectroles.views_api import (
     SODARAPIBaseProjectMixin,
     SODARAPIGenericProjectMixin,
+    SODARPageNumberPagination,
 )
 
 # Samplesheets dependency
@@ -41,11 +46,39 @@ from landingzones.views import (
 logger = logging.getLogger(__name__)
 
 
+# Local constants
+LANDINGZONES_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar.landingzones+json'
+LANDINGZONES_API_ALLOWED_VERSIONS = ['1.0']
+LANDINGZONES_API_DEFAULT_VERSION = '1.0'
+
+ZONE_NO_COLLS_MSG = 'iRODS collections not created for project'
+
+
 # Mixins and Base Views --------------------------------------------------------
 
 
+class LandingzonesAPIVersioningMixin:
+    """
+    Landingzones API view versioning mixin for overriding media type and
+    accepted versions.
+    """
+
+    class LandingzonesAPIRenderer(JSONRenderer):
+        media_type = LANDINGZONES_API_MEDIA_TYPE
+
+    class LandingzonesAPIVersioning(AcceptHeaderVersioning):
+        allowed_versions = LANDINGZONES_API_ALLOWED_VERSIONS
+        default_version = LANDINGZONES_API_DEFAULT_VERSION
+
+    renderer_classes = [LandingzonesAPIRenderer]
+    versioning_class = LandingzonesAPIVersioning
+
+
 class ZoneSubmitBaseAPIView(
-    ZoneModifyPermissionMixin, SODARAPIBaseProjectMixin, APIView
+    ZoneModifyPermissionMixin,
+    LandingzonesAPIVersioningMixin,
+    SODARAPIBaseProjectMixin,
+    APIView,
 ):
     """
     Base API view for initiating LandingZone operations via SODAR Taskflow.
@@ -80,7 +113,9 @@ class ZoneSubmitBaseAPIView(
 # API Views --------------------------------------------------------------------
 
 
-class ZoneListAPIView(SODARAPIGenericProjectMixin, ListAPIView):
+class ZoneListAPIView(
+    LandingzonesAPIVersioningMixin, SODARAPIGenericProjectMixin, ListAPIView
+):
     """
     List the landing zones in a project.
 
@@ -89,6 +124,10 @@ class ZoneListAPIView(SODARAPIGenericProjectMixin, ListAPIView):
     finished (meaning moved or deleted) zones if the "finished" parameter is
     set.
 
+    Supports optional pagination for listing by providing the ``page`` query
+    string. This will return results in the Django Rest Framework
+    ``PageNumberPagination`` format.
+
     **URL:** ``/landingzones/api/list/{Project.sodar_uuid}?finished={integer}``
 
     **Methods:** ``GET``
@@ -96,11 +135,14 @@ class ZoneListAPIView(SODARAPIGenericProjectMixin, ListAPIView):
     **Parameters:**
 
     - ``finished``: Include finished zones if 1 (integer)
+    - ``page``: Page number for paginated results (int, optional)
 
     **Returns:** List of landing zone details (see ``ZoneRetrieveAPIView``)
     """
 
+    pagination_class = SODARPageNumberPagination
     permission_required = 'landingzones.view_zone_own'
+    schema = AutoSchema(operation_id_base='listZone')
     serializer_class = LandingZoneSerializer
 
     def get_queryset(self):
@@ -120,7 +162,9 @@ class ZoneListAPIView(SODARAPIGenericProjectMixin, ListAPIView):
         return ret
 
 
-class ZoneRetrieveAPIView(SODARAPIGenericProjectMixin, RetrieveAPIView):
+class ZoneRetrieveAPIView(
+    LandingzonesAPIVersioningMixin, SODARAPIGenericProjectMixin, RetrieveAPIView
+):
     """
     Retrieve the details of a landing zone.
 
@@ -143,11 +187,12 @@ class ZoneRetrieveAPIView(SODARAPIGenericProjectMixin, RetrieveAPIView):
     - ``status_info``: Detailed description of the landing zone status (string)
     - ``status_locked``: Whether write access to the zone is currently locked (boolean)
     - ``title``: Full title of the created landing zone (string)
-    - ``user``: User who owns the zone (dict)
+    - ``user``: UUID of user who owns the zone (string)
     """
 
     lookup_field = 'sodar_uuid'
     lookup_url_kwarg = 'landingzone'
+    schema = AutoSchema(operation_id_base='retrieveZone')
     serializer_class = LandingZoneSerializer
 
     def get_permission_required(self):
@@ -163,10 +208,16 @@ class ZoneRetrieveAPIView(SODARAPIGenericProjectMixin, RetrieveAPIView):
 
 
 class ZoneCreateAPIView(
-    ZoneModifyMixin, SODARAPIGenericProjectMixin, CreateAPIView
+    ZoneModifyMixin,
+    LandingzonesAPIVersioningMixin,
+    SODARAPIGenericProjectMixin,
+    CreateAPIView,
 ):
     """
     Create a landing zone.
+
+    Returns ``503`` if an investigation for the project is not found or project
+    iRODS collections have not been created.
 
     **URL:** ``/landingzones/api/create/{Project.sodar_uuid}``
 
@@ -191,29 +242,29 @@ class ZoneCreateAPIView(
     permission_required = 'landingzones.create_zone'
     serializer_class = LandingZoneSerializer
 
+    @classmethod
+    def _raise_503(cls, msg):
+        ex = APIException(msg)
+        ex.status_code = 503
+        raise ex
+
     def perform_create(self, serializer):
         """
         Override perform_create() to add timeline event and initiate taskflow.
         """
-        ex_msg = 'Creating landing zone failed: '
+        ex_prefix = 'Creating landing zone failed: '
         # Check taskflow status
         if not get_backend_api('taskflow'):
-            raise APIException('{}Taskflow not enabled'.format(ex_msg))
+            self._raise_503('{}Taskflow not enabled'.format(ex_prefix))
 
         # Ensure project has investigation with iRODS collections created
         project = self.get_project()
         investigation = Investigation.objects.filter(
             active=True, project=project
         ).first()
-
-        if not investigation:
-            raise ValidationError(
-                '{}No investigation found for project'.format(ex_msg)
-            )
+        # NOTE: Lack of investigation is already caught in serializer
         if not investigation.irods_status:
-            raise ValidationError(
-                '{}iRODS collections not created for project'.format(ex_msg)
-            )
+            self._raise_503('{}{}'.format(ex_prefix, ZONE_NO_COLLS_MSG))
 
         # If all is OK, go forward with object creation and taskflow submission
         create_colls = serializer.validated_data.pop('create_colls')
@@ -227,11 +278,14 @@ class ZoneCreateAPIView(
                 request=self.request,
             )
         except Exception as ex:
-            raise APIException('{}{}'.format(ex_msg, ex))
+            raise APIException('{}{}'.format(ex_prefix, ex))
 
 
 class ZoneUpdateAPIView(
-    ZoneModifyMixin, SODARAPIGenericProjectMixin, UpdateAPIView
+    ZoneModifyMixin,
+    LandingzonesAPIVersioningMixin,
+    SODARAPIGenericProjectMixin,
+    UpdateAPIView,
 ):
     """
     Update a landing zone description and user message.
@@ -255,6 +309,8 @@ class ZoneUpdateAPIView(
 
     def get_serializer_context(self, *args, **kwargs):
         context = super().get_serializer_context(*args, **kwargs)
+        if sys.argv[1:2] == ['generateschema']:
+            return context
         landing_zone = self.get_object()
         context['assay'] = landing_zone.assay.sodar_uuid
         return context
@@ -333,6 +389,8 @@ class ZoneSubmitMoveAPIView(ZoneMoveMixin, ZoneSubmitBaseAPIView):
     For validating data without moving it to the sample repository, this view
     should be called with ``submit/validate``.
 
+    Returns ``503`` if the project is currently locked by another operation.
+
     **URL for Validation:** ``/landingzones/api/submit/validate/{LandingZone.sodar_uuid}``
 
     **URL for Moving:** ``/landingzones/api/submit/move/{LandingZone.sodar_uuid}``
@@ -340,10 +398,18 @@ class ZoneSubmitMoveAPIView(ZoneMoveMixin, ZoneSubmitBaseAPIView):
     **Methods:** ``POST``
     """
 
+    class ZoneSubmitMoveSchema(AutoSchema):
+        def get_operation_id_base(self, path, method, action):
+            if '/validate' in path:
+                return 'submitZoneValidate'
+            return 'submitZoneValidateMove'
+
+    schema = ZoneSubmitMoveSchema()
     zone_action = 'move'
 
     def post(self, request, *args, **kwargs):
         """POST request for initiating landing zone validation/moving"""
+        taskflow = get_backend_api('taskflow')
         zone = LandingZone.objects.filter(
             sodar_uuid=self.kwargs['landingzone']
         ).first()
@@ -365,9 +431,10 @@ class ZoneSubmitMoveAPIView(ZoneMoveMixin, ZoneSubmitBaseAPIView):
         try:
             self._submit_validate_move(zone, validate_only)
         except Exception as ex:
-            raise APIException(
-                'Initiating landing zone {} failed: {}'.format(action_msg, ex)
-            )
+            ex_msg = 'Initiating landing zone {} failed: '.format(action_msg)
+            if taskflow:
+                taskflow.raise_submit_api_exception(ex_msg, ex)
+            raise APIException('{}{}'.format(ex_msg, ex))
         return Response(
             {
                 'detail': 'Landing zone {} initiated'.format(action_msg),

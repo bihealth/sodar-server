@@ -287,6 +287,9 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
                 settings.PROJECTROLES_SEND_EMAIL
                 and flow_name == 'landing_zone_move'
                 and not validate_only
+                and app_settings.get(
+                    APP_NAME, 'notify_email_zone_status', user=zone.user
+                )
             ):
                 try:
                     cls._send_owner_move_email(zone)
@@ -304,16 +307,10 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
             and zone.status == ZONE_STATUS_MOVED
             and file_count > 0
         ):
-            members = list(
-                set(
-                    [
-                        r.user
-                        for r in zone.project.get_roles()
-                        if r.user != zone.user
-                    ]
-                )
-            )
-            for member in members:
+            members = [
+                r.user for r in zone.project.get_roles() if r.user != zone.user
+            ]
+            for member in list(set(members)):
                 if app_alerts:
                     try:
                         cls._add_member_move_alert(

@@ -140,7 +140,7 @@ def get_isa_field_name(field):
     :param field: Field of an ISA Django model
     :return: String
     """
-    if type(field) == dict:
+    if isinstance(field, dict):
         return field['name']
     return field
 
@@ -261,6 +261,10 @@ def get_config_name(config):
 def write_excel_table(table, output, display_name):
     """
     Write an Excel 2010 file (.xlsx) from a rendered study/assay table.
+
+    :param table: Study/assay render table (dict)
+    :param output: HttpResponse object in which output will be written
+    :param display_name: Study or assay display name (string)
     """
 
     def _get_val(c_val):
@@ -272,7 +276,6 @@ def write_excel_table(table, output, display_name):
             return ';'.join([_get_val(x) for x in c_val])
         return ''
 
-    # Build Excel file
     wb = Workbook()
     ws = wb.active
     ws.title = re.sub(INVALID_TITLE_REGEX, '_', display_name)
@@ -282,10 +285,8 @@ def write_excel_table(table, output, display_name):
         top_header_row.append(c['value'])
         if c['colspan'] > 1:
             top_header_row += [''] * (c['colspan'] - 1)
-
     ws.append(top_header_row)
     ws.append([c['value'] for c in table['field_header']])
-
     for row in table['table_data']:
         ws.append([_get_val(c['value']) for c in row])
 
@@ -294,7 +295,6 @@ def write_excel_table(table, output, display_name):
     for col_cells in ws.columns:
         length = max(len(c.value) if c.value else 0 for c in col_cells) + 2
         ws.column_dimensions[col_cells[0].column_letter].width = length
-
     wb.save(output)
 
 

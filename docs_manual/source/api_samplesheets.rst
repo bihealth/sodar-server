@@ -6,6 +6,19 @@ Sample Sheets API
 The REST API for sample sheet operations is described in this document.
 
 
+Versioning
+==========
+
+Media Type
+    ``application/vnd.bihealth.sodar.samplesheets+json``
+Current Version
+    ``1.0``
+Accepted Versions
+    ``1.0``
+Header Example
+    ``Accept: application/vnd.bihealth.sodar.samplesheets+json; version=x.y``
+
+
 API Views
 =========
 
@@ -58,14 +71,3 @@ iRODS Data Requests
 .. autoclass:: IrodsDataRequestAcceptAPIView
 
 .. autoclass:: IrodsDataRequestRejectAPIView
-
-
-Versioning
-==========
-
-For accept header versioning, the following header is expected in the current
-SODAR version:
-
-.. code-block:: console
-
-    Accept: application/vnd.bihealth.sodar+json; version=0.15.1

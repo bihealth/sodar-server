@@ -43,6 +43,10 @@ For trying out the system or deploying it in production, see the
 `SODAR Docker Compose <https://github.com/bihealth/sodar-docker-compose>`_
 repository.
 
+**NOTE:** The v1.0 release of SODAR contains breaking changes for its deployment
+environment! For instructions on how to upgrade an existing system, see the
+`administrator upgrade guide <https://sodar-server.readthedocs.io/en/dev/admin_upgrade.html>`_.
+
 Technical Information
 ---------------------
 
@@ -60,6 +64,7 @@ Django apps provided by SODAR:
 - **Irodsadmin**: iRODS data administration helpers
 - **Irodsbackend**: Backend app for iRODS queries and operations
 - **Irodsinfo**: Display iRODS server information and create user configurations
+- **Isatemplates**: Upload and manage custom ISA-Tab templates
 - **Ontologyaccess**: Parse, store and serve ontologies for local lookup
 - **Taskflowbackend**: Run iRODS transactions with full rollback for project and
   file operations

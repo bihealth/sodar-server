@@ -23,6 +23,8 @@ your Charite or MDC user name (in lower case) followed by either ``@CHARITE``
 for Charite users or ``@MDC-BERLIN`` for MDC users. You have to use your
 Charite/MDC password for login.
 
+.. include:: _include/oidc_irods_token.rst
+
 .. image:: _static/ext_tool_igv/IGV_Open_Session.png
     :width: 75%
     :align: center

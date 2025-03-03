@@ -1,50 +1,56 @@
 # Wheel
 # NOTE: For best results wheel should be installed separately before other deps
-wheel==0.40.0
+wheel==0.42.0
 
 # Setuptools
-setuptools==67.6.0
+setuptools==70.0.0
 
 # Django
-django==3.2.25
+django==4.2.19
 
 # Configuration
-django-environ==0.10.0
+django-environ==0.11.2
 
 # Forms
-django-crispy-forms==2.0
-crispy-bootstrap4==2022.1
+django-crispy-forms==2.1
+crispy-bootstrap4==2024.1
 
 # Models
-django-model-utils==4.3.1
+django-model-utils==4.4.0
 
 # Password storage
 argon2-cffi==21.3.0
 
 # Python-PostgreSQL Database Adapter
-psycopg2-binary==2.9.5
+psycopg2-binary==2.9.9
 
 # Unicode slugification
 awesome-slugify==1.6.5
 
 # Time zones support
-pytz==2022.7.1
+pytz==2024.1
+
+# SVG icon support
+django-iconify==0.3
+
+# OpenID Connect (OIDC) authentication support
+social-auth-app-django==5.4.0
 
 # Redis support
-redis>=4.5.4, <4.6
+redis>=5.0.2, <5.1
 
 # Profiling
 django-cprofile-middleware==1.0.5
 
-# Versioning
-versioneer==0.28
-
 # Online documentation via django-docs
-docutils==0.18.1
-Sphinx==6.2.1  # NOTE: sphinx-rtd-theme v1.2.2 forces <7
+docutils==0.20.1
+Sphinx==7.2.6
 django-docs==0.3.3
-sphinx-rtd-theme==1.2.2
-sphinxcontrib-youtube==1.2.0
+sphinx-rtd-theme==2.0.0
+sphinxcontrib-youtube==1.4.1
+
+# Versioning
+versioneer==0.29
 
 #####################
 # SODAR Core imports
@@ -54,38 +60,38 @@ sphinxcontrib-youtube==1.2.0
 rules==3.3
 
 # REST framework
-djangorestframework==3.14.0
+djangorestframework==3.15.2
 
 # Token authentication
 django-rest-knox==4.2.0
 
 # Markdown field support
-markdown==3.4.1
+markdown==3.5.2
 django-markupfield==2.0.1
 django-pagedown==2.2.1
-mistune==2.0.5
+mistune==3.0.2
 
 # Pin to avoid issue with v3.9.5
 # See issue #166 and bihealth/sodar-core#1225
-django-autocomplete-light==3.9.4
+django-autocomplete-light==3.11.0
 
 # SODAR Core
-django-sodar-core==0.13.4
-# -e git+https://github.com/bihealth/sodar-core.git@be012e5536bacf8bfbfe95e3c930324edae0309b#egg=django-sodar-core
+django-sodar-core==1.0.5
+# -e git+https://github.com/bihealth/sodar-core.git@59f4e10b1cddc12aab0594779de0230ecae4c4fd#egg=django-sodar-core
 
 # Celery
-celery==5.2.7
+celery==5.3.6
 
 ####################
 # SODAR app imports
 ####################
 
 # CUBI AltamISA parser
-altamisa==0.2.9
+altamisa==0.3.0
 # -e git+https://github.com/bihealth/altamisa.git@f6de23aa6073d446f7c49ede0af7fa8729992209#egg=altamisa
 
 # Python iRODS client
-python-irodsclient==1.1.8
+python-irodsclient==2.2.0
 
 # XML generating
 lxml==4.9.1

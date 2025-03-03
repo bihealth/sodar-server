@@ -9,6 +9,7 @@ from django.contrib.auth.signals import user_logged_in
 from django.urls import reverse
 
 # Projectroles dependency
+from projectroles.models import AUTH_TYPE_OIDC
 from projectroles.plugins import get_backend_api
 
 
@@ -16,6 +17,10 @@ logger = logging.getLogger(__name__)
 
 
 APP_NAME = 'omics_irods'
+REGULAR_USER_PW_MSG = 'You can log in with the same password you use for SODAR.'
+OIDC_USER_PW_MSG = (
+    'You need to create an API token to use as your iRODS password.'
+)
 
 
 def create_irods_user(sender, user, **kwargs):
@@ -66,14 +71,20 @@ def create_irods_user(sender, user, **kwargs):
                 # Add user alert
                 app_alerts = get_backend_api('appalerts_backend')
                 if app_alerts:
+                    if user.get_auth_type() == AUTH_TYPE_OIDC:
+                        pw_msg = OIDC_USER_PW_MSG
+                        alert_url = reverse('tokens:list')
+                    else:
+                        pw_msg = REGULAR_USER_PW_MSG
+                        alert_url = reverse('irodsinfo:info')
                     app_alerts.add_alert(
                         app_name=APP_NAME,
                         alert_name='irods_user_create',
                         user=user,
-                        message='User account "{}" created in iRODS. You can '
-                        'log in with the same password you use for '
-                        'SODAR.'.format(user_name),
-                        url=reverse('irodsinfo:info'),
+                        message='User account "{}" created in iRODS. {}'.format(
+                            user_name, pw_msg
+                        ),
+                        url=alert_url,
                     )
                 logger.info('User creation OK')
     except Exception as ex:

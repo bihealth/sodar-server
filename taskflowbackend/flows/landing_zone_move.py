@@ -39,7 +39,6 @@ class Flow(BaseLinearFlow):
         sample_path = self.irods_backend.get_path(zone.assay)
         zone_path = self.irods_backend.get_path(zone)
         admin_name = self.irods.username
-        access_lookup = self.irods_backend.get_access_lookup(self.irods)
 
         # HACK: Set zone status in the Django site
         zone.set_status(
@@ -99,144 +98,59 @@ class Flow(BaseLinearFlow):
             )
         )
 
-        # VALIDATE_ONLY
-        # If "validate_only" is set, return without moving and set status
-        if validate_only:
+        if not validate_only:
             self.add_task(
-                lz_tasks.SetLandingZoneStatusTask(
-                    name='Set landing zone status to VALIDATING (calculate)',
-                    project=self.project,
-                    inject={
-                        'landing_zone': zone,
-                        'status': ZONE_STATUS_VALIDATING,
-                        'status_info': ZONE_INFO_CALC,
-                        'flow_name': self.flow_name,
-                    },
-                )
-            )
-            self.add_task(
-                irods_tasks.BatchCalculateChecksumTask(
-                    name='Batch calculate missing checksums in iRODS',
+                irods_tasks.SetInheritanceTask(
+                    name='Set inheritance for landing zone collection '
+                    '{}'.format(zone_path),
                     irods=self.irods,
-                    inject={
-                        'file_paths': zone_objects_nomd5,
-                        'force': False,
-                    },
+                    inject={'path': zone_path, 'inherit': True},
                 )
             )
-            self.add_task(
-                lz_tasks.SetLandingZoneStatusTask(
-                    name='Set landing zone status to VALIDATING (compare)',
-                    project=self.project,
-                    inject={
-                        'landing_zone': zone,
-                        'status': ZONE_STATUS_VALIDATING,
-                        'status_info': ZONE_INFO_VALIDATE.format(
-                            count=file_count, plural=file_count_msg_plural
-                        ),
-                        'flow_name': self.flow_name,
-                    },
-                )
-            )
-            self.add_task(
-                irods_tasks.BatchCheckFilesTask(
-                    name='Batch check file and MD5 checksum file existence for '
-                    'zone data objects',
-                    irods=self.irods,
-                    inject={
-                        'file_paths': zone_objects_nomd5,
-                        'md5_paths': zone_objects_md5,
-                        'zone_path': zone_path,
-                    },
-                )
-            )
-            self.add_task(
-                irods_tasks.BatchValidateChecksumsTask(
-                    name='Batch validate MD5 checksums of {} data '
-                    'objects'.format(file_count),
-                    irods=self.irods,
-                    inject={
-                        'paths': zone_objects_nomd5,
-                        'zone_path': zone_path,
-                    },
-                )
-            )
-            self.add_task(
-                lz_tasks.SetLandingZoneStatusTask(
-                    name='Set landing zone status to ACTIVE',
-                    project=self.project,
-                    inject={
-                        'landing_zone': zone,
-                        'status': ZONE_STATUS_ACTIVE,
-                        'status_info': 'Successfully validated '
-                        '{} file{}'.format(
-                            file_count,
-                            's' if file_count != 1 else '',
-                        ),
-                        'flow_name': self.flow_name,
-                        'extra_data': {'validate_only': int(validate_only)},
-                    },
-                )
-            )
-            return
-
-        # Else continue with moving
-        self.add_task(
-            irods_tasks.SetInheritanceTask(
-                name='Set inheritance for landing zone collection {}'.format(
-                    zone_path
-                ),
-                irods=self.irods,
-                inject={'path': zone_path, 'inherit': True},
-            )
-        )
-        self.add_task(
-            irods_tasks.SetAccessTask(
-                name='Set admin "{}" owner access for zone coll {}'.format(
-                    admin_name, zone_path
-                ),
-                irods=self.irods,
-                inject={
-                    'access_name': 'own',
-                    'path': zone_path,
-                    'user_name': admin_name,
-                    'access_lookup': access_lookup,
-                    'irods_backend': self.irods_backend,
-                },
-            )
-        )
-        self.add_task(
-            irods_tasks.SetAccessTask(
-                name='Set user "{}" read access for zone collection {}'.format(
-                    zone.user.username, zone_path
-                ),
-                irods=self.irods,
-                inject={
-                    'access_name': 'read',
-                    'path': zone_path,
-                    'user_name': zone.user.username,
-                    'access_lookup': access_lookup,
-                    'irods_backend': self.irods_backend,
-                },
-            )
-        )
-        # Workaround for sodar#297
-        # If script user is set, set read access
-        if self.flow_data.get('script_user'):
             self.add_task(
                 irods_tasks.SetAccessTask(
-                    name='Set script user "{}" read access to landing '
-                    'zone'.format(self.flow_data['script_user']),
+                    name='Set admin "{}" owner access for zone coll {}'.format(
+                        admin_name, zone_path
+                    ),
                     irods=self.irods,
                     inject={
-                        'access_name': 'read',
+                        'access_name': 'own',
                         'path': zone_path,
-                        'user_name': self.flow_data['script_user'],
-                        'access_lookup': access_lookup,
+                        'user_name': admin_name,
                         'irods_backend': self.irods_backend,
                     },
                 )
             )
+            self.add_task(
+                irods_tasks.SetAccessTask(
+                    name='Set user "{}" read access for zone collection '
+                    '{}'.format(zone.user.username, zone_path),
+                    irods=self.irods,
+                    inject={
+                        'access_name': 'read',
+                        'path': zone_path,
+                        'user_name': zone.user.username,
+                        'irods_backend': self.irods_backend,
+                    },
+                )
+            )
+            # Workaround for sodar#297
+            # If script user is set, set read access
+            if self.flow_data.get('script_user'):
+                self.add_task(
+                    irods_tasks.SetAccessTask(
+                        name='Set script user "{}" read access to landing '
+                        'zone'.format(self.flow_data['script_user']),
+                        irods=self.irods,
+                        inject={
+                            'access_name': 'read',
+                            'path': zone_path,
+                            'user_name': self.flow_data['script_user'],
+                            'irods_backend': self.irods_backend,
+                        },
+                    )
+                )
+
         self.add_task(
             lz_tasks.SetLandingZoneStatusTask(
                 name='Set landing zone status to VALIDATING (calculate)',
@@ -244,7 +158,8 @@ class Flow(BaseLinearFlow):
                 inject={
                     'landing_zone': zone,
                     'status': ZONE_STATUS_VALIDATING,
-                    'status_info': ZONE_INFO_CALC + ZONE_INFO_READ_ONLY,
+                    'status_info': ZONE_INFO_CALC
+                    + (ZONE_INFO_READ_ONLY if not validate_only else ''),
                     'flow_name': self.flow_name,
                 },
             )
@@ -269,11 +184,12 @@ class Flow(BaseLinearFlow):
                     'status_info': ZONE_INFO_VALIDATE.format(
                         count=file_count, plural=file_count_msg_plural
                     )
-                    + ZONE_INFO_READ_ONLY,
+                    + (ZONE_INFO_READ_ONLY if not validate_only else ''),
                     'flow_name': self.flow_name,
                 },
             )
         )
+
         self.add_task(
             irods_tasks.BatchCheckFilesTask(
                 name='Batch check file and MD5 checksum file existence for '
@@ -295,6 +211,28 @@ class Flow(BaseLinearFlow):
                 inject={'paths': zone_objects_nomd5, 'zone_path': zone_path},
             )
         )
+
+        # Return at this point if validate_only
+        if validate_only:
+            self.add_task(
+                lz_tasks.SetLandingZoneStatusTask(
+                    name='Set landing zone status to ACTIVE',
+                    project=self.project,
+                    inject={
+                        'landing_zone': zone,
+                        'status': ZONE_STATUS_ACTIVE,
+                        'status_info': 'Successfully validated '
+                        '{} file{}'.format(
+                            file_count,
+                            's' if file_count != 1 else '',
+                        ),
+                        'flow_name': self.flow_name,
+                        'extra_data': {'validate_only': int(validate_only)},
+                    },
+                )
+            )
+            return
+
         self.add_task(
             lz_tasks.SetLandingZoneStatusTask(
                 name='Set landing zone status to MOVING',
@@ -327,7 +265,6 @@ class Flow(BaseLinearFlow):
                     'src_paths': zone_objects,
                     'access_name': 'read',
                     'user_name': project_group,
-                    'access_lookup': access_lookup,
                     'irods_backend': self.irods_backend,
                 },
             )
@@ -342,7 +279,6 @@ class Flow(BaseLinearFlow):
                     'access_name': 'null',
                     'path': sample_path,
                     'user_name': zone.user.username,
-                    'access_lookup': access_lookup,
                     'irods_backend': self.irods_backend,
                 },
             )
@@ -358,7 +294,6 @@ class Flow(BaseLinearFlow):
                         'access_name': 'null',
                         'path': sample_path,
                         'user_name': self.flow_data['script_user'],
-                        'access_lookup': access_lookup,
                         'irods_backend': self.irods_backend,
                     },
                 )

@@ -3,7 +3,9 @@
 import logging
 
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
+from rest_framework.versioning import AcceptHeaderVersioning
 from rest_framework.views import APIView
 
 # Projectroles dependency
@@ -15,7 +17,32 @@ from irodsinfo.views import IrodsConfigMixin
 logger = logging.getLogger(__name__)
 
 
-class IrodsEnvRetrieveAPIView(IrodsConfigMixin, APIView):
+# Local constants
+IRODSINFO_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar.irodsinfo+json'
+IRODSINFO_API_ALLOWED_VERSIONS = ['1.0']
+IRODSINFO_API_DEFAULT_VERSION = '1.0'
+
+
+class IrodsinfoAPIVersioningMixin:
+    """
+    Irodsinfo API view versioning mixin for overriding media type and
+    accepted versions.
+    """
+
+    class IrodsinfoAPIRenderer(JSONRenderer):
+        media_type = IRODSINFO_API_MEDIA_TYPE
+
+    class IrodsinfoAPIVersioning(AcceptHeaderVersioning):
+        allowed_versions = IRODSINFO_API_ALLOWED_VERSIONS
+        default_version = IRODSINFO_API_DEFAULT_VERSION
+
+    renderer_classes = [IrodsinfoAPIRenderer]
+    versioning_class = IrodsinfoAPIVersioning
+
+
+class IrodsEnvRetrieveAPIView(
+    IrodsConfigMixin, IrodsinfoAPIVersioningMixin, APIView
+):
     """
     Retrieve iRODS environment file for the current user.
 

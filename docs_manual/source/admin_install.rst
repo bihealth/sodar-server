@@ -17,25 +17,21 @@ environment. All these components are required for running the complete feature
 set of SODAR. However, it is also possible to run some of these outside of the
 Docker Compose network if e.g. you already have a separate iRODS server running.
 
-- Essential SODAR Components
+Essential SODAR Components
     - ``sodar-web``: The SODAR web server for main program logic and UIs.
     - ``sodar-celeryd-default``: Celery daemon for background jobs.
     - ``sodar-celerybeat``: Celery service for periodic tasks.
-- Database Servers
-    - ``postgres``: PostgreSQL server for SODAR and iRODS databases.
+Database Servers
+    - ``postgres``: PostgreSQL server for SODAR and iRODS databases. Minimum
+      supported version is v12, recommended version is v16.
     - ``redis``: In-memory database for Celery jobs and caching.
-- iRODS Servers
-    - ``irods``: An iRODS iCAT server for file storage.
+iRODS Servers
+    - ``irods``: An iRODS iCAT server for file storage. The minimum supported
+      version is v4.3.
     - ``davrods``: iRODS WebDAV server for web access and IGV/UCSC integration.
-- Networking
+Networking
     - ``traefik``: Reverse proxy for TLS/SSL routing.
     - ``sssd``: System Security Service Daemon for LDAP/AD authentication.
-
-.. note::
-
-    Currently the sodar-docker-compose environment only supports iRODS v4.2.
-    Support for v4.3 is being worked on. iRODS v4.3 will be the default
-    supported version from SODAR v1.0 onwards.
 
 
 Quickstart Guide
@@ -60,15 +56,15 @@ Prerequisites
 Ensure your system matches the following operating system and software
 requirements.
 
-- Hardware
+Hardware
     - ~10 GB of disk space for the Docker images
-- Operating System
+Operating System
     - A modern Linux distribution that is
       `supported by Docker <https://docs.docker.com/engine/install/#server>`_.
     - Outgoing HTTPS connections to the internet are allowed to download data
       and Docker images.
     - Server ports 80 and 443 are open and free on the host.
-- Software
+Software
     - `Docker <https://docs.docker.com/get-docker/>`_
     - `Docker Compose <https://docs.docker.com/compose/install/>`_
     - `OpenSSL <https://www.openssl.org/>`_
@@ -202,8 +198,12 @@ override(s) and update your ``.env`` file to point to the existing resources
 instead. Similarly, you may add or replace overrides for different desired
 features. For more information, see :ref:`admin_install_advanced_config`.
 
-6. Create Superuser Account
----------------------------
+6. Create User Accounts
+-----------------------
+
+Certain user accounts need to be created to enable using SODAR and all its
+features. In production deployment, it is recommended to automate the user
+creation in your deployment scripts.
 
 To gain access to the SODAR web UI, you must first create a superuser account.
 The user name should be given as ``admin``, otherwise you will need to edit the
@@ -212,15 +212,25 @@ prompt:
 
 .. code-block:: bash
 
-    $ docker exec -it sodar-docker-compose_sodar-web_1 \
+    $ docker exec -it sodar-docker-compose-sodar-web-1 \
         python /usr/src/app/manage.py createsuperuser \
         --skip-checks --username admin
+
+To enable anonymous iRODS access via ticket URLs, the user ``anonymous`` must
+exist in iRODS. This user can be created by accessing the iRODS iCAT server
+container and running the following commands:
+
+.. code-block:: bash
+
+    $ docker exec -it sodar-docker-compose-sodar-irods-1 /bin/bash -i
+    $ su - irods
+    $ iadmin mkuser anonymous rodsuser
 
 7. Use SODAR
 ------------
 
-Once the superuser has been created, you can navigate to the SODAR web UI at
-``https://<your-host>/`` and log in with the superuser credentials you provided.
+You can now navigate to the SODAR web UI at ``https://<your-host>/`` and log in
+with the superuser credentials you provided.
 
 Typically, the first step when logging to a newly installed SODAR site is to
 :ref:`create a top level category <ui_project_update>` under which projects can
@@ -279,7 +289,7 @@ production is generally recommended only for experienced SODAR admins.
 
 .. note::
 
-    SODAR v1.0 will be upgraded to use iRODS 4.3 and Postgres v16. This version
+    SODAR v1.0 has been upgraded to use iRODS 4.3 and Postgres v16. This version
     may require special steps for upgrading an existing environment. Make sure
     to refer to the sodar-docker-compose README for instructions.
 
@@ -348,7 +358,7 @@ Production Prerequisites
 In addition to the :ref:`general prerequisites <admin_install_prerequisites>`,
 we recommend the following for a production deployment of SODAR:
 
-- Recommended Hardware
+Recommended Hardware
     - Memory: 64 GB of RAM
     - CPU: 16 cores
     - Disk: 600+ GB of free and **fast** disk space

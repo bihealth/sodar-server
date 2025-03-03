@@ -18,7 +18,7 @@ from selenium.webdriver.support import expected_conditions as ec
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.plugins import get_backend_api
-from projectroles.tests.test_ui import TestUIBase
+from projectroles.tests.test_ui import UITestBase
 
 from samplesheets.forms import TPL_DIR_FIELD, TPL_DIR_LABEL
 from samplesheets.models import (
@@ -59,7 +59,7 @@ with open(CONFIG_PATH_UPDATED) as fp:
     CONFIG_DATA_UPDATED = json.load(fp)
 
 
-class SamplesheetsUITestBase(SampleSheetIOMixin, SheetConfigMixin, TestUIBase):
+class SamplesheetsUITestBase(SampleSheetIOMixin, SheetConfigMixin, UITestBase):
     """Base view samplesheets view UI tests"""
 
     def setup_investigation(self, config_data=None):
@@ -609,7 +609,7 @@ class TestIrodsDataRequestListView(
 
 
 class TestSheetVersionCompareView(
-    SampleSheetIOMixin, SheetConfigMixin, TestUIBase
+    SampleSheetIOMixin, SheetConfigMixin, UITestBase
 ):
     """Tests for sheet version compare view UI"""
 
@@ -647,7 +647,7 @@ class TestSheetVersionCompareView(
 
 
 class TestSheetVersionCompareFileView(
-    SampleSheetIOMixin, SheetConfigMixin, TestUIBase
+    SampleSheetIOMixin, SheetConfigMixin, UITestBase
 ):
     """Tests for sheet version compare file view UI"""
 

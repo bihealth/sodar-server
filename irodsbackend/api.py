@@ -10,7 +10,6 @@ import string
 import uuid
 
 from contextlib import contextmanager
-from packaging import version
 
 from irods.api_number import api_number
 from irods.collection import iRODSCollection
@@ -115,13 +114,18 @@ class IrodsAPI:
             raise ex
 
     @classmethod
-    def _get_datetime(cls, naive_dt):
+    def _get_datetime(cls, naive_dt, api_format=False):
         """
         Return a printable datetime in the system timezone from a naive
         datetime object.
+
+        :param naive_dt: Naive DateTime object
+        :param api_format: Return in REST API format (bool, default=False)
         """
         dt = naive_dt.replace(tzinfo=pytz.timezone('GMT'))
         dt = dt.astimezone(timezone.get_default_timezone())
+        if api_format:
+            return dt.isoformat()
         return dt.strftime('%Y-%m-%d %H:%M')
 
     @classmethod
@@ -502,26 +506,6 @@ class IrodsAPI:
         """
         return '.'.join(str(x) for x in irods.server_version)
 
-    @classmethod
-    def get_access_lookup(cls, irods):
-        """
-        Return an ACL lookup dict compatible with the currently used iRODS
-        server version (4.2 and 4.3 supported).
-
-        :param irods: iRODSSession object
-        :return: Dict
-        """
-        v = version.parse(cls.get_version(irods))
-        d = '_' if v >= version.parse('4.3') else ' '
-        return {
-            'read': 'read{}object'.format(d),
-            'read{}object'.format(d): 'read',
-            'write': 'modify{}object'.format(d),
-            'modify{}object'.format(d): 'write',
-            'null': 'null',
-            'own': 'own',
-        }
-
     def get_object_stats(self, irods, path):
         """
         Return file count and total file size for all files within a path.
@@ -581,7 +565,13 @@ class IrodsAPI:
         return [iRODSCollection(coll.manager, row) for row in query]
 
     def get_objs_recursively(
-        self, irods, coll, include_md5=False, name_like=None, limit=None
+        self,
+        irods,
+        coll,
+        include_md5=False,
+        name_like=None,
+        limit=None,
+        api_format=False,
     ):
         """
         Return objects below a coll recursively. Replacement for the
@@ -593,6 +583,7 @@ class IrodsAPI:
         :param include_md5: if True, include .md5 files
         :param name_like: Filtering of file names (string or list of strings)
         :param limit: Limit retrieval to n rows (int)
+        :param api_format: Format data for REST API (bool, default=False)
         :return: List
         """
         ret = []
@@ -645,7 +636,7 @@ class IrodsAPI:
                             'path': obj_path,
                             'size': row[DataObject.size],
                             'modify_time': self._get_datetime(
-                                row[DataObject.modify_time]
+                                row[DataObject.modify_time], api_format
                             ),
                         }
                     )
@@ -683,6 +674,7 @@ class IrodsAPI:
         include_colls=False,
         name_like=None,
         limit=None,
+        api_format=False,
     ):
         """
         Return a flat iRODS object list recursively under a given path.
@@ -693,6 +685,7 @@ class IrodsAPI:
         :param include_colls: Include collections (bool)
         :param name_like: Filtering of file names (string or list of strings)
         :param limit: Limit search to n rows (int)
+        :param api_format: Format data for REST API (bool, default=False)
         :return: List
         :raise: FileNotFoundError if collection is not found
         """
@@ -711,6 +704,7 @@ class IrodsAPI:
             include_md5=include_md5,
             name_like=name_like,
             limit=limit,
+            api_format=api_format,
         )
 
         # Add collections if enabled

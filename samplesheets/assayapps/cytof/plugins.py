@@ -151,6 +151,8 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                 and header['value'].lower() == 'name'
                 and top_header['value'].lower()
                 in ['raw data file', 'derived data file']
+                and row[i]['value']
+                and isinstance(row[i]['value'], str)
             ):
                 row[i]['link'] = (
                     base_url + '/' + mc_assay_name + '/' + row[i]['value']

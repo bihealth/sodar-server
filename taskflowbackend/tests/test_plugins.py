@@ -8,13 +8,13 @@ from django.test import RequestFactory
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import RoleAssignment, SODAR_CONSTANTS
-from projectroles.plugins import BackendPluginPoint
+from projectroles.plugins import BackendPluginPoint, get_backend_api
 
 # Irodsbackend dependency
 from irodsbackend.api import USER_GROUP_TEMPLATE
 
 # Timeline dependency
-from timeline.models import ProjectEvent
+from timeline.models import TimelineEvent
 
 from taskflowbackend.tests.base import TaskflowViewTestBase
 
@@ -45,6 +45,7 @@ class ModifyAPITaskflowTestBase(TaskflowViewTestBase):
         self.req_factory = RequestFactory()
         self.request = self.req_factory.get('/')
         self.request.user = self.user
+        self.timeline = get_backend_api('timeline_backend')
 
 
 class TestPerformProjectModify(ModifyAPITaskflowTestBase):
@@ -97,14 +98,17 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
             self.irods.users.get(self.user_owner_cat.username), iRODSUser
         )
         self.assert_group_member(project, self.user_owner_cat, True)
-        tl_events = ProjectEvent.objects.filter(
+        tl_events = TimelineEvent.objects.filter(
             project=project,
             plugin='taskflow',
             user=self.user,
             event_name='project_create',
         )
         self.assertEqual(tl_events.count(), 1)
-        self.assertEqual(tl_events.first().get_status().status_type, 'OK')
+        self.assertEqual(
+            tl_events.first().get_status().status_type,
+            self.timeline.TL_STATUS_OK,
+        )
 
     def test_create_inherited_members(self):
         """Test project creation in iRODS with inherited members"""
@@ -256,7 +260,7 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
         with self.assertRaises(UserGroupDoesNotExist):
             self.irods.user_groups.get(group_name)
         self.assertEqual(
-            ProjectEvent.objects.filter(
+            TimelineEvent.objects.filter(
                 project=category,
                 plugin='taskflow',
                 user=self.user,
@@ -446,14 +450,17 @@ class TestRevertProjectModify(ModifyAPITaskflowTestBase):
         self.assert_irods_coll(self.project, expected=False)
         with self.assertRaises(UserGroupDoesNotExist):
             self.irods.user_groups.get(self.group_name)
-        tl_events = ProjectEvent.objects.filter(
+        tl_events = TimelineEvent.objects.filter(
             project=self.project,
             plugin='taskflow',
             user=self.user,
             event_name='project_create_revert',
         )
         self.assertEqual(tl_events.count(), 1)
-        self.assertEqual(tl_events.first().get_status().status_type, 'OK')
+        self.assertEqual(
+            tl_events.first().get_status().status_type,
+            self.timeline.TL_STATUS_OK,
+        )
 
 
 class TestPerformRoleModify(ModifyAPITaskflowTestBase):
@@ -485,14 +492,17 @@ class TestPerformRoleModify(ModifyAPITaskflowTestBase):
         )
 
         self.assert_group_member(self.project, self.user_new, True)
-        tl_events = ProjectEvent.objects.filter(
+        tl_events = TimelineEvent.objects.filter(
             project=self.project,
             plugin='taskflow',
             user=self.user,
             event_name='role_update',
         )
         self.assertEqual(tl_events.count(), 1)
-        self.assertEqual(tl_events.first().get_status().status_type, 'OK')
+        self.assertEqual(
+            tl_events.first().get_status().status_type,
+            self.timeline.TL_STATUS_OK,
+        )
 
     def test_create_parent(self):
         """Test creating parent assignment"""
@@ -508,14 +518,17 @@ class TestPerformRoleModify(ModifyAPITaskflowTestBase):
         )
 
         self.assert_group_member(self.project, self.user_new, True)
-        tl_events = ProjectEvent.objects.filter(
+        tl_events = TimelineEvent.objects.filter(
             project=self.category,
             plugin='taskflow',
             user=self.user,
             event_name='role_update',
         )
         self.assertEqual(tl_events.count(), 1)
-        self.assertEqual(tl_events.first().get_status().status_type, 'OK')
+        self.assertEqual(
+            tl_events.first().get_status().status_type,
+            self.timeline.TL_STATUS_OK,
+        )
 
     def test_create_parent_finder(self):
         """Test creating parent finder assignment"""
@@ -532,7 +545,7 @@ class TestPerformRoleModify(ModifyAPITaskflowTestBase):
 
         # Should still be False
         self.assert_group_member(self.project, self.user_new, False)
-        tl_events = ProjectEvent.objects.filter(
+        tl_events = TimelineEvent.objects.filter(
             project=self.category,
             plugin='taskflow',
             user=self.user,
@@ -595,7 +608,7 @@ class TestPerformRoleModify(ModifyAPITaskflowTestBase):
 
         self.assert_group_member(self.project, self.user_new, True)
         self.assertEqual(
-            ProjectEvent.objects.filter(
+            TimelineEvent.objects.filter(
                 project=self.project,
                 plugin='taskflow',
                 user=self.user,
@@ -698,14 +711,17 @@ class TestPerformRoleModify(ModifyAPITaskflowTestBase):
         )
 
         self.assert_group_member(self.project, self.user_new, False)
-        tl_events = ProjectEvent.objects.filter(
+        tl_events = TimelineEvent.objects.filter(
             project=self.project,
             plugin='taskflow',
             user=self.user,
             event_name='role_update_revert',
         )
         self.assertEqual(tl_events.count(), 1)
-        self.assertEqual(tl_events.first().get_status().status_type, 'OK')
+        self.assertEqual(
+            tl_events.first().get_status().status_type,
+            self.timeline.TL_STATUS_OK,
+        )
 
     def test_revert_create_parent(self):
         """Test reverting parent role creation"""
@@ -721,14 +737,17 @@ class TestPerformRoleModify(ModifyAPITaskflowTestBase):
         )
 
         self.assert_group_member(self.project, self.user_new, False)
-        tl_events = ProjectEvent.objects.filter(
+        tl_events = TimelineEvent.objects.filter(
             project=self.category,
             plugin='taskflow',
             user=self.user,
             event_name='role_update_revert',
         )
         self.assertEqual(tl_events.count(), 1)
-        self.assertEqual(tl_events.first().get_status().status_type, 'OK')
+        self.assertEqual(
+            tl_events.first().get_status().status_type,
+            self.timeline.TL_STATUS_OK,
+        )
 
     def test_revert_create_parent_override(self):
         """Test reverting parent role creation with overriding child role"""
@@ -816,7 +835,7 @@ class TestPerformRoleModify(ModifyAPITaskflowTestBase):
         )
         self.assert_group_member(self.project, self.user_new, True)
         self.assertEqual(
-            ProjectEvent.objects.filter(
+            TimelineEvent.objects.filter(
                 project=self.project,
                 plugin='taskflow',
                 user=self.user,
@@ -900,14 +919,17 @@ class TestPerformRoleDelete(ModifyAPITaskflowTestBase):
         self.assert_group_member(self.project, self.user_new, True)
         self.plugin.perform_role_delete(self.role_as, self.request)
         self.assert_group_member(self.project, self.user_new, False)
-        tl_events = ProjectEvent.objects.filter(
+        tl_events = TimelineEvent.objects.filter(
             project=self.project,
             plugin='taskflow',
             user=self.user,
             event_name='role_delete',
         )
         self.assertEqual(tl_events.count(), 1)
-        self.assertEqual(tl_events.first().get_status().status_type, 'OK')
+        self.assertEqual(
+            tl_events.first().get_status().status_type,
+            self.timeline.TL_STATUS_OK,
+        )
 
     def test_delete_parent(self):
         """Test deleting parent role"""
@@ -917,14 +939,17 @@ class TestPerformRoleDelete(ModifyAPITaskflowTestBase):
         self.assert_group_member(self.project, self.user_new, True)
         self.plugin.perform_role_delete(self.role_as, self.request)
         self.assert_group_member(self.project, self.user_new, False)
-        tl_events = ProjectEvent.objects.filter(
+        tl_events = TimelineEvent.objects.filter(
             project=self.category,
             plugin='taskflow',
             user=self.user,
             event_name='role_delete',
         )
         self.assertEqual(tl_events.count(), 1)
-        self.assertEqual(tl_events.first().get_status().status_type, 'OK')
+        self.assertEqual(
+            tl_events.first().get_status().status_type,
+            self.timeline.TL_STATUS_OK,
+        )
 
     def test_delete_parent_with_local(self):
         """Test deleting parent role with local role also set"""
@@ -984,14 +1009,17 @@ class TestPerformRoleDelete(ModifyAPITaskflowTestBase):
 
         self.plugin.revert_role_delete(self.role_as, self.request)
         self.assert_group_member(self.project, self.user_new, True)
-        tl_events = ProjectEvent.objects.filter(
+        tl_events = TimelineEvent.objects.filter(
             project=self.project,
             plugin='taskflow',
             user=self.user,
             event_name='role_delete_revert',
         )
         self.assertEqual(tl_events.count(), 1)
-        self.assertEqual(tl_events.first().get_status().status_type, 'OK')
+        self.assertEqual(
+            tl_events.first().get_status().status_type,
+            self.timeline.TL_STATUS_OK,
+        )
 
     def test_revert_parent(self):
         """Test reverting parent role deletion"""
@@ -1004,14 +1032,17 @@ class TestPerformRoleDelete(ModifyAPITaskflowTestBase):
 
         self.plugin.revert_role_delete(self.role_as, self.request)
         self.assert_group_member(self.project, self.user_new, True)
-        tl_events = ProjectEvent.objects.filter(
+        tl_events = TimelineEvent.objects.filter(
             project=self.category,
             plugin='taskflow',
             user=self.user,
             event_name='role_delete_revert',
         )
         self.assertEqual(tl_events.count(), 1)
-        self.assertEqual(tl_events.first().get_status().status_type, 'OK')
+        self.assertEqual(
+            tl_events.first().get_status().status_type,
+            self.timeline.TL_STATUS_OK,
+        )
 
     def test_revert_parent_with_local(self):
         """Test reverting parent role deletion with local member role"""
@@ -1102,14 +1133,17 @@ class TestPerformOwnerTransfer(ModifyAPITaskflowTestBase):
         self.assert_group_member(self.project, self.user, True)
         self.assert_group_member(self.project, self.user_new, True)
         self.assert_group_member(self.project, self.user_owner_cat, True)
-        tl_events = ProjectEvent.objects.filter(
+        tl_events = TimelineEvent.objects.filter(
             project=self.category,
             plugin='taskflow',
             user=self.user,
             event_name='role_owner_transfer',
         )
         self.assertEqual(tl_events.count(), 1)
-        self.assertEqual(tl_events.first().get_status().status_type, 'OK')
+        self.assertEqual(
+            tl_events.first().get_status().status_type,
+            self.timeline.TL_STATUS_OK,
+        )
 
     def test_transfer_category_old_owner_finder(self):
         """Test category owner transfer with finder role for old owner"""
@@ -1241,14 +1275,17 @@ class TestPerformProjectSync(ModifyAPITaskflowTestBase):
             self.irods.users.get(self.user_owner_cat.username), iRODSUser
         )
         self.assert_group_member(project, self.user_owner_cat, True)
-        tl_events = ProjectEvent.objects.filter(
+        tl_events = TimelineEvent.objects.filter(
             project=project,
             plugin='taskflow',
             user=None,
             event_name='project_sync',
         )
         self.assertEqual(tl_events.count(), 1)
-        self.assertEqual(tl_events.first().get_status().status_type, 'OK')
+        self.assertEqual(
+            tl_events.first().get_status().status_type,
+            self.timeline.TL_STATUS_OK,
+        )
 
     def test_sync_existing(self):
         """Test sync with existing identical iRODS project (should not do anything)"""
@@ -1276,7 +1313,7 @@ class TestPerformProjectSync(ModifyAPITaskflowTestBase):
         )
         self.assert_group_member(project, self.user, True)
         self.assert_group_member(project, self.user_owner_cat, True)
-        tl_events = ProjectEvent.objects.filter(
+        tl_events = TimelineEvent.objects.filter(
             project=project,
             plugin='taskflow',
             user=None,

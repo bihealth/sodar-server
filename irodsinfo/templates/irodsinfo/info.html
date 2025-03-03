@@ -26,10 +26,19 @@
 
   {# Guide #}
   <div class="alert alert-info">
-    The iRODS connecting guide has been moved into the
-    <a href="https://sodar-server.readthedocs.io/en/{% if '+' in site_v %}dev{% else %}latest{% endif %}/">
+    For instructions on connecting to iRODS, see the
+    <a href="https://sodar-server.readthedocs.io/en/{% if '+' in site_v %}dev{% else %}latest{% endif %}/data_transfer_irods.html">
       SODAR Manual</a>.
   </div>
+
+  {% if request.user.get_auth_type == 'OIDC' %}
+    <div class="alert alert-warning" id="sodar-ii-alert-oidc">
+      <strong>Important:</strong> You are authenticating with SODAR using OIDC
+      single sign-on. This means you need to provide a SODAR API token as your
+      password for iRODS and Davrods logins. You can create a token using
+      the <a href="{% url 'tokens:list' %}">API Tokens app</a>.
+    </div>
+  {% endif %}
 
   {# Server info #}
   <div class="card">

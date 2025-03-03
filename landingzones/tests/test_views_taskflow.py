@@ -24,11 +24,12 @@ from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 from samplesheets.views import RESULTS_COLL, MISC_FILES_COLL, TRACK_HUBS_COLL
 
 # Taskflowbackend dependency
+from taskflowbackend.tasks.irods_tasks import NO_FILE_CHECKSUM_LABEL
 from taskflowbackend.tests.base import TaskflowViewTestBase, IRODS_ACCESS_OWN
 
 
 # Timeline dependency
-from timeline.models import ProjectEvent
+from timeline.models import TimelineEvent
 
 from landingzones.constants import (
     ZONE_STATUS_CREATING,
@@ -98,7 +99,7 @@ class LandingZoneTaskflowMixin:
             user=user,
             event_name='zone_create',
             description='create landing zone',
-            status_type='SUBMIT',
+            status_type=timeline.TL_STATUS_SUBMIT,
         )
 
         flow_data = {
@@ -188,7 +189,7 @@ class TestZoneCreateView(
         """Test landingzones creation with taskflow"""
         self.assertEqual(LandingZone.objects.count(), 0)
         self.assertEqual(
-            ProjectEvent.objects.filter(event_name='zone_create').count(), 0
+            TimelineEvent.objects.filter(event_name='zone_create').count(), 0
         )
         self.assertEqual(len(mail.outbox), 1)
 
@@ -210,7 +211,9 @@ class TestZoneCreateView(
         self.assert_irods_coll(zone)
         for c in ZONE_BASE_COLLS:
             self.assert_irods_coll(zone, c, False)
-        tl_event = ProjectEvent.objects.filter(event_name='zone_create').first()
+        tl_event = TimelineEvent.objects.filter(
+            event_name='zone_create'
+        ).first()
         expected_extra = {
             'title': zone.title,
             'assay': str(zone.assay.sodar_uuid),
@@ -246,7 +249,9 @@ class TestZoneCreateView(
         self.assert_zone_count(1)
         zone = LandingZone.objects.first()
         self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
-        tl_event = ProjectEvent.objects.filter(event_name='zone_create').first()
+        tl_event = TimelineEvent.objects.filter(
+            event_name='zone_create'
+        ).first()
         self.assertEqual(tl_event.extra_data['create_colls'], True)
         self.assertEqual(tl_event.extra_data['restrict_colls'], False)
         self.assert_irods_coll(zone)
@@ -392,6 +397,7 @@ class TestZoneMoveView(
 
     def setUp(self):
         super().setUp()
+        self.timeline = get_backend_api('timeline_backend')
         # Make project with owner in Taskflow and Django
         self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
@@ -590,7 +596,7 @@ class TestZoneMoveView(
         )
 
     def test_validate_invalid_md5(self):
-        """Test validating with invalid checksum file (should fail)"""
+        """Test validating with invalid checksum in file (should fail)"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         make_object(self.irods, irods_obj.path + '.md5', INVALID_MD5)
         zone = LandingZone.objects.first()
@@ -614,7 +620,28 @@ class TestZoneMoveView(
             AppAlert.objects.filter(alert_name='zone_validate').count(), 1
         )
 
-    def test_validate_no_md5(self):
+    def test_validate_empty_md5(self):
+        """Test validating with empty checksum in file (should fail)"""
+        irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
+        make_object(self.irods, irods_obj.path + '.md5', '')
+        zone = LandingZone.objects.first()
+        self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(len(self.zone_coll.data_objects), 2)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_validate').count(), 0
+        )
+
+        with self.login(self.user):
+            self.client.post(self.url_validate)
+
+        self.assert_zone_status(zone, ZONE_STATUS_FAILED)
+        self.assertTrue('BatchValidateChecksumsTask' in zone.status_info)
+        self.assertTrue('File: {};'.format(NO_FILE_CHECKSUM_LABEL))
+        self.assertEqual(len(self.zone_coll.data_objects), 2)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+
+    def test_validate_no_md5_file(self):
         """Test validating without checksum file (should fail)"""
         self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         # No md5
@@ -631,7 +658,7 @@ class TestZoneMoveView(
         self.assertEqual(len(self.zone_coll.data_objects), 1)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
 
-    def test_validate_md5_only(self):
+    def test_validate_md5_file_only(self):
         """Test validating zone with no file for MD5 file (should fail)"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         self.md5_obj = self.make_irods_md5_object(irods_obj)
@@ -660,7 +687,7 @@ class TestZoneMoveView(
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(
-            ProjectEvent.objects.filter(event_name='zone_move').count(), 0
+            TimelineEvent.objects.filter(event_name='zone_move').count(), 0
         )
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_move').count(), 0
@@ -678,7 +705,7 @@ class TestZoneMoveView(
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(len(mail.outbox), 1)
-        tl_event = ProjectEvent.objects.filter(event_name='zone_move').first()
+        tl_event = TimelineEvent.objects.filter(event_name='zone_move').first()
         self.assertIsNone(tl_event)
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_move').count(), 0
@@ -695,7 +722,7 @@ class TestZoneMoveView(
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(
-            ProjectEvent.objects.filter(event_name='zone_move').count(), 0
+            TimelineEvent.objects.filter(event_name='zone_move').count(), 0
         )
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_move').count(), 0
@@ -709,9 +736,11 @@ class TestZoneMoveView(
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(len(mail.outbox), 1)  # TODO: Should this send email?
-        tl_event = ProjectEvent.objects.filter(event_name='zone_move').first()
-        self.assertIsInstance(tl_event, ProjectEvent)
-        self.assertEqual(tl_event.get_status().status_type, ZONE_STATUS_FAILED)
+        tl_event = TimelineEvent.objects.filter(event_name='zone_move').first()
+        self.assertIsInstance(tl_event, TimelineEvent)
+        self.assertEqual(
+            tl_event.get_status().status_type, self.timeline.TL_STATUS_FAILED
+        )
         # TODO: Create app alerts for async failures (see #1499)
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_move').count(), 0

@@ -157,7 +157,8 @@ describe('DataCellRenderer.vue', () => {
 
     const cell = wrapper.find('.sodar-ss-data-cell')
     const cellData = cell.find('.sodar-ss-data')
-    expect(cellData.text()).toBe('90 day')
+    expect(cellData.text()).toContain('90')
+    expect(cellData.text()).toContain('day')
     expect(cell.classes()).toContain('text-right')
     expect(cell.classes()).not.toContain('text-muted')
     expect(cellData.find('span.text-muted').exists()).toBe(true)
@@ -290,6 +291,25 @@ describe('DataCellRenderer.vue', () => {
     const cell = wrapper.find('.sodar-ss-data-cell')
     const cellData = cell.find('.sodar-ss-data')
     expect(cellData.text()).toBe('John Doe')
+    expect(cellData.find('a').exists()).toBe(true)
+    expect(cellData.find('a').attributes().href).toBe('mailto:john@example.com')
+    expect(cell.classes()).not.toContain('text-right')
+    expect(cell.classes()).not.toContain('text-muted')
+  })
+
+  it('renders contact cell with list value', async () => {
+    const table = copy(studyTablesOneCol).tables.study
+    table.field_header[0] = studyTables.tables.study.field_header[5]
+    table.table_data[0][0] = studyTables.tables.study.table_data[0][5]
+    table.table_data[0][0].value = 'John Doe <john@example.com>;Jane Doe'
+    const wrapper = mountSheetTable({ table: table })
+    await waitAG(wrapper)
+    await waitRAF()
+
+    const cell = wrapper.find('.sodar-ss-data-cell')
+    const cellData = cell.find('.sodar-ss-data')
+    expect(cellData.text()).toContain('John Doe;')
+    expect(cellData.text()).toContain('Jane Doe')
     expect(cellData.find('a').exists()).toBe(true)
     expect(cellData.find('a').attributes().href).toBe('mailto:john@example.com')
     expect(cell.classes()).not.toContain('text-right')

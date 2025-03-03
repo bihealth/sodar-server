@@ -7,7 +7,7 @@ from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.tests.test_permissions import TestProjectPermissionBase
+from projectroles.tests.test_permissions import ProjectPermissionTestBase
 from projectroles.utils import build_secret
 
 from samplesheets.models import (
@@ -37,7 +37,7 @@ IRODS_FILE_PATH = '/sodarZone/path/test1.txt'
 
 
 class SamplesheetsPermissionTestBase(
-    SampleSheetIOMixin, TestProjectPermissionBase
+    SampleSheetIOMixin, ProjectPermissionTestBase
 ):
     """Base test class for samplesheets UI view permissions"""
 
@@ -307,7 +307,7 @@ class TestSheetTemplateSelectView(SamplesheetsPermissionTestBase):
         self.assert_response(self.url, bad_users, 302)
 
 
-class TestSheetTemplateCreateView(TestProjectPermissionBase):
+class TestSheetTemplateCreateView(ProjectPermissionTestBase):
     """Permission tests for SheetTemplateCreateView"""
 
     def setUp(self):

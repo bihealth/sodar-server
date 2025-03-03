@@ -8,6 +8,89 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v1.0.0 (2025-03-03)
+===================
+
+Release for SODAR Core v1.0 upgrade, iRODS v4.3 upgrade and feature updates.
+
+- Add opt-out settings for iRODS data request and zone status update emails
+- Add REST API list view pagination
+- Add Python v3.11 support
+- Add study plugin override via ISA-Tab comments
+- Add session control in Django settings and environment variables
+- Add token-based iRODS/IGV basic auth support for OIDC users
+- Add support for comment, performer and contact field values as list
+- Add support for numeric field values as list
+- Add support for UTF-8 BOM header in MD5 checksum files
+- Add optional SampleDataFileExistsAPIView access restricting for users with
+  project roles
+- Update minimum supported iRODS version to v4.3.3
+- Update REST API versioning
+- Update REST API views for OpenAPI support
+- Update lock requiring REST API views to return 503 if project is locked
+- Update REST APIs to return user UUID instead of SODARUserSerializer objects
+- Update landing zone creation REST API view to return 503 if no investigation
+  or iRODS collections
+- Update irodsinfo configuration download to return JSON without Zip archive if
+  client-side cert is not set
+- Upgrade to Django v4.2
+- Upgrade to Postgres v16
+- Upgrade to python-irodsclient v2.2.0
+- Upgrade to altamISA v0.3.0
+- Upgrade to SODAR Core v1.0.5
+- Remove Python v3.8 support
+- Remove Postgres <12 support
+- Remove iRODS <4.3 support
+- `SODAR Core v1.0 updates <https://sodar-core.readthedocs.io/en/latest/major_changes.html>`_:
+  OIDC auth support, new REST API versioning, owner/delegate remote sync
+  controls, etc
+
+:ref:`Administrator upgrade guide for v1.0 <admin_upgrade_v1.0>`
+
+User Upgrade Guide
+------------------
+
+iRODS v4.3 Required
+    The minimum supported version of iRODS from this version onwards is v4.3.3.
+    Please ensure your iCommands package is upgraded to the latest version.
+    Your ``irods_environment.json`` file also needs to be updated. It is
+    recommended to download a new environment file in the :ref:`ui_irods_info`
+    application. Alternatively, edit the JSON file and change the value of
+    ``irods_authentication_scheme`` from ``PAM`` to ``pam_password``.
+REST API Versioning Changes
+    REST API versioning has changed in SODAR Core v1.0 and SODAR Server v1.0.
+    Accept header versioning is now specific to each Django app providing their
+    own API. The APIs now use semantic versioning and have individual version
+    numbers starting at ``1.0``. There is no backwards compatibility for old
+    version numbers. If your clients or scripts make use of the versioning, you
+    will need to consult the REST API documentation and update them accordingly.
+
+REST API Updates
+----------------
+
+- Sample Sheets API
+    * ``IrodsAccessTicketRetrieveAPIView``
+        + Return ``user`` field as UUID string instead of serializer
+    * ``IrodsCollsCreateAPIView``
+        + Return ``503`` if project is locked
+    * ``IrodsDataRequestAcceptAPIView``
+        + Return ``503`` if project is locked
+    * ``IrodsDataRequestRetrieveAPIView``
+        + Return ``user`` field as UUID string instead of serializer
+    * ``ProjectIrodsFileListAPIView``
+        + Return results as list without ``irods_data`` object
+        + Return ``modify_time`` field in standard REST API format
+- Landing Zones API
+    * ``ZoneCreateAPIView``
+        + Return ``503`` if Taskflow is not enabled
+        + Return ``503`` if investigation for project is not found
+        + Return ``503`` if project iRODS collections have not been created
+    * ``ZoneRetrieveAPIView``
+        + Return ``user`` field as UUID string instead of serializer
+    * ``ZoneSubmitMoveAPIView``
+        + Return ``503`` if project is locked
+
+
 v0.15.1 (2024-09-12)
 ====================
 
@@ -34,13 +117,7 @@ Feature release.
 - Upgrade critical dependencies
 - Minor updates and bug fixes
 
-Migration Guide
----------------
-
-Isatemplates Backend
-    To enable support for custom ISA-Tab templates, make sure to add
-    ``isatemplates_backend`` to ``ENABLED_BACKEND_PLUGINS`` in your site's
-    Django settings.
+:ref:`Administrator upgrade guide for v0.15 <admin_upgrade_v0.15>`
 
 
 v0.14.2 (2024-03-15)
@@ -63,8 +140,8 @@ Release for minor updates, maintenance and bug fixes.
 - Minor updates and bug fixes
 - Upgrade to SODAR Core v0.13.4
 
-Migration Guide
----------------
+User Upgrade Guide
+------------------
 
 CRAM File Support
     This release adds support for CRAM files. They are linked in studies and IGV
@@ -89,8 +166,8 @@ Release for minor updates, maintenance and bug fixes.
 - Minor updates and bug fixes
 - Upgrade to SODAR Core v0.13.3
 
-Migration Guide
----------------
+User Upgrade Guide
+------------------
 
 Default IGV Genome
     The default IGV genome for cancer and germline projects has been changed
@@ -132,12 +209,7 @@ Major feature update.
 - Upgrade to SODAR Core v0.13.2
 - SODAR Core v0.13 updates: full role inheritance, finder role, etc.
 
-Migration Guide
----------------
-
-Upon deploying this release on an existing instance, admins must run the
-``syncmodifyapi`` management command. This will update project user access in
-iRODS according to the role inheritance update introduced in SODAR Core v0.13.
+:ref:`Administrator upgrade guide for v0.14 <admin_upgrade_v0.14>`
 
 
 v0.13.4 (2023-05-15)

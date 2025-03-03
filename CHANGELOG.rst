@@ -5,6 +5,123 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+v1.0.0 (2025-03-03)
+===================
+
+Added
+-----
+
+- **General**
+    - Python v3.11 support (#1922, #1978)
+    - ``SESSION_COOKIE_AGE`` and ``SESSION_EXPIRE_AT_BROWSER_CLOSE`` Django settings (#2015)
+    - Administrator upgrade guide in documentation (#2047)
+- **Irodsbackend**
+    - Token auth support in ``BasicAuthView`` (#1999)
+    - Django checks for enabled authentication methods (#1999)
+    - ``api_format`` arg in ``get_objects()`` and ``get_objs_recursively()`` (#2045)
+    - REST API compatible date format support in ``get_objects()`` (#2045)
+- **Irodsinfo**
+    - Alert on token usage for OIDC users (#1999)
+- **Landingzones**
+    - REST API list view pagination (#1994)
+    - ``notify_email_zone_status`` user app setting (#1939)
+    - Tests for taskflow tasks (#1916)
+- **Samplesheets**
+    - REST API list view pagination (#1994)
+    - ``notify_email_irods_request`` user app setting (#1939)
+    - Assay app unit tests (#1980)
+    - Missing assay plugin ``__init__.py`` files (#2014)
+    - Study plugin override via ISA-Tab comments (#1885)
+    - Token auth support in study plugin IGV XML serving views (#1999, #2021)
+    - Support for newlines in altamISA error messages (#2033)
+    - Support for comment, performer and contact field values as list (#1789, #2033)
+    - Support for numeric field values as list (#1789, #2033)
+    - ``SHEETS_API_FILE_EXISTS_RESTRICT`` Django setting (#2078)
+- **Taskflowbackend**
+    - ``TaskflowAPI.raise_submit_api_exception()`` helper (#1847)
+    - UTF-8 BOM header support for MD5 files (#1818)
+
+Changed
+-------
+
+- **General**
+    - Upgrade to django-sodar-core v1.0.5 (#1922, #1959)
+    - Upgrade to Postgres v16 (#1922)
+    - Upgrade Python and Vue app dependencies (#1922, #1959)
+    - Unify base test class naming (#2001)
+    - Update ``Dockerfile`` for v1.0 upgrades (#2003, #2004)
+    - Upgrade to iRODS v4.3.3 in CI (#1815)
+    - Upgrade to python-irodsclient v2.2.0 (#2007, #2023)
+    - Upgrade to altamisa v0.3.0 (#2033)
+    - Upgrade minimum supported iRODS version to v4.3.3 (#1815, #2007)
+    - Use constants for timeline event status types (#2010)
+    - Squash migrations (#1967)
+    - Upgrade to ``coverallsapp/github-action@v2`` in CI (#2069)
+- **Irodsbackend**
+    - Rename ``LocalAuthAPIView`` to ``BasicAuthView`` (#1999)
+    - Change ``BasicAuthView`` request to ``GET`` (#1999)
+    - Add API token info for OIDC users in ``create_irods_user()`` (#2077)
+- **Irodsinfo**
+    - Update REST API versioning (#1936)
+    - Return iRODS environment as JSON file if client-side cert not set (#2044)
+    - Link to ``data_transfer_irods`` in template (#2073)
+- **Landingzones**
+    - Update REST API versioning (#1936)
+    - Update REST API views for OpenAPI compatibility (#1951)
+    - Return ``503`` in ``ZoneSubmitMoveAPIView`` if project is locked (#1847)
+    - Return ``503`` in ``ZoneCreateAPIView`` if no investigation or iRODS collections (#2036)
+    - Replace REST API ``SODARUserSerializer`` fields with UUID ``SlugRelatedField`` (#2057)
+- **Samplesheets**
+    - Update REST API versioning (#1936)
+    - Update REST API views for OpenAPI compatibility (#1951)
+    - Send iRODS delete request emails to all addresses of user (#2000)
+    - Disable ontology term select box while querying (#1974)
+    - Refactor ``SampleSheetAssayPluginPoint.get_assay_path()`` (#2016)
+    - Return ``503`` in ``IrodsCollsCreateAPIView`` if project is locked (#1847)
+    - Return ``503`` in ``IrodsDataRequestAcceptAPIView`` if project is locked (#1847)
+    - Return ``ProjectIrodsFileListAPIView`` results as list without ``irods_data`` object (#2040)
+    - Remove length limitation from ``Process.performer`` (#1789, #1942, #2033)
+    - Replace REST API ``SODARUserSerializer`` fields with UUID ``SlugRelatedField`` (#2057)
+    - Enable ``SampleDataFileExistsAPIView`` access restriction to guests and above (#2078)
+- **Taskflowbackend**
+    - Refactor task tests (#2002)
+    - Unify user name parameter naming in flows (#1653)
+    - Refactor ``landing_zone_move`` flow (#1846)
+    - Move ``lock_project()`` into ``TaskflowTestMixin`` (#1847)
+    - Make MD5 checksum comparison case insensitive (#2032)
+    - Improve ``BatchValidateChecksumsTask`` error display on empty MD5 value in file (#2050)
+
+Fixed
+-----
+
+- **Irodsbackend**
+    - iRODS file list modal content overflow with long file paths (#2056)
+- **Landingzones**
+    - Timeline link active for ``DELETED`` and ``NOT_CREATED`` zones (#2005)
+    - Create Zone button visible with iRODS collections not created (#2066)
+    - ``ZoneCreateView`` access with iRODS collections not created (#2066)
+- **Samplesheets**
+    - Timeline event status not updated in ``SheetDeleteVieW`` with iRODS collections enabled (#1798)
+    - Assay plugin ``update_row()`` setting links for empty file names (#2017)
+    - Sporadic test failure in ``TestIrodsAccessTicketCreateView`` (#2026)
+    - ``IrodsDataRequestModifyMixin.accept_request()`` always sets OK status for timeline event (#2027, #2060)
+    - Accepting previously rejected iRODS data requests allowed (#2058)
+- **Taskflowbackend**
+    - ``BatchValidateChecksumsTask`` file opening handling (#2049)
+
+Removed
+-------
+
+- **General**
+    - Python v3.8 support (#1922)
+    - Postgres <v12 support (#1922)
+    - iRODS <v4.3 support (#1815, #2007)
+- **Irodsbackend**
+    - ``get_access_lookup()`` helper (#2009)
+- **Taskflowbackend**
+    - iRODS <v4.3 ACL support (#2009)
+
+
 v0.15.1 (2024-09-12)
 ====================
 
