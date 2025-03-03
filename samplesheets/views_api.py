@@ -42,7 +42,6 @@ from projectroles.models import (
 )
 from projectroles.plugins import get_backend_api
 from projectroles.views_api import (
-    SODARAPIBaseMixin,
     SODARAPIBaseProjectMixin,
     SODARAPIGenericProjectMixin,
     SODARPageNumberPagination,
@@ -854,9 +853,7 @@ class IrodsDataRequestRejectAPIView(
         )
 
 
-class SampleDataFileExistsAPIView(
-    SamplesheetsAPIVersioningMixin, SODARAPIBaseMixin, APIView
-):
+class SampleDataFileExistsAPIView(SamplesheetsAPIVersioningMixin, APIView):
     """
     Return status of data object existing in SODAR iRODS by MD5 checksum.
     Includes all projects in search regardless of user permissions.
