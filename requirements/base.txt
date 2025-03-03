@@ -34,7 +34,7 @@ pytz==2024.1
 django-iconify==0.3
 
 # OpenID Connect (OIDC) authentication support
-social-auth-app-django==5.4.0
+social-auth-app-django==5.4.3
 
 # Redis support
 redis>=5.0.2, <5.1
