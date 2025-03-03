@@ -133,6 +133,7 @@ class ProjectAppPlugin(
             'label': 'Sample sheet display configuration',
             'description': 'User specific JSON configuration for column '
             'display in project sample sheets',
+            'user_modifiable': False,
         },
         'display_config_default': {
             'scope': APP_SETTING_SCOPE_PROJECT,
