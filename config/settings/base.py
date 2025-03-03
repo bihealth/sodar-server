@@ -583,7 +583,7 @@ ENABLED_BACKEND_PLUGINS = env.list(
 
 # General site settings
 SITE_TITLE = 'SODAR'
-SITE_SUBTITLE = env.str('SITE_SUBTITLE', 'Beta')
+SITE_SUBTITLE = env.str('SITE_SUBTITLE', None)
 SITE_INSTANCE_TITLE = env.str('SITE_INSTANCE_TITLE', 'CUBI SODAR')
 
 

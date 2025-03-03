@@ -502,7 +502,7 @@ class SheetImportMixin:
                 alert_msg='Sample sheet {}d'.format(action),
             )
             if ui_mode:
-                success_msg += ', initiated iRODS cache update'
+                success_msg += ', initiated iRODS cache update.'
 
         if ui_mode:
             messages.success(self.request, mark_safe(success_msg + '.'))
@@ -1892,7 +1892,7 @@ class IrodsCollsCreateView(
                 '{}d in iRODS'.format(action)
             )
             if settings.SHEETS_ENABLE_CACHE:
-                success_msg += ', initiated iRODS cache update'
+                success_msg += ', initiated iRODS cache update.'
             messages.success(self.request, success_msg)
         except taskflow.FlowSubmitException as ex:
             messages.error(self.request, str(ex))
@@ -2452,7 +2452,7 @@ class IrodsDataRequestListView(
     def get(self, request, *args, **kwargs):
         irods_backend = get_backend_api('omics_irods')
         if not irods_backend:
-            messages.error(request, 'iRODS backend not enabled')
+            messages.error(request, 'iRODS backend not enabled.')
             return redirect(
                 reverse(
                     'samplesheets:project_sheets',
@@ -2740,6 +2740,10 @@ class IrodsDataRequestAcceptBatchView(
     def post(self, request, *args, **kwargs):
         # Check if form is valid and then process requests
         form = self.get_form()
+        redirect_url = reverse(
+            'samplesheets:irods_requests',
+            kwargs={'project': self.get_project().sodar_uuid},
+        )
         if form.is_valid():
             timeline = get_backend_api('timeline_backend')
             taskflow = get_backend_api('taskflow')
@@ -2748,12 +2752,7 @@ class IrodsDataRequestAcceptBatchView(
             batch = self.get_irods_request_objects()
             if not batch:
                 messages.error(self.request, NO_REQUEST_MSG)
-                return redirect(
-                    reverse(
-                        'samplesheets:irods_requests',
-                        kwargs={'project': self.get_project().sodar_uuid},
-                    )
-                )
+                return redirect(redirect_url)
 
             for obj in batch:
                 try:
@@ -2773,25 +2772,14 @@ class IrodsDataRequestAcceptBatchView(
                     )
                 except Exception as ex:
                     self.add_error_message(obj, ex)
-
-            return redirect(
-                reverse(
-                    'samplesheets:irods_requests',
-                    kwargs={'project': self.get_project().sodar_uuid},
-                )
-            )
+            return redirect(redirect_url)
 
         # Render the confirmation form if the form is not valid
         try:
             return super().render_to_response(self.get_context_data())
         except Exception as ex:
             messages.error(request, str(ex))
-            return redirect(
-                reverse(
-                    'samplesheets:irods_requests',
-                    kwargs={'project': self.get_project().sodar_uuid},
-                )
-            )
+            return redirect(redirect_url)
 
 
 class IrodsDataRequestRejectView(
@@ -2809,6 +2797,10 @@ class IrodsDataRequestRejectView(
         timeline = get_backend_api('timeline_backend')
         app_alerts = get_backend_api('appalerts_backend')
         project = self.get_project()
+        redirect_url = reverse(
+            'samplesheets:irods_requests',
+            kwargs={'project': self.get_project().sodar_uuid},
+        )
 
         try:
             obj = IrodsDataRequest.objects.filter(
@@ -2835,21 +2827,10 @@ class IrodsDataRequestRejectView(
                         obj.get_display_name(), ex
                     ),
                 )
-            return redirect(
-                reverse(
-                    'samplesheets:irods_requests',
-                    kwargs={'project': self.get_project().sodar_uuid},
-                )
-            )
-
+            return redirect(redirect_url)
         except Exception as ex:
             messages.error(request, str(ex))
-            return redirect(
-                reverse(
-                    'samplesheets:irods_requests',
-                    kwargs={'project': self.get_project().sodar_uuid},
-                )
-            )
+        return redirect(redirect_url)
 
 
 class IrodsDataRequestRejectBatchView(
@@ -2867,17 +2848,16 @@ class IrodsDataRequestRejectBatchView(
         timeline = get_backend_api('timeline_backend')
         app_alerts = get_backend_api('appalerts_backend')
         project = self.get_project()
+        redirect_url = reverse(
+            'samplesheets:irods_requests',
+            kwargs={'project': self.get_project().sodar_uuid},
+        )
 
         try:
             batch = self.get_irods_request_objects()
             if not batch:
                 messages.error(self.request, NO_REQUEST_MSG)
-                return redirect(
-                    reverse(
-                        'samplesheets:irods_requests',
-                        kwargs={'project': self.get_project().sodar_uuid},
-                    )
-                )
+                return redirect(redirect_url)
             for obj in batch:
                 try:
                     self.reject_request(
@@ -2900,21 +2880,10 @@ class IrodsDataRequestRejectBatchView(
                             obj.get_display_name(), ex
                         ),
                     )
-            return redirect(
-                reverse(
-                    'samplesheets:irods_requests',
-                    kwargs={'project': self.get_project().sodar_uuid},
-                )
-            )
-
+            return redirect(redirect_url)
         except Exception as ex:
             messages.error(request, str(ex))
-            return redirect(
-                reverse(
-                    'samplesheets:irods_requests',
-                    kwargs={'project': self.get_project().sodar_uuid},
-                )
-            )
+            return redirect(redirect_url)
 
 
 class SheetRemoteSyncView(

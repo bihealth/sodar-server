@@ -100,18 +100,18 @@ conventions straightfoward.
 At the moment, the app is implemented on Vue v2. Upgrading to Vue v3 will be
 considered in the future.
 
-Study Sub-Apps
---------------
+Study Plugin Sub-Apps
+---------------------
 
-Study sub-apps are stored under ``samplesheets/studyapps``. They are used to
-dynamically introduce study table shortcuts for specific sample sheet
+Study plugin sub-apps are stored under ``samplesheets/studyapps``. They are used
+to dynamically introduce study table shortcuts for specific sample sheet
 configurations.
 
 The following study sub-apps currently exist:
 
-cancer
+``cancer``
     Study sub-app for cancer studies. Organizes shortcuts by case.
-germline
+``germline``
     Study sub-app for germline studies. Organizes shortcuts by pedigree.
 
 These apps generally consist of a plugin implementing certain methods, but can
@@ -211,27 +211,27 @@ An example of expected output for ``get_shortcut_links()``:
 The use of each study sub-app in sample sheets should be documented to the user
 in :ref:`metadata_advanced`.
 
-Assay Sub-Apps
---------------
+Assay Plugin Sub-Apps
+---------------------
 
-Similar to study sub-apps, assay sub-apps provide a dynamic way to link content
-within assays based on the assay type. They are placed under
+Similar to study plugin sub-apps, assay plugin sub-apps provide a dynamic way to
+link content within assays based on the assay type. They are placed under
 ``samplesheets/assayapps``.
 
 The following assay sub-apps currently exist:
 
-cytof
+``cytof``
     Protein expression profiling / mass cytometry assay app.
-dna_sequencing
+``dna_sequencing``
     DNA sequencing assay app.
-generic_raw
+``generic_raw``
     Generic assay app providing a top level "raw data" collection under each
     assay.
-meta_ms
+``meta_ms``
     Metabolite profiling / mass spectrometry assay app.
-microarray
+``microarray``
     Microarray assay app.
-pep_ms
+``pep_ms``
     Protein expression profiling / mass spectrometry assay app.
 
 These apps consist of a plugin implementing certain methods. To create a new
@@ -379,6 +379,16 @@ Irodsinfo
 
 The ``irodsinfo`` app simply displays iRODS server information and is used to
 generate a client configuration for the user.
+
+
+Isatemplates
+============
+
+The ``isatemplates`` app enables superusers to upload and manage custom
+Cookiecutter ISA-Tab templates on a SODAR site. This is for cases where the
+built-in templates imported from the
+`CUBI ISA Templates <https://github.com/bihealth/cubi-isa-templates/>`_
+repository are not sufficient.
 
 
 Ontologyaccess

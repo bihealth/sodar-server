@@ -27,6 +27,7 @@ data:
 - Large scale data storage
 - Linking files to metadata
 - Management and validation of file uploads
+- Management of study design templates
 - Tools for aiding project data management
 - Integrating data with third party tools
 

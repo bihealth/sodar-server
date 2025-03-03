@@ -8,8 +8,8 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
-v1.0.0 (WIP)
-============
+v1.0.0 (2025-03-03)
+===================
 
 Release for SODAR Core v1.0 upgrade, iRODS v4.3 upgrade and feature updates.
 

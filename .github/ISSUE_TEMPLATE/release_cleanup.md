@@ -20,6 +20,7 @@ TBA
 - [ ] Review code style and cleanup
 - [ ] Review and update docs entries
 - [ ] Ensure REST API versions are up to date and documented
+- [ ] Run `npm audit fix` for Vue app
 - [ ] Run `npx update-browserslist-db@latest` for Vue app
 - [ ] Update Vue app version with `npm version`
 - [ ] Update version in CHANGELOG and SODAR Release Notes doc

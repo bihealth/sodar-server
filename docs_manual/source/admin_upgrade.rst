@@ -14,8 +14,8 @@ General Upgrades
 
 For most SODAR versions, the following procedure for upgrading can be followed:
 
-1. Pull and check out the ``sodar-docker-compose`` release corresponding to the
-   current SODAR server version.
+1. Pull and check out the latest ``sodar-docker-compose`` release corresponding
+   to the current SODAR server version.
 2. Review and update your environment variables to match and/or support those
    recommended in the `env.example <https://github.com/bihealth/sodar-docker-compose/blob/main/env.example>`_
    file found in the current ``sodar-docker-compose`` release. Especially make
@@ -38,8 +38,21 @@ v1.0
 ====
 
 SODAR v1.0 contains breaking changes regarding upgrades to iRODS 4.3 and
-PostgreSQL >12. When upgrading from a previous version, it is recommended to do
+PostgreSQL >=12. When upgrading from a previous version, it is recommended to do
 a clean install.
+
+This release **requires** at least the following versions of SODAR
+environment components:
+
+- `sodar-docker-compose <https://github.com/bihealth/sodar-docker-compose>`_ ``1.0.0-1``
+- `irods-docker <https://github.com/bihealth/irods-docker>`_ ``4.3.3-2``
+- `davrods-docker <https://github.com/bihealth/davrods-docker>`_ ``4.3.3_1.5.1-1``
+- PostgreSQL ``>=12``
+
+.. note::
+
+    This release no longer supports iRODS <=4.2 and PostgreSQL <=11. Your iRODS
+    and PostgreSQL servers **must** be updated for this release to work.
 
 .. warning::
 
@@ -66,7 +79,7 @@ a clean install.
   stored in a local volume and accessed directly via ICAT, also consider
   backing up your vault directory.
 
-3. Pull the latest release of ``sodar-docker-compose``.
+3. Pull the latest ``v1.0.0-*`` release of ``sodar-docker-compose``.
 
 4. Delete the iRODS configuration directory and PostgreSQL database volume.
 
@@ -75,7 +88,13 @@ a clean install.
 - Example: ``sudo rm -rf config/irods/etc/ volumes/postgres``
 
 5. Update your ``.env`` file (or environment variables in your deployment
-   scripts) to be compatible with the ``env.example`` file.
+   scripts) to be compatible with the ``env.example`` file of the current
+   ``sodar-docker-compose`` release.
+
+- **NOTE:** Make sure ``IRODS_PASS`` and ``IRODS_PASSWORD_SALT`` are set with
+  the same values as in your previous installation. Otherwise iRODS will fail to
+  run after re-importing old databases, as the service user is unable to connect
+  to the ICAT server.
 
 6. Run ``./init.sh`` (or the corresponding command in your deployment scripts)
    to recreate directories.
