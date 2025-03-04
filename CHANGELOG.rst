@@ -13,6 +13,7 @@ Changed
 
 - **General**
     - Upgrade critical Python dependencies (#2081)
+    - Upgrade GitHub Actions CI runner to Ubuntu v22.04 (#2067)
 
 
 v1.0.0 (2025-03-03)
