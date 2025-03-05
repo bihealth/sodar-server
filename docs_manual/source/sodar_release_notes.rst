@@ -13,7 +13,8 @@ v1.0.1 (WIP)
 
 Release for minor updates, maintenance and bug fixes.
 
-TODO
+- Upgrade to SODAR Core v1.0.6 hotfix release
+- Minor updates and bug fixes
 
 
 v1.0.0 (2025-03-03)
