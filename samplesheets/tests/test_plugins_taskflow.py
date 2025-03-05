@@ -27,6 +27,7 @@ PROJECT_TYPE_CATEGORY = SODAR_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 PROJECT_ACTION_CREATE = SODAR_CONSTANTS['PROJECT_ACTION_CREATE']
 PROJECT_ACTION_UPDATE = SODAR_CONSTANTS['PROJECT_ACTION_UPDATE']
+APP_SETTING_SCOPE_PROJECT = SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT']
 
 # Local constants
 APP_NAME = 'samplesheets'
@@ -105,7 +106,9 @@ class TestPerformProjectModify(
         self.plugin.perform_project_modify(
             project=self.project,
             action=PROJECT_ACTION_UPDATE,
-            project_settings=app_settings.get_all(self.project),
+            project_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=self.project
+            ),
             old_data={'parent': self.category},
             request=self.request,
         )
@@ -123,7 +126,9 @@ class TestPerformProjectModify(
         self.plugin.perform_project_modify(
             project=self.project,
             action=PROJECT_ACTION_UPDATE,
-            project_settings=app_settings.get_all(self.project),
+            project_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=self.project
+            ),
             old_data={'parent': self.category},
             request=self.request,
         )
@@ -141,7 +146,9 @@ class TestPerformProjectModify(
         self.plugin.perform_project_modify(
             project=self.project,
             action=PROJECT_ACTION_UPDATE,
-            project_settings=app_settings.get_all(self.project),
+            project_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=self.project
+            ),
             old_data={'parent': self.category},
             request=self.request,
         )
@@ -158,7 +165,9 @@ class TestPerformProjectModify(
         self.plugin.perform_project_modify(
             project=self.project,
             action=PROJECT_ACTION_UPDATE,
-            project_settings=app_settings.get_all(self.project),
+            project_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=self.project
+            ),
             old_data={'parent': self.category},
             old_settings={
                 'settings.samplesheets.public_access_ticket': ticket_str
@@ -177,7 +186,9 @@ class TestPerformProjectModify(
             self.plugin.perform_project_modify(
                 project=self.project,
                 action=PROJECT_ACTION_UPDATE,
-                project_settings=app_settings.get_all(self.project),
+                project_settings=app_settings.get_all_by_scope(
+                    APP_SETTING_SCOPE_PROJECT, project=self.project
+                ),
                 old_data={'parent': self.category},
                 request=self.request,
             )
@@ -192,7 +203,9 @@ class TestPerformProjectModify(
         self.plugin.perform_project_modify(
             project=self.project,
             action=PROJECT_ACTION_UPDATE,
-            project_settings=app_settings.get_all(self.project),
+            project_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=self.project
+            ),
             old_data={'parent': self.category},
             old_settings={
                 'settings.samplesheets.public_access_ticket': ticket_str

@@ -39,6 +39,7 @@ PROJECT_TYPE_CATEGORY = SODAR_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 APP_SETTING_SCOPE_PROJECT = SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT']
 
+
 # Local constants
 INVITE_EMAIL = 'test@example.com'
 SECRET = 'rsd886hi8276nypuvw066sbvv0rb2a6x'
@@ -189,7 +190,9 @@ class TestProjectUpdateView(TaskflowViewTestBase):
             }
         )
         request_data.update(
-            app_settings.get_all(project=self.project, post_safe=True)
+            app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=self.project, post_safe=True
+            )
         )  # Add default settings
         with self.login(self.user):
             response = self.client.post(
@@ -277,7 +280,9 @@ class TestProjectUpdateView(TaskflowViewTestBase):
             }
         )
         request_data.update(
-            app_settings.get_all(project=self.project, post_safe=True)
+            app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=self.project, post_safe=True
+            )
         )  # Add default settings
         with self.login(self.user):
             response = self.client.post(

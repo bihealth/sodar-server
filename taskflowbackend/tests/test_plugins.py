@@ -27,6 +27,7 @@ PROJECT_TYPE_CATEGORY = SODAR_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 PROJECT_ACTION_CREATE = SODAR_CONSTANTS['PROJECT_ACTION_CREATE']
 PROJECT_ACTION_UPDATE = SODAR_CONSTANTS['PROJECT_ACTION_UPDATE']
+APP_SETTING_SCOPE_PROJECT = SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT']
 
 
 class ModifyAPITaskflowTestBase(TaskflowViewTestBase):
@@ -70,7 +71,9 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
         self.plugin.perform_project_modify(
             project=project,
             action=PROJECT_ACTION_CREATE,
-            project_settings=app_settings.get_all(project),
+            project_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=project
+            ),
             request=self.request,
         )
 
@@ -138,7 +141,9 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
         self.plugin.perform_project_modify(
             project=project,
             action=PROJECT_ACTION_CREATE,
-            project_settings=app_settings.get_all(project),
+            project_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=project
+            ),
             request=self.request,
         )
 
@@ -180,7 +185,9 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
         self.plugin.perform_project_modify(
             project=project,
             action=PROJECT_ACTION_CREATE,
-            project_settings=app_settings.get_all(project),
+            project_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=project
+            ),
             request=self.request,
         )
 
@@ -208,7 +215,9 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
         self.plugin.perform_project_modify(
             project=project,
             action=PROJECT_ACTION_CREATE,
-            project_settings=app_settings.get_all(project),
+            project_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=project
+            ),
             request=self.request,
         )
         # Since there is an overridden role, this should be created
@@ -231,7 +240,9 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
         self.plugin.perform_project_modify(
             project=project,
             action=PROJECT_ACTION_CREATE,
-            project_settings=app_settings.get_all(project),
+            project_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=project
+            ),
             request=self.request,
         )
         # Since the finder role is overridden by parent, this should be created
@@ -252,7 +263,9 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
         self.plugin.perform_project_modify(
             project=category,
             action=PROJECT_ACTION_CREATE,
-            project_settings=app_settings.get_all(category),
+            project_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=category
+            ),
             request=self.request,
         )
 
@@ -275,7 +288,9 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
         self.plugin.perform_project_modify(
             project=project,
             action=PROJECT_ACTION_UPDATE,
-            project_settings=app_settings.get_all(project),
+            project_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=project
+            ),
             old_data={'parent': self.category},
             request=self.request,
         )
@@ -323,7 +338,9 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
         self.plugin.perform_project_modify(
             project=project,
             action=PROJECT_ACTION_UPDATE,
-            project_settings=app_settings.get_all(project),
+            project_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=project
+            ),
             old_data={'parent': self.category},
             request=self.request,
         )
@@ -355,9 +372,13 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
         self.plugin.perform_project_modify(
             project=self.category,
             action=PROJECT_ACTION_UPDATE,
-            project_settings=app_settings.get_all(self.category),
+            project_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=self.category
+            ),
             old_data={'parent': None},
-            old_settings=app_settings.get_all(self.category),
+            old_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=self.category
+            ),
             request=self.request,
         )
 
@@ -406,9 +427,13 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
         self.plugin.perform_project_modify(
             project=self.category,
             action=PROJECT_ACTION_UPDATE,
-            project_settings=app_settings.get_all(self.category),
+            project_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=self.category
+            ),
             old_data={'parent': old_category},
-            old_settings=app_settings.get_all(self.category),
+            old_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=self.category
+            ),
             request=self.request,
         )
 
@@ -443,7 +468,9 @@ class TestRevertProjectModify(ModifyAPITaskflowTestBase):
         self.plugin.revert_project_modify(
             project=self.project,
             action=PROJECT_ACTION_CREATE,
-            project_settings=app_settings.get_all(self.project),
+            project_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=self.project
+            ),
             request=self.request,
         )
 
