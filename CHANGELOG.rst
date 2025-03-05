@@ -16,6 +16,12 @@ Changed
     - Upgrade critical Python dependencies (#2081)
     - Upgrade GitHub Actions CI runner to Ubuntu v22.04 (#2067)
 
+Fixed
+-----
+
+- **Landingzones**
+    - Project details card status column width (#2083)
+
 
 v1.0.0 (2025-03-03)
 ===================
