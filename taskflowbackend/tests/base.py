@@ -506,5 +506,28 @@ class TaskflowAPIPermissionTestBase(
 
     def setUp(self):
         super().setUp()
+        # User helpers (NOTE: copied from SODAR Core)
+        self.all_users = [
+            self.superuser,
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
+            self.user_no_roles,
+            self.anonymous,
+        ]  # All users
+        # All authenticated users
+        self.auth_users = self.all_users[:-1]
+        # All users except for superuser
+        self.non_superusers = self.all_users[1:]
+        # All authenticated non-superusers
+        self.auth_non_superusers = self.non_superusers[:-1]
+        # No roles user and anonymous user
+        self.no_role_users = [self.user_no_roles, self.anonymous]
         # Get knox token for self.user
         self.knox_token = self.get_token(self.superuser)

@@ -27,7 +27,7 @@ TBA
 - [ ] Update version in docs conf.py
 - [ ] Ensure both SODAR and SODAR Core API versioning is correct in API docs
 - [ ] Ensure docs can be built without errors
-- [ ] Ensure `generateschema` runs without errors or warnings (until in CI)
+- [ ] Ensure `make spectacular` runs without errors or warnings (until in CI)
 
 ## Notes
 

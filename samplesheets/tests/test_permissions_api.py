@@ -48,6 +48,39 @@ class SamplesheetsAPIPermissionTestBase(ProjectAPIPermissionTestBase):
     media_type = SAMPLESHEETS_API_MEDIA_TYPE
     api_version = SAMPLESHEETS_API_DEFAULT_VERSION
 
+    def setUp(self):
+        super().setUp()
+        # Default users for read views
+        self.good_users_read = [
+            self.superuser,
+            self.user_owner_cat,  # Inherited
+            self.user_delegate_cat,  # Inherited
+            self.user_contributor_cat,  # Inherited
+            self.user_guest_cat,  # Inherited
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
+        ]
+        # NOTE: Omit self.anonymous from here, checked separately
+        self.bad_users_read = [self.user_finder_cat, self.user_no_roles]
+        # Default users for write views
+        self.good_users_write = [
+            self.superuser,
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+        ]
+        self.bad_users_write = [
+            self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_guest,
+            self.user_no_roles,
+        ]
+
 
 class TestInvestigationRetrieveAPIView(
     SampleSheetIOMixin,
@@ -60,75 +93,37 @@ class TestInvestigationRetrieveAPIView(
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-
-    def test_get(self):
-        """Test InvestigationRetrieveAPIView GET"""
-        url = reverse(
+        self.url = reverse(
             'samplesheets:api_investigation_retrieve',
             kwargs={'project': self.project.sodar_uuid},
         )
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,  # Inherited
-            self.user_delegate_cat,  # Inherited
-            self.user_contributor_cat,  # Inherited
-            self.user_guest_cat,  # Inherited
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-        ]
-        self.assert_response_api(url, good_users, 200)
-        self.assert_response_api(
-            url, [self.user_finder_cat, self.user_no_roles], 403
-        )
-        self.assert_response_api(url, self.anonymous, 401)
+
+    def test_get(self):
+        """Test InvestigationRetrieveAPIView GET"""
+        self.assert_response_api(self.url, self.good_users_read, 200)
+        self.assert_response_api(self.url, self.bad_users_read, 403)
+        self.assert_response_api(self.url, self.anonymous, 401)
         # Test public project
         self.project.set_public()
-        self.assert_response_api(
-            url, [self.user_finder_cat, self.user_no_roles], 200
-        )
-        self.assert_response_api(url, self.anonymous, 401)
+        self.assert_response_api(self.url, self.bad_users_read, 200)
+        self.assert_response_api(self.url, self.anonymous, 401)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous guest access"""
-        url = reverse(
-            'samplesheets:api_investigation_retrieve',
-            kwargs={'project': self.project.sodar_uuid},
-        )
         self.project.set_public()
-        self.assert_response_api(url, self.anonymous, 200)
+        self.assert_response_api(self.url, self.anonymous, 200)
 
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
-        url = reverse(
-            'samplesheets:api_investigation_retrieve',
-            kwargs={'project': self.project.sodar_uuid},
-        )
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-        ]
-        self.assert_response_api(url, good_users, 200)
-        self.assert_response_api(
-            url, [self.user_finder_cat, self.user_no_roles], 403
-        )
-        self.assert_response_api(url, self.anonymous, 401)
+        self.assert_response_api(self.url, self.good_users_read, 200)
+        self.assert_response_api(self.url, self.bad_users_read, 403)
+        self.assert_response_api(self.url, self.anonymous, 401)
         # Test public project
         self.project.set_public()
-        self.assert_response_api(
-            url, [self.user_finder_cat, self.user_no_roles], 200
-        )
-        self.assert_response_api(url, self.anonymous, 401)
+        self.assert_response_api(self.url, self.bad_users_read, 200)
+        self.assert_response_api(self.url, self.anonymous, 401)
 
 
 class TestSheetImportAPIView(
@@ -144,6 +139,10 @@ class TestSheetImportAPIView(
         super().setUp()
         self.zip_file = open(SHEET_PATH, 'rb')
         self.post_data = {'file': self.zip_file}
+        self.url = reverse(
+            'samplesheets:api_import',
+            kwargs={'project': self.project.sodar_uuid},
+        )
 
     def tearDown(self):
         self.zip_file.close()
@@ -151,28 +150,9 @@ class TestSheetImportAPIView(
 
     def test_post(self):
         """Test SampleSheetImportAPIView POST"""
-        url = reverse(
-            'samplesheets:api_import',
-            kwargs={'project': self.project.sodar_uuid},
-        )
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-        ]
-        bad_users = [
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_guest,
-            self.user_no_roles,
-        ]
         self.assert_response_api(
-            url,
-            good_users,
+            self.url,
+            self.good_users_write,
             status_code=200,
             method='POST',
             format='multipart',
@@ -180,8 +160,8 @@ class TestSheetImportAPIView(
             cleanup_method=self._cleanup_import,
         )
         self.assert_response_api(
-            url,
-            bad_users,
+            self.url,
+            self.bad_users_write,
             status_code=403,
             method='POST',
             format='multipart',
@@ -189,7 +169,7 @@ class TestSheetImportAPIView(
             cleanup_method=self._cleanup_import,
         )
         self.assert_response_api(
-            url,
+            self.url,
             self.anonymous,
             status_code=401,
             method='POST',
@@ -199,8 +179,8 @@ class TestSheetImportAPIView(
         )
         self.project.set_public()
         self.assert_response_api(
-            url,
-            bad_users,
+            self.url,
+            self.bad_users_write,
             status_code=403,
             method='POST',
             format='multipart',
@@ -208,7 +188,7 @@ class TestSheetImportAPIView(
             cleanup_method=self._cleanup_import,
         )
         self.assert_response_api(
-            url,
+            self.url,
             self.anonymous,
             status_code=401,
             method='POST',
@@ -220,13 +200,9 @@ class TestSheetImportAPIView(
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_post_anon(self):
         """Test POST with anonymous guest access"""
-        url = reverse(
-            'samplesheets:api_import',
-            kwargs={'project': self.project.sodar_uuid},
-        )
         self.project.set_public()
         self.assert_response_api(
-            url,
+            self.url,
             self.anonymous,
             status_code=401,
             method='POST',
@@ -237,26 +213,9 @@ class TestSheetImportAPIView(
     def test_post_archive(self):
         """Test POST with archived project"""
         self.project.set_archive()
-        url = reverse(
-            'samplesheets:api_import',
-            kwargs={'project': self.project.sodar_uuid},
-        )
-        good_users = [self.superuser]
-        bad_users = [
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-        ]
         self.assert_response_api(
-            url,
-            good_users,
+            self.url,
+            self.superuser,
             status_code=200,
             method='POST',
             format='multipart',
@@ -264,8 +223,8 @@ class TestSheetImportAPIView(
             cleanup_method=self._cleanup_import,
         )
         self.assert_response_api(
-            url,
-            bad_users,
+            self.url,
+            self.auth_non_superusers,
             status_code=403,
             method='POST',
             format='multipart',
@@ -273,7 +232,7 @@ class TestSheetImportAPIView(
             cleanup_method=self._cleanup_import,
         )
         self.assert_response_api(
-            url,
+            self.url,
             self.anonymous,
             status_code=401,
             method='POST',
@@ -283,8 +242,8 @@ class TestSheetImportAPIView(
         )
         self.project.set_public()
         self.assert_response_api(
-            url,
-            bad_users,
+            self.url,
+            self.bad_users_write,
             status_code=403,
             method='POST',
             format='multipart',
@@ -292,7 +251,7 @@ class TestSheetImportAPIView(
             cleanup_method=self._cleanup_import,
         )
         self.assert_response_api(
-            url,
+            self.url,
             self.anonymous,
             status_code=401,
             method='POST',
@@ -313,67 +272,37 @@ class TestSheetISAExportAPIView(
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-
-    def test_get(self):
-        """Test SampleSheetISAExportAPIView GET"""
-        url = reverse(
+        self.url = reverse(
             'samplesheets:api_export_zip',
             kwargs={'project': self.project.sodar_uuid},
         )
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-        ]
-        bad_users = [self.user_finder_cat, self.user_no_roles]
-        self.assert_response_api(url, good_users, 200)
-        self.assert_response_api(url, bad_users, 403)
-        self.assert_response_api(url, self.anonymous, 401)
+
+    def test_get(self):
+        """Test SampleSheetISAExportAPIView GET"""
+        self.assert_response_api(self.url, self.good_users_read, 200)
+        self.assert_response_api(self.url, self.bad_users_read, 403)
+        self.assert_response_api(self.url, self.anonymous, 401)
+        # Test public project
         self.project.set_public()
-        self.assert_response_api(url, bad_users, 200)
-        self.assert_response_api(url, self.anonymous, 401)
+        self.assert_response_api(self.url, self.bad_users_read, 200)
+        self.assert_response_api(self.url, self.anonymous, 401)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous guest access"""
-        url = reverse(
-            'samplesheets:api_export_zip',
-            kwargs={'project': self.project.sodar_uuid},
-        )
         self.project.set_public()
-        self.assert_response_api(url, self.anonymous, 200)
+        self.assert_response_api(self.url, self.anonymous, 200)
 
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
-        url = reverse(
-            'samplesheets:api_export_zip',
-            kwargs={'project': self.project.sodar_uuid},
-        )
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-        ]
-        bad_users = [self.user_finder_cat, self.user_no_roles]
-        self.assert_response_api(url, good_users, 200)
-        self.assert_response_api(url, bad_users, 403)
-        self.assert_response_api(url, self.anonymous, 401)
+        self.assert_response_api(self.url, self.good_users_read, 200)
+        self.assert_response_api(self.url, self.bad_users_read, 403)
+        self.assert_response_api(self.url, self.anonymous, 401)
+        # Test public project
         self.project.set_public()
-        self.assert_response_api(url, bad_users, 200)
-        self.assert_response_api(url, self.anonymous, 401)
+        self.assert_response_api(self.url, self.bad_users_read, 200)
+        self.assert_response_api(self.url, self.anonymous, 401)
 
 
 class TestIrodsAccessTicketListAPIView(
@@ -407,23 +336,8 @@ class TestIrodsAccessTicketListAPIView(
 
     def test_get(self):
         """Test IrodsAccessTicketListAPIView GET"""
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-        ]
-        bad_users = [
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_guest,
-            self.user_no_roles,
-        ]
-        self.assert_response_api(self.url, good_users, 200)
-        self.assert_response_api(self.url, bad_users, 403)
+        self.assert_response_api(self.url, self.good_users_write, 200)
+        self.assert_response_api(self.url, self.bad_users_write, 403)
         self.assert_response_api(self.url, self.anonymous, 401)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
@@ -434,21 +348,8 @@ class TestIrodsAccessTicketListAPIView(
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
-        good_users = [self.superuser]
-        bad_users = [
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-        ]
-        self.assert_response_api(self.url, good_users, 200)
-        self.assert_response_api(self.url, bad_users, 403)
+        self.assert_response_api(self.url, self.superuser, 200)
+        self.assert_response_api(self.url, self.auth_non_superusers, 403)
         self.assert_response_api(self.url, self.anonymous, 401)
 
 
@@ -480,23 +381,8 @@ class TestIrodsAccessTicketRetrieveAPIView(
 
     def test_get(self):
         """Test IrodsAccessTicketRetrieveAPIView GET"""
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-        ]
-        bad_users = [
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_guest,
-            self.user_no_roles,
-        ]
-        self.assert_response_api(self.url, good_users, 200)
-        self.assert_response_api(self.url, bad_users, 403)
+        self.assert_response_api(self.url, self.good_users_write, 200)
+        self.assert_response_api(self.url, self.bad_users_write, 403)
         self.assert_response_api(self.url, self.anonymous, 401)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
@@ -507,21 +393,8 @@ class TestIrodsAccessTicketRetrieveAPIView(
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
-        good_users = [self.superuser]
-        bad_users = [
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-        ]
-        self.assert_response_api(self.url, good_users, 200)
-        self.assert_response_api(self.url, bad_users, 403)
+        self.assert_response_api(self.url, self.superuser, 200)
+        self.assert_response_api(self.url, self.auth_non_superusers, 403)
         self.assert_response_api(self.url, self.anonymous, 401)
 
 
@@ -546,29 +419,12 @@ class TestIrodsDataRequestRetrieveAPIView(
 
     def test_get(self):
         """Test IrodsDataRequestListAPIView GET"""
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-        ]
-        bad_users = [
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_guest,
-            self.user_no_roles,
-        ]
-        self.assert_response_api(self.url, good_users, 200)
-        self.assert_response_api(self.url, bad_users, 403)
+        self.assert_response_api(self.url, self.good_users_write, 200)
+        self.assert_response_api(self.url, self.bad_users_write, 403)
         self.assert_response_api(self.url, self.anonymous, 401)
         # Test public project
         self.project.set_public()
-        self.assert_response_api(
-            self.url, [self.user_finder_cat, self.user_no_roles], 403
-        )
+        self.assert_response_api(self.url, self.bad_users_read, 403)
         self.assert_response_api(self.url, self.anonymous, 401)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
@@ -580,21 +436,8 @@ class TestIrodsDataRequestRetrieveAPIView(
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
-        good_users = [self.superuser]
-        bad_users = [
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-        ]
-        self.assert_response_api(self.url, good_users, 200)
-        self.assert_response_api(self.url, bad_users, 403)
+        self.assert_response_api(self.url, self.superuser, 200)
+        self.assert_response_api(self.url, self.auth_non_superusers, 403)
         self.assert_response_api(self.url, self.anonymous, 401)
 
 
@@ -610,29 +453,12 @@ class TestIrodsDataRequestListAPIView(SamplesheetsAPIPermissionTestBase):
 
     def test_get(self):
         """Test IrodsDataRequestListAPIView GET"""
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-        ]
-        bad_users = [
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_guest,
-            self.user_no_roles,
-        ]
-        self.assert_response_api(self.url, good_users, 200)
-        self.assert_response_api(self.url, bad_users, 403)
+        self.assert_response_api(self.url, self.good_users_write, 200)
+        self.assert_response_api(self.url, self.bad_users_write, 403)
         self.assert_response_api(self.url, self.anonymous, 401)
         # Test public project
         self.project.set_public()
-        self.assert_response_api(
-            self.url, [self.user_finder_cat, self.user_no_roles], 403
-        )
+        self.assert_response_api(self.url, self.bad_users_read, 403)
         self.assert_response_api(self.url, self.anonymous, 401)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
@@ -644,21 +470,8 @@ class TestIrodsDataRequestListAPIView(SamplesheetsAPIPermissionTestBase):
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
-        good_users = [self.superuser]
-        bad_users = [
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-        ]
-        self.assert_response_api(self.url, good_users, 200)
-        self.assert_response_api(self.url, bad_users, 403)
+        self.assert_response_api(self.url, self.superuser, 200)
+        self.assert_response_api(self.url, self.auth_non_superusers, 403)
         self.assert_response_api(self.url, self.anonymous, 401)
 
 
@@ -685,7 +498,7 @@ class TestIrodsDataRequestRejectAPIView(
             kwargs={'irodsdatarequest': self.request.sodar_uuid},
         )
 
-    def test_reject(self):
+    def test_post(self):
         """Test IrodsDataRequestRejectAPIView POST"""
         good_users = [
             self.superuser,
@@ -713,34 +526,23 @@ class TestIrodsDataRequestRejectAPIView(
         self.assert_response_api(self.url, self.anonymous, 401, method='POST')
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
-    def test_accept_anon(self):
-        """Test POST in IrodsDataRequestRejectAPIView with anonymous access"""
+    def test_post_anon(self):
+        """Test POST with anonymous access"""
         self.assert_response_api(self.url, self.anonymous, 401, method='POST')
 
-    def test_reject_archive(self):
-        """Test POST in IrodsDataRequestUpdateAPIView with archived project"""
+    def test_post_archive(self):
+        """Test POST with archived project"""
         self.project.set_archive()
-        good_users = [self.superuser]
-        bad_users = [
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-        ]
         self.assert_response_api(
             self.url,
-            good_users,
+            self.superuser,
             200,
             method='POST',
             cleanup_method=self._cleanup,
         )
-        self.assert_response_api(self.url, bad_users, 403, method='POST')
+        self.assert_response_api(
+            self.url, self.auth_non_superusers, 403, method='POST'
+        )
         self.assert_response_api(self.url, self.anonymous, 401, method='POST')
 
 
@@ -805,27 +607,16 @@ class TestIrodsDataRequestDestroyAPIView(
     def test_delete_archive(self):
         """Test DELETE with archived project"""
         self.project.set_archive()
-        good_users = [self.superuser]
-        bad_users = [
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-        ]
         self.assert_response_api(
             self.url,
-            good_users,
+            self.superuser,
             204,
             method='DELETE',
             cleanup_method=self._make_request,
         )
-        self.assert_response_api(self.url, bad_users, 403, method='DELETE')
+        self.assert_response_api(
+            self.url, self.auth_non_superusers, 403, method='DELETE'
+        )
         self.assert_response_api(self.url, self.anonymous, 401, method='DELETE')
 
 
@@ -852,6 +643,13 @@ class TestRemoteSheetGetAPIView(
             description='',
             secret=REMOTE_SITE_SECRET,
         )
+        self.url = reverse(
+            'samplesheets:api_remote_get',
+            kwargs={
+                'project': self.project.sodar_uuid,
+                'secret': REMOTE_SITE_SECRET,
+            },
+        )
 
     def test_get(self):
         """Test RemoteSheetGetAPIView GET"""
@@ -861,14 +659,7 @@ class TestRemoteSheetGetAPIView(
             site=self.target_site,
             level=SODAR_CONSTANTS['REMOTE_LEVEL_READ_ROLES'],
         )
-        url = reverse(
-            'samplesheets:api_remote_get',
-            kwargs={
-                'project': self.project.sodar_uuid,
-                'secret': REMOTE_SITE_SECRET,
-            },
-        )
-        self.assert_response(url, self.anonymous, 200)
+        self.assert_response(self.url, self.anonymous, 200)
 
     def test_get_invalid_access(self):
         """Test GET with invalid access level"""
@@ -877,25 +668,11 @@ class TestRemoteSheetGetAPIView(
             site=self.target_site,
             level=SODAR_CONSTANTS['REMOTE_LEVEL_VIEW_AVAIL'],
         )
-        url = reverse(
-            'samplesheets:api_remote_get',
-            kwargs={
-                'project': self.project.sodar_uuid,
-                'secret': REMOTE_SITE_SECRET,
-            },
-        )
-        self.assert_response(url, self.anonymous, 401)
+        self.assert_response(self.url, self.anonymous, 401)
 
     def test_get_no_access(self):
         """Test GET with no remote access rights"""
-        url = reverse(
-            'samplesheets:api_remote_get',
-            kwargs={
-                'project': self.project.sodar_uuid,
-                'secret': REMOTE_SITE_SECRET,
-            },
-        )
-        self.assert_response(url, self.anonymous, 401)
+        self.assert_response(self.url, self.anonymous, 401)
 
     def test_get_invalid_secret(self):
         """Test GET with invalid remote site secret"""
@@ -921,11 +698,4 @@ class TestRemoteSheetGetAPIView(
             site=self.target_site,
             level=SODAR_CONSTANTS['REMOTE_LEVEL_READ_ROLES'],
         )
-        url = reverse(
-            'samplesheets:api_remote_get',
-            kwargs={
-                'project': self.project.sodar_uuid,
-                'secret': REMOTE_SITE_SECRET,
-            },
-        )
-        self.assert_response(url, self.anonymous, 200)
+        self.assert_response(self.url, self.anonymous, 200)

@@ -626,6 +626,11 @@ PROJECTROLES_DISABLE_CATEGORIES = env.bool(
 PROJECTROLES_API_USER_DETAIL_RESTRICT = env.bool(
     'PROJECTROLES_API_USER_DETAIL_RESTRICT', False
 )
+PROJECTROLES_READ_ONLY_MSG = env.str(
+    'PROJECTROLES_READ_ONLY_MSG',
+    'This site is currently in read-only mode. Modifying data is not permitted.'
+    'This includes landing zone operations.',
+)
 
 # Warn about unsupported browsers (IE)
 PROJECTROLES_BROWSER_WARNING = True
