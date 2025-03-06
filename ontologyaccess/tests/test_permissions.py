@@ -57,6 +57,7 @@ class OntologyAccessPermissionTestBase(
             namespace=OBO_TERM_NAMESPACE,
             comment=OBO_TERM_COMMENT,
         )
+        self.bad_users = [self.anonymous, self.regular_user]
 
 
 class TestOntologyAccessPermissions(OntologyAccessPermissionTestBase):
@@ -65,10 +66,8 @@ class TestOntologyAccessPermissions(OntologyAccessPermissionTestBase):
     def test_get_ontology_list(self):
         """Test OBOFormatOntologyListView GET"""
         url = reverse('ontologyaccess:list')
-        good_users = [self.superuser]
-        bad_users = [self.anonymous, self.regular_user]
-        self.assert_response(url, good_users, 200)
-        self.assert_response(url, bad_users, 302)
+        self.assert_response(url, self.superuser, 200)
+        self.assert_response(url, self.bad_users, 302)
 
     def test_get_ontology_detail(self):
         """Test OBOFormatOntologyDetailView GET"""
@@ -76,18 +75,14 @@ class TestOntologyAccessPermissions(OntologyAccessPermissionTestBase):
             'ontologyaccess:obo_detail',
             kwargs={'oboformatontology': self.ontology.sodar_uuid},
         )
-        good_users = [self.superuser]
-        bad_users = [self.anonymous, self.regular_user]
-        self.assert_response(url, good_users, 200)
-        self.assert_response(url, bad_users, 302)
+        self.assert_response(url, self.superuser, 200)
+        self.assert_response(url, self.bad_users, 302)
 
     def test_get_ontology_import(self):
         """Test OBOFormatOntologyImportView GET"""
         url = reverse('ontologyaccess:obo_import')
-        good_users = [self.superuser]
-        bad_users = [self.anonymous, self.regular_user]
-        self.assert_response(url, good_users, 200)
-        self.assert_response(url, bad_users, 302)
+        self.assert_response(url, self.superuser, 200)
+        self.assert_response(url, self.bad_users, 302)
 
     def test_get_ontology_update(self):
         """Test OBOFormatOntologyUpdateView GET"""
@@ -95,10 +90,8 @@ class TestOntologyAccessPermissions(OntologyAccessPermissionTestBase):
             'ontologyaccess:obo_update',
             kwargs={'oboformatontology': self.ontology.sodar_uuid},
         )
-        good_users = [self.superuser]
-        bad_users = [self.anonymous, self.regular_user]
-        self.assert_response(url, good_users, 200)
-        self.assert_response(url, bad_users, 302)
+        self.assert_response(url, self.superuser, 200)
+        self.assert_response(url, self.bad_users, 302)
 
     def test_ontology_delete(self):
         """Test OBOFormatOntologyDeleteView GET"""
@@ -106,7 +99,5 @@ class TestOntologyAccessPermissions(OntologyAccessPermissionTestBase):
             'ontologyaccess:obo_delete',
             kwargs={'oboformatontology': self.ontology.sodar_uuid},
         )
-        good_users = [self.superuser]
-        bad_users = [self.anonymous, self.regular_user]
-        self.assert_response(url, good_users, 200)
-        self.assert_response(url, bad_users, 302)
+        self.assert_response(url, self.superuser, 200)
+        self.assert_response(url, self.bad_users, 302)

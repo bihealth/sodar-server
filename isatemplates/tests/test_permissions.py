@@ -20,13 +20,15 @@ class TestISATemplatesPermissions(
 ):
     """Tests for isatemplates UI view permissions"""
 
+    def setUp(self):
+        super().setUp()
+        self.bad_users = [self.regular_user, self.anonymous]
+
     def test_get_list(self):
         """Test ISATemplateListView GET"""
         url = reverse('isatemplates:list')
-        good_users = [self.superuser]
-        bad_users = [self.regular_user, self.anonymous]
-        self.assert_response(url, good_users, 200)
-        self.assert_response(url, bad_users, 302)
+        self.assert_response(url, self.superuser, 200)
+        self.assert_response(url, self.bad_users, 302)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_list_anon(self):
@@ -41,10 +43,8 @@ class TestISATemplatesPermissions(
             'isatemplates:detail',
             kwargs={'cookiecutterisatemplate': template.sodar_uuid},
         )
-        good_users = [self.superuser]
-        bad_users = [self.regular_user, self.anonymous]
-        self.assert_response(url, good_users, 200)
-        self.assert_response(url, bad_users, 302)
+        self.assert_response(url, self.superuser, 200)
+        self.assert_response(url, self.bad_users, 302)
 
     def test_get_detail_cubi(self):
         """Test CUBIISATemplateDetailView GET"""
@@ -52,18 +52,14 @@ class TestISATemplatesPermissions(
             'isatemplates:detail_cubi',
             kwargs={'name': CUBI_TEMPLATES[0].name},
         )
-        good_users = [self.superuser]
-        bad_users = [self.regular_user, self.anonymous]
-        self.assert_response(url, good_users, 200)
-        self.assert_response(url, bad_users, 302)
+        self.assert_response(url, self.superuser, 200)
+        self.assert_response(url, self.bad_users, 302)
 
     def test_get_create(self):
         """Test ISATemplateCreateView GET"""
         url = reverse('isatemplates:create')
-        good_users = [self.superuser]
-        bad_users = [self.regular_user, self.anonymous]
-        self.assert_response(url, good_users, 200)
-        self.assert_response(url, bad_users, 302)
+        self.assert_response(url, self.superuser, 200)
+        self.assert_response(url, self.bad_users, 302)
 
     def test_get_update(self):
         """Test ISATemplateUpdateView GET"""
@@ -72,9 +68,8 @@ class TestISATemplatesPermissions(
             'isatemplates:update',
             kwargs={'cookiecutterisatemplate': template.sodar_uuid},
         )
-        good_users = [self.superuser]
         bad_users = [self.regular_user, self.anonymous]
-        self.assert_response(url, good_users, 200)
+        self.assert_response(url, self.superuser, 200)
         self.assert_response(url, bad_users, 302)
 
     def test_get_delete(self):
@@ -84,10 +79,8 @@ class TestISATemplatesPermissions(
             'isatemplates:delete',
             kwargs={'cookiecutterisatemplate': template.sodar_uuid},
         )
-        good_users = [self.superuser]
-        bad_users = [self.regular_user, self.anonymous]
-        self.assert_response(url, good_users, 200)
-        self.assert_response(url, bad_users, 302)
+        self.assert_response(url, self.superuser, 200)
+        self.assert_response(url, self.bad_users, 302)
 
     def test_get_export(self):
         """Test ISATemplateExportView GET"""
@@ -96,7 +89,5 @@ class TestISATemplatesPermissions(
             'isatemplates:export',
             kwargs={'cookiecutterisatemplate': template.sodar_uuid},
         )
-        good_users = [self.superuser]
-        bad_users = [self.regular_user, self.anonymous]
-        self.assert_response(url, good_users, 200)
-        self.assert_response(url, bad_users, 302)
+        self.assert_response(url, self.superuser, 200)
+        self.assert_response(url, self.bad_users, 302)

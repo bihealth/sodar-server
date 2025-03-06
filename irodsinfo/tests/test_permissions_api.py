@@ -23,7 +23,5 @@ class TestIrodsConfigRetrieveAPIView(
     def test_get_irods_config(self):
         """Test IrodsConfigRetrieveAPIView GET"""
         url = reverse('irodsinfo:api_env')
-        good_users = [self.superuser, self.regular_user]
-        bad_users = [self.anonymous]
-        self.assert_response_api(url, good_users, 200)
-        self.assert_response_api(url, bad_users, 401)
+        self.assert_response_api(url, [self.superuser, self.regular_user], 200)
+        self.assert_response_api(url, self.anonymous, 401)
