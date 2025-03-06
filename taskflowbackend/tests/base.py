@@ -530,6 +530,15 @@ class TaskflowAPIPermissionTestBase(
 ):
     """Base class for testing API view permissions with taskflow"""
 
+    # TODO: Get this from SODAR Core
+    def set_site_read_only(self, value=True):
+        """
+        Helper to set site read only mode to the desired value.
+
+        :param value: BooAPP_NAMElean
+        """
+        app_settings.set('projectroles', 'site_read_only', value)
+
     def setUp(self):
         super().setUp()
         self.knox_token = self.get_token(self.superuser)

@@ -162,6 +162,16 @@ class TestSampleDataFileExistsAPIView(SheetTaskflowAPIPermissionTestBase):
             self.url, self.anonymous, 401, data=self.get_data
         )
 
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response_api(
+            self.url, self.auth_users, 200, data=self.get_data
+        )
+        self.assert_response_api(
+            self.url, self.anonymous, 401, data=self.get_data
+        )
+
     @override_settings(SHEETS_API_FILE_EXISTS_RESTRICT=True)
     def test_get_restrict(self):
         """Test GET with file exists restriction enabled"""
@@ -265,6 +275,28 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
             self.url, self.anonymous, 401, method='post', data=self.post_data
         )
 
+    def test_post_read_only(self):
+        """Test POST with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response_api(
+            self.url,
+            self.superuser,
+            201,
+            method='post',
+            data=self.post_data,
+            cleanup_method=self._delete_ticket,
+        )
+        self.assert_response_api(
+            self.url,
+            self.auth_non_superusers,
+            403,
+            method='post',
+            data=self.post_data,
+        )
+        self.assert_response_api(
+            self.url, self.anonymous, 401, method='post', data=self.post_data
+        )
+
 
 class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
     """Test permissions for IrodsAccessTicketUpdateAPIView"""
@@ -309,6 +341,23 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
     def test_patch_archive(self):
         """Test PATCH with archived project"""
         self.project.set_archive()
+        self.assert_response_api(
+            self.url, self.superuser, 200, method='patch', data=self.post_data
+        )
+        self.assert_response_api(
+            self.url,
+            self.auth_non_superusers,
+            403,
+            method='patch',
+            data=self.post_data,
+        )
+        self.assert_response_api(
+            self.url, self.anonymous, 401, method='patch', data=self.post_data
+        )
+
+    def test_patch_read_only(self):
+        """Test PATCH with site read-only mode"""
+        self.set_site_read_only()
         self.assert_response_api(
             self.url, self.superuser, 200, method='patch', data=self.post_data
         )
@@ -389,6 +438,21 @@ class TestIrodsAccessTicketDestroyAPIView(IrodsAccessTicketAPIViewTestBase):
         )
         self.assert_response_api(self.url, self.anonymous, 401, method='DELETE')
 
+    def test_delete_read_only(self):
+        """Test DELETE with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response_api(
+            self.url,
+            self.superuser,
+            204,
+            method='DELETE',
+            cleanup_method=self._create_irods_ticket,
+        )
+        self.assert_response_api(
+            self.url, self.auth_non_superusers, 403, method='DELETE'
+        )
+        self.assert_response_api(self.url, self.anonymous, 401, method='DELETE')
+
 
 class TestIrodsDataRequestListAPIView(SheetTaskflowAPIPermissionTestBase):
     """Tests for IrodsDataRequestListAPIView permissions"""
@@ -418,6 +482,13 @@ class TestIrodsDataRequestListAPIView(SheetTaskflowAPIPermissionTestBase):
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
+        self.assert_response_api(self.url, self.superuser, 200)
+        self.assert_response_api(self.url, self.auth_non_superusers, 403)
+        self.assert_response_api(self.url, self.anonymous, 401)
+
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
         self.assert_response_api(self.url, self.superuser, 200)
         self.assert_response_api(self.url, self.auth_non_superusers, 403)
         self.assert_response_api(self.url, self.anonymous, 401)
@@ -461,6 +532,23 @@ class TestIrodsDataRequestCreateAPIView(IrodsDataRequestAPIViewTestBase):
     def test_post_archive(self):
         """Test POST with archived project"""
         self.project.set_archive()
+        self.assert_response_api(
+            self.url, self.superuser, 201, method='POST', data=self.post_data
+        )
+        self.assert_response_api(
+            self.url,
+            self.auth_non_superusers,
+            403,
+            method='POST',
+            data=self.post_data,
+        )
+        self.assert_response_api(
+            self.url, self.anonymous, 401, method='POST', data=self.post_data
+        )
+
+    def test_post_read_only(self):
+        """Test POST with site read-only mode"""
+        self.set_site_read_only()
         self.assert_response_api(
             self.url, self.superuser, 201, method='POST', data=self.post_data
         )
@@ -548,6 +636,23 @@ class TestIrodsDataRequestUpdateAPIView(
             self.url, self.anonymous, 401, method='PUT', data=self.update_data
         )
 
+    def test_post_read_only(self):
+        """Test POST with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response_api(
+            self.url, self.superuser, 200, method='PUT', data=self.update_data
+        )
+        self.assert_response_api(
+            self.url,
+            self.auth_non_superusers,
+            403,
+            method='PUT',
+            data=self.update_data,
+        )
+        self.assert_response_api(
+            self.url, self.anonymous, 401, method='PUT', data=self.update_data
+        )
+
 
 # NOTE: For IrodsDataRequestDestroyAPIView, see test_permissions_api
 
@@ -610,6 +715,21 @@ class TestIrodsDataRequestAcceptAPIView(
     def test_post_archive(self):
         """Test POST with archived project"""
         self.project.set_archive()
+        self.assert_response_api(
+            self.url,
+            self.superuser,
+            200,
+            method='POST',
+            cleanup_method=self._cleanup,
+        )
+        self.assert_response_api(
+            self.url, self.auth_non_superusers, 403, method='POST'
+        )
+        self.assert_response_api(self.url, self.anonymous, 401, method='POST')
+
+    def test_post_read_only(self):
+        """Test POST with site read-only mode"""
+        self.set_site_read_only()
         self.assert_response_api(
             self.url,
             self.superuser,

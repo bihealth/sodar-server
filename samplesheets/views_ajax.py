@@ -638,6 +638,15 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
         project = inv.project
         # Return extra edit mode data
         edit = bool(request.GET.get('edit'))
+        if (
+            edit
+            and app_settings.get('projectroles', 'site_read_only')
+            and not request.user.is_superuser
+        ):
+            return Response(
+                {'render_error': 'Site in read-only mode, editing not allowed'},
+                status=403,
+            )
         allow_editing = app_settings.get(
             APP_NAME, 'allow_editing', project=project
         )

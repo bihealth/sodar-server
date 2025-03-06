@@ -138,6 +138,12 @@ class TestProjectSheetsView(SamplesheetsPermissionTestBase):
         )
         self.assert_response(self.url, self.anonymous, 302)
 
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.good_users_read, 200)
+        self.assert_response(self.url, self.bad_users_read, 302)
+
 
 class TestSheetImportView(SamplesheetsPermissionTestBase):
     """Permission tests for SheetImportView"""
@@ -188,6 +194,12 @@ class TestSheetImportView(SamplesheetsPermissionTestBase):
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
 
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
+
 
 class TestSheetTemplateSelectView(SamplesheetsPermissionTestBase):
     """Permission tests for SheetTemplateSelectView"""
@@ -230,6 +242,13 @@ class TestSheetTemplateSelectView(SamplesheetsPermissionTestBase):
         self.assert_response(self.url, self.all_users, 302)
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.investigation.delete()
+        self.set_site_read_only()
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
 
 class TestSheetTemplateCreateView(ProjectPermissionTestBase):
@@ -293,6 +312,12 @@ class TestSheetTemplateCreateView(ProjectPermissionTestBase):
         self.assert_response(self.url, self.all_users, 302)
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
 
 class TestSheetExcelExportView(SamplesheetsPermissionTestBase):
@@ -361,6 +386,12 @@ class TestSheetExcelExportView(SamplesheetsPermissionTestBase):
         )
         self.assert_response(self.assay_url, self.anonymous, 302)
 
+    def test_get_study_read_only(self):
+        """Test GET for study table with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.study_url, self.good_users_read, 200)
+        self.assert_response(self.study_url, self.bad_users_read, 302)
+
 
 class TestSheetISAExportView(SamplesheetsPermissionTestBase):
     """Permission tests for SheetISAExportView"""
@@ -399,6 +430,12 @@ class TestSheetISAExportView(SamplesheetsPermissionTestBase):
         )
         self.assert_response(self.url, self.anonymous, 302)
 
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.good_users_read, 200)
+        self.assert_response(self.url, self.bad_users_read, 302)
+
 
 class TestSheetDeleteView(SamplesheetsPermissionTestBase):
     """Permission tests for SheetDeleteView"""
@@ -429,6 +466,12 @@ class TestSheetDeleteView(SamplesheetsPermissionTestBase):
         self.assert_response(self.url, self.non_superusers, 302)
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
 
 class TestSheetVersionListView(SamplesheetsPermissionTestBase):
@@ -466,6 +509,12 @@ class TestSheetVersionListView(SamplesheetsPermissionTestBase):
             self.url, [self.user_finder_cat, self.user_no_roles], 200
         )
         self.assert_response(self.url, self.anonymous, 302)
+
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.good_users_read, 200)
+        self.assert_response(self.url, self.bad_users_read, 302)
 
 
 class TestSheetVersionCompareView(SamplesheetsPermissionTestBase):
@@ -509,6 +558,12 @@ class TestSheetVersionCompareView(SamplesheetsPermissionTestBase):
             self.url, [self.user_finder_cat, self.user_no_roles], 200
         )
         self.assert_response(self.url, self.anonymous, 302)
+
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.good_users_read, 200)
+        self.assert_response(self.url, self.bad_users_read, 302)
 
 
 class TestSheetVersionCompareFileView(SamplesheetsPermissionTestBase):
@@ -555,6 +610,12 @@ class TestSheetVersionCompareFileView(SamplesheetsPermissionTestBase):
         )
         self.assert_response(self.url, self.anonymous, 302)
 
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.good_users_read, 200)
+        self.assert_response(self.url, self.bad_users_read, 302)
+
 
 class TestSheetVersionRestoreView(SamplesheetsPermissionTestBase):
     """Permission tests for SheetVersionRestoreView"""
@@ -589,6 +650,12 @@ class TestSheetVersionRestoreView(SamplesheetsPermissionTestBase):
         self.assert_response(self.url, self.non_superusers, 302)
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
 
 class TestSheetVersionUpdateView(SamplesheetsPermissionTestBase):
@@ -625,6 +692,12 @@ class TestSheetVersionUpdateView(SamplesheetsPermissionTestBase):
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
 
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
+
 
 class TestSheetVersionDeleteView(SamplesheetsPermissionTestBase):
     """Permission tests for SheetVersionDeleteView"""
@@ -659,6 +732,12 @@ class TestSheetVersionDeleteView(SamplesheetsPermissionTestBase):
         self.assert_response(self.url, self.non_superusers, 302)
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
 
 class TestSheetVersionDeleteBatchView(SamplesheetsPermissionTestBase):
@@ -733,6 +812,20 @@ class TestSheetVersionDeleteBatchView(SamplesheetsPermissionTestBase):
             data=self.post_data,
         )
 
+    def test_post_read_only(self):
+        """Test POST with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(
+            self.url, self.superuser, 200, method='POST', data=self.post_data
+        )
+        self.assert_response(
+            self.url,
+            self.non_superusers,
+            302,
+            method='POST',
+            data=self.post_data,
+        )
+
 
 class TestIrodsAccessTicketListView(SamplesheetsPermissionTestBase):
     """Permission tests for IrodsAccessTicketListView"""
@@ -764,6 +857,12 @@ class TestIrodsAccessTicketListView(SamplesheetsPermissionTestBase):
         self.assert_response(self.url, self.bad_users_write, 302)
         self.project.set_public()
         self.assert_response(self.url, self.user_no_roles, 302)
+
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.good_users_write, 200)
+        self.assert_response(self.url, self.bad_users_write, 302)
 
 
 class TestIrodsAccessTicketCreateView(SamplesheetsPermissionTestBase):
@@ -797,6 +896,12 @@ class TestIrodsAccessTicketCreateView(SamplesheetsPermissionTestBase):
         self.assert_response(self.url, self.bad_users_write, 302)
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
 
 class TestIrodsAccessTicketUpdateView(
@@ -838,6 +943,12 @@ class TestIrodsAccessTicketUpdateView(
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
 
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
+
 
 class TestIrodsAccessTicketDeleteView(
     IrodsAccessTicketMixin, SamplesheetsPermissionTestBase
@@ -878,6 +989,12 @@ class TestIrodsAccessTicketDeleteView(
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
 
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
+
 
 class TestIrodsDataRequestListView(SamplesheetsPermissionTestBase):
     """Permission tests for IrodsDataRequestListView"""
@@ -910,6 +1027,12 @@ class TestIrodsDataRequestListView(SamplesheetsPermissionTestBase):
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
 
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
+
 
 class TestIrodsDataRequestCreateView(SamplesheetsPermissionTestBase):
     """Permission tests for IrodsDataRequestCreateView"""
@@ -941,6 +1064,12 @@ class TestIrodsDataRequestCreateView(SamplesheetsPermissionTestBase):
         self.assert_response(self.url, self.non_superusers, 302)
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
 
 class TestIrodsDataRequestUpdateView(
@@ -999,6 +1128,12 @@ class TestIrodsDataRequestUpdateView(
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
 
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
+
 
 class TestIrodsDataRequestAcceptView(
     IrodsDataRequestMixin, SamplesheetsPermissionTestBase
@@ -1039,6 +1174,12 @@ class TestIrodsDataRequestAcceptView(
         self.assert_response(self.url, self.non_superusers, 302)
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
 
 # NOTE: Batch views always redirect, they should be tested in taskflow view
@@ -1099,3 +1240,9 @@ class TestIrodsDataRequestDeleteView(
         self.assert_response(self.url, self.non_superusers, 302)
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)

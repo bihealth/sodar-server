@@ -94,11 +94,22 @@ rules.add_perm(
     ),
 )
 
+# Allow viewing iRODS access tickets
+rules.add_perm(
+    'samplesheets.view_tickets',
+    pr_rules.is_project_owner
+    | pr_rules.is_project_delegate
+    | pr_rules.is_project_contributor,
+)
+
 # Allow creating, updating or deleting iRODS access tickets
 # NOTE: We allow this for archived projects
 rules.add_perm(
     'samplesheets.edit_ticket',
-    pr_rules.is_project_owner
-    | pr_rules.is_project_delegate
-    | pr_rules.is_project_contributor,
+    pr_rules.is_site_writable
+    & (
+        pr_rules.is_project_owner
+        | pr_rules.is_project_delegate
+        | pr_rules.is_project_contributor
+    ),
 )

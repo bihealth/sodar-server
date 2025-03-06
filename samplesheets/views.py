@@ -2244,7 +2244,7 @@ class IrodsAccessTicketListView(
     """iRODS access ticket list view"""
 
     model = IrodsAccessTicket
-    permission_required = 'samplesheets.edit_ticket'
+    permission_required = 'samplesheets.view_tickets'
     template_name = 'samplesheets/irods_access_tickets.html'
     paginate_by = settings.SHEETS_IRODS_TICKET_PAGINATION
 
