@@ -494,7 +494,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
             tl_event.add_object(role_as.user, 'user', user_name)
 
     def perform_owner_transfer(
-        self, project, new_owner, old_owner, old_owner_role, request=None
+        self, project, new_owner, old_owner, old_owner_role=None, request=None
     ):
         """
         Perform additional actions to finalize project ownership transfer.
@@ -502,7 +502,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         :param project: Project object
         :param new_owner: SODARUser object for new owner
         :param old_owner: SODARUser object for previous owner
-        :param old_owner_role: Role object for new role of previous owner
+        :param old_owner_role: Role object for new role of old owner or None
         :param request: Request object or None
         """
         timeline = get_backend_api('timeline_backend')
@@ -512,7 +512,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
 
         if project.type == PROJECT_TYPE_PROJECT:
             flow_data['roles_add'].append(get_batch_role(project, n_user_name))
-            if old_owner_role.rank >= RANK_FINDER:
+            if not old_owner_role or old_owner_role.rank >= RANK_FINDER:
                 flow_data['roles_delete'].append(
                     get_batch_role(project, o_user_name)
                 )
@@ -520,7 +520,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
             children = self._get_child_projects(project)
             for c in children:
                 flow_data['roles_add'].append(get_batch_role(c, n_user_name))
-                if old_owner_role.rank >= RANK_FINDER:
+                if not old_owner_role or old_owner_role.rank >= RANK_FINDER:
                     flow_data['roles_delete'].append(
                         get_batch_role(c, o_user_name)
                     )

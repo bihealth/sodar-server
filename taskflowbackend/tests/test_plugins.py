@@ -1193,6 +1193,27 @@ class TestPerformOwnerTransfer(ModifyAPITaskflowTestBase):
         self.assert_group_member(self.project, self.user_new, True)
         self.assert_group_member(self.project, self.user_owner_cat, False)
 
+    def test_transfer_category_old_owner_no_role(self):
+        """Test category owner transfer with no role for old owner"""
+        self.make_assignment_taskflow(
+            self.category, self.user_new, self.role_contributor
+        )
+        self.assert_group_member(self.project, self.user, True)
+        self.assert_group_member(self.project, self.user_new, True)
+        self.assert_group_member(self.project, self.user_owner_cat, True)
+
+        self.plugin.perform_owner_transfer(
+            project=self.category,
+            new_owner=self.user_new,
+            old_owner=self.user_owner_cat,
+            old_owner_role=None,
+            request=self.request,
+        )
+
+        self.assert_group_member(self.project, self.user, True)
+        self.assert_group_member(self.project, self.user_new, True)
+        self.assert_group_member(self.project, self.user_owner_cat, False)
+
     def test_transfer_category_to_finder(self):
         """Test category owner transfer to user with finder role"""
         self.make_assignment_taskflow(
@@ -1249,6 +1270,27 @@ class TestPerformOwnerTransfer(ModifyAPITaskflowTestBase):
             new_owner=self.user_new,
             old_owner=self.user,
             old_owner_role=self.role_finder,
+            request=self.request,
+        )
+
+        self.assert_group_member(self.project, self.user, False)
+        self.assert_group_member(self.project, self.user_new, True)
+        self.assert_group_member(self.project, self.user_owner_cat, True)
+
+    def test_transfer_project_old_owner_no_role(self):
+        """Test project owner transfer with no role for old user"""
+        self.make_assignment_taskflow(
+            self.project, self.user_new, self.role_contributor
+        )
+        self.assert_group_member(self.project, self.user, True)
+        self.assert_group_member(self.project, self.user_new, True)
+        self.assert_group_member(self.project, self.user_owner_cat, True)
+
+        self.plugin.perform_owner_transfer(
+            project=self.project,
+            new_owner=self.user_new,
+            old_owner=self.user,
+            old_owner_role=None,
             request=self.request,
         )
 
