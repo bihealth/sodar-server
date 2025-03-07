@@ -314,8 +314,8 @@ class TestZoneDeleteView(LandingzonesPermissionTestBase):
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
         self.set_site_read_only()
-        self.assert_response(self.url, self.good_users_write, 200)
-        self.assert_response(self.url, self.bad_users_write, 302)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
     @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
     def test_get_disable(self):
