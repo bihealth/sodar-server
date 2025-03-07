@@ -14,6 +14,7 @@ from django.conf import settings
 from django.test import override_settings
 
 # Projectroles dependency
+from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
 
 # Landingzones dependency
@@ -66,6 +67,9 @@ from taskflowbackend.tests.base import (
     IRODS_ACCESS_OWN,
     TICKET_STR,
 )
+
+
+app_settings = AppSettingAPI()
 
 
 # SODAR constants
@@ -248,6 +252,25 @@ class TestLandingZoneCreate(
         self.taskflow.run_flow(flow, self.project)  # Lock not required
         self.zone.refresh_from_db()
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+
+    def test_create_read_only(self):
+        """Test landing_zone_create with site read-only mode"""
+        app_settings.set('projectroles', 'site_read_only', True)
+        flow_data = {
+            'zone_uuid': str(self.zone.sodar_uuid),
+            'colls': [],
+            'restrict_colls': False,
+        }
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='landing_zone_create',
+            flow_data=flow_data,
+        )
+        with self.assertRaises(self.taskflow.FlowSubmitException):
+            self.taskflow.run_flow(flow, self.project)
+        self.zone.refresh_from_db()
+        self.assertEqual(self.zone.status, ZONE_STATUS_NOT_CREATED)
 
     def test_create_revert(self):
         """Test landing_zone_create for reverting creation"""
@@ -540,6 +563,30 @@ class TestLandingZoneDelete(
         zone.refresh_from_db()
         self.assertEqual(zone.status, ZONE_STATUS_DELETED)
 
+    def test_delete_read_only(self):
+        """Test landing_zone_delete with read-only mode"""
+        zone = self.make_landing_zone(
+            title=ZONE_TITLE,
+            project=self.project,
+            user=self.user,
+            assay=self.assay,
+            description=ZONE_DESC,
+            status=ZONE_STATUS_CREATING,
+        )
+        self.make_zone_taskflow(zone)
+        flow_data = {'zone_uuid': str(zone.sodar_uuid)}
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='landing_zone_delete',
+            flow_data=flow_data,
+        )
+        app_settings.set('projectroles', 'site_read_only', True)
+        with self.assertRaises(self.taskflow.FlowSubmitException):
+            self.taskflow.run_flow(flow, self.project)
+        zone.refresh_from_db()
+        self.assertEqual(zone.status, ZONE_STATUS_FAILED)
+
     def test_delete_files(self):
         """Test landing_zone_delete with files"""
         zone = self.make_landing_zone(
@@ -774,6 +821,26 @@ class TestLandingZoneMove(
             flow_data=flow_data,
         )
         self.lock_project(self.project)
+        with self.assertRaises(self.taskflow.FlowSubmitException):
+            self.taskflow.run_flow(flow, self.project)
+        self.zone.refresh_from_db()
+        self.assertEqual(self.zone.status, ZONE_STATUS_FAILED)
+
+    def test_move_read_only(self):
+        """Test landing_zone_move with site read-only mode"""
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        obj_coll_path = os.path.join(self.zone_path, OBJ_COLL_NAME)
+        obj_coll = self.irods.collections.create(obj_coll_path)
+        obj = self.make_irods_object(obj_coll, OBJ_NAME)
+        self.make_irods_md5_object(obj)
+        flow_data = {'zone_uuid': str(self.zone.sodar_uuid)}
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='landing_zone_move',
+            flow_data=flow_data,
+        )
+        app_settings.set('projectroles', 'site_read_only', True)
         with self.assertRaises(self.taskflow.FlowSubmitException):
             self.taskflow.run_flow(flow, self.project)
         self.zone.refresh_from_db()
@@ -1422,6 +1489,29 @@ class TestProjectUpdate(TaskflowbackendFlowTestBase):
             project_coll.metadata.get_one('title').value, UPDATED_TITLE
         )
 
+    def test_update_metadata_read_only(self):
+        """Test project_update with site read-only mode"""
+        old_title = self.project.title
+        project_coll = self.irods.collections.get(self.project_path)
+        self.assertEqual(
+            project_coll.metadata.get_one('title').value, old_title
+        )
+        self.project.title = UPDATED_TITLE
+        self.project.save()
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='project_update',
+            flow_data={},
+        )
+        app_settings.set('projectroles', 'site_read_only', True)
+        with self.assertRaises(self.taskflow.FlowSubmitException):
+            self.taskflow.run_flow(flow, self.project)
+        project_coll = self.irods.collections.get(self.project_path)
+        self.assertEqual(
+            project_coll.metadata.get_one('title').value, old_title
+        )
+
     def test_update_parent(self):
         """Test project_update with updated parent"""
         user_contributor = self.make_user('user_contributor')
@@ -1518,7 +1608,7 @@ class TestPublicAccessUpdate(
         )
 
     def test_enable_access_locked(self):
-        """Test public_access_with locked project"""
+        """Test public_access_update with locked project"""
         self.make_irods_colls(self.investigation)
         self.assert_irods_access(
             self.group_name, self.sample_path, self.irods_access_read
@@ -1542,6 +1632,28 @@ class TestPublicAccessUpdate(
         self.assert_irods_access(
             PUBLIC_GROUP, self.sample_path, self.irods_access_read
         )
+
+    def test_enable_access_read_only(self):
+        """Test public_access_update with site read-only mode"""
+        self.make_irods_colls(self.investigation)
+        self.assert_irods_access(
+            self.group_name, self.sample_path, self.irods_access_read
+        )
+        self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
+        flow_data = {
+            'path': self.sample_path,
+            'access': True,
+        }
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='public_access_update',
+            flow_data=flow_data,
+        )
+        app_settings.set('projectroles', 'site_read_only', True)
+        with self.assertRaises(self.taskflow.FlowSubmitException):
+            self.taskflow.run_flow(flow, self.project)
+        self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
 
     def test_disable_access(self):
         """Test public_access_update to disable public access"""
@@ -1716,6 +1828,21 @@ class TestRoleDelete(TaskflowbackendFlowTestBase):
         self.taskflow.run_flow(flow, self.project)  # Lock not required
         self.assert_group_member(self.project, self.user_new, False)
 
+    def test_delete_read_only(self):
+        """Test role_delete with site read-only mode"""
+        self.assert_group_member(self.project, self.user_new, True)
+        flow_data = {'user_name': self.user_new.username}
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='role_delete',
+            flow_data=flow_data,
+        )
+        app_settings.set('projectroles', 'site_read_only', True)
+        with self.assertRaises(self.taskflow.FlowSubmitException):
+            self.taskflow.run_flow(flow, self.project)
+        self.assert_group_member(self.project, self.user_new, True)
+
 
 class TestRoleUpdate(TaskflowbackendFlowTestBase):
     """Tests for the role_update flow"""
@@ -1758,6 +1885,23 @@ class TestRoleUpdate(TaskflowbackendFlowTestBase):
         self.lock_project(self.project)
         self.taskflow.run_flow(flow, self.project)  # Lock not required
         self.assert_group_member(self.project, user_new, True)
+
+    def test_update_read_only(self):
+        """Test role_update with site read-only mode"""
+        user_new = self.make_user('user_new')
+        self.make_assignment(self.project, user_new, self.role_contributor)
+        self.assert_group_member(self.project, user_new, False)
+        flow_data = {'user_name': user_new.username}
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='role_update',
+            flow_data=flow_data,
+        )
+        app_settings.set('projectroles', 'site_read_only', True)
+        with self.assertRaises(self.taskflow.FlowSubmitException):
+            self.taskflow.run_flow(flow, self.project)
+        self.assert_group_member(self.project, user_new, False)
 
 
 class TestRoleUpdateIrodsBatch(TaskflowbackendFlowTestBase):
@@ -1825,6 +1969,29 @@ class TestRoleUpdateIrodsBatch(TaskflowbackendFlowTestBase):
         self.lock_project(self.project)
         self.taskflow.run_flow(flow, self.project)  # Lock not required
         self.assert_group_member(self.project, self.user_new1, True)
+
+    def test_add_read_only(self):
+        """Test role_update_irods_batch with site read-only mode"""
+        self.assert_group_member(self.project, self.user_new1, False)
+        flow_data = {
+            'roles_add': [
+                {
+                    'user_name': self.user_new1.username,
+                    'project_uuid': str(self.project.sodar_uuid),
+                },
+            ],
+            'roles_delete': [],
+        }
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='role_update_irods_batch',
+            flow_data=flow_data,
+        )
+        app_settings.set('projectroles', 'site_read_only', True)
+        with self.assertRaises(self.taskflow.FlowSubmitException):
+            self.taskflow.run_flow(flow, self.project)
+        self.assert_group_member(self.project, self.user_new1, False)
 
     def test_add_multi_project(self):
         """Test role_update_irods_batch for adding users to multiple projects"""
@@ -1963,6 +2130,21 @@ class TestSheetCollsCreate(
             flow_data=flow_data,
         )
         self.lock_project(self.project)
+        with self.assertRaises(self.taskflow.FlowSubmitException):
+            self.taskflow.run_flow(flow, self.project)
+        self.investigation.refresh_from_db()
+        self.assertEqual(self.investigation.irods_status, False)
+
+    def test_create_read_only(self):
+        """Test sheet_colls_create with site read-only mode"""
+        flow_data = {'colls': [RESULTS_COLL, MISC_FILES_COLL]}
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='sheet_colls_create',
+            flow_data=flow_data,
+        )
+        app_settings.set('projectroles', 'site_read_only', True)
         with self.assertRaises(self.taskflow.FlowSubmitException):
             self.taskflow.run_flow(flow, self.project)
         self.investigation.refresh_from_db()
@@ -2117,6 +2299,23 @@ class TestSheetDelete(
             flow_data={},
         )
         self.lock_project(self.project)
+        with self.assertRaises(self.taskflow.FlowSubmitException):
+            self.taskflow.run_flow(flow, self.project)
+        self.assertIsNotNone(
+            Investigation.objects.filter(
+                project=self.project, active=True
+            ).first()
+        )
+
+    def test_delete_read_only(self):
+        """Test sheet_delete with site read-only mode"""
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='sheet_delete',
+            flow_data={},
+        )
+        app_settings.set('projectroles', 'site_read_only', True)
         with self.assertRaises(self.taskflow.FlowSubmitException):
             self.taskflow.run_flow(flow, self.project)
         self.assertIsNotNone(
