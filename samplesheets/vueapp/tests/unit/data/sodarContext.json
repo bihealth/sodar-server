@@ -25,7 +25,10 @@
   "allow_editing": true,
   "alerts": [],
   "csrf_token": "k73YXvYB9kB8FXCaE3NO2tUGMGzsJCxW4YAk7Ga9jyUiLqh1a3jCY59n2lUelyZm",
+  "project_uuid": "00000000-0000-0000-0000-000000000000",
   "user_uuid": "66666666-6666-6666-6666-666666666666",
+  "sheet_sync_enabled": false,
+  "site_read_only": false,
   "investigation": {
     "identifier": "i_small",
     "title": "Small Investigation",
@@ -64,6 +67,7 @@
     "view_versions": true,
     "edit_config": true,
     "update_cache": true,
+    "view_tickets": true,
     "is_superuser": true
   },
   "sheet_stats": {

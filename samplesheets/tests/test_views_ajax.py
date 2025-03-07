@@ -189,20 +189,19 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
+        self.url = reverse(
+            'samplesheets:ajax_context',
+            kwargs={'project': self.project.sodar_uuid},
+        )
 
     def test_get(self):
         """Test SheetContextAjaxView GET"""
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:ajax_context',
-                    kwargs={'project': self.project.sodar_uuid},
-                )
-            )
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
 
-        response_data = json.loads(response.data)
-        response_data.pop('csrf_token')  # HACK
+        rd = json.loads(response.data)
+        rd.pop('csrf_token')  # HACK
         expected = {
             'configuration': self.investigation.get_configuration(),
             'inv_file_name': self.investigation.file_name.split('/')[-1],
@@ -226,15 +225,16 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
             'sheet_sync_enabled': app_settings.get_default(
                 APP_NAME, 'sheet_sync_enable'
             ),
+            'site_read_only': False,
             'alerts': [],
+            'project_uuid': str(self.project.sodar_uuid),
+            'user_uuid': str(self.user.sodar_uuid),
             'investigation': {
                 'identifier': self.investigation.identifier,
                 'title': self.investigation.title,
                 'description': None,
                 'comments': None,
             },
-            'project_uuid': str(self.project.sodar_uuid),
-            'user_uuid': str(self.user.sodar_uuid),
             'studies': {
                 str(self.study.sodar_uuid): {
                     'display_name': self.study.get_display_name(),
@@ -271,6 +271,7 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
                 'view_versions': True,
                 'edit_config': True,
                 'update_cache': True,
+                'view_tickets': True,
                 'is_superuser': True,
             },
             'sheet_stats': {
@@ -294,7 +295,7 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
                 'data_count': self.investigation.get_material_count('DATA'),
             },
         }
-        self.assertEqual(response_data, expected)
+        self.assertEqual(rd, expected)
 
     def test_get_no_sheets(self):
         """Test GET without sample sheets"""
@@ -302,16 +303,11 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
         self.investigation.save()
 
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:ajax_context',
-                    kwargs={'project': self.project.sodar_uuid},
-                )
-            )
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
 
-        response_data = json.loads(response.data)
-        response_data.pop('csrf_token')  # HACK
+        rd = json.loads(response.data)
+        rd.pop('csrf_token')  # HACK
         expected = {
             'configuration': None,
             'inv_file_name': None,
@@ -330,10 +326,11 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
             'sheet_sync_enabled': app_settings.get_default(
                 APP_NAME, 'sheet_sync_enable'
             ),
+            'site_read_only': False,
             'alerts': [],
-            'investigation': {},
             'project_uuid': str(self.project.sodar_uuid),
             'user_uuid': str(self.user.sodar_uuid),
+            'investigation': {},
             'studies': {},
             'perms': {
                 'edit_sheet': True,
@@ -344,11 +341,12 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
                 'view_versions': True,
                 'edit_config': True,
                 'update_cache': True,
+                'view_tickets': True,
                 'is_superuser': True,
             },
             'sheet_stats': {},
         }
-        self.assertEqual(response_data, expected)
+        self.assertEqual(rd, expected)
 
     # TODO: Test anonymous request and irods_webdav_enabled
 
@@ -361,12 +359,7 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
             project=self.project,
         )
         with self.login(self.user_delegate):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:ajax_context',
-                    kwargs={'project': self.project.sodar_uuid},
-                )
-            )
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertFalse(json.loads(response.json())['perms']['edit_config'])
 
@@ -379,12 +372,7 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
             project=self.project,
         )
         with self.login(self.user_delegate):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:ajax_context',
-                    kwargs={'project': self.project.sodar_uuid},
-                )
-            )
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertTrue(json.loads(response.json())['perms']['edit_config'])
 
@@ -400,18 +388,13 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
         )
 
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:ajax_context',
-                    kwargs={'project': self.project.sodar_uuid},
-                )
-            )
+            response = self.client.get(self.url)
 
         self.assertEqual(response.status_code, 200)
-        response_data = json.loads(response.data)
-        self.assertEqual(len(response_data['alerts']), 1)
+        rd = json.loads(response.data)
+        self.assertEqual(len(rd['alerts']), 1)
         self.assertEqual(
-            response_data['alerts'][0]['html'],
+            rd['alerts'][0]['html'],
             ALERT_ACTIVE_REQS.format(
                 url=reverse(
                     'samplesheets:irods_requests',
@@ -436,16 +419,11 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
         )
 
         with self.login(user_contributor):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:ajax_context',
-                    kwargs={'project': self.project.sodar_uuid},
-                )
-            )
+            response = self.client.get(self.url)
 
         self.assertEqual(response.status_code, 200)
-        response_data = json.loads(response.data)
-        self.assertEqual(len(response_data['alerts']), 0)
+        rd = json.loads(response.data)
+        self.assertEqual(len(rd['alerts']), 0)
 
     def test_get_inherited_owner(self):
         """Test GET as inherited owner"""
@@ -453,35 +431,69 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
         user_cat = self.make_user('user_cat')
         self.make_assignment(self.category, user_cat, self.role_owner)
         with self.login(user_cat):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:ajax_context',
-                    kwargs={'project': self.project.sodar_uuid},
-                )
-            )
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        response_data = json.loads(response.data)
-        self.assertEqual(response_data['perms']['edit_config'], True)
+        rd = json.loads(response.data)
+        self.assertEqual(rd['perms']['edit_config'], True)
 
     def test_get_display_row_links_override(self):
         """Test GET with assay row link display override"""
         self.assay.comments[ROW_LINK_DISPLAY_COMMENT] = 'false'
         self.assay.save()
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:ajax_context',
-                    kwargs={'project': self.project.sodar_uuid},
-                )
-            )
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        response_data = json.loads(response.data)
+        rd = json.loads(response.data)
         # Initial value was True
         self.assertFalse(
-            response_data['studies'][str(self.study.sodar_uuid)]['assays'][
+            rd['studies'][str(self.study.sodar_uuid)]['assays'][
                 str(self.assay.sodar_uuid)
             ]['display_row_links']
         )
+
+    def test_get_read_only_owner(self):
+        """Test GET with site read-only mode as owner"""
+        app_settings.set('projectroles', 'site_read_only', True)
+        with self.login(self.user_owner):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        rd = json.loads(response.data)
+        self.assertEqual(rd['site_read_only'], True)
+        expected = {
+            'edit_sheet': False,
+            'manage_sheet': False,
+            'create_colls': False,
+            'export_sheet': True,
+            'delete_sheet': False,
+            'view_versions': True,
+            'edit_config': False,
+            'update_cache': False,
+            'view_tickets': True,
+            'is_superuser': False,
+        }
+        self.assertEqual(rd['perms'], expected)
+
+    def test_get_read_only_superuser(self):
+        """Test GET with site read-only mode as superuser"""
+        app_settings.set('projectroles', 'site_read_only', True)
+        with self.login(self.user):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        rd = json.loads(response.data)
+        self.assertEqual(rd['site_read_only'], True)
+        expected = {
+            'edit_sheet': True,
+            'manage_sheet': True,
+            'create_colls': True,
+            'export_sheet': True,
+            'delete_sheet': True,
+            'view_versions': True,
+            'edit_config': True,
+            'update_cache': True,
+            'view_tickets': True,
+            'is_superuser': True,
+        }
+        self.assertEqual(rd['perms'], expected)
 
 
 class TestStudyTablesAjaxView(IrodsAccessTicketMixin, SamplesheetsViewTestBase):

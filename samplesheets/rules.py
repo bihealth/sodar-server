@@ -78,9 +78,12 @@ rules.add_perm(
 # Allow updating sheet cache (also allowed for archived projects)
 rules.add_perm(
     'samplesheets.update_cache',
-    pr_rules.is_project_owner
-    | pr_rules.is_project_delegate
-    | pr_rules.is_project_contributor,
+    pr_rules.is_site_writable
+    & (
+        pr_rules.is_project_owner
+        | pr_rules.is_project_delegate
+        | pr_rules.is_project_contributor
+    ),
 )
 
 # Allow deleting the project sample sheet

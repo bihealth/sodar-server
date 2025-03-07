@@ -102,8 +102,8 @@
           v-if="!app.editMode"
           id="sodar-ss-op-dropdown"
           :disabled="app.gridsBusy ||
-                     (!app.sodarContext.perms.edit_sheet &&
-                     !app.sheetsAvailable)"
+                     (!app.sheetsAvailable && !app.sodarContext.perms.edit_sheet) ||
+                     (app.sheetsAvailable && !app.sodarContext.perms.view_tickets)"
           right
           variant="primary"
           text="Sheet Operations">
@@ -202,8 +202,9 @@
         <b-dropdown-item
             v-if="app.sheetsAvailable &&
                   app.sodarContext.irods_status &&
-                  app.sodarContext.perms.edit_sheet"
+                  app.sodarContext.perms.view_tickets"
             class="sodar-ss-op-item"
+            id="sodar-ss-op-item-tickets"
             :href="'irods/tickets/' + app.projectUuid">
           <i class="iconify" data-icon="mdi:ticket"></i> iRODS Access Tickets
         </b-dropdown-item>
@@ -212,6 +213,7 @@
                   app.sodarContext.irods_status &&
                   app.sodarContext.perms.edit_sheet"
             class="sodar-ss-op-item"
+            id="sodar-ss-op-item-requests"
             :href="'irods/requests/' + app.projectUuid">
           <i class="iconify" data-icon="mdi:trash-can"></i> iRODS Delete Requests
         </b-dropdown-item>
