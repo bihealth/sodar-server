@@ -36,8 +36,26 @@ class TestISATemplatesPermissions(
         url = reverse('isatemplates:list')
         self.assert_response(url, self.anonymous, 302)
 
+    def test_get_list_read_only(self):
+        """Test ISATemplateListView GET with site read-only mode"""
+        self.set_site_read_only()
+        url = reverse('isatemplates:list')
+        self.assert_response(url, self.superuser, 200)
+        self.assert_response(url, self.bad_users, 302)
+
     def test_get_detail(self):
         """Test ISATemplateDetailView GET"""
+        template = self.make_isa_template(TEMPLATE_NAME, TEMPLATE_DESC, {})
+        url = reverse(
+            'isatemplates:detail',
+            kwargs={'cookiecutterisatemplate': template.sodar_uuid},
+        )
+        self.assert_response(url, self.superuser, 200)
+        self.assert_response(url, self.bad_users, 302)
+
+    def test_get_detail_read_only(self):
+        """Test ISATemplateDetailView GET with site read-only mode"""
+        self.set_site_read_only()
         template = self.make_isa_template(TEMPLATE_NAME, TEMPLATE_DESC, {})
         url = reverse(
             'isatemplates:detail',
@@ -55,14 +73,43 @@ class TestISATemplatesPermissions(
         self.assert_response(url, self.superuser, 200)
         self.assert_response(url, self.bad_users, 302)
 
+    def test_get_detail_cubi_read_only(self):
+        """Test CUBIISATemplateDetailView GET with site read-only mode"""
+        self.set_site_read_only()
+        url = reverse(
+            'isatemplates:detail_cubi',
+            kwargs={'name': CUBI_TEMPLATES[0].name},
+        )
+        self.assert_response(url, self.superuser, 200)
+        self.assert_response(url, self.bad_users, 302)
+
     def test_get_create(self):
         """Test ISATemplateCreateView GET"""
         url = reverse('isatemplates:create')
         self.assert_response(url, self.superuser, 200)
         self.assert_response(url, self.bad_users, 302)
 
+    def test_get_create_read_only(self):
+        """Test ISATemplateCreateView GET with site read-only mode"""
+        self.set_site_read_only()
+        url = reverse('isatemplates:create')
+        self.assert_response(url, self.superuser, 200)
+        self.assert_response(url, self.bad_users, 302)
+
     def test_get_update(self):
         """Test ISATemplateUpdateView GET"""
+        template = self.make_isa_template(TEMPLATE_NAME, TEMPLATE_DESC, {})
+        url = reverse(
+            'isatemplates:update',
+            kwargs={'cookiecutterisatemplate': template.sodar_uuid},
+        )
+        bad_users = [self.regular_user, self.anonymous]
+        self.assert_response(url, self.superuser, 200)
+        self.assert_response(url, bad_users, 302)
+
+    def test_get_update_read_only(self):
+        """Test ISATemplateUpdateView GET with site read-only mode"""
+        self.set_site_read_only()
         template = self.make_isa_template(TEMPLATE_NAME, TEMPLATE_DESC, {})
         url = reverse(
             'isatemplates:update',
@@ -82,8 +129,30 @@ class TestISATemplatesPermissions(
         self.assert_response(url, self.superuser, 200)
         self.assert_response(url, self.bad_users, 302)
 
+    def test_get_delete_read_only(self):
+        """Test ISATemplateDeleteView GET with site read-only mode"""
+        self.set_site_read_only()
+        template = self.make_isa_template(TEMPLATE_NAME, TEMPLATE_DESC, {})
+        url = reverse(
+            'isatemplates:delete',
+            kwargs={'cookiecutterisatemplate': template.sodar_uuid},
+        )
+        self.assert_response(url, self.superuser, 200)
+        self.assert_response(url, self.bad_users, 302)
+
     def test_get_export(self):
         """Test ISATemplateExportView GET"""
+        template = self.make_isa_template(TEMPLATE_NAME, TEMPLATE_DESC, {})
+        url = reverse(
+            'isatemplates:export',
+            kwargs={'cookiecutterisatemplate': template.sodar_uuid},
+        )
+        self.assert_response(url, self.superuser, 200)
+        self.assert_response(url, self.bad_users, 302)
+
+    def test_get_export_read_only(self):
+        """Test ISATemplateExportView GET with site read-only mode"""
+        self.set_site_read_only()
         template = self.make_isa_template(TEMPLATE_NAME, TEMPLATE_DESC, {})
         url = reverse(
             'isatemplates:export',
