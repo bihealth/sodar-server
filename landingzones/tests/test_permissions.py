@@ -105,6 +105,12 @@ class TestProjectZoneView(LandingzonesPermissionTestBase):
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
 
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.good_users_read, 200)
+        self.assert_response(self.url, self.bad_users_read, 302)
+
     @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
     def test_get_disable(self):
         """Test GET with disabled non-superuser access"""
@@ -168,6 +174,12 @@ class TestZoneCreateView(LandingzonesPermissionTestBase):
         self.assert_response(self.url, self.non_superusers, 302)
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
     @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
     def test_get_disable(self):
@@ -239,6 +251,14 @@ class TestZoneUpdateView(LandingzonesPermissionTestBase):
             redirect_user=self.redirect_url,
         )
 
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(
+            self.url, self.non_superusers, 302, redirect_user=self.redirect_url
+        )
+
     @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
     def test_get_disable(self):
         """Test GET with disabled non-superuser access"""
@@ -290,6 +310,12 @@ class TestZoneDeleteView(LandingzonesPermissionTestBase):
         self.assert_response(self.url, self.bad_users_write, 302)
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.good_users_write, 200)
+        self.assert_response(self.url, self.bad_users_write, 302)
 
     @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
     def test_get_disable(self):

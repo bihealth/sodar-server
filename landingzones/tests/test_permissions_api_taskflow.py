@@ -177,6 +177,31 @@ class TestZoneCreateAPIViewPermissions(ZoneAPIPermissionTaskflowTestBase):
             data=self._get_post_data(),
         )
 
+    def test_post_read_only(self):
+        """Test POST with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response_api(
+            self.url,
+            self.superuser,
+            201,
+            method='POST',
+            data=self._get_post_data(),
+        )
+        self.assert_response_api(
+            self.url,
+            self.auth_non_superusers,
+            403,
+            method='POST',
+            data=self._get_post_data(),
+        )
+        self.assert_response_api(
+            self.url,
+            self.anonymous,
+            401,
+            method='POST',
+            data=self._get_post_data(),
+        )
+
     @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
     def test_post_disable(self):
         """Test POST with disabled non-superuser access"""
@@ -260,7 +285,6 @@ class TestZoneSubmitDeleteAPIViewPermissions(ZoneAPIPermissionTaskflowTestBase):
 
     def test_post(self):
         """Test ZoneSubmitDeleteAPIView POST"""
-
         self.assert_response_api(
             self.url,
             self.good_users,
@@ -338,6 +362,30 @@ class TestZoneSubmitDeleteAPIViewPermissions(ZoneAPIPermissionTaskflowTestBase):
             self.url,
             self.user_no_roles,
             403,
+            method='POST',
+        )
+
+    def test_post_read_only(self):
+        """Test POST with site read-only mode"""
+        # NOTE: Unlike archive mode, we don't allow this
+        self.set_site_read_only()
+        self.assert_response_api(
+            self.url,
+            self.superuser,
+            200,
+            method='POST',
+            cleanup_method=self._cleanup,
+        )
+        self.assert_response_api(
+            self.url,
+            self.auth_non_superusers,
+            403,
+            method='POST',
+        )
+        self.assert_response_api(
+            self.url,
+            self.anonymous,
+            401,
             method='POST',
         )
 
@@ -512,6 +560,29 @@ class TestZoneSubmitMoveAPIViewPermissions(ZoneAPIPermissionTaskflowTestBase):
             self.url,
             self.user_no_roles,
             403,
+            method='POST',
+        )
+
+    def test_post_read_only(self):
+        """Test POST with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response_api(
+            self.url,
+            self.superuser,
+            200,
+            method='POST',
+            cleanup_method=self._cleanup,
+        )
+        self.assert_response_api(
+            self.url,
+            self.auth_non_superusers,
+            403,
+            method='POST',
+        )
+        self.assert_response_api(
+            self.url,
+            self.anonymous,
+            401,
             method='POST',
         )
 

@@ -96,3 +96,13 @@ class TestZoneStatusRetrieveAjaxViewPermissions(LandingzonesPermissionTestBase):
             method='post',
             data=self.post_data,
         )
+
+    def test_post_read_only(self):
+        """Test POST with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(
+            self.url, self.good_users, 200, method='post', data=self.post_data
+        )
+        self.assert_response(
+            self.url, self.bad_users, 403, method='post', data=self.post_data
+        )

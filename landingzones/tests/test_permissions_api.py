@@ -111,6 +111,13 @@ class TestZoneListAPIView(ZoneAPIPermissionTestBase):
         self.assert_response(self.url, self.user_no_roles, 403)
         self.assert_response(self.url, self.anonymous, 401)
 
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.good_users, 200)
+        self.assert_response(self.url, self.bad_users, 403)
+        self.assert_response(self.url, self.anonymous, 401)
+
 
 class TestZoneRetrieveAPIView(ZoneAPIPermissionTestBase):
     """Tests for ZoneRetrieveAPIView permissions"""
@@ -158,6 +165,13 @@ class TestZoneRetrieveAPIView(ZoneAPIPermissionTestBase):
         self.assert_response(self.url, self.anonymous, 401)
         self.project.set_public()
         self.assert_response(self.url, self.user_no_roles, 403)
+        self.assert_response(self.url, self.anonymous, 401)
+
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.good_users_owner, 200)
+        self.assert_response(self.url, self.bad_users_owner, 403)
         self.assert_response(self.url, self.anonymous, 401)
 
 
@@ -269,6 +283,33 @@ class TestZoneUpdateAPIView(ZoneAPIPermissionTestBase):
         self.assert_response_api(
             self.url,
             self.user_no_roles,
+            403,
+            method='PATCH',
+            data=self.post_data,
+            knox=True,
+        )
+        self.assert_response_api(
+            self.url,
+            self.anonymous,
+            401,
+            method='PATCH',
+            data=self.post_data,
+        )
+
+    def test_patch_read_only(self):
+        """Test PATCH with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response_api(
+            self.url,
+            self.superuser,
+            200,
+            method='PATCH',
+            data=self.post_data,
+            knox=True,
+        )
+        self.assert_response_api(
+            self.url,
+            self.auth_non_superusers,
             403,
             method='PATCH',
             data=self.post_data,
