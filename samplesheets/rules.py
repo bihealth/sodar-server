@@ -108,7 +108,7 @@ rules.add_perm(
 # Allow creating, updating or deleting iRODS access tickets
 # NOTE: We allow this for archived projects
 rules.add_perm(
-    'samplesheets.edit_ticket',
+    'samplesheets.edit_tickets',
     pr_rules.is_site_writable
     & (
         pr_rules.is_project_owner
