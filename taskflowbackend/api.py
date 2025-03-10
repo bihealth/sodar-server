@@ -190,6 +190,9 @@ class TaskflowAPI:
         """
         Run a flow, either synchronously or asynchronously.
 
+        NOTE: Does NOT check for site read-only mode, that must be done in the
+        calling views.
+
         :param flow: Flow object
         :param project: Project object
         :param force_fail: Force failure (boolean, for testing)
@@ -208,9 +211,6 @@ class TaskflowAPI:
             zone = LandingZone.objects.filter(
                 sodar_uuid=flow.flow_data['zone_uuid']
             ).first()
-        # Check for site read-only mode
-        if app_settings.get('projectroles', 'site_read_only'):
-            cls._raise_run_flow_exception(READ_ONLY_MSG, tl_event, zone)
 
         # Acquire lock if needed
         if flow.require_lock:

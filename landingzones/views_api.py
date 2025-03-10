@@ -21,6 +21,7 @@ from rest_framework.versioning import AcceptHeaderVersioning
 from rest_framework.views import APIView
 
 # Projectroles dependency
+from projectroles.app_settings import AppSettingAPI
 from projectroles.plugins import get_backend_api
 from projectroles.views_api import (
     SODARAPIBaseProjectMixin,
@@ -42,7 +43,7 @@ from landingzones.views import (
     ZONE_UPDATE_FIELDS,
 )
 
-
+app_settings = AppSettingAPI()
 logger = logging.getLogger(__name__)
 
 
@@ -50,7 +51,6 @@ logger = logging.getLogger(__name__)
 LANDINGZONES_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar.landingzones+json'
 LANDINGZONES_API_ALLOWED_VERSIONS = ['1.0']
 LANDINGZONES_API_DEFAULT_VERSION = '1.0'
-
 ZONE_NO_COLLS_MSG = 'iRODS collections not created for project'
 
 
