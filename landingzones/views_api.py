@@ -21,7 +21,6 @@ from rest_framework.versioning import AcceptHeaderVersioning
 from rest_framework.views import APIView
 
 # Projectroles dependency
-from projectroles.app_settings import AppSettingAPI
 from projectroles.plugins import get_backend_api
 from projectroles.views_api import (
     SODARAPIBaseProjectMixin,
@@ -43,7 +42,7 @@ from landingzones.views import (
     ZONE_UPDATE_FIELDS,
 )
 
-app_settings = AppSettingAPI()
+
 logger = logging.getLogger(__name__)
 
 
