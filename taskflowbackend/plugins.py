@@ -596,3 +596,69 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                 flow_name='role_update_irods_batch',
                 flow_data=flow_data,
             )
+
+    def perform_project_delete(self, project):
+        """
+        Perform additional actions to finalize project deletion.
+
+        NOTE: This operation can not be undone so there is no revert method.
+
+        :param project: Project object (Project)
+        """
+        # NOTE: Checks for project/category permissions done in SODAR Core views
+        # Skip for categories, nothing to do
+        if project.type != PROJECT_TYPE_PROJECT:
+            logger.debug('Skipping: {}'.format(IRODS_CAT_SKIP_MSG))
+            return
+        irods_backend = get_backend_api('omics_irods')
+        if not irods_backend:
+            logger.error('iRODS backend not enabled')
+            return
+
+        timeline = get_backend_api('timeline_backend')
+        tl_event = None
+        project_path = irods_backend.get_path(project)
+        user_group = irods_backend.get_user_group_name(project)
+        errors = []
+        # Create separate timeline event
+        if timeline:
+            tl_event = timeline.add_event(
+                project=None,  # No project as it has been deleted
+                app_name=APP_NAME,
+                user=None,
+                event_name='project_delete',
+                description=f'Delete iRODS collection and user group from '
+                f'project {project.get_log_title()}',
+                extra_data={
+                    'project_path': project_path,
+                    'user_group': user_group,
+                },
+                classified=True,
+            )
+
+        with irods_backend.get_session() as irods:
+            # Delete project collection and subcollections
+            try:
+                irods.collections.remove(project_path, recurse=True)
+                logger.debug(f'Project collection deleted: {project_path}')
+            except Exception as ex:
+                ex_msg = (
+                    f'Error deleting project collection '
+                    f'({project_path}): {ex}'
+                )
+                logger.error(ex_msg)
+                errors.append(ex_msg)
+            # Delete project user group
+            try:
+                # NOTE: Use users instead of user_groups here
+                irods.users.remove(user_group)
+                logger.debug(f'User group deleted: {user_group}')
+            except Exception as ex:
+                ex_msg = f'Error deleting user group ({user_group}): {ex}'
+                logger.error(ex_msg)
+                errors.append(ex_msg)
+
+        if tl_event and errors:
+            tl_event.set_status(timeline.TL_STATUS_FAILED, '; '.join(errors))
+        elif tl_event:
+            tl_event.set_status(timeline.TL_STATUS_OK)
