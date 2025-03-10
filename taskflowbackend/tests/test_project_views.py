@@ -992,7 +992,9 @@ class TestProjectDeleteView(TaskflowViewTestBase):
         self.assertEqual(
             tl_event.get_status().status_type, self.timeline.TL_STATUS_OK
         )
-        self.assertIsNone(Project.objects.filter(sodar_uuid=self.project_uuid).first())
+        self.assertIsNone(
+            Project.objects.filter(sodar_uuid=self.project_uuid).first()
+        )
 
     def test_post_file(self):
         """Test POST with uploaded file"""
@@ -1015,4 +1017,5 @@ class TestProjectDeleteView(TaskflowViewTestBase):
         with self.assertRaises(GroupDoesNotExist):
             self.irods.groups.get(self.group_name)
         self.assertIsNone(
-            Project.objects.filter(sodar_uuid=self.project_uuid).first())
+            Project.objects.filter(sodar_uuid=self.project_uuid).first()
+        )

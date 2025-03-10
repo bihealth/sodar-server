@@ -624,7 +624,8 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         if timeline:
             tl_event = timeline.add_event(
                 project=None,  # No project as it has been deleted
-                app_name=APP_NAME,
+                app_name='taskflowbackend',
+                plugin_name='taskflow',
                 user=None,
                 event_name='project_delete',
                 description=f'Delete iRODS collection and user group from '
