@@ -31,6 +31,7 @@ PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_ROLE_FINDER = SODAR_CONSTANTS['PROJECT_ROLE_FINDER']
 PROJECT_ACTION_CREATE = SODAR_CONSTANTS['PROJECT_ACTION_CREATE']
 PROJECT_ACTION_UPDATE = SODAR_CONSTANTS['PROJECT_ACTION_UPDATE']
+APP_SETTING_SCOPE_PROJECT = SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT']
 
 # Local constants
 APP_NAME = 'taskflowbackend'
@@ -493,7 +494,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
             tl_event.add_object(role_as.user, 'user', user_name)
 
     def perform_owner_transfer(
-        self, project, new_owner, old_owner, old_owner_role, request=None
+        self, project, new_owner, old_owner, old_owner_role=None, request=None
     ):
         """
         Perform additional actions to finalize project ownership transfer.
@@ -501,7 +502,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         :param project: Project object
         :param new_owner: SODARUser object for new owner
         :param old_owner: SODARUser object for previous owner
-        :param old_owner_role: Role object for new role of previous owner
+        :param old_owner_role: Role object for new role of old owner or None
         :param request: Request object or None
         """
         timeline = get_backend_api('timeline_backend')
@@ -511,7 +512,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
 
         if project.type == PROJECT_TYPE_PROJECT:
             flow_data['roles_add'].append(get_batch_role(project, n_user_name))
-            if old_owner_role.rank >= RANK_FINDER:
+            if not old_owner_role or old_owner_role.rank >= RANK_FINDER:
                 flow_data['roles_delete'].append(
                     get_batch_role(project, o_user_name)
                 )
@@ -519,7 +520,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
             children = self._get_child_projects(project)
             for c in children:
                 flow_data['roles_add'].append(get_batch_role(c, n_user_name))
-                if old_owner_role.rank >= RANK_FINDER:
+                if not old_owner_role or old_owner_role.rank >= RANK_FINDER:
                     flow_data['roles_delete'].append(
                         get_batch_role(c, o_user_name)
                     )
@@ -573,7 +574,9 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         self.perform_project_modify(
             project=project,
             action=PROJECT_ACTION_CREATE,
-            project_settings=app_settings.get_all(project),
+            project_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project
+            ),
             **{'sync_modify_api': True},
         )
         # Remove inactive roles
@@ -593,3 +596,70 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                 flow_name='role_update_irods_batch',
                 flow_data=flow_data,
             )
+
+    def perform_project_delete(self, project):
+        """
+        Perform additional actions to finalize project deletion.
+
+        NOTE: This operation can not be undone so there is no revert method.
+
+        :param project: Project object (Project)
+        """
+        # NOTE: Checks for project/category permissions done in SODAR Core views
+        # Skip for categories, nothing to do
+        if project.type != PROJECT_TYPE_PROJECT:
+            logger.debug('Skipping: {}'.format(IRODS_CAT_SKIP_MSG))
+            return
+        irods_backend = get_backend_api('omics_irods')
+        if not irods_backend:
+            logger.error('iRODS backend not enabled')
+            return
+
+        timeline = get_backend_api('timeline_backend')
+        tl_event = None
+        project_path = irods_backend.get_path(project)
+        user_group = irods_backend.get_user_group_name(project)
+        errors = []
+        # Create separate timeline event
+        if timeline:
+            tl_event = timeline.add_event(
+                project=None,  # No project as it has been deleted
+                app_name='taskflowbackend',
+                plugin_name='taskflow',
+                user=None,
+                event_name='project_delete',
+                description=f'Delete iRODS collection and user group from '
+                f'project {project.get_log_title()}',
+                extra_data={
+                    'project_path': project_path,
+                    'user_group': user_group,
+                },
+                classified=True,
+            )
+
+        with irods_backend.get_session() as irods:
+            # Delete project collection and subcollections
+            try:
+                irods.collections.remove(project_path, recurse=True)
+                logger.debug(f'Project collection deleted: {project_path}')
+            except Exception as ex:
+                ex_msg = (
+                    f'Error deleting project collection '
+                    f'({project_path}): {ex}'
+                )
+                logger.error(ex_msg)
+                errors.append(ex_msg)
+            # Delete project user group
+            try:
+                # NOTE: Use users instead of user_groups here
+                irods.users.remove(user_group)
+                logger.debug(f'User group deleted: {user_group}')
+            except Exception as ex:
+                ex_msg = f'Error deleting user group ({user_group}): {ex}'
+                logger.error(ex_msg)
+                errors.append(ex_msg)
+
+        if tl_event and errors:
+            tl_event.set_status(timeline.TL_STATUS_FAILED, '; '.join(errors))
+        elif tl_event:
+            tl_event.set_status(timeline.TL_STATUS_OK)

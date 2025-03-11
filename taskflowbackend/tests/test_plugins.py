@@ -27,6 +27,7 @@ PROJECT_TYPE_CATEGORY = SODAR_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 PROJECT_ACTION_CREATE = SODAR_CONSTANTS['PROJECT_ACTION_CREATE']
 PROJECT_ACTION_UPDATE = SODAR_CONSTANTS['PROJECT_ACTION_UPDATE']
+APP_SETTING_SCOPE_PROJECT = SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT']
 
 
 class ModifyAPITaskflowTestBase(TaskflowViewTestBase):
@@ -70,7 +71,9 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
         self.plugin.perform_project_modify(
             project=project,
             action=PROJECT_ACTION_CREATE,
-            project_settings=app_settings.get_all(project),
+            project_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=project
+            ),
             request=self.request,
         )
 
@@ -138,7 +141,9 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
         self.plugin.perform_project_modify(
             project=project,
             action=PROJECT_ACTION_CREATE,
-            project_settings=app_settings.get_all(project),
+            project_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=project
+            ),
             request=self.request,
         )
 
@@ -180,7 +185,9 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
         self.plugin.perform_project_modify(
             project=project,
             action=PROJECT_ACTION_CREATE,
-            project_settings=app_settings.get_all(project),
+            project_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=project
+            ),
             request=self.request,
         )
 
@@ -208,7 +215,9 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
         self.plugin.perform_project_modify(
             project=project,
             action=PROJECT_ACTION_CREATE,
-            project_settings=app_settings.get_all(project),
+            project_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=project
+            ),
             request=self.request,
         )
         # Since there is an overridden role, this should be created
@@ -231,7 +240,9 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
         self.plugin.perform_project_modify(
             project=project,
             action=PROJECT_ACTION_CREATE,
-            project_settings=app_settings.get_all(project),
+            project_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=project
+            ),
             request=self.request,
         )
         # Since the finder role is overridden by parent, this should be created
@@ -252,7 +263,9 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
         self.plugin.perform_project_modify(
             project=category,
             action=PROJECT_ACTION_CREATE,
-            project_settings=app_settings.get_all(category),
+            project_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=category
+            ),
             request=self.request,
         )
 
@@ -275,7 +288,9 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
         self.plugin.perform_project_modify(
             project=project,
             action=PROJECT_ACTION_UPDATE,
-            project_settings=app_settings.get_all(project),
+            project_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=project
+            ),
             old_data={'parent': self.category},
             request=self.request,
         )
@@ -323,7 +338,9 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
         self.plugin.perform_project_modify(
             project=project,
             action=PROJECT_ACTION_UPDATE,
-            project_settings=app_settings.get_all(project),
+            project_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=project
+            ),
             old_data={'parent': self.category},
             request=self.request,
         )
@@ -355,9 +372,13 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
         self.plugin.perform_project_modify(
             project=self.category,
             action=PROJECT_ACTION_UPDATE,
-            project_settings=app_settings.get_all(self.category),
+            project_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=self.category
+            ),
             old_data={'parent': None},
-            old_settings=app_settings.get_all(self.category),
+            old_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=self.category
+            ),
             request=self.request,
         )
 
@@ -406,9 +427,13 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
         self.plugin.perform_project_modify(
             project=self.category,
             action=PROJECT_ACTION_UPDATE,
-            project_settings=app_settings.get_all(self.category),
+            project_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=self.category
+            ),
             old_data={'parent': old_category},
-            old_settings=app_settings.get_all(self.category),
+            old_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=self.category
+            ),
             request=self.request,
         )
 
@@ -443,7 +468,9 @@ class TestRevertProjectModify(ModifyAPITaskflowTestBase):
         self.plugin.revert_project_modify(
             project=self.project,
             action=PROJECT_ACTION_CREATE,
-            project_settings=app_settings.get_all(self.project),
+            project_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=self.project
+            ),
             request=self.request,
         )
 
@@ -1166,6 +1193,27 @@ class TestPerformOwnerTransfer(ModifyAPITaskflowTestBase):
         self.assert_group_member(self.project, self.user_new, True)
         self.assert_group_member(self.project, self.user_owner_cat, False)
 
+    def test_transfer_category_old_owner_no_role(self):
+        """Test category owner transfer with no role for old owner"""
+        self.make_assignment_taskflow(
+            self.category, self.user_new, self.role_contributor
+        )
+        self.assert_group_member(self.project, self.user, True)
+        self.assert_group_member(self.project, self.user_new, True)
+        self.assert_group_member(self.project, self.user_owner_cat, True)
+
+        self.plugin.perform_owner_transfer(
+            project=self.category,
+            new_owner=self.user_new,
+            old_owner=self.user_owner_cat,
+            old_owner_role=None,
+            request=self.request,
+        )
+
+        self.assert_group_member(self.project, self.user, True)
+        self.assert_group_member(self.project, self.user_new, True)
+        self.assert_group_member(self.project, self.user_owner_cat, False)
+
     def test_transfer_category_to_finder(self):
         """Test category owner transfer to user with finder role"""
         self.make_assignment_taskflow(
@@ -1222,6 +1270,27 @@ class TestPerformOwnerTransfer(ModifyAPITaskflowTestBase):
             new_owner=self.user_new,
             old_owner=self.user,
             old_owner_role=self.role_finder,
+            request=self.request,
+        )
+
+        self.assert_group_member(self.project, self.user, False)
+        self.assert_group_member(self.project, self.user_new, True)
+        self.assert_group_member(self.project, self.user_owner_cat, True)
+
+    def test_transfer_project_old_owner_no_role(self):
+        """Test project owner transfer with no role for old user"""
+        self.make_assignment_taskflow(
+            self.project, self.user_new, self.role_contributor
+        )
+        self.assert_group_member(self.project, self.user, True)
+        self.assert_group_member(self.project, self.user_new, True)
+        self.assert_group_member(self.project, self.user_owner_cat, True)
+
+        self.plugin.perform_owner_transfer(
+            project=self.project,
+            new_owner=self.user_new,
+            old_owner=self.user,
+            old_owner_role=None,
             request=self.request,
         )
 

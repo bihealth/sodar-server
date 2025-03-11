@@ -118,6 +118,10 @@ def sheet_sync_task(_self):
     """Task for synchronizing sample sheets from a source project"""
     from samplesheets.views import SheetRemoteSyncAPI
 
+    if app_settings.get('projectroles', 'site_read_only'):
+        logger.info('Site read-only mode enabled, skipping')
+        return
+
     timeline = get_backend_api('timeline_backend')
     tl_add = False
     tl_status_type = timeline.TL_STATUS_OK if timeline else 'OK'

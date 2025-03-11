@@ -314,6 +314,72 @@ class TestProjectZoneView(LandingZoneUITestBase):
         self.assertEqual(len(zones), 2)
         self._assert_element(By.CLASS_NAME, 'sodar-lz-zone-warn-access', True)
 
+    def test_render_read_only_contrib(self):
+        """Test ProjectZoneView with site read-only mode as contributor"""
+        self._setup_investigation()
+        self.investigation.irods_status = True
+        self.investigation.save()
+        self.make_landing_zone(
+            'contrib_zone', self.project, self.user_contributor, self.assay
+        )
+        app_settings.set('projectroles', 'site_read_only', True)
+        self.login_and_redirect(self.user_contributor, self.url)
+        self._assert_element(By.ID, 'sodar-lz-btn-create-zone', False)
+        zone = self.selenium.find_element(
+            By.CLASS_NAME, 'sodar-lz-zone-tr-existing'
+        )
+        self._assert_btn_enabled(
+            zone.find_element(By.CLASS_NAME, 'sodar-lz-zone-btn-validate'),
+            False,
+        )
+        self._assert_btn_enabled(
+            zone.find_element(By.CLASS_NAME, 'sodar-lz-zone-btn-move'),
+            False,
+        )
+        self._assert_btn_enabled(
+            zone.find_element(By.CLASS_NAME, 'sodar-lz-zone-btn-copy'),
+            True,
+        )
+        with self.assertRaises(NoSuchElementException):
+            zone.find_element(By.CLASS_NAME, 'sodar-lz-zone-btn-update')
+        with self.assertRaises(NoSuchElementException):
+            zone.find_element(By.CLASS_NAME, 'sodar-lz-zone-btn-delete')
+
+    def test_render_read_only_superuser(self):
+        """Test ProjectZoneView with site read-only mode as superuser"""
+        self._setup_investigation()
+        self.investigation.irods_status = True
+        self.investigation.save()
+        self.make_landing_zone(
+            'contrib_zone', self.project, self.user_contributor, self.assay
+        )
+        app_settings.set('projectroles', 'site_read_only', True)
+        self.login_and_redirect(self.superuser, self.url)
+        self._assert_element(By.ID, 'sodar-lz-btn-create-zone', True)
+        zone = self.selenium.find_element(
+            By.CLASS_NAME, 'sodar-lz-zone-tr-existing'
+        )
+        self._assert_btn_enabled(
+            zone.find_element(By.CLASS_NAME, 'sodar-lz-zone-btn-validate'),
+            True,
+        )
+        self._assert_btn_enabled(
+            zone.find_element(By.CLASS_NAME, 'sodar-lz-zone-btn-move'),
+            True,
+        )
+        self._assert_btn_enabled(
+            zone.find_element(By.CLASS_NAME, 'sodar-lz-zone-btn-copy'),
+            True,
+        )
+        self._assert_btn_enabled(
+            zone.find_element(By.CLASS_NAME, 'sodar-lz-zone-btn-update'),
+            True,
+        )
+        self._assert_btn_enabled(
+            zone.find_element(By.CLASS_NAME, 'sodar-lz-zone-btn-delete'),
+            True,
+        )
+
     def test_status_update(self):
         """Test ProjectZoneView with zone status update"""
         self._setup_investigation()

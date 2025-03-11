@@ -1,6 +1,9 @@
 """Tests for projectroles views with taskflow"""
 
+import os
+
 from irods.collection import iRODSCollection
+from irods.exception import GroupDoesNotExist
 from irods.user import iRODSUser, iRODSUserGroup
 
 from django.conf import settings
@@ -39,10 +42,13 @@ PROJECT_TYPE_CATEGORY = SODAR_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 APP_SETTING_SCOPE_PROJECT = SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT']
 
+
 # Local constants
+APP_NAME = 'taskflowbackend'
 INVITE_EMAIL = 'test@example.com'
 SECRET = 'rsd886hi8276nypuvw066sbvv0rb2a6x'
 TASKFLOW_TEST_MODE = getattr(settings, 'TASKFLOW_TEST_MODE', False)
+OBJ_NAME = 'test_file.txt'
 
 
 # Base Classes -----------------------------------------------------------------
@@ -189,7 +195,9 @@ class TestProjectUpdateView(TaskflowViewTestBase):
             }
         )
         request_data.update(
-            app_settings.get_all(project=self.project, post_safe=True)
+            app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=self.project, post_safe=True
+            )
         )  # Add default settings
         with self.login(self.user):
             response = self.client.post(
@@ -277,7 +285,9 @@ class TestProjectUpdateView(TaskflowViewTestBase):
             }
         )
         request_data.update(
-            app_settings.get_all(project=self.project, post_safe=True)
+            app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=self.project, post_safe=True
+            )
         )  # Add default settings
         with self.login(self.user):
             response = self.client.post(
@@ -925,3 +935,87 @@ class TestProjectInviteAcceptView(ProjectInviteMixin, TaskflowViewTestBase):
                 ],
             )
         self.assertEqual(ProjectInvite.objects.filter(active=True).count(), 1)
+
+
+class TestProjectDeleteView(TaskflowViewTestBase):
+    """Tests for ProjectDeleteView"""
+
+    def _assert_tl_event(self, count):
+        """Assert timeline event count"""
+        tl_events = TimelineEvent.objects.filter(
+            app=APP_NAME, event_name='project_delete'
+        )
+        self.assertEqual(tl_events.count(), count)
+
+    def setUp(self):
+        super().setUp()
+        # Make project with owner in Taskflow and Django
+        self.project, self.owner_as = self.make_project_taskflow(
+            title='TestProject',
+            type=PROJECT_TYPE_PROJECT,
+            parent=self.category,
+            owner=self.user,
+            description='description',
+        )
+        self.project_uuid = self.project.sodar_uuid
+        self.project_path = self.irods_backend.get_path(self.project)
+        self.group_name = self.irods_backend.get_user_group_name(self.project)
+        self.timeline = get_backend_api('timeline_backend')
+        self.url = reverse(
+            'projectroles:delete',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        self.post_data = {'delete_host_confirm': 'testserver'}
+
+    def test_post(self):
+        """Test ProjectDeleteView POST with taskflow"""
+        self.assertTrue(self.irods.collections.exists(self.project_path))
+        self.assertIsNotNone(self.irods.groups.get(self.group_name))
+        self._assert_tl_event(0)
+
+        with self.login(self.user):
+            response = self.client.post(self.url, data=self.post_data)
+            self.assertRedirects(
+                response,
+                reverse(
+                    'projectroles:detail',
+                    kwargs={'project': self.category.sodar_uuid},
+                ),
+            )
+        self.assertFalse(self.irods.collections.exists(self.project_path))
+        with self.assertRaises(GroupDoesNotExist):
+            self.irods.groups.get(self.group_name)
+        self._assert_tl_event(1)
+        tl_event = TimelineEvent.objects.filter(
+            app=APP_NAME, event_name='project_delete'
+        ).first()
+        self.assertEqual(
+            tl_event.get_status().status_type, self.timeline.TL_STATUS_OK
+        )
+        self.assertIsNone(
+            Project.objects.filter(sodar_uuid=self.project_uuid).first()
+        )
+
+    def test_post_file(self):
+        """Test POST with uploaded file"""
+        obj_coll_path = os.path.join(self.project_path, 'subcoll')
+        self.irods.collections.create(obj_coll_path)
+        obj_path = os.path.join(obj_coll_path, OBJ_NAME)
+        self.irods.data_objects.create(obj_path)
+
+        self.assertTrue(self.irods.collections.exists(self.project_path))
+        self.assertTrue(self.irods.collections.exists(obj_coll_path))
+        self.assertTrue(self.irods.data_objects.exists(obj_path))
+        self.assertIsNotNone(self.irods.groups.get(self.group_name))
+
+        with self.login(self.user):
+            self.client.post(self.url, data=self.post_data)
+
+        self.assertFalse(self.irods.collections.exists(self.project_path))
+        self.assertFalse(self.irods.collections.exists(obj_coll_path))
+        self.assertFalse(self.irods.data_objects.exists(obj_path))
+        with self.assertRaises(GroupDoesNotExist):
+            self.irods.groups.get(self.group_name)
+        self.assertIsNone(
+            Project.objects.filter(sodar_uuid=self.project_uuid).first()
+        )

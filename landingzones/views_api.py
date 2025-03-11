@@ -50,7 +50,6 @@ logger = logging.getLogger(__name__)
 LANDINGZONES_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar.landingzones+json'
 LANDINGZONES_API_ALLOWED_VERSIONS = ['1.0']
 LANDINGZONES_API_DEFAULT_VERSION = '1.0'
-
 ZONE_NO_COLLS_MSG = 'iRODS collections not created for project'
 
 

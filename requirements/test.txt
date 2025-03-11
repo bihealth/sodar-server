@@ -1,24 +1,24 @@
 # Test dependencies go here.
 -r base.txt
 
-flake8==7.0.0
-django-test-plus==2.2.3
-factory-boy==3.3.0
-coverage==6.5.0  # NOTE: coveralls 3.3.1 requires <7.0
+flake8==7.1.1
+django-test-plus==2.2.4
+factory-boy==3.3.1
+coverage==7.6.12
 django-coverage-plugin==3.1.0
 
 # pytest
-pytest-django==4.8.0
+pytest-django==4.9.0
 pytest-sugar==1.0.0
 
 # Selenium for UI testing
-selenium==4.18.1
+selenium==4.27.1
 
 # BeautifulSoup for HTML testing
 beautifulsoup4==4.12.3
 
 # Black for formatting
-black==24.3.0
+black==24.10.0
 
 # Coveralls for coverage reporting
-coveralls==3.3.1
+coveralls==4.0.1

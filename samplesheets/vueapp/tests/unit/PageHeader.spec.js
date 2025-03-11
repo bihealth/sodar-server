@@ -265,25 +265,100 @@ describe('PageHeader.vue', () => {
     expect(wrapper.find('#sodar-ss-btn-edit-finish').exists()).toBe(false)
   })
 
-  it('renders operations dropdown header with sheet render error', () => {
+  it('renders operations dropdown in read-only mode without sheets', () => {
+    propsData.app.sheetsAvailable = false
+    propsData.app.sodarContext.perms.create_colls = false
+    propsData.app.sodarContext.perms.delete_sheet = false
+    propsData.app.sodarContext.perms.edit_sheet = false
+    propsData.app.sodarContext.perms.update_cache = false
+    propsData.app.sodarContext.perms.view_tickets = true
+    const wrapper = mount(PageHeader, { localVue, propsData: propsData })
+
+    expect(wrapper.find('#sodar-ss-op-dropdown').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-op-dropdown').find('button').classes()).toContain('disabled')
+  })
+
+  it('renders operations dropdown in read-only mode without irods colls', () => {
+    propsData.app.sodarContext.site_read_only = true
+    propsData.app.sodarContext.perms.create_colls = false
+    propsData.app.sodarContext.perms.delete_sheet = false
+    propsData.app.sodarContext.perms.edit_sheet = false
+    propsData.app.sodarContext.perms.update_cache = false
+    propsData.app.sodarContext.perms.view_tickets = true
+    propsData.app.sodarContext.irods_status = false
+    const wrapper = mount(PageHeader, { localVue, propsData: propsData })
+
+    expect(wrapper.find('#sodar-ss-op-dropdown').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-op-dropdown').find('button').classes()).not.toContain('disabled')
+    expect(wrapper.findAll('.sodar-ss-op-item').length).toBe(2)
+    expect(wrapper.find('#sodar-ss-op-item-sync').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-op-item-import').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-op-item-create').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-op-item-edit').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-op-item-warnings').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-op-item-cache').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-op-item-replace').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-op-item-export').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-op-item-irods').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-op-item-versions').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-op-item-tickets').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-op-item-requests').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-op-item-delete').exists()).toBe(false)
+  })
+
+  it('renders operations dropdown in read-only mode with irods colls', () => {
+    propsData.app.sodarContext.site_read_only = true
+    propsData.app.sodarContext.perms.create_colls = false
+    propsData.app.sodarContext.perms.delete_sheet = false
+    propsData.app.sodarContext.perms.edit_sheet = false
+    propsData.app.sodarContext.perms.update_cache = false
+    propsData.app.sodarContext.perms.view_tickets = true
+    propsData.app.sodarContext.irods_status = true
+    const wrapper = mount(PageHeader, { localVue, propsData: propsData })
+
+    expect(wrapper.find('#sodar-ss-op-dropdown').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-op-dropdown').find('button').classes()).not.toContain('disabled')
+    expect(wrapper.findAll('.sodar-ss-op-item').length).toBe(3)
+    expect(wrapper.find('#sodar-ss-op-item-sync').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-op-item-import').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-op-item-create').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-op-item-edit').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-op-item-warnings').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-op-item-cache').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-op-item-replace').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-op-item-export').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-op-item-irods').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-op-item-versions').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-op-item-tickets').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-op-item-requests').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-op-item-delete').exists()).toBe(false)
+  })
+
+  it('renders operations dropdown with no view_tickets perm', () => {
+    propsData.app.sodarContext.perms.view_tickets = false
+    const wrapper = mount(PageHeader, { localVue, propsData: propsData })
+
+    expect(wrapper.find('#sodar-ss-op-dropdown').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-op-dropdown').find('button').classes()).toContain('disabled')
+  })
+
+  it('renders operations dropdown with sheet render error', () => {
     propsData.app.renderError = true
     const wrapper = mount(PageHeader, { localVue, propsData: propsData })
 
-    // Operations dropdown
     expect(wrapper.findAll('.sodar-ss-op-item').length).toBe(9)
     expect(wrapper.find('#sodar-ss-op-item-irods').exists()).toBe(false)
   })
 
-  it('renders operations dropdown header with no irods collections', () => {
+  it('renders operations dropdown with no irods collections', () => {
     propsData.app.sodarContext.irods_status = false
     const wrapper = mount(PageHeader, { localVue, propsData: propsData })
 
-    // Operations dropdown
     expect(wrapper.findAll('.sodar-ss-op-item').length).toBe(7)
     expect(wrapper.find('#sodar-ss-op-item-cache').exists()).toBe(false)
   })
 
-  it('renders operations dropdown header with no delete_sheet perm', () => {
+  it('renders operations dropdown with no delete_sheet perm', () => {
     propsData.app.sodarContext.perms.delete_sheet = false
     const wrapper = mount(PageHeader, { localVue, propsData: propsData })
 

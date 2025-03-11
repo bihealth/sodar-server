@@ -71,6 +71,7 @@ PROJECT_ROLE_CONTRIBUTOR = SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR']
 PROJECT_ROLE_GUEST = SODAR_CONSTANTS['PROJECT_ROLE_GUEST']
 PROJECT_TYPE_CATEGORY = SODAR_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
+APP_SETTING_SCOPE_PROJECT = SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT']
 
 # Local constants
 APP_NAME = 'samplesheets'
@@ -2593,7 +2594,9 @@ class TestProjectUpdateView(TaskflowViewTestBase):
         self.values['parent'] = self.category.sodar_uuid
         self.values['owner'] = self.user.sodar_uuid
         self.values.update(
-            app_settings.get_all(project=self.project, post_safe=True)
+            app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=self.project, post_safe=True
+            )
         )
         self.url = reverse(
             'projectroles:update',

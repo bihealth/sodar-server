@@ -2244,7 +2244,7 @@ class IrodsAccessTicketListView(
     """iRODS access ticket list view"""
 
     model = IrodsAccessTicket
-    permission_required = 'samplesheets.edit_ticket'
+    permission_required = 'samplesheets.view_tickets'
     template_name = 'samplesheets/irods_access_tickets.html'
     paginate_by = settings.SHEETS_IRODS_TICKET_PAGINATION
 
@@ -2259,7 +2259,7 @@ class IrodsAccessTicketCreateView(
 ):
     """iRODS access ticket create view"""
 
-    permission_required = 'samplesheets.edit_ticket'
+    permission_required = 'samplesheets.edit_tickets'
     template_name = 'samplesheets/irodsaccessticket_form.html'
     form_class = IrodsAccessTicketForm
 
@@ -2321,7 +2321,7 @@ class IrodsAccessTicketUpdateView(
 ):
     """iRODS access ticket update view"""
 
-    permission_required = 'samplesheets.edit_ticket'
+    permission_required = 'samplesheets.edit_tickets'
     model = IrodsAccessTicket
     form_class = IrodsAccessTicketForm
     template_name = 'samplesheets/irodsaccessticket_form.html'
@@ -2354,7 +2354,7 @@ class IrodsAccessTicketDeleteView(
 ):
     """iRODS access ticket deletion view"""
 
-    permission_required = 'samplesheets.edit_ticket'
+    permission_required = 'samplesheets.edit_tickets'
     template_name = 'samplesheets/irodsaccessticket_confirm_delete.html'
     model = IrodsAccessTicket
     slug_url_kwarg = 'irodsaccessticket'

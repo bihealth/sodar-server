@@ -57,6 +57,7 @@ class OntologyAccessPermissionTestBase(
             namespace=OBO_TERM_NAMESPACE,
             comment=OBO_TERM_COMMENT,
         )
+        self.bad_users = [self.anonymous, self.regular_user]
 
 
 class TestOntologyAccessPermissions(OntologyAccessPermissionTestBase):
@@ -65,10 +66,8 @@ class TestOntologyAccessPermissions(OntologyAccessPermissionTestBase):
     def test_get_ontology_list(self):
         """Test OBOFormatOntologyListView GET"""
         url = reverse('ontologyaccess:list')
-        good_users = [self.superuser]
-        bad_users = [self.anonymous, self.regular_user]
-        self.assert_response(url, good_users, 200)
-        self.assert_response(url, bad_users, 302)
+        self.assert_response(url, self.superuser, 200)
+        self.assert_response(url, self.bad_users, 302)
 
     def test_get_ontology_detail(self):
         """Test OBOFormatOntologyDetailView GET"""
@@ -76,18 +75,31 @@ class TestOntologyAccessPermissions(OntologyAccessPermissionTestBase):
             'ontologyaccess:obo_detail',
             kwargs={'oboformatontology': self.ontology.sodar_uuid},
         )
-        good_users = [self.superuser]
-        bad_users = [self.anonymous, self.regular_user]
-        self.assert_response(url, good_users, 200)
-        self.assert_response(url, bad_users, 302)
+        self.assert_response(url, self.superuser, 200)
+        self.assert_response(url, self.bad_users, 302)
+
+    def test_get_ontology_detail_read_only(self):
+        """Test OBOFormatOntologyDetailView GET with site read-only mode"""
+        self.set_site_read_only()
+        url = reverse(
+            'ontologyaccess:obo_detail',
+            kwargs={'oboformatontology': self.ontology.sodar_uuid},
+        )
+        self.assert_response(url, self.superuser, 200)
+        self.assert_response(url, self.bad_users, 302)
 
     def test_get_ontology_import(self):
         """Test OBOFormatOntologyImportView GET"""
         url = reverse('ontologyaccess:obo_import')
-        good_users = [self.superuser]
-        bad_users = [self.anonymous, self.regular_user]
-        self.assert_response(url, good_users, 200)
-        self.assert_response(url, bad_users, 302)
+        self.assert_response(url, self.superuser, 200)
+        self.assert_response(url, self.bad_users, 302)
+
+    def test_get_ontology_import_read_only(self):
+        """Test OBOFormatOntologyImportView GET with site read-only mode"""
+        self.set_site_read_only()
+        url = reverse('ontologyaccess:obo_import')
+        self.assert_response(url, self.superuser, 200)
+        self.assert_response(url, self.bad_users, 302)
 
     def test_get_ontology_update(self):
         """Test OBOFormatOntologyUpdateView GET"""
@@ -95,10 +107,18 @@ class TestOntologyAccessPermissions(OntologyAccessPermissionTestBase):
             'ontologyaccess:obo_update',
             kwargs={'oboformatontology': self.ontology.sodar_uuid},
         )
-        good_users = [self.superuser]
-        bad_users = [self.anonymous, self.regular_user]
-        self.assert_response(url, good_users, 200)
-        self.assert_response(url, bad_users, 302)
+        self.assert_response(url, self.superuser, 200)
+        self.assert_response(url, self.bad_users, 302)
+
+    def test_get_ontology_update_read_only(self):
+        """Test OBOFormatOntologyUpdateView GET with site read-only mode"""
+        self.set_site_read_only()
+        url = reverse(
+            'ontologyaccess:obo_update',
+            kwargs={'oboformatontology': self.ontology.sodar_uuid},
+        )
+        self.assert_response(url, self.superuser, 200)
+        self.assert_response(url, self.bad_users, 302)
 
     def test_ontology_delete(self):
         """Test OBOFormatOntologyDeleteView GET"""
@@ -106,7 +126,15 @@ class TestOntologyAccessPermissions(OntologyAccessPermissionTestBase):
             'ontologyaccess:obo_delete',
             kwargs={'oboformatontology': self.ontology.sodar_uuid},
         )
-        good_users = [self.superuser]
-        bad_users = [self.anonymous, self.regular_user]
-        self.assert_response(url, good_users, 200)
-        self.assert_response(url, bad_users, 302)
+        self.assert_response(url, self.superuser, 200)
+        self.assert_response(url, self.bad_users, 302)
+
+    def test_ontology_delete_read_only(self):
+        """Test OBOFormatOntologyDeleteView GET with site read-only mode"""
+        self.set_site_read_only()
+        url = reverse(
+            'ontologyaccess:obo_delete',
+            kwargs={'oboformatontology': self.ontology.sodar_uuid},
+        )
+        self.assert_response(url, self.superuser, 200)
+        self.assert_response(url, self.bad_users, 302)

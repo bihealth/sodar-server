@@ -37,6 +37,43 @@ class LandingzonesPermissionTestBase(
 ):
     """Base class for landingzones permissions tests"""
 
+    def setUp(self):
+        super().setUp()
+        # Default users for read views
+        self.good_users_read = [
+            self.superuser,
+            self.user_owner_cat,  # Inherited
+            self.user_delegate_cat,  # Inherited
+            self.user_contributor_cat,  # Inherited
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+        ]
+        self.bad_users_read = [
+            self.user_guest_cat,  # Inherited
+            self.user_finder_cat,  # Inherited
+            self.user_guest,
+            self.user_no_roles,
+            self.anonymous,
+        ]
+        # Default users for write views
+        self.good_users_write = [
+            self.superuser,
+            self.user_owner_cat,  # Inherited
+            self.user_delegate_cat,  # Inherited
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+        ]
+        self.bad_users_write = [
+            self.user_contributor_cat,  # Inherited
+            self.user_guest_cat,  # Inherited
+            self.user_finder_cat,  # Inherited
+            self.user_guest,
+            self.user_no_roles,
+            self.anonymous,
+        ]
+
 
 class TestProjectZoneView(LandingzonesPermissionTestBase):
     """Tests for ProjectZoneView permissions"""
@@ -49,28 +86,10 @@ class TestProjectZoneView(LandingzonesPermissionTestBase):
 
     def test_get(self):
         """Test ProjectZoneView GET"""
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,  # Inherited
-            self.user_delegate_cat,  # Inherited
-            self.user_contributor_cat,  # Inherited
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-        ]
-        bad_users = [
-            self.user_guest_cat,  # Inherited
-            self.user_finder_cat,  # Inherited
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
-        self.assert_response(self.url, good_users, 200)
-        self.assert_response(self.url, bad_users, 302)
+        self.assert_response(self.url, self.good_users_read, 200)
+        self.assert_response(self.url, self.bad_users_read, 302)
         self.project.set_public()
-        self.assert_response(
-            self.url, [self.user_no_roles, self.anonymous], 302
-        )
+        self.assert_response(self.url, self.no_role_users, 302)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
@@ -81,50 +100,24 @@ class TestProjectZoneView(LandingzonesPermissionTestBase):
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-        ]
-        bad_users = [
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_guest,
-            self.anonymous,
-            self.user_no_roles,
-        ]
-        self.assert_response(self.url, good_users, 200)
-        self.assert_response(self.url, bad_users, 302)
+        self.assert_response(self.url, self.good_users_read, 200)
+        self.assert_response(self.url, self.bad_users_read, 302)
+        self.project.set_public()
+        self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.good_users_read, 200)
+        self.assert_response(self.url, self.bad_users_read, 302)
 
     @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
     def test_get_disable(self):
         """Test GET with disabled non-superuser access"""
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-        ]
-        bad_users = [
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
-        self.assert_response(self.url, good_users, 200)
-        self.assert_response(self.url, bad_users, 302)
+        self.assert_response(self.url, self.good_users_read, 200)
+        self.assert_response(self.url, self.bad_users_read, 302)
         self.project.set_public()
-        self.assert_response(
-            self.url, [self.user_no_roles, self.anonymous], 302
-        )
+        self.assert_response(self.url, self.no_role_users, 302)
 
 
 class TestZoneCreateView(LandingzonesPermissionTestBase):
@@ -145,76 +138,26 @@ class TestZoneCreateView(LandingzonesPermissionTestBase):
 
     def test_get_no_sheets(self):
         """Test ZoneCreateView GET with no sheets"""
-        good_users = [self.superuser]
-        bad_users = [
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
-        self.assert_response(self.url, good_users, 200)
-        self.assert_response(self.url, bad_users, 302)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
         self.project.set_public()
-        self.assert_response(
-            self.url, [self.user_no_roles, self.anonymous], 302
-        )
+        self.assert_response(self.url, self.no_role_users, 302)
 
     def test_get_investigation(self):
         """Test GET with investigation"""
         self._set_up_investigation()
-        good_users = [self.superuser]
-        bad_users = [
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
-        self.assert_response(self.url, good_users, 200)
-        self.assert_response(self.url, bad_users, 302)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
         self.project.set_public()
-        self.assert_response(
-            self.url, [self.user_no_roles, self.anonymous], 302
-        )
+        self.assert_response(self.url, self.no_role_users, 302)
 
     def test_get_colls(self):
         """Test GET with investigation and collections"""
         self._set_up_investigation(True)
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-        ]
-        bad_users = [
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
-        self.assert_response(self.url, good_users, 200)
-        self.assert_response(self.url, bad_users, 302)
+        self.assert_response(self.url, self.good_users_read, 200)
+        self.assert_response(self.url, self.bad_users_read, 302)
         self.project.set_public()
-        self.assert_response(
-            self.url, [self.user_no_roles, self.anonymous], 302
-        )
+        self.assert_response(self.url, self.no_role_users, 302)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
@@ -227,47 +170,23 @@ class TestZoneCreateView(LandingzonesPermissionTestBase):
         """Test GET with archived project"""
         self._set_up_investigation(True)
         self.project.set_archive()
-        good_users = [self.superuser]
-        bad_users = [
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
-        self.assert_response(self.url, good_users, 200)
-        self.assert_response(self.url, bad_users, 302)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
         self.project.set_public()
-        self.assert_response(
-            self.url, [self.user_no_roles, self.anonymous], 302
-        )
+        self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
     @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
     def test_get_disable(self):
         """Test ZoneCreateView with disabled non-superuser access"""
         self._set_up_investigation(True)
-        good_users = [self.superuser]
-        bad_users = [
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
-        self.assert_response(self.url, good_users, 200)
-        self.assert_response(self.url, bad_users, 302)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
 
 class TestZoneUpdateView(LandingzonesPermissionTestBase):
@@ -297,30 +216,14 @@ class TestZoneUpdateView(LandingzonesPermissionTestBase):
 
     def test_get(self):
         """Test ZoneUpdateView GET"""
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-        ]
-        bad_users = [
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
-        self.assert_response(self.url, good_users, 200)
+        self.assert_response(self.url, self.good_users_write, 200)
         self.assert_response(
-            self.url, bad_users, 302, redirect_user=self.redirect_url
+            self.url, self.bad_users_write, 302, redirect_user=self.redirect_url
         )
         self.project.set_public()
         self.assert_response(
             self.url,
-            [self.user_no_roles, self.anonymous],
+            self.no_role_users,
             302,
             redirect_user=self.redirect_url,
         )
@@ -336,52 +239,32 @@ class TestZoneUpdateView(LandingzonesPermissionTestBase):
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
-        good_users = [self.superuser]
-        bad_users = [
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
-        self.assert_response(self.url, good_users, 200)
+        self.assert_response(self.url, self.superuser, 200)
         self.assert_response(
-            self.url, bad_users, 302, redirect_user=self.redirect_url
+            self.url, self.non_superusers, 302, redirect_user=self.redirect_url
         )
         self.project.set_public()
         self.assert_response(
             self.url,
-            [self.user_no_roles, self.anonymous],
+            self.no_role_users,
             302,
             redirect_user=self.redirect_url,
+        )
+
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(
+            self.url, self.non_superusers, 302, redirect_user=self.redirect_url
         )
 
     @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
     def test_get_disable(self):
         """Test GET with disabled non-superuser access"""
-        good_users = [self.superuser]
-        bad_users = [
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
-        self.assert_response(self.url, good_users, 200)
+        self.assert_response(self.url, self.superuser, 200)
         self.assert_response(
-            self.url, bad_users, 302, redirect_user=self.redirect_url
+            self.url, self.non_superusers, 302, redirect_user=self.redirect_url
         )
 
 
@@ -409,28 +292,10 @@ class TestZoneDeleteView(LandingzonesPermissionTestBase):
 
     def test_get(self):
         """Test ZoneDeleteView GET"""
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-        ]
-        bad_users = [
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
-        self.assert_response(self.url, good_users, 200)
-        self.assert_response(self.url, bad_users, 302)
+        self.assert_response(self.url, self.good_users_write, 200)
+        self.assert_response(self.url, self.bad_users_write, 302)
         self.project.set_public()
-        self.assert_response(
-            self.url, [self.user_no_roles, self.anonymous], 302
-        )
+        self.assert_response(self.url, self.no_role_users, 302)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
@@ -441,45 +306,19 @@ class TestZoneDeleteView(LandingzonesPermissionTestBase):
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-        ]
-        bad_users = [
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
-        self.assert_response(self.url, good_users, 200)
-        self.assert_response(self.url, bad_users, 302)
+        self.assert_response(self.url, self.good_users_write, 200)
+        self.assert_response(self.url, self.bad_users_write, 302)
         self.project.set_public()
-        self.assert_response(
-            self.url, [self.user_no_roles, self.anonymous], 302
-        )
+        self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
     @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
     def test_get_disable(self):
         """Test GET with disabled non-superuser access"""
-        good_users = [self.superuser]
-        bad_users = [
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
-        self.assert_response(self.url, good_users, 200)
-        self.assert_response(self.url, bad_users, 302)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)

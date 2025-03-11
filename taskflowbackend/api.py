@@ -15,6 +15,7 @@ from landingzones.constants import (
 from landingzones.models import LandingZone
 
 # Projectroles dependency
+from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 
@@ -23,6 +24,7 @@ from taskflowbackend.lock_api import ProjectLockAPI, PROJECT_LOCKED_MSG
 from taskflowbackend.tasks_celery import submit_flow_task
 
 
+app_settings = AppSettingAPI()
 lock_api = ProjectLockAPI()
 logger = logging.getLogger(__name__)
 
@@ -33,6 +35,7 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 # Local constants
 UNKNOWN_RUN_ERROR = 'Running flow failed: unknown error, see server log'
 LOCK_FAIL_MSG = 'Unable to acquire project lock'
+READ_ONLY_MSG = 'Site in read-only mode, taskflow operations not allowed'
 
 
 class TaskflowAPI:
@@ -68,6 +71,29 @@ class TaskflowAPI:
             zone.set_status(status, ex_msg[:1024])
         # TODO: Create app alert for failure if async (see #1499)
         raise cls.FlowSubmitException(ex_msg)
+
+    @classmethod
+    def _raise_run_flow_exception(cls, ex_msg, tl_event=None, zone=None):
+        """
+        Wrapper for _raise_flow_exception() to be called from run_flow().
+
+        :param ex_msg: Exception message (string)
+        :param tl_event: Timeline event or None
+        :param zone: LandingZone object or None
+        :raise: FlowSubmitException
+        """
+        logger.error(ex_msg)
+        # Provide landing zone if error occurs but status has not been set
+        # (This means a failure has not been properly handled in the flow)
+        ex_zone = None
+        if zone:
+            zone.refresh_from_db()
+            if zone.status not in [
+                ZONE_STATUS_NOT_CREATED,
+                ZONE_STATUS_FAILED,
+            ]:
+                ex_zone = zone
+        cls._raise_flow_exception(ex_msg, tl_event, ex_zone)
 
     @classmethod
     def _raise_lock_exception(cls, ex_msg, tl_event=None, zone=None):
@@ -164,6 +190,9 @@ class TaskflowAPI:
         """
         Run a flow, either synchronously or asynchronously.
 
+        NOTE: Does NOT check for site read-only mode, that must be done in the
+        calling views.
+
         :param flow: Flow object
         :param project: Project object
         :param force_fail: Force failure (boolean, for testing)
@@ -230,18 +259,7 @@ class TaskflowAPI:
 
         # Raise exception if failed, otherwise return result
         if ex_msg:
-            logger.error(ex_msg)
-            # Provide landing zone if error occurs but status has not been set
-            # (This means a failure has not been properly handled in the flow)
-            ex_zone = None
-            if zone:
-                zone.refresh_from_db()
-                if zone.status not in [
-                    ZONE_STATUS_NOT_CREATED,
-                    ZONE_STATUS_FAILED,
-                ]:
-                    ex_zone = zone
-            cls._raise_flow_exception(ex_msg, tl_event, ex_zone)
+            cls._raise_run_flow_exception(ex_msg, tl_event, zone)
         return flow_result
 
     def submit(

@@ -66,7 +66,7 @@
 
 {% block projectroles_extend %}
 
-{% has_perm 'samplesheets.view_sheet' request.user project as can_view_ticket %}
+{% has_perm 'samplesheets.edit_tickets' request.user project as can_edit_tickets %}
 
 <div class="row sodar-subtitle-container">
   <h3>iRODS Access Tickets</h3>
@@ -76,7 +76,8 @@
      <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Project Sheets
     </a>
     <a href="{% url 'samplesheets:irods_ticket_create' project=project.sodar_uuid %}"
-       class="btn btn-primary" role="button" id="sodar-ss-btn-ticket-create">
+       class="btn btn-primary" role="button" id="sodar-ss-btn-ticket-create"
+       {% if not can_edit_tickets %}disabled="disabled"{% endif %}>
      <i class="iconify" data-icon="mdi:plus-thick"></i> Create Ticket
     </a>
   </div>
@@ -142,21 +143,23 @@
                 {% endif %}
               </td>
               <td class="text-right">
-                <button class="btn btn-secondary dropdown-toggle
-                               sodar-list-dropdown sodar-ss-ticket-dropdown"
-                        type="button" data-toggle="dropdown" aria-expanded="false">
-                  <i class="iconify" data-icon="mdi:cog"></i>
-                </button>
-                <div class="dropdown-menu dropdown-menu-right">
-                  <a class="dropdown-item"
-                     href="{% url 'samplesheets:irods_ticket_update' irodsaccessticket=ticket.sodar_uuid %}">
-                    <i class="iconify" data-icon="mdi:lead-pencil"></i> Update Ticket
-                  </a>
-                  <a class="dropdown-item text-danger"
-                     href="{% url 'samplesheets:irods_ticket_delete' irodsaccessticket=ticket.sodar_uuid %}">
-                    <i class="iconify" data-icon="mdi:close-thick"></i> Delete Ticket
-                  </a>
-                </div>
+                {% if can_edit_tickets %}
+                  <button class="btn btn-secondary dropdown-toggle
+                                 sodar-list-dropdown sodar-ss-ticket-dropdown"
+                          type="button" data-toggle="dropdown" aria-expanded="false">
+                    <i class="iconify" data-icon="mdi:cog"></i>
+                  </button>
+                  <div class="dropdown-menu dropdown-menu-right">
+                    <a class="dropdown-item"
+                       href="{% url 'samplesheets:irods_ticket_update' irodsaccessticket=ticket.sodar_uuid %}">
+                      <i class="iconify" data-icon="mdi:lead-pencil"></i> Update Ticket
+                    </a>
+                    <a class="dropdown-item text-danger"
+                       href="{% url 'samplesheets:irods_ticket_delete' irodsaccessticket=ticket.sodar_uuid %}">
+                      <i class="iconify" data-icon="mdi:close-thick"></i> Delete Ticket
+                    </a>
+                  </div>
+                {% endif %}
               </td>
             </tr>
           {% endfor %}

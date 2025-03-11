@@ -618,18 +618,22 @@ PROJECTROLES_ALLOW_LOCAL_USERS = env.bool(
     'PROJECTROLES_ALLOW_LOCAL_USERS', False
 )
 PROJECTROLES_ALLOW_ANONYMOUS = env.bool('PROJECTROLES_ALLOW_ANONYMOUS', False)
-
-
 PROJECTROLES_ENABLE_MODIFY_API = True
 PROJECTROLES_MODIFY_API_APPS = ['taskflow', 'samplesheets', 'landingzones']
-
 PROJECTROLES_DISABLE_CATEGORIES = env.bool(
     'PROJECTROLES_DISABLE_CATEGORIES', False
+)
+PROJECTROLES_API_USER_DETAIL_RESTRICT = env.bool(
+    'PROJECTROLES_API_USER_DETAIL_RESTRICT', False
+)
+PROJECTROLES_READ_ONLY_MSG = env.str(
+    'PROJECTROLES_READ_ONLY_MSG',
+    'This site is currently in read-only mode. Modifying data is not permitted.'
+    'This includes landing zone operations.',
 )
 
 # Warn about unsupported browsers (IE)
 PROJECTROLES_BROWSER_WARNING = True
-
 # Disable default CDN JS/CSS includes to replace with your local files
 PROJECTROLES_DISABLE_CDN_INCLUDES = env.bool(
     'PROJECTROLES_DISABLE_CDN_INCLUDES', False
@@ -641,24 +645,25 @@ PROJECTROLES_CUSTOM_JS_INCLUDES = env.list(
 PROJECTROLES_CUSTOM_CSS_INCLUDES = env.list(
     'PROJECTROLES_CUSTOM_CSS_INCLUDES', None, []
 )
-
 # Inline HTML include to the head element of the base site template
 PROJECTROLES_INLINE_HEAD_INCLUDE = env.str(
     'PROJECTROLES_INLINE_HEAD_INCLUDE', None
 )
-
 # Enable profiling for debugging/analysis
 PROJECTROLES_ENABLE_PROFILING = env.bool('PROJECTROLES_ENABLE_PROFILING', False)
 if PROJECTROLES_ENABLE_PROFILING:
     MIDDLEWARE += ['projectroles.middleware.ProfilerMiddleware']
 
+# Adminalerts app settings
+ADMINALERTS_PAGINATION = env.int('ADMINALERTS_PAGINATION', 15)
 
 # Timeline app settings
 TIMELINE_PAGINATION = env.int('TIMELINE_PAGINATION', 15)
 
-
-# Adminalerts app settings
-ADMINALERTS_PAGINATION = env.int('ADMINALERTS_PAGINATION', 15)
+# Tokens app settings
+TOKENS_CREATE_PROJECT_USER_RESTRICT = env.bool(
+    'TOKENS_CREATE_PROJECT_USER_RESTRICT', False
+)
 
 
 # SODAR site specific settings (not derived from SODAR Core)
@@ -794,7 +799,6 @@ LANDINGZONES_TRIGGER_FILE = env.str(
 LANDINGZONES_DISABLE_FOR_USERS = env.bool(
     'LANDINGZONES_DISABLE_FOR_USERS', False
 )
-
 # Landingzones configapp plugin settings
 LZ_BIH_PROTEOMICS_SMB_EXPIRY_DAYS = env.int(
     'LZ_BIH_PROTEOMICS_SMB_EXPIRY_DAYS', 14
@@ -804,11 +808,9 @@ LZ_BIH_PROTEOMICS_SMB_USER = env.str(
 )
 LZ_BIH_PROTEOMICS_SMB_PASS = env.str('LZ_BIH_PROTEOMICS_SMB_PASS', 'CHANGE ME!')
 
-
 # Ontologyaccess settings
 ONTOLOGYACCESS_BULK_CREATE = env.int('ONTOLOGYACCESS_BULK_CREATE', 5000)
 ONTOLOGYACCESS_QUERY_LIMIT = env.int('ONTOLOGYACCESS_QUERY_LIMIT', 250)
-
 
 # Isatemplates settings
 # Enable templates from cubi-isa-templates

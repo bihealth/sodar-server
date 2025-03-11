@@ -42,7 +42,6 @@ from projectroles.models import (
 )
 from projectroles.plugins import get_backend_api
 from projectroles.views_api import (
-    SODARAPIBaseMixin,
     SODARAPIBaseProjectMixin,
     SODARAPIGenericProjectMixin,
     SODARPageNumberPagination,
@@ -404,7 +403,7 @@ class IrodsAccessTicketRetrieveAPIView(
 
     lookup_field = 'sodar_uuid'
     lookup_url_kwarg = 'irodsaccessticket'
-    permission_required = 'samplesheets.edit_sheet'
+    permission_required = 'samplesheets.view_tickets'
     schema = AutoSchema(operation_id_base='retrieveIrodsAccessTicket')
     serializer_class = IrodsAccessTicketSerializer
     queryset_project_field = 'study__investigation__project'
@@ -433,7 +432,7 @@ class IrodsAccessTicketListAPIView(
     """
 
     pagination_class = SODARPageNumberPagination
-    permission_required = 'samplesheets.edit_sheet'
+    permission_required = 'samplesheets.view_tickets'
     schema = AutoSchema(operation_id_base='listIrodsAccessTicket')
     serializer_class = IrodsAccessTicketSerializer
 
@@ -854,9 +853,7 @@ class IrodsDataRequestRejectAPIView(
         )
 
 
-class SampleDataFileExistsAPIView(
-    SamplesheetsAPIVersioningMixin, SODARAPIBaseMixin, APIView
-):
+class SampleDataFileExistsAPIView(SamplesheetsAPIVersioningMixin, APIView):
     """
     Return status of data object existing in SODAR iRODS by MD5 checksum.
     Includes all projects in search regardless of user permissions.

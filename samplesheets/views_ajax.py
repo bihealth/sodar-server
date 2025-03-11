@@ -245,6 +245,8 @@ class EditConfigMixin:
     def can_edit_config(cls, user, project):
         if user.is_superuser:
             return True
+        if app_settings.get('projectroles', 'site_read_only'):
+            return False
         min_role_set = app_settings.get(
             APP_NAME, 'edit_config_min_role', project=project
         )
@@ -329,7 +331,6 @@ class SheetContextAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
             ),
             'alerts': [],
             'csrf_token': get_token(request),
-            'investigation': {},
             'project_uuid': str(project.sodar_uuid),
             'user_uuid': (
                 str(request.user.sodar_uuid)
@@ -339,6 +340,10 @@ class SheetContextAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
             'sheet_sync_enabled': app_settings.get(
                 APP_NAME, 'sheet_sync_enable', project=project
             ),
+            'site_read_only': app_settings.get(
+                'projectroles', 'site_read_only'
+            ),
+            'investigation': {},
         }
 
         if inv:
@@ -499,6 +504,9 @@ class SheetContextAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
             'update_cache': request.user.has_perm(
                 'samplesheets.update_cache', project
             ),
+            'view_tickets': request.user.has_perm(
+                'samplesheets.view_tickets', project
+            ),
             'is_superuser': request.user.is_superuser,
         }
 
@@ -638,6 +646,15 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
         project = inv.project
         # Return extra edit mode data
         edit = bool(request.GET.get('edit'))
+        if (
+            edit
+            and app_settings.get('projectroles', 'site_read_only')
+            and not request.user.is_superuser
+        ):
+            return Response(
+                {'render_error': 'Site in read-only mode, editing not allowed'},
+                status=403,
+            )
         allow_editing = app_settings.get(
             APP_NAME, 'allow_editing', project=project
         )

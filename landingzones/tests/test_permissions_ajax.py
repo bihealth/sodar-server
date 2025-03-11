@@ -37,10 +37,7 @@ class TestZoneStatusRetrieveAjaxViewPermissions(LandingzonesPermissionTestBase):
             kwargs={'project': self.project.sodar_uuid},
         )
         self.post_data = {'zone_uuids': [str(zone.sodar_uuid)]}
-
-    def test_post(self):
-        """Test ZoneStatusRetrieveAjaxView POST"""
-        good_users = [
+        self.good_users = [
             self.superuser,
             self.user_owner_cat,
             self.user_delegate_cat,
@@ -49,23 +46,26 @@ class TestZoneStatusRetrieveAjaxViewPermissions(LandingzonesPermissionTestBase):
             self.user_delegate,
             self.user_contributor,  # Zone owner
         ]
-        bad_users = [
+        self.bad_users = [
             self.user_guest_cat,
             self.user_finder_cat,
             self.user_guest,
             self.user_no_roles,
             self.anonymous,
         ]
+
+    def test_post(self):
+        """Test ZoneStatusRetrieveAjaxView POST"""
         self.assert_response(
-            self.url, good_users, 200, method='post', data=self.post_data
+            self.url, self.good_users, 200, method='post', data=self.post_data
         )
         self.assert_response(
-            self.url, bad_users, 403, method='post', data=self.post_data
+            self.url, self.bad_users, 403, method='post', data=self.post_data
         )
         self.project.set_public()
         self.assert_response(
             self.url,
-            [self.user_no_roles, self.anonymous],
+            self.no_role_users,
             403,
             method='post',
             data=self.post_data,
@@ -82,33 +82,27 @@ class TestZoneStatusRetrieveAjaxViewPermissions(LandingzonesPermissionTestBase):
     def test_post_archive(self):
         """Test POST with archived project"""
         self.project.set_archive()
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-        ]
-        bad_users = [
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
         self.assert_response(
-            self.url, good_users, 200, method='post', data=self.post_data
+            self.url, self.good_users, 200, method='post', data=self.post_data
         )
         self.assert_response(
-            self.url, bad_users, 403, method='post', data=self.post_data
+            self.url, self.bad_users, 403, method='post', data=self.post_data
         )
         self.project.set_public()
         self.assert_response(
             self.url,
-            [self.user_no_roles, self.anonymous],
+            self.no_role_users,
             403,
             method='post',
             data=self.post_data,
+        )
+
+    def test_post_read_only(self):
+        """Test POST with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(
+            self.url, self.good_users, 200, method='post', data=self.post_data
+        )
+        self.assert_response(
+            self.url, self.bad_users, 403, method='post', data=self.post_data
         )

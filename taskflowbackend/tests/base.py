@@ -355,6 +355,32 @@ class TaskflowPermissionTestMixin(
             self.project, self.user_guest, self.role_guest
         )
 
+        # Permission test user group helpers
+        # NOTE: Copied from SODAR Core
+        # TODO: Replace with separate mixin (see bihealth/sodar-core#1600)
+        self.all_users = [
+            self.superuser,
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
+            self.user_no_roles,
+            self.anonymous,
+        ]  # All users
+        # All authenticated users
+        self.auth_users = self.all_users[:-1]
+        # All users except for superuser
+        self.non_superusers = self.all_users[1:]
+        # All authenticated non-superusers
+        self.auth_non_superusers = self.non_superusers[:-1]
+        # No roles user and anonymous user
+        self.no_role_users = [self.user_no_roles, self.anonymous]
+
 
 class TaskflowProjectTestMixin:
     """Helpers for UI/Ajax view project management with Taskflow"""
@@ -504,7 +530,15 @@ class TaskflowAPIPermissionTestBase(
 ):
     """Base class for testing API view permissions with taskflow"""
 
+    # TODO: Get this from SODAR Core
+    def set_site_read_only(self, value=True):
+        """
+        Helper to set site read only mode to the desired value.
+
+        :param value: BooAPP_NAMElean
+        """
+        app_settings.set('projectroles', 'site_read_only', value)
+
     def setUp(self):
         super().setUp()
-        # Get knox token for self.user
         self.knox_token = self.get_token(self.superuser)

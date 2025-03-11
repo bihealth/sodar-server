@@ -14,6 +14,7 @@ from django.conf import settings
 from django.test import override_settings
 
 # Projectroles dependency
+from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
 
 # Landingzones dependency
@@ -66,6 +67,9 @@ from taskflowbackend.tests.base import (
     IRODS_ACCESS_OWN,
     TICKET_STR,
 )
+
+
+app_settings = AppSettingAPI()
 
 
 # SODAR constants
@@ -1518,7 +1522,7 @@ class TestPublicAccessUpdate(
         )
 
     def test_enable_access_locked(self):
-        """Test public_access_with locked project"""
+        """Test public_access_update with locked project"""
         self.make_irods_colls(self.investigation)
         self.assert_irods_access(
             self.group_name, self.sample_path, self.irods_access_read

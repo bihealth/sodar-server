@@ -40,6 +40,40 @@ class SampleSheetsAjaxPermissionTestBase(
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
+        # Default users for read views
+        self.good_users_read = [
+            self.superuser,
+            self.user_owner_cat,  # Inherited
+            self.user_delegate_cat,  # Inherited
+            self.user_contributor_cat,  # Inherited
+            self.user_guest_cat,  # Inherited
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
+        ]
+        self.bad_users_read = [
+            self.user_finder_cat,
+            self.user_no_roles,
+            self.anonymous,
+        ]
+        # Default users for write views
+        self.good_users_write = [
+            self.superuser,
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+        ]
+        self.bad_users_write = [
+            self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_guest,
+            self.user_no_roles,
+            self.anonymous,
+        ]
 
 
 class TestSheetContextAjaxView(SampleSheetsAjaxPermissionTestBase):
@@ -54,20 +88,8 @@ class TestSheetContextAjaxView(SampleSheetsAjaxPermissionTestBase):
 
     def test_get(self):
         """Test SheetContextAjaxView GET"""
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,  # Inherited
-            self.user_delegate_cat,  # Inherited
-            self.user_contributor_cat,  # Inherited
-            self.user_guest_cat,  # Inherited
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-        ]
-        bad_users = [self.user_finder_cat, self.user_no_roles, self.anonymous]
-        self.assert_response(self.url, good_users, 200)
-        self.assert_response(self.url, bad_users, 403)
+        self.assert_response(self.url, self.good_users_read, 200)
+        self.assert_response(self.url, self.bad_users_read, 403)
         # Test public project
         self.project.set_public()
         self.assert_response(
@@ -84,26 +106,20 @@ class TestSheetContextAjaxView(SampleSheetsAjaxPermissionTestBase):
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-        ]
-        bad_users = [self.user_finder_cat, self.user_no_roles, self.anonymous]
-        self.assert_response(self.url, good_users, 200)
-        self.assert_response(self.url, bad_users, 403)
+        self.assert_response(self.url, self.good_users_read, 200)
+        self.assert_response(self.url, self.bad_users_read, 403)
         # Test public project
         self.project.set_public()
         self.assert_response(
             self.url, [self.user_finder_cat, self.user_no_roles], 200
         )
         self.assert_response(self.url, self.anonymous, 403)
+
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.good_users_read, 200)
+        self.assert_response(self.url, self.bad_users_read, 403)
 
 
 class TestStudyTablesAjaxView(SampleSheetsAjaxPermissionTestBase):
@@ -119,20 +135,8 @@ class TestStudyTablesAjaxView(SampleSheetsAjaxPermissionTestBase):
 
     def test_get(self):
         """Test StudyTablesAjaxView GET"""
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-        ]
-        bad_users = [self.user_finder_cat, self.user_no_roles, self.anonymous]
-        self.assert_response(self.url, good_users, 200)
-        self.assert_response(self.url, bad_users, 403)
+        self.assert_response(self.url, self.good_users_read, 200)
+        self.assert_response(self.url, self.bad_users_read, 403)
         self.project.set_public()
         self.assert_response(
             self.url, [self.user_finder_cat, self.user_no_roles], 200
@@ -148,51 +152,35 @@ class TestStudyTablesAjaxView(SampleSheetsAjaxPermissionTestBase):
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-        ]
-        bad_users = [self.user_finder_cat, self.user_no_roles, self.anonymous]
-        self.assert_response(self.url, good_users, 200)
-        self.assert_response(self.url, bad_users, 403)
+        self.assert_response(self.url, self.good_users_read, 200)
+        self.assert_response(self.url, self.bad_users_read, 403)
         self.project.set_public()
         self.assert_response(
             self.url, [self.user_finder_cat, self.user_no_roles], 200
         )
         self.assert_response(self.url, self.anonymous, 403)
 
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.good_users_read, 200)
+        self.assert_response(self.url, self.bad_users_read, 403)
+
     def test_get_edit(self):
         """Test GET with edit mode"""
         app_settings.set(
             'samplesheets', 'allow_editing', True, project=self.project
         )
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-        ]
-        bad_users = [
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
-        self.assert_response(self.url, good_users, 200, data=self.edit_data)
-        self.assert_response(self.url, bad_users, 403, data=self.edit_data)
+        self.assert_response(
+            self.url, self.good_users_write, 200, data=self.edit_data
+        )
+        self.assert_response(
+            self.url, self.bad_users_write, 403, data=self.edit_data
+        )
         self.project.set_public()
-        self.assert_response(self.url, bad_users, 403, data=self.edit_data)
+        self.assert_response(
+            self.url, self.no_role_users, 403, data=self.edit_data
+        )
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_edit_anon(self):
@@ -209,47 +197,36 @@ class TestStudyTablesAjaxView(SampleSheetsAjaxPermissionTestBase):
         app_settings.set(
             'samplesheets', 'allow_editing', True, project=self.project
         )
-        good_users = [self.superuser]
-        bad_users = [
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
-        self.assert_response(self.url, good_users, 200, data=self.edit_data)
-        self.assert_response(self.url, bad_users, 403, data=self.edit_data)
+        self.assert_response(self.url, self.superuser, 200, data=self.edit_data)
+        self.assert_response(
+            self.url, self.non_superusers, 403, data=self.edit_data
+        )
         self.project.set_public()
-        self.assert_response(self.url, bad_users, 403, data=self.edit_data)
+        self.assert_response(
+            self.url, self.no_role_users, 403, data=self.edit_data
+        )
+
+    def test_get_edit_read_only(self):
+        """Test GET with site read-only mode"""
+        app_settings.set(
+            'samplesheets', 'allow_editing', True, project=self.project
+        )
+        self.set_site_read_only()
+        self.assert_response(self.url, self.superuser, 200, data=self.edit_data)
+        self.assert_response(
+            self.url, self.non_superusers, 403, data=self.edit_data
+        )
 
     def test_get_not_allowed(self):
         """Test GET with edit mode but disallowed"""
         app_settings.set(
             'samplesheets', 'allow_editing', False, project=self.project
         )
-        users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
-        self.assert_response(self.url, users, 403, data=self.edit_data)
+        self.assert_response(self.url, self.all_users, 403, data=self.edit_data)
         self.project.set_public()
-        self.assert_response(self.url, users, 403, data=self.edit_data)
+        self.assert_response(
+            self.url, self.no_role_users, 403, data=self.edit_data
+        )
 
     def test_get_not_allowed_archive(self):
         """Test GET with disallowed edit mode and archived project"""
@@ -257,23 +234,11 @@ class TestStudyTablesAjaxView(SampleSheetsAjaxPermissionTestBase):
         app_settings.set(
             'samplesheets', 'allow_editing', False, project=self.project
         )
-        users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
-        self.assert_response(self.url, users, 403, data=self.edit_data)
+        self.assert_response(self.url, self.all_users, 403, data=self.edit_data)
         self.project.set_public()
-        self.assert_response(self.url, users, 403, data=self.edit_data)
+        self.assert_response(
+            self.url, self.no_role_users, 403, data=self.edit_data
+        )
 
 
 class TestStudyLinksAjaxView(SampleSheetsAjaxPermissionTestBase):
@@ -288,38 +253,20 @@ class TestStudyLinksAjaxView(SampleSheetsAjaxPermissionTestBase):
 
     def test_get(self):
         """Test StudyLinksAjaxView GET"""
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-        ]
-        bad_users = [self.user_finder_cat, self.user_no_roles, self.anonymous]
-        self.assert_response(self.url, good_users, 404)  # No plugin
-        self.assert_response(self.url, bad_users, 403)
+        self.assert_response(self.url, self.good_users_read, 404)  # No plugin
+        self.assert_response(self.url, self.bad_users_read, 403)
 
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-        ]
-        bad_users = [self.user_finder_cat, self.user_no_roles, self.anonymous]
-        self.assert_response(self.url, good_users, 404)  # No plugin
-        self.assert_response(self.url, bad_users, 403)
+        self.assert_response(self.url, self.good_users_read, 404)  # No plugin
+        self.assert_response(self.url, self.bad_users_read, 403)
+
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.good_users_read, 404)
+        self.assert_response(self.url, self.bad_users_read, 403)
 
 
 class TestSheetWarningsAjaxView(SampleSheetsAjaxPermissionTestBase):
@@ -334,20 +281,8 @@ class TestSheetWarningsAjaxView(SampleSheetsAjaxPermissionTestBase):
 
     def test_get(self):
         """Test SheetWarningsAjaxView GET"""
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-        ]
-        bad_users = [self.user_finder_cat, self.user_no_roles, self.anonymous]
-        self.assert_response(self.url, good_users, 200)
-        self.assert_response(self.url, bad_users, 403)
+        self.assert_response(self.url, self.good_users_read, 200)
+        self.assert_response(self.url, self.bad_users_read, 403)
         self.project.set_public()
         self.assert_response(
             self.url, [self.user_finder_cat, self.user_no_roles], 200
@@ -363,25 +298,19 @@ class TestSheetWarningsAjaxView(SampleSheetsAjaxPermissionTestBase):
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-        ]
-        bad_users = [self.user_finder_cat, self.user_no_roles, self.anonymous]
-        self.assert_response(self.url, good_users, 200)
-        self.assert_response(self.url, bad_users, 403)
+        self.assert_response(self.url, self.good_users_read, 200)
+        self.assert_response(self.url, self.bad_users_read, 403)
         self.project.set_public()
         self.assert_response(
             self.url, [self.user_finder_cat, self.user_no_roles], 200
         )
         self.assert_response(self.url, self.anonymous, 403)
+
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.good_users_read, 200)
+        self.assert_response(self.url, self.bad_users_read, 403)
 
 
 class TestSheetCellEditAjaxView(SampleSheetsAjaxPermissionTestBase):
@@ -396,26 +325,12 @@ class TestSheetCellEditAjaxView(SampleSheetsAjaxPermissionTestBase):
 
     def test_post(self):
         """Test SheetCellEditAjaxView POST"""
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-        ]
-        bad_users = [
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
-        self.assert_response(self.url, good_users, 200, method='POST')
-        self.assert_response(self.url, bad_users, 403, method='POST')
+        self.assert_response(
+            self.url, self.good_users_write, 200, method='POST'
+        )
+        self.assert_response(self.url, self.bad_users_write, 403, method='POST')
         self.project.set_public()
-        self.assert_response(self.url, bad_users, 403, method='POST')
+        self.assert_response(self.url, self.no_role_users, 403, method='POST')
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_post_anon(self):
@@ -426,24 +341,16 @@ class TestSheetCellEditAjaxView(SampleSheetsAjaxPermissionTestBase):
     def test_post_archive(self):
         """Test POST with archived project"""
         self.project.set_archive()
-        good_users = [self.superuser]
-        bad_users = [
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
-        self.assert_response(self.url, good_users, 200, method='POST')
-        self.assert_response(self.url, bad_users, 403, method='POST')
+        self.assert_response(self.url, self.superuser, 200, method='POST')
+        self.assert_response(self.url, self.non_superusers, 403, method='POST')
         self.project.set_public()
-        self.assert_response(self.url, bad_users, 403, method='POST')
+        self.assert_response(self.url, self.no_role_users, 403, method='POST')
+
+    def test_post_read_only(self):
+        """Test POST with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.superuser, 200, method='POST')
+        self.assert_response(self.url, self.non_superusers, 403, method='POST')
 
 
 class TestSheetRowInsertAjaxView(SampleSheetsAjaxPermissionTestBase):
@@ -458,26 +365,12 @@ class TestSheetRowInsertAjaxView(SampleSheetsAjaxPermissionTestBase):
 
     def test_post(self):
         """Test SheetRowInsertAjaxView POST"""
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-        ]
-        bad_users = [
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
-        self.assert_response(self.url, good_users, 200, method='POST')
-        self.assert_response(self.url, bad_users, 403, method='POST')
+        self.assert_response(
+            self.url, self.good_users_write, 200, method='POST'
+        )
+        self.assert_response(self.url, self.bad_users_write, 403, method='POST')
         self.project.set_public()
-        self.assert_response(self.url, bad_users, 403, method='POST')
+        self.assert_response(self.url, self.no_role_users, 403, method='POST')
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_post_anon(self):
@@ -488,24 +381,16 @@ class TestSheetRowInsertAjaxView(SampleSheetsAjaxPermissionTestBase):
     def test_post_archive(self):
         """Test POST with archived project"""
         self.project.set_archive()
-        good_users = [self.superuser]
-        bad_users = [
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
-        self.assert_response(self.url, good_users, 200, method='POST')
-        self.assert_response(self.url, bad_users, 403, method='POST')
+        self.assert_response(self.url, self.superuser, 200, method='POST')
+        self.assert_response(self.url, self.non_superusers, 403, method='POST')
         self.project.set_public()
-        self.assert_response(self.url, bad_users, 403, method='POST')
+        self.assert_response(self.url, self.no_role_users, 403, method='POST')
+
+    def test_post_read_only(self):
+        """Test POST with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.superuser, 200, method='POST')
+        self.assert_response(self.url, self.non_superusers, 403, method='POST')
 
 
 class TestSheetRowDeleteAjaxView(SampleSheetsAjaxPermissionTestBase):
@@ -520,26 +405,12 @@ class TestSheetRowDeleteAjaxView(SampleSheetsAjaxPermissionTestBase):
 
     def test_post(self):
         """Test SheetRowDeleteAjaxView POST"""
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-        ]
-        bad_users = [
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
-        self.assert_response(self.url, good_users, 200, method='POST')
-        self.assert_response(self.url, bad_users, 403, method='POST')
+        self.assert_response(
+            self.url, self.good_users_write, 200, method='POST'
+        )
+        self.assert_response(self.url, self.bad_users_write, 403, method='POST')
         self.project.set_public()
-        self.assert_response(self.url, bad_users, 403, method='POST')
+        self.assert_response(self.url, self.no_role_users, 403, method='POST')
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_post_anon(self):
@@ -550,24 +421,16 @@ class TestSheetRowDeleteAjaxView(SampleSheetsAjaxPermissionTestBase):
     def test_post_archive(self):
         """Test POST with archived project"""
         self.project.set_archive()
-        good_users = [self.superuser]
-        bad_users = [
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
-        self.assert_response(self.url, good_users, 200, method='POST')
-        self.assert_response(self.url, bad_users, 403, method='POST')
+        self.assert_response(self.url, self.superuser, 200, method='POST')
+        self.assert_response(self.url, self.non_superusers, 403, method='POST')
         self.project.set_public()
-        self.assert_response(self.url, bad_users, 403, method='POST')
+        self.assert_response(self.url, self.no_role_users, 403, method='POST')
+
+    def test_post_read_only(self):
+        """Test POST with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.superuser, 200, method='POST')
+        self.assert_response(self.url, self.non_superusers, 403, method='POST')
 
 
 class TestSheetVersionSaveAjaxView(SampleSheetsAjaxPermissionTestBase):
@@ -582,26 +445,12 @@ class TestSheetVersionSaveAjaxView(SampleSheetsAjaxPermissionTestBase):
 
     def test_post(self):
         """Test SheetVersionSaveAjaxView POST"""
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-        ]
-        bad_users = [
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
-        self.assert_response(self.url, good_users, 200, method='POST')
-        self.assert_response(self.url, bad_users, 403, method='POST')
+        self.assert_response(
+            self.url, self.good_users_write, 200, method='POST'
+        )
+        self.assert_response(self.url, self.bad_users_write, 403, method='POST')
         self.project.set_public()
-        self.assert_response(self.url, bad_users, 403, method='POST')
+        self.assert_response(self.url, self.no_role_users, 403, method='POST')
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_post_anon(self):
@@ -612,24 +461,16 @@ class TestSheetVersionSaveAjaxView(SampleSheetsAjaxPermissionTestBase):
     def test_post_archive(self):
         """Test POST with archived project"""
         self.project.set_archive()
-        good_users = [self.superuser]
-        bad_users = [
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
-        self.assert_response(self.url, good_users, 200, method='POST')
-        self.assert_response(self.url, bad_users, 403, method='POST')
+        self.assert_response(self.url, self.superuser, 200, method='POST')
+        self.assert_response(self.url, self.non_superusers, 403, method='POST')
         self.project.set_public()
-        self.assert_response(self.url, bad_users, 403, method='POST')
+        self.assert_response(self.url, self.no_role_users, 403, method='POST')
+
+    def test_post_read_only(self):
+        """Test POST with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.superuser, 200, method='POST')
+        self.assert_response(self.url, self.non_superusers, 403, method='POST')
 
 
 class TestSheetEditFinishAjaxView(SampleSheetsAjaxPermissionTestBase):
@@ -644,26 +485,12 @@ class TestSheetEditFinishAjaxView(SampleSheetsAjaxPermissionTestBase):
 
     def test_post(self):
         """Test SheetEditFinishAjaxView POST"""
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-        ]
-        bad_users = [
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
-        self.assert_response(self.url, good_users, 200, method='POST')
-        self.assert_response(self.url, bad_users, 403, method='POST')
+        self.assert_response(
+            self.url, self.good_users_write, 200, method='POST'
+        )
+        self.assert_response(self.url, self.bad_users_write, 403, method='POST')
         self.project.set_public()
-        self.assert_response(self.url, bad_users, 403, method='POST')
+        self.assert_response(self.url, self.no_role_users, 403, method='POST')
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_post_anon(self):
@@ -674,24 +501,16 @@ class TestSheetEditFinishAjaxView(SampleSheetsAjaxPermissionTestBase):
     def test_post_archive(self):
         """Test POST with archived project"""
         self.project.set_archive()
-        good_users = [self.superuser]
-        bad_users = [
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
-        self.assert_response(self.url, good_users, 200, method='POST')
-        self.assert_response(self.url, bad_users, 403, method='POST')
+        self.assert_response(self.url, self.superuser, 200, method='POST')
+        self.assert_response(self.url, self.non_superusers, 403, method='POST')
         self.project.set_public()
-        self.assert_response(self.url, bad_users, 403, method='POST')
+        self.assert_response(self.url, self.no_role_users, 403, method='POST')
+
+    def test_post_read_only(self):
+        """Test POST with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.superuser, 200, method='POST')
+        self.assert_response(self.url, self.non_superusers, 403, method='POST')
 
 
 class TestSheetEditConfigAjaxView(SampleSheetsAjaxPermissionTestBase):
@@ -707,27 +526,13 @@ class TestSheetEditConfigAjaxView(SampleSheetsAjaxPermissionTestBase):
 
     def test_post(self):
         """Test SheetEditConfigAjaxView POST"""
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-        ]
-        bad_users = [
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
         # NOTE: We need post data for status 200
-        self.assert_response(self.url, good_users, 400, method='POST')
-        self.assert_response(self.url, bad_users, 403, method='POST')
+        self.assert_response(
+            self.url, self.good_users_write, 400, method='POST'
+        )
+        self.assert_response(self.url, self.bad_users_write, 403, method='POST')
         self.project.set_public()
-        self.assert_response(self.url, bad_users, 403, method='POST')
+        self.assert_response(self.url, self.no_role_users, 403, method='POST')
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_post_anon(self):
@@ -738,24 +543,16 @@ class TestSheetEditConfigAjaxView(SampleSheetsAjaxPermissionTestBase):
     def test_post_archive(self):
         """Test POST with archived project"""
         self.project.set_archive()
-        good_users = [self.superuser]
-        bad_users = [
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
-        self.assert_response(self.url, good_users, 400, method='POST')
-        self.assert_response(self.url, bad_users, 403, method='POST')
+        self.assert_response(self.url, self.superuser, 400, method='POST')
+        self.assert_response(self.url, self.non_superusers, 403, method='POST')
         self.project.set_public()
-        self.assert_response(self.url, bad_users, 403, method='POST')
+        self.assert_response(self.url, self.no_role_users, 403, method='POST')
+
+    def test_post_read_only(self):
+        """Test POST with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.superuser, 400, method='POST')
+        self.assert_response(self.url, self.non_superusers, 403, method='POST')
 
 
 class TestStudyDisplayConfigAjaxView(SampleSheetsAjaxPermissionTestBase):
@@ -771,21 +568,9 @@ class TestStudyDisplayConfigAjaxView(SampleSheetsAjaxPermissionTestBase):
 
     def test_post(self):
         """Test StudyDisplayConfigAjaxView POST"""
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-        ]
-        bad_users = [self.user_finder_cat, self.user_no_roles, self.anonymous]
         # NOTE: We need post data for status 200
-        self.assert_response(self.url, good_users, 400, method='POST')
-        self.assert_response(self.url, bad_users, 403, method='POST')
+        self.assert_response(self.url, self.good_users_read, 400, method='POST')
+        self.assert_response(self.url, self.bad_users_read, 403, method='POST')
         self.project.set_public()
         self.assert_response(self.url, self.user_guest, 400, method='POST')
         self.assert_response(self.url, self.anonymous, 403, method='POST')
@@ -800,23 +585,17 @@ class TestStudyDisplayConfigAjaxView(SampleSheetsAjaxPermissionTestBase):
         """Test POST with archived project"""
         # NOTE: This is allowed with archived projects
         self.project.set_archive()
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-        ]
-        bad_users = [self.user_finder_cat, self.user_no_roles, self.anonymous]
-        self.assert_response(self.url, good_users, 400, method='POST')
-        self.assert_response(self.url, bad_users, 403, method='POST')
+        self.assert_response(self.url, self.good_users_read, 400, method='POST')
+        self.assert_response(self.url, self.bad_users_read, 403, method='POST')
         self.project.set_public()
         self.assert_response(self.url, self.user_guest, 400, method='POST')
         self.assert_response(self.url, self.anonymous, 403, method='POST')
+
+    def test_post_read_only(self):
+        """Test POST with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.good_users_read, 400, method='POST')
+        self.assert_response(self.url, self.bad_users_read, 403, method='POST')
 
 
 class TestSheetVersionCompareAjaxView(SampleSheetsAjaxPermissionTestBase):
@@ -836,20 +615,8 @@ class TestSheetVersionCompareAjaxView(SampleSheetsAjaxPermissionTestBase):
 
     def test_get(self):
         """Test SheetVersionCompareAjaxView GET"""
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-        ]
-        bad_users = [self.user_finder_cat, self.user_no_roles, self.anonymous]
-        self.assert_response(self.url, good_users, 200)
-        self.assert_response(self.url, bad_users, 403)
+        self.assert_response(self.url, self.good_users_read, 200)
+        self.assert_response(self.url, self.bad_users_read, 403)
         self.project.set_public()
         self.assert_response(
             self.url, [self.user_finder_cat, self.user_no_roles], 200
@@ -865,23 +632,17 @@ class TestSheetVersionCompareAjaxView(SampleSheetsAjaxPermissionTestBase):
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-        ]
-        bad_users = [self.user_finder_cat, self.user_no_roles, self.anonymous]
-        self.assert_response(self.url, good_users, 200)
-        self.assert_response(self.url, bad_users, 403)
+        self.assert_response(self.url, self.good_users_read, 200)
+        self.assert_response(self.url, self.bad_users_read, 403)
         self.project.set_public()
         self.assert_response(self.url, [self.user_no_roles], 200)
         self.assert_response(self.url, [self.anonymous], 403)
+
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.good_users_read, 200)
+        self.assert_response(self.url, self.bad_users_read, 403)
 
 
 class TestIrodsDataRequestCreateAjaxView(SampleSheetsAjaxPermissionTestBase):
@@ -901,32 +662,20 @@ class TestIrodsDataRequestCreateAjaxView(SampleSheetsAjaxPermissionTestBase):
 
     def test_post(self):
         """Test IrodsDataRequestCreateAjaxView POST"""
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-        ]
-        bad_users = [
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
         self.assert_response(
             self.url,
-            good_users,
+            self.good_users_write,
             200,
             method='POST',
             data=self.post_data,
             cleanup_method=self._cleanup,
         )
         self.assert_response(
-            self.url, bad_users, 403, method='POST', data=self.post_data
+            self.url,
+            self.bad_users_write,
+            403,
+            method='POST',
+            data=self.post_data,
         )
         self.project.set_public()
         self.assert_response(
@@ -952,30 +701,20 @@ class TestIrodsDataRequestCreateAjaxView(SampleSheetsAjaxPermissionTestBase):
     def test_post_archive(self):
         """Test POST with archived project"""
         self.project.set_archive()
-        good_users = [self.superuser]
-        bad_users = [
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
         self.assert_response(
             self.url,
-            good_users,
+            self.superuser,
             200,
             method='POST',
             data=self.post_data,
             cleanup_method=self._cleanup,
         )
         self.assert_response(
-            self.url, bad_users, 403, method='POST', data=self.post_data
+            self.url,
+            self.non_superusers,
+            403,
+            method='POST',
+            data=self.post_data,
         )
         self.project.set_public()
         self.assert_response(
@@ -988,6 +727,25 @@ class TestIrodsDataRequestCreateAjaxView(SampleSheetsAjaxPermissionTestBase):
         )
         self.assert_response(
             self.url, self.anonymous, 403, method='POST', data=self.post_data
+        )
+
+    def test_post_read_only(self):
+        """Test POST with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(
+            self.url,
+            self.superuser,
+            200,
+            method='POST',
+            data=self.post_data,
+            cleanup_method=self._cleanup,
+        )
+        self.assert_response(
+            self.url,
+            self.non_superusers,
+            403,
+            method='POST',
+            data=self.post_data,
         )
 
 
@@ -1070,30 +828,20 @@ class TestIrodsDataRequestDeleteAjaxView(
     def test_post_archive(self):
         """Test POST with archived project"""
         self.project.set_archive()
-        good_users = [self.superuser]
-        bad_users = [
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
         self.assert_response(
             self.url,
-            good_users,
+            self.superuser,
             200,
             method='POST',
             data=self.post_data,
             cleanup_method=self._cleanup,
         )
         self.assert_response(
-            self.url, bad_users, 403, method='POST', data=self.post_data
+            self.url,
+            self.non_superusers,
+            403,
+            method='POST',
+            data=self.post_data,
         )
         self.project.set_public()
         self.assert_response(
@@ -1106,4 +854,23 @@ class TestIrodsDataRequestDeleteAjaxView(
         )
         self.assert_response(
             self.url, self.anonymous, 403, method='POST', data=self.post_data
+        )
+
+    def test_post_read_only(self):
+        """Test POST with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(
+            self.url,
+            self.superuser,
+            200,
+            method='POST',
+            data=self.post_data,
+            cleanup_method=self._cleanup,
+        )
+        self.assert_response(
+            self.url,
+            self.non_superusers,
+            403,
+            method='POST',
+            data=self.post_data,
         )
