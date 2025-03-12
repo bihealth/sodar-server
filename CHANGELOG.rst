@@ -5,6 +5,40 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+Unreleased
+==========
+
+Added
+-----
+
+- **General**
+    - drf-spectacular support (#2051)
+- **Landingzones**
+    - Site read-only mode support (#2051)
+- **Samplesheets**
+    - Site read-only mode support (#2051)
+- **Taskflowbackend**
+    - Project deletion support (#2051)
+
+Changed
+-------
+
+- **General**
+    - Upgrade to django-sodar-core v1.0.6 (#2051)
+- **Landingzones**
+    - Define app settings as ``PluginAppSettingDef`` objects (#2051)
+- **Samplesheets**
+    - Define app settings as ``PluginAppSettingDef`` objects (#2051)
+- **Taskflowbackend**
+    - Enable no role for old owner in ``perform_owner_transfer()`` (#2051)
+
+Removed
+-------
+
+- **General**
+    - DRF generateschema support (#2051)
+
+
 v1.0.1 (2025-03-12)
 ===================
 

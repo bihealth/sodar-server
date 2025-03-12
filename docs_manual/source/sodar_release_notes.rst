@@ -8,6 +8,28 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v1.1.0 (WIP)
+============
+
+Release for SODAR Core 1.1 upgrade and feature updates.
+
+- Upgrade to SODAR Core v1.1.1
+- `SODAR Core v1.1 updates <https://sodar-core.readthedocs.io/en/latest/major_changes.html#v1-1-1-2025-03-11>`_:
+  Project deletion, project leaving, paginated project list, site read-only
+  mode, etc.
+
+:ref:`Administrator upgrade guide for v1.1 <admin_upgrade_v1.1>`
+
+User Upgrade Guide
+------------------
+
+UI Changes
+    Some UI changes may require you to force refresh your browser window on
+    first visit using ``ctrl+f5`` or the equievalent in your OS and browser.
+    Alternatively, you can clear up your browser cache. This affects e.g. the
+    home view.
+
+
 v1.0.1 (2025-03-12)
 ===================
 
@@ -50,9 +72,9 @@ Release for SODAR Core v1.0 upgrade, iRODS v4.3 upgrade and feature updates.
 - Remove Python v3.8 support
 - Remove Postgres <12 support
 - Remove iRODS <4.3 support
-- `SODAR Core v1.0 updates <https://sodar-core.readthedocs.io/en/latest/major_changes.html>`_:
+- `SODAR Core v1.0 updates <https://sodar-core.readthedocs.io/en/latest/major_changes.html#v1-0-6-2025-03-05>`_:
   OIDC auth support, new REST API versioning, owner/delegate remote sync
-  controls, etc
+  controls, etc.
 
 :ref:`Administrator upgrade guide for v1.0 <admin_upgrade_v1.0>`
 
