@@ -2,11 +2,14 @@
 
 import logging
 
+from rest_framework import serializers
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.versioning import AcceptHeaderVersioning
 from rest_framework.views import APIView
+
+from drf_spectacular.utils import extend_schema, inline_serializer
 
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
@@ -40,6 +43,14 @@ class IrodsinfoAPIVersioningMixin:
     versioning_class = IrodsinfoAPIVersioning
 
 
+@extend_schema(
+    responses={
+        '200': inline_serializer(
+            'IrodsEnvRetrieveResponse',
+            fields={'irods_environment': serializers.JSONField()},
+        )
+    }
+)
 class IrodsEnvRetrieveAPIView(
     IrodsConfigMixin, IrodsinfoAPIVersioningMixin, APIView
 ):

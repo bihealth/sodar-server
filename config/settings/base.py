@@ -67,6 +67,7 @@ THIRD_PARTY_APPS = [
     'dal',  # For user search combo box
     'dal_select2',
     'dj_iconify.apps.DjIconifyConfig',  # Iconify for SVG icons
+    'drf_spectacular',  # OpenAPI schema generation
     'webpack_loader',  # For accessing webpack bundles
     # SODAR Core apps
     # Project apps
@@ -342,7 +343,19 @@ CELERY_IMPORTS = [
 ]
 
 
-# Django REST framework default auth classes
+# API Settings
+# ------------------------------------------------------------------------------
+
+SODAR_API_DEFAULT_HOST = env.url(
+    'SODAR_API_DEFAULT_HOST', 'http://127.0.0.1:8000'
+)
+
+SODAR_API_PAGE_SIZE = env.int('SODAR_API_PAGE_SIZE', 100)
+
+
+# Django REST framework
+# ------------------------------------------------------------------------------
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.BasicAuthentication',
@@ -353,7 +366,12 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': (
         'rest_framework.pagination.PageNumberPagination'
     ),
-    'PAGE_SIZE': env.int('SODAR_API_PAGE_SIZE', 100),
+    'PAGE_SIZE': SODAR_API_PAGE_SIZE,
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'PREPROCESSING_HOOKS': ['config.drf_spectacular.exclude_knox_hook']
 }
 
 
@@ -585,12 +603,6 @@ ENABLED_BACKEND_PLUGINS = env.list(
 SITE_TITLE = 'SODAR'
 SITE_SUBTITLE = env.str('SITE_SUBTITLE', None)
 SITE_INSTANCE_TITLE = env.str('SITE_INSTANCE_TITLE', 'CUBI SODAR')
-
-
-# General API settings
-SODAR_API_DEFAULT_HOST = env.url(
-    'SODAR_API_DEFAULT_HOST', 'http://127.0.0.1:8000'
-)
 
 
 # Projectroles app settings

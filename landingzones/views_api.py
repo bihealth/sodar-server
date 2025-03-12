@@ -5,7 +5,7 @@ import sys
 
 from django.urls import reverse
 
-from rest_framework import status
+from rest_framework import serializers, status
 from rest_framework.exceptions import APIException, NotFound
 from rest_framework.generics import (
     ListAPIView,
@@ -16,9 +16,10 @@ from rest_framework.generics import (
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
-from rest_framework.schemas.openapi import AutoSchema
 from rest_framework.versioning import AcceptHeaderVersioning
 from rest_framework.views import APIView
+
+from drf_spectacular.utils import extend_schema, inline_serializer
 
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
@@ -86,6 +87,7 @@ class ZoneSubmitBaseAPIView(
     """
 
     http_method_names = ['post']
+    serializer_class = None  # Need to explicitly set this None for spectacular
 
     @classmethod
     def _validate_zone_obj(cls, zone, allowed_status_types, action):
@@ -141,7 +143,6 @@ class ZoneListAPIView(
 
     pagination_class = SODARPageNumberPagination
     permission_required = 'landingzones.view_zone_own'
-    schema = AutoSchema(operation_id_base='listZone')
     serializer_class = LandingZoneSerializer
 
     def get_queryset(self):
@@ -191,7 +192,6 @@ class ZoneRetrieveAPIView(
 
     lookup_field = 'sodar_uuid'
     lookup_url_kwarg = 'landingzone'
-    schema = AutoSchema(operation_id_base='retrieveZone')
     serializer_class = LandingZoneSerializer
 
     def get_permission_required(self):
@@ -343,6 +343,17 @@ class ZoneUpdateAPIView(
             raise APIException('{}{}'.format(ex_msg, ex))
 
 
+@extend_schema(
+    responses={
+        '200': inline_serializer(
+            'ZoneSubmitDeleteResponse',
+            fields={
+                'detail': serializers.CharField(),
+                'sodar_uuid': serializers.UUIDField(),
+            },
+        ),
+    }
+)
 class ZoneSubmitDeleteAPIView(ZoneDeleteMixin, ZoneSubmitBaseAPIView):
     """
     Initiate landing zone deletion.
@@ -378,6 +389,17 @@ class ZoneSubmitDeleteAPIView(ZoneDeleteMixin, ZoneSubmitBaseAPIView):
         )
 
 
+@extend_schema(
+    responses={
+        '200': inline_serializer(
+            'ZoneSubmitMoveResponse',
+            fields={
+                'detail': serializers.CharField(),
+                'sodar_uuid': serializers.UUIDField(),
+            },
+        ),
+    }
+)
 class ZoneSubmitMoveAPIView(ZoneMoveMixin, ZoneSubmitBaseAPIView):
     """
     Initiate landing zone validation and/or moving.
@@ -397,13 +419,6 @@ class ZoneSubmitMoveAPIView(ZoneMoveMixin, ZoneSubmitBaseAPIView):
     **Methods:** ``POST``
     """
 
-    class ZoneSubmitMoveSchema(AutoSchema):
-        def get_operation_id_base(self, path, method, action):
-            if '/validate' in path:
-                return 'submitZoneValidate'
-            return 'submitZoneValidateMove'
-
-    schema = ZoneSubmitMoveSchema()
     zone_action = 'move'
 
     def post(self, request, *args, **kwargs):

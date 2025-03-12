@@ -10,7 +10,7 @@ from irods.models import DataObject
 from django.conf import settings
 from django.urls import reverse
 
-from rest_framework import status
+from rest_framework import serializers, status
 from rest_framework.exceptions import (
     APIException,
     ParseError,
@@ -28,9 +28,10 @@ from rest_framework.generics import (
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
-from rest_framework.schemas.openapi import AutoSchema
 from rest_framework.versioning import AcceptHeaderVersioning
 from rest_framework.views import APIView
+
+from drf_spectacular.utils import extend_schema, inline_serializer
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
@@ -155,6 +156,14 @@ class InvestigationRetrieveAPIView(
     serializer_class = InvestigationSerializer
 
 
+@extend_schema(
+    responses={
+        '200': inline_serializer(
+            'IrodsCollsCreateResponse',
+            fields={'path': serializers.CharField()},
+        ),
+    }
+)
 class IrodsCollsCreateAPIView(
     IrodsCollsCreateViewMixin,
     SamplesheetsAPIVersioningMixin,
@@ -177,6 +186,7 @@ class IrodsCollsCreateAPIView(
 
     http_method_names = ['post']
     permission_required = 'samplesheets.create_colls'
+    serializer_class = None
 
     def post(self, request, *args, **kwargs):
         """POST request for creating iRODS collections"""
@@ -226,15 +236,9 @@ class SheetISAExportAPIView(
     **Methods:** ``GET``
     """
 
-    class SheetISAExportSchema(AutoSchema):
-        def get_operation_id_base(self, path, method, action):
-            if '/zip/' in path:
-                return 'retrieveSheetISAExportZip'
-            return 'retrieveSheetISAExportJSON'
-
     http_method_names = ['get']
     permission_required = 'samplesheets.export_sheet'
-    schema = SheetISAExportSchema()
+    serializer_class = None
 
     def get(self, request, *args, **kwargs):
         project = self.get_project()
@@ -255,6 +259,17 @@ class SheetISAExportAPIView(
             raise APIException('Unable to export ISA-Tab: {}'.format(ex))
 
 
+@extend_schema(
+    responses={
+        '200': inline_serializer(
+            'SheetImportResponse',
+            fields={
+                'detail': serializers.CharField(),
+                'sodar_warnings': serializers.ListField(),
+            },
+        ),
+    }
+)
 class SheetImportAPIView(
     SheetImportMixin,
     SamplesheetsAPIVersioningMixin,
@@ -280,6 +295,7 @@ class SheetImportAPIView(
 
     http_method_names = ['post']
     permission_required = 'samplesheets.edit_sheet'
+    serializer_class = None
 
     def post(self, request, *args, **kwargs):
         """Handle POST request for submitting"""
@@ -404,7 +420,6 @@ class IrodsAccessTicketRetrieveAPIView(
     lookup_field = 'sodar_uuid'
     lookup_url_kwarg = 'irodsaccessticket'
     permission_required = 'samplesheets.view_tickets'
-    schema = AutoSchema(operation_id_base='retrieveIrodsAccessTicket')
     serializer_class = IrodsAccessTicketSerializer
     queryset_project_field = 'study__investigation__project'
 
@@ -433,7 +448,6 @@ class IrodsAccessTicketListAPIView(
 
     pagination_class = SODARPageNumberPagination
     permission_required = 'samplesheets.view_tickets'
-    schema = AutoSchema(operation_id_base='listIrodsAccessTicket')
     serializer_class = IrodsAccessTicketSerializer
 
     def get_queryset(self):
@@ -607,7 +621,6 @@ class IrodsDataRequestRetrieveAPIView(
     lookup_field = 'sodar_uuid'
     lookup_url_kwarg = 'irodsdatarequest'
     permission_required = 'samplesheets.edit_sheet'
-    schema = AutoSchema(operation_id_base='retrieveIrodsDataRequest')
     serializer_class = IrodsDataRequestSerializer
 
 
@@ -638,7 +651,6 @@ class IrodsDataRequestListAPIView(
 
     pagination_class = SODARPageNumberPagination
     permission_required = 'samplesheets.edit_sheet'
-    schema = AutoSchema(operation_id_base='listIrodsDataRequest')
     serializer_class = IrodsDataRequestSerializer
 
     def get_queryset(self):
@@ -756,6 +768,14 @@ class IrodsDataRequestDestroyAPIView(
         self.handle_alerts_deactivate(instance)
 
 
+@extend_schema(
+    responses={
+        '200': inline_serializer(
+            'IrodsDataRequestAcceptResponse',
+            fields={'detail': serializers.CharField()},
+        ),
+    }
+)
 class IrodsDataRequestAcceptAPIView(
     IrodsDataRequestModifyMixin,
     SamplesheetsAPIVersioningMixin,
@@ -777,6 +797,7 @@ class IrodsDataRequestAcceptAPIView(
 
     http_method_names = ['post']
     permission_required = 'samplesheets.manage_sheet'
+    serializer_class = None
 
     def post(self, request, *args, **kwargs):
         """POST request for accepting an iRODS data request"""
@@ -807,6 +828,14 @@ class IrodsDataRequestAcceptAPIView(
         )
 
 
+@extend_schema(
+    responses={
+        '200': inline_serializer(
+            'IrodsDataRequestRejectResponse',
+            fields={'detail': serializers.CharField()},
+        ),
+    }
+)
 class IrodsDataRequestRejectAPIView(
     IrodsDataRequestModifyMixin,
     SamplesheetsAPIVersioningMixin,
@@ -826,6 +855,7 @@ class IrodsDataRequestRejectAPIView(
 
     http_method_names = ['post']
     permission_required = 'samplesheets.manage_sheet'
+    serializer_class = None
 
     def post(self, request, *args, **kwargs):
         """POST request for rejecting an iRODS data request"""
@@ -853,6 +883,17 @@ class IrodsDataRequestRejectAPIView(
         )
 
 
+@extend_schema(
+    responses={
+        '200': inline_serializer(
+            'SampleDataFileExistsResponse',
+            fields={
+                'detail': serializers.CharField(),
+                'sodar_uuid': serializers.BooleanField(),
+            },
+        ),
+    }
+)
 class SampleDataFileExistsAPIView(SamplesheetsAPIVersioningMixin, APIView):
     """
     Return status of data object existing in SODAR iRODS by MD5 checksum.
@@ -942,6 +983,20 @@ class SampleDataFileExistsAPIView(SamplesheetsAPIVersioningMixin, APIView):
 
 
 # TODO: Add pagination (see #1996, #1997)
+@extend_schema(
+    responses={
+        '200': inline_serializer(
+            'ProjectIrodsFileListResponse',
+            fields={
+                'name': serializers.CharField(),
+                'type': serializers.CharField(),
+                'path': serializers.CharField(),
+                'size': serializers.IntegerField(),
+                'modify_time': serializers.DateTimeField(),
+            },
+        ),
+    }
+)
 class ProjectIrodsFileListAPIView(
     SamplesheetsAPIVersioningMixin, SODARAPIBaseProjectMixin, APIView
 ):
@@ -986,6 +1041,14 @@ class ProjectIrodsFileListAPIView(
 
 
 # TODO: Temporary HACK, should be replaced by proper API view
+@extend_schema(
+    responses={
+        '200': inline_serializer(
+            'RemoteSheetGetResponse',
+            fields={'studies': serializers.JSONField()},
+        ),
+    }
+)
 class RemoteSheetGetAPIView(APIView):
     """
     Temporary API view for retrieving the sample sheet as JSON by a target

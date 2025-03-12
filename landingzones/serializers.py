@@ -1,5 +1,7 @@
 """API view model serializers for the landingzone app"""
 
+from typing import Optional
+
 from rest_framework import serializers
 from rest_framework.exceptions import APIException
 
@@ -57,10 +59,10 @@ class LandingZoneSerializer(SODARProjectModelSerializer):
         read_only_fields = ['status', 'status_info']
         write_only_fields = ['create_colls', 'restrict_colls']
 
-    def get_status_locked(self, obj):
+    def get_status_locked(self, obj: LandingZone) -> bool:
         return obj.is_locked()
 
-    def get_irods_path(self, obj):
+    def get_irods_path(self, obj: LandingZone) -> Optional[str]:
         irods_backend = get_backend_api('omics_irods')
         if irods_backend and obj.status not in [
             ZONE_STATUS_OK,
