@@ -134,8 +134,10 @@ list and remove the role from a parent category.
 Modifying the project owner works slightly differently. In the dropdown next to
 the owner in the member list, you will see a :guilabel:`Transfer Ownership`
 option. This will present you a form where you can select a new owner from the
-current project members as well as select a new role for the current owner. This
-functionality is only available for users currently set as the project owner.
+current project members as well as select a new role for the current owner. If
+the old owner's role is set to "remove role", they will be removed from the
+category or project. The ownership tranfer functionality is only available for
+users currently set as the project owner.
 
 .. figure:: _static/sodar_ui/project_members_owner.png
     :align: center
@@ -171,3 +173,23 @@ your existing invitations, navigate to the member list, open the
 :guilabel:`Member Operations` dropdown and select :guilabel:`View Invites`. Note
 that invitations will expire after a certain time specified by SODAR
 administrators.
+
+
+Leaving a Project
+=================
+
+To leave a project, click the :guilabel:`Leave Project` button, or the
+corresponding :guilabel:`Leave Category` button for a category. This will remove
+your access to the project in SODAR and iRODS.
+
+If you have inherited roles in any child categories or projects, access to them
+will also be removed unless they have been promoted to a higher level local role
+within any of those children.
+
+An owner can not leave a project directly. Instead, you will need to click
+:guilabel:`Transfer Ownership` and assign the owner role to another user.
+
+.. note::
+
+    Once you have left a category or project, you can not rejoin in unless an
+    owner or a delegate grants you a new role.

@@ -133,6 +133,7 @@ Table of Contents
     admin_ui
     admin_isatemplates
     admin_ontologyaccess
+    admin_site_app_settings
     admin_commands
     admin_settings
     admin_custom

@@ -125,3 +125,24 @@ member roles.
 .. note::
 
     Archiving categories is not currently supported.
+
+
+Project Deletion
+================
+
+A category or a project can be deleted by clicking the :guilabel:`Delete`
+button. This takes you to a confirmation view where you must input the host name
+of your SODAR instance to proceed.
+
+Cascading deletion is not supported. In order to delete a category with child
+categories or projects, the children need to be individually deleted. This is
+done to prevent accidental data loss.
+
+Deleting a project will also delete its :ref:`Timeline <ui_project_timeline>`
+events. Deletion creates a summary Timeline event, which is viewable by
+superusers in the :guilabel:`Site-Wide Events` view.
+
+.. danger::
+
+    Deleting a project will delete all of its data including sample sheets,
+    iRODS sample data and landing zones. This operation can **not** be undone!

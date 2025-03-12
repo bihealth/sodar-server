@@ -41,7 +41,7 @@ the SODAR API:
     # Token authorization header (required)
     auth_header = {'Authorization': 'token {}'.format(api_token)}
     # Use project_headers for project management API endpoints
-    project_headers = {**auth_header, 'Accept': 'application/vnd.bihealth.sodar-core.projectroles+json; version=1.0'}
+    project_headers = {**auth_header, 'Accept': 'application/vnd.bihealth.sodar-core.projectroles+json; version=1.1'}
     # Use the following headers for sample sheet and landing zone API endpoints
     sheet_headers = {**auth_header, 'Accept': 'application/vnd.bihealth.sodar.samplesheets+json; version=1.0'}
     zone_headers = {**auth_header, 'Accept': 'application/vnd.bihealth.sodar.landingzones+json; version=1.0'}

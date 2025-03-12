@@ -29,6 +29,9 @@ These commands originate in SODAR Core. More information can be found in the
 ``geticons``
     Download and install the latest versions of iconify icon sets. Must be
     followed by ``collectstatic`` to take effect.
+``removeroles``
+    Remove all roles from a user. Useful when e.g. a user has left the
+    organization. Replaces user's owner roles with another given user.
 ``synccache``
     Synchronize the SODAR Cache.
 ``syncgroups``
