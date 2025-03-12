@@ -12,6 +12,7 @@ Changed
 -------
 
 - **General**
+    - Upgrade to Django v4.2.20 (#2081)
     - Upgrade to django-sodar-core v1.0.6 (#2081)
     - Upgrade critical Python dependencies (#2081)
     - Upgrade GitHub Actions CI runner to Ubuntu v22.04 (#2067)
