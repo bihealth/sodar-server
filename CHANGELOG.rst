@@ -5,6 +5,25 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+v1.0.1 (2025-03-12)
+===================
+
+Changed
+-------
+
+- **General**
+    - Upgrade to Django v4.2.20 (#2081)
+    - Upgrade to django-sodar-core v1.0.6 (#2081)
+    - Upgrade critical Python dependencies (#2081)
+    - Upgrade GitHub Actions CI runner to Ubuntu v22.04 (#2067)
+
+Fixed
+-----
+
+- **Landingzones**
+    - Project details card status column width (#2083)
+
+
 v1.0.0 (2025-03-03)
 ===================
 

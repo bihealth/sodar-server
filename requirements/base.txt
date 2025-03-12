@@ -6,7 +6,7 @@ wheel==0.42.0
 setuptools==70.0.0
 
 # Django
-django==4.2.19
+django==4.2.20
 
 # Configuration
 django-environ==0.11.2
@@ -34,7 +34,7 @@ pytz==2024.1
 django-iconify==0.3
 
 # OpenID Connect (OIDC) authentication support
-social-auth-app-django==5.4.0
+social-auth-app-django==5.4.3
 
 # Redis support
 redis>=5.0.2, <5.1
@@ -76,7 +76,7 @@ mistune==3.0.2
 django-autocomplete-light==3.11.0
 
 # SODAR Core
-django-sodar-core==1.0.5
+django-sodar-core==1.0.6
 # -e git+https://github.com/bihealth/sodar-core.git@59f4e10b1cddc12aab0594779de0230ecae4c4fd#egg=django-sodar-core
 
 # Celery

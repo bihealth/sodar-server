@@ -8,6 +8,15 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v1.0.1 (2025-03-12)
+===================
+
+Release for minor updates, maintenance and bug fixes.
+
+- Upgrade to SODAR Core v1.0.6 hotfix release
+- Minor updates and bug fixes
+
+
 v1.0.0 (2025-03-03)
 ===================
 
