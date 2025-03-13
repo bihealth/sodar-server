@@ -33,6 +33,12 @@ Changed
 - **Taskflowbackend**
     - Enable no role for old owner in ``perform_owner_transfer()`` (#2051)
 
+Fixed
+-----
+
+- **General**
+    - ``LegacyKeyValueFormat`` warnings in Docker build (#2089)
+
 Removed
 -------
 

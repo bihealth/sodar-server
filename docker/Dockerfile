@@ -7,8 +7,8 @@ ARG app_git_url=https://github.com/bihealth/sodar-server.git
 ARG app_git_tag
 ARG app_git_depth=1
 
-ENV DEBIAN_FRONTEND noninteractive
-ENV CUSTOM_STATIC_DIR /usr/src/app/local-static
+ENV DEBIAN_FRONTEND=noninteractive
+ENV CUSTOM_STATIC_DIR=/usr/src/app/local-static
 
 ## Add the wait script to the image
 ADD https://github.com/ufoscout/docker-compose-wait/releases/download/2.12.1/wait /usr/local/bin/wait
