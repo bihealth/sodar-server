@@ -13,21 +13,13 @@ v1.1.0 (WIP)
 
 Release for SODAR Core 1.1 upgrade and feature updates.
 
+- Upgrade to python-irodsclient v3.0
 - Upgrade to SODAR Core v1.1.1
 - `SODAR Core v1.1 updates <https://sodar-core.readthedocs.io/en/latest/major_changes.html#v1-1-1-2025-03-11>`_:
   Project deletion, project leaving, paginated project list, site read-only
   mode, etc.
 
 :ref:`Administrator upgrade guide for v1.1 <admin_upgrade_v1.1>`
-
-User Upgrade Guide
-------------------
-
-UI Changes
-    Some UI changes may require you to force refresh your browser window on
-    first visit using ``ctrl+f5`` or the equievalent in your OS and browser.
-    Alternatively, you can clear up your browser cache. This affects e.g. the
-    home view.
 
 
 v1.0.1 (2025-03-12)

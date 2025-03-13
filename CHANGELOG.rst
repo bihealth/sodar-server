@@ -24,7 +24,8 @@ Changed
 -------
 
 - **General**
-    - Upgrade to django-sodar-core v1.0.6 (#2051)
+    - Upgrade to django-sodar-core v1.1.1 (#2051)
+    - Upgrade to python-irodsclient v3.0.0 (#2079)
 - **Landingzones**
     - Define app settings as ``PluginAppSettingDef`` objects (#2051)
 - **Samplesheets**

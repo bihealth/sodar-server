@@ -4,7 +4,6 @@ Tests for REST API views in the samplesheets app with SODAR Taskflow enabled
 
 import json
 import os
-import pytz
 
 from datetime import timedelta, datetime
 
@@ -1293,9 +1292,7 @@ class TestProjectIrodsFileListAPIView(SampleSheetAPITaskflowTestBase):
         self.assertEqual(response.data[0]['name'], IRODS_FILE_NAME)
         self.assertEqual(response.data[0]['type'], 'obj')
         data_obj = self.irods.data_objects.get(coll_path + '/' + 'test1.txt')
-        aware_dt = timezone.make_aware(
-            data_obj.modify_time, pytz.timezone('GMT')
-        )
         self.assertEqual(
-            response.data[0]['modify_time'], self.get_drf_datetime(aware_dt)
+            response.data[0]['modify_time'],
+            self.get_drf_datetime(data_obj.modify_time),
         )

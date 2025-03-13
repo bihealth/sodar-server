@@ -535,7 +535,6 @@ def set_logging(level=None):
     app_logger_config = {
         'level': level,
         'handlers': ['console', 'file'] if LOGGING_FILE_PATH else ['console'],
-        'propagate': False,  # python-irodsclient>=1.1.9 fix
     }
     log_handlers = {
         'console': {
@@ -553,7 +552,6 @@ def set_logging(level=None):
         }
     return {
         'version': 1,
-        'disable_existing_loggers': True,  # python-irodsclient>=1.1.9 fix
         'formatters': {
             'simple': {
                 'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
