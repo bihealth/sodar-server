@@ -145,6 +145,7 @@ TASKFLOW_TEST_PERMANENT_USERS = [
     'public',
     'bih_proteomics_smb',
 ]
+TASKFLOW_ZONE_PROGRESS_INTERVAL = 60  # Set this high to ease testing
 
 # Isatemplates app settings
 ISATEMPLATES_ENABLE_CUBI_TEMPLATES = True

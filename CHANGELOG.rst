@@ -19,6 +19,8 @@ Added
     - Site read-only mode support (#2051)
 - **Taskflowbackend**
     - Project deletion support (#2051)
+    - Zone validation and moving progress indicators (#2024)
+    - ``TASKFLOW_ZONE_PROGRESS_INTERVAL`` Django setting (#2024)
 
 Changed
 -------
@@ -28,6 +30,7 @@ Changed
     - Upgrade to python-irodsclient v3.0.0 (#2079)
 - **Landingzones**
     - Define app settings as ``PluginAppSettingDef`` objects (#2051)
+    - Do not mute zone title and description with busy zones (#2092)
 - **Samplesheets**
     - Define app settings as ``PluginAppSettingDef`` objects (#2051)
 - **Taskflowbackend**

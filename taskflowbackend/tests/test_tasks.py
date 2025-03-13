@@ -9,10 +9,21 @@ from irods.meta import iRODSMeta
 from irods.ticket import Ticket
 from irods.user import iRODSUser, iRODSUserGroup
 
-from django.conf import settings
+from django.test import override_settings
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
+
+# Landingzones dependency
+from landingzones.constants import ZONE_STATUS_ACTIVE, DEFAULT_STATUS_INFO
+from landingzones.tests.test_models import (
+    LandingZoneMixin,
+    ZONE_TITLE,
+    ZONE_DESC,
+)
+
+# Samplesheets dependency
+from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
 from taskflowbackend.flows.base_flow import BaseLinearFlow
 from taskflowbackend.tests.base import TaskflowViewTestBase, TICKET_STR
@@ -25,6 +36,7 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 # Local constants
 USER_PREFIX = 'omics_'
 IRODS_ZONE = settings.IRODS_ZONE
+SHEET_PATH = SHEET_DIR + 'i_small.zip'
 DEFAULT_USER_GROUP = USER_PREFIX + 'group1'
 GROUP_USER = USER_PREFIX + 'user1'
 GROUPLESS_USER = USER_PREFIX + 'user2'
@@ -1585,7 +1597,73 @@ class TestMoveDataObjectTask(IRODSTaskTestBase):
         self.assertEqual(new_obj.checksum, new_obj2.checksum)
 
 
-# TODO: Test Checksum verifying
+class TestBatchValidateChecksumsTask(
+    SampleSheetIOMixin, LandingZoneMixin, IRODSTaskTestBase
+):
+    """Tests for BatchValidateChecksumsTask"""
+
+    def setUp(self):
+        super().setUp()
+        # Import investigation
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+        # Create zone without taskflow
+        self.zone = self.make_landing_zone(
+            title=ZONE_TITLE,
+            project=self.project,
+            user=self.user,
+            assay=self.assay,
+            description=ZONE_DESC,
+            status=ZONE_STATUS_ACTIVE,
+        )
+        self.zone_path = self.irods_backend.get_path(self.zone)
+        self.obj_name = 'test1.txt'
+        self.obj_path = os.path.join(self.test_coll_path, self.obj_name)
+        self.obj = self.make_irods_object(self.test_coll, self.obj_name)
+        self.make_irods_md5_object(self.obj)
+
+    def test_validate(self):
+        """Test validating checksums"""
+        self.assertIsNotNone(self.obj.replicas[0].checksum)
+        self.assertEqual(
+            self.zone.status_info, DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE]
+        )
+        self.add_task(
+            cls=BatchValidateChecksumsTask,
+            name='Validate checksums',
+            inject={
+                'landing_zone': self.zone,
+                'paths': [self.obj_path],
+                'zone_path': self.zone_path,
+            },
+        )
+        result = self.run_flow()
+        self.assertEqual(result, True)
+        self.zone.refresh_from_db()
+        self.assertEqual(
+            self.zone.status_info, DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE]
+        )
+
+    @override_settings(TASKFLOW_ZONE_PROGRESS_INTERVAL=0)
+    def test_validate_progress(self):
+        """Test validating checksums with progress indicator"""
+        self.add_task(
+            cls=BatchValidateChecksumsTask,
+            name='Validate checksums',
+            inject={
+                'landing_zone': self.zone,
+                'paths': [self.obj_path],
+                'zone_path': self.zone_path,
+            },
+        )
+        result = self.run_flow()
+        self.assertEqual(result, True)
+        self.zone.refresh_from_db()
+        self.assertEqual(
+            self.zone.status_info,
+            DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE] + ' (1/1)',
+        )
 
 
 class TestBatchSetAccessTask(IRODSTaskTestBase):
@@ -1995,11 +2073,26 @@ class TestBatchCreateCollectionsTask(IRODSTaskTestBase):
         )
 
 
-class TestBatchMoveDataObjectsTask(IRODSTaskTestBase):
+class TestBatchMoveDataObjectsTask(
+    SampleSheetIOMixin, LandingZoneMixin, IRODSTaskTestBase
+):
     """Tests for BatchMoveDataObjectsTask"""
 
     def setUp(self):
         super().setUp()
+        # Import investigation
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+        # Create zone without taskflow
+        self.zone = self.make_landing_zone(
+            title=ZONE_TITLE,
+            project=self.project,
+            user=self.user,
+            assay=self.assay,
+            description=ZONE_DESC,
+            status=ZONE_STATUS_ACTIVE,
+        )
         # Init default user group
         self.irods.user_groups.create(DEFAULT_USER_GROUP)
         # Init batch collections
@@ -2027,6 +2120,7 @@ class TestBatchMoveDataObjectsTask(IRODSTaskTestBase):
             cls=BatchMoveDataObjectsTask,
             name='Move data objects',
             inject={
+                'landing_zone': self.zone,
                 'src_root': self.batch_src_path,
                 'dest_root': self.batch_dest_path,
                 'src_paths': [self.batch_obj_path, self.batch_obj2_path],
@@ -2080,6 +2174,7 @@ class TestBatchMoveDataObjectsTask(IRODSTaskTestBase):
             cls=BatchMoveDataObjectsTask,
             name='Move data objects',
             inject={
+                'landing_zone': self.zone,
                 'src_root': self.batch_src_path,
                 'dest_root': self.batch_dest_path,
                 'src_paths': [self.batch_obj_path, self.batch_obj2_path],
@@ -2116,6 +2211,7 @@ class TestBatchMoveDataObjectsTask(IRODSTaskTestBase):
             cls=BatchMoveDataObjectsTask,
             name='Move data objects',
             inject={
+                'landing_zone': self.zone,
                 'src_root': self.batch_src_path,
                 'dest_root': self.batch_dest_path,
                 'src_paths': [self.batch_obj_path, self.batch_obj2_path],
@@ -2136,12 +2232,55 @@ class TestBatchMoveDataObjectsTask(IRODSTaskTestBase):
         existing_obj = self.irods.data_objects.get(new_obj_path)
         self.assertEqual(new_obj.checksum, existing_obj.checksum)
 
+    @override_settings(TASKFLOW_ZONE_PROGRESS_INTERVAL=0)
+    def test_execute_progress(self):
+        """Test moving with progress indicator"""
+        self.assertEqual(
+            self.zone.status_info, DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE]
+        )
+        self.add_task(
+            cls=BatchMoveDataObjectsTask,
+            name='Move data objects',
+            inject={
+                'landing_zone': self.zone,
+                'src_root': self.batch_src_path,
+                'dest_root': self.batch_dest_path,
+                'src_paths': [self.batch_obj_path, self.batch_obj2_path],
+                'access_name': IRODS_ACCESS_READ_IN,
+                'user_name': DEFAULT_USER_GROUP,
+                'irods_backend': self.irods_backend,
+            },
+        )
+        result = self.run_flow()
 
-class TestBatchCalculateChecksumTask(IRODSTaskTestBase):
+        self.assertEqual(result, True)
+        self.zone.refresh_from_db()
+        self.assertEqual(
+            self.zone.status_info,
+            DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE] + ' (2/2)',
+        )
+
+
+class TestBatchCalculateChecksumTask(
+    SampleSheetIOMixin, LandingZoneMixin, IRODSTaskTestBase
+):
     """Tests for BatchCalculateChecksumTask"""
 
     def setUp(self):
         super().setUp()
+        # Import investigation
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+        # Create zone without taskflow
+        self.zone = self.make_landing_zone(
+            title=ZONE_TITLE,
+            project=self.project,
+            user=self.user,
+            assay=self.assay,
+            description=ZONE_DESC,
+            status=ZONE_STATUS_ACTIVE,
+        )
         self.obj_name = 'test1.txt'
         self.obj_path = os.path.join(self.test_coll_path, self.obj_name)
 
@@ -2155,7 +2294,11 @@ class TestBatchCalculateChecksumTask(IRODSTaskTestBase):
         self.add_task(
             cls=BatchCalculateChecksumTask,
             name='Calculate checksums',
-            inject={'file_paths': [self.obj_path], 'force': False},
+            inject={
+                'landing_zone': self.zone,
+                'file_paths': [self.obj_path],
+                'force': False,
+            },
         )
         self.run_flow()
 
@@ -2163,6 +2306,10 @@ class TestBatchCalculateChecksumTask(IRODSTaskTestBase):
         obj = self.irods.data_objects.get(self.obj_path)
         self.assertIsNotNone(obj.replicas[0].checksum)
         self.assertEqual(obj.replicas[0].checksum, self.get_md5_checksum(obj))
+        self.zone.refresh_from_db()
+        self.assertEqual(
+            self.zone.status_info, DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE]
+        )
 
     def test_calculate_twice(self):
         """Test calculating with existing checksum"""
@@ -2173,10 +2320,45 @@ class TestBatchCalculateChecksumTask(IRODSTaskTestBase):
         self.add_task(
             cls=BatchCalculateChecksumTask,
             name='Calculate checksums',
-            inject={'file_paths': [self.obj_path], 'force': False},
+            inject={
+                'landing_zone': self.zone,
+                'file_paths': [self.obj_path],
+                'force': False,
+            },
         )
         self.run_flow()
 
         obj = self.irods.data_objects.get(self.obj_path)
         self.assertIsNotNone(obj.replicas[0].checksum)
         self.assertEqual(obj.replicas[0].checksum, self.get_md5_checksum(obj))
+
+    @override_settings(TASKFLOW_ZONE_PROGRESS_INTERVAL=0)
+    def test_calculate_progress(self):
+        """Test calculating checksum with progress indicator"""
+        obj = self.make_irods_object(
+            self.test_coll, self.obj_name, checksum=False
+        )
+        self.assertIsNone(obj.replicas[0].checksum)
+        self.assertEqual(
+            self.zone.status_info, DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE]
+        )
+
+        self.add_task(
+            cls=BatchCalculateChecksumTask,
+            name='Calculate checksums',
+            inject={
+                'landing_zone': self.zone,
+                'file_paths': [self.obj_path],
+                'force': False,
+            },
+        )
+        self.run_flow()
+
+        obj = self.irods.data_objects.get(self.obj_path)
+        self.assertIsNotNone(obj.replicas[0].checksum)
+        self.assertEqual(obj.replicas[0].checksum, self.get_md5_checksum(obj))
+        self.zone.refresh_from_db()
+        self.assertEqual(
+            self.zone.status_info,
+            DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE] + ' (1/1)',
+        )

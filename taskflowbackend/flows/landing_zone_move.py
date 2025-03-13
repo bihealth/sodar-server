@@ -169,6 +169,7 @@ class Flow(BaseLinearFlow):
                 name='Batch calculate missing checksums in iRODS',
                 irods=self.irods,
                 inject={
+                    'landing_zone': zone,
                     'file_paths': zone_objects_nomd5,
                     'force': False,
                 },
@@ -208,7 +209,11 @@ class Flow(BaseLinearFlow):
                     file_count
                 ),
                 irods=self.irods,
-                inject={'paths': zone_objects_nomd5, 'zone_path': zone_path},
+                inject={
+                    'landing_zone': zone,
+                    'paths': zone_objects_nomd5,
+                    'zone_path': zone_path,
+                },
             )
         )
 
@@ -260,6 +265,7 @@ class Flow(BaseLinearFlow):
                 'read access'.format(len(zone_objects)),
                 irods=self.irods,
                 inject={
+                    'landing_zone': zone,
                     'src_root': zone_path,
                     'dest_root': sample_path,
                     'src_paths': zone_objects,

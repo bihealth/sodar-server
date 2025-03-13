@@ -13,6 +13,7 @@ v1.1.0 (WIP)
 
 Release for SODAR Core 1.1 upgrade and feature updates.
 
+- Add landing zone validation and moving progress indicators
 - Upgrade to python-irodsclient v3.0
 - Upgrade to SODAR Core v1.1.1
 - `SODAR Core v1.1 updates <https://sodar-core.readthedocs.io/en/latest/major_changes.html#v1-1-1-2025-03-11>`_:

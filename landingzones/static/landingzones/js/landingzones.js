@@ -75,9 +75,6 @@ var updateZoneStatus = function() {
 
                         // Button modification
                         if (zoneStatus !== 'ACTIVE' && zoneStatus !== 'FAILED' && !isSuperuser) {
-                            zoneTr.find('td.sodar-lz-zone-title').addClass('text-muted');
-                            zoneTr.find('td.sodar-lz-zone-assay').addClass('text-muted');
-                            zoneTr.find('td.sodar-lz-zone-status-info').addClass('text-muted');
                             zoneTr.find('.btn').each(function() {
                                 if ($(this).is('button')) {
                                     $(this).attr('disabled', 'disabled');
@@ -87,9 +84,6 @@ var updateZoneStatus = function() {
                             });
                             zoneTr.find('.sodar-list-dropdown').addClass('disabled');
                         } else {
-                            zoneTr.find('td.sodar-lz-zone-title').removeClass('text-muted');
-                            zoneTr.find('td.sodar-lz-zone-assay').removeClass('text-muted');
-                            zoneTr.find('td.sodar-lz-zone-status-info').removeClass('text-muted');
                             if (zoneStatus !== 'DELETED') {
                                 zoneTr.find('p#sodar-lz-zone-stats-container-' + zoneUuid).show();
                             }

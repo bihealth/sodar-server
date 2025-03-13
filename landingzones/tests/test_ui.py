@@ -593,13 +593,13 @@ class TestProjectZoneView(LandingZoneUITestBase):
                 By.CLASS_NAME, 'sodar-list-dropdown'
             ).get_attribute('class'),
         )
-        self.assertIn(
+        self.assertNotIn(
             'text-muted',
             zone_elem.find_element(
                 By.CLASS_NAME, 'sodar-lz-zone-title'
             ).get_attribute('class'),
         )
-        self.assertIn(
+        self.assertNotIn(
             'text-muted',
             zone_elem.find_element(
                 By.CLASS_NAME, 'sodar-lz-zone-status-info'

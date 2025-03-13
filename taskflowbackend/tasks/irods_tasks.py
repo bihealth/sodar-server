@@ -6,6 +6,7 @@ import os
 import random
 import re
 import string
+import time
 
 from irods import keywords as kw
 from irods.access import iRODSAccess
@@ -15,6 +16,8 @@ from irods.exception import (
     CAT_SUCCESS_BUT_WITH_NO_INFO,
 )
 from irods.models import Collection
+
+from django.conf import settings
 
 from taskflowbackend.tasks.base_task import BaseTask
 
@@ -394,7 +397,7 @@ class SetAccessTask(IrodsAccessMixin, IrodsBaseTask):
         obj_target=False,
         recursive=True,
         *args,
-        **kwargs
+        **kwargs,
     ):
         try:
             self.execute_set_access(
@@ -417,7 +420,7 @@ class SetAccessTask(IrodsAccessMixin, IrodsBaseTask):
         obj_target=False,
         recursive=True,
         *args,
-        **kwargs
+        **kwargs,
     ):
         try:
             self.revert_set_access(path, user_name, obj_target, recursive)
@@ -583,7 +586,7 @@ class BatchSetAccessTask(IrodsAccessMixin, IrodsBaseTask):
         obj_target=False,
         recursive=True,
         *args,
-        **kwargs
+        **kwargs,
     ):
         # NOTE: Exception handling is done within execute_set_access()
         for path in paths:
@@ -605,7 +608,7 @@ class BatchSetAccessTask(IrodsAccessMixin, IrodsBaseTask):
         obj_target=False,
         recursive=True,
         *args,
-        **kwargs
+        **kwargs,
     ):
         for path in paths:
             self.revert_set_access(path, user_name, obj_target, recursive)
@@ -669,8 +672,14 @@ class BatchValidateChecksumsTask(IrodsBaseTask):
                 logger.error(msg)
                 raise Exception(msg)
 
-    def execute(self, paths, zone_path, *args, **kwargs):
+    def execute(self, landing_zone, paths, zone_path, *args, **kwargs):
         zone_path_len = len(zone_path.split('/'))
+        interval = settings.TASKFLOW_ZONE_PROGRESS_INTERVAL
+        file_count = len(paths)
+        status_base = landing_zone.status_info
+        i = 1
+        i_prev = 0
+        time_start = time.time()
         for path in paths:
             md5_path = path + '.md5'
             try:
@@ -692,9 +701,15 @@ class BatchValidateChecksumsTask(IrodsBaseTask):
                 )
             except Exception as ex:
                 self._raise_irods_exception(ex)
+            if time.time() - time_start > interval and i_prev != i:
+                landing_zone.status_info = f'{status_base} ({i}/{file_count})'
+                landing_zone.save()
+                i_prev = i
+                time_start = time.time()
+            i += 1
         super().execute(*args, **kwargs)
 
-    def revert(self, paths, zone_path, *args, **kwargs):
+    def revert(self, landing_zone, paths, zone_path, *args, **kwargs):
         pass  # Nothing is modified so no need for revert
 
 
@@ -744,6 +759,7 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
 
     def execute(
         self,
+        landing_zone,
         src_root,
         dest_root,
         src_paths,
@@ -751,9 +767,15 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
         user_name,
         irods_backend,
         *args,
-        **kwargs
+        **kwargs,
     ):
         self.execute_data['moved_objects'] = []
+        interval = settings.TASKFLOW_ZONE_PROGRESS_INTERVAL
+        file_count = len(src_paths)
+        status_base = landing_zone.status_info
+        i = 1
+        i_prev = 0
+        time_start = time.time()
 
         for src_path in src_paths:
             dest_coll_path = self.get_dest_coll_path(
@@ -824,17 +846,25 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
                             dest_coll_path
                         ),
                     )
+
+            if time.time() - time_start > interval and i_prev != i:
+                landing_zone.status_info = f'{status_base} ({i}/{file_count})'
+                landing_zone.save()
+                i_prev = i
+                time_start = time.time()
+            i += 1
         super().execute(*args, **kwargs)
 
     def revert(
         self,
+        landing_zone,
         src_root,
         dest_root,
         access_name,
         user_name,
         irods_backend,
         *args,
-        **kwargs
+        **kwargs,
     ):
         for moved_object in self.execute_data['moved_objects']:
             src_path = moved_object[0]
@@ -861,28 +891,43 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
 class BatchCalculateChecksumTask(IrodsBaseTask):
     """Batch calculate checksum for data objects (ichksum)"""
 
-    def execute(self, file_paths, force, *args, **kwargs):
+    @classmethod
+    def _compute_checksum(cls, data_obj, replica, force):
+        if replica.checksum and not force:
+            return
+        for j in range(CHECKSUM_RETRY):
+            if j > 0:  # Retry if iRODS times out (see #1941)
+                logger.info('Retrying ({})..'.format(j + 1))
+            try:
+                data_obj.chksum(**{kw.RESC_HIER_STR_KW: replica.resc_hier})
+                break  # Skip retries on success
+            except Exception as ex:
+                logger.error(
+                    'Exception in BatchCalculateChecksumTask for path '
+                    '"{}" in replica "{}": {}'.format(
+                        data_obj.path, replica.resc_hier, ex
+                    )
+                )  # NOTE: No raise, only log
+
+    def execute(self, landing_zone, file_paths, force, *args, **kwargs):
+        interval = settings.TASKFLOW_ZONE_PROGRESS_INTERVAL
+        file_count = len(file_paths)
+        status_base = landing_zone.status_info
+        i = 1
+        i_prev = 0
+        time_start = time.time()
         for path in file_paths:
             if not self.irods.data_objects.exists(path):
                 continue
             data_obj = self.irods.data_objects.get(path)
             for replica in data_obj.replicas:
-                if replica.checksum and not force:
-                    continue
-                for i in range(CHECKSUM_RETRY):
-                    if i > 0:  # Retry if iRODS times out (see #1941)
-                        logger.info('Retrying ({})..'.format(i + 1))
-                    try:
-                        data_obj.chksum(
-                            **{kw.RESC_HIER_STR_KW: replica.resc_hier}
-                        )
-                        break  # Skip retries on success
-                    except Exception as ex:
-                        logger.error(
-                            'Exception in BatchCalculateChecksumTask for path '
-                            '"{}" in replica "{}": {}'.format(
-                                data_obj.path, replica.resc_hier, ex
-                            )
-                        )  # NOTE: No raise, only log
+                self._compute_checksum(data_obj, replica, force)
+                time.sleep(3)  # DEBUG
+            if time.time() - time_start > interval and i_prev != i:
+                landing_zone.status_info = f'{status_base} ({i}/{file_count})'
+                landing_zone.save()
+                i_prev = i
+                time_start = time.time()
+            i += 1
         super().execute(*args, **kwargs)
         # NOTE: We don't need revert for this

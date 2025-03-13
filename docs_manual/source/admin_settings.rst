@@ -135,6 +135,9 @@ Taskflow Backend Settings
 ``TASKFLOW_LOCK_RETRY_INTERVAL``
     Retry interval for project lock retrieval for Taskflow operations (int,
     default: 3).
+``TASKFLOW_ZONE_PROGRESS_INTERVAL``
+    Interval in seconds for zone progress counters, 0 for update on every file
+    (int, default: 10).
 
 iRODS WebDAV Settings
 ---------------------
