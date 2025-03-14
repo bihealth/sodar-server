@@ -1,12 +1,14 @@
 {% load projectroles_common_tags %}
 
 {% get_django_setting 'SITE_TITLE' as site_title %}
-{% get_django_setting 'SODAR_SUPPORT_EMAIL' as support_email %}
-{% get_django_setting 'SODAR_SUPPORT_NAME' as support_name %}
+{% get_django_setting 'PROJECTROLES_SUPPORT_CONTACT' as support_contact %}
+
 
 Developed by BIH CUBI.
-{% if support_email %}
+{% if support_contact %}
   For support please contact
-  <a href="mailto:{{ support_email }}">{% if support_name %}{{ support_name }}{% else %}{{ support_email }}{% endif %}</a>.
+  {% with support_contact|split:':' as sc_split %}
+    <a href="mailto:{{ sc_split.1 }}">{{ sc_split.0 }}</a>.
+  {% endwith %}
 {% endif %}
 {{ site_title }} v{% site_version %}

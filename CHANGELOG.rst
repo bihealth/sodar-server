@@ -13,6 +13,7 @@ Added
 
 - **General**
     - drf-spectacular support (#2051)
+    - ``PROJECTROLES_SUPPORT_CONTACT`` setting support (#2095)
 - **Landingzones**
     - Site read-only mode support (#2051)
 - **Samplesheets**
@@ -26,7 +27,7 @@ Changed
 -------
 
 - **General**
-    - Upgrade to django-sodar-core v1.1.1 (#2051)
+    - Upgrade to django-sodar-core v1.1.2 (#2051, #2068, #2095)
     - Upgrade to python-irodsclient v3.0.0 (#2079)
 - **Landingzones**
     - Define app settings as ``PluginAppSettingDef`` objects (#2051)
@@ -47,6 +48,7 @@ Removed
 
 - **General**
     - DRF generateschema support (#2051)
+    - ``SODAR_SUPPORT_EMAIL`` and ``SODAR_SUPPORT_EMAIL`` settings (#2095)
 
 
 v1.0.1 (2025-03-12)

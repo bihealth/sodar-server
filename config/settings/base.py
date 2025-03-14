@@ -641,6 +641,7 @@ PROJECTROLES_READ_ONLY_MSG = env.str(
     'This site is currently in read-only mode. Modifying data is not permitted.'
     'This includes landing zone operations.',
 )
+PROJECTROLES_SUPPORT_CONTACT = env.str('PROJECTROLES_SUPPORT_CONTACT', None)
 
 # Warn about unsupported browsers (IE)
 PROJECTROLES_BROWSER_WARNING = True
@@ -674,13 +675,6 @@ TIMELINE_PAGINATION = env.int('TIMELINE_PAGINATION', 15)
 TOKENS_CREATE_PROJECT_USER_RESTRICT = env.bool(
     'TOKENS_CREATE_PROJECT_USER_RESTRICT', False
 )
-
-
-# SODAR site specific settings (not derived from SODAR Core)
-SODAR_SUPPORT_EMAIL = env.str(
-    'SODAR_SUPPORT_EMAIL', 'cubi-helpdesk@bih-charite.de'
-)
-SODAR_SUPPORT_NAME = env.str('SODAR_SUPPORT_NAME', 'CUBI Helpdesk')
 
 
 # iRODS settings shared by iRODS using apps
