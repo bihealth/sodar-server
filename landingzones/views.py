@@ -312,7 +312,6 @@ class ZoneDeleteMixin(ZoneConfigPluginMixin):
             tl_event.add_object(
                 obj=zone.user, label='user', name=zone.user.username
             )
-            tl_event.set_status(timeline.TL_STATUS_SUBMIT)
 
         # Check zone root collection status
         zone_path = irods_backend.get_path(zone)
@@ -324,6 +323,8 @@ class ZoneDeleteMixin(ZoneConfigPluginMixin):
             flow_data = self.get_flow_data(
                 zone, flow_name, {'zone_uuid': str(zone.sodar_uuid)}
             )
+            if tl_event:
+                tl_event.set_status(timeline.TL_STATUS_SUBMIT)
             taskflow.submit(
                 project=project,
                 flow_name=flow_name,
@@ -333,6 +334,8 @@ class ZoneDeleteMixin(ZoneConfigPluginMixin):
             )
         else:  # Delete locally
             zone.set_status(ZONE_STATUS_DELETED, STATUS_INFO_DELETE_NO_COLL)
+            if tl_event:
+                tl_event.set_status(timeline.TL_STATUS_OK)
         self.object = None
 
 

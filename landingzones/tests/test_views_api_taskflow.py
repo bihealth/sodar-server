@@ -12,6 +12,9 @@ from django.urls import reverse
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 
+# Appalerts dependency
+from appalerts.models import AppAlert
+
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from landingzones.tests.test_views_api import INVALID_UUID
@@ -20,6 +23,9 @@ from samplesheets.views import RESULTS_COLL, MISC_FILES_COLL
 
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import TaskflowAPIViewTestBase, IRODS_ACCESS_OWN
+
+# Timeline dependency
+from timeline.models import TimelineEvent, TL_STATUS_OK
 
 from landingzones.constants import (
     DEFAULT_STATUS_INFO,
@@ -337,6 +343,12 @@ class TestZoneSubmitDeleteAPIView(ZoneAPIViewTaskflowTestBase):
     def test_post(self):
         """Test ZoneSubmitDeleteAPIView POST"""
         self.make_zone_taskflow(self.landing_zone)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_delete').count(), 0
+        )
+        self.assertEqual(
+            TimelineEvent.objects.filter(event_name='zone_delete').count(), 0
+        )
         response = self.request_knox(self.url, method='POST')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
@@ -345,6 +357,14 @@ class TestZoneSubmitDeleteAPIView(ZoneAPIViewTaskflowTestBase):
         self.assertEqual(LandingZone.objects.count(), 1)
         zone = LandingZone.objects.first()
         self.assert_zone_status(zone, ZONE_STATUS_DELETED)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_delete').count(), 1
+        )
+        tl_events = TimelineEvent.objects.filter(event_name='zone_delete')
+        self.assertEqual(tl_events.count(), 1)
+        self.assertEqual(
+            tl_events.first().get_status().status_type, TL_STATUS_OK
+        )
 
     def test_post_invalid_status(self):
         """Test POST with invalid zone status (should fail)"""
@@ -388,6 +408,9 @@ class TestZoneSubmitDeleteAPIView(ZoneAPIViewTaskflowTestBase):
         self.make_zone_taskflow(self.landing_zone)
         zone_path = self.irods_backend.get_path(self.landing_zone)
         self.assertTrue(self.irods.collections.exists(zone_path))
+        self.assertEqual(
+            TimelineEvent.objects.filter(event_name='zone_delete').count(), 0
+        )
         # Remove collection
         self.irods.collections.remove(zone_path)
         self.assertFalse(self.irods.collections.exists(zone_path))
@@ -399,6 +422,11 @@ class TestZoneSubmitDeleteAPIView(ZoneAPIViewTaskflowTestBase):
         self.assertEqual(LandingZone.objects.count(), 1)
         zone = LandingZone.objects.first()
         self.assert_zone_status(zone, ZONE_STATUS_DELETED)
+        tl_events = TimelineEvent.objects.filter(event_name='zone_delete')
+        self.assertEqual(tl_events.count(), 1)
+        self.assertEqual(
+            tl_events.first().get_status().status_type, TL_STATUS_OK
+        )
 
 
 class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):

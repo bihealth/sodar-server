@@ -27,9 +27,8 @@ from samplesheets.views import RESULTS_COLL, MISC_FILES_COLL, TRACK_HUBS_COLL
 from taskflowbackend.tasks.irods_tasks import NO_FILE_CHECKSUM_LABEL
 from taskflowbackend.tests.base import TaskflowViewTestBase, IRODS_ACCESS_OWN
 
-
 # Timeline dependency
-from timeline.models import TimelineEvent
+from timeline.models import TimelineEvent, TL_STATUS_OK
 
 from landingzones.constants import (
     ZONE_STATUS_CREATING,
@@ -827,56 +826,55 @@ class TestZoneDeleteView(
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
         self.make_irods_colls(self.investigation)
+        self.zone = self.make_landing_zone(
+            title=ZONE_TITLE,
+            project=self.project,
+            user=self.user,
+            assay=self.assay,
+            description=ZONE_DESC,
+            configuration=None,
+            config_data={},
+        )
+        self.url = reverse(
+            'landingzones:delete', kwargs={'landingzone': self.zone.sodar_uuid}
+        )
         self.url_redirect = reverse(
             'landingzones:list',
             kwargs={'project': self.project.sodar_uuid},
         )
 
-    def test_delete_zone(self):
-        """Test landingzones deletion with taskflow"""
-        zone = self.make_landing_zone(
-            title=ZONE_TITLE,
-            project=self.project,
-            user=self.user,
-            assay=self.assay,
-            description=ZONE_DESC,
-            configuration=None,
-            config_data={},
-        )
-        self.make_zone_taskflow(zone)
+    def test_post(self):
+        """Test ZoneDeleteView POST with taskflow"""
+        self.make_zone_taskflow(self.zone)
         self.assertEqual(LandingZone.objects.count(), 1)
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_delete').count(), 0
         )
-
-        url = reverse(
-            'landingzones:delete', kwargs={'landingzone': zone.sodar_uuid}
+        self.assertEqual(
+            TimelineEvent.objects.filter(event_name='zone_delete').count(), 0
         )
+
         with self.login(self.user):
-            response = self.client.post(url)
+            response = self.client.post(self.url)
             self.assertRedirects(response, self.url_redirect)
 
         self.assert_zone_count(1)
-        zone.refresh_from_db()
-        self.assert_zone_status(zone, ZONE_STATUS_DELETED)
+        self.zone.refresh_from_db()
+        self.assert_zone_status(self.zone, ZONE_STATUS_DELETED)
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_delete').count(), 1
         )
-
-    def test_delete_zone_restrict(self):
-        """Test landingzones deletion with restricted collections"""
-        zone = self.make_landing_zone(
-            title=ZONE_TITLE,
-            project=self.project,
-            user=self.user,
-            assay=self.assay,
-            description=ZONE_DESC,
-            configuration=None,
-            config_data={},
+        tl_events = TimelineEvent.objects.filter(event_name='zone_delete')
+        self.assertEqual(tl_events.count(), 1)
+        self.assertEqual(
+            tl_events.first().get_status().status_type, TL_STATUS_OK
         )
+
+    def test_post_restrict(self):
+        """Test POST with restricted collections"""
         self.make_zone_taskflow(
-            zone=zone,
+            zone=self.zone,
             colls=[MISC_FILES_COLL, RESULTS_COLL],
             restrict_colls=True,
         )
@@ -885,45 +883,39 @@ class TestZoneDeleteView(
             AppAlert.objects.filter(alert_name='zone_delete').count(), 0
         )
 
-        url = reverse(
-            'landingzones:delete', kwargs={'landingzone': zone.sodar_uuid}
-        )
         with self.login(self.user):
-            response = self.client.post(url)
+            response = self.client.post(self.url)
             self.assertRedirects(response, self.url_redirect)
 
         self.assert_zone_count(1)
-        zone.refresh_from_db()
-        self.assert_zone_status(zone, ZONE_STATUS_DELETED)
+        self.zone.refresh_from_db()
+        self.assert_zone_status(self.zone, ZONE_STATUS_DELETED)
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_delete').count(), 1
         )
 
-    def test_delete_zone_no_coll(self):
-        """Test landingzones deletion with no zone root collection in iRODS"""
-        zone = self.make_landing_zone(
-            title=ZONE_TITLE,
-            project=self.project,
-            user=self.user,
-            assay=self.assay,
-            description=ZONE_DESC,
-            configuration=None,
-            config_data={},
-        )
-        self.make_zone_taskflow(zone)
+    def test_post_no_coll(self):
+        """Test POST with no zone root collection in iRODS"""
+        self.make_zone_taskflow(self.zone)
         self.assertEqual(LandingZone.objects.count(), 1)
-        zone_path = self.irods_backend.get_path(zone)
+        zone_path = self.irods_backend.get_path(self.zone)
         self.assertTrue(self.irods.collections.exists(zone_path))
+        self.assertEqual(
+            TimelineEvent.objects.filter(event_name='zone_delete').count(), 0
+        )
+
         # Remove collection
         self.irods.collections.remove(zone_path)
         self.assertFalse(self.irods.collections.exists(zone_path))
-
-        url = reverse(
-            'landingzones:delete', kwargs={'landingzone': zone.sodar_uuid}
-        )
         with self.login(self.user):
-            self.client.post(url)
+            self.client.post(self.url)
+
         self.assert_zone_count(1)
-        zone.refresh_from_db()
-        self.assert_zone_status(zone, ZONE_STATUS_DELETED)
+        self.zone.refresh_from_db()
+        self.assert_zone_status(self.zone, ZONE_STATUS_DELETED)
+        tl_events = TimelineEvent.objects.filter(event_name='zone_delete')
+        self.assertEqual(tl_events.count(), 1)
+        self.assertEqual(
+            tl_events.first().get_status().status_type, TL_STATUS_OK
+        )
