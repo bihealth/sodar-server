@@ -11,4 +11,4 @@ Developed by BIH CUBI.
     <a href="mailto:{{ sc_split.1 }}">{{ sc_split.0 }}</a>.
   {% endwith %}
 {% endif %}
-{{ site_title }} v{% site_version %}
+{{ site_title }} v{% site_version %} / SODAR Core v{% core_version %}

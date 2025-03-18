@@ -33,6 +33,7 @@ Changed
 - **General**
     - Upgrade to django-sodar-core v1.1.2 (#2051, #2068, #2095)
     - Upgrade to python-irodsclient v3.0.0 (#2079)
+    - Display SODAR Core version in footer example (#2101)
 - **Landingzones**
     - Define app settings as ``PluginAppSettingDef`` objects (#2051)
     - Do not mute zone title and description with busy zones (#2092)
