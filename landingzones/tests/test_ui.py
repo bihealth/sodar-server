@@ -32,7 +32,10 @@ app_settings = AppSettingAPI()
 
 
 # Local constants
+APP_NAME = 'landingzones'
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
+PROHIBIT_NAME = 'file_name_prohibit'
+PROHIBIT_VAL = 'bam,vcf.gz'
 
 
 class LandingZoneUITestBase(
@@ -112,6 +115,7 @@ class TestProjectZoneView(LandingZoneUITestBase):
         self._assert_element(By.ID, 'sodar-lz-alert-no-sheets', True)
         self._assert_element(By.ID, 'sodar-lz-alert-no-colls', False)
         self._assert_element(By.ID, 'sodar-lz-alert-no-zones', False)
+        self._assert_element(By.ID, 'sodar-lz-alert-prohibit', False)
         self._assert_element(By.ID, 'sodar-lz-btn-create-zone', False)
         self._assert_element(By.ID, 'sodar-lz-zone-list-own', False)
         self._assert_element(By.ID, 'sodar-lz-zone-list-other', False)
@@ -125,6 +129,7 @@ class TestProjectZoneView(LandingZoneUITestBase):
         self._assert_element(By.ID, 'sodar-lz-alert-no-sheets', False)
         self._assert_element(By.ID, 'sodar-lz-alert-no-colls', True)
         self._assert_element(By.ID, 'sodar-lz-alert-no-zones', False)
+        self._assert_element(By.ID, 'sodar-lz-alert-prohibit', False)
         self._assert_element(By.ID, 'sodar-lz-btn-create-zone', False)
         self._assert_element(By.ID, 'sodar-lz-zone-list-own', False)
         self._assert_element(By.ID, 'sodar-lz-zone-list-other', False)
@@ -139,9 +144,22 @@ class TestProjectZoneView(LandingZoneUITestBase):
         self._assert_element(By.ID, 'sodar-lz-alert-no-sheets', False)
         self._assert_element(By.ID, 'sodar-lz-alert-no-colls', False)
         self._assert_element(By.ID, 'sodar-lz-alert-no-zones', True)
+        self._assert_element(By.ID, 'sodar-lz-alert-prohibit', False)
         self._assert_element(By.ID, 'sodar-lz-btn-create-zone', True)
         self._assert_element(By.ID, 'sodar-lz-zone-list-own', False)
         self._assert_element(By.ID, 'sodar-lz-zone-list-other', False)
+
+    def test_render_prohibit(self):
+        """Test ProjectZoneView with no zones and file_name_prohibit enabled"""
+        app_settings.set(
+            APP_NAME, PROHIBIT_NAME, PROHIBIT_VAL, project=self.project
+        )
+        self._setup_investigation()
+        self.investigation.irods_status = True
+        self.investigation.save()
+        self.login_and_redirect(self.user_owner, self.url)
+        # This should still not be visible because there are no zones
+        self._assert_element(By.ID, 'sodar-lz-alert-prohibit', False)
 
     @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
     def test_render_disable(self):
@@ -154,6 +172,7 @@ class TestProjectZoneView(LandingZoneUITestBase):
         self._assert_element(By.ID, 'sodar-lz-alert-no-sheets', False)
         self._assert_element(By.ID, 'sodar-lz-alert-no-colls', False)
         self._assert_element(By.ID, 'sodar-lz-alert-no-zones', False)
+        self._assert_element(By.ID, 'sodar-lz-alert-prohibit', False)
         self._assert_element(By.ID, 'sodar-lz-btn-create-zone', False)
         self._assert_element(By.ID, 'sodar-lz-zone-list-own', False)
         self._assert_element(By.ID, 'sodar-lz-zone-list-other', False)
@@ -172,6 +191,7 @@ class TestProjectZoneView(LandingZoneUITestBase):
         self._assert_element(By.ID, 'sodar-lz-alert-no-sheets', False)
         self._assert_element(By.ID, 'sodar-lz-alert-no-colls', False)
         self._assert_element(By.ID, 'sodar-lz-alert-no-zones', False)
+        self._assert_element(By.ID, 'sodar-lz-alert-prohibit', False)
         self._assert_element(By.ID, 'sodar-lz-btn-create-zone', True)
         self._assert_element(By.ID, 'sodar-lz-zone-list-own', True)
         self._assert_element(By.ID, 'sodar-lz-zone-list-other', False)
@@ -189,6 +209,7 @@ class TestProjectZoneView(LandingZoneUITestBase):
         self._assert_element(By.ID, 'sodar-lz-alert-no-sheets', False)
         self._assert_element(By.ID, 'sodar-lz-alert-no-colls', False)
         self._assert_element(By.ID, 'sodar-lz-alert-no-zones', False)
+        self._assert_element(By.ID, 'sodar-lz-alert-prohibit', False)
         self._assert_element(By.ID, 'sodar-lz-btn-create-zone', True)
         self._assert_element(By.ID, 'sodar-lz-zone-list-own', True)
         self._assert_element(By.ID, 'sodar-lz-zone-list-other', False)
@@ -201,6 +222,21 @@ class TestProjectZoneView(LandingZoneUITestBase):
             str(contrib_zone.sodar_uuid),
         )
 
+    def test_render_own_zone_prohibit(self):
+        """Test ProjectZoneView with own zone and prohibit enabled"""
+        app_settings.set(
+            APP_NAME, PROHIBIT_NAME, PROHIBIT_VAL, project=self.project
+        )
+        self._setup_investigation()
+        self.investigation.irods_status = True
+        self.investigation.save()
+        self.make_landing_zone(
+            'contrib_zone', self.project, self.user_contributor, self.assay
+        )
+        self.login_and_redirect(self.user_contributor, self.url)
+        # With zone list this alert should be visible
+        self._assert_element(By.ID, 'sodar-lz-alert-prohibit', True)
+
     def test_render_other_zone(self):
         """Test ProjectZoneView as owner with other zone"""
         self._setup_investigation()
@@ -210,6 +246,7 @@ class TestProjectZoneView(LandingZoneUITestBase):
             'contrib_zone', self.project, self.user_contributor, self.assay
         )
         self.login_and_redirect(self.user_owner, self.url)
+        self._assert_element(By.ID, 'sodar-lz-alert-prohibit', False)
         # NOTE: Element for own zones is visible while table is empty
         self._assert_element(By.ID, 'sodar-lz-zone-list-own', True)
         self._assert_element(By.ID, 'sodar-lz-zone-list-other', True)
@@ -234,6 +271,7 @@ class TestProjectZoneView(LandingZoneUITestBase):
             'contrib_zone', self.project, self.user_contributor, self.assay
         )
         self.login_and_redirect(self.user_contributor, self.url)
+        self._assert_element(By.ID, 'sodar-lz-alert-prohibit', False)
         self._assert_element(By.ID, 'sodar-lz-zone-list-own', True)
         self._assert_element(By.ID, 'sodar-lz-zone-list-other', False)
         zones = self.selenium.find_elements(
@@ -257,6 +295,7 @@ class TestProjectZoneView(LandingZoneUITestBase):
             'contrib_zone', self.project, self.user_contributor, self.assay
         )
         self.login_and_redirect(self.user_owner, self.url)
+        self._assert_element(By.ID, 'sodar-lz-alert-prohibit', False)
         self._assert_element(By.ID, 'sodar-lz-zone-list-own', True)
         self._assert_element(By.ID, 'sodar-lz-zone-list-other', True)
         zones = self.selenium.find_elements(
@@ -605,6 +644,66 @@ class TestProjectZoneView(LandingZoneUITestBase):
                 By.CLASS_NAME, 'sodar-lz-zone-status-info'
             ).get_attribute('class'),
         )
+
+
+class TestZoneCreateView(LandingZoneUITestBase):
+    """UI tests for ZoneCreateView"""
+
+    def setUp(self):
+        super().setUp()
+        self._setup_investigation()
+        self.investigation.irods_status = True
+        self.investigation.save()
+        self.url = reverse(
+            'landingzones:create', kwargs={'project': self.project.sodar_uuid}
+        )
+
+    def test_render(self):
+        """Test ZoneCreateView rendering"""
+        self.login_and_redirect(self.user_owner, self.url)
+        self._assert_element(By.ID, 'sodar-lz-alert-prohibit', False)
+
+    def test_render_prohibit(self):
+        """Test ZoneCreateView with file_name_prohibit enabled"""
+        app_settings.set(
+            APP_NAME, PROHIBIT_NAME, PROHIBIT_VAL, project=self.project
+        )
+        self.login_and_redirect(self.user_owner, self.url)
+        self._assert_element(By.ID, 'sodar-lz-alert-prohibit', True)
+
+
+class TestZoneUpdateView(LandingZoneUITestBase):
+    """UI tests for ZoneUpdateView"""
+
+    def setUp(self):
+        super().setUp()
+        self._setup_investigation()
+        self.investigation.irods_status = True
+        self.investigation.save()
+        self.zone = self.make_landing_zone(
+            'owner_zone',
+            self.project,
+            self.user_owner,
+            self.assay,
+            status=ZONE_STATUS_ACTIVE,
+        )
+        self.url = reverse(
+            'landingzones:update', kwargs={'landingzone': self.zone.sodar_uuid}
+        )
+
+    def test_render(self):
+        """Test ZoneUpdateView rendering"""
+        self.login_and_redirect(self.user_owner, self.url)
+        self._assert_element(By.ID, 'sodar-lz-alert-prohibit', False)
+
+    def test_render_prohibit(self):
+        """Test ZoneUpdateView with file_name_prohibit enabled"""
+        app_settings.set(
+            APP_NAME, PROHIBIT_NAME, PROHIBIT_VAL, project=self.project
+        )
+        self.login_and_redirect(self.superuser, self.url)
+        # Not shown in update view
+        self._assert_element(By.ID, 'sodar-lz-alert-prohibit', False)
 
 
 class TestProjectDetailView(LandingZoneUITestBase):

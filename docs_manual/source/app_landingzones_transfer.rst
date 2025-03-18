@@ -89,6 +89,26 @@ Other collections expected for a specific landing zone depend on the assay
 configuration. For detailed reference on which assay type expects which
 collections, see :ref:`metadata_advanced`.
 
+
+.. _app_landingzones_transfer_prohibit:
+
+Prohibited File Types
+---------------------
+
+Project owner or delegate may prohibit the uploading of certain files by file
+suffix. The user is notified of a possible restriction in the zone list and
+create view UI. This limitation is project specific.
+
+If prohibited file types are uploaded, landing zone validation and moving will
+fail with an error message listing the offending files. Removing those files and
+associated checksum files will allow you to validate and move your landing zone.
+
+.. figure:: _static/app_landingzones/zone_prohibit.png
+    :align: center
+    :scale: 75%
+
+    Prohibited files alert
+
 Replacing Files
 ---------------
 

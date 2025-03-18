@@ -36,6 +36,7 @@ logger = logging.getLogger(__name__)
 APP_SETTING_SCOPE_PROJECT = SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT']
 APP_SETTING_SCOPE_USER = SODAR_CONSTANTS['APP_SETTING_SCOPE_USER']
 APP_SETTING_TYPE_BOOLEAN = SODAR_CONSTANTS['APP_SETTING_TYPE_BOOLEAN']
+APP_SETTING_TYPE_STRING = SODAR_CONSTANTS['APP_SETTING_TYPE_STRING']
 
 
 # Local constants
@@ -58,6 +59,18 @@ LANDINGZONES_APP_SETTINGS = [
         label='Receive email for landing zone status updates',
         description='Receive email notifications for status changes in your '
         'landing zones',
+        user_modifiable=True,
+    ),
+    PluginAppSettingDef(
+        name='file_name_prohibit',
+        scope=APP_SETTING_SCOPE_PROJECT,
+        type=APP_SETTING_TYPE_STRING,
+        default='',
+        label='Prohibited file types',
+        description='Prohibit transferring files with given file name '
+        'suffixes from a landing zone into project samples. Checked on zone '
+        'validation. Provide as a comma-separated list.',
+        placeholder='xyz.gz,abc',
         user_modifiable=True,
     ),
 ]

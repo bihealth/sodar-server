@@ -21,6 +21,7 @@ from landingzones.tests.test_models import (
     ZONE_TITLE,
     ZONE_DESC,
 )
+from landingzones.tests.test_views_taskflow import LandingZoneTaskflowMixin
 
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
@@ -66,6 +67,10 @@ BATCH_SRC_NAME = 'batch_src'
 BATCH_DEST_NAME = 'batch_dest'
 BATCH_OBJ_NAME = 'batch_obj'
 BATCH_OBJ2_NAME = 'batch_obj2'
+
+SUFFIX_OBJ_NAME_BAM = 'test.bam'
+SUFFIX_OBJ_NAME_VCF = 'test.vcf.gz'
+SUFFIX_OBJ_NAME_TXT = 'test.txt'
 
 
 class IRODSTaskTestBase(TaskflowViewTestBase):
@@ -1866,6 +1871,180 @@ class TestBatchSetAccessTask(IRODSTaskTestBase):
             DEFAULT_USER_GROUP, self.sub_coll_path, self.irods_access_read
         )
         self.assert_irods_access(DEFAULT_USER_GROUP, self.sub_coll_path2, None)
+
+
+class TestBatchCheckFileSuffixTask(
+    SampleSheetIOMixin,
+    LandingZoneMixin,
+    LandingZoneTaskflowMixin,
+    IRODSTaskTestBase,
+):
+    """Tests for BatchCheckFileSuffixTask"""
+
+    def setUp(self):
+        super().setUp()
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+        self.zone = self.make_landing_zone(
+            title=ZONE_TITLE,
+            project=self.project,
+            user=self.user,
+            assay=self.assay,
+            description=ZONE_DESC,
+        )
+        self.make_zone_taskflow(zone=self.zone)
+        self.zone_path = self.irods_backend.get_path(self.zone)
+        self.zone_coll = self.irods.collections.get(self.zone_path)
+        self.obj_bam = self.make_irods_object(
+            self.zone_coll, SUFFIX_OBJ_NAME_BAM
+        )
+        self.obj_vcf = self.make_irods_object(
+            self.zone_coll, SUFFIX_OBJ_NAME_VCF
+        )
+        self.obj_txt = self.make_irods_object(
+            self.zone_coll, SUFFIX_OBJ_NAME_TXT
+        )
+        self.obj_paths = [
+            self.obj_bam.path,
+            self.obj_vcf.path,
+            self.obj_txt.path,
+        ]
+        self.task_kw = {
+            'cls': BatchCheckFileSuffixTask,
+            'name': 'Check file suffixes',
+            'inject': {
+                'file_paths': self.obj_paths,
+                'zone_path': self.zone_path,
+            },
+        }
+
+    def test_check_bam(self):
+        """Test batch file suffix check with prohibited BAM type"""
+        self.task_kw['inject']['suffixes'] = 'bam'
+        self.add_task(**self.task_kw)
+        with self.assertRaises(Exception) as cm:
+            self.run_flow()
+            ex = cm.exception
+            self.assertIn(SUFFIX_OBJ_NAME_BAM, ex)
+            self.assertNotIn(SUFFIX_OBJ_NAME_VCF, ex)
+            self.assertNotIn(SUFFIX_OBJ_NAME_TXT, ex)
+
+    def test_check_vcf(self):
+        """Test check with prohibited VCF type"""
+        self.task_kw['inject']['suffixes'] = 'vcf.gz'
+        self.add_task(**self.task_kw)
+        with self.assertRaises(Exception) as cm:
+            self.run_flow()
+            ex = cm.exception
+            self.assertNotIn(SUFFIX_OBJ_NAME_BAM, ex)
+            self.assertIn(SUFFIX_OBJ_NAME_VCF, ex)
+            self.assertNotIn(SUFFIX_OBJ_NAME_TXT, ex)
+
+    def test_check_multiple(self):
+        """Test check with multiple prohibited types"""
+        self.task_kw['inject']['suffixes'] = 'bam,vcf.gz'
+        self.add_task(**self.task_kw)
+        with self.assertRaises(Exception) as cm:
+            self.run_flow()
+            ex = cm.exception
+            self.assertIn(SUFFIX_OBJ_NAME_BAM, ex)
+            self.assertIn(SUFFIX_OBJ_NAME_VCF, ex)
+            self.assertNotIn(SUFFIX_OBJ_NAME_TXT, ex)
+
+    def test_check_multiple_not_found(self):
+        """Test check with multiple types not found in files"""
+        self.task_kw['inject']['suffixes'] = 'mp3,rar'
+        self.add_task(**self.task_kw)
+        result = self.run_flow()
+        self.assertEqual(result, True)
+
+    def test_check_empty_list(self):
+        """Test check with empty prohibition list"""
+        self.task_kw['inject']['suffixes'] = ''
+        self.add_task(**self.task_kw)
+        result = self.run_flow()
+        self.assertEqual(result, True)
+
+    def test_check_notation_dot(self):
+        """Test check with dot notation in list"""
+        self.task_kw['inject']['suffixes'] = '.bam'
+        self.add_task(**self.task_kw)
+        with self.assertRaises(Exception) as cm:
+            self.run_flow()
+            ex = cm.exception
+            self.assertIn(SUFFIX_OBJ_NAME_BAM, ex)
+            self.assertNotIn(SUFFIX_OBJ_NAME_VCF, ex)
+            self.assertNotIn(SUFFIX_OBJ_NAME_TXT, ex)
+
+    def test_check_notation_asterisk(self):
+        """Test check with asterisk notation in list"""
+        self.task_kw['inject']['suffixes'] = '*bam'
+        self.add_task(**self.task_kw)
+        with self.assertRaises(Exception) as cm:
+            self.run_flow()
+            ex = cm.exception
+            self.assertIn(SUFFIX_OBJ_NAME_BAM, ex)
+            self.assertNotIn(SUFFIX_OBJ_NAME_VCF, ex)
+            self.assertNotIn(SUFFIX_OBJ_NAME_TXT, ex)
+
+    def test_check_notation_combined(self):
+        """Test check with combined notation in list"""
+        self.task_kw['inject']['suffixes'] = '*.bam'
+        self.add_task(**self.task_kw)
+        with self.assertRaises(Exception) as cm:
+            self.run_flow()
+            ex = cm.exception
+            self.assertIn(SUFFIX_OBJ_NAME_BAM, ex)
+            self.assertNotIn(SUFFIX_OBJ_NAME_VCF, ex)
+            self.assertNotIn(SUFFIX_OBJ_NAME_TXT, ex)
+
+    def test_check_extra_spaces(self):
+        """Test check with extra spaces"""
+        self.task_kw['inject']['suffixes'] = ' bam '
+        self.add_task(**self.task_kw)
+        with self.assertRaises(Exception) as cm:
+            self.run_flow()
+            ex = cm.exception
+            self.assertIn(SUFFIX_OBJ_NAME_BAM, ex)
+            self.assertNotIn(SUFFIX_OBJ_NAME_VCF, ex)
+            self.assertNotIn(SUFFIX_OBJ_NAME_TXT, ex)
+
+    def test_check_not_end_of_file(self):
+        """Test check with given string not in end of file name"""
+        self.task_kw['inject']['suffixes'] = 'test'
+        self.add_task(**self.task_kw)
+        result = self.run_flow()
+        self.assertEqual(result, True)
+
+    def test_check_upper_case(self):
+        """Test check with upper case string"""
+        self.task_kw['inject']['suffixes'] = 'BAM'
+        self.add_task(**self.task_kw)
+        with self.assertRaises(Exception) as cm:
+            self.run_flow()
+            ex = cm.exception
+            self.assertIn(SUFFIX_OBJ_NAME_BAM, ex)
+            self.assertNotIn(SUFFIX_OBJ_NAME_VCF, ex)
+            self.assertNotIn(SUFFIX_OBJ_NAME_TXT, ex)
+
+    def test_check_invalid_strings(self):
+        """Test check with invalid strings"""
+        self.task_kw['inject']['suffixes'] = ',*,*.*'
+        self.add_task(**self.task_kw)
+        result = self.run_flow()
+        self.assertEqual(result, True)
+
+    def test_check_invalid_valid(self):
+        """Test check with mixed invalid and valid strings"""
+        self.task_kw['inject']['suffixes'] = ',*,bam'
+        self.add_task(**self.task_kw)
+        with self.assertRaises(Exception) as cm:
+            self.run_flow()
+            ex = cm.exception
+            self.assertIn(SUFFIX_OBJ_NAME_BAM, ex)
+            self.assertNotIn(SUFFIX_OBJ_NAME_VCF, ex)
+            self.assertNotIn(SUFFIX_OBJ_NAME_TXT, ex)
 
 
 class TestBatchCreateCollectionsTask(IRODSTaskTestBase):

@@ -135,6 +135,9 @@
     </div>
 
   {% else %}
+    {% if prohibit_files %}
+      {% include 'landingzones/_prohibit_warning.html' %}
+    {% endif %}
     {# User zones #}
     {% include 'landingzones/_zone_list.html' with zones=zones_own list_title='Your Zones' list_icon='mdi:account' list_type='own' %}
     {% if zones_other %}

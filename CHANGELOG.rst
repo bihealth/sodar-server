@@ -16,12 +16,16 @@ Added
     - ``PROJECTROLES_SUPPORT_CONTACT`` setting support (#2095)
 - **Landingzones**
     - Site read-only mode support (#2051)
+    - File type prohibiting by file name suffix (#2064)
+    - ``file_name_prohibit`` app setting (#2064)
+    - ``cleanup_file_prohibit()`` utility method (#2064)
 - **Samplesheets**
     - Site read-only mode support (#2051)
 - **Taskflowbackend**
     - Project deletion support (#2051)
     - Zone validation and moving progress indicators (#2024)
     - ``TASKFLOW_ZONE_PROGRESS_INTERVAL`` Django setting (#2024)
+    - ``BatchCheckFileSuffixTask`` iRODS task (#2064)
 
 Changed
 -------
@@ -36,6 +40,8 @@ Changed
     - Define app settings as ``PluginAppSettingDef`` objects (#2051)
 - **Taskflowbackend**
     - Enable no role for old owner in ``perform_owner_transfer()`` (#2051)
+    - Rename ``BatchCheckFileTask`` to ``BatchCheckFileExistTask`` (#2064)
+    - Move ``landing_zone_move`` file check tasks before checksum computing (#2099)
 
 Fixed
 -----

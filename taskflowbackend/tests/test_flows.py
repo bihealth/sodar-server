@@ -80,7 +80,7 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 COLL_NAME = 'test_coll'
 SUB_COLL_NAME = 'sub'
 OBJ_COLL_NAME = 'obj'
-OBJ_NAME = 'test_file'
+OBJ_NAME = 'test_file.txt'
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 UPDATED_TITLE = 'NewTitle'
 UPDATED_DESC = 'updated description'
@@ -1084,6 +1084,33 @@ class TestLandingZoneMove(
         obj = self.irods.data_objects.get(obj_path)  # Reload object
         self.assertIsNotNone(obj.replicas[0].checksum)
         self.assertEqual(obj.replicas[0].checksum, self.get_md5_checksum(obj))
+
+    def test_validate_prohibit(self):
+        """Test landing_zone_move validation with prohibited file name"""
+        coll_path = os.path.join(self.zone_path, COLL_NAME)
+        zone_coll = self.irods.collections.create(coll_path)
+        obj = self.make_irods_object(zone_coll, OBJ_NAME)
+        obj_path = obj.path
+        self.make_irods_md5_object(obj)
+        self.assertEqual(self.irods.data_objects.exists(obj_path), True)
+        self.assertEqual(
+            self.irods.data_objects.exists(obj_path + '.md5'), True
+        )
+        flow_data = {
+            'zone_uuid': str(self.zone.sodar_uuid),
+            'validate_only': True,
+            'file_name_prohibit': 'txt',
+        }
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='landing_zone_move',
+            flow_data=flow_data,
+        )
+        with self.assertRaisesRegex(Exception, OBJ_NAME):
+            self.build_and_run(flow)
+        self.zone.refresh_from_db()
+        self.assertEqual(self.zone.status, ZONE_STATUS_FAILED)
 
     def test_revert(self):
         """Test reverting landing_zone_move"""

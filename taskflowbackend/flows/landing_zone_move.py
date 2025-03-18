@@ -16,6 +16,7 @@ from taskflowbackend.tasks import irods_tasks
 
 
 SAMPLE_COLL = settings.IRODS_SAMPLE_COLL
+ZONE_INFO_CHECK = 'Checking availability and file types of {count} file{plural}'
 ZONE_INFO_CALC = 'Calculating missing checksums in iRODS'
 ZONE_INFO_VALIDATE = 'Validating {count} file{plural}'
 ZONE_INFO_READ_ONLY = ', write access disabled'
@@ -39,6 +40,7 @@ class Flow(BaseLinearFlow):
         sample_path = self.irods_backend.get_path(zone.assay)
         zone_path = self.irods_backend.get_path(zone)
         admin_name = self.irods.username
+        file_name_prohibit = self.flow_data.get('file_name_prohibit')
 
         # HACK: Set zone status in the Django site
         zone.set_status(
@@ -153,6 +155,46 @@ class Flow(BaseLinearFlow):
 
         self.add_task(
             lz_tasks.SetLandingZoneStatusTask(
+                name='Set landing zone status to VALIDATING (check)',
+                project=self.project,
+                inject={
+                    'landing_zone': zone,
+                    'status': ZONE_STATUS_VALIDATING,
+                    'status_info': ZONE_INFO_CHECK.format(
+                        count=file_count, plural=file_count_msg_plural
+                    )
+                    + (ZONE_INFO_READ_ONLY if not validate_only else ''),
+                    'flow_name': self.flow_name,
+                },
+            )
+        )
+        if file_name_prohibit:
+            self.add_task(
+                irods_tasks.BatchCheckFileSuffixTask(
+                    name='Batch check file types for zone data objects',
+                    irods=self.irods,
+                    inject={
+                        'file_paths': zone_objects_nomd5,
+                        'suffixes': file_name_prohibit,
+                        'zone_path': zone_path,
+                    },
+                )
+            )
+        self.add_task(
+            irods_tasks.BatchCheckFileExistTask(
+                name='Batch check file and MD5 checksum file existence for '
+                'zone data objects',
+                irods=self.irods,
+                inject={
+                    'file_paths': zone_objects_nomd5,
+                    'md5_paths': zone_objects_md5,
+                    'zone_path': zone_path,
+                },
+            )
+        )
+
+        self.add_task(
+            lz_tasks.SetLandingZoneStatusTask(
                 name='Set landing zone status to VALIDATING (calculate)',
                 project=self.project,
                 inject={
@@ -187,19 +229,6 @@ class Flow(BaseLinearFlow):
                     )
                     + (ZONE_INFO_READ_ONLY if not validate_only else ''),
                     'flow_name': self.flow_name,
-                },
-            )
-        )
-
-        self.add_task(
-            irods_tasks.BatchCheckFilesTask(
-                name='Batch check file and MD5 checksum file existence for '
-                'zone data objects',
-                irods=self.irods,
-                inject={
-                    'file_paths': zone_objects_nomd5,
-                    'md5_paths': zone_objects_md5,
-                    'zone_path': zone_path,
                 },
             )
         )

@@ -12,6 +12,7 @@ from django.test import override_settings
 from django.urls import reverse
 
 # Projectroles dependency
+from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 
@@ -43,6 +44,7 @@ from landingzones.tests.test_models import LandingZoneMixin
 from landingzones.views import ZONE_MOVE_INVALID_STATUS
 
 
+app_settings = AppSettingAPI()
 User = auth.get_user_model()
 
 
@@ -55,6 +57,7 @@ PROJECT_TYPE_CATEGORY = SODAR_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 # Local constants
+APP_NAME = 'landingzones'
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 ZONE_TITLE = '20190703_172456'
 ZONE_SUFFIX = 'Test Zone'
@@ -653,7 +656,7 @@ class TestZoneMoveView(
             self.client.post(self.url_validate)
 
         self.assert_zone_status(zone, ZONE_STATUS_FAILED)
-        self.assertTrue('BatchCheckFilesTask' in zone.status_info)
+        self.assertTrue('BatchCheckFileExistTask' in zone.status_info)
         self.assertEqual(len(self.zone_coll.data_objects), 1)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
 
@@ -671,9 +674,44 @@ class TestZoneMoveView(
             self.client.post(self.url_validate)
 
         self.assert_zone_status(zone, ZONE_STATUS_FAILED)
-        self.assertTrue('BatchCheckFilesTask' in zone.status_info)
+        self.assertTrue('BatchCheckFileExistTask' in zone.status_info)
         self.assertEqual(len(self.zone_coll.data_objects), 1)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
+
+    def test_validate_prohibit(self):
+        """Test validating zone with prohibited file name suffix"""
+        app_settings.set(
+            APP_NAME, 'file_name_prohibit', 'txt', project=self.project
+        )
+        irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
+        self.make_irods_md5_object(irods_obj)
+        zone = LandingZone.objects.first()
+        self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(len(self.zone_coll.data_objects), 2)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_validate').count(), 0
+        )
+
+        with self.login(self.user):
+            response = self.client.post(self.url_validate)
+            self.assertRedirects(response, self.url_redirect)
+
+        self.assert_zone_status(zone, ZONE_STATUS_FAILED)
+        self.assertEqual(len(self.zone_coll.data_objects), 2)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+        self.assertEqual(len(mail.outbox), 1)
+        tl_event = TimelineEvent.objects.filter(
+            event_name='zone_validate'
+        ).first()
+        self.assertIsInstance(tl_event, TimelineEvent)
+        self.assertEqual(
+            tl_event.get_status().status_type, self.timeline.TL_STATUS_FAILED
+        )
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_move').count(), 0
+        )
 
     def test_move_invalid_status(self):
         """Test validating and moving with invalid zone status (should fail)"""

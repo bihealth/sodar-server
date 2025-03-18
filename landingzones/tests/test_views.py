@@ -7,6 +7,7 @@ from django.urls import reverse
 from test_plus.test import TestCase
 
 # Projectroles dependency
+from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.tests.test_models import (
     ProjectMixin,
@@ -26,6 +27,9 @@ from landingzones.tests.test_models import (
 )
 
 
+app_settings = AppSettingAPI()
+
+
 # SODAR constants
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
@@ -35,8 +39,11 @@ PROJECT_TYPE_CATEGORY = SODAR_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 # Local constants
+APP_NAME = 'landingzones'
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 ZONE_STATUS_INFO = 'Testing'
+PROHIBIT_NAME = 'file_name_prohibit'
+PROHIBIT_VAL = 'bam,vcf.gz'
 
 
 class ViewTestBase(
@@ -73,7 +80,7 @@ class ViewTestBase(
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
         # Create LandingZone
-        self.landing_zone = self.make_landing_zone(
+        self.zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
             user=self.user,
@@ -84,33 +91,31 @@ class ViewTestBase(
 
 
 class TestProjectZonesView(ViewTestBase):
-    """Tests for the project zones list view"""
+    """Tests for ProjectZonesView"""
 
-    def test_render_owner(self):
-        """Test rendering of project zones view as project owner"""
+    def setUp(self):
+        super().setUp()
+        self.url = reverse(
+            'landingzones:list',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+
+    def test_get_owner(self):
+        """Test ProjectZonesView GET as owner"""
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'landingzones:list',
-                    kwargs={'project': self.project.sodar_uuid},
-                )
-            )
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['investigation'], self.investigation)
         self.assertEqual(response.context['zones_own'].count(), 1)
         self.assertEqual(response.context['zones_other'].count(), 0)
-        self.assertEqual(response.context['zones_own'][0], self.landing_zone)
+        self.assertEqual(response.context['zones_own'][0], self.zone)
         self.assertEqual(response.context['zone_access_disabled'], False)
+        self.assertEqual(response.context['prohibit_files'], None)
 
-    def test_render_contrib(self):
-        """Test rendering of project zones view as project contributor"""
+    def test_get_contrib(self):
+        """Test GET as contributor"""
         with self.login(self.user_contributor):
-            response = self.client.get(
-                reverse(
-                    'landingzones:list',
-                    kwargs={'project': self.project.sodar_uuid},
-                )
-            )
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['investigation'], self.investigation)
         # This user should have no zones
@@ -119,100 +124,122 @@ class TestProjectZonesView(ViewTestBase):
         self.assertEqual(response.context['zone_access_disabled'], False)
 
     @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
-    def test_render_disable(self):
-        """Test rendering with user access disabled"""
+    def test_get_disable(self):
+        """Test GET with user access disabled"""
         with self.login(self.user_contributor):
-            response = self.client.get(
-                reverse(
-                    'landingzones:list',
-                    kwargs={'project': self.project.sodar_uuid},
-                )
-            )
+            response = self.client.get(self.url)
         self.assertEqual(response.context['zone_access_disabled'], True)
 
     @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
-    def test_render_disable_superuser(self):
-        """Test rendering with user access disabled as superuser"""
+    def test_get_disable_superuser(self):
+        """Test GET with user access disabled as superuser"""
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'landingzones:list',
-                    kwargs={'project': self.project.sodar_uuid},
-                )
-            )
+            response = self.client.get(self.url)
         self.assertEqual(response.context['zone_access_disabled'], False)
 
-
-class TestLandingZoneCreateView(ViewTestBase):
-    """Tests for the landing zone creation view"""
-
-    def test_render(self):
-        """Test rendering of the landing zone creation view"""
+    def test_get_prohibit(self):
+        """Test GET with file_name_prohibit enabled"""
+        app_settings.set(
+            APP_NAME, PROHIBIT_NAME, PROHIBIT_VAL, project=self.project
+        )
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'landingzones:create',
-                    kwargs={'project': self.project.sodar_uuid},
-                )
-            )
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        # Assert form
+        self.assertEqual(
+            response.context['prohibit_files'],
+            ', '.join(PROHIBIT_VAL.split(',')),
+        )
+
+
+class TestZoneCreateView(ViewTestBase):
+    """Tests for ZoneCreateView"""
+
+    def setUp(self):
+        super().setUp()
+        self.url = reverse(
+            'landingzones:create',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+
+    def test_get(self):
+        """Test ZoneCreateView GET"""
+        with self.login(self.user):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
         form = response.context['form']
         self.assertIsNotNone(form)
         self.assertIsNotNone(form.fields['title_suffix'])
         self.assertIsNotNone(form.fields['assay'])
         self.assertIsNotNone(form.fields['description'])
         self.assertIsNotNone(form.fields['configuration'])
+        self.assertEqual(response.context['prohibit_files'], None)
 
-
-class TestLandingZoneUpdateView(ViewTestBase):
-    """Tests for the landing zone update view"""
-
-    def test_render(self):
-        """Test rendering of the landing zone update view"""
+    def test_get_prohibit(self):
+        """Test GET with file_name_prohibit enabled"""
+        app_settings.set(
+            APP_NAME, PROHIBIT_NAME, PROHIBIT_VAL, project=self.project
+        )
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'landingzones:update',
-                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
-                )
-            )
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        # Assert form
+        self.assertEqual(
+            response.context['prohibit_files'],
+            ', '.join(PROHIBIT_VAL.split(',')),
+        )
+
+
+class TestZoneUpdateView(ViewTestBase):
+    """Tests for ZoneUpdateView"""
+
+    def setUp(self):
+        super().setUp()
+        self.url = reverse(
+            'landingzones:update',
+            kwargs={'landingzone': self.zone.sodar_uuid},
+        )
+
+    def test_get(self):
+        """Test ZoneUpdateView GET"""
+        with self.login(self.user):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
         form = response.context['form']
         self.assertIsNotNone(form)
         self.assertIsNotNone(form.fields['assay'])
         self.assertIsNotNone(form.fields['description'])
-        # Make sure to also assert the expected fields
-        # are hidden with the HiddenInput widget.
+        # Make sure to also assert the expected fields are hidden with the
+        # HiddenInput widget
         self.assertIsInstance(form.fields['title_suffix'].widget, HiddenInput)
         self.assertIsInstance(form.fields['configuration'].widget, HiddenInput)
         self.assertIsInstance(form.fields['create_colls'].widget, HiddenInput)
         self.assertIsInstance(form.fields['restrict_colls'].widget, HiddenInput)
         self.assertIsInstance(form.fields['assay'].widget, HiddenInput)
+        self.assertNotIn('prohibit_files', response.context)
 
-    def test_render_invalid_status(self):
-        """Test rendering with an invalid zone status"""
-        self.landing_zone.status = ZONE_STATUS_DELETED
-        self.landing_zone.save()
-
+    def test_get_prohibit(self):
+        """Test GET with file_name_prohibit enabled"""
+        app_settings.set(
+            APP_NAME, PROHIBIT_NAME, PROHIBIT_VAL, project=self.project
+        )
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'landingzones:update',
-                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
-                )
-            )
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        # Should not be included for update
+        self.assertNotIn('prohibit_files', response.context)
+
+    def test_get_invalid_status(self):
+        """Test GET with invalid zone status"""
+        self.zone.status = ZONE_STATUS_DELETED
+        self.zone.save()
+        with self.login(self.user):
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 302)
 
     def test_post(self):
-        """Test POST request to the landing zone update view"""
+        """Test POST"""
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'landingzones:update',
-                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
-                ),
+                self.url,
                 data={
                     'assay': self.assay.sodar_uuid,
                     'description': 'test description updated',
@@ -226,21 +253,16 @@ class TestLandingZoneUpdateView(ViewTestBase):
                     kwargs={'project': self.project.sodar_uuid},
                 ),
             )
-        landing_zone = LandingZone.objects.get(
-            sodar_uuid=self.landing_zone.sodar_uuid
-        )
-        self.assertEqual(landing_zone.assay, self.assay)
-        self.assertEqual(landing_zone.description, 'test description updated')
-        self.assertEqual(landing_zone.user_message, 'test user message')
+        zone = LandingZone.objects.get(sodar_uuid=self.zone.sodar_uuid)
+        self.assertEqual(zone.assay, self.assay)
+        self.assertEqual(zone.description, 'test description updated')
+        self.assertEqual(zone.user_message, 'test user message')
 
     def test_post_invalid_data(self):
-        """Test POST request with invalid data"""
+        """Test POST with invalid data"""
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'landingzones:update',
-                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
-                ),
+                self.url,
                 data={
                     'assay': self.assay.sodar_uuid,
                     'description': 'test description updated',
@@ -248,55 +270,48 @@ class TestLandingZoneUpdateView(ViewTestBase):
                 },
             )
         self.assertEqual(response.status_code, 302)
-        landing_zone = LandingZone.objects.get(
-            sodar_uuid=self.landing_zone.sodar_uuid
-        )
-        self.assertEqual(landing_zone.assay, self.assay)
-        self.assertEqual(landing_zone.description, 'description')
+        zone = LandingZone.objects.get(sodar_uuid=self.zone.sodar_uuid)
+        self.assertEqual(zone.assay, self.assay)
+        self.assertEqual(zone.description, 'description')
 
 
-class TestLandingZoneMoveView(ViewTestBase):
-    """Tests for the landing zone validation and moving view"""
+class TestZoneMoveView(ViewTestBase):
+    """Tests for ZoneMoveView"""
 
-    def test_render_invalid_status(self):
-        """Test rendering with an invalid zone status"""
-        self.landing_zone.status = ZONE_STATUS_DELETED
-        self.landing_zone.save()
-
+    def test_get_invalid_status(self):
+        """Test ZoneMoveView GET with invalid zone status"""
+        self.zone.status = ZONE_STATUS_DELETED
+        self.zone.save()
         with self.login(self.user):
             response = self.client.get(
                 reverse(
                     'landingzones:move',
-                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
+                    kwargs={'landingzone': self.zone.sodar_uuid},
                 )
             )
         self.assertEqual(response.status_code, 302)
 
 
-class TestLandingZoneDeleteView(ViewTestBase):
-    """Tests for the landing zone deletion view"""
+class TestZoneDeleteView(ViewTestBase):
+    """Tests for ZoneDeleteView"""
 
-    def test_render(self):
-        """Test rendering of the landing zone deletion view"""
+    def setUp(self):
+        super().setUp()
+        self.url = reverse(
+            'landingzones:delete',
+            kwargs={'landingzone': self.zone.sodar_uuid},
+        )
+
+    def test_get(self):
+        """Test ZoneDeleteView GET"""
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'landingzones:delete',
-                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
-                )
-            )
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
 
-    def test_render_invalid_status(self):
-        """Test rendering with an invalid zone status"""
-        self.landing_zone.status = ZONE_STATUS_DELETED
-        self.landing_zone.save()
-
+    def test_get_invalid_status(self):
+        """Test GET with invalid zone status"""
+        self.zone.status = ZONE_STATUS_DELETED
+        self.zone.save()
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'landingzones:delete',
-                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
-                )
-            )
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 302)

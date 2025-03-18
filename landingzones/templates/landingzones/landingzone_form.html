@@ -33,6 +33,9 @@
 </div>
 
 <div class="container-fluid sodar-page-container">
+  {% if prohibit_files and not object.pk %}
+    {% include 'landingzones/_prohibit_warning.html' %}
+  {% endif %}
   <form method="post">
     {% csrf_token %}
     {{ form | crispy }}

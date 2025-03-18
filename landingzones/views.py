@@ -12,6 +12,7 @@ from django.urls import reverse
 from django.views.generic import TemplateView, CreateView, UpdateView
 
 # Projectroles dependency
+from projectroles.app_settings import AppSettingAPI
 from projectroles.plugins import get_backend_api
 from projectroles.views import (
     LoggedInPermissionMixin,
@@ -36,8 +37,10 @@ from landingzones.constants import (
 )
 from landingzones.forms import LandingZoneForm
 from landingzones.models import LandingZone
+from landingzones.utils import cleanup_file_prohibit
 
 
+app_settings = AppSettingAPI()
 logger = logging.getLogger(__name__)
 User = auth.get_user_model()
 
@@ -55,7 +58,23 @@ ZONE_UPDATE_FIELDS = ['description', 'user_message']
 
 
 class ZoneContextMixin:
-    """Context mixing for LandingZones"""
+    """Context mixing for LandingZones UI views"""
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        context['prohibit_files'] = None
+        file_name_prohibit = app_settings.get(
+            APP_NAME, 'file_name_prohibit', project=self.get_project()
+        )
+        if file_name_prohibit:
+            context['prohibit_files'] = ', '.join(
+                cleanup_file_prohibit(file_name_prohibit)
+            )
+        return context
+
+
+class ZoneConfigContextMixin:
+    """Context mixing for LandingZones configuration views"""
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
@@ -386,9 +405,14 @@ class ZoneMoveMixin(ZoneConfigPluginMixin):
             tl_event.set_status(timeline.TL_STATUS_SUBMIT)
 
         flow_data = self.get_flow_data(
-            zone,
-            'landing_zone_move',
-            {'zone_uuid': str(zone.sodar_uuid)},
+            zone=zone,
+            flow_name='landing_zone_move',
+            data={
+                'zone_uuid': str(zone.sodar_uuid),
+                'file_name_prohibit': app_settings.get(
+                    APP_NAME, 'file_name_prohibit', project=project
+                ),
+            },
         )
         if validate_only:
             flow_data['validate_only'] = True
@@ -409,6 +433,7 @@ class ProjectZoneView(
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     InvestigationContextMixin,
+    ZoneContextMixin,
     TemplateView,
 ):
     """View for displaying user landing zones for a project"""
@@ -458,6 +483,7 @@ class ZoneCreateView(
     InvestigationContextMixin,
     CurrentUserFormMixin,
     ZoneModifyMixin,
+    ZoneContextMixin,
     CreateView,
 ):
     """LandingZone creation view"""

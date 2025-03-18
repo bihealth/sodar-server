@@ -48,6 +48,11 @@ Notify members of landing zone uploads
     Send project members email updates for file uploads using landing zones. For
     more information, see the
     :ref:`Landing Zones app documentation <app_landingzones>`.
+Prohibited file types
+    If you want to prohibit uploading files of certain types to the project,
+    add related file suffixes here as a comma-separated list. The file suffixes
+    will be checked during landing zone validation. For more information, see
+    :ref:`app_landingzones_transfer_prohibit`.
 Allow sample sheet editing
     Enable or disable editability of sample sheets in the project.
 Enable sheet synchronization

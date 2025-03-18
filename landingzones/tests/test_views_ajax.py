@@ -16,13 +16,13 @@ class TestLandingZoneStatusGetAjaxView(ViewTestBase):
                     'landingzones:ajax_status',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
-                data={'zone_uuids[]': [str(self.landing_zone.sodar_uuid)]},
+                data={'zone_uuids[]': [str(self.zone.sodar_uuid)]},
             )
         self.assertEqual(response.status_code, 200)
         expected = {
-            str(self.landing_zone.sodar_uuid): {
-                'status': self.landing_zone.status,
-                'status_info': self.landing_zone.status_info,
+            str(self.zone.sodar_uuid): {
+                'status': self.zone.status,
+                'status_info': self.zone.status_info,
             }
         }
         self.assertEquals(response.data, expected)

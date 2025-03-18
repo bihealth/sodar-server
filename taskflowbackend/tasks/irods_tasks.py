@@ -19,6 +19,9 @@ from irods.models import Collection
 
 from django.conf import settings
 
+# Landingzones dependency
+from landingzones.utils import cleanup_file_prohibit
+
 from taskflowbackend.tasks.base_task import BaseTask
 
 
@@ -614,7 +617,35 @@ class BatchSetAccessTask(IrodsAccessMixin, IrodsBaseTask):
             self.revert_set_access(path, user_name, obj_target, recursive)
 
 
-class BatchCheckFilesTask(IrodsBaseTask):
+class BatchCheckFileSuffixTask(IrodsBaseTask):
+    """Batch check for prohibited file name suffixes"""
+
+    def execute(self, file_paths, suffixes, zone_path, *args, **kwargs):
+        suffixes = cleanup_file_prohibit(suffixes)
+        if not suffixes:
+            super().execute(*args, **kwargs)
+            return
+        err_paths = []
+        for p in file_paths:
+            if any(p.lower().endswith('.' + s) for s in suffixes):
+                err_paths.append(p)
+        err_len = len(err_paths)
+        if err_len > 0:
+            msg = '{} file{} found with prohibited file type ({}): {}'.format(
+                err_len,
+                's' if err_len != 1 else '',
+                ', '.join(suffixes),
+                ';'.join([p.replace(zone_path + '/', '') for p in err_paths]),
+            )
+            logger.error(msg)
+            self._raise_irods_exception(Exception(), msg)
+        super().execute(*args, **kwargs)
+
+    def revert(self, file_paths, suffixes, zone_path, *args, **kwargs):
+        pass  # Nothing to revert
+
+
+class BatchCheckFileExistTask(IrodsBaseTask):
     """
     Batch check for existence of files and corresponding .md5 checksum files
     """
