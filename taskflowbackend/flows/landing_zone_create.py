@@ -160,7 +160,7 @@ class Flow(BaseLinearFlow):
                         coll_count, 's' if coll_count != 1 else ''
                     ),
                     irods=self.irods,
-                    inject={'paths': colls_full_path},
+                    inject={'coll_paths': colls_full_path},
                 )
             )
             # Enforce collection access if set

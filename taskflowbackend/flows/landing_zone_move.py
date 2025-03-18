@@ -240,7 +240,7 @@ class Flow(BaseLinearFlow):
                 irods=self.irods,
                 inject={
                     'landing_zone': zone,
-                    'paths': zone_objects_nomd5,
+                    'file_paths': zone_objects_nomd5,
                     'zone_path': zone_path,
                 },
             )
@@ -285,7 +285,7 @@ class Flow(BaseLinearFlow):
                 irods_tasks.BatchCreateCollectionsTask(
                     name='Create collections in {}'.format(SAMPLE_COLL),
                     irods=self.irods,
-                    inject={'paths': sample_colls},
+                    inject={'coll_paths': sample_colls},
                 )
             )
         self.add_task(

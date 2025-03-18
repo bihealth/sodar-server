@@ -1639,7 +1639,7 @@ class TestBatchValidateChecksumsTask(
             name='Validate checksums',
             inject={
                 'landing_zone': self.zone,
-                'paths': [self.obj_path],
+                'file_paths': [self.obj_path],
                 'zone_path': self.zone_path,
             },
         )
@@ -1658,7 +1658,7 @@ class TestBatchValidateChecksumsTask(
             name='Validate checksums',
             inject={
                 'landing_zone': self.zone,
-                'paths': [self.obj_path],
+                'file_paths': [self.obj_path],
                 'zone_path': self.zone_path,
             },
         )
@@ -2059,7 +2059,7 @@ class TestBatchCreateCollectionsTask(IRODSTaskTestBase):
         self.add_task(
             cls=BatchCreateCollectionsTask,
             name='Create collections',
-            inject={'paths': [self.new_coll_path, self.new_coll_path2]},
+            inject={'coll_paths': [self.new_coll_path, self.new_coll_path2]},
         )
         self.assertRaises(
             CollectionDoesNotExist,
@@ -2088,7 +2088,7 @@ class TestBatchCreateCollectionsTask(IRODSTaskTestBase):
         self.add_task(
             cls=BatchCreateCollectionsTask,
             name='Create collections',
-            inject={'paths': [self.new_coll_path, self.new_coll_path2]},
+            inject={'coll_paths': [self.new_coll_path, self.new_coll_path2]},
         )
         self.run_flow()
 
@@ -2096,7 +2096,7 @@ class TestBatchCreateCollectionsTask(IRODSTaskTestBase):
         self.add_task(
             cls=BatchCreateCollectionsTask,
             name='Create collections',
-            inject={'paths': [self.new_coll_path, self.new_coll_path2]},
+            inject={'coll_paths': [self.new_coll_path, self.new_coll_path2]},
         )
         result = self.run_flow()
 
@@ -2115,7 +2115,7 @@ class TestBatchCreateCollectionsTask(IRODSTaskTestBase):
         self.add_task(
             cls=BatchCreateCollectionsTask,
             name='Create collections',
-            inject={'paths': [self.new_coll_path, self.new_coll_path2]},
+            inject={'coll_paths': [self.new_coll_path, self.new_coll_path2]},
             force_fail=True,
         )  # FAIL
         result = self.run_flow()
@@ -2137,7 +2137,7 @@ class TestBatchCreateCollectionsTask(IRODSTaskTestBase):
         self.add_task(
             cls=BatchCreateCollectionsTask,
             name='Create collections',
-            inject={'paths': [self.new_coll_path, self.new_coll_path2]},
+            inject={'coll_paths': [self.new_coll_path, self.new_coll_path2]},
         )
         result = self.run_flow()
         self.assertEqual(result, True)
@@ -2147,7 +2147,7 @@ class TestBatchCreateCollectionsTask(IRODSTaskTestBase):
         self.add_task(
             cls=BatchCreateCollectionsTask,
             name='Create collections',
-            inject={'paths': [self.new_coll_path, self.new_coll_path2]},
+            inject={'coll_paths': [self.new_coll_path, self.new_coll_path2]},
             force_fail=True,
         )  # FAIL
         result = self.run_flow()
@@ -2168,7 +2168,7 @@ class TestBatchCreateCollectionsTask(IRODSTaskTestBase):
             cls=BatchCreateCollectionsTask,
             name='Create collections',
             inject={
-                'paths': [
+                'coll_paths': [
                     os.path.join(self.new_coll_path, 'subcoll1', 'subcoll1a'),
                     os.path.join(self.new_coll_path, 'subcoll2', 'subcoll2a'),
                 ]
@@ -2194,7 +2194,7 @@ class TestBatchCreateCollectionsTask(IRODSTaskTestBase):
             cls=BatchCreateCollectionsTask,
             name='Create collections',
             inject={
-                'paths': [
+                'coll_paths': [
                     os.path.join(self.new_coll_path, 'subcoll1', 'subcoll1a'),
                     os.path.join(self.new_coll_path, 'subcoll1'),
                 ]
@@ -2220,7 +2220,7 @@ class TestBatchCreateCollectionsTask(IRODSTaskTestBase):
             cls=BatchCreateCollectionsTask,
             name='Create collections',
             inject={
-                'paths': [
+                'coll_paths': [
                     os.path.join(self.new_coll_path, 'subcoll1', 'subcoll1a'),
                     os.path.join(self.new_coll_path, 'subcoll2', 'subcoll2a'),
                 ]

@@ -43,6 +43,8 @@ Changed
     - Enable no role for old owner in ``perform_owner_transfer()`` (#2051)
     - Rename ``BatchCheckFileTask`` to ``BatchCheckFileExistTask`` (#2064)
     - Move ``landing_zone_move`` file check tasks before checksum computing (#2099)
+    - Update path argument naming in iRODS tasks (#2093)
+    - Add missing ``super().execute()`` call in ``BatchCheckFileExistTask`` (#2097)
 
 Fixed
 -----

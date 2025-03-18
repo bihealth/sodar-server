@@ -667,6 +667,7 @@ class BatchCheckFileExistTask(IrodsBaseTask):
             )
             logger.error(msg)
             self._raise_irods_exception(Exception(), msg)
+        super().execute(*args, **kwargs)
 
     def revert(self, file_paths, md5_paths, *args, **kwargs):
         pass  # Nothing is modified so no need for revert
@@ -703,15 +704,15 @@ class BatchValidateChecksumsTask(IrodsBaseTask):
                 logger.error(msg)
                 raise Exception(msg)
 
-    def execute(self, landing_zone, paths, zone_path, *args, **kwargs):
+    def execute(self, landing_zone, file_paths, zone_path, *args, **kwargs):
         zone_path_len = len(zone_path.split('/'))
         interval = settings.TASKFLOW_ZONE_PROGRESS_INTERVAL
-        file_count = len(paths)
+        file_count = len(file_paths)
         status_base = landing_zone.status_info
         i = 1
         i_prev = 0
         time_start = time.time()
-        for path in paths:
+        for path in file_paths:
             md5_path = path + '.md5'
             try:
                 with self.irods.data_objects.open(md5_path, mode='r') as f:
@@ -740,17 +741,17 @@ class BatchValidateChecksumsTask(IrodsBaseTask):
             i += 1
         super().execute(*args, **kwargs)
 
-    def revert(self, landing_zone, paths, zone_path, *args, **kwargs):
+    def revert(self, landing_zone, file_paths, zone_path, *args, **kwargs):
         pass  # Nothing is modified so no need for revert
 
 
 class BatchCreateCollectionsTask(IrodsBaseTask):
     """Batch create collections from a list (imkdir)"""
 
-    def execute(self, paths, *args, **kwargs):
+    def execute(self, coll_paths, *args, **kwargs):
         # Create parent collections if they don't exist
         self.execute_data['created_colls'] = []
-        for path in paths:
+        for path in coll_paths:
             for i in range(2, len(path.split('/')) + 1):
                 sub_path = '/'.join(path.split('/')[:i])
                 try:
@@ -765,7 +766,7 @@ class BatchCreateCollectionsTask(IrodsBaseTask):
                     )
         super().execute(*args, **kwargs)
 
-    def revert(self, paths, *args, **kwargs):
+    def revert(self, coll_paths, *args, **kwargs):
         if self.data_modified:
             for coll_path in reversed(self.execute_data['created_colls']):
                 if self.irods.collections.exists(coll_path):
