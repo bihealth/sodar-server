@@ -6,6 +6,7 @@ import sys
 
 from irods.exception import CAT_NO_ROWS_FOUND
 from irods.models import DataObject
+from packaging.version import parse as parse_version
 
 from django.conf import settings
 from django.urls import reverse
@@ -85,8 +86,8 @@ PROJECT_ROLE_GUEST = SODAR_CONSTANTS['PROJECT_ROLE_GUEST']
 
 # Local constants
 SAMPLESHEETS_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar.samplesheets+json'
-SAMPLESHEETS_API_ALLOWED_VERSIONS = ['1.0']
-SAMPLESHEETS_API_DEFAULT_VERSION = '1.0'
+SAMPLESHEETS_API_ALLOWED_VERSIONS = ['1.0', '1.1']
+SAMPLESHEETS_API_DEFAULT_VERSION = '1.1'
 MD5_RE = re.compile(r'([a-fA-F\d]{32})')
 APP_NAME = 'samplesheets'
 IRODS_QUERY_ERROR_MSG = 'Exception querying iRODS objects'
@@ -993,6 +994,7 @@ class SampleDataFileExistsAPIView(SamplesheetsAPIVersioningMixin, APIView):
                 'path': serializers.CharField(),
                 'size': serializers.IntegerField(),
                 'modify_time': serializers.DateTimeField(),
+                'checksum': serializers.CharField(),
             },
         ),
     }
@@ -1016,6 +1018,11 @@ class ProjectIrodsFileListAPIView(
     - ``path``: Full path to file
     - ``size``: Size in bytes
     - ``modify_time``: Datetime of last modification (YYYY-MM-DDThh:mm:ssZ)
+    - ``checksum``: Checksum of data object
+
+    **Version Changes**:
+
+    - ``1.1``: Add ``checksum`` field to return data
     """
 
     http_method_names = ['get']
@@ -1027,10 +1034,12 @@ class ProjectIrodsFileListAPIView(
         irods_backend = get_backend_api('omics_irods')
         project = self.get_project()
         path = irods_backend.get_sample_path(project)
+        version = parse_version(self.request.version)
+        checksum = True if version >= parse_version('1.1') else False
         try:
             with irods_backend.get_session() as irods:
                 obj_list = irods_backend.get_objects(
-                    irods, path, api_format=True
+                    irods, path, api_format=True, checksum=checksum
                 )
         except Exception as ex:
             return Response(

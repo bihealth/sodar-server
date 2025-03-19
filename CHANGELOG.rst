@@ -23,6 +23,7 @@ Added
     - ``cleanup_file_prohibit()`` utility method (#2064)
 - **Samplesheets**
     - Site read-only mode support (#2051)
+    - ``checksum`` field in ``ProjectIrodsFileListAPIView`` return data (#2039)
 - **Taskflowbackend**
     - Project deletion support (#2051)
     - Zone validation and moving progress indicators (#2024)

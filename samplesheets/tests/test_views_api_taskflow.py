@@ -1258,8 +1258,7 @@ class TestProjectIrodsFileListAPIView(SampleSheetAPITaskflowTestBase):
 
     def test_get_no_collection(self):
         """Test ProjectIrodsFileListAPIView GET without collection"""
-        with self.login(self.user):
-            response = self.client.get(self.url)
+        response = self.request_knox(self.url)
         self.assertEqual(response.status_code, 404)
         self.assertEqual(
             response.data['detail'],
@@ -1272,27 +1271,45 @@ class TestProjectIrodsFileListAPIView(SampleSheetAPITaskflowTestBase):
         """Test GET with empty collection"""
         # Set up iRODS collections
         self.make_irods_colls(self.investigation)
-        with self.login(self.user):
-            response = self.client.get(self.url)
+        response = self.request_knox(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data, [])
 
     def test_get_files(self):
         """Test GET with files"""
-        # Set up iRODS collections
         self.make_irods_colls(self.investigation)
         coll_path = self.irods_backend.get_sample_path(self.project) + '/'
         self.irods.data_objects.put(
             IRODS_FILE_PATH, coll_path, **{REG_CHKSUM_KW: ''}
         )
-        with self.login(self.user):
-            response = self.client.get(self.url)
+        data_obj = self.irods.data_objects.get(coll_path + '/' + 'test1.txt')
+        response = self.request_knox(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['name'], IRODS_FILE_NAME)
         self.assertEqual(response.data[0]['type'], 'obj')
-        data_obj = self.irods.data_objects.get(coll_path + '/' + 'test1.txt')
         self.assertEqual(
             response.data[0]['modify_time'],
             self.get_drf_datetime(data_obj.modify_time),
         )
+        self.assertEqual(response.data[0]['checksum'], data_obj.checksum)
+        self.assertIsNotNone(response.data[0]['checksum'])
+
+    def test_get_files_v1_0(self):
+        """Test GET with files and API version 1.0"""
+        self.make_irods_colls(self.investigation)
+        coll_path = self.irods_backend.get_sample_path(self.project) + '/'
+        self.irods.data_objects.put(
+            IRODS_FILE_PATH, coll_path, **{REG_CHKSUM_KW: ''}
+        )
+        data_obj = self.irods.data_objects.get(coll_path + '/' + 'test1.txt')
+        response = self.request_knox(self.url, version='1.0')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['name'], IRODS_FILE_NAME)
+        self.assertEqual(response.data[0]['type'], 'obj')
+        self.assertEqual(
+            response.data[0]['modify_time'],
+            self.get_drf_datetime(data_obj.modify_time),
+        )
+        self.assertNotIn('checksum', response.data[0])  # Should not be included

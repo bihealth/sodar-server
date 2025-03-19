@@ -15,6 +15,7 @@ Release for SODAR Core 1.1 upgrade and feature updates.
 
 - Add landing zone validation and moving progress indicators
 - Add landing zone file type prohibiting
+- Upgrade Sample Sheets REST API version to v1.1
 - Upgrade to python-irodsclient v3.0
 - Upgrade to SODAR Core v1.1.2
 - Replace SODAR_SUPPORT_* settings with PROJECTROLES_SUPPORT_CONTACT
@@ -23,6 +24,15 @@ Release for SODAR Core 1.1 upgrade and feature updates.
   mode, etc.
 
 :ref:`Administrator upgrade guide for v1.1 <admin_upgrade_v1.1>`
+
+REST API Updates
+----------------
+
+- Sample Sheets API
+    * Current version: ``1.1`` (non-breaking changes)
+    * Allowed versions: ``1.0``, ``1.1``
+    * ``ProjectIrodsFileListAPIView``
+        + Add ``checksum`` field to return data
 
 
 v1.0.1 (2025-03-12)
