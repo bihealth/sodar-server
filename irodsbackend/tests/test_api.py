@@ -51,7 +51,7 @@ IRODS_ENV = {
 }
 
 
-class TestIrodsbackendAPI(
+class TestIrodsAPI(
     SampleSheetIOMixin,
     LandingZoneMixin,
     ProjectMixin,
@@ -59,7 +59,7 @@ class TestIrodsbackendAPI(
     RoleAssignmentMixin,
     TestCase,
 ):
-    """Tests for the API in the irodsbackend app"""
+    """Tests for IrodsAPI"""
 
     def setUp(self):
         # Init user

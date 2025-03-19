@@ -571,6 +571,7 @@ class IrodsAPI:
         include_md5=False,
         name_like=None,
         limit=None,
+        offset=None,
         api_format=False,
         checksum=False,
     ):
@@ -583,7 +584,8 @@ class IrodsAPI:
         :param coll: Collection object
         :param include_md5: if True, include .md5 files
         :param name_like: Filtering of file names (string or list of strings)
-        :param limit: Limit retrieval to n rows (int)
+        :param limit: Limit retrieval to N rows (int or None)
+        :param offset: Offset retrieval by N rows (int or None)
         :param api_format: Format data for REST API (bool, default=False)
         :param checksum: Include checksum in info (bool, default=False)
         :return: List of dicts
@@ -617,6 +619,8 @@ class IrodsAPI:
             # TODO: Shouldn't we also allow limit if including .md5 files?
             if not include_md5 and limit:
                 sql += ' LIMIT {}'.format(limit)
+            if offset:
+                sql += ' OFFSET {}'.format(offset)
 
             # logger.debug('Object list query = "{}"'.format(sql))
             columns = [
@@ -681,6 +685,7 @@ class IrodsAPI:
         include_colls=False,
         name_like=None,
         limit=None,
+        offset=None,
         api_format=False,
         checksum=False,
     ):
@@ -692,7 +697,8 @@ class IrodsAPI:
         :param include_md5: Include .md5 checksum files (bool)
         :param include_colls: Include collections (bool)
         :param name_like: Filtering of file names (string or list of strings)
-        :param limit: Limit search to n rows (int)
+        :param limit: Limit retrieval to N rows (int or None)
+        :param offset: Offset retrieval by N rows (int or None)
         :param api_format: Format data for REST API (bool, default=False)
         :param checksum: Include checksum in info (bool, default=False)
         :return: List of dicts
@@ -713,6 +719,7 @@ class IrodsAPI:
             include_md5=include_md5,
             name_like=name_like,
             limit=limit,
+            offset=offset,
             api_format=api_format,
             checksum=checksum,
         )

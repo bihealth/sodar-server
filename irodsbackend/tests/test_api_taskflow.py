@@ -42,16 +42,17 @@ ZONE_TITLE = '20180503_172456_test_zone'
 ZONE_DESC = 'description'
 TEST_FILE_NAME = 'test1'
 TEST_FILE_NAME2 = 'test2'
+TEST_FILE_NAME3 = 'test3'
 TICKET_STR = 'Ahn1kah9Lai2hies'
 
 
-class TestIrodsBackendAPITaskflow(
+class TestIrodsAPITaskflow(
     SampleSheetIOMixin,
     LandingZoneMixin,
     SampleSheetTaskflowMixin,
     TaskflowViewTestBase,
 ):
-    """Tests for the API in the irodsbackend app with Taskflow and iRODS"""
+    """Tests for IrodsAPI with Taskflow and iRODS"""
 
     def setUp(self):
         super().setUp()
@@ -71,7 +72,6 @@ class TestIrodsBackendAPITaskflow(
     def test_get_info(self):
         """Test get_info()"""
         info = self.irods_backend.get_info(self.irods)
-        self.assertIsNotNone(info)
         self.assertEqual(info['server_ok'], True)
         self.assertEqual(info['server_status'], SERVER_AVAILABLE)
         self.assertEqual(info['server_host'], IRODS_HOST)
@@ -106,7 +106,6 @@ class TestIrodsBackendAPITaskflow(
         obj_list = self.irods_backend.get_objects(
             self.irods, path, include_md5=True
         )
-        self.assertIsNotNone(obj_list)
         self.assertEqual(len(obj_list), 2)
 
         data_obj = self.irods.data_objects.get(path + '/' + TEST_FILE_NAME)
@@ -134,7 +133,6 @@ class TestIrodsBackendAPITaskflow(
         obj_list = self.irods_backend.get_objects(
             self.irods, path, include_md5=True, include_colls=True
         )
-        self.assertIsNotNone(obj_list)
         self.assertEqual(len(obj_list), 3)
 
         expected = [
@@ -174,7 +172,6 @@ class TestIrodsBackendAPITaskflow(
             name_like=[TEST_FILE_NAME, TEST_FILE_NAME2],
             include_md5=True,
         )
-        self.assertIsNotNone(obj_list)
         self.assertEqual(len(obj_list), 4)
 
     def test_get_objects_long_query(self):
@@ -205,7 +202,6 @@ class TestIrodsBackendAPITaskflow(
             name_like=[TEST_FILE_NAME, TEST_FILE_NAME2],
             include_md5=True,
         )
-        self.assertIsNotNone(obj_list)
         self.assertEqual(len(obj_list), 4)
 
     def test_get_objects_empty_coll(self):
@@ -213,7 +209,6 @@ class TestIrodsBackendAPITaskflow(
         self.make_irods_colls(self.investigation)
         path = self.irods_backend.get_path(self.project) + '/' + SAMPLE_COLL
         obj_list = self.irods_backend.get_objects(self.irods, path)
-        self.assertIsNotNone(obj_list)
         self.assertEqual(len(obj_list), 0)
 
     def test_get_objects_no_coll(self):
@@ -223,7 +218,7 @@ class TestIrodsBackendAPITaskflow(
             self.irods_backend.get_objects(self.irods, path)
 
     def test_get_objects_limit(self):
-        """Test get_objects() with a limit applied"""
+        """Test get_objects() with limit"""
         self.make_irods_colls(self.investigation)
         path = self.irods_backend.get_path(self.assay)
         self.irods.data_objects.create(path + '/' + TEST_FILE_NAME)
@@ -231,8 +226,34 @@ class TestIrodsBackendAPITaskflow(
         obj_list = self.irods_backend.get_objects(
             self.irods, path, include_md5=False, limit=1
         )
-        self.assertIsNotNone(obj_list)
         self.assertEqual(len(obj_list), 1)  # Limited to 1
+        self.assertEqual(obj_list[0]['name'], TEST_FILE_NAME)
+
+    def test_get_objects_offset(self):
+        """Test get_objects() with offset"""
+        self.make_irods_colls(self.investigation)
+        path = self.irods_backend.get_path(self.assay)
+        self.irods.data_objects.create(path + '/' + TEST_FILE_NAME)
+        self.irods.data_objects.create(path + '/' + TEST_FILE_NAME2)
+        obj_list = self.irods_backend.get_objects(
+            self.irods, path, include_md5=False, offset=1
+        )
+        self.assertEqual(len(obj_list), 1)
+        self.assertEqual(obj_list[0]['name'], TEST_FILE_NAME2)
+
+    def test_get_objects_limit_offset(self):
+        """Test get_objects() with limit and offset"""
+        self.make_irods_colls(self.investigation)
+        path = self.irods_backend.get_path(self.assay)
+        self.irods.data_objects.create(path + '/' + TEST_FILE_NAME)
+        self.irods.data_objects.create(path + '/' + TEST_FILE_NAME2)
+        self.irods.data_objects.create(path + '/' + TEST_FILE_NAME3)
+        obj_list = self.irods_backend.get_objects(
+            self.irods, path, include_md5=False, limit=1, offset=1
+        )
+        self.assertEqual(len(obj_list), 1)
+        # Only the middle file should be returned
+        self.assertEqual(obj_list[0]['name'], TEST_FILE_NAME2)
 
     def test_get_objects_api_format(self):
         """Test get_objects() with api_format=True"""

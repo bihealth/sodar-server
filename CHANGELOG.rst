@@ -15,7 +15,8 @@ Added
     - drf-spectacular support (#2051)
     - ``PROJECTROLES_SUPPORT_CONTACT`` setting support (#2095)
 - **Irodsbackend**
-    - Checksum retrieval in ``get_objects()`` (#2038)
+    - ``checksum`` argument in ``get_objects()`` (#2038)
+    - ``offset`` argument in ``get_objects()`` (#1997)
 - **Landingzones**
     - Site read-only mode support (#2051)
     - File type prohibiting by file name suffix (#2064)
