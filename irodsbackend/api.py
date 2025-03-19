@@ -572,6 +572,7 @@ class IrodsAPI:
         name_like=None,
         limit=None,
         api_format=False,
+        checksum=False,
     ):
         """
         Return objects below a coll recursively. Replacement for the
@@ -584,7 +585,8 @@ class IrodsAPI:
         :param name_like: Filtering of file names (string or list of strings)
         :param limit: Limit retrieval to n rows (int)
         :param api_format: Format data for REST API (bool, default=False)
-        :return: List
+        :param checksum: Include checksum in info (bool, default=False)
+        :return: List of dicts
         """
         ret = []
         md5_filter = '' if include_md5 else 'AND data_name NOT LIKE \'%.md5\''
@@ -594,11 +596,13 @@ class IrodsAPI:
         def _do_query(irods, nl=None):
             sql = (
                 'SELECT DISTINCT ON (data_id) data_name, data_size, '
-                'r_data_main.modify_ts as modify_ts, coll_name '
+                'r_data_main.modify_ts as modify_ts, coll_name{checksum}'
                 'FROM r_data_main JOIN r_coll_main USING (coll_id) '
                 'WHERE (coll_name = \'{coll_path}\' '
                 'OR coll_name LIKE \'{coll_path}/%\') {md5_filter}'.format(
-                    coll_path=coll.path, md5_filter=md5_filter
+                    checksum=', data_checksum ' if checksum else ' ',
+                    coll_path=coll.path,
+                    md5_filter=md5_filter,
                 )
             )
             if nl:
@@ -621,6 +625,8 @@ class IrodsAPI:
                 DataObject.modify_time,
                 Collection.name,
             ]
+            if checksum:
+                columns.append(DataObject.checksum)
             query = self.get_query(irods, sql, columns)
 
             try:
@@ -629,17 +635,18 @@ class IrodsAPI:
                     obj_path = row[Collection.name] + '/' + row[DataObject.name]
                     if q_count > 1 and obj_path in path_lookup:
                         continue  # Skip possible dupes in case of split query
-                    ret.append(
-                        {
-                            'name': row[DataObject.name],
-                            'type': 'obj',
-                            'path': obj_path,
-                            'size': row[DataObject.size],
-                            'modify_time': self._get_datetime(
-                                row[DataObject.modify_time], api_format
-                            ),
-                        }
-                    )
+                    d = {
+                        'name': row[DataObject.name],
+                        'type': 'obj',
+                        'path': obj_path,
+                        'size': row[DataObject.size],
+                        'modify_time': self._get_datetime(
+                            row[DataObject.modify_time], api_format
+                        ),
+                    }
+                    if checksum:
+                        d['checksum'] = row[DataObject.checksum]
+                    ret.append(d)
                     if q_count > 1:
                         path_lookup.append(obj_path)
             except CAT_NO_ROWS_FOUND:
@@ -675,6 +682,7 @@ class IrodsAPI:
         name_like=None,
         limit=None,
         api_format=False,
+        checksum=False,
     ):
         """
         Return a flat iRODS object list recursively under a given path.
@@ -686,7 +694,8 @@ class IrodsAPI:
         :param name_like: Filtering of file names (string or list of strings)
         :param limit: Limit search to n rows (int)
         :param api_format: Format data for REST API (bool, default=False)
-        :return: List
+        :param checksum: Include checksum in info (bool, default=False)
+        :return: List of dicts
         :raise: FileNotFoundError if collection is not found
         """
         try:
@@ -705,6 +714,7 @@ class IrodsAPI:
             name_like=name_like,
             limit=limit,
             api_format=api_format,
+            checksum=checksum,
         )
 
         # Add collections if enabled

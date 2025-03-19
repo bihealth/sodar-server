@@ -258,6 +258,34 @@ class TestIrodsBackendAPITaskflow(
         }
         self.assertEqual(obj_list[0], expected)
 
+    def test_get_objects_checksum(self):
+        """Test get_objects() with checksum"""
+        self.make_irods_colls(self.investigation)
+        path = self.irods_backend.get_path(self.assay)
+        coll = self.irods.collections.get(path)
+        # Use make_irods_object() to generate checksum on server
+        self.make_irods_object(coll, TEST_FILE_NAME, checksum=True)
+        obj_list = self.irods_backend.get_objects(
+            self.irods, path, checksum=True
+        )
+        self.assertEqual(len(obj_list), 1)
+        data_obj = self.irods.data_objects.get(path + '/' + TEST_FILE_NAME)
+        modify_time = (
+            data_obj.modify_time.replace(tzinfo=pytz.timezone('GMT'))
+            .astimezone(pytz.timezone(settings.TIME_ZONE))
+            .strftime('%Y-%m-%d %H:%M')
+        )
+        expected = {
+            'name': TEST_FILE_NAME,
+            'type': 'obj',
+            'path': path + '/' + TEST_FILE_NAME,
+            'size': 1024,
+            'modify_time': modify_time,
+            'checksum': data_obj.checksum,
+        }
+        self.assertEqual(obj_list[0], expected)
+        self.assertIsNotNone(obj_list[0]['checksum'])
+
     def test_issue_ticket(self):
         """Test issue_ticket()"""
         self.make_irods_colls(self.investigation)
