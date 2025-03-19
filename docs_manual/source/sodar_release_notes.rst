@@ -33,6 +33,7 @@ REST API Updates
     * Allowed versions: ``1.0``, ``1.1``
     * ``ProjectIrodsFileListAPIView``
         + Add ``checksum`` field to return data
+        + Add ``page`` parameter for optional pagination
 
 
 v1.0.1 (2025-03-12)

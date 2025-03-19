@@ -81,3 +81,4 @@ v1.1
 
 - ``ProjectIrodsFileListAPIView``
     * Add ``checksum`` field to return data
+    * Add ``page`` parameter for optional pagination

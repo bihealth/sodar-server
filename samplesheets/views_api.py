@@ -16,6 +16,7 @@ from rest_framework.exceptions import (
     APIException,
     ParseError,
     ValidationError,
+    NotAcceptable,
     NotFound,
     PermissionDenied,
 )
@@ -98,6 +99,7 @@ FILE_EXISTS_RESTRICT_MSG = (
     'File exist query access restricted: user does not have guest access or '
     'above in any project (SHEETS_API_FILE_EXISTS_RESTRICT=True)'
 )
+FILE_LIST_PAGINATE_VERSION_MSG = 'Pagination not supported in API version 1.0'
 
 
 # Base Classes and Mixins ------------------------------------------------------
@@ -1005,9 +1007,17 @@ class ProjectIrodsFileListAPIView(
     """
     Return a list of files in the project sample data repository.
 
+    Supports optional pagination for listing by providing the ``page`` query
+    string. This will return results in the Django Rest Framework
+    ``PageNumberPagination`` format.
+
     **URL:** ``/samplesheets/api/file/list/{Project.sodar_uuid}``
 
     **Methods:** ``GET``
+
+    **Parameters:**
+
+    - ``page``: Page number for paginated results (int, optional)
 
     **Returns:**
 
@@ -1023,6 +1033,7 @@ class ProjectIrodsFileListAPIView(
     **Version Changes**:
 
     - ``1.1``: Add ``checksum`` field to return data
+    - ``1.1``: Add ``page`` parameter for optional pagination
     """
 
     http_method_names = ['get']
@@ -1031,22 +1042,65 @@ class ProjectIrodsFileListAPIView(
     def get(self, request, *args, **kwargs):
         if not settings.ENABLE_IRODS:
             raise APIException('iRODS not enabled')
+        version = parse_version(request.version)
+        page = request.GET.get('page')
+        if page and version < parse_version('1.1'):
+            raise NotAcceptable(FILE_LIST_PAGINATE_VERSION_MSG)
+        elif page:
+            page = int(page)
+
         irods_backend = get_backend_api('omics_irods')
         project = self.get_project()
         path = irods_backend.get_sample_path(project)
-        version = parse_version(self.request.version)
+        page_size = settings.SODAR_API_PAGE_SIZE
+        limit = None
+        offset = None
+        file_count = None
+        if page:
+            limit = page_size
+            offset = 0 if page == 1 else (page - 1) * page_size
         checksum = True if version >= parse_version('1.1') else False
+
         try:
             with irods_backend.get_session() as irods:
                 obj_list = irods_backend.get_objects(
-                    irods, path, api_format=True, checksum=checksum
+                    irods,
+                    path,
+                    limit=limit,
+                    offset=offset,
+                    api_format=True,
+                    checksum=checksum,
                 )
+                # Get total count for DRF compatible pagination response
+                if page:
+                    stats = irods_backend.get_object_stats(irods, path)
+                    file_count = stats['file_count']
+        except FileNotFoundError as ex:
+            raise NotFound('{}: {}'.format(IRODS_QUERY_ERROR_MSG, ex))
         except Exception as ex:
             return Response(
                 {'detail': '{}: {}'.format(IRODS_QUERY_ERROR_MSG, ex)},
-                status=status.HTTP_404_NOT_FOUND,
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-        return Response(obj_list, status=status.HTTP_200_OK)
+
+        if page:
+            url = reverse(
+                'samplesheets:api_file_list',
+                kwargs={'project': project.sodar_uuid},
+            )
+            ret = {
+                'count': file_count,
+                'next': (
+                    (url + f'?page={page + 1}')
+                    if file_count > page * page_size
+                    else None
+                ),
+                'previous': (url + f'?page={page - 1}') if page > 1 else None,
+                'results': obj_list,
+            }
+        else:
+            ret = obj_list
+        return Response(ret, status=status.HTTP_200_OK)
 
 
 # TODO: Temporary HACK, should be replaced by proper API view

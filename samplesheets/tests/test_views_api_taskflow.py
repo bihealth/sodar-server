@@ -76,6 +76,7 @@ IRODS_FILE_MD5 = '0b26e313ed4a7ca6904b0e9369e5b957'
 IRODS_REQUEST_DESC_UPDATED = 'updated'
 DUMMY_UUID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
 LABEL_UPDATE = 'label_update'
+TEST_OBJ_NAME = 'test1.txt'
 
 
 # Base Classes and Mixins ------------------------------------------------------
@@ -1278,38 +1279,105 @@ class TestProjectIrodsFileListAPIView(SampleSheetAPITaskflowTestBase):
     def test_get_files(self):
         """Test GET with files"""
         self.make_irods_colls(self.investigation)
-        coll_path = self.irods_backend.get_sample_path(self.project) + '/'
-        self.irods.data_objects.put(
-            IRODS_FILE_PATH, coll_path, **{REG_CHKSUM_KW: ''}
-        )
-        data_obj = self.irods.data_objects.get(coll_path + '/' + 'test1.txt')
+        coll_path = self.irods_backend.get_sample_path(self.project)
+        coll = self.irods.collections.get(coll_path)
+        data_obj = self.make_irods_object(coll, TEST_OBJ_NAME)
         response = self.request_knox(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['name'], IRODS_FILE_NAME)
-        self.assertEqual(response.data[0]['type'], 'obj')
-        self.assertEqual(
-            response.data[0]['modify_time'],
-            self.get_drf_datetime(data_obj.modify_time),
-        )
-        self.assertEqual(response.data[0]['checksum'], data_obj.checksum)
+        expected = {
+            'name': TEST_OBJ_NAME,
+            'path': data_obj.path,
+            'type': 'obj',
+            'size': 1024,
+            'modify_time': self.get_drf_datetime(data_obj.modify_time),
+            'checksum': data_obj.checksum,
+        }
+        self.assertEqual(response.data[0], expected)
         self.assertIsNotNone(response.data[0]['checksum'])
 
     def test_get_files_v1_0(self):
         """Test GET with files and API version 1.0"""
         self.make_irods_colls(self.investigation)
-        coll_path = self.irods_backend.get_sample_path(self.project) + '/'
-        self.irods.data_objects.put(
-            IRODS_FILE_PATH, coll_path, **{REG_CHKSUM_KW: ''}
-        )
-        data_obj = self.irods.data_objects.get(coll_path + '/' + 'test1.txt')
+        coll_path = self.irods_backend.get_sample_path(self.project)
+        coll = self.irods.collections.get(coll_path)
+        data_obj = self.make_irods_object(coll, TEST_OBJ_NAME)
         response = self.request_knox(self.url, version='1.0')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['name'], IRODS_FILE_NAME)
-        self.assertEqual(response.data[0]['type'], 'obj')
-        self.assertEqual(
-            response.data[0]['modify_time'],
-            self.get_drf_datetime(data_obj.modify_time),
-        )
-        self.assertNotIn('checksum', response.data[0])  # Should not be included
+        expected = {
+            'name': TEST_OBJ_NAME,
+            'path': data_obj.path,
+            'type': 'obj',
+            'size': 1024,
+            'modify_time': self.get_drf_datetime(data_obj.modify_time),
+        }  # Checksum should not be included
+        self.assertEqual(response.data[0], expected)
+
+    def test_get_paginate(self):
+        """Test GET with files and pagination"""
+        self.make_irods_colls(self.investigation)
+        coll_path = self.irods_backend.get_sample_path(self.project)
+        coll = self.irods.collections.get(coll_path)
+        data_obj = self.make_irods_object(coll, TEST_OBJ_NAME)
+        response = self.request_knox(self.url + '?page=1')
+        self.assertEqual(response.status_code, 200)
+        expected = {
+            'count': 1,
+            'next': None,
+            'previous': None,
+            'results': [
+                {
+                    'name': TEST_OBJ_NAME,
+                    'path': data_obj.path,
+                    'type': 'obj',
+                    'size': 1024,
+                    'modify_time': self.get_drf_datetime(data_obj.modify_time),
+                    'checksum': data_obj.checksum,
+                }
+            ],
+        }
+        self.assertEqual(response.data, expected)
+
+    @override_settings(SODAR_API_PAGE_SIZE=5)
+    def test_get_paginate_multi(self):
+        """Test GET with pagination and multiple pages"""
+        self.make_irods_colls(self.investigation)
+        coll_path = self.irods_backend.get_sample_path(self.project)
+        coll = self.irods.collections.get(coll_path)
+        for i in range(0, 11):
+            self.make_irods_object(
+                coll,
+                'test{}.txt'.format(('0' if i < 10 else '') + str(i)),
+            )
+        stats = self.irods_backend.get_object_stats(self.irods, coll_path)
+        self.assertEqual(stats['file_count'], 11)
+
+        response = self.request_knox(self.url + '?page=1')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['count'], 11)
+        self.assertEqual(response.data['next'], self.url + '?page=2')
+        self.assertEqual(response.data['previous'], None)
+        self.assertEqual(len(response.data['results']), 5)
+        file_names = [r['name'] for r in response.data['results']]
+        expected = [f'test0{i}.txt' for i in range(0, 5)]
+        self.assertEqual(file_names, expected)
+
+        response = self.request_knox(self.url + '?page=2')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['next'], self.url + '?page=3')
+        self.assertEqual(response.data['previous'], self.url + '?page=1')
+        self.assertEqual(len(response.data['results']), 5)
+        file_names = [r['name'] for r in response.data['results']]
+        expected = [
+            'test{}.txt'.format(('0' if i < 10 else '') + str(i))
+            for i in range(5, 10)
+        ]
+        self.assertEqual(file_names, expected)
+
+        response = self.request_knox(self.url + '?page=3')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['next'], None)
+        self.assertEqual(response.data['previous'], self.url + '?page=2')
+        self.assertEqual(len(response.data['results']), 1)
+        self.assertEqual(response.data['results'][0]['name'], 'test10.txt')

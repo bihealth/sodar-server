@@ -25,6 +25,7 @@ Added
 - **Samplesheets**
     - Site read-only mode support (#2051)
     - ``checksum`` field in ``ProjectIrodsFileListAPIView`` return data (#2039)
+    - ``ProjectIrodsFileListAPIView`` pagination (#1996)
 - **Taskflowbackend**
     - Project deletion support (#2051)
     - Zone validation and moving progress indicators (#2024)
@@ -43,6 +44,7 @@ Changed
     - Do not mute zone title and description with busy zones (#2092)
 - **Samplesheets**
     - Define app settings as ``PluginAppSettingDef`` objects (#2051)
+    - Return ``500`` for iRODS query exceptions in ``ProjectIrodsFileListAPIView`` (#2103)
 - **Taskflowbackend**
     - Enable no role for old owner in ``perform_owner_transfer()`` (#2051)
     - Rename ``BatchCheckFileTask`` to ``BatchCheckFileExistTask`` (#2064)
