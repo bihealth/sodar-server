@@ -616,8 +616,7 @@ class IrodsAPI:
                         sql += ' OR '
                     sql += 'data_name LIKE \'%{}%\''.format(n)
                 sql += ')'
-            # TODO: Shouldn't we also allow limit if including .md5 files?
-            if not include_md5 and limit:
+            if limit:
                 sql += ' LIMIT {}'.format(limit)
             if offset:
                 sql += ' OFFSET {}'.format(offset)

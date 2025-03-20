@@ -229,6 +229,22 @@ class TestIrodsAPITaskflow(
         self.assertEqual(len(obj_list), 1)  # Limited to 1
         self.assertEqual(obj_list[0]['name'], TEST_FILE_NAME)
 
+    def test_get_objects_limit_md5(self):
+        """Test get_objects() with limit and MD5 inclusion"""
+        self.make_irods_colls(self.investigation)
+        path = self.irods_backend.get_path(self.assay)
+        coll = self.irods.collections.get(path)
+        data_obj = self.make_irods_object(coll, TEST_FILE_NAME)
+        self.make_irods_md5_object(data_obj)  # Create MD5 object
+        data_obj2 = self.make_irods_object(coll, TEST_FILE_NAME2)
+        self.make_irods_md5_object(data_obj2)
+        obj_list = self.irods_backend.get_objects(
+            self.irods, path, include_md5=True, limit=2
+        )
+        self.assertEqual(len(obj_list), 2)
+        self.assertEqual(obj_list[0]['name'], TEST_FILE_NAME)
+        self.assertEqual(obj_list[1]['name'], TEST_FILE_NAME + '.md5')
+
     def test_get_objects_offset(self):
         """Test get_objects() with offset"""
         self.make_irods_colls(self.investigation)
