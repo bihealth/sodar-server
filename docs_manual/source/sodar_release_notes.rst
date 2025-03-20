@@ -13,9 +13,9 @@ v1.1.0 (WIP)
 
 Release for SODAR Core 1.1 upgrade and feature updates.
 
-- Add landing zone validation and moving progress indicators
-- Add landing zone file type prohibiting
-- Upgrade Sample Sheets REST API version to v1.1
+- :ref:`Add landing zone validation and moving progress indicators <app_landingzones_transfer>`
+- :ref:`Add landing zone file type prohibiting <app_landingzones_transfer_prohibit>`
+- :ref:`Upgrade Sample Sheets REST API version to v1.1 <api_samplesheets_version_1_1>`
 - Upgrade to python-irodsclient v3.0
 - Upgrade to SODAR Core v1.1.2
 - Replace SODAR_SUPPORT_* settings with PROJECTROLES_SUPPORT_CONTACT
@@ -50,19 +50,18 @@ v1.0.0 (2025-03-03)
 
 Release for SODAR Core v1.0 upgrade, iRODS v4.3 upgrade and feature updates.
 
-- Add opt-out settings for iRODS data request and zone status update emails
+- :ref:`Add opt-out settings for iRODS data request and zone status update emails <ui_user_profile>`
 - Add REST API list view pagination
 - Add Python v3.11 support
-- Add study plugin override via ISA-Tab comments
+- :ref:`Add study plugin override via ISA-Tab comments <metadata_advanced>`
 - Add session control in Django settings and environment variables
-- Add token-based iRODS/IGV basic auth support for OIDC users
-- Add support for comment, performer and contact field values as list
-- Add support for numeric field values as list
+- :ref:`Add token-based iRODS/IGV basic auth support for OIDC users <ui_irods_info>`
+- :ref:`Add support for comment, performer and contact field values as list <app_samplesheets_edit_cell_basic>`
+- :ref:`Add support for numeric field values as list <app_samplesheets_edit_cell_basic>`
 - Add support for UTF-8 BOM header in MD5 checksum files
-- Add optional SampleDataFileExistsAPIView access restricting for users with
-  project roles
+- :ref:`Add optional SampleDataFileExistsAPIView access restricting for users with project roles <api_samplesheets>`
 - Update minimum supported iRODS version to v4.3.3
-- Update REST API versioning
+- :ref:`Update REST API versioning <api_documentation_versioning>`
 - Update REST API views for OpenAPI support
 - Update lock requiring REST API views to return 503 if project is locked
 - Update REST APIs to return user UUID instead of SODARUserSerializer objects

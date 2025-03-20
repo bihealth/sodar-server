@@ -76,6 +76,8 @@ iRODS Data Requests
 Version Changes
 ===============
 
+.. _api_samplesheets_version_1_1:
+
 v1.1
 ----
 

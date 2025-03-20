@@ -69,6 +69,8 @@ will automatically update in all tables.
 The type of editing presented depends on the type of the column. Different
 editing modes are detailed below.
 
+.. _app_samplesheets_edit_cell_basic:
+
 Basic String or Numeric Input
 -----------------------------
 
