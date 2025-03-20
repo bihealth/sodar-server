@@ -5,8 +5,6 @@ import uuid
 
 from datetime import timedelta
 
-from irods.keywords import REG_CHKSUM_KW
-
 from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -25,14 +23,7 @@ from samplesheets.tests.test_models import (
     IrodsAccessTicketMixin,
 )
 from samplesheets.tests.test_permissions import SHEET_PATH
-from samplesheets.tests.test_views_api_taskflow import (
-    IRODS_FILE_PATH,
-    IRODS_FILE_MD5,
-)
-from samplesheets.tests.test_views_taskflow import (
-    SampleSheetTaskflowMixin,
-    IRODS_FILE_NAME,
-)
+from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 from samplesheets.views_api import (
     SAMPLESHEETS_API_MEDIA_TYPE,
     SAMPLESHEETS_API_DEFAULT_VERSION,
@@ -42,6 +33,8 @@ from samplesheets.views_api import (
 # Local constants
 LABEL_CREATE = 'label'
 LABEL_UPDATE = 'label_update'
+IRODS_FILE_NAME = 'test1.txt'
+IRODS_FILE_MD5 = '7265f4d211b56873a381d321f586e4a9'
 
 
 # Base Classes and Mixins ------------------------------------------------------
@@ -130,11 +123,10 @@ class TestSampleDataFileExistsAPIView(SheetTaskflowAPIPermissionTestBase):
         self.assay = self.study.assays.first()
         # Make iRODS collections
         self.make_irods_colls(self.investigation)
-        # Upload file
-        coll_path = self.irods_backend.get_sample_path(self.project) + '/'
-        self.irods.data_objects.put(
-            IRODS_FILE_PATH, coll_path, **{REG_CHKSUM_KW: ''}
-        )
+        # Create file
+        self.coll_path = self.irods_backend.get_sample_path(self.project)
+        self.coll = self.irods.collections.get(self.coll_path)
+        self.make_irods_object(self.coll, IRODS_FILE_NAME)
         self.get_data = {'checksum': IRODS_FILE_MD5}
         self.url = reverse('samplesheets:api_file_exists')
 
@@ -574,7 +566,7 @@ class TestIrodsDataRequestUpdateAPIView(
         self.request = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
-            path=IRODS_FILE_PATH,
+            path=self.file_obj.path,
             status=IRODS_REQUEST_STATUS_ACTIVE,
             user=self.user_contributor,
         )
@@ -671,7 +663,7 @@ class TestIrodsDataRequestAcceptAPIView(
         self.request = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
-            path=IRODS_FILE_PATH,
+            path=self.file_obj.path,
             status=IRODS_REQUEST_STATUS_ACTIVE,
             user=self.user_contributor,
         )
@@ -744,3 +736,71 @@ class TestIrodsDataRequestAcceptAPIView(
 
 
 # NOTE: For IrodsDataRequestRejectAPIView, see test_permissions_api
+
+
+class TestProjectIrodsFileListAPIView(SheetTaskflowAPIPermissionTestBase):
+    """Test permissions for ProjectIrodsFileListAPIView"""
+
+    def setUp(self):
+        super().setUp()
+        # Import investigation
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+        # Set up iRODS data
+        self.make_irods_colls(self.investigation)
+        self.assay_path = self.irods_backend.get_path(self.assay)
+        self.url = reverse(
+            'samplesheets:api_file_list',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        self.good_users = [
+            self.superuser,
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
+        ]
+        self.bad_users = [
+            self.user_finder_cat,
+            self.user_no_roles,
+        ]
+
+    def test_get(self):
+        """Test ProjectIrodsFileListAPIView GET"""
+        self.assert_response_api(self.url, self.good_users, 200)
+        self.assert_response_api(self.url, self.bad_users, 403)
+        self.assert_response_api(self.url, self.anonymous, 401)
+        self.project.set_public()
+        self.assert_response_api(self.url, self.bad_users, 200)
+        self.assert_response_api(self.url, self.anonymous, 401)
+
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_get_anon(self):
+        """Test GET with anonymous access"""
+        self.project.set_public()
+        self.assert_response_api(self.url, self.anonymous, 200)
+
+    def test_get_archive(self):
+        """Test GET with archived project"""
+        self.project.set_archive()
+        self.assert_response_api(self.url, self.good_users, 200)
+        self.assert_response_api(self.url, self.bad_users, 403)
+        self.assert_response_api(self.url, self.anonymous, 401)
+        self.project.set_public()
+        self.assert_response_api(self.url, self.bad_users, 200)
+        self.assert_response_api(self.url, self.anonymous, 401)
+
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response_api(self.url, self.good_users, 200)
+        self.assert_response_api(self.url, self.bad_users, 403)
+        self.assert_response_api(self.url, self.anonymous, 401)
+        self.project.set_public()
+        self.assert_response_api(self.url, self.bad_users, 200)
+        self.assert_response_api(self.url, self.anonymous, 401)

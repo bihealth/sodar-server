@@ -26,6 +26,7 @@ Added
     - Site read-only mode support (#2051)
     - ``checksum`` field in ``ProjectIrodsFileListAPIView`` return data (#2039)
     - ``ProjectIrodsFileListAPIView`` pagination (#1996)
+    - ``ProjectIrodsFileListAPIView`` permission tests (#2104)
 - **Taskflowbackend**
     - Project deletion support (#2051)
     - Zone validation and moving progress indicators (#2024)
@@ -66,6 +67,8 @@ Removed
 - **General**
     - DRF generateschema support (#2051)
     - ``SODAR_SUPPORT_EMAIL`` and ``SODAR_SUPPORT_EMAIL`` settings (#2095)
+- **Samplesheets**
+    - Legacy iRODS test files (#2102)
 
 
 v1.0.1 (2025-03-12)

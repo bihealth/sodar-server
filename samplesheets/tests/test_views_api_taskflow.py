@@ -7,7 +7,6 @@ import os
 
 from datetime import timedelta, datetime
 
-from irods.keywords import REG_CHKSUM_KW
 from irods.models import TicketQuery
 
 from django.forms.models import model_to_dict
@@ -45,8 +44,6 @@ from samplesheets.tests.test_models import (
 from samplesheets.tests.test_views_taskflow import (
     SampleSheetTaskflowMixin,
     IrodsAccessTicketViewTestMixin,
-    IRODS_FILE_NAME,
-    IRODS_FILE_NAME2,
     INVALID_REDIS_URL,
     TICKET_STR,
     TICKET_LABEL,
@@ -71,12 +68,12 @@ SHEET_TSV_DIR = SHEET_DIR + 'i_small2/'
 SHEET_PATH = SHEET_DIR + 'i_small2.zip'
 SHEET_PATH_EDITED = SHEET_DIR + 'i_small2_edited.zip'
 SHEET_PATH_ALT = SHEET_DIR + 'i_small2_alt.zip'
-IRODS_FILE_PATH = os.path.dirname(__file__) + '/irods/test1.txt'
-IRODS_FILE_MD5 = '0b26e313ed4a7ca6904b0e9369e5b957'
+IRODS_FILE_NAME = 'test1.txt'
+IRODS_FILE_NAME2 = 'test2.txt'
+IRODS_FILE_MD5 = '7265f4d211b56873a381d321f586e4a9'
 IRODS_REQUEST_DESC_UPDATED = 'updated'
 DUMMY_UUID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
 LABEL_UPDATE = 'label_update'
-TEST_OBJ_NAME = 'test1.txt'
 
 
 # Base Classes and Mixins ------------------------------------------------------
@@ -1172,6 +1169,8 @@ class TestSampleDataFileExistsAPIView(SampleSheetAPITaskflowTestBase):
     def setUp(self):
         super().setUp()
         self.make_irods_colls(self.investigation)
+        self.coll_path = self.irods_backend.get_sample_path(self.project)
+        self.coll = self.irods.collections.get(self.coll_path)
         self.url = reverse('samplesheets:api_file_exists')
 
     def test_get_no_file(self):
@@ -1184,10 +1183,7 @@ class TestSampleDataFileExistsAPIView(SampleSheetAPITaskflowTestBase):
 
     def test_get_file(self):
         """Test GET with uploaded file"""
-        coll_path = self.irods_backend.get_sample_path(self.project) + '/'
-        self.irods.data_objects.put(
-            IRODS_FILE_PATH, coll_path, **{REG_CHKSUM_KW: ''}
-        )
+        self.make_irods_object(self.coll, IRODS_FILE_NAME)
         response = self.request_knox(
             self.url, data={'checksum': IRODS_FILE_MD5}
         )
@@ -1196,11 +1192,9 @@ class TestSampleDataFileExistsAPIView(SampleSheetAPITaskflowTestBase):
 
     def test_get_file_sub_coll(self):
         """Test GET with file in sub collection"""
-        coll_path = self.irods_backend.get_sample_path(self.project) + '/sub'
-        self.irods.collections.create(coll_path)
-        self.irods.data_objects.put(
-            IRODS_FILE_PATH, coll_path + '/', **{REG_CHKSUM_KW: ''}
-        )
+        sub_coll_path = os.path.join(self.coll_path, 'sub')
+        sub_coll = self.irods.collections.create(sub_coll_path)
+        self.make_irods_object(sub_coll, IRODS_FILE_NAME)
         response = self.request_knox(
             self.url, data={'checksum': IRODS_FILE_MD5}
         )
@@ -1281,12 +1275,12 @@ class TestProjectIrodsFileListAPIView(SampleSheetAPITaskflowTestBase):
         self.make_irods_colls(self.investigation)
         coll_path = self.irods_backend.get_sample_path(self.project)
         coll = self.irods.collections.get(coll_path)
-        data_obj = self.make_irods_object(coll, TEST_OBJ_NAME)
+        data_obj = self.make_irods_object(coll, IRODS_FILE_NAME)
         response = self.request_knox(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
         expected = {
-            'name': TEST_OBJ_NAME,
+            'name': IRODS_FILE_NAME,
             'path': data_obj.path,
             'type': 'obj',
             'size': 1024,
@@ -1301,12 +1295,12 @@ class TestProjectIrodsFileListAPIView(SampleSheetAPITaskflowTestBase):
         self.make_irods_colls(self.investigation)
         coll_path = self.irods_backend.get_sample_path(self.project)
         coll = self.irods.collections.get(coll_path)
-        data_obj = self.make_irods_object(coll, TEST_OBJ_NAME)
+        data_obj = self.make_irods_object(coll, IRODS_FILE_NAME)
         response = self.request_knox(self.url, version='1.0')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
         expected = {
-            'name': TEST_OBJ_NAME,
+            'name': IRODS_FILE_NAME,
             'path': data_obj.path,
             'type': 'obj',
             'size': 1024,
@@ -1319,7 +1313,7 @@ class TestProjectIrodsFileListAPIView(SampleSheetAPITaskflowTestBase):
         self.make_irods_colls(self.investigation)
         coll_path = self.irods_backend.get_sample_path(self.project)
         coll = self.irods.collections.get(coll_path)
-        data_obj = self.make_irods_object(coll, TEST_OBJ_NAME)
+        data_obj = self.make_irods_object(coll, IRODS_FILE_NAME)
         response = self.request_knox(self.url + '?page=1')
         self.assertEqual(response.status_code, 200)
         expected = {
@@ -1328,7 +1322,7 @@ class TestProjectIrodsFileListAPIView(SampleSheetAPITaskflowTestBase):
             'previous': None,
             'results': [
                 {
-                    'name': TEST_OBJ_NAME,
+                    'name': IRODS_FILE_NAME,
                     'path': data_obj.path,
                     'type': 'obj',
                     'size': 1024,
