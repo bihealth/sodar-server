@@ -11,8 +11,15 @@ from irods.user import iRODSUser, iRODSUserGroup
 
 from django.test import override_settings
 
+from test_plus import TestCase
+
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
+from projectroles.plugins import get_backend_api
+from projectroles.tests.test_models import ProjectMixin
+
+# Timeline dependency
+from timeline.tests.test_models import TimelineEventMixin
 
 # Landingzones dependency
 from landingzones.constants import ZONE_STATUS_ACTIVE, DEFAULT_STATUS_INFO
@@ -29,6 +36,7 @@ from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from taskflowbackend.flows.base_flow import BaseLinearFlow
 from taskflowbackend.tests.base import TaskflowViewTestBase, TICKET_STR
 from taskflowbackend.tasks.irods_tasks import *  # noqa
+from taskflowbackend.tasks.sodar_tasks import TimelineEventExtraDataUpdateTask
 
 
 # SODAR constants
@@ -72,9 +80,16 @@ SUFFIX_OBJ_NAME_BAM = 'test.bam'
 SUFFIX_OBJ_NAME_VCF = 'test.vcf.gz'
 SUFFIX_OBJ_NAME_TXT = 'test.txt'
 
+EXTRA_DATA = {'test': 1}
 
-class IRODSTaskTestBase(TaskflowViewTestBase):
-    """Base test class for iRODS tasks"""
+
+class TaskTestMixin:
+    """Helpers for taskflow task tests"""
+
+    flow = None
+    irods = None
+    irods_backend = None
+    project = None
 
     def run_flow(self):
         return self.flow.run(verbose=False)
@@ -87,7 +102,12 @@ class IRODSTaskTestBase(TaskflowViewTestBase):
             flow_data={},
         )
 
+
+class IRODSTaskTestBase(TaskTestMixin, TaskflowViewTestBase):
+    """Base test class for iRODS tasks"""
+
     def add_task(self, cls, name, inject, force_fail=False):
+        """Add task based on IrodsBaseTask"""
         self.flow.add_task(
             cls(
                 name=name,
@@ -2541,3 +2561,140 @@ class TestBatchCalculateChecksumTask(
             self.zone.status_info,
             DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE] + ' (1/1)',
         )
+
+
+class TestTimelineEventExtraDataUpdateTask(
+    ProjectMixin, TimelineEventMixin, TaskTestMixin, TestCase
+):
+    """Tests for TimelineEventExtraDataUpdateTask"""
+
+    def add_task(self, cls, name, inject, force_fail=False):
+        """Add task based on SODARBaseTask"""
+        self.flow.add_task(
+            cls(
+                name=name,
+                project=self.project,
+                verbose=False,
+                inject=inject,
+                force_fail=force_fail,
+            )
+        )
+
+    def setUp(self):
+        self.irods_backend = get_backend_api('omics_irods')
+        self.project = self.make_project(
+            'TestProject', PROJECT_TYPE_PROJECT, None
+        )
+        self.flow = self.init_flow()
+        self.event = self.make_event(
+            project=self.project,
+            app='taskflowbackend',
+            user=None,
+            event_name='test_event',
+            extra_data={},
+        )
+
+    def test_execute(self):
+        """Test TimelineEventExtraDataUpdateTask execute"""
+        self.assertEqual(self.event.extra_data, {})
+        self.add_task(
+            cls=TimelineEventExtraDataUpdateTask,
+            name='Update timeline event',
+            inject={
+                'tl_event': self.event,
+                'extra_data': EXTRA_DATA,
+            },
+        )
+        self.run_flow()
+        self.event.refresh_from_db()
+        self.assertEqual(self.event.extra_data, EXTRA_DATA)
+
+    def test_execute_update_same_field(self):
+        """Test execute with same field in existing extra data"""
+        og_data = {'test': 0}
+        self.event.extra_data = og_data
+        self.event.save()
+        self.assertNotEqual(self.event.extra_data, EXTRA_DATA)
+        self.add_task(
+            cls=TimelineEventExtraDataUpdateTask,
+            name='Update timeline event',
+            inject={
+                'tl_event': self.event,
+                'extra_data': EXTRA_DATA,
+            },
+        )
+        self.run_flow()
+        self.event.refresh_from_db()
+        self.assertEqual(self.event.extra_data, EXTRA_DATA)
+
+    def test_execute_update_other_field(self):
+        """Test execute with other field in existing extra data"""
+        og_data = {'other': 0}
+        self.event.extra_data = og_data
+        self.event.save()
+        self.add_task(
+            cls=TimelineEventExtraDataUpdateTask,
+            name='Update timeline event',
+            inject={
+                'tl_event': self.event,
+                'extra_data': EXTRA_DATA,
+            },
+        )
+        self.run_flow()
+        self.event.refresh_from_db()
+        updated_data = EXTRA_DATA
+        updated_data.update(og_data)
+        self.assertEqual(self.event.extra_data, updated_data)
+
+    def test_revert(self):
+        """Test revert"""
+        self.assertEqual(self.event.extra_data, {})
+        self.add_task(
+            cls=TimelineEventExtraDataUpdateTask,
+            name='Update timeline event',
+            inject={
+                'tl_event': self.event,
+                'extra_data': EXTRA_DATA,
+            },
+            force_fail=True,
+        )
+        self.run_flow()
+        self.event.refresh_from_db()
+        self.assertEqual(self.event.extra_data, {})
+
+    def test_revert_update_same_field(self):
+        """Test revert with same field in existing extra data"""
+        og_data = {'test': 0}
+        self.event.extra_data = og_data
+        self.event.save()
+        self.assertNotEqual(self.event.extra_data, EXTRA_DATA)
+        self.add_task(
+            cls=TimelineEventExtraDataUpdateTask,
+            name='Update timeline event',
+            inject={
+                'tl_event': self.event,
+                'extra_data': EXTRA_DATA,
+            },
+            force_fail=True,
+        )
+        self.run_flow()
+        self.event.refresh_from_db()
+        self.assertEqual(self.event.extra_data, og_data)
+
+    def test_revert_update_other_field(self):
+        """Test revert with other field in existing extra data"""
+        og_data = {'other': 0}
+        self.event.extra_data = og_data
+        self.event.save()
+        self.add_task(
+            cls=TimelineEventExtraDataUpdateTask,
+            name='Update timeline event',
+            inject={
+                'tl_event': self.event,
+                'extra_data': EXTRA_DATA,
+            },
+            force_fail=True,
+        )
+        self.run_flow()
+        self.event.refresh_from_db()
+        self.assertEqual(self.event.extra_data, og_data)

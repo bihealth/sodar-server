@@ -17,6 +17,9 @@ from django.test import override_settings
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
 
+# Timeline dependency
+from timeline.tests.test_models import TimelineEventMixin
+
 # Landingzones dependency
 from landingzones.constants import (
     ZONE_STATUS_MOVED,
@@ -677,6 +680,7 @@ class TestLandingZoneMove(
     LandingZoneTaskflowMixin,
     SampleSheetIOMixin,
     SampleSheetTaskflowMixin,
+    TimelineEventMixin,
     TaskflowbackendFlowTestBase,
 ):
     """Tests for the landing_zone_move flow"""
@@ -722,6 +726,13 @@ class TestLandingZoneMove(
         sample_obj_path = os.path.join(
             self.sample_path, OBJ_COLL_NAME, OBJ_NAME
         )
+        tl_event = self.make_event(
+            project=self.project,
+            app='taskflowbackend',
+            user=self.user,
+            event_name='landing_zone_move',
+            extra_data={},
+        )
 
         self.assertEqual(self.irods.collections.exists(empty_coll_path), True)
         self.assertEqual(self.irods.collections.exists(obj_coll_path), True)
@@ -740,6 +751,7 @@ class TestLandingZoneMove(
             project=self.project,
             flow_name='landing_zone_move',
             flow_data=flow_data,
+            tl_event=tl_event,
         )
         self.assertEqual(type(flow), LandingZoneMoveFlow)
         self.build_and_run(flow)
@@ -762,6 +774,9 @@ class TestLandingZoneMove(
         self.assert_irods_access(
             self.group_name, sample_obj_path + '.md5', self.irods_access_read
         )
+        tl_event.refresh_from_db()
+        expected = {'files': [os.path.join(OBJ_COLL_NAME, OBJ_NAME)]}
+        self.assertEqual(tl_event.extra_data, expected)
 
     def test_move_locked(self):
         """Test landing_zone_move with locked project (should fail)"""

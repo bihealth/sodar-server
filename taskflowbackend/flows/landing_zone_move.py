@@ -12,7 +12,7 @@ import landingzones.tasks_taskflow as lz_tasks
 from landingzones.models import LandingZone
 
 from taskflowbackend.flows.base_flow import BaseLinearFlow
-from taskflowbackend.tasks import irods_tasks
+from taskflowbackend.tasks import irods_tasks, sodar_tasks
 
 
 SAMPLE_COLL = settings.IRODS_SAMPLE_COLL
@@ -340,6 +340,18 @@ class Flow(BaseLinearFlow):
                 inject={'path': zone_path},
             )
         )
+        if self.tl_event:
+            files = [p[len(zone_path) + 1 :] for p in zone_objects_nomd5]
+            self.add_task(
+                sodar_tasks.TimelineEventExtraDataUpdateTask(
+                    name='Update timeline event extra data with file list',
+                    project=self.project,
+                    inject={
+                        'tl_event': self.tl_event,
+                        'extra_data': {'files': files},
+                    },
+                )
+            )
         self.add_task(
             lz_tasks.SetLandingZoneStatusTask(
                 name='Set landing zone status to MOVED',

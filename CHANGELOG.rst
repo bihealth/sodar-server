@@ -32,6 +32,8 @@ Added
     - Zone validation and moving progress indicators (#2024)
     - ``TASKFLOW_ZONE_PROGRESS_INTERVAL`` Django setting (#2024)
     - ``BatchCheckFileSuffixTask`` iRODS task (#2064)
+    - ``TimelineEventExtraDataUpdateTask`` SODAR task (#2105)
+    - File list in ``landing_zone_move`` timeline event extra data (#1202)
 
 Changed
 -------

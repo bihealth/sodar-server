@@ -227,6 +227,13 @@ operation.
 
     Landing zone status after failed moving
 
+.. hint::
+
+    The exact list of files transferred from a landing zone to the sample data
+    repository can be reviewed in the "extra data" modal for the related
+    :guilabel:`Landing Zone Move` :ref:`Timeline <ui_project_timeline>` event.
+    This information is currently available for project owners and delegates.
+
 
 Landing Zone Deletion
 =====================
