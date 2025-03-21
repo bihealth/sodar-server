@@ -15,6 +15,7 @@
 <tr class="{% get_zone_row_class zone %}"
     id="{{ zone.sodar_uuid }}"
     data-zone-uuid="{{ zone.sodar_uuid }}"
+    data-sample-url="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}"
     data-status-url="{% url 'landingzones:ajax_status' project=project.sodar_uuid %}">
   <td class="sodar-lz-zone-title">
     <div class="sodar-overflow-container">

@@ -64,6 +64,7 @@ Fixed
     - ``LegacyKeyValueFormat`` warnings in Docker build (#2089)
 - **Landingzones**
     - Zone delete timeline status not updated with missing collection (#2096)
+    - Sample Sheets link not displayed in UI after zone move (#2106)
 
 Removed
 -------

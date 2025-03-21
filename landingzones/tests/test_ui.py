@@ -23,6 +23,7 @@ from landingzones.constants import (
     ZONE_STATUS_NOT_CREATED,
     ZONE_STATUS_ACTIVE,
     ZONE_STATUS_VALIDATING,
+    ZONE_STATUS_MOVED,
     ZONE_STATUS_DELETED,
 )
 from landingzones.tests.test_models import LandingZoneMixin
@@ -439,6 +440,41 @@ class TestProjectZoneView(LandingZoneUITestBase):
         contrib_zone.set_status(ZONE_STATUS_VALIDATING)
         self._wait_for_status(zone_status, ZONE_STATUS_VALIDATING)
         self.assertEqual(zone_status.text, ZONE_STATUS_VALIDATING)
+
+    def test_status_update_moved(self):
+        """Test ProjectZoneView with zone status update to MOVED"""
+        self._setup_investigation()
+        self.investigation.irods_status = True
+        self.investigation.save()
+        contrib_zone = self.make_landing_zone(
+            'contrib_zone',
+            self.project,
+            self.user_contributor,
+            self.assay,
+            status='ACTIVE',
+        )
+        self.login_and_redirect(self.user_contributor, self.url)
+        zone_status = self.selenium.find_element(
+            By.CLASS_NAME, 'sodar-lz-zone-status'
+        )
+        self.assertEqual(zone_status.text, ZONE_STATUS_ACTIVE)
+        with self.assertRaises(NoSuchElementException):
+            self.selenium.find_element(
+                By.CLASS_NAME, 'sodar-lz-zone-sample-link'
+            )
+        contrib_zone.set_status(ZONE_STATUS_MOVED)
+        self._wait_for_status(zone_status, ZONE_STATUS_MOVED)
+        self.assertEqual(zone_status.text, ZONE_STATUS_MOVED)
+        WebDriverWait(self.selenium, self.wait_time).until(
+            ec.presence_of_element_located(
+                (By.CLASS_NAME, 'sodar-lz-zone-sample-link')
+            )
+        )
+        self.assertIsNotNone(
+            self.selenium.find_element(
+                By.CLASS_NAME, 'sodar-lz-zone-sample-link'
+            )
+        )
 
     def test_stats_deleted_owner(self):
         """Test ProjectZoneView stats badge on DELETED zone as owner"""

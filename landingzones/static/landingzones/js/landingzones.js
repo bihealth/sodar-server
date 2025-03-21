@@ -27,6 +27,7 @@ var updateZoneStatus = function() {
         }).done(function(data) {
             $('.sodar-lz-zone-tr-existing').each(function() {
                 var zoneUuid = $(this).attr('data-zone-uuid');
+                var sampleUrl = $(this).attr('data-sample-url');
                 var zoneTr = $('#' + $(this).attr('id'));
                 var statusTd = zoneTr.find('td#sodar-lz-zone-status-' + zoneUuid);
                 var statusInfoSpan = zoneTr.find('span#sodar-lz-zone-status-info-' + zoneUuid);
@@ -66,9 +67,10 @@ var updateZoneStatus = function() {
                                     'span#sodar-lz-zone-status-moved-' + zoneUuid
                                 );
                                 statusMovedSpan.html(
-                                    '<p class="mb-0"><a href="' + sampleUrl + '">' +
+                                    '<p class="sodar-lz-zone-sample-link mb-0">' +
+                                    '<a href="' + sampleUrl + '">' +
                                     '<i class="iconify" data-icon="mdi:arrow-right-circle"></i> ' +
-                                    'Browse files in sample sheet</a></p>'
+                                    'Browse files in sample sheets</a></p>'
                                 );
                             }
                         }
