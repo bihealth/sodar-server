@@ -13,7 +13,7 @@ django-redis==5.4.0
 
 # WSGI Handler
 gevent==24.2.1
-gunicorn==22.0.0
+gunicorn==23.0.0
 
 # Email backends for Mailgun, Postmark, SendGrid and more
 # django-anymail==7.0.0
