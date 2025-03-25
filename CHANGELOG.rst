@@ -14,6 +14,7 @@ Added
 - **General**
     - drf-spectacular support (#2051)
     - ``PROJECTROLES_SUPPORT_CONTACT`` setting support (#2095)
+    - ``vim`` install in Docker build (#2113)
 - **Irodsbackend**
     - ``checksum`` argument in ``get_objects()`` (#2038)
     - ``offset`` argument in ``get_objects()`` (#1997)
