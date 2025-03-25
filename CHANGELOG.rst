@@ -40,7 +40,7 @@ Changed
 -------
 
 - **General**
-    - Upgrade to django-sodar-core v1.1.2 (#2051, #2068, #2095)
+    - Upgrade to django-sodar-core v1.1.3 (#2051, #2068, #2095, #2108)
     - Upgrade to python-irodsclient v3.0.0 (#2079)
     - Display SODAR Core version in footer example (#2101)
     - Upgrade to gunicorn v23 (#2068)

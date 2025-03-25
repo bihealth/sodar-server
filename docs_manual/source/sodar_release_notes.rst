@@ -18,7 +18,7 @@ Release for SODAR Core 1.1 upgrade and feature updates.
 - Add file list in landing zone move timeline event extra data
 - :ref:`Upgrade Sample Sheets REST API version to v1.1 <api_samplesheets_version_1_1>`
 - Upgrade to python-irodsclient v3.0
-- Upgrade to SODAR Core v1.1.2
+- Upgrade to SODAR Core v1.1.3
 - Replace SODAR_SUPPORT_* settings with PROJECTROLES_SUPPORT_CONTACT
 - `SODAR Core v1.1 updates <https://sodar-core.readthedocs.io/en/latest/major_changes.html#v1-1-1-2025-03-11>`_:
   Project deletion, project leaving, paginated project list, site read-only
