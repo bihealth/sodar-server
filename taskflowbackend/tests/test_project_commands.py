@@ -7,7 +7,7 @@ from tempfile import NamedTemporaryFile
 from irods.exception import (
     CollectionDoesNotExist,
     UserDoesNotExist,
-    UserGroupDoesNotExist,
+    GroupDoesNotExist,
 )
 from irods.user import iRODSUserGroup
 
@@ -112,7 +112,7 @@ class TestSyncModifyAPI(TaskflowViewTestBase):
             self.irods.collections.get(self.category_path)
         with self.assertRaises(CollectionDoesNotExist):
             self.irods.collections.get(self.project_path)
-        with self.assertRaises(UserGroupDoesNotExist):
+        with self.assertRaises(GroupDoesNotExist):
             self.irods.user_groups.get(self.group_name)
         with self.assertRaises(UserDoesNotExist):
             self.irods.users.get(self.user.username)
@@ -133,8 +133,8 @@ class TestSyncModifyAPI(TaskflowViewTestBase):
         self.assert_irods_access(
             self.group_name, self.project_path, self.irods_access_read
         )
-        self.assert_group_member(self.project, self.user, True)
-        self.assert_group_member(self.project, self.user_owner_cat, True)
+        self.assert_group_member(self.project, self.user)
+        self.assert_group_member(self.project, self.user_owner_cat)
         with self.assertRaises(UserDoesNotExist):
             self.irods.users.get(self.user_new.username)
 
@@ -144,7 +144,7 @@ class TestSyncModifyAPI(TaskflowViewTestBase):
 
         with self.assertRaises(CollectionDoesNotExist):
             self.irods.collections.get(self.project_path)
-        with self.assertRaises(UserGroupDoesNotExist):
+        with self.assertRaises(GroupDoesNotExist):
             self.irods.user_groups.get(self.group_name)
         with self.assertRaises(UserDoesNotExist):
             self.irods.users.get(self.user.username)
@@ -156,9 +156,9 @@ class TestSyncModifyAPI(TaskflowViewTestBase):
         self.command.handle()
 
         self.assertEqual(self.irods.collections.exists(self.project_path), True)
-        self.assert_group_member(self.project, self.user, True)
-        self.assert_group_member(self.project, self.user_owner_cat, True)
-        self.assert_group_member(self.project, self.user_new, True)
+        self.assert_group_member(self.project, self.user)
+        self.assert_group_member(self.project, self.user_owner_cat)
+        self.assert_group_member(self.project, self.user_new)
 
     def test_sync_inherited_member(self):
         """Test sync with inherited member role"""
@@ -166,7 +166,7 @@ class TestSyncModifyAPI(TaskflowViewTestBase):
 
         with self.assertRaises(CollectionDoesNotExist):
             self.irods.collections.get(self.project_path)
-        with self.assertRaises(UserGroupDoesNotExist):
+        with self.assertRaises(GroupDoesNotExist):
             self.irods.user_groups.get(self.group_name)
         with self.assertRaises(UserDoesNotExist):
             self.irods.users.get(self.user.username)
@@ -178,9 +178,9 @@ class TestSyncModifyAPI(TaskflowViewTestBase):
         self.command.handle()
 
         self.assertEqual(self.irods.collections.exists(self.project_path), True)
-        self.assert_group_member(self.project, self.user, True)
-        self.assert_group_member(self.project, self.user_owner_cat, True)
-        self.assert_group_member(self.project, self.user_new, True)
+        self.assert_group_member(self.project, self.user)
+        self.assert_group_member(self.project, self.user_owner_cat)
+        self.assert_group_member(self.project, self.user_new)
 
     def test_sync_inherited_finder(self):
         """Test sync with inherited finder role"""
@@ -188,7 +188,7 @@ class TestSyncModifyAPI(TaskflowViewTestBase):
 
         with self.assertRaises(CollectionDoesNotExist):
             self.irods.collections.get(self.project_path)
-        with self.assertRaises(UserGroupDoesNotExist):
+        with self.assertRaises(GroupDoesNotExist):
             self.irods.user_groups.get(self.group_name)
         with self.assertRaises(UserDoesNotExist):
             self.irods.users.get(self.user.username)
@@ -200,8 +200,8 @@ class TestSyncModifyAPI(TaskflowViewTestBase):
         self.command.handle()
 
         self.assertEqual(self.irods.collections.exists(self.project_path), True)
-        self.assert_group_member(self.project, self.user, True)
-        self.assert_group_member(self.project, self.user_owner_cat, True)
+        self.assert_group_member(self.project, self.user)
+        self.assert_group_member(self.project, self.user_owner_cat)
         # Access should not be granted to finder
         self.assert_group_member(self.project, self.user_new, False)
 
@@ -211,13 +211,13 @@ class TestSyncModifyAPI(TaskflowViewTestBase):
             self.project, self.user_new, self.role_guest
         )
         self.command.handle()
-        self.assert_group_member(self.project, self.user, True)
-        self.assert_group_member(self.project, self.user_owner_cat, True)
-        self.assert_group_member(self.project, self.user_new, True)
+        self.assert_group_member(self.project, self.user)
+        self.assert_group_member(self.project, self.user_owner_cat)
+        self.assert_group_member(self.project, self.user_new)
         role_as.delete()
         self.command.handle()
-        self.assert_group_member(self.project, self.user, True)
-        self.assert_group_member(self.project, self.user_owner_cat, True)
+        self.assert_group_member(self.project, self.user)
+        self.assert_group_member(self.project, self.user_owner_cat)
         self.assert_group_member(self.project, self.user_new, False)
 
     def test_sync_remove_inherited_member(self):
@@ -226,11 +226,11 @@ class TestSyncModifyAPI(TaskflowViewTestBase):
             self.category, self.user_new, self.role_guest
         )
         self.command.handle()
-        self.assert_group_member(self.project, self.user, True)
-        self.assert_group_member(self.project, self.user_owner_cat, True)
-        self.assert_group_member(self.project, self.user_new, True)
+        self.assert_group_member(self.project, self.user)
+        self.assert_group_member(self.project, self.user_owner_cat)
+        self.assert_group_member(self.project, self.user_new)
         role_as.delete()
         self.command.handle()
-        self.assert_group_member(self.project, self.user, True)
-        self.assert_group_member(self.project, self.user_owner_cat, True)
+        self.assert_group_member(self.project, self.user)
+        self.assert_group_member(self.project, self.user_owner_cat)
         self.assert_group_member(self.project, self.user_new, False)

@@ -54,6 +54,7 @@ ENV_INT_PARAMS = [
     'irods_port',
 ]
 USER_GROUP_TEMPLATE = 'omics_project_{uuid}'
+OWNER_GROUP_TEMPLATE = USER_GROUP_TEMPLATE + '_owner'
 TRASH_COLL_NAME = 'trash'
 PATH_PARENT_SUBSTRING = '/..'
 ERROR_PATH_PARENT = 'Use of parent not allowed in path'
@@ -391,11 +392,12 @@ class IrodsAPI:
             return s.group(1)
 
     @classmethod
-    def get_user_group_name(cls, project):
+    def get_user_group_name(cls, project, owner=False):
         """
         Return iRODS user group name for project.
 
         :param project: Project object or project UUID
+        :param owner: Return owner and delegate group name if True (bool)
         :return: String
         """
         if isinstance(project, (uuid.UUID, str)):
@@ -403,6 +405,8 @@ class IrodsAPI:
         else:
             cls._validate_project(project)
             project_uuid = project.sodar_uuid
+        if owner:
+            return OWNER_GROUP_TEMPLATE.format(uuid=project_uuid)
         return USER_GROUP_TEMPLATE.format(uuid=project_uuid)
 
     # TODO: Add tests

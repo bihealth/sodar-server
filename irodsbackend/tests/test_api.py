@@ -22,6 +22,7 @@ from landingzones.tests.test_models import LandingZoneMixin
 from irodsbackend.api import (
     IrodsAPI,
     USER_GROUP_TEMPLATE,
+    OWNER_GROUP_TEMPLATE,
     ERROR_PATH_PARENT,
     ERROR_PATH_UNSET,
 )
@@ -318,4 +319,11 @@ class TestIrodsAPI(
                 str(self.project.sodar_uuid)
             ),
             USER_GROUP_TEMPLATE.format(uuid=self.project.sodar_uuid),
+        )
+
+    def test_get_user_group_name_owner(self):
+        """Test get_user_group_name() with owner and delegate group"""
+        self.assertEqual(
+            self.irods_backend.get_user_group_name(self.project, owner=True),
+            OWNER_GROUP_TEMPLATE.format(uuid=self.project.sodar_uuid),
         )

@@ -724,7 +724,7 @@ class TestCreateUserGroupTask(IRODSTaskTestBase):
             inject={'name': TEST_USER_GROUP},
         )
         self.assertRaises(
-            UserGroupDoesNotExist,
+            GroupDoesNotExist,
             self.irods.user_groups.get,
             TEST_USER_GROUP,
         )
@@ -768,7 +768,7 @@ class TestCreateUserGroupTask(IRODSTaskTestBase):
 
         self.assertNotEqual(result, True)
         self.assertRaises(
-            UserGroupDoesNotExist,
+            GroupDoesNotExist,
             self.irods.user_groups.get,
             TEST_USER_GROUP,
         )
@@ -1512,6 +1512,19 @@ class TestRemoveUserFromGroupTask(IRODSTaskTestBase):
         self.assertEqual(result, True)
         group = self.irods.user_groups.get(DEFAULT_USER_GROUP)
         self.assertEqual(group.hasmember(GROUP_USER), False)
+
+    def test_execute_no_group(self):
+        """Test user removal with no existing group"""
+        self.irods.users.remove(DEFAULT_USER_GROUP)
+        with self.assertRaises(GroupDoesNotExist):
+            self.irods.user_groups.get(DEFAULT_USER_GROUP)
+        self.add_task(
+            cls=RemoveUserFromGroupTask,
+            name='Remove user from group',
+            inject={'group_name': DEFAULT_USER_GROUP, 'user_name': GROUP_USER},
+        )
+        result = self.run_flow()
+        self.assertEqual(result, True)
 
     def test_revert_modified(self):
         """Test user ramoval reverting after modification"""

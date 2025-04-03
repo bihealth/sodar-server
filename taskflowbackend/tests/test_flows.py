@@ -4,7 +4,7 @@ import os
 
 from irods.exception import (
     UserDoesNotExist,
-    UserGroupDoesNotExist,
+    GroupDoesNotExist,
 )
 from irods.test.helpers import make_object
 from irods.ticket import Ticket
@@ -15,7 +15,7 @@ from django.test import override_settings
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.models import SODAR_CONSTANTS
+from projectroles.models import SODAR_CONSTANTS, ROLE_RANKING
 
 # Timeline dependency
 from timeline.tests.test_models import TimelineEventMixin
@@ -70,6 +70,7 @@ from taskflowbackend.tests.base import (
     IRODS_ACCESS_OWN,
     TICKET_STR,
 )
+from taskflowbackend.irods_utils import get_flow_role
 
 
 app_settings = AppSettingAPI()
@@ -78,6 +79,9 @@ app_settings = AppSettingAPI()
 # SODAR constants
 PROJECT_TYPE_CATEGORY = SODAR_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
+PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
+PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
+PROJECT_ROLE_CONTRIBUTOR = SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR']
 
 # Local constants
 COLL_NAME = 'test_coll'
@@ -1347,49 +1351,67 @@ class TestLandingZoneMoveAltRootPath(
 class TestProjectCreate(TaskflowbackendFlowTestBase):
     """Tests for the project_create flow"""
 
-    def test_create(self):
-        """Test project_create for creating a project"""
+    def setUp(self):
+        super().setUp()
         # Create project without taskflow
-        project = self.make_project(
+        self.project = self.make_project(
             'NewProject', PROJECT_TYPE_PROJECT, self.category
         )
-        self.make_assignment(project, self.user, self.role_owner)
-        group_name = self.irods_backend.get_user_group_name(project)
+        self.make_assignment(self.project, self.user, self.role_owner)
+        self.group_name = self.irods_backend.get_user_group_name(self.project)
+        self.owner_group_name = self.irods_backend.get_user_group_name(
+            self.project, owner=True
+        )
+        self.user_assign = self.make_user('user_assign')
 
-        self.assert_irods_coll(project, expected=False)
-        with self.assertRaises(UserGroupDoesNotExist):
-            self.irods.user_groups.get(group_name)
+    def test_create(self):
+        """Test project_create for creating a project"""
+        self.assert_irods_coll(self.project, expected=False)
+        with self.assertRaises(GroupDoesNotExist):
+            self.irods.user_groups.get(self.group_name)
+        with self.assertRaises(GroupDoesNotExist):
+            self.irods.user_groups.get(self.owner_group_name)
 
         flow_data = {
             'owner': self.user.username,
-            'users_add': [self.user_owner_cat.username],
+            'roles_add': [
+                get_flow_role(
+                    self.project,
+                    self.user_owner_cat,
+                    ROLE_RANKING[PROJECT_ROLE_OWNER],
+                )
+            ],
         }
         flow = self.taskflow.get_flow(
             irods_backend=self.irods_backend,
-            project=project,
+            project=self.project,
             flow_name='project_create',
             flow_data=flow_data,
         )
         self.assertEqual(type(flow), ProjectCreateFlow)
         self.build_and_run(flow)
 
-        self.assert_irods_coll(project, expected=True)
-        group = self.irods.user_groups.get(group_name)
+        self.assert_irods_coll(self.project, expected=True)
+        group = self.irods.user_groups.get(self.group_name)
+        self.assertIsInstance(group, iRODSUserGroup)
+        group = self.irods.user_groups.get(self.owner_group_name)
         self.assertIsInstance(group, iRODSUserGroup)
         self.assert_irods_access(
-            group_name,
-            self.irods_backend.get_path(project),
+            self.group_name,
+            self.irods_backend.get_path(self.project),
             self.irods_access_read,
         )
+        # NOTE: Owner group does not need special access here, as owners and
+        #       delegates are also in the user group and everything is read-only
         self.assertIsInstance(
             self.irods.users.get(self.user.username), iRODSUser
         )
-        self.assert_group_member(project, self.user, True)
+        self.assert_group_member(self.project, self.user, True, True)
         project_coll = self.irods.collections.get(
-            self.irods_backend.get_path(project)
+            self.irods_backend.get_path(self.project)
         )
         self.assertEqual(
-            project_coll.metadata.get_one('title').value, project.title
+            project_coll.metadata.get_one('title').value, self.project.title
         )
         self.assertEqual(
             project_coll.metadata.get_one('description').value, META_EMPTY_VALUE
@@ -1402,7 +1424,49 @@ class TestProjectCreate(TaskflowbackendFlowTestBase):
         self.assertIsInstance(
             self.irods.users.get(self.user_owner_cat.username), iRODSUser
         )
-        self.assert_group_member(project, self.user_owner_cat, True)
+        self.assert_group_member(self.project, self.user_owner_cat, True, True)
+
+    def test_create_inherited_delegate(self):
+        """Test project_create with inherited delegate"""
+        flow_data = {
+            'owner': self.user.username,
+            'roles_add': [
+                get_flow_role(
+                    self.project,
+                    self.user_assign,
+                    ROLE_RANKING[PROJECT_ROLE_DELEGATE],
+                )
+            ],
+        }
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='project_create',
+            flow_data=flow_data,
+        )
+        self.build_and_run(flow)
+        self.assert_group_member(self.project, self.user_assign, True, True)
+
+    def test_create_inherited_contributor(self):
+        """Test project_create with inherited contributor"""
+        flow_data = {
+            'owner': self.user.username,
+            'roles_add': [
+                get_flow_role(
+                    self.project,
+                    self.user_assign,
+                    ROLE_RANKING[PROJECT_ROLE_CONTRIBUTOR],
+                )
+            ],
+        }
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='project_create',
+            flow_data=flow_data,
+        )
+        self.build_and_run(flow)
+        self.assert_group_member(self.project, self.user_assign, True, False)
 
 
 class TestProjectUpdate(TaskflowbackendFlowTestBase):
@@ -1475,10 +1539,10 @@ class TestProjectUpdate(TaskflowbackendFlowTestBase):
         self.make_assignment_taskflow(
             self.project, user_contributor, self.role_contributor
         )
-        self.assert_group_member(self.project, self.user, True)
-        self.assert_group_member(self.project, self.user_owner_cat, True)
-        self.assert_group_member(self.project, user_contributor, True)
-        self.assert_group_member(self.project, user_cat_new, False)
+        self.assert_group_member(self.project, self.user, True, True)
+        self.assert_group_member(self.project, self.user_owner_cat, True, True)
+        self.assert_group_member(self.project, user_contributor, True, False)
+        self.assert_group_member(self.project, user_cat_new, False, False)
         project_coll = self.irods.collections.get(self.project_path)
         self.assertEqual(
             project_coll.metadata.get_one('parent_uuid').value,
@@ -1493,8 +1557,20 @@ class TestProjectUpdate(TaskflowbackendFlowTestBase):
         self.project.save()
 
         flow_data = {
-            'users_add': [user_cat_new.username],
-            'users_delete': [self.user_owner_cat.username],
+            'roles_add': [
+                get_flow_role(
+                    self.project,
+                    user_cat_new,
+                    ROLE_RANKING[PROJECT_ROLE_CONTRIBUTOR],
+                )
+            ],
+            'roles_delete': [
+                get_flow_role(
+                    self.project,
+                    self.user_owner_cat,
+                    ROLE_RANKING[PROJECT_ROLE_OWNER],
+                )
+            ],
         }
         flow = self.taskflow.get_flow(
             irods_backend=self.irods_backend,
@@ -1504,10 +1580,12 @@ class TestProjectUpdate(TaskflowbackendFlowTestBase):
         )
         self.build_and_run(flow)
 
-        self.assert_group_member(self.project, self.user, True)
-        self.assert_group_member(self.project, self.user_owner_cat, False)
-        self.assert_group_member(self.project, user_contributor, True)
-        self.assert_group_member(self.project, user_cat_new, True)
+        self.assert_group_member(self.project, self.user, True, True)
+        self.assert_group_member(
+            self.project, self.user_owner_cat, False, False
+        )
+        self.assert_group_member(self.project, user_contributor, True, False)
+        self.assert_group_member(self.project, user_cat_new, True, False)
         project_coll = self.irods.collections.get(self.project_path)
         self.assertEqual(
             project_coll.metadata.get_one('parent_uuid').value,
@@ -1736,7 +1814,7 @@ class TestRoleDelete(TaskflowbackendFlowTestBase):
 
     def test_delete(self):
         """Test role_delete for deleting a role assignment"""
-        self.assert_group_member(self.project, self.user_new, True)
+        self.assert_group_member(self.project, self.user_new, status=True)
         flow_data = {'user_name': self.user_new.username}
         flow = self.taskflow.get_flow(
             irods_backend=self.irods_backend,
@@ -1746,11 +1824,11 @@ class TestRoleDelete(TaskflowbackendFlowTestBase):
         )
         self.assertEqual(type(flow), RoleDeleteFlow)
         self.build_and_run(flow)
-        self.assert_group_member(self.project, self.user_new, False)
+        self.assert_group_member(self.project, self.user_new, status=False)
 
     def test_delete_locked(self):
         """Test role_delete with locked project"""
-        self.assert_group_member(self.project, self.user_new, True)
+        self.assert_group_member(self.project, self.user_new, status=True)
         flow_data = {'user_name': self.user_new.username}
         flow = self.taskflow.get_flow(
             irods_backend=self.irods_backend,
@@ -1760,7 +1838,7 @@ class TestRoleDelete(TaskflowbackendFlowTestBase):
         )
         self.lock_project(self.project)
         self.taskflow.run_flow(flow, self.project)  # Lock not required
-        self.assert_group_member(self.project, self.user_new, False)
+        self.assert_group_member(self.project, self.user_new, status=False)
 
 
 class TestRoleUpdate(TaskflowbackendFlowTestBase):
@@ -1777,7 +1855,7 @@ class TestRoleUpdate(TaskflowbackendFlowTestBase):
         """Test role_update for creating a role assignment"""
         user_new = self.make_user('user_new')
         self.make_assignment(self.project, user_new, self.role_contributor)
-        self.assert_group_member(self.project, user_new, False)
+        self.assert_group_member(self.project, user_new, status=False)
         flow_data = {'user_name': user_new.username}
         flow = self.taskflow.get_flow(
             irods_backend=self.irods_backend,
@@ -1787,13 +1865,13 @@ class TestRoleUpdate(TaskflowbackendFlowTestBase):
         )
         self.assertEqual(type(flow), RoleUpdateFlow)
         self.build_and_run(flow)
-        self.assert_group_member(self.project, user_new, True)
+        self.assert_group_member(self.project, user_new, status=True)
 
     def test_update_locked(self):
         """Test role_update with locked project"""
         user_new = self.make_user('user_new')
         self.make_assignment(self.project, user_new, self.role_contributor)
-        self.assert_group_member(self.project, user_new, False)
+        self.assert_group_member(self.project, user_new, status=False)
         flow_data = {'user_name': user_new.username}
         flow = self.taskflow.get_flow(
             irods_backend=self.irods_backend,
@@ -1803,7 +1881,7 @@ class TestRoleUpdate(TaskflowbackendFlowTestBase):
         )
         self.lock_project(self.project)
         self.taskflow.run_flow(flow, self.project)  # Lock not required
-        self.assert_group_member(self.project, user_new, True)
+        self.assert_group_member(self.project, user_new, status=True)
 
 
 class TestRoleUpdateIrodsBatch(TaskflowbackendFlowTestBase):
@@ -1816,25 +1894,31 @@ class TestRoleUpdateIrodsBatch(TaskflowbackendFlowTestBase):
         )
         # self.project_path = self.irods_backend.get_path(self.project)
         self.group_name = self.irods_backend.get_user_group_name(self.project)
+        self.owner_group_name = self.irods_backend.get_user_group_name(
+            self.project, owner=True
+        )
         self.project_group = self.irods.user_groups.get(self.group_name)
-        self.user_new1 = self.make_user('user_new1')
+        self.owner_group = self.irods.user_groups.get(self.owner_group_name)
+        self.user_new = self.make_user('user_new')
         self.user_new2 = self.make_user('user_new2')
 
     def test_add(self):
         """Test role_update_irods_batch for adding users"""
-        self.assert_group_member(self.project, self.user_new1, False)
-        self.assert_group_member(self.project, self.user_new2, False)
+        self.assert_group_member(self.project, self.user_new, False, False)
+        self.assert_group_member(self.project, self.user_new2, False, False)
 
         flow_data = {
             'roles_add': [
-                {
-                    'user_name': self.user_new1.username,
-                    'project_uuid': str(self.project.sodar_uuid),
-                },
-                {
-                    'user_name': self.user_new2.username,
-                    'project_uuid': str(self.project.sodar_uuid),
-                },
+                get_flow_role(
+                    self.project,
+                    self.user_new,
+                    ROLE_RANKING[PROJECT_ROLE_CONTRIBUTOR],
+                ),
+                get_flow_role(
+                    self.project,
+                    self.user_new2,
+                    ROLE_RANKING[PROJECT_ROLE_CONTRIBUTOR],
+                ),
             ],
             'roles_delete': [],
         }
@@ -1847,18 +1931,70 @@ class TestRoleUpdateIrodsBatch(TaskflowbackendFlowTestBase):
         self.assertEqual(type(flow), RoleUpdateIrodsBatchFlow)
         self.build_and_run(flow)
 
-        self.assert_group_member(self.project, self.user_new1, True)
-        self.assert_group_member(self.project, self.user_new2, True)
+        self.assert_group_member(self.project, self.user_new, True, False)
+        self.assert_group_member(self.project, self.user_new2, True, False)
+
+    def test_add_owner(self):
+        """Test role_update_irods_batch for adding users with owner"""
+        self.assert_group_member(self.project, self.user_new, False, False)
+        self.assert_group_member(self.project, self.user_new2, False, False)
+        flow_data = {
+            'roles_add': [
+                get_flow_role(
+                    self.project,
+                    self.user_new,
+                    ROLE_RANKING[PROJECT_ROLE_CONTRIBUTOR],
+                ),
+                get_flow_role(
+                    self.project,
+                    self.user_new2,
+                    ROLE_RANKING[PROJECT_ROLE_OWNER],
+                ),
+            ],
+            'roles_delete': [],
+        }
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='role_update_irods_batch',
+            flow_data=flow_data,
+        )
+        self.build_and_run(flow)
+        self.assert_group_member(self.project, self.user_new, True, False)
+        self.assert_group_member(self.project, self.user_new2, True, True)
+
+    def test_add_delegate(self):
+        """Test role_update_irods_batch for adding users with delegate"""
+        self.assert_group_member(self.project, self.user_new, False, False)
+        flow_data = {
+            'roles_add': [
+                get_flow_role(
+                    self.project,
+                    self.user_new,
+                    ROLE_RANKING[PROJECT_ROLE_DELEGATE],
+                ),
+            ],
+            'roles_delete': [],
+        }
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='role_update_irods_batch',
+            flow_data=flow_data,
+        )
+        self.build_and_run(flow)
+        self.assert_group_member(self.project, self.user_new, True, True)
 
     def test_add_locked(self):
         """Test role_update_irods_batch with locked project"""
-        self.assert_group_member(self.project, self.user_new1, False)
+        self.assert_group_member(self.project, self.user_new, False, False)
         flow_data = {
             'roles_add': [
-                {
-                    'user_name': self.user_new1.username,
-                    'project_uuid': str(self.project.sodar_uuid),
-                },
+                get_flow_role(
+                    self.project,
+                    self.user_new,
+                    ROLE_RANKING[PROJECT_ROLE_CONTRIBUTOR],
+                )
             ],
             'roles_delete': [],
         }
@@ -1870,29 +2006,28 @@ class TestRoleUpdateIrodsBatch(TaskflowbackendFlowTestBase):
         )
         self.lock_project(self.project)
         self.taskflow.run_flow(flow, self.project)  # Lock not required
-        self.assert_group_member(self.project, self.user_new1, True)
+        self.assert_group_member(self.project, self.user_new, True, False)
 
     def test_add_multi_project(self):
         """Test role_update_irods_batch for adding users to multiple projects"""
         new_project, _ = self.make_project_taskflow(
             'NewProject2', PROJECT_TYPE_PROJECT, self.category, self.user
         )
-
-        self.assert_group_member(self.project, self.user_new1, False)
-        self.assert_group_member(self.project, self.user_new2, False)
-        self.assert_group_member(new_project, self.user_new1, False)
-        self.assert_group_member(new_project, self.user_new2, False)
+        self.assert_group_member(self.project, self.user_new, False, False)
+        self.assert_group_member(new_project, self.user_new, False, False)
 
         flow_data = {
             'roles_add': [
-                {
-                    'user_name': self.user_new1.username,
-                    'project_uuid': str(self.project.sodar_uuid),
-                },
-                {
-                    'user_name': self.user_new2.username,
-                    'project_uuid': str(new_project.sodar_uuid),
-                },
+                get_flow_role(
+                    self.project,
+                    self.user_new,
+                    ROLE_RANKING[PROJECT_ROLE_CONTRIBUTOR],
+                ),
+                get_flow_role(
+                    new_project,
+                    self.user_new2,
+                    ROLE_RANKING[PROJECT_ROLE_CONTRIBUTOR],
+                ),
             ],
             'roles_delete': [],
         }
@@ -1904,36 +2039,76 @@ class TestRoleUpdateIrodsBatch(TaskflowbackendFlowTestBase):
         )
         self.build_and_run(flow)
 
-        self.assert_group_member(self.project, self.user_new1, True)
-        self.assert_group_member(self.project, self.user_new2, False)
-        self.assert_group_member(new_project, self.user_new1, False)
-        self.assert_group_member(new_project, self.user_new2, True)
+        self.assert_group_member(self.project, self.user_new, True, False)
+        self.assert_group_member(self.project, self.user_new2, False, False)
+        self.assert_group_member(new_project, self.user_new, False, False)
+        self.assert_group_member(new_project, self.user_new2, True, False)
+
+    def test_add_multi_project_owner(self):
+        """Test role_update_irods_batch for adding users to multiple projects with owner"""
+        new_project, _ = self.make_project_taskflow(
+            'NewProject2', PROJECT_TYPE_PROJECT, self.category, self.user
+        )
+        self.assert_group_member(self.project, self.user_new, False, False)
+        self.assert_group_member(self.project, self.user_new2, False, False)
+        self.assert_group_member(new_project, self.user_new, False, False)
+        self.assert_group_member(new_project, self.user_new2, False, False)
+
+        flow_data = {
+            'roles_add': [
+                get_flow_role(
+                    self.project,
+                    self.user_new,
+                    ROLE_RANKING[PROJECT_ROLE_OWNER],
+                ),
+                get_flow_role(
+                    new_project,
+                    self.user_new2,
+                    ROLE_RANKING[PROJECT_ROLE_CONTRIBUTOR],
+                ),
+            ],
+            'roles_delete': [],
+        }
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='role_update_irods_batch',
+            flow_data=flow_data,
+        )
+        self.build_and_run(flow)
+
+        self.assert_group_member(self.project, self.user_new, True, True)
+        self.assert_group_member(self.project, self.user_new2, False, False)
+        self.assert_group_member(new_project, self.user_new, False, False)
+        self.assert_group_member(new_project, self.user_new2, True, False)
 
     def test_delete(self):
         """Test role_update_irods_batch for deleting users"""
         self.irods.users.create(
-            self.user_new1.username, 'rodsuser', settings.IRODS_ZONE
+            self.user_new.username, 'rodsuser', settings.IRODS_ZONE
         )
         self.irods.users.create(
             self.user_new2.username, 'rodsuser', settings.IRODS_ZONE
         )
-        self.project_group.addmember(self.user_new1.username)
+        self.project_group.addmember(self.user_new.username)
         self.project_group.addmember(self.user_new2.username)
 
-        self.assert_group_member(self.project, self.user_new1, True)
-        self.assert_group_member(self.project, self.user_new2, True)
+        self.assert_group_member(self.project, self.user_new)
+        self.assert_group_member(self.project, self.user_new2)
 
         flow_data = {
             'roles_add': [],
             'roles_delete': [
-                {
-                    'user_name': self.user_new1.username,
-                    'project_uuid': str(self.project.sodar_uuid),
-                },
-                {
-                    'user_name': self.user_new2.username,
-                    'project_uuid': str(self.project.sodar_uuid),
-                },
+                get_flow_role(
+                    self.project,
+                    self.user_new,
+                    ROLE_RANKING[PROJECT_ROLE_CONTRIBUTOR],
+                ),
+                get_flow_role(
+                    self.project,
+                    self.user_new2,
+                    ROLE_RANKING[PROJECT_ROLE_CONTRIBUTOR],
+                ),
             ],
         }
         flow = self.taskflow.get_flow(
@@ -1944,8 +2119,103 @@ class TestRoleUpdateIrodsBatch(TaskflowbackendFlowTestBase):
         )
         self.build_and_run(flow)
 
-        self.assert_group_member(self.project, self.user_new1, False)
+        self.assert_group_member(self.project, self.user_new, False)
         self.assert_group_member(self.project, self.user_new2, False)
+
+    def test_delete_owner(self):
+        """Test role_update_irods_batch for deleting users with owner roles"""
+        self.irods.users.create(
+            self.user_new.username, 'rodsuser', settings.IRODS_ZONE
+        )
+        self.irods.users.create(
+            self.user_new2.username, 'rodsuser', settings.IRODS_ZONE
+        )
+        self.project_group.addmember(self.user_new.username)
+        self.owner_group.addmember(self.user_new.username)
+        self.project_group.addmember(self.user_new2.username)
+        self.owner_group.addmember(self.user_new2.username)
+
+        self.assert_group_member(self.project, self.user_new, True, True)
+        self.assert_group_member(self.project, self.user_new2, True, True)
+
+        flow_data = {
+            'roles_add': [],
+            'roles_delete': [
+                get_flow_role(
+                    self.project,
+                    self.user_new,
+                    ROLE_RANKING[PROJECT_ROLE_OWNER],
+                ),
+                get_flow_role(
+                    self.project,
+                    self.user_new2,
+                    ROLE_RANKING[PROJECT_ROLE_DELEGATE],
+                ),
+            ],
+        }
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='role_update_irods_batch',
+            flow_data=flow_data,
+        )
+        self.build_and_run(flow)
+
+        self.assert_group_member(self.project, self.user_new, False, False)
+        self.assert_group_member(self.project, self.user_new2, False, False)
+
+    def test_update_to_owner(self):
+        """Test role_update_irods_batch with updating user to owner"""
+        self.irods.users.create(
+            self.user_new.username, 'rodsuser', settings.IRODS_ZONE
+        )
+        self.project_group.addmember(self.user_new.username)
+        self.assert_group_member(self.project, self.user_new, True, False)
+        flow_data = {
+            'roles_add': [
+                get_flow_role(
+                    self.project,
+                    self.user_new,
+                    ROLE_RANKING[PROJECT_ROLE_DELEGATE],
+                )
+            ],
+            'roles_delete': [],
+        }
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='role_update_irods_batch',
+            flow_data=flow_data,
+        )
+        self.taskflow.run_flow(flow, self.project)
+        self.assert_group_member(self.project, self.user_new, True, True)
+
+    def test_update_from_owner(self):
+        """Test role_update_irods_batch with updating user from owner"""
+        self.irods.users.create(
+            self.user_new.username, 'rodsuser', settings.IRODS_ZONE
+        )
+        self.project_group.addmember(self.user_new.username)
+        self.owner_group.addmember(self.user_new.username)
+        self.assert_group_member(self.project, self.user_new, True, True)
+        flow_data = {
+            'roles_add': [
+                get_flow_role(
+                    self.project,
+                    self.user_new,
+                    ROLE_RANKING[PROJECT_ROLE_CONTRIBUTOR],
+                )
+            ],
+            'roles_delete': [],
+        }
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='role_update_irods_batch',
+            flow_data=flow_data,
+        )
+        self.taskflow.run_flow(flow, self.project)
+        self.assert_group_member(self.project, self.user_new, True, False)
 
 
 class TestSheetCollsCreate(

@@ -11,8 +11,8 @@ import time
 from irods import keywords as kw
 from irods.access import iRODSAccess
 from irods.exception import (
+    GroupDoesNotExist,
     UserDoesNotExist,
-    UserGroupDoesNotExist,
     CAT_SUCCESS_BUT_WITH_NO_INFO,
 )
 from irods.models import Collection
@@ -346,7 +346,7 @@ class CreateUserGroupTask(IrodsBaseTask):
     def execute(self, name, *args, **kwargs):
         try:
             self.irods.user_groups.get(name)
-        except UserGroupDoesNotExist:
+        except GroupDoesNotExist:
             self.irods.user_groups.create(name=name, user_zone=self.irods.zone)
             self.data_modified = True
         super().execute(*args, **kwargs)
@@ -536,13 +536,18 @@ class RemoveUserFromGroupTask(IrodsBaseTask):
     def execute(self, group_name, user_name, *args, **kwargs):
         try:
             group = self.irods.user_groups.get(group_name)
-            if group.hasmember(user_name):
-                group.removemember(
-                    user_name=user_name, user_zone=self.irods.zone
-                )
-                self.data_modified = True
-        except Exception as ex:
-            self._raise_irods_exception(ex)
+        except GroupDoesNotExist:
+            # This is ok, user isn't in a group that doesn't exist :)
+            group = None
+        if group:
+            try:
+                if group.hasmember(user_name):
+                    group.removemember(
+                        user_name=user_name, user_zone=self.irods.zone
+                    )
+                    self.data_modified = True
+            except Exception as ex:
+                self._raise_irods_exception(ex)
         super().execute(*args, **kwargs)
 
     def revert(self, group_name, user_name, *args, **kwargs):

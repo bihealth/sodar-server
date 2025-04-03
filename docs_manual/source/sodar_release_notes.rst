@@ -16,6 +16,7 @@ Release for SODAR Core 1.1 upgrade and feature updates.
 - :ref:`Add landing zone validation and moving progress indicators <app_landingzones_transfer>`
 - :ref:`Add landing zone file type prohibiting <app_landingzones_transfer_prohibit>`
 - Add file list in landing zone move timeline event extra data
+- Add iRODS project owner/delegate group management
 - :ref:`Upgrade Sample Sheets REST API version to v1.1 <api_samplesheets_version_1_1>`
 - Upgrade to python-irodsclient v3.0
 - Upgrade to SODAR Core v1.1.3

@@ -149,19 +149,29 @@ class TaskflowTestMixin(ProjectMixin, RoleMixin, RoleAssignmentMixin):
             access = access.access_name
         self.assertEqual(access, expected)
 
-    def assert_group_member(self, project, user, status=True):
+    def assert_group_member(
+        self, project, user, status=True, status_owner=None
+    ):
         """
-        Assert user membership in iRODS project group. Requires irods_backend
-        and irods_session to be present in the class.
+        Assert user membership in iRODS project user group and, optionally,
+        owner group. Requires irods_backend and irods_session to be present in
+        the implementing object members.
 
         :param project: Project object
         :param user: SODARUser object
-        :param status: Expected membership status (boolean)
+        :param status: Expected user group membership status (boolean)
+        :param status_owner: Expected owner group membership status (optional,
+                             boolean)
         """
         user_group = self.irods.user_groups.get(
             self.irods_backend.get_user_group_name(project)
         )
         self.assertEqual(user_group.hasmember(user.username), status)
+        if status_owner is not None:
+            owner_group = self.irods.user_groups.get(
+                self.irods_backend.get_user_group_name(project, owner=True)
+            )
+            self.assertEqual(owner_group.hasmember(user.username), status_owner)
 
     def assert_irods_coll(self, target, sub_path=None, expected=True):
         """

@@ -1,12 +1,17 @@
 """iRODS utilities for the taskflowbackend app"""
 
 
-def get_batch_role(project, user_name):
+def get_flow_role(project, user, role_rank=None):
     """
-    Return role dict for use with e.g. the role_update_irods_batch flow.
+    Return role dict for taskflows performing role modification.
 
     :param project: Project object
-    :param user_name: String
+    :param user: SODARUser object or username string
+    :param role_rank: String or None
     :return: Dict
     """
-    return {'project_uuid': str(project.sodar_uuid), 'user_name': user_name}
+    return {
+        'project_uuid': str(project.sodar_uuid),
+        'user_name': user if isinstance(user, str) else user.username,
+        'role_rank': role_rank,
+    }

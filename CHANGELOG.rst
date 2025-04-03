@@ -16,8 +16,9 @@ Added
     - ``PROJECTROLES_SUPPORT_CONTACT`` setting support (#2095)
     - ``vim`` install in Docker build (#2113)
 - **Irodsbackend**
-    - ``checksum`` argument in ``get_objects()`` (#2038)
-    - ``offset`` argument in ``get_objects()`` (#1997)
+    - ``get_objects()`` checksum support (#2038)
+    - ``get_objects()`` offset support (#1997)
+    - ``get_user_group_name()`` owner/delegate group support (#2109)
 - **Landingzones**
     - Site read-only mode support (#2051)
     - File type prohibiting by file name suffix (#2064)
@@ -35,6 +36,7 @@ Added
     - ``BatchCheckFileSuffixTask`` iRODS task (#2064)
     - ``TimelineEventExtraDataUpdateTask`` SODAR task (#2105)
     - File list in ``landing_zone_move`` timeline event extra data (#1202)
+    - iRODS project owner/delegate group management (#2109)
 
 Changed
 -------
@@ -58,6 +60,8 @@ Changed
     - Move ``landing_zone_move`` file check tasks before checksum computing (#2099)
     - Update path argument naming in iRODS tasks (#2093)
     - Add missing ``super().execute()`` call in ``BatchCheckFileExistTask`` (#2097)
+    - Rename ``get_batch_role()`` to ``get_flow_role()`` (#2109)
+    - Refactor ``role_update`` flow usage (#2117)
 
 Fixed
 -----
