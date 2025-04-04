@@ -243,7 +243,7 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
         logger.debug('Collections to be created: {}'.format(', '.join(colls)))
 
         # In case of legacy project and no syncmodifyapi, create owner group
-        owner_group = irods_backend.get_user_group_name(project, owner=True)
+        owner_group = irods_backend.get_group_name(project, owner=True)
         with irods_backend.get_session() as irods:
             try:
                 irods.user_groups.get(owner_group)

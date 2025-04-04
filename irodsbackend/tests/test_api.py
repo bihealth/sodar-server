@@ -298,32 +298,30 @@ class TestIrodsAPI(
         uuid = self.irods_backend.get_uuid_from_path(path, 'assay')
         self.assertEqual(uuid, str(self.assay.sodar_uuid))
 
-    def test_get_user_group_name(self):
-        """Test get_user_group_name() with Project object"""
+    def test_get_group_name(self):
+        """Test get_group_name() with Project object"""
         self.assertEqual(
-            self.irods_backend.get_user_group_name(self.project),
+            self.irods_backend.get_group_name(self.project),
             USER_GROUP_TEMPLATE.format(uuid=self.project.sodar_uuid),
         )
 
-    def test_get_user_group_name_uuid(self):
-        """Test get_user_group_name() with UUID object"""
+    def test_get_group_name_uuid(self):
+        """Test get_group_name() with UUID object"""
         self.assertEqual(
-            self.irods_backend.get_user_group_name(self.project.sodar_uuid),
+            self.irods_backend.get_group_name(self.project.sodar_uuid),
             USER_GROUP_TEMPLATE.format(uuid=self.project.sodar_uuid),
         )
 
-    def test_get_user_group_name_uuid_str(self):
-        """Test get_user_group_name() with UUID string"""
+    def test_get_group_name_uuid_str(self):
+        """Test get_group_name() with UUID string"""
         self.assertEqual(
-            self.irods_backend.get_user_group_name(
-                str(self.project.sodar_uuid)
-            ),
+            self.irods_backend.get_group_name(str(self.project.sodar_uuid)),
             USER_GROUP_TEMPLATE.format(uuid=self.project.sodar_uuid),
         )
 
-    def test_get_user_group_name_owner(self):
-        """Test get_user_group_name() with owner and delegate group"""
+    def test_get_group_name_owner(self):
+        """Test get_group_name() with owner and delegate group"""
         self.assertEqual(
-            self.irods_backend.get_user_group_name(self.project, owner=True),
+            self.irods_backend.get_group_name(self.project, owner=True),
             OWNER_GROUP_TEMPLATE.format(uuid=self.project.sodar_uuid),
         )

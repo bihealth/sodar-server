@@ -84,9 +84,9 @@ class TestProjectCreateAPIView(CoreTaskflowAPITestBase):
         )
         self.assertIsInstance(project_coll, iRODSCollection)
         # Assert user group and owner access
-        group_name = self.irods_backend.get_user_group_name(project)
+        project_group = self.irods_backend.get_group_name(project)
         self.assert_irods_access(
-            group_name, project_coll, self.irods_access_read
+            project_group, project_coll, self.irods_access_read
         )
         self.assert_group_member(project, self.user, True, True)
 

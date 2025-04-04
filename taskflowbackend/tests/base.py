@@ -164,12 +164,12 @@ class TaskflowTestMixin(ProjectMixin, RoleMixin, RoleAssignmentMixin):
                              boolean)
         """
         user_group = self.irods.user_groups.get(
-            self.irods_backend.get_user_group_name(project)
+            self.irods_backend.get_group_name(project)
         )
         self.assertEqual(user_group.hasmember(user.username), status)
         if status_owner is not None:
             owner_group = self.irods.user_groups.get(
-                self.irods_backend.get_user_group_name(project, owner=True)
+                self.irods_backend.get_group_name(project, owner=True)
             )
             self.assertEqual(owner_group.hasmember(user.username), status_owner)
 

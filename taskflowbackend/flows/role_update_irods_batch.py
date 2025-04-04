@@ -22,7 +22,7 @@ class Flow(BaseLinearFlow):
         min_owner_rank = ROLE_RANKING[PROJECT_ROLE_DELEGATE]
         owner_groups_add = set(
             [
-                self.irods_backend.get_user_group_name(r['project_uuid'], True)
+                self.irods_backend.get_group_name(r['project_uuid'], True)
                 for r in self.flow_data['roles_add']
                 if r.get('role_rank') and r['role_rank'] <= min_owner_rank
             ]
@@ -49,10 +49,10 @@ class Flow(BaseLinearFlow):
 
         # Add/update roles
         for role_add in self.flow_data['roles_add']:
-            project_group = self.irods_backend.get_user_group_name(
+            project_group = self.irods_backend.get_group_name(
                 role_add['project_uuid']
             )
-            owner_group = self.irods_backend.get_user_group_name(
+            owner_group = self.irods_backend.get_group_name(
                 role_add['project_uuid'], owner=True
             )
             self.add_task(
@@ -100,7 +100,7 @@ class Flow(BaseLinearFlow):
 
         # Delete roles
         for role_delete in self.flow_data['roles_delete']:
-            project_group = self.irods_backend.get_user_group_name(
+            project_group = self.irods_backend.get_group_name(
                 role_delete['project_uuid']
             )
             self.add_task(
@@ -120,7 +120,7 @@ class Flow(BaseLinearFlow):
                 not role_delete.get('role_rank')
                 or role_delete['role_rank'] <= min_owner_rank
             ):
-                owner_group = self.irods_backend.get_user_group_name(
+                owner_group = self.irods_backend.get_group_name(
                     role_delete['project_uuid'], owner=True
                 )
                 self.add_task(

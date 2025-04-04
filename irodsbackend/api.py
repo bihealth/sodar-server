@@ -392,7 +392,7 @@ class IrodsAPI:
             return s.group(1)
 
     @classmethod
-    def get_user_group_name(cls, project, owner=False):
+    def get_group_name(cls, project, owner=False):
         """
         Return iRODS user group name for project.
 

@@ -21,10 +21,8 @@ class Flow(BaseLinearFlow):
 
     def build(self, force_fail=False):
         project_path = self.irods_backend.get_path(self.project)
-        project_group = self.irods_backend.get_user_group_name(self.project)
-        owner_group = self.irods_backend.get_user_group_name(
-            self.project, owner=True
-        )
+        project_group = self.irods_backend.get_group_name(self.project)
+        owner_group = self.irods_backend.get_group_name(self.project, True)
         min_owner_rank = ROLE_RANKING[PROJECT_ROLE_DELEGATE]
 
         self.add_task(

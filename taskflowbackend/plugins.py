@@ -239,18 +239,18 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                     'Removing project collection: {}'.format(project_path)
                 )
                 irods.collections.remove(project_path)
-            group_name = irods_backend.get_user_group_name(project)
+            project_group = irods_backend.get_group_name(project)
             try:
-                irods.user_groups.get(group_name)
-                logger.debug('Removing user group: {}'.format(group_name))
-                irods.users.remove(group_name)
+                irods.user_groups.get(project_group)
+                logger.debug('Removing user group: {}'.format(project_group))
+                irods.users.remove(project_group)
             except GroupDoesNotExist:
                 pass
-            group_name = irods_backend.get_user_group_name(project, owner=True)
+            project_group = irods_backend.get_group_name(project, owner=True)
             try:
-                irods.user_groups.get(group_name)
-                logger.debug('Removing owner group: {}'.format(group_name))
-                irods.users.remove(group_name)
+                irods.user_groups.get(project_group)
+                logger.debug('Removing owner group: {}'.format(project_group))
+                irods.users.remove(project_group)
             except GroupDoesNotExist:
                 pass
 
@@ -695,10 +695,10 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
             **{'sync_modify_api': True},
         )
         # Remove inactive roles
-        group_name = irods_backend.get_user_group_name(project)
+        project_group = irods_backend.get_group_name(project)
         flow_data = {'roles_add': [], 'roles_delete': []}
         with irods_backend.get_session() as irods:
-            for irods_user in irods.user_groups.getmembers(group_name):
+            for irods_user in irods.user_groups.getmembers(project_group):
                 user = User.objects.filter(username=irods_user.name).first()
                 role_as = project.get_role(user)
                 if not role_as or role_as.role.rank >= RANK_FINDER:
@@ -737,8 +737,8 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         timeline = get_backend_api('timeline_backend')
         tl_event = None
         project_path = irods_backend.get_path(project)
-        user_group = irods_backend.get_user_group_name(project)
-        owner_group = irods_backend.get_user_group_name(project, owner=True)
+        user_group = irods_backend.get_group_name(project)
+        owner_group = irods_backend.get_group_name(project, owner=True)
         errors = []
         # Create separate timeline event
         if timeline:

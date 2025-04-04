@@ -11,7 +11,7 @@ class Flow(BaseLinearFlow):
         return super().validate()
 
     def build(self, force_fail=False):
-        project_group = self.irods_backend.get_user_group_name(self.project)
+        project_group = self.irods_backend.get_group_name(self.project)
 
         self.add_task(
             irods_tasks.CreateUserTask(

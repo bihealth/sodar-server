@@ -36,8 +36,8 @@ class Flow(BaseLinearFlow):
     def build(self, force_fail=False):
         validate_only = self.flow_data.get('validate_only', False)
         zone = LandingZone.objects.get(sodar_uuid=self.flow_data['zone_uuid'])
-        project_group = self.irods_backend.get_user_group_name(self.project)
-        owner_group = self.irods_backend.get_user_group_name(self.project, True)
+        project_group = self.irods_backend.get_group_name(self.project)
+        owner_group = self.irods_backend.get_group_name(self.project, True)
         sample_path = self.irods_backend.get_path(zone.assay)
         zone_path = self.irods_backend.get_path(zone)
         admin_name = self.irods.username

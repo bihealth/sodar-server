@@ -193,7 +193,7 @@ class TestLandingZoneCreate(
         self.project, self.owner_as = self.make_project_taskflow(
             'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
         )
-        self.group_name = self.irods_backend.get_user_group_name(self.project)
+        self.project_group = self.irods_backend.get_group_name(self.project)
         self.project_path = self.irods_backend.get_path(self.project)
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
@@ -212,9 +212,7 @@ class TestLandingZoneCreate(
         )
         self.zone_root_path = self.irods_backend.get_zone_path(self.project)
         self.zone_path = self.irods_backend.get_path(self.zone)
-        self.owner_group = self.irods_backend.get_user_group_name(
-            self.project, True
-        )
+        self.owner_group = self.irods_backend.get_group_name(self.project, True)
 
     def test_create(self):
         """Test landing_zone_create for creating a zone"""
@@ -251,7 +249,7 @@ class TestLandingZoneCreate(
             self.user.username, zone_coll, IRODS_ACCESS_OWN
         )
         self.assert_irods_access(self.owner_group, zone_coll, IRODS_ACCESS_OWN)
-        self.assert_irods_access(self.group_name, zone_coll, None)
+        self.assert_irods_access(self.project_group, zone_coll, None)
 
     def test_create_locked(self):
         """Test landing_zone_create with locked project"""
@@ -326,7 +324,7 @@ class TestLandingZoneCreate(
         self.assert_irods_access(
             self.user.username, results_path, IRODS_ACCESS_OWN
         )
-        self.assert_irods_access(self.group_name, results_path, None)
+        self.assert_irods_access(self.project_group, results_path, None)
 
     def test_create_colls_restrict(self):
         """Test landing_zone_create with restricted collections"""
@@ -360,7 +358,7 @@ class TestLandingZoneCreate(
         self.assert_irods_access(
             self.user.username, results_path, IRODS_ACCESS_OWN
         )
-        self.assert_irods_access(self.group_name, results_path, None)
+        self.assert_irods_access(self.project_group, results_path, None)
         new_root_path = os.path.join(self.zone_path, 'new_root_path')
         self.irods.collections.create(new_root_path)
         self.assert_irods_access(
@@ -428,7 +426,7 @@ class TestLandingZoneCreate(
         self.assert_irods_access(
             SCRIPT_USER_NAME, zone_coll, self.irods_access_write
         )
-        self.assert_irods_access(self.group_name, zone_coll, None)
+        self.assert_irods_access(self.project_group, zone_coll, None)
 
     def test_create_script_user_not_created(self):
         """Test landing_zone_create with invalid script user (should fail)"""
@@ -501,7 +499,7 @@ class TestLandingZoneDelete(
         self.project, self.owner_as = self.make_project_taskflow(
             'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
         )
-        self.group_name = self.irods_backend.get_user_group_name(self.project)
+        self.project_group = self.irods_backend.get_group_name(self.project)
         self.project_path = self.irods_backend.get_path(self.project)
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
@@ -705,9 +703,7 @@ class TestLandingZoneMove(
         self.project, self.owner_as = self.make_project_taskflow(
             'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
         )
-        self.project_group = self.irods_backend.get_user_group_name(
-            self.project
-        )
+        self.project_group = self.irods_backend.get_group_name(self.project)
         self.project_path = self.irods_backend.get_path(self.project)
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
@@ -727,10 +723,8 @@ class TestLandingZoneMove(
         self.make_zone_taskflow(self.zone)
         self.sample_path = self.irods_backend.get_path(self.assay)
         self.zone_path = self.irods_backend.get_path(self.zone)
-        self.project_group = self.irods_backend.get_user_group_name(
-            self.project
-        )
-        self.owner_group = self.irods_backend.get_user_group_name(
+        self.project_group = self.irods_backend.get_group_name(self.project)
+        self.owner_group = self.irods_backend.get_group_name(
             self.project, owner=True
         )
 
@@ -1295,7 +1289,7 @@ class TestLandingZoneMoveAltRootPath(
         self.project, self.owner_as = self.make_project_taskflow(
             'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
         )
-        self.group_name = self.irods_backend.get_user_group_name(self.project)
+        self.project_group = self.irods_backend.get_group_name(self.project)
         self.project_path = self.irods_backend.get_path(self.project)
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
@@ -1315,7 +1309,7 @@ class TestLandingZoneMoveAltRootPath(
         self.make_zone_taskflow(self.zone)
         self.sample_path = self.irods_backend.get_path(self.assay)
         self.zone_path = self.irods_backend.get_path(self.zone)
-        self.group_name = self.irods_backend.get_user_group_name(self.project)
+        self.project_group = self.irods_backend.get_group_name(self.project)
 
     def test_move_alt_root_path(self):
         """Test landing_zone_move with IRODS_ROOT_PATH set"""
@@ -1376,10 +1370,10 @@ class TestLandingZoneMoveAltRootPath(
             self.irods.data_objects.exists(sample_obj_path + '.md5'), True
         )
         self.assert_irods_access(
-            self.group_name, sample_obj_path, self.irods_access_read
+            self.project_group, sample_obj_path, self.irods_access_read
         )
         self.assert_irods_access(
-            self.group_name, sample_obj_path + '.md5', self.irods_access_read
+            self.project_group, sample_obj_path + '.md5', self.irods_access_read
         )
 
 
@@ -1393,19 +1387,17 @@ class TestProjectCreate(TaskflowbackendFlowTestBase):
             'NewProject', PROJECT_TYPE_PROJECT, self.category
         )
         self.make_assignment(self.project, self.user, self.role_owner)
-        self.group_name = self.irods_backend.get_user_group_name(self.project)
-        self.owner_group_name = self.irods_backend.get_user_group_name(
-            self.project, owner=True
-        )
+        self.project_group = self.irods_backend.get_group_name(self.project)
+        self.owner_group = self.irods_backend.get_group_name(self.project, True)
         self.user_assign = self.make_user('user_assign')
 
     def test_create(self):
         """Test project_create for creating a project"""
         self.assert_irods_coll(self.project, expected=False)
         with self.assertRaises(GroupDoesNotExist):
-            self.irods.user_groups.get(self.group_name)
+            self.irods.user_groups.get(self.project_group)
         with self.assertRaises(GroupDoesNotExist):
-            self.irods.user_groups.get(self.owner_group_name)
+            self.irods.user_groups.get(self.owner_group)
 
         flow_data = {
             'owner': self.user.username,
@@ -1427,12 +1419,12 @@ class TestProjectCreate(TaskflowbackendFlowTestBase):
         self.build_and_run(flow)
 
         self.assert_irods_coll(self.project, expected=True)
-        group = self.irods.user_groups.get(self.group_name)
+        group = self.irods.user_groups.get(self.project_group)
         self.assertIsInstance(group, iRODSUserGroup)
-        group = self.irods.user_groups.get(self.owner_group_name)
+        group = self.irods.user_groups.get(self.owner_group)
         self.assertIsInstance(group, iRODSUserGroup)
         self.assert_irods_access(
-            self.group_name,
+            self.project_group,
             self.irods_backend.get_path(self.project),
             self.irods_access_read,
         )
@@ -1640,7 +1632,7 @@ class TestPublicAccessUpdate(
         self.project, self.owner_as = self.make_project_taskflow(
             'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
         )
-        self.group_name = self.irods_backend.get_user_group_name(self.project)
+        self.project_group = self.irods_backend.get_group_name(self.project)
         self.project_path = self.irods_backend.get_path(self.project)
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
@@ -1652,7 +1644,7 @@ class TestPublicAccessUpdate(
         self.make_irods_colls(self.investigation)
         self.assertEqual(self.irods.collections.exists(self.sample_path), True)
         self.assert_irods_access(
-            self.group_name, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, self.irods_access_read
         )
         self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
 
@@ -1670,7 +1662,7 @@ class TestPublicAccessUpdate(
         self.build_and_run(flow)
 
         self.assert_irods_access(
-            self.group_name, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, self.irods_access_read
         )
         self.assert_irods_access(
             PUBLIC_GROUP, self.sample_path, self.irods_access_read
@@ -1680,7 +1672,7 @@ class TestPublicAccessUpdate(
         """Test public_access_update with locked project"""
         self.make_irods_colls(self.investigation)
         self.assert_irods_access(
-            self.group_name, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, self.irods_access_read
         )
         self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
         flow_data = {
@@ -1696,7 +1688,7 @@ class TestPublicAccessUpdate(
         self.lock_project(self.project)
         self.taskflow.run_flow(flow, self.project)  # Lock not required
         self.assert_irods_access(
-            self.group_name, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, self.irods_access_read
         )
         self.assert_irods_access(
             PUBLIC_GROUP, self.sample_path, self.irods_access_read
@@ -1710,7 +1702,7 @@ class TestPublicAccessUpdate(
         self.make_irods_colls(self.investigation)
         self.assertEqual(self.irods.collections.exists(self.sample_path), True)
         self.assert_irods_access(
-            self.group_name, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, self.irods_access_read
         )
         self.assert_irods_access(
             PUBLIC_GROUP, self.sample_path, self.irods_access_read
@@ -1729,7 +1721,7 @@ class TestPublicAccessUpdate(
         self.build_and_run(flow)
 
         self.assert_irods_access(
-            self.group_name, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, self.irods_access_read
         )
         self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
 
@@ -1738,7 +1730,7 @@ class TestPublicAccessUpdate(
         self.make_irods_colls(self.investigation)
         self.assertEqual(self.irods.collections.exists(self.sample_path), True)
         self.assert_irods_access(
-            self.group_name, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, self.irods_access_read
         )
         self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
 
@@ -1756,7 +1748,7 @@ class TestPublicAccessUpdate(
         self.build_and_run(flow, force_fail=True)
 
         self.assert_irods_access(
-            self.group_name, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, self.irods_access_read
         )
         self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
 
@@ -1765,7 +1757,7 @@ class TestPublicAccessUpdate(
         self.make_irods_colls(self.investigation)
         self.assertEqual(self.irods.collections.exists(self.sample_path), True)
         self.assert_irods_access(
-            self.group_name, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, self.irods_access_read
         )
         self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
         self.assertIsNone(self.irods_backend.get_ticket(self.irods, TICKET_STR))
@@ -1786,7 +1778,7 @@ class TestPublicAccessUpdate(
             self.build_and_run(flow)
 
         self.assert_irods_access(
-            self.group_name, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, self.irods_access_read
         )
         self.assert_irods_access(
             PUBLIC_GROUP, self.sample_path, self.irods_access_read
@@ -1804,7 +1796,7 @@ class TestPublicAccessUpdate(
         self.make_irods_colls(self.investigation, ticket_str=TICKET_STR)
         self.assertEqual(self.irods.collections.exists(self.sample_path), True)
         self.assert_irods_access(
-            self.group_name, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, self.irods_access_read
         )
         self.assert_irods_access(
             PUBLIC_GROUP, self.sample_path, self.irods_access_read
@@ -1827,7 +1819,7 @@ class TestPublicAccessUpdate(
         self.build_and_run(flow)
 
         self.assert_irods_access(
-            self.group_name, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, self.irods_access_read
         )
         self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
         self.assertIsNone(self.irods_backend.get_ticket(self.irods, TICKET_STR))
@@ -1928,12 +1920,10 @@ class TestRoleUpdateIrodsBatch(TaskflowbackendFlowTestBase):
             'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
         )
         # self.project_path = self.irods_backend.get_path(self.project)
-        self.group_name = self.irods_backend.get_user_group_name(self.project)
-        self.owner_group_name = self.irods_backend.get_user_group_name(
-            self.project, owner=True
-        )
-        self.project_group = self.irods.user_groups.get(self.group_name)
-        self.owner_group = self.irods.user_groups.get(self.owner_group_name)
+        self.project_group = self.irods_backend.get_group_name(self.project)
+        self.owner_group = self.irods_backend.get_group_name(self.project, True)
+        self.project_group = self.irods.user_groups.get(self.project_group)
+        self.owner_group = self.irods.user_groups.get(self.owner_group)
         self.user_new = self.make_user('user_new')
         self.user_new2 = self.make_user('user_new2')
 
@@ -2265,7 +2255,7 @@ class TestSheetCollsCreate(
         self.project, self.owner_as = self.make_project_taskflow(
             'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
         )
-        self.group_name = self.irods_backend.get_user_group_name(self.project)
+        self.project_group = self.irods_backend.get_group_name(self.project)
         self.project_path = self.irods_backend.get_path(self.project)
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
@@ -2290,18 +2280,18 @@ class TestSheetCollsCreate(
         self.assertEqual(self.investigation.irods_status, True)
         self.assertEqual(self.irods.collections.exists(self.sample_path), True)
         self.assert_irods_access(
-            self.group_name, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, self.irods_access_read
         )
         self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
         results_path = os.path.join(self.sample_path, RESULTS_COLL)
         self.assertEqual(self.irods.collections.exists(results_path), True)
         self.assert_irods_access(
-            self.group_name, results_path, self.irods_access_read
+            self.project_group, results_path, self.irods_access_read
         )
         misc_path = os.path.join(self.sample_path, MISC_FILES_COLL)
         self.assertEqual(self.irods.collections.exists(misc_path), True)
         self.assert_irods_access(
-            self.group_name, misc_path, self.irods_access_read
+            self.project_group, misc_path, self.irods_access_read
         )
 
     def test_create_locked(self):
@@ -2336,7 +2326,7 @@ class TestSheetCollsCreate(
 
         self.assertEqual(self.irods.collections.exists(self.sample_path), True)
         self.assert_irods_access(
-            self.group_name, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, self.irods_access_read
         )
         self.assert_irods_access(
             PUBLIC_GROUP, self.sample_path, self.irods_access_read
@@ -2364,7 +2354,7 @@ class TestSheetCollsCreate(
 
         self.assertEqual(self.irods.collections.exists(self.sample_path), True)
         self.assert_irods_access(
-            self.group_name, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, self.irods_access_read
         )
         self.assert_irods_access(
             PUBLIC_GROUP, self.sample_path, self.irods_access_read
@@ -2430,7 +2420,7 @@ class TestSheetDelete(
         self.project, self.owner_as = self.make_project_taskflow(
             'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
         )
-        self.group_name = self.irods_backend.get_user_group_name(self.project)
+        self.project_group = self.irods_backend.get_group_name(self.project)
         self.project_path = self.irods_backend.get_path(self.project)
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)

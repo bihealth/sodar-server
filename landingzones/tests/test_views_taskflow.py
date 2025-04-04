@@ -183,9 +183,7 @@ class TestZoneCreateView(
         self.make_irods_colls(self.investigation)
         self.project_path = self.irods_backend.get_path(self.project)
         self.zone_root_path = self.irods_backend.get_zone_path(self.project)
-        self.owner_group = self.irods_backend.get_user_group_name(
-            self.project, True
-        )
+        self.owner_group = self.irods_backend.get_group_name(self.project, True)
         # Set up URLs
         self.url = reverse(
             'landingzones:create', kwargs={'project': self.project.sodar_uuid}
@@ -497,12 +495,8 @@ class TestZoneMoveView(
         self.assay_path = self.irods_backend.get_path(self.assay)
         self.assay_coll = self.irods.collections.get(self.assay_path)
         self.sample_path = self.irods_backend.get_path(self.assay)
-        self.project_group = self.irods_backend.get_user_group_name(
-            self.project
-        )
-        self.owner_group = self.irods_backend.get_user_group_name(
-            self.project, owner=True
-        )
+        self.project_group = self.irods_backend.get_group_name(self.project)
+        self.owner_group = self.irods_backend.get_group_name(self.project, True)
         # Set up URLs
         self.url_move = reverse(
             'landingzones:move',

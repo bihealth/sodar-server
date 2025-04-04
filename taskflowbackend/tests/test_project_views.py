@@ -129,9 +129,9 @@ class TestProjectCreateView(TaskflowViewTestBase):
             str(self.category.sodar_uuid),
         )
         # Assert user group and owner access
-        group_name = self.irods_backend.get_user_group_name(project)
+        project_group = self.irods_backend.get_group_name(project)
         self.assert_irods_access(
-            group_name, project_coll, self.irods_access_read
+            project_group, project_coll, self.irods_access_read
         )
         self.assert_group_member(project, self.user, True, True)
         # Assert inherited role updating for category owner
@@ -325,7 +325,7 @@ class TestRoleAssignmentCreateView(TaskflowViewTestBase):
         )
         self.user_new = self.make_user('user_new')
         self.irods_user_group = self.irods.user_groups.get(
-            self.irods_backend.get_user_group_name(self.project)
+            self.irods_backend.get_group_name(self.project)
         )
         self.url = reverse(
             'projectroles:role_create',
@@ -1105,8 +1105,8 @@ class TestProjectDeleteView(TaskflowViewTestBase):
         )
         self.project_uuid = self.project.sodar_uuid
         self.project_path = self.irods_backend.get_path(self.project)
-        self.group_name = self.irods_backend.get_user_group_name(self.project)
-        self.owner_group_name = self.irods_backend.get_user_group_name(
+        self.project_group = self.irods_backend.get_group_name(self.project)
+        self.owner_group = self.irods_backend.get_group_name(
             self.project, owner=True
         )
         self.timeline = get_backend_api('timeline_backend')
@@ -1119,8 +1119,8 @@ class TestProjectDeleteView(TaskflowViewTestBase):
     def test_post(self):
         """Test ProjectDeleteView POST with taskflow"""
         self.assertTrue(self.irods.collections.exists(self.project_path))
-        self.assertIsNotNone(self.irods.groups.get(self.group_name))
-        self.assertIsNotNone(self.irods.groups.get(self.owner_group_name))
+        self.assertIsNotNone(self.irods.groups.get(self.project_group))
+        self.assertIsNotNone(self.irods.groups.get(self.owner_group))
         self._assert_tl_event(0)
 
         with self.login(self.user):
@@ -1134,9 +1134,9 @@ class TestProjectDeleteView(TaskflowViewTestBase):
             )
         self.assertFalse(self.irods.collections.exists(self.project_path))
         with self.assertRaises(GroupDoesNotExist):
-            self.irods.groups.get(self.group_name)
+            self.irods.groups.get(self.project_group)
         with self.assertRaises(GroupDoesNotExist):
-            self.irods.groups.get(self.owner_group_name)
+            self.irods.groups.get(self.owner_group)
         self._assert_tl_event(1)
         tl_event = TimelineEvent.objects.filter(
             app=APP_NAME, event_name='project_delete'
@@ -1158,7 +1158,7 @@ class TestProjectDeleteView(TaskflowViewTestBase):
         self.assertTrue(self.irods.collections.exists(self.project_path))
         self.assertTrue(self.irods.collections.exists(obj_coll_path))
         self.assertTrue(self.irods.data_objects.exists(obj_path))
-        self.assertIsNotNone(self.irods.groups.get(self.group_name))
+        self.assertIsNotNone(self.irods.groups.get(self.project_group))
 
         with self.login(self.user):
             self.client.post(self.url, data=self.post_data)
@@ -1167,7 +1167,7 @@ class TestProjectDeleteView(TaskflowViewTestBase):
         self.assertFalse(self.irods.collections.exists(obj_coll_path))
         self.assertFalse(self.irods.data_objects.exists(obj_path))
         with self.assertRaises(GroupDoesNotExist):
-            self.irods.groups.get(self.group_name)
+            self.irods.groups.get(self.project_group)
         self.assertIsNone(
             Project.objects.filter(sodar_uuid=self.project_uuid).first()
         )

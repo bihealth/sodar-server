@@ -104,12 +104,8 @@ class ZoneAPIViewTaskflowTestBase(
         # Create collections in iRODS
         self.make_irods_colls(self.investigation)
         # Set up helpers
-        self.project_group = self.irods_backend.get_user_group_name(
-            self.project
-        )
-        self.owner_group = self.irods_backend.get_user_group_name(
-            self.project, owner=True
-        )
+        self.project_group = self.irods_backend.get_group_name(self.project)
+        self.owner_group = self.irods_backend.get_group_name(self.project, True)
 
 
 class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
@@ -181,7 +177,7 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
 
     def test_post_no_owner_group(self):
         """Test POST with no project owner group"""
-        owner_group = self.irods_backend.get_user_group_name(self.project, True)
+        owner_group = self.irods_backend.get_group_name(self.project, True)
         self.irods.users.remove(owner_group)
         with self.assertRaises(GroupDoesNotExist):
             self.irods.user_groups.get(owner_group)
@@ -504,12 +500,8 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
         )
         self.make_zone_taskflow(self.landing_zone)
         self.sample_path = self.irods_backend.get_path(self.assay)
-        self.project_group = self.irods_backend.get_user_group_name(
-            self.project
-        )
-        self.owner_group = self.irods_backend.get_user_group_name(
-            self.project, owner=True
-        )
+        self.project_group = self.irods_backend.get_group_name(self.project)
+        self.owner_group = self.irods_backend.get_group_name(self.project, True)
         self.zone_path = self.irods_backend.get_path(self.landing_zone)
         self.zone_coll = self.irods.collections.get(self.zone_path)
         self.assay_path = self.irods_backend.get_path(self.assay)
