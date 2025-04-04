@@ -112,22 +112,6 @@ SHEETS_APP_SETTINGS = [
         user_modifiable=False,
     ),
     PluginAppSettingDef(
-        name='edit_config_min_role',
-        scope=APP_SETTING_SCOPE_PROJECT,
-        type=APP_SETTING_TYPE_STRING,
-        options=[
-            'superuser',
-            PROJECT_ROLE_OWNER,
-            PROJECT_ROLE_DELEGATE,
-            PROJECT_ROLE_CONTRIBUTOR,
-        ],
-        default=PROJECT_ROLE_CONTRIBUTOR,
-        label='Minimum role for column configuration editing',
-        description='Allow per-project restriction of column configuration '
-        'updates',
-        user_modifiable=True,
-    ),
-    PluginAppSettingDef(
         name='sheet_sync_enable',
         scope=APP_SETTING_SCOPE_PROJECT,
         type=APP_SETTING_TYPE_BOOLEAN,

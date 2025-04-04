@@ -84,6 +84,7 @@ Removed
     - ``SODAR_SUPPORT_EMAIL`` and ``SODAR_SUPPORT_EMAIL`` settings (#2095)
 - **Samplesheets**
     - Legacy iRODS test files (#2102)
+    - ``edit_config_min_role`` app setting (#2110)
 - **Taskflowbackend**
     - Unused ``role_delete`` flow (#2115)
     - Unused ``role_update`` flow (#2117)

@@ -22,6 +22,7 @@ Release for SODAR Core 1.1 upgrade and feature updates.
 - Upgrade to python-irodsclient v3.0
 - Upgrade to SODAR Core v1.1.3
 - Replace SODAR_SUPPORT_* settings with PROJECTROLES_SUPPORT_CONTACT
+- Remove minimum sample sheet column config editing role setting
 - `SODAR Core v1.1 updates <https://sodar-core.readthedocs.io/en/latest/major_changes.html#v1-1-1-2025-03-11>`_:
   Project deletion, project leaving, paginated project list, site read-only
   mode, etc.

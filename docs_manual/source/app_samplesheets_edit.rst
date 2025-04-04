@@ -374,10 +374,6 @@ restrict values to e.g. a certain format, value options, integer range, used
 ontology, etc. The configuration menu for each column is accessed via the
 right-aligned button on the column header.
 
-The required member role for configuring columns can be set in the
-project settings under *Minimum role for column configuration editing*, the
-default minimum role being project contributor.
-
 Clicking the column configuration button opens a modal for setting configuration
 variables. The modal content varies based on the column type, but all share a
 few common elements:

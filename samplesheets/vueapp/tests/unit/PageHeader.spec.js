@@ -99,7 +99,6 @@ describe('PageHeader.vue', () => {
       export_sheet: true,
       delete_sheet: false,
       view_versions: true,
-      edit_config: false,
       update_cache: false,
       is_superuser: false
     }

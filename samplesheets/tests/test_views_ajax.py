@@ -269,7 +269,6 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
                 'export_sheet': True,
                 'delete_sheet': True,
                 'view_versions': True,
-                'edit_config': True,
                 'update_cache': True,
                 'view_tickets': True,
                 'is_superuser': True,
@@ -339,7 +338,6 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
                 'export_sheet': True,
                 'delete_sheet': True,
                 'view_versions': True,
-                'edit_config': True,
                 'update_cache': True,
                 'view_tickets': True,
                 'is_superuser': True,
@@ -349,32 +347,6 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
         self.assertEqual(rd, expected)
 
     # TODO: Test anonymous request and irods_webdav_enabled
-
-    def test_get_delegate_min_owner(self):
-        """Test GET as delegate with owner minimum role"""
-        app_settings.set(
-            APP_NAME,
-            'edit_config_min_role',
-            SODAR_CONSTANTS['PROJECT_ROLE_OWNER'],
-            project=self.project,
-        )
-        with self.login(self.user_delegate):
-            response = self.client.get(self.url)
-        self.assertEqual(response.status_code, 200)
-        self.assertFalse(json.loads(response.json())['perms']['edit_config'])
-
-    def test_get_delegate_min_delegate(self):
-        """Test GET as delegate with delegate minimum role"""
-        app_settings.set(
-            APP_NAME,
-            'edit_config_min_role',
-            SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE'],
-            project=self.project,
-        )
-        with self.login(self.user_delegate):
-            response = self.client.get(self.url)
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(json.loads(response.json())['perms']['edit_config'])
 
     def test_get_irods_request_alert_owner(self):
         """Test GET with active iRODS request alert as owner"""
@@ -434,7 +406,7 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         rd = json.loads(response.data)
-        self.assertEqual(rd['perms']['edit_config'], True)
+        self.assertEqual(rd['perms']['edit_sheet'], True)
 
     def test_get_display_row_links_override(self):
         """Test GET with assay row link display override"""
@@ -466,7 +438,6 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
             'export_sheet': True,
             'delete_sheet': False,
             'view_versions': True,
-            'edit_config': False,
             'update_cache': False,
             'view_tickets': True,
             'is_superuser': False,
@@ -488,7 +459,6 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
             'export_sheet': True,
             'delete_sheet': True,
             'view_versions': True,
-            'edit_config': True,
             'update_cache': True,
             'view_tickets': True,
             'is_superuser': True,
@@ -1886,12 +1856,6 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, SamplesheetsViewTestBase):
             self.build_sheet_config(self.investigation),
             project=self.project,
         )
-        app_settings.set(
-            APP_NAME,
-            'edit_config_min_role',
-            SODAR_CONSTANTS['PROJECT_ROLE_OWNER'],
-            project=self.project,
-        )
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
@@ -1973,90 +1937,6 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, SamplesheetsViewTestBase):
                 event_name='field_update',
             ).count(),
             1,
-        )
-
-    def test_post_superuser_min_owner(self):
-        """Test POST as superuser with minimum role of owner"""
-        edit_config_min_role = app_settings.get(
-            APP_NAME, 'edit_config_min_role', project=self.project
-        )
-        self.assertEqual(
-            edit_config_min_role, SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
-        )
-        with self.login(self.user):
-            response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_config_update',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.post_values),
-                content_type='application/json',
-            )
-        self.assertEqual(response.status_code, 200)
-
-    def test_post_owner_min_owner(self):
-        """Test POST as owner with minimum=owner"""
-        edit_config_min_role = app_settings.get(
-            APP_NAME, 'edit_config_min_role', project=self.project
-        )
-        self.assertEqual(
-            edit_config_min_role, SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
-        )
-        with self.login(self.user_owner):
-            response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_config_update',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.post_values),
-                content_type='application/json',
-            )
-        self.assertEqual(response.status_code, 200)
-
-    def test_post_delegate_min_owner(self):
-        """Test POST as delegate with minimum=owner (should fail)"""
-        edit_config_min_role = app_settings.get(
-            APP_NAME, 'edit_config_min_role', project=self.project
-        )
-        self.assertEqual(
-            edit_config_min_role, SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
-        )
-        with self.login(self.user_delegate):
-            response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_config_update',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.post_values),
-                content_type='application/json',
-            )
-        self.assertEqual(response.status_code, 403)
-        self.assertEqual(
-            response.json()['detail'],
-            'User not allowed to modify column config',
-        )
-
-    def test_post_contributor_min_owner(self):
-        """Test POST as contributor with minimum=owner (should fail)"""
-        edit_config_min_role = app_settings.get(
-            APP_NAME, 'edit_config_min_role', project=self.project
-        )
-        self.assertEqual(
-            edit_config_min_role, SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
-        )
-        with self.login(self.user_contributor):
-            response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_config_update',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.post_values),
-                content_type='application/json',
-            )
-        self.assertEqual(response.status_code, 403)
-        self.assertEqual(
-            response.json()['detail'],
-            'User not allowed to modify column config',
         )
 
     def test_post_inherited_owner(self):

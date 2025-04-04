@@ -290,7 +290,7 @@ export function buildColDef (params) {
             editable: fieldEditable, // Add here to allow checking by cell
             headerType: fieldHeader.type,
             assayMode: params.assayMode, // Needed for sample col in assay
-            canEditConfig: params.sodarContext.perms.edit_config
+            canEditConfig: params.sodarContext.perms.edit_sheet
           }
           header.width = header.width + 20 // Fit button in header
           header.minWidth = header.minWidth + 20
