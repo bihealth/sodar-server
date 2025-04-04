@@ -20,6 +20,7 @@ from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 
 from taskflowbackend import flows
+from taskflowbackend.irods_utils import get_flow_role as _get_flow_role
 from taskflowbackend.lock_api import ProjectLockAPI, PROJECT_LOCKED_MSG
 from taskflowbackend.tasks_celery import submit_flow_task
 
@@ -138,6 +139,18 @@ class TaskflowAPI:
             ex.status_code = 503
             raise ex
         raise default_class(msg)
+
+    @classmethod
+    def get_flow_role(cls, project, user, role_rank=None):
+        """
+        Return role dict for taskflows performing role modification.
+
+        :param project: Project object
+        :param user: SODARUser object or username string
+        :param role_rank: String or None
+        :return: Dict
+        """
+        return _get_flow_role(project, user, role_rank)
 
     @classmethod
     def get_flow(

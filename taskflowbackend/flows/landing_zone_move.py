@@ -37,6 +37,7 @@ class Flow(BaseLinearFlow):
         validate_only = self.flow_data.get('validate_only', False)
         zone = LandingZone.objects.get(sodar_uuid=self.flow_data['zone_uuid'])
         project_group = self.irods_backend.get_user_group_name(self.project)
+        owner_group = self.irods_backend.get_user_group_name(self.project, True)
         sample_path = self.irods_backend.get_path(zone.assay)
         zone_path = self.irods_backend.get_path(zone)
         admin_name = self.irods.username
@@ -132,6 +133,19 @@ class Flow(BaseLinearFlow):
                         'access_name': 'read',
                         'path': zone_path,
                         'user_name': zone.user.username,
+                        'irods_backend': self.irods_backend,
+                    },
+                )
+            )
+            self.add_task(
+                irods_tasks.SetAccessTask(
+                    name='Set project owner group read access for zone '
+                    'collection {}'.format(zone_path),
+                    irods=self.irods,
+                    inject={
+                        'access_name': 'read',
+                        'path': zone_path,
+                        'user_name': owner_group,
                         'irods_backend': self.irods_backend,
                     },
                 )
@@ -314,6 +328,19 @@ class Flow(BaseLinearFlow):
                     'access_name': 'null',
                     'path': sample_path,
                     'user_name': zone.user.username,
+                    'irods_backend': self.irods_backend,
+                },
+            )
+        )
+        self.add_task(
+            irods_tasks.SetAccessTask(
+                name='Remove project owner group access from sample collection '
+                '{}'.format(sample_path),
+                irods=self.irods,
+                inject={
+                    'access_name': 'null',
+                    'path': sample_path,
+                    'user_name': owner_group,
                     'irods_backend': self.irods_backend,
                 },
             )

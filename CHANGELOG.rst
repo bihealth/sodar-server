@@ -24,6 +24,8 @@ Added
     - File type prohibiting by file name suffix (#2064)
     - ``file_name_prohibit`` app setting (#2064)
     - ``cleanup_file_prohibit()`` utility method (#2064)
+    - Missing project owner group creation on zone create (#1934)
+    - Owner and delegate own access to all zones in project (#1934)
 - **Samplesheets**
     - Site read-only mode support (#2051)
     - ``checksum`` field in ``ProjectIrodsFileListAPIView`` return data (#2039)
@@ -37,6 +39,7 @@ Added
     - ``TimelineEventExtraDataUpdateTask`` SODAR task (#2105)
     - File list in ``landing_zone_move`` timeline event extra data (#1202)
     - iRODS project owner/delegate group management (#2109)
+    - ``TaskflowAPI.get_flow_role()`` helper (#1934)
 
 Changed
 -------

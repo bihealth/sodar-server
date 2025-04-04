@@ -2,6 +2,8 @@
 
 import logging
 
+from irods.exception import GroupDoesNotExist
+
 from django.conf import settings
 from django.contrib import auth
 from django.contrib import messages
@@ -13,6 +15,7 @@ from django.views.generic import TemplateView, CreateView, UpdateView
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
+from projectroles.models import SODAR_CONSTANTS, ROLE_RANKING
 from projectroles.plugins import get_backend_api
 from projectroles.views import (
     LoggedInPermissionMixin,
@@ -44,6 +47,9 @@ app_settings = AppSettingAPI()
 logger = logging.getLogger(__name__)
 User = auth.get_user_model()
 
+
+# SODAR constants
+PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
 
 # Local constants
 APP_NAME = 'landingzones'
@@ -234,8 +240,36 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
                         logger.debug(
                             'Added shorctut collection "{}"'.format(s.get('id'))
                         )
-
         logger.debug('Collections to be created: {}'.format(', '.join(colls)))
+
+        # In case of legacy project and no syncmodifyapi, create owner group
+        owner_group = irods_backend.get_user_group_name(project, owner=True)
+        with irods_backend.get_session() as irods:
+            try:
+                irods.user_groups.get(owner_group)
+            except GroupDoesNotExist:
+                logger.info('Creating missing project owner group in iRODS..')
+                od_roles = project.get_roles(
+                    max_rank=ROLE_RANKING[PROJECT_ROLE_DELEGATE]
+                )
+                flow_data = {
+                    'roles_add': [
+                        taskflow.get_flow_role(project, r.user, r.role.rank)
+                        for r in od_roles
+                    ],
+                    'roles_delete': [],
+                }
+                try:
+                    taskflow.submit(
+                        project=project,
+                        flow_name='role_update_irods_batch',
+                        flow_data=flow_data,
+                        async_mode=False,
+                    )
+                except taskflow.FlowSubmitException as ex:
+                    zone.delete()
+                    raise ex
+
         flow_name = 'landing_zone_create'
         flow_data = self.get_flow_data(
             zone,

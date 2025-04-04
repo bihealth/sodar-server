@@ -3,6 +3,7 @@
 import os
 import time
 
+from irods.exception import GroupDoesNotExist
 from irods.test.helpers import make_object
 
 from django.contrib import auth
@@ -72,6 +73,7 @@ ZONE_PLUGIN_COLLS = ['0815-N1-DNA1', '0815-T1-DNA1']
 ZONE_ALL_COLLS = ZONE_BASE_COLLS + ZONE_PLUGIN_COLLS
 RAW_DATA_COLL = 'RawData'
 MAX_QUANT_COLL = 'MaxQuantResults'
+IRODS_ACCESS_READ = 'read_object'
 
 
 class LandingZoneTaskflowMixin:
@@ -179,6 +181,11 @@ class TestZoneCreateView(
         self.assay = self.study.assays.first()
         # Create iRODS collections
         self.make_irods_colls(self.investigation)
+        self.project_path = self.irods_backend.get_path(self.project)
+        self.zone_root_path = self.irods_backend.get_zone_path(self.project)
+        self.owner_group = self.irods_backend.get_user_group_name(
+            self.project, True
+        )
         # Set up URLs
         self.url = reverse(
             'landingzones:create', kwargs={'project': self.project.sodar_uuid}
@@ -187,8 +194,8 @@ class TestZoneCreateView(
             'landingzones:list', kwargs={'project': self.project.sodar_uuid}
         )
 
-    def test_create_zone(self):
-        """Test landingzones creation with taskflow"""
+    def test_post(self):
+        """Test ZoneCreateView POST"""
         self.assertEqual(LandingZone.objects.count(), 0)
         self.assertEqual(
             TimelineEvent.objects.filter(event_name='zone_create').count(), 0
@@ -228,14 +235,60 @@ class TestZoneCreateView(
         }
         self.assertEqual(tl_event.extra_data, expected_extra)
         self.assertEqual(len(mail.outbox), 1)
+
+        self.assert_group_member(self.project, self.user, True, True)
+        self.assert_group_member(self.project, self.user_owner_cat, True, True)
+        root_coll = self.irods.collections.get(self.zone_root_path)
+        self.assert_irods_access(self.owner_group, root_coll, IRODS_ACCESS_READ)
         zone_path = self.irods_backend.get_path(zone)
         zone_coll = self.irods.collections.get(zone_path)
         self.assert_irods_access(
             self.user.username, zone_coll, IRODS_ACCESS_OWN
         )
 
-    def test_create_zone_colls(self):
-        """Test landingzones creation with default collections"""
+    def test_post_no_owner_group(self):
+        """Test POST with no project owner group"""
+        self.irods.users.remove(self.owner_group)
+        with self.assertRaises(GroupDoesNotExist):
+            self.irods.user_groups.get(self.owner_group)
+        self.assertEqual(LandingZone.objects.count(), 0)
+        self.assertEqual(
+            TimelineEvent.objects.filter(event_name='zone_create').count(), 0
+        )
+        self.assertEqual(len(mail.outbox), 1)
+
+        values = {
+            'assay': str(self.assay.sodar_uuid),
+            'title_suffix': ZONE_SUFFIX,
+            'description': ZONE_DESC,
+            'configuration': '',
+            'create_colls': False,
+            'restrict_colls': False,
+        }
+        with self.login(self.user):
+            response = self.client.post(self.url, values)
+            self.assertRedirects(response, self.redirect_url)
+
+        self.assert_zone_count(1)
+        zone = LandingZone.objects.first()
+        self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
+
+        self.assert_irods_coll(zone)
+        for c in ZONE_BASE_COLLS:
+            self.assert_irods_coll(zone, c, False)
+        root_coll = self.irods.collections.get(self.zone_root_path)
+        self.assertIsNotNone(self.irods.user_groups.get(self.owner_group))
+        self.assert_group_member(self.project, self.user, True, True)
+        self.assert_group_member(self.project, self.user_owner_cat, True, True)
+        self.assert_irods_access(self.owner_group, root_coll, IRODS_ACCESS_READ)
+        zone_path = self.irods_backend.get_path(zone)
+        zone_coll = self.irods.collections.get(zone_path)
+        self.assert_irods_access(
+            self.user.username, zone_coll, IRODS_ACCESS_OWN
+        )
+
+    def test_post_colls(self):
+        """Test POST with default collections"""
         self.assertEqual(LandingZone.objects.count(), 0)
         values = {
             'assay': str(self.assay.sodar_uuid),
@@ -269,9 +322,12 @@ class TestZoneCreateView(
             self.assert_irods_access(
                 self.user.username, os.path.join(zone_path, c), IRODS_ACCESS_OWN
             )
+            self.assert_irods_access(
+                self.owner_group, os.path.join(zone_path, c), IRODS_ACCESS_OWN
+            )
 
-    def test_create_zone_colls_plugin(self):
-        """Test landingzones creation with plugin collections"""
+    def test_post_colls_plugin(self):
+        """Test POST with plugin collections"""
         self.assertEqual(LandingZone.objects.count(), 0)
         # Mock assay configuration
         self.assay.measurement_type = {'name': 'genome sequencing'}
@@ -311,12 +367,15 @@ class TestZoneCreateView(
             self.assert_irods_access(
                 self.user.username, os.path.join(zone_path, c), IRODS_ACCESS_OWN
             )
+            self.assert_irods_access(
+                self.owner_group, os.path.join(zone_path, c), IRODS_ACCESS_OWN
+            )
         # These should not be created for this plugin
         for c in [MAX_QUANT_COLL, RAW_DATA_COLL]:
             self.assert_irods_coll(zone, c, False)
 
-    def test_create_zone_colls_plugin_shortcuts(self):
-        """Test landingzones creation with shortcut collections in plugin"""
+    def test_post_plugin_shortcuts(self):
+        """Test POST with shortcut collections in plugin"""
         self.assertEqual(LandingZone.objects.count(), 0)
         # Set pep_ms plugin
         self.assay.measurement_type = {'name': 'protein expression profiling'}
@@ -346,8 +405,8 @@ class TestZoneCreateView(
 
     # TODO: Test without sodarcache (see issue #1157)
 
-    def test_create_zone_colls_plugin_restrict(self):
-        """Test landingzones creation with plugin collections and restriction"""
+    def test_post_colls_plugin_restrict(self):
+        """Test POST with plugin collections and restriction"""
         self.assertEqual(LandingZone.objects.count(), 0)
         # Mock assay configuration
         self.assay.measurement_type = {'name': 'genome sequencing'}
@@ -382,9 +441,15 @@ class TestZoneCreateView(
         self.assert_irods_access(
             self.user.username, zone_path, self.irods_access_read
         )
+        self.assert_irods_access(
+            self.owner_group, zone_path, self.irods_access_read
+        )
         for c in ZONE_ALL_COLLS:
             self.assert_irods_access(
                 self.user.username, os.path.join(zone_path, c), IRODS_ACCESS_OWN
+            )
+            self.assert_irods_access(
+                self.owner_group, os.path.join(zone_path, c), IRODS_ACCESS_OWN
             )
 
 
@@ -427,14 +492,17 @@ class TestZoneMoveView(
         # Create zone in taskflow
         self.make_zone_taskflow(self.landing_zone)
         # Get collections
-        self.zone_coll = self.irods.collections.get(
-            self.irods_backend.get_path(self.landing_zone)
-        )
-        self.assay_coll = self.irods.collections.get(
-            self.irods_backend.get_path(self.assay)
-        )
+        self.zone_path = self.irods_backend.get_path(self.landing_zone)
+        self.zone_coll = self.irods.collections.get(self.zone_path)
+        self.assay_path = self.irods_backend.get_path(self.assay)
+        self.assay_coll = self.irods.collections.get(self.assay_path)
         self.sample_path = self.irods_backend.get_path(self.assay)
-        self.group_name = self.irods_backend.get_user_group_name(self.project)
+        self.project_group = self.irods_backend.get_user_group_name(
+            self.project
+        )
+        self.owner_group = self.irods_backend.get_user_group_name(
+            self.project, owner=True
+        )
         # Set up URLs
         self.url_move = reverse(
             'landingzones:move',
@@ -448,8 +516,8 @@ class TestZoneMoveView(
             'landingzones:list', kwargs={'project': self.project.sodar_uuid}
         )
 
-    def test_render(self):
-        """Test rendering of the landing zone validation and moving view"""
+    def test_get(self):
+        """Test ZoneMoveView GET"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         self.make_irods_md5_object(irods_obj)
         zone = LandingZone.objects.first()
@@ -458,12 +526,19 @@ class TestZoneMoveView(
             response = self.client.get(self.url_move)
         self.assertEqual(response.status_code, 200)
 
-    def test_move(self):
-        """Test validating and moving landing zone with objects"""
+    def test_post_move(self):
+        """Test POST to move landing zone with objects"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         self.make_irods_md5_object(irods_obj)
         zone = LandingZone.objects.first()
         self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
+        self.assert_irods_access(
+            self.owner_group, self.zone_path, IRODS_ACCESS_OWN
+        )
+        self.assert_irods_access(
+            self.user.username, self.zone_path, IRODS_ACCESS_OWN
+        )
+        self.assert_irods_access(self.project_group, self.zone_path, None)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(len(mail.outbox), 1)
@@ -478,13 +553,19 @@ class TestZoneMoveView(
         self.assert_zone_status(zone, ZONE_STATUS_MOVED)
         self.assertEqual(len(self.zone_coll.data_objects), 0)
         self.assertEqual(len(self.assay_coll.data_objects), 2)
+        obj_path = os.path.join(self.assay_path, TEST_OBJ_NAME)
+        self.assert_irods_access(self.owner_group, obj_path, None)
+        self.assert_irods_access(self.user.username, obj_path, None)
+        self.assert_irods_access(
+            self.project_group, obj_path, IRODS_ACCESS_READ
+        )
         self.assertEqual(len(mail.outbox), 3)  # Mails to owner & category owner
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_move').count(), 1
         )
 
-    def test_move_no_files(self):
-        """Test validating and moving a landing zone without objects"""
+    def test_post_move_no_files(self):
+        """Test POST to move landing zone without objects"""
         zone = LandingZone.objects.first()
         self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 0)
@@ -503,8 +584,8 @@ class TestZoneMoveView(
             AppAlert.objects.filter(alert_name='zone_move').count(), 0
         )
 
-    def test_move_invalid_md5(self):
-        """Test validating and moving with invalid checksum (should fail)"""
+    def test_post_move_invalid_md5(self):
+        """Test POST with invalid checksum (should fail)"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         make_object(self.irods, irods_obj.path + '.md5', INVALID_MD5)
         zone = LandingZone.objects.first()
@@ -523,13 +604,20 @@ class TestZoneMoveView(
         self.assert_zone_status(zone, ZONE_STATUS_FAILED)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
+        self.assert_irods_access(
+            self.owner_group, self.zone_path, IRODS_ACCESS_OWN
+        )
+        self.assert_irods_access(
+            self.user.username, self.zone_path, IRODS_ACCESS_OWN
+        )
+        self.assert_irods_access(self.project_group, self.zone_path, None)
         self.assertEqual(len(mail.outbox), 2)
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_move').count(), 1
         )
 
-    def test_move_no_md5(self):
-        """Test validating and moving without checksum (should fail)"""
+    def test_post_no_md5(self):
+        """Test POST without checksum (should fail)"""
         self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         # No md5
         zone = LandingZone.objects.first()
@@ -551,8 +639,8 @@ class TestZoneMoveView(
             AppAlert.objects.filter(alert_name='zone_move').count(), 1
         )
 
-    def test_validate(self):
-        """Test validating landing zone with objects without moving"""
+    def test_post_validate(self):
+        """Test POST to validate landing zone with objects without moving"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         self.make_irods_md5_object(irods_obj)
         zone = LandingZone.objects.first()
@@ -571,13 +659,20 @@ class TestZoneMoveView(
         self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
+        self.assert_irods_access(
+            self.owner_group, self.zone_path, IRODS_ACCESS_OWN
+        )
+        self.assert_irods_access(
+            self.user.username, self.zone_path, IRODS_ACCESS_OWN
+        )
+        self.assert_irods_access(self.project_group, self.zone_path, None)
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_validate').count(), 1
         )
 
-    def test_validate_no_files(self):
-        """Test validation a landing zone without files"""
+    def test_post_validate_no_files(self):
+        """Test POST to validate landing zone without files"""
         zone = LandingZone.objects.first()
         self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 0)
@@ -597,8 +692,8 @@ class TestZoneMoveView(
             AppAlert.objects.filter(alert_name='zone_validate').count(), 1
         )
 
-    def test_validate_invalid_md5(self):
-        """Test validating with invalid checksum in file (should fail)"""
+    def test_post_validate_invalid_md5(self):
+        """Test POST to validate with invalid checksum in file (should fail)"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         make_object(self.irods, irods_obj.path + '.md5', INVALID_MD5)
         zone = LandingZone.objects.first()
@@ -622,8 +717,8 @@ class TestZoneMoveView(
             AppAlert.objects.filter(alert_name='zone_validate').count(), 1
         )
 
-    def test_validate_empty_md5(self):
-        """Test validating with empty checksum in file (should fail)"""
+    def test_post_validate_empty_md5(self):
+        """Test POST to validate with empty checksum in file (should fail)"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         make_object(self.irods, irods_obj.path + '.md5', '')
         zone = LandingZone.objects.first()
@@ -643,8 +738,8 @@ class TestZoneMoveView(
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
 
-    def test_validate_no_md5_file(self):
-        """Test validating without checksum file (should fail)"""
+    def test_post_validate_no_md5_file(self):
+        """Test POST to validate without checksum file (should fail)"""
         self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         # No md5
         zone = LandingZone.objects.first()
@@ -660,8 +755,8 @@ class TestZoneMoveView(
         self.assertEqual(len(self.zone_coll.data_objects), 1)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
 
-    def test_validate_md5_file_only(self):
-        """Test validating zone with no file for MD5 file (should fail)"""
+    def test_post_validate_md5_file_only(self):
+        """Test POST to validate with no file for MD5 file (should fail)"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         self.md5_obj = self.make_irods_md5_object(irods_obj)
         irods_obj.unlink(force=True)
@@ -678,8 +773,8 @@ class TestZoneMoveView(
         self.assertEqual(len(self.zone_coll.data_objects), 1)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
 
-    def test_validate_prohibit(self):
-        """Test validating zone with prohibited file name suffix"""
+    def test_post_validate_prohibit(self):
+        """Test POST to validate with prohibited file name suffix"""
         app_settings.set(
             APP_NAME, 'file_name_prohibit', 'txt', project=self.project
         )
@@ -713,8 +808,8 @@ class TestZoneMoveView(
             AppAlert.objects.filter(alert_name='zone_move').count(), 0
         )
 
-    def test_move_invalid_status(self):
-        """Test validating and moving with invalid zone status (should fail)"""
+    def test_post_move_invalid_status(self):
+        """Test POST to move with invalid zone status (should fail)"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         self.make_irods_md5_object(irods_obj)
         zone = LandingZone.objects.first()
@@ -749,8 +844,8 @@ class TestZoneMoveView(
         )
 
     @override_settings(REDIS_URL=INVALID_REDIS_URL)
-    def test_move_lock_failure(self):
-        """Test validating and moving with project lock failure"""
+    def test_post_move_lock_failure(self):
+        """Test POST to move with project lock failure"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         self.make_irods_md5_object(irods_obj)
         zone = LandingZone.objects.first()
@@ -783,8 +878,8 @@ class TestZoneMoveView(
             AppAlert.objects.filter(alert_name='zone_move').count(), 0
         )
 
-    def test_move_restrict(self):
-        """Test validating and moving with restricted collections"""
+    def test_post_move_restrict(self):
+        """Test POST to move with restricted collections"""
         # Create new zone with restricted collections
         zone = self.make_landing_zone(
             title=ZONE_TITLE + '_new',
@@ -831,12 +926,12 @@ class TestZoneMoveView(
         )
         sample_obj_path = os.path.join(assay_results_path, TEST_OBJ_NAME)
         self.assert_irods_access(
-            self.group_name,
+            self.project_group,
             sample_obj_path,
             self.irods_access_read,
         )
         self.assert_irods_access(
-            self.group_name,
+            self.project_group,
             sample_obj_path + '.md5',
             self.irods_access_read,
         )

@@ -5,6 +5,8 @@ Tests for REST API views in the landingzones app with SODAR Taskflow enabled
 import json
 import os
 
+from irods.exception import GroupDoesNotExist
+
 from django.test import override_settings
 from django.urls import reverse
 
@@ -66,6 +68,7 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 # Local constants
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 ZONE_STATUS_INFO = 'Testing'
+IRODS_ACCESS_READ = 'read_object'
 
 
 class ZoneAPIViewTaskflowTestBase(
@@ -101,7 +104,12 @@ class ZoneAPIViewTaskflowTestBase(
         # Create collections in iRODS
         self.make_irods_colls(self.investigation)
         # Set up helpers
-        self.group_name = self.irods_backend.get_user_group_name(self.project)
+        self.project_group = self.irods_backend.get_user_group_name(
+            self.project
+        )
+        self.owner_group = self.irods_backend.get_user_group_name(
+            self.project, owner=True
+        )
 
 
 class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
@@ -155,7 +163,45 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
         }
         self.assertEqual(response_data, expected)
 
-        # Assert collection status
+        # Assert collection and access status
+        self.assert_irods_coll(zone)
+        for c in ZONE_BASE_COLLS:
+            self.assert_irods_coll(zone, c, False)
+        zone_coll = self.irods.collections.get(
+            self.irods_backend.get_path(zone)
+        )
+        self.assert_group_member(self.project, self.user, True, True)
+        self.assert_group_member(self.project, self.user_owner_cat, True, True)
+        self.assert_irods_access(
+            self.user.username, zone_coll, IRODS_ACCESS_OWN
+        )
+        self.assert_irods_access(self.owner_group, zone_coll, IRODS_ACCESS_OWN)
+        self.assert_irods_access(self.project_group, zone_coll, None)
+        # TODO: Assert owner group access once implemented
+
+    def test_post_no_owner_group(self):
+        """Test POST with no project owner group"""
+        owner_group = self.irods_backend.get_user_group_name(self.project, True)
+        self.irods.users.remove(owner_group)
+        with self.assertRaises(GroupDoesNotExist):
+            self.irods.user_groups.get(owner_group)
+        self.assertEqual(LandingZone.objects.count(), 0)
+        # NOTE: No optional create_colls and restrict_colls args, default=False
+        request_data = {
+            'title': 'new zone',
+            'assay': str(self.assay.sodar_uuid),
+            'description': 'description',
+            'user_message': 'user message',
+            'configuration': None,
+            'config_data': {},
+        }
+        response = self.request_knox(self.url, method='POST', data=request_data)
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(LandingZone.objects.count(), 1)
+        zone = LandingZone.objects.first()
+        self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
+
         self.assert_irods_coll(zone)
         for c in ZONE_BASE_COLLS:
             self.assert_irods_coll(zone, c, False)
@@ -165,7 +211,11 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
         self.assert_irods_access(
             self.user.username, zone_coll, IRODS_ACCESS_OWN
         )
-        self.assert_irods_access(self.group_name, zone_coll, None)
+        self.assert_irods_access(self.owner_group, zone_coll, IRODS_ACCESS_OWN)
+        self.assert_irods_access(self.project_group, zone_coll, None)
+        self.assertIsNotNone(self.irods.user_groups.get(owner_group))
+        self.assert_group_member(self.project, self.user, True, True)
+        self.assert_group_member(self.project, self.user_owner_cat, True, True)
 
     def test_post_colls(self):
         """Test POST with default collections"""
@@ -196,6 +246,9 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
         for c in ZONE_BASE_COLLS:
             self.assert_irods_access(
                 self.user.username, os.path.join(zone_path, c), IRODS_ACCESS_OWN
+            )
+            self.assert_irods_access(
+                self.owner_group, os.path.join(zone_path, c), IRODS_ACCESS_OWN
             )
 
     def test_post_colls_plugin(self):
@@ -238,6 +291,9 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
         for c in ZONE_ALL_COLLS:
             self.assert_irods_access(
                 self.user.username, os.path.join(zone_path, c), IRODS_ACCESS_OWN
+            )
+            self.assert_irods_access(
+                self.owner_group, os.path.join(zone_path, c), IRODS_ACCESS_OWN
             )
 
     def test_post_colls_plugin_restrict(self):
@@ -282,6 +338,9 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
         for c in ZONE_ALL_COLLS:
             self.assert_irods_access(
                 self.user.username, os.path.join(zone_path, c), IRODS_ACCESS_OWN
+            )
+            self.assert_irods_access(
+                self.owner_group, os.path.join(zone_path, c), IRODS_ACCESS_OWN
             )
 
     # TODO: Test without sodarcache (see issue #1157)
@@ -445,13 +504,16 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
         )
         self.make_zone_taskflow(self.landing_zone)
         self.sample_path = self.irods_backend.get_path(self.assay)
-        self.group_name = self.irods_backend.get_user_group_name(self.project)
-        self.zone_coll = self.irods.collections.get(
-            self.irods_backend.get_path(self.landing_zone)
+        self.project_group = self.irods_backend.get_user_group_name(
+            self.project
         )
-        self.assay_coll = self.irods.collections.get(
-            self.irods_backend.get_path(self.assay)
+        self.owner_group = self.irods_backend.get_user_group_name(
+            self.project, owner=True
         )
+        self.zone_path = self.irods_backend.get_path(self.landing_zone)
+        self.zone_coll = self.irods.collections.get(self.zone_path)
+        self.assay_path = self.irods_backend.get_path(self.assay)
+        self.assay_coll = self.irods.collections.get(self.assay_path)
         self.url = reverse(
             'landingzones:api_submit_validate',
             kwargs={'landingzone': self.landing_zone.sodar_uuid},
@@ -479,6 +541,13 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
             LandingZone.objects.first().status_info,
             'Successfully validated 0 files',
         )
+        self.assert_irods_access(
+            self.owner_group, self.zone_path, IRODS_ACCESS_OWN
+        )
+        self.assert_irods_access(
+            self.user.username, self.zone_path, IRODS_ACCESS_OWN
+        )
+        self.assert_irods_access(self.project_group, self.zone_path, None)
 
     def test_post_validate_locked(self):
         """Test POST for validation with locked project (should fail)"""
@@ -515,6 +584,12 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
         self.assert_zone_status(self.landing_zone, ZONE_STATUS_MOVED)
         self.assertEqual(len(self.zone_coll.data_objects), 0)
         self.assertEqual(len(self.assay_coll.data_objects), 2)
+        obj_path = os.path.join(self.assay_path, TEST_OBJ_NAME)
+        self.assert_irods_access(self.owner_group, obj_path, None)
+        self.assert_irods_access(self.user.username, obj_path, None)
+        self.assert_irods_access(
+            self.project_group, obj_path, IRODS_ACCESS_READ
+        )
 
     def test_post_move_invalid_status(self):
         """Test POST for moving with invalid zone status (should fail)"""
@@ -585,12 +660,12 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
         self.assertEqual(len(assay_results_coll.data_objects), 2)
         sample_obj_path = os.path.join(assay_results_path, TEST_OBJ_NAME)
         self.assert_irods_access(
-            self.group_name,
+            self.project_group,
             sample_obj_path,
             self.irods_access_read,
         )
         self.assert_irods_access(
-            self.group_name,
+            self.project_group,
             sample_obj_path + '.md5',
             self.irods_access_read,
         )

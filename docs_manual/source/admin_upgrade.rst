@@ -51,6 +51,15 @@ environment components:
     v0.15 straight to v1.1. Doing so risks a database migration failure. This is
     due to squashed migrations removed in v1.1.
 
+SODAR v1.1 adds project owners and delegates iRODS collection ownership to all
+landing zones in the project. To enable owner and delegate access on legacy
+zones created before v1.1, you need to run the ``syncmodifyapi`` management
+command. Example:
+
+.. code-block:: bash
+
+    $ ./manage.py syncmodifyapi
+
 
 .. _admin_upgrade_v1.0:
 

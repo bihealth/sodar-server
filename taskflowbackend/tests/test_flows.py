@@ -94,6 +94,7 @@ UPDATED_DESC = 'updated description'
 SCRIPT_USER_NAME = 'script_user'
 IRODS_ROOT_PATH = 'sodar/root'
 INVALID_REDIS_URL = 'redis://127.0.0.1:6666/0'
+IRODS_ACCESS_READ = 'read_object'
 
 
 class TaskflowbackendFlowTestBase(TaskflowViewTestBase):
@@ -209,7 +210,11 @@ class TestLandingZoneCreate(
             description=ZONE_DESC,
             status=ZONE_STATUS_CREATING,
         )
+        self.zone_root_path = self.irods_backend.get_zone_path(self.project)
         self.zone_path = self.irods_backend.get_path(self.zone)
+        self.owner_group = self.irods_backend.get_user_group_name(
+            self.project, True
+        )
 
     def test_create(self):
         """Test landing_zone_create for creating a zone"""
@@ -232,6 +237,11 @@ class TestLandingZoneCreate(
 
         self.zone.refresh_from_db()
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+
+        self.assert_group_member(self.project, self.user, True, True)
+        self.assert_group_member(self.project, self.user_owner_cat, True, True)
+        root_coll = self.irods.collections.get(self.zone_root_path)
+        self.assert_irods_access(self.owner_group, root_coll, IRODS_ACCESS_READ)
         zone_coll = self.irods.collections.get(self.zone_path)
         self.assertEqual(
             zone_coll.metadata.get_one('description').value,
@@ -240,6 +250,7 @@ class TestLandingZoneCreate(
         self.assert_irods_access(
             self.user.username, zone_coll, IRODS_ACCESS_OWN
         )
+        self.assert_irods_access(self.owner_group, zone_coll, IRODS_ACCESS_OWN)
         self.assert_irods_access(self.group_name, zone_coll, None)
 
     def test_create_locked(self):
@@ -694,7 +705,9 @@ class TestLandingZoneMove(
         self.project, self.owner_as = self.make_project_taskflow(
             'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
         )
-        self.group_name = self.irods_backend.get_user_group_name(self.project)
+        self.project_group = self.irods_backend.get_user_group_name(
+            self.project
+        )
         self.project_path = self.irods_backend.get_path(self.project)
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
@@ -714,7 +727,12 @@ class TestLandingZoneMove(
         self.make_zone_taskflow(self.zone)
         self.sample_path = self.irods_backend.get_path(self.assay)
         self.zone_path = self.irods_backend.get_path(self.zone)
-        self.group_name = self.irods_backend.get_user_group_name(self.project)
+        self.project_group = self.irods_backend.get_user_group_name(
+            self.project
+        )
+        self.owner_group = self.irods_backend.get_user_group_name(
+            self.project, owner=True
+        )
 
     def test_move(self):
         """Test landing_zone_move"""
@@ -727,6 +745,10 @@ class TestLandingZoneMove(
         obj = self.make_irods_object(obj_coll, OBJ_NAME)
         self.make_irods_md5_object(obj)
         obj_path = os.path.join(obj_coll_path, OBJ_NAME)
+        self.assert_irods_access(self.owner_group, obj_path, IRODS_ACCESS_OWN)
+        self.assert_irods_access(self.user.username, obj_path, IRODS_ACCESS_OWN)
+        self.assert_irods_access(self.project_group, obj_path, None)
+
         sample_obj_path = os.path.join(
             self.sample_path, OBJ_COLL_NAME, OBJ_NAME
         )
@@ -773,10 +795,14 @@ class TestLandingZoneMove(
             self.irods.data_objects.exists(sample_obj_path + '.md5'), True
         )
         self.assert_irods_access(
-            self.group_name, sample_obj_path, self.irods_access_read
+            self.project_group, sample_obj_path, self.irods_access_read
+        )
+        self.assert_irods_access(self.owner_group, sample_obj_path, None)
+        self.assert_irods_access(
+            self.project_group, sample_obj_path + '.md5', self.irods_access_read
         )
         self.assert_irods_access(
-            self.group_name, sample_obj_path + '.md5', self.irods_access_read
+            self.owner_group, sample_obj_path + '.md5', None
         )
         tl_event.refresh_from_db()
         expected = {'files': [os.path.join(OBJ_COLL_NAME, OBJ_NAME)]}
@@ -877,6 +903,10 @@ class TestLandingZoneMove(
         self.assertEqual(self.irods.collections.exists(self.zone_path), True)
         sample_obj_path = os.path.join(self.sample_path, COLL_NAME, OBJ_NAME)
         self.assertEqual(self.irods.data_objects.exists(sample_obj_path), False)
+        # Assert access after revert
+        self.assert_irods_access(self.owner_group, obj_path, IRODS_ACCESS_OWN)
+        self.assert_irods_access(self.user.username, obj_path, IRODS_ACCESS_OWN)
+        self.assert_irods_access(self.project_group, obj_path, None)
 
     # TODO: Test with invalid .md5 file
 
@@ -1018,6 +1048,9 @@ class TestLandingZoneMove(
         )
         sample_coll_path = os.path.join(self.sample_path, COLL_NAME)
         self.assertEqual(self.irods.collections.exists(sample_coll_path), False)
+        self.assert_irods_access(self.owner_group, obj_path, IRODS_ACCESS_OWN)
+        self.assert_irods_access(self.user.username, obj_path, IRODS_ACCESS_OWN)
+        self.assert_irods_access(self.project_group, obj_path, None)
 
     def test_validate_upper_case(self):
         """Test landing_zone_move validation with upper case checksum in file"""
@@ -1166,9 +1199,11 @@ class TestLandingZoneMove(
         self.assertEqual(
             self.irods.data_objects.exists(sample_obj_path + '.md5'), False
         )
+        self.assert_irods_access(self.owner_group, zone_coll, IRODS_ACCESS_OWN)
         self.assert_irods_access(
             self.user.username, zone_coll, IRODS_ACCESS_OWN
         )
+        self.assert_irods_access(self.project_group, zone_coll, None)
 
     def test_move_restrict(self):
         """Test landing_zone_move with created and restricted collections"""
@@ -1238,10 +1273,10 @@ class TestLandingZoneMove(
             self.irods.data_objects.exists(sample_obj_path + '.md5'), True
         )
         self.assert_irods_access(
-            self.group_name, sample_obj_path, self.irods_access_read
+            self.project_group, sample_obj_path, self.irods_access_read
         )
         self.assert_irods_access(
-            self.group_name, sample_obj_path + '.md5', self.irods_access_read
+            self.project_group, sample_obj_path + '.md5', self.irods_access_read
         )
 
 

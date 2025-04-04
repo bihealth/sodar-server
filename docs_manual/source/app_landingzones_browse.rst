@@ -39,9 +39,20 @@ iRODS Links
 Zone Dropdown
     For each active zone, there is a dropdown menu for zone specific operations.
 
-Project owners and delegates will also be able to see active zones of other
-users in the project in a separate list within the same view. They can also
-perform the same validation, moving and deletion actions as the zone owner.
+.. _app_landingzones_browse_owner_access:
+
+Project owners and delegates will be able to see active zones of other users in
+the project in a separate list within the same view. They can perform the same
+validation, moving and deletion actions as the zone owner.
+
+Owners and delegates also have iRODS read/write access to zones of other users.
+This functionality was introduced in SODAR v1.1.
+
+.. hint::
+
+    For legacy landing zones created on SODAR versions older than 1.1, an
+    administrator must run the ``syncmodifyapi`` administrator command to enable
+    owner and delegate iRODS access.
 
 
 Status Types
