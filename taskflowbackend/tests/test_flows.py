@@ -54,8 +54,6 @@ from taskflowbackend.flows.project_update import Flow as ProjectUpdateFlow
 from taskflowbackend.flows.public_access_update import (
     Flow as PublicAccessUpdateFlow,
 )
-from taskflowbackend.flows.role_delete import Flow as RoleDeleteFlow
-from taskflowbackend.flows.role_update import Flow as RoleUpdateFlow
 from taskflowbackend.flows.role_update_irods_batch import (
     Flow as RoleUpdateIrodsBatchFlow,
 )
@@ -1823,92 +1821,6 @@ class TestPublicAccessUpdate(
         )
         self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
         self.assertIsNone(self.irods_backend.get_ticket(self.irods, TICKET_STR))
-
-
-class TestRoleDelete(TaskflowbackendFlowTestBase):
-    """Tests for the role_delete flow"""
-
-    def setUp(self):
-        super().setUp()
-        self.project, self.owner_as = self.make_project_taskflow(
-            'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
-        )
-        self.user_new = self.make_user('user_new')
-        self.role_as = self.make_assignment_taskflow(
-            self.project, self.user_new, self.role_contributor
-        )
-        self.project_path = self.irods_backend.get_path(self.project)
-
-    def test_delete(self):
-        """Test role_delete for deleting a role assignment"""
-        self.assert_group_member(self.project, self.user_new, status=True)
-        flow_data = {'user_name': self.user_new.username}
-        flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='role_delete',
-            flow_data=flow_data,
-        )
-        self.assertEqual(type(flow), RoleDeleteFlow)
-        self.build_and_run(flow)
-        self.assert_group_member(self.project, self.user_new, status=False)
-
-    def test_delete_locked(self):
-        """Test role_delete with locked project"""
-        self.assert_group_member(self.project, self.user_new, status=True)
-        flow_data = {'user_name': self.user_new.username}
-        flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='role_delete',
-            flow_data=flow_data,
-        )
-        self.lock_project(self.project)
-        self.taskflow.run_flow(flow, self.project)  # Lock not required
-        self.assert_group_member(self.project, self.user_new, status=False)
-
-
-class TestRoleUpdate(TaskflowbackendFlowTestBase):
-    """Tests for the role_update flow"""
-
-    def setUp(self):
-        super().setUp()
-        self.project, self.owner_as = self.make_project_taskflow(
-            'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
-        )
-        self.project_path = self.irods_backend.get_path(self.project)
-
-    def test_update(self):
-        """Test role_update for creating a role assignment"""
-        user_new = self.make_user('user_new')
-        self.make_assignment(self.project, user_new, self.role_contributor)
-        self.assert_group_member(self.project, user_new, status=False)
-        flow_data = {'user_name': user_new.username}
-        flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='role_update',
-            flow_data=flow_data,
-        )
-        self.assertEqual(type(flow), RoleUpdateFlow)
-        self.build_and_run(flow)
-        self.assert_group_member(self.project, user_new, status=True)
-
-    def test_update_locked(self):
-        """Test role_update with locked project"""
-        user_new = self.make_user('user_new')
-        self.make_assignment(self.project, user_new, self.role_contributor)
-        self.assert_group_member(self.project, user_new, status=False)
-        flow_data = {'user_name': user_new.username}
-        flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='role_update',
-            flow_data=flow_data,
-        )
-        self.lock_project(self.project)
-        self.taskflow.run_flow(flow, self.project)  # Lock not required
-        self.assert_group_member(self.project, user_new, status=True)
 
 
 class TestRoleUpdateIrodsBatch(TaskflowbackendFlowTestBase):
