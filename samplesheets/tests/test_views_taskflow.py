@@ -804,6 +804,25 @@ class TestIrodsAccessTicketCreateView(
         irods_ticket = self.get_irods_ticket(ticket)
         self.assertIsNone(irods_ticket[TicketQuery.Ticket.expiry_ts])
 
+    def test_post_inactive_user(self):
+        """Test POST with inactive user for receiving nofitications"""
+        self.user_owner_cat.is_active = False
+        self.user_owner_cat.save()
+        self.assertEqual(IrodsAccessTicket.objects.count(), 0)
+        self.assertEqual(self.get_app_alert_count('create'), 0)
+        post_data = {
+            'path': self.coll.path,
+            'date_expires': self.date_expires,
+            'label': TICKET_LABEL,
+        }
+        with self.login(self.user):
+            self.client.post(self.url, post_data)
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        ticket = IrodsAccessTicket.objects.first()
+        irods_ticket = self.get_irods_ticket(ticket)
+        self.assertEqual(irods_ticket[TicketQuery.Ticket.type], 'read')
+        self.assertEqual(self.get_app_alert_count('create'), 0)
+
     def test_post_invalid_path(self):
         """Test POST with invalid iRODS path (should fail)"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
@@ -1010,6 +1029,21 @@ class TestIrodsAccessTicketUpdateView(
         self.assertEqual(self.get_tl_event_count('update'), 1)
         self.assertEqual(self.get_app_alert_count('update'), 1)
 
+    def test_post_inactive_user(self):
+        """Test POST with inactive user for receiving notifications"""
+        self.user_owner_cat.is_active = False
+        self.user_owner_cat.save()
+        self.assertEqual(self.get_tl_event_count('update'), 0)
+        self.assertEqual(self.get_app_alert_count('update'), 0)
+        post_data = {'label': TICKET_LABEL_UPDATED, 'date_expires': ''}
+        with self.login(self.user):
+            self.client.post(self.url, post_data)
+        self.ticket.refresh_from_db()
+        self.assertEqual(self.ticket.get_date_expires(), None)
+        self.assertEqual(self.ticket.label, post_data['label'])
+        self.assertEqual(self.get_tl_event_count('update'), 1)
+        self.assertEqual(self.get_app_alert_count('update'), 0)
+
 
 class TestIrodsAccessTicketDeleteView(
     SampleSheetTaskflowMixin,
@@ -1086,6 +1120,21 @@ class TestIrodsAccessTicketDeleteView(
         self.assertEqual(self.get_tl_event_count('delete'), 1)
         self.assertEqual(self.get_app_alert_count('delete'), 1)
 
+    def test_post_inactive_user(self):
+        """Test POST with inactive user for receiving nofitications"""
+        self.user_owner_cat.is_active = False
+        self.user_owner_cat.save()
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        self.assertIsNotNone(self.get_irods_ticket(self.ticket))
+        self.assertEqual(self.get_tl_event_count('delete'), 0)
+        self.assertEqual(self.get_app_alert_count('delete'), 0)
+        with self.login(self.user):
+            self.client.post(self.url)
+        self.assertEqual(IrodsAccessTicket.objects.count(), 0)
+        self.assertIsNone(self.get_irods_ticket(self.ticket))
+        self.assertEqual(self.get_tl_event_count('delete'), 1)
+        self.assertEqual(self.get_app_alert_count('delete'), 0)
+
 
 class TestIrodsDataRequestCreateView(IrodsDataRequestViewTestBase):
     """Tests for IrodsDataRequestCreateView with taskflow"""
@@ -1133,6 +1182,21 @@ class TestIrodsDataRequestCreateView(IrodsDataRequestViewTestBase):
         )
         self._assert_alert_count(EVENT_CREATE, self.user, 1)
         self._assert_alert_count(EVENT_CREATE, self.user_delegate, 1)
+
+    def test_post_inactive_user(self):
+        """Test POST with inactive user for receiving nofitications"""
+        self.user_delegate.is_active = False
+        self.user_delegate.save()
+        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+        self._assert_tl_count(EVENT_CREATE, 0)
+        self._assert_alert_count(EVENT_CREATE, self.user, 0)
+        self._assert_alert_count(EVENT_CREATE, self.user_delegate, 0)
+        with self.login(self.user_contributor):
+            self.client.post(self.url, self.post_data)
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        self._assert_tl_count(EVENT_CREATE, 1)
+        self._assert_alert_count(EVENT_CREATE, self.user, 1)
+        self._assert_alert_count(EVENT_CREATE, self.user_delegate, 0)
 
     def test_post_trailing_slash(self):
         """Test POST with trailing slash in path"""
@@ -1182,7 +1246,7 @@ class TestIrodsDataRequestCreateView(IrodsDataRequestViewTestBase):
         )
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
 
-    def test_create_multiple(self):
+    def test_post_multiple(self):
         """Test POST with multiple requests for same path"""
         path2 = os.path.join(self.assay_path, IRODS_FILE_NAME2)
         self.irods.data_objects.create(path2)
@@ -1457,8 +1521,10 @@ class TestIrodsDataRequestAcceptView(
         self._assert_tl_count(EVENT_ACCEPT, 0)
         self._assert_alert_count(EVENT_CREATE, self.user, 1)
         self._assert_alert_count(EVENT_CREATE, self.user_delegate, 1)
+        self._assert_alert_count(EVENT_CREATE, self.user_contributor, 0)
         self._assert_alert_count(EVENT_ACCEPT, self.user, 0)
         self._assert_alert_count(EVENT_ACCEPT, self.user_delegate, 0)
+        self._assert_alert_count(EVENT_ACCEPT, self.user_contributor, 0)
         mail_count = len(mail.outbox)
 
         obj = IrodsDataRequest.objects.first()
@@ -1487,8 +1553,10 @@ class TestIrodsDataRequestAcceptView(
         self._assert_tl_count(EVENT_ACCEPT, 1)
         self._assert_alert_count(EVENT_CREATE, self.user, 0)
         self._assert_alert_count(EVENT_CREATE, self.user_delegate, 0)
+        self._assert_alert_count(EVENT_CREATE, self.user_contributor, 0)
         self._assert_alert_count(EVENT_ACCEPT, self.user, 0)
         self._assert_alert_count(EVENT_ACCEPT, self.user_delegate, 0)
+        self._assert_alert_count(EVENT_ACCEPT, self.user_contributor, 1)
         self.assert_irods_obj(self.obj_path, False)
         tl_event = TimelineEvent.objects.filter(event_name=EVENT_ACCEPT).first()
         self.assertEqual(tl_event.status_changes.count(), 2)
@@ -1499,6 +1567,35 @@ class TestIrodsDataRequestAcceptView(
         self.assertEqual(
             mail.outbox[-1].recipients(), [self.user_contributor.email]
         )
+
+    def test_post_inactive_user(self):
+        """Test POST to accept delete request created by inactive user"""
+        self.assert_irods_obj(self.obj_path)
+        with self.login(self.user_contributor):
+            self.client.post(self.url_create, self.post_data)
+        self.user_contributor.is_active = False
+        self.user_contributor.save()
+
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        self._assert_alert_count(EVENT_ACCEPT, self.user_contributor, 0)
+        mail_count = len(mail.outbox)
+
+        obj = IrodsDataRequest.objects.first()
+        with self.login(self.user):
+            self.client.post(
+                reverse(
+                    'samplesheets:irods_request_accept',
+                    kwargs={'irodsdatarequest': obj.sodar_uuid},
+                ),
+                {'confirm': True},
+            )
+
+        obj.refresh_from_db()
+        self.assertEqual(obj.status, IRODS_REQUEST_STATUS_ACCEPTED)
+        # No alert should be raised
+        self._assert_alert_count(EVENT_ACCEPT, self.user_contributor, 0)
+        self.assert_irods_obj(self.obj_path, False)
+        self.assertEqual(len(mail.outbox), mail_count)  # No new mail
 
     def test_post_no_request(self):
         """Test POST with non-existing delete request"""
@@ -2101,11 +2198,6 @@ class TestIrodsDataRequestRejectView(
 
     def test_get_superuser(self):
         """Test IrodsDataRequestRejectView GET as superuser"""
-        self.assertEqual(IrodsDataRequest.objects.count(), 0)
-        self.assert_irods_obj(self.obj_path)
-        self._assert_alert_count(EVENT_REJECT, self.user, 0)
-        self._assert_alert_count(EVENT_REJECT, self.user_delegate, 0)
-        self._assert_alert_count(EVENT_REJECT, self.user_contributor, 0)
         obj = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
@@ -2113,6 +2205,11 @@ class TestIrodsDataRequestRejectView(
             status=IRODS_REQUEST_STATUS_ACTIVE,
             user=self.user_contributor,
         )
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        self.assert_irods_obj(self.obj_path)
+        self._assert_alert_count(EVENT_REJECT, self.user, 0)
+        self._assert_alert_count(EVENT_REJECT, self.user_delegate, 0)
+        self._assert_alert_count(EVENT_REJECT, self.user_contributor, 0)
         mail_count = len(mail.outbox)
 
         with self.login(self.user):
@@ -2144,6 +2241,34 @@ class TestIrodsDataRequestRejectView(
         self.assertEqual(
             mail.outbox[-1].recipients(), [self.user_contributor.email]
         )
+
+    def test_get_inactive_user(self):
+        """Test GET with request created by inactive user"""
+        obj = self.make_irods_request(
+            project=self.project,
+            action=IRODS_REQUEST_ACTION_DELETE,
+            path=self.obj_path,
+            status=IRODS_REQUEST_STATUS_ACTIVE,
+            user=self.user_contributor,
+        )
+        self.user_contributor.is_active = False
+        self.user_contributor.save()
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        self._assert_alert_count(EVENT_REJECT, self.user_contributor, 0)
+        mail_count = len(mail.outbox)
+
+        with self.login(self.user):
+            self.client.get(
+                reverse(
+                    'samplesheets:irods_request_reject',
+                    kwargs={'irodsdatarequest': obj.sodar_uuid},
+                ),
+            )
+
+        obj.refresh_from_db()
+        self.assertEqual(obj.status, IRODS_REQUEST_STATUS_REJECTED)
+        self._assert_alert_count(EVENT_REJECT, self.user_contributor, 0)
+        self.assertEqual(len(mail.outbox), mail_count)
 
     def test_get_owner(self):
         """Test GET as owner"""

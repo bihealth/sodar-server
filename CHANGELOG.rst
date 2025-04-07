@@ -55,9 +55,11 @@ Changed
 - **Landingzones**
     - Define app settings as ``PluginAppSettingDef`` objects (#2051)
     - Do not mute zone title and description with busy zones (#2092)
+    - Exclude inactive users from email sending and alert creation (#2114)
 - **Samplesheets**
     - Define app settings as ``PluginAppSettingDef`` objects (#2051)
     - Return ``500`` for iRODS query exceptions in ``ProjectIrodsFileListAPIView`` (#2103)
+    - Exclude inactive users from email sending and alert creation (#2114)
 - **Taskflowbackend**
     - Enable no role for old owner in ``perform_owner_transfer()`` (#2051)
     - Rename ``BatchCheckFileTask`` to ``BatchCheckFileExistTask`` (#2064)

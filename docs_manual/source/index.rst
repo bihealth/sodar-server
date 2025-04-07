@@ -136,6 +136,7 @@ Table of Contents
     admin_site_app_settings
     admin_commands
     admin_settings
+    admin_other
     admin_custom
     admin_upgrade
 

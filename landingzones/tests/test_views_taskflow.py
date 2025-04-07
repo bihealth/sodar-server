@@ -463,12 +463,13 @@ class TestZoneMoveView(
     def setUp(self):
         super().setUp()
         self.timeline = get_backend_api('timeline_backend')
+        self.user_owner = self.make_user('user_owner')
         # Make project with owner in Taskflow and Django
         self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
-            owner=self.user,
+            owner=self.user_owner,
             description='description',
         )
         # Import investigation
@@ -478,19 +479,19 @@ class TestZoneMoveView(
         # Create iRODS collections
         self.make_irods_colls(self.investigation)
         # Create zone
-        self.landing_zone = self.make_landing_zone(
+        self.zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
-            user=self.user,
+            user=self.user_owner,
             assay=self.assay,
             description=ZONE_DESC,
             configuration=None,
             config_data={},
         )
         # Create zone in taskflow
-        self.make_zone_taskflow(self.landing_zone)
+        self.make_zone_taskflow(self.zone)
         # Get collections
-        self.zone_path = self.irods_backend.get_path(self.landing_zone)
+        self.zone_path = self.irods_backend.get_path(self.zone)
         self.zone_coll = self.irods.collections.get(self.zone_path)
         self.assay_path = self.irods_backend.get_path(self.assay)
         self.assay_coll = self.irods.collections.get(self.assay_path)
@@ -500,11 +501,11 @@ class TestZoneMoveView(
         # Set up URLs
         self.url_move = reverse(
             'landingzones:move',
-            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+            kwargs={'landingzone': self.zone.sodar_uuid},
         )
         self.url_validate = reverse(
             'landingzones:validate',
-            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+            kwargs={'landingzone': self.zone.sodar_uuid},
         )
         self.url_redirect = reverse(
             'landingzones:list', kwargs={'project': self.project.sodar_uuid}
@@ -524,18 +525,18 @@ class TestZoneMoveView(
         """Test POST to move landing zone with objects"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         self.make_irods_md5_object(irods_obj)
-        zone = LandingZone.objects.first()
-        self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         self.assert_irods_access(
             self.owner_group, self.zone_path, IRODS_ACCESS_OWN
         )
         self.assert_irods_access(
-            self.user.username, self.zone_path, IRODS_ACCESS_OWN
+            self.user_owner.username, self.zone_path, IRODS_ACCESS_OWN
         )
+        self.assert_irods_access(self.user.username, self.zone_path, None)
         self.assert_irods_access(self.project_group, self.zone_path, None)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
-        self.assertEqual(len(mail.outbox), 1)
+        mail_count = len(mail.outbox)
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_move').count(), 0
         )
@@ -544,7 +545,8 @@ class TestZoneMoveView(
             response = self.client.post(self.url_move)
             self.assertRedirects(response, self.url_redirect)
 
-        self.assert_zone_status(zone, ZONE_STATUS_MOVED)
+        self.zone.refresh_from_db()
+        self.assert_zone_status(self.zone, ZONE_STATUS_MOVED)
         self.assertEqual(len(self.zone_coll.data_objects), 0)
         self.assertEqual(len(self.assay_coll.data_objects), 2)
         obj_path = os.path.join(self.assay_path, TEST_OBJ_NAME)
@@ -553,10 +555,37 @@ class TestZoneMoveView(
         self.assert_irods_access(
             self.project_group, obj_path, IRODS_ACCESS_READ
         )
-        self.assertEqual(len(mail.outbox), 3)  # Mails to owner & category owner
+        # Mails to owner and category owner
+        self.assertEqual(len(mail.outbox), mail_count + 2)
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_move').count(), 1
         )
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_move').first().user,
+            self.user_owner,
+        )
+
+    def test_post_move_inactive_user(self):
+        """Test POST to move with inactive zone owner"""
+        self.user_owner.is_active = False
+        self.user_owner.save()
+        irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
+        self.make_irods_md5_object(irods_obj)
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        mail_count = len(mail.outbox)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_move').count(), 0
+        )
+        with self.login(self.user):
+            response = self.client.post(self.url_move)
+            self.assertRedirects(response, self.url_redirect)
+        self.zone.refresh_from_db()
+        self.assert_zone_status(self.zone, ZONE_STATUS_MOVED)
+        # No mail to owner
+        self.assertEqual(len(mail.outbox), mail_count + 1)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_move').count(), 0
+        )  # No alert
 
     def test_post_move_no_files(self):
         """Test POST to move landing zone without objects"""
@@ -567,11 +596,9 @@ class TestZoneMoveView(
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_move').count(), 0
         )
-
         with self.login(self.user):
             response = self.client.post(self.url_move)
             self.assertRedirects(response, self.url_redirect)
-
         self.assertEqual(len(self.zone_coll.data_objects), 0)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(
@@ -586,7 +613,7 @@ class TestZoneMoveView(
         self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
-        self.assertEqual(len(mail.outbox), 1)
+        mail_count = len(mail.outbox)
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_move').count(), 0
         )
@@ -602,10 +629,11 @@ class TestZoneMoveView(
             self.owner_group, self.zone_path, IRODS_ACCESS_OWN
         )
         self.assert_irods_access(
-            self.user.username, self.zone_path, IRODS_ACCESS_OWN
+            self.user_owner.username, self.zone_path, IRODS_ACCESS_OWN
         )
+        self.assert_irods_access(self.user.username, self.zone_path, None)
         self.assert_irods_access(self.project_group, self.zone_path, None)
-        self.assertEqual(len(mail.outbox), 2)
+        self.assertEqual(len(mail.outbox), mail_count + 1)
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_move').count(), 1
         )
@@ -641,7 +669,7 @@ class TestZoneMoveView(
         self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
-        self.assertEqual(len(mail.outbox), 1)
+        mail_count = len(mail.outbox)
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_validate').count(), 0
         )
@@ -657,10 +685,11 @@ class TestZoneMoveView(
             self.owner_group, self.zone_path, IRODS_ACCESS_OWN
         )
         self.assert_irods_access(
-            self.user.username, self.zone_path, IRODS_ACCESS_OWN
+            self.user_owner.username, self.zone_path, IRODS_ACCESS_OWN
         )
+        self.assert_irods_access(self.user.username, self.zone_path, None)
         self.assert_irods_access(self.project_group, self.zone_path, None)
-        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(len(mail.outbox), mail_count)  # No new mail
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_validate').count(), 1
         )
@@ -694,7 +723,7 @@ class TestZoneMoveView(
         self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
-        self.assertEqual(len(mail.outbox), 1)
+        mail_count = len(mail.outbox)
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_validate').count(), 0
         )
@@ -706,7 +735,7 @@ class TestZoneMoveView(
         self.assertTrue('BatchValidateChecksumsTask' in zone.status_info)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
-        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(len(mail.outbox), mail_count)
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_validate').count(), 1
         )
@@ -778,7 +807,7 @@ class TestZoneMoveView(
         self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
-        self.assertEqual(len(mail.outbox), 1)
+        mail_count = len(mail.outbox)
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_validate').count(), 0
         )
@@ -790,7 +819,7 @@ class TestZoneMoveView(
         self.assert_zone_status(zone, ZONE_STATUS_FAILED)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
-        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(len(mail.outbox), mail_count)
         tl_event = TimelineEvent.objects.filter(
             event_name='zone_validate'
         ).first()
@@ -811,7 +840,7 @@ class TestZoneMoveView(
         zone.save()
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
-        self.assertEqual(len(mail.outbox), 1)
+        mail_count = len(mail.outbox)
         self.assertEqual(
             TimelineEvent.objects.filter(event_name='zone_move').count(), 0
         )
@@ -830,7 +859,7 @@ class TestZoneMoveView(
         self.assert_zone_status(zone, ZONE_STATUS_VALIDATING)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
-        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(len(mail.outbox), mail_count)
         tl_event = TimelineEvent.objects.filter(event_name='zone_move').first()
         self.assertIsNone(tl_event)
         self.assertEqual(
@@ -846,7 +875,7 @@ class TestZoneMoveView(
         self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
-        self.assertEqual(len(mail.outbox), 1)
+        mail_count = len(mail.outbox)
         self.assertEqual(
             TimelineEvent.objects.filter(event_name='zone_move').count(), 0
         )
@@ -861,7 +890,8 @@ class TestZoneMoveView(
         self.assert_zone_status(zone, ZONE_STATUS_FAILED)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
-        self.assertEqual(len(mail.outbox), 1)  # TODO: Should this send email?
+        # TODO: Should this send email?
+        self.assertEqual(len(mail.outbox), mail_count)
         tl_event = TimelineEvent.objects.filter(event_name='zone_move').first()
         self.assertIsInstance(tl_event, TimelineEvent)
         self.assertEqual(
@@ -878,7 +908,7 @@ class TestZoneMoveView(
         zone = self.make_landing_zone(
             title=ZONE_TITLE + '_new',
             project=self.project,
-            user=self.user,
+            user=self.user_owner,
             assay=self.assay,
             description=ZONE_DESC,
             status=ZONE_STATUS_CREATING,
@@ -897,7 +927,7 @@ class TestZoneMoveView(
         self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(zone_results_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
-        self.assertEqual(len(mail.outbox), 1)
+        mail_count = len(mail.outbox)
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_move').count(), 0
         )
@@ -914,7 +944,8 @@ class TestZoneMoveView(
         assay_results_path = os.path.join(self.sample_path, RESULTS_COLL)
         assay_results_coll = self.irods.collections.get(assay_results_path)
         self.assertEqual(len(assay_results_coll.data_objects), 2)
-        self.assertEqual(len(mail.outbox), 3)  # Mails to owner & category owner
+        # Mails to owner & category owner
+        self.assertEqual(len(mail.outbox), mail_count + 2)
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_move').count(), 1
         )

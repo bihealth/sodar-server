@@ -31,7 +31,8 @@ These commands originate in SODAR Core. More information can be found in the
     followed by ``collectstatic`` to take effect.
 ``removeroles``
     Remove all roles from a user. Useful when e.g. a user has left the
-    organization. Replaces user's owner roles with another given user.
+    organization. Replaces user's owner roles with another given user. Can also
+    be used to deactivate the user account after role removal.
 ``synccache``
     Synchronize the SODAR Cache.
 ``syncgroups``

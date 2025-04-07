@@ -780,7 +780,7 @@ class IrodsAccessTicketModifyMixin:
             for a in project.get_roles(
                 max_rank=ROLE_RANKING[PROJECT_ROLE_DELEGATE]
             )
-            if a.user != user
+            if a.user != user and a.user.is_active
         ]
         app_alerts.add_alerts(
             app_name=APP_NAME,
@@ -858,11 +858,10 @@ class IrodsDataRequestModifyMixin:
             for a in project.get_roles(
                 max_rank=ROLE_RANKING[PROJECT_ROLE_DELEGATE]
             )
+            if a.user != self.request.user and a.user.is_active
         ]
         # logger.debug('od_users={}'.format(od_users))  # DEBUG
         for u in od_users:
-            if u == self.request.user:
-                continue  # Skip triggering user
             alert_count = AppAlert.objects.filter(
                 project=project,
                 user=u,
@@ -1013,6 +1012,7 @@ class IrodsDataRequestModifyMixin:
         if (
             settings.PROJECTROLES_SEND_EMAIL
             and irods_request.user != request.user
+            and irods_request.user.is_active
             and app_settings.get(
                 APP_NAME, 'notify_email_irods_request', user=irods_request.user
             )
@@ -1029,7 +1029,11 @@ class IrodsDataRequestModifyMixin:
             )
 
         # Create app alert
-        if app_alerts and irods_request.user != request.user:
+        if (
+            app_alerts
+            and irods_request.user != request.user
+            and irods_request.user.is_active
+        ):
             app_alerts.add_alert(
                 app_name=APP_NAME,
                 alert_name=IRODS_REQUEST_EVENT_ACCEPT,
@@ -1090,6 +1094,7 @@ class IrodsDataRequestModifyMixin:
         if (
             settings.PROJECTROLES_SEND_EMAIL
             and irods_request.user != request.user
+            and irods_request.user.is_active
             and app_settings.get(
                 APP_NAME, 'notify_email_irods_request', user=irods_request.user
             )
@@ -1106,7 +1111,11 @@ class IrodsDataRequestModifyMixin:
             )
 
         # Create app alert
-        if app_alerts and irods_request.user != request.user:
+        if (
+            app_alerts
+            and irods_request.user != request.user
+            and irods_request.user.is_active
+        ):
             app_alerts.add_alert(
                 app_name=APP_NAME,
                 alert_name=IRODS_REQUEST_EVENT_REJECT,

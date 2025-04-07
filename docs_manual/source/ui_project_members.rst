@@ -89,7 +89,7 @@ You are presented with a form to select a user and a role for them. The user
 field works as a search box, where you can start typing a person's name or email
 address and available options will be presented as you type. If the user is not
 yet a SODAR user, you can also type an email address and be redirected to the
-member invitation form.
+member invitation form. Deactivated users will not appear in the search.
 
 .. figure:: _static/sodar_ui/project_members_add.png
     :align: center
