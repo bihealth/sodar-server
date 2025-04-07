@@ -212,6 +212,9 @@ Sample Sheets Settings
     Restrict access to ``SampleDataFileExistsAPIView`` to users with the role of
     project guest or above in any category or project. Recommended for instances
     deployed on the public internet with general OIDC SSO access (boolean).
+``SHEETS_PARSER_WARNING_SAVE_LIMIT``
+    Limit AltamISA parser warnings to be saved in the database to N per
+    investigation (integer).
 
 Landing Zones Settings
 ----------------------

@@ -24,6 +24,7 @@ from altamisa.isatab import (
 )
 
 from django.db import transaction
+from django.conf import settings
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
@@ -95,6 +96,7 @@ class SampleSheetIO:
         self._warn = warn
         self._allow_critical = allow_critical
         self._warnings = self._init_warnings()
+        self._warning_count = 0
 
     # General internal functions -----------------------------------------------
 
@@ -107,6 +109,7 @@ class SampleSheetIO:
             'assays': {},
             'all_ok': True,
             'critical_count': 0,
+            'limit_reached': False,
             'use_file_names': True,  # HACK for issue #644
         }
 
@@ -120,9 +123,9 @@ class SampleSheetIO:
         """
         if not warnings or not self._warn:
             return
-
         if self._warnings['all_ok']:
             self._init_warnings()
+            self._warning_count = 0
         self._warnings['all_ok'] = False
 
         for warning in warnings:
@@ -134,16 +137,20 @@ class SampleSheetIO:
             }
             file_name = str(db_obj.file_name).split('/')[-1]  # Strip path
 
-            if isinstance(db_obj, Investigation):
-                self._warnings['investigation'].append(warn_data)
-            elif isinstance(db_obj, Study):
-                if file_name not in self._warnings['studies']:
-                    self._warnings['studies'][file_name] = []
-                self._warnings['studies'][file_name].append(warn_data)
-            elif isinstance(db_obj, Assay):
-                if file_name not in self._warnings['assays']:
-                    self._warnings['assays'][file_name] = []
-                self._warnings['assays'][file_name].append(warn_data)
+            if self._warning_count < settings.SHEETS_PARSER_WARNING_SAVE_LIMIT:
+                if isinstance(db_obj, Investigation):
+                    self._warnings['investigation'].append(warn_data)
+                elif isinstance(db_obj, Study):
+                    if file_name not in self._warnings['studies']:
+                        self._warnings['studies'][file_name] = []
+                    self._warnings['studies'][file_name].append(warn_data)
+                elif isinstance(db_obj, Assay):
+                    if file_name not in self._warnings['assays']:
+                        self._warnings['assays'][file_name] = []
+                    self._warnings['assays'][file_name].append(warn_data)
+                self._warning_count += 1
+            elif not self._warnings['limit_reached']:
+                self._warnings['limit_reached'] = True
 
             logger.warning(
                 'altamISA warning: "{}" '

@@ -6,12 +6,19 @@ import os
 import warnings
 from zipfile import ZipFile
 
+from altamisa.exceptions import (
+    ModerateIsaValidationWarning,
+    AdvisoryIsaValidationWarning,
+    CriticalIsaValidationWarning,
+)
 from altamisa.isatab import (
     InvestigationReader,
     StudyReader,
     AssayReader,
     models as isa_models,
 )
+
+from django.test import override_settings
 
 from test_plus.test import TestCase
 
@@ -32,6 +39,8 @@ SHEET_DIR = os.path.dirname(__file__) + '/isatab/'
 SHEET_DIR_SPECIAL = os.path.dirname(__file__) + '/isatab_special/'
 SHEET_NAME = 'BII-I-1_edited.zip'
 SHEET_PATH = SHEET_DIR + SHEET_NAME
+WARN_MSG = 'Test warning 1'
+WARN_MSG2 = 'Test warning 2'
 
 
 class SampleSheetIOMixin:
@@ -469,6 +478,106 @@ class TestSampleSheetIOImport(SampleSheetIOTestBase):
         in_data = self.isa_inv.publications
         out_data = self.sheet_io._import_publications(in_data)
         self.assertEqual(len(out_data), len(in_data))
+
+
+class TestSampleSheetIOImportWarnings(SampleSheetIOTestBase):
+    """Tests for sample sheet import warning handling"""
+
+    def setUp(self):
+        super().setUp()
+        self.sheet_io = SampleSheetIO(warn=True, allow_critical=True)
+        # Import investigation so we have an object for _handle_warnings()
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        # Mock warnings
+        self.warnings = [
+            Warning(ModerateIsaValidationWarning()),
+            Warning(AdvisoryIsaValidationWarning('Test advisory warning')),
+        ]
+
+    def test_handle_warnings(self):
+        """Test _handle_warnings()"""
+        expected = {
+            'investigation': [],
+            'studies': {},
+            'assays': {},
+            'all_ok': True,
+            'critical_count': 0,
+            'limit_reached': False,
+            'use_file_names': True,
+        }
+        self.assertEqual(self.sheet_io._warnings, expected)
+        with warnings.catch_warnings(record=True) as w:
+            warnings.warn(WARN_MSG, ModerateIsaValidationWarning)
+            warnings.warn(WARN_MSG2, AdvisoryIsaValidationWarning)
+            self.sheet_io._handle_warnings(w, self.investigation)
+        expected = {
+            'investigation': [
+                {
+                    'message': WARN_MSG,
+                    'category': ModerateIsaValidationWarning.__name__,
+                },
+                {
+                    'message': WARN_MSG2,
+                    'category': AdvisoryIsaValidationWarning.__name__,
+                },
+            ],
+            'studies': {},
+            'assays': {},
+            'all_ok': False,
+            'critical_count': 0,
+            'limit_reached': False,
+            'use_file_names': True,
+        }
+        self.assertEqual(self.sheet_io._warnings, expected)
+
+    def test_handle_warnings_critical(self):
+        """Test _handle_warnings() with critical warning"""
+        with warnings.catch_warnings(record=True) as w:
+            warnings.warn(WARN_MSG, ModerateIsaValidationWarning)
+            warnings.warn(WARN_MSG2, CriticalIsaValidationWarning)
+            self.sheet_io._handle_warnings(w, self.investigation)
+        expected = {
+            'investigation': [
+                {
+                    'message': WARN_MSG,
+                    'category': ModerateIsaValidationWarning.__name__,
+                },
+                {
+                    'message': WARN_MSG2,
+                    'category': CriticalIsaValidationWarning.__name__,
+                },
+            ],
+            'studies': {},
+            'assays': {},
+            'all_ok': False,
+            'critical_count': 1,
+            'limit_reached': False,
+            'use_file_names': True,
+        }
+        self.assertEqual(self.sheet_io._warnings, expected)
+
+    @override_settings(SHEETS_PARSER_WARNING_SAVE_LIMIT=1)
+    def test_handle_warnings_limit(self):
+        """Test _handle_warnings() with warning limit reached"""
+        with warnings.catch_warnings(record=True) as w:
+            warnings.warn(WARN_MSG, ModerateIsaValidationWarning)
+            warnings.warn(WARN_MSG2, AdvisoryIsaValidationWarning)
+            self.sheet_io._handle_warnings(w, self.investigation)
+        expected = {
+            'investigation': [
+                {
+                    'message': WARN_MSG,
+                    'category': ModerateIsaValidationWarning.__name__,
+                },
+            ],
+            'studies': {},
+            'assays': {},
+            'all_ok': False,
+            'critical_count': 0,
+            'limit_reached': True,
+            'use_file_names': True,
+        }
+        self.assertEqual(self.sheet_io._warnings, expected)
 
 
 class TestSampleSheetIOExport(SampleSheetIOTestBase):

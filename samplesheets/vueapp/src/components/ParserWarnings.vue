@@ -1,5 +1,11 @@
 <template>
   <span>
+    <div v-if="limitReached === true"
+         id="sodar-ss-warnings-alert-limit"
+         class="alert alert-warning">
+      Warning limit reached when parsing the sample sheets. All warnings may not
+      be visible.
+    </div>
     <div v-if="warnings && warnings.length > 0"
          class="card" id="sodar-ss-warnings-card">
       <div class="card-header">
@@ -46,7 +52,8 @@ export default {
   data () {
     return {
       warnings: null,
-      message: null
+      message: null,
+      limitReached: false
     }
   },
   methods: {
@@ -64,6 +71,9 @@ export default {
     },
     handleWarningsResponse (response) {
       if ('warnings' in response) {
+        if ('limit_reached' in response.warnings) {
+          this.limitReached = response.warnings.limit_reached
+        }
         this.warnings = []
         if (response.warnings.investigation.length > 0) {
           this.warnings.push.apply(
@@ -112,7 +122,6 @@ export default {
   beforeMount () {
     // No warnings stated by the context -> don't bother fetching
     if (!this.sodarContext.parser_warnings) return
-
     // Fetch data
     this.getWarnings()
   }

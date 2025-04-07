@@ -1,6 +1,6 @@
 import { createLocalVue, mount } from '@vue/test-utils'
 import BootstrapVue from 'bootstrap-vue'
-import { projectUuid, waitNT, waitRAF } from '../testUtils.js'
+import { projectUuid, copy, waitNT, waitRAF } from '../testUtils.js'
 import ParserWarnings from '@/components/ParserWarnings.vue'
 import sodarContext from './data/sodarContext.json'
 import parserWarnings from './data/parserWarnings.json'
@@ -46,6 +46,26 @@ describe('ParserWarnings.vue', () => {
     await waitRAF()
 
     expect(fetchMock.called(ajaxUrl)).toBe(true)
+    expect(wrapper.find('#sodar-ss-warnings-message').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-warnings-alert-limit').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-warnings-card').exists()).toBe(true)
+    expect(wrapper.findAll('.sodar-ss-warnings-item').length).toBe(3)
+  })
+
+  it('renders parser warnings with limit warning', async () => {
+    const updatedWarnings = copy(parserWarnings)
+    updatedWarnings.warnings.limit_reached = true
+    fetchMock.mock(ajaxUrl, updatedWarnings)
+    const wrapper = mount(ParserWarnings, {
+      localVue,
+      propsData: propsData
+    })
+    await waitNT(wrapper.vm)
+    await waitRAF()
+
+    expect(fetchMock.called(ajaxUrl)).toBe(true)
+    expect(wrapper.find('#sodar-ss-warnings-message').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-warnings-alert-limit').exists()).toBe(true)
     expect(wrapper.find('#sodar-ss-warnings-card').exists()).toBe(true)
     expect(wrapper.findAll('.sodar-ss-warnings-item').length).toBe(3)
   })
@@ -62,6 +82,7 @@ describe('ParserWarnings.vue', () => {
     expect(fetchMock.called(ajaxUrl)).toBe(true)
     expect(wrapper.find('#sodar-ss-warnings-message').exists()).toBe(true)
     expect(wrapper.find('#sodar-ss-warnings-message').text()).toBe('message')
+    expect(wrapper.find('#sodar-ss-warnings-alert-limit').exists()).toBe(false)
     expect(wrapper.find('#sodar-ss-warnings-card').exists()).toBe(false)
   })
 })

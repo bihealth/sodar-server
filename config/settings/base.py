@@ -787,6 +787,10 @@ SHEETS_IGV_OMIT_VCF = env.list(
 SHEETS_API_FILE_EXISTS_RESTRICT = env.bool(
     'SHEETS_API_FILE_EXISTS_RESTRICT', False
 )
+# Limit parser warnings to be saved in the database to N per investigation
+SHEETS_PARSER_WARNING_SAVE_LIMIT = env.int(
+    'SHEETS_PARSER_WARNING_SAVE_LIMIT', 100
+)
 
 # Landingzones app settings
 # Status query interval in seconds

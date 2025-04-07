@@ -31,6 +31,8 @@ Added
     - ``checksum`` field in ``ProjectIrodsFileListAPIView`` return data (#2039)
     - ``ProjectIrodsFileListAPIView`` pagination (#1996)
     - ``ProjectIrodsFileListAPIView`` permission tests (#2104)
+    - ``SHEETS_PARSER_WARNING_SAVE_LIMIT`` Django setting (#2120)
+    - Database saving limit for AltamISA warnings (#2120)
 - **Taskflowbackend**
     - Project deletion support (#2051)
     - Zone validation and moving progress indicators (#2024)
