@@ -39,7 +39,7 @@ Added
     - ``TASKFLOW_ZONE_PROGRESS_INTERVAL`` Django setting (#2024)
     - ``BatchCheckFileSuffixTask`` iRODS task (#2064)
     - ``TimelineEventExtraDataUpdateTask`` SODAR task (#2105)
-    - File list in ``landing_zone_move`` timeline event extra data (#1202)
+    - File list in ``landing_zone_move`` timeline event extra data (#1202, #2124)
     - iRODS project owner/delegate group management (#2109)
     - ``TaskflowAPI.get_flow_role()`` helper (#1934)
 

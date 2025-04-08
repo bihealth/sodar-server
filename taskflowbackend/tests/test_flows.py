@@ -797,7 +797,10 @@ class TestLandingZoneMove(
             self.owner_group, sample_obj_path + '.md5', None
         )
         tl_event.refresh_from_db()
-        expected = {'files': [os.path.join(OBJ_COLL_NAME, OBJ_NAME)]}
+        expected = {
+            'files': [os.path.join(OBJ_COLL_NAME, OBJ_NAME)],
+            'total_size': 1024,
+        }
         self.assertEqual(tl_event.extra_data, expected)
 
     def test_move_locked(self):
