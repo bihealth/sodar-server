@@ -535,6 +535,7 @@ def set_logging(level=None):
     app_logger_config = {
         'level': level,
         'handlers': ['console', 'file'] if LOGGING_FILE_PATH else ['console'],
+        'propagate': False,  # python-irodsclient>=1.1.9 fix
     }
     log_handlers = {
         'console': {
