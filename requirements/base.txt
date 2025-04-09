@@ -95,7 +95,7 @@ altamisa==0.3.0
 # -e git+https://github.com/bihealth/altamisa.git@f6de23aa6073d446f7c49ede0af7fa8729992209#egg=altamisa
 
 # Python iRODS client
-python-irodsclient==3.0.0
+python-irodsclient==3.1.0
 
 # XML generating
 lxml==4.9.1

@@ -22,7 +22,7 @@ Release for SODAR Core 1.1 upgrade and feature updates.
 - Add expanding of truncated landing zone status info messages
 - Update email sending and alerts to exclude inactive users
 - :ref:`Upgrade Sample Sheets REST API version to v1.1 <api_samplesheets_version_1_1>`
-- Upgrade to python-irodsclient v3.0
+- Upgrade to python-irodsclient v3.1
 - Upgrade to SODAR Core v1.1.4
 - Replace SODAR_SUPPORT_* settings with PROJECTROLES_SUPPORT_CONTACT
 - Remove minimum sample sheet column config editing role setting
