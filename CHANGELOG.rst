@@ -26,6 +26,8 @@ Added
     - ``cleanup_file_prohibit()`` utility method (#2064)
     - Missing project owner group creation on zone create (#1934)
     - Owner and delegate own access to all zones in project (#1934)
+    - ``ZoneStatusInfoRetrieveAjaxView`` Ajax view (#1308)
+    - Full display of truncated zone status info (#1308)
 - **Samplesheets**
     - Site read-only mode support (#2051)
     - ``checksum`` field in ``ProjectIrodsFileListAPIView`` return data (#2039)
@@ -58,6 +60,9 @@ Changed
     - Define app settings as ``PluginAppSettingDef`` objects (#2051)
     - Do not mute zone title and description with busy zones (#2092)
     - Exclude inactive users from email sending and alert creation (#2114)
+    - Display ``status_info`` newlines in UI (#1308)
+    - Change ``LandingZone.status_info`` to ``TextField`` (#1308)
+    - Prevent redundant refreshing of unchganged zone status (#2126)
 - **Samplesheets**
     - Define app settings as ``PluginAppSettingDef`` objects (#2051)
     - Return ``500`` for iRODS query exceptions in ``ProjectIrodsFileListAPIView`` (#2103)
@@ -70,6 +75,7 @@ Changed
     - Add missing ``super().execute()`` call in ``BatchCheckFileExistTask`` (#2097)
     - Rename ``get_batch_role()`` to ``get_flow_role()`` (#2109)
     - Refactor ``role_update`` flow usage (#2117)
+    - Newline separators in landing zone exception messages (#1308)
 
 Fixed
 -----

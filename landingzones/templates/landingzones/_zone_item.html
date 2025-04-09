@@ -12,9 +12,10 @@
 {% is_zone_enabled zone as zone_enabled %}
 {% disable_zone_ui zone request.user as disable_zone_ui %}
 
-<tr class="{% get_zone_row_class zone %}"
+<tr class="sodar-lz-zone-tr {% get_zone_row_class zone %}"
     id="{{ zone.sodar_uuid }}"
     data-zone-uuid="{{ zone.sodar_uuid }}"
+    data-zone-modified="" {# NOTE: Initially set empty on purpose #}
     data-sample-url="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}"
     data-status-url="{% url 'landingzones:ajax_status' project=project.sodar_uuid %}">
   <td class="sodar-lz-zone-title">
@@ -60,7 +61,7 @@
   </td>
   <td class="sodar-lz-zone-status-info">
     <span id="sodar-lz-zone-status-info-{{ zone.sodar_uuid }}">
-      {{ zone.status_info }}
+      <span class="text-secondary">Updating..</span>
     </span>
     <span id="sodar-lz-zone-status-moved-{{ zone.sodar_uuid }}">
     {% if zone.status == 'MOVED' %}

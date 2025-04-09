@@ -28,8 +28,9 @@ Zone
 Status Info
     Detailed status information on the most recent action performed on the zone.
     Successful actions are described here along with detailed information on
-    failures. Also included is a badge displaying the zone's current file count
-    and size in iRODS
+    failures. Long status messages are truncated by default, but you can click
+    the :guilabel:`See more` link to load the full status. Also included is a
+    badge displaying the zone's current file count and size in iRODS.
 Status
     A coloured representation of the current zone status. If the zone is
     currently locked for read-only access due to an ongoing operation, a lock

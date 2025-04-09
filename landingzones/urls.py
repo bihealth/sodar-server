@@ -85,7 +85,12 @@ urls_ajax = [
         route='ajax/status/retrieve/<uuid:project>',
         view=views_ajax.ZoneStatusRetrieveAjaxView.as_view(),
         name='ajax_status',
-    )
+    ),
+    path(
+        route='ajax/status-info/retrieve/<uuid:landingzone>',
+        view=views_ajax.ZoneStatusInfoRetrieveAjaxView.as_view(),
+        name='ajax_status_info',
+    ),
 ]
 
 urlpatterns = urls_ui + urls_api + urls_ajax

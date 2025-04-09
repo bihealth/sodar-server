@@ -154,7 +154,7 @@ class IrodsBaseTask(BaseTask):
             (str(ex) if str(ex) not in ['', 'None'] else ex.__class__.__name__),
         )
         if info:
-            desc += ' ({})'.format(info)
+            desc += '\n{}'.format(info)
         logger.error(desc)
         raise Exception(desc)
 
@@ -636,11 +636,11 @@ class BatchCheckFileSuffixTask(IrodsBaseTask):
                 err_paths.append(p)
         err_len = len(err_paths)
         if err_len > 0:
-            msg = '{} file{} found with prohibited file type ({}): {}'.format(
+            msg = '{} file{} found with prohibited file type ({}):\n{}'.format(
                 err_len,
                 's' if err_len != 1 else '',
                 ', '.join(suffixes),
-                ';'.join([p.replace(zone_path + '/', '') for p in err_paths]),
+                '\n'.join([p.replace(zone_path + '/', '') for p in err_paths]),
             )
             logger.error(msg)
             self._raise_irods_exception(Exception(), msg)
@@ -665,10 +665,10 @@ class BatchCheckFileExistTask(IrodsBaseTask):
                 err_paths.append(p[:-4])
         err_len = len(err_paths)
         if err_len > 0:
-            msg = '{} expected file{} missing: {}'.format(
+            msg = '{} expected file{} missing:\n{}'.format(
                 err_len,
                 's' if err_len != 1 else '',
-                ';'.join([p.replace(zone_path + '/', '') for p in err_paths]),
+                '\n'.join([p.replace(zone_path + '/', '') for p in err_paths]),
             )
             logger.error(msg)
             self._raise_irods_exception(Exception(), msg)

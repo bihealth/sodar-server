@@ -1,5 +1,7 @@
 """UI tests for the landingzones app"""
 
+import random
+import string
 import time
 
 from django.test import override_settings
@@ -27,6 +29,7 @@ from landingzones.constants import (
     ZONE_STATUS_DELETED,
 )
 from landingzones.tests.test_models import LandingZoneMixin
+from landingzones.views_ajax import STATUS_TRUNCATE_LEN
 
 
 app_settings = AppSettingAPI()
@@ -214,6 +217,10 @@ class TestProjectZoneView(LandingZoneUITestBase):
         self._assert_element(By.ID, 'sodar-lz-btn-create-zone', True)
         self._assert_element(By.ID, 'sodar-lz-zone-list-own', True)
         self._assert_element(By.ID, 'sodar-lz-zone-list-other', False)
+        self._assert_element(
+            By.CLASS_NAME, 'sodar-lz-zone-status-truncate', False
+        )
+        self._assert_element(By.CLASS_NAME, 'sodar-lz-zone-status-link', False)
         zones = self.selenium.find_elements(
             By.CLASS_NAME, 'sodar-lz-zone-tr-existing'
         )
@@ -420,6 +427,66 @@ class TestProjectZoneView(LandingZoneUITestBase):
             True,
         )
 
+    def test_status_truncated(self):
+        """Test rendering truncated status"""
+        self._setup_investigation()
+        self.investigation.irods_status = True
+        self.investigation.save()
+        zone = self.make_landing_zone(
+            'contrib_zone', self.project, self.user_contributor, self.assay
+        )
+        zone.set_status(
+            ZONE_STATUS_ACTIVE,
+            ''.join(
+                random.choice(string.ascii_letters)
+                for _ in range(STATUS_TRUNCATE_LEN * 2)
+            ),
+        )
+        self.login_and_redirect(self.user_contributor, self.url)
+        WebDriverWait(self.selenium, self.wait_time).until(
+            ec.presence_of_element_located(
+                (By.CLASS_NAME, 'sodar-lz-zone-status-link')
+            )
+        )
+        self._assert_element(
+            By.CLASS_NAME, 'sodar-lz-zone-status-truncate', True
+        )
+        self._assert_element(By.CLASS_NAME, 'sodar-lz-zone-status-link', True)
+
+    def test_status_truncated_expand(self):
+        """Test rendering expanded truncated status"""
+        self._setup_investigation()
+        self.investigation.irods_status = True
+        self.investigation.save()
+        zone = self.make_landing_zone(
+            'contrib_zone', self.project, self.user_contributor, self.assay
+        )
+        status_info = ''.join(
+            random.choice(string.ascii_letters)
+            for _ in range(STATUS_TRUNCATE_LEN * 2)
+        )
+        zone.set_status(ZONE_STATUS_ACTIVE, status_info)
+        self.login_and_redirect(self.user_contributor, self.url)
+        WebDriverWait(self.selenium, self.wait_time).until(
+            ec.presence_of_element_located(
+                (By.CLASS_NAME, 'sodar-lz-zone-status-link')
+            )
+        )
+        elem = self.selenium.find_element(
+            By.ID, f'sodar-lz-zone-status-info-{zone.sodar_uuid}'
+        )
+        self.assertNotEqual(elem.text, status_info)
+        link = self.selenium.find_element(
+            By.CLASS_NAME, 'sodar-lz-zone-status-link'
+        )
+        link.click()
+        WebDriverWait(self.selenium, self.wait_time).until(
+            ec.invisibility_of_element_located(
+                (By.CLASS_NAME, 'sodar-lz-zone-status-link')
+            )
+        )
+        self.assertEqual(elem.text, status_info)
+
     def test_status_update(self):
         """Test ProjectZoneView with zone status update"""
         self._setup_investigation()
@@ -432,14 +499,24 @@ class TestProjectZoneView(LandingZoneUITestBase):
             self.assay,
             status='ACTIVE',
         )
+        mod_old_db = contrib_zone.date_modified.timestamp()
+
         self.login_and_redirect(self.user_contributor, self.url)
+
         zone_status = self.selenium.find_element(
             By.CLASS_NAME, 'sodar-lz-zone-status'
         )
         self.assertEqual(zone_status.text, ZONE_STATUS_ACTIVE)
+        elem = self.selenium.find_element(By.CLASS_NAME, 'sodar-lz-zone-tr')
+        mod_old_dom = elem.get_attribute('data-zone-modified')
         contrib_zone.set_status(ZONE_STATUS_VALIDATING)
+        mod_new_db = contrib_zone.date_modified.timestamp()
+        self.assertNotEqual(mod_old_db, mod_new_db)
         self._wait_for_status(zone_status, ZONE_STATUS_VALIDATING)
         self.assertEqual(zone_status.text, ZONE_STATUS_VALIDATING)
+        mod_new_dom = elem.get_attribute('data-zone-modified')
+        self.assertNotEqual(mod_old_dom, mod_new_dom)
+        self.assertEqual(float(mod_new_dom), mod_new_db)
 
     def test_status_update_moved(self):
         """Test ProjectZoneView with zone status update to MOVED"""

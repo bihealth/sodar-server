@@ -57,8 +57,7 @@ class LandingZone(models.Model):
     )
 
     #: Additional status information
-    status_info = models.CharField(
-        max_length=1024,
+    status_info = models.TextField(
         null=True,
         blank=True,
         default=lc.DEFAULT_STATUS_INFO[lc.ZONE_STATUS_CREATING],

@@ -34,8 +34,6 @@ app_settings = AppSettingAPI()
 
 # Local constants
 APP_NAME = 'landingzones'
-STATUS_INFO_LEN = 1024
-STATUS_TRUNCATE_MSG = '... <TRUNCATED>'
 
 EMAIL_MSG_MOVED = r'''
 Data was successfully validated and moved into the project
@@ -243,13 +241,6 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
         :param extra_data: Optional extra data (dict)
         """
         app_alerts = get_backend_api('appalerts_backend')
-
-        # Truncate status info (fix for #1307)
-        if len(status_info) >= STATUS_INFO_LEN - len(STATUS_TRUNCATE_MSG):
-            status_info = (
-                status_info[: STATUS_INFO_LEN - len(STATUS_TRUNCATE_MSG)]
-                + STATUS_TRUNCATE_MSG
-            )
         # Refresh in case sheets have been replaced (see issue #1839)
         zone.refresh_from_db()
         zone.set_status(

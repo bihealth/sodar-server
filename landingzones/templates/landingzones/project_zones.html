@@ -18,9 +18,9 @@
 
   <style type="text/css">
     .sodar-lz-table {
-        table-layout: fixed;
+      table-layout: fixed;
     }
-    .sodar-lz-table thead tr th:nth-child(1){
+    .sodar-lz-table thead tr th:nth-child(1) {
       width: 350px;
     }
     .sodar-lz-table tbody tr td:nth-child(2) {
@@ -33,25 +33,26 @@
     }
     .sodar-lz-table thead tr th:nth-child(4),
     .sodar-lz-table tbody tr td:nth-child(4) {
-      width: 150px;
-      max-width: 150px;
+      width: 140px;
+      max-width: 140px;
       white-space: nowrap;
     }
     .sodar-lz-table thead tr th:nth-child(5),
     .sodar-lz-table tbody tr td:nth-child(5) {
       text-align: right;
       width: 70px;
-      max-width: 140px;
+      max-width: 70px;
+    }
+    a.sodar-lz-zone-status-link:hover {
+      cursor: pointer;
     }
     .sodar-lz-zone-assay-link:hover {
-        text-decoration: none;
+      text-decoration: none;
     }
 
     /* Responsive modifications */
     @media screen and (max-width: 1300px) {
-      .table.sodar-lz-table thead tr th:nth-child(3) {
-        display: none;
-      }
+      .table.sodar-lz-table thead tr th:nth-child(3),
       .table.sodar-lz-table tbody tr td:nth-child(3) {
         display: none;
       }
@@ -62,17 +63,13 @@
       }
     }
     @media screen and (max-width: 900px) {
-      .table.sodar-lz-table thead tr th:nth-child(2) {
-        display: none;
-      }
+      .table.sodar-lz-table thead tr th:nth-child(2),
       .table.sodar-lz-table tbody tr td:nth-child(2) {
         display: none;
       }
     }
     @media screen and (max-width: 450px) {
-      .table.sodar-lz-table thead tr th:nth-child(4) {
-        display: none;
-      }
+      .table.sodar-lz-table thead tr th:nth-child(4),
       .table.sodar-lz-table tbody tr td:nth-child(4) {
         display: none;
       }
