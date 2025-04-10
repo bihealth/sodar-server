@@ -470,36 +470,30 @@ class ProjectZoneView(
     ZoneContextMixin,
     TemplateView,
 ):
-    """View for displaying user landing zones for a project"""
+    """View for displaying landing zones for a project"""
 
     permission_required = 'landingzones.view_zone_own'
     template_name = 'landingzones/project_zones.html'
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
+        project = context['project']
         # iRODS backend
         context['irods_backend_enabled'] = (
             True if get_backend_api('omics_irods') else False
         )
-        # User zones
-        context['zones_own'] = (
-            LandingZone.objects.filter(
-                project=context['project'], user=self.request.user
-            )
+        # Landing zones
+        zones = (
+            LandingZone.objects.filter(project=project)
             .exclude(status__in=STATUS_FINISHED)
             .order_by('title')
         )
-        # Other zones
-        # TODO: Add individual zone perm check if/when we implement issue #57
-        if self.request.user.has_perm(
-            'landingzones.view_zone_all', context['project']
+        # Only show own zones to users without view_zone_all perm
+        if not self.request.user.has_perm(
+            'landingzones.view_zone_all', project
         ):
-            context['zones_other'] = (
-                LandingZone.objects.filter(project=context['project'])
-                .exclude(user=self.request.user)
-                .exclude(status__in=STATUS_FINISHED)
-                .order_by('user__username', 'title')
-            )
+            zones = zones.filter(user=self.request.user)
+        context['zones'] = zones
         # Status query interval
         context['zone_status_interval'] = settings.LANDINGZONES_STATUS_INTERVAL
         # Disable status

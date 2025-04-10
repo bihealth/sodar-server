@@ -19,6 +19,7 @@
 {% endblock css %}
 
 {% block projectroles_extend %}
+{% has_perm 'landingzones.view_zone_all' request.user project as can_view_zone_all %}
 {% has_perm 'landingzones.update_zone_own' request.user project as can_update_zone_own %}
 {% has_perm 'landingzones.update_zone_all' request.user project as can_update_zone_all %}
 {% has_perm 'landingzones.create_zone' request.user project as can_create_zone %}
@@ -43,46 +44,64 @@
       files into iRODS are not allowed for archived projects.
     </div>
   {% endif %}
-
   {% if zone_access_disabled %}
     <div class="alert alert-info" role="alert" id="sodar-lz-alert-disable">
       Landing zone operations are disabled for non-superusers on this site.
     </div>
-
   {% elif not investigation %}
     <div class="alert alert-danger" role="alert" id="sodar-lz-alert-no-sheets">
-      No sample sheets are currently available for this project. To create
-      landing zones, a person with sufficient project permissions must import an
-      ISA-Tab investigation and create the sample collections in iRODS using the
-      <a href="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}">Sample Sheets</a> app.
+      No sample sheets are currently set for this project. To create landing
+      zones, a person with sufficient project permissions must create or import
+      an ISA-Tab investigation and create the sample collections in iRODS using
+      the <a href="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}">Sample Sheets</a>
+      app.
     </div>
-
   {% elif investigation and not investigation.irods_status %}
     <div class="alert alert-danger" role="alert" id="sodar-lz-alert-no-colls">
-      The iRODS collections for the project sample sheets have not been created.
-      A user authorized for sample sheet editing must enable iRODS access by
-      selecting <a href="{% url 'samplesheets:collections' project=project.sodar_uuid %}">Create iRODS Collections</a>
+      iRODS collections for project sample sheets have not been created. A user
+      authorized for sample sheet editing must enable iRODS access by selecting
+      <a href="{% url 'samplesheets:collections' project=project.sodar_uuid %}">Create iRODS Collections</a>
       in the <a href="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}">Sample Sheets</a>
       app. After that landing zones can be created for the project.
     </div>
-
-  {% elif zones_own.count == 0 and not zones_other %}
+  {% elif zones.count == 0 %}
     <div class="alert alert-info" role="alert" id="sodar-lz-alert-no-zones">
       No landing zones are currently available for you in this project. Please
-      create a landing zone for a desired assay using the "Zone Operations" menu.
+      create a landing zone for a desired assay by clicking on
+      <a href="{% url 'landingzones:create' project=project.sodar_uuid %}">Create Zone</a>.
     </div>
-
   {% else %}
     {% if prohibit_files %}
       {% include 'landingzones/_prohibit_warning.html' %}
     {% endif %}
-    {# User zones #}
-    {% include 'landingzones/_zone_list.html' with zones=zones_own list_title='Your Zones' list_icon='mdi:account' list_type='own' %}
-    {% if zones_other %}
-      {% include 'landingzones/_zone_list.html' with zones=zones_other list_title='Other Zones' list_icon='mdi:account-multiple' list_type='other' %}
-    {% endif %}
+    <div class="card" id="sodar-lz-zone-list">
+      <div class="card-body p-0">
+        <table class="table table-striped sodar-card-table sodar-lz-table">
+          <thead>
+            <tr>
+              <th class="sodar-lz-list-header-title">Zone</th>
+              <th class="sodar-lz-list-header-info">Status&nbsp;Info</th>
+              <th class="sodar-lz-list-header-status">Status</th>
+              <th class="sodar-lz-list-header-links">Links</th>
+              <th class="sodar-lz-list-header-edit"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for zone in zones %}
+              {% include 'landingzones/_zone_item.html' %}
+            {% endfor %}
+            {% if zones.count == 0 %}
+               <td class="bg-faded font-italic text-center" colspan="5">
+                 No active landing zones
+                 {% if not can_view_zone_all %}available to you{% endif %}
+                 found.
+               </td>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
   {% endif %}
-
 </div> {# Main container #}
 
 {% endblock projectroles_extend %}
@@ -127,21 +146,12 @@
             showCancelLink: true
         });
     }
-    if ($('#sodar-lz-zone-list-own').length) {
+    if ($('#sodar-lz-zone-list').length) {
         tour.addStep('own_zones', {
-            title: 'Your Zones',
-            text: 'Your own landing zones are listed in this table.',
-            attachTo: '#sodar-lz-zone-list-own top',
-            advanceOn: '.docs-link click',
-            showCancelLink: true
-        });
-    }
-    if ($('#sodar-lz-zone-list-other').length) {
-        tour.addStep('other_zones', {
-            title: 'Zones of Other Users',
-            text: 'This table lists zones of other users to which you have ' +
-                  'been given access.',
-            attachTo: '#sodar-lz-zone-list-other top',
+            title: 'Project Zones',
+            text: 'The project landing zones you have access to are listed ' +
+                  'in this table.',
+            attachTo: '#sodar-lz-zone-list top',
             advanceOn: '.docs-link click',
             showCancelLink: true
         });

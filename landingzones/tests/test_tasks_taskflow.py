@@ -84,8 +84,8 @@ class TestSetLandingZoneStatusTask(ViewTestBase):
             lc.DEFAULT_STATUS_INFO[lc.ZONE_STATUS_MOVED],
         )
         self._assert_owner_alert(1)
-        self._assert_member_alerts(1)
-        self.assertEqual(len(mail.outbox), 2)
+        self._assert_member_alerts(0)
+        self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_move').first().level,
             'SUCCESS',
@@ -102,10 +102,10 @@ class TestSetLandingZoneStatusTask(ViewTestBase):
         self.zone.refresh_from_db()
         self.assertEqual(self.zone.status, lc.ZONE_STATUS_MOVED)
         self._assert_owner_alert(1)
-        self._assert_member_alerts(1)
+        self._assert_member_alerts(0)
         self.assertEqual(len(mail.outbox), 0)
 
-    def test_execute_disable_member_nofify(self):
+    def test_execute_disable_member_notify(self):
         """Test execute() with member notify disabled"""
         app_settings.set(
             APP_NAME, 'member_notify_move', False, project=self.project
@@ -120,9 +120,9 @@ class TestSetLandingZoneStatusTask(ViewTestBase):
         self._assert_owner_alert(1)
         self._assert_member_alerts(0)
         self.assertEqual(len(mail.outbox), 1)
-        self.assertEqual(mail.outbox[0].recipients(), [self.user.email])
+        self.assertEqual(mail.outbox[0].recipients(), [self.user_owner.email])
 
-    def test_execute_disable_owner_nofify(self):
+    def test_execute_disable_owner_notify(self):
         """Test execute() with owner notify disabled"""
         app_settings.set(
             APP_NAME,
@@ -138,11 +138,8 @@ class TestSetLandingZoneStatusTask(ViewTestBase):
         self.zone.refresh_from_db()
         self.assertEqual(self.zone.status, lc.ZONE_STATUS_MOVED)
         self._assert_owner_alert(1)
-        self._assert_member_alerts(1)
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertEqual(
-            mail.outbox[0].recipients(), [self.user_contributor.email]
-        )
+        self._assert_member_alerts(0)
+        self.assertEqual(len(mail.outbox), 0)
 
     def test_execute_moved_no_files(self):
         """Test execute() with a busy status"""

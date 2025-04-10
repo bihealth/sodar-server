@@ -67,48 +67,62 @@ class ViewTestBase(
         self.project = self.make_project(
             'TestProject', PROJECT_TYPE_PROJECT, None
         )
+        self.user_owner = self.make_user('user_owner')
         self.owner_as = self.make_assignment(
-            self.project, self.user, self.role_owner
+            self.project, self.user_owner, self.role_owner
         )
-        # Init contributor user and assignment
-        self.user_contributor = self.make_user('user_contributor')
-        self.contributor_as = self.make_assignment(
-            self.project, self.user_contributor, self.role_contributor
-        )
+
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-        # Create LandingZone
+        # Create landing zone
         self.zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
-            user=self.user,
+            user=self.user_owner,
             assay=self.assay,
             description=ZONE_DESC,
             status=ZONE_STATUS_ACTIVE,
         )
 
 
-class TestProjectZonesView(ViewTestBase):
-    """Tests for ProjectZonesView"""
+class TestProjectZoneView(ViewTestBase):
+    """Tests for ProjectZoneView"""
 
     def setUp(self):
         super().setUp()
+        # Init additional users and assignments
+        self.user_contributor = self.make_user('user_contributor')
+        self.contributor_as = self.make_assignment(
+            self.project, self.user_contributor, self.role_contributor
+        )
+        self.user_no_zones = self.make_user('user_no_zones')
+        self.no_zones_as = self.make_assignment(
+            self.project, self.user_no_zones, self.role_contributor
+        )
+        # Create additional landing zone
+        self.zone_contrib = self.make_landing_zone(
+            title=ZONE_TITLE + '2',
+            project=self.project,
+            user=self.user_contributor,
+            assay=self.assay,
+            description=ZONE_DESC,
+            status=ZONE_STATUS_ACTIVE,
+        )
         self.url = reverse(
-            'landingzones:list',
-            kwargs={'project': self.project.sodar_uuid},
+            'landingzones:list', kwargs={'project': self.project.sodar_uuid}
         )
 
     def test_get_owner(self):
-        """Test ProjectZonesView GET as owner"""
-        with self.login(self.user):
+        """Test ProjectZoneView GET as owner"""
+        with self.login(self.user_owner):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['investigation'], self.investigation)
-        self.assertEqual(response.context['zones_own'].count(), 1)
-        self.assertEqual(response.context['zones_other'].count(), 0)
-        self.assertEqual(response.context['zones_own'][0], self.zone)
+        self.assertEqual(response.context['zones'].count(), 2)
+        self.assertEqual(response.context['zones'][0], self.zone)
+        self.assertEqual(response.context['zones'][1], self.zone_contrib)
         self.assertEqual(response.context['zone_access_disabled'], False)
         self.assertEqual(response.context['prohibit_files'], None)
 
@@ -117,11 +131,24 @@ class TestProjectZonesView(ViewTestBase):
         with self.login(self.user_contributor):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['investigation'], self.investigation)
-        # This user should have no zones
-        self.assertEqual(response.context['zones_own'].count(), 0)
-        self.assertNotIn('zones_other', response.context)
-        self.assertEqual(response.context['zone_access_disabled'], False)
+        self.assertEqual(response.context['zones'].count(), 1)
+        self.assertEqual(response.context['zones'][0], self.zone_contrib)
+
+    def test_get_user_no_zones(self):
+        """Test GET as contributor user with no zones"""
+        with self.login(self.user_no_zones):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['zones'].count(), 0)
+
+    def test_get_superuser(self):
+        """Test GET as superuser"""
+        with self.login(self.user):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['zones'].count(), 2)
+        self.assertEqual(response.context['zones'][0], self.zone)
+        self.assertEqual(response.context['zones'][1], self.zone_contrib)
 
     @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
     def test_get_disable(self):
@@ -221,7 +248,7 @@ class TestZoneUpdateView(ViewTestBase):
         app_settings.set(
             APP_NAME, PROHIBIT_NAME, PROHIBIT_VAL, project=self.project
         )
-        with self.login(self.user):
+        with self.login(self.user_owner):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         # Should not be included for update
@@ -231,13 +258,13 @@ class TestZoneUpdateView(ViewTestBase):
         """Test GET with invalid zone status"""
         self.zone.status = ZONE_STATUS_DELETED
         self.zone.save()
-        with self.login(self.user):
+        with self.login(self.user_owner):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 302)
 
     def test_post(self):
         """Test POST"""
-        with self.login(self.user):
+        with self.login(self.user_owner):
             response = self.client.post(
                 self.url,
                 data={
@@ -260,7 +287,7 @@ class TestZoneUpdateView(ViewTestBase):
 
     def test_post_invalid_data(self):
         """Test POST with invalid data"""
-        with self.login(self.user):
+        with self.login(self.user_owner):
             response = self.client.post(
                 self.url,
                 data={
@@ -282,7 +309,7 @@ class TestZoneMoveView(ViewTestBase):
         """Test ZoneMoveView GET with invalid zone status"""
         self.zone.status = ZONE_STATUS_DELETED
         self.zone.save()
-        with self.login(self.user):
+        with self.login(self.user_owner):
             response = self.client.get(
                 reverse(
                     'landingzones:move',
@@ -304,7 +331,7 @@ class TestZoneDeleteView(ViewTestBase):
 
     def test_get(self):
         """Test ZoneDeleteView GET"""
-        with self.login(self.user):
+        with self.login(self.user_owner):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
 
@@ -312,6 +339,6 @@ class TestZoneDeleteView(ViewTestBase):
         """Test GET with invalid zone status"""
         self.zone.status = ZONE_STATUS_DELETED
         self.zone.save()
-        with self.login(self.user):
+        with self.login(self.user_owner):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 302)

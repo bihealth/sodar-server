@@ -53,7 +53,8 @@
       {% if zone.configuration %}
         <span class="badge badge-secondary sodar-lz-zone-badge-config">
           <i class="iconify" data-icon="mdi:cog"></i>
-          {% get_config_legend zone %}
+          {% get_config_legend zone as config_legend %}
+          {{ config_legend | truncatechars:36 }}
         </span>
       {% endif %}
       {# User lacks permission badge #}

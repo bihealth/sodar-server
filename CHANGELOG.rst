@@ -64,6 +64,7 @@ Changed
     - Change ``LandingZone.status_info`` to ``TextField`` (#1308)
     - Prevent redundant refreshing of unchganged zone status (#2126)
     - Update zone list title column layout (#1852, #2127)
+    - Update ``ProjectZoneView`` to display project zones in one table (#2129)
 - **Samplesheets**
     - Define app settings as ``PluginAppSettingDef`` objects (#2051)
     - Return ``500`` for iRODS query exceptions in ``ProjectIrodsFileListAPIView`` (#2103)

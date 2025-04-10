@@ -123,8 +123,7 @@ class TestProjectZoneView(LandingZoneUITestBase):
         self._assert_element(By.ID, 'sodar-lz-alert-no-zones', False)
         self._assert_element(By.ID, 'sodar-lz-alert-prohibit', False)
         self._assert_element(By.ID, 'sodar-lz-btn-create-zone', False)
-        self._assert_element(By.ID, 'sodar-lz-zone-list-own', False)
-        self._assert_element(By.ID, 'sodar-lz-zone-list-other', False)
+        self._assert_element(By.ID, 'sodar-lz-zone-list', False)
 
     def test_render_no_colls(self):
         """Test ProjectZoneView with investigation but no colls"""
@@ -137,8 +136,7 @@ class TestProjectZoneView(LandingZoneUITestBase):
         self._assert_element(By.ID, 'sodar-lz-alert-no-zones', False)
         self._assert_element(By.ID, 'sodar-lz-alert-prohibit', False)
         self._assert_element(By.ID, 'sodar-lz-btn-create-zone', False)
-        self._assert_element(By.ID, 'sodar-lz-zone-list-own', False)
-        self._assert_element(By.ID, 'sodar-lz-zone-list-other', False)
+        self._assert_element(By.ID, 'sodar-lz-zone-list', False)
 
     def test_render_no_zones(self):
         """Test ProjectZoneView with iRODS enabled but no zones"""
@@ -152,8 +150,7 @@ class TestProjectZoneView(LandingZoneUITestBase):
         self._assert_element(By.ID, 'sodar-lz-alert-no-zones', True)
         self._assert_element(By.ID, 'sodar-lz-alert-prohibit', False)
         self._assert_element(By.ID, 'sodar-lz-btn-create-zone', True)
-        self._assert_element(By.ID, 'sodar-lz-zone-list-own', False)
-        self._assert_element(By.ID, 'sodar-lz-zone-list-other', False)
+        self._assert_element(By.ID, 'sodar-lz-zone-list', False)
 
     def test_render_prohibit(self):
         """Test ProjectZoneView with no zones and file_name_prohibit enabled"""
@@ -180,8 +177,7 @@ class TestProjectZoneView(LandingZoneUITestBase):
         self._assert_element(By.ID, 'sodar-lz-alert-no-zones', False)
         self._assert_element(By.ID, 'sodar-lz-alert-prohibit', False)
         self._assert_element(By.ID, 'sodar-lz-btn-create-zone', False)
-        self._assert_element(By.ID, 'sodar-lz-zone-list-own', False)
-        self._assert_element(By.ID, 'sodar-lz-zone-list-other', False)
+        self._assert_element(By.ID, 'sodar-lz-zone-list', False)
 
     @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
     def test_render_disable_superuser(self):
@@ -199,8 +195,7 @@ class TestProjectZoneView(LandingZoneUITestBase):
         self._assert_element(By.ID, 'sodar-lz-alert-no-zones', False)
         self._assert_element(By.ID, 'sodar-lz-alert-prohibit', False)
         self._assert_element(By.ID, 'sodar-lz-btn-create-zone', True)
-        self._assert_element(By.ID, 'sodar-lz-zone-list-own', True)
-        self._assert_element(By.ID, 'sodar-lz-zone-list-other', False)
+        self._assert_element(By.ID, 'sodar-lz-zone-list', True)
 
     def test_render_own_zone(self):
         """Test ProjectZoneView as contributor with own zone"""
@@ -217,8 +212,7 @@ class TestProjectZoneView(LandingZoneUITestBase):
         self._assert_element(By.ID, 'sodar-lz-alert-no-zones', False)
         self._assert_element(By.ID, 'sodar-lz-alert-prohibit', False)
         self._assert_element(By.ID, 'sodar-lz-btn-create-zone', True)
-        self._assert_element(By.ID, 'sodar-lz-zone-list-own', True)
-        self._assert_element(By.ID, 'sodar-lz-zone-list-other', False)
+        self._assert_element(By.ID, 'sodar-lz-zone-list', True)
         self._assert_element(
             By.CLASS_NAME, 'sodar-lz-zone-status-truncate', False
         )
@@ -262,9 +256,7 @@ class TestProjectZoneView(LandingZoneUITestBase):
         )
         self.login_and_redirect(self.user_owner, self.url)
         self._assert_element(By.ID, 'sodar-lz-alert-prohibit', False)
-        # NOTE: Element for own zones is visible while table is empty
-        self._assert_element(By.ID, 'sodar-lz-zone-list-own', True)
-        self._assert_element(By.ID, 'sodar-lz-zone-list-other', True)
+        self._assert_element(By.ID, 'sodar-lz-zone-list', True)
         self._assert_element(By.CLASS_NAME, 'sodar-user-badge', True)
         self._assert_element(By.CLASS_NAME, 'sodar-lz-zone-badge-config', False)
         self._assert_element(
@@ -294,8 +286,7 @@ class TestProjectZoneView(LandingZoneUITestBase):
         )
         self.login_and_redirect(self.user_contributor, self.url)
         self._assert_element(By.ID, 'sodar-lz-alert-prohibit', False)
-        self._assert_element(By.ID, 'sodar-lz-zone-list-own', True)
-        self._assert_element(By.ID, 'sodar-lz-zone-list-other', False)
+        self._assert_element(By.ID, 'sodar-lz-zone-list', True)
         zones = self.selenium.find_elements(
             By.CLASS_NAME, 'sodar-lz-zone-tr-existing'
         )
@@ -318,19 +309,18 @@ class TestProjectZoneView(LandingZoneUITestBase):
         )
         self.login_and_redirect(self.user_owner, self.url)
         self._assert_element(By.ID, 'sodar-lz-alert-prohibit', False)
-        self._assert_element(By.ID, 'sodar-lz-zone-list-own', True)
-        self._assert_element(By.ID, 'sodar-lz-zone-list-other', True)
+        self._assert_element(By.ID, 'sodar-lz-zone-list', True)
         zones = self.selenium.find_elements(
             By.CLASS_NAME, 'sodar-lz-zone-tr-existing'
         )
         self.assertEqual(len(zones), 2)
         self.assertEqual(
             zones[0].get_attribute('data-zone-uuid'),
-            str(owner_zone.sodar_uuid),
+            str(contrib_zone.sodar_uuid),
         )
         self.assertEqual(
             zones[1].get_attribute('data-zone-uuid'),
-            str(contrib_zone.sodar_uuid),
+            str(owner_zone.sodar_uuid),
         )
         self._assert_element(
             By.CLASS_NAME, 'sodar-lz-zone-badge-warn-perms', False
@@ -460,7 +450,7 @@ class TestProjectZoneView(LandingZoneUITestBase):
             configuration=ZONE_CONFIG_NAME,
         )
         self.login_and_redirect(self.user_contributor, self.url)
-        self._assert_element(By.ID, 'sodar-lz-zone-list-own', True)
+        self._assert_element(By.ID, 'sodar-lz-zone-list', True)
         self._assert_element(By.CLASS_NAME, 'sodar-lz-zone-status-link', False)
         self._assert_element(By.CLASS_NAME, 'sodar-user-badge', False)
         self._assert_element(By.CLASS_NAME, 'sodar-lz-zone-badge-config', True)

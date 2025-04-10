@@ -55,10 +55,10 @@ Zone Dropdown
 .. _app_landingzones_browse_owner_access:
 
 Project owners and delegates will be able to see active zones of other users in
-the project in a separate list within the same view. They can perform the same
-validation, moving and deletion actions as the zone owner. Starting in SODAR
-v1.1, owners and delegates also have iRODS read/write access to zones of other
-users. This functionality was introduced in SODAR v1.1.
+the project. Zones created by other users are denoted by a user badge in the
+title column. Owners and delegates can perform the same validation, moving and
+deletion actions for these zones as the zone owner. Starting in SODAR v1.1,
+owners and delegates also gain iRODS read/write access to zones of other users.
 
 .. hint::
 
