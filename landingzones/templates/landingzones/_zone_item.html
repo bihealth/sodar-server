@@ -19,45 +19,56 @@
     data-sample-url="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}"
     data-status-url="{% url 'landingzones:ajax_status' project=project.sodar_uuid %}">
   <td class="sodar-lz-zone-title">
-    <div class="sodar-overflow-container">
-      <a href="{{ zone.assay.get_url }}"
-         title="{{ zone.assay.get_display_name }}"
-         class="sodar-lz-zone-assay-link"
-         data-tooltip="tooltip" data-placement="top">
-        <i class="iconify text-danger" data-icon="mdi:table-large"></i>
+    {% if details_card_mode %}
+      <a href="{% url 'landingzones:list' project=project.sodar_uuid %}#{{ zone.sodar_uuid }}">
+    {% endif %}
+    {{ zone.title }}
+    {% if details_card_mode %}
       </a>
-      {% if zone.user != request.user %}
-        {% get_user_html zone.user as zone_user %}
-        {{ zone_user | safe }} /
-      {% endif %}
-      {% if details_card_mode %}
-        <a href="{% url 'landingzones:list' project=project.sodar_uuid %}#{{ zone.sodar_uuid }}">
-      {% endif %}
-      {{ zone.title }}
-      {% if details_card_mode %}
+    {% endif %}
+    {% if zone.description %}
+      <span class="sodar-lz-zone-description-link">
+        {% get_zone_desc_html zone as zone_desc_html %}
+        {% get_info_link zone_desc_html html=True as info_link %}
+        {{ info_link | safe }}
+      </span>
+    {% endif %}
+    <div class="sodar-lz-zone-badges">
+      {# Assay badge #}
+      <span class="badge badge-light text-danger sodar-lz-zone-badge-assay">
+        <a href="{{ zone.assay.get_url }}"
+           title="{{ zone.assay.get_display_name }}"
+           class="sodar-lz-zone-assay-link text-danger"
+           data-tooltip="tooltip" data-placement="top">
+          <i class="iconify" data-icon="mdi:table-large"></i>
+          {{ zone.assay.get_display_name | truncatechars:36 }}
         </a>
+      </span>
+      {# User badge #}
+      {% if zone.user != request.user %}
+        {% get_user_badge zone.user as user_badge %}
+        {{ user_badge | safe }}
       {% endif %}
-      {% if zone.description %}
-        <span class="sodar-lz-zone-description-link">
-          {% get_zone_desc_html zone as zone_desc_html %}
-          {% get_info_link zone_desc_html html=True as info_link %}
-          {{ info_link | safe }}
+      {# Configuration badge #}
+      {% if zone.configuration %}
+        <span class="badge badge-secondary sodar-lz-zone-badge-config">
+          <i class="iconify" data-icon="mdi:cog"></i>
+          {% get_config_legend zone %}
         </span>
       {% endif %}
-      {% if zone.configuration %}
-        <span class="badge badge-pill badge-success">{% get_config_legend zone %}</span>
-      {% endif %}
+      {# User lacks permission badge #}
       {% if zone.user != request.user %}
         {% has_perm 'landingzones.update_zone_own' zone.user project as zone_user_perm %}
         {% if not zone_user_perm %}
-          <span title="User lacks permissions to update their zone"
-                data-tooltip="tooltip" data-placement="top"
-                class="sodar-lz-zone-warn-access">
-            <i class="iconify text-danger" data-icon="mdi:account-circle"></i>
+          <span class="badge badge-warning sodar-lz-zone-badge-warn-perms"
+                title="User lacks permissions to update their zone"
+                data-tooltip="tooltip" data-placement="top">
+            <i class="iconify" data-icon="mdi:account-off"></i>
+            No Perms
           </span>
         {% endif %}
       {% endif %}
-    </div>
+    </div> {# sodar-lz-zone-badges #}
   </td>
   <td class="sodar-lz-zone-status-info">
     <span id="sodar-lz-zone-status-info-{{ zone.sodar_uuid }}">

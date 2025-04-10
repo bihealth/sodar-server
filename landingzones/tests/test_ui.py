@@ -40,6 +40,8 @@ APP_NAME = 'landingzones'
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 PROHIBIT_NAME = 'file_name_prohibit'
 PROHIBIT_VAL = 'bam,vcf.gz'
+ZONE_CONFIG_NAME = 'bih_proteomics_smb'
+ZONE_CONFIG_DISPLAY_NAME = 'BIH Proteomics SMB Server'
 
 
 class LandingZoneUITestBase(
@@ -221,6 +223,11 @@ class TestProjectZoneView(LandingZoneUITestBase):
             By.CLASS_NAME, 'sodar-lz-zone-status-truncate', False
         )
         self._assert_element(By.CLASS_NAME, 'sodar-lz-zone-status-link', False)
+        self._assert_element(By.CLASS_NAME, 'sodar-user-badge', False)
+        self._assert_element(By.CLASS_NAME, 'sodar-lz-zone-badge-config', False)
+        self._assert_element(
+            By.CLASS_NAME, 'sodar-lz-zone-badge-warn-perms', False
+        )
         zones = self.selenium.find_elements(
             By.CLASS_NAME, 'sodar-lz-zone-tr-existing'
         )
@@ -258,6 +265,11 @@ class TestProjectZoneView(LandingZoneUITestBase):
         # NOTE: Element for own zones is visible while table is empty
         self._assert_element(By.ID, 'sodar-lz-zone-list-own', True)
         self._assert_element(By.ID, 'sodar-lz-zone-list-other', True)
+        self._assert_element(By.CLASS_NAME, 'sodar-user-badge', True)
+        self._assert_element(By.CLASS_NAME, 'sodar-lz-zone-badge-config', False)
+        self._assert_element(
+            By.CLASS_NAME, 'sodar-lz-zone-badge-warn-perms', False
+        )
         zones = self.selenium.find_elements(
             By.CLASS_NAME, 'sodar-lz-zone-tr-existing'
         )
@@ -266,6 +278,8 @@ class TestProjectZoneView(LandingZoneUITestBase):
             zones[0].get_attribute('data-zone-uuid'),
             str(contrib_zone.sodar_uuid),
         )
+        elem = self.selenium.find_element(By.CLASS_NAME, 'sodar-user-badge')
+        self.assertEqual(elem.text, self.user_contributor.username)
 
     def test_render_both_zones_contrib(self):
         """Test ProjectZoneView as contributor with own and other zones"""
@@ -318,7 +332,9 @@ class TestProjectZoneView(LandingZoneUITestBase):
             zones[1].get_attribute('data-zone-uuid'),
             str(contrib_zone.sodar_uuid),
         )
-        self._assert_element(By.CLASS_NAME, 'sodar-lz-zone-warn-access', False)
+        self._assert_element(
+            By.CLASS_NAME, 'sodar-lz-zone-badge-warn-perms', False
+        )
 
     def test_render_other_user_guest_access(self):
         """Test ProjectZoneView with guest access for other user"""
@@ -339,7 +355,9 @@ class TestProjectZoneView(LandingZoneUITestBase):
             By.CLASS_NAME, 'sodar-lz-zone-tr-existing'
         )
         self.assertEqual(len(zones), 2)
-        self._assert_element(By.CLASS_NAME, 'sodar-lz-zone-warn-access', True)
+        self._assert_element(
+            By.CLASS_NAME, 'sodar-lz-zone-badge-warn-perms', True
+        )
 
     def test_render_other_user_no_access(self):
         """Test ProjectZoneView with no project access for other user"""
@@ -359,7 +377,9 @@ class TestProjectZoneView(LandingZoneUITestBase):
             By.CLASS_NAME, 'sodar-lz-zone-tr-existing'
         )
         self.assertEqual(len(zones), 2)
-        self._assert_element(By.CLASS_NAME, 'sodar-lz-zone-warn-access', True)
+        self._assert_element(
+            By.CLASS_NAME, 'sodar-lz-zone-badge-warn-perms', True
+        )
 
     def test_render_read_only_contrib(self):
         """Test ProjectZoneView with site read-only mode as contributor"""
@@ -426,6 +446,38 @@ class TestProjectZoneView(LandingZoneUITestBase):
             zone.find_element(By.CLASS_NAME, 'sodar-lz-zone-btn-delete'),
             True,
         )
+
+    def test_render_zone_config(self):
+        """Test ProjectZoneView with zone using special configuration"""
+        self._setup_investigation()
+        self.investigation.irods_status = True
+        self.investigation.save()
+        contrib_zone = self.make_landing_zone(
+            'contrib_zone',
+            self.project,
+            self.user_contributor,
+            self.assay,
+            configuration=ZONE_CONFIG_NAME,
+        )
+        self.login_and_redirect(self.user_contributor, self.url)
+        self._assert_element(By.ID, 'sodar-lz-zone-list-own', True)
+        self._assert_element(By.CLASS_NAME, 'sodar-lz-zone-status-link', False)
+        self._assert_element(By.CLASS_NAME, 'sodar-user-badge', False)
+        self._assert_element(By.CLASS_NAME, 'sodar-lz-zone-badge-config', True)
+        self._assert_element(
+            By.CLASS_NAME, 'sodar-lz-zone-badge-warn-perms', False
+        )
+        zones = self.selenium.find_elements(
+            By.CLASS_NAME, 'sodar-lz-zone-tr-existing'
+        )
+        self.assertEqual(
+            zones[0].get_attribute('data-zone-uuid'),
+            str(contrib_zone.sodar_uuid),
+        )
+        elem = self.selenium.find_element(
+            By.CLASS_NAME, 'sodar-lz-zone-badge-config'
+        )
+        self.assertEqual(elem.text, ZONE_CONFIG_DISPLAY_NAME)
 
     def test_status_truncated(self):
         """Test rendering truncated status"""

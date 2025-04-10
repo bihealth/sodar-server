@@ -24,7 +24,19 @@ The following details are available for each landing zone:
 Zone
     The title of the zone along with a tooltip for verifying to which assay the
     zone belongs in. The zone name also acts as its collection name in iRODS.
-    If a special configuration is used for the zone, it is displayed here.
+    In addition to the title, this column displays further landing zone
+    information as badges:
+
+    - **Assay Badge:** This displays the name of the assay the landing zone is
+      linked to, with a link to the assay in the Sample Sheets app.
+    - **User Badge:** When viewing the list as a owner or delegate, you can see
+      zones of other users. For these zones, the user who created the zone is
+      displayed as a badge.
+    - **Configuration Badge:** If a special configuration is used for the zone,
+      the configuration title is presented as a badge.
+    - **Permission Warning Badge:** If you can see other users' zones and a user
+      has lost project permissions after creating the zone, you will see a badge
+      warning you about the zone's original creator being unable to access it.
 Status Info
     Detailed status information on the most recent action performed on the zone.
     Successful actions are described here along with detailed information on
@@ -44,10 +56,9 @@ Zone Dropdown
 
 Project owners and delegates will be able to see active zones of other users in
 the project in a separate list within the same view. They can perform the same
-validation, moving and deletion actions as the zone owner.
-
-Owners and delegates also have iRODS read/write access to zones of other users.
-This functionality was introduced in SODAR v1.1.
+validation, moving and deletion actions as the zone owner. Starting in SODAR
+v1.1, owners and delegates also have iRODS read/write access to zones of other
+users. This functionality was introduced in SODAR v1.1.
 
 .. hint::
 

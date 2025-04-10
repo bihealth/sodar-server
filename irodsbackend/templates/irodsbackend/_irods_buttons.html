@@ -13,7 +13,7 @@
 {% get_django_setting 'IRODS_WEBDAV_ENABLED' as irods_webdav_enabled %}
 {% get_webdav_url project request.user as irods_webdav_url %}
 
-<span class="text-nowrap">
+<span class="text-nowrap sodar-irods-btn-container">
   {% if show_file_list and irods_backend_enabled and irods_webdav_enabled %}
     <button class="btn btn-secondary sodar-list-btn sodar-irods-btn sodar-irods-popup-list-btn
             {% if not irods_webdav_enabled or not irods_colls or disable_all %} no-colls {% endif %}"
