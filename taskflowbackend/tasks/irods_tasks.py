@@ -12,6 +12,7 @@ from irods import keywords as kw
 from irods.access import iRODSAccess
 from irods.exception import (
     GroupDoesNotExist,
+    NetworkException,
     UserDoesNotExist,
     CAT_SUCCESS_BUT_WITH_NO_INFO,
 )
@@ -928,8 +929,15 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
 class BatchCalculateChecksumTask(IrodsBaseTask):
     """Batch calculate checksum for data objects (ichksum)"""
 
-    @classmethod
-    def _compute_checksum(cls, data_obj, replica, force):
+    def _raise_checksum_exception(self, ex, replica, data_obj, info=None):
+        info_str = (':' + info) if info else ''
+        self._raise_irods_exception(
+            ex,
+            f'Failed to calculate checksum{info_str}\nReplica: '
+            f'{replica.resc_hier}\nFile: {data_obj.path}',
+        )
+
+    def _compute_checksum(self, data_obj, replica, force):
         if replica.checksum and not force:
             return
         for j in range(CHECKSUM_RETRY):
@@ -937,14 +945,21 @@ class BatchCalculateChecksumTask(IrodsBaseTask):
                 logger.info('Retrying ({})..'.format(j + 1))
             try:
                 data_obj.chksum(**{kw.RESC_HIER_STR_KW: replica.resc_hier})
-                break  # Skip retries on success
-            except Exception as ex:
+                return
+            # Retry for network exceptions
+            except NetworkException as ex:
                 logger.error(
-                    'Exception in BatchCalculateChecksumTask for path '
-                    '"{}" in replica "{}": {}'.format(
-                        data_obj.path, replica.resc_hier, ex
-                    )
-                )  # NOTE: No raise, only log
+                    f'NetworkException in BatchCalculateChecksumTask for path '
+                    f'"{data_obj.path}" in replica "{replica.resc_hier}" '
+                    f'(attempt {j + 1}/{CHECKSUM_RETRY}): {ex}'
+                )
+                # Raise if we reached maximum retry count
+                if j == CHECKSUM_RETRY - 1:
+                    info = 'maximum network timeout retry attempts reached'
+                    self._raise_checksum_exception(ex, replica, data_obj, info)
+            # Raise other exceptions normally
+            except Exception as ex:
+                self._raise_checksum_exception(ex, replica, data_obj)
 
     def execute(self, landing_zone, file_paths, force, *args, **kwargs):
         interval = settings.TASKFLOW_ZONE_PROGRESS_INTERVAL
@@ -959,7 +974,6 @@ class BatchCalculateChecksumTask(IrodsBaseTask):
             data_obj = self.irods.data_objects.get(path)
             for replica in data_obj.replicas:
                 self._compute_checksum(data_obj, replica, force)
-                time.sleep(3)  # DEBUG
             if time.time() - time_start > interval and i_prev != i:
                 landing_zone.status_info = f'{status_base} ({i}/{file_count})'
                 landing_zone.save()

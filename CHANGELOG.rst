@@ -87,6 +87,9 @@ Fixed
 - **Landingzones**
     - Zone delete timeline status not updated with missing collection (#2096)
     - Sample Sheets link not displayed in UI after zone move (#2106)
+- **Taskflowbackend**
+    - Checksum calculation failing silently if maximum retries reached (#2131)
+    - Checksum calculation retry done for all exception types (#2132)
 
 Removed
 -------
