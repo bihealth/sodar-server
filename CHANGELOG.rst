@@ -78,6 +78,7 @@ Changed
     - Rename ``get_batch_role()`` to ``get_flow_role()`` (#2109)
     - Refactor ``role_update`` flow usage (#2117)
     - Newline separators in landing zone exception messages (#1308)
+    - Do not create timeline events for flows failed by locked project (#1970)
 
 Fixed
 -----

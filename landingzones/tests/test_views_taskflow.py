@@ -866,6 +866,39 @@ class TestZoneMoveView(
             AppAlert.objects.filter(alert_name='zone_move').count(), 0
         )
 
+    def test_post_move_locked(self):
+        """Test POST to move with locked project (should fail)"""
+        self.lock_project(self.project)
+        irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
+        self.make_irods_md5_object(irods_obj)
+        zone = LandingZone.objects.first()
+        self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(len(self.zone_coll.data_objects), 2)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+        mail_count = len(mail.outbox)
+        self.assertEqual(
+            TimelineEvent.objects.filter(event_name='zone_move').count(), 0
+        )
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_move').count(), 0
+        )
+
+        with self.login(self.user):
+            response = self.client.post(self.url_move)
+            self.assertRedirects(response, self.url_redirect)
+
+        self.assert_zone_status(zone, ZONE_STATUS_FAILED)
+        self.assertEqual(len(self.zone_coll.data_objects), 2)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+        self.assertEqual(len(mail.outbox), mail_count)
+        # Timeline event should not exist for locked project
+        self.assertEqual(
+            TimelineEvent.objects.filter(event_name='zone_move').count(), 0
+        )
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_move').count(), 0
+        )
+
     @override_settings(REDIS_URL=INVALID_REDIS_URL)
     def test_post_move_lock_failure(self):
         """Test POST to move with project lock failure"""

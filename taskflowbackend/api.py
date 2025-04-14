@@ -239,7 +239,16 @@ class TaskflowAPI:
                 try:
                     lock_api.acquire(lock)
                 except Exception as ex:
-                    cls._raise_lock_exception(str(ex), tl_event, zone)
+                    # In case of regular locked project API, delete tl_event and
+                    # do not provide it to the raise method
+                    # TODO: Check for project lock before running flow and
+                    #       creating timeline event (see #2136)
+                    raise_event = tl_event
+                    if PROJECT_LOCKED_MSG in str(ex):
+                        if tl_event:
+                            tl_event.delete()
+                        raise_event = None
+                    cls._raise_lock_exception(str(ex), raise_event, zone)
         else:
             logger.info('Lock not required (flow.require_lock=False)')
 
