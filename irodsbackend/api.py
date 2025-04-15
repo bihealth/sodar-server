@@ -59,6 +59,8 @@ TRASH_COLL_NAME = 'trash'
 PATH_PARENT_SUBSTRING = '/..'
 ERROR_PATH_PARENT = 'Use of parent not allowed in path'
 ERROR_PATH_UNSET = 'Path is not set'
+TICKET_MODE_READ = 'read'
+TICKET_MODE_WRITE = 'write'
 
 
 class IrodsAPI:
@@ -772,7 +774,7 @@ class IrodsAPI:
         self, irods, mode, path, ticket_str=None, expiry_date=None
     ):
         """
-        Issue ticket for a specific iRODS collection.
+        Issue ticket for a specific iRODS collection or data object.
 
         :param irods: iRODSSession object
         :param mode: "read" or "write"
@@ -781,17 +783,24 @@ class IrodsAPI:
         :param expiry_date: Expiry date (DateTime object, optional)
         :return: irods client Ticket object
         """
+        mode = mode.lower()
+        if mode not in [TICKET_MODE_READ, TICKET_MODE_WRITE]:
+            raise ValueError(
+                f'Invalid ticket mode "{mode}" (accepted: {TICKET_MODE_READ}, '
+                f'{TICKET_MODE_WRITE})'
+            )
         ticket = Ticket(irods, ticket=ticket_str)
         ticket.issue(mode, self.sanitize_path(path))
         # Remove default file writing limitation
-        self._send_request(
-            irods,
-            'TICKET_ADMIN_AN',
-            'mod',
-            ticket._ticket,
-            'write-file',
-            '0',
-        )
+        if mode == TICKET_MODE_WRITE:
+            self._send_request(
+                irods,
+                'TICKET_ADMIN_AN',
+                'mod',
+                ticket._ticket,
+                'write-file',
+                '0',
+            )
         # Set expiration
         if expiry_date:
             exp_str = expiry_date.strftime('%Y-%m-%d.%H:%M:%S')

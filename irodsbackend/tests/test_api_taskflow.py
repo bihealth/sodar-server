@@ -4,9 +4,13 @@ import pytz
 import random
 import string
 
+from datetime import timedelta
+
+from irods.models import TicketQuery
 from irods.ticket import Ticket
 
 from django.conf import settings
+from django.utils import timezone
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
@@ -20,6 +24,8 @@ from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import TaskflowViewTestBase
+
+from irodsbackend.api import TICKET_MODE_READ, TICKET_MODE_WRITE
 
 
 # SODAR constants
@@ -53,6 +59,13 @@ class TestIrodsAPITaskflow(
     TaskflowViewTestBase,
 ):
     """Tests for IrodsAPI with Taskflow and iRODS"""
+
+    def _get_ticket_query_res(self, ticket):
+        """Return iRODS database ticket query result"""
+        ticket_query = self.irods.query(TicketQuery.Ticket).filter(
+            TicketQuery.Ticket.string == ticket._ticket
+        )
+        return list(ticket_query)[0]
 
     def setUp(self):
         super().setUp()
@@ -323,23 +336,66 @@ class TestIrodsAPITaskflow(
         self.assertEqual(obj_list[0], expected)
         self.assertIsNotNone(obj_list[0]['checksum'])
 
-    def test_issue_ticket(self):
-        """Test issue_ticket()"""
+    def test_issue_ticket_read(self):
+        """Test issue_ticket() in read mode"""
         self.make_irods_colls(self.investigation)
         ticket = self.irods_backend.issue_ticket(
             self.irods,
-            'read',
+            TICKET_MODE_READ,
             self.irods_backend.get_sample_path(self.project),
             TICKET_STR,
         )
         self.assertEqual(type(ticket), Ticket)
         self.assertEqual(ticket.string, TICKET_STR)
+        ticket_res = self._get_ticket_query_res(ticket)
+        self.assertEqual(ticket_res[TicketQuery.Ticket.type], TICKET_MODE_READ)
+        self.assertEqual(ticket_res[TicketQuery.Ticket.expiry_ts], None)
+        # Default write file limit, doesn't affect read tickets so default is OK
+        self.assertEqual(ticket_res[TicketQuery.Ticket.write_file_limit], 10)
+
+    def test_issue_ticket_write(self):
+        """Test issue_ticket() in write mode"""
+        self.make_irods_colls(self.investigation)
+        ticket = self.irods_backend.issue_ticket(
+            self.irods,
+            TICKET_MODE_WRITE,
+            self.irods_backend.get_sample_path(self.project),
+            TICKET_STR,
+        )
+        self.assertEqual(type(ticket), Ticket)
+        self.assertEqual(ticket.string, TICKET_STR)
+        ticket_res = self._get_ticket_query_res(ticket)
+        self.assertEqual(ticket_res[TicketQuery.Ticket.type], TICKET_MODE_WRITE)
+        self.assertEqual(ticket_res[TicketQuery.Ticket.expiry_ts], None)
+        # This should be changed to 0 for write tickets
+        self.assertEqual(ticket_res[TicketQuery.Ticket.write_file_limit], 0)
+
+    def test_issue_ticket_expiry_date(self):
+        """Test issue_ticket() with expiry date"""
+        self.make_irods_colls(self.investigation)
+        expiry_date = timezone.now() + timedelta(days=1)
+        ticket = self.irods_backend.issue_ticket(
+            self.irods,
+            TICKET_MODE_READ,
+            self.irods_backend.get_sample_path(self.project),
+            TICKET_STR,
+            expiry_date=expiry_date,
+        )
+        self.assertEqual(type(ticket), Ticket)
+        self.assertEqual(ticket.string, TICKET_STR)
+        ticket_res = self._get_ticket_query_res(ticket)
+        self.assertEqual(
+            int(ticket_res[TicketQuery.Ticket.expiry_ts]),
+            int(expiry_date.timestamp()),
+        )
 
     def test_get_delete_ticket(self):
         """Test get_ticket() and delete_ticket()"""
         self.make_irods_colls(self.investigation)
         orig_ticket = self.irods_backend.issue_ticket(
-            self.irods, 'read', self.irods_backend.get_sample_path(self.project)
+            self.irods,
+            TICKET_MODE_READ,
+            self.irods_backend.get_sample_path(self.project),
         )
         retr_ticket = self.irods_backend.get_ticket(
             self.irods, orig_ticket.string

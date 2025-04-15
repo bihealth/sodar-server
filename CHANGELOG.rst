@@ -56,6 +56,7 @@ Changed
 - **Irodsbackend**
     - Allow use of ``include_md5`` and ``limit`` together in ``get_objs_recursively()`` (#1887)
     - Rename ``get_user_group_name()`` to ``get_group_name()`` (#2121)
+    - Only set ``write-file`` value for write mode access tickets (#2134)
 - **Landingzones**
     - Define app settings as ``PluginAppSettingDef`` objects (#2051)
     - Do not mute zone title and description with busy zones (#2092)
