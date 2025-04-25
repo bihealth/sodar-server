@@ -444,14 +444,14 @@ class IrodsAccessTicketForm(IrodsAccessTicketValidateMixin, forms.ModelForm):
             self.project = self.instance.get_project()
         else:
             self.project = project
-        # Update path help and hide in update
+        # Update path help and disable in update
         path_help = (
             'Full path to iRODS collection: collection must be within '
             'an assay of the project'
         )
         self.fields['path'].help_text = path_help
         if self.instance.path:
-            self.fields['path'].widget = forms.widgets.HiddenInput()
+            self.fields['path'].disabled = True
             self.fields['path'].required = False
         # Add date input widget to expiry date field
         self.fields['date_expires'].label = 'Expiry date'

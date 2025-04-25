@@ -714,13 +714,13 @@ class TestIrodsAccessTicketCreateView(
         with self.login(self.user):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.context['form'].fields), 4)
-        self.assertIsNotNone(response.context['form'].fields.get('path'))
-        self.assertIsNotNone(response.context['form'].fields.get('label'))
-        self.assertIsNotNone(
-            response.context['form'].fields.get('date_expires')
-        )
-        self.assertEqual(response.context['form'].initial['allowed_hosts'], '')
+        form = response.context['form']
+        self.assertEqual(len(form.fields), 4)
+        self.assertIsNotNone(form.fields.get('path'))
+        self.assertEqual(form.fields['path'].disabled, False)
+        self.assertIsNotNone(form.fields.get('label'))
+        self.assertIsNotNone(form.fields.get('date_expires'))
+        self.assertEqual(form.initial['allowed_hosts'], '')
 
     def test_get_hosts_default(self):
         """Test GET with default value set in project"""
@@ -1062,10 +1062,11 @@ class TestIrodsAccessTicketUpdateView(
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         with self.login(self.user):
             response = self.client.get(self.url)
-        form_data = response.context['form']
-        self.assertEqual(form_data.initial['date_expires'], self.date_expires)
-        self.assertEqual(form_data.initial['label'], self.ticket.label)
-        self.assertEqual(form_data.initial['path'], self.ticket.path)
+        form = response.context['form']
+        self.assertEqual(form.fields['path'].disabled, True)
+        self.assertEqual(form.initial['path'], self.ticket.path)
+        self.assertEqual(form.initial['date_expires'], self.date_expires)
+        self.assertEqual(form.initial['label'], self.ticket.label)
 
     def test_post(self):
         """Test POST"""

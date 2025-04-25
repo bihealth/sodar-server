@@ -75,6 +75,7 @@ Changed
     - Define app settings as ``PluginAppSettingDef`` objects (#2051)
     - Return ``500`` for iRODS query exceptions in ``ProjectIrodsFileListAPIView`` (#2103)
     - Exclude inactive users from email sending and alert creation (#2114)
+    - Display disabled path field in iRODS access ticket update form (#2139)
 - **Taskflowbackend**
     - Enable no role for old owner in ``perform_owner_transfer()`` (#2051)
     - Rename ``BatchCheckFileTask`` to ``BatchCheckFileExistTask`` (#2064)
