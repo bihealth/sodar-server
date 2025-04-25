@@ -28,7 +28,7 @@ from projectroles.views import NO_AUTH_MSG
 from appalerts.models import AppAlert
 
 # Timeline dependency
-from timeline.models import TimelineEvent
+from timeline.models import TimelineEvent, TL_STATUS_OK
 
 # Irodsbackend dependency
 from irodsbackend.api import TICKET_MODE_READ
@@ -741,9 +741,6 @@ class TestIrodsAccessTicketCreateView(
     def test_post(self):
         """Test POST"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
-        self.assertEqual(self.get_tl_event_count('create'), 0)
-        self.assertEqual(self.get_app_alert_count('create'), 0)
-
         with self.login(self.user):
             response = self.client.post(self.url, self.post_data)
             self.assertRedirects(
@@ -753,7 +750,6 @@ class TestIrodsAccessTicketCreateView(
                     kwargs={'project': self.project.sodar_uuid},
                 ),
             )
-
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         ticket = IrodsAccessTicket.objects.first()
         expected = {
@@ -769,7 +765,6 @@ class TestIrodsAccessTicketCreateView(
             'sodar_uuid': ticket.sodar_uuid,
         }
         self.assertEqual(model_to_dict(ticket), expected)
-
         # Assert ticket state in iRODS
         irods_ticket = self.get_irods_ticket(ticket)
         self.assertEqual(irods_ticket[TicketQuery.Ticket.type], 'read')
@@ -780,7 +775,14 @@ class TestIrodsAccessTicketCreateView(
         hosts = self.get_ticket_hosts(irods_ticket[TicketQuery.Ticket.id])
         self.assertEqual(len(hosts), 0)
 
-        self.assertEqual(self.get_tl_event_count('create'), 1)
+    def test_post_alert(self):
+        """Test POST for app alert creation"""
+        self.assertEqual(IrodsAccessTicket.objects.count(), 0)
+        self.assertEqual(self.get_app_alert_count('create'), 0)
+        with self.login(self.user):
+            response = self.client.post(self.url, self.post_data)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         # As creator is owner, only inherited owner receives an alert
         self.assertEqual(self.get_app_alert_count('create'), 1)
         self.assertEqual(
@@ -790,24 +792,43 @@ class TestIrodsAccessTicketCreateView(
             self.user_owner_cat,
         )
 
+    def test_post_timeline(self):
+        """Test POST for timeline event creation"""
+        self.assertEqual(IrodsAccessTicket.objects.count(), 0)
+        self.assertEqual(self.get_tl_event_count('create'), 0)
+        with self.login(self.user):
+            response = self.client.post(self.url, self.post_data)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        self.assertEqual(self.get_tl_event_count('create'), 1)
+        ticket = IrodsAccessTicket.objects.first()
+        tl_event = TimelineEvent.objects.filter(
+            event_name='irods_ticket_create'
+        ).first()
+        self.assertEqual(tl_event.get_status().status_type, TL_STATUS_OK)
+        expected = {
+            'label': ticket.label,
+            'path': ticket.path,
+            'ticket': ticket.ticket,
+            'date_expires': ticket.get_date_expires(),
+            'allowed_hosts': ticket.get_allowed_hosts_list(),
+        }
+        self.assertEqual(tl_event.extra_data, expected)
+
     def test_post_contributor(self):
         """Test POST as contributor"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
         self.assertEqual(self.get_tl_event_count('create'), 0)
         self.assertEqual(self.get_app_alert_count('create'), 0)
-
         user_contributor = self.make_user('user_contributor')
         self.make_assignment_taskflow(
             self.project, user_contributor, self.role_contributor
         )
-
         with self.login(user_contributor):
             self.client.post(self.url, self.post_data)
-
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         ticket = IrodsAccessTicket.objects.first()
         self.assertIsNotNone(self.get_irods_ticket(ticket))
-
         self.assertEqual(self.get_tl_event_count('create'), 1)
         # Both owners should receive alert
         self.assertEqual(self.get_app_alert_count('create'), 2)
@@ -1084,7 +1105,6 @@ class TestIrodsAccessTicketUpdateView(
         host_res = self.get_ticket_hosts(ticket_res[TicketQuery.Ticket.id])
         self.assertEqual(host_res, ['127.0.0.1', '192.168.0.1'])
         self.assertEqual(self.get_tl_event_count('update'), 0)
-        self.assertEqual(self.get_app_alert_count('update'), 0)
 
         with self.login(self.user):
             response = self.client.post(self.url, self.post_data)
@@ -1110,7 +1130,40 @@ class TestIrodsAccessTicketUpdateView(
         host_res = self.get_ticket_hosts(ticket_res[TicketQuery.Ticket.id])
         self.assertEqual(host_res, ['127.0.0.1', '192.168.0.1'])
         self.assertEqual(self.get_tl_event_count('update'), 1)
+
+    def test_post_alert(self):
+        """Test POST for app alert creation"""
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        self.assertEqual(self.get_app_alert_count('update'), 0)
+        with self.login(self.user):
+            response = self.client.post(self.url, self.post_data)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         self.assertEqual(self.get_app_alert_count('update'), 1)
+
+    def test_post_timeline(self):
+        """Test POST for timeline event creation"""
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        self.assertEqual(self.get_tl_event_count('update'), 0)
+        with self.login(self.user):
+            response = self.client.post(self.url, self.post_data)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        self.assertEqual(self.get_tl_event_count('update'), 1)
+        # ticket = IrodsAccessTicket.objects.first()
+        self.ticket.refresh_from_db()
+        tl_event = TimelineEvent.objects.filter(
+            event_name='irods_ticket_update'
+        ).first()
+        self.assertEqual(tl_event.get_status().status_type, TL_STATUS_OK)
+        expected = {
+            'label': self.ticket.label,
+            'path': self.ticket.path,
+            'ticket': self.ticket.ticket,
+            'date_expires': self.ticket.get_date_expires(),
+            'allowed_hosts': self.ticket.get_allowed_hosts_list(),
+        }
+        self.assertEqual(tl_event.extra_data, expected)
 
     def test_post_hosts_remove_all(self):
         """Test POST with all allowed hosts removed"""

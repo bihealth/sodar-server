@@ -745,6 +745,7 @@ class IrodsAccessTicketModifyMixin:
                 'path': ticket.path,
                 'ticket': ticket.ticket,
                 'date_expires': ticket.get_date_expires(),
+                'allowed_hosts': ticket.get_allowed_hosts_list(),
             }
         tl_event = timeline.add_event(
             project=ticket.get_project(),

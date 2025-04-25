@@ -37,7 +37,7 @@ Added
     - ``ProjectIrodsFileListAPIView`` permission tests (#2104)
     - ``SHEETS_PARSER_WARNING_SAVE_LIMIT`` Django setting (#2120)
     - Database saving limit for AltamISA warnings (#2120)
-    - iRODS access ticket allowed hosts support (#1439)
+    - iRODS access ticket allowed hosts support (#1439, #2143)
     - ``IrodsAccessTicket.allowed_hosts`` field and ``get_allowed_hosts_list()`` helper (#1439)
     - ``SHEETS_IRODS_TICKET_HOSTS`` Django setting (#1439)
 - **Taskflowbackend**
