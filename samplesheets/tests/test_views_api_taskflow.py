@@ -584,8 +584,8 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
             mode=TICKET_MODE_READ,
             path=self.coll.path,
             ticket_str=TICKET_STR,
-            expiry_date=None,
-            hosts=['127.0.0.1', '192.168.0.1'],
+            date_expires=None,
+            allowed_hosts=['127.0.0.1', '192.168.0.1'],
         )
         self.url = reverse(
             'samplesheets:api_irods_ticket_update',
@@ -888,7 +888,7 @@ class TestIrodsAccessTicketDestroyAPIView(IrodsAccessTicketAPIViewTestBase):
             'read',
             self.coll.path,
             ticket_str=TICKET_STR,
-            expiry_date=None,
+            date_expires=None,
         )
         self.url = reverse(
             'samplesheets:api_irods_ticket_delete',

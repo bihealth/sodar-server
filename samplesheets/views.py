@@ -2294,8 +2294,8 @@ class IrodsAccessTicketCreateView(
                     'read',
                     form.cleaned_data['path'],
                     ticket_str=build_secret(16),
-                    expiry_date=form.cleaned_data.get('date_expires'),
-                    hosts=form.cleaned_data.get('allowed_hosts'),
+                    date_expires=form.cleaned_data.get('date_expires'),
+                    allowed_hosts=form.cleaned_data.get('allowed_hosts'),
                 )
         except Exception as ex:
             messages.error(
@@ -2352,8 +2352,8 @@ class IrodsAccessTicketUpdateView(
                 irods_backend.update_ticket(
                     irods,
                     ticket_str=obj.ticket,
-                    expiry_date=form.cleaned_data.get('date_expires'),
-                    hosts=form.cleaned_data.get('allowed_hosts'),
+                    date_expires=form.cleaned_data.get('date_expires'),
+                    allowed_hosts=form.cleaned_data.get('allowed_hosts'),
                 )
         except Exception as ex:
             messages.error(

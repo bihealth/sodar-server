@@ -1065,8 +1065,8 @@ class TestIrodsAccessTicketUpdateView(
             mode=TICKET_MODE_READ,
             path=self.ticket.path,
             ticket_str=self.ticket.ticket,
-            expiry_date=self.ticket.date_expires,
-            hosts=['127.0.0.1', '192.168.0.1'],
+            date_expires=self.ticket.date_expires,
+            allowed_hosts=['127.0.0.1', '192.168.0.1'],
         )
         self.url = reverse(
             'samplesheets:irods_ticket_update',
@@ -1271,7 +1271,7 @@ class TestIrodsAccessTicketDeleteView(
             'read',
             self.coll.path,
             ticket_str=TICKET_STR,
-            expiry_date=None,
+            date_expires=None,
         )
         self.url = reverse(
             'samplesheets:irods_ticket_delete',

@@ -19,8 +19,8 @@ Added
     - ``get_objects()`` checksum support (#2038)
     - ``get_objects()`` offset support (#1997)
     - ``get_group_name()`` owner/delegate group support (#2109)
-    - ``issue_ticket()`` allowed hosts support (#1439)
-    - ``IrodsAPI.update_ticket()`` method (#1439)
+    - ``issue_ticket()`` allowed hosts support (#1439, #2141)
+    - ``IrodsAPI.update_ticket()`` method (#1439, #2141)
 - **Landingzones**
     - Site read-only mode support (#2051)
     - File type prohibiting by file name suffix (#2064)
@@ -62,6 +62,7 @@ Changed
     - Allow use of ``include_md5`` and ``limit`` together in ``get_objs_recursively()`` (#1887)
     - Rename ``get_user_group_name()`` to ``get_group_name()`` (#2121)
     - Only set ``write-file`` value for write mode access tickets (#2134)
+    - Rename ``date_expires`` kwarg in ``issue_ticket()`` (#2141)
 - **Landingzones**
     - Define app settings as ``PluginAppSettingDef`` objects (#2051)
     - Do not mute zone title and description with busy zones (#2092)

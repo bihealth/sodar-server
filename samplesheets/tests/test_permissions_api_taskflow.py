@@ -394,7 +394,7 @@ class TestIrodsAccessTicketDestroyAPIView(IrodsAccessTicketAPIViewTestBase):
             'read',
             self.coll.path,
             ticket_str=ticket_str,
-            expiry_date=None,
+            date_expires=None,
         )
         self.ticket.sodar_uuid = self.request_uuid
         self.ticket.save()

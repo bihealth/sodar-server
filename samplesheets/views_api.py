@@ -535,8 +535,10 @@ class IrodsAccessTicketCreateAPIView(
                     'read',
                     serializer.validated_data.get('path'),
                     ticket_str=build_secret(16),
-                    expiry_date=serializer.validated_data.get('date_expires'),
-                    hosts=serializer.validated_data.get('allowed_hosts'),
+                    date_expires=serializer.validated_data.get('date_expires'),
+                    allowed_hosts=serializer.validated_data.get(
+                        'allowed_hosts'
+                    ),
                 )
         except Exception as ex:
             raise ValidationError(
@@ -610,8 +612,10 @@ class IrodsAccessTicketUpdateAPIView(
                 irods_backend.update_ticket(
                     irods,
                     ticket_str=serializer.instance.ticket,
-                    expiry_date=serializer.instance.date_expires,
-                    hosts=serializer.validated_data.get('allowed_hosts'),
+                    date_expires=serializer.instance.date_expires,
+                    allowed_hosts=serializer.validated_data.get(
+                        'allowed_hosts'
+                    ),
                 )
         except Exception as ex:
             raise APIException(

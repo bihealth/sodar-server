@@ -386,7 +386,7 @@ class TestIrodsAPITaskflow(
             TICKET_MODE_READ,
             self.irods_backend.get_sample_path(self.project),
             TICKET_STR,
-            expiry_date=expiry_date,
+            date_expires=expiry_date,
         )
         ticket_res = self._get_ticket_res(ticket)
         self.assertEqual(
@@ -402,7 +402,7 @@ class TestIrodsAPITaskflow(
             TICKET_MODE_READ,
             self.irods_backend.get_sample_path(self.project),
             TICKET_STR,
-            hosts=['127.0.0.1'],
+            allowed_hosts=['127.0.0.1'],
         )
         self.assertEqual(type(ticket), Ticket)
         self.assertEqual(ticket.string, TICKET_STR)
@@ -421,7 +421,7 @@ class TestIrodsAPITaskflow(
             TICKET_MODE_READ,
             self.irods_backend.get_sample_path(self.project),
             TICKET_STR,
-            hosts='127.0.0.1,192.168.0.1',
+            allowed_hosts='127.0.0.1,192.168.0.1',
         )
         self.assertEqual(type(ticket), Ticket)
         self.assertEqual(ticket.string, TICKET_STR)
@@ -451,7 +451,7 @@ class TestIrodsAPITaskflow(
 
         date_expires = timezone.now()
         self.irods_backend.update_ticket(
-            self.irods, TICKET_STR, expiry_date=date_expires
+            self.irods, TICKET_STR, date_expires=date_expires
         )
         ticket_res = self._get_ticket_res(ticket)
         obj_exp = date_expires.replace(tzinfo=pytz.timezone('GMT'))
@@ -469,7 +469,7 @@ class TestIrodsAPITaskflow(
             TICKET_MODE_READ,
             self.irods_backend.get_sample_path(self.project),
             TICKET_STR,
-            expiry_date=date_expires,
+            date_expires=date_expires,
         )
         ticket_res = self._get_ticket_res(ticket)
         obj_exp = date_expires.replace(tzinfo=pytz.timezone('GMT'))
@@ -479,7 +479,7 @@ class TestIrodsAPITaskflow(
         )
 
         self.irods_backend.update_ticket(
-            self.irods, TICKET_STR, expiry_date=None
+            self.irods, TICKET_STR, date_expires=None
         )
         ticket_res = self._get_ticket_res(ticket)
         self.assertEqual(ticket_res[TicketQuery.Ticket.expiry_ts], None)
@@ -499,7 +499,7 @@ class TestIrodsAPITaskflow(
         self.assertEqual(len(host_res), 0)
 
         self.irods_backend.update_ticket(
-            self.irods, TICKET_STR, hosts=['127.0.0.1', '192.168.0.1']
+            self.irods, TICKET_STR, allowed_hosts=['127.0.0.1', '192.168.0.1']
         )
         ticket_res = self._get_ticket_res(ticket)
         host_res = self._get_host_res(ticket_res[TicketQuery.Ticket.id])
@@ -521,7 +521,7 @@ class TestIrodsAPITaskflow(
         self.assertEqual(len(host_res), 0)
 
         self.irods_backend.update_ticket(
-            self.irods, TICKET_STR, hosts='127.0.0.1,192.168.0.1'
+            self.irods, TICKET_STR, allowed_hosts='127.0.0.1,192.168.0.1'
         )
         ticket_res = self._get_ticket_res(ticket)
         host_res = self._get_host_res(ticket_res[TicketQuery.Ticket.id])
@@ -536,7 +536,7 @@ class TestIrodsAPITaskflow(
             TICKET_MODE_READ,
             self.irods_backend.get_sample_path(self.project),
             TICKET_STR,
-            hosts=['127.0.0.1'],
+            allowed_hosts=['127.0.0.1'],
         )
         ticket_res = self._get_ticket_res(ticket)
         self.assertEqual(ticket_res[TicketQuery.Ticket.expiry_ts], None)
@@ -546,7 +546,7 @@ class TestIrodsAPITaskflow(
         self.assertEqual(host_res, ['127.0.0.1'])
 
         self.irods_backend.update_ticket(
-            self.irods, TICKET_STR, hosts=['127.0.0.1', '192.168.0.1']
+            self.irods, TICKET_STR, allowed_hosts=['127.0.0.1', '192.168.0.1']
         )
         ticket_res = self._get_ticket_res(ticket)
         host_res = self._get_host_res(ticket_res[TicketQuery.Ticket.id])
@@ -561,7 +561,7 @@ class TestIrodsAPITaskflow(
             TICKET_MODE_READ,
             self.irods_backend.get_sample_path(self.project),
             TICKET_STR,
-            hosts=['127.0.0.1', '192.168.0.1'],
+            allowed_hosts=['127.0.0.1', '192.168.0.1'],
         )
         ticket_res = self._get_ticket_res(ticket)
         self.assertEqual(ticket_res[TicketQuery.Ticket.expiry_ts], None)
@@ -570,7 +570,9 @@ class TestIrodsAPITaskflow(
         host_res = [h[TicketQuery.AllowedHosts.host] for h in host_res]
         self.assertEqual(host_res, ['127.0.0.1', '192.168.0.1'])
 
-        self.irods_backend.update_ticket(self.irods, TICKET_STR, hosts=None)
+        self.irods_backend.update_ticket(
+            self.irods, TICKET_STR, allowed_hosts=None
+        )
         ticket_res = self._get_ticket_res(ticket)
         host_res = self._get_host_res(ticket_res[TicketQuery.Ticket.id])
         self.assertEqual(len(host_res), 0)
@@ -583,7 +585,7 @@ class TestIrodsAPITaskflow(
             TICKET_MODE_READ,
             self.irods_backend.get_sample_path(self.project),
             TICKET_STR,
-            hosts=['127.0.0.1', '192.168.0.1'],
+            allowed_hosts=['127.0.0.1', '192.168.0.1'],
         )
         ticket_res = self._get_ticket_res(ticket)
         self.assertEqual(ticket_res[TicketQuery.Ticket.expiry_ts], None)
@@ -593,7 +595,7 @@ class TestIrodsAPITaskflow(
         self.assertEqual(host_res, ['127.0.0.1', '192.168.0.1'])
 
         self.irods_backend.update_ticket(
-            self.irods, TICKET_STR, hosts=['192.168.0.1']
+            self.irods, TICKET_STR, allowed_hosts=['192.168.0.1']
         )
         ticket_res = self._get_ticket_res(ticket)
         host_res = self._get_host_res(ticket_res[TicketQuery.Ticket.id])
