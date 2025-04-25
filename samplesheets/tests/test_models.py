@@ -393,6 +393,7 @@ class IrodsAccessTicketMixin:
         label=None,
         ticket=None,
         date_expires=None,  # never expires
+        allowed_hosts=None,
     ):
         """Create an IrodsAccessTicket object in the database"""
         if not ticket:
@@ -405,6 +406,9 @@ class IrodsAccessTicketMixin:
             'label': label,
             'user': user,
             'date_expires': date_expires,
+            'allowed_hosts': (
+                ','.join(h for h in allowed_hosts) if allowed_hosts else None
+            ),
         }
         return IrodsAccessTicket.objects.create(**values)
 
@@ -1451,6 +1455,7 @@ class TestIrodsAccessTicket(IrodsAccessTicketMixin, SamplesheetsModelTestBase):
             path=IRODS_TICKET_PATH,
             label=IRODS_TICKET_LABEL,
             user=self.user_owner,
+            allowed_hosts=['127.0.0.1', '192.168.0.1'],
         )
 
     def test_initialization(self):
@@ -1465,6 +1470,7 @@ class TestIrodsAccessTicket(IrodsAccessTicketMixin, SamplesheetsModelTestBase):
             'user': self.user_owner.pk,
             'sodar_uuid': self.ticket.sodar_uuid,
             'date_expires': None,
+            'allowed_hosts': '127.0.0.1,192.168.0.1',
         }
         self.assertEqual(model_to_dict(self.ticket), expected)
 
@@ -1589,6 +1595,18 @@ class TestIrodsAccessTicket(IrodsAccessTicketMixin, SamplesheetsModelTestBase):
             self.ticket.get_date_expires(),
             timezone.localtime(self.ticket.date_expires).strftime('%Y-%m-%d'),
         )
+
+    def test_get_allowed_hosts_list(self):
+        """Test get_allowed_hosts_lists()"""
+        self.assertEqual(self.ticket.allowed_hosts, '127.0.0.1,192.168.0.1')
+        self.assertEqual(
+            self.ticket.get_allowed_hosts_list(), ['127.0.0.1', '192.168.0.1']
+        )
+
+    def test_get_allowed_hosts_list_empty(self):
+        """Test get_allowed_hosts_lists() with no hosts"""
+        self.ticket.allowed_hosts = None
+        self.assertEqual(self.ticket.get_allowed_hosts_list(), [])
 
 
 class TestIrodsDataRequest(IrodsDataRequestMixin, SamplesheetsModelTestBase):

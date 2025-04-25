@@ -15,6 +15,11 @@ access to SODAR data from other software.
     collections regardless of their project roles. Care should be taken in what
     is shared publicly and to whom tickets are provided.
 
+.. hint::
+
+    From SODAR v1.1 onwards it is possible to restrict ticket access to users
+    from certain hosts. Read further for instructions on how to do this.
+
 
 Browsing Access Tickets
 =======================
@@ -34,7 +39,8 @@ For each ticket, the list displays the following information:
 Name
     Collection name and label for the ticket. The name works as a link to the
     collection in Davrods. A button for copying the ticket link with the
-    access token included is also included.
+    access token included is also included. If access to the ticket is
+    restricted to specific hosts, those will be displayed here as badges.
 Ticket
     The token string of the access ticket.
 User
@@ -76,8 +82,16 @@ Path
 Label
     Optional text label for the ticket. This will be displayed for the ticket
     to e.g. inform other users of the purpose for which the ticket was created.
-Expiry Date
+Expiry date
     Optional date for ticket expiry.
+Allowed hosts
+    Optional comma-separated list of hosts from which access to the ticket URL
+    is allowed. Hosts can be given as DNS host names like ``site.example.com``
+    or IP addresses such as ``127.0.0.1``. A project-specific default value for
+    allowed hosts can be set by a project owner or delegate in the
+    :ref:`project update view <ui_project_update>`. This can be overridden for
+    each ticket if needed. If no hosts are listed for a ticket, access is
+    allowed from any host for those who know the ticket URL.
 
 
 Updating Access Tickets

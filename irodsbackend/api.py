@@ -771,7 +771,7 @@ class IrodsAPI:
         return query
 
     def issue_ticket(
-        self, irods, mode, path, ticket_str=None, expiry_date=None
+        self, irods, mode, path, ticket_str=None, expiry_date=None, hosts=None
     ):
         """
         Issue ticket for a specific iRODS collection or data object.
@@ -781,8 +781,11 @@ class IrodsAPI:
         :param path: iRODS path for creating the ticket
         :param ticket_str: String to use as the ticket
         :param expiry_date: Expiry date (DateTime object, optional)
+        :param hosts: Restrict access to given hosts (string or list, optional)
         :return: irods client Ticket object
         """
+        if isinstance(hosts, str):
+            hosts = hosts.split(',')
         mode = mode.lower()
         if mode not in [TICKET_MODE_READ, TICKET_MODE_WRITE]:
             raise ValueError(
@@ -812,7 +815,78 @@ class IrodsAPI:
                 'expire',
                 exp_str,
             )
+        if hosts:
+            for host in hosts:
+                self._send_request(
+                    irods,
+                    'TICKET_ADMIN_AN',
+                    'mod',
+                    ticket._ticket,
+                    'add',
+                    'host',
+                    host,
+                )
         return ticket
+
+    def update_ticket(self, irods, ticket_str, expiry_date=None, hosts=None):
+        """
+        Update ticket in iRODS. Allows updating the expiry date and allowed
+        hosts.
+
+        :param irods: iRODSSession object
+        :param ticket_str: String to identify the ticket
+        :param expiry_date: Expiry date (DateTime object, optional)
+        :param hosts: Restrict access to given hosts (string or list, optional)
+        """
+        if not hosts:
+            hosts = []
+        elif isinstance(hosts, str):
+            hosts = hosts.split(',')
+        if expiry_date:
+            exp_str = expiry_date.strftime('%Y-%m-%d.%H:%M:%S')
+        else:
+            exp_str = ''
+        # Update expiry
+        self._send_request(
+            irods, 'TICKET_ADMIN_AN', 'mod', ticket_str, 'expire', exp_str
+        )
+        # Update hosts
+        ticket_query = irods.query(TicketQuery.Ticket).filter(
+            TicketQuery.Ticket.string == ticket_str
+        )
+        ticket_res = list(ticket_query)[0]
+        # Query for current list of hosts
+        host_query = irods.query(TicketQuery.AllowedHosts).filter(
+            TicketQuery.AllowedHosts.ticket_id
+            == ticket_res[TicketQuery.Ticket.id]
+        )
+        host_res = list(host_query)
+        if host_res:
+            host_res = [h[TicketQuery.AllowedHosts.host] for h in host_res]
+        # If host in iRODS is not in arg, remove
+        for host in host_res:
+            if host not in hosts:
+                self._send_request(
+                    irods,
+                    'TICKET_ADMIN_AN',
+                    'mod',
+                    ticket_str,
+                    'remove',
+                    'host',
+                    host,
+                )
+        # If host in arg is not in the iRODS, add
+        for host in hosts:
+            if host not in host_res:
+                self._send_request(
+                    irods,
+                    'TICKET_ADMIN_AN',
+                    'mod',
+                    ticket_str,
+                    'add',
+                    'host',
+                    host,
+                )
 
     def get_ticket(self, irods, ticket_str):
         """

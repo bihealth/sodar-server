@@ -694,7 +694,56 @@ class TestIrodsAccessTicketRetrieveAPIView(IrodsAccessTicketAPITestBase):
         """Test IrodsAccessTicketRetrieveAPIView GET"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         with self.login(self.user_contributor):
-            response = self.client.get(self.url)
+            response = self.request_knox(self.url)
+        self.assertEqual(response.status_code, 200)
+        local_date_created = self.ticket.date_created.astimezone(
+            timezone.get_current_timezone()
+        )
+        expected = {
+            'sodar_uuid': str(self.ticket.sodar_uuid),
+            'label': self.ticket.label,
+            'ticket': self.ticket.ticket,
+            'study': str(self.study.sodar_uuid),
+            'assay': str(self.assay.sodar_uuid),
+            'path': self.ticket.path,
+            'date_created': local_date_created.isoformat(),
+            'date_expires': self.ticket.date_expires,
+            'allowed_hosts': [],
+            'user': str(self.user.sodar_uuid),
+            'is_active': self.ticket.is_active(),
+        }
+        self.assertEqual(json.loads(response.content), expected)
+
+    def test_get_hosts(self):
+        """Test GET with allowed hosts"""
+        self.ticket.allowed_hosts = '127.0.0.1,192.168.0.1'
+        self.ticket.save()
+        with self.login(self.user_contributor):
+            response = self.request_knox(self.url)
+        self.assertEqual(response.status_code, 200)
+        local_date_created = self.ticket.date_created.astimezone(
+            timezone.get_current_timezone()
+        )
+        expected = {
+            'sodar_uuid': str(self.ticket.sodar_uuid),
+            'label': self.ticket.label,
+            'ticket': self.ticket.ticket,
+            'study': str(self.study.sodar_uuid),
+            'assay': str(self.assay.sodar_uuid),
+            'path': self.ticket.path,
+            'date_created': local_date_created.isoformat(),
+            'date_expires': self.ticket.date_expires,
+            'allowed_hosts': ['127.0.0.1', '192.168.0.1'],
+            'user': str(self.user.sodar_uuid),
+            'is_active': self.ticket.is_active(),
+        }
+        self.assertEqual(json.loads(response.content), expected)
+
+    def test_get_v1_0(self):
+        """Test GET with API version 1.0"""
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        with self.login(self.user_contributor):
+            response = self.request_knox(self.url, version='1.0')
         self.assertEqual(response.status_code, 200)
         local_date_created = self.ticket.date_created.astimezone(
             timezone.get_current_timezone()
@@ -710,7 +759,7 @@ class TestIrodsAccessTicketRetrieveAPIView(IrodsAccessTicketAPITestBase):
             'date_expires': self.ticket.date_expires,
             'user': str(self.user.sodar_uuid),
             'is_active': self.ticket.is_active(),
-        }
+        }  # No allowed_hosts field
         self.assertEqual(json.loads(response.content), expected)
 
 
@@ -737,7 +786,7 @@ class TestIrodsAccessTicketListAPIView(IrodsAccessTicketAPITestBase):
         """Test IrodsAccessTicketListAPIView GET"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         with self.login(self.user_contributor):
-            response = self.client.get(self.url)
+            response = self.request_knox(self.url)
         self.assertEqual(response.status_code, 200)
         expected = {
             'sodar_uuid': str(self.ticket.sodar_uuid),
@@ -748,6 +797,7 @@ class TestIrodsAccessTicketListAPIView(IrodsAccessTicketAPITestBase):
             'path': self.ticket.path,
             'date_created': self.get_drf_datetime(self.ticket.date_created),
             'date_expires': self.ticket.date_expires,
+            'allowed_hosts': [],
             'user': str(self.user.sodar_uuid),
             'is_active': self.ticket.is_active(),
         }
@@ -766,7 +816,7 @@ class TestIrodsAccessTicketListAPIView(IrodsAccessTicketAPITestBase):
         )
         self.assertEqual(IrodsAccessTicket.objects.count(), 2)
         with self.login(self.user_contributor):
-            response = self.client.get(self.url + '?active=1')
+            response = self.request_knox(self.url + '?active=1')
         self.assertEqual(response.status_code, 200)
         expected = {
             'sodar_uuid': str(self.ticket.sodar_uuid),
@@ -777,6 +827,7 @@ class TestIrodsAccessTicketListAPIView(IrodsAccessTicketAPITestBase):
             'path': self.ticket.path,
             'date_created': self.get_drf_datetime(self.ticket.date_created),
             'date_expires': self.ticket.date_expires,
+            'allowed_hosts': [],
             'user': str(self.user.sodar_uuid),
             'is_active': self.ticket.is_active(),
         }
@@ -786,7 +837,7 @@ class TestIrodsAccessTicketListAPIView(IrodsAccessTicketAPITestBase):
         """Test GET with pagination"""
         url = self.url + '?page=1'
         with self.login(self.user_contributor):
-            response = self.client.get(url)
+            response = self.request_knox(url)
         self.assertEqual(response.status_code, 200)
         expected = {
             'count': 1,
@@ -804,12 +855,33 @@ class TestIrodsAccessTicketListAPIView(IrodsAccessTicketAPITestBase):
                         self.ticket.date_created
                     ),
                     'date_expires': self.ticket.date_expires,
+                    'allowed_hosts': [],
                     'user': str(self.user.sodar_uuid),
                     'is_active': self.ticket.is_active(),
                 }
             ],
         }
         self.assertEqual(json.loads(response.content), expected)
+
+    def test_get_v1_0(self):
+        """Test GET with API version 1.0"""
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        with self.login(self.user_contributor):
+            response = self.request_knox(self.url, version='1.0')
+        self.assertEqual(response.status_code, 200)
+        expected = {
+            'sodar_uuid': str(self.ticket.sodar_uuid),
+            'label': self.ticket.label,
+            'ticket': self.ticket.ticket,
+            'study': str(self.study.sodar_uuid),
+            'assay': str(self.assay.sodar_uuid),
+            'path': self.ticket.path,
+            'date_created': self.get_drf_datetime(self.ticket.date_created),
+            'date_expires': self.ticket.date_expires,
+            'user': str(self.user.sodar_uuid),
+            'is_active': self.ticket.is_active(),
+        }  # No allowed_hosts
+        self.assertEqual(json.loads(response.content), [expected])
 
 
 class TestIrodsDataRequestRetrieveAPIView(

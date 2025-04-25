@@ -123,6 +123,7 @@ SHEETS_EXTERNAL_LINK_PATH = os.path.join(
 )
 SHEETS_IGV_OMIT_BAM = ['*dragen_evidence.bam']
 SHEETS_IGV_OMIT_VCF = ['*cnv.vcf.gz', '*ploidy.vcf.gz', '*sv.vcf.gz']
+SHEETS_IRODS_TICKET_HOSTS = []
 SHEETS_API_FILE_EXISTS_RESTRICT = False
 SHEETS_PARSER_WARNING_SAVE_LIMIT = 100
 

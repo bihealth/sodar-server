@@ -413,7 +413,6 @@ class TestIrodsAccessTicketListView(
         )
         self.login_and_redirect(self.user_contributor, self.url)
         elem = self.selenium.find_element(By.ID, 'sodar-ss-btn-ticket-create')
-        self.assertIsNotNone(elem)
         self.assertIsNone(elem.get_attribute('disabled'))
         with self.assertRaises(NoSuchElementException):
             self.selenium.find_element(By.ID, 'sodar-ss-ticket-alert-empty')
@@ -428,6 +427,10 @@ class TestIrodsAccessTicketListView(
             By.CLASS_NAME, 'sodar-ss-ticket-item-title'
         ).find_element(By.TAG_NAME, 'a')
         self.assertNotIn('text-strikethrough', elem.get_attribute('class'))
+        with self.assertRaises(NoSuchElementException):
+            self.selenium.find_element(
+                By.CLASS_NAME, 'sodar-ss-ticket-item-host'
+            )
         elem = self.selenium.find_element(
             By.CLASS_NAME, 'sodar-ss-ticket-item-expiry'
         )
@@ -453,6 +456,26 @@ class TestIrodsAccessTicketListView(
         )
         self.assertEqual(elem.text, 'Expired')
         self.assertIn('text-danger', elem.get_attribute('class'))
+
+    def test_render_ticket_hosts(self):
+        """Test rendering ticket with allowed hosts set"""
+        self.make_irods_ticket(
+            study=self.study,
+            assay=self.assay,
+            path='/sodarZone/some/path',
+            user=self.user_contributor,
+            allowed_hosts=['127.0.0.1'],
+        )
+        self.login_and_redirect(self.user_contributor, self.url)
+        items = self.selenium.find_elements(
+            By.CLASS_NAME, 'sodar-ss-ticket-item'
+        )
+        self.assertEqual(len(items), 1)
+        self.assertIsNotNone(
+            self.selenium.find_element(
+                By.CLASS_NAME, 'sodar-ss-ticket-item-host'
+            )
+        )
 
     def test_render_read_only(self):
         """Test rendering with site read-only mode"""

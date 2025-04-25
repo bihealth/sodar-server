@@ -215,6 +215,16 @@ SHEETS_APP_SETTINGS = [
         'accepting and rejecting',
         user_modifiable=True,
     ),
+    PluginAppSettingDef(
+        name='irods_ticket_hosts',
+        scope=APP_SETTING_SCOPE_PROJECT,
+        type=APP_SETTING_TYPE_STRING,
+        default=', '.join(settings.SHEETS_IRODS_TICKET_HOSTS),
+        label='Allowed hosts for iRODS access tickets',
+        description='Default allowed hosts for iRODS access tickets as a '
+        'comma-separated list.',
+        user_modifiable=True,
+    ),
 ]
 SHEETS_INFO_SETTINGS = [
     'SHEETS_ALLOW_CRITICAL',

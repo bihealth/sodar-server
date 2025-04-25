@@ -1,5 +1,6 @@
 """API view model serializers for the samplesheets app"""
 
+from packaging.version import parse as parse_version
 from typing import Optional
 
 from django.utils import timezone
@@ -149,6 +150,7 @@ class IrodsAccessTicketSerializer(
 ):
     """Serializer for the IrodsAccessTicket model"""
 
+    allowed_hosts = serializers.ListField()
     is_active = serializers.SerializerMethodField()
     user = serializers.SlugRelatedField(slug_field='sodar_uuid', read_only=True)
 
@@ -163,6 +165,7 @@ class IrodsAccessTicketSerializer(
             'date_created',
             'date_expires',
             'label',
+            'allowed_hosts',
             'is_active',
             'sodar_uuid',
         ]
@@ -198,6 +201,12 @@ class IrodsAccessTicketSerializer(
             attrs['path'] = self.instance.path
             attrs['assay'] = self.instance.assay
 
+        attrs['allowed_hosts'] = (
+            ','.join(attrs['allowed_hosts'])
+            if attrs.get('allowed_hosts')
+            else None
+        )
+
         error = self.validate_data(
             irods_backend, self.context['project'], self.instance, attrs
         )
@@ -211,4 +220,11 @@ class IrodsAccessTicketSerializer(
         ret['assay'] = (
             str(instance.assay.sodar_uuid) if instance.assay else None
         )
+        # If API version <1.1, omit allowed_hosts
+        if parse_version(self.context['request'].version) >= parse_version(
+            '1.1'
+        ):
+            ret['allowed_hosts'] = instance.get_allowed_hosts_list()
+        else:
+            ret.pop('allowed_hosts', None)
         return ret

@@ -19,6 +19,8 @@ Added
     - ``get_objects()`` checksum support (#2038)
     - ``get_objects()`` offset support (#1997)
     - ``get_group_name()`` owner/delegate group support (#2109)
+    - ``issue_ticket()`` allowed hosts support (#1439)
+    - ``IrodsAPI.update_ticket()`` method (#1439)
 - **Landingzones**
     - Site read-only mode support (#2051)
     - File type prohibiting by file name suffix (#2064)
@@ -35,6 +37,9 @@ Added
     - ``ProjectIrodsFileListAPIView`` permission tests (#2104)
     - ``SHEETS_PARSER_WARNING_SAVE_LIMIT`` Django setting (#2120)
     - Database saving limit for AltamISA warnings (#2120)
+    - iRODS access ticket allowed hosts support (#1439)
+    - ``IrodsAccessTicket.allowed_hosts`` field and ``get_allowed_hosts_list()`` helper (#1439)
+    - ``SHEETS_IRODS_TICKET_HOSTS`` Django setting (#1439)
 - **Taskflowbackend**
     - Project deletion support (#2051)
     - Zone validation and moving progress indicators (#2024)
@@ -89,6 +94,8 @@ Fixed
 - **Landingzones**
     - Zone delete timeline status not updated with missing collection (#2096)
     - Sample Sheets link not displayed in UI after zone move (#2106)
+- **Samplesheets**
+    - iRODS access ticket expiry date not updated on ticket update (#2140)
 - **Taskflowbackend**
     - Checksum calculation failing silently if maximum retries reached (#2131)
     - Checksum calculation retry done for all exception types (#2132)

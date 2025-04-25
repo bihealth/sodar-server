@@ -436,7 +436,7 @@ class IrodsAccessTicketForm(IrodsAccessTicketValidateMixin, forms.ModelForm):
 
     class Meta:
         model = IrodsAccessTicket
-        fields = ('path', 'label', 'date_expires')
+        fields = ('path', 'label', 'date_expires', 'allowed_hosts')
 
     def __init__(self, project=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -458,18 +458,41 @@ class IrodsAccessTicketForm(IrodsAccessTicketValidateMixin, forms.ModelForm):
         self.fields['date_expires'].widget = forms.widgets.DateInput(
             attrs={'type': 'date'}, format='%Y-%m-%d'
         )
+        # Set/format initial allowed hosts value
+        if self.instance.pk:
+            self.initial['allowed_hosts'] = ', '.join(
+                self.instance.get_allowed_hosts_list()
+            )
+        else:
+            default_hosts = app_settings.get(
+                APP_NAME, 'irods_ticket_hosts', project=project
+            )
+            if default_hosts:
+                self.initial['allowed_hosts'] = ', '.join(
+                    [h.strip() for h in default_hosts.split(',') if h.strip()]
+                )
+            else:
+                self.initial['allowed_hosts'] = ''
 
     def clean(self):
         cleaned_data = super().clean()
         irods_backend = get_backend_api('omics_irods')
         if self.instance.pk:
             cleaned_data['path'] = self.instance.path
+        if cleaned_data['allowed_hosts']:
+            cleaned_data['allowed_hosts'] = ','.join(
+                [
+                    h.strip()
+                    for h in cleaned_data['allowed_hosts'].split(',')
+                    if h.strip()
+                ]
+            )
         error = self.validate_data(
             irods_backend, self.project, self.instance, cleaned_data
         )
         if error:
             self.add_error(*error)
-        return self.cleaned_data
+        return cleaned_data
 
 
 class IrodsDataRequestForm(IrodsDataRequestValidateMixin, forms.ModelForm):

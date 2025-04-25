@@ -86,11 +86,11 @@ table_builder = SampleSheetTableBuilder()
 PROJECT_ROLE_GUEST = SODAR_CONSTANTS['PROJECT_ROLE_GUEST']
 
 # Local constants
+APP_NAME = 'samplesheets'
 SAMPLESHEETS_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar.samplesheets+json'
 SAMPLESHEETS_API_ALLOWED_VERSIONS = ['1.0', '1.1']
 SAMPLESHEETS_API_DEFAULT_VERSION = '1.1'
 MD5_RE = re.compile(r'([a-fA-F\d]{32})')
-APP_NAME = 'samplesheets'
 IRODS_QUERY_ERROR_MSG = 'Exception querying iRODS objects'
 IRODS_REQUEST_EX_MSG = 'iRODS data request failed'
 IRODS_TICKET_EX_MSG = 'iRODS access ticket failed'
@@ -100,6 +100,9 @@ FILE_EXISTS_RESTRICT_MSG = (
     'above in any project (SHEETS_API_FILE_EXISTS_RESTRICT=True)'
 )
 FILE_LIST_PAGINATE_VERSION_MSG = 'Pagination not supported in API version 1.0'
+HOST_VERSION_ERR_MSG = (
+    'Field allowed_hosts requires samplesheets API version 1.1 or above'
+)
 
 
 # Base Classes and Mixins ------------------------------------------------------
@@ -415,9 +418,14 @@ class IrodsAccessTicketRetrieveAPIView(
     - ``study``: Study UUID (string)
     - ``date_created``: Creation datetime (YYYY-MM-DDThh:mm:ssZ)
     - ``date_expires``: Expiry datetime (YYYY-MM-DDThh:mm:ssZ or null)
+    - ``allowed_hosts``: Allowed hosts for ticket access (list)
     - ``user``: UUID of user who created the request (string)
     - ``is_active``: Whether the request is currently active (boolean)
     - ``sodar_uuid``: IrodsAccessTicket UUID (string)
+
+    **Version Changes**:
+
+    - ``1.1``: Add ``allowed_hosts`` field
     """
 
     lookup_field = 'sodar_uuid'
@@ -483,8 +491,13 @@ class IrodsAccessTicketCreateAPIView(
     - ``path``: Full iRODS path (string)
     - ``label``: Text label for ticket (string, optional)
     - ``date_expires``: Expiration date (YYYY-MM-DDThh:mm:ssZ, optional)
+    - ``allowed_hosts``: Allowed hosts for ticket access (list, optional)
 
     **Returns:** Ticket dict, see ``IrodsAccessTicketRetrieveAPIView``
+
+    **Version Changes**:
+
+    - ``1.1``: Add ``allowed_hosts`` field
     """
 
     permission_required = 'samplesheets.edit_sheet'
@@ -498,6 +511,20 @@ class IrodsAccessTicketCreateAPIView(
         context['user'] = self.request.user
         return context
 
+    def create(self, request, *args, **kwargs):
+        # If API v1.0, fail if attribute is present, set default if not
+        version = parse_version(self.request.version)
+        if version < parse_version('1.1'):
+            if 'allowed_hosts' in request.data:
+                raise ValidationError(HOST_VERSION_ERR_MSG)
+            default_hosts = app_settings.get(
+                APP_NAME, 'irods_ticket_hosts', project=self.get_project()
+            )
+            request.data['allowed_hosts'] = [
+                h.strip() for h in default_hosts.split(',') if h.strip()
+            ]
+        return super().create(request, *args, **kwargs)
+
     def perform_create(self, serializer):
         """Override perform_create() to create IrodsAccessTicket"""
         irods_backend = get_backend_api('omics_irods')
@@ -509,6 +536,7 @@ class IrodsAccessTicketCreateAPIView(
                     serializer.validated_data.get('path'),
                     ticket_str=build_secret(16),
                     expiry_date=serializer.validated_data.get('date_expires'),
+                    hosts=serializer.validated_data.get('allowed_hosts'),
                 )
         except Exception as ex:
             raise ValidationError(
@@ -540,8 +568,13 @@ class IrodsAccessTicketUpdateAPIView(
 
     - ``label``: Label (string)
     - ``date_expires``: Expiration date (YYYY-MM-DDThh:mm:ssZ, optional)
+    - ``allowed_hosts``: Allowed hosts for ticket access (list, optional)
 
     **Returns:** Ticket dict, see ``IrodsAccessTicketRetrieveAPIView``
+
+    **Version Changes**:
+
+    - ``1.1``: Add ``allowed_hosts`` field
     """
 
     lookup_url_kwarg = 'irodsaccessticket'
@@ -549,11 +582,41 @@ class IrodsAccessTicketUpdateAPIView(
     serializer_class = IrodsAccessTicketSerializer
     queryset_project_field = 'study__investigation__project'
 
+    def update(self, request, *args, **kwargs):
+        version = parse_version(self.request.version)
+        if version < parse_version('1.1'):
+            if 'allowed_hosts' in request.data:
+                raise ValidationError(HOST_VERSION_ERR_MSG)
+            # Set current value for serializer
+            obj = self.get_object()
+            request.data['allowed_hosts'] = [
+                h.strip() for h in obj.allowed_hosts.split(',') if h.strip()
+            ]
+        return super().update(request, *args, **kwargs)
+
     def perform_update(self, serializer):
         """Override perform_update() to update IrodsAccessTicket"""
-        if not set(serializer.initial_data) & {'label', 'date_expires'}:
+        irods_backend = get_backend_api('omics_irods')
+        if not set(serializer.initial_data) & {
+            'label',
+            'date_expires',
+            'allowed_hosts',
+        }:
             raise ValidationError(IRODS_TICKET_NO_UPDATE_FIELDS_MSG)
         serializer.save()
+        # Update ticket in iRODS
+        try:
+            with irods_backend.get_session() as irods:
+                irods_backend.update_ticket(
+                    irods,
+                    ticket_str=serializer.instance.ticket,
+                    expiry_date=serializer.instance.date_expires,
+                    hosts=serializer.validated_data.get('allowed_hosts'),
+                )
+        except Exception as ex:
+            raise APIException(
+                'Exception updating iRODS access ticket: {}'.format(ex),
+            )
         # Add timeline event
         self.add_tl_event(serializer.instance, 'update')
         # Add app alerts to owners/delegates

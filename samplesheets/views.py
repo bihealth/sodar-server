@@ -2294,6 +2294,7 @@ class IrodsAccessTicketCreateView(
                     form.cleaned_data['path'],
                     ticket_str=build_secret(16),
                     expiry_date=form.cleaned_data.get('date_expires'),
+                    hosts=form.cleaned_data.get('allowed_hosts'),
                 )
         except Exception as ex:
             messages.error(
@@ -2338,19 +2339,35 @@ class IrodsAccessTicketUpdateView(
     slug_field = 'sodar_uuid'
 
     def form_valid(self, form):
+        irods_backend = get_backend_api('omics_irods')
+        project = self.get_project()
         obj = form.save()
+        redirect_url = reverse(
+            'samplesheets:irods_tickets',
+            kwargs={'project': project.sodar_uuid},
+        )
+        try:
+            with irods_backend.get_session() as irods:
+                irods_backend.update_ticket(
+                    irods,
+                    ticket_str=obj.ticket,
+                    expiry_date=form.cleaned_data.get('date_expires'),
+                    hosts=form.cleaned_data.get('allowed_hosts'),
+                )
+        except Exception as ex:
+            messages.error(
+                self.request,
+                'Exception updating iRODS access ticket: {}'.format(ex),
+            )
+            return redirect(redirect_url)
+
         self.add_tl_event(obj, 'update')
         self.create_app_alerts(obj, 'update', self.request.user)
         messages.success(
             self.request,
             'iRODS access ticket "{}" updated.'.format(obj.get_display_name()),
         )
-        return redirect(
-            reverse(
-                'samplesheets:irods_tickets',
-                kwargs={'project': self.get_project().sodar_uuid},
-            )
-        )
+        return redirect(redirect_url)
 
 
 class IrodsAccessTicketDeleteView(

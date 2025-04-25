@@ -4,6 +4,7 @@ Tests for REST API views in the samplesheets app with SODAR Taskflow enabled
 
 import json
 import os
+import pytz
 
 from datetime import timedelta, datetime
 
@@ -15,11 +16,15 @@ from django.urls import reverse
 from django.utils import timezone
 
 # Projectroles dependency
+from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 
 # Timeline dependency
 from timeline.models import TimelineEvent
+
+# Irodsbackend dependency
+from irodsbackend.api import TICKET_MODE_READ
 
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import (
@@ -60,10 +65,15 @@ from samplesheets.views_api import (
     FILE_EXISTS_RESTRICT_MSG,
 )
 
+
+app_settings = AppSettingAPI()
+
+
 # SODAR constants
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 # Local constants
+APP_NAME = 'samplesheets'
 SHEET_TSV_DIR = SHEET_DIR + 'i_small2/'
 SHEET_PATH = SHEET_DIR + 'i_small2.zip'
 SHEET_PATH_EDITED = SHEET_DIR + 'i_small2_edited.zip'
@@ -367,6 +377,7 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
             'path': self.path,
             'label': TICKET_LABEL,
             'date_expires': self.date_expires,
+            'allowed_hosts': [],
         }
 
     def test_post(self):
@@ -386,6 +397,7 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
             ticket.date_expires,
             datetime.strptime(self.date_expires, '%Y-%m-%dT%H:%M:%S.%f%z'),
         )
+        self.assertEqual(ticket.allowed_hosts, None)
         self.assertEqual(ticket.user, self.user)
         self.assertEqual(ticket.study, self.study)
         self.assertEqual(ticket.assay, self.assay)
@@ -403,12 +415,14 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
         )
 
         # Assert ticket state in iRODS
-        irods_ticket = self.get_irods_ticket(ticket)
-        self.assertEqual(irods_ticket[TicketQuery.Ticket.type], 'read')
-        self.assertIsNotNone(irods_ticket[TicketQuery.Ticket.expiry_ts])
+        ticket_res = self.get_irods_ticket(ticket)
+        self.assertEqual(ticket_res[TicketQuery.Ticket.type], TICKET_MODE_READ)
+        self.assertIsNotNone(ticket_res[TicketQuery.Ticket.expiry_ts])
         self.assertEqual(
-            irods_ticket[TicketQuery.Collection.name], self.coll.path
+            ticket_res[TicketQuery.Collection.name], self.coll.path
         )
+        host_res = self.get_ticket_hosts(ticket_res[TicketQuery.Ticket.id])
+        self.assertEqual(len(host_res), 0)
 
     def test_post_contributor(self):
         """Test POST as contributor"""
@@ -447,6 +461,52 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         ticket = IrodsAccessTicket.objects.first()
         self.assertIsNone(ticket.date_expires)
+        ticket_res = self.get_irods_ticket(ticket)
+        self.assertIsNone(ticket_res[TicketQuery.Ticket.expiry_ts])
+
+    def test_post_hosts(self):
+        """Test POST with allowed hosts"""
+        self.post_data['allowed_hosts'] = ['127.0.0.1', '192.168.0.1']
+        self.assertEqual(IrodsAccessTicket.objects.count(), 0)
+        response = self.request_knox(self.url, 'POST', data=self.post_data)
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        ticket = IrodsAccessTicket.objects.first()
+        self.assertEqual(ticket.allowed_hosts, '127.0.0.1,192.168.0.1')
+        ticket_res = self.get_irods_ticket(ticket)
+        host_res = self.get_ticket_hosts(ticket_res[TicketQuery.Ticket.id])
+        self.assertEqual(host_res, ['127.0.0.1', '192.168.0.1'])
+
+    def test_post_hosts_v1_0(self):
+        """Test POST with allowed hosts and API version 1.0 (should fail)"""
+        self.post_data['allowed_hosts'] = ['127.0.0.1', '192.168.0.1']
+        self.assertEqual(IrodsAccessTicket.objects.count(), 0)
+        response = self.request_knox(
+            self.url, 'POST', data=self.post_data, version='1.0'
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(IrodsAccessTicket.objects.count(), 0)
+
+    def test_post_hosts_v1_0_default(self):
+        """Test POST with default allowed hosts and API version 1.0"""
+        app_settings.set(
+            APP_NAME,
+            'irods_ticket_hosts',
+            '127.0.0.1,192.168.0.1',
+            project=self.project,
+        )
+        self.post_data.pop('allowed_hosts', None)
+        self.assertEqual(IrodsAccessTicket.objects.count(), 0)
+        response = self.request_knox(
+            self.url, 'POST', data=self.post_data, version='1.0'
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        ticket = IrodsAccessTicket.objects.first()
+        self.assertEqual(ticket.allowed_hosts, '127.0.0.1,192.168.0.1')
+        ticket_res = self.get_irods_ticket(ticket)
+        host_res = self.get_ticket_hosts(ticket_res[TicketQuery.Ticket.id])
+        self.assertEqual(host_res, ['127.0.0.1', '192.168.0.1'])
 
     def test_post_invalid_path(self):
         """Test POST with invalid path"""
@@ -517,27 +577,43 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
             label=TICKET_LABEL,
             user=self.user,
             date_expires=None,
+            allowed_hosts=['127.0.0.1', '192.168.0.1'],
+        )
+        self.irods_backend.issue_ticket(
+            irods=self.irods,
+            mode=TICKET_MODE_READ,
+            path=self.coll.path,
+            ticket_str=TICKET_STR,
+            expiry_date=None,
+            hosts=['127.0.0.1', '192.168.0.1'],
         )
         self.url = reverse(
             'samplesheets:api_irods_ticket_update',
             kwargs={'irodsaccessticket': self.ticket.sodar_uuid},
         )
-        self.date_expires_update = (
-            timezone.localtime() + timedelta(days=1)
-        ).isoformat()
+        self.date_expires_update = timezone.localtime() + timedelta(days=1)
 
     def test_put(self):
         """Test IrodsAccessTicketUpdateAPIView PUT"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        ticket_res = self.get_irods_ticket(self.ticket)
+        self.assertEqual(ticket_res[TicketQuery.Ticket.type], TICKET_MODE_READ)
+        self.assertEqual(ticket_res[TicketQuery.Ticket.expiry_ts], None)
+        self.assertEqual(
+            ticket_res[TicketQuery.Collection.name], self.coll.path
+        )
+        host_res = self.get_ticket_hosts(ticket_res[TicketQuery.Ticket.id])
+        self.assertEqual(host_res, ['127.0.0.1', '192.168.0.1'])
         self.assertEqual(self.get_tl_event_count('update'), 0)
         self.assertEqual(self.get_app_alert_count('update'), 0)
-        self.post_data = {
-            'label': LABEL_UPDATE,
-            'date_expires': self.date_expires_update,
+        put_data = {
             'path': self.coll.path,
+            'label': LABEL_UPDATE,
+            'date_expires': self.date_expires_update.isoformat(),
+            'allowed_hosts': [],
         }
         response = self.request_knox(
-            self.url, 'PUT', data=self.post_data, token=self.token_contrib
+            self.url, 'PUT', data=put_data, token=self.token_contrib
         )
         self.assertEqual(response.status_code, 200)
         local_date_created = self.ticket.date_created.astimezone(
@@ -551,11 +627,23 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
             'assay': str(self.assay.sodar_uuid),
             'path': self.ticket.path,  # Path should not be updated
             'date_created': local_date_created.isoformat(),
-            'date_expires': self.date_expires_update,
+            'date_expires': self.date_expires_update.isoformat(),
+            'allowed_hosts': [],
             'user': str(self.user.sodar_uuid),
             'is_active': self.ticket.is_active(),
         }
         self.assertEqual(response.json(), expected)
+        ticket_res = self.get_irods_ticket(self.ticket)
+        obj_exp = self.date_expires_update.replace(tzinfo=pytz.timezone('GMT'))
+        self.assertEqual(
+            int(ticket_res[TicketQuery.Ticket.expiry_ts]),
+            int(obj_exp.timestamp()),
+        )
+        self.assertEqual(
+            ticket_res[TicketQuery.Collection.name], self.coll.path
+        )
+        host_res = self.get_ticket_hosts(ticket_res[TicketQuery.Ticket.id])
+        self.assertEqual(host_res, [])
         self.assertEqual(self.get_tl_event_count('update'), 1)
         self.assertEqual(self.get_app_alert_count('update'), 3)
         self.assertEqual(
@@ -567,46 +655,137 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
             self.user_delegate,
         )
 
-    def test_put_with_path(self):
-        """Test PUT in IrodsAccessTicketUpdateAPIView with path"""
+    def test_put_hosts_remove_partial(self):
+        """Test PUT to remove partial allowed hosts"""
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        ticket_res = self.get_irods_ticket(self.ticket)
+        host_res = self.get_ticket_hosts(ticket_res[TicketQuery.Ticket.id])
+        self.assertEqual(host_res, ['127.0.0.1', '192.168.0.1'])
+        put_data = {
+            'path': self.coll.path,
+            'label': LABEL_UPDATE,
+            'date_expires': self.date_expires_update.isoformat(),
+            'allowed_hosts': ['192.168.0.1'],
+        }
+        response = self.request_knox(
+            self.url, 'PUT', data=put_data, token=self.token_contrib
+        )
+        self.assertEqual(response.status_code, 200)
+        self.ticket.refresh_from_db()
+        self.assertEqual(self.ticket.allowed_hosts, '192.168.0.1')
+        ticket_res = self.get_irods_ticket(self.ticket)
+        host_res = self.get_ticket_hosts(ticket_res[TicketQuery.Ticket.id])
+        self.assertEqual(host_res, ['192.168.0.1'])
+
+    def test_put_hosts_add(self):
+        """Test PUT to add allowed hosts"""
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        ticket_res = self.get_irods_ticket(self.ticket)
+        host_res = self.get_ticket_hosts(ticket_res[TicketQuery.Ticket.id])
+        self.assertEqual(host_res, ['127.0.0.1', '192.168.0.1'])
+        put_data = {
+            'path': self.coll.path,
+            'label': LABEL_UPDATE,
+            'date_expires': self.date_expires_update.isoformat(),
+            'allowed_hosts': ['127.0.0.1', '192.168.0.1', '2.22.231.13'],
+        }
+        response = self.request_knox(
+            self.url, 'PUT', data=put_data, token=self.token_contrib
+        )
+        self.assertEqual(response.status_code, 200)
+        self.ticket.refresh_from_db()
+        self.assertEqual(
+            self.ticket.allowed_hosts, '127.0.0.1,192.168.0.1,2.22.231.13'
+        )
+        ticket_res = self.get_irods_ticket(self.ticket)
+        host_res = self.get_ticket_hosts(ticket_res[TicketQuery.Ticket.id])
+        self.assertEqual(host_res, ['127.0.0.1', '192.168.0.1', '2.22.231.13'])
+
+    def test_put_v1_0(self):
+        """Test PUT with API version 1.0"""
+        put_data = {
+            'path': self.coll.path,
+            'label': LABEL_UPDATE,
+            'date_expires': self.date_expires_update.isoformat(),
+        }
+        response = self.request_knox(
+            self.url,
+            'PUT',
+            data=put_data,
+            token=self.token_contrib,
+            version='1.0',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.ticket.refresh_from_db()
+        self.assertEqual(self.ticket.allowed_hosts, '127.0.0.1,192.168.0.1')
+        ticket_res = self.get_irods_ticket(self.ticket)
+        host_res = self.get_ticket_hosts(ticket_res[TicketQuery.Ticket.id])
+        self.assertEqual(host_res, ['127.0.0.1', '192.168.0.1'])
+
+    def test_put_v1_0_hosts(self):
+        """Test PUT with API version 1.0 and hosts param (should fail)"""
+        put_data = {
+            'path': self.coll.path,
+            'label': LABEL_UPDATE,
+            'date_expires': self.date_expires_update.isoformat(),
+            'allowed_hosts': ['127.0.0.1', '192.168.0.1', '2.22.231.13'],
+        }
+        response = self.request_knox(
+            self.url,
+            'PUT',
+            data=put_data,
+            token=self.token_contrib,
+            version='1.0',
+        )
+        self.assertEqual(response.status_code, 400)
+        self.ticket.refresh_from_db()
+        self.assertEqual(self.ticket.allowed_hosts, '127.0.0.1,192.168.0.1')
+        ticket_res = self.get_irods_ticket(self.ticket)
+        host_res = self.get_ticket_hosts(ticket_res[TicketQuery.Ticket.id])
+        self.assertEqual(host_res, ['127.0.0.1', '192.168.0.1'])
+
+    def test_put_missing_fields(self):
+        """Test PUT with missing fields"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         self.assertEqual(self.get_tl_event_count('update'), 0)
         self.assertEqual(self.get_app_alert_count('update'), 0)
-        self.post_data = {
-            'path': self.coll.path,
-        }
+        put_data = {'path': self.coll.path}
         response = self.request_knox(
-            self.url, 'PUT', data=self.post_data, token=self.token_contrib
+            self.url, 'PUT', data=put_data, token=self.token_contrib
         )
         self.assertEqual(response.status_code, 400)
         self.assertEqual(self.get_tl_event_count('update'), 0)
         self.assertEqual(self.get_app_alert_count('update'), 0)
 
     def test_put_invalid_date(self):
-        """Test PUT in IrodsAccessTicketUpdateAPIView with invalid date"""
+        """Test PUT with invalid date"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         self.assertEqual(self.get_tl_event_count('update'), 0)
         self.assertEqual(self.get_app_alert_count('update'), 0)
         invalid_date = 'invalid'
-        self.post_data = {
+        put_data = {
+            'path': self.coll.path,
+            'label': LABEL_UPDATE,
             'date_expires': invalid_date,
+            'allowed_hosts': [],
         }
         response = self.request_knox(
-            self.url, 'PUT', data=self.post_data, token=self.token_contrib
+            self.url, 'PUT', data=put_data, token=self.token_contrib
         )
-
         self.assertEqual(response.status_code, 400)
         self.assertEqual(self.get_tl_event_count('update'), 0)
         self.assertEqual(self.get_app_alert_count('update'), 0)
 
     def test_patch(self):
-        """Test IrodsAccessTicketUpdateAPIView PATCH"""
+        """Test PATCH"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        irods_ticket = self.get_irods_ticket(self.ticket)
+        self.assertEqual(irods_ticket[TicketQuery.Ticket.expiry_ts], None)
         self.assertEqual(self.get_tl_event_count('update'), 0)
         self.assertEqual(self.get_app_alert_count('update'), 0)
-        self.post_data = {'date_expires': self.date_expires_update}
+        patch_data = {'date_expires': self.date_expires_update.isoformat()}
         response = self.request_knox(
-            self.url, 'PATCH', data=self.post_data, token=self.token_contrib
+            self.url, 'PATCH', data=patch_data, token=self.token_contrib
         )
 
         self.assertEqual(response.status_code, 200)
@@ -621,11 +800,18 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
             'assay': str(self.assay.sodar_uuid),
             'path': self.ticket.path,
             'date_created': local_date_created.isoformat(),
-            'date_expires': self.date_expires_update,
+            'date_expires': self.date_expires_update.isoformat(),
+            'allowed_hosts': [],
             'user': str(self.user.sodar_uuid),
             'is_active': self.ticket.is_active(),
         }
         self.assertEqual(response.json(), expected)
+        irods_ticket = self.get_irods_ticket(self.ticket)
+        obj_exp = self.date_expires_update.replace(tzinfo=pytz.timezone('GMT'))
+        self.assertEqual(
+            int(irods_ticket[TicketQuery.Ticket.expiry_ts]),
+            int(obj_exp.timestamp()),
+        )
         self.assertEqual(self.get_tl_event_count('update'), 1)
         self.assertEqual(self.get_app_alert_count('update'), 3)
         self.assertEqual(
@@ -637,30 +823,43 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
             self.user_delegate,
         )
 
-    def test_patch_with_path(self):
-        """Test PATCH in IrodsAccessTicketUpdateAPIView with path"""
+    def test_patch_hosts(self):
+        """Test PATCH with allowed hosts"""
+        ticket_res = self.get_irods_ticket(self.ticket)
+        host_res = self.get_ticket_hosts(ticket_res[TicketQuery.Ticket.id])
+        self.assertEqual(host_res, ['127.0.0.1', '192.168.0.1'])
+        patch_data = {'allowed_hosts': []}
+        response = self.request_knox(
+            self.url, 'PATCH', data=patch_data, token=self.token_contrib
+        )
+        self.assertEqual(response.status_code, 200)
+        ticket_res = self.get_irods_ticket(self.ticket)
+        host_res = self.get_ticket_hosts(ticket_res[TicketQuery.Ticket.id])
+        self.assertEqual(host_res, [])
+
+    def test_patch_path(self):
+        """Test PATCH with path (should fail)"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         self.assertEqual(self.get_tl_event_count('update'), 0)
         self.assertEqual(self.get_app_alert_count('update'), 0)
-        self.post_data = {'path': self.coll.path}
+        patch_data = {'path': self.coll.path}
         response = self.request_knox(
-            self.url, 'PATCH', data=self.post_data, token=self.token_contrib
+            self.url, 'PATCH', data=patch_data, token=self.token_contrib
         )
         self.assertEqual(response.status_code, 400)
         self.assertEqual(self.get_tl_event_count('update'), 0)
         self.assertEqual(self.get_app_alert_count('update'), 0)
 
     def test_patch_invalid_date(self):
-        """Test PATCH in IrodsAccessTicketUpdateAPIView with invalid date"""
+        """Test PATCH with invalid date"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         self.assertEqual(self.get_tl_event_count('update'), 0)
         self.assertEqual(self.get_app_alert_count('update'), 0)
         invalid_date = 'invalid'
-        self.post_data = {'date_expires': invalid_date}
+        patch_data = {'date_expires': invalid_date}
         response = self.request_knox(
-            self.url, 'PATCH', data=self.post_data, token=self.token_contrib
+            self.url, 'PATCH', data=patch_data, token=self.token_contrib
         )
-
         self.assertEqual(response.status_code, 400)
         self.assertEqual(self.get_tl_event_count('update'), 0)
         self.assertEqual(self.get_app_alert_count('update'), 0)

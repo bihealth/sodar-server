@@ -13,18 +13,20 @@ v1.1.0 (WIP)
 
 Release for SODAR Core 1.1 upgrade and feature updates.
 
+- Add allowed hosts support for iRODS access tickets
 - :ref:`Add landing zone validation and moving progress indicators <app_landingzones_transfer>`
 - :ref:`Add landing zone file type prohibiting <app_landingzones_transfer_prohibit>`
 - Add file list in landing zone move timeline event extra data
-- Add iRODS project owner/delegate group management
 - :ref:`Add owners and delegates read/write access to all project zones <app_landingzones_browse_owner_access>`
 - Add support for longer landing zone status info messages
+- Add iRODS project owner/delegate group management
 - Update email sending and alerts to exclude inactive users
 - :ref:`Update project landing zone list layout <app_landingzones_browse>`
 - :ref:`Upgrade Sample Sheets REST API version to v1.1 <api_samplesheets_version_1_1>`
 - Upgrade to python-irodsclient v3.1
 - Upgrade to SODAR Core v1.1.4
 - Replace SODAR_SUPPORT_* settings with PROJECTROLES_SUPPORT_CONTACT
+- Fix iRODS access ticket expiry date updating
 - Remove minimum sample sheet column config editing role setting
 - `SODAR Core v1.1 updates <https://sodar-core.readthedocs.io/en/latest/major_changes.html#v1-1-4-2025-04-04>`_:
   Project deletion, project leaving, paginated project list, site read-only
@@ -38,6 +40,12 @@ REST API Updates
 - Sample Sheets API
     * Current version: ``1.1`` (non-breaking changes)
     * Allowed versions: ``1.0``, ``1.1``
+    * ``IrodsAccessTicketRetrieveAPIView``
+        + Add ``allowed_hosts`` field
+    * ``IrodsAccessTicketCreateAPIView``
+        + Add ``allowed_hosts`` field
+    * ``IrodsAccessTicketUpdateAPIView``
+        + Add ``allowed_hosts`` field
     * ``ProjectIrodsFileListAPIView``
         + Add ``checksum`` field to return data
         + Add ``page`` parameter for optional pagination

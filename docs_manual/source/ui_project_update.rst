@@ -81,6 +81,12 @@ VCF paths to omit from IGV sessions
     cancer and germline projects. Behaves similarly to the related BAM/CRAM
     setting. You need to run :guilabel:`Update Sheet Cache` in the Sample Sheet
     application for changes to take effect.
+Allowed hosts for iRODS access tickets
+    Comma-separated list of host names or IP addresses that specify default
+    allowed hosts for
+    :ref:`iRODS access tickets <app_samplesheets_irods_ticket>` created for the
+    project. These can be overridden by the user for each ticket upon its
+    creation. If no value is set here, no default restriction is applied.
 IP restrict
     Restrict project access to specific IP addresses if this is set.
 IP allow list

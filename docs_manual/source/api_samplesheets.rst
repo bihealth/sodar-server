@@ -81,6 +81,12 @@ Version Changes
 v1.1
 ----
 
+- ``IrodsAccessTicketRetrieveAPIView``
+    * Add ``allowed_hosts`` field
+- ``IrodsAccessTicketCreateAPIView``
+    * Add ``allowed_hosts`` field
+- ``IrodsAccessTicketUpdateAPIView``
+    * Add ``allowed_hosts`` field
 - ``ProjectIrodsFileListAPIView``
     * Add ``checksum`` field to return data
     * Add ``page`` parameter for optional pagination

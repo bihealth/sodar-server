@@ -784,6 +784,9 @@ SHEETS_IGV_OMIT_VCF = env.list(
     'SHEETS_IGV_OMIT_VCF',
     default=['*cnv.vcf.gz', '*ploidy.vcf.gz', '*sv.vcf.gz'],
 )
+# Default allowed hosts for iRODS access tickets.
+# Can be overridden by project and ticket.
+SHEETS_IRODS_TICKET_HOSTS = env.list('SHEETS_IRODS_TICKET_HOSTS', default=[])
 # Restrict SampleDataFileExistsAPIView access to users with project roles
 SHEETS_API_FILE_EXISTS_RESTRICT = env.bool(
     'SHEETS_API_FILE_EXISTS_RESTRICT', False

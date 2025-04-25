@@ -9,6 +9,9 @@ from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 
+# Irodsbackend dependency
+from irodsbackend.api import TICKET_MODE_READ
+
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import TaskflowAPIPermissionTestBase
 
@@ -219,6 +222,7 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
             'path': self.path,
             'label': LABEL_CREATE,
             'date_expires': self.date_expires,
+            'allowed_hosts': [],
         }
 
     def test_post(self):
@@ -303,6 +307,12 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
             ticket='ticket',
             label=LABEL_CREATE,
             date_expires=(timezone.localtime() + timedelta(days=1)).isoformat(),
+        )
+        self.irods_backend.issue_ticket(
+            irods=self.irods,
+            mode=TICKET_MODE_READ,
+            path=self.coll.path,
+            ticket_str=self.ticket.ticket,
         )
         self.url = reverse(
             'samplesheets:api_irods_ticket_update',

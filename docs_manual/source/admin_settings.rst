@@ -208,6 +208,11 @@ Sample Sheets Settings
 ``SHEETS_IGV_OMIT_VCF``
     VCF file name suffixes to omit from study shortcuts and IGV session
     generation.
+``SHEETS_IRODS_TICKET_HOSTS``
+    List of host names or IP addresses to be used as default allowed hosts for
+    iRODS access tickets. If no value is given, no restrictions are applied. The
+    restriction can be overridden by a project-specific setting and/or a
+    ticket-specific value.
 ``SHEETS_API_FILE_EXISTS_RESTRICT``
     Restrict access to ``SampleDataFileExistsAPIView`` to users with the role of
     project guest or above in any category or project. Recommended for instances
