@@ -480,7 +480,7 @@ class IrodsAccessTicketCreateAPIView(
     CreateAPIView,
 ):
     """
-    Create an iRODS access ticket for a project.
+    Create an iRODS access ticket for collection or data object in a project.
 
     **URL:** ``/samplesheets/api/irods/ticket/create/{Project.sodar_uuid}``
 
@@ -488,7 +488,7 @@ class IrodsAccessTicketCreateAPIView(
 
     **Parameters:**
 
-    - ``path``: Full iRODS path (string)
+    - ``path``: Full iRODS path to collection or data object (string)
     - ``label``: Text label for ticket (string, optional)
     - ``date_expires``: Expiration date (YYYY-MM-DDThh:mm:ssZ, optional)
     - ``allowed_hosts``: Allowed hosts for ticket access (list, optional)

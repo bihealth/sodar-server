@@ -128,9 +128,9 @@
     tour.addStep('irods_ticket', {
         title: 'iRODS Access Tickets',
         text: 'In this view you can manage access tickets for iRODS ' +
-              'collections in the project sample data repository. These ' +
-              'tickets grant read-only access to collections without the ' +
-              'need for logging in to iRODS. This is usable when e.g. ' +
+              'files in the project sample data repository. These tickets ' +
+              'grant read-only access to collections or data objects without ' +
+              'the need for logging in to iRODS. This is usable when e.g. ' +
               'integrating data from SODAR to external software.',
         advanceOn: '.docs-link click',
         showCancelLink: true
@@ -138,9 +138,9 @@
     tour.addStep('irods_ticket_warning', {
         title: 'iRODS Access Warning',
         text: 'WARNING: Anyone with the URL and network access to your iRODS ' +
-              'server can access thes collections regardless of their ' +
-              'project roles. Care should be taken in what is shared ' +
-              'publicly and to whom tickets are provided.',
+              'server can access these files regardless of their project ' +
+              'roles. Care should be taken in what is shared publicly and to ' +
+              'whom tickets are provided.',
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
@@ -158,11 +158,11 @@
         tour.addStep('irods_ticket_title', {
             title: 'iRODS Access Ticket Title',
             text: 'The title of the ticket is displayed here. It consists of ' +
-                  'the collection the ticket targets along with an optional ' +
-                  'string identified or the ticket creation timestamp. The ' +
-                  'title links to the anonymous ticket URL via WebDAV. The ' +
-                  'column also includes a link for copying the URL into the ' +
-                  'clipboard.',
+                  'the name of the collection or the data object the ticket ' +
+                  'targets, along with an optional string identified or the ' +
+                  'ticket creation timestamp. The title links to the ' +
+                  'anonymous ticket URL via WebDAV. The column also includes ' +
+                  'a link for copying the URL into the clipboard.',
             attachTo: '.sodar-ss-ticket-item-title top',
             advanceOn: '.docs-link click',
             showCancelLink: true
@@ -199,8 +199,9 @@
     tour.addStep('irods_ticket_create', {
         title: 'iRODS Access Ticket Creation',
         text: 'Click on this button to create a new access ticket. You will ' +
-              'be taken to a form where you can set the ticket collection ' +
-              'and optional expiration date.',
+              'be taken to a form where you can set the target collection or ' +
+              'data object, optional expiration date and optional host ' +
+              'restrictions.',
         attachTo: '#sodar-ss-btn-ticket-create left',
         advanceOn: '.docs-link click',
         showCancelLink: true

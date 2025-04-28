@@ -1173,7 +1173,8 @@ class IrodsAccessTicket(models.Model):
 
     #: Path
     path = models.CharField(
-        max_length=DEFAULT_LENGTH, help_text='Path to iRODS collection'
+        max_length=DEFAULT_LENGTH,
+        help_text='Path to iRODS collection or data object',
     )
 
     #: Label for ticket (optional)

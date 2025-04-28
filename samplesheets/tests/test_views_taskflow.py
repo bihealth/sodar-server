@@ -976,15 +976,15 @@ class TestIrodsAccessTicketCreateView(
         self.assertEqual(response.status_code, 200)
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
 
-    def test_post_object_path(self):
-        """Test POST with path to data object (should fail)"""
+    def test_post_data_object_path(self):
+        """Test POST with path to data object"""
         obj = self.make_irods_object(self.coll, 'test.txt')
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
         self.post_data['path'] = obj.path
         with self.login(self.user):
             response = self.client.post(self.url, self.post_data)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(IrodsAccessTicket.objects.count(), 0)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
 
     def test_post_existing_ticket(self):
         """Test POST with prior ticket for the same path (should fail)"""

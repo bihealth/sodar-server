@@ -67,13 +67,15 @@ class IrodsAccessTicketValidateMixin:
             # Ensure path is within project
             if not data['path'].startswith(irods_backend.get_path(project)):
                 return 'path', 'Path is not within the project'
-            # Ensure path is a collection
+            # Ensure collection or data object exists
             with irods_backend.get_session() as irods:
-                if not irods.collections.exists(data['path']):
+                if not irods.collections.exists(
+                    data['path']
+                ) and not irods.data_objects.exists(data['path']):
                     return (
                         'path',
-                        'Path does not point to a collection or '
-                        'the collection doesn\'t exist',
+                        'Collection or data object does not exist in the given '
+                        'iRODS path',
                     )
             # Ensure path is within a project assay
             match = re.search(
@@ -95,7 +97,7 @@ class IrodsAccessTicketValidateMixin:
             if data['path'] == irods_backend.get_path(data['assay']):
                 return (
                     'path',
-                    'Ticket creation for assay root path is not ' 'allowed',
+                    'Ticket creation for assay root path is not allowed',
                 )
 
         # Check if expiry date is in the past
@@ -446,8 +448,8 @@ class IrodsAccessTicketForm(IrodsAccessTicketValidateMixin, forms.ModelForm):
             self.project = project
         # Update path help and disable in update
         path_help = (
-            'Full path to iRODS collection: collection must be within '
-            'an assay of the project'
+            'Full path to iRODS collection or data object within an assay '
+            'collection in this project'
         )
         self.fields['path'].help_text = path_help
         if self.instance.path:

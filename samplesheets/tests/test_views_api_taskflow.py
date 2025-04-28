@@ -546,6 +546,15 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
         self.assertEqual(self.get_tl_event_count('create'), 0)
         self.assertEqual(self.get_app_alert_count('create'), 0)
 
+    def test_post_data_object_path(self):
+        """Test POST with path to data object"""
+        obj = self.make_irods_object(self.coll, 'test.txt')
+        self.assertEqual(IrodsAccessTicket.objects.count(), 0)
+        self.post_data['path'] = obj.path
+        response = self.request_knox(self.url, 'POST', data=self.post_data)
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+
     def test_post_existing_ticket(self):
         """Test POST for the same path"""
         self.make_irods_ticket(
