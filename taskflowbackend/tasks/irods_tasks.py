@@ -683,13 +683,14 @@ class BatchValidateChecksumsTask(IrodsBaseTask):
     """Batch validate checksums of a given list of data object paths"""
 
     @classmethod
-    def _compare_checksums(cls, data_obj, checksum):
+    def _compare_checksums(cls, data_obj, checksum, zone_path_len):
         """
         Compares object replicate checksums to expected sum. Raises exception if
         checksums do not match.
 
         :param data_obj: Data object
         :param checksum: Expected checksum (string)
+        :param zone_path_len: Landing zone iRODS path length (int)
         :raises: Exception if checksums do not match
         """
         for replica in data_obj.replicas:
@@ -698,7 +699,7 @@ class BatchValidateChecksumsTask(IrodsBaseTask):
                 or not replica.checksum
                 or checksum.lower() != replica.checksum.lower()
             ):
-                msg = (
+                log_msg = (
                     'Checksums do not match for "{}" in resource "{}" '
                     '(File: {}; iRODS: {})'.format(
                         os.path.basename(data_obj.path),
@@ -707,8 +708,15 @@ class BatchValidateChecksumsTask(IrodsBaseTask):
                         replica.checksum,
                     )
                 )
-                logger.error(msg)
-                raise Exception(msg)
+                logger.error(log_msg)
+                ex_path = '/'.join(data_obj.path.split('/')[zone_path_len:])
+                ex_msg = 'Path: {}\nResource: {}\nFile: {}\niRODS: {}'.format(
+                    ex_path,
+                    replica.resource_name,
+                    checksum or NO_FILE_CHECKSUM_LABEL,
+                    replica.checksum,
+                )
+                raise Exception(ex_msg)
 
     def execute(self, landing_zone, file_paths, zone_path, *args, **kwargs):
         zone_path_len = len(zone_path.split('/'))
@@ -717,9 +725,12 @@ class BatchValidateChecksumsTask(IrodsBaseTask):
         status_base = landing_zone.status_info
         i = 1
         i_prev = 0
+        read_errors = []
+        cmp_errors = []
         time_start = time.time()
         for path in file_paths:
             md5_path = path + '.md5'
+            read_err = False
             try:
                 with self.irods.data_objects.open(md5_path, mode='r') as f:
                     dec = 'utf-8'
@@ -729,22 +740,43 @@ class BatchValidateChecksumsTask(IrodsBaseTask):
                         dec += '-sig'
                     file_sum = re.split(MD5_RE, md5_content.decode(dec))[0]
             except Exception as ex:
-                msg = 'Unable to read checksum file "{}"'.format(
-                    '/'.join(md5_path.split('/')[zone_path_len:])
+                ex_msg = 'File: {}\nException: {}'.format(
+                    '/'.join(md5_path.split('/')[zone_path_len:]), ex
                 )
-                self._raise_irods_exception(ex, msg)
-            try:
-                self._compare_checksums(
-                    self.irods.data_objects.get(path), file_sum
-                )
-            except Exception as ex:
-                self._raise_irods_exception(ex)
+                read_errors.append(ex_msg)
+                read_err = True
+            if not read_err:
+                try:
+                    self._compare_checksums(
+                        self.irods.data_objects.get(path),
+                        file_sum,
+                        zone_path_len,
+                    )
+                except Exception as ex:
+                    cmp_errors.append(str(ex))
             if time.time() - time_start > interval and i_prev != i:
                 landing_zone.status_info = f'{status_base} ({i}/{file_count})'
                 landing_zone.save()
                 i_prev = i
                 time_start = time.time()
             i += 1
+        if read_errors or cmp_errors:
+            ex_msg = ''
+            if read_errors:
+                err_len = len(read_errors)
+                ex_msg += 'Unable to read {} checksum file{}:\n'.format(
+                    err_len, 's' if err_len != 1 else ''
+                )
+                ex_msg += '\n'.join(read_errors)
+            if cmp_errors:
+                err_len = len(cmp_errors)
+                ex_msg += '{}Checksums do not match for {} file{}:\n'.format(
+                    '\n' if read_errors else '',
+                    err_len,
+                    's' if err_len != 1 else '',
+                )
+                ex_msg += '\n'.join(cmp_errors)
+            self._raise_irods_exception(Exception(), ex_msg)
         super().execute(*args, **kwargs)
 
     def revert(self, landing_zone, file_paths, zone_path, *args, **kwargs):

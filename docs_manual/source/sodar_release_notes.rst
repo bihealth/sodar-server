@@ -22,6 +22,7 @@ Release for SODAR Core 1.1 upgrade and feature updates.
 - Add iRODS project owner/delegate group management
 - Update email sending and alerts to exclude inactive users
 - Update iRODS access ticket creation to support path to data object in UI
+- Update checksum validation to check all files before failing
 - :ref:`Update project landing zone list layout <app_landingzones_browse>`
 - :ref:`Upgrade Sample Sheets REST API version to v1.1 <api_samplesheets_version_1_1>`
 - Upgrade to python-irodsclient v3.1

@@ -107,15 +107,16 @@ class TaskflowTestMixin(ProjectMixin, RoleMixin, RoleAssignmentMixin):
         obj_kwargs = {REG_CHKSUM_KW: ''} if checksum else {}
         return make_object(self.irods, obj_path, content, **obj_kwargs)
 
-    def make_irods_md5_object(self, obj):
+    def make_irods_md5_object(self, obj, content=None):
         """
         Create and put an MD5 checksum object for an existing object in iRODS.
 
         :param obj: iRODSDataObject
+        :param content: Force content if set (string or None)
         :return: iRODSDataObject
         """
         md5_path = obj.path + '.md5'
-        md5_content = self.get_md5_checksum(obj)
+        md5_content = content or self.get_md5_checksum(obj)
         return make_object(self.irods, md5_path, md5_content)
 
     def get_md5_checksum(self, obj):

@@ -174,8 +174,9 @@ details of what failed. In most cases, these fall into the following categories:
 
     Landing zone status after failed validation
 
-At this point you can go back to fix the problems with your files and retry
-validation again.
+If there have been problems with multiple files, all the errors are detailed
+sequentially in the zone status info. At this point you can go back to fix the
+problems with your files and retry validation again.
 
 
 Moving Files

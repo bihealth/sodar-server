@@ -1656,26 +1656,29 @@ class TestBatchValidateChecksumsTask(
             status=ZONE_STATUS_ACTIVE,
         )
         self.zone_path = self.irods_backend.get_path(self.zone)
+        # TODO: Actually place files in zone path
         self.obj_name = 'test1.txt'
-        self.obj_path = os.path.join(self.test_coll_path, self.obj_name)
-        self.obj = self.make_irods_object(self.test_coll, self.obj_name)
-        self.make_irods_md5_object(self.obj)
-
-    def test_validate(self):
-        """Test validating checksums"""
-        self.assertIsNotNone(self.obj.replicas[0].checksum)
-        self.assertEqual(
-            self.zone.status_info, DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE]
-        )
-        self.add_task(
-            cls=BatchValidateChecksumsTask,
-            name='Validate checksums',
-            inject={
+        self.zone_coll = self.irods.collections.create(self.zone_path)
+        self.obj = self.make_irods_object(self.zone_coll, self.obj_name)
+        self.obj_path = self.obj.path
+        self.task_kw = {
+            'cls': BatchValidateChecksumsTask,
+            'name': 'Validate checksums',
+            'inject': {
                 'landing_zone': self.zone,
                 'file_paths': [self.obj_path],
                 'zone_path': self.zone_path,
             },
+        }
+
+    def test_validate(self):
+        """Test validating checksums"""
+        self.make_irods_md5_object(self.obj)
+        self.assertIsNotNone(self.obj.replicas[0].checksum)
+        self.assertEqual(
+            self.zone.status_info, DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE]
         )
+        self.add_task(**self.task_kw)
         result = self.run_flow()
         self.assertEqual(result, True)
         self.zone.refresh_from_db()
@@ -1686,15 +1689,8 @@ class TestBatchValidateChecksumsTask(
     @override_settings(TASKFLOW_ZONE_PROGRESS_INTERVAL=0)
     def test_validate_progress(self):
         """Test validating checksums with progress indicator"""
-        self.add_task(
-            cls=BatchValidateChecksumsTask,
-            name='Validate checksums',
-            inject={
-                'landing_zone': self.zone,
-                'file_paths': [self.obj_path],
-                'zone_path': self.zone_path,
-            },
-        )
+        self.make_irods_md5_object(self.obj)
+        self.add_task(**self.task_kw)
         result = self.run_flow()
         self.assertEqual(result, True)
         self.zone.refresh_from_db()
@@ -1702,6 +1698,26 @@ class TestBatchValidateChecksumsTask(
             self.zone.status_info,
             DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE] + ' (1/1)',
         )
+
+    def test_validate_invalid_in_file(self):
+        """Test validating checksums with invalid checksum in file"""
+        self.make_irods_md5_object(self.obj, content='xxx')
+        self.assertEqual(
+            self.zone.status_info, DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE]
+        )
+        self.add_task(**self.task_kw)
+        zone_path_len = len(self.zone_path.split('/'))
+        ex_path = '/'.join(self.obj_path.split('/')[zone_path_len:])
+        expected = (
+            f'Checksums do not match for 1 file:\n'
+            f'Path: {ex_path}\n'
+            f'Resource: demoResc\n'
+            f'File: xxx\n'
+            f'iRODS: {self.obj.replicas[0].checksum}'
+        )
+        with self.assertRaises(Exception) as cm:
+            self.run_flow()
+        self.assertIn(expected, str(cm.exception))
 
 
 class TestBatchSetAccessTask(IRODSTaskTestBase):
