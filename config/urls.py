@@ -60,6 +60,7 @@ urlpatterns = [
     path('timeline/', include('timeline.urls')),
     # Backend apps with API URLs
     path('irodsbackend/', include('irodsbackend.urls')),
+    path('taskflowbackend/', include('taskflowbackend.urls')),
     # Samplesheets study sub-app URLs
     path(
         'samplesheets/study/germline/',

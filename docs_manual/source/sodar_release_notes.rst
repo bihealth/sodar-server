@@ -20,6 +20,7 @@ Release for SODAR Core 1.1 upgrade and feature updates.
 - :ref:`Add owners and delegates read/write access to all project zones <app_landingzones_browse_owner_access>`
 - Add support for longer landing zone status info messages
 - Add iRODS project owner/delegate group management
+- Add taskflow API with project lock status view
 - Update email sending and alerts to exclude inactive users
 - Update iRODS access ticket creation to support path to data object in UI
 - Update checksum validation to check all files before failing
@@ -51,6 +52,11 @@ REST API Updates
     * ``ProjectIrodsFileListAPIView``
         + Add ``checksum`` field to return data
         + Add ``page`` parameter for optional pagination
+- Taskflow Backend API
+    * Add API
+    * Current version: ``1.0``
+    * ``ProjectLockStatusAPIView``
+        + Add view
 
 
 v1.0.1 (2025-03-12)

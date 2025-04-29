@@ -49,6 +49,9 @@ Added
     - File list in ``landing_zone_move`` timeline event extra data (#1202, #2124)
     - iRODS project owner/delegate group management (#2109)
     - ``TaskflowAPI.get_flow_role()`` helper (#1934)
+    - ``TaskflowAPI.is_locked()`` helper (#2048)
+    - Taskflowbackend REST API (#2048)
+    - ``ProjectLockStatusAPIView`` REST API view (#2048)
 
 Changed
 -------
@@ -59,6 +62,7 @@ Changed
     - Display SODAR Core version in footer example (#2101)
     - Upgrade to gunicorn v23 (#2068)
     - Upgrade critical Vue app dependencies (#2068)
+    - Upgrade to tooz v6.3 (#2048)
 - **Irodsbackend**
     - Allow use of ``include_md5`` and ``limit`` together in ``get_objs_recursively()`` (#1887)
     - Rename ``get_user_group_name()`` to ``get_group_name()`` (#2121)

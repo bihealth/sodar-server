@@ -116,7 +116,7 @@ cubi-isa-templates==0.1.2
 # -e git+https://github.com/bihealth/cubi-isa-templates.git@d3ebe866f3823d81fdb358042ef7ed4d8b8fd100#egg=cubi-isa-templates
 
 # Taskflow requirements
-tooz==3.0.0
+tooz==6.3.0
 taskflow==5.0.0
 
 # DRF-spectacular for OpenAPI schema generation

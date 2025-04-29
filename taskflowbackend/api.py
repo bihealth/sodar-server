@@ -2,6 +2,9 @@
 
 import json
 import logging
+import redis
+
+from django.conf import settings
 
 from rest_framework.exceptions import APIException
 
@@ -37,6 +40,7 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 UNKNOWN_RUN_ERROR = 'Running flow failed: unknown error, see server log'
 LOCK_FAIL_MSG = 'Unable to acquire project lock'
 READ_ONLY_MSG = 'Site in read-only mode, taskflow operations not allowed'
+COORDINATOR_EX_MSG = 'Failed to retrieve lock coordinator'
 
 
 class TaskflowAPI:
@@ -230,9 +234,7 @@ class TaskflowAPI:
             # Acquire lock
             coordinator = lock_api.get_coordinator()
             if not coordinator:
-                cls._raise_lock_exception(
-                    'Failed to retrieve lock coordinator', tl_event, zone
-                )
+                cls._raise_lock_exception(COORDINATOR_EX_MSG, tl_event, zone)
             else:
                 lock_id = str(project.sodar_uuid)
                 lock = coordinator.get_lock(lock_id)
@@ -358,3 +360,17 @@ class TaskflowAPI:
         return 'Taskflow "{}" failed! Reason: "{}"'.format(
             flow_name, submit_info[:256]
         )
+
+    @classmethod
+    def is_locked(cls, project):
+        """
+        Return lock status for project, True meaning locked.
+
+        :param project: Project object
+        :return: Boolean
+        """
+        # NOTE: We query redis directly to allow having to call acquire()
+        # NOTE: Yes, this is how tooz encodes the lock IDs (see #2144)
+        lock_db_id = f'b\'_tooz\'_{project.sodar_uuid}_lock'.encode()
+        redis_conn = redis.from_url(settings.REDIS_URL, decode_responses=True)
+        return redis_conn.get(lock_db_id) is not None

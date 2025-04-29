@@ -120,6 +120,7 @@ Table of Contents
     Sample Sheets API <api_samplesheets>
     Landing Zones API <api_landingzones>
     iRODS Info API <api_irodsinfo>
+    Taskflow Backend API <api_taskflowbackend>
     api_examples
 
 .. toctree::
