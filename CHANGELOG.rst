@@ -58,6 +58,7 @@ Changed
     - Upgrade to python-irodsclient v3.1 (#2068, #2079, #2128)
     - Display SODAR Core version in footer example (#2101)
     - Upgrade to gunicorn v23 (#2068)
+    - Upgrade critical Vue app dependencies (#2068)
 - **Irodsbackend**
     - Allow use of ``include_md5`` and ``limit`` together in ``get_objs_recursively()`` (#1887)
     - Rename ``get_user_group_name()`` to ``get_group_name()`` (#2121)
