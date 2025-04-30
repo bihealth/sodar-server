@@ -1,9 +1,9 @@
 // Init global variable
 var isSuperuser = false;
 
-/*****************************
- Zone status updating function
- *****************************/
+/*********************
+ Zone status updating
+ *********************/
 var updateZoneStatus = function() {
     window.zoneStatusUpdated = false;
     var zoneData = {};
@@ -115,6 +115,14 @@ var updateZoneStatus = function() {
     }
 };
 
+/**********************
+ Modal copy path method
+ **********************/
+function copyModalPath(path, id) {
+    navigator.clipboard.writeText(path);
+    displayCopyStatus($('#' + id));
+}
+
 $(document).ready(function() {
     /*********************
      Get superuser status
@@ -157,5 +165,107 @@ $(document).ready(function() {
                     response.status_info.replaceAll('\n', '<br />'));
             }
         });
+    });
+
+    // Update collection stats
+    updateCollectionStats();
+    if ($('table.sodar-lz-table').length === 0) {
+        updateButtons();
+    }
+    var statsSec = 8;
+    if (typeof(window.irodsbackendStatusInterval) !== 'undefined') {
+        statsSec = window.irodsbackendStatusInterval;
+    }
+    var statsInterval = statsSec * 1000;
+    // Poll and update active collections
+    setInterval(function () {
+        if ($('table.sodar-lz-table').length === 0) {
+            updateButtons();
+        }
+        updateCollectionStats();
+    }, statsInterval);
+
+    // iRODS dir list modal
+    $('.sodar-lz-list-modal-btn').click(function() {
+        var listUrl = $(this).attr('data-list-url');
+        var irodsPath = $(this).attr('data-irods-path');
+        var irodsPathLength = irodsPath.split('/').length;
+        var webDavUrl = $(this).attr('data-webdav-url');
+        var body = '';
+        $('.modal-title').text('Files in iRODS: ' + irodsPath.split('/').pop());
+
+        $.ajax({url: listUrl, method: 'GET', dataType: 'json'}).done(function (data) {
+            // console.log(data); // DEBUG
+            if (data['irods_data'].length > 0) {
+                body += '<table class="table sodar-card-table sodar-irods-obj-table">';
+                body += '<thead><th>File/Collection</th><th>Size</th><th>Modified</th>';
+                body += '<th>MD5</th><th>iRODS</th>';
+                body += '</thead><tbody>';
+
+                $.each(data['irods_data'], function (i, obj) {
+                    var objNameSplit = obj['path'].split('/');
+                    var objPrefix = objNameSplit.slice(
+                        irodsPathLength, objNameSplit.length - 1).join('/');
+                    var objLink = '<a href="' + webDavUrl + obj['path'] + '">';
+                    if (objPrefix) {
+                        objLink += '<span class="text-muted">' + objPrefix + '/</span>';
+                    }
+                    objLink += obj['name'] + '</a>';
+
+                    var colSpan = '1';
+                    var icon = obj['type'] === 'coll' ? 'mdi:folder-open' : 'mdi:file-document-outline';
+                    var toolTip = obj['type'] === 'coll' ? 'Collection' : 'File';
+                    var elemId = 'sodar-irods-copy-btn-' + i.toString();
+                    var copyButton = '<button class="btn btn-secondary sodar-list-btn pull-right" ' +
+                        'id="' + elemId + '"' +
+                        'title="Copy iRODS path into clipboard" ' +
+                        'data-placement="top" onclick="copyModalPath(\'' + obj['path'] +
+                        '\', \'' + elemId + '\')">' +
+                        '<i class="iconify" data-icon="mdi:console-line"></i>' +
+                        '</button>';
+                    var iconHtml = '<i class="iconify mr-1" data-icon="' + icon + '"' +
+                        ' title="' + toolTip + '"></i>';
+                    body += '<tr><td colspan="' + colSpan + '">' + iconHtml + objLink + '</td>';
+
+                    if (obj['type'] === 'obj') {
+                        body += '<td>' + humanFileSize(obj['size'], true) + '</td>';
+                        body += '<td>' + obj['modify_time'] + '</td><td>';
+                        if (obj['md5_file'] === true) {
+                            body += '<span class="text-muted">' +
+                                '<i class="iconify" data-icon="mdi:check-bold"></i></span>';
+                        } else {
+                            body += '<span class="text-danger">' +
+                                '<i class="iconify" data-icon="mdi:close-thick"></i></span>';
+                        }
+                        body += '</td>';
+                    } else {
+                        body += '<td colspan="3"></td>';
+                    }
+                    body += '<td>' + copyButton + '</td>';
+                    body += '</tr>';
+                });
+            } else {
+                body += '<span class="text-muted font-italic">No files</span>';
+            }
+
+            // Set success content and toggle modal
+            $('.modal-body').html(body);
+            $('#sodar-modal-wait').modal('hide');
+            $('#sodar-modal').modal('show');
+        }).fail(function (response) {
+            // Set failure content and toggle modal
+            if (response.status === 404) {
+                $('.modal-body').html(
+                    '<span class="text-muted font-italic">Collection not found</span>');
+            } else {
+                $('.modal-body').html(
+                    '<span class="text-danger font-italic">Failed to query data (' +
+                    response.status + ': ' + response.responseText + ')</span>');
+            }
+            $('#sodar-modal-wait').modal('hide');
+            $('#sodar-modal').modal('show');
+        });
+        // Set waiting content and toggle modal
+        $('#sodar-modal-wait').modal('show');
     });
 });

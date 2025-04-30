@@ -30,6 +30,7 @@ Added
     - Owner and delegate own access to all zones in project (#1934)
     - ``ZoneStatusInfoRetrieveAjaxView`` Ajax view (#1308)
     - Full display of truncated zone status info (#1308)
+    - ``ZoneIrodsListRetrieveAjaxView`` Ajax view (#1730)
 - **Samplesheets**
     - Site read-only mode support (#2051)
     - ``checksum`` field in ``ProjectIrodsFileListAPIView`` return data (#2039)
@@ -77,6 +78,7 @@ Changed
     - Prevent redundant refreshing of unchganged zone status (#2126)
     - Update zone list title column layout (#1852, #2127)
     - Update ``ProjectZoneView`` to display project zones in one table (#2129)
+    - Move irodsbackend dir list modal JQuery to ``landingzones.js`` (#1730)
 - **Samplesheets**
     - Define app settings as ``PluginAppSettingDef`` objects (#2051)
     - Return ``500`` for iRODS query exceptions in ``ProjectIrodsFileListAPIView`` (#2103)
@@ -115,6 +117,11 @@ Removed
 - **General**
     - DRF generateschema support (#2051)
     - ``SODAR_SUPPORT_EMAIL`` and ``SODAR_SUPPORT_EMAIL`` settings (#2095)
+- **Irodsbackend**
+    - ``IrodsObjectListAjaxView`` Ajax view (#1730)
+    - iRODS dir modal javascript (#1730)
+- **Landingzones**
+    - ``get_zone_list_url()`` template tag (#1730)
 - **Samplesheets**
     - Legacy iRODS test files (#2102)
     - ``edit_config_min_role`` app setting (#2110)

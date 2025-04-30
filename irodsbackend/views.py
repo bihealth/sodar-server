@@ -38,6 +38,7 @@ BASIC_AUTH_NOT_ENABLED_MSG = 'IRODS_SODAR_AUTH not enabled'
 # Ajax Views -------------------------------------------------------------------
 
 
+# NOTE: Also used in samplesheets.views_ajax.IrodsObjectListAjaxView (see #2145)
 class BaseIrodsAjaxView(SODARBaseProjectAjaxView):
     """Base iRODS Ajax API View"""
 
@@ -190,41 +191,6 @@ class IrodsStatisticsAjaxView(BaseIrodsAjaxView):
             ret[p] = d
         irods.cleanup()
         return Response({'irods_stats': ret}, status=200)
-
-
-class IrodsObjectListAjaxView(BaseIrodsAjaxView):
-    """View for listing data objects in iRODS recursively"""
-
-    permission_required = 'irodsbackend.view_files'
-
-    def get(self, request, *args, **kwargs):
-        check_md5 = bool(int(request.GET.get('md5')))
-        include_colls = bool(int(request.GET.get('colls')))
-        # Get files
-        try:
-            with self.irods_backend.get_session() as irods:
-                objs = self.irods_backend.get_objects(
-                    irods,
-                    self.path,
-                    include_md5=check_md5,
-                    include_colls=include_colls,
-                )
-                ret = []
-                md5_paths = []
-                if check_md5:
-                    md5_paths = [
-                        o['path'] for o in objs if o['path'].endswith('.md5')
-                    ]
-                for o in objs:
-                    if o['type'] == 'coll' and include_colls:
-                        ret.append(o)
-                    elif o['type'] == 'obj' and not o['path'].endswith('.md5'):
-                        if check_md5:
-                            o['md5_file'] = o['path'] + '.md5' in md5_paths
-                        ret.append(o)
-            return Response({'irods_data': ret}, status=200)
-        except Exception as ex:
-            return Response(self._get_detail(ex), status=500)
 
 
 # Basic Auth View --------------------------------------------------------------

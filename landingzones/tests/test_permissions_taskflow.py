@@ -9,7 +9,9 @@ from projectroles.models import SODAR_CONSTANTS
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
+# Taskflowbackend dependency
 from taskflowbackend.tests.base import TaskflowPermissionTestBase
+
 from landingzones.tests.test_models import (
     LandingZoneMixin,
     ZONE_TITLE,

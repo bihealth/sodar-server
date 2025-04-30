@@ -91,6 +91,11 @@ urls_ajax = [
         view=views_ajax.ZoneStatusInfoRetrieveAjaxView.as_view(),
         name='ajax_status_info',
     ),
+    path(
+        route='ajax/irods/list/<uuid:landingzone>',
+        view=views_ajax.ZoneIrodsListRetrieveAjaxView.as_view(),
+        name='ajax_irods_list',
+    ),
 ]
 
 urlpatterns = urls_ui + urls_api + urls_ajax

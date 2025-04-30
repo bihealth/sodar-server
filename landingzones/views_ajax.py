@@ -5,6 +5,7 @@ from django.http import Http404, HttpResponseForbidden
 from rest_framework.response import Response
 
 # Projectroles dependency
+from projectroles.plugins import get_backend_api
 from projectroles.views_ajax import SODARBaseProjectAjaxView
 
 from landingzones.models import LandingZone
@@ -78,3 +79,45 @@ class ZoneStatusInfoRetrieveAjaxView(ZoneBaseAjaxView):
         if not self.check_zone_permission(zone, self.request.user):
             return HttpResponseForbidden()
         return Response({'status_info': zone.status_info}, status=200)
+
+
+class ZoneIrodsListRetrieveAjaxView(ZoneBaseAjaxView):
+    """View for landing zone data objects list in iRODS"""
+
+    permission_required = 'landingzones.view_zone_own'
+
+    def get(self, request, *args, **kwargs):
+        irods_backend = get_backend_api('omics_irods')
+        if not irods_backend:
+            return Response({'detail': 'iRODS backend not enabled'}, status=503)
+        zone = LandingZone.objects.filter(
+            sodar_uuid=self.kwargs.get('landingzone')
+        ).first()
+        if not zone:
+            return Response({'detail': 'Not found'}, status=404)
+        if not self.check_zone_permission(zone, self.request.user):
+            return Response(
+                {'detail': 'Access not granted for zone'}, status=403
+            )
+        zone_path = irods_backend.get_path(zone)
+        try:
+            with irods_backend.get_session() as irods:
+                objs = irods_backend.get_objects(
+                    irods, zone_path, include_md5=True, include_colls=True
+                )
+                ret = []
+                md5_paths = [
+                    o['path'] for o in objs if o['path'].endswith('.md5')
+                ]
+                for o in objs:
+                    if o['type'] == 'coll':
+                        ret.append(o)
+                    elif o['type'] == 'obj' and not o['path'].endswith('.md5'):
+                        o['md5_file'] = o['path'] + '.md5' in md5_paths
+                        ret.append(o)
+            return Response({'irods_data': ret}, status=200)
+        except Exception as ex:
+            return Response(
+                {'detail': f'Exception in iRODS file list retrieval: {ex}'},
+                status=500,
+            )

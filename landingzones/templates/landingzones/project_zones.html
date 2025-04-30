@@ -19,6 +19,7 @@
 {% endblock css %}
 
 {% block projectroles_extend %}
+{% get_django_setting 'IRODS_WEBDAV_ENABLED' as irods_webdav_enabled %}
 {% has_perm 'landingzones.view_zone_all' request.user project as can_view_zone_all %}
 {% has_perm 'landingzones.update_zone_own' request.user project as can_update_zone_own %}
 {% has_perm 'landingzones.update_zone_all' request.user project as can_update_zone_all %}
@@ -113,7 +114,6 @@
   <script type="text/javascript">
     window.zoneStatusUpdated = false;
     window.statusInterval = {{ zone_status_interval }} * 1000;
-    window.irodsShowChecksumCol = true;
     var zoneStatusURL = "{% url 'landingzones:ajax_status' project=project.sodar_uuid %}";
     var currentUserURL = "{% url 'projectroles:ajax_user_current' %}";
   </script>
@@ -244,6 +244,14 @@
                   'found here along with current zone file size and file ' +
                   'count.',
             attachTo: '.sodar-lz-list-header-info top',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+        tour.addStep('zone_file_list', {
+            title: 'iRODS File List Modal',
+            text: 'You can see a flat list of landing zone collections and ' +
+                  'data objects by clicking this button.',
+            attachTo: '.sodar-lz-list-modal-btn left',
             advanceOn: '.docs-link click',
             showCancelLink: true
         });
