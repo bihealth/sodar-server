@@ -18,6 +18,9 @@ from projectroles.tests.test_models import (
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
+# Taskflowbackend dependency
+from taskflowbackend.tests.base import ProjectLockMixin
+
 from landingzones.constants import ZONE_STATUS_ACTIVE, ZONE_STATUS_DELETED
 from landingzones.models import LandingZone
 from landingzones.tests.test_models import (
@@ -87,7 +90,7 @@ class ViewTestBase(
         )
 
 
-class TestProjectZoneView(ViewTestBase):
+class TestProjectZoneView(ProjectLockMixin, ViewTestBase):
     """Tests for ProjectZoneView"""
 
     def setUp(self):
@@ -125,6 +128,7 @@ class TestProjectZoneView(ViewTestBase):
         self.assertEqual(response.context['zones'][1], self.zone_contrib)
         self.assertEqual(response.context['zone_access_disabled'], False)
         self.assertEqual(response.context['prohibit_files'], None)
+        self.assertEqual(response.context['project_lock'], False)
 
     def test_get_contrib(self):
         """Test GET as contributor"""
@@ -176,6 +180,14 @@ class TestProjectZoneView(ViewTestBase):
             response.context['prohibit_files'],
             ', '.join(PROHIBIT_VAL.split(',')),
         )
+
+    def test_get_locked(self):
+        """Test GET with locked project"""
+        self.lock_project(self.project)
+        with self.login(self.user_owner):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['project_lock'], True)
 
 
 class TestZoneCreateView(ViewTestBase):

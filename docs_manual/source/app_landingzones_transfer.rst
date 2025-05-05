@@ -89,7 +89,6 @@ Other collections expected for a specific landing zone depend on the assay
 configuration. For detailed reference on which assay type expects which
 collections, see :ref:`metadata_advanced`.
 
-
 .. _app_landingzones_transfer_prohibit:
 
 Prohibited File Types
@@ -129,7 +128,7 @@ Validating Files
 To ensure your uploaded files are OK for being transferred into the project
 sample data, you can call on SODAR to validate them. To do this in the Landing
 Zones UI, open the dropdown next to your landing zone in the zone list
-and click :guilabel:`Validate Files`.
+and select :guilabel:`Validate Files`.
 
 .. figure:: _static/app_landingzones/zone_dropdown.png
     :align: center
@@ -137,12 +136,16 @@ and click :guilabel:`Validate Files`.
 
     Landing zone dropdown
 
-Clicking the link will temporarily lock the landing zone for read-only access
-and start the validation process in the background. Duration of validation
-depends on the amount of files in your zone. You can monitor the status of this
-process in the landing zone list view. You will also receive an alert once the
-validation is done. In the validation phase, missing iRODS checksums are also
-calculated so they can be compared to the corresponding ``.md5`` files.
+Selecting :guilabel:`Validate Files` will temporarily lock the landing zone for
+read-only access and start the validation process in the background. In the
+validation phase, SODAR checks for expected files and compares iRODS checksums
+to corresponding ``.md5`` files. If checksums were not calculated during file
+transfer, they will be generated before comparison.
+
+Duration of the validation process depends on the amount of files in your zone
+and whether checksums were calculated during transfer. You can monitor the
+status of the process in the landing zone list view. You will also receive an
+alert once validation is done.
 
 .. figure:: _static/app_landingzones/zone_status_validating.png
     :align: center
@@ -189,6 +192,12 @@ the dropdown next to your landing zones and select
 described above and if successful, automatically proceed to move the files under
 the assay. As with validation this is done in the background and you can monitor
 the process in the landing zone list.
+
+.. note::
+
+    Only one moving process per project can be active at a given time. The UI
+    will display a locked status and disable relevant controls if the project is
+    currently locked for moving operations.
 
 .. hint::
 

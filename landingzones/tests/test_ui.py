@@ -20,6 +20,9 @@ from projectroles.tests.test_ui import UITestBase
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_sheet_config import SheetConfigMixin
 
+# Taskflowbackend dependency
+from taskflowbackend.tests.base import ProjectLockMixin
+
 from landingzones.constants import (
     ZONE_STATUS_CREATING,
     ZONE_STATUS_NOT_CREATED,
@@ -102,7 +105,7 @@ class LandingZoneUITestBase(
         ]
 
 
-class TestProjectZoneView(LandingZoneUITestBase):
+class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
     """UI tests for ProjectZoneView"""
 
     def setUp(self):
@@ -116,6 +119,11 @@ class TestProjectZoneView(LandingZoneUITestBase):
         """Test ProjectZoneView rendering with no sheets"""
         # NOTE: Only testing with owner as this doesn't depend on user
         self.login_and_redirect(self.user_owner, self.url)
+        # Lock element exists regardless of status
+        self._assert_element(By.ID, 'sodar-lz-alert-lock', True)
+        elem = self.selenium.find_element(By.ID, 'sodar-lz-alert-lock')
+        self.assertIn('d-none', elem.get_attribute('class'))
+        self.assertNotIn('d-block', elem.get_attribute('class'))
         self._assert_element(By.ID, 'sodar-lz-alert-archive', False)
         self._assert_element(By.ID, 'sodar-lz-alert-disable', False)
         self._assert_element(By.ID, 'sodar-lz-alert-no-sheets', True)
@@ -436,6 +444,44 @@ class TestProjectZoneView(LandingZoneUITestBase):
             zone.find_element(By.CLASS_NAME, 'sodar-lz-zone-btn-delete'),
             True,
         )
+
+    def test_render_locked(self):
+        """Test ProjectZoneView with locked project"""
+        self._setup_investigation()
+        self.investigation.irods_status = True
+        self.investigation.save()
+        self.make_landing_zone(
+            'contrib_zone', self.project, self.user_contributor, self.assay
+        )
+        self.lock_project(self.project)
+        self.login_and_redirect(self.user_contributor, self.url)
+        self._assert_element(By.ID, 'sodar-lz-alert-lock', True)
+        elem = self.selenium.find_element(By.ID, 'sodar-lz-alert-lock')
+        self.assertNotIn('d-none', elem.get_attribute('class'))
+        self.assertIn('d-block', elem.get_attribute('class'))
+        # TODO: Test controls (see #1512)
+
+    def test_render_lock_update(self):
+        """Test ProjectZoneView with updated lock status"""
+        self._setup_investigation()
+        self.investigation.irods_status = True
+        self.investigation.save()
+        self.make_landing_zone(
+            'contrib_zone', self.project, self.user_contributor, self.assay
+        )
+        self.login_and_redirect(self.user_contributor, self.url)
+        self._assert_element(By.ID, 'sodar-lz-alert-lock', True)
+        elem = self.selenium.find_element(By.ID, 'sodar-lz-alert-lock')
+        self.assertIn('d-none', elem.get_attribute('class'))
+        self.assertNotIn('d-block', elem.get_attribute('class'))
+        self.lock_project(self.project)
+        WebDriverWait(self.selenium, self.wait_time).until(
+            ec.presence_of_element_located((By.CLASS_NAME, 'd-block'))
+        )
+        elem = self.selenium.find_element(By.ID, 'sodar-lz-alert-lock')
+        self.assertNotIn('d-none', elem.get_attribute('class'))
+        self.assertIn('d-block', elem.get_attribute('class'))
+        # TODO: Test controls (see #1512)
 
     def test_render_zone_config(self):
         """Test ProjectZoneView with zone using special configuration"""

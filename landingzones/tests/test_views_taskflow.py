@@ -156,6 +156,44 @@ class LandingZoneTaskflowMixin:
         )
 
 
+class TestProjectZoneView(
+    SampleSheetIOMixin,
+    LandingZoneMixin,
+    SampleSheetTaskflowMixin,
+    LandingZoneTaskflowMixin,
+    TaskflowViewTestBase,
+):
+    """Tests for ProjectZoneView with Taskflow and iRODS"""
+
+    def setUp(self):
+        super().setUp()
+        # Make project with owner in Taskflow and Django
+        self.project, self.owner_as = self.make_project_taskflow(
+            title='TestProject',
+            type=PROJECT_TYPE_PROJECT,
+            parent=self.category,
+            owner=self.user,
+            description='description',
+        )
+        # Import investigation
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+        # Create iRODS collections
+        self.make_irods_colls(self.investigation)
+        self.url = reverse(
+            'landingzones:list', kwargs={'project': self.project.sodar_uuid}
+        )
+
+    def test_get_locked(self):
+        """Test ProjectZoneView GET with locked project"""
+        self.lock_project(self.project)
+        with self.login(self.user):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['project_lock'], True)
+
+
 class TestZoneCreateView(
     SampleSheetIOMixin,
     LandingZoneMixin,

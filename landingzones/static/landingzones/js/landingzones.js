@@ -115,6 +115,25 @@ var updateZoneStatus = function() {
     }
 };
 
+
+/*****************************
+ Project lock status updating
+ *****************************/
+var updateLockStatus = function() {
+    var lockAlert = $('#sodar-lz-alert-lock');
+    var lockUrl = lockAlert.attr('data-lock-url');
+    $.ajax({
+        url: lockUrl,
+        method: 'GET',
+    }).done(function(data) {
+        if (data.is_locked && lockAlert.hasClass('d-none')) {
+            lockAlert.removeClass('d-none').addClass('d-block');
+        } else if (!data.is_locked && lockAlert.hasClass('d-block')) {
+            lockAlert.removeClass('d-block').addClass('d-none');
+        }
+    });
+}
+
 /**********************
  Modal copy path method
  **********************/
@@ -184,6 +203,12 @@ $(document).ready(function() {
         }
         updateCollectionStats();
     }, statsInterval);
+
+    // Poll and update project lock status
+    var lockInterval = 5000;
+    setInterval(function() {
+        updateLockStatus();
+    }, lockInterval)
 
     // iRODS dir list modal
     $('.sodar-lz-list-modal-btn').click(function() {

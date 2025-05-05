@@ -38,6 +38,13 @@
 </div>
 
 <div class="container-fluid sodar-page-container"> {# Main container #}
+  <div class="alert alert-danger {% if project_lock %}d-block{% else %}d-none{% endif %}"
+       data-lock-url="{% url 'taskflowbackend:api_lock_status' project=project.sodar_uuid %}"
+       id="sodar-lz-alert-lock">
+    <i class="iconify" data-icon="mdi:lock"></i>
+    This project is locked for landing zone operations. You need to wait for
+    the ongoing operation to finish before starting new jobs.
+  </div>
   {% if project.archive %}
     <div class="alert alert-warning" id="sodar-lz-alert-archive">
       <i class="iconify" data-icon="mdi:archive"></i> Accessing and deleting

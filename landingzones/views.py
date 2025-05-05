@@ -477,6 +477,7 @@ class ProjectZoneView(
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
+        taskflow = get_backend_api('taskflow')
         project = context['project']
         # iRODS backend
         context['irods_backend_enabled'] = (
@@ -501,6 +502,14 @@ class ProjectZoneView(
             settings.LANDINGZONES_DISABLE_FOR_USERS
             and not self.request.user.is_superuser
         )
+        # Project lock status
+        project_lock = False
+        if taskflow:
+            try:
+                project_lock = taskflow.is_locked(project)
+            except Exception as ex:
+                logger.error('Exception querying lock status: {}'.format(ex))
+        context['project_lock'] = project_lock
         return context
 
 

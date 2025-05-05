@@ -31,6 +31,7 @@ Added
     - ``ZoneStatusInfoRetrieveAjaxView`` Ajax view (#1308)
     - Full display of truncated zone status info (#1308)
     - ``ZoneIrodsListRetrieveAjaxView`` Ajax view (#1730)
+    - UI alert for locked project (#2146)
 - **Samplesheets**
     - Site read-only mode support (#2051)
     - ``checksum`` field in ``ProjectIrodsFileListAPIView`` return data (#2039)
@@ -96,6 +97,7 @@ Changed
     - Newline separators in landing zone exception messages (#1308)
     - Do not create timeline events for flows failed by locked project (#1970)
     - Collect all failed checksums in ``BatchValidateChecksumsTask`` (#1073)
+    - Move ``lock_project()`` test helper in ``ProjectLockMixin`` (#2146)
 
 Fixed
 -----

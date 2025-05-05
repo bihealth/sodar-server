@@ -72,21 +72,28 @@ TEST_MODE_ERR_MSG = (
 DEFAULT_PERMANENT_USERS = ['client_user', 'rods', 'rodsadmin', 'public']
 
 
-class TaskflowTestMixin(ProjectMixin, RoleMixin, RoleAssignmentMixin):
-    """Setup/teardown methods and helpers for taskflow tests"""
+class ProjectLockMixin:
+    """Taskflow project locking helpers for tests"""
 
     #: Project lock coordinator
     coordinator = None
-    #: iRODS backend object
-    irods_backend = None
-    #: iRODS session object
-    irods = None
 
     def lock_project(self, project):
         self.coordinator = lock_api.get_coordinator()
         lock_id = str(project.sodar_uuid)
         lock = self.coordinator.get_lock(lock_id)
         lock_api.acquire(lock)
+
+
+class TaskflowTestMixin(
+    ProjectMixin, RoleMixin, ProjectLockMixin, RoleAssignmentMixin
+):
+    """Setup/teardown methods and helpers for taskflow tests"""
+
+    #: iRODS backend object
+    irods_backend = None
+    #: iRODS session object
+    irods = None
 
     def make_irods_object(
         self, coll, obj_name, content=None, content_length=1024, checksum=True
