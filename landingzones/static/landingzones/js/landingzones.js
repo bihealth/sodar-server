@@ -128,15 +128,15 @@ var updateLockStatus = function() {
     }).done(function(data) {
         if (data.is_locked) {
             lockAlert.removeClass('d-none').addClass('d-block');
-            $('.sodar-lz-zone-btn-process').each(function() {
+            $('.sodar-lz-zone-btn-move').each(function() {
                 if (!$(this).hasClass('disabled')) {
                     $(this).addClass('disabled');
                 }
             });
         } else if (!data.is_locked) {
             lockAlert.removeClass('d-block').addClass('d-none');
-            $('.sodar-lz-zone-btn-process').each(function() {
-                if ($(this).getAttribute('data-can-move') === '1') {
+            $('.sodar-lz-zone-btn-move').each(function() {
+                if ($(this).attr('data-can-move') === '1') {
                     $(this).removeClass('disabled');
                 }
             });

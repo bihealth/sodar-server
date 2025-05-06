@@ -869,6 +869,22 @@ class TestZoneMoveView(
             AppAlert.objects.filter(alert_name='zone_move').count(), 0
         )
 
+    def test_post_validate_locked(self):
+        """Test POST to validate with locked project"""
+        self.lock_project(self.project)
+        irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
+        self.make_irods_md5_object(irods_obj)
+        zone = LandingZone.objects.first()
+        self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(len(self.zone_coll.data_objects), 2)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+        with self.login(self.user):
+            response = self.client.post(self.url_validate)
+            self.assertRedirects(response, self.url_redirect)
+        self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
+        self.assertEqual(len(self.zone_coll.data_objects), 2)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+
     def test_post_move_invalid_status(self):
         """Test POST to move with invalid zone status (should fail)"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)

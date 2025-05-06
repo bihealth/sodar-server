@@ -29,6 +29,8 @@ class Flow(BaseLinearFlow):
     """
 
     def validate(self):
+        # Only require lock if moving
+        self.require_lock = not self.flow_data.get('validate_only', False)
         self.supported_modes = ['sync', 'async']
         self.required_fields = ['zone_uuid']
         return super().validate()

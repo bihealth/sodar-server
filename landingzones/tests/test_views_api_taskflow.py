@@ -542,13 +542,12 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
         self.assert_irods_access(self.project_group, self.zone_path, None)
 
     def test_post_validate_locked(self):
-        """Test POST for validation with locked project (should fail)"""
+        """Test POST for validation with locked project"""
         self.lock_project(self.project)
         self.landing_zone.status = ZONE_STATUS_FAILED
         self.landing_zone.save()
         response = self.request_knox(self.url, method='POST')
-        # NOTE: This should be updated to not require lock, see #1850
-        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.status_code, 200)
 
     def test_post_validate_invalid_status(self):
         """Test POST for validation with invalid zone status (should fail)"""

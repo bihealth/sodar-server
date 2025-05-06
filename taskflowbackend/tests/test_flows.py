@@ -1159,6 +1159,28 @@ class TestLandingZoneMove(
         self.zone.refresh_from_db()
         self.assertEqual(self.zone.status, ZONE_STATUS_FAILED)
 
+    def test_validate_locked(self):
+        """Test landing_zone_move validation with locked project"""
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        obj_coll_path = os.path.join(self.zone_path, OBJ_COLL_NAME)
+        obj_coll = self.irods.collections.create(obj_coll_path)
+        obj = self.make_irods_object(obj_coll, OBJ_NAME)
+        self.make_irods_md5_object(obj)
+        flow_data = {
+            'zone_uuid': str(self.zone.sodar_uuid),
+            'validate_only': True,
+        }
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='landing_zone_move',
+            flow_data=flow_data,
+        )
+        self.lock_project(self.project)
+        self.taskflow.run_flow(flow, self.project)
+        self.zone.refresh_from_db()
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+
     def test_revert(self):
         """Test reverting landing_zone_move"""
         coll_path = os.path.join(self.zone_path, COLL_NAME)

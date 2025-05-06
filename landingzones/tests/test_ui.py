@@ -465,7 +465,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
         for elem in self.selenium.find_elements(
             By.CLASS_NAME, 'sodar-lz-zone-btn-validate'
         ):
-            self._assert_btn_enabled(elem, False)
+            self._assert_btn_enabled(elem, True)
         for elem in self.selenium.find_elements(
             By.CLASS_NAME, 'sodar-lz-zone-btn-move'
         ):
@@ -504,7 +504,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
         for elem in self.selenium.find_elements(
             By.CLASS_NAME, 'sodar-lz-zone-btn-validate'
         ):
-            self._assert_btn_enabled(elem, False)
+            self._assert_btn_enabled(elem, True)
         for elem in self.selenium.find_elements(
             By.CLASS_NAME, 'sodar-lz-zone-btn-move'
         ):

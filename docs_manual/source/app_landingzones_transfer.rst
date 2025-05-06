@@ -136,11 +136,11 @@ and select :guilabel:`Validate Files`.
 
     Landing zone dropdown
 
-Selecting :guilabel:`Validate Files` will temporarily lock the landing zone for
-read-only access and start the validation process in the background. In the
-validation phase, SODAR checks for expected files and compares iRODS checksums
-to corresponding ``.md5`` files. If checksums were not calculated during file
-transfer, they will be generated before comparison.
+Selecting :guilabel:`Validate Files` will start the validation process for the
+given zone in the background. In the validation phase, SODAR checks for expected
+files and compares iRODS checksums to corresponding ``.md5`` files. If checksums
+were not calculated during file transfer, they will be generated before
+comparison.
 
 Duration of the validation process depends on the amount of files in your zone
 and whether checksums were calculated during transfer. You can monitor the

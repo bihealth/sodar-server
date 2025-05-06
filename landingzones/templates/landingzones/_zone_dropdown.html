@@ -27,14 +27,14 @@
       {% endfor %}
     {% endif %}
     {# General options #}
-    <a class="dropdown-item sodar-lz-zone-btn-process sodar-lz-zone-btn-validate
-              {% if project_lock or not can_move %}disabled{% endif %}"
+    <a class="dropdown-item sodar-lz-zone-btn-validate
+              {% if not can_move %}disabled{% endif %}"
        data-can-move="{{ can_move|yesno:'1,0' }}"
        href="{% url 'landingzones:validate' landingzone=zone.sodar_uuid %}">
       <i class="iconify" data-icon="mdi:check-thick"></i>
       Validate Files
     </a>
-    <a class="dropdown-item sodar-lz-zone-btn-process sodar-lz-zone-btn-move
+    <a class="dropdown-item sodar-lz-zone-btn-move
               {% if project_lock or not can_move %}disabled{% endif %}"
        data-can-move="{{ can_move|yesno:'1,0' }}"
        href="{% url 'landingzones:move' landingzone=zone.sodar_uuid %}">
