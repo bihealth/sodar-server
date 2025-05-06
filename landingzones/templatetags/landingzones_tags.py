@@ -90,6 +90,16 @@ def get_config_link_url(zone, url_name):
     return reverse(url_name, kwargs={'landingzone': zone.sodar_uuid})
 
 
+@register.simple_tag
+def can_move_zone(zone, user):
+    """Return True if user is allowed to move the given zone"""
+    if user.is_superuser:
+        return True
+    perm = 'landingzones.move_zone_'
+    perm += 'own' if zone.user == user else 'all'
+    return user.has_perm(perm, zone.project)
+
+
 # TODO: Move to SODAR Core (see bihealth/sodar-core#1662)
 @register.simple_tag
 def get_user_badge(user):

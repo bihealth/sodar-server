@@ -451,15 +451,25 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
         self.investigation.irods_status = True
         self.investigation.save()
         self.make_landing_zone(
+            'owner_zone', self.project, self.user_owner, self.assay
+        )
+        self.make_landing_zone(
             'contrib_zone', self.project, self.user_contributor, self.assay
         )
         self.lock_project(self.project)
-        self.login_and_redirect(self.user_contributor, self.url)
+        self.login_and_redirect(self.user_owner, self.url)
         self._assert_element(By.ID, 'sodar-lz-alert-lock', True)
         elem = self.selenium.find_element(By.ID, 'sodar-lz-alert-lock')
         self.assertNotIn('d-none', elem.get_attribute('class'))
         self.assertIn('d-block', elem.get_attribute('class'))
-        # TODO: Test controls (see #1512)
+        for elem in self.selenium.find_elements(
+            By.CLASS_NAME, 'sodar-lz-zone-btn-validate'
+        ):
+            self._assert_btn_enabled(elem, False)
+        for elem in self.selenium.find_elements(
+            By.CLASS_NAME, 'sodar-lz-zone-btn-move'
+        ):
+            self._assert_btn_enabled(elem, False)
 
     def test_render_lock_update(self):
         """Test ProjectZoneView with updated lock status"""
@@ -474,14 +484,31 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
         elem = self.selenium.find_element(By.ID, 'sodar-lz-alert-lock')
         self.assertIn('d-none', elem.get_attribute('class'))
         self.assertNotIn('d-block', elem.get_attribute('class'))
+        for elem in self.selenium.find_elements(
+            By.CLASS_NAME, 'sodar-lz-zone-btn-validate'
+        ):
+            self._assert_btn_enabled(elem, True)
+        for elem in self.selenium.find_elements(
+            By.CLASS_NAME, 'sodar-lz-zone-btn-move'
+        ):
+            self._assert_btn_enabled(elem, True)
+
         self.lock_project(self.project)
+
         WebDriverWait(self.selenium, self.wait_time).until(
             ec.presence_of_element_located((By.CLASS_NAME, 'd-block'))
         )
         elem = self.selenium.find_element(By.ID, 'sodar-lz-alert-lock')
         self.assertNotIn('d-none', elem.get_attribute('class'))
         self.assertIn('d-block', elem.get_attribute('class'))
-        # TODO: Test controls (see #1512)
+        for elem in self.selenium.find_elements(
+            By.CLASS_NAME, 'sodar-lz-zone-btn-validate'
+        ):
+            self._assert_btn_enabled(elem, False)
+        for elem in self.selenium.find_elements(
+            By.CLASS_NAME, 'sodar-lz-zone-btn-move'
+        ):
+            self._assert_btn_enabled(elem, False)
 
     def test_render_zone_config(self):
         """Test ProjectZoneView with zone using special configuration"""

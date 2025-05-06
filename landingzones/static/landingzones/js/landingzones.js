@@ -126,10 +126,20 @@ var updateLockStatus = function() {
         url: lockUrl,
         method: 'GET',
     }).done(function(data) {
-        if (data.is_locked && lockAlert.hasClass('d-none')) {
+        if (data.is_locked) {
             lockAlert.removeClass('d-none').addClass('d-block');
-        } else if (!data.is_locked && lockAlert.hasClass('d-block')) {
+            $('.sodar-lz-zone-btn-process').each(function() {
+                if (!$(this).hasClass('disabled')) {
+                    $(this).addClass('disabled');
+                }
+            });
+        } else if (!data.is_locked) {
             lockAlert.removeClass('d-block').addClass('d-none');
+            $('.sodar-lz-zone-btn-process').each(function() {
+                if ($(this).getAttribute('data-can-move') === '1') {
+                    $(this).removeClass('disabled');
+                }
+            });
         }
     });
 }
@@ -205,6 +215,7 @@ $(document).ready(function() {
     }, statsInterval);
 
     // Poll and update project lock status
+    updateLockStatus();
     var lockInterval = 5000;
     setInterval(function() {
         updateLockStatus();

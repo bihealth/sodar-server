@@ -21,7 +21,7 @@ Release for SODAR Core 1.1 upgrade and feature updates.
 - Add support for longer landing zone status info messages
 - Add iRODS project owner/delegate group management
 - Add taskflow API with project lock status view
-- Add project locking status display in landing zone list view
+- Add project locking status display and control disabling in landing zone list view
 - Update email sending and alerts to exclude inactive users
 - Update iRODS access ticket creation to support path to data object in UI
 - Update checksum validation to check all files before failing

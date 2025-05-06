@@ -80,6 +80,7 @@ Changed
     - Update zone list title column layout (#1852, #2127)
     - Update ``ProjectZoneView`` to display project zones in one table (#2129)
     - Move irodsbackend dir list modal JQuery to ``landingzones.js`` (#1730)
+    - Disable zone controls for locked project (#1512)
 - **Samplesheets**
     - Define app settings as ``PluginAppSettingDef`` objects (#2051)
     - Return ``500`` for iRODS query exceptions in ``ProjectIrodsFileListAPIView`` (#2103)
