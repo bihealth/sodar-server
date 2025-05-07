@@ -1,5 +1,6 @@
 """Tests for UI views in the landingzones app"""
 
+from django.contrib.messages import get_messages
 from django.forms import HiddenInput
 from django.test import override_settings
 from django.urls import reverse
@@ -21,13 +22,18 @@ from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import ProjectLockMixin
 
-from landingzones.constants import ZONE_STATUS_ACTIVE, ZONE_STATUS_DELETED
+from landingzones.constants import (
+    ZONE_STATUS_ACTIVE,
+    ZONE_STATUS_MOVED,
+    ZONE_STATUS_DELETED,
+)
 from landingzones.models import LandingZone
 from landingzones.tests.test_models import (
     LandingZoneMixin,
     ZONE_TITLE,
     ZONE_DESC,
 )
+from landingzones.views import ZONE_LIMIT_MSG
 
 
 app_settings = AppSettingAPI()
@@ -122,13 +128,15 @@ class TestProjectZoneView(ProjectLockMixin, ViewTestBase):
         with self.login(self.user_owner):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['investigation'], self.investigation)
-        self.assertEqual(response.context['zones'].count(), 2)
-        self.assertEqual(response.context['zones'][0], self.zone)
-        self.assertEqual(response.context['zones'][1], self.zone_contrib)
-        self.assertEqual(response.context['zone_access_disabled'], False)
-        self.assertEqual(response.context['prohibit_files'], None)
-        self.assertEqual(response.context['project_lock'], False)
+        rc = response.context
+        self.assertEqual(rc['investigation'], self.investigation)
+        self.assertEqual(rc['zones'].count(), 2)
+        self.assertEqual(rc['zones'][0], self.zone)
+        self.assertEqual(rc['zones'][1], self.zone_contrib)
+        self.assertEqual(rc['zone_access_disabled'], False)
+        self.assertEqual(rc['prohibit_files'], None)
+        self.assertEqual(rc['project_lock'], False)
+        self.assertEqual(rc['zone_create_limit'], False)
 
     def test_get_contrib(self):
         """Test GET as contributor"""
@@ -189,6 +197,26 @@ class TestProjectZoneView(ProjectLockMixin, ViewTestBase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['project_lock'], True)
 
+    @override_settings(LANDINGZONES_ZONE_CREATE_LIMIT=2)
+    def test_get_limit(self):
+        """Test GET with zone creation limit reached"""
+        self.assertEqual(
+            LandingZone.objects.filter(project=self.project).count(), 2
+        )
+        with self.login(self.user_owner):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['zone_create_limit'], True)
+
+    @override_settings(LANDINGZONES_ZONE_CREATE_LIMIT=2)
+    def test_get_limit_existing_finished(self):
+        """Test GET with zone creation limit and finished zone"""
+        self.zone.set_status(ZONE_STATUS_MOVED)
+        with self.login(self.user_owner):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['zone_create_limit'], False)
+
 
 class TestZoneCreateView(ViewTestBase):
     """Tests for ZoneCreateView"""
@@ -225,6 +253,31 @@ class TestZoneCreateView(ViewTestBase):
             response.context['prohibit_files'],
             ', '.join(PROHIBIT_VAL.split(',')),
         )
+
+    @override_settings(LANDINGZONES_ZONE_CREATE_LIMIT=1)
+    def test_get_limit(self):
+        """Test GET with zone creation limit reached (should fail)"""
+        with self.login(self.user):
+            response = self.client.get(self.url)
+            self.assertRedirects(
+                response,
+                reverse(
+                    'landingzones:list',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
+        self.assertEqual(
+            list(get_messages(response.wsgi_request))[0].message,
+            ZONE_LIMIT_MSG.format(limit=1) + '.',
+        )
+
+    @override_settings(LANDINGZONES_ZONE_CREATE_LIMIT=1)
+    def test_get_limit_existing_finished(self):
+        """Test GET with zone creation limit and finished zone"""
+        self.zone.set_status(ZONE_STATUS_MOVED)
+        with self.login(self.user):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
 
 
 class TestZoneUpdateView(ViewTestBase):

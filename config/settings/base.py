@@ -813,6 +813,9 @@ LANDINGZONES_TRIGGER_FILE = env.str(
 LANDINGZONES_DISABLE_FOR_USERS = env.bool(
     'LANDINGZONES_DISABLE_FOR_USERS', False
 )
+# Limit creation of active landing zones per project (0 or None = no limit)
+LANDINGZONES_ZONE_CREATE_LIMIT = env.int('LANDINGZONES_ZONE_CREATE_LIMIT', None)
+
 # Landingzones configapp plugin settings
 LZ_BIH_PROTEOMICS_SMB_EXPIRY_DAYS = env.int(
     'LZ_BIH_PROTEOMICS_SMB_EXPIRY_DAYS', 14

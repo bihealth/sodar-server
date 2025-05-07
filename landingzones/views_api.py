@@ -6,7 +6,7 @@ import sys
 from django.urls import reverse
 
 from rest_framework import serializers, status
-from rest_framework.exceptions import APIException, NotFound
+from rest_framework.exceptions import APIException, NotFound, PermissionDenied
 from rest_framework.generics import (
     ListAPIView,
     RetrieveAPIView,
@@ -246,6 +246,14 @@ class ZoneCreateAPIView(
         ex = APIException(msg)
         ex.status_code = 503
         raise ex
+
+    def post(self, request, *args, **kwargs):
+        project = self.get_project()
+        try:
+            self.check_create_limit(project)
+        except Exception as ex:
+            raise PermissionDenied(ex)
+        return super().post(request, *args, **kwargs)
 
     def perform_create(self, serializer):
         """

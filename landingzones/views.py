@@ -40,7 +40,7 @@ from landingzones.constants import (
 )
 from landingzones.forms import LandingZoneForm
 from landingzones.models import LandingZone
-from landingzones.utils import cleanup_file_prohibit
+from landingzones.utils import get_zone_create_limit, cleanup_file_prohibit
 
 
 app_settings = AppSettingAPI()
@@ -58,6 +58,10 @@ ZONE_MOVE_INVALID_STATUS = 'Zone not in active state, unable to trigger action.'
 ZONE_MOVE_NO_FILES = 'No files in landing zone, nothing to do.'
 ZONE_UPDATE_ACTIONS = ['update', 'move', 'delete']
 ZONE_UPDATE_FIELDS = ['description', 'user_message']
+ZONE_LIMIT_MSG = (
+    'Landing zone creation limit for project ({limit}) reached, please move or '
+    'delete existing zones before creating new ones'
+)
 
 
 # Mixins -----------------------------------------------------------------------
@@ -141,7 +145,17 @@ class ZoneConfigPluginMixin:
 
 
 class ZoneModifyMixin(ZoneConfigPluginMixin):
-    """Mixin to be used in zone creation in UI and REST API views"""
+    """Mixin to be used in zone creation/update in UI and REST API views"""
+
+    def check_create_limit(self, project):
+        """Raise Exception if zone create limit has been reached"""
+        limit = settings.LANDINGZONES_ZONE_CREATE_LIMIT
+        if limit and limit > 0:
+            zones = LandingZone.objects.filter(project=project).exclude(
+                status__in=STATUS_FINISHED
+            )
+            if zones.count() >= limit:
+                raise Exception(ZONE_LIMIT_MSG.format(limit=limit))
 
     def submit_create(
         self,
@@ -510,6 +524,8 @@ class ProjectZoneView(
             except Exception as ex:
                 logger.error('Exception querying lock status: {}'.format(ex))
         context['project_lock'] = project_lock
+        # Zone creation limit
+        context['zone_create_limit'] = get_zone_create_limit(project)
         return context
 
 
@@ -534,6 +550,20 @@ class ZoneCreateView(
         kwargs = super().get_form_kwargs()
         kwargs.update({'project': self.kwargs['project']})
         return kwargs
+
+    def dispatch(self, request, *args, **kwargs):
+        project = self.get_project()
+        try:
+            self.check_create_limit(project)
+        except Exception as ex:
+            messages.error(request, str(ex) + '.')
+            return redirect(
+                reverse(
+                    'landingzones:list',
+                    kwargs={'project': project.sodar_uuid},
+                )
+            )
+        return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
         taskflow = get_backend_api('taskflow')

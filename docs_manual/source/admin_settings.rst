@@ -224,6 +224,9 @@ Sample Sheets Settings
 Landing Zones Settings
 ----------------------
 
+``LANDINGZONES_DISABLE_FOR_USERS``
+    Disable non-superuser uploads via landing zones, useful for e.g. demo
+    instances (boolean).
 ``LANDINGZONES_STATUS_INTERVAL``
     Zone status query interval in seconds (integer).
 ``LANDINGZONES_TRIGGER_ENABLE``
@@ -233,9 +236,11 @@ Landing Zones Settings
 ``LANDINGZONES_TRIGGER_FILE``
     File name for automated move triggering (string,
     default: ``.sodar_validate_and_move``).
-``LANDINGZONES_DISABLE_FOR_USERS``
-    Disable non-superuser uploads via landing zones, useful for e.g. demo
-    instances (boolean).
+``LANDINGZONES_ZONE_CREATE_LIMIT``
+    Optional limit for how many active landing zones can be created per
+    project. If enabled, existing landing zones past the limit must be moved or
+    deleted before new ones can be created. The UI and API will inform the user
+    of this limitation. Use value ``0`` or ``None`` for no limit (integer).
 ``LZ_BIH_PROTEOMICS_SMB_EXPIRY_DAYS``
     BIH proteomics configuration SMB expiry days (integer).
 ``LZ_BIH_PROTEOMICS_SMB_USER``

@@ -74,6 +74,14 @@ see the zone status and move further with file uploads.
 The next sections will provide instructions on browsing your landing zones and
 how to proceed with your file uploads.
 
+.. attention::
+
+    The administrators of your SODAR instance may limit the amount of active
+    landing zones that can be created per project. If a limit is active and
+    reached, you will be notified about this in the UI and the REST API. In this
+    case, existing zones in the project will have to be moved or deleted before
+    new ones are created.
+
 
 Landing Zone Update
 ^^^^^^^^^^^^^^^^^^^

@@ -32,6 +32,8 @@ Added
     - Full display of truncated zone status info (#1308)
     - ``ZoneIrodsListRetrieveAjaxView`` Ajax view (#1730)
     - UI alert for locked project (#2146)
+    - ``LANDINGZONES_ZONE_CREATE_LIMIT`` Django setting (#2148)
+    - Landing zone creation limit per project (#2148)
 - **Samplesheets**
     - Site read-only mode support (#2051)
     - ``checksum`` field in ``ProjectIrodsFileListAPIView`` return data (#2039)

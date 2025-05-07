@@ -42,7 +42,7 @@ from landingzones.constants import (
 )
 from landingzones.models import LandingZone
 from landingzones.tests.test_models import LandingZoneMixin
-from landingzones.views import ZONE_MOVE_INVALID_STATUS
+from landingzones.views import ZONE_MOVE_INVALID_STATUS, ZONE_LIMIT_MSG
 
 
 app_settings = AppSettingAPI()
@@ -222,13 +222,21 @@ class TestZoneCreateView(
         self.project_path = self.irods_backend.get_path(self.project)
         self.zone_root_path = self.irods_backend.get_zone_path(self.project)
         self.owner_group = self.irods_backend.get_group_name(self.project, True)
-        # Set up URLs
+        # Set up URLs and default data
         self.url = reverse(
             'landingzones:create', kwargs={'project': self.project.sodar_uuid}
         )
         self.redirect_url = reverse(
             'landingzones:list', kwargs={'project': self.project.sodar_uuid}
         )
+        self.post_data = {
+            'assay': str(self.assay.sodar_uuid),
+            'title_suffix': ZONE_SUFFIX,
+            'description': ZONE_DESC,
+            'configuration': '',
+            'create_colls': False,
+            'restrict_colls': False,
+        }
 
     def test_post(self):
         """Test ZoneCreateView POST"""
@@ -238,16 +246,8 @@ class TestZoneCreateView(
         )
         self.assertEqual(len(mail.outbox), 1)
 
-        values = {
-            'assay': str(self.assay.sodar_uuid),
-            'title_suffix': ZONE_SUFFIX,
-            'description': ZONE_DESC,
-            'configuration': '',
-            'create_colls': False,
-            'restrict_colls': False,
-        }
         with self.login(self.user):
-            response = self.client.post(self.url, values)
+            response = self.client.post(self.url, self.post_data)
             self.assertRedirects(response, self.redirect_url)
 
         self.assert_zone_count(1)
@@ -293,22 +293,13 @@ class TestZoneCreateView(
         )
         self.assertEqual(len(mail.outbox), 1)
 
-        values = {
-            'assay': str(self.assay.sodar_uuid),
-            'title_suffix': ZONE_SUFFIX,
-            'description': ZONE_DESC,
-            'configuration': '',
-            'create_colls': False,
-            'restrict_colls': False,
-        }
         with self.login(self.user):
-            response = self.client.post(self.url, values)
+            response = self.client.post(self.url, self.post_data)
             self.assertRedirects(response, self.redirect_url)
 
         self.assert_zone_count(1)
         zone = LandingZone.objects.first()
         self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
-
         self.assert_irods_coll(zone)
         for c in ZONE_BASE_COLLS:
             self.assert_irods_coll(zone, c, False)
@@ -326,16 +317,9 @@ class TestZoneCreateView(
     def test_post_colls(self):
         """Test POST with default collections"""
         self.assertEqual(LandingZone.objects.count(), 0)
-        values = {
-            'assay': str(self.assay.sodar_uuid),
-            'title_suffix': ZONE_SUFFIX,
-            'description': ZONE_DESC,
-            'create_colls': True,
-            'restrict_colls': False,
-            'configuration': '',
-        }
+        self.post_data['create_colls'] = True
         with self.login(self.user):
-            self.client.post(self.url, values)
+            self.client.post(self.url, self.post_data)
 
         self.assert_zone_count(1)
         zone = LandingZone.objects.first()
@@ -378,16 +362,9 @@ class TestZoneCreateView(
             self.user,
         )
 
-        values = {
-            'assay': str(self.assay.sodar_uuid),
-            'title_suffix': ZONE_SUFFIX,
-            'description': ZONE_DESC,
-            'create_colls': True,
-            'restrict_colls': False,
-            'configuration': '',
-        }
+        self.post_data['create_colls'] = True
         with self.login(self.user):
-            self.client.post(self.url, values)
+            self.client.post(self.url, self.post_data)
 
         self.assert_zone_count(1)
         zone = LandingZone.objects.first()
@@ -419,16 +396,9 @@ class TestZoneCreateView(
         self.assay.save()
         # NOTE: update_cache() not implemented in this plugin
 
-        values = {
-            'assay': str(self.assay.sodar_uuid),
-            'title_suffix': ZONE_SUFFIX,
-            'description': ZONE_DESC,
-            'create_colls': True,
-            'restrict_colls': False,
-            'configuration': '',
-        }
+        self.post_data['create_colls'] = True
         with self.login(self.user):
-            self.client.post(self.url, values)
+            self.client.post(self.url, self.post_data)
 
         self.assert_zone_count(1)
         zone = LandingZone.objects.first()
@@ -457,16 +427,10 @@ class TestZoneCreateView(
             self.user,
         )
 
-        values = {
-            'assay': str(self.assay.sodar_uuid),
-            'title_suffix': ZONE_SUFFIX,
-            'description': ZONE_DESC,
-            'create_colls': True,
-            'restrict_colls': True,
-            'configuration': '',
-        }
+        self.post_data['create_colls'] = True
+        self.post_data['restrict_colls'] = True
         with self.login(self.user):
-            self.client.post(self.url, values)
+            self.client.post(self.url, self.post_data)
 
         self.assert_zone_count(1)
         zone = LandingZone.objects.first()
@@ -487,6 +451,42 @@ class TestZoneCreateView(
             self.assert_irods_access(
                 self.owner_group, os.path.join(zone_path, c), IRODS_ACCESS_OWN
             )
+
+    @override_settings(LANDINGZONES_ZONE_CREATE_LIMIT=1)
+    def test_post_limit(self):
+        """Test POST with zone creation limit reached (should fail)"""
+        self.make_landing_zone(
+            title=ZONE_TITLE,
+            project=self.project,
+            user=self.user,
+            assay=self.assay,
+            status=ZONE_STATUS_ACTIVE,
+        )
+        self.assertEqual(LandingZone.objects.count(), 1)
+        with self.login(self.user):
+            response = self.client.post(self.url, self.post_data)
+            self.assertRedirects(response, self.redirect_url)
+        self.assertEqual(LandingZone.objects.count(), 1)
+        self.assertEqual(
+            list(get_messages(response.wsgi_request))[0].message,
+            ZONE_LIMIT_MSG.format(limit=1) + '.',
+        )
+
+    @override_settings(LANDINGZONES_ZONE_CREATE_LIMIT=1)
+    def test_post_limit_existing_finished(self):
+        """Test POST with zone creation limit and finished zone"""
+        self.make_landing_zone(
+            title=ZONE_TITLE,
+            project=self.project,
+            user=self.user,
+            assay=self.assay,
+            status=ZONE_STATUS_MOVED,
+        )
+        self.assertEqual(LandingZone.objects.count(), 1)
+        with self.login(self.user):
+            response = self.client.post(self.url, self.post_data)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(LandingZone.objects.count(), 2)
 
 
 class TestZoneMoveView(

@@ -9,6 +9,7 @@ from projectroles.plugins import get_backend_api
 from projectroles.views_ajax import SODARBaseProjectAjaxView
 
 from landingzones.models import LandingZone
+from landingzones.utils import get_zone_create_limit
 
 
 # Local constants
@@ -28,16 +29,16 @@ class ZoneBaseAjaxView(SODARBaseProjectAjaxView):
 
 
 class ZoneStatusRetrieveAjaxView(ZoneBaseAjaxView):
-    """Ajax API view for returning the landing zone status"""
+    """Ajax API view for returning project landing zone statuses"""
 
     permission_required = 'landingzones.view_zone_own'
 
     def post(self, request, *args, **kwargs):
-        ret = {}
+        project = self.get_project()
+        ret = {'zones': {}, 'zone_create_limit': get_zone_create_limit(project)}
         zone_data = request.data.get('zones')
         if not zone_data:
             return Response(ret, status=200)
-        project = self.get_project()
         zones = LandingZone.objects.filter(
             sodar_uuid__in=list(zone_data.keys()), project=project
         )
@@ -56,7 +57,7 @@ class ZoneStatusRetrieveAjaxView(ZoneBaseAjaxView):
             truncated = False
             if len(zone.status_info) > len(status_info):
                 truncated = True
-            ret[str(zone.sodar_uuid)] = {
+            ret['zones'][str(zone.sodar_uuid)] = {
                 'modified': zone.date_modified.timestamp(),
                 'status': zone.status,
                 'status_info': status_info,

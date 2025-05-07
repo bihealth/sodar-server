@@ -30,7 +30,8 @@
   {% if not zone_access_disabled and can_create_zone %}
     <div class="ml-auto">
       <a href="{% url 'landingzones:create' project=project.sodar_uuid %}"
-         class="btn btn-primary" role="button" id="sodar-lz-btn-create-zone">
+         class="btn btn-primary {% if zone_create_limit %}disabled{% endif %}"
+         role="button" id="sodar-lz-btn-create-zone">
        <i class="iconify" data-icon="mdi:plus-thick"></i> Create Zone
       </a>
     </div>
@@ -44,6 +45,12 @@
     <i class="iconify" data-icon="mdi:lock"></i>
     This project is locked for landing zone operations. You need to wait for
     the ongoing operation to finish before starting new jobs.
+  </div>
+  <div class="alert alert-danger {% if zone_create_limit %}d-block{% else %}d-none{% endif %}"
+       id="sodar-lz-alert-zone-create-limit">
+    <i class="iconify" data-icon="mdi:briefcase-variant-off"></i>
+    Landing zone creation limit for the project has been reached. Please move or
+    delete existing zones before creating new ones.
   </div>
   {% if project.archive %}
     <div class="alert alert-warning" id="sodar-lz-alert-archive">

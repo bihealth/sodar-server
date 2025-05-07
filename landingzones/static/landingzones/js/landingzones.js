@@ -7,6 +7,8 @@ var isSuperuser = false;
 var updateZoneStatus = function() {
     window.zoneStatusUpdated = false;
     var zoneData = {};
+    var createBtn = $('#sodar-lz-btn-create-zone');
+    var createLimitAlert = $('#sodar-lz-alert-zone-create-limit');
     $('.sodar-lz-zone-tr-existing').each(function() {
         var trId = $(this).attr('id');
         var zoneTr = $('#' + trId);
@@ -18,101 +20,114 @@ var updateZoneStatus = function() {
         }
     });
     // Make the POST request to retrieve zone statuses
-    if (Object.keys(zoneData).length > 0) {
-        $.ajax({
-            url: zoneStatusURL,
-            method: 'POST',
-            dataType: 'JSON',
-            contentType: 'application/json',
-            data: JSON.stringify({zones: zoneData}),
-        }).done(function(data) {
-            $('.sodar-lz-zone-tr-existing').each(function() {
-                var zoneUuid = $(this).attr('data-zone-uuid');
-                var sampleUrl = $(this).attr('data-sample-url');
-                var zoneTr = $('#' + $(this).attr('id'));
-                var statusTd = zoneTr.find('td#sodar-lz-zone-status-' + zoneUuid);
-                var statusInfoSpan = zoneTr.find(
-                    'span#sodar-lz-zone-status-info-' + zoneUuid);
-                var statusStyles = {
-                    'CREATING': 'bg-warning',
-                    'NOT CREATED': 'bg-danger',
-                    'ACTIVE': 'bg-info',
-                    'PREPARING': 'bg-warning',
-                    'VALIDATING': 'bg-warning',
-                    'MOVING': 'bg-warning',
-                    'MOVED': 'bg-success',
-                    'FAILED': 'bg-danger',
-                    'DELETING': 'bg-warning',
-                    'DELETED': 'bg-secondary'
-                };
-                if (data[zoneUuid]) {
-                    var zoneStatus = data[zoneUuid].status;
-                    var zoneStatusInfo = data[zoneUuid].status_info.replaceAll(
-                        '\n', '<br />');
-                    var statusInfoHtml = zoneStatusInfo;
-                    if (data[zoneUuid].truncated) {
-                        statusInfoHtml += '<span class="sodar-lz-zone-status-truncate">...</span>';
-                        statusInfoHtml += '<div><a class="sodar-lz-zone-status-link">See more</a></div>';
+    $.ajax({
+        url: zoneStatusURL,
+        method: 'POST',
+        dataType: 'JSON',
+        contentType: 'application/json',
+        data: JSON.stringify({zones: zoneData}),
+    }).done(function(data) {
+        // Update create limit data
+        var createLimit = data['zone_create_limit'];
+        console.debug('createLimit=' + createLimit);
+        if (createLimit) {
+            if (!createBtn.hasClass('disabled')) {
+                createBtn.addClass('disabled');
+            }
+            createLimitAlert.removeClass('d-none').addClass('d-block');
+        } else {
+            createBtn.removeClass('disabled');
+            createLimitAlert.removeClass('d-block').addClass('d-none');
+        }
+
+        // Update individual zones
+        $('.sodar-lz-zone-tr-existing').each(function() {
+            var zoneUuid = $(this).attr('data-zone-uuid');
+            var sampleUrl = $(this).attr('data-sample-url');
+            var zoneTr = $('#' + $(this).attr('id'));
+            var statusTd = zoneTr.find('td#sodar-lz-zone-status-' + zoneUuid);
+            var statusInfoSpan = zoneTr.find(
+                'span#sodar-lz-zone-status-info-' + zoneUuid);
+            var statusStyles = {
+                'CREATING': 'bg-warning',
+                'NOT CREATED': 'bg-danger',
+                'ACTIVE': 'bg-info',
+                'PREPARING': 'bg-warning',
+                'VALIDATING': 'bg-warning',
+                'MOVING': 'bg-warning',
+                'MOVED': 'bg-success',
+                'FAILED': 'bg-danger',
+                'DELETING': 'bg-warning',
+                'DELETED': 'bg-secondary'
+            };
+            if (data.zones[zoneUuid]) {
+                var zoneInfo = data.zones[zoneUuid];
+                var zoneStatus = zoneInfo.status;
+                var zoneStatusInfo = zoneInfo.status_info.replaceAll(
+                    '\n', '<br />');
+                var statusInfoHtml = zoneStatusInfo;
+                if (zoneInfo.truncated) {
+                    statusInfoHtml += '<span class="sodar-lz-zone-status-truncate">...</span>';
+                    statusInfoHtml += '<div><a class="sodar-lz-zone-status-link">See more</a></div>';
+                }
+                // Update data-zone-modified
+                zoneTr.attr('data-zone-modified', zoneInfo.modified);
+                if (
+                    statusTd.text() !== zoneStatus ||
+                    statusInfoSpan.text() !== zoneStatusInfo
+                ) {
+                    statusTd.text(zoneStatus);
+                    statusTd.removeClass();
+                    statusTd.addClass(
+                        'sodar-lz-zone-status ' + statusStyles[zoneStatus] + ' text-white');
+                    statusInfoSpan.html(statusInfoHtml);
+                    if (['PREPARING', 'VALIDATING', 'MOVING', 'DELETING'].includes(zoneStatus)) {
+                        statusTd.append(
+                            '<span class="pull-right"><i class="iconify" data-icon="mdi:lock"></i></span>'
+                        );
                     }
-                    // Update data-zone-modified
-                    zoneTr.attr('data-zone-modified', data[zoneUuid].modified);
-                    if (
-                        statusTd.text() !== zoneStatus ||
-                        statusInfoSpan.text() !== zoneStatusInfo
-                    ) {
-                        statusTd.text(zoneStatus);
-                        statusTd.removeClass();
-                        statusTd.addClass(
-                            'sodar-lz-zone-status ' + statusStyles[zoneStatus] + ' text-white');
-                        statusInfoSpan.html(statusInfoHtml);
-                        if (['PREPARING', 'VALIDATING', 'MOVING', 'DELETING'].includes(zoneStatus)) {
-                            statusTd.append(
-                                '<span class="pull-right"><i class="iconify" data-icon="mdi:lock"></i></span>'
+                    if (['CREATING', 'NOT CREATED', 'MOVED', 'DELETED'].includes(zoneStatus)) {
+                        zoneTr.find('p#sodar-lz-zone-stats-container-' + zoneUuid).hide();
+                        if (zoneStatus === 'MOVED') {
+                            var statusMovedSpan = zoneTr.find(
+                                'span#sodar-lz-zone-status-moved-' + zoneUuid
+                            );
+                            statusMovedSpan.html(
+                                '<p class="sodar-lz-zone-sample-link mb-0">' +
+                                '<a href="' + sampleUrl + '">' +
+                                '<i class="iconify" data-icon="mdi:arrow-right-circle"></i> ' +
+                                'Browse files in sample sheets</a></p>'
                             );
                         }
-                        if (['CREATING', 'NOT CREATED', 'MOVED', 'DELETED'].includes(zoneStatus)) {
-                            zoneTr.find('p#sodar-lz-zone-stats-container-' + zoneUuid).hide();
-                            if (zoneStatus === 'MOVED') {
-                                var statusMovedSpan = zoneTr.find(
-                                    'span#sodar-lz-zone-status-moved-' + zoneUuid
-                                );
-                                statusMovedSpan.html(
-                                    '<p class="sodar-lz-zone-sample-link mb-0">' +
-                                    '<a href="' + sampleUrl + '">' +
-                                    '<i class="iconify" data-icon="mdi:arrow-right-circle"></i> ' +
-                                    'Browse files in sample sheets</a></p>'
-                                );
-                            }
-                        }
+                    }
 
-                        // Button modification
-                        if (zoneStatus !== 'ACTIVE' && zoneStatus !== 'FAILED' && !isSuperuser) {
-                            zoneTr.find('.btn').each(function() {
-                                if ($(this).is('button')) {
-                                    $(this).attr('disabled', 'disabled');
-                                } else if ($(this).is('a')) {
-                                    $(this).addClass('disabled');
-                                }
-                            });
-                            zoneTr.find('.sodar-list-dropdown').addClass('disabled');
-                        } else {
-                            if (zoneStatus !== 'DELETED') {
-                                zoneTr.find('p#sodar-lz-zone-stats-container-' + zoneUuid).show();
+                    // Button modification
+                    if (zoneStatus !== 'ACTIVE' && zoneStatus !== 'FAILED' && !isSuperuser) {
+                        zoneTr.find('.btn').each(function() {
+                            if ($(this).is('button')) {
+                                $(this).attr('disabled', 'disabled');
+                            } else if ($(this).is('a')) {
+                                $(this).addClass('disabled');
                             }
-                            zoneTr.find('.btn').each(function() {
-                                if ($(this).is('button')) {
-                                    $(this).removeAttr('disabled');
-                                }
-                                $(this).removeClass('disabled');
-                            });
-                            zoneTr.find('.sodar-list-dropdown').removeClass('disabled');
+                        });
+                        zoneTr.find('.sodar-list-dropdown').addClass('disabled');
+                    } else {
+                        if (zoneStatus !== 'DELETED') {
+                            zoneTr.find('p#sodar-lz-zone-stats-container-' + zoneUuid).show();
                         }
+                        zoneTr.find('.btn').each(function() {
+                            if ($(this).is('button')) {
+                                $(this).removeAttr('disabled');
+                            }
+                            $(this).removeClass('disabled');
+                        });
+                        zoneTr.find('.sodar-list-dropdown').removeClass('disabled');
                     }
                 }
-            });
-        window.zoneStatusUpdated = true;
+            }
         });
-    }
+    window.zoneStatusUpdated = true;
+    });
 };
 
 
