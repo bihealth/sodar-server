@@ -31,7 +31,7 @@ Added
     - ``ZoneStatusInfoRetrieveAjaxView`` Ajax view (#1308)
     - Full display of truncated zone status info (#1308)
     - ``ZoneIrodsListRetrieveAjaxView`` Ajax view (#1730)
-    - UI alert for locked project (#2146)
+    - UI alert for locked project (#2146, #2151)
     - ``LANDINGZONES_ZONE_CREATE_LIMIT`` Django setting (#2148)
     - Landing zone creation limit per project (#2148)
 - **Samplesheets**
@@ -83,6 +83,7 @@ Changed
     - Update ``ProjectZoneView`` to display project zones in one table (#2129)
     - Move irodsbackend dir list modal JQuery to ``landingzones.js`` (#1730)
     - Disable zone controls for locked project (#1512, #1850)
+    - Display icons for zone list alerts (#2147)
 - **Samplesheets**
     - Define app settings as ``PluginAppSettingDef`` objects (#2051)
     - Return ``500`` for iRODS query exceptions in ``ProjectIrodsFileListAPIView`` (#2103)
