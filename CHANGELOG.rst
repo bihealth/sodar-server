@@ -61,7 +61,7 @@ Changed
 -------
 
 - **General**
-    - Upgrade to django-sodar-core v1.1.4 (#2051, #2068, #2095, #2108)
+    - Upgrade to django-sodar-core v1.1.5 (#2051, #2068, #2095, #2108, #2156)
     - Upgrade to python-irodsclient v3.1 (#2068, #2079, #2128)
     - Display SODAR Core version in footer example (#2101)
     - Upgrade to gunicorn v23 (#2068)

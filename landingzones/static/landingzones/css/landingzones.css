@@ -28,9 +28,6 @@
 a.sodar-lz-zone-status-link:hover {
   cursor: pointer;
 }
-.sodar-lz-zone-badge-assay {
-  border: 1px solid #dfdfdf;
-}
 .sodar-lz-zone-assay-link:hover {
   text-decoration: none;
 }

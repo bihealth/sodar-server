@@ -98,35 +98,3 @@ def can_move_zone(zone, user):
     perm = 'landingzones.move_zone_'
     perm += 'own' if zone.user == user else 'all'
     return user.has_perm(perm, zone.project)
-
-
-# TODO: Move to SODAR Core (see bihealth/sodar-core#1662)
-@register.simple_tag
-def get_user_badge(user):
-    """Return HTML badge for user"""
-    if not user.is_active:
-        icon = 'mdi:account-off'
-        badge_class = 'secondary'
-        user_class = 'inactive'
-    elif user.is_superuser:
-        icon = 'mdi:shield-account'
-        badge_class = 'info'
-        user_class = 'superuser'
-    else:
-        icon = 'mdi:account'
-        badge_class = 'primary'
-        user_class = 'active'
-    email = True if user.is_active and user.email else False
-    ret = (
-        f'<span class="badge badge-{badge_class} sodar-user-badge '
-        f'sodar-user-badge-{user_class}" '
-        f'title="{user.get_full_name()}" data-toggle="tooltip">'
-        f'<i class="iconify" data-icon="{icon}"></i> '
-    )
-    if email:
-        ret += f'<a class="text-white" href="mailto:{user.email}">'
-    ret += user.username
-    if email:
-        ret += '</a>'
-    ret += '</span>'
-    return ret

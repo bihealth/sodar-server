@@ -30,7 +30,7 @@ Release for SODAR Core 1.1 upgrade and feature updates.
 - :ref:`Update project landing zone list layout <app_landingzones_browse>`
 - :ref:`Upgrade Sample Sheets REST API version to v1.1 <api_samplesheets_version_1_1>`
 - Upgrade to python-irodsclient v3.1
-- Upgrade to SODAR Core v1.1.4
+- Upgrade to SODAR Core v1.1.5
 - Replace SODAR_SUPPORT_* settings with PROJECTROLES_SUPPORT_CONTACT
 - Fix iRODS access ticket expiry date updating
 - Remove minimum sample sheet column config editing role setting
