@@ -699,6 +699,169 @@ class TestZoneMoveView(
             AppAlert.objects.filter(alert_name='zone_move').count(), 1
         )
 
+    def test_post_move_invalid_status(self):
+        """Test POST to move with invalid zone status (should fail)"""
+        irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
+        self.make_irods_md5_object(irods_obj)
+        zone = LandingZone.objects.first()
+        zone.status = ZONE_STATUS_VALIDATING
+        zone.save()
+        self.assertEqual(len(self.zone_coll.data_objects), 2)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+        mail_count = len(mail.outbox)
+        self.assertEqual(
+            TimelineEvent.objects.filter(event_name='zone_move').count(), 0
+        )
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_move').count(), 0
+        )
+
+        with self.login(self.user):
+            response = self.client.post(self.url_move)
+            self.assertRedirects(response, self.url_redirect)
+
+        self.assertEqual(
+            str(list(get_messages(response.wsgi_request))[0]),
+            ZONE_MOVE_INVALID_STATUS,
+        )
+        self.assert_zone_status(zone, ZONE_STATUS_VALIDATING)
+        self.assertEqual(len(self.zone_coll.data_objects), 2)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+        self.assertEqual(len(mail.outbox), mail_count)
+        tl_event = TimelineEvent.objects.filter(event_name='zone_move').first()
+        self.assertIsNone(tl_event)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_move').count(), 0
+        )
+
+    def test_post_move_locked(self):
+        """Test POST to move with locked project (should fail)"""
+        self.lock_project(self.project)
+        irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
+        self.make_irods_md5_object(irods_obj)
+        zone = LandingZone.objects.first()
+        self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(len(self.zone_coll.data_objects), 2)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+        mail_count = len(mail.outbox)
+        self.assertEqual(
+            TimelineEvent.objects.filter(event_name='zone_move').count(), 0
+        )
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_move').count(), 0
+        )
+
+        with self.login(self.user):
+            response = self.client.post(self.url_move)
+            self.assertRedirects(response, self.url_redirect)
+
+        self.assert_zone_status(zone, ZONE_STATUS_FAILED)
+        self.assertEqual(len(self.zone_coll.data_objects), 2)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+        self.assertEqual(len(mail.outbox), mail_count)
+        # Timeline event should not exist for locked project
+        self.assertEqual(
+            TimelineEvent.objects.filter(event_name='zone_move').count(), 0
+        )
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_move').count(), 0
+        )
+
+    @override_settings(REDIS_URL=INVALID_REDIS_URL)
+    def test_post_move_lock_failure(self):
+        """Test POST to move with project lock failure"""
+        irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
+        self.make_irods_md5_object(irods_obj)
+        zone = LandingZone.objects.first()
+        self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(len(self.zone_coll.data_objects), 2)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+        mail_count = len(mail.outbox)
+        self.assertEqual(
+            TimelineEvent.objects.filter(event_name='zone_move').count(), 0
+        )
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_move').count(), 0
+        )
+
+        with self.login(self.user):
+            response = self.client.post(self.url_move)
+            self.assertRedirects(response, self.url_redirect)
+
+        self.assert_zone_status(zone, ZONE_STATUS_FAILED)
+        self.assertEqual(len(self.zone_coll.data_objects), 2)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+        # TODO: Should this send email?
+        self.assertEqual(len(mail.outbox), mail_count)
+        tl_event = TimelineEvent.objects.filter(event_name='zone_move').first()
+        self.assertIsInstance(tl_event, TimelineEvent)
+        self.assertEqual(
+            tl_event.get_status().status_type, self.timeline.TL_STATUS_FAILED
+        )
+        # TODO: Create app alerts for async failures (see #1499)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_move').count(), 0
+        )
+
+    def test_post_move_restrict(self):
+        """Test POST to move with restricted collections"""
+        # Create new zone with restricted collections
+        zone = self.make_landing_zone(
+            title=ZONE_TITLE + '_new',
+            project=self.project,
+            user=self.user_owner,
+            assay=self.assay,
+            description=ZONE_DESC,
+            status=ZONE_STATUS_CREATING,
+        )
+        self.make_zone_taskflow(
+            zone=zone,
+            colls=[MISC_FILES_COLL, RESULTS_COLL],
+            restrict_colls=True,
+        )
+        new_zone_path = self.irods_backend.get_path(zone)
+        zone_results_coll = self.irods.collections.get(
+            os.path.join(new_zone_path, RESULTS_COLL)
+        )
+        irods_obj = self.make_irods_object(zone_results_coll, TEST_OBJ_NAME)
+        self.make_irods_md5_object(irods_obj)
+        self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(len(zone_results_coll.data_objects), 2)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+        mail_count = len(mail.outbox)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_move').count(), 0
+        )
+
+        url = reverse(
+            'landingzones:move', kwargs={'landingzone': zone.sodar_uuid}
+        )
+        with self.login(self.user):
+            response = self.client.post(url)
+            self.assertRedirects(response, self.url_redirect)
+
+        self.assert_zone_status(zone, ZONE_STATUS_MOVED)
+        self.assertEqual(len(zone_results_coll.data_objects), 0)
+        assay_results_path = os.path.join(self.sample_path, RESULTS_COLL)
+        assay_results_coll = self.irods.collections.get(assay_results_path)
+        self.assertEqual(len(assay_results_coll.data_objects), 2)
+        # Mails to owner & category owner
+        self.assertEqual(len(mail.outbox), mail_count + 2)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_move').count(), 1
+        )
+        sample_obj_path = os.path.join(assay_results_path, TEST_OBJ_NAME)
+        self.assert_irods_access(
+            self.project_group,
+            sample_obj_path,
+            self.irods_access_read,
+        )
+        self.assert_irods_access(
+            self.project_group,
+            sample_obj_path + '.md5',
+            self.irods_access_read,
+        )
+
     def test_post_validate(self):
         """Test POST to validate landing zone with objects without moving"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
@@ -869,6 +1032,28 @@ class TestZoneMoveView(
             AppAlert.objects.filter(alert_name='zone_move').count(), 0
         )
 
+    def test_post_validate_invalid_status(self):
+        """Test POST to validate with invalid zone status (should fail)"""
+        irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
+        self.make_irods_md5_object(irods_obj)
+        zone = LandingZone.objects.first()
+        zone.status = ZONE_STATUS_VALIDATING
+        zone.save()
+        self.assertEqual(len(self.zone_coll.data_objects), 2)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+
+        with self.login(self.user):
+            response = self.client.post(self.url_validate)
+            self.assertRedirects(response, self.url_redirect)
+
+        self.assertEqual(
+            str(list(get_messages(response.wsgi_request))[0]),
+            ZONE_MOVE_INVALID_STATUS,
+        )
+        self.assert_zone_status(zone, ZONE_STATUS_VALIDATING)
+        self.assertEqual(len(self.zone_coll.data_objects), 2)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+
     def test_post_validate_locked(self):
         """Test POST to validate with locked project"""
         self.lock_project(self.project)
@@ -884,169 +1069,6 @@ class TestZoneMoveView(
         self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
-
-    def test_post_move_invalid_status(self):
-        """Test POST to move with invalid zone status (should fail)"""
-        irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
-        self.make_irods_md5_object(irods_obj)
-        zone = LandingZone.objects.first()
-        zone.status = ZONE_STATUS_VALIDATING
-        zone.save()
-        self.assertEqual(len(self.zone_coll.data_objects), 2)
-        self.assertEqual(len(self.assay_coll.data_objects), 0)
-        mail_count = len(mail.outbox)
-        self.assertEqual(
-            TimelineEvent.objects.filter(event_name='zone_move').count(), 0
-        )
-        self.assertEqual(
-            AppAlert.objects.filter(alert_name='zone_move').count(), 0
-        )
-
-        with self.login(self.user):
-            response = self.client.post(self.url_validate)
-            self.assertRedirects(response, self.url_redirect)
-
-        self.assertEqual(
-            str(list(get_messages(response.wsgi_request))[0]),
-            ZONE_MOVE_INVALID_STATUS,
-        )
-        self.assert_zone_status(zone, ZONE_STATUS_VALIDATING)
-        self.assertEqual(len(self.zone_coll.data_objects), 2)
-        self.assertEqual(len(self.assay_coll.data_objects), 0)
-        self.assertEqual(len(mail.outbox), mail_count)
-        tl_event = TimelineEvent.objects.filter(event_name='zone_move').first()
-        self.assertIsNone(tl_event)
-        self.assertEqual(
-            AppAlert.objects.filter(alert_name='zone_move').count(), 0
-        )
-
-    def test_post_move_locked(self):
-        """Test POST to move with locked project (should fail)"""
-        self.lock_project(self.project)
-        irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
-        self.make_irods_md5_object(irods_obj)
-        zone = LandingZone.objects.first()
-        self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
-        self.assertEqual(len(self.zone_coll.data_objects), 2)
-        self.assertEqual(len(self.assay_coll.data_objects), 0)
-        mail_count = len(mail.outbox)
-        self.assertEqual(
-            TimelineEvent.objects.filter(event_name='zone_move').count(), 0
-        )
-        self.assertEqual(
-            AppAlert.objects.filter(alert_name='zone_move').count(), 0
-        )
-
-        with self.login(self.user):
-            response = self.client.post(self.url_move)
-            self.assertRedirects(response, self.url_redirect)
-
-        self.assert_zone_status(zone, ZONE_STATUS_FAILED)
-        self.assertEqual(len(self.zone_coll.data_objects), 2)
-        self.assertEqual(len(self.assay_coll.data_objects), 0)
-        self.assertEqual(len(mail.outbox), mail_count)
-        # Timeline event should not exist for locked project
-        self.assertEqual(
-            TimelineEvent.objects.filter(event_name='zone_move').count(), 0
-        )
-        self.assertEqual(
-            AppAlert.objects.filter(alert_name='zone_move').count(), 0
-        )
-
-    @override_settings(REDIS_URL=INVALID_REDIS_URL)
-    def test_post_move_lock_failure(self):
-        """Test POST to move with project lock failure"""
-        irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
-        self.make_irods_md5_object(irods_obj)
-        zone = LandingZone.objects.first()
-        self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
-        self.assertEqual(len(self.zone_coll.data_objects), 2)
-        self.assertEqual(len(self.assay_coll.data_objects), 0)
-        mail_count = len(mail.outbox)
-        self.assertEqual(
-            TimelineEvent.objects.filter(event_name='zone_move').count(), 0
-        )
-        self.assertEqual(
-            AppAlert.objects.filter(alert_name='zone_move').count(), 0
-        )
-
-        with self.login(self.user):
-            response = self.client.post(self.url_move)
-            self.assertRedirects(response, self.url_redirect)
-
-        self.assert_zone_status(zone, ZONE_STATUS_FAILED)
-        self.assertEqual(len(self.zone_coll.data_objects), 2)
-        self.assertEqual(len(self.assay_coll.data_objects), 0)
-        # TODO: Should this send email?
-        self.assertEqual(len(mail.outbox), mail_count)
-        tl_event = TimelineEvent.objects.filter(event_name='zone_move').first()
-        self.assertIsInstance(tl_event, TimelineEvent)
-        self.assertEqual(
-            tl_event.get_status().status_type, self.timeline.TL_STATUS_FAILED
-        )
-        # TODO: Create app alerts for async failures (see #1499)
-        self.assertEqual(
-            AppAlert.objects.filter(alert_name='zone_move').count(), 0
-        )
-
-    def test_post_move_restrict(self):
-        """Test POST to move with restricted collections"""
-        # Create new zone with restricted collections
-        zone = self.make_landing_zone(
-            title=ZONE_TITLE + '_new',
-            project=self.project,
-            user=self.user_owner,
-            assay=self.assay,
-            description=ZONE_DESC,
-            status=ZONE_STATUS_CREATING,
-        )
-        self.make_zone_taskflow(
-            zone=zone,
-            colls=[MISC_FILES_COLL, RESULTS_COLL],
-            restrict_colls=True,
-        )
-        new_zone_path = self.irods_backend.get_path(zone)
-        zone_results_coll = self.irods.collections.get(
-            os.path.join(new_zone_path, RESULTS_COLL)
-        )
-        irods_obj = self.make_irods_object(zone_results_coll, TEST_OBJ_NAME)
-        self.make_irods_md5_object(irods_obj)
-        self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
-        self.assertEqual(len(zone_results_coll.data_objects), 2)
-        self.assertEqual(len(self.assay_coll.data_objects), 0)
-        mail_count = len(mail.outbox)
-        self.assertEqual(
-            AppAlert.objects.filter(alert_name='zone_move').count(), 0
-        )
-
-        url = reverse(
-            'landingzones:move', kwargs={'landingzone': zone.sodar_uuid}
-        )
-        with self.login(self.user):
-            response = self.client.post(url)
-            self.assertRedirects(response, self.url_redirect)
-
-        self.assert_zone_status(zone, ZONE_STATUS_MOVED)
-        self.assertEqual(len(zone_results_coll.data_objects), 0)
-        assay_results_path = os.path.join(self.sample_path, RESULTS_COLL)
-        assay_results_coll = self.irods.collections.get(assay_results_path)
-        self.assertEqual(len(assay_results_coll.data_objects), 2)
-        # Mails to owner & category owner
-        self.assertEqual(len(mail.outbox), mail_count + 2)
-        self.assertEqual(
-            AppAlert.objects.filter(alert_name='zone_move').count(), 1
-        )
-        sample_obj_path = os.path.join(assay_results_path, TEST_OBJ_NAME)
-        self.assert_irods_access(
-            self.project_group,
-            sample_obj_path,
-            self.irods_access_read,
-        )
-        self.assert_irods_access(
-            self.project_group,
-            sample_obj_path + '.md5',
-            self.irods_access_read,
-        )
 
 
 class TestZoneDeleteView(

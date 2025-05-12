@@ -36,6 +36,7 @@ from landingzones.constants import (
     ZONE_STATUS_DELETED,
     ZONE_STATUS_MOVED,
     ZONE_STATUS_FAILED,
+    ZONE_STATUS_VALIDATING,
 )
 from landingzones.models import LandingZone
 from landingzones.serializers import ZONE_NO_INV_MSG
@@ -524,49 +525,6 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
             kwargs={'landingzone': self.landing_zone.sodar_uuid},
         )
 
-    def test_post_validate(self):
-        """Test POST for validation"""
-        # Update to check status change
-        self.landing_zone.status = ZONE_STATUS_FAILED
-        self.landing_zone.save()
-        response = self.request_knox(self.url, method='POST')
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            response.data['sodar_uuid'], str(self.landing_zone.sodar_uuid)
-        )
-        self.assertEqual(LandingZone.objects.count(), 1)
-        zone = LandingZone.objects.first()
-        self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
-        self.assertEqual(
-            LandingZone.objects.first().status_info,
-            'Successfully validated 0 files',
-        )
-        self.assert_irods_access(
-            self.owner_group, self.zone_path, IRODS_ACCESS_OWN
-        )
-        self.assert_irods_access(
-            self.user.username, self.zone_path, IRODS_ACCESS_OWN
-        )
-        self.assert_irods_access(self.project_group, self.zone_path, None)
-
-    def test_post_validate_locked(self):
-        """Test POST for validation with locked project"""
-        self.lock_project(self.project)
-        self.landing_zone.status = ZONE_STATUS_FAILED
-        self.landing_zone.save()
-        response = self.request_knox(self.url, method='POST')
-        self.assertEqual(response.status_code, 200)
-
-    def test_post_validate_invalid_status(self):
-        """Test POST for validation with invalid zone status (should fail)"""
-        self.landing_zone.status = ZONE_STATUS_MOVED
-        self.landing_zone.save()
-        response = self.request_knox(self.url, method='POST')
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(LandingZone.objects.count(), 1)
-        self.assertEqual(LandingZone.objects.first().status, ZONE_STATUS_MOVED)
-
     def test_post_move(self):
         """Test POST for moving"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
@@ -668,4 +626,49 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
             self.project_group,
             sample_obj_path + '.md5',
             self.irods_access_read,
+        )
+
+    def test_post_validate(self):
+        """Test POST for validation"""
+        # Update to check status change
+        self.landing_zone.status = ZONE_STATUS_FAILED
+        self.landing_zone.save()
+        response = self.request_knox(self.url, method='POST')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.data['sodar_uuid'], str(self.landing_zone.sodar_uuid)
+        )
+        self.assertEqual(LandingZone.objects.count(), 1)
+        zone = LandingZone.objects.first()
+        self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
+        self.assertEqual(
+            LandingZone.objects.first().status_info,
+            'Successfully validated 0 files',
+        )
+        self.assert_irods_access(
+            self.owner_group, self.zone_path, IRODS_ACCESS_OWN
+        )
+        self.assert_irods_access(
+            self.user.username, self.zone_path, IRODS_ACCESS_OWN
+        )
+        self.assert_irods_access(self.project_group, self.zone_path, None)
+
+    def test_post_validate_locked(self):
+        """Test POST for validation with locked project"""
+        self.lock_project(self.project)
+        self.landing_zone.status = ZONE_STATUS_FAILED
+        self.landing_zone.save()
+        response = self.request_knox(self.url, method='POST')
+        self.assertEqual(response.status_code, 200)
+
+    def test_post_validate_invalid_status(self):
+        """Test POST for validation with invalid zone status (should fail)"""
+        self.landing_zone.status = ZONE_STATUS_VALIDATING
+        self.landing_zone.save()
+        response = self.request_knox(self.url, method='POST')
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(LandingZone.objects.count(), 1)
+        self.assertEqual(
+            LandingZone.objects.first().status, ZONE_STATUS_VALIDATING
         )
