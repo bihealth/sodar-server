@@ -9,7 +9,7 @@ setuptools==75.8.0
 packaging==24.2
 
 # Django
-django==4.2.20
+django==4.2.21
 
 # Configuration
 django-environ==0.12.0
