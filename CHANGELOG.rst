@@ -124,6 +124,7 @@ Removed
 - **General**
     - DRF generateschema support (#2051)
     - ``SODAR_SUPPORT_EMAIL`` and ``SODAR_SUPPORT_EMAIL`` settings (#2095)
+    - Migrations squashed in v1.0 (#2052)
 - **Irodsbackend**
     - ``IrodsObjectListAjaxView`` Ajax view (#1730)
     - iRODS dir modal javascript (#1730)
