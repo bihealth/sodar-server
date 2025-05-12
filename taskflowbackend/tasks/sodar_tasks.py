@@ -7,7 +7,7 @@ from copy import deepcopy
 from taskflowbackend.tasks.base_task import BaseTask
 
 
-logger = logging.getLogger('__name__')
+logger = logging.getLogger(__name__)
 
 
 class SODARBaseTask(BaseTask):

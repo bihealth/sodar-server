@@ -15,7 +15,7 @@ LOCK_RETRY_INTERVAL = settings.TASKFLOW_LOCK_RETRY_INTERVAL
 PROJECT_LOCKED_MSG = 'Project is locked by another operation'
 
 
-logger = logging.getLogger('__name__')
+logger = logging.getLogger(__name__)
 
 
 class LockAcquireException(Exception):

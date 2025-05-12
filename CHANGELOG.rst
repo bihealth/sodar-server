@@ -117,6 +117,7 @@ Fixed
 - **Taskflowbackend**
     - Checksum calculation failing silently if maximum retries reached (#2131)
     - Checksum calculation retry done for all exception types (#2132)
+    - Invalid logger names in multiple modules (#2155)
 
 Removed
 -------

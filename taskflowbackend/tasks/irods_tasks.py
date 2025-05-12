@@ -26,7 +26,7 @@ from landingzones.utils import cleanup_file_prohibit
 from taskflowbackend.tasks.base_task import BaseTask
 
 
-logger = logging.getLogger('__name__')
+logger = logging.getLogger(__name__)
 
 
 # Local constants
