@@ -8,7 +8,9 @@ var updateZoneStatus = function() {
     window.zoneStatusUpdated = false;
     var zoneData = {};
     var createBtn = $('#sodar-lz-btn-create-zone');
+    var projectLockAlert = $('#sodar-lz-alert-lock');
     var createLimitAlert = $('#sodar-lz-alert-zone-create-limit');
+    var validateLimitAlert = $('#sodar-lz-alert-zone-validate-limit');
     $('.sodar-lz-zone-tr-existing').each(function() {
         var trId = $(this).attr('id');
         var zoneTr = $('#' + trId);
@@ -27,9 +29,17 @@ var updateZoneStatus = function() {
         contentType: 'application/json',
         data: JSON.stringify({zones: zoneData}),
     }).done(function(data) {
-        // Update create limit data
+        var projectLock = data['project_lock'];
         var createLimit = data['zone_create_limit'];
-        console.debug('createLimit=' + createLimit);
+        var validateLimit = data['zone_validate_limit'];
+
+        // Update project lock alert
+        if (projectLock) {
+            projectLockAlert.removeClass('d-none').addClass('d-block');
+        } else {
+            projectLockAlert.removeClass('d-block').addClass('d-none');
+        }
+        // Update create limit alert
         if (createLimit) {
             if (!createBtn.hasClass('disabled')) {
                 createBtn.addClass('disabled');
@@ -38,6 +48,12 @@ var updateZoneStatus = function() {
         } else {
             createBtn.removeClass('disabled');
             createLimitAlert.removeClass('d-block').addClass('d-none');
+        }
+        // Update validate limit alert
+        if (validateLimit) {
+            validateLimitAlert.removeClass('d-none').addClass('d-block');
+        } else {
+            validateLimitAlert.removeClass('d-block').addClass('d-none');
         }
 
         // Update individual zones
@@ -60,6 +76,7 @@ var updateZoneStatus = function() {
                 'DELETING': 'bg-warning',
                 'DELETED': 'bg-secondary'
             };
+
             if (data.zones[zoneUuid]) {
                 var zoneInfo = data.zones[zoneUuid];
                 var zoneStatus = zoneInfo.status;
@@ -102,8 +119,9 @@ var updateZoneStatus = function() {
                     }
 
                     // Button modification
-                    if (zoneStatus !== 'ACTIVE' && zoneStatus !== 'FAILED' && !isSuperuser) {
-                        zoneTr.find('.btn').each(function() {
+                    if (zoneStatus !== 'ACTIVE' &&
+                        zoneStatus !== 'FAILED' && !isSuperuser) {
+                        zoneTr.find('.btn').each(function () {
                             if ($(this).is('button')) {
                                 $(this).attr('disabled', 'disabled');
                             } else if ($(this).is('a')) {
@@ -113,9 +131,10 @@ var updateZoneStatus = function() {
                         zoneTr.find('.sodar-list-dropdown').addClass('disabled');
                     } else {
                         if (zoneStatus !== 'DELETED') {
-                            zoneTr.find('p#sodar-lz-zone-stats-container-' + zoneUuid).show();
+                            zoneTr.find(
+                                'p#sodar-lz-zone-stats-container-' + zoneUuid).show();
                         }
-                        zoneTr.find('.btn').each(function() {
+                        zoneTr.find('.btn').each(function () {
                             if ($(this).is('button')) {
                                 $(this).removeAttr('disabled');
                             }
@@ -125,39 +144,31 @@ var updateZoneStatus = function() {
                     }
                 }
             }
+
+            // Validate/move link modification
+            var validateLink = zoneTr.find('.sodar-lz-zone-btn-validate');
+            var moveLink = zoneTr.find('.sodar-lz-zone-btn-move');
+            // Update validate link
+            if (validateLimit && !validateLink.hasClass('disabled')) {
+                validateLink.addClass('disabled');
+            } else if (!validateLimit &&
+                validateLink.attr('data-can-move') === '1') {
+                validateLink.removeClass('disabled');
+            }
+            // Update move link
+            if ((projectLock || validateLimit) &&
+                !moveLink.hasClass('disabled')) {
+                moveLink.addClass('disabled');
+            } else if (!projectLock &&
+                !validateLimit &&
+                moveLink.attr('data-can-move') === '1') {
+                moveLink.removeClass('disabled');
+            }
         });
     window.zoneStatusUpdated = true;
     });
 };
 
-
-/*****************************
- Project lock status updating
- *****************************/
-var updateLockStatus = function() {
-    var lockAlert = $('#sodar-lz-alert-lock');
-    var lockUrl = lockAlert.attr('data-lock-url');
-    $.ajax({
-        url: lockUrl,
-        method: 'GET',
-    }).done(function(data) {
-        if (data.is_locked) {
-            lockAlert.removeClass('d-none').addClass('d-block');
-            $('.sodar-lz-zone-btn-move').each(function() {
-                if (!$(this).hasClass('disabled')) {
-                    $(this).addClass('disabled');
-                }
-            });
-        } else if (!data.is_locked) {
-            lockAlert.removeClass('d-block').addClass('d-none');
-            $('.sodar-lz-zone-btn-move').each(function() {
-                if ($(this).attr('data-can-move') === '1') {
-                    $(this).removeClass('disabled');
-                }
-            });
-        }
-    });
-}
 
 /**********************
  Modal copy path method
@@ -228,13 +239,6 @@ $(document).ready(function() {
         }
         updateCollectionStats();
     }, statsInterval);
-
-    // Poll and update project lock status
-    updateLockStatus();
-    var lockInterval = 5000;
-    setInterval(function() {
-        updateLockStatus();
-    }, lockInterval)
 
     // iRODS dir list modal
     $('.sodar-lz-list-modal-btn').click(function() {

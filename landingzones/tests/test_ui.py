@@ -119,9 +119,14 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
         """Test ProjectZoneView rendering with no sheets"""
         # NOTE: Only testing with owner as this doesn't depend on user
         self.login_and_redirect(self.user_owner, self.url)
-        # Lock and create limit alert elements exist regardless of status
+        # Lock and limit alert elements exist regardless of status
         self._assert_element(By.ID, 'sodar-lz-alert-lock', True)
         elem = self.selenium.find_element(By.ID, 'sodar-lz-alert-lock')
+        self.assertIn('d-none', elem.get_attribute('class'))
+        self.assertNotIn('d-block', elem.get_attribute('class'))
+        elem = self.selenium.find_element(
+            By.ID, 'sodar-lz-alert-zone-validate-limit'
+        )
         self.assertIn('d-none', elem.get_attribute('class'))
         self.assertNotIn('d-block', elem.get_attribute('class'))
         elem = self.selenium.find_element(
@@ -476,90 +481,6 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
         ):
             self._assert_btn_enabled(elem, False)
 
-    @override_settings(LANDINGZONES_ZONE_CREATE_LIMIT=1)
-    def test_render_limit(self):
-        """Test ProjectZoneView with zone creation limit reached"""
-        self._setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
-        self.make_landing_zone(
-            'owner_zone',
-            self.project,
-            self.user_owner,
-            self.assay,
-            status=ZONE_STATUS_ACTIVE,
-        )
-        self.login_and_redirect(self.user_owner, self.url)
-        self._assert_btn_enabled(
-            self.selenium.find_element(By.ID, 'sodar-lz-btn-create-zone'), False
-        )
-        elem = self.selenium.find_element(
-            By.ID, 'sodar-lz-alert-zone-create-limit'
-        )
-        self.assertNotIn('d-none', elem.get_attribute('class'))
-        self.assertIn('d-block', elem.get_attribute('class'))
-
-    @override_settings(LANDINGZONES_ZONE_CREATE_LIMIT=1)
-    def test_render_limit_existing_finished(self):
-        """Test ProjectZoneView with zone creation limit and finished zone"""
-        self._setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
-        self.make_landing_zone(
-            'owner_zone',
-            self.project,
-            self.user_owner,
-            self.assay,
-            status=ZONE_STATUS_MOVED,
-        )
-        self.login_and_redirect(self.user_owner, self.url)
-        self._assert_btn_enabled(
-            self.selenium.find_element(By.ID, 'sodar-lz-btn-create-zone'), True
-        )
-        elem = self.selenium.find_element(
-            By.ID, 'sodar-lz-alert-zone-create-limit'
-        )
-        self.assertIn('d-none', elem.get_attribute('class'))
-        self.assertNotIn('d-block', elem.get_attribute('class'))
-
-    @override_settings(LANDINGZONES_ZONE_CREATE_LIMIT=1)
-    def test_render_limit_update(self):
-        """Test ProjectZoneView with zone creation limit update"""
-        self._setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
-        zone = self.make_landing_zone(
-            'owner_zone',
-            self.project,
-            self.user_owner,
-            self.assay,
-            status=ZONE_STATUS_ACTIVE,
-        )
-
-        self.login_and_redirect(self.user_owner, self.url)
-        self._assert_btn_enabled(
-            self.selenium.find_element(By.ID, 'sodar-lz-btn-create-zone'), False
-        )
-        elem = self.selenium.find_element(
-            By.ID, 'sodar-lz-alert-zone-create-limit'
-        )
-        self.assertNotIn('d-none', elem.get_attribute('class'))
-        self.assertIn('d-block', elem.get_attribute('class'))
-
-        zone.set_status(ZONE_STATUS_MOVED)
-        zone_status = self.selenium.find_element(
-            By.CLASS_NAME, 'sodar-lz-zone-status'
-        )
-        self._wait_for_status(zone_status, ZONE_STATUS_MOVED)
-        self._assert_btn_enabled(
-            self.selenium.find_element(By.ID, 'sodar-lz-btn-create-zone'), True
-        )
-        elem = self.selenium.find_element(
-            By.ID, 'sodar-lz-alert-zone-create-limit'
-        )
-        self.assertIn('d-none', elem.get_attribute('class'))
-        self.assertNotIn('d-block', elem.get_attribute('class'))
-
     def test_render_lock_update(self):
         """Test ProjectZoneView with updated lock status"""
         self._setup_investigation()
@@ -598,6 +519,211 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
             By.CLASS_NAME, 'sodar-lz-zone-btn-move'
         ):
             self._assert_btn_enabled(elem, False)
+
+    @override_settings(LANDINGZONES_ZONE_CREATE_LIMIT=1)
+    def test_render_create_limit(self):
+        """Test ProjectZoneView with zone creation limit reached"""
+        self._setup_investigation()
+        self.investigation.irods_status = True
+        self.investigation.save()
+        self.make_landing_zone(
+            'owner_zone',
+            self.project,
+            self.user_owner,
+            self.assay,
+            status=ZONE_STATUS_ACTIVE,
+        )
+        self.login_and_redirect(self.user_owner, self.url)
+        self._assert_btn_enabled(
+            self.selenium.find_element(By.ID, 'sodar-lz-btn-create-zone'), False
+        )
+        elem = self.selenium.find_element(
+            By.ID, 'sodar-lz-alert-zone-create-limit'
+        )
+        self.assertNotIn('d-none', elem.get_attribute('class'))
+        self.assertIn('d-block', elem.get_attribute('class'))
+
+    @override_settings(LANDINGZONES_ZONE_CREATE_LIMIT=1)
+    def test_render_create_limit_existing_finished(self):
+        """Test ProjectZoneView with zone creation limit and finished zone"""
+        self._setup_investigation()
+        self.investigation.irods_status = True
+        self.investigation.save()
+        self.make_landing_zone(
+            'owner_zone',
+            self.project,
+            self.user_owner,
+            self.assay,
+            status=ZONE_STATUS_MOVED,
+        )
+        self.login_and_redirect(self.user_owner, self.url)
+        self._assert_btn_enabled(
+            self.selenium.find_element(By.ID, 'sodar-lz-btn-create-zone'), True
+        )
+        elem = self.selenium.find_element(
+            By.ID, 'sodar-lz-alert-zone-create-limit'
+        )
+        self.assertIn('d-none', elem.get_attribute('class'))
+        self.assertNotIn('d-block', elem.get_attribute('class'))
+
+    @override_settings(LANDINGZONES_ZONE_CREATE_LIMIT=1)
+    def test_render_create_limit_update(self):
+        """Test ProjectZoneView with zone creation limit update"""
+        self._setup_investigation()
+        self.investigation.irods_status = True
+        self.investigation.save()
+        zone = self.make_landing_zone(
+            'owner_zone',
+            self.project,
+            self.user_owner,
+            self.assay,
+            status=ZONE_STATUS_ACTIVE,
+        )
+
+        self.login_and_redirect(self.user_owner, self.url)
+        self._assert_btn_enabled(
+            self.selenium.find_element(By.ID, 'sodar-lz-btn-create-zone'), False
+        )
+        elem = self.selenium.find_element(
+            By.ID, 'sodar-lz-alert-zone-create-limit'
+        )
+        self.assertNotIn('d-none', elem.get_attribute('class'))
+        self.assertIn('d-block', elem.get_attribute('class'))
+
+        zone.set_status(ZONE_STATUS_MOVED)
+        zone_status = self.selenium.find_element(
+            By.CLASS_NAME, 'sodar-lz-zone-status'
+        )
+        self._wait_for_status(zone_status, ZONE_STATUS_MOVED)
+        self._assert_btn_enabled(
+            self.selenium.find_element(By.ID, 'sodar-lz-btn-create-zone'), True
+        )
+        elem = self.selenium.find_element(
+            By.ID, 'sodar-lz-alert-zone-create-limit'
+        )
+        self.assertIn('d-none', elem.get_attribute('class'))
+        self.assertNotIn('d-block', elem.get_attribute('class'))
+
+    @override_settings(LANDINGZONES_ZONE_VALIDATE_LIMIT=1)
+    def test_render_validate_limit(self):
+        """Test ProjectZoneView with zone validation limit reached"""
+        self._setup_investigation()
+        self.investigation.irods_status = True
+        self.investigation.save()
+        self.make_landing_zone(
+            'owner_zone',
+            self.project,
+            self.user_owner,
+            self.assay,
+            status=ZONE_STATUS_VALIDATING,
+        )
+        zone2 = self.make_landing_zone(
+            'owner_zone2',
+            self.project,
+            self.user_owner,
+            self.assay,
+            status=ZONE_STATUS_ACTIVE,
+        )
+        self.login_and_redirect(self.user_owner, self.url)
+        alert = self.selenium.find_element(
+            By.ID, 'sodar-lz-alert-zone-validate-limit'
+        )
+        self.assertNotIn('d-none', alert.get_attribute('class'))
+        self.assertIn('d-block', alert.get_attribute('class'))
+        zone_tr = self.selenium.find_element(
+            By.ID, f'sodar-lz-zone-dropdown-{zone2.sodar_uuid}'
+        )
+        link = zone_tr.find_element(By.CLASS_NAME, 'sodar-lz-zone-btn-validate')
+        self.assertIn('disabled', link.get_attribute('class'))
+        link = zone_tr.find_element(By.CLASS_NAME, 'sodar-lz-zone-btn-move')
+        self.assertIn('disabled', link.get_attribute('class'))
+
+    @override_settings(LANDINGZONES_ZONE_VALIDATE_LIMIT=1)
+    def test_render_validate_limit_other_zone_finished(self):
+        """Test ProjectZoneView with zone validation limit and other zone finished"""
+        self._setup_investigation()
+        self.investigation.irods_status = True
+        self.investigation.save()
+        self.make_landing_zone(
+            'owner_zone',
+            self.project,
+            self.user_owner,
+            self.assay,
+            status=ZONE_STATUS_MOVED,
+        )
+        zone2 = self.make_landing_zone(
+            'owner_zone2',
+            self.project,
+            self.user_owner,
+            self.assay,
+            status=ZONE_STATUS_ACTIVE,
+        )
+        self.login_and_redirect(self.user_owner, self.url)
+        alert = self.selenium.find_element(
+            By.ID, 'sodar-lz-alert-zone-validate-limit'
+        )
+        self.assertIn('d-none', alert.get_attribute('class'))
+        self.assertNotIn('d-block', alert.get_attribute('class'))
+        zone_tr = self.selenium.find_element(
+            By.ID, f'sodar-lz-zone-dropdown-{zone2.sodar_uuid}'
+        )
+        link = zone_tr.find_element(By.CLASS_NAME, 'sodar-lz-zone-btn-validate')
+        self.assertNotIn('disabled', link.get_attribute('class'))
+        link = zone_tr.find_element(By.CLASS_NAME, 'sodar-lz-zone-btn-move')
+        self.assertNotIn('disabled', link.get_attribute('class'))
+
+    @override_settings(LANDINGZONES_ZONE_VALIDATE_LIMIT=1)
+    def test_render_validate_limit_update(self):
+        """Test ProjectZoneView with zone validation limit update"""
+        self._setup_investigation()
+        self.investigation.irods_status = True
+        self.investigation.save()
+        zone = self.make_landing_zone(
+            'owner_zone',
+            self.project,
+            self.user_owner,
+            self.assay,
+            status=ZONE_STATUS_VALIDATING,
+        )
+        zone2 = self.make_landing_zone(
+            'owner_zone2',
+            self.project,
+            self.user_owner,
+            self.assay,
+            status=ZONE_STATUS_ACTIVE,
+        )
+
+        self.login_and_redirect(self.user_owner, self.url)
+        elem = self.selenium.find_element(
+            By.ID, 'sodar-lz-alert-zone-validate-limit'
+        )
+        self.assertNotIn('d-none', elem.get_attribute('class'))
+        self.assertIn('d-block', elem.get_attribute('class'))
+        zone_tr = self.selenium.find_element(
+            By.ID, f'sodar-lz-zone-dropdown-{zone2.sodar_uuid}'
+        )
+        link = zone_tr.find_element(By.CLASS_NAME, 'sodar-lz-zone-btn-validate')
+        self.assertIn('disabled', link.get_attribute('class'))
+        link = zone_tr.find_element(By.CLASS_NAME, 'sodar-lz-zone-btn-move')
+        self.assertIn('disabled', link.get_attribute('class'))
+
+        zone.set_status(ZONE_STATUS_MOVED)
+        zone_status = self.selenium.find_element(
+            By.CLASS_NAME, 'sodar-lz-zone-status'
+        )
+        self._wait_for_status(zone_status, ZONE_STATUS_MOVED)
+        elem = self.selenium.find_element(
+            By.ID, 'sodar-lz-alert-zone-validate-limit'
+        )
+        self.assertIn('d-none', elem.get_attribute('class'))
+        self.assertNotIn('d-block', elem.get_attribute('class'))
+        zone_tr = self.selenium.find_element(
+            By.ID, f'sodar-lz-zone-dropdown-{zone2.sodar_uuid}'
+        )
+        link = zone_tr.find_element(By.CLASS_NAME, 'sodar-lz-zone-btn-validate')
+        self.assertNotIn('disabled', link.get_attribute('class'))
+        link = zone_tr.find_element(By.CLASS_NAME, 'sodar-lz-zone-btn-move')
+        self.assertNotIn('disabled', link.get_attribute('class'))
 
     def test_render_zone_config(self):
         """Test ProjectZoneView with zone using special configuration"""

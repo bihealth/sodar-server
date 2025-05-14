@@ -39,12 +39,8 @@ Scope of Landing Zones
 
 In the current implementation, all data is uploaded on the assay level. A single
 landing zone is always linked to an assay and should contain files specific to
-that assay.
-
-.. attention::
-
-    Study level data repositories and related landing zones may be implemented
-    in a further SODAR release.
+that assay. Study level data repositories and related landing zones may be
+implemented in a later SODAR release.
 
 File Checksums
 --------------
@@ -56,11 +52,10 @@ calculated in iRODS once the upload is complete. The file should be named with a
 ``filename.bam`` should be uploaded together with a checksum file called
 ``filename.bam.md5`` in the same collection.
 
-From SODAR v0.14 onwards, iRODS checksums not present after the upload are
-automatically calculated prior to validating the landing zone. This means
-uploading with the ``-k`` argument or separately calling ``ichksum`` are no
-longer required. The calculation step may take some time with large landing
-zones.
+iRODS checksums not present after the upload are automatically calculated prior
+to validating the landing zone. This means uploading with the ``-k`` argument or
+separately calling ``ichksum`` are not required. The calculation step may take
+some time with large landing zones.
 
 Collection Structure
 --------------------
@@ -127,8 +122,15 @@ Validating Files
 
 To ensure your uploaded files are OK for being transferred into the project
 sample data, you can call on SODAR to validate them. To do this in the Landing
-Zones UI, open the dropdown next to your landing zone in the zone list
-and select :guilabel:`Validate Files`.
+Zones UI, open the dropdown next to your landing zone in the zone list and
+select :guilabel:`Validate Files`.
+
+.. attention::
+
+    Administrators of your SODAR instance may limit the amount of simultaneous
+    validation processes per project. If this limit is reached, ongoing
+    validation jobs must finish before new ones can be initiated. The UI and
+    REST API will inform you of the limit being reached.
 
 .. figure:: _static/app_landingzones/zone_dropdown.png
     :align: center
@@ -193,7 +195,7 @@ described above and if successful, automatically proceed to move the files under
 the assay. As with validation this is done in the background and you can monitor
 the process in the landing zone list.
 
-.. note::
+.. attention::
 
     Only one moving process per project can be active at a given time. The UI
     will display a locked status and disable relevant controls if the project is

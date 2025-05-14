@@ -24,6 +24,7 @@ from taskflowbackend.tests.base import ProjectLockMixin
 
 from landingzones.constants import (
     ZONE_STATUS_ACTIVE,
+    ZONE_STATUS_VALIDATING,
     ZONE_STATUS_MOVED,
     ZONE_STATUS_DELETED,
 )
@@ -33,7 +34,7 @@ from landingzones.tests.test_models import (
     ZONE_TITLE,
     ZONE_DESC,
 )
-from landingzones.views import ZONE_LIMIT_MSG
+from landingzones.views import ZONE_CREATE_LIMIT_MSG
 
 
 app_settings = AppSettingAPI()
@@ -137,6 +138,7 @@ class TestProjectZoneView(ProjectLockMixin, ViewTestBase):
         self.assertEqual(rc['prohibit_files'], None)
         self.assertEqual(rc['project_lock'], False)
         self.assertEqual(rc['zone_create_limit'], False)
+        self.assertEqual(rc['zone_validate_limit'], False)
 
     def test_get_contrib(self):
         """Test GET as contributor"""
@@ -198,7 +200,7 @@ class TestProjectZoneView(ProjectLockMixin, ViewTestBase):
         self.assertEqual(response.context['project_lock'], True)
 
     @override_settings(LANDINGZONES_ZONE_CREATE_LIMIT=2)
-    def test_get_limit(self):
+    def test_get_create_limit(self):
         """Test GET with zone creation limit reached"""
         self.assertEqual(
             LandingZone.objects.filter(project=self.project).count(), 2
@@ -209,13 +211,31 @@ class TestProjectZoneView(ProjectLockMixin, ViewTestBase):
         self.assertEqual(response.context['zone_create_limit'], True)
 
     @override_settings(LANDINGZONES_ZONE_CREATE_LIMIT=2)
-    def test_get_limit_existing_finished(self):
+    def test_get_create_limit_existing_finished(self):
         """Test GET with zone creation limit and finished zone"""
         self.zone.set_status(ZONE_STATUS_MOVED)
         with self.login(self.user_owner):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['zone_create_limit'], False)
+
+    @override_settings(LANDINGZONES_ZONE_VALIDATE_LIMIT=1)
+    def test_get_validate_limit(self):
+        """Test GET with zone validation limit reached"""
+        self.zone.set_status(ZONE_STATUS_VALIDATING)
+        with self.login(self.user_owner):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['zone_validate_limit'], True)
+
+    @override_settings(LANDINGZONES_ZONE_VALIDATE_LIMIT=1)
+    def test_get_validate_limit_other_zone_moved(self):
+        """Test GET with zone validation limit reached and other zone moved"""
+        self.zone.set_status(ZONE_STATUS_MOVED)
+        with self.login(self.user_owner):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['zone_validate_limit'], False)
 
 
 class TestZoneCreateView(ViewTestBase):
@@ -268,7 +288,7 @@ class TestZoneCreateView(ViewTestBase):
             )
         self.assertEqual(
             list(get_messages(response.wsgi_request))[0].message,
-            ZONE_LIMIT_MSG.format(limit=1) + '.',
+            ZONE_CREATE_LIMIT_MSG.format(limit=1) + '.',
         )
 
     @override_settings(LANDINGZONES_ZONE_CREATE_LIMIT=1)

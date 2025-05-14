@@ -240,7 +240,12 @@ Landing Zones Settings
     Optional limit for how many active landing zones can be created per
     project. If enabled, existing landing zones past the limit must be moved or
     deleted before new ones can be created. The UI and API will inform the user
-    of this limitation. Use value ``0`` or ``None`` for no limit (integer).
+    of this limitation. Use value ``0`` for no limit (integer).
+``LANDINGZONES_ZONE_VALIDATE_LIMIT``
+    Optional limit for how many landing zones can be simultaneously triggered
+    for validation in the project. If enabled, ongoing validation jobs must
+    finish before new ones can be initiated. The UI and API will inform the user
+    of this limitation. Use value ``0`` for no limit (integer).
 ``LZ_BIH_PROTEOMICS_SMB_EXPIRY_DAYS``
     BIH proteomics configuration SMB expiry days (integer).
 ``LZ_BIH_PROTEOMICS_SMB_USER``

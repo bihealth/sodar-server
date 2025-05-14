@@ -40,12 +40,18 @@
 
 <div class="container-fluid sodar-page-container"> {# Main container #}
   <div class="alert alert-danger {% if project_lock %}d-block{% else %}d-none{% endif %}"
-       data-lock-url="{% url 'taskflowbackend:api_lock_status' project=project.sodar_uuid %}"
        id="sodar-lz-alert-lock">
     <i class="iconify" data-icon="mdi:lock"></i>
     This project is locked for landing zone "Validate and Move" operations. You
     need to wait for the ongoing moving operation to finish before starting new
     move jobs.
+  </div>
+  <div class="alert alert-warning {% if zone_validate_limit %}d-block{% else %}d-none{% endif %}"
+       id="sodar-lz-alert-zone-validate-limit">
+    <i class="iconify" data-icon="mdi:lock-check"></i>
+    The maximum number of ongoing validation jobs for this project has been
+    reached. Please wait for ongoing validations to finish before starting new
+    validation jobs.
   </div>
   <div class="alert alert-danger {% if zone_create_limit %}d-block{% else %}d-none{% endif %}"
        id="sodar-lz-alert-zone-create-limit">

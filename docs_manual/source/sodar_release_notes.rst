@@ -24,6 +24,7 @@ Release for SODAR Core 1.1 upgrade and feature updates.
 - Add project locking status display and control disabling in landing zone list view
 - Add support for simultaneous validation of multiple zones in a project
 - Add support for landing zone creation limit per project
+- Add support for landing zone validation limit per project
 - Update email sending and alerts to exclude inactive users
 - Update iRODS access ticket creation to support path to data object in UI
 - Update checksum validation to check all files before failing

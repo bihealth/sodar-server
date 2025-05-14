@@ -7,7 +7,11 @@ from datetime import datetime as dt
 from django.conf import settings
 from django.utils.text import slugify
 
-from landingzones.constants import STATUS_FINISHED
+from landingzones.constants import (
+    STATUS_FINISHED,
+    ZONE_STATUS_PREPARING,
+    ZONE_STATUS_VALIDATING,
+)
 from landingzones.models import LandingZone
 
 
@@ -31,6 +35,22 @@ def get_zone_create_limit(project):
         <= LandingZone.objects.filter(project=project)
         .exclude(status__in=STATUS_FINISHED)
         .count()
+    ):
+        return True
+    return False
+
+
+def get_zone_validate_limit(project):
+    """Return True if zone validation limit has been reached"""
+    limit = settings.LANDINGZONES_ZONE_VALIDATE_LIMIT
+    if (
+        limit
+        and 0
+        < limit
+        <= LandingZone.objects.filter(
+            project=project,
+            status__in=[ZONE_STATUS_PREPARING, ZONE_STATUS_VALIDATING],
+        ).count()
     ):
         return True
     return False

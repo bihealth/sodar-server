@@ -35,12 +35,14 @@ from samplesheets.models import Investigation
 from landingzones.constants import STATUS_ALLOW_UPDATE, STATUS_FINISHED
 from landingzones.models import LandingZone
 from landingzones.serializers import LandingZoneSerializer
+from landingzones.utils import get_zone_validate_limit
 from landingzones.views import (
     ZoneModifyPermissionMixin,
     ZoneModifyMixin,
     ZoneDeleteMixin,
     ZoneMoveMixin,
     ZONE_UPDATE_FIELDS,
+    ZONE_VALIDATE_LIMIT_MSG,
 )
 
 
@@ -418,7 +420,8 @@ class ZoneSubmitMoveAPIView(ZoneMoveMixin, ZoneSubmitBaseAPIView):
     For validating data without moving it to the sample repository, this view
     should be called with ``submit/validate``.
 
-    Returns ``503`` if the project is currently locked by another operation.
+    Returns ``503`` if the project is currently locked by another operation or
+    if the concurrent validation limit for the project has been reached.
 
     **URL for Validation:** ``/landingzones/api/submit/validate/{LandingZone.sodar_uuid}``
 
@@ -436,6 +439,12 @@ class ZoneSubmitMoveAPIView(ZoneMoveMixin, ZoneSubmitBaseAPIView):
             sodar_uuid=self.kwargs['landingzone']
         ).first()
 
+        # Check limit
+        if get_zone_validate_limit(zone.project):
+            ex = APIException(ZONE_VALIDATE_LIMIT_MSG)
+            ex.status_code = 503
+            raise ex
+
         # Validate/move or validate only
         if self.request.get_full_path() == reverse(
             'landingzones:api_submit_validate',
@@ -451,7 +460,7 @@ class ZoneSubmitMoveAPIView(ZoneMoveMixin, ZoneSubmitBaseAPIView):
         self._validate_zone_obj(zone, STATUS_ALLOW_UPDATE, action_obj)
 
         try:
-            self._submit_validate_move(zone, validate_only)
+            self.submit_validate_move(zone, validate_only)
         except Exception as ex:
             ex_msg = 'Initiating landing zone {} failed: '.format(action_msg)
             if taskflow:

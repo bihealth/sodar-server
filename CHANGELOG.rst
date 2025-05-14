@@ -34,6 +34,7 @@ Added
     - UI alert for locked project (#2146, #2151)
     - ``LANDINGZONES_ZONE_CREATE_LIMIT`` Django setting (#2148)
     - Landing zone creation limit per project (#2148)
+    - Landing zone validation limit per project (#2150)
 - **Samplesheets**
     - Site read-only mode support (#2051)
     - ``checksum`` field in ``ProjectIrodsFileListAPIView`` return data (#2039)

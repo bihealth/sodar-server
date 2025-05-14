@@ -40,7 +40,11 @@ from landingzones.constants import (
 )
 from landingzones.forms import LandingZoneForm
 from landingzones.models import LandingZone
-from landingzones.utils import get_zone_create_limit, cleanup_file_prohibit
+from landingzones.utils import (
+    get_zone_create_limit,
+    get_zone_validate_limit,
+    cleanup_file_prohibit,
+)
 
 
 app_settings = AppSettingAPI()
@@ -58,9 +62,13 @@ ZONE_MOVE_INVALID_STATUS = 'Zone not in active state, unable to trigger action.'
 ZONE_MOVE_NO_FILES = 'No files in landing zone, nothing to do.'
 ZONE_UPDATE_ACTIONS = ['update', 'move', 'delete']
 ZONE_UPDATE_FIELDS = ['description', 'user_message']
-ZONE_LIMIT_MSG = (
+ZONE_CREATE_LIMIT_MSG = (
     'Landing zone creation limit for project ({limit}) reached, please move or '
     'delete existing zones before creating new ones'
+)
+ZONE_VALIDATE_LIMIT_MSG = (
+    'Landing zone validation limit per project reached, please wait for '
+    'ongoing validation jobs to finish before initiating new ones'
 )
 
 
@@ -155,7 +163,7 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
                 status__in=STATUS_FINISHED
             )
             if zones.count() >= limit:
-                raise Exception(ZONE_LIMIT_MSG.format(limit=limit))
+                raise Exception(ZONE_CREATE_LIMIT_MSG.format(limit=limit))
 
     def submit_create(
         self,
@@ -409,7 +417,7 @@ class ZoneDeleteMixin(ZoneConfigPluginMixin):
 class ZoneMoveMixin(ZoneConfigPluginMixin):
     """Mixin to be used in zone validation/moving"""
 
-    def _submit_validate_move(self, zone, validate_only, request=None):
+    def submit_validate_move(self, zone, validate_only, request=None):
         """
         Handle timeline updating and initialize taskflow operation for
         LandingZone moving and/or validation.
@@ -526,6 +534,8 @@ class ProjectZoneView(
         context['project_lock'] = project_lock
         # Zone creation limit
         context['zone_create_limit'] = get_zone_create_limit(project)
+        # Zone validation limit
+        context['zone_validate_limit'] = get_zone_validate_limit(project)
         return context
 
 
@@ -877,6 +887,12 @@ class ZoneMoveView(
             messages.error(self.request, ZONE_MOVE_INVALID_STATUS)
             return redirect(redirect_url)
 
+        # Check limit
+        # if self.is_validate_limit_reached(project):
+        if get_zone_validate_limit(project):
+            messages.error(self.request, ZONE_VALIDATE_LIMIT_MSG + '.')
+            return redirect(redirect_url)
+
         # Validate/move or validate only
         validate_only = False
         if self.request.get_full_path() == reverse(
@@ -884,7 +900,7 @@ class ZoneMoveView(
         ):
             validate_only = True
         try:
-            self._submit_validate_move(zone, validate_only)
+            self.submit_validate_move(zone, validate_only)
             messages.warning(
                 self.request,
                 'Validating {}landing zone, see job progress in the '

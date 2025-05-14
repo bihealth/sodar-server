@@ -70,7 +70,7 @@ class TriggerZoneMoveTask(ZoneMoveMixin):
                 irods.data_objects.unlink(path, force=True)
                 logger.debug('Trigger file deleted')
                 # Submit request to Taskflow
-                self._submit_validate_move(
+                self.submit_validate_move(
                     zone, validate_only=False, request=request
                 )
                 logger.info(

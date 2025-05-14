@@ -51,7 +51,7 @@ from landingzones.tests.test_views_taskflow import (
     ZONE_ALL_COLLS,
     TEST_OBJ_NAME,
 )
-from landingzones.views import ZONE_LIMIT_MSG
+from landingzones.views import ZONE_CREATE_LIMIT_MSG, ZONE_VALIDATE_LIMIT_MSG
 from landingzones.views_api import (
     LANDINGZONES_API_MEDIA_TYPE,
     LANDINGZONES_API_DEFAULT_VERSION,
@@ -363,7 +363,7 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
         )
         self.assertEqual(response.status_code, 403)
         self.assertEqual(
-            response.data['detail'], ZONE_LIMIT_MSG.format(limit=1)
+            response.data['detail'], ZONE_CREATE_LIMIT_MSG.format(limit=1)
         )
         self.assertEqual(LandingZone.objects.count(), 1)
 
@@ -499,7 +499,7 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
 
     def setUp(self):
         super().setUp()
-        self.landing_zone = self.make_landing_zone(
+        self.zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
             user=self.user,
@@ -508,38 +508,36 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
             configuration=None,
             config_data={},
         )
-        self.make_zone_taskflow(self.landing_zone)
+        self.make_zone_taskflow(self.zone)
         self.sample_path = self.irods_backend.get_path(self.assay)
         self.project_group = self.irods_backend.get_group_name(self.project)
         self.owner_group = self.irods_backend.get_group_name(self.project, True)
-        self.zone_path = self.irods_backend.get_path(self.landing_zone)
+        self.zone_path = self.irods_backend.get_path(self.zone)
         self.zone_coll = self.irods.collections.get(self.zone_path)
         self.assay_path = self.irods_backend.get_path(self.assay)
         self.assay_coll = self.irods.collections.get(self.assay_path)
-        self.url = reverse(
+        self.url_validate = reverse(
             'landingzones:api_submit_validate',
-            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+            kwargs={'landingzone': self.zone.sodar_uuid},
         )
         self.url_move = reverse(
             'landingzones:api_submit_move',
-            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+            kwargs={'landingzone': self.zone.sodar_uuid},
         )
 
     def test_post_move(self):
         """Test POST for moving"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         self.make_irods_md5_object(irods_obj)
-        self.assertEqual(self.landing_zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         response = self.request_knox(self.url_move, method='POST')
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            response.data['sodar_uuid'], str(self.landing_zone.sodar_uuid)
-        )
+        self.assertEqual(response.data['sodar_uuid'], str(self.zone.sodar_uuid))
         self.assertEqual(LandingZone.objects.count(), 1)
-        self.assert_zone_status(self.landing_zone, ZONE_STATUS_MOVED)
+        self.assert_zone_status(self.zone, ZONE_STATUS_MOVED)
         self.assertEqual(len(self.zone_coll.data_objects), 0)
         self.assertEqual(len(self.assay_coll.data_objects), 2)
         obj_path = os.path.join(self.assay_path, TEST_OBJ_NAME)
@@ -551,8 +549,8 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
 
     def test_post_move_invalid_status(self):
         """Test POST for moving with invalid zone status (should fail)"""
-        self.landing_zone.status = ZONE_STATUS_DELETED
-        self.landing_zone.save()
+        self.zone.status = ZONE_STATUS_DELETED
+        self.zone.save()
         response = self.request_knox(self.url_move, method='POST')
         self.assertEqual(response.status_code, 400)
         self.assertEqual(LandingZone.objects.count(), 1)
@@ -628,17 +626,80 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
             self.irods_access_read,
         )
 
+    @override_settings(LANDINGZONES_ZONE_VALIDATE_LIMIT=1)
+    def test_post_move_limit(self):
+        """Test POST to move with validation limit reached"""
+        self.make_landing_zone(
+            title='other_zone',
+            project=self.project,
+            user=self.user,
+            assay=self.assay,
+            status=ZONE_STATUS_VALIDATING,
+        )
+        irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
+        self.make_irods_md5_object(irods_obj)
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(len(self.zone_coll.data_objects), 2)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+        response = self.request_knox(self.url_move, method='POST')
+        self.assertEqual(response.status_code, 503)
+        self.assert_zone_status(self.zone, ZONE_STATUS_ACTIVE)
+        self.assertEqual(len(self.zone_coll.data_objects), 2)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+
+    @override_settings(LANDINGZONES_ZONE_VALIDATE_LIMIT=1)
+    def test_post_move_limit_other_project(self):
+        """Test POST to move with validation limit and zone in another project"""
+        new_project = self.make_project(
+            'NewProject', PROJECT_TYPE_PROJECT, self.category
+        )
+        self.make_landing_zone(
+            title='other_zone',
+            project=new_project,
+            user=self.user,
+            assay=self.assay,
+            status=ZONE_STATUS_VALIDATING,
+        )
+        irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
+        self.make_irods_md5_object(irods_obj)
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(len(self.zone_coll.data_objects), 2)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+        response = self.request_knox(self.url_move, method='POST')
+        self.assertEqual(response.status_code, 200)
+        self.assert_zone_status(self.zone, ZONE_STATUS_MOVED)
+        self.assertEqual(len(self.zone_coll.data_objects), 0)
+        self.assertEqual(len(self.assay_coll.data_objects), 2)
+
+    @override_settings(LANDINGZONES_ZONE_VALIDATE_LIMIT=1)
+    def test_post_move_limit_other_zone_moved(self):
+        """Test POST to move with validation limit and other zone in moved status"""
+        self.make_landing_zone(
+            title='other_zone',
+            project=self.project,
+            user=self.user,
+            assay=self.assay,
+            status=ZONE_STATUS_MOVED,
+        )
+        irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
+        self.make_irods_md5_object(irods_obj)
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(len(self.zone_coll.data_objects), 2)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+        response = self.request_knox(self.url_move, method='POST')
+        self.assertEqual(response.status_code, 200)
+        self.assert_zone_status(self.zone, ZONE_STATUS_MOVED)
+        self.assertEqual(len(self.zone_coll.data_objects), 0)
+        self.assertEqual(len(self.assay_coll.data_objects), 2)
+
     def test_post_validate(self):
         """Test POST for validation"""
         # Update to check status change
-        self.landing_zone.status = ZONE_STATUS_FAILED
-        self.landing_zone.save()
-        response = self.request_knox(self.url, method='POST')
-
+        self.zone.status = ZONE_STATUS_FAILED
+        self.zone.save()
+        response = self.request_knox(self.url_validate, method='POST')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            response.data['sodar_uuid'], str(self.landing_zone.sodar_uuid)
-        )
+        self.assertEqual(response.data['sodar_uuid'], str(self.zone.sodar_uuid))
         self.assertEqual(LandingZone.objects.count(), 1)
         zone = LandingZone.objects.first()
         self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
@@ -657,18 +718,33 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
     def test_post_validate_locked(self):
         """Test POST for validation with locked project"""
         self.lock_project(self.project)
-        self.landing_zone.status = ZONE_STATUS_FAILED
-        self.landing_zone.save()
-        response = self.request_knox(self.url, method='POST')
+        self.zone.status = ZONE_STATUS_FAILED
+        self.zone.save()
+        response = self.request_knox(self.url_validate, method='POST')
         self.assertEqual(response.status_code, 200)
 
     def test_post_validate_invalid_status(self):
         """Test POST for validation with invalid zone status (should fail)"""
-        self.landing_zone.status = ZONE_STATUS_VALIDATING
-        self.landing_zone.save()
-        response = self.request_knox(self.url, method='POST')
+        self.zone.status = ZONE_STATUS_VALIDATING
+        self.zone.save()
+        response = self.request_knox(self.url_validate, method='POST')
         self.assertEqual(response.status_code, 400)
         self.assertEqual(LandingZone.objects.count(), 1)
         self.assertEqual(
             LandingZone.objects.first().status, ZONE_STATUS_VALIDATING
         )
+
+    @override_settings(LANDINGZONES_ZONE_VALIDATE_LIMIT=1)
+    def test_post_validate_limit(self):
+        """Test POST to validate with validation limit reached"""
+        self.make_landing_zone(
+            title='other_zone',
+            project=self.project,
+            user=self.user,
+            assay=self.assay,
+            status=ZONE_STATUS_VALIDATING,
+        )
+        response = self.request_knox(self.url_validate, method='POST')
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.data['detail'], ZONE_VALIDATE_LIMIT_MSG)
+        self.assert_zone_status(self.zone, ZONE_STATUS_ACTIVE)

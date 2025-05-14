@@ -7,9 +7,15 @@ import string
 from django.test import override_settings
 from django.urls import reverse
 
-from landingzones.constants import ZONE_STATUS_MOVED
+# Taskflowbackend dependency
+from taskflowbackend.lock_api import ProjectLockAPI
+
+from landingzones.constants import ZONE_STATUS_VALIDATING, ZONE_STATUS_MOVED
 from landingzones.tests.test_views import ViewTestBase
 from landingzones.views_ajax import STATUS_TRUNCATE_LEN
+
+
+lock_api = ProjectLockAPI()
 
 
 class TestZoneStatusRetrieveAjaxView(ViewTestBase):
@@ -33,6 +39,7 @@ class TestZoneStatusRetrieveAjaxView(ViewTestBase):
                 self.url, data=json.dumps(self.post_data), **self.post_kw
             )
         self.assertEqual(response.status_code, 200)
+        rd = response.data
         expected = {
             str(self.zone.sodar_uuid): {
                 'modified': self.zone.date_modified.timestamp(),
@@ -41,8 +48,10 @@ class TestZoneStatusRetrieveAjaxView(ViewTestBase):
                 'truncated': False,
             }
         }
-        self.assertEqual(response.data['zones'], expected)
-        self.assertEqual(response.data['zone_create_limit'], False)
+        self.assertEqual(rd['zones'], expected)
+        self.assertEqual(rd['project_lock'], False)
+        self.assertEqual(rd['zone_create_limit'], False)
+        self.assertEqual(rd['zone_validate_limit'], False)
 
     def test_post_modified(self):
         """Test ZoneStatusRetrieveAjaxView POST"""
@@ -59,7 +68,13 @@ class TestZoneStatusRetrieveAjaxView(ViewTestBase):
             )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
-            response.data, {'zones': {}, 'zone_create_limit': False}
+            response.data,
+            {
+                'zones': {},
+                'project_lock': False,
+                'zone_create_limit': False,
+                'zone_validate_limit': False,
+            },
         )
 
     def test_post_truncate(self):
@@ -74,6 +89,7 @@ class TestZoneStatusRetrieveAjaxView(ViewTestBase):
                 self.url, data=json.dumps(self.post_data), **self.post_kw
             )
         self.assertEqual(response.status_code, 200)
+        rd = response.data
         expected = {
             str(self.zone.sodar_uuid): {
                 'modified': self.zone.date_modified.timestamp(),
@@ -82,8 +98,10 @@ class TestZoneStatusRetrieveAjaxView(ViewTestBase):
                 'truncated': True,
             }
         }
-        self.assertEqual(response.data['zones'], expected)
-        self.assertEqual(response.data['zone_create_limit'], False)
+        self.assertEqual(rd['zones'], expected)
+        self.assertEqual(rd['project_lock'], False)
+        self.assertEqual(rd['zone_create_limit'], False)
+        self.assertEqual(rd['zone_validate_limit'], False)
 
     def test_post_no_zone(self):
         """Test POST with no zones"""
@@ -94,21 +112,46 @@ class TestZoneStatusRetrieveAjaxView(ViewTestBase):
             )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
-            response.data, {'zones': {}, 'zone_create_limit': False}
+            response.data,
+            {
+                'zones': {},
+                'project_lock': False,
+                'zone_create_limit': False,
+                'zone_validate_limit': False,
+            },
         )
 
+    def test_post_locked(self):
+        """Test POST with locked project"""
+        self.coordinator = lock_api.get_coordinator()
+        lock_id = str(self.project.sodar_uuid)
+        lock = self.coordinator.get_lock(lock_id)
+        lock_api.acquire(lock)
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, data=json.dumps(self.post_data), **self.post_kw
+            )
+        self.assertEqual(response.status_code, 200)
+        rd = response.data
+        self.assertEqual(rd['project_lock'], True)
+        self.assertEqual(rd['zone_create_limit'], False)
+        self.assertEqual(rd['zone_validate_limit'], False)
+
     @override_settings(LANDINGZONES_ZONE_CREATE_LIMIT=1)
-    def test_post_limit(self):
+    def test_post_create_limit(self):
         """Test POST with zone creation limit reached"""
         with self.login(self.user):
             response = self.client.post(
                 self.url, data=json.dumps(self.post_data), **self.post_kw
             )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['zone_create_limit'], True)
+        rd = response.data
+        self.assertEqual(rd['project_lock'], False)
+        self.assertEqual(rd['zone_create_limit'], True)
+        self.assertEqual(rd['zone_validate_limit'], False)
 
     @override_settings(LANDINGZONES_ZONE_CREATE_LIMIT=1)
-    def test_post_limit_existing_finished(self):
+    def test_post_create_limit_existing_finished(self):
         """Test POST with zone creation limit and finished zone"""
         self.zone.set_status(ZONE_STATUS_MOVED)
         with self.login(self.user):
@@ -116,7 +159,38 @@ class TestZoneStatusRetrieveAjaxView(ViewTestBase):
                 self.url, data=json.dumps(self.post_data), **self.post_kw
             )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['zone_create_limit'], False)
+        rd = response.data
+        self.assertEqual(rd['project_lock'], False)
+        self.assertEqual(rd['zone_create_limit'], False)
+        self.assertEqual(rd['zone_validate_limit'], False)
+
+    @override_settings(LANDINGZONES_ZONE_VALIDATE_LIMIT=1)
+    def test_post_validate_limit(self):
+        """Test POST with zone validation limit reached"""
+        self.zone.set_status(ZONE_STATUS_VALIDATING)
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, data=json.dumps(self.post_data), **self.post_kw
+            )
+        self.assertEqual(response.status_code, 200)
+        rd = response.data
+        self.assertEqual(rd['project_lock'], False)
+        self.assertEqual(rd['zone_create_limit'], False)
+        self.assertEqual(rd['zone_validate_limit'], True)
+
+    @override_settings(LANDINGZONES_ZONE_VALIDATE_LIMIT=1)
+    def test_post_validate_limit_other_zone_moved(self):
+        """Test POST to move with validation limit and other zone in moved status"""
+        self.zone.set_status(ZONE_STATUS_MOVED)
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, data=json.dumps(self.post_data), **self.post_kw
+            )
+        self.assertEqual(response.status_code, 200)
+        rd = response.data
+        self.assertEqual(rd['project_lock'], False)
+        self.assertEqual(rd['zone_create_limit'], False)
+        self.assertEqual(rd['zone_validate_limit'], False)
 
 
 class TestZoneStatusInfoRetrieveAjaxView(ViewTestBase):

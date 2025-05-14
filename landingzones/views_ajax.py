@@ -1,5 +1,7 @@
 """Ajax API views for the landingzones app"""
 
+import logging
+
 from django.http import Http404, HttpResponseForbidden
 
 from rest_framework.response import Response
@@ -9,7 +11,10 @@ from projectroles.plugins import get_backend_api
 from projectroles.views_ajax import SODARBaseProjectAjaxView
 
 from landingzones.models import LandingZone
-from landingzones.utils import get_zone_create_limit
+from landingzones.utils import get_zone_create_limit, get_zone_validate_limit
+
+
+logger = logging.getLogger(__name__)
 
 
 # Local constants
@@ -34,8 +39,21 @@ class ZoneStatusRetrieveAjaxView(ZoneBaseAjaxView):
     permission_required = 'landingzones.view_zone_own'
 
     def post(self, request, *args, **kwargs):
+        taskflow = get_backend_api('taskflow')
         project = self.get_project()
-        ret = {'zones': {}, 'zone_create_limit': get_zone_create_limit(project)}
+        ret = {
+            'zones': {},
+            'zone_create_limit': get_zone_create_limit(project),
+            'zone_validate_limit': get_zone_validate_limit(project),
+        }
+        # Project lock status
+        project_lock = False
+        if taskflow:
+            try:
+                project_lock = taskflow.is_locked(project)
+            except Exception as ex:
+                logger.error('Exception querying lock status: {}'.format(ex))
+        ret['project_lock'] = project_lock
         zone_data = request.data.get('zones')
         if not zone_data:
             return Response(ret, status=200)
