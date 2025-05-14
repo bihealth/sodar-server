@@ -628,7 +628,7 @@ class ZoneCreateView(
                 and 'sodar_cache' in settings.ENABLED_BACKEND_PLUGINS
             ):
                 msg += ' Collections will be created.'
-            messages.warning(self.request, msg)
+            messages.info(self.request, msg)
         except taskflow.FlowSubmitException as ex:
             messages.error(self.request, str(ex))
         return redirect(
@@ -784,7 +784,7 @@ class ZoneDeleteView(
             return redirect(redirect_url)
         try:
             self.submit_delete(zone)
-            messages.warning(
+            messages.info(
                 self.request,
                 'Landing zone deletion initiated for "{}/{}" in '
                 'assay {}.'.format(
@@ -901,7 +901,7 @@ class ZoneMoveView(
             validate_only = True
         try:
             self.submit_validate_move(zone, validate_only)
-            messages.warning(
+            messages.info(
                 self.request,
                 'Validating {}landing zone, see job progress in the '
                 'zone list.'.format('and moving ' if not validate_only else ''),
