@@ -17,7 +17,7 @@ Added
     - ``vim`` install in Docker build (#2113)
 - **Irodsbackend**
     - ``get_objects()`` checksum support (#2038)
-    - ``get_objects()`` offset support (#1997)
+    - ``get_objects()`` offset support (#1997, #2159)
     - ``get_group_name()`` owner/delegate group support (#2109)
     - ``issue_ticket()`` allowed hosts support (#1439, #2141)
     - ``IrodsAPI.update_ticket()`` method (#1439, #2141)
@@ -114,6 +114,8 @@ Fixed
 
 - **General**
     - ``LegacyKeyValueFormat`` warnings in Docker build (#2089)
+- **Irodsbackend**
+    - ``get_objects()`` ``limit`` arg not working correctly with ``include_colls`` (#2159)
 - **Landingzones**
     - Zone delete timeline status not updated with missing collection (#2096)
     - Sample Sheets link not displayed in UI after zone move (#2106)

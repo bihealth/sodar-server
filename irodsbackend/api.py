@@ -735,19 +735,23 @@ class IrodsAPI:
             coll,
             include_md5=include_md5,
             name_like=name_like,
-            limit=limit,
-            offset=offset,
+            limit=limit if not include_colls else None,  # See #2159
+            offset=offset if not include_colls else None,
             api_format=api_format,
             checksum=checksum,
         )
 
         # Add collections if enabled
-        # TODO: Combine into a single query? (see issues #1440, #1883)
+        # TODO: Combine into a single query? (see #1883)
         if include_colls:
             colls = self.get_colls_recursively(coll)
             for c in colls:
                 ret.append({'name': c.name, 'type': 'coll', 'path': c.path})
             ret = sorted(ret, key=lambda x: x['path'])
+            if offset:  # See #2159
+                ret = ret[offset:]
+            if limit:
+                ret = ret[:limit]
         return ret
 
     @classmethod

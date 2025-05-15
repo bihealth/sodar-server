@@ -209,11 +209,13 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
         }
         self.assertEqual(obj_list[0], expected)
 
-    def test_get_objects_with_colls(self):
-        """Test get_objects() with collections included"""
+    def test_get_objects_include_colls(self):
+        """Test get_objects() with include_colls"""
         data_obj = self.make_irods_object(self.coll, TEST_FILE_NAME)
         self.make_irods_md5_object(data_obj)
-        self.irods.collections.create(self.assay_path + '/subcoll')
+        self.irods.collections.create(
+            os.path.join(self.assay_path, SUBCOLL_NAME)
+        )
         obj_list = self.irods_backend.get_objects(
             self.irods, self.assay_path, include_md5=True, include_colls=True
         )
@@ -223,7 +225,7 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
             {
                 'name': 'subcoll',
                 'type': 'coll',
-                'path': self.assay_path + '/subcoll',
+                'path': os.path.join(self.assay_path, SUBCOLL_NAME),
             },
             {
                 'name': TEST_FILE_NAME,
@@ -326,6 +328,23 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
         self.assertEqual(obj_list[0]['name'], TEST_FILE_NAME)
         self.assertEqual(obj_list[1]['name'], TEST_FILE_NAME + '.md5')
 
+    def test_get_objects_limit_include_colls(self):
+        """Test get_objects() with limit and include_colls"""
+        self.irods.collections.create(
+            os.path.join(self.coll.path, SUBCOLL_NAME)
+        )
+        self.make_irods_object(self.coll, TEST_FILE_NAME)
+        self.make_irods_object(self.coll, TEST_FILE_NAME2)
+        obj_list = self.irods_backend.get_objects(
+            self.irods,
+            self.assay_path,
+            include_md5=False,
+            include_colls=True,
+            limit=1,
+        )
+        self.assertEqual(len(obj_list), 1)  # Limited to 1
+        self.assertEqual(obj_list[0]['name'], SUBCOLL_NAME)
+
     def test_get_objects_offset(self):
         """Test get_objects() with offset"""
         self.make_irods_object(self.coll, TEST_FILE_NAME)
@@ -335,6 +354,23 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
         )
         self.assertEqual(len(obj_list), 1)
         self.assertEqual(obj_list[0]['name'], TEST_FILE_NAME2)
+
+    def test_get_objects_offset_include_colls(self):
+        """Test get_objects() with offset and include_colls"""
+        self.irods.collections.create(
+            os.path.join(self.coll.path, SUBCOLL_NAME)
+        )
+        self.make_irods_object(self.coll, TEST_FILE_NAME)
+        self.make_irods_object(self.coll, TEST_FILE_NAME2)
+        obj_list = self.irods_backend.get_objects(
+            self.irods,
+            self.assay_path,
+            include_md5=False,
+            include_colls=True,
+            offset=1,
+        )
+        self.assertEqual(len(obj_list), 2)
+        self.assertEqual(obj_list[0]['name'], TEST_FILE_NAME)
 
     def test_get_objects_limit_offset(self):
         """Test get_objects() with limit and offset"""
@@ -347,6 +383,26 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
         self.assertEqual(len(obj_list), 1)
         # Only the middle file should be returned
         self.assertEqual(obj_list[0]['name'], TEST_FILE_NAME2)
+
+    def test_get_objects_limit_offset_include_colls(self):
+        """Test get_objects() with limit, offset and include_colls"""
+        self.irods.collections.create(
+            os.path.join(self.coll.path, SUBCOLL_NAME)
+        )
+        self.make_irods_object(self.coll, TEST_FILE_NAME)
+        self.make_irods_object(self.coll, TEST_FILE_NAME2)
+        self.make_irods_object(self.coll, TEST_FILE_NAME3)
+        obj_list = self.irods_backend.get_objects(
+            self.irods,
+            self.assay_path,
+            include_md5=False,
+            include_colls=True,
+            limit=2,
+            offset=1,
+        )
+        self.assertEqual(len(obj_list), 2)
+        self.assertEqual(obj_list[0]['name'], TEST_FILE_NAME)
+        self.assertEqual(obj_list[1]['name'], TEST_FILE_NAME2)
 
     def test_get_objects_api_format(self):
         """Test get_objects() with api_format=True"""
