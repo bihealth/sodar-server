@@ -57,7 +57,7 @@ class Flow(BaseLinearFlow):
         zone_all = self.irods_backend.get_objects(
             self.irods, zone_path, include_md5=True, include_colls=True
         )
-        zone_stats = self.irods_backend.get_object_stats(self.irods, zone_path)
+        zone_stats = self.irods_backend.get_stats(self.irods, zone_path)
         zone_objects = [o['path'] for o in zone_all if o['type'] == 'obj']
         zone_objects_nomd5 = [
             p for p in zone_objects if p[p.rfind('.') + 1 :].lower() != 'md5'

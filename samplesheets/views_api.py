@@ -1140,7 +1140,7 @@ class ProjectIrodsFileListAPIView(
                 )
                 # Get total count for DRF compatible pagination response
                 if page:
-                    stats = irods_backend.get_object_stats(irods, path)
+                    stats = irods_backend.get_stats(irods, path)
                     file_count = stats['file_count']
         except FileNotFoundError as ex:
             raise NotFound('{}: {}'.format(IRODS_QUERY_ERROR_MSG, ex))

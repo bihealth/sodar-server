@@ -1552,7 +1552,7 @@ class TestProjectIrodsFileListAPIView(SampleSheetAPITaskflowTestBase):
                 coll,
                 'test{}.txt'.format(('0' if i < 10 else '') + str(i)),
             )
-        stats = self.irods_backend.get_object_stats(self.irods, coll_path)
+        stats = self.irods_backend.get_stats(self.irods, coll_path)
         self.assertEqual(stats['file_count'], 11)
 
         response = self.request_knox(self.url + '?page=1')

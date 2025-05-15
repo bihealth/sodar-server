@@ -21,6 +21,7 @@ Added
     - ``get_group_name()`` owner/delegate group support (#2109)
     - ``issue_ticket()`` allowed hosts support (#1439, #2141)
     - ``IrodsAPI.update_ticket()`` method (#1439, #2141)
+    - ``get_stats()`` collection stats support (#2160)
 - **Landingzones**
     - Site read-only mode support (#2051)
     - File type prohibiting by file name suffix (#2064)
@@ -73,6 +74,9 @@ Changed
     - Rename ``get_user_group_name()`` to ``get_group_name()`` (#2121)
     - Only set ``write-file`` value for write mode access tickets (#2134)
     - Rename ``date_expires`` kwarg in ``issue_ticket()`` (#2141)
+    - Rename ``get_object_stats()`` to ``get_stats()`` (#2160)
+    - Raise encountered exceptions in ``get_stats()`` (#2161)
+    - Update ``IrodsAPI`` Taskflow tests (#2162, #2163)
 - **Landingzones**
     - Define app settings as ``PluginAppSettingDef`` objects (#2051)
     - Do not mute zone title and description with busy zones (#2092)

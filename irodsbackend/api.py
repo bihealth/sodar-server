@@ -512,12 +512,14 @@ class IrodsAPI:
         """
         return '.'.join(str(x) for x in irods.server_version)
 
-    def get_object_stats(self, irods, path):
+    def get_stats(self, irods, path, include_colls=False):
         """
-        Return file count and total file size for all files within a path.
+        Return file count, total file size and optional subcollection count
+        within an iRODS path.
 
         :param irods: iRODSSession object
         :param path: Full path to iRODS collection
+        :param include_colls: Include subcollection count (bool, default=False)
         :return: Dict
         """
         try:
@@ -525,7 +527,7 @@ class IrodsAPI:
         except CollectionDoesNotExist:
             raise FileNotFoundError('iRODS collection not found')
 
-        ret = {'file_count': 0, 'total_size': 0}
+        ret = {}
         sql = (
             'SELECT COUNT(data_id) as file_count, '
             'SUM(data_size) as total_size '
@@ -549,11 +551,21 @@ class IrodsAPI:
             pass
         except Exception as ex:
             logger.error(
-                'iRODS exception in get_object_stats(): {}; '
-                'SQL = "{}"'.format(ex.__class__.__name__, sql)
+                f'iRODS exception in get_stats(): '
+                f'{ex.__class__.__name__}; SQL = "{sql}"'
             )
+            raise ex
         finally:
             query.remove()
+
+        if include_colls:
+            try:
+                ret['coll_count'] = len(self.get_colls_recursively(coll))
+            except Exception as ex:
+                logger.error(
+                    f'Exception in get_stats() for collection count: {ex}'
+                )
+                raise ex
         return ret
 
     @classmethod

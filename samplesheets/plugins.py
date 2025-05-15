@@ -1096,9 +1096,9 @@ class SampleSheetAssayPluginPoint(PluginPoint):
                     for path in row_paths:
                         try:
                             cache_data['paths'][path] = (
-                                self.irods_backend.get_object_stats(irods, path)
+                                self.irods_backend.get_stats(irods, path)
                             )
-                        except FileNotFoundError:
+                        except Exception:
                             cache_data['paths'][path] = None
                 cache_backend.set_cache_item(
                     name=item_name,

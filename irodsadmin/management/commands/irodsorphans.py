@@ -259,7 +259,7 @@ class Command(BaseCommand):
                 self._write_orphan(collection.path, irods)
 
     def _write_orphan(self, path, irods):
-        stats = self.irods_backend.get_object_stats(irods, path)
+        stats = self.irods_backend.get_stats(irods, path)
         projects_path = self.irods_backend.get_projects_path()
         pattern = projects_path + r'/([^/]{2})/(\1[^/]+)'
         m = re.search(pattern, path)

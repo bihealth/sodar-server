@@ -37,7 +37,7 @@ def get_output(zones, irods_backend, irods):
             )
             continue
         try:
-            stats = irods_backend.get_object_stats(irods, path)
+            stats = irods_backend.get_stats(irods, path)
             lines.append(
                 ';'.join(
                     [

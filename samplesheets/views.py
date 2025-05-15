@@ -1689,7 +1689,7 @@ class SheetDeleteView(
         # NOTE: We handle a possible crash in get()
         with irods_backend.get_session() as irods:
             try:
-                context['irods_file_count'] = irods_backend.get_object_stats(
+                context['irods_file_count'] = irods_backend.get_stats(
                     irods, irods_backend.get_sample_path(project)
                 ).get('file_count')
             except FileNotFoundError:

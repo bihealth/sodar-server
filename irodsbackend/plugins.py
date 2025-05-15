@@ -75,10 +75,10 @@ class BackendPlugin(BackendPluginPoint):
         irods_backend = IrodsAPI()
         try:
             with irods_backend.get_session() as irods:
-                project_stats = irods_backend.get_object_stats(
+                project_stats = irods_backend.get_stats(
                     irods, irods_backend.get_projects_path()
                 )
-                trash_stats = irods_backend.get_object_stats(
+                trash_stats = irods_backend.get_stats(
                     irods, irods_backend.get_trash_path()
                 )
         except Exception:

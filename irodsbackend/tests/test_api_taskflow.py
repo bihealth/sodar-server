@@ -1,5 +1,6 @@
 """Tests for the API in the irodsbackend app with Taskflow and iRODS"""
 
+import os
 import pytz
 import random
 import string
@@ -50,29 +51,17 @@ TEST_FILE_NAME = 'test1'
 TEST_FILE_NAME2 = 'test2'
 TEST_FILE_NAME3 = 'test3'
 TICKET_STR = 'Ahn1kah9Lai2hies'
+SUBCOLL_NAME = 'subcoll'
+INVALID_COLL = 'DOES-NOT-EXIST'
 
 
-class TestIrodsAPITaskflow(
+class IrodsAPITaskflowTestBase(
     SampleSheetIOMixin,
     LandingZoneMixin,
     SampleSheetTaskflowMixin,
     TaskflowViewTestBase,
 ):
-    """Tests for IrodsAPI with Taskflow and iRODS"""
-
-    def _get_ticket_res(self, ticket):
-        """Return iRODS database ticket query result"""
-        query = self.irods.query(TicketQuery.Ticket).filter(
-            TicketQuery.Ticket.string == ticket._ticket
-        )
-        return list(query)[0]
-
-    def _get_host_res(self, ticket_id):
-        """Return iRODS database ticket allowed hosts query result"""
-        query = self.irods.query(TicketQuery.AllowedHosts).filter(
-            TicketQuery.AllowedHosts.ticket_id == ticket_id
-        )
-        return list(query)
+    """Base class for IrodsAPI tests with Taskflow and iRODS"""
 
     def setUp(self):
         super().setUp()
@@ -88,6 +77,10 @@ class TestIrodsAPITaskflow(
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
+
+
+class TestIrodsAPIServerInfo(IrodsAPITaskflowTestBase):
+    """Tests for IrodsAPI server info methods with Taskflow"""
 
     def test_get_info(self):
         """Test get_info()"""
@@ -113,22 +106,95 @@ class TestIrodsAPITaskflow(
             ),
         )
 
-    def test_get_objects(self):
-        """Test get_objects() with files in a sample collection"""
+
+class TestIrodsAPIGetStats(IrodsAPITaskflowTestBase):
+    """Tests for IrodsAPI.get_stats() with Taskflow"""
+
+    def _make_data_objects(self):
+        """Create data objects with .md5 files in iRODS"""
+        self.data_obj = self.make_irods_object(self.coll, TEST_FILE_NAME)
+        self.make_irods_md5_object(self.data_obj)
+        self.data_obj2 = self.make_irods_object(self.coll, TEST_FILE_NAME2)
+        self.make_irods_md5_object(self.data_obj2)
+
+    def setUp(self):
+        super().setUp()
         # Create iRODS collections
         self.make_irods_colls(self.investigation)
-        path = self.irods_backend.get_path(self.assay)
+        # Create subcollection
+        self.assay_path = self.irods_backend.get_path(self.assay)
+        self.subcoll_path = os.path.join(self.assay_path, SUBCOLL_NAME)
+        self.coll = self.irods.collections.create(self.subcoll_path)
 
-        # Create objects
-        # TODO: Test with actual files and put() instead
-        self.irods.data_objects.create(path + '/' + TEST_FILE_NAME)
-        self.irods.data_objects.create(path + '/{}.md5'.format(TEST_FILE_NAME))
+    def test_get_stats_empty(self):
+        """Test get_stats() with no files"""
+        expected = {'file_count': 0, 'total_size': 0}
+        stats = self.irods_backend.get_stats(self.irods, self.assay_path)
+        self.assertEqual(stats, expected)
+
+    def test_get_stats_empty_include_colls(self):
+        """Test get_stats() with no files and include_colls"""
+        expected = {'file_count': 0, 'total_size': 0, 'coll_count': 1}
+        stats = self.irods_backend.get_stats(
+            self.irods, self.assay_path, include_colls=True
+        )
+        self.assertEqual(stats, expected)
+
+    def test_get_stats_files(self):
+        """Test get_stats() with files"""
+        self._make_data_objects()
+        # MD5 checksum files should not be included
+        expected = {'file_count': 2, 'total_size': 2048}
+        stats = self.irods_backend.get_stats(self.irods, self.assay_path)
+        self.assertEqual(stats, expected)
+
+    def test_get_stats_files_include_colls(self):
+        """Test get_stats() with files and include_colls"""
+        self._make_data_objects()
+        # MD5 checksum files should not be included
+        expected = {'file_count': 2, 'total_size': 2048, 'coll_count': 1}
+        stats = self.irods_backend.get_stats(
+            self.irods, self.assay_path, include_colls=True
+        )
+        self.assertEqual(stats, expected)
+
+    def test_get_stats_include_colls_no_subcolls(self):
+        """Test get_stats() with include_colls and no subcollections"""
+        expected = {'file_count': 0, 'total_size': 0, 'coll_count': 0}
+        stats = self.irods_backend.get_stats(
+            self.irods, self.subcoll_path, include_colls=True
+        )
+        self.assertEqual(stats, expected)
+
+    def test_get_stats_invalid_path(self):
+        """Test get_stats() with invalid path"""
+        path = os.path.join(self.assay_path, INVALID_COLL)
+        with self.assertRaises(FileNotFoundError):
+            self.irods_backend.get_stats(self.irods, path)
+
+
+class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
+    """Tests for IrodsAPI.get_objects() with Taskflow"""
+
+    def setUp(self):
+        super().setUp()
+        # Create iRODS collections
+        self.make_irods_colls(self.investigation)
+        self.assay_path = self.irods_backend.get_path(self.assay)
+        self.coll = self.irods.collections.get(self.assay_path)
+
+    def test_get_objects(self):
+        """Test get_objects() with files in a sample collection"""
+        data_obj = self.make_irods_object(self.coll, TEST_FILE_NAME)
+        self.make_irods_md5_object(data_obj)
         obj_list = self.irods_backend.get_objects(
-            self.irods, path, include_md5=True
+            self.irods, self.assay_path, include_md5=True
         )
         self.assertEqual(len(obj_list), 2)
 
-        data_obj = self.irods.data_objects.get(path + '/' + TEST_FILE_NAME)
+        data_obj = self.irods.data_objects.get(
+            os.path.join(self.assay_path, TEST_FILE_NAME)
+        )
         modify_time = (
             data_obj.modify_time.replace(tzinfo=pytz.timezone('GMT'))
             .astimezone(pytz.timezone(settings.TIME_ZONE))
@@ -137,21 +203,19 @@ class TestIrodsAPITaskflow(
         expected = {
             'name': TEST_FILE_NAME,
             'type': 'obj',
-            'path': path + '/' + TEST_FILE_NAME,
-            'size': 0,
+            'path': os.path.join(self.assay_path, TEST_FILE_NAME),
+            'size': 1024,
             'modify_time': modify_time,
         }
         self.assertEqual(obj_list[0], expected)
 
     def test_get_objects_with_colls(self):
         """Test get_objects() with collections included"""
-        self.make_irods_colls(self.investigation)
-        path = self.irods_backend.get_path(self.assay)
-        self.irods.data_objects.create(path + '/' + TEST_FILE_NAME)
-        self.irods.data_objects.create(path + '/{}.md5'.format(TEST_FILE_NAME))
-        self.irods.collections.create(path + '/subcoll')
+        data_obj = self.make_irods_object(self.coll, TEST_FILE_NAME)
+        self.make_irods_md5_object(data_obj)
+        self.irods.collections.create(self.assay_path + '/subcoll')
         obj_list = self.irods_backend.get_objects(
-            self.irods, path, include_md5=True, include_colls=True
+            self.irods, self.assay_path, include_md5=True, include_colls=True
         )
         self.assertEqual(len(obj_list), 3)
 
@@ -159,20 +223,20 @@ class TestIrodsAPITaskflow(
             {
                 'name': 'subcoll',
                 'type': 'coll',
-                'path': path + '/subcoll',
+                'path': self.assay_path + '/subcoll',
             },
             {
                 'name': TEST_FILE_NAME,
                 'type': 'obj',
-                'path': path + '/' + TEST_FILE_NAME,
-                'size': 0,
+                'path': os.path.join(self.assay_path, TEST_FILE_NAME),
+                'size': 1024,
                 'modify_time': obj_list[1]['modify_time'],
             },
             {
                 'name': TEST_FILE_NAME + '.md5',
                 'type': 'obj',
-                'path': path + '/' + TEST_FILE_NAME + '.md5',
-                'size': 0,
+                'path': os.path.join(self.assay_path, TEST_FILE_NAME + '.md5'),
+                'size': 32,
                 'modify_time': obj_list[2]['modify_time'],
             },
         ]
@@ -180,15 +244,13 @@ class TestIrodsAPITaskflow(
 
     def test_get_objects_multi(self):
         """Test get_objects() with multiple search terms"""
-        self.make_irods_colls(self.investigation)
-        path = self.irods_backend.get_path(self.assay)
-        self.irods.data_objects.create(path + '/' + TEST_FILE_NAME)
-        self.irods.data_objects.create(path + '/{}.md5'.format(TEST_FILE_NAME))
-        self.irods.data_objects.create(path + '/' + TEST_FILE_NAME2)
-        self.irods.data_objects.create(path + '/{}.md5'.format(TEST_FILE_NAME2))
+        data_obj = self.make_irods_object(self.coll, TEST_FILE_NAME)
+        self.make_irods_md5_object(data_obj)
+        data_obj = self.make_irods_object(self.coll, TEST_FILE_NAME2)
+        self.make_irods_md5_object(data_obj)
         obj_list = self.irods_backend.get_objects(
             self.irods,
-            path,
+            self.assay_path,
             name_like=[TEST_FILE_NAME, TEST_FILE_NAME2],
             include_md5=True,
         )
@@ -196,12 +258,10 @@ class TestIrodsAPITaskflow(
 
     def test_get_objects_long_query(self):
         """Test get_objects() with a long query"""
-        self.make_irods_colls(self.investigation)
-        path = self.irods_backend.get_path(self.assay)
-        self.irods.data_objects.create(path + '/' + TEST_FILE_NAME)
-        self.irods.data_objects.create(path + '/{}.md5'.format(TEST_FILE_NAME))
-        self.irods.data_objects.create(path + '/' + TEST_FILE_NAME2)
-        self.irods.data_objects.create(path + '/{}.md5'.format(TEST_FILE_NAME2))
+        data_obj = self.make_irods_object(self.coll, TEST_FILE_NAME)
+        self.make_irods_md5_object(data_obj)
+        data_obj = self.make_irods_object(self.coll, TEST_FILE_NAME2)
+        self.make_irods_md5_object(data_obj)
 
         # Generate a large number of name search terms
         name_like = [TEST_FILE_NAME]
@@ -218,7 +278,7 @@ class TestIrodsAPITaskflow(
 
         obj_list = self.irods_backend.get_objects(
             self.irods,
-            path,
+            self.assay_path,
             name_like=[TEST_FILE_NAME, TEST_FILE_NAME2],
             include_md5=True,
         )
@@ -226,40 +286,41 @@ class TestIrodsAPITaskflow(
 
     def test_get_objects_empty_coll(self):
         """Test get_objects() with an empty sample collection"""
-        self.make_irods_colls(self.investigation)
-        path = self.irods_backend.get_path(self.project) + '/' + SAMPLE_COLL
+        path = os.path.join(
+            self.irods_backend.get_path(self.project), SAMPLE_COLL
+        )
         obj_list = self.irods_backend.get_objects(self.irods, path)
         self.assertEqual(len(obj_list), 0)
 
-    def test_get_objects_no_coll(self):
-        """Test get_objects() with no created collections"""
-        path = self.irods_backend.get_path(self.project) + '/' + SAMPLE_COLL
+    def test_get_objects_non_existent_coll(self):
+        """Test get_objects() with non-existing collection"""
+        path = os.path.join(
+            self.irods_backend.get_path(self.project),
+            SAMPLE_COLL,
+            INVALID_COLL,
+        )
         with self.assertRaises(FileNotFoundError):
             self.irods_backend.get_objects(self.irods, path)
 
     def test_get_objects_limit(self):
         """Test get_objects() with limit"""
-        self.make_irods_colls(self.investigation)
-        path = self.irods_backend.get_path(self.assay)
-        self.irods.data_objects.create(path + '/' + TEST_FILE_NAME)
-        self.irods.data_objects.create(path + '/' + TEST_FILE_NAME2)
+        self.make_irods_object(self.coll, TEST_FILE_NAME)
+        self.make_irods_object(self.coll, TEST_FILE_NAME2)
         obj_list = self.irods_backend.get_objects(
-            self.irods, path, include_md5=False, limit=1
+            self.irods, self.assay_path, include_md5=False, limit=1
         )
         self.assertEqual(len(obj_list), 1)  # Limited to 1
         self.assertEqual(obj_list[0]['name'], TEST_FILE_NAME)
 
     def test_get_objects_limit_md5(self):
         """Test get_objects() with limit and MD5 inclusion"""
-        self.make_irods_colls(self.investigation)
-        path = self.irods_backend.get_path(self.assay)
-        coll = self.irods.collections.get(path)
+        coll = self.irods.collections.get(self.assay_path)
         data_obj = self.make_irods_object(coll, TEST_FILE_NAME)
-        self.make_irods_md5_object(data_obj)  # Create MD5 object
+        self.make_irods_md5_object(data_obj)
         data_obj2 = self.make_irods_object(coll, TEST_FILE_NAME2)
         self.make_irods_md5_object(data_obj2)
         obj_list = self.irods_backend.get_objects(
-            self.irods, path, include_md5=True, limit=2
+            self.irods, self.assay_path, include_md5=True, limit=2
         )
         self.assertEqual(len(obj_list), 2)
         self.assertEqual(obj_list[0]['name'], TEST_FILE_NAME)
@@ -267,25 +328,21 @@ class TestIrodsAPITaskflow(
 
     def test_get_objects_offset(self):
         """Test get_objects() with offset"""
-        self.make_irods_colls(self.investigation)
-        path = self.irods_backend.get_path(self.assay)
-        self.irods.data_objects.create(path + '/' + TEST_FILE_NAME)
-        self.irods.data_objects.create(path + '/' + TEST_FILE_NAME2)
+        self.make_irods_object(self.coll, TEST_FILE_NAME)
+        self.make_irods_object(self.coll, TEST_FILE_NAME2)
         obj_list = self.irods_backend.get_objects(
-            self.irods, path, include_md5=False, offset=1
+            self.irods, self.assay_path, include_md5=False, offset=1
         )
         self.assertEqual(len(obj_list), 1)
         self.assertEqual(obj_list[0]['name'], TEST_FILE_NAME2)
 
     def test_get_objects_limit_offset(self):
         """Test get_objects() with limit and offset"""
-        self.make_irods_colls(self.investigation)
-        path = self.irods_backend.get_path(self.assay)
-        self.irods.data_objects.create(path + '/' + TEST_FILE_NAME)
-        self.irods.data_objects.create(path + '/' + TEST_FILE_NAME2)
-        self.irods.data_objects.create(path + '/' + TEST_FILE_NAME3)
+        self.make_irods_object(self.coll, TEST_FILE_NAME)
+        self.make_irods_object(self.coll, TEST_FILE_NAME2)
+        self.make_irods_object(self.coll, TEST_FILE_NAME3)
         obj_list = self.irods_backend.get_objects(
-            self.irods, path, include_md5=False, limit=1, offset=1
+            self.irods, self.assay_path, include_md5=False, limit=1, offset=1
         )
         self.assertEqual(len(obj_list), 1)
         # Only the middle file should be returned
@@ -293,14 +350,14 @@ class TestIrodsAPITaskflow(
 
     def test_get_objects_api_format(self):
         """Test get_objects() with api_format=True"""
-        self.make_irods_colls(self.investigation)
-        path = self.irods_backend.get_path(self.assay)
-        self.irods.data_objects.create(path + '/' + TEST_FILE_NAME)
+        self.make_irods_object(self.coll, TEST_FILE_NAME)
         obj_list = self.irods_backend.get_objects(
-            self.irods, path, api_format=True
+            self.irods, self.assay_path, api_format=True
         )
         self.assertEqual(len(obj_list), 1)
-        data_obj = self.irods.data_objects.get(path + '/' + TEST_FILE_NAME)
+        data_obj = self.irods.data_objects.get(
+            os.path.join(self.assay_path, TEST_FILE_NAME)
+        )
         modify_time = (
             data_obj.modify_time.replace(tzinfo=pytz.timezone('GMT'))
             .astimezone(pytz.timezone(settings.TIME_ZONE))
@@ -309,24 +366,24 @@ class TestIrodsAPITaskflow(
         expected = {
             'name': TEST_FILE_NAME,
             'type': 'obj',
-            'path': path + '/' + TEST_FILE_NAME,
-            'size': 0,
+            'path': os.path.join(self.assay_path, TEST_FILE_NAME),
+            'size': 1024,
             'modify_time': modify_time,
         }
         self.assertEqual(obj_list[0], expected)
 
     def test_get_objects_checksum(self):
         """Test get_objects() with checksum"""
-        self.make_irods_colls(self.investigation)
-        path = self.irods_backend.get_path(self.assay)
-        coll = self.irods.collections.get(path)
+        coll = self.irods.collections.get(self.assay_path)
         # Use make_irods_object() to generate checksum on server
         self.make_irods_object(coll, TEST_FILE_NAME, checksum=True)
         obj_list = self.irods_backend.get_objects(
-            self.irods, path, checksum=True
+            self.irods, self.assay_path, checksum=True
         )
         self.assertEqual(len(obj_list), 1)
-        data_obj = self.irods.data_objects.get(path + '/' + TEST_FILE_NAME)
+        data_obj = self.irods.data_objects.get(
+            os.path.join(self.assay_path, TEST_FILE_NAME)
+        )
         modify_time = (
             data_obj.modify_time.replace(tzinfo=pytz.timezone('GMT'))
             .astimezone(pytz.timezone(settings.TIME_ZONE))
@@ -335,7 +392,7 @@ class TestIrodsAPITaskflow(
         expected = {
             'name': TEST_FILE_NAME,
             'type': 'obj',
-            'path': path + '/' + TEST_FILE_NAME,
+            'path': os.path.join(self.assay_path, TEST_FILE_NAME),
             'size': 1024,
             'modify_time': modify_time,
             'checksum': data_obj.checksum,
@@ -343,9 +400,31 @@ class TestIrodsAPITaskflow(
         self.assertEqual(obj_list[0], expected)
         self.assertIsNotNone(obj_list[0]['checksum'])
 
+
+class TestIrodsAPITickets(IrodsAPITaskflowTestBase):
+    """Tests for IrodsAPI ticket methods with Taskflow"""
+
+    def _get_ticket_res(self, ticket):
+        """Return iRODS database ticket query result"""
+        query = self.irods.query(TicketQuery.Ticket).filter(
+            TicketQuery.Ticket.string == ticket._ticket
+        )
+        return list(query)[0]
+
+    def _get_host_res(self, ticket_id):
+        """Return iRODS database ticket allowed hosts query result"""
+        query = self.irods.query(TicketQuery.AllowedHosts).filter(
+            TicketQuery.AllowedHosts.ticket_id == ticket_id
+        )
+        return list(query)
+
+    def setUp(self):
+        super().setUp()
+        # Create iRODS collections
+        self.make_irods_colls(self.investigation)
+
     def test_issue_ticket_read(self):
         """Test issue_ticket() in read mode"""
-        self.make_irods_colls(self.investigation)
         ticket = self.irods_backend.issue_ticket(
             self.irods,
             TICKET_MODE_READ,
@@ -364,7 +443,6 @@ class TestIrodsAPITaskflow(
 
     def test_issue_ticket_write(self):
         """Test issue_ticket() in write mode"""
-        self.make_irods_colls(self.investigation)
         ticket = self.irods_backend.issue_ticket(
             self.irods,
             TICKET_MODE_WRITE,
@@ -379,7 +457,6 @@ class TestIrodsAPITaskflow(
 
     def test_issue_ticket_expiry_date(self):
         """Test issue_ticket() with expiry date"""
-        self.make_irods_colls(self.investigation)
         expiry_date = timezone.now() + timedelta(days=1)
         ticket = self.irods_backend.issue_ticket(
             self.irods,
@@ -396,7 +473,6 @@ class TestIrodsAPITaskflow(
 
     def test_issue_ticket_hosts(self):
         """Test issue_ticket() with allowed hosts"""
-        self.make_irods_colls(self.investigation)
         ticket = self.irods_backend.issue_ticket(
             self.irods,
             TICKET_MODE_READ,
@@ -415,7 +491,6 @@ class TestIrodsAPITaskflow(
 
     def test_issue_ticket_hosts_string(self):
         """Test issue_ticket() with allowed hosts as string"""
-        self.make_irods_colls(self.investigation)
         ticket = self.irods_backend.issue_ticket(
             self.irods,
             TICKET_MODE_READ,
@@ -435,9 +510,18 @@ class TestIrodsAPITaskflow(
             host_res[1][TicketQuery.AllowedHosts.host], '192.168.0.1'
         )
 
+    def test_get_ticket(self):
+        """Test get_ticket()"""
+        ticket = self.irods_backend.issue_ticket(
+            self.irods,
+            TICKET_MODE_READ,
+            self.irods_backend.get_sample_path(self.project),
+        )
+        retr_ticket = self.irods_backend.get_ticket(self.irods, ticket.string)
+        self.assertEqual(type(retr_ticket), Ticket)
+
     def test_update_ticket_expiry_date(self):
         """Test update_ticket() with expiry date"""
-        self.make_irods_colls(self.investigation)
         ticket = self.irods_backend.issue_ticket(
             self.irods,
             TICKET_MODE_READ,
@@ -463,7 +547,6 @@ class TestIrodsAPITaskflow(
     def test_update_ticket_no_expiry_date(self):
         """Test update_ticket() for no expiry date"""
         date_expires = timezone.now()
-        self.make_irods_colls(self.investigation)
         ticket = self.irods_backend.issue_ticket(
             self.irods,
             TICKET_MODE_READ,
@@ -486,7 +569,6 @@ class TestIrodsAPITaskflow(
 
     def test_update_ticket_add_hosts(self):
         """Test update_ticket() to add hosts"""
-        self.make_irods_colls(self.investigation)
         ticket = self.irods_backend.issue_ticket(
             self.irods,
             TICKET_MODE_READ,
@@ -508,7 +590,6 @@ class TestIrodsAPITaskflow(
 
     def test_update_ticket_add_hosts_string(self):
         """Test update_ticket() to add hosts as string"""
-        self.make_irods_colls(self.investigation)
         ticket = self.irods_backend.issue_ticket(
             self.irods,
             TICKET_MODE_READ,
@@ -530,7 +611,6 @@ class TestIrodsAPITaskflow(
 
     def test_update_ticket_add_hosts_existing(self):
         """Test update_ticket() to add hosts with existing host"""
-        self.make_irods_colls(self.investigation)
         ticket = self.irods_backend.issue_ticket(
             self.irods,
             TICKET_MODE_READ,
@@ -555,7 +635,6 @@ class TestIrodsAPITaskflow(
 
     def test_update_ticket_remove_hosts(self):
         """Test update_ticket() to remove hosts"""
-        self.make_irods_colls(self.investigation)
         ticket = self.irods_backend.issue_ticket(
             self.irods,
             TICKET_MODE_READ,
@@ -579,7 +658,6 @@ class TestIrodsAPITaskflow(
 
     def test_update_ticket_remove_hosts_partial(self):
         """Test update_ticket() to partially remove hosts"""
-        self.make_irods_colls(self.investigation)
         ticket = self.irods_backend.issue_ticket(
             self.irods,
             TICKET_MODE_READ,
@@ -603,20 +681,13 @@ class TestIrodsAPITaskflow(
         host_res = [h[TicketQuery.AllowedHosts.host] for h in host_res]
         self.assertEqual(host_res, ['192.168.0.1'])
 
-    def test_get_delete_ticket(self):
-        """Test get_ticket() and delete_ticket()"""
-        self.make_irods_colls(self.investigation)
-        orig_ticket = self.irods_backend.issue_ticket(
+    def test_delete_ticket(self):
+        """Test delete_ticket()"""
+        ticket = self.irods_backend.issue_ticket(
             self.irods,
             TICKET_MODE_READ,
             self.irods_backend.get_sample_path(self.project),
         )
-        retr_ticket = self.irods_backend.get_ticket(
-            self.irods, orig_ticket.string
-        )
-        self.assertEqual(type(retr_ticket), Ticket)
-        self.irods_backend.delete_ticket(self.irods, orig_ticket.string)
-        retr_ticket = self.irods_backend.get_ticket(
-            self.irods, orig_ticket.string
-        )
+        self.irods_backend.delete_ticket(self.irods, ticket.string)
+        retr_ticket = self.irods_backend.get_ticket(self.irods, ticket.string)
         self.assertIsNone(retr_ticket)

@@ -160,7 +160,7 @@ class IrodsStatisticsAjaxView(BaseIrodsAjaxView):
     def get(self, *args, **kwargs):
         try:
             with self.irods_backend.get_session() as irods:
-                stats = self.irods_backend.get_object_stats(irods, self.path)
+                stats = self.irods_backend.get_stats(irods, self.path)
             return Response(stats, status=200)
         except Exception as ex:
             return Response(self._get_detail(ex), status=500)
@@ -181,7 +181,7 @@ class IrodsStatisticsAjaxView(BaseIrodsAjaxView):
             else:
                 try:
                     if irods.collections.exists(p):
-                        stats = self.irods_backend.get_object_stats(irods, p)
+                        stats = self.irods_backend.get_stats(irods, p)
                         d.update(stats)
                         d['status'] = 200
                     else:
