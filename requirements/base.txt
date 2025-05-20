@@ -3,7 +3,7 @@
 wheel==0.45.1
 
 # Setuptools
-setuptools==75.8.0
+setuptools==78.1.1
 
 # Packaging
 packaging==24.2
@@ -80,8 +80,8 @@ mistune==3.1.0
 django-autocomplete-light==3.11.0
 
 # SODAR Core
-django-sodar-core==1.1.5
-# -e git+https://github.com/bihealth/sodar-core.git@2ce5b3cd0f6aced9fcb3fca6484492d58574d5c7#egg=django-sodar-core
+django-sodar-core==1.1.6
+# -e git+https://github.com/bihealth/sodar-core.git@82c6acf88567748de7a2928c7a832bef7bdf7ec5#egg=django-sodar-core
 
 # Celery
 celery==5.4.0
