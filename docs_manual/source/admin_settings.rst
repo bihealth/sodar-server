@@ -246,6 +246,8 @@ Landing Zones Settings
     for validation in the project. If enabled, ongoing validation jobs must
     finish before new ones can be initiated. The UI and API will inform the user
     of this limitation. Use value ``0`` for no limit (integer).
+``LANDINGZONES_FILE_LIST_PAGINATION``
+    Page size for landing zone iRODS file list modal pagination.
 ``LZ_BIH_PROTEOMICS_SMB_EXPIRY_DAYS``
     BIH proteomics configuration SMB expiry days (integer).
 ``LZ_BIH_PROTEOMICS_SMB_USER``

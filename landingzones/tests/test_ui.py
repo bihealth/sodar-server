@@ -709,7 +709,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
 
         zone.set_status(ZONE_STATUS_MOVED)
         zone_status = self.selenium.find_element(
-            By.CLASS_NAME, 'sodar-lz-zone-status'
+            By.ID, f'sodar-lz-zone-status-{zone.sodar_uuid}'
         )
         self._wait_for_status(zone_status, ZONE_STATUS_MOVED)
         elem = self.selenium.find_element(
@@ -1087,6 +1087,9 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
                 By.CLASS_NAME, 'sodar-lz-zone-status-info'
             ).get_attribute('class'),
         )
+
+
+# TODO: Add file list modal UI tests with Taskflow (see #2167, #2168)
 
 
 class TestZoneCreateView(LandingZoneUITestBase):

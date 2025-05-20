@@ -1,8 +1,11 @@
 """Ajax API views for the landingzones app"""
 
 import logging
+import math
 
-from django.http import Http404, HttpResponseForbidden
+from django.conf import settings
+from django.http import Http404, HttpResponseForbidden, HttpResponseBadRequest
+from django.urls import reverse
 
 from rest_framework.response import Response
 
@@ -41,11 +44,7 @@ class ZoneStatusRetrieveAjaxView(ZoneBaseAjaxView):
     def post(self, request, *args, **kwargs):
         taskflow = get_backend_api('taskflow')
         project = self.get_project()
-        ret = {
-            'zones': {},
-            'zone_create_limit': get_zone_create_limit(project),
-            'zone_validate_limit': get_zone_validate_limit(project),
-        }
+        ret = {'zones': {}}
         # Project lock status
         project_lock = False
         if taskflow:
@@ -56,6 +55,8 @@ class ZoneStatusRetrieveAjaxView(ZoneBaseAjaxView):
         ret['project_lock'] = project_lock
         zone_data = request.data.get('zones')
         if not zone_data:
+            ret['zone_create_limit'] = False
+            ret['zone_validate_limit'] = False
             return Response(ret, status=200)
         zones = LandingZone.objects.filter(
             sodar_uuid__in=list(zone_data.keys()), project=project
@@ -81,6 +82,8 @@ class ZoneStatusRetrieveAjaxView(ZoneBaseAjaxView):
                 'status_info': status_info,
                 'truncated': truncated,
             }
+        ret['zone_create_limit'] = get_zone_create_limit(project)
+        ret['zone_validate_limit'] = get_zone_validate_limit(project)
         return Response(ret, status=200)
 
 
@@ -90,6 +93,7 @@ class ZoneStatusInfoRetrieveAjaxView(ZoneBaseAjaxView):
     permission_required = 'landingzones.view_zone_own'
 
     def get(self, request, *args, **kwargs):
+        # TODO: Remove repetition
         zone = LandingZone.objects.filter(
             sodar_uuid=self.kwargs.get('landingzone')
         ).first()
@@ -109,34 +113,93 @@ class ZoneIrodsListRetrieveAjaxView(ZoneBaseAjaxView):
         irods_backend = get_backend_api('omics_irods')
         if not irods_backend:
             return Response({'detail': 'iRODS backend not enabled'}, status=503)
+        # TODO: Remove repetition
         zone = LandingZone.objects.filter(
             sodar_uuid=self.kwargs.get('landingzone')
         ).first()
         if not zone:
-            return Response({'detail': 'Not found'}, status=404)
+            return Http404()
         if not self.check_zone_permission(zone, self.request.user):
-            return Response(
-                {'detail': 'Access not granted for zone'}, status=403
-            )
+            return HttpResponseForbidden()
+
+        page = int(request.GET.get('page', '1'))
+        limit = settings.LANDINGZONES_FILE_LIST_PAGINATION
+        offset = 0 if page == 1 else (page - 1) * limit
         zone_path = irods_backend.get_path(zone)
+        url = reverse(
+            'landingzones:ajax_irods_list',
+            kwargs={'landingzone': zone.sodar_uuid},
+        )
         try:
             with irods_backend.get_session() as irods:
                 objs = irods_backend.get_objects(
-                    irods, zone_path, include_md5=True, include_colls=True
+                    irods,
+                    zone_path,
+                    include_md5=False,  # MD5 info retrieved in separate query
+                    include_colls=True,
+                    limit=limit,
+                    offset=offset,
                 )
-                ret = []
-                md5_paths = [
-                    o['path'] for o in objs if o['path'].endswith('.md5')
-                ]
-                for o in objs:
-                    if o['type'] == 'coll':
-                        ret.append(o)
-                    elif o['type'] == 'obj' and not o['path'].endswith('.md5'):
-                        o['md5_file'] = o['path'] + '.md5' in md5_paths
-                        ret.append(o)
-            return Response({'irods_data': ret}, status=200)
+                stats = irods_backend.get_stats(
+                    irods, zone_path, include_colls=True
+                )
+            count = stats['file_count'] + stats['coll_count']
+            ret = {
+                'results': objs,
+                'count': count,
+                'page': page,
+                'page_count': math.ceil(count / limit),
+                'next': (
+                    (url + f'?page={page + 1}') if count > page * limit else ''
+                ),
+                'previous': (url + f'?page={page - 1}') if page > 1 else '',
+            }
+            return Response(ret, status=200)
         except Exception as ex:
             return Response(
                 {'detail': f'Exception in iRODS file list retrieval: {ex}'},
                 status=500,
             )
+
+
+class ZoneChecksumStatusRetrieveAjaxView(ZoneBaseAjaxView):
+    """View for retrieving iRODS checksum status for zone data objects"""
+
+    permission_required = 'landingzones.view_zone_own'
+
+    def post(self, request, *args, **kwargs):
+        irods_backend = get_backend_api('omics_irods')
+        if not irods_backend:
+            return Response({'detail': 'iRODS backend not enabled'}, status=503)
+
+        # TODO: Remove repetition
+        zone = LandingZone.objects.filter(
+            sodar_uuid=self.kwargs.get('landingzone')
+        ).first()
+        if not zone:
+            return Http404()
+        if not self.check_zone_permission(zone, self.request.user):
+            return HttpResponseForbidden()
+
+        ret = {'checksum_status': {}}
+        zone_path = irods_backend.get_path(zone)
+        paths = request.data.get('paths')
+        if not paths:
+            return Response(ret, status=200)
+
+        with irods_backend.get_session() as irods:
+            for path in paths:
+                try:  # Get past at parent path injection etc
+                    irods_backend.sanitize_path(path)
+                except ValueError:
+                    logger.error(f'Invalid path: {path}')
+                    return HttpResponseBadRequest()
+                # Fail if user attempts to provide path outside of zone
+                if not path.startswith(zone_path + '/'):
+                    logger.error(f'Path not in zone: {path}')
+                    return HttpResponseBadRequest()
+                chk_path = path + '.md5'
+                ret['checksum_status'][path] = irods.data_objects.exists(
+                    chk_path
+                )
+        return Response(ret, status=200)

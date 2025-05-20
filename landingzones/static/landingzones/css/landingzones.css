@@ -31,6 +31,33 @@ a.sodar-lz-zone-status-link:hover {
 .sodar-lz-zone-assay-link:hover {
   text-decoration: none;
 }
+#sodar-lz-obj-list-container {
+  min-height: 600px;
+  display: flex;
+  flex-direction: column;
+}
+#sodar-lz-obj-list-table thead tr th:nth-child(1) {
+  width: 100%;
+}
+#sodar-lz-obj-list-table thead tr th:nth-child(2) {
+  width: 50px;
+}
+#sodar-lz-obj-list-table thead tr th:nth-child(3) {
+  min-width: 160px;
+  width: 160px;
+}
+#sodar-lz-obj-list-table thead tr th:nth-child(4) {
+  width: 25px;
+}
+#sodar-lz-obj-list-table thead tr th:nth-child(5) {
+  width: 40px;
+}
+#sodar-lz-obj-pagination {
+  display: flex;
+  align-items: flex-end;
+  flex-grow: 1;
+  justify-content: center;
+}
 
 /* Responsive modifications */
 @media screen and (max-width: 1300px) {

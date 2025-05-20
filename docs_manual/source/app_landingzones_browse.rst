@@ -109,15 +109,32 @@ seen in the :ref:`Sample Sheets <app_samplesheets>` application:
     landing zone collection through WebDAV.
 
 
+.. _app_landingzones_browse_file_list:
+
 iRODS File List Modal
 =====================
 
-The iRODS file list modal is slightly different from the similar modal in the
-Sample Sheets app. It displays collections in addition to files to help
-visualize which root level collections are expected. Furthermore, a check mark
-is displayed on the right hand side column for files, if the expected ``.md5``
-checksum file is accompanying the actual data file.
+The landing zone file list modal displays collections and files within a
+specific landing zone. The following information is displayed:
 
+Path to Collection or File
+    The path below the landing zone for each collection and file is displayed.
+    The path is a link which will open the corresponding collection or file with
+    WebDAV.
+Size
+    For files, the file size is displayed.
+Modified
+    For files, the modification datetime is displayed.
+MD5
+    This column displays an icon representing whether the expected checksum file
+    corresponding to each actual data file is present.
+iRODS
+    This column contains a button for copying the path to the corresponding
+    collection or file into the clipboard.
+
+The results may be paginated depending on the amount of collections and files in
+the zone as well as SODAR server settings set by admins. In case of multiple
+pages of results, you will find pagination controls in the bottom of the modal.
 
 .. figure:: _static/app_landingzones/irods_file_list.png
     :align: center

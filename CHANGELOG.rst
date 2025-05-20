@@ -36,6 +36,10 @@ Added
     - ``LANDINGZONES_ZONE_CREATE_LIMIT`` Django setting (#2148)
     - Landing zone creation limit per project (#2148)
     - Landing zone validation limit per project (#2150)
+    - ``LANDINGZONES_FILE_LIST_PAGINATION`` Django setting (#1881)
+    - ``ZoneIrodsListRetrieveAjaxView`` pagination support (#1881)
+    - ``ZoneChecksumStatusRetrieveAjaxView`` Ajax view (#1881)
+    - Landing zone file list modal pagination (#1881)
 - **Samplesheets**
     - Site read-only mode support (#2051)
     - ``checksum`` field in ``ProjectIrodsFileListAPIView`` return data (#2039)

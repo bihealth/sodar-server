@@ -96,6 +96,11 @@ urls_ajax = [
         view=views_ajax.ZoneIrodsListRetrieveAjaxView.as_view(),
         name='ajax_irods_list',
     ),
+    path(
+        route='ajax/irods/checksum/<uuid:landingzone>',
+        view=views_ajax.ZoneChecksumStatusRetrieveAjaxView.as_view(),
+        name='ajax_irods_checksum',
+    ),
 ]
 
 urlpatterns = urls_ui + urls_api + urls_ajax

@@ -108,6 +108,7 @@
           <button class="btn btn-secondary sodar-list-btn sodar-irods-btn sodar-lz-list-modal-btn"
                   data-irods-path="{{ zone_irods_path }}"
                   data-list-url="{% url 'landingzones:ajax_irods_list' landingzone=zone.sodar_uuid %}"
+                  data-checksum-url="{% url 'landingzones:ajax_irods_checksum' landingzone=zone.sodar_uuid %}"
                   data-webdav-url="{{ irods_webdav_url }}"
                   role="submit"
                   {# NOTE: Modal not triggered here as data is async, see JQuery #}
