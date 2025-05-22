@@ -23,6 +23,7 @@ from irodsbackend.api import (
     IrodsAPI,
     USER_GROUP_TEMPLATE,
     OWNER_GROUP_TEMPLATE,
+    IRODS_SHA256_PREFIX,
     ERROR_PATH_PARENT,
     ERROR_PATH_UNSET,
 )
@@ -50,6 +51,10 @@ IRODS_ENV = {
     "irods_encryption_num_hash_rounds": 16,
     "irods_encryption_salt_size": 8,
 }
+CHECKSUM_SHA256_HEX = (
+    '49abd65bbf7f7e40c7055093ed2e3fd75f2f602f2c5fcf955c213e3135eb03f7'
+)
+CHECKSUM_SHA256_BASE64 = 'SavWW79/fkDHBVCT7S4/118vYC8sX8+VXCE+MTXrA/c='
 
 
 class TestIrodsAPI(
@@ -324,4 +329,47 @@ class TestIrodsAPI(
         self.assertEqual(
             self.irods_backend.get_group_name(self.project, owner=True),
             OWNER_GROUP_TEMPLATE.format(uuid=self.project.sodar_uuid),
+        )
+
+    def test_get_checksum_file_suffix(self):
+        """Test get_checksum_file_suffix() with default MD5 setting"""
+        self.assertEqual(self.irods_backend.get_checksum_file_suffix(), '.md5')
+
+    @override_settings(IRODS_HASH_SCHEME='SHA256')
+    def test_get_checksum_file_suffix_sha256(self):
+        """Test get_checksum_file_suffix() with SHA256 setting"""
+        self.assertEqual(
+            self.irods_backend.get_checksum_file_suffix(), '.sha256'
+        )
+
+    def test_get_sha256_base64(self):
+        """Test get_sha256_base64()"""
+        self.assertEqual(
+            self.irods_backend.get_sha256_base64(CHECKSUM_SHA256_HEX),
+            IRODS_SHA256_PREFIX + CHECKSUM_SHA256_BASE64,
+        )
+
+    def test_get_sha256_base64_no_prefix(self):
+        """Test get_sha256_base64() with prefix=False"""
+        self.assertEqual(
+            self.irods_backend.get_sha256_base64(
+                CHECKSUM_SHA256_HEX, prefix=False
+            ),
+            CHECKSUM_SHA256_BASE64,
+        )
+
+    def test_get_sha256_hex(self):
+        """Test get_sha256hex()"""
+        self.assertEqual(
+            self.irods_backend.get_sha256_hex(CHECKSUM_SHA256_BASE64),
+            CHECKSUM_SHA256_HEX,
+        )
+
+    def test_get_sha256_hex_prefix(self):
+        """Test get_sha256_hex() with prefix"""
+        self.assertEqual(
+            self.irods_backend.get_sha256_hex(
+                IRODS_SHA256_PREFIX + CHECKSUM_SHA256_BASE64
+            ),
+            CHECKSUM_SHA256_HEX,
         )

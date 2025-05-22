@@ -15,6 +15,7 @@ Added
     - drf-spectacular support (#2051)
     - ``PROJECTROLES_SUPPORT_CONTACT`` setting support (#2095)
     - ``vim`` install in Docker build (#2113)
+    - ``IRODS_HASH_SCHEME`` Django setting (#2149)
 - **Irodsbackend**
     - ``get_objects()`` checksum support (#2038)
     - ``get_objects()`` offset support (#1997, #2159)
@@ -22,6 +23,7 @@ Added
     - ``issue_ticket()`` allowed hosts support (#1439, #2141)
     - ``IrodsAPI.update_ticket()`` method (#1439, #2141)
     - ``get_stats()`` collection stats support (#2160)
+    - SHA256 checksum support (#2149)
 - **Landingzones**
     - Site read-only mode support (#2051)
     - File type prohibiting by file name suffix (#2064)
@@ -40,6 +42,7 @@ Added
     - ``ZoneIrodsListRetrieveAjaxView`` pagination support (#1881)
     - ``ZoneChecksumStatusRetrieveAjaxView`` Ajax view (#1881)
     - Landing zone file list modal pagination (#1881)
+    - SHA256 checksum support (#2149)
 - **Samplesheets**
     - Site read-only mode support (#2051)
     - ``checksum`` field in ``ProjectIrodsFileListAPIView`` return data (#2039)
@@ -50,6 +53,7 @@ Added
     - iRODS access ticket allowed hosts support (#1439, #2143)
     - ``IrodsAccessTicket.allowed_hosts`` field and ``get_allowed_hosts_list()`` helper (#1439)
     - ``SHEETS_IRODS_TICKET_HOSTS`` Django setting (#1439)
+    - SHA256 checksum support (#2149)
 - **Taskflowbackend**
     - Project deletion support (#2051)
     - Zone validation and moving progress indicators (#2024)
@@ -62,6 +66,8 @@ Added
     - ``TaskflowAPI.is_locked()`` helper (#2048)
     - Taskflowbackend REST API (#2048)
     - ``ProjectLockStatusAPIView`` REST API view (#2048)
+    - SHA256 checksum support (#2149)
+    - ``BatchCheckFileExistTask`` tests (#2149)
 
 Changed
 -------
@@ -113,6 +119,7 @@ Changed
     - Collect all failed checksums in ``BatchValidateChecksumsTask`` (#1073)
     - Move ``lock_project()`` test helper in ``ProjectLockMixin`` (#2146)
     - Disable project locking if ``validate_only`` is set (#1850)
+    - Update test helpers to support SHA256 checksums (#2149)
 
 Fixed
 -----

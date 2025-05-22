@@ -69,7 +69,7 @@ def cleanup_file_prohibit(prohibit_val):
         for x in [
             re.sub(SUFFIX_CLEAN_RE, '', s.lower().strip())
             for s in ret
-            if not s.lower().endswith('md5')
+            if not any([s.lower().endswith(x) for x in ['.md5', '.sha256']])
         ]
         if x
     ]

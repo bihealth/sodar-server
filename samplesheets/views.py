@@ -981,7 +981,11 @@ class IrodsDataRequestModifyMixin:
         flow_name = 'data_delete'
         flow_data = {'paths': [irods_request.path]}
         if irods_request.is_data_object():
-            flow_data['paths'].append(irods_request.path + '.md5')
+            # Remove checksum file
+            hash_scheme = settings.IRODS_HASH_SCHEME
+            flow_data['paths'].append(
+                irods_request.path + '.' + hash_scheme.lower()
+            )
 
         try:
             taskflow.submit(

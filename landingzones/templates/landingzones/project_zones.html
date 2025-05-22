@@ -20,6 +20,7 @@
 
 {% block projectroles_extend %}
 {% get_django_setting 'IRODS_WEBDAV_ENABLED' as irods_webdav_enabled %}
+{% get_django_setting 'IRODS_HASH_SCHEME' as irods_hash_scheme %}
 {% has_perm 'landingzones.view_zone_all' request.user project as can_view_zone_all %}
 {% has_perm 'landingzones.update_zone_own' request.user project as can_update_zone_own %}
 {% has_perm 'landingzones.update_zone_all' request.user project as can_update_zone_all %}
@@ -101,7 +102,9 @@
     {% if prohibit_files %}
       {% include 'landingzones/_prohibit_warning.html' %}
     {% endif %}
-    <div class="card" id="sodar-lz-zone-list">
+    <div class="card"
+         id="sodar-lz-zone-list"
+         data-hash-scheme="{{ irods_hash_scheme }}">
       <div class="card-body p-0">
         <table class="table table-striped sodar-card-table sodar-lz-table">
           <thead>

@@ -90,7 +90,12 @@ APP_NAME = 'samplesheets'
 SAMPLESHEETS_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar.samplesheets+json'
 SAMPLESHEETS_API_ALLOWED_VERSIONS = ['1.0', '1.1']
 SAMPLESHEETS_API_DEFAULT_VERSION = '1.1'
-MD5_RE = re.compile(r'([a-fA-F\d]{32})')
+HASH_SCHEME_MD5 = 'MD5'
+HASH_SCHEME_SHA256 = 'SHA256'
+CHECKSUM_RE = {
+    HASH_SCHEME_MD5: re.compile(r'^([a-fA-F\d]{32})$'),
+    HASH_SCHEME_SHA256: re.compile(r'^([a-fA-F\d]{64})$'),
+}
 IRODS_QUERY_ERROR_MSG = 'Exception querying iRODS objects'
 IRODS_REQUEST_EX_MSG = 'iRODS data request failed'
 IRODS_TICKET_EX_MSG = 'iRODS access ticket failed'
@@ -966,8 +971,11 @@ class IrodsDataRequestRejectAPIView(
 )
 class SampleDataFileExistsAPIView(SamplesheetsAPIVersioningMixin, APIView):
     """
-    Return status of data object existing in SODAR iRODS by MD5 checksum.
+    Return status of data object existing in SODAR iRODS by checksum.
     Includes all projects in search regardless of user permissions.
+
+    The checksum is expected as MD5 or SHA256, depending on which is set as the
+    hash scheme for the SODAR and iRODS servers.
 
     If ``SHEETS_API_FILE_EXISTS_RESTRICT`` is set True on the server, this view
     is only accessible by users who have a guest role or above in at least one
@@ -979,7 +987,7 @@ class SampleDataFileExistsAPIView(SamplesheetsAPIVersioningMixin, APIView):
 
     **Parameters:**
 
-    - ``checksum``: MD5 checksum (string)
+    - ``checksum``: MD5 or SHA256 checksum as hex (string)
 
     **Returns:**
 
@@ -1006,9 +1014,14 @@ class SampleDataFileExistsAPIView(SamplesheetsAPIVersioningMixin, APIView):
         irods_backend = get_backend_api('omics_irods')
         if not irods_backend:
             raise APIException('iRODS backend not enabled')
+
+        hash_scheme = settings.IRODS_HASH_SCHEME
         c = request.query_params.get('checksum')
-        if not c or not re.match(MD5_RE, c):
-            raise ParseError('Invalid MD5 checksum: "{}"'.format(c))
+        if not c or not re.match(CHECKSUM_RE[hash_scheme], c):
+            raise ParseError(f'Invalid {hash_scheme} checksum: "{c}"')
+        # If SHA256, convert to base64 with prefix
+        if hash_scheme == HASH_SCHEME_SHA256:
+            c = irods_backend.get_sha256_base64(c, prefix=True)
 
         ret = {'detail': 'File does not exist', 'status': False}
         sql = (
@@ -1052,7 +1065,6 @@ class SampleDataFileExistsAPIView(SamplesheetsAPIVersioningMixin, APIView):
         return Response(ret, status=status.HTTP_200_OK)
 
 
-# TODO: Add pagination (see #1996, #1997)
 @extend_schema(
     responses={
         '200': inline_serializer(

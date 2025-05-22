@@ -63,7 +63,7 @@ class ZonePermissionTaskflowTestBase(
             self.irods_backend.get_path(self.landing_zone)
         )
         self.irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
-        self.make_irods_md5_object(self.irods_obj)
+        self.make_checksum_object(self.irods_obj)
 
 
 class TestZoneMoveView(ZonePermissionTaskflowTestBase):

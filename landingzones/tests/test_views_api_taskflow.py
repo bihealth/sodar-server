@@ -528,7 +528,7 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
     def test_post_move(self):
         """Test POST for moving"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
-        self.make_irods_md5_object(irods_obj)
+        self.make_checksum_object(irods_obj)
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
@@ -596,7 +596,7 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
             os.path.join(new_zone_path, RESULTS_COLL)
         )
         irods_obj = self.make_irods_object(zone_results_coll, TEST_OBJ_NAME)
-        self.make_irods_md5_object(irods_obj)
+        self.make_checksum_object(irods_obj)
         self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(zone_results_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
@@ -637,7 +637,7 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
             status=ZONE_STATUS_VALIDATING,
         )
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
-        self.make_irods_md5_object(irods_obj)
+        self.make_checksum_object(irods_obj)
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
@@ -661,7 +661,7 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
             status=ZONE_STATUS_VALIDATING,
         )
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
-        self.make_irods_md5_object(irods_obj)
+        self.make_checksum_object(irods_obj)
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
@@ -682,7 +682,7 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
             status=ZONE_STATUS_MOVED,
         )
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
-        self.make_irods_md5_object(irods_obj)
+        self.make_checksum_object(irods_obj)
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)

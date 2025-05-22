@@ -45,17 +45,25 @@ implemented in a later SODAR release.
 File Checksums
 --------------
 
-SODAR requires for an MD5 checksum file to accompany each file when uploaded to
-the server. This file is used to verify the original checksum against the one
+SODAR requires for a checksum file to accompany each file when uploaded to the
+server. This file is used to verify the original checksum against the one
 calculated in iRODS once the upload is complete. The file should be named with a
-``.md5`` suffix following the name of the data file. E.g. a file named
-``filename.bam`` should be uploaded together with a checksum file called
+suffix representing the hashing scheme used, following the name of the actual
+data file. For example, with the default hashing scheme ``MD5``, a file named
+``filename.bam`` must be uploaded together with a checksum file called
 ``filename.bam.md5`` in the same collection.
 
 iRODS checksums not present after the upload are automatically calculated prior
 to validating the landing zone. This means uploading with the ``-k`` argument or
 separately calling ``ichksum`` are not required. The calculation step may take
 some time with large landing zones.
+
+.. note::
+
+    SODAR supports ``MD5`` and ``SHA256`` hashing schemes. Administrators can
+    set the server to support one of these schemes on initial deployment.
+    ``MD5`` is the default setting. For more information, see
+    :ref:`admin_other_hash_scheme`.
 
 Collection Structure
 --------------------
@@ -140,9 +148,9 @@ select :guilabel:`Validate Files`.
 
 Selecting :guilabel:`Validate Files` will start the validation process for the
 given zone in the background. In the validation phase, SODAR checks for expected
-files and compares iRODS checksums to corresponding ``.md5`` files. If checksums
-were not calculated during file transfer, they will be generated before
-comparison.
+files and compares iRODS checksums to corresponding checksum files. If checksums
+were not calculated in iRODS during file transfer, they will be generated
+automatically by SODAR before comparison.
 
 Duration of the validation process depends on the amount of files in your zone
 and whether checksums were calculated during transfer. You can monitor the
@@ -169,9 +177,10 @@ If an error is encountered during validation, the landing zone status is set
 to ``FAILED``. The *Status Info* field in the landing zone list will contain
 details of what failed. In most cases, these fall into the following categories:
 
-- File checksum does not match the accompanying MD5 checksum file.
-- An MD5 checksum file is missing.
-- An MD5 checksum file is present but the related file is missing.
+- File checksum does not match the accompanying checksum file.
+- An checksum file is missing.
+- An checksum file is present but the related file is missing.
+- The checksum file is somehow invalid.
 
 .. figure:: _static/app_landingzones/zone_status_validate_failed.png
     :align: center
@@ -210,7 +219,7 @@ the process in the landing zone list.
     contact the server administrators for further information.
 
 If successful, the status of your landing zone will be updated to ``MOVED``,
-with the count of moved files excluding the MD5 checksum files. Cache update for
+with the count of moved files excluding the checksum files. Cache update for
 sample sheets is also initiated to ensure iRODS links are up-to-date in the UI.
 You can then navigate to the :ref:`Sample Sheets <app_samplesheets_browse>` app
 to view your files in the assay.

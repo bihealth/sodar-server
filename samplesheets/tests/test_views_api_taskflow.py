@@ -29,6 +29,7 @@ from irodsbackend.api import TICKET_MODE_READ
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import (
     TaskflowAPIViewTestBase,
+    HASH_SCHEME_SHA256,
 )
 
 from samplesheets.models import (
@@ -80,8 +81,12 @@ SHEET_PATH_EDITED = SHEET_DIR + 'i_small2_edited.zip'
 SHEET_PATH_ALT = SHEET_DIR + 'i_small2_alt.zip'
 IRODS_FILE_NAME = 'test1.txt'
 IRODS_FILE_NAME2 = 'test2.txt'
-IRODS_FILE_MD5 = '7265f4d211b56873a381d321f586e4a9'
 IRODS_REQUEST_DESC_UPDATED = 'updated'
+CHECKSUM_MD5 = '7265f4d211b56873a381d321f586e4a9'
+CHECKSUM_SHA256_HEX = (
+    '49abd65bbf7f7e40c7055093ed2e3fd75f2f602f2c5fcf955c213e3135eb03f7'
+)
+CHECKSUM_SHA256_BASE64 = 'SavWW79/fkDHBVCT7S4/118vYC8sX8+VXCE+MTXrA/c='
 DUMMY_UUID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
 LABEL_UPDATE = 'label_update'
 
@@ -1383,29 +1388,42 @@ class TestSampleDataFileExistsAPIView(SampleSheetAPITaskflowTestBase):
 
     def test_get_no_file(self):
         """Test SampleDataFileExistsAPIView GET with no file uploaded"""
-        response = self.request_knox(
-            self.url, data={'checksum': IRODS_FILE_MD5}
-        )
+        response = self.request_knox(self.url, data={'checksum': CHECKSUM_MD5})
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(json.loads(response.content)['status'], False)
+
+    @override_settings(IRODS_HASH_SCHEME=HASH_SCHEME_SHA256)
+    def test_get_no_file_sha256(self):
+        """Test GET with no file uploaded and SHA256 scheme"""
+        response = self.request_knox(
+            self.url, data={'checksum': CHECKSUM_SHA256_HEX}
+        )
+        self.assertEqual(response.status_code, 200)  # Request should succeed
         self.assertEqual(json.loads(response.content)['status'], False)
 
     def test_get_file(self):
         """Test GET with uploaded file"""
         self.make_irods_object(self.coll, IRODS_FILE_NAME)
-        response = self.request_knox(
-            self.url, data={'checksum': IRODS_FILE_MD5}
-        )
+        response = self.request_knox(self.url, data={'checksum': CHECKSUM_MD5})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(json.loads(response.content)['status'], True)
+
+    # TODO: Test with SHA256 and uploaded file
+
+    def test_get_wrong_scheme(self):
+        """Test GET with wrong checksum hash scheme"""
+        # NOTE: Scheme set to MD5
+        response = self.request_knox(
+            self.url, data={'checksum': CHECKSUM_SHA256_HEX}
+        )
+        self.assertEqual(response.status_code, 400)
 
     def test_get_file_sub_coll(self):
         """Test GET with file in sub collection"""
         sub_coll_path = os.path.join(self.coll_path, 'sub')
         sub_coll = self.irods.collections.create(sub_coll_path)
         self.make_irods_object(sub_coll, IRODS_FILE_NAME)
-        response = self.request_knox(
-            self.url, data={'checksum': IRODS_FILE_MD5}
-        )
+        response = self.request_knox(self.url, data={'checksum': CHECKSUM_MD5})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(json.loads(response.content)['status'], True)
 
@@ -1427,7 +1445,7 @@ class TestSampleDataFileExistsAPIView(SampleSheetAPITaskflowTestBase):
         user_no_roles = self.make_user('user_no_roles')
         response = self.request_knox(
             self.url,
-            data={'checksum': IRODS_FILE_MD5},
+            data={'checksum': CHECKSUM_MD5},
             token=self.get_token(user_no_roles),
         )
         self.assertEqual(response.status_code, 403)

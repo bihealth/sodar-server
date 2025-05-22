@@ -90,6 +90,10 @@ iRODS Settings
     iRODS port (integer).
 ``IRODS_ZONE``
     iRODS zone (string).
+``IRODS_HASH_SCHEME``
+    iRODS checksum hashing scheme. Supported values are "MD5" and "SHA256", with
+    "MD5" as the default. This should be set upon initial deployment (string).
+    :ref:`See here for more information <admin_other_hash_scheme>`.
 ``IRODS_ROOT_PATH``
     iRODS root path, without the zone. Used if the SODAR projects collection is
     not intended to be placed directly under ``IRODS_ZONE`` (string).

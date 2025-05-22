@@ -5,13 +5,13 @@ import os
 from irods.test.helpers import make_object
 
 from django.conf import settings
-from django.test import RequestFactory
+from django.test import RequestFactory, override_settings
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
 
 # Taskflowbackend dependency
-from taskflowbackend.tests.base import TaskflowViewTestBase
+from taskflowbackend.tests.base import TaskflowViewTestBase, HASH_SCHEME_SHA256
 
 
 # SODAR constants
@@ -57,6 +57,9 @@ class TestIrodsStatisticsAjaxView(IrodsbackendViewTestBase):
 
     def setUp(self):
         super().setUp()
+        self.get_url = self.irods_backend.get_url(
+            view='stats', project=self.project, path=self.irods_path
+        )
         self.post_url = self.irods_backend.get_url(
             view='stats', project=self.project, method='POST'
         )
@@ -76,45 +79,38 @@ class TestIrodsStatisticsAjaxView(IrodsbackendViewTestBase):
     def test_get_invalid_coll(self):
         """Test GET request with invalid collection (should fail)"""
         with self.login(self.user):
-            response = self.client.get(
-                self.irods_backend.get_url(
-                    view='stats', project=self.project, path=self.irods_path
-                )
-                + '%2F..'
-            )
+            response = self.client.get(self.get_url + '%2F..')
         self.assertEqual(response.status_code, 400)
 
     def test_get_coll_obj(self):
         """Test GET for stats on collection with data object"""
-        # Put data object in iRODS
-        obj_path = self.irods_path + '/' + IRODS_OBJ_NAME
-        make_object(self.irods, obj_path, IRODS_OBJ_CONTENT)
+        self.make_irods_object(self.irods_coll, IRODS_OBJ_NAME)
         with self.login(self.user):
-            response = self.client.get(
-                self.irods_backend.get_url(
-                    view='stats', project=self.project, path=self.irods_path
-                )
-            )
+            response = self.client.get(self.get_url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['file_count'], 1)
         self.assertEqual(response.data['total_size'], IRODS_OBJ_SIZE)
 
-    def test_get_coll_md5(self):
-        """Test GET for stats on collection with data object and md5"""
-        # Put data object in iRODS
-        obj_path = self.irods_path + '/' + IRODS_OBJ_NAME
-        make_object(self.irods, obj_path, IRODS_OBJ_CONTENT)
-        # Put MD5 data object in iRODS
-        md5_path = self.irods_path + '/' + IRODS_MD5_NAME
-        make_object(self.irods, md5_path, IRODS_OBJ_CONTENT)  # Not actual md5
+    def test_get_coll_checksum_md5(self):
+        """Test GET for stats on collection with MD5 checksum file"""
+        obj = self.make_irods_object(self.irods_coll, IRODS_OBJ_NAME)
+        self.make_checksum_object(obj)
         with self.login(self.user):
-            response = self.client.get(
-                self.irods_backend.get_url(
-                    view='stats', project=self.project, path=self.irods_path
-                )
-            )
+            response = self.client.get(self.get_url)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['file_count'], 1)  # md5 not counted
+        # Checksum file not counted
+        self.assertEqual(response.data['file_count'], 1)
+        self.assertEqual(response.data['total_size'], IRODS_OBJ_SIZE)
+
+    @override_settings(IRODS_HASH_SCHEME=HASH_SCHEME_SHA256)
+    def test_get_coll_checksum_sha256(self):
+        """Test GET for stats on collection with SHA256 checksum file"""
+        obj = self.make_irods_object(self.irods_coll, IRODS_OBJ_NAME)
+        self.make_checksum_object(obj, scheme=HASH_SCHEME_SHA256)
+        with self.login(self.user):
+            response = self.client.get(self.get_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['file_count'], 1)
         self.assertEqual(response.data['total_size'], IRODS_OBJ_SIZE)
 
     def test_get_coll_not_found(self):
@@ -151,11 +147,7 @@ class TestIrodsStatisticsAjaxView(IrodsbackendViewTestBase):
             self.project, new_user, self.role_contributor
         )  # No taskflow
         with self.login(new_user):
-            response = self.client.get(
-                self.irods_backend.get_url(
-                    view='stats', project=self.project, path=self.irods_path
-                )
-            )
+            response = self.client.get(self.get_url)
         self.assertEqual(response.status_code, 403)
 
     def test_post_empty_coll(self):
@@ -187,11 +179,11 @@ class TestIrodsStatisticsAjaxView(IrodsbackendViewTestBase):
         }
         self.assertEqual(response.data['irods_stats'], expected)
 
-    def test_post_md5_file(self):
-        """Test POST with .md5 file in collection"""
+    def test_post_checksum_file_md5(self):
+        """Test POST with MD5 checksum file"""
         obj_path = os.path.join(self.irods_path, IRODS_OBJ_NAME)
         obj = make_object(self.irods, obj_path, IRODS_OBJ_CONTENT)
-        self.make_irods_md5_object(obj)
+        self.make_checksum_object(obj)
         self.assert_irods_obj(
             os.path.join(self.irods_path, IRODS_OBJ_NAME + '.md5')
         )
@@ -199,12 +191,35 @@ class TestIrodsStatisticsAjaxView(IrodsbackendViewTestBase):
         with self.login(self.user):
             response = self.client.post(self.post_url, post_data)
         response_data = response.data['irods_stats']
-        self.assertEqual(len(response_data.values()), 1)  # md5 not included
+        self.assertEqual(len(response_data.values()), 1)  # MD5 not included
         expected = {
             self.irods_path: {
                 'status': 200,
                 'file_count': 1,
-                'total_size': IRODS_OBJ_SIZE,  # md5 file size not included
+                'total_size': IRODS_OBJ_SIZE,  # MD5 file size not included
+            }
+        }
+        self.assertEqual(response_data, expected)
+
+    @override_settings(IRODS_HASH_SCHEME=HASH_SCHEME_SHA256)
+    def test_post_checksum_file_sha256(self):
+        """Test POST with SHA256 checksum file"""
+        obj_path = os.path.join(self.irods_path, IRODS_OBJ_NAME)
+        obj = make_object(self.irods, obj_path, IRODS_OBJ_CONTENT)
+        self.make_checksum_object(obj, scheme=HASH_SCHEME_SHA256)
+        self.assert_irods_obj(
+            os.path.join(self.irods_path, IRODS_OBJ_NAME + '.sha256')
+        )
+        post_data = {'paths': [self.irods_path]}
+        with self.login(self.user):
+            response = self.client.post(self.post_url, post_data)
+        response_data = response.data['irods_stats']
+        self.assertEqual(len(response_data.values()), 1)
+        expected = {
+            self.irods_path: {
+                'status': 200,
+                'file_count': 1,
+                'total_size': IRODS_OBJ_SIZE,
             }
         }
         self.assertEqual(response_data, expected)

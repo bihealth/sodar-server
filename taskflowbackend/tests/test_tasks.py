@@ -34,7 +34,11 @@ from landingzones.tests.test_views_taskflow import LandingZoneTaskflowMixin
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
 from taskflowbackend.flows.base_flow import BaseLinearFlow
-from taskflowbackend.tests.base import TaskflowViewTestBase, TICKET_STR
+from taskflowbackend.tests.base import (
+    TaskflowViewTestBase,
+    HASH_SCHEME_SHA256,
+    TICKET_STR,
+)
 from taskflowbackend.tasks.irods_tasks import *  # noqa
 from taskflowbackend.tasks.sodar_tasks import TimelineEventExtraDataUpdateTask
 
@@ -53,7 +57,7 @@ GROUPLESS_USER = USER_PREFIX + 'user2'
 TEST_COLL_NAME = 'test'
 NEW_COLL_NAME = 'test_new'
 NEW_COLL2_NAME = 'test_new2'
-TEST_OBJ_NAME = 'move_obj'
+TEST_OBJ_NAME = 'test1.txt'
 SUB_COLL_NAME = 'sub'
 SUB_COLL_NAME2 = 'sub2'
 MOVE_COLL_NAME = 'move_coll'
@@ -81,6 +85,8 @@ SUFFIX_OBJ_NAME_VCF = 'test.vcf.gz'
 SUFFIX_OBJ_NAME_TXT = 'test.txt'
 
 EXTRA_DATA = {'test': 1}
+MD5_SUFFIX = '.md5'
+SHA256_SUFFIX = '.sha256'
 
 
 class TaskTestMixin:
@@ -1635,6 +1641,139 @@ class TestMoveDataObjectTask(IRODSTaskTestBase):
         self.assertEqual(new_obj.checksum, new_obj2.checksum)
 
 
+class TestBatchCheckFileExistTask(
+    SampleSheetIOMixin, LandingZoneMixin, IRODSTaskTestBase
+):
+    """Tests for BatchCheckFileExistTask"""
+
+    def setUp(self):
+        super().setUp()
+        # Import investigation
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+        # Create zone without taskflow
+        self.zone = self.make_landing_zone(
+            title=ZONE_TITLE,
+            project=self.project,
+            user=self.user,
+            assay=self.assay,
+            description=ZONE_DESC,
+            status=ZONE_STATUS_ACTIVE,
+        )
+        self.zone_path = self.irods_backend.get_path(self.zone)
+        self.zone_path_len = len(self.zone_path.split('/'))
+        # NOTE: We don't have to actually upload files for this task
+        self.obj_path = os.path.join(self.zone_path, TEST_OBJ_NAME)
+        # Default MD5 suffix
+        self.chk_suffix = self.irods_backend.get_checksum_file_suffix()
+        self.task_kw = {
+            'cls': BatchCheckFileExistTask,
+            'name': 'Check for file existence',
+            'inject': {
+                'file_paths': [self.obj_path],
+                'chk_paths': [],
+                'zone_path': self.zone_path,
+                'chk_suffix': self.irods_backend.get_checksum_file_suffix(),
+            },
+        }
+        self.ex_prefix = 'BatchCheckFileExistTask failed: Exception'
+
+    def test_task_md5(self):
+        """Test task with MD5 checksum file"""
+        self.task_kw['inject']['chk_paths'] = [self.obj_path + self.chk_suffix]
+        self.add_task(**self.task_kw)
+        result = self.run_flow()
+        self.assertEqual(result, True)
+        self.zone.refresh_from_db()
+        self.assertEqual(
+            self.zone.status_info, DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE]
+        )
+
+    @override_settings(IRODS_HASH_SCHEME=HASH_SCHEME_SHA256)
+    def test_task_sha256(self):
+        """Test task with SHA256 checksum file"""
+        chk_suffix = self.irods_backend.get_checksum_file_suffix()
+        self.assertEqual(chk_suffix, '.sha256')
+        self.task_kw['inject']['chk_suffix'] = chk_suffix
+        self.task_kw['inject']['chk_paths'] = [self.obj_path + chk_suffix]
+        self.add_task(**self.task_kw)
+        result = self.run_flow()
+        self.assertEqual(result, True)
+        self.zone.refresh_from_db()
+        self.assertEqual(
+            self.zone.status_info, DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE]
+        )
+
+    def test_task_no_checksum(self):
+        """Test task with no checksum file"""
+        self.assertEqual(self.task_kw['inject']['chk_paths'], [])
+        self.add_task(**self.task_kw)
+        with self.assertRaises(Exception) as cm:
+            self.run_flow()
+        ex_path = (
+            '/'.join(self.obj_path.split('/')[self.zone_path_len :])
+            + self.chk_suffix
+        )
+        expected = f'{self.ex_prefix}\n1 expected file missing:\n{ex_path}'
+        self.assertEqual(expected, str(cm.exception))
+
+    def test_task_md5_no_file(self):
+        """Test task with MD5 checksum file and no data file"""
+        self.task_kw['inject']['file_paths'] = []
+        self.task_kw['inject']['chk_paths'] = [self.obj_path + self.chk_suffix]
+        self.add_task(**self.task_kw)
+        with self.assertRaises(Exception) as cm:
+            self.run_flow()
+        ex_path = '/'.join(self.obj_path.split('/')[self.zone_path_len :])
+        expected = f'{self.ex_prefix}\n1 expected file missing:\n{ex_path}'
+        self.assertEqual(expected, str(cm.exception))
+
+    @override_settings(IRODS_HASH_SCHEME=HASH_SCHEME_SHA256)
+    def test_task_sha256_no_file(self):
+        """Test task with SHA256 checksum file and no data file"""
+        chk_suffix = self.irods_backend.get_checksum_file_suffix()
+        self.task_kw['inject']['file_paths'] = []
+        self.task_kw['inject']['chk_suffix'] = chk_suffix
+        self.task_kw['inject']['chk_paths'] = [self.obj_path + chk_suffix]
+        self.add_task(**self.task_kw)
+        with self.assertRaises(Exception) as cm:
+            self.run_flow()
+        ex_path = '/'.join(self.obj_path.split('/')[self.zone_path_len :])
+        expected = f'{self.ex_prefix}\n1 expected file missing:\n{ex_path}'
+        self.assertEqual(expected, str(cm.exception))
+
+    @override_settings(IRODS_HASH_SCHEME=HASH_SCHEME_SHA256)
+    def test_task_sha256_unexpected_md5(self):
+        """Test task unexpected MD5 checksum file"""
+        self.task_kw['inject'][
+            'chk_suffix'
+        ] = self.irods_backend.get_checksum_file_suffix()
+        self.task_kw['inject']['chk_paths'] = [self.obj_path + MD5_SUFFIX]
+        self.add_task(**self.task_kw)
+        with self.assertRaises(Exception) as cm:
+            self.run_flow()
+        ex_path = (
+            '/'.join(self.obj_path.split('/')[self.zone_path_len :])
+            + SHA256_SUFFIX
+        )
+        expected = f'{self.ex_prefix}\n1 expected file missing:\n{ex_path}'
+        self.assertEqual(expected, str(cm.exception))
+
+    def test_task_md5_unexpected_sha256(self):
+        """Test task unexpected SHA256 checksum file"""
+        self.task_kw['inject']['chk_paths'] = [self.obj_path + SHA256_SUFFIX]
+        self.add_task(**self.task_kw)
+        with self.assertRaises(Exception) as cm:
+            self.run_flow()
+        ex_path = (
+            '/'.join(self.obj_path.split('/')[self.zone_path_len :])
+            + MD5_SUFFIX
+        )
+        expected = f'{self.ex_prefix}\n1 expected file missing:\n{ex_path}'
+        self.assertEqual(expected, str(cm.exception))
+
+
 class TestBatchValidateChecksumsTask(
     SampleSheetIOMixin, LandingZoneMixin, IRODSTaskTestBase
 ):
@@ -1656,8 +1795,7 @@ class TestBatchValidateChecksumsTask(
             status=ZONE_STATUS_ACTIVE,
         )
         self.zone_path = self.irods_backend.get_path(self.zone)
-        # TODO: Actually place files in zone path
-        self.obj_name = 'test1.txt'
+        self.obj_name = 'test1.txt'  # TODO: Replace with TEST_OBJ_NAME
         self.zone_coll = self.irods.collections.create(self.zone_path)
         self.obj = self.make_irods_object(self.zone_coll, self.obj_name)
         self.obj_path = self.obj.path
@@ -1668,12 +1806,13 @@ class TestBatchValidateChecksumsTask(
                 'landing_zone': self.zone,
                 'file_paths': [self.obj_path],
                 'zone_path': self.zone_path,
+                'irods_backend': self.irods_backend,
             },
         }
 
     def test_validate(self):
         """Test validating checksums"""
-        self.make_irods_md5_object(self.obj)
+        self.make_checksum_object(self.obj)
         self.assertIsNotNone(self.obj.replicas[0].checksum)
         self.assertEqual(
             self.zone.status_info, DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE]
@@ -1686,10 +1825,12 @@ class TestBatchValidateChecksumsTask(
             self.zone.status_info, DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE]
         )
 
+    # TODO: Test with SHA256 checksum (see #2170)
+
     @override_settings(TASKFLOW_ZONE_PROGRESS_INTERVAL=0)
     def test_validate_progress(self):
         """Test validating checksums with progress indicator"""
-        self.make_irods_md5_object(self.obj)
+        self.make_checksum_object(self.obj)
         self.add_task(**self.task_kw)
         result = self.run_flow()
         self.assertEqual(result, True)
@@ -1701,7 +1842,7 @@ class TestBatchValidateChecksumsTask(
 
     def test_validate_invalid_in_file(self):
         """Test validating checksums with invalid checksum in file"""
-        self.make_irods_md5_object(self.obj, content='xxx')
+        self.make_checksum_object(self.obj, content='xxx')
         self.assertEqual(
             self.zone.status_info, DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE]
         )
@@ -2533,7 +2674,7 @@ class TestBatchCalculateChecksumTask(
         # Object must be reloaded to refresh replica info
         obj = self.irods.data_objects.get(self.obj_path)
         self.assertIsNotNone(obj.replicas[0].checksum)
-        self.assertEqual(obj.replicas[0].checksum, self.get_md5_checksum(obj))
+        self.assertEqual(obj.replicas[0].checksum, self.get_checksum(obj))
         self.zone.refresh_from_db()
         self.assertEqual(
             self.zone.status_info, DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE]
@@ -2543,7 +2684,7 @@ class TestBatchCalculateChecksumTask(
         """Test calculating with existing checksum"""
         obj = self.make_irods_object(self.test_coll, self.obj_name)
         self.assertIsNotNone(obj.replicas[0].checksum)
-        self.assertEqual(obj.replicas[0].checksum, self.get_md5_checksum(obj))
+        self.assertEqual(obj.replicas[0].checksum, self.get_checksum(obj))
 
         self.add_task(
             cls=BatchCalculateChecksumTask,
@@ -2558,7 +2699,7 @@ class TestBatchCalculateChecksumTask(
 
         obj = self.irods.data_objects.get(self.obj_path)
         self.assertIsNotNone(obj.replicas[0].checksum)
-        self.assertEqual(obj.replicas[0].checksum, self.get_md5_checksum(obj))
+        self.assertEqual(obj.replicas[0].checksum, self.get_checksum(obj))
 
     @override_settings(TASKFLOW_ZONE_PROGRESS_INTERVAL=0)
     def test_calculate_progress(self):
@@ -2584,7 +2725,7 @@ class TestBatchCalculateChecksumTask(
 
         obj = self.irods.data_objects.get(self.obj_path)
         self.assertIsNotNone(obj.replicas[0].checksum)
-        self.assertEqual(obj.replicas[0].checksum, self.get_md5_checksum(obj))
+        self.assertEqual(obj.replicas[0].checksum, self.get_checksum(obj))
         self.zone.refresh_from_db()
         self.assertEqual(
             self.zone.status_info,

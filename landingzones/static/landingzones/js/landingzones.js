@@ -417,6 +417,7 @@ $(document).ready(function() {
 
     // iRODS dir list modal
     $('.sodar-lz-list-modal-btn').click(function () {
+        var hashScheme = $('#sodar-lz-zone-list').attr('data-hash-scheme');
         var listUrl = $(this).attr('data-list-url');
         var checksumUrl = $(this).attr('data-checksum-url');
         var irodsPath = $(this).attr('data-irods-path');
@@ -442,7 +443,7 @@ $(document).ready(function() {
                     .append($('<th>').text('File/Collection'))
                     .append($('<th>').text('Size'))
                     .append($('<th>').text('Modified'))
-                    .append($('<th>').text('MD5'))
+                    .append($('<th>').text(hashScheme.substring(0, 3)))
                     .append($('<th>').text('iRODS'))))
             .append($('<tbody>').attr('id', 'sodar-lz-obj-table-body'));
         var pageContainer = $('<div>')

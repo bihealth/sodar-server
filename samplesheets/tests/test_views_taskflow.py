@@ -34,7 +34,7 @@ from timeline.models import TimelineEvent, TL_STATUS_OK
 from irodsbackend.api import TICKET_MODE_READ
 
 # Taskflowbackend dependency
-from taskflowbackend.tests.base import TaskflowViewTestBase
+from taskflowbackend.tests.base import TaskflowViewTestBase, HASH_SCHEME_SHA256
 
 from samplesheets.forms import ERROR_MSG_INVALID_PATH
 from samplesheets.models import (
@@ -1752,6 +1752,49 @@ class TestIrodsDataRequestAcceptView(
         self.assertEqual(
             mail.outbox[-1].recipients(), [self.user_contributor.email]
         )
+
+    def test_post_checksum_md5(self):
+        """Test POST to accept delete request with MD5 checksum"""
+        self.assert_irods_obj(self.obj_path)
+        self.make_checksum_object(self.file_obj)
+        self.assert_irods_obj(self.obj_path + '.md5')
+        with self.login(self.user_contributor):
+            self.client.post(self.url_create, self.post_data)
+        obj = IrodsDataRequest.objects.first()
+        with self.login(self.user):
+            self.client.post(
+                reverse(
+                    'samplesheets:irods_request_accept',
+                    kwargs={'irodsdatarequest': obj.sodar_uuid},
+                ),
+                {'confirm': True},
+            )
+        obj.refresh_from_db()
+        self.assertEqual(obj.status, IRODS_REQUEST_STATUS_ACCEPTED)
+        self.assert_irods_obj(self.obj_path, False)
+        self.assert_irods_obj(self.obj_path + '.md5', False)
+
+    @override_settings(IRODS_HASH_SCHEME=HASH_SCHEME_SHA256)
+    def test_post_checksum_sha256(self):
+        """Test POST to accept delete request with SHA256 checksum"""
+        self.assert_irods_obj(self.obj_path)
+        self.make_checksum_object(self.file_obj, scheme=HASH_SCHEME_SHA256)
+        self.assert_irods_obj(self.obj_path + '.sha256')
+        with self.login(self.user_contributor):
+            self.client.post(self.url_create, self.post_data)
+        obj = IrodsDataRequest.objects.first()
+        with self.login(self.user):
+            self.client.post(
+                reverse(
+                    'samplesheets:irods_request_accept',
+                    kwargs={'irodsdatarequest': obj.sodar_uuid},
+                ),
+                {'confirm': True},
+            )
+        obj.refresh_from_db()
+        self.assertEqual(obj.status, IRODS_REQUEST_STATUS_ACCEPTED)
+        self.assert_irods_obj(self.obj_path, False)
+        self.assert_irods_obj(self.obj_path + '.sha256', False)
 
     def test_post_inactive_user(self):
         """Test POST to accept delete request created by inactive user"""

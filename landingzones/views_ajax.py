@@ -135,7 +135,7 @@ class ZoneIrodsListRetrieveAjaxView(ZoneBaseAjaxView):
                 objs = irods_backend.get_objects(
                     irods,
                     zone_path,
-                    include_md5=False,  # MD5 info retrieved in separate query
+                    include_checksum=False,  # Info retrieved in separate query
                     include_colls=True,
                     limit=limit,
                     offset=offset,
@@ -187,6 +187,7 @@ class ZoneChecksumStatusRetrieveAjaxView(ZoneBaseAjaxView):
         if not paths:
             return Response(ret, status=200)
 
+        hash_scheme = settings.IRODS_HASH_SCHEME
         with irods_backend.get_session() as irods:
             for path in paths:
                 try:  # Get past at parent path injection etc
@@ -198,7 +199,7 @@ class ZoneChecksumStatusRetrieveAjaxView(ZoneBaseAjaxView):
                 if not path.startswith(zone_path + '/'):
                     logger.error(f'Path not in zone: {path}')
                     return HttpResponseBadRequest()
-                chk_path = path + '.md5'
+                chk_path = path + '.' + hash_scheme.lower()
                 ret['checksum_status'][path] = irods.data_objects.exists(
                     chk_path
                 )

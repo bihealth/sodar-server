@@ -20,7 +20,7 @@ from samplesheets.tests.test_views_taskflow import (
 )
 
 # Taskflowbackend dependency
-from taskflowbackend.tests.base import TaskflowViewTestBase
+from taskflowbackend.tests.base import TaskflowViewTestBase, HASH_SCHEME_SHA256
 
 from landingzones.tests.test_models import LandingZoneMixin
 from landingzones.tests.test_views_taskflow import LandingZoneTaskflowMixin
@@ -140,7 +140,7 @@ class TestZoneIrodsListRetrieveAjaxView(
         self.make_zone_taskflow(self.zone, colls=ZONE_COLLS)
         coll = self.irods.collections.get(self.misc_path)
         irods_obj = self.make_irods_object(coll, TEST_OBJ_NAME)
-        self.make_irods_md5_object(irods_obj)
+        self.make_checksum_object(irods_obj)
         with self.login(self.user_owner):
             response = self.client.get(self.url + '?page=1')
         self.assertEqual(response.status_code, 200)
@@ -284,7 +284,20 @@ class TestZoneChecksumStatusRetrieveAjaxView(
     def test_post(self):
         """Test ZoneChecksumStatusRetrieveAjaxView POST"""
         obj = self.make_irods_object(self.misc_coll, TEST_OBJ_NAME)
-        self.make_irods_md5_object(obj)
+        self.make_checksum_object(obj)
+        post_data = {'paths': [obj.path]}
+        with self.login(self.user_owner):
+            response = self.client.post(
+                self.url, data=json.dumps(post_data), **self.post_kw
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['checksum_status'], {obj.path: True})
+
+    @override_settings(IRODS_HASH_SCHEME=HASH_SCHEME_SHA256)
+    def test_post_checksum_sha256(self):
+        """Test POST with SHA256 checksum file"""
+        obj = self.make_irods_object(self.misc_coll, TEST_OBJ_NAME)
+        self.make_checksum_object(obj, scheme=HASH_SCHEME_SHA256)
         post_data = {'paths': [obj.path]}
         with self.login(self.user_owner):
             response = self.client.post(
@@ -308,7 +321,7 @@ class TestZoneChecksumStatusRetrieveAjaxView(
     def test_post_multiple(self):
         """Test POST with multiple files"""
         obj = self.make_irods_object(self.misc_coll, TEST_OBJ_NAME)
-        self.make_irods_md5_object(obj)
+        self.make_checksum_object(obj)
         obj2 = self.make_irods_object(self.misc_coll, TEST_OBJ_NAME2)
         # No checksum for data_obj2
         post_data = {'paths': [obj.path, obj2.path]}

@@ -11,6 +11,7 @@ from irods.models import TicketQuery
 from irods.ticket import Ticket
 
 from django.conf import settings
+from django.test import override_settings
 from django.utils import timezone
 
 # Projectroles dependency
@@ -24,7 +25,11 @@ from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 
 # Taskflowbackend dependency
-from taskflowbackend.tests.base import TaskflowViewTestBase
+from taskflowbackend.tests.base import (
+    TaskflowViewTestBase,
+    HASH_SCHEME_MD5,
+    HASH_SCHEME_SHA256,
+)
 
 from irodsbackend.api import TICKET_MODE_READ, TICKET_MODE_WRITE
 
@@ -110,12 +115,12 @@ class TestIrodsAPIServerInfo(IrodsAPITaskflowTestBase):
 class TestIrodsAPIGetStats(IrodsAPITaskflowTestBase):
     """Tests for IrodsAPI.get_stats() with Taskflow"""
 
-    def _make_data_objects(self):
-        """Create data objects with .md5 files in iRODS"""
+    def _make_data_objects(self, hash_scheme=HASH_SCHEME_MD5):
+        """Create data objects with checksum files in iRODS"""
         self.data_obj = self.make_irods_object(self.coll, TEST_FILE_NAME)
-        self.make_irods_md5_object(self.data_obj)
+        self.make_checksum_object(self.data_obj, scheme=hash_scheme)
         self.data_obj2 = self.make_irods_object(self.coll, TEST_FILE_NAME2)
-        self.make_irods_md5_object(self.data_obj2)
+        self.make_checksum_object(self.data_obj2, scheme=hash_scheme)
 
     def setUp(self):
         super().setUp()
@@ -143,7 +148,26 @@ class TestIrodsAPIGetStats(IrodsAPITaskflowTestBase):
     def test_get_stats_files(self):
         """Test get_stats() with files"""
         self._make_data_objects()
-        # MD5 checksum files should not be included
+        # Checksum files should not be included
+        expected = {'file_count': 2, 'total_size': 2048}
+        stats = self.irods_backend.get_stats(self.irods, self.assay_path)
+        self.assertEqual(stats, expected)
+
+    @override_settings(IRODS_HASH_SCHEME=HASH_SCHEME_SHA256)
+    def test_get_stats_files_checksum_sha256(self):
+        """Test get_stats() with files and SHA256 checksum files"""
+        self._make_data_objects(hash_scheme=HASH_SCHEME_SHA256)
+        # Checksum files should not be included
+        expected = {'file_count': 2, 'total_size': 2048}
+        stats = self.irods_backend.get_stats(self.irods, self.assay_path)
+        self.assertEqual(stats, expected)
+
+    def test_get_stats_files_checksum_multiple(self):
+        """Test get_stats() with files and multiple checksum file types"""
+        self._make_data_objects()
+        self.make_checksum_object(self.data_obj, scheme=HASH_SCHEME_SHA256)
+        self.make_checksum_object(self.data_obj2, scheme=HASH_SCHEME_SHA256)
+        # Checksum files should not be included
         expected = {'file_count': 2, 'total_size': 2048}
         stats = self.irods_backend.get_stats(self.irods, self.assay_path)
         self.assertEqual(stats, expected)
@@ -151,7 +175,6 @@ class TestIrodsAPIGetStats(IrodsAPITaskflowTestBase):
     def test_get_stats_files_include_colls(self):
         """Test get_stats() with files and include_colls"""
         self._make_data_objects()
-        # MD5 checksum files should not be included
         expected = {'file_count': 2, 'total_size': 2048, 'coll_count': 1}
         stats = self.irods_backend.get_stats(
             self.irods, self.assay_path, include_colls=True
@@ -186,12 +209,9 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
     def test_get_objects(self):
         """Test get_objects() with files in a sample collection"""
         data_obj = self.make_irods_object(self.coll, TEST_FILE_NAME)
-        self.make_irods_md5_object(data_obj)
-        obj_list = self.irods_backend.get_objects(
-            self.irods, self.assay_path, include_md5=True
-        )
-        self.assertEqual(len(obj_list), 2)
-
+        self.make_checksum_object(data_obj)
+        obj_list = self.irods_backend.get_objects(self.irods, self.assay_path)
+        self.assertEqual(len(obj_list), 1)
         data_obj = self.irods.data_objects.get(
             os.path.join(self.assay_path, TEST_FILE_NAME)
         )
@@ -209,15 +229,82 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
         }
         self.assertEqual(obj_list[0], expected)
 
+    def test_get_objects_include_checksum(self):
+        """Test get_objects() with include_checksum"""
+        data_obj = self.make_irods_object(self.coll, TEST_FILE_NAME)
+        self.make_checksum_object(data_obj)
+        obj_list = self.irods_backend.get_objects(
+            self.irods, self.assay_path, include_checksum=True
+        )
+        self.assertEqual(len(obj_list), 2)
+        data_obj = self.irods.data_objects.get(
+            os.path.join(self.assay_path, TEST_FILE_NAME)
+        )
+        modify_time = (
+            data_obj.modify_time.replace(tzinfo=pytz.timezone('GMT'))
+            .astimezone(pytz.timezone(settings.TIME_ZONE))
+            .strftime('%Y-%m-%d %H:%M')
+        )
+        expected = [
+            {
+                'name': TEST_FILE_NAME,
+                'type': 'obj',
+                'path': os.path.join(self.assay_path, TEST_FILE_NAME),
+                'size': 1024,
+                'modify_time': modify_time,
+            },
+            {
+                'name': TEST_FILE_NAME + '.md5',
+                'type': 'obj',
+                'path': os.path.join(self.assay_path, TEST_FILE_NAME + '.md5'),
+                'size': 32,
+                'modify_time': obj_list[1]['modify_time'],
+            },
+        ]
+        self.assertEqual(obj_list, expected)
+
     def test_get_objects_include_colls(self):
         """Test get_objects() with include_colls"""
         data_obj = self.make_irods_object(self.coll, TEST_FILE_NAME)
-        self.make_irods_md5_object(data_obj)
+        self.make_checksum_object(data_obj)
         self.irods.collections.create(
             os.path.join(self.assay_path, SUBCOLL_NAME)
         )
         obj_list = self.irods_backend.get_objects(
-            self.irods, self.assay_path, include_md5=True, include_colls=True
+            self.irods,
+            self.assay_path,
+            include_colls=True,
+        )
+        self.assertEqual(len(obj_list), 2)
+
+        expected = [
+            {
+                'name': 'subcoll',
+                'type': 'coll',
+                'path': os.path.join(self.assay_path, SUBCOLL_NAME),
+            },
+            {
+                'name': TEST_FILE_NAME,
+                'type': 'obj',
+                'path': os.path.join(self.assay_path, TEST_FILE_NAME),
+                'size': 1024,
+                'modify_time': obj_list[1]['modify_time'],
+            },
+        ]
+        self.assertEqual(obj_list, expected)
+
+    def test_get_objects_include_both(self):
+        """Test get_objects() with include_checksum and include_colls"""
+        data_obj = self.make_irods_object(self.coll, TEST_FILE_NAME)
+        self.make_checksum_object(data_obj)
+        self.irods.collections.create(
+            os.path.join(self.assay_path, SUBCOLL_NAME)
+        )
+        obj_list = self.irods_backend.get_objects(
+            self.irods,
+            self.assay_path,
+            include_checksum=True,
+            include_colls=True,
         )
         self.assertEqual(len(obj_list), 3)
 
@@ -244,26 +331,60 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
         ]
         self.assertEqual(obj_list, expected)
 
+    @override_settings(IRODS_HASH_SCHEME=HASH_SCHEME_SHA256)
+    def test_get_objects_sha256(self):
+        """Test get_objects() with SHA256 checksum"""
+        data_obj = self.make_irods_object(self.coll, TEST_FILE_NAME)
+        self.make_checksum_object(data_obj, scheme=HASH_SCHEME_SHA256)
+        obj_list = self.irods_backend.get_objects(self.irods, self.assay_path)
+        self.assertEqual(len(obj_list), 1)
+        self.assertEqual(obj_list[0]['name'], TEST_FILE_NAME)
+
+    @override_settings(IRODS_HASH_SCHEME=HASH_SCHEME_SHA256)
+    def test_get_objects_sha256_include_checksum(self):
+        """Test get_objects() with SHA256 checksum and include_checksum"""
+        data_obj = self.make_irods_object(self.coll, TEST_FILE_NAME)
+        self.make_checksum_object(data_obj, scheme=HASH_SCHEME_SHA256)
+        obj_list = self.irods_backend.get_objects(
+            self.irods, self.assay_path, include_checksum=True
+        )
+        self.assertEqual(len(obj_list), 2)
+        self.assertEqual(obj_list[0]['name'], TEST_FILE_NAME)
+        self.assertEqual(obj_list[1]['name'], TEST_FILE_NAME + '.sha256')
+
+    def test_get_objects_include_checksum_multiple(self):
+        """Test get_objects() with include_checksum and multiple checksum types"""
+        data_obj = self.make_irods_object(self.coll, TEST_FILE_NAME)
+        self.make_checksum_object(data_obj, scheme=HASH_SCHEME_MD5)
+        self.make_checksum_object(data_obj, scheme=HASH_SCHEME_SHA256)
+        obj_list = self.irods_backend.get_objects(
+            self.irods, self.assay_path, include_checksum=True
+        )
+        self.assertEqual(len(obj_list), 3)
+        self.assertEqual(obj_list[0]['name'], TEST_FILE_NAME)
+        self.assertEqual(obj_list[1]['name'], TEST_FILE_NAME + '.md5')
+        self.assertEqual(obj_list[2]['name'], TEST_FILE_NAME + '.sha256')
+
     def test_get_objects_multi(self):
         """Test get_objects() with multiple search terms"""
         data_obj = self.make_irods_object(self.coll, TEST_FILE_NAME)
-        self.make_irods_md5_object(data_obj)
+        self.make_checksum_object(data_obj)
         data_obj = self.make_irods_object(self.coll, TEST_FILE_NAME2)
-        self.make_irods_md5_object(data_obj)
+        self.make_checksum_object(data_obj)
         obj_list = self.irods_backend.get_objects(
             self.irods,
             self.assay_path,
             name_like=[TEST_FILE_NAME, TEST_FILE_NAME2],
-            include_md5=True,
+            include_checksum=True,
         )
         self.assertEqual(len(obj_list), 4)
 
     def test_get_objects_long_query(self):
         """Test get_objects() with a long query"""
         data_obj = self.make_irods_object(self.coll, TEST_FILE_NAME)
-        self.make_irods_md5_object(data_obj)
+        self.make_checksum_object(data_obj)
         data_obj = self.make_irods_object(self.coll, TEST_FILE_NAME2)
-        self.make_irods_md5_object(data_obj)
+        self.make_checksum_object(data_obj)
 
         # Generate a large number of name search terms
         name_like = [TEST_FILE_NAME]
@@ -282,7 +403,7 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
             self.irods,
             self.assay_path,
             name_like=[TEST_FILE_NAME, TEST_FILE_NAME2],
-            include_md5=True,
+            include_checksum=True,
         )
         self.assertEqual(len(obj_list), 4)
 
@@ -309,24 +430,39 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
         self.make_irods_object(self.coll, TEST_FILE_NAME)
         self.make_irods_object(self.coll, TEST_FILE_NAME2)
         obj_list = self.irods_backend.get_objects(
-            self.irods, self.assay_path, include_md5=False, limit=1
+            self.irods, self.assay_path, include_checksum=False, limit=1
         )
         self.assertEqual(len(obj_list), 1)  # Limited to 1
         self.assertEqual(obj_list[0]['name'], TEST_FILE_NAME)
 
-    def test_get_objects_limit_md5(self):
-        """Test get_objects() with limit and MD5 inclusion"""
+    def test_get_objects_limit_checksum(self):
+        """Test get_objects() with limit and include_checksum"""
         coll = self.irods.collections.get(self.assay_path)
         data_obj = self.make_irods_object(coll, TEST_FILE_NAME)
-        self.make_irods_md5_object(data_obj)
+        self.make_checksum_object(data_obj)
         data_obj2 = self.make_irods_object(coll, TEST_FILE_NAME2)
-        self.make_irods_md5_object(data_obj2)
+        self.make_checksum_object(data_obj2)
         obj_list = self.irods_backend.get_objects(
-            self.irods, self.assay_path, include_md5=True, limit=2
+            self.irods, self.assay_path, include_checksum=True, limit=2
         )
         self.assertEqual(len(obj_list), 2)
         self.assertEqual(obj_list[0]['name'], TEST_FILE_NAME)
         self.assertEqual(obj_list[1]['name'], TEST_FILE_NAME + '.md5')
+
+    @override_settings(IRODS_HASH_SCHEME=HASH_SCHEME_SHA256)
+    def test_get_objects_limit_checksum_sha256(self):
+        """Test get_objects() with limit and sha256 checksum scheme"""
+        coll = self.irods.collections.get(self.assay_path)
+        data_obj = self.make_irods_object(coll, TEST_FILE_NAME)
+        self.make_checksum_object(data_obj, scheme=HASH_SCHEME_SHA256)
+        data_obj2 = self.make_irods_object(coll, TEST_FILE_NAME2)
+        self.make_checksum_object(data_obj2, scheme=HASH_SCHEME_SHA256)
+        obj_list = self.irods_backend.get_objects(
+            self.irods, self.assay_path, include_checksum=True, limit=2
+        )
+        self.assertEqual(len(obj_list), 2)
+        self.assertEqual(obj_list[0]['name'], TEST_FILE_NAME)
+        self.assertEqual(obj_list[1]['name'], TEST_FILE_NAME + '.sha256')
 
     def test_get_objects_limit_include_colls(self):
         """Test get_objects() with limit and include_colls"""
@@ -338,7 +474,7 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
         obj_list = self.irods_backend.get_objects(
             self.irods,
             self.assay_path,
-            include_md5=False,
+            include_checksum=False,
             include_colls=True,
             limit=1,
         )
@@ -350,7 +486,7 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
         self.make_irods_object(self.coll, TEST_FILE_NAME)
         self.make_irods_object(self.coll, TEST_FILE_NAME2)
         obj_list = self.irods_backend.get_objects(
-            self.irods, self.assay_path, include_md5=False, offset=1
+            self.irods, self.assay_path, include_checksum=False, offset=1
         )
         self.assertEqual(len(obj_list), 1)
         self.assertEqual(obj_list[0]['name'], TEST_FILE_NAME2)
@@ -365,7 +501,7 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
         obj_list = self.irods_backend.get_objects(
             self.irods,
             self.assay_path,
-            include_md5=False,
+            include_checksum=False,
             include_colls=True,
             offset=1,
         )
@@ -378,7 +514,11 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
         self.make_irods_object(self.coll, TEST_FILE_NAME2)
         self.make_irods_object(self.coll, TEST_FILE_NAME3)
         obj_list = self.irods_backend.get_objects(
-            self.irods, self.assay_path, include_md5=False, limit=1, offset=1
+            self.irods,
+            self.assay_path,
+            include_checksum=False,
+            limit=1,
+            offset=1,
         )
         self.assertEqual(len(obj_list), 1)
         # Only the middle file should be returned
@@ -395,7 +535,7 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
         obj_list = self.irods_backend.get_objects(
             self.irods,
             self.assay_path,
-            include_md5=False,
+            include_checksum=False,
             include_colls=True,
             limit=2,
             offset=1,

@@ -687,16 +687,17 @@ IRODS_ZONE = env.str('IRODS_ZONE', 'sodarZone')
 IRODS_ROOT_PATH = env.str('IRODS_ROOT_PATH', None)
 IRODS_USER = env.str('IRODS_USER', 'rods')
 IRODS_PASS = env.str('IRODS_PASS', 'rods')
+# iRODS server checksum hash scheme (MD5 or SHA256)
+IRODS_HASH_SCHEME = env.str('IRODS_HASH_SCHEME', 'MD5')
 IRODS_SAMPLE_COLL = env.str('IRODS_SAMPLE_COLL', 'sample_data')
 IRODS_LANDING_ZONE_COLL = env.str('IRODS_LANDING_ZONE_COLL', 'landing_zones')
-
 # Enable entry point for custom local auth for iRODS users if no LDAP is in use
 IRODS_SODAR_AUTH = env.bool('IRODS_SODAR_AUTH', False)
-
 # Default iRODS environment for backend and client connections
 # NOTE: irods_ssl_ca_certificate_file should be defined in IRODS_CERT_PATH
 IRODS_ENV_DEFAULT = env.dict(
-    'IRODS_ENV_DEFAULT', default={'irods_default_hash_scheme': 'MD5'}
+    'IRODS_ENV_DEFAULT',
+    default={'irods_default_hash_scheme': IRODS_HASH_SCHEME},
 )
 # iRODS environment overrides for backend connections
 IRODS_ENV_BACKEND = env.dict('IRODS_ENV_BACKEND', default={})
@@ -704,7 +705,6 @@ IRODS_ENV_BACKEND = env.dict('IRODS_ENV_BACKEND', default={})
 IRODS_ENV_CLIENT = env.dict('IRODS_ENV_CLIENT', default={})
 # Optional iRODS certificate path on server
 IRODS_CERT_PATH = env.str('IRODS_CERT_PATH', None)
-
 
 # Taskflow backend settings
 # Connection timeout for taskflowbackend flows (other sessions not affected)

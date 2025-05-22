@@ -25,6 +25,7 @@ Release for SODAR Core 1.1 upgrade and feature updates.
 - Add support for simultaneous validation of multiple zones in a project
 - Add support for landing zone creation limit per project
 - Add support for landing zone validation limit per project
+- :ref:`Add iRODS SHA256 checksum hashing scheme support <admin_other_hash_scheme>`
 - :ref:`Add landing zone file list modal pagination <app_landingzones_browse_file_list>`
 - Update email sending and alerts to exclude inactive users
 - Update iRODS access ticket creation to support path to data object in UI

@@ -556,7 +556,7 @@ class TestZoneMoveView(
     def test_get(self):
         """Test ZoneMoveView GET"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
-        self.make_irods_md5_object(irods_obj)
+        self.make_checksum_object(irods_obj)
         zone = LandingZone.objects.first()
         self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
         with self.login(self.user):
@@ -566,7 +566,7 @@ class TestZoneMoveView(
     def test_post_move(self):
         """Test POST to move landing zone with objects"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
-        self.make_irods_md5_object(irods_obj)
+        self.make_checksum_object(irods_obj)
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         self.assert_irods_access(
             self.owner_group, self.zone_path, IRODS_ACCESS_OWN
@@ -606,12 +606,14 @@ class TestZoneMoveView(
             self.user_owner,
         )
 
+    # TODO: Test with SHA256 checksum
+
     def test_post_move_inactive_user(self):
         """Test POST to move with inactive zone owner"""
         self.user_owner.is_active = False
         self.user_owner.save()
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
-        self.make_irods_md5_object(irods_obj)
+        self.make_checksum_object(irods_obj)
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         mail_count = len(mail.outbox)
         self.assertEqual(
@@ -644,8 +646,8 @@ class TestZoneMoveView(
             AppAlert.objects.filter(alert_name='zone_move').count(), 0
         )
 
-    def test_post_move_invalid_md5(self):
-        """Test POST with invalid checksum (should fail)"""
+    def test_post_move_invalid_checksum_md5(self):
+        """Test POST with invalid checksum in file (should fail)"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         make_object(self.irods, irods_obj.path + '.md5', INVALID_MD5)
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
@@ -676,10 +678,12 @@ class TestZoneMoveView(
             AppAlert.objects.filter(alert_name='zone_move').count(), 1
         )
 
-    def test_post_no_md5(self):
-        """Test POST without checksum (should fail)"""
+    # TODO: Test with invalid SHA256 file
+
+    def test_post_no_checksum(self):
+        """Test POST without checksum file (should fail)"""
         self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
-        # No md5
+        # No checksum file
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 1)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
@@ -699,7 +703,7 @@ class TestZoneMoveView(
     def test_post_move_invalid_status(self):
         """Test POST to move with invalid zone status (should fail)"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
-        self.make_irods_md5_object(irods_obj)
+        self.make_checksum_object(irods_obj)
         self.zone.status = ZONE_STATUS_VALIDATING
         self.zone.save()
         self.assertEqual(len(self.zone_coll.data_objects), 2)
@@ -734,7 +738,7 @@ class TestZoneMoveView(
         """Test POST to move with locked project (should fail)"""
         self.lock_project(self.project)
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
-        self.make_irods_md5_object(irods_obj)
+        self.make_checksum_object(irods_obj)
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
@@ -766,7 +770,7 @@ class TestZoneMoveView(
     def test_post_move_lock_failure(self):
         """Test POST to move with project lock failure"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
-        self.make_irods_md5_object(irods_obj)
+        self.make_checksum_object(irods_obj)
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
@@ -818,7 +822,7 @@ class TestZoneMoveView(
             os.path.join(new_zone_path, RESULTS_COLL)
         )
         irods_obj = self.make_irods_object(zone_results_coll, TEST_OBJ_NAME)
-        self.make_irods_md5_object(irods_obj)
+        self.make_checksum_object(irods_obj)
         self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(zone_results_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
@@ -867,7 +871,7 @@ class TestZoneMoveView(
             status=ZONE_STATUS_VALIDATING,
         )
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
-        self.make_irods_md5_object(irods_obj)
+        self.make_checksum_object(irods_obj)
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
@@ -897,7 +901,7 @@ class TestZoneMoveView(
             status=ZONE_STATUS_VALIDATING,
         )
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
-        self.make_irods_md5_object(irods_obj)
+        self.make_checksum_object(irods_obj)
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
@@ -919,7 +923,7 @@ class TestZoneMoveView(
             status=ZONE_STATUS_MOVED,
         )
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
-        self.make_irods_md5_object(irods_obj)
+        self.make_checksum_object(irods_obj)
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
@@ -933,7 +937,7 @@ class TestZoneMoveView(
     def test_post_validate(self):
         """Test POST to validate landing zone with objects without moving"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
-        self.make_irods_md5_object(irods_obj)
+        self.make_checksum_object(irods_obj)
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
@@ -980,8 +984,8 @@ class TestZoneMoveView(
             AppAlert.objects.filter(alert_name='zone_validate').count(), 1
         )
 
-    def test_post_validate_invalid_md5(self):
-        """Test POST to validate with invalid checksum in file (should fail)"""
+    def test_post_validate_invalid_checksum_md5(self):
+        """Test POST to validate with invalid MD5 checksum in file (should fail)"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         make_object(self.irods, irods_obj.path + '.md5', INVALID_MD5)
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
@@ -1002,8 +1006,10 @@ class TestZoneMoveView(
             AppAlert.objects.filter(alert_name='zone_validate').count(), 1
         )
 
-    def test_post_validate_empty_md5(self):
-        """Test POST to validate with empty checksum in file (should fail)"""
+    # TODO: Test with invalid SHA256
+
+    def test_post_validate_empty_checksum_md5(self):
+        """Test POST to validate with empty MD5 checksum in file (should fail)"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         make_object(self.irods, irods_obj.path + '.md5', '')
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
@@ -1020,8 +1026,10 @@ class TestZoneMoveView(
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
 
-    def test_post_validate_no_md5_file(self):
-        """Test POST to validate without checksum file (should fail)"""
+    # TODO: Test with empty SHA256
+
+    def test_post_validate_no_checksum_file_md5(self):
+        """Test POST to validate without MD5 checksum file (should fail)"""
         self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         # No md5
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
@@ -1034,10 +1042,12 @@ class TestZoneMoveView(
         self.assertEqual(len(self.zone_coll.data_objects), 1)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
 
-    def test_post_validate_md5_file_only(self):
-        """Test POST to validate with no file for MD5 file (should fail)"""
+    # TODO: Test with no SHA256 checksum file
+
+    def test_post_validate_checksum_file_only(self):
+        """Test POST to validate with no file for checksum file (should fail)"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
-        self.md5_obj = self.make_irods_md5_object(irods_obj)
+        self.md5_obj = self.make_checksum_object(irods_obj)
         irods_obj.unlink(force=True)
         zone = LandingZone.objects.first()
         self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
@@ -1056,7 +1066,7 @@ class TestZoneMoveView(
             APP_NAME, 'file_name_prohibit', 'txt', project=self.project
         )
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
-        self.make_irods_md5_object(irods_obj)
+        self.make_checksum_object(irods_obj)
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
@@ -1087,7 +1097,7 @@ class TestZoneMoveView(
     def test_post_validate_invalid_status(self):
         """Test POST to validate with invalid zone status (should fail)"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
-        self.make_irods_md5_object(irods_obj)
+        self.make_checksum_object(irods_obj)
         self.zone.status = ZONE_STATUS_VALIDATING
         self.zone.save()
         self.assertEqual(len(self.zone_coll.data_objects), 2)
@@ -1107,7 +1117,7 @@ class TestZoneMoveView(
         """Test POST to validate with locked project"""
         self.lock_project(self.project)
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
-        self.make_irods_md5_object(irods_obj)
+        self.make_checksum_object(irods_obj)
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
@@ -1129,7 +1139,7 @@ class TestZoneMoveView(
             status=ZONE_STATUS_VALIDATING,
         )
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
-        self.make_irods_md5_object(irods_obj)
+        self.make_checksum_object(irods_obj)
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)

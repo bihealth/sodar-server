@@ -42,6 +42,7 @@ class Flow(BaseLinearFlow):
         owner_group = self.irods_backend.get_group_name(self.project, True)
         sample_path = self.irods_backend.get_path(zone.assay)
         zone_path = self.irods_backend.get_path(zone)
+        chk_suffix = self.irods_backend.get_checksum_file_suffix()
         admin_name = self.irods.username
         file_name_prohibit = self.flow_data.get('file_name_prohibit')
 
@@ -55,17 +56,18 @@ class Flow(BaseLinearFlow):
 
         # Get landing zone data object and collection paths from iRODS
         zone_all = self.irods_backend.get_objects(
-            self.irods, zone_path, include_md5=True, include_colls=True
+            self.irods, zone_path, include_checksum=True, include_colls=True
         )
         zone_stats = self.irods_backend.get_stats(self.irods, zone_path)
         zone_objects = [o['path'] for o in zone_all if o['type'] == 'obj']
-        zone_objects_nomd5 = [
-            p for p in zone_objects if p[p.rfind('.') + 1 :].lower() != 'md5'
-        ]
-        zone_objects_md5 = [
-            p for p in zone_objects if p not in zone_objects_nomd5
-        ]
-        file_count = len(zone_objects_nomd5)
+        zone_objects_no_chk = [
+            p for p in zone_objects if not p.lower().endswith(chk_suffix)
+        ]  # Zone objects without checksum files
+
+        zone_objects_chk = [
+            p for p in zone_objects if p.lower().endswith(chk_suffix)
+        ]  # Zone checksum files
+        file_count = len(zone_objects_no_chk)
         file_count_msg_plural = 's' if file_count != 1 else ''
 
         # Get all collections with root path
@@ -81,12 +83,12 @@ class Flow(BaseLinearFlow):
             if len(p.split('/')) > zone_path_len
         ]
 
-        # print('sample_path: {}'.format(sample_path))                # DEBUG
-        # print('zone_objects: {}'.format(zone_objects))              # DEBUG
-        # print('zone_objects_nomd5: {}'.format(zone_objects_nomd5))  # DEBUG
-        # print('zone_all_colls: {}'.format(zone_all_colls))          # DEBUG
-        # print('zone_object_colls: {}'.format(zone_object_colls))    # DEBUG
-        # print('sample_colls: {}'.format(sample_colls))              # DEBUG
+        # print('sample_path: {}'.format(sample_path))                  # DEBUG
+        # print('zone_objects: {}'.format(zone_objects))                # DEBUG
+        # print('zone_objects_no_chk: {}'.format(zone_objects_no_chk))  # DEBUG
+        # print('zone_all_colls: {}'.format(zone_all_colls))            # DEBUG
+        # print('zone_object_colls: {}'.format(zone_object_colls))      # DEBUG
+        # print('sample_colls: {}'.format(sample_colls))                # DEBUG
 
         # Set up task to set landing zone status to failed
         self.add_task(
@@ -191,7 +193,7 @@ class Flow(BaseLinearFlow):
                     name='Batch check file types for zone data objects',
                     irods=self.irods,
                     inject={
-                        'file_paths': zone_objects_nomd5,
+                        'file_paths': zone_objects_no_chk,
                         'suffixes': file_name_prohibit,
                         'zone_path': zone_path,
                     },
@@ -199,13 +201,14 @@ class Flow(BaseLinearFlow):
             )
         self.add_task(
             irods_tasks.BatchCheckFileExistTask(
-                name='Batch check file and MD5 checksum file existence for '
-                'zone data objects',
+                name='Batch check file and checksum file existence for zone '
+                'data objects',
                 irods=self.irods,
                 inject={
-                    'file_paths': zone_objects_nomd5,
-                    'md5_paths': zone_objects_md5,
+                    'file_paths': zone_objects_no_chk,
+                    'chk_paths': zone_objects_chk,
                     'zone_path': zone_path,
+                    'chk_suffix': chk_suffix,
                 },
             )
         )
@@ -229,7 +232,7 @@ class Flow(BaseLinearFlow):
                 irods=self.irods,
                 inject={
                     'landing_zone': zone,
-                    'file_paths': zone_objects_nomd5,
+                    'file_paths': zone_objects_no_chk,
                     'force': False,
                 },
             )
@@ -251,14 +254,15 @@ class Flow(BaseLinearFlow):
         )
         self.add_task(
             irods_tasks.BatchValidateChecksumsTask(
-                name='Batch validate MD5 checksums of {} data objects'.format(
+                name='Batch validate checksums of {} data objects'.format(
                     file_count
                 ),
                 irods=self.irods,
                 inject={
                     'landing_zone': zone,
-                    'file_paths': zone_objects_nomd5,
+                    'file_paths': zone_objects_no_chk,
                     'zone_path': zone_path,
+                    'irods_backend': self.irods_backend,
                 },
             )
         )
@@ -371,7 +375,7 @@ class Flow(BaseLinearFlow):
             )
         )
         if self.tl_event:
-            files = [p[len(zone_path) + 1 :] for p in zone_objects_nomd5]
+            files = [p[len(zone_path) + 1 :] for p in zone_objects_no_chk]
             self.add_task(
                 sodar_tasks.TimelineEventExtraDataUpdateTask(
                     name='Update timeline event extra data with file list',

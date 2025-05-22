@@ -9,6 +9,7 @@ import re
 import string
 import uuid
 
+from base64 import b64decode, b64encode
 from contextlib import contextmanager
 
 from irods.api_number import api_number
@@ -55,6 +56,7 @@ ENV_INT_PARAMS = [
 ]
 USER_GROUP_TEMPLATE = 'omics_project_{uuid}'
 OWNER_GROUP_TEMPLATE = USER_GROUP_TEMPLATE + '_owner'
+IRODS_SHA256_PREFIX = 'sha2:'
 TRASH_COLL_NAME = 'trash'
 PATH_PARENT_SUBSTRING = '/..'
 ERROR_PATH_PARENT = 'Use of parent not allowed in path'
@@ -418,7 +420,6 @@ class IrodsAPI:
         view,
         project=None,
         path='',
-        md5=False,
         colls=False,
         method='GET',
         absolute=False,
@@ -430,7 +431,6 @@ class IrodsAPI:
         :param view: View of the URL ("stats" or "list")
         :param path: Full iRODS path (string)
         :param project: Project object or None
-        :param md5: Include MD5 or not for a list view (boolean, default=False)
         :param colls: Include collections in list (boolean, default=False)
         :param method: Method for the function (string)
         :param absolute: Whether or not an absolute URI is required (boolean)
@@ -449,12 +449,46 @@ class IrodsAPI:
         if method == 'GET':
             query_string = {'path': cls.sanitize_path(path)}
             if view == 'list':
-                query_string['md5'] = int(md5)
                 query_string['colls'] = int(colls)
             rev_url += '?' + urlencode(query_string)
         if absolute and request:
             return request.build_absolute_uri(rev_url)
         return rev_url
+
+    @classmethod
+    def get_checksum_file_suffix(cls):
+        """
+        Return checksum file suffix according to site settings.
+
+        :return: String (".md5" or ".sha256")
+        """
+        # NOTE: Invalid setting is already caught by Django checks
+        return '.' + settings.IRODS_HASH_SCHEME.lower()
+
+    @classmethod
+    def get_sha256_base64(cls, hex_str, prefix=True):
+        """
+        Convert SHA256 checksum from hex into base64 as stored in iRODS.
+
+        :param hex_str: String containing SHA256 checksum as hex
+        :param prefix: Include "sha2:" prefix in return data if True (bool)
+        :return: String containing base64 encoded checksum
+        """
+        ret = b64encode(bytes.fromhex(hex_str)).decode()
+        return (IRODS_SHA256_PREFIX + ret) if prefix else ret
+
+    @classmethod
+    def get_sha256_hex(cls, base64_str):
+        """
+        Convert SHA256 checksum base64 from into hex. Strips "sha2:" prefix if
+        present.
+
+        :param base64_str: String containing SHA256 checksum as hex
+        :return: String, containing checksum as lowercase hex
+        """
+        if base64_str.startswith(IRODS_SHA256_PREFIX):
+            base64_str = base64_str.split(IRODS_SHA256_PREFIX)[1]
+        return b64decode(base64_str).hex()
 
     # iRODS Operations ---------------------------------------------------------
 
@@ -536,6 +570,7 @@ class IrodsAPI:
             'WHERE (coll_name = \'{coll_path}\' '
             'OR coll_name LIKE \'{coll_path}/%\') '
             'AND data_name NOT LIKE \'%.md5\' '
+            'AND data_name NOT LIKE \'%.sha256\' '
             'GROUP BY data_id, data_size) AS sub_query'.format(
                 coll_path=coll.path
             )
@@ -586,7 +621,7 @@ class IrodsAPI:
         self,
         irods,
         coll,
-        include_md5=False,
+        include_checksum=False,
         name_like=None,
         limit=None,
         offset=None,
@@ -600,7 +635,7 @@ class IrodsAPI:
 
         :param irods: iRODSSession object
         :param coll: Collection object
-        :param include_md5: if True, include .md5 files
+        :param include_checksum: if True, include .md5/.sha256 files
         :param name_like: Filtering of file names (string or list of strings)
         :param limit: Limit retrieval to N rows (int or None)
         :param offset: Offset retrieval by N rows (int or None)
@@ -609,7 +644,12 @@ class IrodsAPI:
         :return: List of dicts
         """
         ret = []
-        md5_filter = '' if include_md5 else 'AND data_name NOT LIKE \'%.md5\''
+        chk_filter = (
+            ''
+            if include_checksum
+            else 'AND data_name NOT LIKE \'%.md5\' AND data_name NOT LIKE '
+            '\'%.sha256\''
+        )
         path_lookup = []
         q_count = 1
 
@@ -619,10 +659,10 @@ class IrodsAPI:
                 'r_data_main.modify_ts as modify_ts, coll_name{checksum}'
                 'FROM r_data_main JOIN r_coll_main USING (coll_id) '
                 'WHERE (coll_name = \'{coll_path}\' '
-                'OR coll_name LIKE \'{coll_path}/%\') {md5_filter}'.format(
+                'OR coll_name LIKE \'{coll_path}/%\') {chk_filter}'.format(
                     checksum=', data_checksum ' if checksum else ' ',
                     coll_path=coll.path,
-                    md5_filter=md5_filter,
+                    chk_filter=chk_filter,
                 )
             )
             if nl:
@@ -698,7 +738,7 @@ class IrodsAPI:
         self,
         irods,
         path,
-        include_md5=False,
+        include_checksum=False,
         include_colls=False,
         name_like=None,
         limit=None,
@@ -711,7 +751,7 @@ class IrodsAPI:
 
         :param irods: iRODSSession object
         :param path: Full path to iRODS collection
-        :param include_md5: Include .md5 checksum files (bool)
+        :param include_checksum: Include .md5/.sha256 files (bool)
         :param include_colls: Include collections (bool)
         :param name_like: Filtering of file names (string or list of strings)
         :param limit: Limit retrieval to N rows (int or None)
@@ -733,7 +773,7 @@ class IrodsAPI:
         ret = self.get_objs_recursively(
             irods,
             coll,
-            include_md5=include_md5,
+            include_checksum=include_checksum,
             name_like=name_like,
             limit=limit if not include_colls else None,  # See #2159
             offset=offset if not include_colls else None,

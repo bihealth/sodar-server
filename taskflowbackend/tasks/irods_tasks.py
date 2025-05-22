@@ -42,9 +42,10 @@ ACCESS_LOOKUP = {
 }
 INHERIT_STRINGS = {True: 'inherit', False: 'noinherit'}
 META_EMPTY_VALUE = 'N/A'
-MD5_RE = re.compile(r'([^\w.])')
+CHECKSUM_FILE_RE = re.compile(r'([^\w.])')
 CHECKSUM_RETRY = 5
 NO_FILE_CHECKSUM_LABEL = 'None'
+HASH_SCHEME_SHA256 = 'SHA256'
 
 
 # Mixins -----------------------------------------------------------------------
@@ -653,17 +654,21 @@ class BatchCheckFileSuffixTask(IrodsBaseTask):
 
 class BatchCheckFileExistTask(IrodsBaseTask):
     """
-    Batch check for existence of files and corresponding .md5 checksum files
+    Batch check for existence of files and corresponding checksum files
     """
 
-    def execute(self, file_paths, md5_paths, zone_path, *args, **kwargs):
+    def execute(
+        self, file_paths, chk_paths, zone_path, chk_suffix, *args, **kwargs
+    ):
         err_paths = []
         for p in file_paths:
-            if p + '.md5' not in md5_paths:
-                err_paths.append(p + '.md5')
-        for p in md5_paths:
-            if p[:-4] not in file_paths:
-                err_paths.append(p[:-4])
+            p_chk = p + chk_suffix
+            if p_chk not in chk_paths:
+                err_paths.append(p_chk)
+        for p in chk_paths:
+            p_file = p[: p.rfind('.')]
+            if p_file not in file_paths:
+                err_paths.append(p_file)
         err_len = len(err_paths)
         if err_len > 0:
             msg = '{} expected file{} missing:\n{}'.format(
@@ -675,29 +680,59 @@ class BatchCheckFileExistTask(IrodsBaseTask):
             self._raise_irods_exception(Exception(), msg)
         super().execute(*args, **kwargs)
 
-    def revert(self, file_paths, md5_paths, *args, **kwargs):
+    def revert(
+        self, file_paths, chk_paths, zone_path, chk_suffix, *args, **kwargs
+    ):
         pass  # Nothing is modified so no need for revert
 
 
 class BatchValidateChecksumsTask(IrodsBaseTask):
     """Batch validate checksums of a given list of data object paths"""
 
-    @classmethod
-    def _compare_checksums(cls, data_obj, checksum, zone_path_len):
+    def _read_checksum(self, chk_path, zone_path_len, read_errors):
         """
-        Compares object replicate checksums to expected sum. Raises exception if
+        Read checksum file. Appends error and returns False if error is
+        reached.
+        """
+        try:
+            with self.irods.data_objects.open(chk_path, mode='r') as f:
+                dec = 'utf-8'
+                chk_content = f.read()
+                # Support for BOM header forced by PowerShell (see #1818)
+                if chk_content[:3] == codecs.BOM_UTF8:
+                    dec += '-sig'
+                return re.split(CHECKSUM_FILE_RE, chk_content.decode(dec))[0]
+        except Exception as ex:
+            ex_msg = 'File: {}\nException: {}'.format(
+                '/'.join(chk_path.split('/')[zone_path_len:]), ex
+            )
+            read_errors.append(ex_msg)
+            return False
+
+    @classmethod
+    def _compare_checksums(
+        cls, data_obj, checksum, zone_path_len, hash_scheme, irods_backend
+    ):
+        """
+        Compare object replicate checksums to expected sum. Raises exception if
         checksums do not match.
 
         :param data_obj: Data object
         :param checksum: Expected checksum (string)
         :param zone_path_len: Landing zone iRODS path length (int)
+        :param hash_scheme: Checksum hashing scheme (string)
+        :param irods_backend: IrodsAPI object
         :raises: Exception if checksums do not match
         """
         for replica in data_obj.replicas:
+            repl_checksum = replica.checksum
+            if hash_scheme == HASH_SCHEME_SHA256:
+                # Convert SHA256 from base64
+                repl_checksum = irods_backend.get_sha256_hex(repl_checksum)
             if (
                 not checksum
-                or not replica.checksum
-                or checksum.lower() != replica.checksum.lower()
+                or not repl_checksum
+                or checksum.lower() != repl_checksum.lower()
             ):
                 log_msg = (
                     'Checksums do not match for "{}" in resource "{}" '
@@ -705,7 +740,7 @@ class BatchValidateChecksumsTask(IrodsBaseTask):
                         os.path.basename(data_obj.path),
                         replica.resource_name,
                         checksum or NO_FILE_CHECKSUM_LABEL,
-                        replica.checksum,
+                        repl_checksum,
                     )
                 )
                 logger.error(log_msg)
@@ -714,13 +749,23 @@ class BatchValidateChecksumsTask(IrodsBaseTask):
                     ex_path,
                     replica.resource_name,
                     checksum or NO_FILE_CHECKSUM_LABEL,
-                    replica.checksum,
+                    repl_checksum,
                 )
                 raise Exception(ex_msg)
 
-    def execute(self, landing_zone, file_paths, zone_path, *args, **kwargs):
+    def execute(
+        self,
+        landing_zone,
+        file_paths,
+        zone_path,
+        irods_backend,
+        *args,
+        **kwargs,
+    ):
         zone_path_len = len(zone_path.split('/'))
         interval = settings.TASKFLOW_ZONE_PROGRESS_INTERVAL
+        hash_scheme = settings.IRODS_HASH_SCHEME
+        chk_suffix = irods_backend.get_checksum_file_suffix()
         file_count = len(file_paths)
         status_base = landing_zone.status_info
         i = 1
@@ -728,29 +773,17 @@ class BatchValidateChecksumsTask(IrodsBaseTask):
         read_errors = []
         cmp_errors = []
         time_start = time.time()
-        for path in file_paths:
-            md5_path = path + '.md5'
-            read_err = False
-            try:
-                with self.irods.data_objects.open(md5_path, mode='r') as f:
-                    dec = 'utf-8'
-                    md5_content = f.read()
-                    # Support for BOM header forced by PowerShell (see #1818)
-                    if md5_content[:3] == codecs.BOM_UTF8:
-                        dec += '-sig'
-                    file_sum = re.split(MD5_RE, md5_content.decode(dec))[0]
-            except Exception as ex:
-                ex_msg = 'File: {}\nException: {}'.format(
-                    '/'.join(md5_path.split('/')[zone_path_len:]), ex
-                )
-                read_errors.append(ex_msg)
-                read_err = True
-            if not read_err:
+        for f_path in file_paths:
+            chk_path = f_path + chk_suffix
+            file_sum = self._read_checksum(chk_path, zone_path_len, read_errors)
+            if file_sum is not False:
                 try:
                     self._compare_checksums(
-                        self.irods.data_objects.get(path),
+                        self.irods.data_objects.get(f_path),
                         file_sum,
                         zone_path_len,
+                        hash_scheme,
+                        irods_backend,
                     )
                 except Exception as ex:
                     cmp_errors.append(str(ex))
@@ -779,7 +812,15 @@ class BatchValidateChecksumsTask(IrodsBaseTask):
             self._raise_irods_exception(Exception(), ex_msg)
         super().execute(*args, **kwargs)
 
-    def revert(self, landing_zone, file_paths, zone_path, *args, **kwargs):
+    def revert(
+        self,
+        landing_zone,
+        file_paths,
+        zone_path,
+        irods_backend,
+        *args,
+        **kwargs,
+    ):
         pass  # Nothing is modified so no need for revert
 
 

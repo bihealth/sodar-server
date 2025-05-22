@@ -70,6 +70,8 @@ TEST_MODE_ERR_MSG = (
     'TASKFLOW_TEST_MODE not True, testing with SODAR Taskflow disabled'
 )
 DEFAULT_PERMANENT_USERS = ['client_user', 'rods', 'rodsadmin', 'public']
+HASH_SCHEME_MD5 = 'MD5'
+HASH_SCHEME_SHA256 = 'SHA256'
 
 
 class ProjectLockMixin:
@@ -114,27 +116,31 @@ class TaskflowTestMixin(
         obj_kwargs = {REG_CHKSUM_KW: ''} if checksum else {}
         return make_object(self.irods, obj_path, content, **obj_kwargs)
 
-    def make_irods_md5_object(self, obj, content=None):
+    def make_checksum_object(self, obj, scheme=HASH_SCHEME_MD5, content=None):
         """
-        Create and put an MD5 checksum object for an existing object in iRODS.
+        Create and put a checksum object for an existing object in iRODS.
 
         :param obj: iRODSDataObject
+        :param scheme: Hash scheme (string, default="MD5")
         :param content: Force content if set (string or None)
         :return: iRODSDataObject
         """
-        md5_path = obj.path + '.md5'
-        md5_content = content or self.get_md5_checksum(obj)
-        return make_object(self.irods, md5_path, md5_content)
+        chk_path = obj.path + '.' + scheme.lower()
+        chk_content = content or self.get_checksum(obj, scheme)
+        return make_object(self.irods, chk_path, chk_content)
 
-    def get_md5_checksum(self, obj):
+    @classmethod
+    def get_checksum(cls, obj, scheme=HASH_SCHEME_MD5):
         """
-        Return the md5 checksum for an iRODS object.
+        Return the checksum for an iRODS object.
 
         :param obj: iRODSDataObject
+        :param scheme: Hash scheme (string, default="MD5")
         :return: String
         """
         with obj.open() as obj_fp:
-            return hashlib.md5(obj_fp.read()).hexdigest()
+            method = getattr(hashlib, scheme.lower())
+            return method(obj_fp.read()).hexdigest()
 
     def assert_irods_access(self, user_name, target, expected):
         """
@@ -278,7 +284,7 @@ class TaskflowTestMixin(
             obj_paths = [
                 o['path']
                 for o in irods_backend.get_objs_recursively(
-                    irods, trash_coll, include_md5=True
+                    irods, trash_coll, include_checksum=True
                 )
             ]
             for path in obj_paths:
