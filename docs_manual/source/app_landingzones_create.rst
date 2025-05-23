@@ -12,9 +12,8 @@ preqrequisites:
    see :ref:`app_samplesheets_create_colls`.
 
 Creating landing zones and uploading files is permitted to users with the
-project contributor access level or higher. There is no limit on how many zones
-you can create and multiple simultaneous landing zones for a single assay are
-allowed.
+project contributor access level or higher. Multiple simultaneous landing zones
+for a single assay are allowed.
 
 Initially navigating to the Landing Zones app presents you a notification on
 no zones being available, with a :guilabel:`Create Zone` button on the right

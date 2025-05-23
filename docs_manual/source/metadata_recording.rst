@@ -359,6 +359,18 @@ this document.
 We will extend this list with more rules/restrictions as soon as more pitfalls
 show up.
 
+SODAR Restrictions
+------------------
+
+SODAR has been observed to perform well with studies and assays up to 5000+
+sources or samples. Specifying restrictions for metadata size is not
+straightforward, as the complexity of sheet data and the amount of columns
+involved can vary highly between projects.
+
+One concrete limitation of SODAR is that in the current implementation, ISA-Tabs
+or render tables generated from them can not exceed 256MB in size per
+investigation.
+
 
 3. Validation (Post-Processing)
 ===============================

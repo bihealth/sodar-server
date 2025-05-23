@@ -54,7 +54,7 @@ class TestZoneStatusRetrieveAjaxView(ViewTestBase):
         self.assertEqual(rd['zone_validate_limit'], False)
 
     def test_post_modified(self):
-        """Test ZoneStatusRetrieveAjaxView POST"""
+        """Test POST with date_modified set"""
         post_data = {
             'zones': {
                 str(self.zone.sodar_uuid): {

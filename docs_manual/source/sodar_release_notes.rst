@@ -8,19 +8,19 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
-v1.1.0 (WIP)
-============
+v1.1.0 (2025-05-23)
+===================
 
-Release for SODAR Core 1.1 upgrade and feature updates.
+Major feature update and SODAR Core 1.1 upgrade.
 
-- Add allowed hosts support for iRODS access tickets
+- :ref:`Add allowed hosts support for iRODS access tickets <app_samplesheets_irods_ticket>`
 - :ref:`Add landing zone validation and moving progress indicators <app_landingzones_transfer>`
 - :ref:`Add landing zone file type prohibiting <app_landingzones_transfer_prohibit>`
 - Add file list in landing zone move timeline event extra data
 - :ref:`Add owners and delegates read/write access to all project zones <app_landingzones_browse_owner_access>`
 - Add support for longer landing zone status info messages
 - Add iRODS project owner/delegate group management
-- Add taskflow API with project lock status view
+- :ref:`Add taskflowbackend API with project lock status view <api_taskflowbackend>`
 - Add project locking status display and control disabling in landing zone list view
 - Add support for simultaneous validation of multiple zones in a project
 - Add support for landing zone creation limit per project
@@ -28,7 +28,7 @@ Release for SODAR Core 1.1 upgrade and feature updates.
 - :ref:`Add iRODS SHA256 checksum hashing scheme support <admin_other_hash_scheme>`
 - :ref:`Add landing zone file list modal pagination <app_landingzones_browse_file_list>`
 - Update email sending and alerts to exclude inactive users
-- Update iRODS access ticket creation to support path to data object in UI
+- :ref:`Update iRODS access ticket creation to support path to data object in UI <app_samplesheets_irods_ticket_create>`
 - Update checksum validation to check all files before failing
 - :ref:`Update project landing zone list layout <app_landingzones_browse>`
 - :ref:`Upgrade Sample Sheets REST API version to v1.1 <api_samplesheets_version_1_1>`
@@ -37,7 +37,7 @@ Release for SODAR Core 1.1 upgrade and feature updates.
 - Replace SODAR_SUPPORT_* settings with PROJECTROLES_SUPPORT_CONTACT
 - Fix iRODS access ticket expiry date updating
 - Remove minimum sample sheet column config editing role setting
-- `SODAR Core v1.1 updates <https://sodar-core.readthedocs.io/en/latest/major_changes.html#v1-1-4-2025-04-04>`_:
+- `SODAR Core v1.1 updates <https://sodar-core.readthedocs.io/en/latest/major_changes.html#v1-1-6-2025-05-20>`_:
   Project deletion, project leaving, paginated project list, site read-only
   mode, etc.
 

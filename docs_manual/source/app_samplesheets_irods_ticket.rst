@@ -52,6 +52,8 @@ Expires
     Expiry date for the ticket, or *"Never"* if no expiry has been set.
 
 
+.. _app_samplesheets_irods_ticket_create:
+
 Creating Access Tickets
 =======================
 

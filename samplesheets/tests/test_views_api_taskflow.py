@@ -932,7 +932,7 @@ class TestIrodsAccessTicketDestroyAPIView(IrodsAccessTicketAPIViewTestBase):
         )
 
     def test_delete_invalid_url(self):
-        """Test DELETE IrodsAccessTicketDeleteAPIView with invalid URL"""
+        """Test DELETE with invalid URL"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         self.assertEqual(self.get_tl_event_count('delete'), 0)
         self.assertEqual(self.get_app_alert_count('delete'), 0)
@@ -957,7 +957,7 @@ class TestIrodsAccessTicketDestroyAPIView(IrodsAccessTicketAPIViewTestBase):
 class TestIrodsDataRequestCreateAPIView(IrodsDataRequestAPIViewTestBase):
     """Tests for IrodsDataRequestCreateAPIView"""
 
-    def test_create(self):
+    def test_post(self):
         """Test IrodsDataRequestCreateAPIView POST"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         self.assert_alert_count(CREATE_ALERT, self.user, 0)
@@ -986,7 +986,7 @@ class TestIrodsDataRequestCreateAPIView(IrodsDataRequestAPIViewTestBase):
         self.assert_alert_count(CREATE_ALERT, self.user_contributor, 0)
         self.assert_alert_count(CREATE_ALERT, self.user_guest, 0)
 
-    def test_create_no_description(self):
+    def test_post_no_description(self):
         """Test POST without description"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         self.post_data['description'] = ''
@@ -998,7 +998,7 @@ class TestIrodsDataRequestCreateAPIView(IrodsDataRequestAPIViewTestBase):
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         self.assertEqual(obj.description, '')
 
-    def test_create_trailing_slash(self):
+    def test_post_trailing_slash(self):
         """Test POST with trailing slash in path"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         self.post_data['path'] += '/'
@@ -1011,7 +1011,7 @@ class TestIrodsDataRequestCreateAPIView(IrodsDataRequestAPIViewTestBase):
         self.assertEqual(obj.path, self.obj_path + '/')
         self.assertEqual(obj.description, IRODS_REQUEST_DESC)
 
-    def test_create_invalid_data(self):
+    def test_post_invalid_data(self):
         """Test POST with invalid data"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         self.assert_alert_count(CREATE_ALERT, self.user, 0)
@@ -1023,7 +1023,7 @@ class TestIrodsDataRequestCreateAPIView(IrodsDataRequestAPIViewTestBase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
 
-    def test_create_invalid_path_assay_collection(self):
+    def test_post_invalid_path_assay_collection(self):
         """Test POST with assay path (should fail)"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         self.post_data['path'] = self.assay_path
@@ -1033,7 +1033,7 @@ class TestIrodsDataRequestCreateAPIView(IrodsDataRequestAPIViewTestBase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
 
-    def test_create_multiple(self):
+    def test_post_multiple(self):
         """Test creating multiple requests for same path"""
         path2 = os.path.join(self.assay_path, IRODS_FILE_NAME2)
         self.irods.data_objects.create(path2)
@@ -1196,7 +1196,7 @@ class TestIrodsDataRequestAcceptAPIView(
             kwargs={'irodsdatarequest': self.request.sodar_uuid},
         )
 
-    def test_accept(self):
+    def test_post(self):
         """Test IrodsDataRequestAcceptAPIView POST"""
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
@@ -1211,7 +1211,7 @@ class TestIrodsDataRequestAcceptAPIView(
         self.assert_alert_count(ACCEPT_ALERT, self.user_contributor, 1)
         self.assert_irods_obj(self.obj_path, False)
 
-    def test_accept_no_request(self):
+    def test_post_no_request(self):
         """Test POST to accept non-existing request"""
         url = reverse(
             'samplesheets:api_irods_request_accept',
@@ -1220,7 +1220,7 @@ class TestIrodsDataRequestAcceptAPIView(
         response = self.request_knox(url, 'POST')
         self.assertEqual(response.status_code, 404)
 
-    def test_accept_delegate(self):
+    def test_post_delegate(self):
         """Test POST to accept request as delegate"""
         self.assert_irods_obj(self.obj_path)
         self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
@@ -1237,7 +1237,7 @@ class TestIrodsDataRequestAcceptAPIView(
         self.assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
         self.assert_alert_count(ACCEPT_ALERT, self.user_contributor, 1)
 
-    def test_accept_contributor(self):
+    def test_post_contributor(self):
         """Test POST to accept request as contributor (should fail)"""
         self.assert_irods_obj(self.obj_path)
         self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
@@ -1254,7 +1254,7 @@ class TestIrodsDataRequestAcceptAPIView(
         self.assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
         self.assert_alert_count(ACCEPT_ALERT, self.user_contributor, 0)
 
-    def test_accept_locked(self):
+    def test_post_locked(self):
         """Test POST to accept request with locked project (should fail)"""
         self.lock_project(self.project)
         self.assert_irods_obj(self.obj_path)
@@ -1268,7 +1268,7 @@ class TestIrodsDataRequestAcceptAPIView(
         self.assert_alert_count(ACCEPT_ALERT, self.user_contributor, 0)
 
     @override_settings(REDIS_URL=INVALID_REDIS_URL)
-    def test_accept_lock_failure(self):
+    def test_post_lock_failure(self):
         """Test POST to accept request with project lock failure"""
         self.assert_irods_obj(self.obj_path)
         response = self.request_knox(self.url, 'POST')
@@ -1280,7 +1280,7 @@ class TestIrodsDataRequestAcceptAPIView(
         self.assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
         self.assert_alert_count(ACCEPT_ALERT, self.user_contributor, 0)
 
-    def test_accept_accepted(self):
+    def test_post_accepted(self):
         """Test acceptining previously accepted request (should fail)"""
         self.assertEqual(self.request.status, IRODS_REQUEST_STATUS_ACTIVE)
         response = self.request_knox(self.url, 'POST')
@@ -1291,7 +1291,7 @@ class TestIrodsDataRequestAcceptAPIView(
         self.assertEqual(response.status_code, 400)
         self.assertEqual(self.request.status, IRODS_REQUEST_STATUS_ACCEPTED)
 
-    def test_accept_rejected(self):
+    def test_post_rejected(self):
         """Test accepting previously rejected request (should fail)"""
         self.assert_irods_obj(self.obj_path, True)
         self.request.status = IRODS_REQUEST_STATUS_REJECTED
@@ -1323,7 +1323,7 @@ class TestIrodsDataRequestRejectAPIView(
             kwargs={'irodsdatarequest': self.request.sodar_uuid},
         )
 
-    def test_reject(self):
+    def test_post(self):
         """Test IrodsDataRequestRejectAPIView POST"""
         self.assert_alert_count(REJECT_ALERT, self.user, 0)
         self.assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
@@ -1337,7 +1337,7 @@ class TestIrodsDataRequestRejectAPIView(
         self.assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
         self.assert_alert_count(REJECT_ALERT, self.user_contributor, 1)
 
-    def test_reject_delegate(self):
+    def test_post_delegate(self):
         """Test POST to reject request as delegate"""
         self.assert_alert_count(REJECT_ALERT, self.user, 0)
         self.assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
@@ -1352,7 +1352,7 @@ class TestIrodsDataRequestRejectAPIView(
         self.assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
         self.assert_alert_count(REJECT_ALERT, self.user_contributor, 1)
 
-    def test_reject_contributor(self):
+    def test_post_contributor(self):
         """Test POST to reject request as contributor"""
         self.assert_alert_count(REJECT_ALERT, self.user, 0)
         self.assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
@@ -1366,7 +1366,7 @@ class TestIrodsDataRequestRejectAPIView(
         self.assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
         self.assert_alert_count(REJECT_ALERT, self.user_contributor, 0)
 
-    def test_reject_no_request(self):
+    def test_post_no_request(self):
         """Test POST to reject non-existing request"""
         url = reverse(
             'samplesheets:api_irods_request_reject',

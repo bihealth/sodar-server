@@ -51,9 +51,9 @@ jobs:
     steps:
       - name: Install server dependencies
         run: |
-          sudo apt update
-          sudo apt install -qq build-essential zlib1g-dev libtiff5-dev libjpeg8-dev libfreetype6-dev
-          sudo apt install -qq liblcms2-dev libwebp-dev libpq-dev graphviz-dev
+          sudo apt-get update
+          sudo apt-get install -qq build-essential zlib1g-dev libtiff5-dev libjpeg8-dev libfreetype6-dev
+          sudo apt-get install -qq liblcms2-dev libwebp-dev libpq-dev graphviz-dev
       - name: Install Python
         uses: actions/setup-python@v4
         with:

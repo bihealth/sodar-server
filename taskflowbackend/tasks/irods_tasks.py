@@ -146,7 +146,7 @@ class IrodsBaseTask(BaseTask):
         self.name = '<iRODS> {} ({})'.format(name, self.__class__.__name__)
         self.irods = kwargs['irods']
 
-    def _raise_irods_exception(self, ex, info=None):
+    def raise_irods_exception(self, ex, info=None):
         """
         Raise an exception when taskflow doesn't catch a proper exception from
         the iRODS client.
@@ -298,7 +298,7 @@ class SetCollectionMetadataTask(IrodsBaseTask):
         try:
             coll = self.irods.collections.get(path)
         except Exception as ex:
-            self._raise_irods_exception(ex)
+            self.raise_irods_exception(ex)
         meta_item = None
         try:
             meta_item = coll.metadata.get_one(name)
@@ -413,7 +413,7 @@ class SetAccessTask(IrodsAccessMixin, IrodsBaseTask):
                 recursive,
             )
         except Exception as ex:
-            self._raise_irods_exception(ex, user_name)
+            self.raise_irods_exception(ex, user_name)
         super().execute(*args, **kwargs)
 
     def revert(
@@ -446,7 +446,7 @@ class IssueTicketTask(IrodsBaseTask):
                 )
                 self.data_modified = True
             except Exception as ex:
-                self._raise_irods_exception(ex)
+                self.raise_irods_exception(ex)
         super().execute(*args, **kwargs)
 
     def revert(
@@ -468,7 +468,7 @@ class DeleteTicketTask(IrodsBaseTask):
                 irods_backend.delete_ticket(self.irods, ticket_str)
                 self.data_modified = True
             except Exception as ex:
-                self._raise_irods_exception(ex)
+                self.raise_irods_exception(ex)
         super().execute(*args, **kwargs)
 
     def revert(
@@ -510,7 +510,7 @@ class AddUserToGroupTask(IrodsBaseTask):
         try:
             group = self.irods.user_groups.get(group_name)
         except Exception as ex:
-            self._raise_irods_exception(
+            self.raise_irods_exception(
                 ex, info='Failed to retrieve group "{}"'.format(group_name)
             )
         if not group.hasmember(user_name):
@@ -518,7 +518,7 @@ class AddUserToGroupTask(IrodsBaseTask):
                 group.addmember(user_name=user_name, user_zone=self.irods.zone)
                 self.data_modified = True
             except Exception as ex:
-                self._raise_irods_exception(
+                self.raise_irods_exception(
                     ex,
                     info='Failed to add user "{}" into group "{}"'.format(
                         user_name, group_name
@@ -549,7 +549,7 @@ class RemoveUserFromGroupTask(IrodsBaseTask):
                     )
                     self.data_modified = True
             except Exception as ex:
-                self._raise_irods_exception(ex)
+                self.raise_irods_exception(ex)
         super().execute(*args, **kwargs)
 
     def revert(self, group_name, user_name, *args, **kwargs):
@@ -567,7 +567,7 @@ class MoveDataObjectTask(IrodsBaseTask):
             self.irods.data_objects.move(src_path=src_path, dest_path=dest_path)
             self.data_modified = True
         except Exception as ex:
-            self._raise_irods_exception(ex)
+            self.raise_irods_exception(ex)
         super().execute(*args, **kwargs)
 
     def revert(self, src_path, dest_path, *args, **kwargs):
@@ -645,7 +645,7 @@ class BatchCheckFileSuffixTask(IrodsBaseTask):
                 '\n'.join([p.replace(zone_path + '/', '') for p in err_paths]),
             )
             logger.error(msg)
-            self._raise_irods_exception(Exception(), msg)
+            self.raise_irods_exception(Exception(), msg)
         super().execute(*args, **kwargs)
 
     def revert(self, file_paths, suffixes, zone_path, *args, **kwargs):
@@ -677,7 +677,7 @@ class BatchCheckFileExistTask(IrodsBaseTask):
                 '\n'.join([p.replace(zone_path + '/', '') for p in err_paths]),
             )
             logger.error(msg)
-            self._raise_irods_exception(Exception(), msg)
+            self.raise_irods_exception(Exception(), msg)
         super().execute(*args, **kwargs)
 
     def revert(
@@ -810,7 +810,7 @@ class BatchValidateChecksumsTask(IrodsBaseTask):
                     's' if err_len != 1 else '',
                 )
                 ex_msg += '\n'.join(cmp_errors)
-            self._raise_irods_exception(Exception(), ex_msg)
+            self.raise_irods_exception(Exception(), ex_msg)
         super().execute(*args, **kwargs)
 
     def revert(
@@ -840,7 +840,7 @@ class BatchCreateCollectionsTask(IrodsBaseTask):
                         self.execute_data['created_colls'].append(sub_path)
                         self.data_modified = True
                 except Exception as ex:
-                    self._raise_irods_exception(
+                    self.raise_irods_exception(
                         ex,
                         'Failed to create collection: {}'.format(sub_path),
                     )
@@ -906,11 +906,11 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
                     msg = 'Error moving move data object "{}" to "{}"'.format(
                         src_path, dest_obj_path
                     )
-                self._raise_irods_exception(ex, msg)
+                self.raise_irods_exception(ex, msg)
             try:
                 target = self.irods.data_objects.get(dest_obj_path)
             except Exception as ex:
-                self._raise_irods_exception(
+                self.raise_irods_exception(
                     ex,
                     'Error retrieving destination object "{}"'.format(
                         dest_obj_path
@@ -919,7 +919,7 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
             try:
                 target_access = self.irods.acls.get(target=target)
             except Exception as ex:
-                self._raise_irods_exception(
+                self.raise_irods_exception(
                     ex,
                     'Error getting permissions of target "{}"'.format(target),
                 )
@@ -952,7 +952,7 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
                 try:
                     self.irods.acls.set(acl, recursive=False)
                 except Exception as ex:
-                    self._raise_irods_exception(
+                    self.raise_irods_exception(
                         ex,
                         'Error setting permission for "{}"'.format(
                             dest_coll_path
@@ -1006,7 +1006,7 @@ class BatchCalculateChecksumTask(IrodsBaseTask):
 
     def _raise_checksum_exception(self, ex, replica, data_obj, info=None):
         info_str = (':' + info) if info else ''
-        self._raise_irods_exception(
+        self.raise_irods_exception(
             ex,
             f'Failed to calculate checksum{info_str}\nReplica: '
             f'{replica.resc_hier}\nFile: {data_obj.path}',

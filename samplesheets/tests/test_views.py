@@ -239,27 +239,25 @@ class SamplesheetsViewTestBase(
 
 
 class TestProjectSheetsView(SamplesheetsViewTestBase):
-    """Tests for the project sheets view"""
+    """Tests for ProjectSheetsView"""
 
     def setUp(self):
         super().setUp()
-        # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
+        self.url = reverse(
+            'samplesheets:project_sheets',
+            kwargs={'project': self.project.sodar_uuid},
+        )
 
-    def test_render_no_sheets(self):
-        """Test rendering the project sheets view without an investigation"""
+    def test_get_no_investigation(self):
+        """Test ProjectSheetsView GET with no investigation"""
         self.investigation.delete()
         self.investigation = None
         self.study = None
 
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:project_sheets',
-                    kwargs={'project': self.project.sodar_uuid},
-                )
-            )
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertIsNone(response.context['investigation'])
         self.assertNotIn('study', response.context)
@@ -269,39 +267,32 @@ class TestProjectSheetsView(SamplesheetsViewTestBase):
 class TestSheetImportView(
     SheetImportMixin, LandingZoneMixin, SamplesheetsViewTestBase
 ):
-    """Tests for the investigation import view"""
+    """Tests for SheetImportView"""
 
     def setUp(self):
         super().setUp()
         self.timeline = get_backend_api('timeline_backend')
         self.cache_backend = get_backend_api('sodar_cache')
+        self.url = reverse(
+            'samplesheets:import',
+            kwargs={'project': self.project.sodar_uuid},
+        )
 
-    def test_render(self):
-        """Test rendering the investigation import view"""
+    def test_get(self):
+        """Test SheetImportView GET"""
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:import',
-                    kwargs={'project': self.project.sodar_uuid},
-                )
-            )
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
 
-    def test_import(self):
-        """Test posting an ISA-Tab zip file in the import form"""
+    def test_post(self):
+        """Test POST to import ISA-Tab zip file"""
         self.assertEqual(Investigation.objects.count(), 0)
         self.assertEqual(ISATab.objects.count(), 0)
 
         with open(SHEET_PATH, 'rb') as file:
+            post_data = {'file_upload': file}
             with self.login(self.user):
-                values = {'file_upload': file}
-                response = self.client.post(
-                    reverse(
-                        'samplesheets:import',
-                        kwargs={'project': self.project.sodar_uuid},
-                    ),
-                    values,
-                )
+                response = self.client.post(self.url, post_data)
 
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Investigation.objects.count(), 1)
@@ -322,8 +313,8 @@ class TestSheetImportView(
             )
         )
 
-    def test_replace(self):
-        """Test replacing an existing investigation by posting"""
+    def test_post_replace(self):
+        """Test POST to replace replacing existing investigation"""
         inv = self.import_isa_from_file(SHEET_PATH, self.project)
         uuid = inv.sodar_uuid
         app_settings.set(
@@ -340,15 +331,9 @@ class TestSheetImportView(
         )
 
         with open(SHEET_PATH_SMALL2, 'rb') as file:
+            post_data = {'file_upload': file}
             with self.login(self.user):
-                values = {'file_upload': file}
-                response = self.client.post(
-                    reverse(
-                        'samplesheets:import',
-                        kwargs={'project': self.project.sodar_uuid},
-                    ),
-                    values,
-                )
+                response = self.client.post(self.url, post_data)
 
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Investigation.objects.count(), 1)
@@ -378,8 +363,8 @@ class TestSheetImportView(
             )
         )
 
-    def test_replace_config_keep(self):
-        """Test keeping configs when replacing"""
+    def test_post_replace_config_keep(self):
+        """Test POST to replace and keep configs"""
         inv = self.import_isa_from_file(SHEET_PATH, self.project)
         s_uuid = str(inv.studies.first().sodar_uuid)
         # Get and update config
@@ -399,15 +384,9 @@ class TestSheetImportView(
         )
 
         with open(SHEET_PATH_INSERTED, 'rb') as file:
+            post_data = {'file_upload': file}
             with self.login(self.user):
-                values = {'file_upload': file}
-                response = self.client.post(
-                    reverse(
-                        'samplesheets:import',
-                        kwargs={'project': self.project.sodar_uuid},
-                    ),
-                    values,
-                )
+                response = self.client.post(self.url, post_data)
 
         self.assertEqual(response.status_code, 302)
         sheet_config = app_settings.get(
@@ -425,32 +404,24 @@ class TestSheetImportView(
             edited_field,
         )
 
-    def test_replace_not_allowed(self):
-        """Test replacing an iRODS-enabled investigation with missing data"""
+    def test_post_replace_not_allowed(self):
+        """Test post to replace iRODS-enabled investigation with missing data"""
         inv = self.import_isa_from_file(SHEET_PATH, self.project)
         inv.irods_status = True
         inv.save()
         uuid = inv.sodar_uuid
         self.assertEqual(Investigation.objects.count(), 1)
-
         with open(SHEET_PATH_MINIMAL, 'rb') as file:
+            post_data = {'file_upload': file}
             with self.login(self.user):
-                values = {'file_upload': file}
-                response = self.client.post(
-                    reverse(
-                        'samplesheets:import',
-                        kwargs={'project': self.project.sodar_uuid},
-                    ),
-                    values,
-                )
-
+                response = self.client.post(self.url, post_data)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Investigation.objects.count(), 1)
         new_inv = Investigation.objects.first()
         self.assertEqual(uuid, new_inv.sodar_uuid)  # Should not have changed
 
-    def test_replace_zone(self):
-        """Test replacing with existing landing zone"""
+    def test_post_replace_zone(self):
+        """Test POST to replace with existing landing zone"""
         inv = self.import_isa_from_file(SHEET_PATH, self.project)
         inv.irods_status = True
         inv.save()
@@ -478,15 +449,9 @@ class TestSheetImportView(
         )
 
         with open(SHEET_PATH_INSERTED, 'rb') as file:
+            post_data = {'file_upload': file}
             with self.login(self.user):
-                values = {'file_upload': file}
-                response = self.client.post(
-                    reverse(
-                        'samplesheets:import',
-                        kwargs={'project': self.project.sodar_uuid},
-                    ),
-                    values,
-                )
+                response = self.client.post(self.url, post_data)
 
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Investigation.objects.count(), 1)
@@ -503,8 +468,8 @@ class TestSheetImportView(
             Assay.objects.filter(study__investigation=inv).first(),
         )
 
-    def test_replace_study_cache(self):
-        """Test replacing with existing study table cache"""
+    def test_post_replace_study_cache(self):
+        """Test POST to replace with existing study table cache"""
         inv = self.import_isa_from_file(SHEET_PATH, self.project)
         conf_api.get_sheet_config(inv)
         study = inv.studies.first()
@@ -522,15 +487,9 @@ class TestSheetImportView(
         self.assertEqual(JSONCacheItem.objects.count(), 1)
 
         with open(SHEET_PATH_INSERTED, 'rb') as file:
+            post_data = {'file_upload': file}
             with self.login(self.user):
-                values = {'file_upload': file}
-                response = self.client.post(
-                    reverse(
-                        'samplesheets:import',
-                        kwargs={'project': self.project.sodar_uuid},
-                    ),
-                    values,
-                )
+                response = self.client.post(self.url, post_data)
 
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Investigation.objects.count(), 1)
@@ -539,8 +498,8 @@ class TestSheetImportView(
         self.assertEqual(cache_item.data, {})
         self.assertEqual(JSONCacheItem.objects.count(), 1)
 
-    def test_replace_study_cache_new_sheet(self):
-        """Test replacing with study table cache and different sheet"""
+    def test_post_replace_study_cache_new_sheet(self):
+        """Test POST to replace with study table cache and different sheet"""
         inv = self.import_isa_from_file(SHEET_PATH, self.project)
         conf_api.get_sheet_config(inv)
         study = inv.studies.first()
@@ -557,15 +516,9 @@ class TestSheetImportView(
         self.assertEqual(JSONCacheItem.objects.count(), 1)
 
         with open(SHEET_PATH_SMALL2, 'rb') as file:
+            post_data = {'file_upload': file}
             with self.login(self.user):
-                values = {'file_upload': file}
-                response = self.client.post(
-                    reverse(
-                        'samplesheets:import',
-                        kwargs={'project': self.project.sodar_uuid},
-                    ),
-                    values,
-                )
+                response = self.client.post(self.url, post_data)
 
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Investigation.objects.count(), 1)
@@ -574,19 +527,13 @@ class TestSheetImportView(
         self.assertIsNone(cache_item)
         self.assertEqual(JSONCacheItem.objects.count(), 0)
 
-    def test_import_critical_warnings(self):
-        """Test posting an ISA-Tab which raises critical warnings in altamISA"""
+    def test_post_import_critical_warnings(self):
+        """Test POST with critical warnings raised in altamISA"""
         self.assertEqual(Investigation.objects.count(), 0)
         with open(SHEET_PATH_CRITICAL, 'rb') as file:
+            post_data = {'file_upload': file}
             with self.login(self.user):
-                values = {'file_upload': file}
-                response = self.client.post(
-                    reverse(
-                        'samplesheets:import',
-                        kwargs={'project': self.project.sodar_uuid},
-                    ),
-                    values,
-                )
+                response = self.client.post(self.url, post_data)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Investigation.objects.count(), 0)
         # Assert timeline event
@@ -597,21 +544,13 @@ class TestSheetImportView(
         self.assertIsNotNone(tl_status.extra_data['warnings'])
 
     @override_settings(SHEETS_ALLOW_CRITICAL=True)
-    def test_import_critical_warnings_allowed(self):
-        """Test posting an ISA-Tab with critical warnings allowed"""
+    def test_post_import_critical_warnings_allowed(self):
+        """Test POST with critical warnings allowed"""
         self.assertEqual(Investigation.objects.count(), 0)
-
         with open(SHEET_PATH_CRITICAL, 'rb') as file:
+            post_data = {'file_upload': file}
             with self.login(self.user):
-                values = {'file_upload': file}
-                response = self.client.post(
-                    reverse(
-                        'samplesheets:import',
-                        kwargs={'project': self.project.sodar_uuid},
-                    ),
-                    values,
-                )
-
+                response = self.client.post(self.url, post_data)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Investigation.objects.count(), 1)
         # Assert timeline event
@@ -621,96 +560,66 @@ class TestSheetImportView(
         tl_status = tl_event.get_status()
         self.assertIsNotNone(tl_status.extra_data['warnings'])
 
-    def test_import_multiple(self):
-        """Test posting an ISA-Tab as multiple files"""
+    def test_post_import_multiple(self):
+        """Test POST with ISA-Tab as multiple files"""
         self.assertEqual(Investigation.objects.count(), 0)
         self.assertEqual(ISATab.objects.count(), 0)
-
         zf = ZipFile(os.fsdecode(SHEET_PATH))
+        post_data = {
+            'file_upload': [
+                zf.open(f.filename) for f in zf.filelist if f.file_size > 0
+            ]
+        }
         with self.login(self.user):
-            values = {
-                'file_upload': [
-                    zf.open(f.filename) for f in zf.filelist if f.file_size > 0
-                ]
-            }
-            response = self.client.post(
-                reverse(
-                    'samplesheets:import',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                values,
-            )
-
+            response = self.client.post(self.url, post_data)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Investigation.objects.count(), 1)
         self.assertEqual(ISATab.objects.count(), 1)
         self.assertListEqual(ISATab.objects.first().tags, ['IMPORT'])
 
-    def test_import_multiple_no_study(self):
-        """Test posting an ISA-Tab as multiple files without required study"""
+    def test_post_import_multiple_no_study(self):
+        """Test POST as multiple files without required study"""
         self.assertEqual(Investigation.objects.count(), 0)
         self.assertEqual(ISATab.objects.count(), 0)
-
         zf = ZipFile(os.fsdecode(SHEET_PATH))
+        post_data = {
+            'file_upload': [
+                zf.open(f.filename)
+                for f in zf.filelist
+                if f.file_size > 0
+                and not f.filename.split('/')[-1].startswith('s_')
+            ]
+        }
         with self.login(self.user):
-            values = {
-                'file_upload': [
-                    zf.open(f.filename)
-                    for f in zf.filelist
-                    if f.file_size > 0
-                    and not f.filename.split('/')[-1].startswith('s_')
-                ]
-            }
-            response = self.client.post(
-                reverse(
-                    'samplesheets:import',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                values,
-            )
-
+            response = self.client.post(self.url, post_data)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(Investigation.objects.count(), 0)
 
-    def test_import_multiple_no_assay(self):
-        """Test posting an ISA-Tab as multiple files without required assay"""
+    def test_post_import_multiple_no_assay(self):
+        """Test POST as multiple files without required assay"""
         self.assertEqual(Investigation.objects.count(), 0)
         self.assertEqual(ISATab.objects.count(), 0)
-
         zf = ZipFile(os.fsdecode(SHEET_PATH))
+        post_data = {
+            'file_upload': [
+                zf.open(f.filename)
+                for f in zf.filelist
+                if f.file_size > 0
+                and not f.filename.split('/')[-1].startswith('a_')
+            ]
+        }
         with self.login(self.user):
-            values = {
-                'file_upload': [
-                    zf.open(f.filename)
-                    for f in zf.filelist
-                    if f.file_size > 0
-                    and not f.filename.split('/')[-1].startswith('a_')
-                ]
-            }
-            response = self.client.post(
-                reverse(
-                    'samplesheets:import',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                values,
-            )
-
+            response = self.client.post(self.url, post_data)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Investigation.objects.count(), 0)
 
-    def test_import_empty_assay(self):
-        """Test posting an ISA-Tab with an empty assay table (should fail)"""
+    def test_post_import_empty_assay(self):
+        """Test POST with empty assay table (should fail)"""
         self.assertEqual(Investigation.objects.count(), 0)
         with open(SHEET_PATH_EMPTY_ASSAY, 'rb') as file:
+            post_data = {'file_upload': file}
             with self.login(self.user):
-                values = {'file_upload': file}
-                response = self.client.post(
-                    reverse(
-                        'samplesheets:import',
-                        kwargs={'project': self.project.sodar_uuid},
-                    ),
-                    values,
-                )
+                response = self.client.post(self.url, post_data)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Investigation.objects.count(), 0)
 
@@ -718,15 +627,9 @@ class TestSheetImportView(
         """Test posting an ISA-Tab with an assay without plugin"""
         self.assertEqual(Investigation.objects.count(), 0)
         with open(SHEET_PATH_NO_PLUGIN_ASSAY, 'rb') as file:
+            post_data = {'file_upload': file}
             with self.login(self.user):
-                values = {'file_upload': file}
-                response = self.client.post(
-                    reverse(
-                        'samplesheets:import',
-                        kwargs={'project': self.project.sodar_uuid},
-                    ),
-                    values,
-                )
+                response = self.client.post(self.url, post_data)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Investigation.objects.count(), 1)
         self.assertEqual(
@@ -1019,7 +922,7 @@ class TestSheetTemplateCreateView(
 
 
 class TestSheetExcelExportView(SamplesheetsViewTestBase):
-    """Tests for the sample sheet Excel export view"""
+    """Tests for SheetExcelExportView"""
 
     def setUp(self):
         super().setUp()
@@ -1029,8 +932,8 @@ class TestSheetExcelExportView(SamplesheetsViewTestBase):
         self.assay = self.study.assays.first()
         self.timeline = get_backend_api('timeline_backend')
 
-    def test_render_study(self):
-        """Test rendering the Excel file for a study table"""
+    def test_getr_study(self):
+        """Test SheetExcelExportView GET with study table"""
         with self.login(self.user):
             response = self.client.get(
                 reverse(
@@ -1040,8 +943,8 @@ class TestSheetExcelExportView(SamplesheetsViewTestBase):
             )
         self.assertEqual(response.status_code, 200)
 
-    def test_render_assay(self):
-        """Test rendering the Excel file for a assay table"""
+    def test_getr_assay(self):
+        """Test GET with assay table"""
         with self.login(self.user):
             response = self.client.get(
                 reverse(
@@ -1053,23 +956,22 @@ class TestSheetExcelExportView(SamplesheetsViewTestBase):
 
 
 class TestSheetISAExportView(SamplesheetsViewTestBase):
-    """Tests for the investigation ISA-Tab export view"""
+    """Tests for SheetISAExportView"""
 
     def setUp(self):
         super().setUp()
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.timeline = get_backend_api('timeline_backend')
+        self.url = reverse(
+            'samplesheets:export_isa',
+            kwargs={'project': self.project.sodar_uuid},
+        )
 
     def test_get(self):
-        """Test requesting a file from the ISA-Tab export view"""
+        """Test SheetISAExportView GET"""
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:export_isa',
-                    kwargs={'project': self.project.sodar_uuid},
-                )
-            )
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.get('Content-Disposition'),
@@ -1077,19 +979,14 @@ class TestSheetISAExportView(SamplesheetsViewTestBase):
         )
 
     def test_get_no_investigation(self):
-        """Test requesting an ISA-Tab export with no investigation provided"""
+        """Test GET with no investigation"""
         self.investigation.delete()
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:export_isa',
-                    kwargs={'project': self.project.sodar_uuid},
-                )
-            )
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 302)
 
     def test_get_version(self):
-        """Test requesting export of an ISA-Tab version"""
+        """Test GET with ISA-Tab version"""
         isa_version = ISATab.objects.get(
             investigation_uuid=self.investigation.sodar_uuid
         )
@@ -1114,7 +1011,7 @@ class TestSheetISAExportView(SamplesheetsViewTestBase):
 
 
 class TestSheetDeleteView(SamplesheetsViewTestBase):
-    """Tests for the investigation delete view"""
+    """Tests for SheetDeleteView"""
 
     def setUp(self):
         super().setUp()
@@ -1123,22 +1020,21 @@ class TestSheetDeleteView(SamplesheetsViewTestBase):
         self.study = self.investigation.studies.first()
         # Set up helpers
         self.cache_backend = get_backend_api('sodar_cache')
+        self.url = reverse(
+            'samplesheets:delete',
+            kwargs={'project': self.project.sodar_uuid},
+        )
 
-    def test_render(self):
-        """Test rendering the project sheets view"""
+    def test_get(self):
+        """Test SheetDeleteView GET"""
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:delete',
-                    kwargs={'project': self.project.sodar_uuid},
-                )
-            )
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['irods_file_count'], 0)
         self.assertEqual(response.context['can_delete_sheets'], True)
 
-    def test_delete(self):
-        """Test deleting the project sample sheets"""
+    def test_post(self):
+        """Test POST"""
         app_settings.set(
             'samplesheets',
             'display_config',
@@ -1154,15 +1050,10 @@ class TestSheetDeleteView(SamplesheetsViewTestBase):
 
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:delete',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                data={'delete_host_confirm': 'testserver'},
+                self.url, data={'delete_host_confirm': 'testserver'}
             )
-            self.assertEqual(response.status_code, 302)
-            self.assertEqual(
-                response.url,
+            self.assertRedirects(
+                response,
                 reverse(
                     'samplesheets:project_sheets',
                     kwargs={'project': self.project.sodar_uuid},
@@ -1175,33 +1066,20 @@ class TestSheetDeleteView(SamplesheetsViewTestBase):
             AppSetting.objects.filter(name='display_config').count(), 0
         )
 
-    def test_delete_invalid_host(self):
-        """Test deleting with an invalid host name supplied in form"""
+    def test_post_invalid_host(self):
+        """Test POST with invalid host name given in form"""
         self.assertEqual(Investigation.objects.count(), 1)
         self.assertEqual(ISATab.objects.count(), 1)
-
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:delete',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                data={'delete_host_confirm': ''},
+                self.url, data={'delete_host_confirm': ''}
             )
-            self.assertEqual(response.status_code, 302)
-            self.assertEqual(
-                response.url,
-                reverse(
-                    'samplesheets:project_sheets',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-            )
-
+        self.assertEqual(response.status_code, 302)
         self.assertEqual(Investigation.objects.count(), 1)
         self.assertEqual(ISATab.objects.count(), 1)
 
-    def test_delete_study_cache(self):
-        """Test deleting with cached study tables"""
+    def test_post_study_cache(self):
+        """Test POST with cached study tables"""
         self.assertEqual(Investigation.objects.count(), 1)
         self.assertEqual(ISATab.objects.count(), 1)
 
@@ -1217,21 +1095,9 @@ class TestSheetDeleteView(SamplesheetsViewTestBase):
 
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:delete',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                data={'delete_host_confirm': 'testserver'},
+                self.url, data={'delete_host_confirm': 'testserver'}
             )
-            self.assertEqual(response.status_code, 302)
-            self.assertEqual(
-                response.url,
-                reverse(
-                    'samplesheets:project_sheets',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-            )
-
+        self.assertEqual(response.status_code, 302)
         self.assertEqual(Investigation.objects.count(), 0)
         self.assertEqual(ISATab.objects.count(), 0)
         cache_item = self.cache_backend.get_cache_item(*cache_args)
@@ -1240,21 +1106,21 @@ class TestSheetDeleteView(SamplesheetsViewTestBase):
 
 
 class TestSheetVersionListView(SamplesheetsViewTestBase):
-    """Tests for the sample sheet version list view"""
+    """Tests for SheetVersionListView"""
 
-    def test_render(self):
-        """Test rendering the sheet version list view"""
+    def setUp(self):
+        super().setUp()
+        self.url = reverse(
+            'samplesheets:versions',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+
+    def test_get(self):
+        """Test SheetVersionListView GET"""
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
-
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:versions',
-                    kwargs={'project': self.project.sodar_uuid},
-                )
-            )
-
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['object_list'].count(), 1)
         self.assertEqual(
@@ -1267,15 +1133,10 @@ class TestSheetVersionListView(SamplesheetsViewTestBase):
             .first(),
         )
 
-    def test_render_no_sheets(self):
-        """Test rendering version list view with no versions available"""
+    def test_get_empty(self):
+        """Test GET with no versions"""
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:versions',
-                    kwargs={'project': self.project.sodar_uuid},
-                )
-            )
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['object_list'].count(), 0)
         self.assertIsNone(response.context['current_version'])
@@ -1377,7 +1238,7 @@ class TestSheetVersionRestoreView(SamplesheetsViewTestBase):
 
 
 class TestSheetVersionUpdateView(SamplesheetsViewTestBase):
-    """Tests for the sample sheet version update view"""
+    """Tests for SheetVersionUpdateView"""
 
     def setUp(self):
         super().setUp()
@@ -1387,31 +1248,26 @@ class TestSheetVersionUpdateView(SamplesheetsViewTestBase):
         self.isatab = ISATab.objects.get(
             investigation_uuid=self.investigation.sodar_uuid
         )
+        self.url = reverse(
+            'samplesheets:version_update',
+            kwargs={'isatab': self.isatab.sodar_uuid},
+        )
 
-    def test_render(self):
-        """Test rendering the update view"""
+    def test_get(self):
+        """Test SheetVersionUpdateView GET"""
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:version_update',
-                    kwargs={'isatab': self.isatab.sodar_uuid},
-                )
-            )
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEquals(response.context['object'], self.isatab)
 
-    def test_update(self):
-        """Test updating the sheet version"""
+    def test_post(self):
+        """Test POST"""
         self.assertEqual(ISATab.objects.count(), 1)
         self.assertIsNone(self.isatab.description)
         date_created = self.isatab.date_created
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:version_update',
-                    kwargs={'isatab': self.isatab.sodar_uuid},
-                ),
-                data={'description': SHEET_VERSION_DESC},
+                self.url, data={'description': SHEET_VERSION_DESC}
             )
         self.assertEqual(response.status_code, 302)
         self.assertEqual(ISATab.objects.count(), 1)
@@ -1422,7 +1278,7 @@ class TestSheetVersionUpdateView(SamplesheetsViewTestBase):
 
 
 class TestSheetVersionDeleteView(SamplesheetsViewTestBase):
-    """Tests for the sample sheet version delete view"""
+    """Tests for SheetVersionDeleteView"""
 
     def setUp(self):
         super().setUp()
@@ -1432,29 +1288,23 @@ class TestSheetVersionDeleteView(SamplesheetsViewTestBase):
         self.isatab = ISATab.objects.get(
             investigation_uuid=self.investigation.sodar_uuid
         )
+        self.url = reverse(
+            'samplesheets:version_delete',
+            kwargs={'isatab': self.isatab.sodar_uuid},
+        )
 
-    def test_render(self):
-        """Test rendering the sheet version delete view"""
+    def test_get(self):
+        """Test SheetVersionDeleteView GET"""
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:version_delete',
-                    kwargs={'isatab': self.isatab.sodar_uuid},
-                )
-            )
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertIsNotNone(response.context['sheet_version'])
 
     def test_post(self):
-        """Test issuing a POST request for the sheet version delete view"""
+        """Test POST"""
         self.assertEqual(ISATab.objects.count(), 1)
         with self.login(self.user):
-            response = self.client.post(
-                reverse(
-                    'samplesheets:version_delete',
-                    kwargs={'isatab': self.isatab.sodar_uuid},
-                )
-            )
+            response = self.client.post(self.url)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(ISATab.objects.count(), 0)
 
@@ -1462,7 +1312,7 @@ class TestSheetVersionDeleteView(SamplesheetsViewTestBase):
 class TestSheetVersionDeleteBatchView(
     SampleSheetModelMixin, SamplesheetsViewTestBase
 ):
-    """Tests for the sample sheet version batch delete view"""
+    """Tests for SheetVersionDeleteBatchView"""
 
     def setUp(self):
         super().setUp()
@@ -1479,11 +1329,15 @@ class TestSheetVersionDeleteBatchView(
             investigation_uuid=self.investigation.sodar_uuid,
             user=self.user,
         )
+        self.url = reverse(
+            'samplesheets:version_delete_batch',
+            kwargs={'project': self.project.sodar_uuid},
+        )
 
-    def test_render_confirm(self):
-        """Test rendering the confirm view"""
+    def test_get_confirm(self):
+        """Test SheetVersionDeleteBatchView GET with confirm view"""
         self.assertEqual(ISATab.objects.count(), 2)
-        values = {
+        post_data = {
             'confirm': '1',
             'version_check': [
                 str(self.isatab.sodar_uuid),
@@ -1491,33 +1345,21 @@ class TestSheetVersionDeleteBatchView(
             ],
         }
         with self.login(self.user):
-            response = self.client.post(
-                reverse(
-                    'samplesheets:version_delete_batch',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                values,
-            )
+            response = self.client.post(self.url, post_data)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(ISATab.objects.count(), 2)
 
-    def test_delete(self):
-        """Test version deletion"""
+    def test_post_delete(self):
+        """Test POST to delete versions"""
         self.assertEqual(ISATab.objects.count(), 2)
-        values = {
+        post_data = {
             'version_check': [
                 str(self.isatab.sodar_uuid),
                 str(self.isatab2.sodar_uuid),
             ]
         }
         with self.login(self.user):
-            response = self.client.post(
-                reverse(
-                    'samplesheets:version_delete_batch',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                values,
-            )
+            response = self.client.post(self.url, post_data)
             self.assertRedirects(
                 response,
                 reverse(
@@ -1635,19 +1477,19 @@ class TestProjectSearchResultsView(SamplesheetsViewTestBase):
 
 
 class TestSheetVersionCompareView(SamplesheetsViewTestBase):
-    """Tests for the SheetVersionCompareView"""
+    """Tests for SheetVersionCompareView"""
 
     def setUp(self):
         super().setUp()
         self.import_isa_from_file(SHEET_PATH_SMALL2, self.project)
         with open(SHEET_PATH_SMALL2_ALT, 'rb') as file, self.login(self.user):
-            values = {'file_upload': file}
+            post_data = {'file_upload': file}
             self.client.post(
                 reverse(
                     'samplesheets:import',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
-                values,
+                post_data,
             )
         self.isa1 = ISATab.objects.first()
         self.isa2 = ISATab.objects.last()
@@ -1658,16 +1500,17 @@ class TestSheetVersionCompareView(SamplesheetsViewTestBase):
             'a_small2_alt.txt'
         )
         self.isa2.save()
+        self.url = reverse(
+            'samplesheets:version_compare',
+            kwargs={'project': self.project.sodar_uuid},
+        )
 
-    def test_render(self):
-        """Test rendering the sheet version compare view"""
+    def test_get(self):
+        """Test SheetVersionCompareView GET"""
         with self.login(self.user):
             response = self.client.get(
-                '{}?source={}&target={}'.format(
-                    reverse(
-                        'samplesheets:version_compare',
-                        kwargs={'project': self.project.sodar_uuid},
-                    ),
+                self.url
+                + '?source={}&target={}'.format(
                     str(self.isa1.sodar_uuid),
                     str(self.isa2.sodar_uuid),
                 )
@@ -1676,37 +1519,21 @@ class TestSheetVersionCompareView(SamplesheetsViewTestBase):
         self.assertEqual(response.context['source'], str(self.isa1.sodar_uuid))
         self.assertEqual(response.context['target'], str(self.isa2.sodar_uuid))
 
-    def test_render_no_permission(self):
-        """Test rendering the sheet version compare view without permission"""
-        with self.login(self.user_no_roles):
-            response = self.client.get(
-                '{}?source={}&target={}'.format(
-                    reverse(
-                        'samplesheets:version_compare',
-                        kwargs={'project': self.project.sodar_uuid},
-                    ),
-                    str(self.isa1.sodar_uuid),
-                    str(self.isa2.sodar_uuid),
-                ),
-                follow=True,
-            )
-        self.assertRedirects(response, reverse('home'))
-
 
 class TestSheetVersionCompareFileView(SamplesheetsViewTestBase):
-    """Tests for the SheetVersionCompareFileView"""
+    """Tests for SheetVersionCompareFileView"""
 
     def setUp(self):
         super().setUp()
         self.import_isa_from_file(SHEET_PATH_SMALL2, self.project)
         with open(SHEET_PATH_SMALL2_ALT, 'rb') as file, self.login(self.user):
-            values = {'file_upload': file}
+            post_data = {'file_upload': file}
             self.client.post(
                 reverse(
                     'samplesheets:import',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
-                values,
+                post_data,
             )
         self.isa1 = ISATab.objects.first()
         self.isa2 = ISATab.objects.last()
@@ -1717,16 +1544,17 @@ class TestSheetVersionCompareFileView(SamplesheetsViewTestBase):
             'a_small2_alt.txt'
         )
         self.isa2.save()
+        self.url = reverse(
+            'samplesheets:version_compare_file',
+            kwargs={'project': self.project.sodar_uuid},
+        )
 
-    def test_render(self):
-        """Test rendering the sheet version compare view"""
+    def test_get(self):
+        """Test SheetVersionCompareFileView GET"""
         with self.login(self.user):
             response = self.client.get(
-                '{}?source={}&target={}&filename={}&category={}'.format(
-                    reverse(
-                        'samplesheets:version_compare_file',
-                        kwargs={'project': self.project.sodar_uuid},
-                    ),
+                self.url + '?source={}&target={}&filename={}'
+                '&category={}'.format(
                     str(self.isa1.sodar_uuid),
                     str(self.isa2.sodar_uuid),
                     'a_small2.txt',
@@ -1739,29 +1567,18 @@ class TestSheetVersionCompareFileView(SamplesheetsViewTestBase):
         self.assertEqual(response.context['filename'], 'a_small2.txt')
         self.assertEqual(response.context['category'], 'assays')
 
-    def test_render_no_permission(self):
-        """Test rendering the sheet version compare view without permission"""
-        with self.login(self.user_no_roles):
-            response = self.client.get(
-                '{}?source={}&target={}&filename={}&category={}'.format(
-                    reverse(
-                        'samplesheets:version_compare_file',
-                        kwargs={'project': self.project.sodar_uuid},
-                    ),
-                    str(self.isa1.sodar_uuid),
-                    str(self.isa2.sodar_uuid),
-                    'a_small2.txt',
-                    'assays',
-                ),
-                follow=True,
-            )
-        self.assertRedirects(response, reverse('home'))
-
 
 class TestIrodsDataRequestListView(
     IrodsDataRequestMixin, SamplesheetsViewTestBase
 ):
     """Tests for IrodsDataRequestListView"""
+
+    def setUp(self):
+        super().setUp()
+        self.url = reverse(
+            'samplesheets:irods_requests',
+            kwargs={'project': self.project.sodar_uuid},
+        )
 
     def test_get(self):
         """Test IrodsDataRequestListView GET"""
@@ -1774,12 +1591,7 @@ class TestIrodsDataRequestListView(
             user=self.user,
         )
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:irods_requests',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-            )
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['object_list']), 1)
         context_obj = response.context['object_list'][0]
@@ -1799,12 +1611,7 @@ class TestIrodsDataRequestListView(
             user=self.user,
         )
         with self.login(self.user_contributor):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:irods_requests',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-            )
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['object_list']), 0)
 
@@ -1822,12 +1629,7 @@ class TestIrodsDataRequestListView(
             user=self.user_contributor,
         )
         with self.login(user_contributor2):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:irods_requests',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-            )
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['object_list']), 0)
 
@@ -1835,12 +1637,7 @@ class TestIrodsDataRequestListView(
         """Test GET request for empty list of delete requests"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:irods_requests',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-            )
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['object_list']), 0)
 
@@ -1913,23 +1710,24 @@ class SheetRemoteSyncTestBase(
 class TestSheetRemoteSyncView(SheetRemoteSyncTestBase):
     """Tests for SheetRemoteSyncView"""
 
-    def test_sync(self):
-        """Test sync sheets successfully"""
+    def setUp(self):
+        super().setUp()
+        self.url = reverse(
+            'samplesheets:sync',
+            kwargs={'project': self.project_target.sodar_uuid},
+        )
+
+    def test_get(self):
+        """Test SheetRemoteSyncView GET"""
         with self.login(self.user):
-            response = self.client.get(
+            response = self.client.get(self.url)
+            self.assertRedirects(
+                response,
                 reverse(
-                    'samplesheets:sync',
+                    'samplesheets:project_sheets',
                     kwargs={'project': self.project_target.sodar_uuid},
                 ),
-                follow=True,
             )
-        self.assertRedirects(
-            response,
-            reverse(
-                'samplesheets:project_sheets',
-                kwargs={'project': self.project_target.sodar_uuid},
-            ),
-        )
         self.assertEqual(
             str(list(get_messages(response.wsgi_request))[0]),
             SYNC_SUCCESS_MSG,
@@ -1937,8 +1735,8 @@ class TestSheetRemoteSyncView(SheetRemoteSyncTestBase):
         # Check if investigation was created
         self.assertEqual(self.project_target.investigations.count(), 1)
 
-    def test_sync_disabled(self):
-        """Test sync sheets with sync disabled"""
+    def test_get_disabled(self):
+        """Test GET with sync disabled"""
         app_settings.set(
             APP_NAME,
             'sheet_sync_enable',
@@ -1946,28 +1744,22 @@ class TestSheetRemoteSyncView(SheetRemoteSyncTestBase):
             project=self.project_target,
         )
         with self.login(self.user):
-            response = self.client.get(
+            response = self.client.get(self.url)
+            self.assertRedirects(
+                response,
                 reverse(
-                    'samplesheets:sync',
+                    'samplesheets:project_sheets',
                     kwargs={'project': self.project_target.sodar_uuid},
                 ),
-                follow=True,
             )
-        self.assertRedirects(
-            response,
-            reverse(
-                'samplesheets:project_sheets',
-                kwargs={'project': self.project_target.sodar_uuid},
-            ),
-        )
         self.assertEqual(
             str(list(get_messages(response.wsgi_request))[0]),
             SYNC_FAIL_DISABLED,
         )
         self.assertEqual(self.project_target.investigations.count(), 0)
 
-    def test_sync_invalid_token(self):
-        """Test sync sheets with invalid token"""
+    def test_get_invalid_token(self):
+        """Test GET with invalid token"""
         app_settings.set(
             APP_NAME,
             'sheet_sync_token',
@@ -1975,28 +1767,15 @@ class TestSheetRemoteSyncView(SheetRemoteSyncTestBase):
             project=self.project_target,
         )
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:sync',
-                    kwargs={'project': self.project_target.sodar_uuid},
-                ),
-                follow=True,
-            )
-        self.assertRedirects(
-            response,
-            reverse(
-                'samplesheets:project_sheets',
-                kwargs={'project': self.project_target.sodar_uuid},
-            ),
-        )
+            response = self.client.get(self.url)
         self.assertEqual(
             str(list(get_messages(response.wsgi_request))[0]),
             '{}: {}: 401'.format(SYNC_FAIL_PREFIX, SYNC_FAIL_STATUS_CODE),
         )
         self.assertEqual(self.project_target.investigations.count(), 0)
 
-    def test_sync_no_token(self):
-        """Test sync sheets with no token"""
+    def test_get_no_token(self):
+        """Test GET with no token"""
         app_settings.set(
             APP_NAME,
             'sheet_sync_token',
@@ -2004,57 +1783,30 @@ class TestSheetRemoteSyncView(SheetRemoteSyncTestBase):
             project=self.project_target,
         )
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:sync',
-                    kwargs={'project': self.project_target.sodar_uuid},
-                ),
-                follow=True,
-            )
-        self.assertRedirects(
-            response,
-            reverse(
-                'samplesheets:project_sheets',
-                kwargs={'project': self.project_target.sodar_uuid},
-            ),
-        )
+            response = self.client.get(self.url)
         self.assertEqual(
             str(list(get_messages(response.wsgi_request))[0]),
             '{}: {}'.format(SYNC_FAIL_PREFIX, SYNC_FAIL_UNSET_TOKEN),
         )
         self.assertEqual(self.project_target.investigations.count(), 0)
 
-    def test_sync_no_url(self):
-        """Test sync sheets with no URL"""
+    def test_get_no_url(self):
+        """Test GET with no URL"""
         app_settings.set(
             APP_NAME,
             'sheet_sync_url',
             '',
             project=self.project_target,
         )
-
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:sync',
-                    kwargs={'project': self.project_target.sodar_uuid},
-                ),
-                follow=True,
-            )
-        self.assertRedirects(
-            response,
-            reverse(
-                'samplesheets:project_sheets',
-                kwargs={'project': self.project_target.sodar_uuid},
-            ),
-        )
+            response = self.client.get(self.url)
         self.assertEqual(
             str(list(get_messages(response.wsgi_request))[0]),
             '{}: {}'.format(SYNC_FAIL_PREFIX, SYNC_FAIL_UNSET_URL),
         )
 
-    def test_sync_invalid_url(self):
-        """Test sync sheets with invalid URL"""
+    def test_get_invalid_url(self):
+        """Test GET with invalid URL"""
         url = 'https://alsdjfasdkjfasdgfli.com'
         app_settings.set(
             APP_NAME,
@@ -2062,30 +1814,16 @@ class TestSheetRemoteSyncView(SheetRemoteSyncTestBase):
             url,
             project=self.project_target,
         )
-
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:sync',
-                    kwargs={'project': self.project_target.sodar_uuid},
-                ),
-                follow=True,
-            )
-        self.assertRedirects(
-            response,
-            reverse(
-                'samplesheets:project_sheets',
-                kwargs={'project': self.project_target.sodar_uuid},
-            ),
-        )
+            response = self.client.get(self.url)
         self.assertEqual(
             str(list(get_messages(response.wsgi_request))[0]),
             '{}: {}: {}'.format(SYNC_FAIL_PREFIX, SYNC_FAIL_INVALID_URL, url),
         )
         self.assertEqual(self.project_target.investigations.count(), 0)
 
-    def test_sync_no_connection(self):
-        """Test sync sheets with no connection via URL"""
+    def test_get_no_connection(self):
+        """Test GET with no connection via URL"""
         url = 'https://alsdjfasdkjfasdgfli.com' + reverse(
             'samplesheets:api_export_json',
             kwargs={'project': self.project_target.sodar_uuid},
@@ -2096,29 +1834,15 @@ class TestSheetRemoteSyncView(SheetRemoteSyncTestBase):
             url,
             project=self.project_target,
         )
-
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:sync',
-                    kwargs={'project': self.project_target.sodar_uuid},
-                ),
-                follow=True,
-            )
-        self.assertRedirects(
-            response,
-            reverse(
-                'samplesheets:project_sheets',
-                kwargs={'project': self.project_target.sodar_uuid},
-            ),
-        )
+            response = self.client.get(self.url)
         self.assertEqual(
             str(list(get_messages(response.wsgi_request))[0]),
             '{}: {}: {}'.format(SYNC_FAIL_PREFIX, SYNC_FAIL_CONNECT, url),
         )
 
-    def test_sync_no_sheet(self):
-        """Test sync with non-existing sheets"""
+    def test_get_no_sheet(self):
+        """Test GET with non-existing sheets"""
         app_settings.set(
             APP_NAME,
             'sheet_sync_url',
@@ -2129,22 +1853,8 @@ class TestSheetRemoteSyncView(SheetRemoteSyncTestBase):
             ),
             project=self.project_target,
         )
-
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:sync',
-                    kwargs={'project': self.project_target.sodar_uuid},
-                ),
-                follow=True,
-            )
-        self.assertRedirects(
-            response,
-            reverse(
-                'samplesheets:project_sheets',
-                kwargs={'project': self.project_target.sodar_uuid},
-            ),
-        )
+            response = self.client.get(self.url)
         self.assertEqual(
             str(list(get_messages(response.wsgi_request))[0]),
             '{}: {}: 404'.format(SYNC_FAIL_PREFIX, SYNC_FAIL_STATUS_CODE),

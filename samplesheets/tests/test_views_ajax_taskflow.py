@@ -175,9 +175,13 @@ class TestSheetCellEditAjaxView(
         )
         # Create iRODS collections
         self.make_irods_colls(self.investigation)
-        # Set up POST data
-        self.values = {'updated_cells': [], 'verify': True}
-        self.values['updated_cells'].append(
+        # Set up URL and data
+        self.url = reverse(
+            'samplesheets:ajax_edit_cell',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        self.post_data = {'updated_cells': [], 'verify': True}
+        self.post_data['updated_cells'].append(
             {
                 'uuid': str(self.library.sodar_uuid),
                 'value': LIBRARY_ID_EDIT,
@@ -191,17 +195,14 @@ class TestSheetCellEditAjaxView(
             }
         )
 
-    def test_update_library_name(self):
-        """Test updating library name with no collection or files in iRODS"""
+    def test_post_library_name(self):
+        """Test SheetCellEditAjaxView POST for library name with no collection or files in iRODS"""
         self.assertEqual(self.library.name, LIBRARY_ID)
         self.assay_plugin.update_cache(project=self.project, user=self.user)
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_edit_cell',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.values),
+                self.url,
+                json.dumps(self.post_data),
                 content_type='application/json',
             )
         self.assertEqual(response.status_code, 200)
@@ -209,19 +210,16 @@ class TestSheetCellEditAjaxView(
         self.library.refresh_from_db()
         self.assertEqual(self.library.name, LIBRARY_ID_EDIT)
 
-    def test_update_library_name_coll(self):
-        """Test updating library name with empty collection"""
+    def test_post_library_name_coll(self):
+        """Test POST for library name with empty collection"""
         with self.irods_backend.get_session() as irods:
             irods.collections.create(self.library_path)
             self.assertEqual(irods.collections.exists(self.library_path), True)
         self.assay_plugin.update_cache(project=self.project, user=self.user)
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_edit_cell',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.values),
+                self.url,
+                json.dumps(self.post_data),
                 content_type='application/json',
             )
         self.assertEqual(response.status_code, 200)
@@ -229,8 +227,8 @@ class TestSheetCellEditAjaxView(
         self.library.refresh_from_db()
         self.assertEqual(self.library.name, LIBRARY_ID_EDIT)
 
-    def test_update_library_name_file(self):
-        """Test updating library name with file in iRODS (should fail)"""
+    def test_post_library_name_file(self):
+        """Test POST for library name with file in iRODS (should fail)"""
         with self.irods_backend.get_session() as irods:
             irods.collections.create(self.library_path)
             self.assertEqual(irods.collections.exists(self.library_path), True)
@@ -240,11 +238,8 @@ class TestSheetCellEditAjaxView(
         self.assay_plugin.update_cache(project=self.project, user=self.user)
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_edit_cell',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.values),
+                self.url,
+                json.dumps(self.post_data),
                 content_type='application/json',
             )
         self.assertEqual(response.status_code, 200)
@@ -256,9 +251,9 @@ class TestSheetCellEditAjaxView(
         self.library.refresh_from_db()
         self.assertEqual(self.library.name, LIBRARY_ID)
 
-    def test_update_library_name_file_no_verify(self):
-        """Test updating library name with file in iRODS and no verify"""
-        self.values['verify'] = False
+    def test_post_library_name_file_no_verify(self):
+        """Test POST for library name with file in iRODS and no verify"""
+        self.post_data['verify'] = False
         with self.irods_backend.get_session() as irods:
             irods.collections.create(self.library_path)
             self.assertEqual(irods.collections.exists(self.library_path), True)
@@ -268,11 +263,8 @@ class TestSheetCellEditAjaxView(
         self.assay_plugin.update_cache(project=self.project, user=self.user)
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_edit_cell',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.values),
+                self.url,
+                json.dumps(self.post_data),
                 content_type='application/json',
             )
         self.assertEqual(response.status_code, 200)
@@ -280,9 +272,9 @@ class TestSheetCellEditAjaxView(
         self.library.refresh_from_db()
         self.assertEqual(self.library.name, LIBRARY_ID_EDIT)
 
-    def test_update_library_field(self):
-        """Test updating library characteristics field with file in iRODS"""
-        self.values['updated_cells'][0] = {
+    def test_post_library_field(self):
+        """Test POST for library characteristics field with file in iRODS"""
+        self.post_data['updated_cells'][0] = {
             'uuid': str(self.library.sodar_uuid),
             'value': LIBRARY_FIELD_EDIT,
             'colType': 'NAME',
@@ -302,11 +294,8 @@ class TestSheetCellEditAjaxView(
         self.assay_plugin.update_cache(project=self.project, user=self.user)
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_edit_cell',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.values),
+                self.url,
+                json.dumps(self.post_data),
                 content_type='application/json',
             )
         self.assertEqual(response.status_code, 200)
