@@ -32,6 +32,35 @@ All instructions assume you are running the previous major release of SODAR
 before performing the upgrade.
 
 
+.. _admin_upgrade_v1.1:
+
+v1.1
+====
+
+This release requires at least the following versions of SODAR
+environment components:
+
+- `sodar-docker-compose <https://github.com/bihealth/sodar-docker-compose>`_ ``1.1-1``
+- `irods-docker <https://github.com/bihealth/irods-docker>`_ ``4.3.3-2``
+- `davrods-docker <https://github.com/bihealth/davrods-docker>`_ ``4.3.3_1.5.1-1``
+
+.. warning::
+
+    To deploy SODAR v1.1 on top of an existing deployment, you **must** first
+    deploy SODAR v1.0. This means you can **not** upgrade directly from e.g.
+    v0.15 straight to v1.1. Doing so risks a database migration failure. This is
+    due to squashed migrations removed in v1.1.
+
+SODAR v1.1 adds project owners and delegates iRODS collection ownership to all
+landing zones in the project. To enable owner and delegate access on legacy
+zones created before v1.1, you need to run the ``syncmodifyapi`` management
+command. Example:
+
+.. code-block:: bash
+
+    $ ./manage.py syncmodifyapi
+
+
 .. _admin_upgrade_v1.0:
 
 v1.0

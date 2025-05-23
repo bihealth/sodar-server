@@ -1,6 +1,7 @@
 """Tests for UI views in the samplesheets app with taskflow"""
 
 import os
+import pytz
 import uuid
 
 from datetime import timedelta
@@ -27,10 +28,13 @@ from projectroles.views import NO_AUTH_MSG
 from appalerts.models import AppAlert
 
 # Timeline dependency
-from timeline.models import TimelineEvent
+from timeline.models import TimelineEvent, TL_STATUS_OK
+
+# Irodsbackend dependency
+from irodsbackend.api import TICKET_MODE_READ
 
 # Taskflowbackend dependency
-from taskflowbackend.tests.base import TaskflowViewTestBase
+from taskflowbackend.tests.base import TaskflowViewTestBase, HASH_SCHEME_SHA256
 
 from samplesheets.forms import ERROR_MSG_INVALID_PATH
 from samplesheets.models import (
@@ -71,6 +75,7 @@ PROJECT_ROLE_CONTRIBUTOR = SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR']
 PROJECT_ROLE_GUEST = SODAR_CONSTANTS['PROJECT_ROLE_GUEST']
 PROJECT_TYPE_CATEGORY = SODAR_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
+APP_SETTING_SCOPE_PROJECT = SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT']
 
 # Local constants
 APP_NAME = 'samplesheets'
@@ -167,7 +172,7 @@ class IrodsAccessTicketViewTestMixin:
 
     def get_irods_ticket(self, sodar_ticket):
         """
-        Query for iRODS ticket.
+        Query for iRODS access ticket.
 
         :param sodar_ticket: IrodsAccessTicket object
         :return: dict
@@ -180,6 +185,18 @@ class IrodsAccessTicketViewTestMixin:
             )
         except NoResultFound:
             return None
+
+    def get_ticket_hosts(self, ticket_id):
+        """
+        Query for iRODS access ticket allowed hosts.
+
+        :param ticket_id: Ticket iRODS database ID
+        :return: list
+        """
+        query = self.irods.query(TicketQuery.AllowedHosts).filter(
+            TicketQuery.AllowedHosts.ticket_id == ticket_id
+        )
+        return [h[TicketQuery.AllowedHosts.host] for h in list(query)]
 
     @classmethod
     def get_tl_event_count(cls, action):
@@ -684,6 +701,12 @@ class TestIrodsAccessTicketCreateView(
             'samplesheets:irods_ticket_create',
             kwargs={'project': self.project.sodar_uuid},
         )
+        self.post_data = {
+            'path': self.coll.path,
+            'label': TICKET_LABEL,
+            'date_expires': self.date_expires,
+            'allowed_hosts': '',
+        }
         self.user.set_password('password')
 
     def test_get(self):
@@ -691,26 +714,35 @@ class TestIrodsAccessTicketCreateView(
         with self.login(self.user):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.context['form'].fields), 3)
-        self.assertIsNotNone(response.context['form'].fields.get('path'))
-        self.assertIsNotNone(response.context['form'].fields.get('label'))
-        self.assertIsNotNone(
-            response.context['form'].fields.get('date_expires')
+        form = response.context['form']
+        self.assertEqual(len(form.fields), 4)
+        self.assertIsNotNone(form.fields.get('path'))
+        self.assertEqual(form.fields['path'].disabled, False)
+        self.assertIsNotNone(form.fields.get('label'))
+        self.assertIsNotNone(form.fields.get('date_expires'))
+        self.assertEqual(form.initial['allowed_hosts'], '')
+
+    def test_get_hosts_default(self):
+        """Test GET with default value set in project"""
+        app_settings.set(
+            APP_NAME,
+            'irods_ticket_hosts',
+            '127.0.0.1,192.168.0.1',
+            project=self.project,
+        )
+        with self.login(self.user):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.context['form'].initial['allowed_hosts'],
+            '127.0.0.1, 192.168.0.1',
         )
 
     def test_post(self):
         """Test POST"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
-        self.assertEqual(self.get_tl_event_count('create'), 0)
-        self.assertEqual(self.get_app_alert_count('create'), 0)
-
-        post_data = {
-            'path': self.coll.path,
-            'date_expires': self.date_expires,
-            'label': TICKET_LABEL,
-        }
         with self.login(self.user):
-            response = self.client.post(self.url, post_data)
+            response = self.client.post(self.url, self.post_data)
             self.assertRedirects(
                 response,
                 reverse(
@@ -718,7 +750,6 @@ class TestIrodsAccessTicketCreateView(
                     kwargs={'project': self.project.sodar_uuid},
                 ),
             )
-
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         ticket = IrodsAccessTicket.objects.first()
         expected = {
@@ -730,10 +761,10 @@ class TestIrodsAccessTicketCreateView(
             'label': TICKET_LABEL,
             'user': self.user.pk,
             'date_expires': ticket.date_expires,
+            'allowed_hosts': None,
             'sodar_uuid': ticket.sodar_uuid,
         }
         self.assertEqual(model_to_dict(ticket), expected)
-
         # Assert ticket state in iRODS
         irods_ticket = self.get_irods_ticket(ticket)
         self.assertEqual(irods_ticket[TicketQuery.Ticket.type], 'read')
@@ -741,8 +772,17 @@ class TestIrodsAccessTicketCreateView(
         self.assertEqual(
             irods_ticket[TicketQuery.Collection.name], self.coll.path
         )
+        hosts = self.get_ticket_hosts(irods_ticket[TicketQuery.Ticket.id])
+        self.assertEqual(len(hosts), 0)
 
-        self.assertEqual(self.get_tl_event_count('create'), 1)
+    def test_post_alert(self):
+        """Test POST for app alert creation"""
+        self.assertEqual(IrodsAccessTicket.objects.count(), 0)
+        self.assertEqual(self.get_app_alert_count('create'), 0)
+        with self.login(self.user):
+            response = self.client.post(self.url, self.post_data)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         # As creator is owner, only inherited owner receives an alert
         self.assertEqual(self.get_app_alert_count('create'), 1)
         self.assertEqual(
@@ -752,29 +792,43 @@ class TestIrodsAccessTicketCreateView(
             self.user_owner_cat,
         )
 
+    def test_post_timeline(self):
+        """Test POST for timeline event creation"""
+        self.assertEqual(IrodsAccessTicket.objects.count(), 0)
+        self.assertEqual(self.get_tl_event_count('create'), 0)
+        with self.login(self.user):
+            response = self.client.post(self.url, self.post_data)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        self.assertEqual(self.get_tl_event_count('create'), 1)
+        ticket = IrodsAccessTicket.objects.first()
+        tl_event = TimelineEvent.objects.filter(
+            event_name='irods_ticket_create'
+        ).first()
+        self.assertEqual(tl_event.get_status().status_type, TL_STATUS_OK)
+        expected = {
+            'label': ticket.label,
+            'path': ticket.path,
+            'ticket': ticket.ticket,
+            'date_expires': ticket.get_date_expires(),
+            'allowed_hosts': ticket.get_allowed_hosts_list(),
+        }
+        self.assertEqual(tl_event.extra_data, expected)
+
     def test_post_contributor(self):
         """Test POST as contributor"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
         self.assertEqual(self.get_tl_event_count('create'), 0)
         self.assertEqual(self.get_app_alert_count('create'), 0)
-
         user_contributor = self.make_user('user_contributor')
         self.make_assignment_taskflow(
             self.project, user_contributor, self.role_contributor
         )
-
-        post_data = {
-            'path': self.coll.path,
-            'date_expires': self.date_expires,
-            'label': TICKET_LABEL,
-        }
         with self.login(user_contributor):
-            self.client.post(self.url, post_data)
-
+            self.client.post(self.url, self.post_data)
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         ticket = IrodsAccessTicket.objects.first()
         self.assertIsNotNone(self.get_irods_ticket(ticket))
-
         self.assertEqual(self.get_tl_event_count('create'), 1)
         # Both owners should receive alert
         self.assertEqual(self.get_app_alert_count('create'), 2)
@@ -789,13 +843,9 @@ class TestIrodsAccessTicketCreateView(
     def test_post_no_expiry(self):
         """Test POST with no expiry date"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
-        post_data = {
-            'path': self.coll.path,
-            'date_expires': '',
-            'label': TICKET_LABEL,
-        }
+        self.post_data['date_expires'] = ''
         with self.login(self.user):
-            response = self.client.post(self.url, post_data)
+            response = self.client.post(self.url, self.post_data)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         ticket = IrodsAccessTicket.objects.first()
@@ -803,18 +853,84 @@ class TestIrodsAccessTicketCreateView(
         irods_ticket = self.get_irods_ticket(ticket)
         self.assertIsNone(irods_ticket[TicketQuery.Ticket.expiry_ts])
 
+    def test_post_hosts(self):
+        """Test POST with allowed hosts"""
+        self.assertEqual(IrodsAccessTicket.objects.count(), 0)
+        self.post_data['allowed_hosts'] = '127.0.0.1,192.168.0.1'
+        with self.login(self.user):
+            response = self.client.post(self.url, self.post_data)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        ticket = IrodsAccessTicket.objects.first()
+        self.assertEqual(ticket.allowed_hosts, '127.0.0.1,192.168.0.1')
+        ticket_res = self.get_irods_ticket(ticket)
+        host_res = self.get_ticket_hosts(ticket_res[TicketQuery.Ticket.id])
+        self.assertEqual(host_res, ['127.0.0.1', '192.168.0.1'])
+
+    def test_post_hosts_single(self):
+        """Test POST with single allowed host"""
+        self.assertEqual(IrodsAccessTicket.objects.count(), 0)
+        self.post_data['allowed_hosts'] = '127.0.0.1'
+        with self.login(self.user):
+            response = self.client.post(self.url, self.post_data)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        ticket = IrodsAccessTicket.objects.first()
+        self.assertEqual(ticket.allowed_hosts, '127.0.0.1')
+        ticket_res = self.get_irods_ticket(ticket)
+        host_res = self.get_ticket_hosts(ticket_res[TicketQuery.Ticket.id])
+        self.assertEqual(host_res, ['127.0.0.1'])
+
+    def test_post_hosts_space(self):
+        """Test POST with allowed hosts and space in input"""
+        self.assertEqual(IrodsAccessTicket.objects.count(), 0)
+        self.post_data['allowed_hosts'] = '127.0.0.1, 192.168.0.1'
+        with self.login(self.user):
+            response = self.client.post(self.url, self.post_data)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        ticket = IrodsAccessTicket.objects.first()
+        self.assertEqual(ticket.allowed_hosts, '127.0.0.1,192.168.0.1')
+        ticket_res = self.get_irods_ticket(ticket)
+        host_res = self.get_ticket_hosts(ticket_res[TicketQuery.Ticket.id])
+        self.assertEqual(host_res, ['127.0.0.1', '192.168.0.1'])
+
+    def test_post_hosts_empty(self):
+        """Test POST with allowed hosts and empty value in input"""
+        self.assertEqual(IrodsAccessTicket.objects.count(), 0)
+        self.post_data['allowed_hosts'] = '127.0.0.1,,192.168.0.1'
+        with self.login(self.user):
+            response = self.client.post(self.url, self.post_data)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        ticket = IrodsAccessTicket.objects.first()
+        self.assertEqual(ticket.allowed_hosts, '127.0.0.1,192.168.0.1')
+        ticket_res = self.get_irods_ticket(ticket)
+        host_res = self.get_ticket_hosts(ticket_res[TicketQuery.Ticket.id])
+        self.assertEqual(host_res, ['127.0.0.1', '192.168.0.1'])
+
+    def test_post_inactive_user(self):
+        """Test POST with inactive user for receiving nofitications"""
+        self.user_owner_cat.is_active = False
+        self.user_owner_cat.save()
+        self.assertEqual(IrodsAccessTicket.objects.count(), 0)
+        self.assertEqual(self.get_app_alert_count('create'), 0)
+        with self.login(self.user):
+            self.client.post(self.url, self.post_data)
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        ticket = IrodsAccessTicket.objects.first()
+        irods_ticket = self.get_irods_ticket(ticket)
+        self.assertEqual(irods_ticket[TicketQuery.Ticket.type], 'read')
+        self.assertEqual(self.get_app_alert_count('create'), 0)
+
     def test_post_invalid_path(self):
         """Test POST with invalid iRODS path (should fail)"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
         self.assertEqual(self.get_tl_event_count('create'), 0)
         self.assertEqual(self.get_app_alert_count('create'), 0)
-        post_data = {
-            'path': self.coll.path + '/..',
-            'date_expires': self.date_expires,
-            'label': TICKET_LABEL,
-        }
+        self.post_data['path'] = self.coll.path + '/..'
         with self.login(self.user):
-            response = self.client.post(self.url, post_data)
+            response = self.client.post(self.url, self.post_data)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
         self.assertEqual(self.get_tl_event_count('create'), 0)
@@ -823,70 +939,52 @@ class TestIrodsAccessTicketCreateView(
     def test_post_expired(self):
         """Test POST with expired date (should fail)"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
-        post_data = {
-            'path': self.coll.path,
-            'date_expires': (timezone.localtime() - timedelta(days=1)).strftime(
-                '%Y-%m-%d'
-            ),
-            'label': TICKET_LABEL,
-        }
+        self.post_data['date_expires'] = (
+            timezone.localtime() - timedelta(days=1)
+        ).strftime('%Y-%m-%d')
         with self.login(self.user):
-            response = self.client.post(self.url, post_data)
+            response = self.client.post(self.url, self.post_data)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
 
     def test_post_assay_root(self):
         """Test POST with assay root path (should fail)"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
-        post_data = {
-            'path': self.assay_path,
-            'date_expires': self.date_expires,
-            'label': TICKET_LABEL,
-        }
+        self.post_data['path'] = self.assay_path
         with self.login(self.user):
-            response = self.client.post(self.url, post_data)
+            response = self.client.post(self.url, self.post_data)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
 
     def test_post_study_path(self):
         """Test POST with study path (should fail)"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
-        post_data = {
-            'path': self.irods_backend.get_path(self.study),
-            'date_expires': self.date_expires,
-            'label': TICKET_LABEL,
-        }
+        self.post_data['path'] = self.irods_backend.get_path(self.study)
         with self.login(self.user):
-            response = self.client.post(self.url, post_data)
+            response = self.client.post(self.url, self.post_data)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
 
     def test_post_non_existing_path(self):
         """Test POST with non-existing path (should fail)"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
-        post_data = {
-            'path': os.path.join(self.assay_path, 'NOT-A-REAL-COLLECTION'),
-            'date_expires': self.date_expires,
-            'label': TICKET_LABEL,
-        }
+        self.post_data['path'] = os.path.join(
+            self.assay_path, 'NOT-A-REAL-COLLECTION'
+        )
         with self.login(self.user):
-            response = self.client.post(self.url, post_data)
+            response = self.client.post(self.url, self.post_data)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
 
-    def test_post_object_path(self):
-        """Test POST with path to data object (should fail)"""
+    def test_post_data_object_path(self):
+        """Test POST with path to data object"""
         obj = self.make_irods_object(self.coll, 'test.txt')
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
-        post_data = {
-            'path': obj.path,
-            'date_expires': self.date_expires,
-            'label': TICKET_LABEL,
-        }
+        self.post_data['path'] = obj.path
         with self.login(self.user):
-            response = self.client.post(self.url, post_data)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(IrodsAccessTicket.objects.count(), 0)
+            response = self.client.post(self.url, self.post_data)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
 
     def test_post_existing_ticket(self):
         """Test POST with prior ticket for the same path (should fail)"""
@@ -899,13 +997,8 @@ class TestIrodsAccessTicketCreateView(
             user=self.user,
         )
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
-        post_data = {
-            'path': self.coll.path,
-            'date_expires': self.date_expires,
-            'label': TICKET_LABEL,
-        }
         with self.login(self.user):
-            response = self.client.post(self.url, post_data)
+            response = self.client.post(self.url, self.post_data)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
 
@@ -915,18 +1008,15 @@ class TestIrodsAccessTicketCreateView(
             'AltProject', PROJECT_TYPE_PROJECT, self.category, self.user
         )
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
-        post_data = {
-            'path': self.assay_path,  # Path is still for self.project
-            'date_expires': self.date_expires,
-            'label': TICKET_LABEL,
-        }
+        # Path is still for self.project
+        self.post_data['path'] = self.assay_path
         with self.login(self.user):
             response = self.client.post(
                 reverse(
                     'samplesheets:irods_ticket_create',
                     kwargs={'project': alt_project.sodar_uuid},
                 ),
-                post_data,
+                self.post_data,
             )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
@@ -969,30 +1059,55 @@ class TestIrodsAccessTicketUpdateView(
             label=TICKET_LABEL,
             date_expires=self.date_expires,
         )
+        # Issue ticket in iRODS
+        self.irods_backend.issue_ticket(
+            irods=self.irods,
+            mode=TICKET_MODE_READ,
+            path=self.ticket.path,
+            ticket_str=self.ticket.ticket,
+            date_expires=self.ticket.date_expires,
+            allowed_hosts=['127.0.0.1', '192.168.0.1'],
+        )
         self.url = reverse(
             'samplesheets:irods_ticket_update',
             kwargs={'irodsaccessticket': self.ticket.sodar_uuid},
         )
+        self.post_data = {
+            'label': TICKET_LABEL_UPDATED,
+            'date_expires': '',
+            'allowed_hosts': '127.0.0.1,192.168.0.1',
+        }
 
     def test_get(self):
         """Test IrodsAccessTicketUpdateView GET"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         with self.login(self.user):
             response = self.client.get(self.url)
-        form_data = response.context['form']
-        self.assertEqual(form_data.initial['date_expires'], self.date_expires)
-        self.assertEqual(form_data.initial['label'], self.ticket.label)
-        self.assertEqual(form_data.initial['path'], self.ticket.path)
+        form = response.context['form']
+        self.assertEqual(form.fields['path'].disabled, True)
+        self.assertEqual(form.initial['path'], self.ticket.path)
+        self.assertEqual(form.initial['date_expires'], self.date_expires)
+        self.assertEqual(form.initial['label'], self.ticket.label)
 
     def test_post(self):
         """Test POST"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        ticket_res = self.get_irods_ticket(self.ticket)
+        self.assertEqual(ticket_res[TicketQuery.Ticket.type], TICKET_MODE_READ)
+        obj_exp = self.ticket.date_expires.replace(tzinfo=pytz.timezone('GMT'))
+        self.assertEqual(
+            int(ticket_res[TicketQuery.Ticket.expiry_ts]),
+            int(obj_exp.timestamp()),
+        )
+        self.assertEqual(
+            ticket_res[TicketQuery.Collection.name], self.coll.path
+        )
+        host_res = self.get_ticket_hosts(ticket_res[TicketQuery.Ticket.id])
+        self.assertEqual(host_res, ['127.0.0.1', '192.168.0.1'])
         self.assertEqual(self.get_tl_event_count('update'), 0)
-        self.assertEqual(self.get_app_alert_count('update'), 0)
 
-        post_data = {'label': TICKET_LABEL_UPDATED, 'date_expires': ''}
         with self.login(self.user):
-            response = self.client.post(self.url, post_data)
+            response = self.client.post(self.url, self.post_data)
             self.assertRedirects(
                 response,
                 reverse(
@@ -1004,10 +1119,115 @@ class TestIrodsAccessTicketUpdateView(
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         self.ticket.refresh_from_db()
         self.assertEqual(self.ticket.get_date_expires(), None)
-        self.assertEqual(self.ticket.label, post_data['label'])
+        self.assertEqual(self.ticket.label, self.post_data['label'])
         self.assertEqual(self.ticket.path, self.coll.path)  # Path not updated
+        self.assertEqual(self.ticket.allowed_hosts, '127.0.0.1,192.168.0.1')
+        ticket_res = self.get_irods_ticket(self.ticket)
+        self.assertEqual(ticket_res[TicketQuery.Ticket.expiry_ts], None)
+        self.assertEqual(
+            ticket_res[TicketQuery.Collection.name], self.coll.path
+        )
+        host_res = self.get_ticket_hosts(ticket_res[TicketQuery.Ticket.id])
+        self.assertEqual(host_res, ['127.0.0.1', '192.168.0.1'])
         self.assertEqual(self.get_tl_event_count('update'), 1)
+
+    def test_post_alert(self):
+        """Test POST for app alert creation"""
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        self.assertEqual(self.get_app_alert_count('update'), 0)
+        with self.login(self.user):
+            response = self.client.post(self.url, self.post_data)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         self.assertEqual(self.get_app_alert_count('update'), 1)
+
+    def test_post_timeline(self):
+        """Test POST for timeline event creation"""
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        self.assertEqual(self.get_tl_event_count('update'), 0)
+        with self.login(self.user):
+            response = self.client.post(self.url, self.post_data)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        self.assertEqual(self.get_tl_event_count('update'), 1)
+        # ticket = IrodsAccessTicket.objects.first()
+        self.ticket.refresh_from_db()
+        tl_event = TimelineEvent.objects.filter(
+            event_name='irods_ticket_update'
+        ).first()
+        self.assertEqual(tl_event.get_status().status_type, TL_STATUS_OK)
+        expected = {
+            'label': self.ticket.label,
+            'path': self.ticket.path,
+            'ticket': self.ticket.ticket,
+            'date_expires': self.ticket.get_date_expires(),
+            'allowed_hosts': self.ticket.get_allowed_hosts_list(),
+        }
+        self.assertEqual(tl_event.extra_data, expected)
+
+    def test_post_hosts_remove_all(self):
+        """Test POST with all allowed hosts removed"""
+        self.post_data['allowed_hosts'] = ''
+        with self.login(self.user):
+            response = self.client.post(self.url, self.post_data)
+        self.assertEqual(response.status_code, 302)
+        self.ticket.refresh_from_db()
+        self.assertEqual(self.ticket.allowed_hosts, None)
+        ticket_res = self.get_irods_ticket(self.ticket)
+        host_res = self.get_ticket_hosts(ticket_res[TicketQuery.Ticket.id])
+        self.assertEqual(host_res, [])
+
+    def test_post_hosts_remove_one(self):
+        """Test POST with one allowed host removed"""
+        self.post_data['allowed_hosts'] = '192.168.0.1'
+        with self.login(self.user):
+            response = self.client.post(self.url, self.post_data)
+        self.assertEqual(response.status_code, 302)
+        self.ticket.refresh_from_db()
+        self.assertEqual(self.ticket.allowed_hosts, '192.168.0.1')
+        ticket_res = self.get_irods_ticket(self.ticket)
+        host_res = self.get_ticket_hosts(ticket_res[TicketQuery.Ticket.id])
+        self.assertEqual(host_res, ['192.168.0.1'])
+
+    def test_post_hosts_replace(self):
+        """Test POST with allowed host replaced"""
+        self.post_data['allowed_hosts'] = '127.0.0.1,2.22.231.13'
+        with self.login(self.user):
+            response = self.client.post(self.url, self.post_data)
+        self.assertEqual(response.status_code, 302)
+        self.ticket.refresh_from_db()
+        self.assertEqual(self.ticket.allowed_hosts, '127.0.0.1,2.22.231.13')
+        ticket_res = self.get_irods_ticket(self.ticket)
+        host_res = self.get_ticket_hosts(ticket_res[TicketQuery.Ticket.id])
+        self.assertEqual(host_res, ['127.0.0.1', '2.22.231.13'])
+
+    def test_post_hosts_add(self):
+        """Test POST with allowed host added"""
+        self.post_data['allowed_hosts'] = '127.0.0.1,192.168.0.1,2.22.231.13'
+        with self.login(self.user):
+            response = self.client.post(self.url, self.post_data)
+        self.assertEqual(response.status_code, 302)
+        self.ticket.refresh_from_db()
+        self.assertEqual(
+            self.ticket.allowed_hosts, '127.0.0.1,192.168.0.1,2.22.231.13'
+        )
+        ticket_res = self.get_irods_ticket(self.ticket)
+        host_res = self.get_ticket_hosts(ticket_res[TicketQuery.Ticket.id])
+        self.assertEqual(host_res, ['127.0.0.1', '192.168.0.1', '2.22.231.13'])
+
+    def test_post_inactive_user(self):
+        """Test POST with inactive user for receiving notifications"""
+        self.user_owner_cat.is_active = False
+        self.user_owner_cat.save()
+        self.assertEqual(self.get_tl_event_count('update'), 0)
+        self.assertEqual(self.get_app_alert_count('update'), 0)
+        with self.login(self.user):
+            self.client.post(self.url, self.post_data)
+        self.ticket.refresh_from_db()
+        self.assertEqual(self.ticket.get_date_expires(), None)
+        self.assertEqual(self.ticket.label, self.post_data['label'])
+        self.assertEqual(self.get_tl_event_count('update'), 1)
+        self.assertEqual(self.get_app_alert_count('update'), 0)
 
 
 class TestIrodsAccessTicketDeleteView(
@@ -1051,7 +1271,7 @@ class TestIrodsAccessTicketDeleteView(
             'read',
             self.coll.path,
             ticket_str=TICKET_STR,
-            expiry_date=None,
+            date_expires=None,
         )
         self.url = reverse(
             'samplesheets:irods_ticket_delete',
@@ -1084,6 +1304,21 @@ class TestIrodsAccessTicketDeleteView(
         self.assertIsNone(self.get_irods_ticket(self.ticket))
         self.assertEqual(self.get_tl_event_count('delete'), 1)
         self.assertEqual(self.get_app_alert_count('delete'), 1)
+
+    def test_post_inactive_user(self):
+        """Test POST with inactive user for receiving nofitications"""
+        self.user_owner_cat.is_active = False
+        self.user_owner_cat.save()
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        self.assertIsNotNone(self.get_irods_ticket(self.ticket))
+        self.assertEqual(self.get_tl_event_count('delete'), 0)
+        self.assertEqual(self.get_app_alert_count('delete'), 0)
+        with self.login(self.user):
+            self.client.post(self.url)
+        self.assertEqual(IrodsAccessTicket.objects.count(), 0)
+        self.assertIsNone(self.get_irods_ticket(self.ticket))
+        self.assertEqual(self.get_tl_event_count('delete'), 1)
+        self.assertEqual(self.get_app_alert_count('delete'), 0)
 
 
 class TestIrodsDataRequestCreateView(IrodsDataRequestViewTestBase):
@@ -1133,6 +1368,21 @@ class TestIrodsDataRequestCreateView(IrodsDataRequestViewTestBase):
         self._assert_alert_count(EVENT_CREATE, self.user, 1)
         self._assert_alert_count(EVENT_CREATE, self.user_delegate, 1)
 
+    def test_post_inactive_user(self):
+        """Test POST with inactive user for receiving nofitications"""
+        self.user_delegate.is_active = False
+        self.user_delegate.save()
+        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+        self._assert_tl_count(EVENT_CREATE, 0)
+        self._assert_alert_count(EVENT_CREATE, self.user, 0)
+        self._assert_alert_count(EVENT_CREATE, self.user_delegate, 0)
+        with self.login(self.user_contributor):
+            self.client.post(self.url, self.post_data)
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        self._assert_tl_count(EVENT_CREATE, 1)
+        self._assert_alert_count(EVENT_CREATE, self.user, 1)
+        self._assert_alert_count(EVENT_CREATE, self.user_delegate, 0)
+
     def test_post_trailing_slash(self):
         """Test POST with trailing slash in path"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
@@ -1181,7 +1431,7 @@ class TestIrodsDataRequestCreateView(IrodsDataRequestViewTestBase):
         )
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
 
-    def test_create_multiple(self):
+    def test_post_multiple(self):
         """Test POST with multiple requests for same path"""
         path2 = os.path.join(self.assay_path, IRODS_FILE_NAME2)
         self.irods.data_objects.create(path2)
@@ -1456,8 +1706,10 @@ class TestIrodsDataRequestAcceptView(
         self._assert_tl_count(EVENT_ACCEPT, 0)
         self._assert_alert_count(EVENT_CREATE, self.user, 1)
         self._assert_alert_count(EVENT_CREATE, self.user_delegate, 1)
+        self._assert_alert_count(EVENT_CREATE, self.user_contributor, 0)
         self._assert_alert_count(EVENT_ACCEPT, self.user, 0)
         self._assert_alert_count(EVENT_ACCEPT, self.user_delegate, 0)
+        self._assert_alert_count(EVENT_ACCEPT, self.user_contributor, 0)
         mail_count = len(mail.outbox)
 
         obj = IrodsDataRequest.objects.first()
@@ -1486,8 +1738,10 @@ class TestIrodsDataRequestAcceptView(
         self._assert_tl_count(EVENT_ACCEPT, 1)
         self._assert_alert_count(EVENT_CREATE, self.user, 0)
         self._assert_alert_count(EVENT_CREATE, self.user_delegate, 0)
+        self._assert_alert_count(EVENT_CREATE, self.user_contributor, 0)
         self._assert_alert_count(EVENT_ACCEPT, self.user, 0)
         self._assert_alert_count(EVENT_ACCEPT, self.user_delegate, 0)
+        self._assert_alert_count(EVENT_ACCEPT, self.user_contributor, 1)
         self.assert_irods_obj(self.obj_path, False)
         tl_event = TimelineEvent.objects.filter(event_name=EVENT_ACCEPT).first()
         self.assertEqual(tl_event.status_changes.count(), 2)
@@ -1498,6 +1752,78 @@ class TestIrodsDataRequestAcceptView(
         self.assertEqual(
             mail.outbox[-1].recipients(), [self.user_contributor.email]
         )
+
+    def test_post_checksum_md5(self):
+        """Test POST to accept delete request with MD5 checksum"""
+        self.assert_irods_obj(self.obj_path)
+        self.make_checksum_object(self.file_obj)
+        self.assert_irods_obj(self.obj_path + '.md5')
+        with self.login(self.user_contributor):
+            self.client.post(self.url_create, self.post_data)
+        obj = IrodsDataRequest.objects.first()
+        with self.login(self.user):
+            self.client.post(
+                reverse(
+                    'samplesheets:irods_request_accept',
+                    kwargs={'irodsdatarequest': obj.sodar_uuid},
+                ),
+                {'confirm': True},
+            )
+        obj.refresh_from_db()
+        self.assertEqual(obj.status, IRODS_REQUEST_STATUS_ACCEPTED)
+        self.assert_irods_obj(self.obj_path, False)
+        self.assert_irods_obj(self.obj_path + '.md5', False)
+
+    @override_settings(IRODS_HASH_SCHEME=HASH_SCHEME_SHA256)
+    def test_post_checksum_sha256(self):
+        """Test POST to accept delete request with SHA256 checksum"""
+        self.assert_irods_obj(self.obj_path)
+        self.make_checksum_object(self.file_obj, scheme=HASH_SCHEME_SHA256)
+        self.assert_irods_obj(self.obj_path + '.sha256')
+        with self.login(self.user_contributor):
+            self.client.post(self.url_create, self.post_data)
+        obj = IrodsDataRequest.objects.first()
+        with self.login(self.user):
+            self.client.post(
+                reverse(
+                    'samplesheets:irods_request_accept',
+                    kwargs={'irodsdatarequest': obj.sodar_uuid},
+                ),
+                {'confirm': True},
+            )
+        obj.refresh_from_db()
+        self.assertEqual(obj.status, IRODS_REQUEST_STATUS_ACCEPTED)
+        self.assert_irods_obj(self.obj_path, False)
+        self.assert_irods_obj(self.obj_path + '.sha256', False)
+
+    def test_post_inactive_user(self):
+        """Test POST to accept delete request created by inactive user"""
+        self.assert_irods_obj(self.obj_path)
+        with self.login(self.user_contributor):
+            self.client.post(self.url_create, self.post_data)
+        self.user_contributor.is_active = False
+        self.user_contributor.save()
+
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        self._assert_alert_count(EVENT_ACCEPT, self.user_contributor, 0)
+        mail_count = len(mail.outbox)
+
+        obj = IrodsDataRequest.objects.first()
+        with self.login(self.user):
+            self.client.post(
+                reverse(
+                    'samplesheets:irods_request_accept',
+                    kwargs={'irodsdatarequest': obj.sodar_uuid},
+                ),
+                {'confirm': True},
+            )
+
+        obj.refresh_from_db()
+        self.assertEqual(obj.status, IRODS_REQUEST_STATUS_ACCEPTED)
+        # No alert should be raised
+        self._assert_alert_count(EVENT_ACCEPT, self.user_contributor, 0)
+        self.assert_irods_obj(self.obj_path, False)
+        self.assertEqual(len(mail.outbox), mail_count)  # No new mail
 
     def test_post_no_request(self):
         """Test POST with non-existing delete request"""
@@ -2100,11 +2426,6 @@ class TestIrodsDataRequestRejectView(
 
     def test_get_superuser(self):
         """Test IrodsDataRequestRejectView GET as superuser"""
-        self.assertEqual(IrodsDataRequest.objects.count(), 0)
-        self.assert_irods_obj(self.obj_path)
-        self._assert_alert_count(EVENT_REJECT, self.user, 0)
-        self._assert_alert_count(EVENT_REJECT, self.user_delegate, 0)
-        self._assert_alert_count(EVENT_REJECT, self.user_contributor, 0)
         obj = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
@@ -2112,6 +2433,11 @@ class TestIrodsDataRequestRejectView(
             status=IRODS_REQUEST_STATUS_ACTIVE,
             user=self.user_contributor,
         )
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        self.assert_irods_obj(self.obj_path)
+        self._assert_alert_count(EVENT_REJECT, self.user, 0)
+        self._assert_alert_count(EVENT_REJECT, self.user_delegate, 0)
+        self._assert_alert_count(EVENT_REJECT, self.user_contributor, 0)
         mail_count = len(mail.outbox)
 
         with self.login(self.user):
@@ -2143,6 +2469,34 @@ class TestIrodsDataRequestRejectView(
         self.assertEqual(
             mail.outbox[-1].recipients(), [self.user_contributor.email]
         )
+
+    def test_get_inactive_user(self):
+        """Test GET with request created by inactive user"""
+        obj = self.make_irods_request(
+            project=self.project,
+            action=IRODS_REQUEST_ACTION_DELETE,
+            path=self.obj_path,
+            status=IRODS_REQUEST_STATUS_ACTIVE,
+            user=self.user_contributor,
+        )
+        self.user_contributor.is_active = False
+        self.user_contributor.save()
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        self._assert_alert_count(EVENT_REJECT, self.user_contributor, 0)
+        mail_count = len(mail.outbox)
+
+        with self.login(self.user):
+            self.client.get(
+                reverse(
+                    'samplesheets:irods_request_reject',
+                    kwargs={'irodsdatarequest': obj.sodar_uuid},
+                ),
+            )
+
+        obj.refresh_from_db()
+        self.assertEqual(obj.status, IRODS_REQUEST_STATUS_REJECTED)
+        self._assert_alert_count(EVENT_REJECT, self.user_contributor, 0)
+        self.assertEqual(len(mail.outbox), mail_count)
 
     def test_get_owner(self):
         """Test GET as owner"""
@@ -2593,7 +2947,9 @@ class TestProjectUpdateView(TaskflowViewTestBase):
         self.values['parent'] = self.category.sodar_uuid
         self.values['owner'] = self.user.sodar_uuid
         self.values.update(
-            app_settings.get_all(project=self.project, post_safe=True)
+            app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=self.project, post_safe=True
+            )
         )
         self.url = reverse(
             'projectroles:update',

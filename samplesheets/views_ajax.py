@@ -16,7 +16,6 @@ from rest_framework.response import Response
 
 # Projectroles dependency
 from projectroles.constants import SODAR_CONSTANTS
-from projectroles.models import Role
 from projectroles.plugins import get_backend_api
 from projectroles.views_ajax import SODARBaseProjectAjaxView
 
@@ -238,32 +237,6 @@ class BaseSheetEditAjaxView(SODARBaseProjectAjaxView):
             )
 
 
-class EditConfigMixin:
-    """Mixin class to check if user can edit column configuration"""
-
-    @classmethod
-    def can_edit_config(cls, user, project):
-        if user.is_superuser:
-            return True
-        min_role_set = app_settings.get(
-            APP_NAME, 'edit_config_min_role', project=project
-        )
-        min_role = Role.objects.filter(name=min_role_set).first()
-        if not min_role:
-            logger.error('Role "{}" not found'.format(min_role_set))
-            return False
-        if project.is_owner(user):  # Local or inherited owner
-            user_role = Role.objects.filter(
-                name=SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
-            ).first()
-        else:
-            role_as = project.get_role(user)
-            if not role_as:
-                return False
-            user_role = role_as.role
-        return user_role.rank <= min_role.rank
-
-
 class SheetVersionMixin:
     """Mixin for sheet version saving"""
 
@@ -300,7 +273,7 @@ class SheetVersionMixin:
 # Ajax Views -------------------------------------------------------------------
 
 
-class SheetContextAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
+class SheetContextAjaxView(SODARBaseProjectAjaxView):
     """View to retrieve sample sheet context data"""
 
     permission_required = 'samplesheets.view_sheet'
@@ -329,7 +302,6 @@ class SheetContextAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
             ),
             'alerts': [],
             'csrf_token': get_token(request),
-            'investigation': {},
             'project_uuid': str(project.sodar_uuid),
             'user_uuid': (
                 str(request.user.sodar_uuid)
@@ -339,6 +311,10 @@ class SheetContextAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
             'sheet_sync_enabled': app_settings.get(
                 APP_NAME, 'sheet_sync_enable', project=project
             ),
+            'site_read_only': app_settings.get(
+                'projectroles', 'site_read_only'
+            ),
+            'investigation': {},
         }
 
         if inv:
@@ -495,9 +471,11 @@ class SheetContextAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
             'view_versions': request.user.has_perm(
                 'samplesheets.view_versions', project
             ),
-            'edit_config': self.can_edit_config(request.user, project),
             'update_cache': request.user.has_perm(
                 'samplesheets.update_cache', project
+            ),
+            'view_tickets': request.user.has_perm(
+                'samplesheets.view_tickets', project
             ),
             'is_superuser': request.user.is_superuser,
         }
@@ -638,6 +616,15 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
         project = inv.project
         # Return extra edit mode data
         edit = bool(request.GET.get('edit'))
+        if (
+            edit
+            and app_settings.get('projectroles', 'site_read_only')
+            and not request.user.is_superuser
+        ):
+            return Response(
+                {'render_error': 'Site in read-only mode, editing not allowed'},
+                status=403,
+            )
         allow_editing = app_settings.get(
             APP_NAME, 'allow_editing', project=project
         )
@@ -1722,7 +1709,7 @@ class SheetEditFinishAjaxView(SheetVersionMixin, SODARBaseProjectAjaxView):
         return Response({'detail': export_ex}, status=500)
 
 
-class SheetEditConfigAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
+class SheetEditConfigAjaxView(SODARBaseProjectAjaxView):
     """View to update sample sheet editing configuration"""
 
     # NOTE: Currently not requiring manage_sheet perm (see issue #880)
@@ -1738,11 +1725,6 @@ class SheetEditConfigAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
         sheet_config = app_settings.get(
             APP_NAME, 'sheet_config', project=project
         )
-        if not self.can_edit_config(request.user, project):
-            return Response(
-                {'detail': 'User not allowed to modify column config'},
-                status=403,
-            )
         studies = []
 
         for field in fields:

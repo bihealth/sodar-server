@@ -6,15 +6,17 @@ import sys
 
 from irods.exception import CAT_NO_ROWS_FOUND
 from irods.models import DataObject
+from packaging.version import parse as parse_version
 
 from django.conf import settings
 from django.urls import reverse
 
-from rest_framework import status
+from rest_framework import serializers, status
 from rest_framework.exceptions import (
     APIException,
     ParseError,
     ValidationError,
+    NotAcceptable,
     NotFound,
     PermissionDenied,
 )
@@ -28,9 +30,10 @@ from rest_framework.generics import (
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
-from rest_framework.schemas.openapi import AutoSchema
 from rest_framework.versioning import AcceptHeaderVersioning
 from rest_framework.views import APIView
+
+from drf_spectacular.utils import extend_schema, inline_serializer
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
@@ -42,7 +45,6 @@ from projectroles.models import (
 )
 from projectroles.plugins import get_backend_api
 from projectroles.views_api import (
-    SODARAPIBaseMixin,
     SODARAPIBaseProjectMixin,
     SODARAPIGenericProjectMixin,
     SODARPageNumberPagination,
@@ -84,11 +86,16 @@ table_builder = SampleSheetTableBuilder()
 PROJECT_ROLE_GUEST = SODAR_CONSTANTS['PROJECT_ROLE_GUEST']
 
 # Local constants
-SAMPLESHEETS_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar.samplesheets+json'
-SAMPLESHEETS_API_ALLOWED_VERSIONS = ['1.0']
-SAMPLESHEETS_API_DEFAULT_VERSION = '1.0'
-MD5_RE = re.compile(r'([a-fA-F\d]{32})')
 APP_NAME = 'samplesheets'
+SAMPLESHEETS_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar.samplesheets+json'
+SAMPLESHEETS_API_ALLOWED_VERSIONS = ['1.0', '1.1']
+SAMPLESHEETS_API_DEFAULT_VERSION = '1.1'
+HASH_SCHEME_MD5 = 'MD5'
+HASH_SCHEME_SHA256 = 'SHA256'
+CHECKSUM_RE = {
+    HASH_SCHEME_MD5: re.compile(r'^([a-fA-F\d]{32})$'),
+    HASH_SCHEME_SHA256: re.compile(r'^([a-fA-F\d]{64})$'),
+}
 IRODS_QUERY_ERROR_MSG = 'Exception querying iRODS objects'
 IRODS_REQUEST_EX_MSG = 'iRODS data request failed'
 IRODS_TICKET_EX_MSG = 'iRODS access ticket failed'
@@ -96,6 +103,10 @@ IRODS_TICKET_NO_UPDATE_FIELDS_MSG = 'No fields to update'
 FILE_EXISTS_RESTRICT_MSG = (
     'File exist query access restricted: user does not have guest access or '
     'above in any project (SHEETS_API_FILE_EXISTS_RESTRICT=True)'
+)
+FILE_LIST_PAGINATE_VERSION_MSG = 'Pagination not supported in API version 1.0'
+HOST_VERSION_ERR_MSG = (
+    'Field allowed_hosts requires samplesheets API version 1.1 or above'
 )
 
 
@@ -156,6 +167,14 @@ class InvestigationRetrieveAPIView(
     serializer_class = InvestigationSerializer
 
 
+@extend_schema(
+    responses={
+        '200': inline_serializer(
+            'IrodsCollsCreateResponse',
+            fields={'path': serializers.CharField()},
+        ),
+    }
+)
 class IrodsCollsCreateAPIView(
     IrodsCollsCreateViewMixin,
     SamplesheetsAPIVersioningMixin,
@@ -178,6 +197,7 @@ class IrodsCollsCreateAPIView(
 
     http_method_names = ['post']
     permission_required = 'samplesheets.create_colls'
+    serializer_class = None
 
     def post(self, request, *args, **kwargs):
         """POST request for creating iRODS collections"""
@@ -227,15 +247,9 @@ class SheetISAExportAPIView(
     **Methods:** ``GET``
     """
 
-    class SheetISAExportSchema(AutoSchema):
-        def get_operation_id_base(self, path, method, action):
-            if '/zip/' in path:
-                return 'retrieveSheetISAExportZip'
-            return 'retrieveSheetISAExportJSON'
-
     http_method_names = ['get']
     permission_required = 'samplesheets.export_sheet'
-    schema = SheetISAExportSchema()
+    serializer_class = None
 
     def get(self, request, *args, **kwargs):
         project = self.get_project()
@@ -256,6 +270,17 @@ class SheetISAExportAPIView(
             raise APIException('Unable to export ISA-Tab: {}'.format(ex))
 
 
+@extend_schema(
+    responses={
+        '200': inline_serializer(
+            'SheetImportResponse',
+            fields={
+                'detail': serializers.CharField(),
+                'sodar_warnings': serializers.ListField(),
+            },
+        ),
+    }
+)
 class SheetImportAPIView(
     SheetImportMixin,
     SamplesheetsAPIVersioningMixin,
@@ -281,6 +306,7 @@ class SheetImportAPIView(
 
     http_method_names = ['post']
     permission_required = 'samplesheets.edit_sheet'
+    serializer_class = None
 
     def post(self, request, *args, **kwargs):
         """Handle POST request for submitting"""
@@ -397,15 +423,19 @@ class IrodsAccessTicketRetrieveAPIView(
     - ``study``: Study UUID (string)
     - ``date_created``: Creation datetime (YYYY-MM-DDThh:mm:ssZ)
     - ``date_expires``: Expiry datetime (YYYY-MM-DDThh:mm:ssZ or null)
+    - ``allowed_hosts``: Allowed hosts for ticket access (list)
     - ``user``: UUID of user who created the request (string)
     - ``is_active``: Whether the request is currently active (boolean)
     - ``sodar_uuid``: IrodsAccessTicket UUID (string)
+
+    **Version Changes**:
+
+    - ``1.1``: Add ``allowed_hosts`` field
     """
 
     lookup_field = 'sodar_uuid'
     lookup_url_kwarg = 'irodsaccessticket'
-    permission_required = 'samplesheets.edit_sheet'
-    schema = AutoSchema(operation_id_base='retrieveIrodsAccessTicket')
+    permission_required = 'samplesheets.view_tickets'
     serializer_class = IrodsAccessTicketSerializer
     queryset_project_field = 'study__investigation__project'
 
@@ -433,8 +463,7 @@ class IrodsAccessTicketListAPIView(
     """
 
     pagination_class = SODARPageNumberPagination
-    permission_required = 'samplesheets.edit_sheet'
-    schema = AutoSchema(operation_id_base='listIrodsAccessTicket')
+    permission_required = 'samplesheets.view_tickets'
     serializer_class = IrodsAccessTicketSerializer
 
     def get_queryset(self):
@@ -456,7 +485,7 @@ class IrodsAccessTicketCreateAPIView(
     CreateAPIView,
 ):
     """
-    Create an iRODS access ticket for a project.
+    Create an iRODS access ticket for collection or data object in a project.
 
     **URL:** ``/samplesheets/api/irods/ticket/create/{Project.sodar_uuid}``
 
@@ -464,11 +493,16 @@ class IrodsAccessTicketCreateAPIView(
 
     **Parameters:**
 
-    - ``path``: Full iRODS path (string)
+    - ``path``: Full iRODS path to collection or data object (string)
     - ``label``: Text label for ticket (string, optional)
     - ``date_expires``: Expiration date (YYYY-MM-DDThh:mm:ssZ, optional)
+    - ``allowed_hosts``: Allowed hosts for ticket access (list, optional)
 
     **Returns:** Ticket dict, see ``IrodsAccessTicketRetrieveAPIView``
+
+    **Version Changes**:
+
+    - ``1.1``: Add ``allowed_hosts`` field
     """
 
     permission_required = 'samplesheets.edit_sheet'
@@ -482,6 +516,20 @@ class IrodsAccessTicketCreateAPIView(
         context['user'] = self.request.user
         return context
 
+    def create(self, request, *args, **kwargs):
+        # If API v1.0, fail if attribute is present, set default if not
+        version = parse_version(self.request.version)
+        if version < parse_version('1.1'):
+            if 'allowed_hosts' in request.data:
+                raise ValidationError(HOST_VERSION_ERR_MSG)
+            default_hosts = app_settings.get(
+                APP_NAME, 'irods_ticket_hosts', project=self.get_project()
+            )
+            request.data['allowed_hosts'] = [
+                h.strip() for h in default_hosts.split(',') if h.strip()
+            ]
+        return super().create(request, *args, **kwargs)
+
     def perform_create(self, serializer):
         """Override perform_create() to create IrodsAccessTicket"""
         irods_backend = get_backend_api('omics_irods')
@@ -492,7 +540,10 @@ class IrodsAccessTicketCreateAPIView(
                     'read',
                     serializer.validated_data.get('path'),
                     ticket_str=build_secret(16),
-                    expiry_date=serializer.validated_data.get('date_expires'),
+                    date_expires=serializer.validated_data.get('date_expires'),
+                    allowed_hosts=serializer.validated_data.get(
+                        'allowed_hosts'
+                    ),
                 )
         except Exception as ex:
             raise ValidationError(
@@ -524,8 +575,13 @@ class IrodsAccessTicketUpdateAPIView(
 
     - ``label``: Label (string)
     - ``date_expires``: Expiration date (YYYY-MM-DDThh:mm:ssZ, optional)
+    - ``allowed_hosts``: Allowed hosts for ticket access (list, optional)
 
     **Returns:** Ticket dict, see ``IrodsAccessTicketRetrieveAPIView``
+
+    **Version Changes**:
+
+    - ``1.1``: Add ``allowed_hosts`` field
     """
 
     lookup_url_kwarg = 'irodsaccessticket'
@@ -533,11 +589,43 @@ class IrodsAccessTicketUpdateAPIView(
     serializer_class = IrodsAccessTicketSerializer
     queryset_project_field = 'study__investigation__project'
 
+    def update(self, request, *args, **kwargs):
+        version = parse_version(self.request.version)
+        if version < parse_version('1.1'):
+            if 'allowed_hosts' in request.data:
+                raise ValidationError(HOST_VERSION_ERR_MSG)
+            # Set current value for serializer
+            obj = self.get_object()
+            request.data['allowed_hosts'] = [
+                h.strip() for h in obj.allowed_hosts.split(',') if h.strip()
+            ]
+        return super().update(request, *args, **kwargs)
+
     def perform_update(self, serializer):
         """Override perform_update() to update IrodsAccessTicket"""
-        if not set(serializer.initial_data) & {'label', 'date_expires'}:
+        irods_backend = get_backend_api('omics_irods')
+        if not set(serializer.initial_data) & {
+            'label',
+            'date_expires',
+            'allowed_hosts',
+        }:
             raise ValidationError(IRODS_TICKET_NO_UPDATE_FIELDS_MSG)
         serializer.save()
+        # Update ticket in iRODS
+        try:
+            with irods_backend.get_session() as irods:
+                irods_backend.update_ticket(
+                    irods,
+                    ticket_str=serializer.instance.ticket,
+                    date_expires=serializer.instance.date_expires,
+                    allowed_hosts=serializer.validated_data.get(
+                        'allowed_hosts'
+                    ),
+                )
+        except Exception as ex:
+            raise APIException(
+                'Exception updating iRODS access ticket: {}'.format(ex),
+            )
         # Add timeline event
         self.add_tl_event(serializer.instance, 'update')
         # Add app alerts to owners/delegates
@@ -608,7 +696,6 @@ class IrodsDataRequestRetrieveAPIView(
     lookup_field = 'sodar_uuid'
     lookup_url_kwarg = 'irodsdatarequest'
     permission_required = 'samplesheets.edit_sheet'
-    schema = AutoSchema(operation_id_base='retrieveIrodsDataRequest')
     serializer_class = IrodsDataRequestSerializer
 
 
@@ -639,7 +726,6 @@ class IrodsDataRequestListAPIView(
 
     pagination_class = SODARPageNumberPagination
     permission_required = 'samplesheets.edit_sheet'
-    schema = AutoSchema(operation_id_base='listIrodsDataRequest')
     serializer_class = IrodsDataRequestSerializer
 
     def get_queryset(self):
@@ -757,6 +843,14 @@ class IrodsDataRequestDestroyAPIView(
         self.handle_alerts_deactivate(instance)
 
 
+@extend_schema(
+    responses={
+        '200': inline_serializer(
+            'IrodsDataRequestAcceptResponse',
+            fields={'detail': serializers.CharField()},
+        ),
+    }
+)
 class IrodsDataRequestAcceptAPIView(
     IrodsDataRequestModifyMixin,
     SamplesheetsAPIVersioningMixin,
@@ -778,6 +872,7 @@ class IrodsDataRequestAcceptAPIView(
 
     http_method_names = ['post']
     permission_required = 'samplesheets.manage_sheet'
+    serializer_class = None
 
     def post(self, request, *args, **kwargs):
         """POST request for accepting an iRODS data request"""
@@ -808,6 +903,14 @@ class IrodsDataRequestAcceptAPIView(
         )
 
 
+@extend_schema(
+    responses={
+        '200': inline_serializer(
+            'IrodsDataRequestRejectResponse',
+            fields={'detail': serializers.CharField()},
+        ),
+    }
+)
 class IrodsDataRequestRejectAPIView(
     IrodsDataRequestModifyMixin,
     SamplesheetsAPIVersioningMixin,
@@ -827,6 +930,7 @@ class IrodsDataRequestRejectAPIView(
 
     http_method_names = ['post']
     permission_required = 'samplesheets.manage_sheet'
+    serializer_class = None
 
     def post(self, request, *args, **kwargs):
         """POST request for rejecting an iRODS data request"""
@@ -854,12 +958,24 @@ class IrodsDataRequestRejectAPIView(
         )
 
 
-class SampleDataFileExistsAPIView(
-    SamplesheetsAPIVersioningMixin, SODARAPIBaseMixin, APIView
-):
+@extend_schema(
+    responses={
+        '200': inline_serializer(
+            'SampleDataFileExistsResponse',
+            fields={
+                'detail': serializers.CharField(),
+                'sodar_uuid': serializers.BooleanField(),
+            },
+        ),
+    }
+)
+class SampleDataFileExistsAPIView(SamplesheetsAPIVersioningMixin, APIView):
     """
-    Return status of data object existing in SODAR iRODS by MD5 checksum.
+    Return status of data object existing in SODAR iRODS by checksum.
     Includes all projects in search regardless of user permissions.
+
+    The checksum is expected as MD5 or SHA256, depending on which is set as the
+    hash scheme for the SODAR and iRODS servers.
 
     If ``SHEETS_API_FILE_EXISTS_RESTRICT`` is set True on the server, this view
     is only accessible by users who have a guest role or above in at least one
@@ -871,7 +987,7 @@ class SampleDataFileExistsAPIView(
 
     **Parameters:**
 
-    - ``checksum``: MD5 checksum (string)
+    - ``checksum``: MD5 or SHA256 checksum as hex (string)
 
     **Returns:**
 
@@ -898,9 +1014,14 @@ class SampleDataFileExistsAPIView(
         irods_backend = get_backend_api('omics_irods')
         if not irods_backend:
             raise APIException('iRODS backend not enabled')
+
+        hash_scheme = settings.IRODS_HASH_SCHEME
         c = request.query_params.get('checksum')
-        if not c or not re.match(MD5_RE, c):
-            raise ParseError('Invalid MD5 checksum: "{}"'.format(c))
+        if not c or not re.match(CHECKSUM_RE[hash_scheme], c):
+            raise ParseError(f'Invalid {hash_scheme} checksum: "{c}"')
+        # If SHA256, convert to base64 with prefix
+        if hash_scheme == HASH_SCHEME_SHA256:
+            c = irods_backend.get_sha256_base64(c, prefix=True)
 
         ret = {'detail': 'File does not exist', 'status': False}
         sql = (
@@ -944,16 +1065,38 @@ class SampleDataFileExistsAPIView(
         return Response(ret, status=status.HTTP_200_OK)
 
 
-# TODO: Add pagination (see #1996, #1997)
+@extend_schema(
+    responses={
+        '200': inline_serializer(
+            'ProjectIrodsFileListResponse',
+            fields={
+                'name': serializers.CharField(),
+                'type': serializers.CharField(),
+                'path': serializers.CharField(),
+                'size': serializers.IntegerField(),
+                'modify_time': serializers.DateTimeField(),
+                'checksum': serializers.CharField(),
+            },
+        ),
+    }
+)
 class ProjectIrodsFileListAPIView(
     SamplesheetsAPIVersioningMixin, SODARAPIBaseProjectMixin, APIView
 ):
     """
     Return a list of files in the project sample data repository.
 
+    Supports optional pagination for listing by providing the ``page`` query
+    string. This will return results in the Django Rest Framework
+    ``PageNumberPagination`` format.
+
     **URL:** ``/samplesheets/api/file/list/{Project.sodar_uuid}``
 
     **Methods:** ``GET``
+
+    **Parameters:**
+
+    - ``page``: Page number for paginated results (int, optional)
 
     **Returns:**
 
@@ -964,6 +1107,12 @@ class ProjectIrodsFileListAPIView(
     - ``path``: Full path to file
     - ``size``: Size in bytes
     - ``modify_time``: Datetime of last modification (YYYY-MM-DDThh:mm:ssZ)
+    - ``checksum``: Checksum of data object
+
+    **Version Changes**:
+
+    - ``1.1``: Add ``checksum`` field to return data
+    - ``1.1``: Add ``page`` parameter for optional pagination
     """
 
     http_method_names = ['get']
@@ -972,23 +1121,76 @@ class ProjectIrodsFileListAPIView(
     def get(self, request, *args, **kwargs):
         if not settings.ENABLE_IRODS:
             raise APIException('iRODS not enabled')
+        version = parse_version(request.version)
+        page = request.GET.get('page')
+        if page and version < parse_version('1.1'):
+            raise NotAcceptable(FILE_LIST_PAGINATE_VERSION_MSG)
+        elif page:
+            page = int(page)
+
         irods_backend = get_backend_api('omics_irods')
         project = self.get_project()
         path = irods_backend.get_sample_path(project)
+        page_size = settings.SODAR_API_PAGE_SIZE
+        limit = None
+        offset = None
+        file_count = None
+        if page:
+            limit = page_size
+            offset = 0 if page == 1 else (page - 1) * page_size
+        checksum = True if version >= parse_version('1.1') else False
+
         try:
             with irods_backend.get_session() as irods:
                 obj_list = irods_backend.get_objects(
-                    irods, path, api_format=True
+                    irods,
+                    path,
+                    limit=limit,
+                    offset=offset,
+                    api_format=True,
+                    checksum=checksum,
                 )
+                # Get total count for DRF compatible pagination response
+                if page:
+                    stats = irods_backend.get_stats(irods, path)
+                    file_count = stats['file_count']
+        except FileNotFoundError as ex:
+            raise NotFound('{}: {}'.format(IRODS_QUERY_ERROR_MSG, ex))
         except Exception as ex:
             return Response(
                 {'detail': '{}: {}'.format(IRODS_QUERY_ERROR_MSG, ex)},
-                status=status.HTTP_404_NOT_FOUND,
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-        return Response(obj_list, status=status.HTTP_200_OK)
+
+        if page:
+            url = reverse(
+                'samplesheets:api_file_list',
+                kwargs={'project': project.sodar_uuid},
+            )
+            ret = {
+                'count': file_count,
+                'next': (
+                    (url + f'?page={page + 1}')
+                    if file_count > page * page_size
+                    else None
+                ),
+                'previous': (url + f'?page={page - 1}') if page > 1 else None,
+                'results': obj_list,
+            }
+        else:
+            ret = obj_list
+        return Response(ret, status=status.HTTP_200_OK)
 
 
 # TODO: Temporary HACK, should be replaced by proper API view
+@extend_schema(
+    responses={
+        '200': inline_serializer(
+            'RemoteSheetGetResponse',
+            fields={'studies': serializers.JSONField()},
+        ),
+    }
+)
 class RemoteSheetGetAPIView(APIView):
     """
     Temporary API view for retrieving the sample sheet as JSON by a target

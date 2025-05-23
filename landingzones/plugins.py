@@ -11,6 +11,7 @@ from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import (
     ProjectAppPluginPoint,
     ProjectModifyPluginMixin,
+    PluginAppSettingDef,
     PluginObjectLink,
     get_backend_api,
 )
@@ -31,12 +32,57 @@ from landingzones.views import ZoneModifyMixin
 logger = logging.getLogger(__name__)
 
 
+# SODAR constants
+APP_SETTING_SCOPE_PROJECT = SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT']
+APP_SETTING_SCOPE_USER = SODAR_CONSTANTS['APP_SETTING_SCOPE_USER']
+APP_SETTING_TYPE_BOOLEAN = SODAR_CONSTANTS['APP_SETTING_TYPE_BOOLEAN']
+APP_SETTING_TYPE_STRING = SODAR_CONSTANTS['APP_SETTING_TYPE_STRING']
+
+
 # Local constants
+LANDINGZONES_APP_SETTINGS = [
+    PluginAppSettingDef(
+        name='member_notify_move',
+        scope=APP_SETTING_SCOPE_PROJECT,
+        type=APP_SETTING_TYPE_BOOLEAN,
+        default=True,
+        label='Notify members of landing zone uploads',
+        description='Notify project members via alerts and email if new files '
+        'are uploaded from landing zones',
+        user_modifiable=True,
+    ),
+    PluginAppSettingDef(
+        name='notify_email_zone_status',
+        scope=APP_SETTING_SCOPE_USER,
+        type=APP_SETTING_TYPE_BOOLEAN,
+        default=True,
+        label='Receive email for landing zone status updates',
+        description='Receive email notifications for status changes in your '
+        'landing zones',
+        user_modifiable=True,
+    ),
+    PluginAppSettingDef(
+        name='file_name_prohibit',
+        scope=APP_SETTING_SCOPE_PROJECT,
+        type=APP_SETTING_TYPE_STRING,
+        default='',
+        label='Prohibited file types',
+        description='Prohibit transferring files with given file name '
+        'suffixes from a landing zone into project samples. Checked on zone '
+        'validation. Provide as a comma-separated list.',
+        placeholder='xyz.gz,abc',
+        user_modifiable=True,
+    ),
+]
 LANDINGZONES_INFO_SETTINGS = [
     'LANDINGZONES_DISABLE_FOR_USERS',
+    'LANDINGZONES_FILE_LIST_PAGINATION',
     'LANDINGZONES_STATUS_INTERVAL',
+    'LANDINGZONES_TRIGGER_ENABLE',
     'LANDINGZONES_TRIGGER_FILE',
     'LANDINGZONES_TRIGGER_MOVE_INTERVAL',
+    'LANDINGZONES_ZONE_CREATE_LIMIT',
+    'LANDINGZONES_ZONE_VALIDATE_LIMIT',
 ]
 
 
@@ -61,27 +107,8 @@ class ProjectAppPlugin(
 
     # Properties defined in ProjectAppPluginPoint -----------------------
 
-    #: App settings definition
-    app_settings = {
-        'member_notify_move': {
-            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
-            'type': 'BOOLEAN',
-            'label': 'Notify members of landing zone uploads',
-            'description': 'Notify project members via alerts and email if '
-            'new files are uploaded from landing zones',
-            'user_modifiable': True,
-            'default': True,
-        },
-        'notify_email_zone_status': {
-            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_USER'],
-            'type': 'BOOLEAN',
-            'default': True,
-            'label': 'Receive email for landing zone status updates',
-            'description': 'Receive email notifications for status changes in '
-            'your landing zones',
-            'user_modifiable': True,
-        },
-    }
+    #: App setting definitions
+    app_settings = LANDINGZONES_APP_SETTINGS
 
     #: Iconify icon
     icon = 'mdi:briefcase-upload'

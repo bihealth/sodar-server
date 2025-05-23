@@ -58,10 +58,7 @@ class TestIrodsStatisticsAjaxView(
         self.url = self.irods_backend.get_url(
             view='stats', project=self.project, path=self.sample_path
         )
-
-    def test_get(self):
-        """Test IrodsStatisticsAjaxView GET"""
-        good_users = [
+        self.good_users = [
             self.superuser,
             self.user_owner_cat,  # Inherited
             self.user_delegate_cat,  # Inherited
@@ -72,9 +69,16 @@ class TestIrodsStatisticsAjaxView(
             self.user_contributor,
             self.user_guest,
         ]
-        bad_users = [self.user_finder_cat, self.user_no_roles, self.anonymous]
-        self.assert_response(self.url, good_users, 200)
-        self.assert_response(self.url, bad_users, 403)
+        self.bad_users = [
+            self.user_finder_cat,
+            self.user_no_roles,
+            self.anonymous,
+        ]
+
+    def test_get(self):
+        """Test IrodsStatisticsAjaxView GET"""
+        self.assert_response(self.url, self.good_users, 200)
+        self.assert_response(self.url, self.bad_users, 403)
         self.project.set_public()
         self.assert_response(self.url, self.user_no_roles, 200)
         self.assert_response(self.url, self.anonymous, 403)
@@ -88,20 +92,8 @@ class TestIrodsStatisticsAjaxView(
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-        ]
-        bad_users = [self.user_finder_cat, self.user_no_roles, self.anonymous]
-        self.assert_response(self.url, good_users, 200)
-        self.assert_response(self.url, bad_users, 403)
+        self.assert_response(self.url, self.good_users, 200)
+        self.assert_response(self.url, self.bad_users, 403)
         self.project.set_public()
         self.assert_response(self.url, self.user_no_roles, 200)
         self.assert_response(self.url, self.anonymous, 403)
@@ -120,21 +112,7 @@ class TestIrodsStatisticsAjaxView(
         url = self.irods_backend.get_url(
             view='stats', project=self.project, path=NON_PROJECT_PATH
         )
-        bad_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
-        self.assert_response(url, bad_users, 400)
+        self.assert_response(url, self.all_users, 400)
 
     def test_get_no_perms(self):
         """Test GET without collection perms"""
@@ -226,116 +204,3 @@ class TestIrodsStatisticsAjaxView(
         self.project.set_public()
         self.assert_response(url, self.user_no_roles, 403)
         self.assert_response(url, self.anonymous, 403)
-
-
-class TestIrodsObjectListAjaxView(IrodsbackendPermissionsTestBase):
-    """Tests for IrodsObjectListAjaxView permissions"""
-
-    def setUp(self):
-        super().setUp()
-        self.url = self.irods_backend.get_url(
-            view='list', project=self.project, path=self.sample_path, md5=0
-        )
-
-    def test_get(self):
-        """Test IrodsObjectListAjaxView GET"""
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-        ]
-        bad_users = [self.user_finder_cat, self.user_no_roles, self.anonymous]
-        self.assert_response(self.url, good_users, 200)
-        self.assert_response(self.url, bad_users, 403)
-        self.project.set_public()
-        self.assert_response(self.url, self.user_no_roles, 200)
-        self.assert_response(self.url, self.anonymous, 403)
-
-    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
-    def test_get_anon(self):
-        """Test GET with anonymous access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 200)
-
-    def test_get_archive(self):
-        """Test GET with archived project"""
-        self.project.set_archive()
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-        ]
-        bad_users = [self.user_finder_cat, self.user_no_roles, self.anonymous]
-        self.assert_response(self.url, good_users, 200)
-        self.assert_response(self.url, bad_users, 403)
-        self.project.set_public()
-        self.assert_response(self.url, self.user_no_roles, 200)
-        self.assert_response(self.url, self.anonymous, 403)
-
-    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
-    def test_get_anon_no_perms(self):
-        """Test GET with anonymous access and no permission"""
-        url = self.irods_backend.get_url(
-            view='list', project=self.project, path=self.project_path, md5=0
-        )
-        self.project.set_public()
-        self.assert_response(url, self.anonymous, 403)
-
-    def test_get_not_in_project(self):
-        """Test GET with path not in project"""
-        url = self.irods_backend.get_url(
-            view='list', project=self.project, path=NON_PROJECT_PATH, md5=0
-        )
-        bad_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
-        self.assert_response(url, bad_users, 400)
-
-    def test_get_no_perms(self):
-        """Test GET without collection perms"""
-        test_path = self.project_path + '/' + TEST_COLL_NAME
-        self.irods.collections.create(test_path)  # NOTE: No perms given
-        url = self.irods_backend.get_url(
-            view='list', project=self.project, path=test_path, md5=0
-        )
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_owner,
-            self.user_delegate,
-        ]
-        bad_users = [
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
-        self.assert_response(url, good_users, 200)
-        self.assert_response(url, bad_users, 403)

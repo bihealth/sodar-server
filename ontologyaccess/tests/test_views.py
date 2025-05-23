@@ -73,8 +73,8 @@ class OntologyAccessViewTestBase(OBOFormatOntologyModelMixin, TestCase):
 class TestOBOFormatOntologyListView(OntologyAccessViewTestBase):
     """Tests for OBOFormatOntologyListView"""
 
-    def test_render(self):
-        """Test rendering the ontology list view"""
+    def test_get(self):
+        """Test OBOFormatOntologyListView GET"""
         with self.login(self.superuser):
             response = self.client.get(reverse('ontologyaccess:list'))
         self.assertEqual(response.status_code, 200)
@@ -87,43 +87,38 @@ class TestOBOFormatOntologyListView(OntologyAccessViewTestBase):
 class TestOBOFormatOntologyDetailView(OntologyAccessViewTestBase):
     """Tests for OBOFormatOntologyDetailView"""
 
-    def test_render(self):
-        """Test rendering the ontology detail view"""
+    def setUp(self):
+        super().setUp()
+        self.url = reverse(
+            'ontologyaccess:obo_detail',
+            kwargs={'oboformatontology': self.ontology.sodar_uuid},
+        )
+
+    def test_get(self):
+        """Test OBOFormatOntologyDetailView GET"""
         with self.login(self.superuser):
-            response = self.client.get(
-                reverse(
-                    'ontologyaccess:obo_detail',
-                    kwargs={'oboformatontology': self.ontology.sodar_uuid},
-                )
-            )
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['object'], self.ontology)
         self.assertIsNotNone(response.context['ex_term'])
         self.assertIsNotNone(response.context['ex_term_acc'])
 
-    def test_render_no_terms(self):
-        """Test rendering the ontology detail view with no terms"""
-        with self.login(self.superuser):
-            response = self.client.get(
-                reverse(
-                    'ontologyaccess:obo_detail',
-                    kwargs={'oboformatontology': self.ontology.sodar_uuid},
-                )
-            )
-        self.assertEqual(response.status_code, 200)
-
 
 class TestOBOFormatOntologyImportView(OntologyAccessViewTestBase):
     """Tests for OBOFormatOntologyImportView"""
 
-    def test_render(self):
-        """Test rendering the ontology import view"""
-        with self.login(self.superuser):
-            response = self.client.get(reverse('ontologyaccess:obo_import'))
-            self.assertEqual(response.status_code, 200)
+    def setUp(self):
+        super().setUp()
+        self.url = reverse('ontologyaccess:obo_import')
 
-    def test_import(self):
-        """Test importing an ontology"""
+    def test_get(self):
+        """Test OBOFormatOntologyImportView GET"""
+        with self.login(self.superuser):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_post(self):
+        """Test OBOFormatOntologyImportView POST"""
         self.assertEqual(OBOFormatOntology.objects.count(), 1)
         with open(OBO_PATH) as file:
             post_data = {
@@ -133,9 +128,7 @@ class TestOBOFormatOntologyImportView(OntologyAccessViewTestBase):
                 'term_url': DEFAULT_TERM_URL,
             }
             with self.login(self.superuser):
-                response = self.client.post(
-                    reverse('ontologyaccess:obo_import'), post_data
-                )
+                response = self.client.post(self.url, post_data)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse('ontologyaccess:list'))
         self.assertEqual(OBOFormatOntology.objects.count(), 2)
@@ -146,19 +139,21 @@ class TestOBOFormatOntologyImportView(OntologyAccessViewTestBase):
 class TestOBOFormatOntologyUpdateView(OntologyAccessViewTestBase):
     """Tests for OBOFormatOntologyUpdateView"""
 
-    def test_render(self):
-        """Test rendering the ontology update view"""
-        with self.login(self.superuser):
-            response = self.client.get(
-                reverse(
-                    'ontologyaccess:obo_update',
-                    kwargs={'oboformatontology': self.ontology.sodar_uuid},
-                )
-            )
-            self.assertEqual(response.status_code, 200)
+    def setUp(self):
+        super().setUp()
+        self.url = reverse(
+            'ontologyaccess:obo_update',
+            kwargs={'oboformatontology': self.ontology.sodar_uuid},
+        )
 
-    def test_update(self):
-        """Test updating an ontology"""
+    def test_get(self):
+        """Test OBOFormatOntologyUpdateView GET"""
+        with self.login(self.superuser):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_post(self):
+        """Test OBOFormatOntologyUpdateView POST"""
         self.assertEqual(OBOFormatOntology.objects.count(), 1)
         post_data = {
             'name': OBO_NAME,
@@ -166,13 +161,7 @@ class TestOBOFormatOntologyUpdateView(OntologyAccessViewTestBase):
             'term_url': OBO_TERM_URL_ALT,
         }
         with self.login(self.superuser):
-            response = self.client.post(
-                reverse(
-                    'ontologyaccess:obo_update',
-                    kwargs={'oboformatontology': self.ontology.sodar_uuid},
-                ),
-                post_data,
-            )
+            response = self.client.post(self.url, post_data)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse('ontologyaccess:list'))
         self.assertEqual(OBOFormatOntology.objects.count(), 1)
@@ -184,27 +173,24 @@ class TestOBOFormatOntologyUpdateView(OntologyAccessViewTestBase):
 class TestOBOFormatOntologyDeleteView(OntologyAccessViewTestBase):
     """Tests for OBOFormatOntologyDeleteView"""
 
-    def test_render(self):
-        """Test rendering the ontology delete view"""
-        with self.login(self.superuser):
-            response = self.client.get(
-                reverse(
-                    'ontologyaccess:obo_delete',
-                    kwargs={'oboformatontology': self.ontology.sodar_uuid},
-                )
-            )
-            self.assertEqual(response.status_code, 200)
+    def setUp(self):
+        super().setUp()
+        self.url = reverse(
+            'ontologyaccess:obo_delete',
+            kwargs={'oboformatontology': self.ontology.sodar_uuid},
+        )
 
-    def test_delete(self):
-        """Test deleting an ontology"""
+    def test_get(self):
+        """Test OBOFormatOntologyDeleteView GET"""
+        with self.login(self.superuser):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_post(self):
+        """Test OBOFormatOntologyDeleteView POST"""
         self.assertEqual(OBOFormatOntology.objects.count(), 1)
         with self.login(self.superuser):
-            response = self.client.post(
-                reverse(
-                    'ontologyaccess:obo_delete',
-                    kwargs={'oboformatontology': self.ontology.sodar_uuid},
-                )
-            )
+            response = self.client.post(self.url)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse('ontologyaccess:list'))
         self.assertEqual(OBOFormatOntology.objects.count(), 0)

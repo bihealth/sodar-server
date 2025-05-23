@@ -21,7 +21,7 @@ class Flow(BaseLinearFlow):
 
     def build(self, force_fail=False):
         sample_path = self.irods_backend.get_sample_path(self.project)
-        project_group = self.irods_backend.get_user_group_name(self.project)
+        project_group = self.irods_backend.get_group_name(self.project)
 
         self.add_task(
             irods_tasks.CreateCollectionTask(

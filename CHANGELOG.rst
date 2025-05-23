@@ -5,6 +5,160 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+v1.1.0 (2025-05-23)
+===================
+
+Added
+-----
+
+- **General**
+    - drf-spectacular support (#2051)
+    - ``PROJECTROLES_SUPPORT_CONTACT`` setting support (#2095)
+    - ``vim`` install in Docker build (#2113)
+    - ``IRODS_HASH_SCHEME`` Django setting (#2149)
+- **Irodsbackend**
+    - ``get_objects()`` checksum support (#2038)
+    - ``get_objects()`` offset support (#1997, #2159)
+    - ``get_group_name()`` owner/delegate group support (#2109)
+    - ``issue_ticket()`` allowed hosts support (#1439, #2141)
+    - ``IrodsAPI.update_ticket()`` method (#1439, #2141)
+    - ``get_stats()`` collection stats support (#2160)
+    - SHA256 checksum support (#2149)
+- **Landingzones**
+    - Site read-only mode support (#2051)
+    - File type prohibiting by file name suffix (#2064)
+    - ``file_name_prohibit`` app setting (#2064)
+    - ``cleanup_file_prohibit()`` utility method (#2064)
+    - Missing project owner group creation on zone create (#1934)
+    - Owner and delegate own access to all zones in project (#1934)
+    - ``ZoneStatusInfoRetrieveAjaxView`` Ajax view (#1308)
+    - Full display of truncated zone status info (#1308)
+    - ``ZoneIrodsListRetrieveAjaxView`` Ajax view (#1730)
+    - UI alert for locked project (#2146, #2151)
+    - ``LANDINGZONES_ZONE_CREATE_LIMIT`` Django setting (#2148)
+    - Landing zone creation limit per project (#2148)
+    - Landing zone validation limit per project (#2150)
+    - ``LANDINGZONES_FILE_LIST_PAGINATION`` Django setting (#1881)
+    - ``ZoneIrodsListRetrieveAjaxView`` pagination support (#1881)
+    - ``ZoneChecksumStatusRetrieveAjaxView`` Ajax view (#1881)
+    - Landing zone file list modal pagination (#1881)
+    - SHA256 checksum support (#2149)
+- **Samplesheets**
+    - Site read-only mode support (#2051)
+    - ``checksum`` field in ``ProjectIrodsFileListAPIView`` return data (#2039)
+    - ``ProjectIrodsFileListAPIView`` pagination (#1996)
+    - ``ProjectIrodsFileListAPIView`` permission tests (#2104)
+    - ``SHEETS_PARSER_WARNING_SAVE_LIMIT`` Django setting (#2120)
+    - Database saving limit for AltamISA warnings (#2120)
+    - iRODS access ticket allowed hosts support (#1439, #2143)
+    - ``IrodsAccessTicket.allowed_hosts`` field and ``get_allowed_hosts_list()`` helper (#1439)
+    - ``SHEETS_IRODS_TICKET_HOSTS`` Django setting (#1439)
+    - SHA256 checksum support (#2149)
+- **Taskflowbackend**
+    - Project deletion support (#2051)
+    - Zone validation and moving progress indicators (#2024)
+    - ``TASKFLOW_ZONE_PROGRESS_INTERVAL`` Django setting (#2024)
+    - ``BatchCheckFileSuffixTask`` iRODS task (#2064)
+    - ``TimelineEventExtraDataUpdateTask`` SODAR task (#2105)
+    - File list in ``landing_zone_move`` timeline event extra data (#1202, #2124)
+    - iRODS project owner/delegate group management (#2109)
+    - ``TaskflowAPI.get_flow_role()`` helper (#1934)
+    - ``TaskflowAPI.is_locked()`` helper (#2048)
+    - Taskflowbackend REST API (#2048)
+    - ``ProjectLockStatusAPIView`` REST API view (#2048)
+    - SHA256 checksum support (#2149)
+    - ``BatchCheckFileExistTask`` tests (#2149)
+
+Changed
+-------
+
+- **General**
+    - Upgrade to django-sodar-core v1.1.6 (#2051, #2068, #2095, #2108, #2156)
+    - Upgrade to python-irodsclient v3.1 (#2068, #2079, #2128)
+    - Display SODAR Core version in footer example (#2101)
+    - Upgrade to gunicorn v23 (#2068)
+    - Upgrade critical Python dependencies (#2068)
+    - Upgrade critical Vue app dependencies (#2068)
+    - Upgrade to tooz v6.3 (#2048)
+- **Irodsbackend**
+    - Allow use of ``include_md5`` and ``limit`` together in ``get_objs_recursively()`` (#1887)
+    - Rename ``get_user_group_name()`` to ``get_group_name()`` (#2121)
+    - Only set ``write-file`` value for write mode access tickets (#2134)
+    - Rename ``date_expires`` kwarg in ``issue_ticket()`` (#2141)
+    - Rename ``get_object_stats()`` to ``get_stats()`` (#2160)
+    - Raise encountered exceptions in ``get_stats()`` (#2161)
+    - Update ``IrodsAPI`` Taskflow tests (#2162, #2163)
+- **Landingzones**
+    - Define app settings as ``PluginAppSettingDef`` objects (#2051)
+    - Do not mute zone title and description with busy zones (#2092)
+    - Exclude inactive users from email sending and alert creation (#2114)
+    - Display ``status_info`` newlines in UI (#1308)
+    - Change ``LandingZone.status_info`` to ``TextField`` (#1308)
+    - Prevent redundant refreshing of unchganged zone status (#2126)
+    - Update zone list title column layout (#1852, #2127)
+    - Update ``ProjectZoneView`` to display project zones in one table (#2129)
+    - Move irodsbackend dir list modal JQuery to ``landingzones.js`` (#1730)
+    - Disable zone controls for locked project (#1512, #1850)
+    - Display icons for zone list alerts (#2147)
+- **Samplesheets**
+    - Define app settings as ``PluginAppSettingDef`` objects (#2051)
+    - Return ``500`` for iRODS query exceptions in ``ProjectIrodsFileListAPIView`` (#2103)
+    - Exclude inactive users from email sending and alert creation (#2114)
+    - Display disabled path field in iRODS access ticket update form (#2139)
+    - Allow iRODS access ticket creation for data objects in UI (#2138)
+- **Taskflowbackend**
+    - Enable no role for old owner in ``perform_owner_transfer()`` (#2051)
+    - Rename ``BatchCheckFileTask`` to ``BatchCheckFileExistTask`` (#2064)
+    - Move ``landing_zone_move`` file check tasks before checksum computing (#2099)
+    - Update path argument naming in iRODS tasks (#2093)
+    - Add missing ``super().execute()`` call in ``BatchCheckFileExistTask`` (#2097)
+    - Rename ``get_batch_role()`` to ``get_flow_role()`` (#2109)
+    - Refactor ``role_update`` flow usage (#2117)
+    - Newline separators in landing zone exception messages (#1308)
+    - Do not create timeline events for flows failed by locked project (#1970)
+    - Collect all failed checksums in ``BatchValidateChecksumsTask`` (#1073)
+    - Move ``lock_project()`` test helper in ``ProjectLockMixin`` (#2146)
+    - Disable project locking if ``validate_only`` is set (#1850)
+    - Update test helpers to support SHA256 checksums (#2149)
+
+Fixed
+-----
+
+- **General**
+    - ``LegacyKeyValueFormat`` warnings in Docker build (#2089)
+- **Irodsbackend**
+    - ``get_objects()`` ``limit`` arg not working correctly with ``include_colls`` (#2159)
+- **Landingzones**
+    - Zone delete timeline status not updated with missing collection (#2096)
+    - Sample Sheets link not displayed in UI after zone move (#2106)
+    - ``LandingZone.set_status()`` not enforcing database refresh (#2175)
+- **Samplesheets**
+    - iRODS access ticket expiry date not updated on ticket update (#2140)
+- **Taskflowbackend**
+    - Checksum calculation failing silently if maximum retries reached (#2131)
+    - Checksum calculation retry done for all exception types (#2132)
+    - Invalid logger names in multiple modules (#2155)
+
+Removed
+-------
+
+- **General**
+    - DRF generateschema support (#2051)
+    - ``SODAR_SUPPORT_EMAIL`` and ``SODAR_SUPPORT_EMAIL`` settings (#2095)
+    - Migrations squashed in v1.0 (#2052)
+- **Irodsbackend**
+    - ``IrodsObjectListAjaxView`` Ajax view (#1730)
+    - iRODS dir modal javascript (#1730)
+- **Landingzones**
+    - ``get_zone_list_url()`` template tag (#1730)
+- **Samplesheets**
+    - Legacy iRODS test files (#2102)
+    - ``edit_config_min_role`` app setting (#2110)
+- **Taskflowbackend**
+    - Unused ``role_delete`` flow (#2115)
+    - Unused ``role_update`` flow (#2117)
+
+
 v1.0.1 (2025-03-12)
 ===================
 

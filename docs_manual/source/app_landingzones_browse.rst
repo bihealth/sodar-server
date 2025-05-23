@@ -24,12 +24,25 @@ The following details are available for each landing zone:
 Zone
     The title of the zone along with a tooltip for verifying to which assay the
     zone belongs in. The zone name also acts as its collection name in iRODS.
-    If a special configuration is used for the zone, it is displayed here.
+    In addition to the title, this column displays further landing zone
+    information as badges:
+
+    - **Assay Badge:** This displays the name of the assay the landing zone is
+      linked to, with a link to the assay in the Sample Sheets app.
+    - **User Badge:** When viewing the list as a owner or delegate, you can see
+      zones of other users. For these zones, the user who created the zone is
+      displayed as a badge.
+    - **Configuration Badge:** If a special configuration is used for the zone,
+      the configuration title is presented as a badge.
+    - **Permission Warning Badge:** If you can see other users' zones and a user
+      has lost project permissions after creating the zone, you will see a badge
+      warning you about the zone's original creator being unable to access it.
 Status Info
     Detailed status information on the most recent action performed on the zone.
     Successful actions are described here along with detailed information on
-    failures. Also included is a badge displaying the zone's current file count
-    and size in iRODS
+    failures. Long status messages are truncated by default, but you can click
+    the :guilabel:`See more` link to load the full status. Also included is a
+    badge displaying the zone's current file count and size in iRODS.
 Status
     A coloured representation of the current zone status. If the zone is
     currently locked for read-only access due to an ongoing operation, a lock
@@ -39,9 +52,19 @@ iRODS Links
 Zone Dropdown
     For each active zone, there is a dropdown menu for zone specific operations.
 
-Project owners and delegates will also be able to see active zones of other
-users in the project in a separate list within the same view. They can also
-perform the same validation, moving and deletion actions as the zone owner.
+.. _app_landingzones_browse_owner_access:
+
+Project owners and delegates will be able to see active zones of other users in
+the project. Zones created by other users are denoted by a user badge in the
+title column. Owners and delegates can perform the same validation, moving and
+deletion actions for these zones as the zone owner. Starting in SODAR v1.1,
+owners and delegates also gain iRODS read/write access to zones of other users.
+
+.. hint::
+
+    For legacy landing zones created on SODAR versions older than 1.1, an
+    administrator must run the ``syncmodifyapi`` administrator command to enable
+    owner and delegate iRODS access.
 
 
 Status Types
@@ -86,15 +109,32 @@ seen in the :ref:`Sample Sheets <app_samplesheets>` application:
     landing zone collection through WebDAV.
 
 
+.. _app_landingzones_browse_file_list:
+
 iRODS File List Modal
 =====================
 
-The iRODS file list modal is slightly different from the similar modal in the
-Sample Sheets app. It displays collections in addition to files to help
-visualize which root level collections are expected. Furthermore, a check mark
-is displayed on the right hand side column for files, if the expected ``.md5``
-checksum file is accompanying the actual data file.
+The landing zone file list modal displays collections and files within a
+specific landing zone. The following information is displayed:
 
+Path to Collection or File
+    The path below the landing zone for each collection and file is displayed.
+    The path is a link which will open the corresponding collection or file with
+    WebDAV.
+Size
+    For files, the file size is displayed.
+Modified
+    For files, the modification datetime is displayed.
+MD5
+    This column displays an icon representing whether the expected checksum file
+    corresponding to each actual data file is present.
+iRODS
+    This column contains a button for copying the path to the corresponding
+    collection or file into the clipboard.
+
+The results may be paginated depending on the amount of collections and files in
+the zone as well as SODAR server settings set by admins. In case of multiple
+pages of results, you will find pagination controls in the bottom of the modal.
 
 .. figure:: _static/app_landingzones/irods_file_list.png
     :align: center

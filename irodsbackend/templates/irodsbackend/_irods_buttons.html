@@ -6,27 +6,12 @@
 {# project: Project object #}
 {# irods_colls: Whether iRODS collections exist (boolean) #}
 {# irods_path: full iRODS path to link to #}
-{# list_url: SODAR URL for querying file list #}
-{# show_file_list: Whether to show the file list popup (boolean) #}
 {# disable_all: Show but disable buttons if True (boolean) #}
 
 {% get_django_setting 'IRODS_WEBDAV_ENABLED' as irods_webdav_enabled %}
 {% get_webdav_url project request.user as irods_webdav_url %}
 
-<span class="text-nowrap">
-  {% if show_file_list and irods_backend_enabled and irods_webdav_enabled %}
-    <button class="btn btn-secondary sodar-list-btn sodar-irods-btn sodar-irods-popup-list-btn
-            {% if not irods_webdav_enabled or not irods_colls or disable_all %} no-colls {% endif %}"
-            data-irods-path="{{ irods_path }}"
-            data-list-url="{{ list_url }}"
-            data-webdav-url="{{ irods_webdav_url }}"
-            role="submit"
-            {# NOTE: Modal not triggered here as data is async, see JQuery #}
-            title="List files"
-            {% if not irods_colls or disable_all %} disabled{% endif %}>
-      <i class="iconify" data-icon="mdi:folder-open-outline"></i>
-    </button>
-  {% endif %}
+<span class="text-nowrap sodar-irods-btn-container">
   <button class="btn btn-secondary sodar-list-btn sodar-irods-btn sodar-irods-copy-btn sodar-irods-path-btn
           {% if not irods_webdav_enabled or not irods_colls or disable_all %} no-colls {% endif %}"
           data-clipboard-text="{{ irods_path }}" role="submit"
@@ -34,15 +19,13 @@
           {% if not irods_colls or disable_all %} disabled{% endif %}>
     <i class="iconify" data-icon="mdi:console-line"></i>
   </button>
-  <button class="btn btn-secondary sodar-list-btn sodar-irods-btn sodar-irods-copy-btn
-          {% if not irods_webdav_enabled or not irods_colls or disable_all %} no-colls {% endif %}"
+  <button class="btn btn-secondary sodar-list-btn sodar-irods-btn sodar-irods-copy-btn"
           data-clipboard-text="{{ irods_webdav_url }}{{ irods_path }}" role="submit"
           title="Copy WebDAV URL into clipboard"
           {% if not irods_colls or disable_all %} disabled{% endif %}>
     <i class="iconify" data-icon="mdi:clipboard-text-multiple"></i>
   </button>
-  <a class="btn btn-secondary sodar-list-btn sodar-irods-btn sodar-irods-dav-btn
-     {% if not irods_webdav_enabled or not irods_colls or disable_all %} no-colls disabled {% endif %}"
+  <a class="btn btn-secondary sodar-list-btn sodar-irods-btn sodar-irods-dav-btn"
      href="{{ irods_webdav_url }}{{ irods_path }}" role="button"
      title="Browse files in WebDAV">
     <i class="iconify" data-icon="mdi:open-in-new"></i>

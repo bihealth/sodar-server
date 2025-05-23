@@ -8,6 +8,63 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v1.1.0 (2025-05-23)
+===================
+
+Major feature update and SODAR Core 1.1 upgrade.
+
+- :ref:`Add allowed hosts support for iRODS access tickets <app_samplesheets_irods_ticket>`
+- :ref:`Add landing zone validation and moving progress indicators <app_landingzones_transfer>`
+- :ref:`Add landing zone file type prohibiting <app_landingzones_transfer_prohibit>`
+- Add file list in landing zone move timeline event extra data
+- :ref:`Add owners and delegates read/write access to all project zones <app_landingzones_browse_owner_access>`
+- Add support for longer landing zone status info messages
+- Add iRODS project owner/delegate group management
+- :ref:`Add taskflowbackend API with project lock status view <api_taskflowbackend>`
+- Add project locking status display and control disabling in landing zone list view
+- Add support for simultaneous validation of multiple zones in a project
+- Add support for landing zone creation limit per project
+- Add support for landing zone validation limit per project
+- :ref:`Add iRODS SHA256 checksum hashing scheme support <admin_other_hash_scheme>`
+- :ref:`Add landing zone file list modal pagination <app_landingzones_browse_file_list>`
+- Update email sending and alerts to exclude inactive users
+- :ref:`Update iRODS access ticket creation to support path to data object in UI <app_samplesheets_irods_ticket_create>`
+- Update checksum validation to check all files before failing
+- :ref:`Update project landing zone list layout <app_landingzones_browse>`
+- :ref:`Upgrade Sample Sheets REST API version to v1.1 <api_samplesheets_version_1_1>`
+- Upgrade to python-irodsclient v3.1
+- Upgrade to SODAR Core v1.1.6
+- Replace SODAR_SUPPORT_* settings with PROJECTROLES_SUPPORT_CONTACT
+- Fix iRODS access ticket expiry date updating
+- Remove minimum sample sheet column config editing role setting
+- `SODAR Core v1.1 updates <https://sodar-core.readthedocs.io/en/latest/major_changes.html#v1-1-6-2025-05-20>`_:
+  Project deletion, project leaving, paginated project list, site read-only
+  mode, etc.
+
+:ref:`Administrator upgrade guide for v1.1 <admin_upgrade_v1.1>`
+
+REST API Updates
+----------------
+
+- Sample Sheets API
+    * Current version: ``1.1`` (non-breaking changes)
+    * Allowed versions: ``1.0``, ``1.1``
+    * ``IrodsAccessTicketRetrieveAPIView``
+        + Add ``allowed_hosts`` field
+    * ``IrodsAccessTicketCreateAPIView``
+        + Add ``allowed_hosts`` field
+    * ``IrodsAccessTicketUpdateAPIView``
+        + Add ``allowed_hosts`` field
+    * ``ProjectIrodsFileListAPIView``
+        + Add ``checksum`` field to return data
+        + Add ``page`` parameter for optional pagination
+- Taskflow Backend API
+    * Add API
+    * Current version: ``1.0``
+    * ``ProjectLockStatusAPIView``
+        + Add view
+
+
 v1.0.1 (2025-03-12)
 ===================
 
@@ -22,19 +79,18 @@ v1.0.0 (2025-03-03)
 
 Release for SODAR Core v1.0 upgrade, iRODS v4.3 upgrade and feature updates.
 
-- Add opt-out settings for iRODS data request and zone status update emails
+- :ref:`Add opt-out settings for iRODS data request and zone status update emails <ui_user_profile>`
 - Add REST API list view pagination
 - Add Python v3.11 support
-- Add study plugin override via ISA-Tab comments
+- :ref:`Add study plugin override via ISA-Tab comments <metadata_advanced>`
 - Add session control in Django settings and environment variables
-- Add token-based iRODS/IGV basic auth support for OIDC users
-- Add support for comment, performer and contact field values as list
-- Add support for numeric field values as list
+- :ref:`Add token-based iRODS/IGV basic auth support for OIDC users <ui_irods_info>`
+- :ref:`Add support for comment, performer and contact field values as list <app_samplesheets_edit_cell_basic>`
+- :ref:`Add support for numeric field values as list <app_samplesheets_edit_cell_basic>`
 - Add support for UTF-8 BOM header in MD5 checksum files
-- Add optional SampleDataFileExistsAPIView access restricting for users with
-  project roles
+- :ref:`Add optional SampleDataFileExistsAPIView access restricting for users with project roles <api_samplesheets>`
 - Update minimum supported iRODS version to v4.3.3
-- Update REST API versioning
+- :ref:`Update REST API versioning <api_documentation_versioning>`
 - Update REST API views for OpenAPI support
 - Update lock requiring REST API views to return 503 if project is locked
 - Update REST APIs to return user UUID instead of SODARUserSerializer objects
@@ -50,9 +106,9 @@ Release for SODAR Core v1.0 upgrade, iRODS v4.3 upgrade and feature updates.
 - Remove Python v3.8 support
 - Remove Postgres <12 support
 - Remove iRODS <4.3 support
-- `SODAR Core v1.0 updates <https://sodar-core.readthedocs.io/en/latest/major_changes.html>`_:
+- `SODAR Core v1.0 updates <https://sodar-core.readthedocs.io/en/latest/major_changes.html#v1-0-6-2025-03-05>`_:
   OIDC auth support, new REST API versioning, owner/delegate remote sync
-  controls, etc
+  controls, etc.
 
 :ref:`Administrator upgrade guide for v1.0 <admin_upgrade_v1.0>`
 

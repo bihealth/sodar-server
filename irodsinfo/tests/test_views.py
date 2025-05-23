@@ -36,16 +36,16 @@ class IrodsinfoViewTestBase(TestCase):
 class TestIrodsInfoView(IrodsinfoViewTestBase):
     """Tests for IrodsInfoView"""
 
-    def test_render(self):
-        """Test rendering irods info view with irodsbackend"""
+    def test_get(self):
+        """Test IrodsInfoView GET"""
         with self.login(self.regular_user):
             response = self.client.get(reverse('irodsinfo:info'))
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.context['irods_backend_enabled'])
 
     @override_settings(ENABLED_BACKEND_PLUGINS=PLUGINS_DISABLE_IRODS)
-    def test_render_no_backend(self):
-        """Test rendering irods info view without irodsbackend"""
+    def test_get_no_backend(self):
+        """Test GET without irodsbackend"""
         with self.login(self.regular_user):
             response = self.client.get(reverse('irodsinfo:info'))
         self.assertEqual(response.status_code, 200)
@@ -55,10 +55,14 @@ class TestIrodsInfoView(IrodsinfoViewTestBase):
 class TestIrodsConfigView(IrodsinfoViewTestBase):
     """Tests for IrodsConfigView"""
 
-    def test_serve(self):
-        """Test serving irods config"""
+    def setUp(self):
+        super().setUp()
+        self.url = reverse('irodsinfo:config')
+
+    def test_get(self):
+        """Test IrodsConfigView GET"""
         with self.login(self.regular_user):
-            response = self.client.get(reverse('irodsinfo:config'))
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['content-type'], 'application/json')
         self.assertEqual(
@@ -69,10 +73,10 @@ class TestIrodsConfigView(IrodsinfoViewTestBase):
         self.assertEqual(('test', 1) in env_data.items(), False)
 
     @override_settings(IRODS_ENV_CLIENT=IRODS_ENV)
-    def test_serve_env(self):
-        """Test serving irods config with provided env"""
+    def test_get_env(self):
+        """Test GET with provided env"""
         with self.login(self.regular_user):
-            response = self.client.get(reverse('irodsinfo:config'))
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['content-type'], 'application/json')
         self.assertEqual(
@@ -83,10 +87,10 @@ class TestIrodsConfigView(IrodsinfoViewTestBase):
         self.assertEqual(('test', 1) in env_data.items(), True)
 
     @override_settings(IRODS_CERT_PATH=CERT_PATH)
-    def test_serve_cert(self):
-        """Test serving irods config with client side server cert"""
+    def test_get_cert(self):
+        """Test GET with client side server cert"""
         with self.login(self.regular_user):
-            response = self.client.get(reverse('irodsinfo:config'))
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['content-type'], 'application/zip')
         self.assertEqual(

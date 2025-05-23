@@ -3,9 +3,6 @@
 from django import template
 from django.urls import reverse
 
-# Projectroles dependency
-from projectroles.plugins import get_backend_api
-
 from landingzones.constants import (
     STATUS_STYLES,
     STATUS_FINISHED,
@@ -72,21 +69,6 @@ def disable_zone_ui(zone, user):
 
 
 @register.simple_tag
-def get_zone_list_url(zone):
-    """Return iRODS file list querying URL for landing zone"""
-    irods_backend = get_backend_api('omics_irods')
-    if not irods_backend:
-        return None
-    return irods_backend.get_url(
-        view='list',
-        project=zone.project,
-        path=irods_backend.get_path(zone),
-        md5=True,
-        colls=True,
-    )
-
-
-@register.simple_tag
 def get_config_legend(zone):
     """Return printable legend for zone configuration"""
     if not zone.configuration:
@@ -106,3 +88,13 @@ def get_config_plugin(zone):
 def get_config_link_url(zone, url_name):
     """Return URL for a config plugin link"""
     return reverse(url_name, kwargs={'landingzone': zone.sodar_uuid})
+
+
+@register.simple_tag
+def can_move_zone(zone, user):
+    """Return True if user is allowed to move the given zone"""
+    if user.is_superuser:
+        return True
+    perm = 'landingzones.move_zone_'
+    perm += 'own' if zone.user == user else 'all'
+    return user.has_perm(perm, zone.project)

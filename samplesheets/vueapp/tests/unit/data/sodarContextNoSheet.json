@@ -13,7 +13,10 @@
   "allow_editing": false,
   "alerts": [],
   "csrf_token": "NSNt4pE6xONuH8niHIe9naHhwT6rRqaRxJkPeAQEH26ENB29dIKXjMWYMyrdtmCh",
+  "project_uuid": "00000000-0000-0000-0000-000000000000",
   "user_uuid": "66666666-6666-6666-6666-666666666666",
+  "sheet_sync_enabled": false,
+  "site_read_only": false,
   "investigation": {},
   "studies": {},
   "perms": {
@@ -22,8 +25,8 @@
     "create_colls": true,
     "export_sheet": true,
     "delete_sheet": true,
-    "edit_config": true,
     "update_cache": true,
+    "view_tickets": true,
     "is_superuser": true
   },
   "sheet_stats": {}

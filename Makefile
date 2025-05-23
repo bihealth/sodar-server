@@ -14,6 +14,7 @@ define USAGE=
 @echo -e "\tmake test_coverage                          -- run all django tests and provide coverage html report"
 @echo -e "\tmake test_samplesheets_vue [arg=<target>]   -- run all samplesheets vue app tests or specify target"
 @echo -e "\tmake sync_taskflow                          -- sync taskflow"
+@echo -e "\tmake spectacular                            -- generate OpenAPI schemas with drf-spectacular"
 @echo -e
 endef
 
@@ -80,6 +81,11 @@ test_coverage: collectstatic
 .PHONY: test_samplesheets_vue
 test_samplesheets_vue:
 	npm run --prefix samplesheets/vueapp test:unit $(arg)
+
+
+.PHONY: spectacular
+spectacular:
+	$(MANAGE) spectacular --color $(arg)
 
 
 .PHONY: usage

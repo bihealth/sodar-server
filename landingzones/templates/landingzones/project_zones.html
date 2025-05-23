@@ -15,72 +15,13 @@
   <!-- Irodsbackend -->
   {% get_backend_include 'omics_irods' 'css' as irodsbackend_css %}
   {{ irodsbackend_css|safe }}
-
-  <style type="text/css">
-    .sodar-lz-table {
-        table-layout: fixed;
-    }
-    .sodar-lz-table thead tr th:nth-child(1){
-      width: 350px;
-    }
-    .sodar-lz-table tbody tr td:nth-child(2) {
-      word-wrap: break-word;
-    }
-    .sodar-lz-table thead tr th:nth-child(3),
-    .sodar-lz-table tbody tr td:nth-child(3) {
-      white-space: nowrap;
-      width: 150px;
-    }
-    .sodar-lz-table thead tr th:nth-child(4),
-    .sodar-lz-table tbody tr td:nth-child(4) {
-      width: 150px;
-      max-width: 150px;
-      white-space: nowrap;
-    }
-    .sodar-lz-table thead tr th:nth-child(5),
-    .sodar-lz-table tbody tr td:nth-child(5) {
-      text-align: right;
-      width: 70px;
-      max-width: 140px;
-    }
-    .sodar-lz-zone-assay-link:hover {
-        text-decoration: none;
-    }
-
-    /* Responsive modifications */
-    @media screen and (max-width: 1300px) {
-      .table.sodar-lz-table thead tr th:nth-child(3) {
-        display: none;
-      }
-      .table.sodar-lz-table tbody tr td:nth-child(3) {
-        display: none;
-      }
-    }
-    @media screen and (max-width: 1200px) {
-      .table.sodar-lz-table thead tr th:nth-child(1) {
-        width: 250px;
-      }
-    }
-    @media screen and (max-width: 900px) {
-      .table.sodar-lz-table thead tr th:nth-child(2) {
-        display: none;
-      }
-      .table.sodar-lz-table tbody tr td:nth-child(2) {
-        display: none;
-      }
-    }
-    @media screen and (max-width: 450px) {
-      .table.sodar-lz-table thead tr th:nth-child(4) {
-        display: none;
-      }
-      .table.sodar-lz-table tbody tr td:nth-child(4) {
-        display: none;
-      }
-    }
-  </style>
+  <link rel="stylesheet" type="text/css" href="{% static 'landingzones/css/landingzones.css' %}" />
 {% endblock css %}
 
 {% block projectroles_extend %}
+{% get_django_setting 'IRODS_WEBDAV_ENABLED' as irods_webdav_enabled %}
+{% get_django_setting 'IRODS_HASH_SCHEME' as irods_hash_scheme %}
+{% has_perm 'landingzones.view_zone_all' request.user project as can_view_zone_all %}
 {% has_perm 'landingzones.update_zone_own' request.user project as can_update_zone_own %}
 {% has_perm 'landingzones.update_zone_all' request.user project as can_update_zone_all %}
 {% has_perm 'landingzones.create_zone' request.user project as can_create_zone %}
@@ -90,7 +31,8 @@
   {% if not zone_access_disabled and can_create_zone %}
     <div class="ml-auto">
       <a href="{% url 'landingzones:create' project=project.sodar_uuid %}"
-         class="btn btn-primary" role="button" id="sodar-lz-btn-create-zone">
+         class="btn btn-primary {% if zone_create_limit %}disabled{% endif %}"
+         role="button" id="sodar-lz-btn-create-zone">
        <i class="iconify" data-icon="mdi:plus-thick"></i> Create Zone
       </a>
     </div>
@@ -98,50 +40,98 @@
 </div>
 
 <div class="container-fluid sodar-page-container"> {# Main container #}
+  <div class="alert alert-warning {% if project_lock %}d-block{% else %}d-none{% endif %}"
+       role="alert" id="sodar-lz-alert-lock">
+    <i class="iconify" data-icon="mdi:lock"></i>
+    This project is locked for landing zone "Validate and Move" operations. You
+    need to wait for the ongoing moving operation to finish before starting new
+    move jobs.
+  </div>
+  <div class="alert alert-warning {% if zone_validate_limit %}d-block{% else %}d-none{% endif %}"
+       role="alert" id="sodar-lz-alert-zone-validate-limit">
+    <i class="iconify" data-icon="mdi:lock-check"></i>
+    The maximum number of ongoing validation jobs for this project has been
+    reached. Please wait for ongoing validations to finish before starting new
+    validation jobs.
+  </div>
+  <div class="alert alert-warning {% if zone_create_limit %}d-block{% else %}d-none{% endif %}"
+       role="alert" id="sodar-lz-alert-zone-create-limit">
+    <i class="iconify" data-icon="mdi:briefcase-variant-off"></i>
+    Landing zone creation limit for the project has been reached. Please move or
+    delete existing zones before creating new ones.
+  </div>
   {% if project.archive %}
-    <div class="alert alert-warning" id="sodar-lz-alert-archive">
-      <i class="iconify" data-icon="mdi:archive"></i> Accessing and deleting
-      existing landing zones is permitted. Creating new landing zones and moving
-      files into iRODS are not allowed for archived projects.
+    <div class="alert alert-info" role="alert" id="sodar-lz-alert-archive">
+      <i class="iconify" data-icon="mdi:archive"></i>
+      Accessing and deleting existing landing zones is permitted. Creating new
+      landing zones and moving files into iRODS are not allowed for archived
+      projects.
     </div>
   {% endif %}
-
   {% if zone_access_disabled %}
     <div class="alert alert-info" role="alert" id="sodar-lz-alert-disable">
+      <i class="iconify" data-icon="mdi:briefcase-variant-off"></i>
       Landing zone operations are disabled for non-superusers on this site.
     </div>
-
   {% elif not investigation %}
-    <div class="alert alert-danger" role="alert" id="sodar-lz-alert-no-sheets">
-      No sample sheets are currently available for this project. To create
-      landing zones, a person with sufficient project permissions must import an
-      ISA-Tab investigation and create the sample collections in iRODS using the
-      <a href="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}">Sample Sheets</a> app.
+    <div class="alert alert-warning" role="alert" id="sodar-lz-alert-no-sheets">
+      <i class="iconify" data-icon="mdi:flask-empty-off"></i>
+      No sample sheets are currently set for this project. To create landing
+      zones, a person with sufficient project permissions must create or import
+      an ISA-Tab investigation and create the sample collections in iRODS using
+      the <a href="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}">Sample Sheets</a>
+      app.
     </div>
-
   {% elif investigation and not investigation.irods_status %}
-    <div class="alert alert-danger" role="alert" id="sodar-lz-alert-no-colls">
-      The iRODS collections for the project sample sheets have not been created.
-      A user authorized for sample sheet editing must enable iRODS access by
-      selecting <a href="{% url 'samplesheets:collections' project=project.sodar_uuid %}">Create iRODS Collections</a>
+    <div class="alert alert-warning" role="alert" id="sodar-lz-alert-no-colls">
+      <i class="iconify" data-icon="mdi:database-off"></i>
+      iRODS collections for project sample sheets have not been created. A user
+      authorized for sample sheet editing must enable iRODS access by selecting
+      <a href="{% url 'samplesheets:collections' project=project.sodar_uuid %}">Create iRODS Collections</a>
       in the <a href="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}">Sample Sheets</a>
       app. After that landing zones can be created for the project.
     </div>
-
-  {% elif zones_own.count == 0 and not zones_other %}
+  {% elif zones.count == 0 %}
     <div class="alert alert-info" role="alert" id="sodar-lz-alert-no-zones">
+      <i class="iconify" data-icon="mdi:briefcase-variant-off"></i>
       No landing zones are currently available for you in this project. Please
-      create a landing zone for a desired assay using the "Zone Operations" menu.
+      create a landing zone for a desired assay by clicking on
+      <a href="{% url 'landingzones:create' project=project.sodar_uuid %}">Create Zone</a>.
     </div>
-
   {% else %}
-    {# User zones #}
-    {% include 'landingzones/_zone_list.html' with zones=zones_own list_title='Your Zones' list_icon='mdi:account' list_type='own' %}
-    {% if zones_other %}
-      {% include 'landingzones/_zone_list.html' with zones=zones_other list_title='Other Zones' list_icon='mdi:account-multiple' list_type='other' %}
+    {% if prohibit_files %}
+      {% include 'landingzones/_prohibit_warning.html' %}
     {% endif %}
+    <div class="card"
+         id="sodar-lz-zone-list"
+         data-hash-scheme="{{ irods_hash_scheme }}">
+      <div class="card-body p-0">
+        <table class="table table-striped sodar-card-table sodar-lz-table">
+          <thead>
+            <tr>
+              <th class="sodar-lz-list-header-title">Zone</th>
+              <th class="sodar-lz-list-header-info">Status&nbsp;Info</th>
+              <th class="sodar-lz-list-header-status">Status</th>
+              <th class="sodar-lz-list-header-links">Links</th>
+              <th class="sodar-lz-list-header-edit"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for zone in zones %}
+              {% include 'landingzones/_zone_item.html' %}
+            {% endfor %}
+            {% if zones.count == 0 %}
+               <td class="bg-faded font-italic text-center" colspan="5">
+                 No active landing zones
+                 {% if not can_view_zone_all %}available to you{% endif %}
+                 found.
+               </td>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
   {% endif %}
-
 </div> {# Main container #}
 
 {% endblock projectroles_extend %}
@@ -153,7 +143,6 @@
   <script type="text/javascript">
     window.zoneStatusUpdated = false;
     window.statusInterval = {{ zone_status_interval }} * 1000;
-    window.irodsShowChecksumCol = true;
     var zoneStatusURL = "{% url 'landingzones:ajax_status' project=project.sodar_uuid %}";
     var currentUserURL = "{% url 'projectroles:ajax_user_current' %}";
   </script>
@@ -186,21 +175,12 @@
             showCancelLink: true
         });
     }
-    if ($('#sodar-lz-zone-list-own').length) {
+    if ($('#sodar-lz-zone-list').length) {
         tour.addStep('own_zones', {
-            title: 'Your Zones',
-            text: 'Your own landing zones are listed in this table.',
-            attachTo: '#sodar-lz-zone-list-own top',
-            advanceOn: '.docs-link click',
-            showCancelLink: true
-        });
-    }
-    if ($('#sodar-lz-zone-list-other').length) {
-        tour.addStep('other_zones', {
-            title: 'Zones of Other Users',
-            text: 'This table lists zones of other users to which you have ' +
-                  'been given access.',
-            attachTo: '#sodar-lz-zone-list-other top',
+            title: 'Project Zones',
+            text: 'The project landing zones you have access to are listed ' +
+                  'in this table.',
+            attachTo: '#sodar-lz-zone-list top',
             advanceOn: '.docs-link click',
             showCancelLink: true
         });
@@ -219,7 +199,7 @@
     if ($('.sodar-lz-table').length) {
         tour.addStep('zone_title', {
             title: 'Zone Title',
-            text: 'The title of each stone is shown in the leftmost column. ' +
+            text: 'The title of each zone is shown in the leftmost column. ' +
                   'The title is presented in the form of a time stamp of the ' +
                   'creation date and an optional text idenfitier.',
             attachTo: '.sodar-lz-list-header-title top',
@@ -229,21 +209,51 @@
         tour.addStep('zone_assay', {
             title: 'Zone Assay',
             text: 'Each landing zone is specific to an assay within the ' +
-                  'project studies. This assay icon links to the assay in ' +
+                  'project studies. This assay badge links to the assay in ' +
                   'the Sample Sheets app.',
-            attachTo: '.sodar-lz-zone-assay-link right',
+            attachTo: '.sodar-lz-zone-badge-assay right',
             advanceOn: '.docs-link click',
             showCancelLink: true
         });
         if ($('.sodar-lz-zone-description-link').length) {
             tour.addStep('zone_description', {
-            title: 'Zone Description',
-            text: 'Clicking on this icon will display an optional ' +
-                'description for the landing zone.',
-            attachTo: '.sodar-lz-zone-description-link right',
-            advanceOn: '.docs-link click',
-            showCancelLink: true
-          });
+                title: 'Zone Description',
+                text: 'Clicking on this icon will display an optional ' +
+                      'description for the landing zone.',
+                attachTo: '.sodar-lz-zone-description-link right',
+                advanceOn: '.docs-link click',
+                showCancelLink: true
+            });
+        }
+        if ($('.sodar-user-badge').length) {
+            tour.addStep('zone_user', {
+                title: 'Zone User',
+                text: 'For zones of other users, the user who created the ' +
+                      'zone is displayed as a badge.',
+                attachTo: '.sodar-user-badge right',
+                advanceOn: '.docs-link click',
+                showCancelLink: true
+            });
+        }
+        if ($('.sodar-lz-zone-badge-config').length) {
+            tour.addStep('zone_config', {
+                title: 'Zone Configuration',
+                text: 'For zones with a special configuration, the used ' +
+                      'configuration is displayed as a badge.',
+                attachTo: '.sodar-lz-zone-badge-config right',
+                advanceOn: '.docs-link click',
+                showCancelLink: true
+            });
+        }
+        if ($('.sodar-lz-zone-badge-warn-perms').length) {
+            tour.addStep('zone_perm_warning', {
+                title: 'Zone User Permission Warning',
+                text: 'For zones created by users who no longer have project ' +
+                      'permissions, a warning badge is displayed.',
+                attachTo: '.sodar-lz-zone-badge-warn-perms right',
+                advanceOn: '.docs-link click',
+                showCancelLink: true
+            });
         }
         tour.addStep('zone_status', {
             title: 'Zone Status',
@@ -266,11 +276,19 @@
             advanceOn: '.docs-link click',
             showCancelLink: true
         });
+        tour.addStep('zone_file_list', {
+            title: 'iRODS File List Modal',
+            text: 'You can see a flat list of landing zone collections and ' +
+                  'data objects by clicking this button.',
+            attachTo: '.sodar-lz-list-modal-btn left',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
         tour.addStep('zone_links', {
             title: 'iRODS Links for Zone',
             text: 'Links for iRODS access for available zone are presented ' +
                   'in this column.',
-            attachTo: '.sodar-lz-zone-links left',
+            attachTo: '.sodar-irods-btn-container left',
             advanceOn: '.docs-link click',
             showCancelLink: true
         });
@@ -280,7 +298,7 @@
                   'validation and moving operation for moving your landing ' +
                   'zone content into the project sample repository. Here you ' +
                   'can also delete unwanted landing zones.',
-            attachTo: '.sodar-lz-zone-edit left',
+            attachTo: '.sodar-lz-zone-dropdown left',
             advanceOn: '.docs-link click',
             showCancelLink: true
         });

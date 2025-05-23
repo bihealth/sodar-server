@@ -6,20 +6,27 @@ import os
 import random
 import re
 import string
+import time
 
 from irods import keywords as kw
 from irods.access import iRODSAccess
 from irods.exception import (
+    GroupDoesNotExist,
+    NetworkException,
     UserDoesNotExist,
-    UserGroupDoesNotExist,
     CAT_SUCCESS_BUT_WITH_NO_INFO,
 )
 from irods.models import Collection
 
+from django.conf import settings
+
+# Landingzones dependency
+from landingzones.utils import cleanup_file_prohibit
+
 from taskflowbackend.tasks.base_task import BaseTask
 
 
-logger = logging.getLogger('__name__')
+logger = logging.getLogger(__name__)
 
 
 # Local constants
@@ -35,9 +42,10 @@ ACCESS_LOOKUP = {
 }
 INHERIT_STRINGS = {True: 'inherit', False: 'noinherit'}
 META_EMPTY_VALUE = 'N/A'
-MD5_RE = re.compile(r'([^\w.])')
+CHECKSUM_FILE_RE = re.compile(r'([^\w.])')
 CHECKSUM_RETRY = 5
 NO_FILE_CHECKSUM_LABEL = 'None'
+HASH_SCHEME_SHA256 = 'SHA256'
 
 
 # Mixins -----------------------------------------------------------------------
@@ -138,7 +146,7 @@ class IrodsBaseTask(BaseTask):
         self.name = '<iRODS> {} ({})'.format(name, self.__class__.__name__)
         self.irods = kwargs['irods']
 
-    def _raise_irods_exception(self, ex, info=None):
+    def raise_irods_exception(self, ex, info=None):
         """
         Raise an exception when taskflow doesn't catch a proper exception from
         the iRODS client.
@@ -148,7 +156,7 @@ class IrodsBaseTask(BaseTask):
             (str(ex) if str(ex) not in ['', 'None'] else ex.__class__.__name__),
         )
         if info:
-            desc += ' ({})'.format(info)
+            desc += '\n{}'.format(info)
         logger.error(desc)
         raise Exception(desc)
 
@@ -290,7 +298,7 @@ class SetCollectionMetadataTask(IrodsBaseTask):
         try:
             coll = self.irods.collections.get(path)
         except Exception as ex:
-            self._raise_irods_exception(ex)
+            self.raise_irods_exception(ex)
         meta_item = None
         try:
             meta_item = coll.metadata.get_one(name)
@@ -340,7 +348,7 @@ class CreateUserGroupTask(IrodsBaseTask):
     def execute(self, name, *args, **kwargs):
         try:
             self.irods.user_groups.get(name)
-        except UserGroupDoesNotExist:
+        except GroupDoesNotExist:
             self.irods.user_groups.create(name=name, user_zone=self.irods.zone)
             self.data_modified = True
         super().execute(*args, **kwargs)
@@ -394,7 +402,7 @@ class SetAccessTask(IrodsAccessMixin, IrodsBaseTask):
         obj_target=False,
         recursive=True,
         *args,
-        **kwargs
+        **kwargs,
     ):
         try:
             self.execute_set_access(
@@ -405,7 +413,7 @@ class SetAccessTask(IrodsAccessMixin, IrodsBaseTask):
                 recursive,
             )
         except Exception as ex:
-            self._raise_irods_exception(ex, user_name)
+            self.raise_irods_exception(ex, user_name)
         super().execute(*args, **kwargs)
 
     def revert(
@@ -417,7 +425,7 @@ class SetAccessTask(IrodsAccessMixin, IrodsBaseTask):
         obj_target=False,
         recursive=True,
         *args,
-        **kwargs
+        **kwargs,
     ):
         try:
             self.revert_set_access(path, user_name, obj_target, recursive)
@@ -438,7 +446,7 @@ class IssueTicketTask(IrodsBaseTask):
                 )
                 self.data_modified = True
             except Exception as ex:
-                self._raise_irods_exception(ex)
+                self.raise_irods_exception(ex)
         super().execute(*args, **kwargs)
 
     def revert(
@@ -460,7 +468,7 @@ class DeleteTicketTask(IrodsBaseTask):
                 irods_backend.delete_ticket(self.irods, ticket_str)
                 self.data_modified = True
             except Exception as ex:
-                self._raise_irods_exception(ex)
+                self.raise_irods_exception(ex)
         super().execute(*args, **kwargs)
 
     def revert(
@@ -502,7 +510,7 @@ class AddUserToGroupTask(IrodsBaseTask):
         try:
             group = self.irods.user_groups.get(group_name)
         except Exception as ex:
-            self._raise_irods_exception(
+            self.raise_irods_exception(
                 ex, info='Failed to retrieve group "{}"'.format(group_name)
             )
         if not group.hasmember(user_name):
@@ -510,7 +518,7 @@ class AddUserToGroupTask(IrodsBaseTask):
                 group.addmember(user_name=user_name, user_zone=self.irods.zone)
                 self.data_modified = True
             except Exception as ex:
-                self._raise_irods_exception(
+                self.raise_irods_exception(
                     ex,
                     info='Failed to add user "{}" into group "{}"'.format(
                         user_name, group_name
@@ -530,13 +538,18 @@ class RemoveUserFromGroupTask(IrodsBaseTask):
     def execute(self, group_name, user_name, *args, **kwargs):
         try:
             group = self.irods.user_groups.get(group_name)
-            if group.hasmember(user_name):
-                group.removemember(
-                    user_name=user_name, user_zone=self.irods.zone
-                )
-                self.data_modified = True
-        except Exception as ex:
-            self._raise_irods_exception(ex)
+        except GroupDoesNotExist:
+            # This is ok, user isn't in a group that doesn't exist :)
+            group = None
+        if group:
+            try:
+                if group.hasmember(user_name):
+                    group.removemember(
+                        user_name=user_name, user_zone=self.irods.zone
+                    )
+                    self.data_modified = True
+            except Exception as ex:
+                self.raise_irods_exception(ex)
         super().execute(*args, **kwargs)
 
     def revert(self, group_name, user_name, *args, **kwargs):
@@ -554,7 +567,7 @@ class MoveDataObjectTask(IrodsBaseTask):
             self.irods.data_objects.move(src_path=src_path, dest_path=dest_path)
             self.data_modified = True
         except Exception as ex:
-            self._raise_irods_exception(ex)
+            self.raise_irods_exception(ex)
         super().execute(*args, **kwargs)
 
     def revert(self, src_path, dest_path, *args, **kwargs):
@@ -583,7 +596,7 @@ class BatchSetAccessTask(IrodsAccessMixin, IrodsBaseTask):
         obj_target=False,
         recursive=True,
         *args,
-        **kwargs
+        **kwargs,
     ):
         # NOTE: Exception handling is done within execute_set_access()
         for path in paths:
@@ -605,106 +618,220 @@ class BatchSetAccessTask(IrodsAccessMixin, IrodsBaseTask):
         obj_target=False,
         recursive=True,
         *args,
-        **kwargs
+        **kwargs,
     ):
         for path in paths:
             self.revert_set_access(path, user_name, obj_target, recursive)
 
 
-class BatchCheckFilesTask(IrodsBaseTask):
-    """
-    Batch check for existence of files and corresponding .md5 checksum files
-    """
+class BatchCheckFileSuffixTask(IrodsBaseTask):
+    """Batch check for prohibited file name suffixes"""
 
-    def execute(self, file_paths, md5_paths, zone_path, *args, **kwargs):
+    def execute(self, file_paths, suffixes, zone_path, *args, **kwargs):
+        suffixes = cleanup_file_prohibit(suffixes)
+        if not suffixes:
+            super().execute(*args, **kwargs)
+            return
         err_paths = []
         for p in file_paths:
-            if p + '.md5' not in md5_paths:
-                err_paths.append(p + '.md5')
-        for p in md5_paths:
-            if p[:-4] not in file_paths:
-                err_paths.append(p[:-4])
+            if any(p.lower().endswith('.' + s) for s in suffixes):
+                err_paths.append(p)
         err_len = len(err_paths)
         if err_len > 0:
-            msg = '{} expected file{} missing: {}'.format(
+            msg = '{} file{} found with prohibited file type ({}):\n{}'.format(
                 err_len,
                 's' if err_len != 1 else '',
-                ';'.join([p.replace(zone_path + '/', '') for p in err_paths]),
+                ', '.join(suffixes),
+                '\n'.join([p.replace(zone_path + '/', '') for p in err_paths]),
             )
             logger.error(msg)
-            self._raise_irods_exception(Exception(), msg)
+            self.raise_irods_exception(Exception(), msg)
+        super().execute(*args, **kwargs)
 
-    def revert(self, file_paths, md5_paths, *args, **kwargs):
+    def revert(self, file_paths, suffixes, zone_path, *args, **kwargs):
+        pass  # Nothing to revert
+
+
+class BatchCheckFileExistTask(IrodsBaseTask):
+    """
+    Batch check for existence of files and corresponding checksum files
+    """
+
+    def execute(
+        self, file_paths, chk_paths, zone_path, chk_suffix, *args, **kwargs
+    ):
+        err_paths = []
+        for p in file_paths:
+            p_chk = p + chk_suffix
+            if p_chk not in chk_paths:
+                err_paths.append(p_chk)
+        for p in chk_paths:
+            p_file = p[: p.rfind('.')]
+            if p_file not in file_paths:
+                err_paths.append(p_file)
+        err_len = len(err_paths)
+        if err_len > 0:
+            msg = '{} expected file{} missing:\n{}'.format(
+                err_len,
+                's' if err_len != 1 else '',
+                '\n'.join([p.replace(zone_path + '/', '') for p in err_paths]),
+            )
+            logger.error(msg)
+            self.raise_irods_exception(Exception(), msg)
+        super().execute(*args, **kwargs)
+
+    def revert(
+        self, file_paths, chk_paths, zone_path, chk_suffix, *args, **kwargs
+    ):
         pass  # Nothing is modified so no need for revert
 
 
 class BatchValidateChecksumsTask(IrodsBaseTask):
     """Batch validate checksums of a given list of data object paths"""
 
-    @classmethod
-    def _compare_checksums(cls, data_obj, checksum):
+    def _read_checksum(self, chk_path, zone_path_len, read_errors):
         """
-        Compares object replicate checksums to expected sum. Raises exception if
+        Read checksum file. Appends error and returns False if error is
+        reached.
+        """
+        try:
+            with self.irods.data_objects.open(chk_path, mode='r') as f:
+                dec = 'utf-8'
+                chk_content = f.read()
+                # Support for BOM header forced by PowerShell (see #1818)
+                if chk_content[:3] == codecs.BOM_UTF8:
+                    dec += '-sig'
+                return re.split(CHECKSUM_FILE_RE, chk_content.decode(dec))[0]
+        except Exception as ex:
+            ex_msg = 'File: {}\nException: {}'.format(
+                '/'.join(chk_path.split('/')[zone_path_len:]), ex
+            )
+            read_errors.append(ex_msg)
+            return False
+
+    @classmethod
+    def _compare_checksums(
+        cls, data_obj, checksum, zone_path_len, hash_scheme, irods_backend
+    ):
+        """
+        Compare object replicate checksums to expected sum. Raises exception if
         checksums do not match.
 
         :param data_obj: Data object
         :param checksum: Expected checksum (string)
+        :param zone_path_len: Landing zone iRODS path length (int)
+        :param hash_scheme: Checksum hashing scheme (string)
+        :param irods_backend: IrodsAPI object
         :raises: Exception if checksums do not match
         """
         for replica in data_obj.replicas:
+            repl_checksum = replica.checksum
+            if hash_scheme == HASH_SCHEME_SHA256:
+                # Convert SHA256 from base64
+                repl_checksum = irods_backend.get_sha256_hex(repl_checksum)
             if (
                 not checksum
-                or not replica.checksum
-                or checksum.lower() != replica.checksum.lower()
+                or not repl_checksum
+                or checksum.lower() != repl_checksum.lower()
             ):
-                msg = (
+                log_msg = (
                     'Checksums do not match for "{}" in resource "{}" '
                     '(File: {}; iRODS: {})'.format(
                         os.path.basename(data_obj.path),
                         replica.resource_name,
                         checksum or NO_FILE_CHECKSUM_LABEL,
-                        replica.checksum,
+                        repl_checksum,
                     )
                 )
-                logger.error(msg)
-                raise Exception(msg)
+                logger.error(log_msg)
+                ex_path = '/'.join(data_obj.path.split('/')[zone_path_len:])
+                ex_msg = 'Path: {}\nResource: {}\nFile: {}\niRODS: {}'.format(
+                    ex_path,
+                    replica.resource_name,
+                    checksum or NO_FILE_CHECKSUM_LABEL,
+                    repl_checksum,
+                )
+                raise Exception(ex_msg)
 
-    def execute(self, paths, zone_path, *args, **kwargs):
+    def execute(
+        self,
+        landing_zone,
+        file_paths,
+        zone_path,
+        irods_backend,
+        *args,
+        **kwargs,
+    ):
         zone_path_len = len(zone_path.split('/'))
-        for path in paths:
-            md5_path = path + '.md5'
-            try:
-                with self.irods.data_objects.open(md5_path, mode='r') as f:
-                    dec = 'utf-8'
-                    md5_content = f.read()
-                    # Support for BOM header forced by PowerShell (see #1818)
-                    if md5_content[:3] == codecs.BOM_UTF8:
-                        dec += '-sig'
-                    file_sum = re.split(MD5_RE, md5_content.decode(dec))[0]
-            except Exception as ex:
-                msg = 'Unable to read checksum file "{}"'.format(
-                    '/'.join(md5_path.split('/')[zone_path_len:])
+        interval = settings.TASKFLOW_ZONE_PROGRESS_INTERVAL
+        hash_scheme = settings.IRODS_HASH_SCHEME
+        chk_suffix = irods_backend.get_checksum_file_suffix()
+        file_count = len(file_paths)
+        status_base = landing_zone.status_info
+        i = 1
+        i_prev = 0
+        read_errors = []
+        cmp_errors = []
+        time_start = time.time()
+        for f_path in file_paths:
+            chk_path = f_path + chk_suffix
+            file_sum = self._read_checksum(chk_path, zone_path_len, read_errors)
+            if file_sum is not False:
+                try:
+                    self._compare_checksums(
+                        self.irods.data_objects.get(f_path),
+                        file_sum,
+                        zone_path_len,
+                        hash_scheme,
+                        irods_backend,
+                    )
+                except Exception as ex:
+                    cmp_errors.append(str(ex))
+            if time.time() - time_start > interval and i_prev != i:
+                landing_zone.refresh_from_db()
+                landing_zone.status_info = f'{status_base} ({i}/{file_count})'
+                landing_zone.save()
+                i_prev = i
+                time_start = time.time()
+            i += 1
+        if read_errors or cmp_errors:
+            ex_msg = ''
+            if read_errors:
+                err_len = len(read_errors)
+                ex_msg += 'Unable to read {} checksum file{}:\n'.format(
+                    err_len, 's' if err_len != 1 else ''
                 )
-                self._raise_irods_exception(ex, msg)
-            try:
-                self._compare_checksums(
-                    self.irods.data_objects.get(path), file_sum
+                ex_msg += '\n'.join(read_errors)
+            if cmp_errors:
+                err_len = len(cmp_errors)
+                ex_msg += '{}Checksums do not match for {} file{}:\n'.format(
+                    '\n' if read_errors else '',
+                    err_len,
+                    's' if err_len != 1 else '',
                 )
-            except Exception as ex:
-                self._raise_irods_exception(ex)
+                ex_msg += '\n'.join(cmp_errors)
+            self.raise_irods_exception(Exception(), ex_msg)
         super().execute(*args, **kwargs)
 
-    def revert(self, paths, zone_path, *args, **kwargs):
+    def revert(
+        self,
+        landing_zone,
+        file_paths,
+        zone_path,
+        irods_backend,
+        *args,
+        **kwargs,
+    ):
         pass  # Nothing is modified so no need for revert
 
 
 class BatchCreateCollectionsTask(IrodsBaseTask):
     """Batch create collections from a list (imkdir)"""
 
-    def execute(self, paths, *args, **kwargs):
+    def execute(self, coll_paths, *args, **kwargs):
         # Create parent collections if they don't exist
         self.execute_data['created_colls'] = []
-        for path in paths:
+        for path in coll_paths:
             for i in range(2, len(path.split('/')) + 1):
                 sub_path = '/'.join(path.split('/')[:i])
                 try:
@@ -713,13 +840,13 @@ class BatchCreateCollectionsTask(IrodsBaseTask):
                         self.execute_data['created_colls'].append(sub_path)
                         self.data_modified = True
                 except Exception as ex:
-                    self._raise_irods_exception(
+                    self.raise_irods_exception(
                         ex,
                         'Failed to create collection: {}'.format(sub_path),
                     )
         super().execute(*args, **kwargs)
 
-    def revert(self, paths, *args, **kwargs):
+    def revert(self, coll_paths, *args, **kwargs):
         if self.data_modified:
             for coll_path in reversed(self.execute_data['created_colls']):
                 if self.irods.collections.exists(coll_path):
@@ -744,6 +871,7 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
 
     def execute(
         self,
+        landing_zone,
         src_root,
         dest_root,
         src_paths,
@@ -751,9 +879,15 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
         user_name,
         irods_backend,
         *args,
-        **kwargs
+        **kwargs,
     ):
         self.execute_data['moved_objects'] = []
+        interval = settings.TASKFLOW_ZONE_PROGRESS_INTERVAL
+        file_count = len(src_paths)
+        status_base = landing_zone.status_info
+        i = 1
+        i_prev = 0
+        time_start = time.time()
 
         for src_path in src_paths:
             dest_coll_path = self.get_dest_coll_path(
@@ -772,11 +906,11 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
                     msg = 'Error moving move data object "{}" to "{}"'.format(
                         src_path, dest_obj_path
                     )
-                self._raise_irods_exception(ex, msg)
+                self.raise_irods_exception(ex, msg)
             try:
                 target = self.irods.data_objects.get(dest_obj_path)
             except Exception as ex:
-                self._raise_irods_exception(
+                self.raise_irods_exception(
                     ex,
                     'Error retrieving destination object "{}"'.format(
                         dest_obj_path
@@ -785,7 +919,7 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
             try:
                 target_access = self.irods.acls.get(target=target)
             except Exception as ex:
-                self._raise_irods_exception(
+                self.raise_irods_exception(
                     ex,
                     'Error getting permissions of target "{}"'.format(target),
                 )
@@ -818,23 +952,32 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
                 try:
                     self.irods.acls.set(acl, recursive=False)
                 except Exception as ex:
-                    self._raise_irods_exception(
+                    self.raise_irods_exception(
                         ex,
                         'Error setting permission for "{}"'.format(
                             dest_coll_path
                         ),
                     )
+
+            if time.time() - time_start > interval and i_prev != i:
+                landing_zone.refresh_from_db()
+                landing_zone.status_info = f'{status_base} ({i}/{file_count})'
+                landing_zone.save()
+                i_prev = i
+                time_start = time.time()
+            i += 1
         super().execute(*args, **kwargs)
 
     def revert(
         self,
+        landing_zone,
         src_root,
         dest_root,
         access_name,
         user_name,
         irods_backend,
         *args,
-        **kwargs
+        **kwargs,
     ):
         for moved_object in self.execute_data['moved_objects']:
             src_path = moved_object[0]
@@ -861,28 +1004,57 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
 class BatchCalculateChecksumTask(IrodsBaseTask):
     """Batch calculate checksum for data objects (ichksum)"""
 
-    def execute(self, file_paths, force, *args, **kwargs):
+    def _raise_checksum_exception(self, ex, replica, data_obj, info=None):
+        info_str = (':' + info) if info else ''
+        self.raise_irods_exception(
+            ex,
+            f'Failed to calculate checksum{info_str}\nReplica: '
+            f'{replica.resc_hier}\nFile: {data_obj.path}',
+        )
+
+    def _compute_checksum(self, data_obj, replica, force):
+        if replica.checksum and not force:
+            return
+        for j in range(CHECKSUM_RETRY):
+            if j > 0:  # Retry if iRODS times out (see #1941)
+                logger.info('Retrying ({})..'.format(j + 1))
+            try:
+                data_obj.chksum(**{kw.RESC_HIER_STR_KW: replica.resc_hier})
+                return
+            # Retry for network exceptions
+            except NetworkException as ex:
+                logger.error(
+                    f'NetworkException in BatchCalculateChecksumTask for path '
+                    f'"{data_obj.path}" in replica "{replica.resc_hier}" '
+                    f'(attempt {j + 1}/{CHECKSUM_RETRY}): {ex}'
+                )
+                # Raise if we reached maximum retry count
+                if j == CHECKSUM_RETRY - 1:
+                    info = 'maximum network timeout retry attempts reached'
+                    self._raise_checksum_exception(ex, replica, data_obj, info)
+            # Raise other exceptions normally
+            except Exception as ex:
+                self._raise_checksum_exception(ex, replica, data_obj)
+
+    def execute(self, landing_zone, file_paths, force, *args, **kwargs):
+        interval = settings.TASKFLOW_ZONE_PROGRESS_INTERVAL
+        file_count = len(file_paths)
+        status_base = landing_zone.status_info
+        i = 1
+        i_prev = 0
+        time_start = time.time()
         for path in file_paths:
             if not self.irods.data_objects.exists(path):
                 continue
             data_obj = self.irods.data_objects.get(path)
             for replica in data_obj.replicas:
-                if replica.checksum and not force:
-                    continue
-                for i in range(CHECKSUM_RETRY):
-                    if i > 0:  # Retry if iRODS times out (see #1941)
-                        logger.info('Retrying ({})..'.format(i + 1))
-                    try:
-                        data_obj.chksum(
-                            **{kw.RESC_HIER_STR_KW: replica.resc_hier}
-                        )
-                        break  # Skip retries on success
-                    except Exception as ex:
-                        logger.error(
-                            'Exception in BatchCalculateChecksumTask for path '
-                            '"{}" in replica "{}": {}'.format(
-                                data_obj.path, replica.resc_hier, ex
-                            )
-                        )  # NOTE: No raise, only log
+                self._compute_checksum(data_obj, replica, force)
+            if time.time() - time_start > interval and i_prev != i:
+                landing_zone.refresh_from_db()
+                landing_zone.status_info = f'{status_base} ({i}/{file_count})'
+                landing_zone.save()
+                i_prev = i
+                time_start = time.time()
+            i += 1
         super().execute(*args, **kwargs)
         # NOTE: We don't need revert for this

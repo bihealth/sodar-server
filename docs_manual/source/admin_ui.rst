@@ -52,6 +52,8 @@ These new applications are as follows:
 `Remote Site Access <https://sodar-core.readthedocs.io/en/latest/app_projectroles_usage.html#remote-projects>`_
     Synchronize projects and their member roles between multiple SODAR Core
     based sites.
+:ref:`Site App Settings <admin_site_app_settings>`
+    View for modifying site-wide app settings intended to be changed at runtime.
 `Site Info <https://sodar-core.readthedocs.io/en/latest/app_siteinfo.html#usage>`_
     Display information related to this SODAR instance, including statistics,
     enabled applications and back-end server settings.

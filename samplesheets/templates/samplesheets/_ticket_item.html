@@ -1,0 +1,73 @@
+{% load projectroles_common_tags %}
+
+<tr class="sodar-ss-ticket-item">
+  <td class="nowrap sodar-ss-ticket-item-title">
+    <button
+        role="submit"
+        class="btn btn-secondary sodar-list-btn sodar-copy-btn pull-right ml-1"
+        data-clipboard-text="{{ ticket.get_webdav_link }}"
+        data-tooltip="tooltip" data-placement="top"
+        title="Copy WebDAV URL into clipboard">
+      <i class="iconify" data-icon="mdi:clipboard-text-multiple"></i>
+    </button>
+    <a href="{{ ticket.get_webdav_link }}"
+       target="_blank"
+       class="{% if not ticket.is_active %}text-strikethrough{% endif %}">
+      {{ ticket.get_display_name }}
+    </a>
+    {% if ticket.get_allowed_hosts_list %}
+      <div>
+        {% for host in ticket.get_allowed_hosts_list %}
+          <span class="badge badge-info sodar-ss-ticket-item-host"
+                title="Allowed host: {{ host }}"
+                data-toggle="tooltip">
+            <i class="iconify" data-icon="mdi:lock-open"></i> {{ host }}
+          </span>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </td>
+  <td class="nowrap
+             {% if not ticket.is_active %}text-strikethrough{% endif %}
+             sodar-ss-ticket-item-str">
+    <code>{{ ticket.ticket }}</code>
+  </td>
+  {% if ticket.user %}
+    <td>
+      {% get_user_html ticket.user as user_html %}{{ user_html | safe }}
+    </td>
+  {% else %}
+    <td class="text-muted">N/A</td>
+  {% endif %}
+  <td class="nowrap">{{ ticket.get_date_created }}</td>
+  <td class="nowrap
+            {% if not ticket.date_expires %}text-muted{% elif not ticket.is_active %}text-danger{% endif %}
+            sodar-ss-ticket-item-expiry">
+    {% if not ticket.is_active %}
+      Expired
+    {% elif ticket.date_expires %}
+      {{ ticket.get_date_expires }}
+    {% else %}
+      Never
+    {% endif %}
+  </td>
+  <td class="text-right">
+    {% if can_edit_tickets %}
+      <button class="btn btn-secondary dropdown-toggle
+                     sodar-list-dropdown sodar-ss-ticket-dropdown"
+              type="button" data-toggle="dropdown" aria-expanded="false">
+        <i class="iconify" data-icon="mdi:cog"></i>
+      </button>
+      <div class="dropdown-menu dropdown-menu-right">
+        <a class="dropdown-item"
+           href="{% url 'samplesheets:irods_ticket_update' irodsaccessticket=ticket.sodar_uuid %}">
+          <i class="iconify" data-icon="mdi:lead-pencil"></i> Update Ticket
+        </a>
+        <a class="dropdown-item text-danger"
+           href="{% url 'samplesheets:irods_ticket_delete' irodsaccessticket=ticket.sodar_uuid %}">
+          <i class="iconify" data-icon="mdi:close-thick"></i> Delete Ticket
+        </a>
+      </div>
+    {% endif %}
+  </td>
+</tr>

@@ -9,14 +9,38 @@ from irods.meta import iRODSMeta
 from irods.ticket import Ticket
 from irods.user import iRODSUser, iRODSUserGroup
 
-from django.conf import settings
+from django.test import override_settings
+
+from test_plus import TestCase
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
+from projectroles.plugins import get_backend_api
+from projectroles.tests.test_models import ProjectMixin
+
+# Timeline dependency
+from timeline.tests.test_models import TimelineEventMixin
+
+# Landingzones dependency
+from landingzones.constants import ZONE_STATUS_ACTIVE, DEFAULT_STATUS_INFO
+from landingzones.tests.test_models import (
+    LandingZoneMixin,
+    ZONE_TITLE,
+    ZONE_DESC,
+)
+from landingzones.tests.test_views_taskflow import LandingZoneTaskflowMixin
+
+# Samplesheets dependency
+from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
 from taskflowbackend.flows.base_flow import BaseLinearFlow
-from taskflowbackend.tests.base import TaskflowViewTestBase, TICKET_STR
+from taskflowbackend.tests.base import (
+    TaskflowViewTestBase,
+    HASH_SCHEME_SHA256,
+    TICKET_STR,
+)
 from taskflowbackend.tasks.irods_tasks import *  # noqa
+from taskflowbackend.tasks.sodar_tasks import TimelineEventExtraDataUpdateTask
 
 
 # SODAR constants
@@ -25,6 +49,7 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 # Local constants
 USER_PREFIX = 'omics_'
 IRODS_ZONE = settings.IRODS_ZONE
+SHEET_PATH = SHEET_DIR + 'i_small.zip'
 DEFAULT_USER_GROUP = USER_PREFIX + 'group1'
 GROUP_USER = USER_PREFIX + 'user1'
 GROUPLESS_USER = USER_PREFIX + 'user2'
@@ -32,7 +57,7 @@ GROUPLESS_USER = USER_PREFIX + 'user2'
 TEST_COLL_NAME = 'test'
 NEW_COLL_NAME = 'test_new'
 NEW_COLL2_NAME = 'test_new2'
-TEST_OBJ_NAME = 'move_obj'
+TEST_OBJ_NAME = 'test1.txt'
 SUB_COLL_NAME = 'sub'
 SUB_COLL_NAME2 = 'sub2'
 MOVE_COLL_NAME = 'move_coll'
@@ -55,9 +80,22 @@ BATCH_DEST_NAME = 'batch_dest'
 BATCH_OBJ_NAME = 'batch_obj'
 BATCH_OBJ2_NAME = 'batch_obj2'
 
+SUFFIX_OBJ_NAME_BAM = 'test.bam'
+SUFFIX_OBJ_NAME_VCF = 'test.vcf.gz'
+SUFFIX_OBJ_NAME_TXT = 'test.txt'
 
-class IRODSTaskTestBase(TaskflowViewTestBase):
-    """Base test class for iRODS tasks"""
+EXTRA_DATA = {'test': 1}
+MD5_SUFFIX = '.md5'
+SHA256_SUFFIX = '.sha256'
+
+
+class TaskTestMixin:
+    """Helpers for taskflow task tests"""
+
+    flow = None
+    irods = None
+    irods_backend = None
+    project = None
 
     def run_flow(self):
         return self.flow.run(verbose=False)
@@ -70,7 +108,12 @@ class IRODSTaskTestBase(TaskflowViewTestBase):
             flow_data={},
         )
 
+
+class IRODSTaskTestBase(TaskTestMixin, TaskflowViewTestBase):
+    """Base test class for iRODS tasks"""
+
     def add_task(self, cls, name, inject, force_fail=False):
+        """Add task based on IrodsBaseTask"""
         self.flow.add_task(
             cls(
                 name=name,
@@ -687,7 +730,7 @@ class TestCreateUserGroupTask(IRODSTaskTestBase):
             inject={'name': TEST_USER_GROUP},
         )
         self.assertRaises(
-            UserGroupDoesNotExist,
+            GroupDoesNotExist,
             self.irods.user_groups.get,
             TEST_USER_GROUP,
         )
@@ -731,7 +774,7 @@ class TestCreateUserGroupTask(IRODSTaskTestBase):
 
         self.assertNotEqual(result, True)
         self.assertRaises(
-            UserGroupDoesNotExist,
+            GroupDoesNotExist,
             self.irods.user_groups.get,
             TEST_USER_GROUP,
         )
@@ -1476,6 +1519,19 @@ class TestRemoveUserFromGroupTask(IRODSTaskTestBase):
         group = self.irods.user_groups.get(DEFAULT_USER_GROUP)
         self.assertEqual(group.hasmember(GROUP_USER), False)
 
+    def test_execute_no_group(self):
+        """Test user removal with no existing group"""
+        self.irods.users.remove(DEFAULT_USER_GROUP)
+        with self.assertRaises(GroupDoesNotExist):
+            self.irods.user_groups.get(DEFAULT_USER_GROUP)
+        self.add_task(
+            cls=RemoveUserFromGroupTask,
+            name='Remove user from group',
+            inject={'group_name': DEFAULT_USER_GROUP, 'user_name': GROUP_USER},
+        )
+        result = self.run_flow()
+        self.assertEqual(result, True)
+
     def test_revert_modified(self):
         """Test user ramoval reverting after modification"""
         self.add_task(
@@ -1585,7 +1641,224 @@ class TestMoveDataObjectTask(IRODSTaskTestBase):
         self.assertEqual(new_obj.checksum, new_obj2.checksum)
 
 
-# TODO: Test Checksum verifying
+class TestBatchCheckFileExistTask(
+    SampleSheetIOMixin, LandingZoneMixin, IRODSTaskTestBase
+):
+    """Tests for BatchCheckFileExistTask"""
+
+    def setUp(self):
+        super().setUp()
+        # Import investigation
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+        # Create zone without taskflow
+        self.zone = self.make_landing_zone(
+            title=ZONE_TITLE,
+            project=self.project,
+            user=self.user,
+            assay=self.assay,
+            description=ZONE_DESC,
+            status=ZONE_STATUS_ACTIVE,
+        )
+        self.zone_path = self.irods_backend.get_path(self.zone)
+        self.zone_path_len = len(self.zone_path.split('/'))
+        # NOTE: We don't have to actually upload files for this task
+        self.obj_path = os.path.join(self.zone_path, TEST_OBJ_NAME)
+        # Default MD5 suffix
+        self.chk_suffix = self.irods_backend.get_checksum_file_suffix()
+        self.task_kw = {
+            'cls': BatchCheckFileExistTask,
+            'name': 'Check for file existence',
+            'inject': {
+                'file_paths': [self.obj_path],
+                'chk_paths': [],
+                'zone_path': self.zone_path,
+                'chk_suffix': self.irods_backend.get_checksum_file_suffix(),
+            },
+        }
+        self.ex_prefix = 'BatchCheckFileExistTask failed: Exception'
+
+    def test_task_md5(self):
+        """Test task with MD5 checksum file"""
+        self.task_kw['inject']['chk_paths'] = [self.obj_path + self.chk_suffix]
+        self.add_task(**self.task_kw)
+        result = self.run_flow()
+        self.assertEqual(result, True)
+        self.zone.refresh_from_db()
+        self.assertEqual(
+            self.zone.status_info, DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE]
+        )
+
+    @override_settings(IRODS_HASH_SCHEME=HASH_SCHEME_SHA256)
+    def test_task_sha256(self):
+        """Test task with SHA256 checksum file"""
+        chk_suffix = self.irods_backend.get_checksum_file_suffix()
+        self.assertEqual(chk_suffix, '.sha256')
+        self.task_kw['inject']['chk_suffix'] = chk_suffix
+        self.task_kw['inject']['chk_paths'] = [self.obj_path + chk_suffix]
+        self.add_task(**self.task_kw)
+        result = self.run_flow()
+        self.assertEqual(result, True)
+        self.zone.refresh_from_db()
+        self.assertEqual(
+            self.zone.status_info, DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE]
+        )
+
+    def test_task_no_checksum(self):
+        """Test task with no checksum file"""
+        self.assertEqual(self.task_kw['inject']['chk_paths'], [])
+        self.add_task(**self.task_kw)
+        with self.assertRaises(Exception) as cm:
+            self.run_flow()
+        ex_path = (
+            '/'.join(self.obj_path.split('/')[self.zone_path_len :])
+            + self.chk_suffix
+        )
+        expected = f'{self.ex_prefix}\n1 expected file missing:\n{ex_path}'
+        self.assertEqual(expected, str(cm.exception))
+
+    def test_task_md5_no_file(self):
+        """Test task with MD5 checksum file and no data file"""
+        self.task_kw['inject']['file_paths'] = []
+        self.task_kw['inject']['chk_paths'] = [self.obj_path + self.chk_suffix]
+        self.add_task(**self.task_kw)
+        with self.assertRaises(Exception) as cm:
+            self.run_flow()
+        ex_path = '/'.join(self.obj_path.split('/')[self.zone_path_len :])
+        expected = f'{self.ex_prefix}\n1 expected file missing:\n{ex_path}'
+        self.assertEqual(expected, str(cm.exception))
+
+    @override_settings(IRODS_HASH_SCHEME=HASH_SCHEME_SHA256)
+    def test_task_sha256_no_file(self):
+        """Test task with SHA256 checksum file and no data file"""
+        chk_suffix = self.irods_backend.get_checksum_file_suffix()
+        self.task_kw['inject']['file_paths'] = []
+        self.task_kw['inject']['chk_suffix'] = chk_suffix
+        self.task_kw['inject']['chk_paths'] = [self.obj_path + chk_suffix]
+        self.add_task(**self.task_kw)
+        with self.assertRaises(Exception) as cm:
+            self.run_flow()
+        ex_path = '/'.join(self.obj_path.split('/')[self.zone_path_len :])
+        expected = f'{self.ex_prefix}\n1 expected file missing:\n{ex_path}'
+        self.assertEqual(expected, str(cm.exception))
+
+    @override_settings(IRODS_HASH_SCHEME=HASH_SCHEME_SHA256)
+    def test_task_sha256_unexpected_md5(self):
+        """Test task unexpected MD5 checksum file"""
+        self.task_kw['inject'][
+            'chk_suffix'
+        ] = self.irods_backend.get_checksum_file_suffix()
+        self.task_kw['inject']['chk_paths'] = [self.obj_path + MD5_SUFFIX]
+        self.add_task(**self.task_kw)
+        with self.assertRaises(Exception) as cm:
+            self.run_flow()
+        ex_path = (
+            '/'.join(self.obj_path.split('/')[self.zone_path_len :])
+            + SHA256_SUFFIX
+        )
+        expected = f'{self.ex_prefix}\n1 expected file missing:\n{ex_path}'
+        self.assertEqual(expected, str(cm.exception))
+
+    def test_task_md5_unexpected_sha256(self):
+        """Test task unexpected SHA256 checksum file"""
+        self.task_kw['inject']['chk_paths'] = [self.obj_path + SHA256_SUFFIX]
+        self.add_task(**self.task_kw)
+        with self.assertRaises(Exception) as cm:
+            self.run_flow()
+        ex_path = (
+            '/'.join(self.obj_path.split('/')[self.zone_path_len :])
+            + MD5_SUFFIX
+        )
+        expected = f'{self.ex_prefix}\n1 expected file missing:\n{ex_path}'
+        self.assertEqual(expected, str(cm.exception))
+
+
+class TestBatchValidateChecksumsTask(
+    SampleSheetIOMixin, LandingZoneMixin, IRODSTaskTestBase
+):
+    """Tests for BatchValidateChecksumsTask"""
+
+    def setUp(self):
+        super().setUp()
+        # Import investigation
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+        # Create zone without taskflow
+        self.zone = self.make_landing_zone(
+            title=ZONE_TITLE,
+            project=self.project,
+            user=self.user,
+            assay=self.assay,
+            description=ZONE_DESC,
+            status=ZONE_STATUS_ACTIVE,
+        )
+        self.zone_path = self.irods_backend.get_path(self.zone)
+        self.obj_name = 'test1.txt'  # TODO: Replace with TEST_OBJ_NAME
+        self.zone_coll = self.irods.collections.create(self.zone_path)
+        self.obj = self.make_irods_object(self.zone_coll, self.obj_name)
+        self.obj_path = self.obj.path
+        self.task_kw = {
+            'cls': BatchValidateChecksumsTask,
+            'name': 'Validate checksums',
+            'inject': {
+                'landing_zone': self.zone,
+                'file_paths': [self.obj_path],
+                'zone_path': self.zone_path,
+                'irods_backend': self.irods_backend,
+            },
+        }
+
+    def test_validate(self):
+        """Test validating checksums"""
+        self.make_checksum_object(self.obj)
+        self.assertIsNotNone(self.obj.replicas[0].checksum)
+        self.assertEqual(
+            self.zone.status_info, DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE]
+        )
+        self.add_task(**self.task_kw)
+        result = self.run_flow()
+        self.assertEqual(result, True)
+        self.zone.refresh_from_db()
+        self.assertEqual(
+            self.zone.status_info, DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE]
+        )
+
+    # TODO: Test with SHA256 checksum (see #2170)
+
+    @override_settings(TASKFLOW_ZONE_PROGRESS_INTERVAL=0)
+    def test_validate_progress(self):
+        """Test validating checksums with progress indicator"""
+        self.make_checksum_object(self.obj)
+        self.add_task(**self.task_kw)
+        result = self.run_flow()
+        self.assertEqual(result, True)
+        self.zone.refresh_from_db()
+        self.assertEqual(
+            self.zone.status_info,
+            DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE] + ' (1/1)',
+        )
+
+    def test_validate_invalid_in_file(self):
+        """Test validating checksums with invalid checksum in file"""
+        self.make_checksum_object(self.obj, content='xxx')
+        self.assertEqual(
+            self.zone.status_info, DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE]
+        )
+        self.add_task(**self.task_kw)
+        zone_path_len = len(self.zone_path.split('/'))
+        ex_path = '/'.join(self.obj_path.split('/')[zone_path_len:])
+        expected = (
+            f'Checksums do not match for 1 file:\n'
+            f'Path: {ex_path}\n'
+            f'Resource: demoResc\n'
+            f'File: xxx\n'
+            f'iRODS: {self.obj.replicas[0].checksum}'
+        )
+        with self.assertRaises(Exception) as cm:
+            self.run_flow()
+        self.assertIn(expected, str(cm.exception))
 
 
 class TestBatchSetAccessTask(IRODSTaskTestBase):
@@ -1790,6 +2063,180 @@ class TestBatchSetAccessTask(IRODSTaskTestBase):
         self.assert_irods_access(DEFAULT_USER_GROUP, self.sub_coll_path2, None)
 
 
+class TestBatchCheckFileSuffixTask(
+    SampleSheetIOMixin,
+    LandingZoneMixin,
+    LandingZoneTaskflowMixin,
+    IRODSTaskTestBase,
+):
+    """Tests for BatchCheckFileSuffixTask"""
+
+    def setUp(self):
+        super().setUp()
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+        self.zone = self.make_landing_zone(
+            title=ZONE_TITLE,
+            project=self.project,
+            user=self.user,
+            assay=self.assay,
+            description=ZONE_DESC,
+        )
+        self.make_zone_taskflow(zone=self.zone)
+        self.zone_path = self.irods_backend.get_path(self.zone)
+        self.zone_coll = self.irods.collections.get(self.zone_path)
+        self.obj_bam = self.make_irods_object(
+            self.zone_coll, SUFFIX_OBJ_NAME_BAM
+        )
+        self.obj_vcf = self.make_irods_object(
+            self.zone_coll, SUFFIX_OBJ_NAME_VCF
+        )
+        self.obj_txt = self.make_irods_object(
+            self.zone_coll, SUFFIX_OBJ_NAME_TXT
+        )
+        self.obj_paths = [
+            self.obj_bam.path,
+            self.obj_vcf.path,
+            self.obj_txt.path,
+        ]
+        self.task_kw = {
+            'cls': BatchCheckFileSuffixTask,
+            'name': 'Check file suffixes',
+            'inject': {
+                'file_paths': self.obj_paths,
+                'zone_path': self.zone_path,
+            },
+        }
+
+    def test_check_bam(self):
+        """Test batch file suffix check with prohibited BAM type"""
+        self.task_kw['inject']['suffixes'] = 'bam'
+        self.add_task(**self.task_kw)
+        with self.assertRaises(Exception) as cm:
+            self.run_flow()
+            ex = cm.exception
+            self.assertIn(SUFFIX_OBJ_NAME_BAM, ex)
+            self.assertNotIn(SUFFIX_OBJ_NAME_VCF, ex)
+            self.assertNotIn(SUFFIX_OBJ_NAME_TXT, ex)
+
+    def test_check_vcf(self):
+        """Test check with prohibited VCF type"""
+        self.task_kw['inject']['suffixes'] = 'vcf.gz'
+        self.add_task(**self.task_kw)
+        with self.assertRaises(Exception) as cm:
+            self.run_flow()
+            ex = cm.exception
+            self.assertNotIn(SUFFIX_OBJ_NAME_BAM, ex)
+            self.assertIn(SUFFIX_OBJ_NAME_VCF, ex)
+            self.assertNotIn(SUFFIX_OBJ_NAME_TXT, ex)
+
+    def test_check_multiple(self):
+        """Test check with multiple prohibited types"""
+        self.task_kw['inject']['suffixes'] = 'bam,vcf.gz'
+        self.add_task(**self.task_kw)
+        with self.assertRaises(Exception) as cm:
+            self.run_flow()
+            ex = cm.exception
+            self.assertIn(SUFFIX_OBJ_NAME_BAM, ex)
+            self.assertIn(SUFFIX_OBJ_NAME_VCF, ex)
+            self.assertNotIn(SUFFIX_OBJ_NAME_TXT, ex)
+
+    def test_check_multiple_not_found(self):
+        """Test check with multiple types not found in files"""
+        self.task_kw['inject']['suffixes'] = 'mp3,rar'
+        self.add_task(**self.task_kw)
+        result = self.run_flow()
+        self.assertEqual(result, True)
+
+    def test_check_empty_list(self):
+        """Test check with empty prohibition list"""
+        self.task_kw['inject']['suffixes'] = ''
+        self.add_task(**self.task_kw)
+        result = self.run_flow()
+        self.assertEqual(result, True)
+
+    def test_check_notation_dot(self):
+        """Test check with dot notation in list"""
+        self.task_kw['inject']['suffixes'] = '.bam'
+        self.add_task(**self.task_kw)
+        with self.assertRaises(Exception) as cm:
+            self.run_flow()
+            ex = cm.exception
+            self.assertIn(SUFFIX_OBJ_NAME_BAM, ex)
+            self.assertNotIn(SUFFIX_OBJ_NAME_VCF, ex)
+            self.assertNotIn(SUFFIX_OBJ_NAME_TXT, ex)
+
+    def test_check_notation_asterisk(self):
+        """Test check with asterisk notation in list"""
+        self.task_kw['inject']['suffixes'] = '*bam'
+        self.add_task(**self.task_kw)
+        with self.assertRaises(Exception) as cm:
+            self.run_flow()
+            ex = cm.exception
+            self.assertIn(SUFFIX_OBJ_NAME_BAM, ex)
+            self.assertNotIn(SUFFIX_OBJ_NAME_VCF, ex)
+            self.assertNotIn(SUFFIX_OBJ_NAME_TXT, ex)
+
+    def test_check_notation_combined(self):
+        """Test check with combined notation in list"""
+        self.task_kw['inject']['suffixes'] = '*.bam'
+        self.add_task(**self.task_kw)
+        with self.assertRaises(Exception) as cm:
+            self.run_flow()
+            ex = cm.exception
+            self.assertIn(SUFFIX_OBJ_NAME_BAM, ex)
+            self.assertNotIn(SUFFIX_OBJ_NAME_VCF, ex)
+            self.assertNotIn(SUFFIX_OBJ_NAME_TXT, ex)
+
+    def test_check_extra_spaces(self):
+        """Test check with extra spaces"""
+        self.task_kw['inject']['suffixes'] = ' bam '
+        self.add_task(**self.task_kw)
+        with self.assertRaises(Exception) as cm:
+            self.run_flow()
+            ex = cm.exception
+            self.assertIn(SUFFIX_OBJ_NAME_BAM, ex)
+            self.assertNotIn(SUFFIX_OBJ_NAME_VCF, ex)
+            self.assertNotIn(SUFFIX_OBJ_NAME_TXT, ex)
+
+    def test_check_not_end_of_file(self):
+        """Test check with given string not in end of file name"""
+        self.task_kw['inject']['suffixes'] = 'test'
+        self.add_task(**self.task_kw)
+        result = self.run_flow()
+        self.assertEqual(result, True)
+
+    def test_check_upper_case(self):
+        """Test check with upper case string"""
+        self.task_kw['inject']['suffixes'] = 'BAM'
+        self.add_task(**self.task_kw)
+        with self.assertRaises(Exception) as cm:
+            self.run_flow()
+            ex = cm.exception
+            self.assertIn(SUFFIX_OBJ_NAME_BAM, ex)
+            self.assertNotIn(SUFFIX_OBJ_NAME_VCF, ex)
+            self.assertNotIn(SUFFIX_OBJ_NAME_TXT, ex)
+
+    def test_check_invalid_strings(self):
+        """Test check with invalid strings"""
+        self.task_kw['inject']['suffixes'] = ',*,*.*'
+        self.add_task(**self.task_kw)
+        result = self.run_flow()
+        self.assertEqual(result, True)
+
+    def test_check_invalid_valid(self):
+        """Test check with mixed invalid and valid strings"""
+        self.task_kw['inject']['suffixes'] = ',*,bam'
+        self.add_task(**self.task_kw)
+        with self.assertRaises(Exception) as cm:
+            self.run_flow()
+            ex = cm.exception
+            self.assertIn(SUFFIX_OBJ_NAME_BAM, ex)
+            self.assertNotIn(SUFFIX_OBJ_NAME_VCF, ex)
+            self.assertNotIn(SUFFIX_OBJ_NAME_TXT, ex)
+
+
 class TestBatchCreateCollectionsTask(IRODSTaskTestBase):
     """Tests for BatchCreateCollectionsTask"""
 
@@ -1802,7 +2249,7 @@ class TestBatchCreateCollectionsTask(IRODSTaskTestBase):
         self.add_task(
             cls=BatchCreateCollectionsTask,
             name='Create collections',
-            inject={'paths': [self.new_coll_path, self.new_coll_path2]},
+            inject={'coll_paths': [self.new_coll_path, self.new_coll_path2]},
         )
         self.assertRaises(
             CollectionDoesNotExist,
@@ -1831,7 +2278,7 @@ class TestBatchCreateCollectionsTask(IRODSTaskTestBase):
         self.add_task(
             cls=BatchCreateCollectionsTask,
             name='Create collections',
-            inject={'paths': [self.new_coll_path, self.new_coll_path2]},
+            inject={'coll_paths': [self.new_coll_path, self.new_coll_path2]},
         )
         self.run_flow()
 
@@ -1839,7 +2286,7 @@ class TestBatchCreateCollectionsTask(IRODSTaskTestBase):
         self.add_task(
             cls=BatchCreateCollectionsTask,
             name='Create collections',
-            inject={'paths': [self.new_coll_path, self.new_coll_path2]},
+            inject={'coll_paths': [self.new_coll_path, self.new_coll_path2]},
         )
         result = self.run_flow()
 
@@ -1858,7 +2305,7 @@ class TestBatchCreateCollectionsTask(IRODSTaskTestBase):
         self.add_task(
             cls=BatchCreateCollectionsTask,
             name='Create collections',
-            inject={'paths': [self.new_coll_path, self.new_coll_path2]},
+            inject={'coll_paths': [self.new_coll_path, self.new_coll_path2]},
             force_fail=True,
         )  # FAIL
         result = self.run_flow()
@@ -1880,7 +2327,7 @@ class TestBatchCreateCollectionsTask(IRODSTaskTestBase):
         self.add_task(
             cls=BatchCreateCollectionsTask,
             name='Create collections',
-            inject={'paths': [self.new_coll_path, self.new_coll_path2]},
+            inject={'coll_paths': [self.new_coll_path, self.new_coll_path2]},
         )
         result = self.run_flow()
         self.assertEqual(result, True)
@@ -1890,7 +2337,7 @@ class TestBatchCreateCollectionsTask(IRODSTaskTestBase):
         self.add_task(
             cls=BatchCreateCollectionsTask,
             name='Create collections',
-            inject={'paths': [self.new_coll_path, self.new_coll_path2]},
+            inject={'coll_paths': [self.new_coll_path, self.new_coll_path2]},
             force_fail=True,
         )  # FAIL
         result = self.run_flow()
@@ -1911,7 +2358,7 @@ class TestBatchCreateCollectionsTask(IRODSTaskTestBase):
             cls=BatchCreateCollectionsTask,
             name='Create collections',
             inject={
-                'paths': [
+                'coll_paths': [
                     os.path.join(self.new_coll_path, 'subcoll1', 'subcoll1a'),
                     os.path.join(self.new_coll_path, 'subcoll2', 'subcoll2a'),
                 ]
@@ -1937,7 +2384,7 @@ class TestBatchCreateCollectionsTask(IRODSTaskTestBase):
             cls=BatchCreateCollectionsTask,
             name='Create collections',
             inject={
-                'paths': [
+                'coll_paths': [
                     os.path.join(self.new_coll_path, 'subcoll1', 'subcoll1a'),
                     os.path.join(self.new_coll_path, 'subcoll1'),
                 ]
@@ -1963,7 +2410,7 @@ class TestBatchCreateCollectionsTask(IRODSTaskTestBase):
             cls=BatchCreateCollectionsTask,
             name='Create collections',
             inject={
-                'paths': [
+                'coll_paths': [
                     os.path.join(self.new_coll_path, 'subcoll1', 'subcoll1a'),
                     os.path.join(self.new_coll_path, 'subcoll2', 'subcoll2a'),
                 ]
@@ -1995,11 +2442,26 @@ class TestBatchCreateCollectionsTask(IRODSTaskTestBase):
         )
 
 
-class TestBatchMoveDataObjectsTask(IRODSTaskTestBase):
+class TestBatchMoveDataObjectsTask(
+    SampleSheetIOMixin, LandingZoneMixin, IRODSTaskTestBase
+):
     """Tests for BatchMoveDataObjectsTask"""
 
     def setUp(self):
         super().setUp()
+        # Import investigation
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+        # Create zone without taskflow
+        self.zone = self.make_landing_zone(
+            title=ZONE_TITLE,
+            project=self.project,
+            user=self.user,
+            assay=self.assay,
+            description=ZONE_DESC,
+            status=ZONE_STATUS_ACTIVE,
+        )
         # Init default user group
         self.irods.user_groups.create(DEFAULT_USER_GROUP)
         # Init batch collections
@@ -2027,6 +2489,7 @@ class TestBatchMoveDataObjectsTask(IRODSTaskTestBase):
             cls=BatchMoveDataObjectsTask,
             name='Move data objects',
             inject={
+                'landing_zone': self.zone,
                 'src_root': self.batch_src_path,
                 'dest_root': self.batch_dest_path,
                 'src_paths': [self.batch_obj_path, self.batch_obj2_path],
@@ -2080,6 +2543,7 @@ class TestBatchMoveDataObjectsTask(IRODSTaskTestBase):
             cls=BatchMoveDataObjectsTask,
             name='Move data objects',
             inject={
+                'landing_zone': self.zone,
                 'src_root': self.batch_src_path,
                 'dest_root': self.batch_dest_path,
                 'src_paths': [self.batch_obj_path, self.batch_obj2_path],
@@ -2116,6 +2580,7 @@ class TestBatchMoveDataObjectsTask(IRODSTaskTestBase):
             cls=BatchMoveDataObjectsTask,
             name='Move data objects',
             inject={
+                'landing_zone': self.zone,
                 'src_root': self.batch_src_path,
                 'dest_root': self.batch_dest_path,
                 'src_paths': [self.batch_obj_path, self.batch_obj2_path],
@@ -2136,12 +2601,55 @@ class TestBatchMoveDataObjectsTask(IRODSTaskTestBase):
         existing_obj = self.irods.data_objects.get(new_obj_path)
         self.assertEqual(new_obj.checksum, existing_obj.checksum)
 
+    @override_settings(TASKFLOW_ZONE_PROGRESS_INTERVAL=0)
+    def test_execute_progress(self):
+        """Test moving with progress indicator"""
+        self.assertEqual(
+            self.zone.status_info, DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE]
+        )
+        self.add_task(
+            cls=BatchMoveDataObjectsTask,
+            name='Move data objects',
+            inject={
+                'landing_zone': self.zone,
+                'src_root': self.batch_src_path,
+                'dest_root': self.batch_dest_path,
+                'src_paths': [self.batch_obj_path, self.batch_obj2_path],
+                'access_name': IRODS_ACCESS_READ_IN,
+                'user_name': DEFAULT_USER_GROUP,
+                'irods_backend': self.irods_backend,
+            },
+        )
+        result = self.run_flow()
 
-class TestBatchCalculateChecksumTask(IRODSTaskTestBase):
+        self.assertEqual(result, True)
+        self.zone.refresh_from_db()
+        self.assertEqual(
+            self.zone.status_info,
+            DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE] + ' (2/2)',
+        )
+
+
+class TestBatchCalculateChecksumTask(
+    SampleSheetIOMixin, LandingZoneMixin, IRODSTaskTestBase
+):
     """Tests for BatchCalculateChecksumTask"""
 
     def setUp(self):
         super().setUp()
+        # Import investigation
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+        # Create zone without taskflow
+        self.zone = self.make_landing_zone(
+            title=ZONE_TITLE,
+            project=self.project,
+            user=self.user,
+            assay=self.assay,
+            description=ZONE_DESC,
+            status=ZONE_STATUS_ACTIVE,
+        )
         self.obj_name = 'test1.txt'
         self.obj_path = os.path.join(self.test_coll_path, self.obj_name)
 
@@ -2155,28 +2663,208 @@ class TestBatchCalculateChecksumTask(IRODSTaskTestBase):
         self.add_task(
             cls=BatchCalculateChecksumTask,
             name='Calculate checksums',
-            inject={'file_paths': [self.obj_path], 'force': False},
+            inject={
+                'landing_zone': self.zone,
+                'file_paths': [self.obj_path],
+                'force': False,
+            },
         )
         self.run_flow()
 
         # Object must be reloaded to refresh replica info
         obj = self.irods.data_objects.get(self.obj_path)
         self.assertIsNotNone(obj.replicas[0].checksum)
-        self.assertEqual(obj.replicas[0].checksum, self.get_md5_checksum(obj))
+        self.assertEqual(obj.replicas[0].checksum, self.get_checksum(obj))
+        self.zone.refresh_from_db()
+        self.assertEqual(
+            self.zone.status_info, DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE]
+        )
 
     def test_calculate_twice(self):
         """Test calculating with existing checksum"""
         obj = self.make_irods_object(self.test_coll, self.obj_name)
         self.assertIsNotNone(obj.replicas[0].checksum)
-        self.assertEqual(obj.replicas[0].checksum, self.get_md5_checksum(obj))
+        self.assertEqual(obj.replicas[0].checksum, self.get_checksum(obj))
 
         self.add_task(
             cls=BatchCalculateChecksumTask,
             name='Calculate checksums',
-            inject={'file_paths': [self.obj_path], 'force': False},
+            inject={
+                'landing_zone': self.zone,
+                'file_paths': [self.obj_path],
+                'force': False,
+            },
         )
         self.run_flow()
 
         obj = self.irods.data_objects.get(self.obj_path)
         self.assertIsNotNone(obj.replicas[0].checksum)
-        self.assertEqual(obj.replicas[0].checksum, self.get_md5_checksum(obj))
+        self.assertEqual(obj.replicas[0].checksum, self.get_checksum(obj))
+
+    @override_settings(TASKFLOW_ZONE_PROGRESS_INTERVAL=0)
+    def test_calculate_progress(self):
+        """Test calculating checksum with progress indicator"""
+        obj = self.make_irods_object(
+            self.test_coll, self.obj_name, checksum=False
+        )
+        self.assertIsNone(obj.replicas[0].checksum)
+        self.assertEqual(
+            self.zone.status_info, DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE]
+        )
+
+        self.add_task(
+            cls=BatchCalculateChecksumTask,
+            name='Calculate checksums',
+            inject={
+                'landing_zone': self.zone,
+                'file_paths': [self.obj_path],
+                'force': False,
+            },
+        )
+        self.run_flow()
+
+        obj = self.irods.data_objects.get(self.obj_path)
+        self.assertIsNotNone(obj.replicas[0].checksum)
+        self.assertEqual(obj.replicas[0].checksum, self.get_checksum(obj))
+        self.zone.refresh_from_db()
+        self.assertEqual(
+            self.zone.status_info,
+            DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE] + ' (1/1)',
+        )
+
+
+class TestTimelineEventExtraDataUpdateTask(
+    ProjectMixin, TimelineEventMixin, TaskTestMixin, TestCase
+):
+    """Tests for TimelineEventExtraDataUpdateTask"""
+
+    def add_task(self, cls, name, inject, force_fail=False):
+        """Add task based on SODARBaseTask"""
+        self.flow.add_task(
+            cls(
+                name=name,
+                project=self.project,
+                verbose=False,
+                inject=inject,
+                force_fail=force_fail,
+            )
+        )
+
+    def setUp(self):
+        self.irods_backend = get_backend_api('omics_irods')
+        self.project = self.make_project(
+            'TestProject', PROJECT_TYPE_PROJECT, None
+        )
+        self.flow = self.init_flow()
+        self.event = self.make_event(
+            project=self.project,
+            app='taskflowbackend',
+            user=None,
+            event_name='test_event',
+            extra_data={},
+        )
+
+    def test_execute(self):
+        """Test TimelineEventExtraDataUpdateTask execute"""
+        self.assertEqual(self.event.extra_data, {})
+        self.add_task(
+            cls=TimelineEventExtraDataUpdateTask,
+            name='Update timeline event',
+            inject={
+                'tl_event': self.event,
+                'extra_data': EXTRA_DATA,
+            },
+        )
+        self.run_flow()
+        self.event.refresh_from_db()
+        self.assertEqual(self.event.extra_data, EXTRA_DATA)
+
+    def test_execute_update_same_field(self):
+        """Test execute with same field in existing extra data"""
+        og_data = {'test': 0}
+        self.event.extra_data = og_data
+        self.event.save()
+        self.assertNotEqual(self.event.extra_data, EXTRA_DATA)
+        self.add_task(
+            cls=TimelineEventExtraDataUpdateTask,
+            name='Update timeline event',
+            inject={
+                'tl_event': self.event,
+                'extra_data': EXTRA_DATA,
+            },
+        )
+        self.run_flow()
+        self.event.refresh_from_db()
+        self.assertEqual(self.event.extra_data, EXTRA_DATA)
+
+    def test_execute_update_other_field(self):
+        """Test execute with other field in existing extra data"""
+        og_data = {'other': 0}
+        self.event.extra_data = og_data
+        self.event.save()
+        self.add_task(
+            cls=TimelineEventExtraDataUpdateTask,
+            name='Update timeline event',
+            inject={
+                'tl_event': self.event,
+                'extra_data': EXTRA_DATA,
+            },
+        )
+        self.run_flow()
+        self.event.refresh_from_db()
+        updated_data = EXTRA_DATA
+        updated_data.update(og_data)
+        self.assertEqual(self.event.extra_data, updated_data)
+
+    def test_revert(self):
+        """Test revert"""
+        self.assertEqual(self.event.extra_data, {})
+        self.add_task(
+            cls=TimelineEventExtraDataUpdateTask,
+            name='Update timeline event',
+            inject={
+                'tl_event': self.event,
+                'extra_data': EXTRA_DATA,
+            },
+            force_fail=True,
+        )
+        self.run_flow()
+        self.event.refresh_from_db()
+        self.assertEqual(self.event.extra_data, {})
+
+    def test_revert_update_same_field(self):
+        """Test revert with same field in existing extra data"""
+        og_data = {'test': 0}
+        self.event.extra_data = og_data
+        self.event.save()
+        self.assertNotEqual(self.event.extra_data, EXTRA_DATA)
+        self.add_task(
+            cls=TimelineEventExtraDataUpdateTask,
+            name='Update timeline event',
+            inject={
+                'tl_event': self.event,
+                'extra_data': EXTRA_DATA,
+            },
+            force_fail=True,
+        )
+        self.run_flow()
+        self.event.refresh_from_db()
+        self.assertEqual(self.event.extra_data, og_data)
+
+    def test_revert_update_other_field(self):
+        """Test revert with other field in existing extra data"""
+        og_data = {'other': 0}
+        self.event.extra_data = og_data
+        self.event.save()
+        self.add_task(
+            cls=TimelineEventExtraDataUpdateTask,
+            name='Update timeline event',
+            inject={
+                'tl_event': self.event,
+                'extra_data': EXTRA_DATA,
+            },
+            force_fail=True,
+        )
+        self.run_flow()
+        self.event.refresh_from_db()
+        self.assertEqual(self.event.extra_data, og_data)

@@ -189,20 +189,19 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
+        self.url = reverse(
+            'samplesheets:ajax_context',
+            kwargs={'project': self.project.sodar_uuid},
+        )
 
     def test_get(self):
         """Test SheetContextAjaxView GET"""
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:ajax_context',
-                    kwargs={'project': self.project.sodar_uuid},
-                )
-            )
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
 
-        response_data = json.loads(response.data)
-        response_data.pop('csrf_token')  # HACK
+        rd = json.loads(response.data)
+        rd.pop('csrf_token')  # HACK
         expected = {
             'configuration': self.investigation.get_configuration(),
             'inv_file_name': self.investigation.file_name.split('/')[-1],
@@ -226,15 +225,16 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
             'sheet_sync_enabled': app_settings.get_default(
                 APP_NAME, 'sheet_sync_enable'
             ),
+            'site_read_only': False,
             'alerts': [],
+            'project_uuid': str(self.project.sodar_uuid),
+            'user_uuid': str(self.user.sodar_uuid),
             'investigation': {
                 'identifier': self.investigation.identifier,
                 'title': self.investigation.title,
                 'description': None,
                 'comments': None,
             },
-            'project_uuid': str(self.project.sodar_uuid),
-            'user_uuid': str(self.user.sodar_uuid),
             'studies': {
                 str(self.study.sodar_uuid): {
                     'display_name': self.study.get_display_name(),
@@ -269,8 +269,8 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
                 'export_sheet': True,
                 'delete_sheet': True,
                 'view_versions': True,
-                'edit_config': True,
                 'update_cache': True,
+                'view_tickets': True,
                 'is_superuser': True,
             },
             'sheet_stats': {
@@ -294,7 +294,7 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
                 'data_count': self.investigation.get_material_count('DATA'),
             },
         }
-        self.assertEqual(response_data, expected)
+        self.assertEqual(rd, expected)
 
     def test_get_no_sheets(self):
         """Test GET without sample sheets"""
@@ -302,16 +302,11 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
         self.investigation.save()
 
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:ajax_context',
-                    kwargs={'project': self.project.sodar_uuid},
-                )
-            )
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
 
-        response_data = json.loads(response.data)
-        response_data.pop('csrf_token')  # HACK
+        rd = json.loads(response.data)
+        rd.pop('csrf_token')  # HACK
         expected = {
             'configuration': None,
             'inv_file_name': None,
@@ -330,10 +325,11 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
             'sheet_sync_enabled': app_settings.get_default(
                 APP_NAME, 'sheet_sync_enable'
             ),
+            'site_read_only': False,
             'alerts': [],
-            'investigation': {},
             'project_uuid': str(self.project.sodar_uuid),
             'user_uuid': str(self.user.sodar_uuid),
+            'investigation': {},
             'studies': {},
             'perms': {
                 'edit_sheet': True,
@@ -342,51 +338,15 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
                 'export_sheet': True,
                 'delete_sheet': True,
                 'view_versions': True,
-                'edit_config': True,
                 'update_cache': True,
+                'view_tickets': True,
                 'is_superuser': True,
             },
             'sheet_stats': {},
         }
-        self.assertEqual(response_data, expected)
+        self.assertEqual(rd, expected)
 
     # TODO: Test anonymous request and irods_webdav_enabled
-
-    def test_get_delegate_min_owner(self):
-        """Test GET as delegate with owner minimum role"""
-        app_settings.set(
-            APP_NAME,
-            'edit_config_min_role',
-            SODAR_CONSTANTS['PROJECT_ROLE_OWNER'],
-            project=self.project,
-        )
-        with self.login(self.user_delegate):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:ajax_context',
-                    kwargs={'project': self.project.sodar_uuid},
-                )
-            )
-        self.assertEqual(response.status_code, 200)
-        self.assertFalse(json.loads(response.json())['perms']['edit_config'])
-
-    def test_get_delegate_min_delegate(self):
-        """Test GET as delegate with delegate minimum role"""
-        app_settings.set(
-            APP_NAME,
-            'edit_config_min_role',
-            SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE'],
-            project=self.project,
-        )
-        with self.login(self.user_delegate):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:ajax_context',
-                    kwargs={'project': self.project.sodar_uuid},
-                )
-            )
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(json.loads(response.json())['perms']['edit_config'])
 
     def test_get_irods_request_alert_owner(self):
         """Test GET with active iRODS request alert as owner"""
@@ -400,18 +360,13 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
         )
 
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:ajax_context',
-                    kwargs={'project': self.project.sodar_uuid},
-                )
-            )
+            response = self.client.get(self.url)
 
         self.assertEqual(response.status_code, 200)
-        response_data = json.loads(response.data)
-        self.assertEqual(len(response_data['alerts']), 1)
+        rd = json.loads(response.data)
+        self.assertEqual(len(rd['alerts']), 1)
         self.assertEqual(
-            response_data['alerts'][0]['html'],
+            rd['alerts'][0]['html'],
             ALERT_ACTIVE_REQS.format(
                 url=reverse(
                     'samplesheets:irods_requests',
@@ -436,16 +391,11 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
         )
 
         with self.login(user_contributor):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:ajax_context',
-                    kwargs={'project': self.project.sodar_uuid},
-                )
-            )
+            response = self.client.get(self.url)
 
         self.assertEqual(response.status_code, 200)
-        response_data = json.loads(response.data)
-        self.assertEqual(len(response_data['alerts']), 0)
+        rd = json.loads(response.data)
+        self.assertEqual(len(rd['alerts']), 0)
 
     def test_get_inherited_owner(self):
         """Test GET as inherited owner"""
@@ -453,35 +403,67 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
         user_cat = self.make_user('user_cat')
         self.make_assignment(self.category, user_cat, self.role_owner)
         with self.login(user_cat):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:ajax_context',
-                    kwargs={'project': self.project.sodar_uuid},
-                )
-            )
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        response_data = json.loads(response.data)
-        self.assertEqual(response_data['perms']['edit_config'], True)
+        rd = json.loads(response.data)
+        self.assertEqual(rd['perms']['edit_sheet'], True)
 
     def test_get_display_row_links_override(self):
         """Test GET with assay row link display override"""
         self.assay.comments[ROW_LINK_DISPLAY_COMMENT] = 'false'
         self.assay.save()
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:ajax_context',
-                    kwargs={'project': self.project.sodar_uuid},
-                )
-            )
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        response_data = json.loads(response.data)
+        rd = json.loads(response.data)
         # Initial value was True
         self.assertFalse(
-            response_data['studies'][str(self.study.sodar_uuid)]['assays'][
+            rd['studies'][str(self.study.sodar_uuid)]['assays'][
                 str(self.assay.sodar_uuid)
             ]['display_row_links']
         )
+
+    def test_get_read_only_owner(self):
+        """Test GET with site read-only mode as owner"""
+        app_settings.set('projectroles', 'site_read_only', True)
+        with self.login(self.user_owner):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        rd = json.loads(response.data)
+        self.assertEqual(rd['site_read_only'], True)
+        expected = {
+            'edit_sheet': False,
+            'manage_sheet': False,
+            'create_colls': False,
+            'export_sheet': True,
+            'delete_sheet': False,
+            'view_versions': True,
+            'update_cache': False,
+            'view_tickets': True,
+            'is_superuser': False,
+        }
+        self.assertEqual(rd['perms'], expected)
+
+    def test_get_read_only_superuser(self):
+        """Test GET with site read-only mode as superuser"""
+        app_settings.set('projectroles', 'site_read_only', True)
+        with self.login(self.user):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        rd = json.loads(response.data)
+        self.assertEqual(rd['site_read_only'], True)
+        expected = {
+            'edit_sheet': True,
+            'manage_sheet': True,
+            'create_colls': True,
+            'export_sheet': True,
+            'delete_sheet': True,
+            'view_versions': True,
+            'update_cache': True,
+            'view_tickets': True,
+            'is_superuser': True,
+        }
+        self.assertEqual(rd['perms'], expected)
 
 
 class TestStudyTablesAjaxView(IrodsAccessTicketMixin, SamplesheetsViewTestBase):
@@ -1874,12 +1856,6 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, SamplesheetsViewTestBase):
             self.build_sheet_config(self.investigation),
             project=self.project,
         )
-        app_settings.set(
-            APP_NAME,
-            'edit_config_min_role',
-            SODAR_CONSTANTS['PROJECT_ROLE_OWNER'],
-            project=self.project,
-        )
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
@@ -1961,90 +1937,6 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, SamplesheetsViewTestBase):
                 event_name='field_update',
             ).count(),
             1,
-        )
-
-    def test_post_superuser_min_owner(self):
-        """Test POST as superuser with minimum role of owner"""
-        edit_config_min_role = app_settings.get(
-            APP_NAME, 'edit_config_min_role', project=self.project
-        )
-        self.assertEqual(
-            edit_config_min_role, SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
-        )
-        with self.login(self.user):
-            response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_config_update',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.post_values),
-                content_type='application/json',
-            )
-        self.assertEqual(response.status_code, 200)
-
-    def test_post_owner_min_owner(self):
-        """Test POST as owner with minimum=owner"""
-        edit_config_min_role = app_settings.get(
-            APP_NAME, 'edit_config_min_role', project=self.project
-        )
-        self.assertEqual(
-            edit_config_min_role, SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
-        )
-        with self.login(self.user_owner):
-            response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_config_update',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.post_values),
-                content_type='application/json',
-            )
-        self.assertEqual(response.status_code, 200)
-
-    def test_post_delegate_min_owner(self):
-        """Test POST as delegate with minimum=owner (should fail)"""
-        edit_config_min_role = app_settings.get(
-            APP_NAME, 'edit_config_min_role', project=self.project
-        )
-        self.assertEqual(
-            edit_config_min_role, SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
-        )
-        with self.login(self.user_delegate):
-            response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_config_update',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.post_values),
-                content_type='application/json',
-            )
-        self.assertEqual(response.status_code, 403)
-        self.assertEqual(
-            response.json()['detail'],
-            'User not allowed to modify column config',
-        )
-
-    def test_post_contributor_min_owner(self):
-        """Test POST as contributor with minimum=owner (should fail)"""
-        edit_config_min_role = app_settings.get(
-            APP_NAME, 'edit_config_min_role', project=self.project
-        )
-        self.assertEqual(
-            edit_config_min_role, SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
-        )
-        with self.login(self.user_contributor):
-            response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_config_update',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.post_values),
-                content_type='application/json',
-            )
-        self.assertEqual(response.status_code, 403)
-        self.assertEqual(
-            response.json()['detail'],
-            'User not allowed to modify column config',
         )
 
     def test_post_inherited_owner(self):

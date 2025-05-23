@@ -2,6 +2,8 @@
 
 import logging
 
+from irods.exception import GroupDoesNotExist
+
 from django.conf import settings
 from django.contrib import auth
 from django.contrib import messages
@@ -12,6 +14,8 @@ from django.urls import reverse
 from django.views.generic import TemplateView, CreateView, UpdateView
 
 # Projectroles dependency
+from projectroles.app_settings import AppSettingAPI
+from projectroles.models import SODAR_CONSTANTS, ROLE_RANKING
 from projectroles.plugins import get_backend_api
 from projectroles.views import (
     LoggedInPermissionMixin,
@@ -36,11 +40,20 @@ from landingzones.constants import (
 )
 from landingzones.forms import LandingZoneForm
 from landingzones.models import LandingZone
+from landingzones.utils import (
+    get_zone_create_limit,
+    get_zone_validate_limit,
+    cleanup_file_prohibit,
+)
 
 
+app_settings = AppSettingAPI()
 logger = logging.getLogger(__name__)
 User = auth.get_user_model()
 
+
+# SODAR constants
+PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
 
 # Local constants
 APP_NAME = 'landingzones'
@@ -49,13 +62,37 @@ ZONE_MOVE_INVALID_STATUS = 'Zone not in active state, unable to trigger action.'
 ZONE_MOVE_NO_FILES = 'No files in landing zone, nothing to do.'
 ZONE_UPDATE_ACTIONS = ['update', 'move', 'delete']
 ZONE_UPDATE_FIELDS = ['description', 'user_message']
+ZONE_CREATE_LIMIT_MSG = (
+    'Landing zone creation limit for project ({limit}) reached, please move or '
+    'delete existing zones before creating new ones'
+)
+ZONE_VALIDATE_LIMIT_MSG = (
+    'Landing zone validation limit per project reached, please wait for '
+    'ongoing validation jobs to finish before initiating new ones'
+)
 
 
 # Mixins -----------------------------------------------------------------------
 
 
 class ZoneContextMixin:
-    """Context mixing for LandingZones"""
+    """Context mixing for LandingZones UI views"""
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        context['prohibit_files'] = None
+        file_name_prohibit = app_settings.get(
+            APP_NAME, 'file_name_prohibit', project=self.get_project()
+        )
+        if file_name_prohibit:
+            context['prohibit_files'] = ', '.join(
+                cleanup_file_prohibit(file_name_prohibit)
+            )
+        return context
+
+
+class ZoneConfigContextMixin:
+    """Context mixing for LandingZones configuration views"""
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
@@ -116,7 +153,17 @@ class ZoneConfigPluginMixin:
 
 
 class ZoneModifyMixin(ZoneConfigPluginMixin):
-    """Mixin to be used in zone creation in UI and REST API views"""
+    """Mixin to be used in zone creation/update in UI and REST API views"""
+
+    def check_create_limit(self, project):
+        """Raise Exception if zone create limit has been reached"""
+        limit = settings.LANDINGZONES_ZONE_CREATE_LIMIT
+        if limit and limit > 0:
+            zones = LandingZone.objects.filter(project=project).exclude(
+                status__in=STATUS_FINISHED
+            )
+            if zones.count() >= limit:
+                raise Exception(ZONE_CREATE_LIMIT_MSG.format(limit=limit))
 
     def submit_create(
         self,
@@ -215,8 +262,36 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
                         logger.debug(
                             'Added shorctut collection "{}"'.format(s.get('id'))
                         )
-
         logger.debug('Collections to be created: {}'.format(', '.join(colls)))
+
+        # In case of legacy project and no syncmodifyapi, create owner group
+        owner_group = irods_backend.get_group_name(project, owner=True)
+        with irods_backend.get_session() as irods:
+            try:
+                irods.user_groups.get(owner_group)
+            except GroupDoesNotExist:
+                logger.info('Creating missing project owner group in iRODS..')
+                od_roles = project.get_roles(
+                    max_rank=ROLE_RANKING[PROJECT_ROLE_DELEGATE]
+                )
+                flow_data = {
+                    'roles_add': [
+                        taskflow.get_flow_role(project, r.user, r.role.rank)
+                        for r in od_roles
+                    ],
+                    'roles_delete': [],
+                }
+                try:
+                    taskflow.submit(
+                        project=project,
+                        flow_name='role_update_irods_batch',
+                        flow_data=flow_data,
+                        async_mode=False,
+                    )
+                except taskflow.FlowSubmitException as ex:
+                    zone.delete()
+                    raise ex
+
         flow_name = 'landing_zone_create'
         flow_data = self.get_flow_data(
             zone,
@@ -312,7 +387,6 @@ class ZoneDeleteMixin(ZoneConfigPluginMixin):
             tl_event.add_object(
                 obj=zone.user, label='user', name=zone.user.username
             )
-            tl_event.set_status(timeline.TL_STATUS_SUBMIT)
 
         # Check zone root collection status
         zone_path = irods_backend.get_path(zone)
@@ -324,6 +398,8 @@ class ZoneDeleteMixin(ZoneConfigPluginMixin):
             flow_data = self.get_flow_data(
                 zone, flow_name, {'zone_uuid': str(zone.sodar_uuid)}
             )
+            if tl_event:
+                tl_event.set_status(timeline.TL_STATUS_SUBMIT)
             taskflow.submit(
                 project=project,
                 flow_name=flow_name,
@@ -333,13 +409,15 @@ class ZoneDeleteMixin(ZoneConfigPluginMixin):
             )
         else:  # Delete locally
             zone.set_status(ZONE_STATUS_DELETED, STATUS_INFO_DELETE_NO_COLL)
+            if tl_event:
+                tl_event.set_status(timeline.TL_STATUS_OK)
         self.object = None
 
 
 class ZoneMoveMixin(ZoneConfigPluginMixin):
     """Mixin to be used in zone validation/moving"""
 
-    def _submit_validate_move(self, zone, validate_only, request=None):
+    def submit_validate_move(self, zone, validate_only, request=None):
         """
         Handle timeline updating and initialize taskflow operation for
         LandingZone moving and/or validation.
@@ -383,9 +461,14 @@ class ZoneMoveMixin(ZoneConfigPluginMixin):
             tl_event.set_status(timeline.TL_STATUS_SUBMIT)
 
         flow_data = self.get_flow_data(
-            zone,
-            'landing_zone_move',
-            {'zone_uuid': str(zone.sodar_uuid)},
+            zone=zone,
+            flow_name='landing_zone_move',
+            data={
+                'zone_uuid': str(zone.sodar_uuid),
+                'file_name_prohibit': app_settings.get(
+                    APP_NAME, 'file_name_prohibit', project=project
+                ),
+            },
         )
         if validate_only:
             flow_data['validate_only'] = True
@@ -406,38 +489,34 @@ class ProjectZoneView(
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     InvestigationContextMixin,
+    ZoneContextMixin,
     TemplateView,
 ):
-    """View for displaying user landing zones for a project"""
+    """View for displaying landing zones for a project"""
 
     permission_required = 'landingzones.view_zone_own'
     template_name = 'landingzones/project_zones.html'
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
+        taskflow = get_backend_api('taskflow')
+        project = context['project']
         # iRODS backend
         context['irods_backend_enabled'] = (
             True if get_backend_api('omics_irods') else False
         )
-        # User zones
-        context['zones_own'] = (
-            LandingZone.objects.filter(
-                project=context['project'], user=self.request.user
-            )
+        # Landing zones
+        zones = (
+            LandingZone.objects.filter(project=project)
             .exclude(status__in=STATUS_FINISHED)
             .order_by('title')
         )
-        # Other zones
-        # TODO: Add individual zone perm check if/when we implement issue #57
-        if self.request.user.has_perm(
-            'landingzones.view_zone_all', context['project']
+        # Only show own zones to users without view_zone_all perm
+        if not self.request.user.has_perm(
+            'landingzones.view_zone_all', project
         ):
-            context['zones_other'] = (
-                LandingZone.objects.filter(project=context['project'])
-                .exclude(user=self.request.user)
-                .exclude(status__in=STATUS_FINISHED)
-                .order_by('user__username', 'title')
-            )
+            zones = zones.filter(user=self.request.user)
+        context['zones'] = zones
         # Status query interval
         context['zone_status_interval'] = settings.LANDINGZONES_STATUS_INTERVAL
         # Disable status
@@ -445,6 +524,18 @@ class ProjectZoneView(
             settings.LANDINGZONES_DISABLE_FOR_USERS
             and not self.request.user.is_superuser
         )
+        # Project lock status
+        project_lock = False
+        if taskflow:
+            try:
+                project_lock = taskflow.is_locked(project)
+            except Exception as ex:
+                logger.error('Exception querying lock status: {}'.format(ex))
+        context['project_lock'] = project_lock
+        # Zone creation limit
+        context['zone_create_limit'] = get_zone_create_limit(project)
+        # Zone validation limit
+        context['zone_validate_limit'] = get_zone_validate_limit(project)
         return context
 
 
@@ -455,6 +546,7 @@ class ZoneCreateView(
     InvestigationContextMixin,
     CurrentUserFormMixin,
     ZoneModifyMixin,
+    ZoneContextMixin,
     CreateView,
 ):
     """LandingZone creation view"""
@@ -468,6 +560,20 @@ class ZoneCreateView(
         kwargs = super().get_form_kwargs()
         kwargs.update({'project': self.kwargs['project']})
         return kwargs
+
+    def dispatch(self, request, *args, **kwargs):
+        project = self.get_project()
+        try:
+            self.check_create_limit(project)
+        except Exception as ex:
+            messages.error(request, str(ex) + '.')
+            return redirect(
+                reverse(
+                    'landingzones:list',
+                    kwargs={'project': project.sodar_uuid},
+                )
+            )
+        return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
         taskflow = get_backend_api('taskflow')
@@ -522,7 +628,7 @@ class ZoneCreateView(
                 and 'sodar_cache' in settings.ENABLED_BACKEND_PLUGINS
             ):
                 msg += ' Collections will be created.'
-            messages.warning(self.request, msg)
+            messages.info(self.request, msg)
         except taskflow.FlowSubmitException as ex:
             messages.error(self.request, str(ex))
         return redirect(
@@ -678,7 +784,7 @@ class ZoneDeleteView(
             return redirect(redirect_url)
         try:
             self.submit_delete(zone)
-            messages.warning(
+            messages.info(
                 self.request,
                 'Landing zone deletion initiated for "{}/{}" in '
                 'assay {}.'.format(
@@ -729,7 +835,7 @@ class ZoneMoveView(
             irods_backend = get_backend_api('omics_irods')
             path = irods_backend.get_path(zone)
             with irods_backend.get_session() as irods:
-                stats = irods_backend.get_object_stats(irods, path)
+                stats = irods_backend.get_stats(irods, path)
                 if stats['file_count'] == 0:
                     messages.info(request, ZONE_MOVE_NO_FILES)
                     return redirect(
@@ -781,6 +887,12 @@ class ZoneMoveView(
             messages.error(self.request, ZONE_MOVE_INVALID_STATUS)
             return redirect(redirect_url)
 
+        # Check limit
+        # if self.is_validate_limit_reached(project):
+        if get_zone_validate_limit(project):
+            messages.error(self.request, ZONE_VALIDATE_LIMIT_MSG + '.')
+            return redirect(redirect_url)
+
         # Validate/move or validate only
         validate_only = False
         if self.request.get_full_path() == reverse(
@@ -788,8 +900,8 @@ class ZoneMoveView(
         ):
             validate_only = True
         try:
-            self._submit_validate_move(zone, validate_only)
-            messages.warning(
+            self.submit_validate_move(zone, validate_only)
+            messages.info(
                 self.request,
                 'Validating {}landing zone, see job progress in the '
                 'zone list.'.format('and moving ' if not validate_only else ''),

@@ -67,6 +67,7 @@ THIRD_PARTY_APPS = [
     'dal',  # For user search combo box
     'dal_select2',
     'dj_iconify.apps.DjIconifyConfig',  # Iconify for SVG icons
+    'drf_spectacular',  # OpenAPI schema generation
     'webpack_loader',  # For accessing webpack bundles
     # SODAR Core apps
     # Project apps
@@ -342,7 +343,19 @@ CELERY_IMPORTS = [
 ]
 
 
-# Django REST framework default auth classes
+# API Settings
+# ------------------------------------------------------------------------------
+
+SODAR_API_DEFAULT_HOST = env.url(
+    'SODAR_API_DEFAULT_HOST', 'http://127.0.0.1:8000'
+)
+
+SODAR_API_PAGE_SIZE = env.int('SODAR_API_PAGE_SIZE', 100)
+
+
+# Django REST framework
+# ------------------------------------------------------------------------------
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.BasicAuthentication',
@@ -353,7 +366,12 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': (
         'rest_framework.pagination.PageNumberPagination'
     ),
-    'PAGE_SIZE': env.int('SODAR_API_PAGE_SIZE', 100),
+    'PAGE_SIZE': SODAR_API_PAGE_SIZE,
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'PREPROCESSING_HOOKS': ['config.drf_spectacular.exclude_knox_hook']
 }
 
 
@@ -535,7 +553,6 @@ def set_logging(level=None):
         }
     return {
         'version': 1,
-        'disable_existing_loggers': True,  # python-irodsclient>=1.1.9 fix
         'formatters': {
             'simple': {
                 'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
@@ -587,12 +604,6 @@ SITE_SUBTITLE = env.str('SITE_SUBTITLE', None)
 SITE_INSTANCE_TITLE = env.str('SITE_INSTANCE_TITLE', 'CUBI SODAR')
 
 
-# General API settings
-SODAR_API_DEFAULT_HOST = env.url(
-    'SODAR_API_DEFAULT_HOST', 'http://127.0.0.1:8000'
-)
-
-
 # Projectroles app settings
 PROJECTROLES_SITE_MODE = env.str('PROJECTROLES_SITE_MODE', 'SOURCE')
 PROJECTROLES_TEMPLATE_INCLUDE_PATH = env.path(
@@ -618,18 +629,23 @@ PROJECTROLES_ALLOW_LOCAL_USERS = env.bool(
     'PROJECTROLES_ALLOW_LOCAL_USERS', False
 )
 PROJECTROLES_ALLOW_ANONYMOUS = env.bool('PROJECTROLES_ALLOW_ANONYMOUS', False)
-
-
 PROJECTROLES_ENABLE_MODIFY_API = True
 PROJECTROLES_MODIFY_API_APPS = ['taskflow', 'samplesheets', 'landingzones']
-
 PROJECTROLES_DISABLE_CATEGORIES = env.bool(
     'PROJECTROLES_DISABLE_CATEGORIES', False
 )
+PROJECTROLES_API_USER_DETAIL_RESTRICT = env.bool(
+    'PROJECTROLES_API_USER_DETAIL_RESTRICT', False
+)
+PROJECTROLES_READ_ONLY_MSG = env.str(
+    'PROJECTROLES_READ_ONLY_MSG',
+    'This site is currently in read-only mode. Modifying data is not permitted.'
+    'This includes landing zone operations.',
+)
+PROJECTROLES_SUPPORT_CONTACT = env.str('PROJECTROLES_SUPPORT_CONTACT', None)
 
 # Warn about unsupported browsers (IE)
 PROJECTROLES_BROWSER_WARNING = True
-
 # Disable default CDN JS/CSS includes to replace with your local files
 PROJECTROLES_DISABLE_CDN_INCLUDES = env.bool(
     'PROJECTROLES_DISABLE_CDN_INCLUDES', False
@@ -641,31 +657,25 @@ PROJECTROLES_CUSTOM_JS_INCLUDES = env.list(
 PROJECTROLES_CUSTOM_CSS_INCLUDES = env.list(
     'PROJECTROLES_CUSTOM_CSS_INCLUDES', None, []
 )
-
 # Inline HTML include to the head element of the base site template
 PROJECTROLES_INLINE_HEAD_INCLUDE = env.str(
     'PROJECTROLES_INLINE_HEAD_INCLUDE', None
 )
-
 # Enable profiling for debugging/analysis
 PROJECTROLES_ENABLE_PROFILING = env.bool('PROJECTROLES_ENABLE_PROFILING', False)
 if PROJECTROLES_ENABLE_PROFILING:
     MIDDLEWARE += ['projectroles.middleware.ProfilerMiddleware']
 
+# Adminalerts app settings
+ADMINALERTS_PAGINATION = env.int('ADMINALERTS_PAGINATION', 15)
 
 # Timeline app settings
 TIMELINE_PAGINATION = env.int('TIMELINE_PAGINATION', 15)
 
-
-# Adminalerts app settings
-ADMINALERTS_PAGINATION = env.int('ADMINALERTS_PAGINATION', 15)
-
-
-# SODAR site specific settings (not derived from SODAR Core)
-SODAR_SUPPORT_EMAIL = env.str(
-    'SODAR_SUPPORT_EMAIL', 'cubi-helpdesk@bih-charite.de'
+# Tokens app settings
+TOKENS_CREATE_PROJECT_USER_RESTRICT = env.bool(
+    'TOKENS_CREATE_PROJECT_USER_RESTRICT', False
 )
-SODAR_SUPPORT_NAME = env.str('SODAR_SUPPORT_NAME', 'CUBI Helpdesk')
 
 
 # iRODS settings shared by iRODS using apps
@@ -677,16 +687,17 @@ IRODS_ZONE = env.str('IRODS_ZONE', 'sodarZone')
 IRODS_ROOT_PATH = env.str('IRODS_ROOT_PATH', None)
 IRODS_USER = env.str('IRODS_USER', 'rods')
 IRODS_PASS = env.str('IRODS_PASS', 'rods')
+# iRODS server checksum hash scheme (MD5 or SHA256)
+IRODS_HASH_SCHEME = env.str('IRODS_HASH_SCHEME', 'MD5')
 IRODS_SAMPLE_COLL = env.str('IRODS_SAMPLE_COLL', 'sample_data')
 IRODS_LANDING_ZONE_COLL = env.str('IRODS_LANDING_ZONE_COLL', 'landing_zones')
-
 # Enable entry point for custom local auth for iRODS users if no LDAP is in use
 IRODS_SODAR_AUTH = env.bool('IRODS_SODAR_AUTH', False)
-
 # Default iRODS environment for backend and client connections
 # NOTE: irods_ssl_ca_certificate_file should be defined in IRODS_CERT_PATH
 IRODS_ENV_DEFAULT = env.dict(
-    'IRODS_ENV_DEFAULT', default={'irods_default_hash_scheme': 'MD5'}
+    'IRODS_ENV_DEFAULT',
+    default={'irods_default_hash_scheme': IRODS_HASH_SCHEME},
 )
 # iRODS environment overrides for backend connections
 IRODS_ENV_BACKEND = env.dict('IRODS_ENV_BACKEND', default={})
@@ -695,12 +706,13 @@ IRODS_ENV_CLIENT = env.dict('IRODS_ENV_CLIENT', default={})
 # Optional iRODS certificate path on server
 IRODS_CERT_PATH = env.str('IRODS_CERT_PATH', None)
 
-
 # Taskflow backend settings
 # Connection timeout for taskflowbackend flows (other sessions not affected)
 TASKFLOW_IRODS_CONN_TIMEOUT = env.int('TASKFLOW_IRODS_CONN_TIMEOUT', 3600)
 TASKFLOW_LOCK_RETRY_COUNT = env.int('TASKFLOW_LOCK_RETRY_COUNT', 2)
 TASKFLOW_LOCK_RETRY_INTERVAL = env.int('TASKFLOW_LOCK_RETRY_INTERVAL', 3)
+# Interval in seconds for zone progress counters (0 for update on every file)
+TASKFLOW_ZONE_PROGRESS_INTERVAL = env.int('TASKFLOW_ZONE_PROGRESS_INTERVAL', 10)
 TASKFLOW_LOCK_ENABLED = True
 TASKFLOW_TEST_MODE = False  # Important to protect iRODS data
 
@@ -772,9 +784,16 @@ SHEETS_IGV_OMIT_VCF = env.list(
     'SHEETS_IGV_OMIT_VCF',
     default=['*cnv.vcf.gz', '*ploidy.vcf.gz', '*sv.vcf.gz'],
 )
+# Default allowed hosts for iRODS access tickets.
+# Can be overridden by project and ticket.
+SHEETS_IRODS_TICKET_HOSTS = env.list('SHEETS_IRODS_TICKET_HOSTS', default=[])
 # Restrict SampleDataFileExistsAPIView access to users with project roles
 SHEETS_API_FILE_EXISTS_RESTRICT = env.bool(
     'SHEETS_API_FILE_EXISTS_RESTRICT', False
+)
+# Limit parser warnings to be saved in the database to N per investigation
+SHEETS_PARSER_WARNING_SAVE_LIMIT = env.int(
+    'SHEETS_PARSER_WARNING_SAVE_LIMIT', 100
 )
 
 # Landingzones app settings
@@ -794,6 +813,16 @@ LANDINGZONES_TRIGGER_FILE = env.str(
 LANDINGZONES_DISABLE_FOR_USERS = env.bool(
     'LANDINGZONES_DISABLE_FOR_USERS', False
 )
+# Limit creation of active landing zones per project (0 or None = no limit)
+LANDINGZONES_ZONE_CREATE_LIMIT = env.int('LANDINGZONES_ZONE_CREATE_LIMIT', None)
+# Limit concurrent landing zone validations per project (0 or None = no limit)
+LANDINGZONES_ZONE_VALIDATE_LIMIT = env.int(
+    'LANDINGZONES_ZONE_VALIDATE_LIMIT', None
+)
+# Landing zone file list modal page size
+LANDINGZONES_FILE_LIST_PAGINATION = env.int(
+    'LANDINGZONES_FILE_LIST_PAGINATION', 25
+)
 
 # Landingzones configapp plugin settings
 LZ_BIH_PROTEOMICS_SMB_EXPIRY_DAYS = env.int(
@@ -804,11 +833,9 @@ LZ_BIH_PROTEOMICS_SMB_USER = env.str(
 )
 LZ_BIH_PROTEOMICS_SMB_PASS = env.str('LZ_BIH_PROTEOMICS_SMB_PASS', 'CHANGE ME!')
 
-
 # Ontologyaccess settings
 ONTOLOGYACCESS_BULK_CREATE = env.int('ONTOLOGYACCESS_BULK_CREATE', 5000)
 ONTOLOGYACCESS_QUERY_LIMIT = env.int('ONTOLOGYACCESS_QUERY_LIMIT', 250)
-
 
 # Isatemplates settings
 # Enable templates from cubi-isa-templates

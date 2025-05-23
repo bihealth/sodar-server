@@ -21,6 +21,7 @@
       }
     ],
     "critical_count": 0,
-    "use_file_names": true
+    "use_file_names": true,
+    "limit_reached": false
   }
 }

@@ -123,11 +123,16 @@ SHEETS_EXTERNAL_LINK_PATH = os.path.join(
 )
 SHEETS_IGV_OMIT_BAM = ['*dragen_evidence.bam']
 SHEETS_IGV_OMIT_VCF = ['*cnv.vcf.gz', '*ploidy.vcf.gz', '*sv.vcf.gz']
+SHEETS_IRODS_TICKET_HOSTS = []
 SHEETS_API_FILE_EXISTS_RESTRICT = False
+SHEETS_PARSER_WARNING_SAVE_LIMIT = 100
 
 # Landingzones app settings
 LANDINGZONES_TRIGGER_ENABLE = True
 LANDINGZONES_DISABLE_FOR_USERS = False
+LANDINGZONES_ZONE_CREATE_LIMIT = None
+LANDINGZONES_ZONE_VALIDATE_LIMIT = None
+LANDINGZONES_FILE_LIST_PAGINATION = 25
 
 # iRODS settings shared by iRODS using apps
 ENABLE_IRODS = True
@@ -135,6 +140,7 @@ IRODS_HOST = '127.0.0.1'
 IRODS_PORT = 4488
 IRODS_WEBDAV_ENABLED = True
 IRODS_SODAR_AUTH = True
+IRODS_HASH_SCHEME = 'MD5'
 
 # Taskflow backend settings
 TASKFLOW_TEST_MODE = True
@@ -145,6 +151,7 @@ TASKFLOW_TEST_PERMANENT_USERS = [
     'public',
     'bih_proteomics_smb',
 ]
+TASKFLOW_ZONE_PROGRESS_INTERVAL = 60  # Set this high to ease testing
 
 # Isatemplates app settings
 ISATEMPLATES_ENABLE_CUBI_TEMPLATES = True

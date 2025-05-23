@@ -120,6 +120,7 @@ Table of Contents
     Sample Sheets API <api_samplesheets>
     Landing Zones API <api_landingzones>
     iRODS Info API <api_irodsinfo>
+    Taskflow Backend API <api_taskflowbackend>
     api_examples
 
 .. toctree::
@@ -133,8 +134,10 @@ Table of Contents
     admin_ui
     admin_isatemplates
     admin_ontologyaccess
+    admin_site_app_settings
     admin_commands
     admin_settings
+    admin_other
     admin_custom
     admin_upgrade
 

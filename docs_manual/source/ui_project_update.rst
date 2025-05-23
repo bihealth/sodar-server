@@ -48,6 +48,11 @@ Notify members of landing zone uploads
     Send project members email updates for file uploads using landing zones. For
     more information, see the
     :ref:`Landing Zones app documentation <app_landingzones>`.
+Prohibited file types
+    If you want to prohibit uploading files of certain types to the project,
+    add related file suffixes here as a comma-separated list. The file suffixes
+    will be checked during landing zone validation. For more information, see
+    :ref:`app_landingzones_transfer_prohibit`.
 Allow sample sheet editing
     Enable or disable editability of sample sheets in the project.
 Enable sheet synchronization
@@ -76,6 +81,12 @@ VCF paths to omit from IGV sessions
     cancer and germline projects. Behaves similarly to the related BAM/CRAM
     setting. You need to run :guilabel:`Update Sheet Cache` in the Sample Sheet
     application for changes to take effect.
+Allowed hosts for iRODS access tickets
+    Comma-separated list of host names or IP addresses that specify default
+    allowed hosts for
+    :ref:`iRODS access tickets <app_samplesheets_irods_ticket>` created for the
+    project. These can be overridden by the user for each ticket upon its
+    creation. If no value is set here, no default restriction is applied.
 IP restrict
     Restrict project access to specific IP addresses if this is set.
 IP allow list
@@ -125,3 +136,24 @@ member roles.
 .. note::
 
     Archiving categories is not currently supported.
+
+
+Project Deletion
+================
+
+A category or a project can be deleted by clicking the :guilabel:`Delete`
+button. This takes you to a confirmation view where you must input the host name
+of your SODAR instance to proceed.
+
+Cascading deletion is not supported. In order to delete a category with child
+categories or projects, the children need to be individually deleted. This is
+done to prevent accidental data loss.
+
+Deleting a project will also delete its :ref:`Timeline <ui_project_timeline>`
+events. Deletion creates a summary Timeline event, which is viewable by
+superusers in the :guilabel:`Site-Wide Events` view.
+
+.. danger::
+
+    Deleting a project will delete all of its data including sample sheets,
+    iRODS sample data and landing zones. This operation can **not** be undone!

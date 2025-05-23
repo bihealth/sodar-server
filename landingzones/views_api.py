@@ -5,8 +5,8 @@ import sys
 
 from django.urls import reverse
 
-from rest_framework import status
-from rest_framework.exceptions import APIException, NotFound
+from rest_framework import serializers, status
+from rest_framework.exceptions import APIException, NotFound, PermissionDenied
 from rest_framework.generics import (
     ListAPIView,
     RetrieveAPIView,
@@ -16,9 +16,10 @@ from rest_framework.generics import (
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
-from rest_framework.schemas.openapi import AutoSchema
 from rest_framework.versioning import AcceptHeaderVersioning
 from rest_framework.views import APIView
+
+from drf_spectacular.utils import extend_schema, inline_serializer
 
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
@@ -34,12 +35,14 @@ from samplesheets.models import Investigation
 from landingzones.constants import STATUS_ALLOW_UPDATE, STATUS_FINISHED
 from landingzones.models import LandingZone
 from landingzones.serializers import LandingZoneSerializer
+from landingzones.utils import get_zone_validate_limit
 from landingzones.views import (
     ZoneModifyPermissionMixin,
     ZoneModifyMixin,
     ZoneDeleteMixin,
     ZoneMoveMixin,
     ZONE_UPDATE_FIELDS,
+    ZONE_VALIDATE_LIMIT_MSG,
 )
 
 
@@ -50,7 +53,6 @@ logger = logging.getLogger(__name__)
 LANDINGZONES_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar.landingzones+json'
 LANDINGZONES_API_ALLOWED_VERSIONS = ['1.0']
 LANDINGZONES_API_DEFAULT_VERSION = '1.0'
-
 ZONE_NO_COLLS_MSG = 'iRODS collections not created for project'
 
 
@@ -87,6 +89,7 @@ class ZoneSubmitBaseAPIView(
     """
 
     http_method_names = ['post']
+    serializer_class = None  # Need to explicitly set this None for spectacular
 
     @classmethod
     def _validate_zone_obj(cls, zone, allowed_status_types, action):
@@ -142,7 +145,6 @@ class ZoneListAPIView(
 
     pagination_class = SODARPageNumberPagination
     permission_required = 'landingzones.view_zone_own'
-    schema = AutoSchema(operation_id_base='listZone')
     serializer_class = LandingZoneSerializer
 
     def get_queryset(self):
@@ -192,7 +194,6 @@ class ZoneRetrieveAPIView(
 
     lookup_field = 'sodar_uuid'
     lookup_url_kwarg = 'landingzone'
-    schema = AutoSchema(operation_id_base='retrieveZone')
     serializer_class = LandingZoneSerializer
 
     def get_permission_required(self):
@@ -247,6 +248,14 @@ class ZoneCreateAPIView(
         ex = APIException(msg)
         ex.status_code = 503
         raise ex
+
+    def post(self, request, *args, **kwargs):
+        project = self.get_project()
+        try:
+            self.check_create_limit(project)
+        except Exception as ex:
+            raise PermissionDenied(ex)
+        return super().post(request, *args, **kwargs)
 
     def perform_create(self, serializer):
         """
@@ -344,6 +353,17 @@ class ZoneUpdateAPIView(
             raise APIException('{}{}'.format(ex_msg, ex))
 
 
+@extend_schema(
+    responses={
+        '200': inline_serializer(
+            'ZoneSubmitDeleteResponse',
+            fields={
+                'detail': serializers.CharField(),
+                'sodar_uuid': serializers.UUIDField(),
+            },
+        ),
+    }
+)
 class ZoneSubmitDeleteAPIView(ZoneDeleteMixin, ZoneSubmitBaseAPIView):
     """
     Initiate landing zone deletion.
@@ -379,6 +399,17 @@ class ZoneSubmitDeleteAPIView(ZoneDeleteMixin, ZoneSubmitBaseAPIView):
         )
 
 
+@extend_schema(
+    responses={
+        '200': inline_serializer(
+            'ZoneSubmitMoveResponse',
+            fields={
+                'detail': serializers.CharField(),
+                'sodar_uuid': serializers.UUIDField(),
+            },
+        ),
+    }
+)
 class ZoneSubmitMoveAPIView(ZoneMoveMixin, ZoneSubmitBaseAPIView):
     """
     Initiate landing zone validation and/or moving.
@@ -389,7 +420,8 @@ class ZoneSubmitMoveAPIView(ZoneMoveMixin, ZoneSubmitBaseAPIView):
     For validating data without moving it to the sample repository, this view
     should be called with ``submit/validate``.
 
-    Returns ``503`` if the project is currently locked by another operation.
+    Returns ``503`` if the project is currently locked by another operation or
+    if the concurrent validation limit for the project has been reached.
 
     **URL for Validation:** ``/landingzones/api/submit/validate/{LandingZone.sodar_uuid}``
 
@@ -398,13 +430,6 @@ class ZoneSubmitMoveAPIView(ZoneMoveMixin, ZoneSubmitBaseAPIView):
     **Methods:** ``POST``
     """
 
-    class ZoneSubmitMoveSchema(AutoSchema):
-        def get_operation_id_base(self, path, method, action):
-            if '/validate' in path:
-                return 'submitZoneValidate'
-            return 'submitZoneValidateMove'
-
-    schema = ZoneSubmitMoveSchema()
     zone_action = 'move'
 
     def post(self, request, *args, **kwargs):
@@ -413,6 +438,12 @@ class ZoneSubmitMoveAPIView(ZoneMoveMixin, ZoneSubmitBaseAPIView):
         zone = LandingZone.objects.filter(
             sodar_uuid=self.kwargs['landingzone']
         ).first()
+
+        # Check limit
+        if get_zone_validate_limit(zone.project):
+            ex = APIException(ZONE_VALIDATE_LIMIT_MSG)
+            ex.status_code = 503
+            raise ex
 
         # Validate/move or validate only
         if self.request.get_full_path() == reverse(
@@ -429,7 +460,7 @@ class ZoneSubmitMoveAPIView(ZoneMoveMixin, ZoneSubmitBaseAPIView):
         self._validate_zone_obj(zone, STATUS_ALLOW_UPDATE, action_obj)
 
         try:
-            self._submit_validate_move(zone, validate_only)
+            self.submit_validate_move(zone, validate_only)
         except Exception as ex:
             ex_msg = 'Initiating landing zone {} failed: '.format(action_msg)
             if taskflow:

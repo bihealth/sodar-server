@@ -43,6 +43,39 @@ class ZoneAPIPermissionTestBase(
     media_type = LANDINGZONES_API_MEDIA_TYPE
     api_version = LANDINGZONES_API_DEFAULT_VERSION
 
+    def setUp(self):
+        super().setUp()
+        self.good_users = [
+            self.superuser,
+            self.user_owner_cat,  # Inherited
+            self.user_delegate_cat,  # Inherited
+            self.user_contributor_cat,  # Inherited
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+        ]
+        self.bad_users = [
+            self.user_guest_cat,  # Inherited
+            self.user_finder_cat,  # Inherited
+            self.user_guest,
+            self.user_no_roles,
+        ]
+        self.good_users_owner = [
+            self.superuser,
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_owner,
+            self.user_delegate,
+        ]
+        self.bad_users_owner = [
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_contributor,
+            self.user_guest,
+            self.user_no_roles,
+        ]
+
 
 class TestZoneListAPIView(ZoneAPIPermissionTestBase):
     """Tests for ZoneListAPIView permissions"""
@@ -55,23 +88,8 @@ class TestZoneListAPIView(ZoneAPIPermissionTestBase):
 
     def test_get(self):
         """Test ZoneListAPIView GET"""
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,  # Inherited
-            self.user_delegate_cat,  # Inherited
-            self.user_contributor_cat,  # Inherited
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-        ]
-        bad_users = [
-            self.user_guest_cat,  # Inherited
-            self.user_finder_cat,  # Inherited
-            self.user_guest,
-            self.user_no_roles,
-        ]
-        self.assert_response(self.url, good_users, 200)
-        self.assert_response(self.url, bad_users, 403)
+        self.assert_response(self.url, self.good_users, 200)
+        self.assert_response(self.url, self.bad_users, 403)
         self.assert_response(self.url, self.anonymous, 401)
         self.project.set_public()
         self.assert_response(self.url, self.user_no_roles, 403)
@@ -86,26 +104,18 @@ class TestZoneListAPIView(ZoneAPIPermissionTestBase):
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-        ]
-        bad_users = [
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_guest,
-            self.user_no_roles,
-        ]
-        self.assert_response(self.url, good_users, 200)
-        self.assert_response(self.url, bad_users, 403)
+        self.assert_response(self.url, self.good_users, 200)
+        self.assert_response(self.url, self.bad_users, 403)
         self.assert_response(self.url, self.anonymous, 401)
         self.project.set_public()
         self.assert_response(self.url, self.user_no_roles, 403)
+        self.assert_response(self.url, self.anonymous, 401)
+
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.good_users, 200)
+        self.assert_response(self.url, self.bad_users, 403)
         self.assert_response(self.url, self.anonymous, 401)
 
 
@@ -134,23 +144,8 @@ class TestZoneRetrieveAPIView(ZoneAPIPermissionTestBase):
 
     def test_get(self):
         """Test ZoneRetrieveAPIView GET"""
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_owner,
-            self.user_delegate,
-        ]
-        bad_users = [
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-        ]
-        self.assert_response(self.url, good_users, 200)
-        self.assert_response(self.url, bad_users, 403)
+        self.assert_response(self.url, self.good_users_owner, 200)
+        self.assert_response(self.url, self.bad_users_owner, 403)
         self.assert_response(self.url, self.anonymous, 401)
         self.project.set_public()
         self.assert_response(self.url, self.user_no_roles, 403)
@@ -165,26 +160,18 @@ class TestZoneRetrieveAPIView(ZoneAPIPermissionTestBase):
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_owner,
-            self.user_delegate,
-        ]
-        bad_users = [
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-        ]
-        self.assert_response(self.url, good_users, 200)
-        self.assert_response(self.url, bad_users, 403)
+        self.assert_response(self.url, self.good_users_owner, 200)
+        self.assert_response(self.url, self.bad_users_owner, 403)
         self.assert_response(self.url, self.anonymous, 401)
         self.project.set_public()
         self.assert_response(self.url, self.user_no_roles, 403)
+        self.assert_response(self.url, self.anonymous, 401)
+
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.good_users_owner, 200)
+        self.assert_response(self.url, self.bad_users_owner, 403)
         self.assert_response(self.url, self.anonymous, 401)
 
 
@@ -215,24 +202,9 @@ class TestZoneUpdateAPIView(ZoneAPIPermissionTestBase):
 
     def test_patch(self):
         """Test ZoneUpdateAPIView PATCH"""
-        good_users = [
-            self.superuser,
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_owner,
-            self.user_delegate,
-        ]
-        bad_users = [
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-        ]
         self.assert_response_api(
             self.url,
-            good_users,
+            self.good_users_owner,
             200,
             method='PATCH',
             data=self.post_data,
@@ -240,7 +212,7 @@ class TestZoneUpdateAPIView(ZoneAPIPermissionTestBase):
         )
         self.assert_response_api(
             self.url,
-            bad_users,
+            self.bad_users_owner,
             403,
             method='PATCH',
             data=self.post_data,
@@ -284,22 +256,9 @@ class TestZoneUpdateAPIView(ZoneAPIPermissionTestBase):
     def test_patch_archive(self):
         """Test PATCH with archived project"""
         self.project.set_archive()
-        good_users = [self.superuser]
-        bad_users = [
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-        ]
         self.assert_response_api(
             self.url,
-            good_users,
+            self.superuser,
             200,
             method='PATCH',
             data=self.post_data,
@@ -307,7 +266,7 @@ class TestZoneUpdateAPIView(ZoneAPIPermissionTestBase):
         )
         self.assert_response_api(
             self.url,
-            bad_users,
+            self.auth_non_superusers,
             403,
             method='PATCH',
             data=self.post_data,
@@ -324,6 +283,33 @@ class TestZoneUpdateAPIView(ZoneAPIPermissionTestBase):
         self.assert_response_api(
             self.url,
             self.user_no_roles,
+            403,
+            method='PATCH',
+            data=self.post_data,
+            knox=True,
+        )
+        self.assert_response_api(
+            self.url,
+            self.anonymous,
+            401,
+            method='PATCH',
+            data=self.post_data,
+        )
+
+    def test_patch_read_only(self):
+        """Test PATCH with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response_api(
+            self.url,
+            self.superuser,
+            200,
+            method='PATCH',
+            data=self.post_data,
+            knox=True,
+        )
+        self.assert_response_api(
+            self.url,
+            self.auth_non_superusers,
             403,
             method='PATCH',
             data=self.post_data,

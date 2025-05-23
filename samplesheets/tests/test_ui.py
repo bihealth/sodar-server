@@ -303,6 +303,21 @@ class TestSheetVersionListView(SamplesheetsUITestBase):
         self.assert_element_exists(
             [self.user_contributor], self.url, 'sodar-ss-version-alert', False
         )
+        self.assert_element_exists(
+            [self.user_contributor],
+            self.url,
+            'sodar-ss-version-link-compare',
+            True,
+        )
+        self.assert_element_exists(
+            [self.user_owner], self.url, 'sodar-ss-version-link-delete', True
+        )
+        self.assert_element_exists(
+            [self.user_contributor],
+            self.url,
+            'sodar-ss-version-link-delete',
+            False,
+        )
         # Ensure badge is shown for current version
         self.login_and_redirect(self.user_contributor, self.url)
         self.assertIsNotNone(
@@ -324,7 +339,7 @@ class TestSheetVersionListView(SamplesheetsUITestBase):
             False,
         )
 
-    def test_render_dropdown(self):
+    def test_render_version_dropdown(self):
         """Test sheet version dropdown rendering"""
         expected = [
             (self.superuser, 1),
@@ -337,6 +352,27 @@ class TestSheetVersionListView(SamplesheetsUITestBase):
             (self.user_contributor, 0),
             (self.user_guest, 0),
         ]
+        self.assert_element_count(
+            expected, self.url, 'sodar-ss-version-dropdown', 'class'
+        )
+
+    def test_render_read_only(self):
+        """Test rendering with site read-only-mode"""
+        app_settings.set('projectroles', 'site_read_only', True)
+        expected = [
+            (self.superuser, 1),
+            (self.user_owner_cat, 0),
+            (self.user_delegate_cat, 0),
+            (self.user_contributor_cat, 0),
+            (self.user_guest_cat, 0),
+            (self.user_owner, 0),
+            (self.user_delegate, 0),
+            (self.user_contributor, 0),
+            (self.user_guest, 0),
+        ]
+        self.assert_element_count(
+            expected, self.url, 'sodar-ss-version-link-delete'
+        )
         self.assert_element_count(
             expected, self.url, 'sodar-ss-version-dropdown', 'class'
         )
@@ -358,6 +394,9 @@ class TestIrodsAccessTicketListView(
     def test_render_empty(self):
         """Test rendering empty list view"""
         self.login_and_redirect(self.user_contributor, self.url)
+        elem = self.selenium.find_element(By.ID, 'sodar-ss-btn-ticket-create')
+        self.assertIsNotNone(elem)
+        self.assertIsNone(elem.get_attribute('disabled'))
         self.assertIsNotNone(
             self.selenium.find_element(By.ID, 'sodar-ss-ticket-alert-empty')
         )
@@ -373,23 +412,25 @@ class TestIrodsAccessTicketListView(
             user=self.user_contributor,
         )
         self.login_and_redirect(self.user_contributor, self.url)
+        elem = self.selenium.find_element(By.ID, 'sodar-ss-btn-ticket-create')
+        self.assertIsNone(elem.get_attribute('disabled'))
         with self.assertRaises(NoSuchElementException):
             self.selenium.find_element(By.ID, 'sodar-ss-ticket-alert-empty')
         self.assertIsNotNone(
             self.selenium.find_element(By.ID, 'sodar-ss-ticket-table')
         )
-        self.assertEqual(
-            len(
-                self.selenium.find_elements(
-                    By.CLASS_NAME, 'sodar-ss-ticket-item'
-                )
-            ),
-            1,
+        items = self.selenium.find_elements(
+            By.CLASS_NAME, 'sodar-ss-ticket-item'
         )
+        self.assertEqual(len(items), 1)
         elem = self.selenium.find_element(
             By.CLASS_NAME, 'sodar-ss-ticket-item-title'
         ).find_element(By.TAG_NAME, 'a')
         self.assertNotIn('text-strikethrough', elem.get_attribute('class'))
+        with self.assertRaises(NoSuchElementException):
+            self.selenium.find_element(
+                By.CLASS_NAME, 'sodar-ss-ticket-item-host'
+            )
         elem = self.selenium.find_element(
             By.CLASS_NAME, 'sodar-ss-ticket-item-expiry'
         )
@@ -415,6 +456,70 @@ class TestIrodsAccessTicketListView(
         )
         self.assertEqual(elem.text, 'Expired')
         self.assertIn('text-danger', elem.get_attribute('class'))
+
+    def test_render_ticket_hosts(self):
+        """Test rendering ticket with allowed hosts set"""
+        self.make_irods_ticket(
+            study=self.study,
+            assay=self.assay,
+            path='/sodarZone/some/path',
+            user=self.user_contributor,
+            allowed_hosts=['127.0.0.1'],
+        )
+        self.login_and_redirect(self.user_contributor, self.url)
+        items = self.selenium.find_elements(
+            By.CLASS_NAME, 'sodar-ss-ticket-item'
+        )
+        self.assertEqual(len(items), 1)
+        self.assertIsNotNone(
+            self.selenium.find_element(
+                By.CLASS_NAME, 'sodar-ss-ticket-item-host'
+            )
+        )
+
+    def test_render_read_only(self):
+        """Test rendering with site read-only mode"""
+        self.make_irods_ticket(
+            study=self.study,
+            assay=self.assay,
+            path='/sodarZone/some/path',
+            user=self.user_contributor,
+        )
+        app_settings.set('projectroles', 'site_read_only', True)
+        self.login_and_redirect(self.user_contributor, self.url)
+        elem = self.selenium.find_element(By.ID, 'sodar-ss-btn-ticket-create')
+        self.assertIsNotNone(elem)
+        self.assertEqual(elem.get_attribute('disabled'), 'true')
+        items = self.selenium.find_elements(
+            By.CLASS_NAME, 'sodar-ss-ticket-item'
+        )
+        self.assertEqual(len(items), 1)
+        with self.assertRaises(NoSuchElementException):
+            self.selenium.find_element(
+                By.CLASS_NAME, 'sodar-ss-ticket-dropdown'
+            )
+
+    def test_render_read_only_superuser(self):
+        """Test rendering with site read-only mode as superuser"""
+        self.make_irods_ticket(
+            study=self.study,
+            assay=self.assay,
+            path='/sodarZone/some/path',
+            user=self.user_contributor,
+        )
+        app_settings.set('projectroles', 'site_read_only', True)
+        self.login_and_redirect(self.superuser, self.url)
+        elem = self.selenium.find_element(By.ID, 'sodar-ss-btn-ticket-create')
+        self.assertIsNotNone(elem)
+        self.assertIsNone(elem.get_attribute('disabled'))
+        items = self.selenium.find_elements(
+            By.CLASS_NAME, 'sodar-ss-ticket-item'
+        )
+        self.assertEqual(len(items), 1)
+        elem = self.selenium.find_element(
+            By.CLASS_NAME, 'sodar-ss-ticket-dropdown'
+        )
+        self.assertIsNotNone(elem)
 
 
 class TestIrodsAccessTicketCreateView(SamplesheetsUITestBase):

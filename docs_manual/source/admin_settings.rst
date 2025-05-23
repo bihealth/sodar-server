@@ -90,6 +90,10 @@ iRODS Settings
     iRODS port (integer).
 ``IRODS_ZONE``
     iRODS zone (string).
+``IRODS_HASH_SCHEME``
+    iRODS checksum hashing scheme. Supported values are "MD5" and "SHA256", with
+    "MD5" as the default. This should be set upon initial deployment (string).
+    :ref:`See here for more information <admin_other_hash_scheme>`.
 ``IRODS_ROOT_PATH``
     iRODS root path, without the zone. Used if the SODAR projects collection is
     not intended to be placed directly under ``IRODS_ZONE`` (string).
@@ -135,6 +139,9 @@ Taskflow Backend Settings
 ``TASKFLOW_LOCK_RETRY_INTERVAL``
     Retry interval for project lock retrieval for Taskflow operations (int,
     default: 3).
+``TASKFLOW_ZONE_PROGRESS_INTERVAL``
+    Interval in seconds for zone progress counters, 0 for update on every file
+    (int, default: 10).
 
 iRODS WebDAV Settings
 ---------------------
@@ -205,14 +212,25 @@ Sample Sheets Settings
 ``SHEETS_IGV_OMIT_VCF``
     VCF file name suffixes to omit from study shortcuts and IGV session
     generation.
+``SHEETS_IRODS_TICKET_HOSTS``
+    List of host names or IP addresses to be used as default allowed hosts for
+    iRODS access tickets. If no value is given, no restrictions are applied. The
+    restriction can be overridden by a project-specific setting and/or a
+    ticket-specific value.
 ``SHEETS_API_FILE_EXISTS_RESTRICT``
     Restrict access to ``SampleDataFileExistsAPIView`` to users with the role of
     project guest or above in any category or project. Recommended for instances
     deployed on the public internet with general OIDC SSO access (boolean).
+``SHEETS_PARSER_WARNING_SAVE_LIMIT``
+    Limit AltamISA parser warnings to be saved in the database to N per
+    investigation (integer).
 
 Landing Zones Settings
 ----------------------
 
+``LANDINGZONES_DISABLE_FOR_USERS``
+    Disable non-superuser uploads via landing zones, useful for e.g. demo
+    instances (boolean).
 ``LANDINGZONES_STATUS_INTERVAL``
     Zone status query interval in seconds (integer).
 ``LANDINGZONES_TRIGGER_ENABLE``
@@ -222,9 +240,18 @@ Landing Zones Settings
 ``LANDINGZONES_TRIGGER_FILE``
     File name for automated move triggering (string,
     default: ``.sodar_validate_and_move``).
-``LANDINGZONES_DISABLE_FOR_USERS``
-    Disable non-superuser uploads via landing zones, useful for e.g. demo
-    instances (boolean).
+``LANDINGZONES_ZONE_CREATE_LIMIT``
+    Optional limit for how many active landing zones can be created per
+    project. If enabled, existing landing zones past the limit must be moved or
+    deleted before new ones can be created. The UI and API will inform the user
+    of this limitation. Use value ``0`` for no limit (integer).
+``LANDINGZONES_ZONE_VALIDATE_LIMIT``
+    Optional limit for how many landing zones can be simultaneously triggered
+    for validation in the project. If enabled, ongoing validation jobs must
+    finish before new ones can be initiated. The UI and API will inform the user
+    of this limitation. Use value ``0`` for no limit (integer).
+``LANDINGZONES_FILE_LIST_PAGINATION``
+    Page size for landing zone iRODS file list modal pagination.
 ``LZ_BIH_PROTEOMICS_SMB_EXPIRY_DAYS``
     BIH proteomics configuration SMB expiry days (integer).
 ``LZ_BIH_PROTEOMICS_SMB_USER``

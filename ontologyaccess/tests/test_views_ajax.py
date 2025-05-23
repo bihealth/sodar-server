@@ -22,8 +22,8 @@ OBO_TERM_NAME_ALT = 'Alt term'
 class TestOBOOntologyListAjaxView(OntologyAccessViewTestBase):
     """Tests for OBOOntologyListAjaxView"""
 
-    def test_list(self):
-        """Test listing ontologies"""
+    def test_get(self):
+        """Test OBOOntologyListAjaxView GET"""
         with self.login(self.superuser):
             response = self.client.get(reverse('ontologyaccess:ajax_obo_list'))
         self.assertEqual(response.status_code, 200)
@@ -61,14 +61,13 @@ class TestOBOTermQueryAjaxView(OntologyAccessViewTestBase):
             term_id=OBO_TERM_ID_ALT,
             name=OBO_TERM_NAME_ALT,
         )
+        self.url = reverse('ontologyaccess:ajax_obo_term_query')
 
-    def test_query(self):
-        """Test querying for a single term"""
+    def test_get(self):
+        """Test OBOTermQueryAjaxView GET with single term"""
         query_data = {'s': self.term.name}
         with self.login(self.superuser):
-            response = self.client.get(
-                reverse('ontologyaccess:ajax_obo_term_query'), data=query_data
-            )
+            response = self.client.get(self.url, data=query_data)
         self.assertEqual(response.status_code, 200)
         response_data = json.loads(response.content)
         self.assertEqual(len(response_data['terms']), 1)
@@ -83,25 +82,20 @@ class TestOBOTermQueryAjaxView(OntologyAccessViewTestBase):
         }
         self.assertEqual(response_data['terms'][0], expected)
 
-    def test_query_multiple(self):
-        """Test querying for multiple terms"""
+    def test_get_multiple(self):
+        """Test GET with multiple terms"""
         query_data = {'s': 'term'}
         with self.login(self.superuser):
-            response = self.client.get(
-                reverse('ontologyaccess:ajax_obo_term_query'), data=query_data
-            )
+            response = self.client.get(self.url, data=query_data)
         self.assertEqual(response.status_code, 200)
         response_data = json.loads(response.content)
         self.assertEqual(len(response_data['terms']), 2)
 
-    def test_query_limit(self):
-        """Test querying limited to a specific ontology"""
+    def test_get_limit(self):
+        """Test GET limited to specific ontology"""
         query_data = {'s': 'term', 'o': self.ontology2.name}
         with self.login(self.superuser):
-            response = self.client.get(
-                reverse('ontologyaccess:ajax_obo_term_query'),
-                data=query_data,
-            )
+            response = self.client.get(self.url, data=query_data)
         self.assertEqual(response.status_code, 200)
         response_data = json.loads(response.content)
         self.assertEqual(len(response_data['terms']), 1)
@@ -116,43 +110,34 @@ class TestOBOTermQueryAjaxView(OntologyAccessViewTestBase):
         }
         self.assertEqual(response_data['terms'][0], expected)
 
-    def test_query_limit_multiple(self):
-        """Test querying limited to a multiple ontologies"""
+    def test_get_limit_multiple(self):
+        """Test GET limited to multiple ontologies"""
         query_data = {
             's': 'term',
             'o': [self.ontology.name, self.ontology2.name],
         }
         with self.login(self.superuser):
-            response = self.client.get(
-                reverse('ontologyaccess:ajax_obo_term_query'),
-                data=query_data,
-            )
+            response = self.client.get(self.url, data=query_data)
         self.assertEqual(response.status_code, 200)
         response_data = json.loads(response.content)
         self.assertEqual(len(response_data['terms']), 2)
 
-    def test_query_no_data(self):
-        """Test querying without a query string (should fail)"""
+    def test_get_no_data(self):
+        """Test GET without query string (should fail)"""
         query_data = {}
         with self.login(self.superuser):
-            response = self.client.get(
-                reverse('ontologyaccess:ajax_obo_term_query'),
-                data=query_data,
-            )
+            response = self.client.get(self.url, data=query_data)
         self.assertEqual(response.status_code, 400)
 
-    def test_query_order(self):
-        """Test querying with ordering by ontology"""
+    def test_get_order(self):
+        """Test GET with ordering by ontology"""
         query_data = {
             's': 'term',
             'o': [self.ontology2.name, self.ontology.name],
             'order': '1',
         }
         with self.login(self.superuser):
-            response = self.client.get(
-                reverse('ontologyaccess:ajax_obo_term_query'),
-                data=query_data,
-            )
+            response = self.client.get(self.url, data=query_data)
         self.assertEqual(response.status_code, 200)
         response_data = json.loads(response.content)
         self.assertEqual(len(response_data['terms']), 2)
@@ -167,13 +152,11 @@ class TestOBOTermQueryAjaxView(OntologyAccessViewTestBase):
         }
         self.assertEqual(response_data['terms'][0], expected)
 
-    def test_query_id(self):
-        """Test querying for a single term with term id"""
+    def test_get_id(self):
+        """Test GET for single term with term ID"""
         query_data = {'s': self.term.term_id}
         with self.login(self.superuser):
-            response = self.client.get(
-                reverse('ontologyaccess:ajax_obo_term_query'), data=query_data
-            )
+            response = self.client.get(self.url, data=query_data)
         self.assertEqual(response.status_code, 200)
         response_data = json.loads(response.content)
         self.assertEqual(len(response_data['terms']), 1)
@@ -206,15 +189,13 @@ class TestOBOTermListAjaxView(OntologyAccessViewTestBase):
             term_id=OBO_TERM_ID_ALT,
             name=OBO_TERM_NAME_ALT,
         )
+        self.url = reverse('ontologyaccess:ajax_obo_term_list')
 
-    def test_list(self):
-        """Test listing OBO ontology terms"""
+    def test_get(self):
+        """Test OBOTermListAjaxView GET"""
         query_data = {'t': [OBO_TERM_NAME, OBO_TERM_NAME_ALT]}
         with self.login(self.superuser):
-            response = self.client.get(
-                reverse('ontologyaccess:ajax_obo_term_list'),
-                data=query_data,
-            )
+            response = self.client.get(self.url, data=query_data)
         self.assertEqual(response.status_code, 200)
         response_data = json.loads(response.content)
         self.assertEqual(len(response_data['terms']), 2)
@@ -240,14 +221,11 @@ class TestOBOTermListAjaxView(OntologyAccessViewTestBase):
         ]
         self.assertEqual(response_data['terms'], expected)
 
-    def test_list_inexact(self):
-        """Test listing OBO ontology terms with an inexact key (should fail)"""
+    def test_get_inexact(self):
+        """Test GET with inexact key (should fail)"""
         query_data = {'t': 'term'}
         with self.login(self.superuser):
-            response = self.client.get(
-                reverse('ontologyaccess:ajax_obo_term_list'),
-                data=query_data,
-            )
+            response = self.client.get(self.url, data=query_data)
         self.assertEqual(response.status_code, 200)
         response_data = json.loads(response.content)
         self.assertEqual(len(response_data['terms']), 0)

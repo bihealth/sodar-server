@@ -1,7 +1,7 @@
 """Django checks for the irodsbackend app"""
 
 from django.conf import settings
-from django.core.checks import Warning, register
+from django.core.checks import Error, Warning, register
 
 
 # Projectroles dependency
@@ -28,6 +28,12 @@ W003_MSG = (
     'users to access iRODS.'
 )
 W003 = Warning(W003_MSG, obj=settings, id='irodsbackend.W003')
+
+E001_MSG = (
+    'Invalid value for IRODS_HASH_SCHEME. Accepted values are "MD5" and '
+    '"SHA256".'
+)
+E001 = Error(E001_MSG, obj=settings, id='irodsbackend.E001')
 
 
 @register()
@@ -67,4 +73,13 @@ def check_token_app_oidc(app_configs, **kwargs):
         and not get_app_plugin('tokens')
     ):
         ret.append(W003)
+    return ret
+
+
+@register()
+def check_irods_hash_scheme(app_configs, **kwargs):
+    """Check for IRODS_HASH_SCHEME validity"""
+    ret = []
+    if settings.IRODS_HASH_SCHEME not in ['MD5', 'SHA256']:
+        ret.append(E001)
     return ret

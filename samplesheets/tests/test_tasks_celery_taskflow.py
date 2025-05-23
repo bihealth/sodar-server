@@ -354,3 +354,9 @@ class TestSheetRemoteSyncTask(SheetRemoteSyncTestBase):
         )
         sheet_sync_task()
         self.assertEqual(self.project_target.investigations.count(), 0)
+
+    def test_sync_read_only(self):
+        """Test sync with site read-only mode"""
+        app_settings.set('projectroles', 'site_read_only', True)
+        sheet_sync_task()
+        self.assertEqual(self.project_target.investigations.count(), 0)

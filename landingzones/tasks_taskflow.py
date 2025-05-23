@@ -34,8 +34,6 @@ app_settings = AppSettingAPI()
 
 # Local constants
 APP_NAME = 'landingzones'
-STATUS_INFO_LEN = 1024
-STATUS_TRUNCATE_MSG = '... <TRUNCATED>'
 
 EMAIL_MSG_MOVED = r'''
 Data was successfully validated and moved into the project
@@ -243,13 +241,6 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
         :param extra_data: Optional extra data (dict)
         """
         app_alerts = get_backend_api('appalerts_backend')
-
-        # Truncate status info (fix for #1307)
-        if len(status_info) >= STATUS_INFO_LEN - len(STATUS_TRUNCATE_MSG):
-            status_info = (
-                status_info[: STATUS_INFO_LEN - len(STATUS_TRUNCATE_MSG)]
-                + STATUS_TRUNCATE_MSG
-            )
         # Refresh in case sheets have been replaced (see issue #1839)
         zone.refresh_from_db()
         zone.set_status(
@@ -269,7 +260,7 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
             and flow_name != 'landing_zone_create'
             and (file_count > 0 or zone.status != ZONE_STATUS_MOVED)
         ):
-            if app_alerts:
+            if app_alerts and zone.user.is_active:
                 try:
                     cls._add_owner_alert(
                         app_alerts,
@@ -287,6 +278,7 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
                 settings.PROJECTROLES_SEND_EMAIL
                 and flow_name == 'landing_zone_move'
                 and not validate_only
+                and zone.user.is_active
                 and app_settings.get(
                     APP_NAME, 'notify_email_zone_status', user=zone.user
                 )
@@ -308,7 +300,9 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
             and file_count > 0
         ):
             members = [
-                r.user for r in zone.project.get_roles() if r.user != zone.user
+                a.user
+                for a in zone.project.get_roles()
+                if a.user != zone.user and a.user.is_active
             ]
             for member in list(set(members)):
                 if app_alerts:

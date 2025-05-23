@@ -9,12 +9,15 @@ from django.db.models import Count
 from config.celery import app
 
 # Projectroles dependency
+from projectroles.app_settings import AppSettingAPI
 from projectroles.models import Project
 from projectroles.plugins import get_backend_api
 
 from landingzones.constants import STATUS_ALLOW_UPDATE, STATUS_LOCKING
 from landingzones.views import ZoneMoveMixin
 
+
+app_settings = AppSettingAPI()
 logger = logging.getLogger(__name__)
 
 
@@ -67,7 +70,7 @@ class TriggerZoneMoveTask(ZoneMoveMixin):
                 irods.data_objects.unlink(path, force=True)
                 logger.debug('Trigger file deleted')
                 # Submit request to Taskflow
-                self._submit_validate_move(
+                self.submit_validate_move(
                     zone, validate_only=False, request=request
                 )
                 logger.info(
@@ -83,6 +86,9 @@ class TriggerZoneMoveTask(ZoneMoveMixin):
         irods.cleanup()
 
     def run(self, request=None):
+        if app_settings.get('projectroles', 'site_read_only'):
+            logger.info('Site read-only mode enabled, skipping')
+            return
         try:
             irods_backend = get_backend_api('omics_irods')
         except Exception as ex:

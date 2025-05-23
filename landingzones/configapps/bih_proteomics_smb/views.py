@@ -18,7 +18,7 @@ from projectroles.utils import build_secret
 
 # Landingzones dependency
 from landingzones.models import LandingZone
-from landingzones.views import ZoneContextMixin
+from landingzones.views import ZoneConfigContextMixin
 
 
 # Local constants
@@ -30,7 +30,7 @@ class ZoneTicketGetView(
     LoggedInPermissionMixin,
     ProjectContextMixin,
     ProjectPermissionMixin,
-    ZoneContextMixin,
+    ZoneConfigContextMixin,
     TemplateView,
 ):
     """Zone iRODS ticket retrieval view"""
@@ -85,7 +85,7 @@ class ZoneTicketGetView(
                         mode='write',
                         path=irods_backend.get_path(zone),
                         ticket_str=build_secret(16),
-                        expiry_date=expiry_date,
+                        date_expires=expiry_date,
                     )
                 zone.config_data['ticket'] = ticket._ticket
                 zone.config_data['ticket_expire_date'] = expiry_date.strftime(

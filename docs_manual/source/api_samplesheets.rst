@@ -12,9 +12,9 @@ Versioning
 Media Type
     ``application/vnd.bihealth.sodar.samplesheets+json``
 Current Version
-    ``1.0``
+    ``1.1``
 Accepted Versions
-    ``1.0``
+    ``1.0``, ``1.1``
 Header Example
     ``Accept: application/vnd.bihealth.sodar.samplesheets+json; version=x.y``
 
@@ -71,3 +71,22 @@ iRODS Data Requests
 .. autoclass:: IrodsDataRequestAcceptAPIView
 
 .. autoclass:: IrodsDataRequestRejectAPIView
+
+
+Version Changes
+===============
+
+.. _api_samplesheets_version_1_1:
+
+v1.1
+----
+
+- ``IrodsAccessTicketRetrieveAPIView``
+    * Add ``allowed_hosts`` field
+- ``IrodsAccessTicketCreateAPIView``
+    * Add ``allowed_hosts`` field
+- ``IrodsAccessTicketUpdateAPIView``
+    * Add ``allowed_hosts`` field
+- ``ProjectIrodsFileListAPIView``
+    * Add ``checksum`` field to return data
+    * Add ``page`` parameter for optional pagination

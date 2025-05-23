@@ -89,7 +89,8 @@ rules.add_perm(
 # NOTE: Is allowed if project is archived
 rules.add_perm(
     'landingzones.delete_zone_own',
-    can_modify_zone
+    pr_rules.is_site_writable
+    & can_modify_zone
     & (
         pr_rules.is_project_owner
         | pr_rules.is_project_delegate
@@ -117,6 +118,7 @@ rules.add_perm(
 # NOTE: Is allowed if project is archived
 rules.add_perm(
     'landingzones.delete_zone_all',
-    can_modify_zone
+    pr_rules.is_site_writable
+    & can_modify_zone
     & (pr_rules.is_project_owner | pr_rules.is_project_delegate),
 )

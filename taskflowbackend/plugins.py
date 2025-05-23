@@ -2,7 +2,7 @@
 
 import logging
 
-from irods.exception import UserGroupDoesNotExist
+from irods.exception import GroupDoesNotExist
 
 from django.contrib.auth import get_user_model
 
@@ -16,7 +16,7 @@ from projectroles.plugins import (
 )
 
 from taskflowbackend.api import TaskflowAPI
-from taskflowbackend.irods_utils import get_batch_role
+from taskflowbackend.irods_utils import get_flow_role
 
 
 app_settings = AppSettingAPI()
@@ -28,18 +28,23 @@ User = get_user_model()
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 PROJECT_TYPE_CATEGORY = SODAR_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
+PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
 PROJECT_ROLE_FINDER = SODAR_CONSTANTS['PROJECT_ROLE_FINDER']
 PROJECT_ACTION_CREATE = SODAR_CONSTANTS['PROJECT_ACTION_CREATE']
 PROJECT_ACTION_UPDATE = SODAR_CONSTANTS['PROJECT_ACTION_UPDATE']
+APP_SETTING_SCOPE_PROJECT = SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT']
 
 # Local constants
 APP_NAME = 'taskflowbackend'
 IRODS_CAT_SKIP_MSG = 'Categories are not synchronized into iRODS'
+RANK_OWNER = ROLE_RANKING[PROJECT_ROLE_OWNER]
+RANK_DELEGATE = ROLE_RANKING[PROJECT_ROLE_DELEGATE]
 RANK_FINDER = ROLE_RANKING[PROJECT_ROLE_FINDER]
 TASKFLOW_INFO_SETTINGS = [
     'TASKFLOW_IRODS_CONN_TIMEOUT',
     'TASKFLOW_LOCK_RETRY_COUNT',
     'TASKFLOW_LOCK_RETRY_INTERVAL',
+    'TASKFLOW_ZONE_PROGRESS_INTERVAL',
 ]
 TL_SUBMIT_DESC = 'Job submitted to Taskflow'
 
@@ -127,26 +132,33 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
             flow_data = {
                 'owner': owner.username,
                 'settings': project_settings,
-                'users_add': [],
+                'roles_add': [],
             }
             if (
                 action == PROJECT_ACTION_UPDATE
                 and old_data['parent'] != project.parent
             ):
                 inh_members = [
-                    a.user.username
+                    get_flow_role(project, a.user, a.role.rank)
                     for a in all_roles
                     if a.project != project and a.user != owner
                 ]
-                flow_data['users_add'] = inh_members
+                flow_data['roles_add'] = inh_members
                 old_inh_members = [
-                    a.user.username for a in old_data['parent'].get_roles()
+                    get_flow_role(project, a.user, a.role.rank)
+                    for a in old_data['parent'].get_roles()
                 ]
-                flow_data['users_delete'] = [
-                    u for u in old_inh_members if u not in all_members
+                flow_data['roles_delete'] = [
+                    r
+                    for r in old_inh_members
+                    if r['user_name'] not in all_members
                 ]
             else:  # Create
-                flow_data['users_add'] = all_members
+                flow_data['roles_add'] = [
+                    get_flow_role(project, a.user, a.role.rank)
+                    for a in all_roles
+                    if a.user != owner
+                ]
             taskflow.submit(
                 project=project,
                 flow_name='project_{}'.format(action.lower()),
@@ -159,18 +171,20 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
             and old_data['parent'] != project.parent
         ):
             flow_data = {'roles_add': [], 'roles_delete': []}
-            old_inh_members = (
-                [a.user.username for a in old_data['parent'].get_roles()]
-                if old_data['parent']  # Old parent may be None
-                else []
+            old_inh_roles = (
+                old_data['parent'].get_roles() if old_data['parent'] else []
             )
             for c in children:
-                for u in all_members:
-                    flow_data['roles_add'].append(get_batch_role(c, u))
+                for a in all_roles:
+                    flow_data['roles_add'].append(
+                        get_flow_role(c, a.user, a.role.rank)
+                    )
                 c_members = [a.user.username for a in c.get_roles()]
-                for u in old_inh_members:
-                    if u not in c_members:
-                        flow_data['roles_delete'].append(get_batch_role(c, u))
+                for a in old_inh_roles:
+                    if a.user.username not in c_members:
+                        flow_data['roles_delete'].append(
+                            get_flow_role(c, a.user, a.role.rank)
+                        )
             taskflow.submit(
                 project=None,
                 flow_name='role_update_irods_batch',
@@ -226,12 +240,19 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                     'Removing project collection: {}'.format(project_path)
                 )
                 irods.collections.remove(project_path)
-            group_name = irods_backend.get_user_group_name(project)
+            project_group = irods_backend.get_group_name(project)
             try:
-                irods.user_groups.get(group_name)
-                logger.debug('Removing user group: {}'.format(group_name))
-                irods.users.remove(group_name)
-            except UserGroupDoesNotExist:
+                irods.user_groups.get(project_group)
+                logger.debug('Removing user group: {}'.format(project_group))
+                irods.users.remove(project_group)
+            except GroupDoesNotExist:
+                pass
+            project_group = irods_backend.get_group_name(project, owner=True)
+            try:
+                irods.user_groups.get(project_group)
+                logger.debug('Removing owner group: {}'.format(project_group))
+                irods.users.remove(project_group)
+            except GroupDoesNotExist:
                 pass
 
         if timeline:
@@ -255,13 +276,26 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         :param old_role: Role object for previous role in case of an update
         :param request: Request object or None
         """
-        # Skip for update (no action needed unless updating to/from finder)
+        owner_update = False
+        if action == PROJECT_ACTION_UPDATE:
+            owner_update = not (
+                (
+                    role_as.role.rank <= RANK_DELEGATE
+                    and old_role.rank <= RANK_DELEGATE
+                )
+                or (
+                    role_as.role.rank > RANK_DELEGATE
+                    and old_role.rank > RANK_DELEGATE
+                )
+            )
+        # Skip for update (unless updating to/from finder, owner or delegate)
         if (
             action == PROJECT_ACTION_UPDATE
             and role_as.role.rank < RANK_FINDER
             and old_role.rank < RANK_FINDER
+            and not owner_update
         ):
-            logger.debug('Skipping: User already has iRODS access')
+            logger.debug('Skipping: No iRODS update needed')
             return
 
         taskflow = self.get_api()
@@ -269,27 +303,39 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         project = role_as.project
         user = role_as.user
         children = self._get_child_projects(project)
+        flow_data = {'roles_add': [], 'roles_delete': []}
+        role_rank = role_as.role.rank
+        # Set overriding inherited role if present
+        # NOTE: In practice we should not call this method with a role of higher
+        #       rank than what already exists, but it may happen e.g. in testing
+        if project.parent:
+            parent_role_as = project.parent.get_role(user)
+            if parent_role_as and parent_role_as.role.rank < role_rank:
+                role_rank = parent_role_as.role.rank
 
         if project.type == PROJECT_TYPE_PROJECT:
-            flow_data = {'user_name': user.username}
-            taskflow.submit(
-                project=project, flow_name='role_update', flow_data=flow_data
+            flow_data['roles_add'].append(
+                get_flow_role(project, user, role_rank)
             )
         elif children:  # Category children
-            flow_data = {'roles_add': [], 'roles_delete': []}
             for c in children:
-                k = (
-                    'roles_delete'
-                    if role_as.role.rank >= RANK_FINDER
-                    and not c.get_role(user)  # Finder not returned for project
-                    else 'roles_add'
-                )
-                flow_data[k].append(get_batch_role(c, user.username))
-            taskflow.submit(
-                project=None,
-                flow_name='role_update_irods_batch',
-                flow_data=flow_data,
-            )
+                c_role = c.get_role(user)
+                if role_as.role.rank >= RANK_FINDER and not c_role:
+                    flow_data['roles_delete'].append(
+                        get_flow_role(c, user, role_rank)
+                    )
+                else:  # Update user, ensure child rank is not downgraded
+                    c_rank = role_rank
+                    if c_role and c_role.role.rank < role_rank:
+                        c_rank = c_role.role.rank
+                    flow_data['roles_add'].append(
+                        get_flow_role(c, user, c_rank)
+                    )
+        taskflow.submit(
+            project=None,
+            flow_name='role_update_irods_batch',
+            flow_data=flow_data,
+        )
 
         if timeline:
             tl_event = timeline.add_event(
@@ -320,16 +366,45 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         user = role_as.user
         user_name = user.username
         flow_data = {'roles_add': [], 'roles_delete': []}
+        owner_update = False
+        if action == PROJECT_ACTION_UPDATE:
+            owner_update = not (
+                (
+                    role_as.role.rank <= RANK_DELEGATE
+                    and old_role.rank <= RANK_DELEGATE
+                )
+                or (
+                    role_as.role.rank > RANK_DELEGATE
+                    and old_role.rank > RANK_DELEGATE
+                )
+            )
 
         # Revert creation or update from finder role for project
         if project.type == PROJECT_TYPE_PROJECT and (
-            action == PROJECT_ACTION_CREATE or old_role.rank >= RANK_FINDER
+            action == PROJECT_ACTION_CREATE
+            or (old_role and old_role.rank >= RANK_FINDER)
         ):
-            flow_data['roles_delete'].append(get_batch_role(project, user_name))
+            flow_data['roles_delete'].append(
+                get_flow_role(
+                    project, user_name, old_role.rank if old_role else None
+                )
+            )
+        # Update project owner/delegate
+        elif (
+            project.type == PROJECT_TYPE_PROJECT
+            and action == PROJECT_ACTION_UPDATE
+            and owner_update
+        ):
+            # Update happens with roles_add
+            flow_data['roles_add'].append(
+                get_flow_role(
+                    project, user_name, old_role.rank if old_role else None
+                )
+            )
+        # Update roles in category child projects
         elif project.type == PROJECT_TYPE_CATEGORY:
             children = self._get_child_projects(project)
             for c in children:
-                batch_role = get_batch_role(c, user_name)
                 # Search for inherited roles for child
                 # NOTE: role_as still exists so it has to be excluded
                 c_as = (
@@ -339,6 +414,9 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                     .order_by('role__rank')
                     .exclude(sodar_uuid=role_as.sodar_uuid)
                     .first()
+                )
+                batch_role = get_flow_role(
+                    c, user_name, c_as.role.rank if c_as else None
                 )
                 local_access = c_as and c_as.role.rank < RANK_FINDER
                 if action == PROJECT_ACTION_CREATE and not local_access:
@@ -392,7 +470,13 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
             )
             if not inh_as or inh_as.role.rank >= RANK_FINDER:
                 flow_data['roles_delete'].append(
-                    get_batch_role(project, user_name)
+                    get_flow_role(
+                        project, user_name, inh_as.role.rank if inh_as else None
+                    )
+                )
+            elif inh_as:  # Update role to match inherited role
+                flow_data['roles_add'].append(
+                    get_flow_role(project, user_name, inh_as.role.rank)
                 )
         else:  # Category
             children = self._get_child_projects(project)
@@ -408,7 +492,17 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                 )
                 if not c_as or c_as.role.rank >= RANK_FINDER:
                     flow_data['roles_delete'].append(
-                        get_batch_role(c, user_name)
+                        get_flow_role(
+                            c, user_name, c_as.role.rank if c_as else None
+                        )
+                    )
+                # Update child role if owner/delegate role is deleted
+                elif (
+                    c_as
+                    and c_as.role.rank >= RANK_DELEGATE >= role_as.role.rank
+                ):
+                    flow_data['roles_add'].append(
+                        get_flow_role(c, user_name, c_as.role.rank)
                     )
 
         if flow_data['roles_add'] or flow_data['roles_delete']:
@@ -448,15 +542,16 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
             user_as = project.get_role(user)
             if user_as and user_as.role.rank < RANK_FINDER:
                 flow_data['roles_add'].append(
-                    get_batch_role(project, user_name)
+                    get_flow_role(project, user_name, user_as.role.rank)
                 )
         else:  # Category
             children = self._get_child_projects(project)
             for c in children:
-                batch_role = get_batch_role(c, user_name)
                 # NOTE: role_as still exists so it has to be excluded
                 if role_as.role.rank < RANK_FINDER:
-                    flow_data['roles_add'].append(batch_role)
+                    flow_data['roles_add'].append(
+                        get_flow_role(c, user_name, role_as.role.rank)
+                    )
                 else:
                     c_as = (
                         RoleAssignment.objects.filter(
@@ -470,7 +565,11 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                         k = 'roles_add'
                     else:
                         k = 'roles_delete'
-                    flow_data[k].append(batch_role)
+                    flow_data[k].append(
+                        get_flow_role(
+                            c, user_name, c_as.role.rank if c_as else None
+                        )
+                    )
 
         if flow_data['roles_add'] or flow_data['roles_delete']:
             self.get_api().submit(
@@ -493,7 +592,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
             tl_event.add_object(role_as.user, 'user', user_name)
 
     def perform_owner_transfer(
-        self, project, new_owner, old_owner, old_owner_role, request=None
+        self, project, new_owner, old_owner, old_owner_role=None, request=None
     ):
         """
         Perform additional actions to finalize project ownership transfer.
@@ -501,27 +600,45 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         :param project: Project object
         :param new_owner: SODARUser object for new owner
         :param old_owner: SODARUser object for previous owner
-        :param old_owner_role: Role object for new role of previous owner
+        :param old_owner_role: Role object for new role of old owner or None
         :param request: Request object or None
         """
         timeline = get_backend_api('timeline_backend')
         n_user_name = new_owner.username
         o_user_name = old_owner.username
+        o_rank = old_owner_role.rank if old_owner_role else None
         flow_data = {'roles_add': [], 'roles_delete': []}
 
         if project.type == PROJECT_TYPE_PROJECT:
-            flow_data['roles_add'].append(get_batch_role(project, n_user_name))
-            if old_owner_role.rank >= RANK_FINDER:
+            flow_data['roles_add'].append(
+                get_flow_role(
+                    project, n_user_name, ROLE_RANKING[PROJECT_ROLE_OWNER]
+                )
+            )
+            if not old_owner_role or old_owner_role.rank >= RANK_FINDER:
                 flow_data['roles_delete'].append(
-                    get_batch_role(project, o_user_name)
+                    get_flow_role(project, o_user_name, RANK_OWNER)
+                )
+            else:
+                # Update owner role with roles_add
+                flow_data['roles_add'].append(
+                    get_flow_role(project, o_user_name, o_rank)
                 )
         else:  # Category
             children = self._get_child_projects(project)
             for c in children:
-                flow_data['roles_add'].append(get_batch_role(c, n_user_name))
-                if old_owner_role.rank >= RANK_FINDER:
+                flow_data['roles_add'].append(
+                    get_flow_role(
+                        c, n_user_name, ROLE_RANKING[PROJECT_ROLE_OWNER]
+                    )
+                )
+                if not old_owner_role or old_owner_role.rank >= RANK_FINDER:
                     flow_data['roles_delete'].append(
-                        get_batch_role(c, o_user_name)
+                        get_flow_role(c, o_user_name, RANK_OWNER)
+                    )
+                else:
+                    flow_data['roles_add'].append(
+                        get_flow_role(c, o_user_name, o_rank)
                     )
         if flow_data['roles_add'] or flow_data['roles_delete']:
             self.get_api().submit(
@@ -549,7 +666,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
             )
 
     # NOTE: revert_owner_transfer() not needed at the moment
-    # (No other plugin gets called with after taskflowbackend)
+    # (No other plugin gets called after taskflowbackend)
 
     def perform_project_sync(self, project):
         """
@@ -573,19 +690,25 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         self.perform_project_modify(
             project=project,
             action=PROJECT_ACTION_CREATE,
-            project_settings=app_settings.get_all(project),
+            project_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project
+            ),
             **{'sync_modify_api': True},
         )
         # Remove inactive roles
-        group_name = irods_backend.get_user_group_name(project)
+        project_group = irods_backend.get_group_name(project)
         flow_data = {'roles_add': [], 'roles_delete': []}
         with irods_backend.get_session() as irods:
-            for irods_user in irods.user_groups.getmembers(group_name):
+            for irods_user in irods.user_groups.getmembers(project_group):
                 user = User.objects.filter(username=irods_user.name).first()
                 role_as = project.get_role(user)
                 if not role_as or role_as.role.rank >= RANK_FINDER:
                     flow_data['roles_delete'].append(
-                        get_batch_role(project, irods_user.name)
+                        get_flow_role(
+                            project,
+                            irods_user.name,
+                            role_as.role.rank if role_as else None,
+                        )
                     )
         if flow_data['roles_delete']:
             self.get_api().submit(
@@ -593,3 +716,77 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                 flow_name='role_update_irods_batch',
                 flow_data=flow_data,
             )
+
+    def perform_project_delete(self, project):
+        """
+        Perform additional actions to finalize project deletion.
+
+        NOTE: This operation can not be undone so there is no revert method.
+
+        :param project: Project object (Project)
+        """
+        # NOTE: Checks for project/category permissions done in SODAR Core views
+        # Skip for categories, nothing to do
+        if project.type != PROJECT_TYPE_PROJECT:
+            logger.debug('Skipping: {}'.format(IRODS_CAT_SKIP_MSG))
+            return
+        irods_backend = get_backend_api('omics_irods')
+        if not irods_backend:
+            logger.error('iRODS backend not enabled')
+            return
+
+        timeline = get_backend_api('timeline_backend')
+        tl_event = None
+        project_path = irods_backend.get_path(project)
+        user_group = irods_backend.get_group_name(project)
+        owner_group = irods_backend.get_group_name(project, owner=True)
+        errors = []
+        # Create separate timeline event
+        if timeline:
+            tl_event = timeline.add_event(
+                project=None,  # No project as it has been deleted
+                app_name='taskflowbackend',
+                plugin_name='taskflow',
+                user=None,
+                event_name='project_delete',
+                description=f'Delete iRODS collection and user group from '
+                f'project {project.get_log_title()}',
+                extra_data={
+                    'project_path': project_path,
+                    'user_group': user_group,
+                },
+                classified=True,
+            )
+
+        with irods_backend.get_session() as irods:
+            # Delete project collection and subcollections
+            try:
+                irods.collections.remove(project_path, recurse=True)
+                logger.debug(f'Project collection deleted: {project_path}')
+            except Exception as ex:
+                ex_msg = (
+                    f'Error deleting project collection '
+                    f'({project_path}): {ex}'
+                )
+                logger.error(ex_msg)
+                errors.append(ex_msg)
+            try:  # Delete project user group
+                # NOTE: Use users instead of user_groups here
+                irods.users.remove(user_group)
+                logger.debug(f'User group deleted: {user_group}')
+            except Exception as ex:
+                ex_msg = f'Error deleting user group ({user_group}): {ex}'
+                logger.error(ex_msg)
+                errors.append(ex_msg)
+            try:  # Delete project owner group
+                irods.users.remove(owner_group)
+                logger.debug(f'Owner group deleted: {owner_group}')
+            except Exception as ex:
+                ex_msg = f'Error deleting owner group ({owner_group}): {ex}'
+                logger.error(ex_msg)
+                errors.append(ex_msg)
+
+        if tl_event and errors:
+            tl_event.set_status(timeline.TL_STATUS_FAILED, '; '.join(errors))
+        elif tl_event:
+            tl_event.set_status(timeline.TL_STATUS_OK)

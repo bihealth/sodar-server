@@ -2,6 +2,9 @@
 
 import json
 import logging
+import redis
+
+from django.conf import settings
 
 from rest_framework.exceptions import APIException
 
@@ -15,14 +18,17 @@ from landingzones.constants import (
 from landingzones.models import LandingZone
 
 # Projectroles dependency
+from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 
 from taskflowbackend import flows
+from taskflowbackend.irods_utils import get_flow_role as _get_flow_role
 from taskflowbackend.lock_api import ProjectLockAPI, PROJECT_LOCKED_MSG
 from taskflowbackend.tasks_celery import submit_flow_task
 
 
+app_settings = AppSettingAPI()
 lock_api = ProjectLockAPI()
 logger = logging.getLogger(__name__)
 
@@ -33,6 +39,8 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 # Local constants
 UNKNOWN_RUN_ERROR = 'Running flow failed: unknown error, see server log'
 LOCK_FAIL_MSG = 'Unable to acquire project lock'
+READ_ONLY_MSG = 'Site in read-only mode, taskflow operations not allowed'
+COORDINATOR_EX_MSG = 'Failed to retrieve lock coordinator'
 
 
 class TaskflowAPI:
@@ -68,6 +76,29 @@ class TaskflowAPI:
             zone.set_status(status, ex_msg[:1024])
         # TODO: Create app alert for failure if async (see #1499)
         raise cls.FlowSubmitException(ex_msg)
+
+    @classmethod
+    def _raise_run_flow_exception(cls, ex_msg, tl_event=None, zone=None):
+        """
+        Wrapper for _raise_flow_exception() to be called from run_flow().
+
+        :param ex_msg: Exception message (string)
+        :param tl_event: Timeline event or None
+        :param zone: LandingZone object or None
+        :raise: FlowSubmitException
+        """
+        logger.error(ex_msg)
+        # Provide landing zone if error occurs but status has not been set
+        # (This means a failure has not been properly handled in the flow)
+        ex_zone = None
+        if zone:
+            zone.refresh_from_db()
+            if zone.status not in [
+                ZONE_STATUS_NOT_CREATED,
+                ZONE_STATUS_FAILED,
+            ]:
+                ex_zone = zone
+        cls._raise_flow_exception(ex_msg, tl_event, ex_zone)
 
     @classmethod
     def _raise_lock_exception(cls, ex_msg, tl_event=None, zone=None):
@@ -112,6 +143,18 @@ class TaskflowAPI:
             ex.status_code = 503
             raise ex
         raise default_class(msg)
+
+    @classmethod
+    def get_flow_role(cls, project, user, role_rank=None):
+        """
+        Return role dict for taskflows performing role modification.
+
+        :param project: Project object
+        :param user: SODARUser object or username string
+        :param role_rank: String or None
+        :return: Dict
+        """
+        return _get_flow_role(project, user, role_rank)
 
     @classmethod
     def get_flow(
@@ -164,6 +207,9 @@ class TaskflowAPI:
         """
         Run a flow, either synchronously or asynchronously.
 
+        NOTE: Does NOT check for site read-only mode, that must be done in the
+        calling views.
+
         :param flow: Flow object
         :param project: Project object
         :param force_fail: Force failure (boolean, for testing)
@@ -188,16 +234,23 @@ class TaskflowAPI:
             # Acquire lock
             coordinator = lock_api.get_coordinator()
             if not coordinator:
-                cls._raise_lock_exception(
-                    'Failed to retrieve lock coordinator', tl_event, zone
-                )
+                cls._raise_lock_exception(COORDINATOR_EX_MSG, tl_event, zone)
             else:
                 lock_id = str(project.sodar_uuid)
                 lock = coordinator.get_lock(lock_id)
                 try:
                     lock_api.acquire(lock)
                 except Exception as ex:
-                    cls._raise_lock_exception(str(ex), tl_event, zone)
+                    # In case of regular locked project API, delete tl_event and
+                    # do not provide it to the raise method
+                    # TODO: Check for project lock before running flow and
+                    #       creating timeline event (see #2136)
+                    raise_event = tl_event
+                    if PROJECT_LOCKED_MSG in str(ex):
+                        if tl_event:
+                            tl_event.delete()
+                        raise_event = None
+                    cls._raise_lock_exception(str(ex), raise_event, zone)
         else:
             logger.info('Lock not required (flow.require_lock=False)')
 
@@ -230,18 +283,7 @@ class TaskflowAPI:
 
         # Raise exception if failed, otherwise return result
         if ex_msg:
-            logger.error(ex_msg)
-            # Provide landing zone if error occurs but status has not been set
-            # (This means a failure has not been properly handled in the flow)
-            ex_zone = None
-            if zone:
-                zone.refresh_from_db()
-                if zone.status not in [
-                    ZONE_STATUS_NOT_CREATED,
-                    ZONE_STATUS_FAILED,
-                ]:
-                    ex_zone = zone
-            cls._raise_flow_exception(ex_msg, tl_event, ex_zone)
+            cls._raise_run_flow_exception(ex_msg, tl_event, zone)
         return flow_result
 
     def submit(
@@ -318,3 +360,17 @@ class TaskflowAPI:
         return 'Taskflow "{}" failed! Reason: "{}"'.format(
             flow_name, submit_info[:256]
         )
+
+    @classmethod
+    def is_locked(cls, project):
+        """
+        Return lock status for project, True meaning locked.
+
+        :param project: Project object
+        :return: Boolean
+        """
+        # NOTE: We query redis directly to allow having to call acquire()
+        # NOTE: Yes, this is how tooz encodes the lock IDs (see #2144)
+        lock_db_id = f'b\'_tooz\'_{project.sodar_uuid}_lock'.encode()
+        redis_conn = redis.from_url(settings.REDIS_URL, decode_responses=True)
+        return redis_conn.get(lock_db_id) is not None

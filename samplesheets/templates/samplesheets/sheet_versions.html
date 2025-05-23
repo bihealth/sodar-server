@@ -75,14 +75,13 @@
          class="btn btn-secondary mr-2" role="button" id="sodar-ss-btn-back">
         <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Project Sheets
       </a>
-      <div class="btn-group ml-auto" id="sodar-pr-btn-role-list">
+      <div class="btn-group ml-auto" id="sodar-ss-version-ops-dropdown">
         <button class="btn btn-primary dropdown-toggle"
-                id="sodar-ss-version-btn-ops"
+                id="sodar-ss-version-ops-dropdown-btn"
                 type="button" data-toggle="dropdown">
           Version Operations
         </button>
-        <div class="dropdown-menu dropdown-menu-right"
-             id="sodar-ss-version-ops-btn">
+        <div class="dropdown-menu dropdown-menu-right">
           <a href="#"
              class="dropdown-item disabled"
              id="sodar-ss-version-link-compare"
@@ -319,7 +318,7 @@
               'sample sheet versions at once, or compare two versions if ' +
               'they have been selected using the checkboxes in the version ' +
               'list.',
-        attachTo: '#sodar-ss-version-btn-ops left',
+        attachTo: '#sodar-ss-version-ops-dropdown-btn left',
         advanceOn: '.docs-link click',
         showCancelLink: true
     });

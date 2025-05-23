@@ -5,12 +5,17 @@ Tests for REST API views in the landingzones app with SODAR Taskflow enabled
 import json
 import os
 
+from irods.exception import GroupDoesNotExist
+
 from django.test import override_settings
 from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
+
+# Appalerts dependency
+from appalerts.models import AppAlert
 
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
@@ -21,6 +26,9 @@ from samplesheets.views import RESULTS_COLL, MISC_FILES_COLL
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import TaskflowAPIViewTestBase, IRODS_ACCESS_OWN
 
+# Timeline dependency
+from timeline.models import TimelineEvent, TL_STATUS_OK
+
 from landingzones.constants import (
     DEFAULT_STATUS_INFO,
     ZONE_STATUS_ACTIVE,
@@ -28,6 +36,7 @@ from landingzones.constants import (
     ZONE_STATUS_DELETED,
     ZONE_STATUS_MOVED,
     ZONE_STATUS_FAILED,
+    ZONE_STATUS_VALIDATING,
 )
 from landingzones.models import LandingZone
 from landingzones.serializers import ZONE_NO_INV_MSG
@@ -42,6 +51,7 @@ from landingzones.tests.test_views_taskflow import (
     ZONE_ALL_COLLS,
     TEST_OBJ_NAME,
 )
+from landingzones.views import ZONE_CREATE_LIMIT_MSG, ZONE_VALIDATE_LIMIT_MSG
 from landingzones.views_api import (
     LANDINGZONES_API_MEDIA_TYPE,
     LANDINGZONES_API_DEFAULT_VERSION,
@@ -60,6 +70,7 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 # Local constants
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 ZONE_STATUS_INFO = 'Testing'
+IRODS_ACCESS_READ = 'read_object'
 
 
 class ZoneAPIViewTaskflowTestBase(
@@ -95,7 +106,8 @@ class ZoneAPIViewTaskflowTestBase(
         # Create collections in iRODS
         self.make_irods_colls(self.investigation)
         # Set up helpers
-        self.group_name = self.irods_backend.get_user_group_name(self.project)
+        self.project_group = self.irods_backend.get_group_name(self.project)
+        self.owner_group = self.irods_backend.get_group_name(self.project, True)
 
 
 class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
@@ -107,12 +119,8 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
             'landingzones:api_create',
             kwargs={'project': self.project.sodar_uuid},
         )
-
-    def test_post(self):
-        """Test ZoneCreateAPIView POST"""
-        self.assertEqual(LandingZone.objects.count(), 0)
         # NOTE: No optional create_colls and restrict_colls args, default=False
-        request_data = {
+        self.post_data = {
             'title': 'new zone',
             'assay': str(self.assay.sodar_uuid),
             'description': 'description',
@@ -120,7 +128,13 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
             'configuration': None,
             'config_data': {},
         }
-        response = self.request_knox(self.url, method='POST', data=request_data)
+
+    def test_post(self):
+        """Test ZoneCreateAPIView POST"""
+        self.assertEqual(LandingZone.objects.count(), 0)
+        response = self.request_knox(
+            self.url, method='POST', data=self.post_data
+        )
 
         # Assert status after creation
         self.assertEqual(response.status_code, 201)
@@ -149,7 +163,39 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
         }
         self.assertEqual(response_data, expected)
 
-        # Assert collection status
+        # Assert collection and access status
+        self.assert_irods_coll(zone)
+        for c in ZONE_BASE_COLLS:
+            self.assert_irods_coll(zone, c, False)
+        zone_coll = self.irods.collections.get(
+            self.irods_backend.get_path(zone)
+        )
+        self.assert_group_member(self.project, self.user, True, True)
+        self.assert_group_member(self.project, self.user_owner_cat, True, True)
+        self.assert_irods_access(
+            self.user.username, zone_coll, IRODS_ACCESS_OWN
+        )
+        self.assert_irods_access(self.owner_group, zone_coll, IRODS_ACCESS_OWN)
+        self.assert_irods_access(self.project_group, zone_coll, None)
+        # TODO: Assert owner group access once implemented
+
+    def test_post_no_owner_group(self):
+        """Test POST with no project owner group"""
+        owner_group = self.irods_backend.get_group_name(self.project, True)
+        self.irods.users.remove(owner_group)
+        with self.assertRaises(GroupDoesNotExist):
+            self.irods.user_groups.get(owner_group)
+        self.assertEqual(LandingZone.objects.count(), 0)
+        # NOTE: No optional create_colls and restrict_colls args, default=False
+        response = self.request_knox(
+            self.url, method='POST', data=self.post_data
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(LandingZone.objects.count(), 1)
+        zone = LandingZone.objects.first()
+        self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
+
         self.assert_irods_coll(zone)
         for c in ZONE_BASE_COLLS:
             self.assert_irods_coll(zone, c, False)
@@ -159,20 +205,19 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
         self.assert_irods_access(
             self.user.username, zone_coll, IRODS_ACCESS_OWN
         )
-        self.assert_irods_access(self.group_name, zone_coll, None)
+        self.assert_irods_access(self.owner_group, zone_coll, IRODS_ACCESS_OWN)
+        self.assert_irods_access(self.project_group, zone_coll, None)
+        self.assertIsNotNone(self.irods.user_groups.get(owner_group))
+        self.assert_group_member(self.project, self.user, True, True)
+        self.assert_group_member(self.project, self.user_owner_cat, True, True)
 
     def test_post_colls(self):
         """Test POST with default collections"""
         self.assertEqual(LandingZone.objects.count(), 0)
-        request_data = {
-            'title': 'new zone',
-            'assay': str(self.assay.sodar_uuid),
-            'description': 'description',
-            'configuration': None,
-            'create_colls': True,
-            'config_data': {},
-        }
-        response = self.request_knox(self.url, method='POST', data=request_data)
+        self.post_data['create_colls'] = True
+        response = self.request_knox(
+            self.url, method='POST', data=self.post_data
+        )
 
         self.assertEqual(response.status_code, 201)
         self.assertEqual(LandingZone.objects.count(), 1)
@@ -191,6 +236,9 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
             self.assert_irods_access(
                 self.user.username, os.path.join(zone_path, c), IRODS_ACCESS_OWN
             )
+            self.assert_irods_access(
+                self.owner_group, os.path.join(zone_path, c), IRODS_ACCESS_OWN
+            )
 
     def test_post_colls_plugin(self):
         """Test POST with plugin collections"""
@@ -208,15 +256,10 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
             self.user,
         )
 
-        request_data = {
-            'title': 'new zone',
-            'assay': str(self.assay.sodar_uuid),
-            'description': 'description',
-            'configuration': None,
-            'create_colls': True,
-            'config_data': {},
-        }
-        response = self.request_knox(self.url, method='POST', data=request_data)
+        self.post_data['create_colls'] = True
+        response = self.request_knox(
+            self.url, method='POST', data=self.post_data
+        )
 
         self.assertEqual(response.status_code, 201)
         self.assertEqual(LandingZone.objects.count(), 1)
@@ -232,6 +275,9 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
         for c in ZONE_ALL_COLLS:
             self.assert_irods_access(
                 self.user.username, os.path.join(zone_path, c), IRODS_ACCESS_OWN
+            )
+            self.assert_irods_access(
+                self.owner_group, os.path.join(zone_path, c), IRODS_ACCESS_OWN
             )
 
     def test_post_colls_plugin_restrict(self):
@@ -250,16 +296,11 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
             self.user,
         )
 
-        request_data = {
-            'title': 'new zone',
-            'assay': str(self.assay.sodar_uuid),
-            'description': 'description',
-            'configuration': None,
-            'create_colls': True,
-            'restrict_colls': True,
-            'config_data': {},
-        }
-        response = self.request_knox(self.url, method='POST', data=request_data)
+        self.post_data['create_colls'] = True
+        self.post_data['restrict_colls'] = True
+        response = self.request_knox(
+            self.url, method='POST', data=self.post_data
+        )
 
         self.assertEqual(response.status_code, 201)
         self.assertEqual(LandingZone.objects.count(), 1)
@@ -277,6 +318,9 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
             self.assert_irods_access(
                 self.user.username, os.path.join(zone_path, c), IRODS_ACCESS_OWN
             )
+            self.assert_irods_access(
+                self.owner_group, os.path.join(zone_path, c), IRODS_ACCESS_OWN
+            )
 
     # TODO: Test without sodarcache (see issue #1157)
 
@@ -284,14 +328,9 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
         """Test POST with no investigation"""
         self.investigation.delete()
         self.assertEqual(LandingZone.objects.count(), 0)
-        request_data = {
-            'title': 'new zone',
-            'assay': str(self.assay.sodar_uuid),
-            'description': 'description',
-            'configuration': None,
-            'config_data': {},
-        }
-        response = self.request_knox(self.url, method='POST', data=request_data)
+        response = self.request_knox(
+            self.url, method='POST', data=self.post_data
+        )
         self.assertEqual(response.status_code, 503)
         self.assertEqual(ZONE_NO_INV_MSG, response.data['detail'])
         self.assertEqual(LandingZone.objects.count(), 0)
@@ -301,17 +340,49 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
         self.investigation.irods_status = False
         self.investigation.save()
         self.assertEqual(LandingZone.objects.count(), 0)
-        request_data = {
-            'title': 'new zone',
-            'assay': str(self.assay.sodar_uuid),
-            'description': 'description',
-            'configuration': None,
-            'config_data': {},
-        }
-        response = self.request_knox(self.url, method='POST', data=request_data)
+        response = self.request_knox(
+            self.url, method='POST', data=self.post_data
+        )
         self.assertEqual(response.status_code, 503)
         self.assertIn(ZONE_NO_COLLS_MSG, response.data['detail'])
         self.assertEqual(LandingZone.objects.count(), 0)
+
+    @override_settings(LANDINGZONES_ZONE_CREATE_LIMIT=1)
+    def test_post_limit(self):
+        """Test POST with zone creation limit reached (should fail)"""
+        self.make_landing_zone(
+            title=ZONE_TITLE,
+            project=self.project,
+            user=self.user,
+            assay=self.assay,
+            status=ZONE_STATUS_ACTIVE,
+        )
+        self.assertEqual(LandingZone.objects.count(), 1)
+        response = self.request_knox(
+            self.url, method='POST', data=self.post_data
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(
+            response.data['detail'], ZONE_CREATE_LIMIT_MSG.format(limit=1)
+        )
+        self.assertEqual(LandingZone.objects.count(), 1)
+
+    @override_settings(LANDINGZONES_ZONE_CREATE_LIMIT=1)
+    def test_post_limit_existing_finished(self):
+        """Test POST with zone creation limit and finished zone"""
+        self.make_landing_zone(
+            title=ZONE_TITLE,
+            project=self.project,
+            user=self.user,
+            assay=self.assay,
+            status=ZONE_STATUS_MOVED,
+        )
+        self.assertEqual(LandingZone.objects.count(), 1)
+        response = self.request_knox(
+            self.url, method='POST', data=self.post_data
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(LandingZone.objects.count(), 2)
 
 
 class TestZoneSubmitDeleteAPIView(ZoneAPIViewTaskflowTestBase):
@@ -337,6 +408,12 @@ class TestZoneSubmitDeleteAPIView(ZoneAPIViewTaskflowTestBase):
     def test_post(self):
         """Test ZoneSubmitDeleteAPIView POST"""
         self.make_zone_taskflow(self.landing_zone)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_delete').count(), 0
+        )
+        self.assertEqual(
+            TimelineEvent.objects.filter(event_name='zone_delete').count(), 0
+        )
         response = self.request_knox(self.url, method='POST')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
@@ -345,6 +422,14 @@ class TestZoneSubmitDeleteAPIView(ZoneAPIViewTaskflowTestBase):
         self.assertEqual(LandingZone.objects.count(), 1)
         zone = LandingZone.objects.first()
         self.assert_zone_status(zone, ZONE_STATUS_DELETED)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_delete').count(), 1
+        )
+        tl_events = TimelineEvent.objects.filter(event_name='zone_delete')
+        self.assertEqual(tl_events.count(), 1)
+        self.assertEqual(
+            tl_events.first().get_status().status_type, TL_STATUS_OK
+        )
 
     def test_post_invalid_status(self):
         """Test POST with invalid zone status (should fail)"""
@@ -388,6 +473,9 @@ class TestZoneSubmitDeleteAPIView(ZoneAPIViewTaskflowTestBase):
         self.make_zone_taskflow(self.landing_zone)
         zone_path = self.irods_backend.get_path(self.landing_zone)
         self.assertTrue(self.irods.collections.exists(zone_path))
+        self.assertEqual(
+            TimelineEvent.objects.filter(event_name='zone_delete').count(), 0
+        )
         # Remove collection
         self.irods.collections.remove(zone_path)
         self.assertFalse(self.irods.collections.exists(zone_path))
@@ -399,6 +487,11 @@ class TestZoneSubmitDeleteAPIView(ZoneAPIViewTaskflowTestBase):
         self.assertEqual(LandingZone.objects.count(), 1)
         zone = LandingZone.objects.first()
         self.assert_zone_status(zone, ZONE_STATUS_DELETED)
+        tl_events = TimelineEvent.objects.filter(event_name='zone_delete')
+        self.assertEqual(tl_events.count(), 1)
+        self.assertEqual(
+            tl_events.first().get_status().status_type, TL_STATUS_OK
+        )
 
 
 class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
@@ -406,7 +499,7 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
 
     def setUp(self):
         super().setUp()
-        self.landing_zone = self.make_landing_zone(
+        self.zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
             user=self.user,
@@ -415,83 +508,49 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
             configuration=None,
             config_data={},
         )
-        self.make_zone_taskflow(self.landing_zone)
+        self.make_zone_taskflow(self.zone)
         self.sample_path = self.irods_backend.get_path(self.assay)
-        self.group_name = self.irods_backend.get_user_group_name(self.project)
-        self.zone_coll = self.irods.collections.get(
-            self.irods_backend.get_path(self.landing_zone)
-        )
-        self.assay_coll = self.irods.collections.get(
-            self.irods_backend.get_path(self.assay)
-        )
-        self.url = reverse(
+        self.project_group = self.irods_backend.get_group_name(self.project)
+        self.owner_group = self.irods_backend.get_group_name(self.project, True)
+        self.zone_path = self.irods_backend.get_path(self.zone)
+        self.zone_coll = self.irods.collections.get(self.zone_path)
+        self.assay_path = self.irods_backend.get_path(self.assay)
+        self.assay_coll = self.irods.collections.get(self.assay_path)
+        self.url_validate = reverse(
             'landingzones:api_submit_validate',
-            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+            kwargs={'landingzone': self.zone.sodar_uuid},
         )
         self.url_move = reverse(
             'landingzones:api_submit_move',
-            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+            kwargs={'landingzone': self.zone.sodar_uuid},
         )
-
-    def test_post_validate(self):
-        """Test POST for validation"""
-        # Update to check status change
-        self.landing_zone.status = ZONE_STATUS_FAILED
-        self.landing_zone.save()
-        response = self.request_knox(self.url, method='POST')
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            response.data['sodar_uuid'], str(self.landing_zone.sodar_uuid)
-        )
-        self.assertEqual(LandingZone.objects.count(), 1)
-        zone = LandingZone.objects.first()
-        self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
-        self.assertEqual(
-            LandingZone.objects.first().status_info,
-            'Successfully validated 0 files',
-        )
-
-    def test_post_validate_locked(self):
-        """Test POST for validation with locked project (should fail)"""
-        self.lock_project(self.project)
-        self.landing_zone.status = ZONE_STATUS_FAILED
-        self.landing_zone.save()
-        response = self.request_knox(self.url, method='POST')
-        # NOTE: This should be updated to not require lock, see #1850
-        self.assertEqual(response.status_code, 503)
-
-    def test_post_validate_invalid_status(self):
-        """Test POST for validation with invalid zone status (should fail)"""
-        self.landing_zone.status = ZONE_STATUS_MOVED
-        self.landing_zone.save()
-        response = self.request_knox(self.url, method='POST')
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(LandingZone.objects.count(), 1)
-        self.assertEqual(LandingZone.objects.first().status, ZONE_STATUS_MOVED)
 
     def test_post_move(self):
         """Test POST for moving"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
-        self.make_irods_md5_object(irods_obj)
-        self.assertEqual(self.landing_zone.status, ZONE_STATUS_ACTIVE)
+        self.make_checksum_object(irods_obj)
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         response = self.request_knox(self.url_move, method='POST')
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            response.data['sodar_uuid'], str(self.landing_zone.sodar_uuid)
-        )
+        self.assertEqual(response.data['sodar_uuid'], str(self.zone.sodar_uuid))
         self.assertEqual(LandingZone.objects.count(), 1)
-        self.assert_zone_status(self.landing_zone, ZONE_STATUS_MOVED)
+        self.assert_zone_status(self.zone, ZONE_STATUS_MOVED)
         self.assertEqual(len(self.zone_coll.data_objects), 0)
         self.assertEqual(len(self.assay_coll.data_objects), 2)
+        obj_path = os.path.join(self.assay_path, TEST_OBJ_NAME)
+        self.assert_irods_access(self.owner_group, obj_path, None)
+        self.assert_irods_access(self.user.username, obj_path, None)
+        self.assert_irods_access(
+            self.project_group, obj_path, IRODS_ACCESS_READ
+        )
 
     def test_post_move_invalid_status(self):
         """Test POST for moving with invalid zone status (should fail)"""
-        self.landing_zone.status = ZONE_STATUS_DELETED
-        self.landing_zone.save()
+        self.zone.status = ZONE_STATUS_DELETED
+        self.zone.save()
         response = self.request_knox(self.url_move, method='POST')
         self.assertEqual(response.status_code, 400)
         self.assertEqual(LandingZone.objects.count(), 1)
@@ -537,7 +596,7 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
             os.path.join(new_zone_path, RESULTS_COLL)
         )
         irods_obj = self.make_irods_object(zone_results_coll, TEST_OBJ_NAME)
-        self.make_irods_md5_object(irods_obj)
+        self.make_checksum_object(irods_obj)
         self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(len(zone_results_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
@@ -557,12 +616,135 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
         self.assertEqual(len(assay_results_coll.data_objects), 2)
         sample_obj_path = os.path.join(assay_results_path, TEST_OBJ_NAME)
         self.assert_irods_access(
-            self.group_name,
+            self.project_group,
             sample_obj_path,
             self.irods_access_read,
         )
         self.assert_irods_access(
-            self.group_name,
+            self.project_group,
             sample_obj_path + '.md5',
             self.irods_access_read,
         )
+
+    @override_settings(LANDINGZONES_ZONE_VALIDATE_LIMIT=1)
+    def test_post_move_limit(self):
+        """Test POST to move with validation limit reached"""
+        self.make_landing_zone(
+            title='other_zone',
+            project=self.project,
+            user=self.user,
+            assay=self.assay,
+            status=ZONE_STATUS_VALIDATING,
+        )
+        irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
+        self.make_checksum_object(irods_obj)
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(len(self.zone_coll.data_objects), 2)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+        response = self.request_knox(self.url_move, method='POST')
+        self.assertEqual(response.status_code, 503)
+        self.assert_zone_status(self.zone, ZONE_STATUS_ACTIVE)
+        self.assertEqual(len(self.zone_coll.data_objects), 2)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+
+    @override_settings(LANDINGZONES_ZONE_VALIDATE_LIMIT=1)
+    def test_post_move_limit_other_project(self):
+        """Test POST to move with validation limit and zone in another project"""
+        new_project = self.make_project(
+            'NewProject', PROJECT_TYPE_PROJECT, self.category
+        )
+        self.make_landing_zone(
+            title='other_zone',
+            project=new_project,
+            user=self.user,
+            assay=self.assay,
+            status=ZONE_STATUS_VALIDATING,
+        )
+        irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
+        self.make_checksum_object(irods_obj)
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(len(self.zone_coll.data_objects), 2)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+        response = self.request_knox(self.url_move, method='POST')
+        self.assertEqual(response.status_code, 200)
+        self.assert_zone_status(self.zone, ZONE_STATUS_MOVED)
+        self.assertEqual(len(self.zone_coll.data_objects), 0)
+        self.assertEqual(len(self.assay_coll.data_objects), 2)
+
+    @override_settings(LANDINGZONES_ZONE_VALIDATE_LIMIT=1)
+    def test_post_move_limit_other_zone_moved(self):
+        """Test POST to move with validation limit and other zone in moved status"""
+        self.make_landing_zone(
+            title='other_zone',
+            project=self.project,
+            user=self.user,
+            assay=self.assay,
+            status=ZONE_STATUS_MOVED,
+        )
+        irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
+        self.make_checksum_object(irods_obj)
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(len(self.zone_coll.data_objects), 2)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+        response = self.request_knox(self.url_move, method='POST')
+        self.assertEqual(response.status_code, 200)
+        self.assert_zone_status(self.zone, ZONE_STATUS_MOVED)
+        self.assertEqual(len(self.zone_coll.data_objects), 0)
+        self.assertEqual(len(self.assay_coll.data_objects), 2)
+
+    def test_post_validate(self):
+        """Test POST for validation"""
+        # Update to check status change
+        self.zone.status = ZONE_STATUS_FAILED
+        self.zone.save()
+        response = self.request_knox(self.url_validate, method='POST')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['sodar_uuid'], str(self.zone.sodar_uuid))
+        self.assertEqual(LandingZone.objects.count(), 1)
+        zone = LandingZone.objects.first()
+        self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
+        self.assertEqual(
+            LandingZone.objects.first().status_info,
+            'Successfully validated 0 files',
+        )
+        self.assert_irods_access(
+            self.owner_group, self.zone_path, IRODS_ACCESS_OWN
+        )
+        self.assert_irods_access(
+            self.user.username, self.zone_path, IRODS_ACCESS_OWN
+        )
+        self.assert_irods_access(self.project_group, self.zone_path, None)
+
+    def test_post_validate_locked(self):
+        """Test POST for validation with locked project"""
+        self.lock_project(self.project)
+        self.zone.status = ZONE_STATUS_FAILED
+        self.zone.save()
+        response = self.request_knox(self.url_validate, method='POST')
+        self.assertEqual(response.status_code, 200)
+
+    def test_post_validate_invalid_status(self):
+        """Test POST for validation with invalid zone status (should fail)"""
+        self.zone.status = ZONE_STATUS_VALIDATING
+        self.zone.save()
+        response = self.request_knox(self.url_validate, method='POST')
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(LandingZone.objects.count(), 1)
+        self.assertEqual(
+            LandingZone.objects.first().status, ZONE_STATUS_VALIDATING
+        )
+
+    @override_settings(LANDINGZONES_ZONE_VALIDATE_LIMIT=1)
+    def test_post_validate_limit(self):
+        """Test POST to validate with validation limit reached"""
+        self.make_landing_zone(
+            title='other_zone',
+            project=self.project,
+            user=self.user,
+            assay=self.assay,
+            status=ZONE_STATUS_VALIDATING,
+        )
+        response = self.request_knox(self.url_validate, method='POST')
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.data['detail'], ZONE_VALIDATE_LIMIT_MSG)
+        self.assert_zone_status(self.zone, ZONE_STATUS_ACTIVE)

@@ -70,23 +70,32 @@ TEST_MODE_ERR_MSG = (
     'TASKFLOW_TEST_MODE not True, testing with SODAR Taskflow disabled'
 )
 DEFAULT_PERMANENT_USERS = ['client_user', 'rods', 'rodsadmin', 'public']
+HASH_SCHEME_MD5 = 'MD5'
+HASH_SCHEME_SHA256 = 'SHA256'
 
 
-class TaskflowTestMixin(ProjectMixin, RoleMixin, RoleAssignmentMixin):
-    """Setup/teardown methods and helpers for taskflow tests"""
+class ProjectLockMixin:
+    """Taskflow project locking helpers for tests"""
 
     #: Project lock coordinator
     coordinator = None
-    #: iRODS backend object
-    irods_backend = None
-    #: iRODS session object
-    irods = None
 
     def lock_project(self, project):
         self.coordinator = lock_api.get_coordinator()
         lock_id = str(project.sodar_uuid)
         lock = self.coordinator.get_lock(lock_id)
         lock_api.acquire(lock)
+
+
+class TaskflowTestMixin(
+    ProjectMixin, RoleMixin, ProjectLockMixin, RoleAssignmentMixin
+):
+    """Setup/teardown methods and helpers for taskflow tests"""
+
+    #: iRODS backend object
+    irods_backend = None
+    #: iRODS session object
+    irods = None
 
     def make_irods_object(
         self, coll, obj_name, content=None, content_length=1024, checksum=True
@@ -107,26 +116,31 @@ class TaskflowTestMixin(ProjectMixin, RoleMixin, RoleAssignmentMixin):
         obj_kwargs = {REG_CHKSUM_KW: ''} if checksum else {}
         return make_object(self.irods, obj_path, content, **obj_kwargs)
 
-    def make_irods_md5_object(self, obj):
+    def make_checksum_object(self, obj, scheme=HASH_SCHEME_MD5, content=None):
         """
-        Create and put an MD5 checksum object for an existing object in iRODS.
+        Create and put a checksum object for an existing object in iRODS.
 
         :param obj: iRODSDataObject
+        :param scheme: Hash scheme (string, default="MD5")
+        :param content: Force content if set (string or None)
         :return: iRODSDataObject
         """
-        md5_path = obj.path + '.md5'
-        md5_content = self.get_md5_checksum(obj)
-        return make_object(self.irods, md5_path, md5_content)
+        chk_path = obj.path + '.' + scheme.lower()
+        chk_content = content or self.get_checksum(obj, scheme)
+        return make_object(self.irods, chk_path, chk_content)
 
-    def get_md5_checksum(self, obj):
+    @classmethod
+    def get_checksum(cls, obj, scheme=HASH_SCHEME_MD5):
         """
-        Return the md5 checksum for an iRODS object.
+        Return the checksum for an iRODS object.
 
         :param obj: iRODSDataObject
+        :param scheme: Hash scheme (string, default="MD5")
         :return: String
         """
         with obj.open() as obj_fp:
-            return hashlib.md5(obj_fp.read()).hexdigest()
+            method = getattr(hashlib, scheme.lower())
+            return method(obj_fp.read()).hexdigest()
 
     def assert_irods_access(self, user_name, target, expected):
         """
@@ -149,19 +163,29 @@ class TaskflowTestMixin(ProjectMixin, RoleMixin, RoleAssignmentMixin):
             access = access.access_name
         self.assertEqual(access, expected)
 
-    def assert_group_member(self, project, user, status=True):
+    def assert_group_member(
+        self, project, user, status=True, status_owner=None
+    ):
         """
-        Assert user membership in iRODS project group. Requires irods_backend
-        and irods_session to be present in the class.
+        Assert user membership in iRODS project user group and, optionally,
+        owner group. Requires irods_backend and irods_session to be present in
+        the implementing object members.
 
         :param project: Project object
         :param user: SODARUser object
-        :param status: Expected membership status (boolean)
+        :param status: Expected user group membership status (boolean)
+        :param status_owner: Expected owner group membership status (optional,
+                             boolean)
         """
         user_group = self.irods.user_groups.get(
-            self.irods_backend.get_user_group_name(project)
+            self.irods_backend.get_group_name(project)
         )
         self.assertEqual(user_group.hasmember(user.username), status)
+        if status_owner is not None:
+            owner_group = self.irods.user_groups.get(
+                self.irods_backend.get_group_name(project, owner=True)
+            )
+            self.assertEqual(owner_group.hasmember(user.username), status_owner)
 
     def assert_irods_coll(self, target, sub_path=None, expected=True):
         """
@@ -260,7 +284,7 @@ class TaskflowTestMixin(ProjectMixin, RoleMixin, RoleAssignmentMixin):
             obj_paths = [
                 o['path']
                 for o in irods_backend.get_objs_recursively(
-                    irods, trash_coll, include_md5=True
+                    irods, trash_coll, include_checksum=True
                 )
             ]
             for path in obj_paths:
@@ -354,6 +378,32 @@ class TaskflowPermissionTestMixin(
         self.guest_as = self.make_assignment_taskflow(
             self.project, self.user_guest, self.role_guest
         )
+
+        # Permission test user group helpers
+        # NOTE: Copied from SODAR Core
+        # TODO: Replace with separate mixin (see bihealth/sodar-core#1600)
+        self.all_users = [
+            self.superuser,
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
+            self.user_no_roles,
+            self.anonymous,
+        ]  # All users
+        # All authenticated users
+        self.auth_users = self.all_users[:-1]
+        # All users except for superuser
+        self.non_superusers = self.all_users[1:]
+        # All authenticated non-superusers
+        self.auth_non_superusers = self.non_superusers[:-1]
+        # No roles user and anonymous user
+        self.no_role_users = [self.user_no_roles, self.anonymous]
 
 
 class TaskflowProjectTestMixin:
@@ -504,7 +554,15 @@ class TaskflowAPIPermissionTestBase(
 ):
     """Base class for testing API view permissions with taskflow"""
 
+    # TODO: Get this from SODAR Core
+    def set_site_read_only(self, value=True):
+        """
+        Helper to set site read only mode to the desired value.
+
+        :param value: BooAPP_NAMElean
+        """
+        app_settings.set('projectroles', 'site_read_only', value)
+
     def setUp(self):
         super().setUp()
-        # Get knox token for self.user
         self.knox_token = self.get_token(self.superuser)

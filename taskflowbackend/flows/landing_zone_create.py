@@ -19,7 +19,8 @@ class Flow(BaseLinearFlow):
         return super().validate()
 
     def build(self, force_fail=False):
-        project_group = self.irods_backend.get_user_group_name(self.project)
+        project_group = self.irods_backend.get_group_name(self.project)
+        owner_group = self.irods_backend.get_group_name(self.project, True)
         zone_root = self.irods_backend.get_zone_path(self.project)
         zone = LandingZone.objects.get(sodar_uuid=self.flow_data['zone_uuid'])
         user_path = os.path.join(zone_root, zone.user.username)
@@ -56,6 +57,20 @@ class Flow(BaseLinearFlow):
                     'user_name': project_group,
                     'irods_backend': self.irods_backend,
                     'recursive': False,
+                },
+            )
+        )
+        self.add_task(
+            irods_tasks.SetAccessTask(
+                name='Set project owner group read access for project landing '
+                'zones root collection recursively',
+                irods=self.irods,
+                inject={
+                    'access_name': 'read',
+                    'path': zone_root,
+                    'user_name': owner_group,
+                    'irods_backend': self.irods_backend,
+                    'recursive': True,
                 },
             )
         )
@@ -105,7 +120,8 @@ class Flow(BaseLinearFlow):
                 inject={'path': zone_path, 'inherit': True},
             )
         )
-        # Only set own access to root zone collection if not enforcing colls
+        # Set user access to zone collection
+        # Only set own access to root level zone coll if not enforcing colls
         self.add_task(
             irods_tasks.SetAccessTask(
                 name='Set user {} access to landing zone root'.format(
@@ -116,6 +132,19 @@ class Flow(BaseLinearFlow):
                     'access_name': root_access,
                     'path': zone_path,
                     'user_name': zone.user.username,
+                    'irods_backend': self.irods_backend,
+                },
+            )
+        )
+        # Set project owner group access to zone collection
+        self.add_task(
+            irods_tasks.SetAccessTask(
+                name='Set project owner group access to landing zone root',
+                irods=self.irods,
+                inject={
+                    'access_name': root_access,
+                    'path': zone_path,
+                    'user_name': owner_group,
                     'irods_backend': self.irods_backend,
                 },
             )
@@ -160,20 +189,33 @@ class Flow(BaseLinearFlow):
                         coll_count, 's' if coll_count != 1 else ''
                     ),
                     irods=self.irods,
-                    inject={'paths': colls_full_path},
+                    inject={'coll_paths': colls_full_path},
                 )
             )
             # Enforce collection access if set
             if self.flow_data['restrict_colls']:
                 self.add_task(
                     irods_tasks.BatchSetAccessTask(
-                        name='Batch set user owner access to created '
+                        name='Batch set user own access to created '
                         'collections',
                         irods=self.irods,
                         inject={
                             'access_name': 'own',
                             'paths': colls_full_path,
                             'user_name': zone.user.username,
+                            'irods_backend': self.irods_backend,
+                        },
+                    )
+                )
+                self.add_task(
+                    irods_tasks.BatchSetAccessTask(
+                        name='Batch set owner group own access to created '
+                        'collections',
+                        irods=self.irods,
+                        inject={
+                            'access_name': 'own',
+                            'paths': colls_full_path,
+                            'user_name': owner_group,
                             'irods_backend': self.irods_backend,
                         },
                     )

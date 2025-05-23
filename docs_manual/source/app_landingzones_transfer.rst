@@ -39,28 +39,31 @@ Scope of Landing Zones
 
 In the current implementation, all data is uploaded on the assay level. A single
 landing zone is always linked to an assay and should contain files specific to
-that assay.
-
-.. attention::
-
-    Study level data repositories and related landing zones may be implemented
-    in a further SODAR release.
+that assay. Study level data repositories and related landing zones may be
+implemented in a later SODAR release.
 
 File Checksums
 --------------
 
-SODAR requires for an MD5 checksum file to accompany each file when uploaded to
-the server. This file is used to verify the original checksum against the one
+SODAR requires for a checksum file to accompany each file when uploaded to the
+server. This file is used to verify the original checksum against the one
 calculated in iRODS once the upload is complete. The file should be named with a
-``.md5`` suffix following the name of the data file. E.g. a file named
-``filename.bam`` should be uploaded together with a checksum file called
+suffix representing the hashing scheme used, following the name of the actual
+data file. For example, with the default hashing scheme ``MD5``, a file named
+``filename.bam`` must be uploaded together with a checksum file called
 ``filename.bam.md5`` in the same collection.
 
-From SODAR v0.14 onwards, iRODS checksums not present after the upload are
-automatically calculated prior to validating the landing zone. This means
-uploading with the ``-k`` argument or separately calling ``ichksum`` are no
-longer required. The calculation step may take some time with large landing
-zones.
+iRODS checksums not present after the upload are automatically calculated prior
+to validating the landing zone. This means uploading with the ``-k`` argument or
+separately calling ``ichksum`` are not required. The calculation step may take
+some time with large landing zones.
+
+.. note::
+
+    SODAR supports ``MD5`` and ``SHA256`` hashing schemes. Administrators can
+    set the server to support one of these schemes on initial deployment.
+    ``MD5`` is the default setting. For more information, see
+    :ref:`admin_other_hash_scheme`.
 
 Collection Structure
 --------------------
@@ -89,6 +92,25 @@ Other collections expected for a specific landing zone depend on the assay
 configuration. For detailed reference on which assay type expects which
 collections, see :ref:`metadata_advanced`.
 
+.. _app_landingzones_transfer_prohibit:
+
+Prohibited File Types
+---------------------
+
+Project owner or delegate may prohibit the uploading of certain files by file
+suffix. The user is notified of a possible restriction in the zone list and
+create view UI. This limitation is project specific.
+
+If prohibited file types are uploaded, landing zone validation and moving will
+fail with an error message listing the offending files. Removing those files and
+associated checksum files will allow you to validate and move your landing zone.
+
+.. figure:: _static/app_landingzones/zone_prohibit.png
+    :align: center
+    :scale: 75%
+
+    Prohibited files alert
+
 Replacing Files
 ---------------
 
@@ -108,8 +130,15 @@ Validating Files
 
 To ensure your uploaded files are OK for being transferred into the project
 sample data, you can call on SODAR to validate them. To do this in the Landing
-Zones UI, open the dropdown next to your landing zone in the zone list
-and click :guilabel:`Validate Files`.
+Zones UI, open the dropdown next to your landing zone in the zone list and
+select :guilabel:`Validate Files`.
+
+.. attention::
+
+    Administrators of your SODAR instance may limit the amount of simultaneous
+    validation processes per project. If this limit is reached, ongoing
+    validation jobs must finish before new ones can be initiated. The UI and
+    REST API will inform you of the limit being reached.
 
 .. figure:: _static/app_landingzones/zone_dropdown.png
     :align: center
@@ -117,12 +146,16 @@ and click :guilabel:`Validate Files`.
 
     Landing zone dropdown
 
-Clicking the link will temporarily lock the landing zone for read-only access
-and start the validation process in the background. Duration of validation
-depends on the amount of files in your zone. You can monitor the status of this
-process in the landing zone list view. You will also receive an alert once the
-validation is done. In the validation phase, missing iRODS checksums are also
-calculated so they can be compared to the corresponding ``.md5`` files.
+Selecting :guilabel:`Validate Files` will start the validation process for the
+given zone in the background. In the validation phase, SODAR checks for expected
+files and compares iRODS checksums to corresponding checksum files. If checksums
+were not calculated in iRODS during file transfer, they will be generated
+automatically by SODAR before comparison.
+
+Duration of the validation process depends on the amount of files in your zone
+and whether checksums were calculated during transfer. You can monitor the
+status of the process in the landing zone list view. You will also receive an
+alert once validation is done.
 
 .. figure:: _static/app_landingzones/zone_status_validating.png
     :align: center
@@ -144,9 +177,10 @@ If an error is encountered during validation, the landing zone status is set
 to ``FAILED``. The *Status Info* field in the landing zone list will contain
 details of what failed. In most cases, these fall into the following categories:
 
-- File checksum does not match the accompanying MD5 checksum file.
-- An MD5 checksum file is missing.
-- An MD5 checksum file is present but the related file is missing.
+- File checksum does not match the accompanying checksum file.
+- An checksum file is missing.
+- An checksum file is present but the related file is missing.
+- The checksum file is somehow invalid.
 
 .. figure:: _static/app_landingzones/zone_status_validate_failed.png
     :align: center
@@ -154,8 +188,9 @@ details of what failed. In most cases, these fall into the following categories:
 
     Landing zone status after failed validation
 
-At this point you can go back to fix the problems with your files and retry
-validation again.
+If there have been problems with multiple files, all the errors are detailed
+sequentially in the zone status info. At this point you can go back to fix the
+problems with your files and retry validation again.
 
 
 Moving Files
@@ -169,6 +204,12 @@ described above and if successful, automatically proceed to move the files under
 the assay. As with validation this is done in the background and you can monitor
 the process in the landing zone list.
 
+.. attention::
+
+    Only one moving process per project can be active at a given time. The UI
+    will display a locked status and disable relevant controls if the project is
+    currently locked for moving operations.
+
 .. hint::
 
     If it is enabled on the SODAR server, it is also possible to trigger moving
@@ -178,7 +219,7 @@ the process in the landing zone list.
     contact the server administrators for further information.
 
 If successful, the status of your landing zone will be updated to ``MOVED``,
-with the count of moved files excluding the MD5 checksum files. Cache update for
+with the count of moved files excluding the checksum files. Cache update for
 sample sheets is also initiated to ensure iRODS links are up-to-date in the UI.
 You can then navigate to the :ref:`Sample Sheets <app_samplesheets_browse>` app
 to view your files in the assay.
@@ -206,6 +247,13 @@ operation.
     :scale: 75%
 
     Landing zone status after failed moving
+
+.. hint::
+
+    The exact list of files transferred from a landing zone to the sample data
+    repository can be reviewed in the "extra data" modal for the related
+    :guilabel:`Landing Zone Move` :ref:`Timeline <ui_project_timeline>` event.
+    This information is currently available for project owners and delegates.
 
 
 Landing Zone Deletion

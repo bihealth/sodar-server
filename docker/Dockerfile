@@ -7,8 +7,8 @@ ARG app_git_url=https://github.com/bihealth/sodar-server.git
 ARG app_git_tag
 ARG app_git_depth=1
 
-ENV DEBIAN_FRONTEND noninteractive
-ENV CUSTOM_STATIC_DIR /usr/src/app/local-static
+ENV DEBIAN_FRONTEND=noninteractive
+ENV CUSTOM_STATIC_DIR=/usr/src/app/local-static
 
 ## Add the wait script to the image
 ADD https://github.com/ufoscout/docker-compose-wait/releases/download/2.12.1/wait /usr/local/bin/wait
@@ -21,7 +21,7 @@ RUN git clone --depth $app_git_depth --branch $app_git_tag $app_git_url /usr/src
 # Install system dependencies
 RUN apt-get update && \
     apt-get install -y apt-utils gcc ldap-utils libldap2-dev libsasl2-dev \
-        make postgresql-client wget
+        make postgresql-client wget vim
 
 # Install Nodejs v18
 RUN apt-get install -y ca-certificates curl gnupg && \

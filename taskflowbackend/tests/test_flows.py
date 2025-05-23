@@ -4,7 +4,7 @@ import os
 
 from irods.exception import (
     UserDoesNotExist,
-    UserGroupDoesNotExist,
+    GroupDoesNotExist,
 )
 from irods.test.helpers import make_object
 from irods.ticket import Ticket
@@ -14,7 +14,11 @@ from django.conf import settings
 from django.test import override_settings
 
 # Projectroles dependency
-from projectroles.models import SODAR_CONSTANTS
+from projectroles.app_settings import AppSettingAPI
+from projectroles.models import SODAR_CONSTANTS, ROLE_RANKING
+
+# Timeline dependency
+from timeline.tests.test_models import TimelineEventMixin
 
 # Landingzones dependency
 from landingzones.constants import (
@@ -50,8 +54,6 @@ from taskflowbackend.flows.project_update import Flow as ProjectUpdateFlow
 from taskflowbackend.flows.public_access_update import (
     Flow as PublicAccessUpdateFlow,
 )
-from taskflowbackend.flows.role_delete import Flow as RoleDeleteFlow
-from taskflowbackend.flows.role_update import Flow as RoleUpdateFlow
 from taskflowbackend.flows.role_update_irods_batch import (
     Flow as RoleUpdateIrodsBatchFlow,
 )
@@ -66,23 +68,32 @@ from taskflowbackend.tests.base import (
     IRODS_ACCESS_OWN,
     TICKET_STR,
 )
+from taskflowbackend.irods_utils import get_flow_role
+
+
+app_settings = AppSettingAPI()
 
 
 # SODAR constants
 PROJECT_TYPE_CATEGORY = SODAR_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
+PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
+PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
+PROJECT_ROLE_CONTRIBUTOR = SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR']
 
 # Local constants
 COLL_NAME = 'test_coll'
 SUB_COLL_NAME = 'sub'
 OBJ_COLL_NAME = 'obj'
-OBJ_NAME = 'test_file'
+OBJ_NAME = 'test_file.txt'
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 UPDATED_TITLE = 'NewTitle'
 UPDATED_DESC = 'updated description'
 SCRIPT_USER_NAME = 'script_user'
 IRODS_ROOT_PATH = 'sodar/root'
 INVALID_REDIS_URL = 'redis://127.0.0.1:6666/0'
+IRODS_ACCESS_READ = 'read_object'
+MD5_SUFFIX = '.md5'
 
 
 class TaskflowbackendFlowTestBase(TaskflowViewTestBase):
@@ -181,7 +192,7 @@ class TestLandingZoneCreate(
         self.project, self.owner_as = self.make_project_taskflow(
             'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
         )
-        self.group_name = self.irods_backend.get_user_group_name(self.project)
+        self.project_group = self.irods_backend.get_group_name(self.project)
         self.project_path = self.irods_backend.get_path(self.project)
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
@@ -198,7 +209,9 @@ class TestLandingZoneCreate(
             description=ZONE_DESC,
             status=ZONE_STATUS_CREATING,
         )
+        self.zone_root_path = self.irods_backend.get_zone_path(self.project)
         self.zone_path = self.irods_backend.get_path(self.zone)
+        self.owner_group = self.irods_backend.get_group_name(self.project, True)
 
     def test_create(self):
         """Test landing_zone_create for creating a zone"""
@@ -221,6 +234,11 @@ class TestLandingZoneCreate(
 
         self.zone.refresh_from_db()
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+
+        self.assert_group_member(self.project, self.user, True, True)
+        self.assert_group_member(self.project, self.user_owner_cat, True, True)
+        root_coll = self.irods.collections.get(self.zone_root_path)
+        self.assert_irods_access(self.owner_group, root_coll, IRODS_ACCESS_READ)
         zone_coll = self.irods.collections.get(self.zone_path)
         self.assertEqual(
             zone_coll.metadata.get_one('description').value,
@@ -229,7 +247,8 @@ class TestLandingZoneCreate(
         self.assert_irods_access(
             self.user.username, zone_coll, IRODS_ACCESS_OWN
         )
-        self.assert_irods_access(self.group_name, zone_coll, None)
+        self.assert_irods_access(self.owner_group, zone_coll, IRODS_ACCESS_OWN)
+        self.assert_irods_access(self.project_group, zone_coll, None)
 
     def test_create_locked(self):
         """Test landing_zone_create with locked project"""
@@ -304,7 +323,7 @@ class TestLandingZoneCreate(
         self.assert_irods_access(
             self.user.username, results_path, IRODS_ACCESS_OWN
         )
-        self.assert_irods_access(self.group_name, results_path, None)
+        self.assert_irods_access(self.project_group, results_path, None)
 
     def test_create_colls_restrict(self):
         """Test landing_zone_create with restricted collections"""
@@ -338,7 +357,7 @@ class TestLandingZoneCreate(
         self.assert_irods_access(
             self.user.username, results_path, IRODS_ACCESS_OWN
         )
-        self.assert_irods_access(self.group_name, results_path, None)
+        self.assert_irods_access(self.project_group, results_path, None)
         new_root_path = os.path.join(self.zone_path, 'new_root_path')
         self.irods.collections.create(new_root_path)
         self.assert_irods_access(
@@ -406,7 +425,7 @@ class TestLandingZoneCreate(
         self.assert_irods_access(
             SCRIPT_USER_NAME, zone_coll, self.irods_access_write
         )
-        self.assert_irods_access(self.group_name, zone_coll, None)
+        self.assert_irods_access(self.project_group, zone_coll, None)
 
     def test_create_script_user_not_created(self):
         """Test landing_zone_create with invalid script user (should fail)"""
@@ -479,7 +498,7 @@ class TestLandingZoneDelete(
         self.project, self.owner_as = self.make_project_taskflow(
             'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
         )
-        self.group_name = self.irods_backend.get_user_group_name(self.project)
+        self.project_group = self.irods_backend.get_group_name(self.project)
         self.project_path = self.irods_backend.get_path(self.project)
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
@@ -673,6 +692,7 @@ class TestLandingZoneMove(
     LandingZoneTaskflowMixin,
     SampleSheetIOMixin,
     SampleSheetTaskflowMixin,
+    TimelineEventMixin,
     TaskflowbackendFlowTestBase,
 ):
     """Tests for the landing_zone_move flow"""
@@ -682,7 +702,7 @@ class TestLandingZoneMove(
         self.project, self.owner_as = self.make_project_taskflow(
             'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
         )
-        self.group_name = self.irods_backend.get_user_group_name(self.project)
+        self.project_group = self.irods_backend.get_group_name(self.project)
         self.project_path = self.irods_backend.get_path(self.project)
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
@@ -702,7 +722,10 @@ class TestLandingZoneMove(
         self.make_zone_taskflow(self.zone)
         self.sample_path = self.irods_backend.get_path(self.assay)
         self.zone_path = self.irods_backend.get_path(self.zone)
-        self.group_name = self.irods_backend.get_user_group_name(self.project)
+        self.project_group = self.irods_backend.get_group_name(self.project)
+        self.owner_group = self.irods_backend.get_group_name(
+            self.project, owner=True
+        )
 
     def test_move(self):
         """Test landing_zone_move"""
@@ -713,21 +736,32 @@ class TestLandingZoneMove(
         obj_coll_path = os.path.join(self.zone_path, OBJ_COLL_NAME)
         obj_coll = self.irods.collections.create(obj_coll_path)
         obj = self.make_irods_object(obj_coll, OBJ_NAME)
-        self.make_irods_md5_object(obj)
+        self.make_checksum_object(obj)
         obj_path = os.path.join(obj_coll_path, OBJ_NAME)
+        self.assert_irods_access(self.owner_group, obj_path, IRODS_ACCESS_OWN)
+        self.assert_irods_access(self.user.username, obj_path, IRODS_ACCESS_OWN)
+        self.assert_irods_access(self.project_group, obj_path, None)
+
         sample_obj_path = os.path.join(
             self.sample_path, OBJ_COLL_NAME, OBJ_NAME
+        )
+        tl_event = self.make_event(
+            project=self.project,
+            app='taskflowbackend',
+            user=self.user,
+            event_name='landing_zone_move',
+            extra_data={},
         )
 
         self.assertEqual(self.irods.collections.exists(empty_coll_path), True)
         self.assertEqual(self.irods.collections.exists(obj_coll_path), True)
         self.assertEqual(self.irods.data_objects.exists(obj_path), True)
         self.assertEqual(
-            self.irods.data_objects.exists(obj_path + '.md5'), True
+            self.irods.data_objects.exists(obj_path + MD5_SUFFIX), True
         )
         self.assertEqual(self.irods.data_objects.exists(sample_obj_path), False)
         self.assertEqual(
-            self.irods.data_objects.exists(sample_obj_path + '.md5'), False
+            self.irods.data_objects.exists(sample_obj_path + MD5_SUFFIX), False
         )
 
         flow_data = {'zone_uuid': str(self.zone.sodar_uuid)}
@@ -736,6 +770,7 @@ class TestLandingZoneMove(
             project=self.project,
             flow_name='landing_zone_move',
             flow_data=flow_data,
+            tl_event=tl_event,
         )
         self.assertEqual(type(flow), LandingZoneMoveFlow)
         self.build_and_run(flow)
@@ -750,14 +785,26 @@ class TestLandingZoneMove(
         )
         self.assertEqual(self.irods.data_objects.exists(sample_obj_path), True)
         self.assertEqual(
-            self.irods.data_objects.exists(sample_obj_path + '.md5'), True
+            self.irods.data_objects.exists(sample_obj_path + MD5_SUFFIX), True
         )
         self.assert_irods_access(
-            self.group_name, sample_obj_path, self.irods_access_read
+            self.project_group, sample_obj_path, self.irods_access_read
+        )
+        self.assert_irods_access(self.owner_group, sample_obj_path, None)
+        self.assert_irods_access(
+            self.project_group,
+            sample_obj_path + MD5_SUFFIX,
+            self.irods_access_read,
         )
         self.assert_irods_access(
-            self.group_name, sample_obj_path + '.md5', self.irods_access_read
+            self.owner_group, sample_obj_path + MD5_SUFFIX, None
         )
+        tl_event.refresh_from_db()
+        expected = {
+            'files': [os.path.join(OBJ_COLL_NAME, OBJ_NAME)],
+            'total_size': 1024,
+        }
+        self.assertEqual(tl_event.extra_data, expected)
 
     def test_move_locked(self):
         """Test landing_zone_move with locked project (should fail)"""
@@ -765,7 +812,7 @@ class TestLandingZoneMove(
         obj_coll_path = os.path.join(self.zone_path, OBJ_COLL_NAME)
         obj_coll = self.irods.collections.create(obj_coll_path)
         obj = self.make_irods_object(obj_coll, OBJ_NAME)
-        self.make_irods_md5_object(obj)
+        self.make_checksum_object(obj)
         flow_data = {'zone_uuid': str(self.zone.sodar_uuid)}
         flow = self.taskflow.get_flow(
             irods_backend=self.irods_backend,
@@ -779,14 +826,14 @@ class TestLandingZoneMove(
         self.zone.refresh_from_db()
         self.assertEqual(self.zone.status, ZONE_STATUS_FAILED)
 
-    def test_move_no_checksum(self):
-        """Test landing_zone_move with no checksum"""
+    def test_move_no_checksum_irods(self):
+        """Test landing_zone_move with no checksum in iRODS"""
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(self.irods.collections.exists(self.zone_path), True)
         obj_coll_path = os.path.join(self.zone_path, OBJ_COLL_NAME)
         obj_coll = self.irods.collections.create(obj_coll_path)
         obj = self.make_irods_object(obj_coll, OBJ_NAME, checksum=False)
-        self.make_irods_md5_object(obj)
+        self.make_checksum_object(obj)
         obj_path = os.path.join(obj_coll_path, OBJ_NAME)
         sample_obj_path = os.path.join(
             self.sample_path, OBJ_COLL_NAME, OBJ_NAME
@@ -795,11 +842,11 @@ class TestLandingZoneMove(
         self.assertEqual(self.irods.collections.exists(obj_coll_path), True)
         self.assertEqual(self.irods.data_objects.exists(obj_path), True)
         self.assertEqual(
-            self.irods.data_objects.exists(obj_path + '.md5'), True
+            self.irods.data_objects.exists(obj_path + MD5_SUFFIX), True
         )
         self.assertEqual(self.irods.data_objects.exists(sample_obj_path), False)
         self.assertEqual(
-            self.irods.data_objects.exists(sample_obj_path + '.md5'), False
+            self.irods.data_objects.exists(sample_obj_path + MD5_SUFFIX), False
         )
         self.assertIsNone(obj.replicas[0].checksum)
 
@@ -818,24 +865,24 @@ class TestLandingZoneMove(
         self.assertEqual(self.irods.collections.exists(self.zone_path), False)
         self.assertEqual(self.irods.data_objects.exists(sample_obj_path), True)
         self.assertEqual(
-            self.irods.data_objects.exists(sample_obj_path + '.md5'), True
+            self.irods.data_objects.exists(sample_obj_path + MD5_SUFFIX), True
         )
         obj = self.irods.data_objects.get(sample_obj_path)  # Reload object
         self.assertIsNotNone(obj.replicas[0].checksum)
-        self.assertEqual(obj.replicas[0].checksum, self.get_md5_checksum(obj))
+        self.assertEqual(obj.replicas[0].checksum, self.get_checksum(obj))
 
-    def test_move_no_md5_file(self):
-        """Test landing_zone_move without an MD5 checksum file (should fail)"""
+    def test_move_no_checksum_file(self):
+        """Test landing_zone_move without an checksum file (should fail)"""
         coll_path = os.path.join(self.zone_path, COLL_NAME)
         zone_coll = self.irods.collections.create(coll_path)
         obj = self.make_irods_object(zone_coll, OBJ_NAME)
         obj_path = obj.path
-        # No MD5 file
+        # No checksum file
 
         self.assertEqual(self.irods.collections.exists(coll_path), True)
         self.assertEqual(self.irods.data_objects.exists(obj_path), True)
         self.assertEqual(
-            self.irods.data_objects.exists(obj_path + '.md5'), False
+            self.irods.data_objects.exists(obj_path + MD5_SUFFIX), False
         )
 
         flow_data = {'zone_uuid': str(self.zone.sodar_uuid)}
@@ -854,8 +901,13 @@ class TestLandingZoneMove(
         self.assertEqual(self.irods.collections.exists(self.zone_path), True)
         sample_obj_path = os.path.join(self.sample_path, COLL_NAME, OBJ_NAME)
         self.assertEqual(self.irods.data_objects.exists(sample_obj_path), False)
+        # Assert access after revert
+        self.assert_irods_access(self.owner_group, obj_path, IRODS_ACCESS_OWN)
+        self.assert_irods_access(self.user.username, obj_path, IRODS_ACCESS_OWN)
+        self.assert_irods_access(self.project_group, obj_path, None)
 
-    # TODO: Test with invalid .md5 file
+    # TODO: Test with invalid MD5 file
+    # TODO: Test with invalid SHA256 file
 
     def test_move_coll_exists(self):
         """Test landing_zone_move with existing collection"""
@@ -863,14 +915,14 @@ class TestLandingZoneMove(
         zone_coll = self.irods.collections.create(coll_path)
         obj = self.make_irods_object(zone_coll, OBJ_NAME)
         obj_path = obj.path
-        self.make_irods_md5_object(obj)
+        self.make_checksum_object(obj)
         sample_coll_path = os.path.join(self.sample_path, COLL_NAME)
         self.irods.collections.create(sample_coll_path)
 
         self.assertEqual(self.irods.collections.exists(coll_path), True)
         self.assertEqual(self.irods.data_objects.exists(obj_path), True)
         self.assertEqual(
-            self.irods.data_objects.exists(obj_path + '.md5'), True
+            self.irods.data_objects.exists(obj_path + MD5_SUFFIX), True
         )
         # The sample collection path should already be there
         self.assertEqual(self.irods.collections.exists(sample_coll_path), True)
@@ -890,7 +942,7 @@ class TestLandingZoneMove(
         sample_obj_path = os.path.join(self.sample_path, COLL_NAME, OBJ_NAME)
         self.assertEqual(self.irods.data_objects.exists(sample_obj_path), True)
         self.assertEqual(
-            self.irods.data_objects.exists(sample_obj_path + '.md5'), True
+            self.irods.data_objects.exists(sample_obj_path + MD5_SUFFIX), True
         )
 
     def test_move_obj_exists(self):
@@ -899,7 +951,7 @@ class TestLandingZoneMove(
         zone_coll = self.irods.collections.create(coll_path)
         obj = self.make_irods_object(zone_coll, OBJ_NAME)
         obj_path = obj.path
-        self.make_irods_md5_object(obj)
+        self.make_checksum_object(obj)
         sample_coll_path = os.path.join(self.sample_path, COLL_NAME)
         sample_coll = self.irods.collections.create(sample_coll_path)
         sample_obj = self.make_irods_object(sample_coll, OBJ_NAME)
@@ -907,7 +959,7 @@ class TestLandingZoneMove(
         self.assertEqual(self.irods.collections.exists(coll_path), True)
         self.assertEqual(self.irods.data_objects.exists(obj_path), True)
         self.assertEqual(
-            self.irods.data_objects.exists(obj_path + '.md5'), True
+            self.irods.data_objects.exists(obj_path + MD5_SUFFIX), True
         )
         self.assertEqual(self.irods.collections.exists(sample_coll_path), True)
         # Object should exist in sample repository
@@ -929,7 +981,7 @@ class TestLandingZoneMove(
         self.assertEqual(self.irods.collections.exists(coll_path), True)
         self.assertEqual(self.irods.data_objects.exists(obj_path), True)
         self.assertEqual(
-            self.irods.data_objects.exists(obj_path + '.md5'), True
+            self.irods.data_objects.exists(obj_path + MD5_SUFFIX), True
         )
         self.assertEqual(self.irods.data_objects.exists(sample_obj.path), True)
 
@@ -939,7 +991,7 @@ class TestLandingZoneMove(
         zone_coll = self.irods.collections.create(coll_path)
         obj = self.make_irods_object(zone_coll, OBJ_NAME)
         obj_path = obj.path
-        self.make_irods_md5_object(obj)
+        self.make_checksum_object(obj)
         sample_coll_path = os.path.join(self.sample_path)
         sample_coll = self.irods.collections.create(sample_coll_path)
         # NOTE: Using collection name for the data object
@@ -959,7 +1011,7 @@ class TestLandingZoneMove(
         self.assertEqual(self.irods.collections.exists(coll_path), True)
         self.assertEqual(self.irods.data_objects.exists(obj_path), True)
         self.assertEqual(
-            self.irods.data_objects.exists(obj_path + '.md5'), True
+            self.irods.data_objects.exists(obj_path + MD5_SUFFIX), True
         )
         self.assertEqual(self.irods.data_objects.exists(sample_obj.path), True)
 
@@ -969,10 +1021,10 @@ class TestLandingZoneMove(
         zone_coll = self.irods.collections.create(coll_path)
         obj = self.make_irods_object(zone_coll, OBJ_NAME)
         obj_path = obj.path
-        self.make_irods_md5_object(obj)
+        self.make_checksum_object(obj)
         self.assertEqual(self.irods.data_objects.exists(obj_path), True)
         self.assertEqual(
-            self.irods.data_objects.exists(obj_path + '.md5'), True
+            self.irods.data_objects.exists(obj_path + MD5_SUFFIX), True
         )
 
         flow_data = {
@@ -991,19 +1043,24 @@ class TestLandingZoneMove(
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(self.irods.data_objects.exists(obj_path), True)
         self.assertEqual(
-            self.irods.data_objects.exists(obj_path + '.md5'), True
+            self.irods.data_objects.exists(obj_path + MD5_SUFFIX), True
         )
         sample_coll_path = os.path.join(self.sample_path, COLL_NAME)
         self.assertEqual(self.irods.collections.exists(sample_coll_path), False)
+        self.assert_irods_access(self.owner_group, obj_path, IRODS_ACCESS_OWN)
+        self.assert_irods_access(self.user.username, obj_path, IRODS_ACCESS_OWN)
+        self.assert_irods_access(self.project_group, obj_path, None)
+
+    # TODO: Test validation with SHA256 checksum (see #2170)
 
     def test_validate_upper_case(self):
         """Test landing_zone_move validation with upper case checksum in file"""
         coll_path = os.path.join(self.zone_path, COLL_NAME)
         zone_coll = self.irods.collections.create(coll_path)
         obj = self.make_irods_object(zone_coll, OBJ_NAME)
-        md5_path = obj.path + '.md5'
-        md5_content = self.get_md5_checksum(obj).upper()
-        make_object(self.irods, md5_path, md5_content)
+        chk_path = obj.path + MD5_SUFFIX
+        chk_content = self.get_checksum(obj).upper()
+        make_object(self.irods, chk_path, chk_content)
         flow_data = {
             'zone_uuid': str(self.zone.sodar_uuid),
             'validate_only': True,
@@ -1025,12 +1082,12 @@ class TestLandingZoneMove(
         obj = self.make_irods_object(zone_coll, OBJ_NAME)
         obj_path = obj.path
         # Make MD5 object with BOM header
-        md5_path = obj.path + '.md5'
-        md5_content = bytes(self.get_md5_checksum(obj), encoding='utf-8-sig')
-        make_object(self.irods, md5_path, md5_content)
+        chk_path = obj.path + MD5_SUFFIX
+        chk_content = bytes(self.get_checksum(obj), encoding='utf-8-sig')
+        make_object(self.irods, chk_path, chk_content)
         self.assertEqual(self.irods.data_objects.exists(obj_path), True)
         self.assertEqual(
-            self.irods.data_objects.exists(obj_path + '.md5'), True
+            self.irods.data_objects.exists(obj_path + MD5_SUFFIX), True
         )
 
         flow_data = {
@@ -1049,19 +1106,21 @@ class TestLandingZoneMove(
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(self.irods.data_objects.exists(obj_path), True)
         self.assertEqual(
-            self.irods.data_objects.exists(obj_path + '.md5'), True
+            self.irods.data_objects.exists(obj_path + MD5_SUFFIX), True
         )
         sample_coll_path = os.path.join(self.sample_path, COLL_NAME)
         self.assertEqual(self.irods.collections.exists(sample_coll_path), False)
 
-    def test_validate_no_checksum(self):
-        """Test landing_zone_move validation with missing checksum"""
+    # TODO: Test validation with BOM header and SHA256 checksum (see #2170)
+
+    def test_validate_no_checksum_file_md5(self):
+        """Test landing_zone_move validation with missing MD5 checksum file"""
         coll_path = os.path.join(self.zone_path, COLL_NAME)
         zone_coll = self.irods.collections.create(coll_path)
         obj = self.make_irods_object(zone_coll, OBJ_NAME, checksum=False)
         self.assertIsNone(obj.replicas[0].checksum)
         obj_path = obj.path
-        self.make_irods_md5_object(obj)
+        self.make_checksum_object(obj)
 
         flow_data = {
             'zone_uuid': str(self.zone.sodar_uuid),
@@ -1079,7 +1138,58 @@ class TestLandingZoneMove(
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         obj = self.irods.data_objects.get(obj_path)  # Reload object
         self.assertIsNotNone(obj.replicas[0].checksum)
-        self.assertEqual(obj.replicas[0].checksum, self.get_md5_checksum(obj))
+        self.assertEqual(obj.replicas[0].checksum, self.get_checksum(obj))
+
+    # TODO: Test with SHA256 checksum (see #2170)
+
+    def test_validate_prohibit(self):
+        """Test landing_zone_move validation with prohibited file name"""
+        coll_path = os.path.join(self.zone_path, COLL_NAME)
+        zone_coll = self.irods.collections.create(coll_path)
+        obj = self.make_irods_object(zone_coll, OBJ_NAME)
+        obj_path = obj.path
+        self.make_checksum_object(obj)
+        self.assertEqual(self.irods.data_objects.exists(obj_path), True)
+        self.assertEqual(
+            self.irods.data_objects.exists(obj_path + MD5_SUFFIX), True
+        )
+        flow_data = {
+            'zone_uuid': str(self.zone.sodar_uuid),
+            'validate_only': True,
+            'file_name_prohibit': 'txt',
+        }
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='landing_zone_move',
+            flow_data=flow_data,
+        )
+        with self.assertRaisesRegex(Exception, OBJ_NAME):
+            self.build_and_run(flow)
+        self.zone.refresh_from_db()
+        self.assertEqual(self.zone.status, ZONE_STATUS_FAILED)
+
+    def test_validate_locked(self):
+        """Test landing_zone_move validation with locked project"""
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        obj_coll_path = os.path.join(self.zone_path, OBJ_COLL_NAME)
+        obj_coll = self.irods.collections.create(obj_coll_path)
+        obj = self.make_irods_object(obj_coll, OBJ_NAME)
+        self.make_checksum_object(obj)
+        flow_data = {
+            'zone_uuid': str(self.zone.sodar_uuid),
+            'validate_only': True,
+        }
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='landing_zone_move',
+            flow_data=flow_data,
+        )
+        self.lock_project(self.project)
+        self.taskflow.run_flow(flow, self.project)
+        self.zone.refresh_from_db()
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
 
     def test_revert(self):
         """Test reverting landing_zone_move"""
@@ -1087,12 +1197,12 @@ class TestLandingZoneMove(
         zone_coll = self.irods.collections.create(coll_path)
         obj = self.make_irods_object(zone_coll, OBJ_NAME)
         obj_path = obj.path
-        self.make_irods_md5_object(obj)
+        self.make_checksum_object(obj)
 
         self.assertEqual(self.irods.collections.exists(coll_path), True)
         self.assertEqual(self.irods.data_objects.exists(obj_path), True)
         self.assertEqual(
-            self.irods.data_objects.exists(obj_path + '.md5'), True
+            self.irods.data_objects.exists(obj_path + MD5_SUFFIX), True
         )
 
         flow_data = {'zone_uuid': str(self.zone.sodar_uuid)}
@@ -1109,16 +1219,18 @@ class TestLandingZoneMove(
         self.assertEqual(self.irods.collections.exists(coll_path), True)
         self.assertEqual(self.irods.data_objects.exists(obj_path), True)
         self.assertEqual(
-            self.irods.data_objects.exists(obj_path + '.md5'), True
+            self.irods.data_objects.exists(obj_path + MD5_SUFFIX), True
         )
         sample_obj_path = os.path.join(self.sample_path, COLL_NAME, OBJ_NAME)
         self.assertEqual(self.irods.data_objects.exists(sample_obj_path), False)
         self.assertEqual(
-            self.irods.data_objects.exists(sample_obj_path + '.md5'), False
+            self.irods.data_objects.exists(sample_obj_path + MD5_SUFFIX), False
         )
+        self.assert_irods_access(self.owner_group, zone_coll, IRODS_ACCESS_OWN)
         self.assert_irods_access(
             self.user.username, zone_coll, IRODS_ACCESS_OWN
         )
+        self.assert_irods_access(self.project_group, zone_coll, None)
 
     def test_move_restrict(self):
         """Test landing_zone_move with created and restricted collections"""
@@ -1147,7 +1259,7 @@ class TestLandingZoneMove(
         obj_coll_path = os.path.join(results_path, OBJ_COLL_NAME)
         obj_coll = self.irods.collections.create(obj_coll_path)
         obj = self.make_irods_object(obj_coll, OBJ_NAME)
-        self.make_irods_md5_object(obj)
+        self.make_checksum_object(obj)
         obj_path = os.path.join(obj_coll_path, OBJ_NAME)
         sample_obj_path = os.path.join(
             self.sample_path, RESULTS_COLL, OBJ_COLL_NAME, OBJ_NAME
@@ -1157,11 +1269,11 @@ class TestLandingZoneMove(
         self.assertEqual(self.irods.collections.exists(obj_coll_path), True)
         self.assertEqual(self.irods.data_objects.exists(obj_path), True)
         self.assertEqual(
-            self.irods.data_objects.exists(obj_path + '.md5'), True
+            self.irods.data_objects.exists(obj_path + MD5_SUFFIX), True
         )
         self.assertEqual(self.irods.data_objects.exists(sample_obj_path), False)
         self.assertEqual(
-            self.irods.data_objects.exists(sample_obj_path + '.md5'), False
+            self.irods.data_objects.exists(sample_obj_path + MD5_SUFFIX), False
         )
 
         flow_data = {'zone_uuid': str(new_zone.sodar_uuid)}
@@ -1185,13 +1297,15 @@ class TestLandingZoneMove(
         )
         self.assertEqual(self.irods.data_objects.exists(sample_obj_path), True)
         self.assertEqual(
-            self.irods.data_objects.exists(sample_obj_path + '.md5'), True
+            self.irods.data_objects.exists(sample_obj_path + MD5_SUFFIX), True
         )
         self.assert_irods_access(
-            self.group_name, sample_obj_path, self.irods_access_read
+            self.project_group, sample_obj_path, self.irods_access_read
         )
         self.assert_irods_access(
-            self.group_name, sample_obj_path + '.md5', self.irods_access_read
+            self.project_group,
+            sample_obj_path + MD5_SUFFIX,
+            self.irods_access_read,
         )
 
 
@@ -1210,7 +1324,7 @@ class TestLandingZoneMoveAltRootPath(
         self.project, self.owner_as = self.make_project_taskflow(
             'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
         )
-        self.group_name = self.irods_backend.get_user_group_name(self.project)
+        self.project_group = self.irods_backend.get_group_name(self.project)
         self.project_path = self.irods_backend.get_path(self.project)
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
@@ -1230,7 +1344,7 @@ class TestLandingZoneMoveAltRootPath(
         self.make_zone_taskflow(self.zone)
         self.sample_path = self.irods_backend.get_path(self.assay)
         self.zone_path = self.irods_backend.get_path(self.zone)
-        self.group_name = self.irods_backend.get_user_group_name(self.project)
+        self.project_group = self.irods_backend.get_group_name(self.project)
 
     def test_move_alt_root_path(self):
         """Test landing_zone_move with IRODS_ROOT_PATH set"""
@@ -1252,7 +1366,7 @@ class TestLandingZoneMoveAltRootPath(
         obj_coll_path = os.path.join(self.zone_path, OBJ_COLL_NAME)
         obj_coll = self.irods.collections.create(obj_coll_path)
         obj = self.make_irods_object(obj_coll, OBJ_NAME)
-        self.make_irods_md5_object(obj)
+        self.make_checksum_object(obj)
         obj_path = os.path.join(obj_coll_path, OBJ_NAME)
         sample_obj_path = os.path.join(
             self.sample_path, OBJ_COLL_NAME, OBJ_NAME
@@ -1262,11 +1376,11 @@ class TestLandingZoneMoveAltRootPath(
         self.assertEqual(self.irods.collections.exists(obj_coll_path), True)
         self.assertEqual(self.irods.data_objects.exists(obj_path), True)
         self.assertEqual(
-            self.irods.data_objects.exists(obj_path + '.md5'), True
+            self.irods.data_objects.exists(obj_path + MD5_SUFFIX), True
         )
         self.assertEqual(self.irods.data_objects.exists(sample_obj_path), False)
         self.assertEqual(
-            self.irods.data_objects.exists(sample_obj_path + '.md5'), False
+            self.irods.data_objects.exists(sample_obj_path + MD5_SUFFIX), False
         )
 
         flow_data = {'zone_uuid': str(self.zone.sodar_uuid)}
@@ -1288,62 +1402,80 @@ class TestLandingZoneMoveAltRootPath(
         )
         self.assertEqual(self.irods.data_objects.exists(sample_obj_path), True)
         self.assertEqual(
-            self.irods.data_objects.exists(sample_obj_path + '.md5'), True
+            self.irods.data_objects.exists(sample_obj_path + MD5_SUFFIX), True
         )
         self.assert_irods_access(
-            self.group_name, sample_obj_path, self.irods_access_read
+            self.project_group, sample_obj_path, self.irods_access_read
         )
         self.assert_irods_access(
-            self.group_name, sample_obj_path + '.md5', self.irods_access_read
+            self.project_group,
+            sample_obj_path + MD5_SUFFIX,
+            self.irods_access_read,
         )
 
 
 class TestProjectCreate(TaskflowbackendFlowTestBase):
     """Tests for the project_create flow"""
 
-    def test_create(self):
-        """Test project_create for creating a project"""
+    def setUp(self):
+        super().setUp()
         # Create project without taskflow
-        project = self.make_project(
+        self.project = self.make_project(
             'NewProject', PROJECT_TYPE_PROJECT, self.category
         )
-        self.make_assignment(project, self.user, self.role_owner)
-        group_name = self.irods_backend.get_user_group_name(project)
+        self.make_assignment(self.project, self.user, self.role_owner)
+        self.project_group = self.irods_backend.get_group_name(self.project)
+        self.owner_group = self.irods_backend.get_group_name(self.project, True)
+        self.user_assign = self.make_user('user_assign')
 
-        self.assert_irods_coll(project, expected=False)
-        with self.assertRaises(UserGroupDoesNotExist):
-            self.irods.user_groups.get(group_name)
+    def test_create(self):
+        """Test project_create for creating a project"""
+        self.assert_irods_coll(self.project, expected=False)
+        with self.assertRaises(GroupDoesNotExist):
+            self.irods.user_groups.get(self.project_group)
+        with self.assertRaises(GroupDoesNotExist):
+            self.irods.user_groups.get(self.owner_group)
 
         flow_data = {
             'owner': self.user.username,
-            'users_add': [self.user_owner_cat.username],
+            'roles_add': [
+                get_flow_role(
+                    self.project,
+                    self.user_owner_cat,
+                    ROLE_RANKING[PROJECT_ROLE_OWNER],
+                )
+            ],
         }
         flow = self.taskflow.get_flow(
             irods_backend=self.irods_backend,
-            project=project,
+            project=self.project,
             flow_name='project_create',
             flow_data=flow_data,
         )
         self.assertEqual(type(flow), ProjectCreateFlow)
         self.build_and_run(flow)
 
-        self.assert_irods_coll(project, expected=True)
-        group = self.irods.user_groups.get(group_name)
+        self.assert_irods_coll(self.project, expected=True)
+        group = self.irods.user_groups.get(self.project_group)
+        self.assertIsInstance(group, iRODSUserGroup)
+        group = self.irods.user_groups.get(self.owner_group)
         self.assertIsInstance(group, iRODSUserGroup)
         self.assert_irods_access(
-            group_name,
-            self.irods_backend.get_path(project),
+            self.project_group,
+            self.irods_backend.get_path(self.project),
             self.irods_access_read,
         )
+        # NOTE: Owner group does not need special access here, as owners and
+        #       delegates are also in the user group and everything is read-only
         self.assertIsInstance(
             self.irods.users.get(self.user.username), iRODSUser
         )
-        self.assert_group_member(project, self.user, True)
+        self.assert_group_member(self.project, self.user, True, True)
         project_coll = self.irods.collections.get(
-            self.irods_backend.get_path(project)
+            self.irods_backend.get_path(self.project)
         )
         self.assertEqual(
-            project_coll.metadata.get_one('title').value, project.title
+            project_coll.metadata.get_one('title').value, self.project.title
         )
         self.assertEqual(
             project_coll.metadata.get_one('description').value, META_EMPTY_VALUE
@@ -1356,7 +1488,49 @@ class TestProjectCreate(TaskflowbackendFlowTestBase):
         self.assertIsInstance(
             self.irods.users.get(self.user_owner_cat.username), iRODSUser
         )
-        self.assert_group_member(project, self.user_owner_cat, True)
+        self.assert_group_member(self.project, self.user_owner_cat, True, True)
+
+    def test_create_inherited_delegate(self):
+        """Test project_create with inherited delegate"""
+        flow_data = {
+            'owner': self.user.username,
+            'roles_add': [
+                get_flow_role(
+                    self.project,
+                    self.user_assign,
+                    ROLE_RANKING[PROJECT_ROLE_DELEGATE],
+                )
+            ],
+        }
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='project_create',
+            flow_data=flow_data,
+        )
+        self.build_and_run(flow)
+        self.assert_group_member(self.project, self.user_assign, True, True)
+
+    def test_create_inherited_contributor(self):
+        """Test project_create with inherited contributor"""
+        flow_data = {
+            'owner': self.user.username,
+            'roles_add': [
+                get_flow_role(
+                    self.project,
+                    self.user_assign,
+                    ROLE_RANKING[PROJECT_ROLE_CONTRIBUTOR],
+                )
+            ],
+        }
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='project_create',
+            flow_data=flow_data,
+        )
+        self.build_and_run(flow)
+        self.assert_group_member(self.project, self.user_assign, True, False)
 
 
 class TestProjectUpdate(TaskflowbackendFlowTestBase):
@@ -1429,10 +1603,10 @@ class TestProjectUpdate(TaskflowbackendFlowTestBase):
         self.make_assignment_taskflow(
             self.project, user_contributor, self.role_contributor
         )
-        self.assert_group_member(self.project, self.user, True)
-        self.assert_group_member(self.project, self.user_owner_cat, True)
-        self.assert_group_member(self.project, user_contributor, True)
-        self.assert_group_member(self.project, user_cat_new, False)
+        self.assert_group_member(self.project, self.user, True, True)
+        self.assert_group_member(self.project, self.user_owner_cat, True, True)
+        self.assert_group_member(self.project, user_contributor, True, False)
+        self.assert_group_member(self.project, user_cat_new, False, False)
         project_coll = self.irods.collections.get(self.project_path)
         self.assertEqual(
             project_coll.metadata.get_one('parent_uuid').value,
@@ -1447,8 +1621,20 @@ class TestProjectUpdate(TaskflowbackendFlowTestBase):
         self.project.save()
 
         flow_data = {
-            'users_add': [user_cat_new.username],
-            'users_delete': [self.user_owner_cat.username],
+            'roles_add': [
+                get_flow_role(
+                    self.project,
+                    user_cat_new,
+                    ROLE_RANKING[PROJECT_ROLE_CONTRIBUTOR],
+                )
+            ],
+            'roles_delete': [
+                get_flow_role(
+                    self.project,
+                    self.user_owner_cat,
+                    ROLE_RANKING[PROJECT_ROLE_OWNER],
+                )
+            ],
         }
         flow = self.taskflow.get_flow(
             irods_backend=self.irods_backend,
@@ -1458,10 +1644,12 @@ class TestProjectUpdate(TaskflowbackendFlowTestBase):
         )
         self.build_and_run(flow)
 
-        self.assert_group_member(self.project, self.user, True)
-        self.assert_group_member(self.project, self.user_owner_cat, False)
-        self.assert_group_member(self.project, user_contributor, True)
-        self.assert_group_member(self.project, user_cat_new, True)
+        self.assert_group_member(self.project, self.user, True, True)
+        self.assert_group_member(
+            self.project, self.user_owner_cat, False, False
+        )
+        self.assert_group_member(self.project, user_contributor, True, False)
+        self.assert_group_member(self.project, user_cat_new, True, False)
         project_coll = self.irods.collections.get(self.project_path)
         self.assertEqual(
             project_coll.metadata.get_one('parent_uuid').value,
@@ -1481,7 +1669,7 @@ class TestPublicAccessUpdate(
         self.project, self.owner_as = self.make_project_taskflow(
             'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
         )
-        self.group_name = self.irods_backend.get_user_group_name(self.project)
+        self.project_group = self.irods_backend.get_group_name(self.project)
         self.project_path = self.irods_backend.get_path(self.project)
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
@@ -1493,7 +1681,7 @@ class TestPublicAccessUpdate(
         self.make_irods_colls(self.investigation)
         self.assertEqual(self.irods.collections.exists(self.sample_path), True)
         self.assert_irods_access(
-            self.group_name, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, self.irods_access_read
         )
         self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
 
@@ -1511,17 +1699,17 @@ class TestPublicAccessUpdate(
         self.build_and_run(flow)
 
         self.assert_irods_access(
-            self.group_name, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, self.irods_access_read
         )
         self.assert_irods_access(
             PUBLIC_GROUP, self.sample_path, self.irods_access_read
         )
 
     def test_enable_access_locked(self):
-        """Test public_access_with locked project"""
+        """Test public_access_update with locked project"""
         self.make_irods_colls(self.investigation)
         self.assert_irods_access(
-            self.group_name, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, self.irods_access_read
         )
         self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
         flow_data = {
@@ -1537,7 +1725,7 @@ class TestPublicAccessUpdate(
         self.lock_project(self.project)
         self.taskflow.run_flow(flow, self.project)  # Lock not required
         self.assert_irods_access(
-            self.group_name, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, self.irods_access_read
         )
         self.assert_irods_access(
             PUBLIC_GROUP, self.sample_path, self.irods_access_read
@@ -1551,7 +1739,7 @@ class TestPublicAccessUpdate(
         self.make_irods_colls(self.investigation)
         self.assertEqual(self.irods.collections.exists(self.sample_path), True)
         self.assert_irods_access(
-            self.group_name, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, self.irods_access_read
         )
         self.assert_irods_access(
             PUBLIC_GROUP, self.sample_path, self.irods_access_read
@@ -1570,7 +1758,7 @@ class TestPublicAccessUpdate(
         self.build_and_run(flow)
 
         self.assert_irods_access(
-            self.group_name, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, self.irods_access_read
         )
         self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
 
@@ -1579,7 +1767,7 @@ class TestPublicAccessUpdate(
         self.make_irods_colls(self.investigation)
         self.assertEqual(self.irods.collections.exists(self.sample_path), True)
         self.assert_irods_access(
-            self.group_name, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, self.irods_access_read
         )
         self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
 
@@ -1597,7 +1785,7 @@ class TestPublicAccessUpdate(
         self.build_and_run(flow, force_fail=True)
 
         self.assert_irods_access(
-            self.group_name, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, self.irods_access_read
         )
         self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
 
@@ -1606,7 +1794,7 @@ class TestPublicAccessUpdate(
         self.make_irods_colls(self.investigation)
         self.assertEqual(self.irods.collections.exists(self.sample_path), True)
         self.assert_irods_access(
-            self.group_name, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, self.irods_access_read
         )
         self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
         self.assertIsNone(self.irods_backend.get_ticket(self.irods, TICKET_STR))
@@ -1627,7 +1815,7 @@ class TestPublicAccessUpdate(
             self.build_and_run(flow)
 
         self.assert_irods_access(
-            self.group_name, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, self.irods_access_read
         )
         self.assert_irods_access(
             PUBLIC_GROUP, self.sample_path, self.irods_access_read
@@ -1645,7 +1833,7 @@ class TestPublicAccessUpdate(
         self.make_irods_colls(self.investigation, ticket_str=TICKET_STR)
         self.assertEqual(self.irods.collections.exists(self.sample_path), True)
         self.assert_irods_access(
-            self.group_name, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, self.irods_access_read
         )
         self.assert_irods_access(
             PUBLIC_GROUP, self.sample_path, self.irods_access_read
@@ -1668,96 +1856,10 @@ class TestPublicAccessUpdate(
         self.build_and_run(flow)
 
         self.assert_irods_access(
-            self.group_name, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, self.irods_access_read
         )
         self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
         self.assertIsNone(self.irods_backend.get_ticket(self.irods, TICKET_STR))
-
-
-class TestRoleDelete(TaskflowbackendFlowTestBase):
-    """Tests for the role_delete flow"""
-
-    def setUp(self):
-        super().setUp()
-        self.project, self.owner_as = self.make_project_taskflow(
-            'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
-        )
-        self.user_new = self.make_user('user_new')
-        self.role_as = self.make_assignment_taskflow(
-            self.project, self.user_new, self.role_contributor
-        )
-        self.project_path = self.irods_backend.get_path(self.project)
-
-    def test_delete(self):
-        """Test role_delete for deleting a role assignment"""
-        self.assert_group_member(self.project, self.user_new, True)
-        flow_data = {'user_name': self.user_new.username}
-        flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='role_delete',
-            flow_data=flow_data,
-        )
-        self.assertEqual(type(flow), RoleDeleteFlow)
-        self.build_and_run(flow)
-        self.assert_group_member(self.project, self.user_new, False)
-
-    def test_delete_locked(self):
-        """Test role_delete with locked project"""
-        self.assert_group_member(self.project, self.user_new, True)
-        flow_data = {'user_name': self.user_new.username}
-        flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='role_delete',
-            flow_data=flow_data,
-        )
-        self.lock_project(self.project)
-        self.taskflow.run_flow(flow, self.project)  # Lock not required
-        self.assert_group_member(self.project, self.user_new, False)
-
-
-class TestRoleUpdate(TaskflowbackendFlowTestBase):
-    """Tests for the role_update flow"""
-
-    def setUp(self):
-        super().setUp()
-        self.project, self.owner_as = self.make_project_taskflow(
-            'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
-        )
-        self.project_path = self.irods_backend.get_path(self.project)
-
-    def test_update(self):
-        """Test role_update for creating a role assignment"""
-        user_new = self.make_user('user_new')
-        self.make_assignment(self.project, user_new, self.role_contributor)
-        self.assert_group_member(self.project, user_new, False)
-        flow_data = {'user_name': user_new.username}
-        flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='role_update',
-            flow_data=flow_data,
-        )
-        self.assertEqual(type(flow), RoleUpdateFlow)
-        self.build_and_run(flow)
-        self.assert_group_member(self.project, user_new, True)
-
-    def test_update_locked(self):
-        """Test role_update with locked project"""
-        user_new = self.make_user('user_new')
-        self.make_assignment(self.project, user_new, self.role_contributor)
-        self.assert_group_member(self.project, user_new, False)
-        flow_data = {'user_name': user_new.username}
-        flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='role_update',
-            flow_data=flow_data,
-        )
-        self.lock_project(self.project)
-        self.taskflow.run_flow(flow, self.project)  # Lock not required
-        self.assert_group_member(self.project, user_new, True)
 
 
 class TestRoleUpdateIrodsBatch(TaskflowbackendFlowTestBase):
@@ -1769,26 +1871,30 @@ class TestRoleUpdateIrodsBatch(TaskflowbackendFlowTestBase):
             'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
         )
         # self.project_path = self.irods_backend.get_path(self.project)
-        self.group_name = self.irods_backend.get_user_group_name(self.project)
-        self.project_group = self.irods.user_groups.get(self.group_name)
-        self.user_new1 = self.make_user('user_new1')
+        self.project_group = self.irods_backend.get_group_name(self.project)
+        self.owner_group = self.irods_backend.get_group_name(self.project, True)
+        self.project_group = self.irods.user_groups.get(self.project_group)
+        self.owner_group = self.irods.user_groups.get(self.owner_group)
+        self.user_new = self.make_user('user_new')
         self.user_new2 = self.make_user('user_new2')
 
     def test_add(self):
         """Test role_update_irods_batch for adding users"""
-        self.assert_group_member(self.project, self.user_new1, False)
-        self.assert_group_member(self.project, self.user_new2, False)
+        self.assert_group_member(self.project, self.user_new, False, False)
+        self.assert_group_member(self.project, self.user_new2, False, False)
 
         flow_data = {
             'roles_add': [
-                {
-                    'user_name': self.user_new1.username,
-                    'project_uuid': str(self.project.sodar_uuid),
-                },
-                {
-                    'user_name': self.user_new2.username,
-                    'project_uuid': str(self.project.sodar_uuid),
-                },
+                get_flow_role(
+                    self.project,
+                    self.user_new,
+                    ROLE_RANKING[PROJECT_ROLE_CONTRIBUTOR],
+                ),
+                get_flow_role(
+                    self.project,
+                    self.user_new2,
+                    ROLE_RANKING[PROJECT_ROLE_CONTRIBUTOR],
+                ),
             ],
             'roles_delete': [],
         }
@@ -1801,18 +1907,70 @@ class TestRoleUpdateIrodsBatch(TaskflowbackendFlowTestBase):
         self.assertEqual(type(flow), RoleUpdateIrodsBatchFlow)
         self.build_and_run(flow)
 
-        self.assert_group_member(self.project, self.user_new1, True)
-        self.assert_group_member(self.project, self.user_new2, True)
+        self.assert_group_member(self.project, self.user_new, True, False)
+        self.assert_group_member(self.project, self.user_new2, True, False)
+
+    def test_add_owner(self):
+        """Test role_update_irods_batch for adding users with owner"""
+        self.assert_group_member(self.project, self.user_new, False, False)
+        self.assert_group_member(self.project, self.user_new2, False, False)
+        flow_data = {
+            'roles_add': [
+                get_flow_role(
+                    self.project,
+                    self.user_new,
+                    ROLE_RANKING[PROJECT_ROLE_CONTRIBUTOR],
+                ),
+                get_flow_role(
+                    self.project,
+                    self.user_new2,
+                    ROLE_RANKING[PROJECT_ROLE_OWNER],
+                ),
+            ],
+            'roles_delete': [],
+        }
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='role_update_irods_batch',
+            flow_data=flow_data,
+        )
+        self.build_and_run(flow)
+        self.assert_group_member(self.project, self.user_new, True, False)
+        self.assert_group_member(self.project, self.user_new2, True, True)
+
+    def test_add_delegate(self):
+        """Test role_update_irods_batch for adding users with delegate"""
+        self.assert_group_member(self.project, self.user_new, False, False)
+        flow_data = {
+            'roles_add': [
+                get_flow_role(
+                    self.project,
+                    self.user_new,
+                    ROLE_RANKING[PROJECT_ROLE_DELEGATE],
+                ),
+            ],
+            'roles_delete': [],
+        }
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='role_update_irods_batch',
+            flow_data=flow_data,
+        )
+        self.build_and_run(flow)
+        self.assert_group_member(self.project, self.user_new, True, True)
 
     def test_add_locked(self):
         """Test role_update_irods_batch with locked project"""
-        self.assert_group_member(self.project, self.user_new1, False)
+        self.assert_group_member(self.project, self.user_new, False, False)
         flow_data = {
             'roles_add': [
-                {
-                    'user_name': self.user_new1.username,
-                    'project_uuid': str(self.project.sodar_uuid),
-                },
+                get_flow_role(
+                    self.project,
+                    self.user_new,
+                    ROLE_RANKING[PROJECT_ROLE_CONTRIBUTOR],
+                )
             ],
             'roles_delete': [],
         }
@@ -1824,29 +1982,28 @@ class TestRoleUpdateIrodsBatch(TaskflowbackendFlowTestBase):
         )
         self.lock_project(self.project)
         self.taskflow.run_flow(flow, self.project)  # Lock not required
-        self.assert_group_member(self.project, self.user_new1, True)
+        self.assert_group_member(self.project, self.user_new, True, False)
 
     def test_add_multi_project(self):
         """Test role_update_irods_batch for adding users to multiple projects"""
         new_project, _ = self.make_project_taskflow(
             'NewProject2', PROJECT_TYPE_PROJECT, self.category, self.user
         )
-
-        self.assert_group_member(self.project, self.user_new1, False)
-        self.assert_group_member(self.project, self.user_new2, False)
-        self.assert_group_member(new_project, self.user_new1, False)
-        self.assert_group_member(new_project, self.user_new2, False)
+        self.assert_group_member(self.project, self.user_new, False, False)
+        self.assert_group_member(new_project, self.user_new, False, False)
 
         flow_data = {
             'roles_add': [
-                {
-                    'user_name': self.user_new1.username,
-                    'project_uuid': str(self.project.sodar_uuid),
-                },
-                {
-                    'user_name': self.user_new2.username,
-                    'project_uuid': str(new_project.sodar_uuid),
-                },
+                get_flow_role(
+                    self.project,
+                    self.user_new,
+                    ROLE_RANKING[PROJECT_ROLE_CONTRIBUTOR],
+                ),
+                get_flow_role(
+                    new_project,
+                    self.user_new2,
+                    ROLE_RANKING[PROJECT_ROLE_CONTRIBUTOR],
+                ),
             ],
             'roles_delete': [],
         }
@@ -1858,36 +2015,76 @@ class TestRoleUpdateIrodsBatch(TaskflowbackendFlowTestBase):
         )
         self.build_and_run(flow)
 
-        self.assert_group_member(self.project, self.user_new1, True)
-        self.assert_group_member(self.project, self.user_new2, False)
-        self.assert_group_member(new_project, self.user_new1, False)
-        self.assert_group_member(new_project, self.user_new2, True)
+        self.assert_group_member(self.project, self.user_new, True, False)
+        self.assert_group_member(self.project, self.user_new2, False, False)
+        self.assert_group_member(new_project, self.user_new, False, False)
+        self.assert_group_member(new_project, self.user_new2, True, False)
+
+    def test_add_multi_project_owner(self):
+        """Test role_update_irods_batch for adding users to multiple projects with owner"""
+        new_project, _ = self.make_project_taskflow(
+            'NewProject2', PROJECT_TYPE_PROJECT, self.category, self.user
+        )
+        self.assert_group_member(self.project, self.user_new, False, False)
+        self.assert_group_member(self.project, self.user_new2, False, False)
+        self.assert_group_member(new_project, self.user_new, False, False)
+        self.assert_group_member(new_project, self.user_new2, False, False)
+
+        flow_data = {
+            'roles_add': [
+                get_flow_role(
+                    self.project,
+                    self.user_new,
+                    ROLE_RANKING[PROJECT_ROLE_OWNER],
+                ),
+                get_flow_role(
+                    new_project,
+                    self.user_new2,
+                    ROLE_RANKING[PROJECT_ROLE_CONTRIBUTOR],
+                ),
+            ],
+            'roles_delete': [],
+        }
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='role_update_irods_batch',
+            flow_data=flow_data,
+        )
+        self.build_and_run(flow)
+
+        self.assert_group_member(self.project, self.user_new, True, True)
+        self.assert_group_member(self.project, self.user_new2, False, False)
+        self.assert_group_member(new_project, self.user_new, False, False)
+        self.assert_group_member(new_project, self.user_new2, True, False)
 
     def test_delete(self):
         """Test role_update_irods_batch for deleting users"""
         self.irods.users.create(
-            self.user_new1.username, 'rodsuser', settings.IRODS_ZONE
+            self.user_new.username, 'rodsuser', settings.IRODS_ZONE
         )
         self.irods.users.create(
             self.user_new2.username, 'rodsuser', settings.IRODS_ZONE
         )
-        self.project_group.addmember(self.user_new1.username)
+        self.project_group.addmember(self.user_new.username)
         self.project_group.addmember(self.user_new2.username)
 
-        self.assert_group_member(self.project, self.user_new1, True)
-        self.assert_group_member(self.project, self.user_new2, True)
+        self.assert_group_member(self.project, self.user_new)
+        self.assert_group_member(self.project, self.user_new2)
 
         flow_data = {
             'roles_add': [],
             'roles_delete': [
-                {
-                    'user_name': self.user_new1.username,
-                    'project_uuid': str(self.project.sodar_uuid),
-                },
-                {
-                    'user_name': self.user_new2.username,
-                    'project_uuid': str(self.project.sodar_uuid),
-                },
+                get_flow_role(
+                    self.project,
+                    self.user_new,
+                    ROLE_RANKING[PROJECT_ROLE_CONTRIBUTOR],
+                ),
+                get_flow_role(
+                    self.project,
+                    self.user_new2,
+                    ROLE_RANKING[PROJECT_ROLE_CONTRIBUTOR],
+                ),
             ],
         }
         flow = self.taskflow.get_flow(
@@ -1898,8 +2095,103 @@ class TestRoleUpdateIrodsBatch(TaskflowbackendFlowTestBase):
         )
         self.build_and_run(flow)
 
-        self.assert_group_member(self.project, self.user_new1, False)
+        self.assert_group_member(self.project, self.user_new, False)
         self.assert_group_member(self.project, self.user_new2, False)
+
+    def test_delete_owner(self):
+        """Test role_update_irods_batch for deleting users with owner roles"""
+        self.irods.users.create(
+            self.user_new.username, 'rodsuser', settings.IRODS_ZONE
+        )
+        self.irods.users.create(
+            self.user_new2.username, 'rodsuser', settings.IRODS_ZONE
+        )
+        self.project_group.addmember(self.user_new.username)
+        self.owner_group.addmember(self.user_new.username)
+        self.project_group.addmember(self.user_new2.username)
+        self.owner_group.addmember(self.user_new2.username)
+
+        self.assert_group_member(self.project, self.user_new, True, True)
+        self.assert_group_member(self.project, self.user_new2, True, True)
+
+        flow_data = {
+            'roles_add': [],
+            'roles_delete': [
+                get_flow_role(
+                    self.project,
+                    self.user_new,
+                    ROLE_RANKING[PROJECT_ROLE_OWNER],
+                ),
+                get_flow_role(
+                    self.project,
+                    self.user_new2,
+                    ROLE_RANKING[PROJECT_ROLE_DELEGATE],
+                ),
+            ],
+        }
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='role_update_irods_batch',
+            flow_data=flow_data,
+        )
+        self.build_and_run(flow)
+
+        self.assert_group_member(self.project, self.user_new, False, False)
+        self.assert_group_member(self.project, self.user_new2, False, False)
+
+    def test_update_to_owner(self):
+        """Test role_update_irods_batch with updating user to owner"""
+        self.irods.users.create(
+            self.user_new.username, 'rodsuser', settings.IRODS_ZONE
+        )
+        self.project_group.addmember(self.user_new.username)
+        self.assert_group_member(self.project, self.user_new, True, False)
+        flow_data = {
+            'roles_add': [
+                get_flow_role(
+                    self.project,
+                    self.user_new,
+                    ROLE_RANKING[PROJECT_ROLE_DELEGATE],
+                )
+            ],
+            'roles_delete': [],
+        }
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='role_update_irods_batch',
+            flow_data=flow_data,
+        )
+        self.taskflow.run_flow(flow, self.project)
+        self.assert_group_member(self.project, self.user_new, True, True)
+
+    def test_update_from_owner(self):
+        """Test role_update_irods_batch with updating user from owner"""
+        self.irods.users.create(
+            self.user_new.username, 'rodsuser', settings.IRODS_ZONE
+        )
+        self.project_group.addmember(self.user_new.username)
+        self.owner_group.addmember(self.user_new.username)
+        self.assert_group_member(self.project, self.user_new, True, True)
+        flow_data = {
+            'roles_add': [
+                get_flow_role(
+                    self.project,
+                    self.user_new,
+                    ROLE_RANKING[PROJECT_ROLE_CONTRIBUTOR],
+                )
+            ],
+            'roles_delete': [],
+        }
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='role_update_irods_batch',
+            flow_data=flow_data,
+        )
+        self.taskflow.run_flow(flow, self.project)
+        self.assert_group_member(self.project, self.user_new, True, False)
 
 
 class TestSheetCollsCreate(
@@ -1914,7 +2206,7 @@ class TestSheetCollsCreate(
         self.project, self.owner_as = self.make_project_taskflow(
             'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
         )
-        self.group_name = self.irods_backend.get_user_group_name(self.project)
+        self.project_group = self.irods_backend.get_group_name(self.project)
         self.project_path = self.irods_backend.get_path(self.project)
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
@@ -1939,18 +2231,18 @@ class TestSheetCollsCreate(
         self.assertEqual(self.investigation.irods_status, True)
         self.assertEqual(self.irods.collections.exists(self.sample_path), True)
         self.assert_irods_access(
-            self.group_name, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, self.irods_access_read
         )
         self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
         results_path = os.path.join(self.sample_path, RESULTS_COLL)
         self.assertEqual(self.irods.collections.exists(results_path), True)
         self.assert_irods_access(
-            self.group_name, results_path, self.irods_access_read
+            self.project_group, results_path, self.irods_access_read
         )
         misc_path = os.path.join(self.sample_path, MISC_FILES_COLL)
         self.assertEqual(self.irods.collections.exists(misc_path), True)
         self.assert_irods_access(
-            self.group_name, misc_path, self.irods_access_read
+            self.project_group, misc_path, self.irods_access_read
         )
 
     def test_create_locked(self):
@@ -1985,7 +2277,7 @@ class TestSheetCollsCreate(
 
         self.assertEqual(self.irods.collections.exists(self.sample_path), True)
         self.assert_irods_access(
-            self.group_name, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, self.irods_access_read
         )
         self.assert_irods_access(
             PUBLIC_GROUP, self.sample_path, self.irods_access_read
@@ -2013,7 +2305,7 @@ class TestSheetCollsCreate(
 
         self.assertEqual(self.irods.collections.exists(self.sample_path), True)
         self.assert_irods_access(
-            self.group_name, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, self.irods_access_read
         )
         self.assert_irods_access(
             PUBLIC_GROUP, self.sample_path, self.irods_access_read
@@ -2079,7 +2371,7 @@ class TestSheetDelete(
         self.project, self.owner_as = self.make_project_taskflow(
             'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
         )
-        self.group_name = self.irods_backend.get_user_group_name(self.project)
+        self.project_group = self.irods_backend.get_group_name(self.project)
         self.project_path = self.irods_backend.get_path(self.project)
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)

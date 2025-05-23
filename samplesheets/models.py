@@ -1173,7 +1173,8 @@ class IrodsAccessTicket(models.Model):
 
     #: Path
     path = models.CharField(
-        max_length=DEFAULT_LENGTH, help_text='Path to iRODS collection'
+        max_length=DEFAULT_LENGTH,
+        help_text='Path to iRODS collection or data object',
     )
 
     #: Label for ticket (optional)
@@ -1198,11 +1199,18 @@ class IrodsAccessTicket(models.Model):
         auto_now_add=True, help_text='DateTime of ticket creation'
     )
 
-    #: Date ticket expires
+    #: Expiry date
     date_expires = models.DateTimeField(
         null=True,
         blank=True,
         help_text='DateTime of ticket expiration (leave unset to never expire)',
+    )
+
+    #: Allowed hosts
+    allowed_hosts = models.CharField(
+        null=True,
+        blank=True,
+        help_text='Comma-separated list of allowed hosts (optional)',
     )
 
     #: SODAR UUID for the object
@@ -1278,6 +1286,12 @@ class IrodsAccessTicket(models.Model):
             ticket=self.ticket,
             path=self.path,
         )
+
+    def get_allowed_hosts_list(self):
+        """Return allowed_hosts as list"""
+        if not self.allowed_hosts:
+            return []
+        return [h.strip() for h in self.allowed_hosts.split(',') if h.strip()]
 
     def is_active(self):
         return self.date_expires is None or self.date_expires >= timezone.now()

@@ -9,6 +9,7 @@ import re
 import string
 import uuid
 
+from base64 import b64decode, b64encode
 from contextlib import contextmanager
 
 from irods.api_number import api_number
@@ -54,10 +55,14 @@ ENV_INT_PARAMS = [
     'irods_port',
 ]
 USER_GROUP_TEMPLATE = 'omics_project_{uuid}'
+OWNER_GROUP_TEMPLATE = USER_GROUP_TEMPLATE + '_owner'
+IRODS_SHA256_PREFIX = 'sha2:'
 TRASH_COLL_NAME = 'trash'
 PATH_PARENT_SUBSTRING = '/..'
 ERROR_PATH_PARENT = 'Use of parent not allowed in path'
 ERROR_PATH_UNSET = 'Path is not set'
+TICKET_MODE_READ = 'read'
+TICKET_MODE_WRITE = 'write'
 
 
 class IrodsAPI:
@@ -391,11 +396,12 @@ class IrodsAPI:
             return s.group(1)
 
     @classmethod
-    def get_user_group_name(cls, project):
+    def get_group_name(cls, project, owner=False):
         """
         Return iRODS user group name for project.
 
         :param project: Project object or project UUID
+        :param owner: Return owner and delegate group name if True (bool)
         :return: String
         """
         if isinstance(project, (uuid.UUID, str)):
@@ -403,6 +409,8 @@ class IrodsAPI:
         else:
             cls._validate_project(project)
             project_uuid = project.sodar_uuid
+        if owner:
+            return OWNER_GROUP_TEMPLATE.format(uuid=project_uuid)
         return USER_GROUP_TEMPLATE.format(uuid=project_uuid)
 
     # TODO: Add tests
@@ -412,7 +420,6 @@ class IrodsAPI:
         view,
         project=None,
         path='',
-        md5=False,
         colls=False,
         method='GET',
         absolute=False,
@@ -424,7 +431,6 @@ class IrodsAPI:
         :param view: View of the URL ("stats" or "list")
         :param path: Full iRODS path (string)
         :param project: Project object or None
-        :param md5: Include MD5 or not for a list view (boolean, default=False)
         :param colls: Include collections in list (boolean, default=False)
         :param method: Method for the function (string)
         :param absolute: Whether or not an absolute URI is required (boolean)
@@ -443,12 +449,46 @@ class IrodsAPI:
         if method == 'GET':
             query_string = {'path': cls.sanitize_path(path)}
             if view == 'list':
-                query_string['md5'] = int(md5)
                 query_string['colls'] = int(colls)
             rev_url += '?' + urlencode(query_string)
         if absolute and request:
             return request.build_absolute_uri(rev_url)
         return rev_url
+
+    @classmethod
+    def get_checksum_file_suffix(cls):
+        """
+        Return checksum file suffix according to site settings.
+
+        :return: String (".md5" or ".sha256")
+        """
+        # NOTE: Invalid setting is already caught by Django checks
+        return '.' + settings.IRODS_HASH_SCHEME.lower()
+
+    @classmethod
+    def get_sha256_base64(cls, hex_str, prefix=True):
+        """
+        Convert SHA256 checksum from hex into base64 as stored in iRODS.
+
+        :param hex_str: String containing SHA256 checksum as hex
+        :param prefix: Include "sha2:" prefix in return data if True (bool)
+        :return: String containing base64 encoded checksum
+        """
+        ret = b64encode(bytes.fromhex(hex_str)).decode()
+        return (IRODS_SHA256_PREFIX + ret) if prefix else ret
+
+    @classmethod
+    def get_sha256_hex(cls, base64_str):
+        """
+        Convert SHA256 checksum base64 from into hex. Strips "sha2:" prefix if
+        present.
+
+        :param base64_str: String containing SHA256 checksum as hex
+        :return: String, containing checksum as lowercase hex
+        """
+        if base64_str.startswith(IRODS_SHA256_PREFIX):
+            base64_str = base64_str.split(IRODS_SHA256_PREFIX)[1]
+        return b64decode(base64_str).hex()
 
     # iRODS Operations ---------------------------------------------------------
 
@@ -506,12 +546,14 @@ class IrodsAPI:
         """
         return '.'.join(str(x) for x in irods.server_version)
 
-    def get_object_stats(self, irods, path):
+    def get_stats(self, irods, path, include_colls=False):
         """
-        Return file count and total file size for all files within a path.
+        Return file count, total file size and optional subcollection count
+        within an iRODS path.
 
         :param irods: iRODSSession object
         :param path: Full path to iRODS collection
+        :param include_colls: Include subcollection count (bool, default=False)
         :return: Dict
         """
         try:
@@ -519,7 +561,7 @@ class IrodsAPI:
         except CollectionDoesNotExist:
             raise FileNotFoundError('iRODS collection not found')
 
-        ret = {'file_count': 0, 'total_size': 0}
+        ret = {}
         sql = (
             'SELECT COUNT(data_id) as file_count, '
             'SUM(data_size) as total_size '
@@ -528,6 +570,7 @@ class IrodsAPI:
             'WHERE (coll_name = \'{coll_path}\' '
             'OR coll_name LIKE \'{coll_path}/%\') '
             'AND data_name NOT LIKE \'%.md5\' '
+            'AND data_name NOT LIKE \'%.sha256\' '
             'GROUP BY data_id, data_size) AS sub_query'.format(
                 coll_path=coll.path
             )
@@ -543,11 +586,21 @@ class IrodsAPI:
             pass
         except Exception as ex:
             logger.error(
-                'iRODS exception in get_object_stats(): {}; '
-                'SQL = "{}"'.format(ex.__class__.__name__, sql)
+                f'iRODS exception in get_stats(): '
+                f'{ex.__class__.__name__}; SQL = "{sql}"'
             )
+            raise ex
         finally:
             query.remove()
+
+        if include_colls:
+            try:
+                ret['coll_count'] = len(self.get_colls_recursively(coll))
+            except Exception as ex:
+                logger.error(
+                    f'Exception in get_stats() for collection count: {ex}'
+                )
+                raise ex
         return ret
 
     @classmethod
@@ -568,10 +621,12 @@ class IrodsAPI:
         self,
         irods,
         coll,
-        include_md5=False,
+        include_checksum=False,
         name_like=None,
         limit=None,
+        offset=None,
         api_format=False,
+        checksum=False,
     ):
         """
         Return objects below a coll recursively. Replacement for the
@@ -580,25 +635,34 @@ class IrodsAPI:
 
         :param irods: iRODSSession object
         :param coll: Collection object
-        :param include_md5: if True, include .md5 files
+        :param include_checksum: if True, include .md5/.sha256 files
         :param name_like: Filtering of file names (string or list of strings)
-        :param limit: Limit retrieval to n rows (int)
+        :param limit: Limit retrieval to N rows (int or None)
+        :param offset: Offset retrieval by N rows (int or None)
         :param api_format: Format data for REST API (bool, default=False)
-        :return: List
+        :param checksum: Include checksum in info (bool, default=False)
+        :return: List of dicts
         """
         ret = []
-        md5_filter = '' if include_md5 else 'AND data_name NOT LIKE \'%.md5\''
+        chk_filter = (
+            ''
+            if include_checksum
+            else 'AND data_name NOT LIKE \'%.md5\' AND data_name NOT LIKE '
+            '\'%.sha256\''
+        )
         path_lookup = []
         q_count = 1
 
         def _do_query(irods, nl=None):
             sql = (
                 'SELECT DISTINCT ON (data_id) data_name, data_size, '
-                'r_data_main.modify_ts as modify_ts, coll_name '
+                'r_data_main.modify_ts as modify_ts, coll_name{checksum}'
                 'FROM r_data_main JOIN r_coll_main USING (coll_id) '
                 'WHERE (coll_name = \'{coll_path}\' '
-                'OR coll_name LIKE \'{coll_path}/%\') {md5_filter}'.format(
-                    coll_path=coll.path, md5_filter=md5_filter
+                'OR coll_name LIKE \'{coll_path}/%\') {chk_filter}'.format(
+                    checksum=', data_checksum ' if checksum else ' ',
+                    coll_path=coll.path,
+                    chk_filter=chk_filter,
                 )
             )
             if nl:
@@ -610,9 +674,10 @@ class IrodsAPI:
                         sql += ' OR '
                     sql += 'data_name LIKE \'%{}%\''.format(n)
                 sql += ')'
-            # TODO: Shouldn't we also allow limit if including .md5 files?
-            if not include_md5 and limit:
+            if limit:
                 sql += ' LIMIT {}'.format(limit)
+            if offset:
+                sql += ' OFFSET {}'.format(offset)
 
             # logger.debug('Object list query = "{}"'.format(sql))
             columns = [
@@ -621,6 +686,8 @@ class IrodsAPI:
                 DataObject.modify_time,
                 Collection.name,
             ]
+            if checksum:
+                columns.append(DataObject.checksum)
             query = self.get_query(irods, sql, columns)
 
             try:
@@ -629,17 +696,18 @@ class IrodsAPI:
                     obj_path = row[Collection.name] + '/' + row[DataObject.name]
                     if q_count > 1 and obj_path in path_lookup:
                         continue  # Skip possible dupes in case of split query
-                    ret.append(
-                        {
-                            'name': row[DataObject.name],
-                            'type': 'obj',
-                            'path': obj_path,
-                            'size': row[DataObject.size],
-                            'modify_time': self._get_datetime(
-                                row[DataObject.modify_time], api_format
-                            ),
-                        }
-                    )
+                    d = {
+                        'name': row[DataObject.name],
+                        'type': 'obj',
+                        'path': obj_path,
+                        'size': row[DataObject.size],
+                        'modify_time': self._get_datetime(
+                            row[DataObject.modify_time], api_format
+                        ),
+                    }
+                    if checksum:
+                        d['checksum'] = row[DataObject.checksum]
+                    ret.append(d)
                     if q_count > 1:
                         path_lookup.append(obj_path)
             except CAT_NO_ROWS_FOUND:
@@ -670,23 +738,27 @@ class IrodsAPI:
         self,
         irods,
         path,
-        include_md5=False,
+        include_checksum=False,
         include_colls=False,
         name_like=None,
         limit=None,
+        offset=None,
         api_format=False,
+        checksum=False,
     ):
         """
         Return a flat iRODS object list recursively under a given path.
 
         :param irods: iRODSSession object
         :param path: Full path to iRODS collection
-        :param include_md5: Include .md5 checksum files (bool)
+        :param include_checksum: Include .md5/.sha256 files (bool)
         :param include_colls: Include collections (bool)
         :param name_like: Filtering of file names (string or list of strings)
-        :param limit: Limit search to n rows (int)
+        :param limit: Limit retrieval to N rows (int or None)
+        :param offset: Offset retrieval by N rows (int or None)
         :param api_format: Format data for REST API (bool, default=False)
-        :return: List
+        :param checksum: Include checksum in info (bool, default=False)
+        :return: List of dicts
         :raise: FileNotFoundError if collection is not found
         """
         try:
@@ -701,19 +773,25 @@ class IrodsAPI:
         ret = self.get_objs_recursively(
             irods,
             coll,
-            include_md5=include_md5,
+            include_checksum=include_checksum,
             name_like=name_like,
-            limit=limit,
+            limit=limit if not include_colls else None,  # See #2159
+            offset=offset if not include_colls else None,
             api_format=api_format,
+            checksum=checksum,
         )
 
         # Add collections if enabled
-        # TODO: Combine into a single query? (see issues #1440, #1883)
+        # TODO: Combine into a single query? (see #1883)
         if include_colls:
             colls = self.get_colls_recursively(coll)
             for c in colls:
                 ret.append({'name': c.name, 'type': 'coll', 'path': c.path})
             ret = sorted(ret, key=lambda x: x['path'])
+            if offset:  # See #2159
+                ret = ret[offset:]
+            if limit:
+                ret = ret[:limit]
         return ret
 
     @classmethod
@@ -749,32 +827,49 @@ class IrodsAPI:
         return query
 
     def issue_ticket(
-        self, irods, mode, path, ticket_str=None, expiry_date=None
+        self,
+        irods,
+        mode,
+        path,
+        ticket_str=None,
+        date_expires=None,
+        allowed_hosts=None,
     ):
         """
-        Issue ticket for a specific iRODS collection.
+        Issue ticket for a specific iRODS collection or data object.
 
         :param irods: iRODSSession object
         :param mode: "read" or "write"
         :param path: iRODS path for creating the ticket
         :param ticket_str: String to use as the ticket
-        :param expiry_date: Expiry date (DateTime object, optional)
+        :param date_expires: Expiry date (DateTime object, optional)
+        :param allowed_hosts: Restrict access to given hosts (string or list,
+                              optional)
         :return: irods client Ticket object
         """
+        if isinstance(allowed_hosts, str):
+            allowed_hosts = allowed_hosts.split(',')
+        mode = mode.lower()
+        if mode not in [TICKET_MODE_READ, TICKET_MODE_WRITE]:
+            raise ValueError(
+                f'Invalid ticket mode "{mode}" (accepted: {TICKET_MODE_READ}, '
+                f'{TICKET_MODE_WRITE})'
+            )
         ticket = Ticket(irods, ticket=ticket_str)
         ticket.issue(mode, self.sanitize_path(path))
         # Remove default file writing limitation
-        self._send_request(
-            irods,
-            'TICKET_ADMIN_AN',
-            'mod',
-            ticket._ticket,
-            'write-file',
-            '0',
-        )
+        if mode == TICKET_MODE_WRITE:
+            self._send_request(
+                irods,
+                'TICKET_ADMIN_AN',
+                'mod',
+                ticket._ticket,
+                'write-file',
+                '0',
+            )
         # Set expiration
-        if expiry_date:
-            exp_str = expiry_date.strftime('%Y-%m-%d.%H:%M:%S')
+        if date_expires:
+            exp_str = date_expires.strftime('%Y-%m-%d.%H:%M:%S')
             self._send_request(
                 irods,
                 'TICKET_ADMIN_AN',
@@ -783,7 +878,81 @@ class IrodsAPI:
                 'expire',
                 exp_str,
             )
+        if allowed_hosts:
+            for host in allowed_hosts:
+                self._send_request(
+                    irods,
+                    'TICKET_ADMIN_AN',
+                    'mod',
+                    ticket._ticket,
+                    'add',
+                    'host',
+                    host,
+                )
         return ticket
+
+    def update_ticket(
+        self, irods, ticket_str, date_expires=None, allowed_hosts=None
+    ):
+        """
+        Update ticket in iRODS. Allows updating the expiry date and allowed
+        hosts.
+
+        :param irods: iRODSSession object
+        :param ticket_str: String to identify the ticket
+        :param date_expires: Expiry date (DateTime object, optional)
+        :param allowed_hosts: Restrict access to given hosts (string or list,
+                              optional)
+        """
+        if not allowed_hosts:
+            allowed_hosts = []
+        elif isinstance(allowed_hosts, str):
+            allowed_hosts = allowed_hosts.split(',')
+        if date_expires:
+            exp_str = date_expires.strftime('%Y-%m-%d.%H:%M:%S')
+        else:
+            exp_str = ''
+        # Update expiry
+        self._send_request(
+            irods, 'TICKET_ADMIN_AN', 'mod', ticket_str, 'expire', exp_str
+        )
+        # Update hosts
+        ticket_query = irods.query(TicketQuery.Ticket).filter(
+            TicketQuery.Ticket.string == ticket_str
+        )
+        ticket_res = list(ticket_query)[0]
+        # Query for current list of hosts
+        host_query = irods.query(TicketQuery.AllowedHosts).filter(
+            TicketQuery.AllowedHosts.ticket_id
+            == ticket_res[TicketQuery.Ticket.id]
+        )
+        host_res = list(host_query)
+        if host_res:
+            host_res = [h[TicketQuery.AllowedHosts.host] for h in host_res]
+        # If host in iRODS is not in arg, remove
+        for host in host_res:
+            if host not in allowed_hosts:
+                self._send_request(
+                    irods,
+                    'TICKET_ADMIN_AN',
+                    'mod',
+                    ticket_str,
+                    'remove',
+                    'host',
+                    host,
+                )
+        # If host in arg is not in the iRODS, add
+        for host in allowed_hosts:
+            if host not in host_res:
+                self._send_request(
+                    irods,
+                    'TICKET_ADMIN_AN',
+                    'mod',
+                    ticket_str,
+                    'add',
+                    'host',
+                    host,
+                )
 
     def get_ticket(self, irods, ticket_str):
         """

@@ -82,3 +82,13 @@ If local users are enabled on the site and you have a local SODAR account, the
 profile also includes the :guilabel:`Update User` button. This opens a form in
 which you can update your details and password. This form is **not** available
 for users authenticating with an existing user account via LDAP.
+
+
+Deactivating Your Account
+=========================
+
+Currently, only administrators are able to deactivate user accounts. To get
+your user account deactivated, contact your instance's support email or
+administrators. After deactivation you will no longer be able to log in to the
+SODAR instance or access the REST API. You will also not receive any further
+notification emails from the server.

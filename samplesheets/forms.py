@@ -67,13 +67,15 @@ class IrodsAccessTicketValidateMixin:
             # Ensure path is within project
             if not data['path'].startswith(irods_backend.get_path(project)):
                 return 'path', 'Path is not within the project'
-            # Ensure path is a collection
+            # Ensure collection or data object exists
             with irods_backend.get_session() as irods:
-                if not irods.collections.exists(data['path']):
+                if not irods.collections.exists(
+                    data['path']
+                ) and not irods.data_objects.exists(data['path']):
                     return (
                         'path',
-                        'Path does not point to a collection or '
-                        'the collection doesn\'t exist',
+                        'Collection or data object does not exist in the given '
+                        'iRODS path',
                     )
             # Ensure path is within a project assay
             match = re.search(
@@ -95,7 +97,7 @@ class IrodsAccessTicketValidateMixin:
             if data['path'] == irods_backend.get_path(data['assay']):
                 return (
                     'path',
-                    'Ticket creation for assay root path is not ' 'allowed',
+                    'Ticket creation for assay root path is not allowed',
                 )
 
         # Check if expiry date is in the past
@@ -436,7 +438,7 @@ class IrodsAccessTicketForm(IrodsAccessTicketValidateMixin, forms.ModelForm):
 
     class Meta:
         model = IrodsAccessTicket
-        fields = ('path', 'label', 'date_expires')
+        fields = ('path', 'label', 'date_expires', 'allowed_hosts')
 
     def __init__(self, project=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -444,32 +446,55 @@ class IrodsAccessTicketForm(IrodsAccessTicketValidateMixin, forms.ModelForm):
             self.project = self.instance.get_project()
         else:
             self.project = project
-        # Update path help and hide in update
+        # Update path help and disable in update
         path_help = (
-            'Full path to iRODS collection: collection must be within '
-            'an assay of the project'
+            'Full path to iRODS collection or data object within an assay '
+            'collection in this project'
         )
         self.fields['path'].help_text = path_help
         if self.instance.path:
-            self.fields['path'].widget = forms.widgets.HiddenInput()
+            self.fields['path'].disabled = True
             self.fields['path'].required = False
         # Add date input widget to expiry date field
         self.fields['date_expires'].label = 'Expiry date'
         self.fields['date_expires'].widget = forms.widgets.DateInput(
             attrs={'type': 'date'}, format='%Y-%m-%d'
         )
+        # Set/format initial allowed hosts value
+        if self.instance.pk:
+            self.initial['allowed_hosts'] = ', '.join(
+                self.instance.get_allowed_hosts_list()
+            )
+        else:
+            default_hosts = app_settings.get(
+                APP_NAME, 'irods_ticket_hosts', project=project
+            )
+            if default_hosts:
+                self.initial['allowed_hosts'] = ', '.join(
+                    [h.strip() for h in default_hosts.split(',') if h.strip()]
+                )
+            else:
+                self.initial['allowed_hosts'] = ''
 
     def clean(self):
         cleaned_data = super().clean()
         irods_backend = get_backend_api('omics_irods')
         if self.instance.pk:
             cleaned_data['path'] = self.instance.path
+        if cleaned_data['allowed_hosts']:
+            cleaned_data['allowed_hosts'] = ','.join(
+                [
+                    h.strip()
+                    for h in cleaned_data['allowed_hosts'].split(',')
+                    if h.strip()
+                ]
+            )
         error = self.validate_data(
             irods_backend, self.project, self.instance, cleaned_data
         )
         if error:
             self.add_error(*error)
-        return self.cleaned_data
+        return cleaned_data
 
 
 class IrodsDataRequestForm(IrodsDataRequestValidateMixin, forms.ModelForm):

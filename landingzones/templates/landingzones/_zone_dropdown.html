@@ -3,10 +3,9 @@
 
 {% has_perm 'landingzones.update_zone_own' request.user project as can_update_own %}
 {% has_perm 'landingzones.update_zone_all' request.user project as can_update_all %}
-{% has_perm 'landingzones.move_zone_own' request.user project as can_move_own %}
-{% has_perm 'landingzones.move_zone_all' request.user project as can_move_all %}
 {% has_perm 'landingzones.delete_zone_own' request.user project as can_delete_own %}
 {% has_perm 'landingzones.delete_zone_all' request.user project as can_delete_all %}
+{% can_move_zone zone request.user as can_move %}
 
 <div class="btn-group sodar-list-btn-group sodar-lz-zone-dropdown"
      id="sodar-lz-zone-dropdown-{{ zone.sodar_uuid }}">
@@ -28,21 +27,17 @@
       {% endfor %}
     {% endif %}
     {# General options #}
-    {% if zone.status != 'MOVED' and can_move_all or zone.user == request.user and can_move_own %}
-      <a class="dropdown-item sodar-lz-zone-btn-validate"
-         href="{% url 'landingzones:validate' landingzone=zone.sodar_uuid %}">
-    {% else %}
-      <a class="dropdown-item disabled sodar-lz-zone-btn-validate" href="#">
-    {% endif %}
+    <a class="dropdown-item sodar-lz-zone-btn-validate
+              {% if zone_validate_limit or not can_move %}disabled{% endif %}"
+       data-can-move="{{ can_move|yesno:'1,0' }}"
+       href="{% url 'landingzones:validate' landingzone=zone.sodar_uuid %}">
       <i class="iconify" data-icon="mdi:check-thick"></i>
       Validate Files
     </a>
-    {% if zone.status != 'MOVED' and can_move_all or zone.user == request.user and can_move_own %}
-      <a class="dropdown-item sodar-lz-zone-btn-move"
-         href="{% url 'landingzones:move' landingzone=zone.sodar_uuid %}">
-    {% else %}
-      <a class="dropdown-item disabled sodar-lz-zone-btn-move" href="#">
-    {% endif %}
+    <a class="dropdown-item sodar-lz-zone-btn-move
+              {% if project_lock or zone_validate_limit or not can_move %}disabled{% endif %}"
+       data-can-move="{{ can_move|yesno:'1,0' }}"
+       href="{% url 'landingzones:move' landingzone=zone.sodar_uuid %}">
       <i class="iconify" data-icon="mdi:arrow-right-bold-hexagon-outline"></i>
       Validate and Move
     </a>

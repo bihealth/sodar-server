@@ -38,6 +38,7 @@ BASIC_AUTH_NOT_ENABLED_MSG = 'IRODS_SODAR_AUTH not enabled'
 # Ajax Views -------------------------------------------------------------------
 
 
+# NOTE: Also used in samplesheets.views_ajax.IrodsObjectListAjaxView (see #2145)
 class BaseIrodsAjaxView(SODARBaseProjectAjaxView):
     """Base iRODS Ajax API View"""
 
@@ -92,12 +93,12 @@ class BaseIrodsAjaxView(SODARBaseProjectAjaxView):
         # In python-irodsclient v2.0+, acls don't return users based on group
         # membership. Instead, we need to check against project user group and
         # then verify membership.
-        group_name = self.irods_backend.get_user_group_name(self.project)
+        project_group = self.irods_backend.get_group_name(self.project)
         try:
-            group = irods.groups.get(group_name)
+            group = irods.groups.get(project_group)
         except Exception:
             return False
-        if group_name in perm_users and user.username in [
+        if project_group in perm_users and user.username in [
             m.name for m in group.members
         ]:
             return True
@@ -159,7 +160,7 @@ class IrodsStatisticsAjaxView(BaseIrodsAjaxView):
     def get(self, *args, **kwargs):
         try:
             with self.irods_backend.get_session() as irods:
-                stats = self.irods_backend.get_object_stats(irods, self.path)
+                stats = self.irods_backend.get_stats(irods, self.path)
             return Response(stats, status=200)
         except Exception as ex:
             return Response(self._get_detail(ex), status=500)
@@ -180,7 +181,7 @@ class IrodsStatisticsAjaxView(BaseIrodsAjaxView):
             else:
                 try:
                     if irods.collections.exists(p):
-                        stats = self.irods_backend.get_object_stats(irods, p)
+                        stats = self.irods_backend.get_stats(irods, p)
                         d.update(stats)
                         d['status'] = 200
                     else:
@@ -190,41 +191,6 @@ class IrodsStatisticsAjaxView(BaseIrodsAjaxView):
             ret[p] = d
         irods.cleanup()
         return Response({'irods_stats': ret}, status=200)
-
-
-class IrodsObjectListAjaxView(BaseIrodsAjaxView):
-    """View for listing data objects in iRODS recursively"""
-
-    permission_required = 'irodsbackend.view_files'
-
-    def get(self, request, *args, **kwargs):
-        check_md5 = bool(int(request.GET.get('md5')))
-        include_colls = bool(int(request.GET.get('colls')))
-        # Get files
-        try:
-            with self.irods_backend.get_session() as irods:
-                objs = self.irods_backend.get_objects(
-                    irods,
-                    self.path,
-                    include_md5=check_md5,
-                    include_colls=include_colls,
-                )
-                ret = []
-                md5_paths = []
-                if check_md5:
-                    md5_paths = [
-                        o['path'] for o in objs if o['path'].endswith('.md5')
-                    ]
-                for o in objs:
-                    if o['type'] == 'coll' and include_colls:
-                        ret.append(o)
-                    elif o['type'] == 'obj' and not o['path'].endswith('.md5'):
-                        if check_md5:
-                            o['md5_file'] = o['path'] + '.md5' in md5_paths
-                        ret.append(o)
-            return Response({'irods_data': ret}, status=200)
-        except Exception as ex:
-            return Response(self._get_detail(ex), status=500)
 
 
 # Basic Auth View --------------------------------------------------------------

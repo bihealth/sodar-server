@@ -31,6 +31,8 @@ follows:
 
     Authorization: token 90c2483172515bc8f6d52fd608e5031db3fcdc06d5a83b24bec1688f39b72bcd
 
+.. _api_documentation_versioning:
+
 Versioning
 ----------
 
@@ -59,7 +61,6 @@ Example for the SODAR Server samplesheets API:
 
 For detailed media types and versioning information of each API, see the
 respective application API documentation.
-
 
 Model Access and Permissions
 ----------------------------

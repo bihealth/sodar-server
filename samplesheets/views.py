@@ -745,6 +745,7 @@ class IrodsAccessTicketModifyMixin:
                 'path': ticket.path,
                 'ticket': ticket.ticket,
                 'date_expires': ticket.get_date_expires(),
+                'allowed_hosts': ticket.get_allowed_hosts_list(),
             }
         tl_event = timeline.add_event(
             project=ticket.get_project(),
@@ -780,7 +781,7 @@ class IrodsAccessTicketModifyMixin:
             for a in project.get_roles(
                 max_rank=ROLE_RANKING[PROJECT_ROLE_DELEGATE]
             )
-            if a.user != user
+            if a.user != user and a.user.is_active
         ]
         app_alerts.add_alerts(
             app_name=APP_NAME,
@@ -858,11 +859,10 @@ class IrodsDataRequestModifyMixin:
             for a in project.get_roles(
                 max_rank=ROLE_RANKING[PROJECT_ROLE_DELEGATE]
             )
+            if a.user != self.request.user and a.user.is_active
         ]
         # logger.debug('od_users={}'.format(od_users))  # DEBUG
         for u in od_users:
-            if u == self.request.user:
-                continue  # Skip triggering user
             alert_count = AppAlert.objects.filter(
                 project=project,
                 user=u,
@@ -981,7 +981,11 @@ class IrodsDataRequestModifyMixin:
         flow_name = 'data_delete'
         flow_data = {'paths': [irods_request.path]}
         if irods_request.is_data_object():
-            flow_data['paths'].append(irods_request.path + '.md5')
+            # Remove checksum file
+            hash_scheme = settings.IRODS_HASH_SCHEME
+            flow_data['paths'].append(
+                irods_request.path + '.' + hash_scheme.lower()
+            )
 
         try:
             taskflow.submit(
@@ -1013,6 +1017,7 @@ class IrodsDataRequestModifyMixin:
         if (
             settings.PROJECTROLES_SEND_EMAIL
             and irods_request.user != request.user
+            and irods_request.user.is_active
             and app_settings.get(
                 APP_NAME, 'notify_email_irods_request', user=irods_request.user
             )
@@ -1029,7 +1034,11 @@ class IrodsDataRequestModifyMixin:
             )
 
         # Create app alert
-        if app_alerts and irods_request.user != request.user:
+        if (
+            app_alerts
+            and irods_request.user != request.user
+            and irods_request.user.is_active
+        ):
             app_alerts.add_alert(
                 app_name=APP_NAME,
                 alert_name=IRODS_REQUEST_EVENT_ACCEPT,
@@ -1090,6 +1099,7 @@ class IrodsDataRequestModifyMixin:
         if (
             settings.PROJECTROLES_SEND_EMAIL
             and irods_request.user != request.user
+            and irods_request.user.is_active
             and app_settings.get(
                 APP_NAME, 'notify_email_irods_request', user=irods_request.user
             )
@@ -1106,7 +1116,11 @@ class IrodsDataRequestModifyMixin:
             )
 
         # Create app alert
-        if app_alerts and irods_request.user != request.user:
+        if (
+            app_alerts
+            and irods_request.user != request.user
+            and irods_request.user.is_active
+        ):
             app_alerts.add_alert(
                 app_name=APP_NAME,
                 alert_name=IRODS_REQUEST_EVENT_REJECT,
@@ -1679,7 +1693,7 @@ class SheetDeleteView(
         # NOTE: We handle a possible crash in get()
         with irods_backend.get_session() as irods:
             try:
-                context['irods_file_count'] = irods_backend.get_object_stats(
+                context['irods_file_count'] = irods_backend.get_stats(
                     irods, irods_backend.get_sample_path(project)
                 ).get('file_count')
             except FileNotFoundError:
@@ -2244,7 +2258,7 @@ class IrodsAccessTicketListView(
     """iRODS access ticket list view"""
 
     model = IrodsAccessTicket
-    permission_required = 'samplesheets.edit_ticket'
+    permission_required = 'samplesheets.view_tickets'
     template_name = 'samplesheets/irods_access_tickets.html'
     paginate_by = settings.SHEETS_IRODS_TICKET_PAGINATION
 
@@ -2259,7 +2273,7 @@ class IrodsAccessTicketCreateView(
 ):
     """iRODS access ticket create view"""
 
-    permission_required = 'samplesheets.edit_ticket'
+    permission_required = 'samplesheets.edit_tickets'
     template_name = 'samplesheets/irodsaccessticket_form.html'
     form_class = IrodsAccessTicketForm
 
@@ -2284,7 +2298,8 @@ class IrodsAccessTicketCreateView(
                     'read',
                     form.cleaned_data['path'],
                     ticket_str=build_secret(16),
-                    expiry_date=form.cleaned_data.get('date_expires'),
+                    date_expires=form.cleaned_data.get('date_expires'),
+                    allowed_hosts=form.cleaned_data.get('allowed_hosts'),
                 )
         except Exception as ex:
             messages.error(
@@ -2321,7 +2336,7 @@ class IrodsAccessTicketUpdateView(
 ):
     """iRODS access ticket update view"""
 
-    permission_required = 'samplesheets.edit_ticket'
+    permission_required = 'samplesheets.edit_tickets'
     model = IrodsAccessTicket
     form_class = IrodsAccessTicketForm
     template_name = 'samplesheets/irodsaccessticket_form.html'
@@ -2329,19 +2344,35 @@ class IrodsAccessTicketUpdateView(
     slug_field = 'sodar_uuid'
 
     def form_valid(self, form):
+        irods_backend = get_backend_api('omics_irods')
+        project = self.get_project()
         obj = form.save()
+        redirect_url = reverse(
+            'samplesheets:irods_tickets',
+            kwargs={'project': project.sodar_uuid},
+        )
+        try:
+            with irods_backend.get_session() as irods:
+                irods_backend.update_ticket(
+                    irods,
+                    ticket_str=obj.ticket,
+                    date_expires=form.cleaned_data.get('date_expires'),
+                    allowed_hosts=form.cleaned_data.get('allowed_hosts'),
+                )
+        except Exception as ex:
+            messages.error(
+                self.request,
+                'Exception updating iRODS access ticket: {}'.format(ex),
+            )
+            return redirect(redirect_url)
+
         self.add_tl_event(obj, 'update')
         self.create_app_alerts(obj, 'update', self.request.user)
         messages.success(
             self.request,
             'iRODS access ticket "{}" updated.'.format(obj.get_display_name()),
         )
-        return redirect(
-            reverse(
-                'samplesheets:irods_tickets',
-                kwargs={'project': self.get_project().sodar_uuid},
-            )
-        )
+        return redirect(redirect_url)
 
 
 class IrodsAccessTicketDeleteView(
@@ -2354,7 +2385,7 @@ class IrodsAccessTicketDeleteView(
 ):
     """iRODS access ticket deletion view"""
 
-    permission_required = 'samplesheets.edit_ticket'
+    permission_required = 'samplesheets.edit_tickets'
     template_name = 'samplesheets/irodsaccessticket_confirm_delete.html'
     model = IrodsAccessTicket
     slug_url_kwarg = 'irodsaccessticket'

@@ -9,7 +9,9 @@ from projectroles.models import SODAR_CONSTANTS
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
+# Taskflowbackend dependency
 from taskflowbackend.tests.base import TaskflowPermissionTestBase
+
 from landingzones.tests.test_models import (
     LandingZoneMixin,
     ZONE_TITLE,
@@ -61,7 +63,7 @@ class ZonePermissionTaskflowTestBase(
             self.irods_backend.get_path(self.landing_zone)
         )
         self.irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
-        self.make_irods_md5_object(self.irods_obj)
+        self.make_checksum_object(self.irods_obj)
 
 
 class TestZoneMoveView(ZonePermissionTaskflowTestBase):
@@ -95,9 +97,7 @@ class TestZoneMoveView(ZonePermissionTaskflowTestBase):
         self.assert_response(self.url, good_users, 200)
         self.assert_response(self.url, bad_users, 302)
         self.project.set_public()
-        self.assert_response(
-            self.url, [self.user_no_roles, self.anonymous], 302
-        )
+        self.assert_response(self.url, self.no_role_users, 302)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
@@ -108,43 +108,19 @@ class TestZoneMoveView(ZonePermissionTaskflowTestBase):
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
-        good_users = [self.superuser]
-        bad_users = [
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
-        self.assert_response(self.url, good_users, 200)
-        self.assert_response(self.url, bad_users, 302)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
         self.project.set_public()
-        self.assert_response(
-            self.url, [self.user_no_roles, self.anonymous], 302
-        )
+        self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
     @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
     def test_get_disable(self):
         """Test GET with disabled non-superuser access"""
-        good_users = [self.superuser]
-        bad_users = [
-            self.user_owner_cat,
-            self.user_delegate_cat,
-            self.user_contributor_cat,
-            self.user_guest_cat,
-            self.user_finder_cat,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-            self.user_no_roles,
-            self.anonymous,
-        ]
-        self.assert_response(self.url, good_users, 200)
-        self.assert_response(self.url, bad_users, 302)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)

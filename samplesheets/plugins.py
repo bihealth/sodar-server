@@ -20,6 +20,7 @@ from projectroles.models import Project, SODAR_CONSTANTS
 from projectroles.plugins import (
     ProjectAppPluginPoint,
     ProjectModifyPluginMixin,
+    PluginAppSettingDef,
     PluginObjectLink,
     PluginSearchResult,
     get_backend_api,
@@ -38,10 +39,7 @@ from samplesheets.models import (
 )
 from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.urls import urlpatterns
-from samplesheets.utils import (
-    get_isa_field_name,
-    get_sheets_url,
-)
+from samplesheets.utils import get_isa_field_name, get_sheets_url
 from samplesheets.views import (
     IrodsCollsCreateViewMixin,
     RESULTS_COLL,
@@ -62,13 +60,172 @@ table_builder = SampleSheetTableBuilder()
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 PROJECT_ACTION_CREATE = SODAR_CONSTANTS['PROJECT_ACTION_CREATE']
 PROJECT_ACTION_UPDATE = SODAR_CONSTANTS['PROJECT_ACTION_UPDATE']
+PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
+PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
+PROJECT_ROLE_CONTRIBUTOR = SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR']
 APP_SETTING_SCOPE_PROJECT = SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT']
 APP_SETTING_SCOPE_USER = SODAR_CONSTANTS['APP_SETTING_SCOPE_USER']
 APP_SETTING_SCOPE_PROJECT_USER = SODAR_CONSTANTS[
     'APP_SETTING_SCOPE_PROJECT_USER'
 ]
+APP_SETTING_TYPE_BOOLEAN = SODAR_CONSTANTS['APP_SETTING_TYPE_BOOLEAN']
+APP_SETTING_TYPE_INTEGER = SODAR_CONSTANTS['APP_SETTING_TYPE_INTEGER']
+APP_SETTING_TYPE_JSON = SODAR_CONSTANTS['APP_SETTING_TYPE_JSON']
+APP_SETTING_TYPE_STRING = SODAR_CONSTANTS['APP_SETTING_TYPE_STRING']
 
 # Local constants
+IGV_DEFAULT_GENOME = 'b37_1kg'
+SHEETS_APP_SETTINGS = [
+    PluginAppSettingDef(
+        name='allow_editing',
+        scope=APP_SETTING_SCOPE_PROJECT,
+        type=APP_SETTING_TYPE_BOOLEAN,
+        default=True,
+        label='Allow sample sheet editing',
+        description='Allow editing of project sample sheets by authorized '
+        'users',
+        user_modifiable=True,
+    ),
+    PluginAppSettingDef(
+        name='display_config',
+        scope=APP_SETTING_SCOPE_PROJECT_USER,
+        type=APP_SETTING_TYPE_JSON,
+        label='Sample sheet display configuration',
+        description='User specific JSON configuration for column display in '
+        'project sample sheets',
+    ),
+    PluginAppSettingDef(
+        name='display_config_default',
+        scope=APP_SETTING_SCOPE_PROJECT,
+        type=APP_SETTING_TYPE_JSON,
+        label='Default sample sheet display configuration',
+        description='Default JSON configuration for column display in project '
+        'sample sheets',
+        user_modifiable=False,
+    ),
+    PluginAppSettingDef(
+        name='sheet_config',
+        scope=APP_SETTING_SCOPE_PROJECT,
+        type=APP_SETTING_TYPE_JSON,
+        label='Sample sheet editing configuration',
+        description='JSON configuration for sample sheet editing',
+        user_modifiable=False,
+    ),
+    PluginAppSettingDef(
+        name='sheet_sync_enable',
+        scope=APP_SETTING_SCOPE_PROJECT,
+        type=APP_SETTING_TYPE_BOOLEAN,
+        default=False,
+        label='Enable sheet synchronization',
+        description='Enable sheet synchronization from a source project',
+        user_modifiable=True,
+    ),
+    PluginAppSettingDef(
+        name='sheet_sync_url',
+        scope=APP_SETTING_SCOPE_PROJECT,
+        type=APP_SETTING_TYPE_STRING,
+        default='',
+        label='URL for sheet synchronization',
+        description='REST API URL for sheet synchronization',
+        user_modifiable=True,
+    ),
+    PluginAppSettingDef(
+        name='sheet_sync_token',
+        scope=APP_SETTING_SCOPE_PROJECT,
+        type=APP_SETTING_TYPE_STRING,
+        default='',
+        label='Token for sheet synchronization',
+        description='Access token for sheet synchronization in the source '
+        'project',
+        user_modifiable=True,
+    ),
+    PluginAppSettingDef(
+        name='sheet_table_height',
+        scope=APP_SETTING_SCOPE_USER,
+        type=APP_SETTING_TYPE_INTEGER,
+        options=[250, 400, 600, 800],
+        default=400,
+        label='Sample sheet table height',
+        description='Maximum display height for study and assay tables in '
+        'pixels',
+        user_modifiable=True,
+    ),
+    PluginAppSettingDef(
+        name='public_access_ticket',
+        scope=APP_SETTING_SCOPE_PROJECT,
+        type=APP_SETTING_TYPE_STRING,
+        default='',
+        label='iRODS public access ticket',
+        description='iRODS ticket for read-only anonymous sample data access, '
+        'used with projects allowing public guest access',
+        user_modifiable=False,
+    ),
+    PluginAppSettingDef(
+        name='igv_genome',
+        scope=APP_SETTING_SCOPE_PROJECT,
+        type=APP_SETTING_TYPE_STRING,
+        default=IGV_DEFAULT_GENOME,
+        label='IGV session genome',
+        description='Genome used in generating IGV session files for the '
+        'project. The name needs to be in a format accepted by IGV. Affects '
+        'cancer and germline projects.',
+        user_modifiable=True,
+    ),
+    PluginAppSettingDef(
+        name='igv_omit_bam',
+        scope=APP_SETTING_SCOPE_PROJECT,
+        type=APP_SETTING_TYPE_STRING,
+        default=', '.join(settings.SHEETS_IGV_OMIT_BAM),
+        label='BAM and CRAM paths to omit from IGV sessions',
+        description='Comma-separated list of iRODS path glob patterns for '
+        'omitting BAM and CRAM files from IGV sessions and study shortcuts. '
+        'Overrides site-wide setting, affects cancer and germline projects. '
+        'Update sheet cache after updating this value.',
+        user_modifiable=True,
+    ),
+    PluginAppSettingDef(
+        name='igv_omit_vcf',
+        scope=APP_SETTING_SCOPE_PROJECT,
+        type=APP_SETTING_TYPE_STRING,
+        default=', '.join(settings.SHEETS_IGV_OMIT_VCF),
+        label='VCF paths to omit from IGV sessions',
+        description='Comma-separated list of iRODS path glob patterns for '
+        'omitting VCF files from IGV sessions and study shortcuts. Overrides '
+        'site-wide setting, affects cancer and germline projects. Update sheet '
+        'cache after updating this value.',
+        user_modifiable=True,
+    ),
+    PluginAppSettingDef(
+        name='template_output_dir_display',
+        scope=APP_SETTING_SCOPE_USER,
+        type=APP_SETTING_TYPE_BOOLEAN,
+        default=False,
+        label='Display template output directory field',
+        description='Display output directory field for sample sheet '
+        'templates.',
+        user_modifiable=True,
+    ),
+    PluginAppSettingDef(
+        name='notify_email_irods_request',
+        scope=APP_SETTING_SCOPE_USER,
+        type=APP_SETTING_TYPE_BOOLEAN,
+        default=True,
+        label='Receive email for iRODS data requests',
+        description='Receive email notifications for iRODS data request '
+        'accepting and rejecting',
+        user_modifiable=True,
+    ),
+    PluginAppSettingDef(
+        name='irods_ticket_hosts',
+        scope=APP_SETTING_SCOPE_PROJECT,
+        type=APP_SETTING_TYPE_STRING,
+        default=', '.join(settings.SHEETS_IRODS_TICKET_HOSTS),
+        label='Allowed hosts for iRODS access tickets',
+        description='Default allowed hosts for iRODS access tickets as a '
+        'comma-separated list.',
+        user_modifiable=True,
+    ),
+]
 SHEETS_INFO_SETTINGS = [
     'SHEETS_ALLOW_CRITICAL',
     'SHEETS_API_FILE_EXISTS_RESTRICT',
@@ -78,10 +235,12 @@ SHEETS_INFO_SETTINGS = [
     'SHEETS_EXTERNAL_LINK_PATH',
     'SHEETS_IRODS_LIMIT',
     'SHEETS_IRODS_REQUEST_PAGINATION',
+    'SHEETS_IRODS_TICKET_HOSTS',
     'SHEETS_IRODS_TICKET_PAGINATION',
     'SHEETS_MAX_COLUMN_WIDTH',
     'SHEETS_MIN_COLUMN_WIDTH',
     'SHEETS_ONTOLOGY_URL_SKIP',
+    'SHEETS_PARSER_WARNING_SAVE_LIMIT',
     'SHEETS_SYNC_INTERVAL',
     'SHEETS_VERSION_PAGINATION',
     'SHEETS_IGV_OMIT_BAM',
@@ -90,7 +249,6 @@ SHEETS_INFO_SETTINGS = [
 MATERIAL_SEARCH_TYPES = ['source', 'sample']
 SKIP_MSG_NO_INV = 'No investigation for project'
 SKIP_MSG_NO_COLLS = 'Investigation collections not created in iRODS'
-IGV_DEFAULT_GENOME = 'b37_1kg'
 SYNC_URL_RE = (
     r'/samplesheets/sync/[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]'
     r'{3}-?[a-f0-9]{12}'
@@ -116,149 +274,8 @@ class ProjectAppPlugin(
     #: App URLs (will be included in settings by djangoplugins)
     urls = urlpatterns
 
-    #: App settings definition
-    app_settings = {
-        'allow_editing': {
-            'scope': APP_SETTING_SCOPE_PROJECT,
-            'type': 'BOOLEAN',
-            'label': 'Allow sample sheet editing',
-            'description': 'Allow editing of project sample sheets by '
-            'authorized users',
-            'user_modifiable': True,
-            'default': True,
-        },
-        'display_config': {
-            'scope': APP_SETTING_SCOPE_PROJECT_USER,
-            'type': 'JSON',
-            'label': 'Sample sheet display configuration',
-            'description': 'User specific JSON configuration for column '
-            'display in project sample sheets',
-        },
-        'display_config_default': {
-            'scope': APP_SETTING_SCOPE_PROJECT,
-            'type': 'JSON',
-            'label': 'Default sample sheet display configuration',
-            'description': 'Default JSON configuration for column display in '
-            'project sample sheets',
-            'user_modifiable': False,
-        },
-        'sheet_config': {
-            'scope': APP_SETTING_SCOPE_PROJECT,
-            'type': 'JSON',
-            'label': 'Sample sheet editing configuration',
-            'description': 'JSON configuration for sample sheet editing',
-            'user_modifiable': False,
-        },
-        'edit_config_min_role': {
-            'scope': APP_SETTING_SCOPE_PROJECT,
-            'type': 'STRING',
-            'options': [
-                'superuser',
-                SODAR_CONSTANTS['PROJECT_ROLE_OWNER'],
-                SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE'],
-                SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR'],
-            ],
-            'default': SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR'],
-            'label': 'Minimum role for column configuration editing',
-            'description': 'Allow per-project restriction of column '
-            'configuration updates',
-            'user_modifiable': True,
-        },
-        'sheet_sync_enable': {
-            'scope': APP_SETTING_SCOPE_PROJECT,
-            'type': 'BOOLEAN',
-            'default': False,
-            'label': 'Enable sheet synchronization',
-            'description': 'Enable sheet synchronization from a source project',
-            'user_modifiable': True,
-        },
-        'sheet_sync_url': {
-            'scope': APP_SETTING_SCOPE_PROJECT,
-            'type': 'STRING',
-            'label': 'URL for sheet synchronization',
-            'default': '',
-            'description': 'REST API URL for sheet synchronization',
-            'user_modifiable': True,
-        },
-        'sheet_sync_token': {
-            'scope': APP_SETTING_SCOPE_PROJECT,
-            'type': 'STRING',
-            'label': 'Token for sheet synchronization',
-            'default': '',
-            'description': 'Access token for sheet synchronization in the '
-            'source project',
-            'user_modifiable': True,
-        },
-        'sheet_table_height': {
-            'scope': APP_SETTING_SCOPE_USER,
-            'type': 'INTEGER',
-            'label': 'Sample sheet table height',
-            'options': [250, 400, 600, 800],
-            'default': 400,
-            'description': 'Maximum display height for study and assay tables '
-            'in pixels',
-            'user_modifiable': True,
-        },
-        'public_access_ticket': {
-            'scope': APP_SETTING_SCOPE_PROJECT,
-            'type': 'STRING',
-            'label': 'iRODS public access ticket',
-            'default': '',
-            'description': 'iRODS ticket for read-only anonymous sample data '
-            'access, used with projects allowing public guest access',
-            'user_modifiable': False,
-        },
-        'igv_genome': {
-            'scope': APP_SETTING_SCOPE_PROJECT,
-            'type': 'STRING',
-            'label': 'IGV session genome',
-            'default': IGV_DEFAULT_GENOME,
-            'description': 'Genome used in generating IGV session files for '
-            'the project. The name needs to be in a format accepted by IGV. '
-            'Affects cancer and germline projects.',
-            'user_modifiable': True,
-        },
-        'igv_omit_bam': {
-            'scope': APP_SETTING_SCOPE_PROJECT,
-            'type': 'STRING',
-            'label': 'BAM and CRAM paths to omit from IGV sessions',
-            'default': ', '.join(settings.SHEETS_IGV_OMIT_BAM),
-            'description': 'Comma-separated list of iRODS path glob patterns '
-            'for omitting BAM and CRAM files from IGV sessions and study '
-            'shortcuts. Overrides site-wide setting, affects cancer and '
-            'germline projects. Update sheet cache after updating this value.',
-            'user_modifiable': True,
-        },
-        'igv_omit_vcf': {
-            'scope': APP_SETTING_SCOPE_PROJECT,
-            'type': 'STRING',
-            'label': 'VCF paths to omit from IGV sessions',
-            'default': ', '.join(settings.SHEETS_IGV_OMIT_VCF),
-            'description': 'Comma-separated list of iRODS path glob patterns '
-            'for omitting VCF files from IGV sessions and study shortcuts. '
-            'Overrides site-wide setting, affects cancer and germline '
-            'projects. Update sheet cache after updating this value.',
-            'user_modifiable': True,
-        },
-        'template_output_dir_display': {
-            'scope': APP_SETTING_SCOPE_USER,
-            'type': 'BOOLEAN',
-            'label': 'Display template output directory field',
-            'default': False,
-            'description': 'Display output directory field for sample sheet '
-            'templates.',
-            'user_modifiable': True,
-        },
-        'notify_email_irods_request': {
-            'scope': APP_SETTING_SCOPE_USER,
-            'type': 'BOOLEAN',
-            'default': True,
-            'label': 'Receive email for iRODS data requests',
-            'description': 'Receive email notifications for iRODS data '
-            'request accepting and rejecting',
-            'user_modifiable': True,
-        },
-    }
+    #: App setting definitions
+    app_settings = SHEETS_APP_SETTINGS
 
     #: Iconify icon
     icon = 'mdi:flask'
@@ -1079,9 +1096,9 @@ class SampleSheetAssayPluginPoint(PluginPoint):
                     for path in row_paths:
                         try:
                             cache_data['paths'][path] = (
-                                self.irods_backend.get_object_stats(irods, path)
+                                self.irods_backend.get_stats(irods, path)
                             )
-                        except FileNotFoundError:
+                        except Exception:
                             cache_data['paths'][path] = None
                 cache_backend.set_cache_item(
                     name=item_name,

@@ -57,12 +57,16 @@ User Icon
 Home
     Click this to return to this home view.
 Available Projects
-    The list of categories and projects to which you have access. The list
-    columns contain shortcuts for creating or accessing landing zones, browsing
-    the project's sample data via WebDAV, and viewing or importing sample sheets
-    into a project.
+    A paginated list of categories and projects to which you have access. The
+    list columns contain shortcuts for creating or accessing landing zones,
+    browsing the project's sample data via WebDAV, and viewing or importing
+    sample sheets into a project.
 Starred Button
     Filter projects to those that you have favourited by clicking on the star
     icon in the project views.
+Page Dropdown
+    Choose how many categories and projects are displayed on each page of the
+    list. This value will be saved for subsequent visits to the site. Pagination
+    controls will appear on the bottom of the list.
 Filter
     Filter projects and categories to those containing a search string.

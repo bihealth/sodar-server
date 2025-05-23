@@ -1,8 +1,11 @@
 """API view model serializers for the samplesheets app"""
 
-from rest_framework import serializers
+from packaging.version import parse as parse_version
+from typing import Optional
 
 from django.utils import timezone
+
+from rest_framework import serializers
 
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
@@ -42,7 +45,7 @@ class AssaySerializer(SODARNestedListSerializer):
         ]
         read_only_fields = fields
 
-    def get_irods_path(self, obj):
+    def get_irods_path(self, obj: Assay) -> Optional[str]:
         irods_backend = get_backend_api('omics_irods')
         if irods_backend and obj.study.investigation.irods_status:
             return irods_backend.get_path(obj)
@@ -70,7 +73,7 @@ class StudySerializer(SODARNestedListSerializer):
         ]
         read_only_fields = fields
 
-    def get_irods_path(self, obj):
+    def get_irods_path(self, obj: Study) -> Optional[str]:
         irods_backend = get_backend_api('omics_irods')
         if irods_backend and obj.investigation.irods_status:
             return irods_backend.get_path(obj)
@@ -147,6 +150,7 @@ class IrodsAccessTicketSerializer(
 ):
     """Serializer for the IrodsAccessTicket model"""
 
+    allowed_hosts = serializers.ListField()
     is_active = serializers.SerializerMethodField()
     user = serializers.SlugRelatedField(slug_field='sodar_uuid', read_only=True)
 
@@ -161,6 +165,7 @@ class IrodsAccessTicketSerializer(
             'date_created',
             'date_expires',
             'label',
+            'allowed_hosts',
             'is_active',
             'sodar_uuid',
         ]
@@ -168,7 +173,7 @@ class IrodsAccessTicketSerializer(
             f for f in fields if f not in ['path', 'label', 'date_expires']
         ]
 
-    def get_is_active(self, obj):
+    def get_is_active(self, obj: IrodsAccessTicket) -> bool:
         if not obj.date_expires:
             return True
         return obj.date_expires > timezone.now()
@@ -196,6 +201,12 @@ class IrodsAccessTicketSerializer(
             attrs['path'] = self.instance.path
             attrs['assay'] = self.instance.assay
 
+        attrs['allowed_hosts'] = (
+            ','.join(attrs['allowed_hosts'])
+            if attrs.get('allowed_hosts')
+            else None
+        )
+
         error = self.validate_data(
             irods_backend, self.context['project'], self.instance, attrs
         )
@@ -209,4 +220,11 @@ class IrodsAccessTicketSerializer(
         ret['assay'] = (
             str(instance.assay.sodar_uuid) if instance.assay else None
         )
+        # If API version <1.1, omit allowed_hosts
+        if parse_version(self.context['request'].version) >= parse_version(
+            '1.1'
+        ):
+            ret['allowed_hosts'] = instance.get_allowed_hosts_list()
+        else:
+            ret.pop('allowed_hosts', None)
         return ret

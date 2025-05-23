@@ -173,7 +173,7 @@ IRODS_ENV_DEFAULT = env.dict(
     default={
         'irods_client_server_negotiation': 'request_server_negotiation',
         'irods_client_server_policy': 'CS_NEG_REQUIRE',
-        'irods_default_hash_scheme': 'MD5',
+        'irods_default_hash_scheme': IRODS_HASH_SCHEME,
         'irods_encryption_algorithm': 'AES-256-CBC',
         'irods_encryption_key_size': 32,
         'irods_encryption_num_hash_rounds': 16,
