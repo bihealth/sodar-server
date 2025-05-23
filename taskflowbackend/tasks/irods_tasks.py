@@ -788,6 +788,7 @@ class BatchValidateChecksumsTask(IrodsBaseTask):
                 except Exception as ex:
                     cmp_errors.append(str(ex))
             if time.time() - time_start > interval and i_prev != i:
+                landing_zone.refresh_from_db()
                 landing_zone.status_info = f'{status_base} ({i}/{file_count})'
                 landing_zone.save()
                 i_prev = i
@@ -959,6 +960,7 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
                     )
 
             if time.time() - time_start > interval and i_prev != i:
+                landing_zone.refresh_from_db()
                 landing_zone.status_info = f'{status_base} ({i}/{file_count})'
                 landing_zone.save()
                 i_prev = i
@@ -1048,6 +1050,7 @@ class BatchCalculateChecksumTask(IrodsBaseTask):
             for replica in data_obj.replicas:
                 self._compute_checksum(data_obj, replica, force)
             if time.time() - time_start > interval and i_prev != i:
+                landing_zone.refresh_from_db()
                 landing_zone.status_info = f'{status_base} ({i}/{file_count})'
                 landing_zone.save()
                 i_prev = i

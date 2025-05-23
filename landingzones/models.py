@@ -130,6 +130,8 @@ class LandingZone(models.Model):
         """Set zone status"""
         if status not in lc.ZONE_STATUS_TYPES:
             raise TypeError('Unknown status "{}"'.format(status))
+        # Refresh object in case foreign keys have changed (see #2175)
+        self.refresh_from_db()
         self.status = status
         if status_info:
             self.status_info = status_info

@@ -131,6 +131,7 @@ Fixed
 - **Landingzones**
     - Zone delete timeline status not updated with missing collection (#2096)
     - Sample Sheets link not displayed in UI after zone move (#2106)
+    - ``LandingZone.set_status()`` not enforcing database refresh (#2175)
 - **Samplesheets**
     - iRODS access ticket expiry date not updated on ticket update (#2140)
 - **Taskflowbackend**
