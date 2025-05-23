@@ -1031,11 +1031,19 @@ class TestLandingZoneMove(
             'zone_uuid': str(self.zone.sodar_uuid),
             'validate_only': True,
         }
+        tl_event = self.make_event(
+            project=self.project,
+            app='taskflowbackend',
+            user=self.user,
+            event_name='landing_zone_move',
+            extra_data={},
+        )
         flow = self.taskflow.get_flow(
             irods_backend=self.irods_backend,
             project=self.project,
             flow_name='landing_zone_move',
             flow_data=flow_data,
+            tl_event=tl_event,
         )
         self.build_and_run(flow)
 
@@ -1050,6 +1058,12 @@ class TestLandingZoneMove(
         self.assert_irods_access(self.owner_group, obj_path, IRODS_ACCESS_OWN)
         self.assert_irods_access(self.user.username, obj_path, IRODS_ACCESS_OWN)
         self.assert_irods_access(self.project_group, obj_path, None)
+        tl_event.refresh_from_db()
+        expected = {
+            'files': [os.path.join(COLL_NAME, OBJ_NAME)],
+            'total_size': 1024,
+        }
+        self.assertEqual(tl_event.extra_data, expected)
 
     # TODO: Test validation with SHA256 checksum (see #2170)
 

@@ -8,6 +8,14 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v1.1.1 (WIP)
+============
+
+Release for minor updates, maintenance and bug fixes.
+
+- Add landing zone validation timeline extra data
+
+
 v1.1.0 (2025-05-23)
 ===================
 

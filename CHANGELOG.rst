@@ -5,6 +5,16 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+Unreleased
+==========
+
+Added
+-------
+
+- **Taskflowbackend**
+    - ``landing_zone_move`` timeline extra data in validate mode (#2172)
+
+
 v1.1.0 (2025-05-23)
 ===================
 
