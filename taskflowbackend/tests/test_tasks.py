@@ -2677,7 +2677,8 @@ class TestBatchCalculateChecksumTask(
         self.assertEqual(obj.replicas[0].checksum, self.get_checksum(obj))
         self.zone.refresh_from_db()
         self.assertEqual(
-            self.zone.status_info, DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE]
+            self.zone.status_info,
+            DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE] + ' (1/1)',
         )
 
     def test_calculate_twice(self):

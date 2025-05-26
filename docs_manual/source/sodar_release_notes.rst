@@ -13,7 +13,8 @@ v1.1.1 (WIP)
 
 Release for minor updates, maintenance and bug fixes.
 
-- Add landing zone validation timeline extra data
+- Add timeline extra data for landing zone validation
+- Minor updates and bug fixes
 
 
 v1.1.0 (2025-05-23)

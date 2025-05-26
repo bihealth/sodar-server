@@ -9,10 +9,17 @@ Unreleased
 ==========
 
 Added
--------
+-----
 
 - **Taskflowbackend**
     - ``landing_zone_move`` timeline extra data in validate mode (#2172)
+
+Changed
+-------
+
+- **Taskflowbackend**
+    - Update checksum calculation progress on initial file (#2171)
+    - Refactor zone progress updating (#2178)
 
 
 v1.1.0 (2025-05-23)
