@@ -28,15 +28,43 @@
 
 <div class="row sodar-subtitle-container bg-white sticky-top">
   <h3><i class="iconify" data-icon="mdi:briefcase-upload"></i> Landing Zones</h3>
-  {% if not zone_access_disabled and can_create_zone %}
+
     <div class="ml-auto">
-      <a href="{% url 'landingzones:create' project=project.sodar_uuid %}"
-         class="btn btn-primary {% if zone_create_limit %}disabled{% endif %}"
-         role="button" id="sodar-lz-btn-create-zone">
-       <i class="iconify" data-icon="mdi:plus-thick"></i> Create Zone
-      </a>
+      {# Create limit badge #}
+      <span class="badge-group text-nowrap"
+            title="Total non-finished zones in project with per-project creation limit"
+            data-toggle="tooltip">
+        <span class="badge badge-pill badge-secondary">Zones</span>
+        <span class="badge badge-pill
+                     badge-{% if not zone_create_limit %}info{% elif zone_create_limit_reached %}warning{% else %}success{% endif %}"
+              id="sodar-lz-badge-create-limit">
+          {% if zone_create_limit %}
+            {{ zone_active_count }} / {{ zone_create_limit }}
+          {% else %}
+            Unlimited
+          {% endif %}
+        </span>
+      </span>
+      {# Validating limit badge #}
+      <span class="badge-group text-nowrap mr-2"
+            title="Zones currently under validation in project with per-project validation limit"
+            data-toggle="tooltip">
+        <span class="badge badge-pill badge-secondary">Validating</span>
+        <span class="badge badge-pill
+                     badge-{% if zone_validate_limit_reached %}warning{% else %}success{% endif %}"
+              id="sodar-lz-badge-validate-limit">
+          {{ zone_validate_count }} / {{ zone_validate_limit }}
+        </span>
+      </span>
+      {# Zone create button #}
+      {% if not zone_access_disabled and can_create_zone %}
+        <a href="{% url 'landingzones:create' project=project.sodar_uuid %}"
+           class="btn btn-primary {% if zone_create_limit_reached %}disabled{% endif %}"
+           role="button" id="sodar-lz-btn-create-zone">
+         <i class="iconify" data-icon="mdi:plus-thick"></i> Create Zone
+        </a>
+      {% endif %}
     </div>
-  {% endif %}
 </div>
 
 <div class="container-fluid sodar-page-container"> {# Main container #}
@@ -47,14 +75,14 @@
     need to wait for the ongoing moving operation to finish before starting new
     move jobs.
   </div>
-  <div class="alert alert-warning {% if zone_validate_limit %}d-block{% else %}d-none{% endif %}"
+  <div class="alert alert-warning {% if zone_validate_limit_reached %}d-block{% else %}d-none{% endif %}"
        role="alert" id="sodar-lz-alert-zone-validate-limit">
     <i class="iconify" data-icon="mdi:lock-check"></i>
     The maximum number of ongoing validation jobs for this project has been
     reached. Please wait for ongoing validations to finish before starting new
     validation jobs.
   </div>
-  <div class="alert alert-warning {% if zone_create_limit %}d-block{% else %}d-none{% endif %}"
+  <div class="alert alert-warning {% if zone_create_limit_reached %}d-block{% else %}d-none{% endif %}"
        role="alert" id="sodar-lz-alert-zone-create-limit">
     <i class="iconify" data-icon="mdi:briefcase-variant-off"></i>
     Landing zone creation limit for the project has been reached. Please move or
@@ -303,7 +331,26 @@
             showCancelLink: true
         });
     }
-    // Create zone
+    // App Title Bar
+    tour.addStep('create_limit_badge', {
+        title: 'Active Zones Badge',
+        text: 'This badge displays the current amount of zones in this ' +
+              'project and the per-project creation limit of new zones. ' +
+              'If no creation limit is set, the badge will display as ' +
+              '"unlimited".',
+        attachTo: '#sodar-lz-badge-create-limit bottom',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+    });
+    tour.addStep('validate_limit_badge', {
+        title: 'Zone Validation Badge',
+        text: 'This badge displays the current amount of zones under ' +
+              'validation in this project, along with the per-project limit ' +
+              'for concurrent zone validation processes.',
+        attachTo: '#sodar-lz-badge-validate-limit bottom',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+    });
     if ($('#sodar-lz-btn-create-zone').length) {
         tour.addStep('zone_create', {
             title: 'Create Zone',

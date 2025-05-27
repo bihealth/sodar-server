@@ -7,6 +7,8 @@ var isSuperuser = false;
 var updateZoneStatus = function() {
     window.zoneStatusUpdated = false;
     var zoneData = {};
+    var createLimitBadge = $('#sodar-lz-badge-create-limit');
+    var validateLimitBadge = $('#sodar-lz-badge-validate-limit');
     var createBtn = $('#sodar-lz-btn-create-zone');
     var projectLockAlert = $('#sodar-lz-alert-lock');
     var createLimitAlert = $('#sodar-lz-alert-zone-create-limit');
@@ -30,8 +32,35 @@ var updateZoneStatus = function() {
         data: JSON.stringify({zones: zoneData}),
     }).done(function(data) {
         var projectLock = data['project_lock'];
+        var zoneActiveCount = data['zone_active_count'];
         var createLimit = data['zone_create_limit'];
+        var createLimitReached = data['zone_create_limit_reached'];
+        var zoneValidateCount = data['zone_validate_count'];
         var validateLimit = data['zone_validate_limit'];
+        var validateLimitReached = data['zone_validate_limit_reached'];
+
+        // Update create limit badge
+        if (createLimit) {  // With unlimited creation we don't update this
+            createLimitBadge.text(
+                zoneActiveCount.toString() + ' / ' + createLimit.toString());
+            if (createLimitReached) {
+                createLimitBadge.removeClass(
+                    'badge-success').addClass('badge-warning');
+            } else {
+                createLimitBadge.removeClass(
+                    'badge-warning').addClass('badge-success');
+            }
+        }
+        // Update validate limit badge
+        validateLimitBadge.text(
+            zoneValidateCount.toString() + ' / ' + validateLimit.toString());
+        if (validateLimitReached) {
+            validateLimitBadge.removeClass(
+                'badge-success').addClass('badge-warning');
+        } else {
+            validateLimitBadge.removeClass(
+                'badge-warning').addClass('badge-success');
+        }
 
         // Update project lock alert
         if (projectLock) {
@@ -40,7 +69,7 @@ var updateZoneStatus = function() {
             projectLockAlert.removeClass('d-block').addClass('d-none');
         }
         // Update create limit alert
-        if (createLimit) {
+        if (createLimitReached) {
             if (!createBtn.hasClass('disabled')) {
                 createBtn.addClass('disabled');
             }
@@ -50,7 +79,7 @@ var updateZoneStatus = function() {
             createLimitAlert.removeClass('d-block').addClass('d-none');
         }
         // Update validate limit alert
-        if (validateLimit) {
+        if (validateLimitReached) {
             validateLimitAlert.removeClass('d-none').addClass('d-block');
         } else {
             validateLimitAlert.removeClass('d-block').addClass('d-none');
@@ -149,18 +178,18 @@ var updateZoneStatus = function() {
             var validateLink = zoneTr.find('.sodar-lz-zone-btn-validate');
             var moveLink = zoneTr.find('.sodar-lz-zone-btn-move');
             // Update validate link
-            if (validateLimit && !validateLink.hasClass('disabled')) {
+            if (validateLimitReached && !validateLink.hasClass('disabled')) {
                 validateLink.addClass('disabled');
-            } else if (!validateLimit &&
+            } else if (!validateLimitReached &&
                 validateLink.attr('data-can-move') === '1') {
                 validateLink.removeClass('disabled');
             }
             // Update move link
-            if ((projectLock || validateLimit) &&
+            if ((projectLock || validateLimitReached) &&
                 !moveLink.hasClass('disabled')) {
                 moveLink.addClass('disabled');
             } else if (!projectLock &&
-                !validateLimit &&
+                !validateLimitReached &&
                 moveLink.attr('data-can-move') === '1') {
                 moveLink.removeClass('disabled');
             }

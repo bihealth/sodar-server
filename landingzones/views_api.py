@@ -3,6 +3,7 @@
 import logging
 import sys
 
+from django.conf import settings
 from django.urls import reverse
 
 from rest_framework import serializers, status
@@ -32,10 +33,14 @@ from projectroles.views_api import (
 # Samplesheets dependency
 from samplesheets.models import Investigation
 
-from landingzones.constants import STATUS_ALLOW_UPDATE, STATUS_FINISHED
+from landingzones.constants import (
+    STATUS_ALLOW_UPDATE,
+    STATUS_FINISHED,
+    ZONE_STATUS_PREPARING,
+    ZONE_STATUS_VALIDATING,
+)
 from landingzones.models import LandingZone
 from landingzones.serializers import LandingZoneSerializer
-from landingzones.utils import get_zone_validate_limit
 from landingzones.views import (
     ZoneModifyPermissionMixin,
     ZoneModifyMixin,
@@ -440,7 +445,12 @@ class ZoneSubmitMoveAPIView(ZoneMoveMixin, ZoneSubmitBaseAPIView):
         ).first()
 
         # Check limit
-        if get_zone_validate_limit(zone.project):
+        valid_count = LandingZone.objects.filter(
+            project=zone.project,
+            status__in=[ZONE_STATUS_PREPARING, ZONE_STATUS_VALIDATING],
+        ).count()
+        valid_limit = settings.LANDINGZONES_ZONE_VALIDATE_LIMIT or 1
+        if valid_count >= valid_limit:
             ex = APIException(ZONE_VALIDATE_LIMIT_MSG)
             ex.status_code = 503
             raise ex

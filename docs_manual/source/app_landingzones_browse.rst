@@ -15,11 +15,26 @@ landing zones (also referred to as "zones" for brevity).
 
 .. figure:: _static/app_landingzones/zone_list.png
     :align: center
-    :scale: 50%
+    :scale: 60%
 
     Landing zone list
 
-The following details are available for each landing zone:
+The Landing Zones application title bar displays project zone status badges
+along with the button for creating a new zone. The status badges displayed:
+
+:guilabel:`Zones` Badge
+    Amount of active zones currently in this project along with the per-project
+    limitation of creating new active landing zones per project. If the limit
+    has been reached, existing zones must be moved or deleted before new ones
+    are created. If no zone creation limit is set, the badge will display as
+    "unlimited".
+:guilabel:`Validating` Badge
+    The amount of currently validating landing zones in the project along with
+    the per-project limitation of how many zones can be concurrently validated.
+    If the limit has been reached, ongoing zone validation processes must finish
+    before new ones can be started.
+
+In the table, the following details are available for each landing zone:
 
 Zone
     The title of the zone along with a tooltip for verifying to which assay the

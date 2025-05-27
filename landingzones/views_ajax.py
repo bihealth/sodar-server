@@ -14,7 +14,7 @@ from projectroles.plugins import get_backend_api
 from projectroles.views_ajax import SODARBaseProjectAjaxView
 
 from landingzones.models import LandingZone
-from landingzones.utils import get_zone_create_limit, get_zone_validate_limit
+from landingzones.views import ProjectZoneInfoMixin
 
 
 logger = logging.getLogger(__name__)
@@ -36,27 +36,17 @@ class ZoneBaseAjaxView(SODARBaseProjectAjaxView):
         return user.has_perm(permission, obj=zone.project)
 
 
-class ZoneStatusRetrieveAjaxView(ZoneBaseAjaxView):
+class ZoneStatusRetrieveAjaxView(ProjectZoneInfoMixin, ZoneBaseAjaxView):
     """Ajax API view for returning project landing zone statuses"""
 
     permission_required = 'landingzones.view_zone_own'
 
     def post(self, request, *args, **kwargs):
-        taskflow = get_backend_api('taskflow')
         project = self.get_project()
-        ret = {'zones': {}}
-        # Project lock status
-        project_lock = False
-        if taskflow:
-            try:
-                project_lock = taskflow.is_locked(project)
-            except Exception as ex:
-                logger.error('Exception querying lock status: {}'.format(ex))
-        ret['project_lock'] = project_lock
+        ret = self.get_project_zone_info(project)
+        ret['zones'] = {}
         zone_data = request.data.get('zones')
         if not zone_data:
-            ret['zone_create_limit'] = False
-            ret['zone_validate_limit'] = False
             return Response(ret, status=200)
         zones = LandingZone.objects.filter(
             sodar_uuid__in=list(zone_data.keys()), project=project
@@ -82,8 +72,6 @@ class ZoneStatusRetrieveAjaxView(ZoneBaseAjaxView):
                 'status_info': status_info,
                 'truncated': truncated,
             }
-        ret['zone_create_limit'] = get_zone_create_limit(project)
-        ret['zone_validate_limit'] = get_zone_validate_limit(project)
         return Response(ret, status=200)
 
 

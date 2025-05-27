@@ -137,23 +137,41 @@ class TestProjectZoneView(ProjectLockMixin, ViewTestBase):
         self.assertEqual(rc['zone_access_disabled'], False)
         self.assertEqual(rc['prohibit_files'], None)
         self.assertEqual(rc['project_lock'], False)
-        self.assertEqual(rc['zone_create_limit'], False)
-        self.assertEqual(rc['zone_validate_limit'], False)
+        self.assertEqual(rc['zone_active_count'], 2)
+        self.assertEqual(rc['zone_create_limit'], None)
+        self.assertEqual(rc['zone_create_limit_reached'], False)
+        self.assertEqual(rc['zone_validate_count'], 0)
+        self.assertEqual(rc['zone_validate_limit'], 4)
+        self.assertEqual(rc['zone_validate_limit_reached'], False)
 
     def test_get_contrib(self):
         """Test GET as contributor"""
         with self.login(self.user_contributor):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['zones'].count(), 1)
-        self.assertEqual(response.context['zones'][0], self.zone_contrib)
+        rc = response.context
+        self.assertEqual(rc['zones'].count(), 1)
+        self.assertEqual(rc['zones'][0], self.zone_contrib)
+        self.assertEqual(rc['zone_active_count'], 2)
+        self.assertEqual(rc['zone_create_limit'], None)
+        self.assertEqual(rc['zone_create_limit_reached'], False)
+        self.assertEqual(rc['zone_validate_count'], 0)
+        self.assertEqual(rc['zone_validate_limit'], 4)
+        self.assertEqual(rc['zone_validate_limit_reached'], False)
 
     def test_get_user_no_zones(self):
         """Test GET as contributor user with no zones"""
         with self.login(self.user_no_zones):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['zones'].count(), 0)
+        rc = response.context
+        self.assertEqual(rc['zones'].count(), 0)
+        self.assertEqual(rc['zone_active_count'], 2)
+        self.assertEqual(rc['zone_create_limit'], None)
+        self.assertEqual(rc['zone_create_limit_reached'], False)
+        self.assertEqual(rc['zone_validate_count'], 0)
+        self.assertEqual(rc['zone_validate_limit'], 4)
+        self.assertEqual(rc['zone_validate_limit_reached'], False)
 
     def test_get_superuser(self):
         """Test GET as superuser"""
@@ -208,7 +226,11 @@ class TestProjectZoneView(ProjectLockMixin, ViewTestBase):
         with self.login(self.user_owner):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['zone_create_limit'], True)
+        rc = response.context
+        self.assertEqual(rc['zone_active_count'], 2)
+        self.assertEqual(rc['zone_create_limit'], 2)
+        self.assertEqual(rc['zone_create_limit_reached'], True)
+        self.assertEqual(rc['zone_validate_limit_reached'], False)
 
     @override_settings(LANDINGZONES_ZONE_CREATE_LIMIT=2)
     def test_get_create_limit_existing_finished(self):
@@ -217,7 +239,11 @@ class TestProjectZoneView(ProjectLockMixin, ViewTestBase):
         with self.login(self.user_owner):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['zone_create_limit'], False)
+        rc = response.context
+        self.assertEqual(rc['zone_active_count'], 1)
+        self.assertEqual(rc['zone_create_limit'], 2)
+        self.assertEqual(rc['zone_create_limit_reached'], False)
+        self.assertEqual(rc['zone_validate_limit_reached'], False)
 
     @override_settings(LANDINGZONES_ZONE_VALIDATE_LIMIT=1)
     def test_get_validate_limit(self):
@@ -226,7 +252,22 @@ class TestProjectZoneView(ProjectLockMixin, ViewTestBase):
         with self.login(self.user_owner):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['zone_validate_limit'], True)
+        rc = response.context
+        self.assertEqual(rc['zone_validate_count'], 1)
+        self.assertEqual(rc['zone_validate_limit'], 1)
+        self.assertEqual(rc['zone_validate_limit_reached'], True)
+
+    @override_settings(LANDINGZONES_ZONE_VALIDATE_LIMIT=None)
+    def test_get_validate_limit_none(self):
+        """Test GET with zone validation limit set to None (counts as 1)"""
+        self.zone.set_status(ZONE_STATUS_VALIDATING)
+        with self.login(self.user_owner):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        rc = response.context
+        self.assertEqual(rc['zone_validate_count'], 1)
+        self.assertEqual(rc['zone_validate_limit'], 1)
+        self.assertEqual(rc['zone_validate_limit'], True)
 
     @override_settings(LANDINGZONES_ZONE_VALIDATE_LIMIT=1)
     def test_get_validate_limit_other_zone_moved(self):
@@ -235,7 +276,10 @@ class TestProjectZoneView(ProjectLockMixin, ViewTestBase):
         with self.login(self.user_owner):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['zone_validate_limit'], False)
+        rc = response.context
+        self.assertEqual(rc['zone_validate_count'], 0)
+        self.assertEqual(rc['zone_validate_limit'], 1)
+        self.assertEqual(rc['zone_validate_limit_reached'], False)
 
 
 class TestZoneCreateView(ViewTestBase):

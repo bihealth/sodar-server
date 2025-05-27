@@ -13,7 +13,9 @@ v1.1.1 (WIP)
 
 Release for minor updates, maintenance and bug fixes.
 
+- :ref:`Add landing zone creation and validation limit badges in zone list UI <app_landingzones_browse>`
 - Add timeline extra data for landing zone validation
+- Update per-project zone validate limit to disallow unlimited validations
 - Minor updates and bug fixes
 
 

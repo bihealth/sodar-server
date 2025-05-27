@@ -39,19 +39,24 @@ class TestZoneStatusRetrieveAjaxView(ViewTestBase):
                 self.url, data=json.dumps(self.post_data), **self.post_kw
             )
         self.assertEqual(response.status_code, 200)
-        rd = response.data
         expected = {
-            str(self.zone.sodar_uuid): {
-                'modified': self.zone.date_modified.timestamp(),
-                'status': self.zone.status,
-                'status_info': self.zone.status_info,
-                'truncated': False,
-            }
+            'project_lock': False,
+            'zone_active_count': 1,
+            'zone_create_limit': None,
+            'zone_create_limit_reached': False,
+            'zone_validate_count': 0,
+            'zone_validate_limit': 4,
+            'zone_validate_limit_reached': False,
+            'zones': {
+                str(self.zone.sodar_uuid): {
+                    'modified': self.zone.date_modified.timestamp(),
+                    'status': self.zone.status,
+                    'status_info': self.zone.status_info,
+                    'truncated': False,
+                }
+            },
         }
-        self.assertEqual(rd['zones'], expected)
-        self.assertEqual(rd['project_lock'], False)
-        self.assertEqual(rd['zone_create_limit'], False)
-        self.assertEqual(rd['zone_validate_limit'], False)
+        self.assertEqual(response.data, expected)
 
     def test_post_modified(self):
         """Test POST with date_modified set"""
@@ -70,10 +75,14 @@ class TestZoneStatusRetrieveAjaxView(ViewTestBase):
         self.assertEqual(
             response.data,
             {
-                'zones': {},
                 'project_lock': False,
-                'zone_create_limit': False,
-                'zone_validate_limit': False,
+                'zone_active_count': 1,
+                'zone_create_limit': None,
+                'zone_create_limit_reached': False,
+                'zone_validate_count': 0,
+                'zone_validate_limit': 4,
+                'zone_validate_limit_reached': False,
+                'zones': {},
             },
         )
 
@@ -99,11 +108,8 @@ class TestZoneStatusRetrieveAjaxView(ViewTestBase):
             }
         }
         self.assertEqual(rd['zones'], expected)
-        self.assertEqual(rd['project_lock'], False)
-        self.assertEqual(rd['zone_create_limit'], False)
-        self.assertEqual(rd['zone_validate_limit'], False)
 
-    def test_post_no_zone(self):
+    def test_post_no_zones(self):
         """Test POST with no zones"""
         post_data = {'zones': {}}
         with self.login(self.user):
@@ -116,8 +122,12 @@ class TestZoneStatusRetrieveAjaxView(ViewTestBase):
             {
                 'zones': {},
                 'project_lock': False,
-                'zone_create_limit': False,
-                'zone_validate_limit': False,
+                'zone_active_count': 1,
+                'zone_create_limit': None,
+                'zone_create_limit_reached': False,
+                'zone_validate_count': 0,
+                'zone_validate_limit': 4,
+                'zone_validate_limit_reached': False,
             },
         )
 
@@ -134,8 +144,8 @@ class TestZoneStatusRetrieveAjaxView(ViewTestBase):
         self.assertEqual(response.status_code, 200)
         rd = response.data
         self.assertEqual(rd['project_lock'], True)
-        self.assertEqual(rd['zone_create_limit'], False)
-        self.assertEqual(rd['zone_validate_limit'], False)
+        self.assertEqual(rd['zone_create_limit_reached'], False)
+        self.assertEqual(rd['zone_validate_limit_reached'], False)
 
     @override_settings(LANDINGZONES_ZONE_CREATE_LIMIT=1)
     def test_post_create_limit(self):
@@ -147,8 +157,10 @@ class TestZoneStatusRetrieveAjaxView(ViewTestBase):
         self.assertEqual(response.status_code, 200)
         rd = response.data
         self.assertEqual(rd['project_lock'], False)
-        self.assertEqual(rd['zone_create_limit'], True)
-        self.assertEqual(rd['zone_validate_limit'], False)
+        self.assertEqual(rd['zone_active_count'], 1)
+        self.assertEqual(rd['zone_create_limit'], 1)
+        self.assertEqual(rd['zone_create_limit_reached'], True)
+        self.assertEqual(rd['zone_validate_limit_reached'], False)
 
     @override_settings(LANDINGZONES_ZONE_CREATE_LIMIT=1)
     def test_post_create_limit_existing_finished(self):
@@ -161,8 +173,10 @@ class TestZoneStatusRetrieveAjaxView(ViewTestBase):
         self.assertEqual(response.status_code, 200)
         rd = response.data
         self.assertEqual(rd['project_lock'], False)
-        self.assertEqual(rd['zone_create_limit'], False)
-        self.assertEqual(rd['zone_validate_limit'], False)
+        self.assertEqual(rd['zone_active_count'], 0)
+        self.assertEqual(rd['zone_create_limit'], 1)
+        self.assertEqual(rd['zone_create_limit_reached'], False)
+        self.assertEqual(rd['zone_validate_limit_reached'], False)
 
     @override_settings(LANDINGZONES_ZONE_VALIDATE_LIMIT=1)
     def test_post_validate_limit(self):
@@ -175,8 +189,10 @@ class TestZoneStatusRetrieveAjaxView(ViewTestBase):
         self.assertEqual(response.status_code, 200)
         rd = response.data
         self.assertEqual(rd['project_lock'], False)
-        self.assertEqual(rd['zone_create_limit'], False)
-        self.assertEqual(rd['zone_validate_limit'], True)
+        self.assertEqual(rd['zone_create_limit_reached'], False)
+        self.assertEqual(rd['zone_validate_count'], 1)
+        self.assertEqual(rd['zone_validate_limit'], 1)
+        self.assertEqual(rd['zone_validate_limit_reached'], True)
 
     @override_settings(LANDINGZONES_ZONE_VALIDATE_LIMIT=1)
     def test_post_validate_limit_other_zone_moved(self):
@@ -189,8 +205,10 @@ class TestZoneStatusRetrieveAjaxView(ViewTestBase):
         self.assertEqual(response.status_code, 200)
         rd = response.data
         self.assertEqual(rd['project_lock'], False)
-        self.assertEqual(rd['zone_create_limit'], False)
-        self.assertEqual(rd['zone_validate_limit'], False)
+        self.assertEqual(rd['zone_create_limit_reached'], False)
+        self.assertEqual(rd['zone_validate_count'], 0)
+        self.assertEqual(rd['zone_validate_limit'], 1)
+        self.assertEqual(rd['zone_validate_limit_reached'], False)
 
 
 class TestZoneStatusInfoRetrieveAjaxView(ViewTestBase):

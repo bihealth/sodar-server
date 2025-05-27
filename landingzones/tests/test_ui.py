@@ -134,6 +134,21 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
         )
         self.assertIn('d-none', elem.get_attribute('class'))
         self.assertNotIn('d-block', elem.get_attribute('class'))
+        create_badge = self.selenium.find_element(
+            By.ID, 'sodar-lz-badge-create-limit'
+        )
+        badge_class = create_badge.get_attribute('class')
+        self.assertIn('badge-info', badge_class)
+        self.assertNotIn('badge-success', badge_class)
+        self.assertNotIn('badge-warning', badge_class)
+        self.assertEqual(create_badge.text, 'Unlimited')
+        valid_badge = self.selenium.find_element(
+            By.ID, 'sodar-lz-badge-validate-limit'
+        )
+        badge_class = valid_badge.get_attribute('class')
+        self.assertIn('badge-success', badge_class)
+        self.assertNotIn('badge-warning', badge_class)
+        self.assertEqual(valid_badge.text, '0 / 4')
         self.assert_element(By.ID, 'sodar-lz-alert-archive', False)
         self.assert_element(By.ID, 'sodar-lz-alert-disable', False)
         self.assert_element(By.ID, 'sodar-lz-alert-no-sheets', True)
@@ -224,6 +239,21 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
             'contrib_zone', self.project, self.user_contributor, self.assay
         )
         self.login_and_redirect(self.user_contributor, self.url)
+        create_badge = self.selenium.find_element(
+            By.ID, 'sodar-lz-badge-create-limit'
+        )
+        badge_class = create_badge.get_attribute('class')
+        self.assertIn('badge-info', badge_class)
+        self.assertNotIn('badge-success', badge_class)
+        self.assertNotIn('badge-warning', badge_class)
+        self.assertEqual(create_badge.text, 'Unlimited')
+        valid_badge = self.selenium.find_element(
+            By.ID, 'sodar-lz-badge-validate-limit'
+        )
+        badge_class = valid_badge.get_attribute('class')
+        self.assertIn('badge-success', badge_class)
+        self.assertNotIn('badge-warning', badge_class)
+        self.assertEqual(valid_badge.text, '0 / 4')
         self.assert_element(By.ID, 'sodar-lz-alert-disable', False)
         self.assert_element(By.ID, 'sodar-lz-alert-no-sheets', False)
         self.assert_element(By.ID, 'sodar-lz-alert-no-colls', False)
@@ -378,7 +408,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
         self.make_landing_zone(
             'contrib_zone', self.project, self.user_contributor, self.assay
         )
-        # Remove contributor's access
+        # Remove contributor access
         self.contributor_as.delete()
         self.login_and_redirect(self.user_owner, self.url)
         zones = self.selenium.find_elements(
@@ -534,6 +564,14 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
             status=ZONE_STATUS_ACTIVE,
         )
         self.login_and_redirect(self.user_owner, self.url)
+        create_badge = self.selenium.find_element(
+            By.ID, 'sodar-lz-badge-create-limit'
+        )
+        badge_class = create_badge.get_attribute('class')
+        self.assertNotIn('badge-info', badge_class)
+        self.assertNotIn('badge-success', badge_class)
+        self.assertIn('badge-warning', badge_class)
+        self.assertEqual(create_badge.text, '1 / 1')
         self.assert_enabled(
             self.selenium.find_element(By.ID, 'sodar-lz-btn-create-zone'), False
         )
@@ -557,6 +595,14 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
             status=ZONE_STATUS_MOVED,
         )
         self.login_and_redirect(self.user_owner, self.url)
+        create_badge = self.selenium.find_element(
+            By.ID, 'sodar-lz-badge-create-limit'
+        )
+        badge_class = create_badge.get_attribute('class')
+        self.assertNotIn('badge-info', badge_class)
+        self.assertIn('badge-success', badge_class)
+        self.assertNotIn('badge-warning', badge_class)
+        self.assertEqual(create_badge.text, '0 / 1')
         self.assert_enabled(
             self.selenium.find_element(By.ID, 'sodar-lz-btn-create-zone'), True
         )
@@ -581,6 +627,14 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
         )
 
         self.login_and_redirect(self.user_owner, self.url)
+        create_badge = self.selenium.find_element(
+            By.ID, 'sodar-lz-badge-create-limit'
+        )
+        badge_class = create_badge.get_attribute('class')
+        self.assertNotIn('badge-info', badge_class)
+        self.assertNotIn('badge-success', badge_class)
+        self.assertIn('badge-warning', badge_class)
+        self.assertEqual(create_badge.text, '1 / 1')
         self.assert_enabled(
             self.selenium.find_element(By.ID, 'sodar-lz-btn-create-zone'), False
         )
@@ -595,6 +649,17 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
             By.CLASS_NAME, 'sodar-lz-zone-status'
         )
         self.wait_for_status(zone_status, ZONE_STATUS_MOVED)
+        # HACK: Wait for badge to be updated
+        WebDriverWait(self.selenium, self.wait_time).until(
+            ec.presence_of_element_located(
+                (By.XPATH, '//*[contains(text(), "0 / 1")]')
+            )
+        )
+        badge_class = create_badge.get_attribute('class')
+        self.assertNotIn('badge-info', badge_class)
+        self.assertIn('badge-success', badge_class)
+        self.assertNotIn('badge-warning', badge_class)
+        self.assertEqual(create_badge.text, '0 / 1')
         self.assert_enabled(
             self.selenium.find_element(By.ID, 'sodar-lz-btn-create-zone'), True
         )
@@ -625,6 +690,13 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
             status=ZONE_STATUS_ACTIVE,
         )
         self.login_and_redirect(self.user_owner, self.url)
+        valid_badge = self.selenium.find_element(
+            By.ID, 'sodar-lz-badge-validate-limit'
+        )
+        badge_class = valid_badge.get_attribute('class')
+        self.assertNotIn('badge-success', badge_class)
+        self.assertIn('badge-warning', badge_class)
+        self.assertEqual(valid_badge.text, '1 / 1')
         alert = self.selenium.find_element(
             By.ID, 'sodar-lz-alert-zone-validate-limit'
         )
@@ -659,6 +731,13 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
             status=ZONE_STATUS_ACTIVE,
         )
         self.login_and_redirect(self.user_owner, self.url)
+        valid_badge = self.selenium.find_element(
+            By.ID, 'sodar-lz-badge-validate-limit'
+        )
+        badge_class = valid_badge.get_attribute('class')
+        self.assertIn('badge-success', badge_class)
+        self.assertNotIn('badge-warning', badge_class)
+        self.assertEqual(valid_badge.text, '0 / 1')
         alert = self.selenium.find_element(
             By.ID, 'sodar-lz-alert-zone-validate-limit'
         )
@@ -694,6 +773,13 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
         )
 
         self.login_and_redirect(self.user_owner, self.url)
+        valid_badge = self.selenium.find_element(
+            By.ID, 'sodar-lz-badge-validate-limit'
+        )
+        badge_class = valid_badge.get_attribute('class')
+        self.assertNotIn('badge-success', badge_class)
+        self.assertIn('badge-warning', badge_class)
+        self.assertEqual(valid_badge.text, '1 / 1')
         elem = self.selenium.find_element(
             By.ID, 'sodar-lz-alert-zone-validate-limit'
         )
@@ -712,6 +798,11 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
             By.ID, f'sodar-lz-zone-status-{zone.sodar_uuid}'
         )
         self.wait_for_status(zone_status, ZONE_STATUS_MOVED)
+
+        badge_class = valid_badge.get_attribute('class')
+        self.assertIn('badge-success', badge_class)
+        self.assertNotIn('badge-warning', badge_class)
+        self.assertEqual(valid_badge.text, '0 / 1')
         elem = self.selenium.find_element(
             By.ID, 'sodar-lz-alert-zone-validate-limit'
         )

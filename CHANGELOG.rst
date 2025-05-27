@@ -11,15 +11,27 @@ Unreleased
 Added
 -----
 
+- **Landingzones**
+    - Zone creation and validation limit badges in zone list UI (#2173)
+    - Django check for ``LANDINGZONES_ZONE_VALIDATE_LIMIT`` (#2179)
 - **Taskflowbackend**
     - ``landing_zone_move`` timeline extra data in validate mode (#2172)
 
 Changed
 -------
 
+- **Landingzones**
+    - Set ``LANDINGZONES_ZONE_VALIDATE_LIMIT`` default to ``1`` (#2179)
+    - Disallow setting ``LANDINGZONES_ZONE_VALIDATE_LIMIT`` to ``None`` (#2179)
 - **Taskflowbackend**
     - Update checksum calculation progress on initial file (#2171)
     - Refactor zone progress updating (#2178)
+
+Removed
+-------
+
+- **Landingzones**
+    - ``get_zone_create_limit()`` and ``get_zone_validate_limit()`` helpers (#2173)
 
 
 v1.1.0 (2025-05-23)
