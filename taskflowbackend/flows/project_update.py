@@ -69,7 +69,7 @@ class Flow(BaseLinearFlow):
             )
         )
         # Add owner to owner group if not present
-        if self.flow_data['owner'] not in [
+        if self.flow_data.get('owner') and self.flow_data['owner'] not in [
             r['user_name'] for r in self.flow_data.get('roles_add', [])
         ]:
             self.add_task(
