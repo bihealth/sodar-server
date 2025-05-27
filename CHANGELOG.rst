@@ -27,6 +27,12 @@ Changed
     - Update checksum calculation progress on initial file (#2171)
     - Refactor zone progress updating (#2178)
 
+Fixed
+-----
+
+- **Taskflowbackend**
+    - Legacy project update failing with missing iRODS owner group (#2180)
+
 Removed
 -------
 

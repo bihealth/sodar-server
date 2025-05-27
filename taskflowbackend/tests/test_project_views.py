@@ -310,6 +310,52 @@ class TestProjectUpdateView(TaskflowViewTestBase):
         )
         self.assert_group_member(self.project, self.user_new, True, True)
 
+    def test_post_no_owner_group(self):
+        """Test POST with legacy project without owner group"""
+        owner_group = self.irods_backend.get_group_name(self.project, True)
+        self.assertIsNotNone(self.irods.groups.get(owner_group))
+        self.irods.users.remove(user_name=owner_group)
+        with self.assertRaises(GroupDoesNotExist):
+            self.irods.groups.get(owner_group)
+
+        request_data = model_to_dict(self.project)
+        request_data.update(
+            {
+                'title': 'updated title',
+                'description': 'updated description',
+                'owner': str(self.user.sodar_uuid),  # NOTE: Must add owner
+                'readme': 'updated readme',
+                'parent': str(self.category.sodar_uuid),
+                'public_guest_access': True,
+            }
+        )
+        request_data.update(
+            app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=self.project, post_safe=True
+            )
+        )  # Add default settings
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'projectroles:update',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                request_data,
+            )
+        self.assertEqual(response.status_code, 302)
+
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.title, 'updated title')
+        project_coll = self.irods.collections.get(
+            self.irods_backend.get_path(self.project)
+        )
+        self.assertEqual(
+            project_coll.metadata.get_one('title').value, self.project.title
+        )
+        self.assertIsNotNone(self.irods.groups.get(owner_group))
+        self.assert_group_member(self.project, self.user, True, True)
+        self.assert_group_member(self.project, self.user_owner_cat, True, True)
+
 
 class TestRoleAssignmentCreateView(TaskflowViewTestBase):
     """Tests for RoleAssignmentCreateView"""
