@@ -239,16 +239,9 @@ function updateChecksumStatus(checksumUrl, paths) {
 function updateFileList(listUrl, webDavUrl, irodsPathLength, checksumUrl) {
     var tableBody = $('#sodar-lz-obj-table-body');
     var titlePageSpan = $('#sodar-lz-obj-list-title-page');
-    titlePageSpan.empty();
-    var row = $('<tr>')
-        .append($('<td>')
-            .attr('colspan', '5')
-            .attr('class', 'text-muted text-center')
-            .attr('id', 'sodar-lz-obj-table-wait')
-            .append($('<i>')
-                .attr('class', 'iconify spin')
-                .attr('data-icon', 'mdi:loading')));
-    tableBody.html(row);
+    // Disable pagination buttons
+    $('#sodar-lz-modal-page-item-prev').addClass('disabled');
+    $('#sodar-lz-modal-page-item-next').addClass('disabled');
 
     $.ajax({url: listUrl, method: 'GET', dataType: 'json'})
         .done(function (data) {
@@ -343,6 +336,7 @@ function updateFileList(listUrl, webDavUrl, irodsPathLength, checksumUrl) {
                     .attr('class', 'pagination')
                     .append($('<li>')
                         .attr('class', prevClass)
+                        .attr('id', 'sodar-lz-modal-page-item-prev')
                         .append($('<a>')
                             .attr('class', 'page-link')
                             .attr('id', 'sodar-lz-modal-link-prev')
@@ -360,6 +354,7 @@ function updateFileList(listUrl, webDavUrl, irodsPathLength, checksumUrl) {
                             ).append('Prev')))
                     .append($('<li>')
                         .attr('class', nextClass)
+                        .attr('id', 'sodar-lz-modal-page-item-next')
                         .append($('<a>')
                             .attr('class', 'page-link')
                             .attr('id', 'sodar-lz-modal-link-next')

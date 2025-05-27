@@ -821,7 +821,7 @@ LANDINGZONES_ZONE_VALIDATE_LIMIT = env.int(
 )
 # Landing zone file list modal page size
 LANDINGZONES_FILE_LIST_PAGINATION = env.int(
-    'LANDINGZONES_FILE_LIST_PAGINATION', 25
+    'LANDINGZONES_FILE_LIST_PAGINATION', 15
 )
 
 # Landingzones configapp plugin settings
