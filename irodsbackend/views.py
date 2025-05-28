@@ -95,7 +95,7 @@ class BaseIrodsAjaxView(SODARBaseProjectAjaxView):
         # then verify membership.
         project_group = self.irods_backend.get_group_name(self.project)
         try:
-            group = irods.groups.get(project_group)
+            group = irods.user_groups.get(project_group)
         except Exception:
             return False
         if project_group in perm_users and user.username in [

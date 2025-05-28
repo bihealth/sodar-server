@@ -8,8 +8,8 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
-v1.1.1 (WIP)
-============
+v1.1.1 (2025-05-28)
+===================
 
 Release for minor updates, maintenance and bug fixes.
 
@@ -18,7 +18,6 @@ Release for minor updates, maintenance and bug fixes.
 - Update per-project zone validate limit to disallow unlimited validations
 - Update landing zone file list modal rendering
 - Fix legacy project update failure due to missing iRODS owner group
-- Minor updates and bug fixes
 
 
 v1.1.0 (2025-05-23)

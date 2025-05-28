@@ -177,7 +177,6 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
         )
         self.assert_irods_access(self.owner_group, zone_coll, IRODS_ACCESS_OWN)
         self.assert_irods_access(self.project_group, zone_coll, None)
-        # TODO: Assert owner group access once implemented
 
     def test_post_no_owner_group(self):
         """Test POST with no project owner group"""

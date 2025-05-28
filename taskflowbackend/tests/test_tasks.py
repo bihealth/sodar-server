@@ -730,9 +730,7 @@ class TestCreateUserGroupTask(IRODSTaskTestBase):
             inject={'name': TEST_USER_GROUP},
         )
         self.assertRaises(
-            GroupDoesNotExist,
-            self.irods.user_groups.get,
-            TEST_USER_GROUP,
+            GroupDoesNotExist, self.irods.user_groups.get, TEST_USER_GROUP
         )
         result = self.run_flow()
 
@@ -774,9 +772,7 @@ class TestCreateUserGroupTask(IRODSTaskTestBase):
 
         self.assertNotEqual(result, True)
         self.assertRaises(
-            GroupDoesNotExist,
-            self.irods.user_groups.get,
-            TEST_USER_GROUP,
+            GroupDoesNotExist, self.irods.user_groups.get, TEST_USER_GROUP
         )
 
     def test_revert_not_modified(self):
