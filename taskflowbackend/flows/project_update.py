@@ -60,6 +60,28 @@ class Flow(BaseLinearFlow):
                 },
             )
         )
+        # Create project owner group if not present
+        self.add_task(
+            irods_tasks.CreateUserGroupTask(
+                name='Create project owner group',
+                irods=self.irods,
+                inject={'name': owner_group},
+            )
+        )
+        # Add owner to owner group if not present
+        if self.flow_data.get('owner') and self.flow_data['owner'] not in [
+            r['user_name'] for r in self.flow_data.get('roles_add', [])
+        ]:
+            self.add_task(
+                irods_tasks.AddUserToGroupTask(
+                    name='Add owner user to project owner group',
+                    irods=self.irods,
+                    inject={
+                        'group_name': owner_group,
+                        'user_name': self.flow_data['owner'],
+                    },
+                )
+            )
         # Add new inherited roles
         for r in self.flow_data.get('roles_add', []):
             self.add_task(

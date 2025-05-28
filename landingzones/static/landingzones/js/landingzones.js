@@ -7,6 +7,8 @@ var isSuperuser = false;
 var updateZoneStatus = function() {
     window.zoneStatusUpdated = false;
     var zoneData = {};
+    var createLimitBadge = $('#sodar-lz-badge-create-limit');
+    var validateLimitBadge = $('#sodar-lz-badge-validate-limit');
     var createBtn = $('#sodar-lz-btn-create-zone');
     var projectLockAlert = $('#sodar-lz-alert-lock');
     var createLimitAlert = $('#sodar-lz-alert-zone-create-limit');
@@ -30,8 +32,35 @@ var updateZoneStatus = function() {
         data: JSON.stringify({zones: zoneData}),
     }).done(function(data) {
         var projectLock = data['project_lock'];
+        var zoneActiveCount = data['zone_active_count'];
         var createLimit = data['zone_create_limit'];
+        var createLimitReached = data['zone_create_limit_reached'];
+        var zoneValidateCount = data['zone_validate_count'];
         var validateLimit = data['zone_validate_limit'];
+        var validateLimitReached = data['zone_validate_limit_reached'];
+
+        // Update create limit badge
+        if (createLimit) {  // With unlimited creation we don't update this
+            createLimitBadge.text(
+                zoneActiveCount.toString() + ' / ' + createLimit.toString());
+            if (createLimitReached) {
+                createLimitBadge.removeClass(
+                    'badge-success').addClass('badge-warning');
+            } else {
+                createLimitBadge.removeClass(
+                    'badge-warning').addClass('badge-success');
+            }
+        }
+        // Update validate limit badge
+        validateLimitBadge.text(
+            zoneValidateCount.toString() + ' / ' + validateLimit.toString());
+        if (validateLimitReached) {
+            validateLimitBadge.removeClass(
+                'badge-success').addClass('badge-warning');
+        } else {
+            validateLimitBadge.removeClass(
+                'badge-warning').addClass('badge-success');
+        }
 
         // Update project lock alert
         if (projectLock) {
@@ -40,7 +69,7 @@ var updateZoneStatus = function() {
             projectLockAlert.removeClass('d-block').addClass('d-none');
         }
         // Update create limit alert
-        if (createLimit) {
+        if (createLimitReached) {
             if (!createBtn.hasClass('disabled')) {
                 createBtn.addClass('disabled');
             }
@@ -50,7 +79,7 @@ var updateZoneStatus = function() {
             createLimitAlert.removeClass('d-block').addClass('d-none');
         }
         // Update validate limit alert
-        if (validateLimit) {
+        if (validateLimitReached) {
             validateLimitAlert.removeClass('d-none').addClass('d-block');
         } else {
             validateLimitAlert.removeClass('d-block').addClass('d-none');
@@ -149,18 +178,18 @@ var updateZoneStatus = function() {
             var validateLink = zoneTr.find('.sodar-lz-zone-btn-validate');
             var moveLink = zoneTr.find('.sodar-lz-zone-btn-move');
             // Update validate link
-            if (validateLimit && !validateLink.hasClass('disabled')) {
+            if (validateLimitReached && !validateLink.hasClass('disabled')) {
                 validateLink.addClass('disabled');
-            } else if (!validateLimit &&
+            } else if (!validateLimitReached &&
                 validateLink.attr('data-can-move') === '1') {
                 validateLink.removeClass('disabled');
             }
             // Update move link
-            if ((projectLock || validateLimit) &&
+            if ((projectLock || validateLimitReached) &&
                 !moveLink.hasClass('disabled')) {
                 moveLink.addClass('disabled');
             } else if (!projectLock &&
-                !validateLimit &&
+                !validateLimitReached &&
                 moveLink.attr('data-can-move') === '1') {
                 moveLink.removeClass('disabled');
             }
@@ -207,19 +236,16 @@ function updateChecksumStatus(checksumUrl, paths) {
     });
 }
 
-function updateFileList(listUrl, webDavUrl, irodsPathLength, checksumUrl) {
+function updateFileList(
+    listUrl, webDavUrl, irodsPathLength, checksumUrl, pageElemId) {
     var tableBody = $('#sodar-lz-obj-table-body');
     var titlePageSpan = $('#sodar-lz-obj-list-title-page');
-    titlePageSpan.empty();
-    var row = $('<tr>')
-        .append($('<td>')
-            .attr('colspan', '5')
-            .attr('class', 'text-muted text-center')
-            .attr('id', 'sodar-lz-obj-table-wait')
-            .append($('<i>')
-                .attr('class', 'iconify spin')
-                .attr('data-icon', 'mdi:loading')));
-    tableBody.html(row);
+    if (!listUrl) {
+        listUrl = $('#' + pageElemId).attr('data-url');
+    }
+    // Disable pagination buttons
+    $('#sodar-lz-modal-page-item-prev').addClass('disabled');
+    $('#sodar-lz-modal-page-item-next').addClass('disabled');
 
     $.ajax({url: listUrl, method: 'GET', dataType: 'json'})
         .done(function (data) {
@@ -301,53 +327,8 @@ function updateFileList(listUrl, webDavUrl, irodsPathLength, checksumUrl) {
 
             // Display results
             tableBody.html(rows);
-
-            // Pagination
-            var prevClass = 'page-item';
-            if (!data['previous']) prevClass += ' disabled';
-            var nextClass = 'page-item';
-            if (!data['next']) nextClass += ' disabled';
-            var pageControls = $('<div>')
-                .attr('class',
-                    'pt-3 d-flex justify-content-center sodar-pr-pagination')
-                .append($('<ul>')
-                    .attr('class', 'pagination')
-                    .append($('<li>')
-                        .attr('class', prevClass)
-                        .append($('<a>')
-                            .attr('class', 'page-link')
-                            .attr('id', 'sodar-lz-modal-link-prev')
-                            .attr('data-url', data['previous'])
-                            .click(function () {
-                                updateFileList(
-                                    data['previous'],
-                                    webDavUrl,
-                                    irodsPathLength,
-                                    checksumUrl);
-                            })
-                            .append($('<i>')
-                                .attr('class', 'iconify mr-1')
-                                .attr('data-icon', 'mdi:arrow-left-circle')
-                            ).append('Prev')))
-                    .append($('<li>')
-                        .attr('class', nextClass)
-                        .append($('<a>')
-                            .attr('class', 'page-link')
-                            .attr('id', 'sodar-lz-modal-link-next')
-                            .attr('data-url', data['next'])
-                            .click(function () {
-                                updateFileList(
-                                    data['next'],
-                                    webDavUrl,
-                                    irodsPathLength,
-                                    checksumUrl);
-                            })
-                            .append('Next')
-                            .append($('<i>')
-                                .attr('class', 'iconify ml-1')
-                                .attr('data-icon', 'mdi:arrow-right-circle')))));
-            $('#sodar-lz-obj-pagination').html(pageControls);
-
+            // Update pagination controls
+            updatePageConrols(data, webDavUrl, irodsPathLength, checksumUrl);
             // Call for checksum status retrieval
             if (objPaths.length > 0) {
                 updateChecksumStatus(checksumUrl, objPaths);
@@ -361,6 +342,79 @@ function updateFileList(listUrl, webDavUrl, irodsPathLength, checksumUrl) {
             tableBody.html(row);
         }
     });
+}
+
+
+// Update pagination controls
+function updatePageConrols(listData, webDavUrl, irodsPathLength, checksumUrl) {
+    var modalPagination = $('#sodar-lz-modal-pagination');
+    // If buttons already exist in DOM, simply update
+    if (modalPagination.length) {
+        var prevBtn = $('#sodar-lz-modal-page-item-prev');
+        var prevLink = $('#sodar-lz-modal-link-prev');
+        var nextBtn = $('#sodar-lz-modal-page-item-next');
+        var nextLink = $('#sodar-lz-modal-link-next');
+        if (listData['previous']) {
+            prevBtn.removeClass('disabled');
+            prevLink.attr('data-url', listData['previous']);
+        } else prevBtn.addClass('disabled');
+        if (listData['next']) {
+            nextBtn.removeClass('disabled');
+            nextLink.attr('data-url', listData['next']);
+        } else {
+            nextBtn.addClass('disabled');
+        }
+    } else { // Create controls
+        var prevClass = 'page-item';
+        if (!listData['previous']) prevClass += ' disabled';
+        var nextClass = 'page-item';
+        if (!listData['next']) nextClass += ' disabled';
+        var pageControls = $('<div>')
+            .attr('class',
+                'pt-3 d-flex justify-content-center sodar-pr-pagination')
+            .attr('id', 'sodar-lz-modal-pagination')
+            .append($('<ul>')
+                .attr('class', 'pagination')
+                .append($('<li>')
+                    .attr('class', prevClass)
+                    .attr('id', 'sodar-lz-modal-page-item-prev')
+                    .append($('<a>')
+                        .attr('class', 'page-link')
+                        .attr('id', 'sodar-lz-modal-link-prev')
+                        .attr('data-url', listData['previous'])
+                        .click(function () {
+                            updateFileList(
+                                null,
+                                webDavUrl,
+                                irodsPathLength,
+                                checksumUrl,
+                                'sodar-lz-modal-link-prev');
+                        })
+                        .append($('<i>')
+                            .attr('class', 'iconify mr-1')
+                            .attr('data-icon', 'mdi:arrow-left-circle')
+                        ).append('Prev')))
+                .append($('<li>')
+                    .attr('class', nextClass)
+                    .attr('id', 'sodar-lz-modal-page-item-next')
+                    .append($('<a>')
+                        .attr('class', 'page-link')
+                        .attr('id', 'sodar-lz-modal-link-next')
+                        .attr('data-url', listData['next'])
+                        .click(function () {
+                            updateFileList(
+                                null,
+                                webDavUrl,
+                                irodsPathLength,
+                                checksumUrl,
+                                'sodar-lz-modal-link-next');
+                        })
+                        .append('Next')
+                        .append($('<i>')
+                            .attr('class', 'iconify ml-1')
+                            .attr('data-icon', 'mdi:arrow-right-circle')))));
+        $('#sodar-lz-obj-pagination').html(pageControls);
+    }
 }
 
 $(document).ready(function() {

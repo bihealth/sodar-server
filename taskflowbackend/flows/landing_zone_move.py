@@ -28,6 +28,23 @@ class Flow(BaseLinearFlow):
     sample data collection in iRODS.
     """
 
+    def _add_extra_data_task(self, zone_path, zone_objects_no_chk, zone_stats):
+        """Helper for adding TimelineEventExtraDataUpdateTask to flow"""
+        files = [p[len(zone_path) + 1 :] for p in zone_objects_no_chk]
+        self.add_task(
+            sodar_tasks.TimelineEventExtraDataUpdateTask(
+                name='Update timeline event extra data with file list',
+                project=self.project,
+                inject={
+                    'tl_event': self.tl_event,
+                    'extra_data': {
+                        'files': files,
+                        'total_size': zone_stats.get('total_size'),
+                    },
+                },
+            )
+        )
+
     def validate(self):
         # Only require lock if moving
         self.require_lock = not self.flow_data.get('validate_only', False)
@@ -269,6 +286,10 @@ class Flow(BaseLinearFlow):
 
         # Return at this point if validate_only
         if validate_only:
+            if self.tl_event:
+                self._add_extra_data_task(
+                    zone_path, zone_objects_no_chk, zone_stats
+                )
             self.add_task(
                 lz_tasks.SetLandingZoneStatusTask(
                     name='Set landing zone status to ACTIVE',
@@ -375,19 +396,8 @@ class Flow(BaseLinearFlow):
             )
         )
         if self.tl_event:
-            files = [p[len(zone_path) + 1 :] for p in zone_objects_no_chk]
-            self.add_task(
-                sodar_tasks.TimelineEventExtraDataUpdateTask(
-                    name='Update timeline event extra data with file list',
-                    project=self.project,
-                    inject={
-                        'tl_event': self.tl_event,
-                        'extra_data': {
-                            'files': files,
-                            'total_size': zone_stats.get('total_size'),
-                        },
-                    },
-                )
+            self._add_extra_data_task(
+                zone_path, zone_objects_no_chk, zone_stats
             )
         self.add_task(
             lz_tasks.SetLandingZoneStatusTask(

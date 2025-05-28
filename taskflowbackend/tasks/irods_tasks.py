@@ -789,8 +789,9 @@ class BatchValidateChecksumsTask(IrodsBaseTask):
                     cmp_errors.append(str(ex))
             if time.time() - time_start > interval and i_prev != i:
                 landing_zone.refresh_from_db()
-                landing_zone.status_info = f'{status_base} ({i}/{file_count})'
-                landing_zone.save()
+                landing_zone.set_status(
+                    landing_zone.status, f'{status_base} ({i}/{file_count})'
+                )
                 i_prev = i
                 time_start = time.time()
             i += 1
@@ -960,9 +961,9 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
                     )
 
             if time.time() - time_start > interval and i_prev != i:
-                landing_zone.refresh_from_db()
-                landing_zone.status_info = f'{status_base} ({i}/{file_count})'
-                landing_zone.save()
+                landing_zone.set_status(
+                    landing_zone.status, f'{status_base} ({i}/{file_count})'
+                )
                 i_prev = i
                 time_start = time.time()
             i += 1
@@ -1039,9 +1040,15 @@ class BatchCalculateChecksumTask(IrodsBaseTask):
     def execute(self, landing_zone, file_paths, force, *args, **kwargs):
         interval = settings.TASKFLOW_ZONE_PROGRESS_INTERVAL
         file_count = len(file_paths)
+        if file_count == 0:  # Nothing to do
+            super().execute(*args, **kwargs)
+            return
         status_base = landing_zone.status_info
         i = 1
         i_prev = 0
+        landing_zone.set_status(
+            landing_zone.status, f'{status_base} (1/{file_count})'
+        )  # Set initial status in case first file is a time consuming one
         time_start = time.time()
         for path in file_paths:
             if not self.irods.data_objects.exists(path):
@@ -1050,9 +1057,9 @@ class BatchCalculateChecksumTask(IrodsBaseTask):
             for replica in data_obj.replicas:
                 self._compute_checksum(data_obj, replica, force)
             if time.time() - time_start > interval and i_prev != i:
-                landing_zone.refresh_from_db()
-                landing_zone.status_info = f'{status_base} ({i}/{file_count})'
-                landing_zone.save()
+                landing_zone.set_status(
+                    landing_zone.status, f'{status_base} ({i}/{file_count})'
+                )
                 i_prev = i
                 time_start = time.time()
             i += 1

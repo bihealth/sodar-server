@@ -34,17 +34,15 @@ from samplesheets.views import (
 
 from landingzones.constants import (
     STATUS_ALLOW_UPDATE,
+    ZONE_STATUS_PREPARING,
+    ZONE_STATUS_VALIDATING,
     STATUS_FINISHED,
     STATUS_INFO_DELETE_NO_COLL,
     ZONE_STATUS_DELETED,
 )
 from landingzones.forms import LandingZoneForm
 from landingzones.models import LandingZone
-from landingzones.utils import (
-    get_zone_create_limit,
-    get_zone_validate_limit,
-    cleanup_file_prohibit,
-)
+from landingzones.utils import cleanup_file_prohibit
 
 
 app_settings = AppSettingAPI()
@@ -76,7 +74,7 @@ ZONE_VALIDATE_LIMIT_MSG = (
 
 
 class ZoneContextMixin:
-    """Context mixing for LandingZones UI views"""
+    """Context mixin for LandingZones UI views"""
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
@@ -92,7 +90,7 @@ class ZoneContextMixin:
 
 
 class ZoneConfigContextMixin:
-    """Context mixing for LandingZones configuration views"""
+    """Context mixin for LandingZones configuration views"""
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
@@ -100,6 +98,54 @@ class ZoneConfigContextMixin:
             sodar_uuid=self.kwargs['landingzone']
         ).first()
         return context
+
+
+class ProjectZoneInfoMixin:
+    """
+    Mixin for providing current project zone status and limit info for UI view
+    context and Ajax views.
+    """
+
+    @classmethod
+    def get_project_zone_info(cls, project):
+        """
+        Return project zone info for view context and Ajax views.
+
+        :param project: Project object
+        :return: Dict
+        """
+        taskflow = get_backend_api('taskflow')
+        ret = {}
+        # Project lock status
+        project_lock = False
+        if taskflow:
+            try:
+                project_lock = taskflow.is_locked(project)
+            except Exception as ex:
+                logger.error('Exception querying lock status: {}'.format(ex))
+        ret['project_lock'] = project_lock
+        # Active zone count and zone creation limit
+        active_count = (
+            LandingZone.objects.filter(project=project)
+            .exclude(status__in=STATUS_FINISHED)
+            .count()
+        )
+        create_limit = settings.LANDINGZONES_ZONE_CREATE_LIMIT
+        ret['zone_active_count'] = active_count
+        ret['zone_create_limit'] = create_limit
+        ret['zone_create_limit_reached'] = (
+            create_limit is not None and active_count >= create_limit
+        )
+        # Validating zone count and validation limit
+        valid_count = LandingZone.objects.filter(
+            project=project,
+            status__in=[ZONE_STATUS_PREPARING, ZONE_STATUS_VALIDATING],
+        ).count()
+        valid_limit = settings.LANDINGZONES_ZONE_VALIDATE_LIMIT or 1
+        ret['zone_validate_count'] = valid_count
+        ret['zone_validate_limit'] = valid_limit
+        ret['zone_validate_limit_reached'] = valid_count >= valid_limit
+        return ret
 
 
 class ZoneModifyPermissionMixin:
@@ -490,6 +536,7 @@ class ProjectZoneView(
     ProjectPermissionMixin,
     InvestigationContextMixin,
     ZoneContextMixin,
+    ProjectZoneInfoMixin,
     TemplateView,
 ):
     """View for displaying landing zones for a project"""
@@ -499,7 +546,6 @@ class ProjectZoneView(
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-        taskflow = get_backend_api('taskflow')
         project = context['project']
         # iRODS backend
         context['irods_backend_enabled'] = (
@@ -524,18 +570,7 @@ class ProjectZoneView(
             settings.LANDINGZONES_DISABLE_FOR_USERS
             and not self.request.user.is_superuser
         )
-        # Project lock status
-        project_lock = False
-        if taskflow:
-            try:
-                project_lock = taskflow.is_locked(project)
-            except Exception as ex:
-                logger.error('Exception querying lock status: {}'.format(ex))
-        context['project_lock'] = project_lock
-        # Zone creation limit
-        context['zone_create_limit'] = get_zone_create_limit(project)
-        # Zone validation limit
-        context['zone_validate_limit'] = get_zone_validate_limit(project)
+        context.update(self.get_project_zone_info(project))
         return context
 
 
@@ -888,8 +923,12 @@ class ZoneMoveView(
             return redirect(redirect_url)
 
         # Check limit
-        # if self.is_validate_limit_reached(project):
-        if get_zone_validate_limit(project):
+        valid_count = LandingZone.objects.filter(
+            project=project,
+            status__in=[ZONE_STATUS_PREPARING, ZONE_STATUS_VALIDATING],
+        ).count()
+        valid_limit = settings.LANDINGZONES_ZONE_VALIDATE_LIMIT or 1
+        if valid_count >= valid_limit:
             messages.error(self.request, ZONE_VALIDATE_LIMIT_MSG + '.')
             return redirect(redirect_url)
 

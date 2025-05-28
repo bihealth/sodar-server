@@ -815,13 +815,13 @@ LANDINGZONES_DISABLE_FOR_USERS = env.bool(
 )
 # Limit creation of active landing zones per project (0 or None = no limit)
 LANDINGZONES_ZONE_CREATE_LIMIT = env.int('LANDINGZONES_ZONE_CREATE_LIMIT', None)
-# Limit concurrent landing zone validations per project (0 or None = no limit)
+# Limit concurrent landing zone validations per project (1 or more)
 LANDINGZONES_ZONE_VALIDATE_LIMIT = env.int(
-    'LANDINGZONES_ZONE_VALIDATE_LIMIT', None
+    'LANDINGZONES_ZONE_VALIDATE_LIMIT', 1
 )
 # Landing zone file list modal page size
 LANDINGZONES_FILE_LIST_PAGINATION = env.int(
-    'LANDINGZONES_FILE_LIST_PAGINATION', 25
+    'LANDINGZONES_FILE_LIST_PAGINATION', 15
 )
 
 # Landingzones configapp plugin settings

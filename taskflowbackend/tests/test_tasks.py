@@ -730,9 +730,7 @@ class TestCreateUserGroupTask(IRODSTaskTestBase):
             inject={'name': TEST_USER_GROUP},
         )
         self.assertRaises(
-            GroupDoesNotExist,
-            self.irods.user_groups.get,
-            TEST_USER_GROUP,
+            GroupDoesNotExist, self.irods.user_groups.get, TEST_USER_GROUP
         )
         result = self.run_flow()
 
@@ -774,9 +772,7 @@ class TestCreateUserGroupTask(IRODSTaskTestBase):
 
         self.assertNotEqual(result, True)
         self.assertRaises(
-            GroupDoesNotExist,
-            self.irods.user_groups.get,
-            TEST_USER_GROUP,
+            GroupDoesNotExist, self.irods.user_groups.get, TEST_USER_GROUP
         )
 
     def test_revert_not_modified(self):
@@ -2677,7 +2673,8 @@ class TestBatchCalculateChecksumTask(
         self.assertEqual(obj.replicas[0].checksum, self.get_checksum(obj))
         self.zone.refresh_from_db()
         self.assertEqual(
-            self.zone.status_info, DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE]
+            self.zone.status_info,
+            DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE] + ' (1/1)',
         )
 
     def test_calculate_twice(self):

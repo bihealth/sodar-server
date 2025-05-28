@@ -246,10 +246,11 @@ Landing Zones Settings
     deleted before new ones can be created. The UI and API will inform the user
     of this limitation. Use value ``0`` for no limit (integer).
 ``LANDINGZONES_ZONE_VALIDATE_LIMIT``
-    Optional limit for how many landing zones can be simultaneously triggered
-    for validation in the project. If enabled, ongoing validation jobs must
-    finish before new ones can be initiated. The UI and API will inform the user
-    of this limitation. Use value ``0`` for no limit (integer).
+    Limit for how many landing zones can be simultaneously triggered for
+    validation in a project. Once the limit is reached, onoing validation jobs
+    in the project must finish before new ones can be initiated. The UI and API
+    will inform the user of this limitation. Set as ``1`` by default. Setting
+    this value to ``0`` or ``None`` will be considered as ``1`` (integer).
 ``LANDINGZONES_FILE_LIST_PAGINATION``
     Page size for landing zone iRODS file list modal pagination.
 ``LZ_BIH_PROTEOMICS_SMB_EXPIRY_DAYS``

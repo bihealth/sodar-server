@@ -5,6 +5,44 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+v1.1.1 (2025-05-28)
+===================
+
+Added
+-----
+
+- **Landingzones**
+    - Zone creation and validation limit badges in zone list UI (#2173)
+    - Django check for ``LANDINGZONES_ZONE_VALIDATE_LIMIT`` (#2179)
+- **Taskflowbackend**
+    - ``landing_zone_move`` timeline extra data in validate mode (#2172)
+
+Changed
+-------
+
+- **Landingzones**
+    - Set ``LANDINGZONES_ZONE_VALIDATE_LIMIT`` default to ``1`` (#2179)
+    - Disallow setting ``LANDINGZONES_ZONE_VALIDATE_LIMIT`` to ``None`` (#2179)
+    - Update zone file list modal page refresh rendering (#2181)
+    - Update ``LANDINGZONES_FILE_LIST_PAGINATION`` default value (#2177)
+    - Update zone file list modal pagination control rendering (#2182)
+- **Taskflowbackend**
+    - Update checksum calculation progress on initial file (#2171)
+    - Refactor zone progress updating (#2178)
+
+Fixed
+-----
+
+- **Taskflowbackend**
+    - Legacy project update failing with missing iRODS owner group (#2180)
+
+Removed
+-------
+
+- **Landingzones**
+    - ``get_zone_create_limit()`` and ``get_zone_validate_limit()`` helpers (#2173)
+
+
 v1.1.0 (2025-05-23)
 ===================
 
