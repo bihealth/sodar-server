@@ -25,6 +25,7 @@ Changed
     - Disallow setting ``LANDINGZONES_ZONE_VALIDATE_LIMIT`` to ``None`` (#2179)
     - Update zone file list modal page refresh rendering (#2181)
     - Update ``LANDINGZONES_FILE_LIST_PAGINATION`` default value (#2177)
+    - Update zone file list modal pagination control rendering (#2182)
 - **Taskflowbackend**
     - Update checksum calculation progress on initial file (#2171)
     - Refactor zone progress updating (#2178)

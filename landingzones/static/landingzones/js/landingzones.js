@@ -236,9 +236,13 @@ function updateChecksumStatus(checksumUrl, paths) {
     });
 }
 
-function updateFileList(listUrl, webDavUrl, irodsPathLength, checksumUrl) {
+function updateFileList(
+    listUrl, webDavUrl, irodsPathLength, checksumUrl, pageElemId) {
     var tableBody = $('#sodar-lz-obj-table-body');
     var titlePageSpan = $('#sodar-lz-obj-list-title-page');
+    if (!listUrl) {
+        listUrl = $('#' + pageElemId).attr('data-url');
+    }
     // Disable pagination buttons
     $('#sodar-lz-modal-page-item-prev').addClass('disabled');
     $('#sodar-lz-modal-page-item-next').addClass('disabled');
@@ -323,55 +327,8 @@ function updateFileList(listUrl, webDavUrl, irodsPathLength, checksumUrl) {
 
             // Display results
             tableBody.html(rows);
-
-            // Pagination
-            var prevClass = 'page-item';
-            if (!data['previous']) prevClass += ' disabled';
-            var nextClass = 'page-item';
-            if (!data['next']) nextClass += ' disabled';
-            var pageControls = $('<div>')
-                .attr('class',
-                    'pt-3 d-flex justify-content-center sodar-pr-pagination')
-                .append($('<ul>')
-                    .attr('class', 'pagination')
-                    .append($('<li>')
-                        .attr('class', prevClass)
-                        .attr('id', 'sodar-lz-modal-page-item-prev')
-                        .append($('<a>')
-                            .attr('class', 'page-link')
-                            .attr('id', 'sodar-lz-modal-link-prev')
-                            .attr('data-url', data['previous'])
-                            .click(function () {
-                                updateFileList(
-                                    data['previous'],
-                                    webDavUrl,
-                                    irodsPathLength,
-                                    checksumUrl);
-                            })
-                            .append($('<i>')
-                                .attr('class', 'iconify mr-1')
-                                .attr('data-icon', 'mdi:arrow-left-circle')
-                            ).append('Prev')))
-                    .append($('<li>')
-                        .attr('class', nextClass)
-                        .attr('id', 'sodar-lz-modal-page-item-next')
-                        .append($('<a>')
-                            .attr('class', 'page-link')
-                            .attr('id', 'sodar-lz-modal-link-next')
-                            .attr('data-url', data['next'])
-                            .click(function () {
-                                updateFileList(
-                                    data['next'],
-                                    webDavUrl,
-                                    irodsPathLength,
-                                    checksumUrl);
-                            })
-                            .append('Next')
-                            .append($('<i>')
-                                .attr('class', 'iconify ml-1')
-                                .attr('data-icon', 'mdi:arrow-right-circle')))));
-            $('#sodar-lz-obj-pagination').html(pageControls);
-
+            // Update pagination controls
+            updatePageConrols(data, webDavUrl, irodsPathLength, checksumUrl);
             // Call for checksum status retrieval
             if (objPaths.length > 0) {
                 updateChecksumStatus(checksumUrl, objPaths);
@@ -385,6 +342,79 @@ function updateFileList(listUrl, webDavUrl, irodsPathLength, checksumUrl) {
             tableBody.html(row);
         }
     });
+}
+
+
+// Update pagination controls
+function updatePageConrols(listData, webDavUrl, irodsPathLength, checksumUrl) {
+    var modalPagination = $('#sodar-lz-modal-pagination');
+    // If buttons already exist in DOM, simply update
+    if (modalPagination.length) {
+        var prevBtn = $('#sodar-lz-modal-page-item-prev');
+        var prevLink = $('#sodar-lz-modal-link-prev');
+        var nextBtn = $('#sodar-lz-modal-page-item-next');
+        var nextLink = $('#sodar-lz-modal-link-next');
+        if (listData['previous']) {
+            prevBtn.removeClass('disabled');
+            prevLink.attr('data-url', listData['previous']);
+        } else prevBtn.addClass('disabled');
+        if (listData['next']) {
+            nextBtn.removeClass('disabled');
+            nextLink.attr('data-url', listData['next']);
+        } else {
+            nextBtn.addClass('disabled');
+        }
+    } else { // Create controls
+        var prevClass = 'page-item';
+        if (!listData['previous']) prevClass += ' disabled';
+        var nextClass = 'page-item';
+        if (!listData['next']) nextClass += ' disabled';
+        var pageControls = $('<div>')
+            .attr('class',
+                'pt-3 d-flex justify-content-center sodar-pr-pagination')
+            .attr('id', 'sodar-lz-modal-pagination')
+            .append($('<ul>')
+                .attr('class', 'pagination')
+                .append($('<li>')
+                    .attr('class', prevClass)
+                    .attr('id', 'sodar-lz-modal-page-item-prev')
+                    .append($('<a>')
+                        .attr('class', 'page-link')
+                        .attr('id', 'sodar-lz-modal-link-prev')
+                        .attr('data-url', listData['previous'])
+                        .click(function () {
+                            updateFileList(
+                                null,
+                                webDavUrl,
+                                irodsPathLength,
+                                checksumUrl,
+                                'sodar-lz-modal-link-prev');
+                        })
+                        .append($('<i>')
+                            .attr('class', 'iconify mr-1')
+                            .attr('data-icon', 'mdi:arrow-left-circle')
+                        ).append('Prev')))
+                .append($('<li>')
+                    .attr('class', nextClass)
+                    .attr('id', 'sodar-lz-modal-page-item-next')
+                    .append($('<a>')
+                        .attr('class', 'page-link')
+                        .attr('id', 'sodar-lz-modal-link-next')
+                        .attr('data-url', listData['next'])
+                        .click(function () {
+                            updateFileList(
+                                null,
+                                webDavUrl,
+                                irodsPathLength,
+                                checksumUrl,
+                                'sodar-lz-modal-link-next');
+                        })
+                        .append('Next')
+                        .append($('<i>')
+                            .attr('class', 'iconify ml-1')
+                            .attr('data-icon', 'mdi:arrow-right-circle')))));
+        $('#sodar-lz-obj-pagination').html(pageControls);
+    }
 }
 
 $(document).ready(function() {
