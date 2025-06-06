@@ -8,6 +8,14 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v1.1.2 (WIP)
+============
+
+Release for minor updates, maintenance and bug fixes.
+
+- Fix incorrect file count in landing zone file moving progress counter
+
+
 v1.1.1 (2025-05-28)
 ===================
 

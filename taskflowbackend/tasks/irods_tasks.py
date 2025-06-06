@@ -884,9 +884,11 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
     ):
         self.execute_data['moved_objects'] = []
         interval = settings.TASKFLOW_ZONE_PROGRESS_INTERVAL
-        file_count = len(src_paths)
+        # Disregard checksum files in file count
+        chk_suffix = irods_backend.get_checksum_file_suffix()
+        file_count = len([p for p in src_paths if not p.endswith(chk_suffix)])
         status_base = landing_zone.status_info
-        i = 1
+        i = 0
         i_prev = 0
         time_start = time.time()
 
@@ -966,7 +968,8 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
                 )
                 i_prev = i
                 time_start = time.time()
-            i += 1
+            if not src_path.endswith(chk_suffix):
+                i += 1  # Only increment progress counter with data files
         super().execute(*args, **kwargs)
 
     def revert(

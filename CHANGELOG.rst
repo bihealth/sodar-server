@@ -5,6 +5,16 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+Unreleased
+==========
+
+Fixed
+-----
+
+- **Taskflowbackend**
+    - Incorrect file count in ``BatchMoveDataObjectsTask`` progress counter (#2186)
+
+
 v1.1.1 (2025-05-28)
 ===================
 

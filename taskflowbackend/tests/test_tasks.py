@@ -2600,6 +2600,9 @@ class TestBatchMoveDataObjectsTask(
     @override_settings(TASKFLOW_ZONE_PROGRESS_INTERVAL=0)
     def test_execute_progress(self):
         """Test moving with progress indicator"""
+        # Create checksum objects
+        chk_obj = self.make_checksum_object(self.batch_obj)
+        chk_obj2 = self.make_checksum_object(self.batch_obj2)
         self.assertEqual(
             self.zone.status_info, DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE]
         )
@@ -2610,7 +2613,12 @@ class TestBatchMoveDataObjectsTask(
                 'landing_zone': self.zone,
                 'src_root': self.batch_src_path,
                 'dest_root': self.batch_dest_path,
-                'src_paths': [self.batch_obj_path, self.batch_obj2_path],
+                'src_paths': [
+                    self.batch_obj_path,
+                    chk_obj.path,
+                    self.batch_obj2_path,
+                    chk_obj2.path,
+                ],
                 'access_name': IRODS_ACCESS_READ_IN,
                 'user_name': DEFAULT_USER_GROUP,
                 'irods_backend': self.irods_backend,
@@ -2623,7 +2631,7 @@ class TestBatchMoveDataObjectsTask(
         self.assertEqual(
             self.zone.status_info,
             DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE] + ' (2/2)',
-        )
+        )  # Checksum files should not be counted
 
 
 class TestBatchCalculateChecksumTask(
