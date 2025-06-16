@@ -13,6 +13,7 @@ v1.1.2 (WIP)
 
 Release for minor updates, maintenance and bug fixes.
 
+- Fix legacy landing zone move failure due to missing iRODS owner group
 - Fix incorrect file count in landing zone file moving progress counter
 
 

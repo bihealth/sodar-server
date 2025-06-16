@@ -13,6 +13,7 @@ Fixed
 
 - **Taskflowbackend**
     - Incorrect file count in ``BatchMoveDataObjectsTask`` progress counter (#2186)
+    - Legacy landing zone move failing with missing iRODS owner group (#2192)
 
 
 v1.1.1 (2025-05-28)

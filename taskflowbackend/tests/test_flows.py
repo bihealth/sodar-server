@@ -1015,6 +1015,67 @@ class TestLandingZoneMove(
         )
         self.assertEqual(self.irods.data_objects.exists(sample_obj.path), True)
 
+    def test_move_no_owner_group(self):
+        """Test landing_zone_move with no owner group"""
+        # Remove owner group
+        self.irods.users.remove(self.owner_group)
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(self.irods.collections.exists(self.zone_path), True)
+        empty_coll_path = os.path.join(self.zone_path, COLL_NAME)
+        self.irods.collections.create(empty_coll_path)
+        obj_coll_path = os.path.join(self.zone_path, OBJ_COLL_NAME)
+        obj_coll = self.irods.collections.create(obj_coll_path)
+        obj = self.make_irods_object(obj_coll, OBJ_NAME)
+        self.make_checksum_object(obj)
+        obj_path = os.path.join(obj_coll_path, OBJ_NAME)
+        self.assert_irods_access(self.user.username, obj_path, IRODS_ACCESS_OWN)
+        self.assert_irods_access(self.project_group, obj_path, None)
+
+        sample_obj_path = os.path.join(
+            self.sample_path, OBJ_COLL_NAME, OBJ_NAME
+        )
+        self.assertEqual(self.irods.collections.exists(empty_coll_path), True)
+        self.assertEqual(self.irods.collections.exists(obj_coll_path), True)
+        self.assertEqual(self.irods.data_objects.exists(obj_path), True)
+        self.assertEqual(
+            self.irods.data_objects.exists(obj_path + MD5_SUFFIX), True
+        )
+        self.assertEqual(self.irods.data_objects.exists(sample_obj_path), False)
+        self.assertEqual(
+            self.irods.data_objects.exists(sample_obj_path + MD5_SUFFIX), False
+        )
+
+        flow_data = {'zone_uuid': str(self.zone.sodar_uuid)}
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='landing_zone_move',
+            flow_data=flow_data,
+            tl_event=None,
+        )
+        self.assertEqual(type(flow), LandingZoneMoveFlow)
+        self.build_and_run(flow)
+
+        self.zone.refresh_from_db()
+        self.assertEqual(self.zone.status, ZONE_STATUS_MOVED)
+        self.assertEqual(self.irods.collections.exists(self.zone_path), False)
+        self.assertEqual(self.irods.data_objects.exists(sample_obj_path), True)
+        self.assertEqual(
+            self.irods.data_objects.exists(sample_obj_path + MD5_SUFFIX), True
+        )
+        self.assert_irods_access(
+            self.project_group, sample_obj_path, self.irods_access_read
+        )
+        self.assert_irods_access(self.owner_group, sample_obj_path, None)
+        self.assert_irods_access(
+            self.project_group,
+            sample_obj_path + MD5_SUFFIX,
+            self.irods_access_read,
+        )
+        self.assert_irods_access(
+            self.owner_group, sample_obj_path + MD5_SUFFIX, None
+        )
+
     def test_validate(self):
         """Test landing_zone_move with validate_only=True"""
         coll_path = os.path.join(self.zone_path, COLL_NAME)
