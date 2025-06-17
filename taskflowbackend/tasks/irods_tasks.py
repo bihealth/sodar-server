@@ -154,7 +154,7 @@ class ProgressCounterMixin:
         """
         interval = settings.TASKFLOW_ZONE_PROGRESS_INTERVAL
         if time.time() - time_start > interval and previous != current:
-            pct = math.floor(current / total * 100)
+            pct = math.floor(current / total * 100) if total > 0 else '?'
             zone.set_status(
                 zone.status, f'{status_base} ({current}/{total}: {pct}%)'
             )
@@ -796,7 +796,7 @@ class BatchValidateChecksumsTask(ProgressCounterMixin, IrodsBaseTask):
         chk_suffix = irods_backend.get_checksum_file_suffix()
         file_count = len(file_paths)
         status_base = landing_zone.status_info
-        i = 1
+        i = 0
         i_prev = 0
         read_errors = []
         cmp_errors = []
@@ -1069,10 +1069,10 @@ class BatchCalculateChecksumTask(ProgressCounterMixin, IrodsBaseTask):
             super().execute(*args, **kwargs)
             return
         status_base = landing_zone.status_info
-        i = 1
+        i = 0
         i_prev = 0
         landing_zone.set_status(
-            landing_zone.status, f'{status_base} (1/{file_count})'
+            landing_zone.status, f'{status_base} (0/{file_count}: 0%)'
         )  # Set initial status in case first file is a time consuming one
         time_start = time.time()
         for path in file_paths:
