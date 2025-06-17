@@ -19,6 +19,9 @@ Added
 Changed
 -------
 
+- **General**
+    - Upgrade to Django v4.2.23 (#2184)
+    - Upgrade critical dependencies (#2184)
 - **Irodsadmin**
     - Do not recreate cached tables in ``irodsorphans`` management command (#2191)
 
