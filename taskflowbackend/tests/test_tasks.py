@@ -1833,7 +1833,7 @@ class TestBatchValidateChecksumsTask(
         self.zone.refresh_from_db()
         self.assertEqual(
             self.zone.status_info,
-            DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE] + ' (1/1)',
+            DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE] + ' (1/1: 100%)',
         )
 
     def test_validate_invalid_in_file(self):
@@ -2630,7 +2630,7 @@ class TestBatchMoveDataObjectsTask(
         self.zone.refresh_from_db()
         self.assertEqual(
             self.zone.status_info,
-            DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE] + ' (2/2)',
+            DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE] + ' (2/2: 100%)',
         )  # Checksum files should not be counted
 
 
@@ -2734,7 +2734,7 @@ class TestBatchCalculateChecksumTask(
         self.zone.refresh_from_db()
         self.assertEqual(
             self.zone.status_info,
-            DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE] + ' (1/1)',
+            DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE] + ' (1/1: 100%)',
         )
 
 
