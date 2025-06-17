@@ -262,6 +262,13 @@ class TestSampleSheetTableBuilder(
         study_tables = self.tb.get_study_tables(self.study)
         self.assertEqual(study_tables, cache_item.data)
 
+    def test_get_study_tables_cache_disable_save(self):
+        """Test get_study_tables() with disabled cache saving"""
+        self.assertIsNone(self.cache_backend.get_cache_item(*self.cache_args))
+        study_tables = self.tb.get_study_tables(self.study, save_cache=False)
+        self.assertIsInstance(study_tables, dict)
+        self.assertIsNone(self.cache_backend.get_cache_item(*self.cache_args))
+
     @override_settings(SHEETS_ENABLE_STUDY_TABLE_CACHE=False)
     def test_get_study_tables_update_no_cache(self):
         """Test get_study_tables() with SHEETS_ENABLE_STUDY_TABLE_CACHE=False"""

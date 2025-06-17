@@ -8,6 +8,18 @@ Changelog for the SODAR project. Loosely follows the
 Unreleased
 ==========
 
+Added
+-----
+
+- **Samplesheets**
+    - ``save_cache`` arg in ``SampleSheetTableBuilder.get_study_tables()`` (#2190)
+
+Changed
+-------
+
+- **Irodsadmin**
+    - Do not recreate cached tables in ``irodsorphans`` management command (#2191)
+
 Fixed
 -----
 
