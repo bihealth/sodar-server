@@ -25,6 +25,8 @@ Changed
 Fixed
 -----
 
+- **Samplesheets**
+    - Germline plugin cache update crash with missing row path from assay plugin (#2193)
 - **Taskflowbackend**
     - Incorrect file count in ``BatchMoveDataObjectsTask`` progress counter (#2186)
     - Legacy landing zone move failing with missing iRODS owner group (#2192)

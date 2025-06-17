@@ -35,6 +35,7 @@ User = auth.get_user_model()
 
 # SODAR constants
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
+
 # Local constants
 APP_NAME = 'samplesheets.studyapps.germline'
 
@@ -325,18 +326,17 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         vcf_omit_list = get_igv_omit_list(project, 'vcf')
 
         for assay in study.assays.all():
+            skip_msg = 'skipping pedigree file path search: "{}" ({})'.format(
+                assay.get_display_name(), assay.sodar_uuid
+            )
             assay_plugin = assay.get_plugin()
             if not assay_plugin:
-                logger.warning(
-                    'No plugin for assay, skipping pedigree file path search: '
-                    '"{}" ({})'.format(
-                        assay.get_display_name(), assay.sodar_uuid
-                    )
-                )
+                logger.warning(f'No plugin for assay, {skip_msg}')
                 continue
             assay_table = study_tables['assays'][str(assay.sodar_uuid)]
             assay_path = irods_backend.get_path(assay)
             fam_idx = get_index_by_header(assay_table, 'family')
+            row_idx = 0
             for row in assay_table['table_data']:
                 source_name = row[0]['value']
                 if source_name not in bam_paths:
@@ -345,6 +345,14 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 path = assay_plugin.get_row_path(
                     row, assay_table, assay, assay_path
                 )
+                # Skip if path was not found
+                if not path:
+                    logger.warning(
+                        f'No path returned by get_row_path() for row '
+                        f'{row_idx}, {skip_msg}'
+                    )
+                    row_idx += 1
+                    continue
                 if obj_len > 0 and path not in bam_paths[source_name]:
                     bam_paths[source_name] += [
                         o['path']
@@ -368,6 +376,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                         and o['name'].lower().endswith('vcf.gz')
                         and check_igv_file_path(o['path'], vcf_omit_list)
                     ]
+                row_idx += 1
 
         # Update data
         # NOTE: We get the last file name, assuming files are named by date
