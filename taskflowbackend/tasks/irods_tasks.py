@@ -135,7 +135,7 @@ class IrodsAccessMixin:
 
 
 class ProgressCounterMixin:
-    """Mixin for progress counter helpers"""
+    """Mixin for file operation progress counter helpers"""
 
     @classmethod
     def update_zone_progress(
@@ -160,6 +160,17 @@ class ProgressCounterMixin:
             )
             return current, time.time()
         return previous, time_start  # If not updated, return previous values
+
+    @classmethod
+    def set_zone_final_status(cls, zone, status_base, total):
+        """
+        Set final progress status for landing zone.
+
+        :param zone: LandingZone object
+        :param status_base: Base status message (string)
+        :param total: Total file count (int)
+        """
+        zone.set_status(zone.status, f'{status_base} ({total}/{total}: 100%)')
 
 
 # Base Task --------------------------------------------------------------------
@@ -821,6 +832,7 @@ class BatchValidateChecksumsTask(ProgressCounterMixin, IrodsBaseTask):
                 landing_zone, status_base, i, i_prev, file_count, time_start
             )
             i += 1
+        self.set_zone_final_status(landing_zone, status_base, file_count)
 
         if read_errors or cmp_errors:
             ex_msg = ''
@@ -993,6 +1005,8 @@ class BatchMoveDataObjectsTask(ProgressCounterMixin, IrodsBaseTask):
             )
             if not src_path.endswith(chk_suffix):
                 i += 1  # Only increment progress counter with data files
+
+        self.set_zone_final_status(landing_zone, status_base, file_count)
         super().execute(*args, **kwargs)
 
     def revert(
@@ -1085,5 +1099,6 @@ class BatchCalculateChecksumTask(ProgressCounterMixin, IrodsBaseTask):
                 landing_zone, status_base, i, i_prev, file_count, time_start
             )
             i += 1
+        self.set_zone_final_status(landing_zone, status_base, file_count)
         super().execute(*args, **kwargs)
         # NOTE: We don't need revert for this

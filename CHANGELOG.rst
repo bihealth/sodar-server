@@ -14,7 +14,7 @@ Added
 - **Samplesheets**
     - ``save_cache`` arg in ``SampleSheetTableBuilder.get_study_tables()`` (#2190)
 - **Taskflowbackend**
-    - Percentages in zone progress counters (#2189, #2194)
+    - Percentages in zone progress counters (#2189, #2194, #2195)
 
 Changed
 -------

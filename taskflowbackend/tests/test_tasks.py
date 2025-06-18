@@ -1818,7 +1818,8 @@ class TestBatchValidateChecksumsTask(
         self.assertEqual(result, True)
         self.zone.refresh_from_db()
         self.assertEqual(
-            self.zone.status_info, DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE]
+            self.zone.status_info,
+            DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE] + ' (1/1: 100%)',
         )
 
     # TODO: Test with SHA256 checksum (see #2170)
@@ -2720,7 +2721,7 @@ class TestBatchCalculateChecksumTask(
         self.zone.refresh_from_db()
         self.assertEqual(
             self.zone.status_info,
-            DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE] + ' (0/1: 0%)',
+            DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE] + ' (1/1: 100%)',
         )
 
 
