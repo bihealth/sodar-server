@@ -1046,7 +1046,7 @@ class BatchCalculateChecksumTask(ProgressCounterMixin, IrodsBaseTask):
     """Batch calculate checksum for data objects (ichksum)"""
 
     def _raise_checksum_exception(self, ex, replica, data_obj, info=None):
-        info_str = (':' + info) if info else ''
+        info_str = (': ' + info) if info else ''
         self.raise_irods_exception(
             ex,
             f'Failed to calculate checksum{info_str}\nReplica: '
