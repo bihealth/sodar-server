@@ -1,3 +1,5 @@
+from irods.exception import GroupDoesNotExist
+
 from django.conf import settings
 
 # Landingzones dependency
@@ -57,6 +59,11 @@ class Flow(BaseLinearFlow):
         zone = LandingZone.objects.get(sodar_uuid=self.flow_data['zone_uuid'])
         project_group = self.irods_backend.get_group_name(self.project)
         owner_group = self.irods_backend.get_group_name(self.project, True)
+        try:  # Support for legacy zones
+            self.irods.user_groups.get(owner_group)
+            owner_group_exists = True
+        except GroupDoesNotExist:
+            owner_group_exists = False
         sample_path = self.irods_backend.get_path(zone.assay)
         zone_path = self.irods_backend.get_path(zone)
         chk_suffix = self.irods_backend.get_checksum_file_suffix()
@@ -159,19 +166,20 @@ class Flow(BaseLinearFlow):
                     },
                 )
             )
-            self.add_task(
-                irods_tasks.SetAccessTask(
-                    name='Set project owner group read access for zone '
-                    'collection {}'.format(zone_path),
-                    irods=self.irods,
-                    inject={
-                        'access_name': 'read',
-                        'path': zone_path,
-                        'user_name': owner_group,
-                        'irods_backend': self.irods_backend,
-                    },
+            if owner_group_exists:  # Support for legacy zones
+                self.add_task(
+                    irods_tasks.SetAccessTask(
+                        name='Set project owner group read access for zone '
+                        'collection {}'.format(zone_path),
+                        irods=self.irods,
+                        inject={
+                            'access_name': 'read',
+                            'path': zone_path,
+                            'user_name': owner_group,
+                            'irods_backend': self.irods_backend,
+                        },
+                    )
                 )
-            )
             # Workaround for sodar#297
             # If script user is set, set read access
             if self.flow_data.get('script_user'):
@@ -360,19 +368,20 @@ class Flow(BaseLinearFlow):
                 },
             )
         )
-        self.add_task(
-            irods_tasks.SetAccessTask(
-                name='Remove project owner group access from sample collection '
-                '{}'.format(sample_path),
-                irods=self.irods,
-                inject={
-                    'access_name': 'null',
-                    'path': sample_path,
-                    'user_name': owner_group,
-                    'irods_backend': self.irods_backend,
-                },
+        if owner_group_exists:  # Support for legacy zones
+            self.add_task(
+                irods_tasks.SetAccessTask(
+                    name='Remove project owner group access from sample '
+                    'collection {}'.format(sample_path),
+                    irods=self.irods,
+                    inject={
+                        'access_name': 'null',
+                        'path': sample_path,
+                        'user_name': owner_group,
+                        'irods_backend': self.irods_backend,
+                    },
+                )
             )
-        )
         # If script user is set, remove access
         if self.flow_data.get('script_user'):
             self.add_task(

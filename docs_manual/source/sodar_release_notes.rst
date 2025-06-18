@@ -8,6 +8,18 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v1.1.2 (2025-06-18)
+===================
+
+Release for minor updates, maintenance and bug fixes.
+
+- Add percentages in zone progress counters
+- Update irodsorphans management command study table cache handling
+- Fix legacy landing zone move failure due to missing iRODS owner group
+- Fix incorrect file count in landing zone file moving progress counter
+- Fix germline study plugin cache update crash with missing row path from assay plugin
+
+
 v1.1.1 (2025-05-28)
 ===================
 

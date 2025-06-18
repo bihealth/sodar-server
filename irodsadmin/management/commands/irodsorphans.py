@@ -50,7 +50,9 @@ class Command(BaseCommand):
         collections = []
         for study in studies:
             try:
-                study_tables = table_builder.get_study_tables(study)
+                study_tables = table_builder.get_study_tables(
+                    study, save_cache=False
+                )
             except Exception as ex:
                 logger.error(
                     'Study table building exception for "{}" '

@@ -840,12 +840,13 @@ class SampleSheetTableBuilder:
             ret[study] = self.build_study_tables(study, use_config=use_config)
         return ret
 
-    def get_study_tables(self, study):
+    def get_study_tables(self, study, save_cache=True):
         """
         Get study and assay tables for rendering. Retrieve from sodarcache or
         build and save to cache if not found.
 
         :param study: Study object
+        :param save_cache: Save tables in cache if cache is enabled (bool)
         :return: Dict
         """
         logger.info(
@@ -875,7 +876,7 @@ class SampleSheetTableBuilder:
 
         # If not found in cache, build and save tables
         study_tables = self.build_study_tables(study, use_config=True)
-        if cache_backend:
+        if cache_backend and save_cache:
             try:
                 cache_backend.set_cache_item(
                     app_name=APP_NAME,

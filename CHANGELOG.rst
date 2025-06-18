@@ -5,6 +5,36 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+v1.1.2 (2025-06-18)
+===================
+
+Added
+-----
+
+- **Samplesheets**
+    - ``save_cache`` arg in ``SampleSheetTableBuilder.get_study_tables()`` (#2190)
+- **Taskflowbackend**
+    - Percentages in zone progress counters (#2189, #2194, #2195)
+
+Changed
+-------
+
+- **General**
+    - Upgrade to Django v4.2.23 (#2184)
+    - Upgrade critical dependencies (#2184)
+- **Irodsadmin**
+    - Do not recreate cached tables in ``irodsorphans`` management command (#2191)
+
+Fixed
+-----
+
+- **Samplesheets**
+    - Germline plugin cache update crash with missing row path from assay plugin (#2193)
+- **Taskflowbackend**
+    - Incorrect file count in ``BatchMoveDataObjectsTask`` progress counter (#2186)
+    - Legacy landing zone move failing with missing iRODS owner group (#2192)
+
+
 v1.1.1 (2025-05-28)
 ===================
 

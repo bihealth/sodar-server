@@ -2,6 +2,7 @@
 
 import codecs
 import logging
+import math
 import os
 import random
 import re
@@ -131,6 +132,45 @@ class IrodsAccessMixin:
             )
             recursive = False if obj_target else recursive
             self.irods.acls.set(acl, recursive=recursive)
+
+
+class ProgressCounterMixin:
+    """Mixin for file operation progress counter helpers"""
+
+    @classmethod
+    def update_zone_progress(
+        cls, zone, status_base, current, previous, total, time_start
+    ):
+        """
+        Update landing zone status for progress counter.
+
+        :param zone: LandingZone object
+        :param status_base: Base status message (string)
+        :param current: Current file index (int)
+        :param previous: Previous logged file index (int)
+        :param total: Total file count (int)
+        :param time_start: Time of operation start (datetime)
+        :return: Tuple of int, datetime
+        """
+        interval = settings.TASKFLOW_ZONE_PROGRESS_INTERVAL
+        if time.time() - time_start > interval and previous != current:
+            pct = math.floor(current / total * 100) if total > 0 else '?'
+            zone.set_status(
+                zone.status, f'{status_base} ({current}/{total}: {pct}%)'
+            )
+            return current, time.time()
+        return previous, time_start  # If not updated, return previous values
+
+    @classmethod
+    def set_zone_final_status(cls, zone, status_base, total):
+        """
+        Set final progress status for landing zone.
+
+        :param zone: LandingZone object
+        :param status_base: Base status message (string)
+        :param total: Total file count (int)
+        """
+        zone.set_status(zone.status, f'{status_base} ({total}/{total}: 100%)')
 
 
 # Base Task --------------------------------------------------------------------
@@ -686,7 +726,7 @@ class BatchCheckFileExistTask(IrodsBaseTask):
         pass  # Nothing is modified so no need for revert
 
 
-class BatchValidateChecksumsTask(IrodsBaseTask):
+class BatchValidateChecksumsTask(ProgressCounterMixin, IrodsBaseTask):
     """Batch validate checksums of a given list of data object paths"""
 
     def _read_checksum(self, chk_path, zone_path_len, read_errors):
@@ -763,16 +803,16 @@ class BatchValidateChecksumsTask(IrodsBaseTask):
         **kwargs,
     ):
         zone_path_len = len(zone_path.split('/'))
-        interval = settings.TASKFLOW_ZONE_PROGRESS_INTERVAL
         hash_scheme = settings.IRODS_HASH_SCHEME
         chk_suffix = irods_backend.get_checksum_file_suffix()
         file_count = len(file_paths)
         status_base = landing_zone.status_info
-        i = 1
+        i = 0
         i_prev = 0
         read_errors = []
         cmp_errors = []
         time_start = time.time()
+
         for f_path in file_paths:
             chk_path = f_path + chk_suffix
             file_sum = self._read_checksum(chk_path, zone_path_len, read_errors)
@@ -787,14 +827,13 @@ class BatchValidateChecksumsTask(IrodsBaseTask):
                     )
                 except Exception as ex:
                     cmp_errors.append(str(ex))
-            if time.time() - time_start > interval and i_prev != i:
-                landing_zone.refresh_from_db()
-                landing_zone.set_status(
-                    landing_zone.status, f'{status_base} ({i}/{file_count})'
-                )
-                i_prev = i
-                time_start = time.time()
+
+            i_prev, time_start = self.update_zone_progress(
+                landing_zone, status_base, i, i_prev, file_count, time_start
+            )
             i += 1
+        self.set_zone_final_status(landing_zone, status_base, file_count)
+
         if read_errors or cmp_errors:
             ex_msg = ''
             if read_errors:
@@ -854,7 +893,7 @@ class BatchCreateCollectionsTask(IrodsBaseTask):
                     self.irods.collections.remove(coll_path, recurse=True)
 
 
-class BatchMoveDataObjectsTask(IrodsBaseTask):
+class BatchMoveDataObjectsTask(ProgressCounterMixin, IrodsBaseTask):
     """Batch move files (imv) and set access to user group (ichmod)"""
 
     @staticmethod
@@ -883,10 +922,11 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
         **kwargs,
     ):
         self.execute_data['moved_objects'] = []
-        interval = settings.TASKFLOW_ZONE_PROGRESS_INTERVAL
-        file_count = len(src_paths)
+        # Disregard checksum files in file count
+        chk_suffix = irods_backend.get_checksum_file_suffix()
+        file_count = len([p for p in src_paths if not p.endswith(chk_suffix)])
         status_base = landing_zone.status_info
-        i = 1
+        i = 0
         i_prev = 0
         time_start = time.time()
 
@@ -960,13 +1000,13 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
                         ),
                     )
 
-            if time.time() - time_start > interval and i_prev != i:
-                landing_zone.set_status(
-                    landing_zone.status, f'{status_base} ({i}/{file_count})'
-                )
-                i_prev = i
-                time_start = time.time()
-            i += 1
+            i_prev, time_start = self.update_zone_progress(
+                landing_zone, status_base, i, i_prev, file_count, time_start
+            )
+            if not src_path.endswith(chk_suffix):
+                i += 1  # Only increment progress counter with data files
+
+        self.set_zone_final_status(landing_zone, status_base, file_count)
         super().execute(*args, **kwargs)
 
     def revert(
@@ -1002,11 +1042,11 @@ class BatchMoveDataObjectsTask(IrodsBaseTask):
             self.irods.acls.set(acl, recursive=False)
 
 
-class BatchCalculateChecksumTask(IrodsBaseTask):
+class BatchCalculateChecksumTask(ProgressCounterMixin, IrodsBaseTask):
     """Batch calculate checksum for data objects (ichksum)"""
 
     def _raise_checksum_exception(self, ex, replica, data_obj, info=None):
-        info_str = (':' + info) if info else ''
+        info_str = (': ' + info) if info else ''
         self.raise_irods_exception(
             ex,
             f'Failed to calculate checksum{info_str}\nReplica: '
@@ -1038,16 +1078,15 @@ class BatchCalculateChecksumTask(IrodsBaseTask):
                 self._raise_checksum_exception(ex, replica, data_obj)
 
     def execute(self, landing_zone, file_paths, force, *args, **kwargs):
-        interval = settings.TASKFLOW_ZONE_PROGRESS_INTERVAL
         file_count = len(file_paths)
         if file_count == 0:  # Nothing to do
             super().execute(*args, **kwargs)
             return
         status_base = landing_zone.status_info
-        i = 1
+        i = 0
         i_prev = 0
         landing_zone.set_status(
-            landing_zone.status, f'{status_base} (1/{file_count})'
+            landing_zone.status, f'{status_base} (0/{file_count}: 0%)'
         )  # Set initial status in case first file is a time consuming one
         time_start = time.time()
         for path in file_paths:
@@ -1056,12 +1095,10 @@ class BatchCalculateChecksumTask(IrodsBaseTask):
             data_obj = self.irods.data_objects.get(path)
             for replica in data_obj.replicas:
                 self._compute_checksum(data_obj, replica, force)
-            if time.time() - time_start > interval and i_prev != i:
-                landing_zone.set_status(
-                    landing_zone.status, f'{status_base} ({i}/{file_count})'
-                )
-                i_prev = i
-                time_start = time.time()
+            i_prev, time_start = self.update_zone_progress(
+                landing_zone, status_base, i, i_prev, file_count, time_start
+            )
             i += 1
+        self.set_zone_final_status(landing_zone, status_base, file_count)
         super().execute(*args, **kwargs)
         # NOTE: We don't need revert for this
