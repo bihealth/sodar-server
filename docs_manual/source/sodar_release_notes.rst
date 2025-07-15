@@ -8,6 +8,14 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v1.1.3 (WIP)
+============
+
+Release for minor updates, maintenance and bug fixes.
+
+- Fix potential unwanted user access not unset in landing zone move flow
+
+
 v1.1.2 (2025-06-18)
 ===================
 

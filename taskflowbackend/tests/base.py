@@ -314,6 +314,7 @@ class TaskflowTestMixin(
         )
         self.irods_access_read = 'read_object'
         self.irods_access_write = 'modify_object'
+        self.irods_access_own = 'own'
 
     def tearDown(self):
         self.clear_irods_test_data()
