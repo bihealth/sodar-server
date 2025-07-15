@@ -19,6 +19,7 @@ Changed
 
 - **General**
     - Upgrade Docker image to ``python:3.11-bookworm`` (#2220)
+    - Upgrade to python-irodsclient v3.1.1 (#2219)
 
 Fixed
 -----
