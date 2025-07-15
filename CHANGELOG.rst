@@ -14,9 +14,17 @@ Added
 - **Taskflowbackend**
     - ``CleanupAccessTask`` iRODS task (#2217)
 
+Changed
+-------
+
+- **General**
+    - Upgrade Docker image to ``python:3.11-bookworm`` (#2220)
+
 Fixed
 -----
 
+- **General**
+    - Docker build failing due to outdated release links (#2220)
 - **Taskflowbackend**
     - Potential unwanted user access not unset in ``landing_zone_move`` (#2217)
 
