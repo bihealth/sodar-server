@@ -11,6 +11,8 @@ Unreleased
 Added
 -----
 
+- **Irodsadmin**
+    - ``checksampleaccess`` management command (#2216)
 - **Taskflowbackend**
     - ``CleanupAccessTask`` iRODS task (#2217)
 

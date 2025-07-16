@@ -13,6 +13,7 @@ v1.1.3 (WIP)
 
 Release for minor updates, maintenance and bug fixes.
 
+- Add checksampleaccess management command
 - Fix potential unwanted user access not unset in landing zone move flow
 - Upgrade Docker image build to Debian Bookworm
 - Upgrade critical dependencies

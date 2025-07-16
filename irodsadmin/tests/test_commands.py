@@ -5,6 +5,9 @@ import os
 import sys
 import uuid
 
+from irods.access import iRODSAccess
+
+from django.conf import settings
 from django.core.management import call_command
 
 from test_plus.test import TestCase
@@ -23,7 +26,21 @@ from landingzones.tests.test_models import LandingZoneMixin
 
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
+from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
+from samplesheets.views import MISC_FILES_COLL
 
+# Taskflowbackend dependency
+from taskflowbackend.tests.base import (
+    TaskflowViewTestBase,
+    IRODS_RODS_USER_TYPE,
+)
+
+from irodsadmin.management.commands.checksampleaccess import (
+    CHECK_ACCESS_DONE_MSG,
+    CHECK_ACCESS_GROUP_MSG,
+    CHECK_ACCESS_START_MSG,
+    CHECK_ACCESS_USER_MSG,
+)
 from irodsadmin.management.commands.irodsorphans import Command, DELETED
 
 
@@ -37,6 +54,156 @@ SHEET_PATH = SHEET_DIR + 'i_small.zip'
 ZONE_TITLE = '20180503_172456_test_zone'
 ZONE_DESC = 'description'
 DUMMY_UUID = '11111111-1111-1111-1111-111111111111'
+USER_ADMIN = settings.IRODS_USER
+USER_NEW = 'user_new'
+LOGGER_PREFIX = 'irodsadmin.management.commands.'
+TEST_OBJ = 'test1.txt'
+
+
+class TestCheckSampleAccess(
+    SampleSheetIOMixin, SampleSheetTaskflowMixin, TaskflowViewTestBase
+):
+    def setUp(self):
+        super().setUp()
+        # Init project with owner
+        self.project, self.owner_as = self.make_project_taskflow(
+            title='TestProject',
+            type=PROJECT_TYPE_PROJECT,
+            parent=self.category,
+            owner=self.user,
+            description='description',
+        )
+        # Set up investigation
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+        # Set up iRODS data
+        self.make_irods_colls(self.investigation)
+        self.sample_path = self.irods_backend.get_sample_path(self.project)
+        self.assay_path = self.irods_backend.get_path(self.assay)
+        self.misc_path = os.path.join(self.assay_path, MISC_FILES_COLL)
+        self.misc_coll = self.irods.collections.create(self.misc_path)
+        self.project_group = self.irods_backend.get_group_name(self.project)
+        # User with no project roles
+        self.irods_user_new = self.irods.users.create(
+            USER_NEW, IRODS_RODS_USER_TYPE
+        )
+        # Set up test vars
+        self.cmd_name = 'checksampleaccess'
+        self.logger_name = LOGGER_PREFIX + self.cmd_name
+
+    def test_command(self):
+        """Test command with default access"""
+        # Assert inherited access
+        paths = [self.sample_path, self.assay_path, self.misc_path]
+        for p in paths:
+            self.assert_irods_access(USER_ADMIN, p, self.irods_access_own)
+            self.assert_irods_access(
+                self.project_group, p, self.irods_access_read
+            )
+        with self.assertLogs(self.logger_name) as cm:
+            call_command(self.cmd_name)
+        self.assertEqual(len(cm.output), 2)  # Only startup and end log messages
+        self.assertIn(CHECK_ACCESS_START_MSG, cm.output[0])
+        self.assertIn(
+            CHECK_ACCESS_DONE_MSG.format(count=0, plural='s'), cm.output[1]
+        )
+
+    def test_command_extra_user_coll(self):
+        """Test command with extra user collection access"""
+        acl = iRODSAccess(
+            access_name=self.irods_access_own,
+            path=self.misc_path,
+            user_name=USER_NEW,
+            user_zone=self.irods.zone,
+        )
+        self.irods.acls.set(acl, recursive=True)
+        self.assert_irods_access(
+            USER_NEW, self.misc_path, self.irods_access_own
+        )
+        with self.assertLogs(self.logger_name) as cm:
+            call_command(self.cmd_name)
+        self.assertEqual(len(cm.output), 3)
+        self.assertIn(
+            f'{CHECK_ACCESS_USER_MSG}: '
+            f'{USER_NEW};{self.irods_access_own};{self.misc_path}',
+            cm.output[1],
+        )
+        self.assertIn(
+            CHECK_ACCESS_DONE_MSG.format(count=1, plural=''), cm.output[2]
+        )
+
+    def test_command_extra_user_obj(self):
+        """Test command with extra user data object access"""
+        obj = self.make_irods_object(self.misc_coll, TEST_OBJ)
+        acl = iRODSAccess(
+            access_name=self.irods_access_own,
+            path=obj.path,
+            user_name=USER_NEW,
+            user_zone=self.irods.zone,
+        )
+        self.irods.acls.set(acl, recursive=False)
+        self.assert_irods_access(USER_NEW, obj.path, self.irods_access_own)
+        with self.assertLogs(self.logger_name) as cm:
+            call_command(self.cmd_name)
+        self.assertEqual(len(cm.output), 3)
+        self.assertIn(
+            f'{CHECK_ACCESS_USER_MSG}: '
+            f'{USER_NEW};{self.irods_access_own};{obj.path}',
+            cm.output[1],
+        )
+        self.assertIn(
+            CHECK_ACCESS_DONE_MSG.format(count=1, plural=''), cm.output[2]
+        )
+
+    def test_command_invalid_group_coll_access(self):
+        """Test command with invalid project group collection access"""
+        acl = iRODSAccess(
+            access_name=self.irods_access_write,
+            path=self.misc_path,
+            user_name=self.project_group,
+            user_zone=self.irods.zone,
+        )
+        self.irods.acls.set(acl, recursive=True)
+        self.assert_irods_access(
+            self.project_group, self.misc_path, self.irods_access_write
+        )
+        with self.assertLogs(self.logger_name) as cm:
+            call_command(self.cmd_name)
+        self.assertEqual(len(cm.output), 3)
+        self.assertIn(
+            f'{CHECK_ACCESS_GROUP_MSG}: '
+            f'{self.irods_access_write};{self.misc_path}',
+            cm.output[1],
+        )
+        self.assertIn(
+            CHECK_ACCESS_DONE_MSG.format(count=1, plural=''), cm.output[2]
+        )
+
+    def test_command_invalid_group_obj_access(self):
+        """Test command with invalid project group data object access"""
+        obj = self.make_irods_object(self.misc_coll, TEST_OBJ)
+        acl = iRODSAccess(
+            access_name=self.irods_access_write,
+            path=obj.path,
+            user_name=self.project_group,
+            user_zone=self.irods.zone,
+        )
+        self.irods.acls.set(acl, recursive=False)
+        self.assert_irods_access(
+            self.project_group, obj.path, self.irods_access_write
+        )
+        with self.assertLogs(self.logger_name) as cm:
+            call_command(self.cmd_name)
+        self.assertEqual(len(cm.output), 3)
+        self.assertIn(
+            f'{CHECK_ACCESS_GROUP_MSG}: '
+            f'{self.irods_access_write};{obj.path}',
+            cm.output[1],
+        )
+        self.assertIn(
+            CHECK_ACCESS_DONE_MSG.format(count=1, plural=''), cm.output[2]
+        )
 
 
 # TODO: Modify this to use taskflow test base
@@ -49,6 +216,16 @@ class TestIrodsOrphans(
     TestCase,
 ):
     """Tests for the irodsorphans management command"""
+
+    @staticmethod
+    def _get_stdout():
+        """Call irodsorphans management command and return output"""
+        out = io.StringIO()
+        sys.stdout = out
+        call_command('irodsorphans', stdout=out)
+        output = out.getvalue()
+        sys.stdout = sys.__stdout__
+        return output
 
     def setUp(self):
         # Init roles
@@ -112,16 +289,6 @@ class TestIrodsOrphans(
         ).remove(force=True)
         self.irods.cleanup()
         super().tearDown()
-
-    @staticmethod
-    def catch_stdout():
-        """Catch stdout from irodsorphans management command"""
-        out = io.StringIO()
-        sys.stdout = out
-        call_command('irodsorphans', stdout=out)
-        output = out.getvalue()
-        sys.stdout = sys.__stdout__
-        return output
 
     def test_get_assay_collections(self):
         """Test get_assay_collections()"""
@@ -403,7 +570,7 @@ class TestIrodsOrphans(
             self.irods_backend.get_path(self.study), str(uuid.uuid4())
         )
         self.irods.collections.create(orphan_path)
-        output = self.catch_stdout()
+        output = self._get_stdout()
         expected = '{};{};{};0;0 bytes\n'.format(
             str(self.project.sodar_uuid),
             self.project.full_title,
@@ -417,7 +584,7 @@ class TestIrodsOrphans(
             self.irods_backend.get_path(self.project), str(uuid.uuid4())
         )
         self.irods.collections.create(orphan_path)
-        output = self.catch_stdout()
+        output = self._get_stdout()
         expected = '{};{};{};0;0 bytes\n'.format(
             str(self.project.sodar_uuid),
             self.project.full_title,
@@ -435,7 +602,7 @@ class TestIrodsOrphans(
             collection,
         )
         self.irods.collections.create(orphan_path)
-        output = self.catch_stdout()
+        output = self._get_stdout()
         expected = '{};{};{};0;0 bytes\n'.format(
             str(self.project.sodar_uuid),
             self.project.full_title,
@@ -454,7 +621,7 @@ class TestIrodsOrphans(
             collection,
         )
         self.irods.collections.create(orphan_path)
-        output = self.catch_stdout()
+        output = self._get_stdout()
         expected = '{};{};{};0;0 bytes\n'.format(
             project_uuid, DELETED, orphan_path
         )
@@ -467,7 +634,7 @@ class TestIrodsOrphans(
             self.irods_backend.get_path(self.assay), collection
         )
         self.irods.collections.create(orphan_path)
-        output = self.catch_stdout()
+        output = self._get_stdout()
         expected = '{};{};{};0;0 bytes\n'.format(
             str(self.project.sodar_uuid),
             self.project.full_title,
@@ -489,7 +656,7 @@ class TestIrodsOrphans(
             collection,
         )
         self.irods.collections.create(orphan_path2)
-        output = self.catch_stdout()
+        output = self._get_stdout()
         expected = '{};{};{};0;0 bytes\n'.format(
             str(self.project.sodar_uuid),
             self.project.full_title,
@@ -516,7 +683,7 @@ class TestIrodsOrphans(
         )
         self.irods.collections.create(orphan_path2)
 
-        output = self.catch_stdout()
+        output = self._get_stdout()
         expected = '{};{};{};0;0 bytes\n'.format(
             str(self.project.sodar_uuid),
             self.project.full_title,

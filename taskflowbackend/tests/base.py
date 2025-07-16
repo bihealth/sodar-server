@@ -65,6 +65,7 @@ APP_SETTING_SCOPE_PROJECT = SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT']
 IRODS_ACCESS_OWN = 'own'
 IRODS_ACCESS_NULL = 'null'
 IRODS_GROUP_PUBLIC = 'public'
+IRODS_RODS_USER_TYPE = 'rodsuser'
 TICKET_STR = 'ei8iomuDoazeiD2z'
 TEST_MODE_ERR_MSG = (
     'TASKFLOW_TEST_MODE not True, testing with SODAR Taskflow disabled'
@@ -523,7 +524,7 @@ class TaskflowViewTestBase(
     TaskflowProjectTestMixin,
     TestCase,
 ):
-    """Base class for testing with taskflow"""
+    """Base class for testing UI views with taskflow"""
 
 
 class TaskflowAPIViewTestBase(
