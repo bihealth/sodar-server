@@ -8,12 +8,12 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
-v1.1.3 (WIP)
-============
+v1.1.3 (2025-07-16)
+===================
 
 Release for minor updates, maintenance and bug fixes.
 
-- Add checksampleaccess management command
+- :ref:`Add checksampleaccess management command <admin_commands_sodar>`
 - Fix potential unwanted user access not unset in landing zone move flow
 - Upgrade Docker image build to Debian Bookworm
 - Upgrade critical dependencies

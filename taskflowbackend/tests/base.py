@@ -337,7 +337,7 @@ class TaskflowPermissionTestMixin(
         # No user
         self.anonymous = None
         # Users with role assignments
-        # NOTE: user_owner_cate created in super()
+        # NOTE: user_owner_cat created in super()
         self.user_delegate_cat = self.make_user('user_delegate_cat')
         self.user_contributor_cat = self.make_user('user_contributor_cat')
         self.user_guest_cat = self.make_user('user_guest_cat')

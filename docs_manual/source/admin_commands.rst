@@ -9,6 +9,8 @@ and used third party components. For more details on their usage, use the
 ``-h`` or ``--help`` argument.
 
 
+.. _admin_commands_core:
+
 SODAR Core Commands
 ===================
 
@@ -44,6 +46,8 @@ These commands originate in SODAR Core. More information can be found in the
     Synchronize project and user data from a remote site if remote project sync
     is enabled.
 
+
+.. _admin_commands_sodar:
 
 SODAR Commands
 ==============
