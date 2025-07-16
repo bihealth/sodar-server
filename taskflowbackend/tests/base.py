@@ -65,6 +65,7 @@ APP_SETTING_SCOPE_PROJECT = SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT']
 IRODS_ACCESS_OWN = 'own'
 IRODS_ACCESS_NULL = 'null'
 IRODS_GROUP_PUBLIC = 'public'
+IRODS_RODS_USER_TYPE = 'rodsuser'
 TICKET_STR = 'ei8iomuDoazeiD2z'
 TEST_MODE_ERR_MSG = (
     'TASKFLOW_TEST_MODE not True, testing with SODAR Taskflow disabled'
@@ -314,6 +315,7 @@ class TaskflowTestMixin(
         )
         self.irods_access_read = 'read_object'
         self.irods_access_write = 'modify_object'
+        self.irods_access_own = 'own'
 
     def tearDown(self):
         self.clear_irods_test_data()
@@ -335,7 +337,7 @@ class TaskflowPermissionTestMixin(
         # No user
         self.anonymous = None
         # Users with role assignments
-        # NOTE: user_owner_cate created in super()
+        # NOTE: user_owner_cat created in super()
         self.user_delegate_cat = self.make_user('user_delegate_cat')
         self.user_contributor_cat = self.make_user('user_contributor_cat')
         self.user_guest_cat = self.make_user('user_guest_cat')
@@ -522,7 +524,7 @@ class TaskflowViewTestBase(
     TaskflowProjectTestMixin,
     TestCase,
 ):
-    """Base class for testing with taskflow"""
+    """Base class for testing UI views with taskflow"""
 
 
 class TaskflowAPIViewTestBase(

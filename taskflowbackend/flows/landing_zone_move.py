@@ -69,6 +69,7 @@ class Flow(BaseLinearFlow):
         chk_suffix = self.irods_backend.get_checksum_file_suffix()
         admin_name = self.irods.username
         file_name_prohibit = self.flow_data.get('file_name_prohibit')
+        script_user = self.flow_data.get('script_user')
 
         # HACK: Set zone status in the Django site
         zone.set_status(
@@ -106,13 +107,13 @@ class Flow(BaseLinearFlow):
             for p in zone_object_colls
             if len(p.split('/')) > zone_path_len
         ]
-
-        # print('sample_path: {}'.format(sample_path))                  # DEBUG
-        # print('zone_objects: {}'.format(zone_objects))                # DEBUG
-        # print('zone_objects_no_chk: {}'.format(zone_objects_no_chk))  # DEBUG
-        # print('zone_all_colls: {}'.format(zone_all_colls))            # DEBUG
-        # print('zone_object_colls: {}'.format(zone_object_colls))      # DEBUG
-        # print('sample_colls: {}'.format(sample_colls))                # DEBUG
+        # Get user names of allowed users for access cleanup
+        allowed_users = [zone.user.username, admin_name, owner_group]
+        for a in self.project.get_owners() + self.project.get_delegates():
+            if a.user.username not in allowed_users:
+                allowed_users.append(a.user.username)
+        if script_user and script_user not in allowed_users:
+            allowed_users.append(script_user)
 
         # Set up task to set landing zone status to failed
         self.add_task(
@@ -131,6 +132,18 @@ class Flow(BaseLinearFlow):
         )
 
         if not validate_only:
+            # Enforce access cleanup in case of e.g. admin ACL modifications
+            self.add_task(
+                irods_tasks.CleanupAccessTask(
+                    name='Cleanup zone user access',
+                    irods=self.irods,
+                    inject={
+                        'path': zone_path,
+                        'user_names': allowed_users,
+                    },
+                )
+            )
+
             self.add_task(
                 irods_tasks.SetInheritanceTask(
                     name='Set inheritance for landing zone collection '
@@ -182,16 +195,16 @@ class Flow(BaseLinearFlow):
                 )
             # Workaround for sodar#297
             # If script user is set, set read access
-            if self.flow_data.get('script_user'):
+            if script_user:
                 self.add_task(
                     irods_tasks.SetAccessTask(
                         name='Set script user "{}" read access to landing '
-                        'zone'.format(self.flow_data['script_user']),
+                        'zone'.format(script_user),
                         irods=self.irods,
                         inject={
                             'access_name': 'read',
                             'path': zone_path,
-                            'user_name': self.flow_data['script_user'],
+                            'user_name': script_user,
                             'irods_backend': self.irods_backend,
                         },
                     )
@@ -383,16 +396,16 @@ class Flow(BaseLinearFlow):
                 )
             )
         # If script user is set, remove access
-        if self.flow_data.get('script_user'):
+        if script_user:
             self.add_task(
                 irods_tasks.SetAccessTask(
                     name='Remove script user "{}" access to sample path '
-                    'zone'.format(self.flow_data['script_user']),
+                    'zone'.format(script_user),
                     irods=self.irods,
                     inject={
                         'access_name': 'null',
                         'path': sample_path,
-                        'user_name': self.flow_data['script_user'],
+                        'user_name': script_user,
                         'irods_backend': self.irods_backend,
                     },
                 )

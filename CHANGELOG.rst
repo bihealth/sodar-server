@@ -5,6 +5,33 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+v1.1.3 (2025-07-16)
+===================
+
+Added
+-----
+
+- **Irodsadmin**
+    - ``checksampleaccess`` management command (#2216)
+- **Taskflowbackend**
+    - ``CleanupAccessTask`` iRODS task (#2217)
+
+Changed
+-------
+
+- **General**
+    - Upgrade Docker image to ``python:3.11-bookworm`` (#2220)
+    - Upgrade to python-irodsclient v3.1.1 (#2219)
+
+Fixed
+-----
+
+- **General**
+    - Docker build failing due to outdated release links (#2220)
+- **Taskflowbackend**
+    - Potential unwanted user access not unset in ``landing_zone_move`` (#2217)
+
+
 v1.1.2 (2025-06-18)
 ===================
 

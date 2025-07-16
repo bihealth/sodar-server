@@ -9,6 +9,7 @@ from irods.meta import iRODSMeta
 from irods.ticket import Ticket
 from irods.user import iRODSUser, iRODSUserGroup
 
+from django.conf import settings
 from django.test import override_settings
 
 from test_plus import TestCase
@@ -53,6 +54,7 @@ SHEET_PATH = SHEET_DIR + 'i_small.zip'
 DEFAULT_USER_GROUP = USER_PREFIX + 'group1'
 GROUP_USER = USER_PREFIX + 'user1'
 GROUPLESS_USER = USER_PREFIX + 'user2'
+ADMIN_USER = settings.IRODS_USER
 
 TEST_COLL_NAME = 'test'
 NEW_COLL_NAME = 'test_new'
@@ -63,11 +65,11 @@ SUB_COLL_NAME2 = 'sub2'
 MOVE_COLL_NAME = 'move_coll'
 
 TEST_USER = USER_PREFIX + 'user3'
-TEST_USER_TYPE = 'rodsuser'
 TEST_KEY = 'test_key'
 TEST_VAL = 'test_val'
 TEST_UNITS = 'test_units'
 TEST_USER_GROUP = USER_PREFIX + 'group2'
+RODS_USER_TYPE = 'rodsuser'
 
 # iRODS access control values
 # NOTE: input values set in base class for iRODS 4.2/4.3 support
@@ -993,7 +995,7 @@ class TestSetAccessTask(IRODSTaskTestBase):
         sub_coll = self.irods.collections.create(self.sub_coll_path)
         self.irods.users.create(
             user_name=TEST_USER,
-            user_type=TEST_USER_TYPE,
+            user_type=RODS_USER_TYPE,
             user_zone=self.irods.zone,
         )
         self.add_task(
@@ -1032,7 +1034,7 @@ class TestSetAccessTask(IRODSTaskTestBase):
         sub_coll = self.irods.collections.create(self.sub_coll_path)
         self.irods.users.create(
             user_name=TEST_USER,
-            user_type=TEST_USER_TYPE,
+            user_type=RODS_USER_TYPE,
             user_zone=self.irods.zone,
         )
 
@@ -1067,6 +1069,180 @@ class TestSetAccessTask(IRODSTaskTestBase):
 
         user_access = self.get_user_access(target=sub_coll, user_name=TEST_USER)
         self.assertEqual(user_access, None)
+
+
+class TestCleanupAccessTask(IRODSTaskTestBase):
+    """Tests for CleanupccessTask"""
+
+    def set_irods_access(self, path, user_name, access, recursive=True):
+        """Set iRODS access"""
+        if recursive and self.irods.data_objects.exists(path):
+            recursive = False
+        acl = iRODSAccess(
+            access_name=access,
+            path=path,
+            user_name=user_name,
+            user_zone=self.irods.zone,
+        )
+        self.irods.acls.set(acl, recursive=recursive)
+
+    def setUp(self):
+        super().setUp()
+        self.user_test = self.make_user(TEST_USER)
+        self.irods.users.create(TEST_USER, RODS_USER_TYPE)
+        self.task_name = 'Cleanup access'
+
+    def test_execute_coll(self):
+        """Test execute() with collection access"""
+        ua = self.get_user_access(self.test_coll, ADMIN_USER)
+        self.assertEqual(ua.access_name, self.irods_access_own)
+        self.assertIsNone(self.get_user_access(self.test_coll, TEST_USER))
+
+        # Set test user access to coll
+        self.set_irods_access(
+            self.test_coll.path, TEST_USER, self.irods_access_write
+        )
+        ua = self.get_user_access(self.test_coll, TEST_USER)
+        self.assertEqual(ua.access_name, self.irods_access_write)
+
+        self.add_task(
+            cls=CleanupAccessTask,
+            name=self.task_name,
+            inject={
+                'path': self.test_coll.path,
+                'user_names': [ADMIN_USER],  # No test user
+            },
+        )
+        result = self.run_flow()
+        self.assertEqual(result, True)
+        # Admin should still have access
+        ua = self.get_user_access(self.test_coll, ADMIN_USER)
+        self.assertEqual(ua.access_name, self.irods_access_own)
+        # Test user should not have access
+        self.assertIsNone(self.get_user_access(self.test_coll, TEST_USER))
+
+    def test_execute_coll_allowed(self):
+        """Test execute() with collection access and all users allowed"""
+        self.set_irods_access(
+            self.test_coll.path, TEST_USER, self.irods_access_write
+        )
+        ua = self.get_user_access(self.test_coll, ADMIN_USER)
+        self.assertEqual(ua.access_name, self.irods_access_own)
+        ua = self.get_user_access(self.test_coll, TEST_USER)
+        self.assertEqual(ua.access_name, self.irods_access_write)
+        self.add_task(
+            cls=CleanupAccessTask,
+            name=self.task_name,
+            inject={
+                'path': self.test_coll.path,
+                'user_names': [ADMIN_USER, TEST_USER],
+            },
+        )
+        result = self.run_flow()
+        self.assertEqual(result, True)
+        # Both users should still have access
+        ua = self.get_user_access(self.test_coll, ADMIN_USER)
+        self.assertEqual(ua.access_name, self.irods_access_own)
+        ua = self.get_user_access(self.test_coll, TEST_USER)
+        self.assertEqual(ua.access_name, self.irods_access_write)
+
+    def test_execute_coll_non_existent_user(self):
+        """Test execute() with collection access aand non-existent user"""
+        self.set_irods_access(
+            self.test_coll.path, TEST_USER, self.irods_access_write
+        )
+        ua = self.get_user_access(self.test_coll, ADMIN_USER)
+        self.assertEqual(ua.access_name, self.irods_access_own)
+        ua = self.get_user_access(self.test_coll, TEST_USER)
+        self.assertEqual(ua.access_name, self.irods_access_write)
+        self.add_task(
+            cls=CleanupAccessTask,
+            name=self.task_name,
+            inject={
+                'path': self.test_coll.path,
+                'user_names': [ADMIN_USER, TEST_USER, 'NON-EXISTENT-USER'],
+            },
+        )
+        result = self.run_flow()
+        self.assertEqual(result, True)  # We should not fail
+        ua = self.get_user_access(self.test_coll, ADMIN_USER)
+        self.assertEqual(ua.access_name, self.irods_access_own)
+        ua = self.get_user_access(self.test_coll, TEST_USER)
+        self.assertEqual(ua.access_name, self.irods_access_write)
+
+    def test_execute_group(self):
+        """Test execute() with user group"""
+        self.irods.user_groups.create(DEFAULT_USER_GROUP)
+        ua = self.get_user_access(self.test_coll, ADMIN_USER)
+        self.assertEqual(ua.access_name, self.irods_access_own)
+        self.assertIsNone(
+            self.get_user_access(self.test_coll, DEFAULT_USER_GROUP)
+        )
+        self.set_irods_access(
+            self.test_coll.path, DEFAULT_USER_GROUP, self.irods_access_write
+        )
+        ua = self.get_user_access(self.test_coll, DEFAULT_USER_GROUP)
+        self.assertEqual(ua.access_name, self.irods_access_write)
+        self.add_task(
+            cls=CleanupAccessTask,
+            name=self.task_name,
+            inject={
+                'path': self.test_coll.path,
+                'user_names': [ADMIN_USER],  # No user group
+            },
+        )
+        result = self.run_flow()
+        self.assertEqual(result, True)
+        ua = self.get_user_access(self.test_coll, ADMIN_USER)
+        self.assertEqual(ua.access_name, self.irods_access_own)
+        self.assertIsNone(
+            self.get_user_access(self.test_coll, DEFAULT_USER_GROUP)
+        )
+
+    def test_execute_obj(self):
+        """Test execute() with data object access"""
+        obj = self.make_irods_object(self.test_coll, TEST_OBJ_NAME)
+        self.set_irods_access(obj.path, TEST_USER, self.irods_access_write)
+        ua = self.get_user_access(obj, ADMIN_USER)
+        self.assertEqual(ua.access_name, self.irods_access_own)
+        ua = self.get_user_access(obj, TEST_USER)
+        self.assertEqual(ua.access_name, self.irods_access_write)
+        self.add_task(
+            cls=CleanupAccessTask,
+            name=self.task_name,
+            inject={
+                'path': self.test_coll.path,
+                'user_names': [ADMIN_USER],  # No test user
+            },
+        )
+        result = self.run_flow()
+        self.assertEqual(result, True)
+        ua = self.get_user_access(obj, ADMIN_USER)
+        self.assertEqual(ua.access_name, self.irods_access_own)
+        self.assertIsNone(self.get_user_access(obj, TEST_USER))
+
+    def test_execute_obj_allowed(self):
+        """Test execute() with data object access and all users allowed"""
+        obj = self.make_irods_object(self.test_coll, TEST_OBJ_NAME)
+        self.set_irods_access(obj.path, TEST_USER, self.irods_access_write)
+        ua = self.get_user_access(obj, ADMIN_USER)
+        self.assertEqual(ua.access_name, self.irods_access_own)
+        ua = self.get_user_access(obj, TEST_USER)
+        self.assertEqual(ua.access_name, self.irods_access_write)
+        self.add_task(
+            cls=CleanupAccessTask,
+            name=self.task_name,
+            inject={
+                'path': self.test_coll.path,
+                'user_names': [ADMIN_USER, TEST_USER],
+            },
+        )
+        result = self.run_flow()
+        self.assertEqual(result, True)
+        ua = self.get_user_access(obj, ADMIN_USER)
+        self.assertEqual(ua.access_name, self.irods_access_own)
+        ua = self.get_user_access(obj, TEST_USER)
+        self.assertEqual(ua.access_name, self.irods_access_write)
 
 
 class TestIssueTicketTask(IRODSTaskTestBase):
@@ -1287,7 +1463,7 @@ class TestCreateUserTask(IRODSTaskTestBase):
         self.add_task(
             cls=CreateUserTask,
             name='Create user',
-            inject={'user_name': TEST_USER, 'user_type': TEST_USER_TYPE},
+            inject={'user_name': TEST_USER, 'user_type': RODS_USER_TYPE},
         )
         self.assertRaises(UserDoesNotExist, self.irods.users.get, TEST_USER)
         result = self.run_flow()
@@ -1301,7 +1477,7 @@ class TestCreateUserTask(IRODSTaskTestBase):
         self.add_task(
             cls=CreateUserTask,
             name='Create user',
-            inject={'user_name': TEST_USER, 'user_type': TEST_USER_TYPE},
+            inject={'user_name': TEST_USER, 'user_type': RODS_USER_TYPE},
         )
         result = self.run_flow()
         self.assertEqual(result, True)
@@ -1310,7 +1486,7 @@ class TestCreateUserTask(IRODSTaskTestBase):
         self.add_task(
             cls=CreateUserTask,
             name='Create user',
-            inject={'user_name': TEST_USER, 'user_type': TEST_USER_TYPE},
+            inject={'user_name': TEST_USER, 'user_type': RODS_USER_TYPE},
         )
         self.run_flow()
 
@@ -1322,7 +1498,7 @@ class TestCreateUserTask(IRODSTaskTestBase):
         self.add_task(
             cls=CreateUserTask,
             name='Create user',
-            inject={'user_name': TEST_USER, 'user_type': TEST_USER_TYPE},
+            inject={'user_name': TEST_USER, 'user_type': RODS_USER_TYPE},
             force_fail=True,
         )  # FAIL
         result = self.run_flow()
@@ -1335,7 +1511,7 @@ class TestCreateUserTask(IRODSTaskTestBase):
         self.add_task(
             cls=CreateUserTask,
             name='Create user',
-            inject={'user_name': TEST_USER, 'user_type': TEST_USER_TYPE},
+            inject={'user_name': TEST_USER, 'user_type': RODS_USER_TYPE},
         )
         result = self.run_flow()
         self.assertEqual(result, True)
@@ -1345,7 +1521,7 @@ class TestCreateUserTask(IRODSTaskTestBase):
         self.add_task(
             cls=CreateUserTask,
             name='Create user',
-            inject={'user_name': TEST_USER, 'user_type': TEST_USER_TYPE},
+            inject={'user_name': TEST_USER, 'user_type': RODS_USER_TYPE},
             force_fail=True,
         )  # FAIL
         result = self.run_flow()
@@ -1364,12 +1540,12 @@ class TestAddUserToGroupTask(IRODSTaskTestBase):
         group = self.irods.user_groups.create(DEFAULT_USER_GROUP)
         # Init default users
         self.irods.users.create(
-            user_name=GROUP_USER, user_type='rodsuser', user_zone=IRODS_ZONE
+            user_name=GROUP_USER, user_type=RODS_USER_TYPE, user_zone=IRODS_ZONE
         )
         group.addmember(GROUP_USER)
         self.irods.users.create(
             user_name=GROUPLESS_USER,
-            user_type='rodsuser',
+            user_type=RODS_USER_TYPE,
             user_zone=IRODS_ZONE,
         )
 
@@ -1474,7 +1650,7 @@ class TestRemoveUserFromGroupTask(IRODSTaskTestBase):
         group = self.irods.user_groups.create(DEFAULT_USER_GROUP)
         # Init default users
         self.irods.users.create(
-            user_name=GROUP_USER, user_type='rodsuser', user_zone=IRODS_ZONE
+            user_name=GROUP_USER, user_type=RODS_USER_TYPE, user_zone=IRODS_ZONE
         )
         group.addmember(GROUP_USER)
 
