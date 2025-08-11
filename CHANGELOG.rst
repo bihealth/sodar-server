@@ -8,6 +8,12 @@ Changelog for the SODAR project. Loosely follows the
 Unreleased
 ==========
 
+Changed
+-------
+
+- **Samplesheets**
+    - Upgrade critical Vue app dependencies (#2237)
+
 Fixed
 -----
 

@@ -14,6 +14,7 @@ v1.1.4 (WIP)
 Release for minor updates, maintenance and bug fixes.
 
 - Fix samplesheets iRODS file list modal filtering case insensitivity
+- Upgrade critical dependencies
 
 
 v1.1.3 (2025-07-16)
