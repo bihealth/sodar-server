@@ -143,6 +143,22 @@ describe('IrodsDirModal.vue', () => {
     expect(wrapper.findAll('.sodar-ss-irods-obj').at(1).attributes('style')).not.toBe(displayNone)
   })
 
+  it('updates list on onFilterUpdate() with different case', async () => {
+    fetchMock.mock(listAjaxUrl, objList)
+    const wrapper = mount(IrodsDirModal, {
+      localVue, propsData: propsData
+    })
+    wrapper.vm.showModal(rootIrodsPath)
+    await waitNT(wrapper.vm)
+    await waitRAF()
+
+    await wrapper.vm.onFilterUpdate('Test2') // Different case than in result
+    expect(wrapper.find('.sodar-irods-obj-table').exists()).toBe(true)
+    expect(wrapper.findAll('.sodar-ss-irods-obj').length).toBe(2)
+    expect(wrapper.findAll('.sodar-ss-irods-obj').at(0).attributes('style')).toBe(displayNone)
+    expect(wrapper.findAll('.sodar-ss-irods-obj').at(1).attributes('style')).not.toBe(displayNone)
+  })
+
   it('clears filter input on modal re-open', async () => {
     fetchMock.mock(listAjaxUrl, objList)
     const wrapper = mount(IrodsDirModal, {

@@ -143,7 +143,8 @@ export default {
       let visCount = 0
       for (let i = 0; i < this.objectList.length; i++) {
         const vis = event === '' ||
-          this.objectList[i].displayPath.toLowerCase().includes(event)
+          this.objectList[i].displayPath.toLowerCase().includes(
+            event.toLowerCase())
         this.$set(this.objectList[i], 'visibleInList', vis)
         if (vis === true) visCount += 1
       }

@@ -5,6 +5,16 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+Unreleased
+==========
+
+Fixed
+-----
+
+- **Samplesheets**
+    - ``IrodsDirModal`` filtering not case insensitive (#2236)
+
+
 v1.1.3 (2025-07-16)
 ===================
 

@@ -8,6 +8,14 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v1.1.4 (WIP)
+============
+
+Release for minor updates, maintenance and bug fixes.
+
+- Fix samplesheets iRODS file list modal filtering case insensitivity
+
+
 v1.1.3 (2025-07-16)
 ===================
 
