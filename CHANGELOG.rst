@@ -25,6 +25,7 @@ Fixed
 
 - **Samplesheets**
     - ``IrodsDirModal`` filtering not case insensitive (#2236)
+    - ``IrodsDirModal`` filtering not working with full subpath (#2239)
 
 
 v1.1.3 (2025-07-16)

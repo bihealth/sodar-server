@@ -159,6 +159,27 @@ describe('IrodsDirModal.vue', () => {
     expect(wrapper.findAll('.sodar-ss-irods-obj').at(1).attributes('style')).not.toBe(displayNone)
   })
 
+  it('updates list on onFilterUpdate() with full subpath', async () => {
+    objList.irods_data[1].path = '/sodarZone/projects/00/' +
+        '00000000-0000-0000-0000-000000000000/sample_data/' +
+        'study_11111111-1111-1111-1111-111111111111/' +
+        'assay_22222222-2222-2222-2222-222222222222/' +
+        '0815-N1-DNA1/subcoll/test2.txt'
+    fetchMock.mock(listAjaxUrl, objList)
+    const wrapper = mount(IrodsDirModal, {
+      localVue, propsData: propsData
+    })
+    wrapper.vm.showModal(rootIrodsPath)
+    await waitNT(wrapper.vm)
+    await waitRAF()
+
+    await wrapper.vm.onFilterUpdate('subcoll/test2.txt')
+    expect(wrapper.find('.sodar-irods-obj-table').exists()).toBe(true)
+    expect(wrapper.findAll('.sodar-ss-irods-obj').length).toBe(2)
+    expect(wrapper.findAll('.sodar-ss-irods-obj').at(0).attributes('style')).toBe(displayNone)
+    expect(wrapper.findAll('.sodar-ss-irods-obj').at(1).attributes('style')).not.toBe(displayNone)
+  })
+
   it('clears filter input on modal re-open', async () => {
     fetchMock.mock(listAjaxUrl, objList)
     const wrapper = mount(IrodsDirModal, {

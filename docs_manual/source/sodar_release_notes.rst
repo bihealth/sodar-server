@@ -14,7 +14,7 @@ v1.1.4 (WIP)
 Release for minor updates, maintenance and bug fixes.
 
 - Add CELERY_LOGLEVEL env var in Docker entrypoint
-- Fix samplesheets iRODS file list modal filtering case insensitivity
+- Fix samplesheets iRODS file list modal filtering issues
 - Upgrade critical dependencies
 
 

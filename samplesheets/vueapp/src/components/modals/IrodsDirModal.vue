@@ -187,7 +187,7 @@ export default {
           for (let i = 0; i < this.objectList.length; i++) {
             this.objectList[i].visibleInList = true
             this.objectList[i].displayPath =
-              this.getRelativePath(this.objectList[i].path) +
+              this.getRelativePath(this.objectList[i].path) + '/' +
                 this.objectList[i].name
             this.fileSize += this.objectList[i].size
           }
