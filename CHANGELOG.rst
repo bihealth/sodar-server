@@ -8,6 +8,12 @@ Changelog for the SODAR project. Loosely follows the
 Unreleased
 ==========
 
+Added
+-----
+
+- **General**
+    - ``CELERY_LOGLEVEL`` env var in ``docker-entrypoint.sh`` (#2234)
+
 Changed
 -------
 
