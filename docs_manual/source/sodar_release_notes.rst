@@ -13,6 +13,7 @@ v1.1.4 (WIP)
 
 Release for minor updates, maintenance and bug fixes.
 
+- Add site app setting to disable landing zone move access cleanup
 - Add CELERY_LOGLEVEL env var in Docker entrypoint
 - Fix samplesheets iRODS file list modal filtering issues
 - Upgrade critical dependencies

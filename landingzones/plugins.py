@@ -35,6 +35,7 @@ logger = logging.getLogger(__name__)
 # SODAR constants
 APP_SETTING_SCOPE_PROJECT = SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT']
 APP_SETTING_SCOPE_USER = SODAR_CONSTANTS['APP_SETTING_SCOPE_USER']
+APP_SETTING_SCOPE_SITE = SODAR_CONSTANTS['APP_SETTING_SCOPE_SITE']
 APP_SETTING_TYPE_BOOLEAN = SODAR_CONSTANTS['APP_SETTING_TYPE_BOOLEAN']
 APP_SETTING_TYPE_STRING = SODAR_CONSTANTS['APP_SETTING_TYPE_STRING']
 
@@ -73,7 +74,19 @@ LANDINGZONES_APP_SETTINGS = [
         placeholder='xyz.gz,abc',
         user_modifiable=True,
     ),
+    PluginAppSettingDef(
+        name='zone_access_cleanup',
+        scope=APP_SETTING_SCOPE_SITE,
+        type=APP_SETTING_TYPE_BOOLEAN,
+        default=True,
+        label='Landing zone access cleanup',
+        description='Enable experimental cleanup feature for landing zone '
+        'access on zone move, in case of e.g admin ACL modifications. Disable '
+        'if encountering performance issues or other zone moving problems.',
+        user_modifiable=True,
+    ),  # TODO: Remove once implementing #2215
 ]
+
 LANDINGZONES_INFO_SETTINGS = [
     'LANDINGZONES_DISABLE_FOR_USERS',
     'LANDINGZONES_FILE_LIST_PAGINATION',

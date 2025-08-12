@@ -13,12 +13,17 @@ Added
 
 - **General**
     - ``CELERY_LOGLEVEL`` env var in ``docker-entrypoint.sh`` (#2234)
+- **Landingzones**
+    - ``zone_access_cleanup`` site app setting (#2235)
+
 
 Changed
 -------
 
 - **Samplesheets**
     - Upgrade critical Vue app dependencies (#2237)
+- **Taskflowbackend**
+    - Make ``landing_zone_move`` access cleanup optional (#2235)
 
 Fixed
 -----
