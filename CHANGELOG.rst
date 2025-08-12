@@ -5,6 +5,34 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+v1.1.4 (2025-08-12)
+===================
+
+Added
+-----
+
+- **General**
+    - ``CELERY_LOGLEVEL`` env var in ``docker-entrypoint.sh`` (#2234)
+- **Landingzones**
+    - ``zone_access_cleanup`` site app setting (#2235)
+
+
+Changed
+-------
+
+- **Samplesheets**
+    - Upgrade critical Vue app dependencies (#2237)
+- **Taskflowbackend**
+    - Make ``landing_zone_move`` access cleanup optional (#2235)
+
+Fixed
+-----
+
+- **Samplesheets**
+    - ``IrodsDirModal`` filtering not case insensitive (#2236)
+    - ``IrodsDirModal`` filtering not working with full subpath (#2239)
+
+
 v1.1.3 (2025-07-16)
 ===================
 

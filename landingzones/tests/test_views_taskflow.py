@@ -3,6 +3,7 @@
 import os
 import time
 
+from irods.access import iRODSAccess
 from irods.exception import GroupDoesNotExist
 from irods.test.helpers import make_object
 
@@ -933,6 +934,91 @@ class TestZoneMoveView(
         self.assert_zone_status(self.zone, ZONE_STATUS_MOVED)
         self.assertEqual(len(self.zone_coll.data_objects), 0)
         self.assertEqual(len(self.assay_coll.data_objects), 2)
+
+    def test_post_move_extra_user_obj(self):
+        """Test POST to move with extra object access for user"""
+        user_new = self.make_user('user_new')
+        self.irods.users.create('user_new', 'rodsuser')
+
+        irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
+        self.make_checksum_object(irods_obj)
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assert_irods_access(
+            self.owner_group, self.zone_path, IRODS_ACCESS_OWN
+        )
+        self.assert_irods_access(
+            self.user_owner.username, self.zone_path, IRODS_ACCESS_OWN
+        )
+        self.assert_irods_access(self.user.username, self.zone_path, None)
+        self.assert_irods_access(self.project_group, self.zone_path, None)
+
+        acl = iRODSAccess(
+            access_name='own',
+            path=irods_obj.path,
+            user_name=user_new.username,
+            user_zone=self.irods.zone,
+        )
+        self.irods.acls.set(acl)
+        self.assert_irods_access(
+            user_new.username, irods_obj.path, IRODS_ACCESS_OWN
+        )
+
+        with self.login(self.user):
+            response = self.client.post(self.url_move)
+            self.assertRedirects(response, self.url_redirect)
+
+        self.assert_zone_status(self.zone, ZONE_STATUS_MOVED)
+        obj_path = os.path.join(self.assay_path, TEST_OBJ_NAME)
+        self.assert_irods_access(self.owner_group, obj_path, None)
+        self.assert_irods_access(self.user.username, obj_path, None)
+        self.assert_irods_access(
+            self.project_group, obj_path, IRODS_ACCESS_READ
+        )
+        # New user should not have access
+        self.assert_irods_access(user_new.username, obj_path, None)
+
+    def test_post_move_extra_user_obj_disable_cleanup(self):
+        """Test POST to move with extra object access and disabled cleanup"""
+        app_settings.set(APP_NAME, 'zone_access_cleanup', False)
+        user_new = self.make_user('user_new')
+        self.irods.users.create('user_new', 'rodsuser')
+
+        irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
+        self.make_checksum_object(irods_obj)
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assert_irods_access(
+            self.owner_group, self.zone_path, IRODS_ACCESS_OWN
+        )
+        self.assert_irods_access(
+            self.user_owner.username, self.zone_path, IRODS_ACCESS_OWN
+        )
+        self.assert_irods_access(self.user.username, self.zone_path, None)
+        self.assert_irods_access(self.project_group, self.zone_path, None)
+
+        acl = iRODSAccess(
+            access_name='own',
+            path=irods_obj.path,
+            user_name=user_new.username,
+            user_zone=self.irods.zone,
+        )
+        self.irods.acls.set(acl)
+        self.assert_irods_access(
+            user_new.username, irods_obj.path, IRODS_ACCESS_OWN
+        )
+
+        with self.login(self.user):
+            response = self.client.post(self.url_move)
+            self.assertRedirects(response, self.url_redirect)
+
+        self.assert_zone_status(self.zone, ZONE_STATUS_MOVED)
+        obj_path = os.path.join(self.assay_path, TEST_OBJ_NAME)
+        self.assert_irods_access(self.owner_group, obj_path, None)
+        self.assert_irods_access(self.user.username, obj_path, None)
+        self.assert_irods_access(
+            self.project_group, obj_path, IRODS_ACCESS_READ
+        )
+        # New user should have access
+        self.assert_irods_access(user_new.username, obj_path, IRODS_ACCESS_OWN)
 
     def test_post_validate(self):
         """Test POST to validate landing zone with objects without moving"""

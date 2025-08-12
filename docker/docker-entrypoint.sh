@@ -16,6 +16,8 @@ set -euo pipefail
 #                      default: "default,query,import" (all)
 #   CELERY_WORKERS  -- celery concurrency/process count
 #                      default: "8"
+#   CELERY_LOGLEVEL -- celery log level
+#                      default: "info"
 #
 #   NO_WAIT         -- skip waiting for servers
 #                      default: "0"
@@ -34,6 +36,7 @@ set -euo pipefail
 APP_DIR=${APP_DIR-/usr/src/app}
 CELERY_QUEUES=${CELERY_QUEUES-default,query,import}
 CELERY_WORKERS=${CELERY_WORKERS-8}
+CELERY_LOGLEVEL=${CELERY_LOGLEVEL-info}
 NO_WAIT=${NO_WAIT-0}
 export WAIT_HOSTS=${WAIT_HOSTS-postgres:5432, redis:6379}
 export PYTHONUNBUFFERED=${PYTHONUNBUFFERED-1}
@@ -76,7 +79,7 @@ elif [[ "$1" == celeryd ]]; then
     worker \
     -Q "${CELERY_QUEUES}" \
     --concurrency "${CELERY_WORKERS}" \
-    --loglevel info
+    --loglevel "${CELERY_LOGLEVEL}"
 elif [[ "$1" == celerybeat ]]; then
   cd $APP_DIR
   rm -f celerybeat.pid
@@ -85,7 +88,7 @@ elif [[ "$1" == celerybeat ]]; then
     --app config.celery_app \
     beat \
     --max-interval 30 \
-    --loglevel info
+    --loglevel "${CELERY_LOGLEVEL}"
 else
   cd $APP_DIR
   exec "$@"

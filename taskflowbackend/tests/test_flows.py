@@ -916,7 +916,6 @@ class TestLandingZoneMove(
             flow_data=flow_data,
             tl_event=None,
         )
-        self.assertEqual(type(flow), LandingZoneMoveFlow)
         self.build_and_run(flow)
 
         self.zone.refresh_from_db()
@@ -940,6 +939,72 @@ class TestLandingZoneMove(
         )
         # New user should have no access
         self.assert_irods_access(user_new.username, sample_obj_path, None)
+
+    def test_move_extra_user_coll_disable_cleanup(self):
+        """Test landing_zone_move with extra user coll access and disabled cleanup"""
+        # Create new user
+        user_new = self.make_user('user_new')
+        self.irods.users.create('user_new', 'rodsuser')
+        obj_coll_path = os.path.join(self.zone_path, OBJ_COLL_NAME)
+        obj_coll = self.irods.collections.create(obj_coll_path)
+        obj = self.make_irods_object(obj_coll, OBJ_NAME)
+        self.make_checksum_object(obj)
+        obj_path = os.path.join(obj_coll_path, OBJ_NAME)
+        self.assert_irods_access(self.owner_group, obj_path, IRODS_ACCESS_OWN)
+        self.assert_irods_access(self.user.username, obj_path, IRODS_ACCESS_OWN)
+        self.assert_irods_access(self.project_group, obj_path, None)
+
+        acl = iRODSAccess(
+            access_name='own',
+            path=obj_coll_path,
+            user_name=user_new.username,
+            user_zone=self.irods.zone,
+        )
+        self.irods.acls.set(acl, recursive=True)
+        self.assert_irods_access(
+            user_new.username, obj_coll_path, IRODS_ACCESS_OWN
+        )
+
+        sample_obj_path = os.path.join(
+            self.sample_path, OBJ_COLL_NAME, OBJ_NAME
+        )
+        self.assertEqual(self.irods.data_objects.exists(sample_obj_path), False)
+        self.assertEqual(
+            self.irods.data_objects.exists(sample_obj_path + MD5_SUFFIX), False
+        )
+
+        flow_data = {
+            'zone_uuid': str(self.zone.sodar_uuid),
+            'access_cleanup': False,
+        }
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='landing_zone_move',
+            flow_data=flow_data,
+            tl_event=None,
+        )
+        self.build_and_run(flow)
+
+        self.zone.refresh_from_db()
+        self.assertEqual(self.zone.status, ZONE_STATUS_MOVED)
+        self.assertEqual(
+            self.irods.data_objects.exists(sample_obj_path + MD5_SUFFIX), True
+        )
+        self.assert_irods_access(
+            self.project_group, sample_obj_path, self.irods_access_read
+        )
+        self.assert_irods_access(self.owner_group, sample_obj_path, None)
+        self.assert_irods_access(
+            self.project_group,
+            sample_obj_path + MD5_SUFFIX,
+            self.irods_access_read,
+        )
+        self.assert_irods_access(
+            self.owner_group, sample_obj_path + MD5_SUFFIX, None
+        )
+        # New user should have access
+        self.assert_irods_access(user_new.username, sample_obj_path, 'own')
 
     def test_move_locked(self):
         """Test landing_zone_move with locked project (should fail)"""

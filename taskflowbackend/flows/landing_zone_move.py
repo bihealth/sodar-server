@@ -70,6 +70,8 @@ class Flow(BaseLinearFlow):
         admin_name = self.irods.username
         file_name_prohibit = self.flow_data.get('file_name_prohibit')
         script_user = self.flow_data.get('script_user')
+        # TODO: Remove after implementing #2215
+        access_cleanup = self.flow_data.get('access_cleanup', True)
 
         # HACK: Set zone status in the Django site
         zone.set_status(
@@ -133,16 +135,18 @@ class Flow(BaseLinearFlow):
 
         if not validate_only:
             # Enforce access cleanup in case of e.g. admin ACL modifications
-            self.add_task(
-                irods_tasks.CleanupAccessTask(
-                    name='Cleanup zone user access',
-                    irods=self.irods,
-                    inject={
-                        'path': zone_path,
-                        'user_names': allowed_users,
-                    },
+            # TODO: Remove after implementing #2215
+            if access_cleanup:
+                self.add_task(
+                    irods_tasks.CleanupAccessTask(
+                        name='Cleanup zone user access',
+                        irods=self.irods,
+                        inject={
+                            'path': zone_path,
+                            'user_names': allowed_users,
+                        },
+                    )
                 )
-            )
 
             self.add_task(
                 irods_tasks.SetInheritanceTask(

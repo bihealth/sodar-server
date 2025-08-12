@@ -506,6 +506,7 @@ class ZoneMoveMixin(ZoneConfigPluginMixin):
             )
             tl_event.set_status(timeline.TL_STATUS_SUBMIT)
 
+        # TODO: Remove access_cleanup after implementing #2215
         flow_data = self.get_flow_data(
             zone=zone,
             flow_name='landing_zone_move',
@@ -513,6 +514,9 @@ class ZoneMoveMixin(ZoneConfigPluginMixin):
                 'zone_uuid': str(zone.sodar_uuid),
                 'file_name_prohibit': app_settings.get(
                     APP_NAME, 'file_name_prohibit', project=project
+                ),
+                'access_cleanup': app_settings.get(
+                    APP_NAME, 'zone_access_cleanup'
                 ),
             },
         )
