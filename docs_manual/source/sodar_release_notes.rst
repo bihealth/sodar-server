@@ -8,12 +8,12 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
-v1.1.4 (WIP)
-============
+v1.1.4 (2025-08-12)
+===================
 
 Release for minor updates, maintenance and bug fixes.
 
-- Add site app setting to disable landing zone move access cleanup
+- :ref:`Add site app setting to disable landing zone move access cleanup <admin_site_app_settings>`
 - Add CELERY_LOGLEVEL env var in Docker entrypoint
 - Fix samplesheets iRODS file list modal filtering issues
 - Upgrade critical dependencies
