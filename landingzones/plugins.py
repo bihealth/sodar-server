@@ -13,7 +13,7 @@ from projectroles.plugins import (
     ProjectModifyPluginMixin,
     PluginAppSettingDef,
     PluginObjectLink,
-    get_backend_api,
+    PluginAPI,
 )
 
 # Samplesheets dependency
@@ -30,6 +30,7 @@ from landingzones.views import ZoneModifyMixin
 
 
 logger = logging.getLogger(__name__)
+plugin_api = PluginAPI()
 
 
 # SODAR constants
@@ -316,8 +317,8 @@ class ProjectAppPlugin(
             logger.debug('Skipping: No active zones found')
             return
 
-        irods_backend = get_backend_api('omics_irods')
-        taskflow = get_backend_api('taskflow')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
+        taskflow = plugin_api.get_backend_api('taskflow')
         if not irods_backend or not taskflow:
             logger.debug('Skipping: Required backend plugins not active')
             return

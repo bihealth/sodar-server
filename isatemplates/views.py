@@ -22,7 +22,7 @@ from django.views.generic import (
 )
 
 # Projectroles dependency
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.views import CurrentUserFormMixin, LoggedInPermissionMixin
 
 from isatemplates.forms import ISATemplateForm
@@ -31,6 +31,9 @@ from isatemplates.models import (
     CookiecutterISAFile,
     ISA_FILE_PREFIXES,
 )
+
+
+plugin_api = PluginAPI()
 
 
 # Local constants
@@ -46,7 +49,7 @@ class ISATemplateModifyMixin:
     """Modification helpers for ISA-Tab template views"""
 
     def handle_modify(self, obj, action):
-        timeline = get_backend_api('timeline_backend')
+        timeline = plugin_api.get_backend_api('timeline_backend')
         if timeline:
             tl_extra = {}
             if action in ['create', 'update']:
@@ -108,7 +111,7 @@ class ISATemplateListView(LoggedInPermissionMixin, TemplateView):
                 CUBI_TEMPLATES, key=lambda x: x.description.lower()
             )
         context['backend_enabled'] = (
-            get_backend_api('isatemplates_backend') is not None
+            plugin_api.get_backend_api('isatemplates_backend') is not None
         )
         return context
 

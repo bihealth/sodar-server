@@ -31,13 +31,17 @@ Parent
 Description
     Set an optional longer description of the project.
 ReadMe
-    Set an optional ReadMe document with for the project. MarkDown notation can
-    be used.
-Public guest access
-    Enable public guest access to the project for anyone using SODAR. This
-    should be used with caution and is generally intended for demonstration
-    projects. If your SODAR server allows anonymous users, this will grant guest
-    access to anyone browsing the site.
+    Set an optional readme document for the project. Markdown notation can be
+    used. Note that project guests and viewers can see the readme:s of projects
+    and their parent categories. Providing confidential information here should
+    be done with care.
+Public access
+    Enable public access to the project for anyone using SODAR. Either grants
+    full read-only access as project guest, or a partial read-only access as
+    project viewer. This feature should be used with caution and is generally
+    intended for demonstration projects. If your SODAR server allows anonymous
+    users, this will grant specified access to anyone browsing the site even if
+    they have not logged in.
 Enable project on {target remote site}
     Enable access to project for project members on the selected target site.
     Target sites for which project owner/delegation modifying is enabled by an

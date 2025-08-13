@@ -177,7 +177,7 @@ class IrodsAPI:
         """
         if project.__class__.__name__ != 'Project':
             raise ValueError('Argument "project" is not a Project object')
-        if project.type != PROJECT_TYPE_PROJECT:
+        if project.is_category():
             raise ValueError(
                 'Project type is not {}'.format(PROJECT_TYPE_PROJECT)
             )

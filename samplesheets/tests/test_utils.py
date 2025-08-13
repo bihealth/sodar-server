@@ -9,7 +9,7 @@ from test_plus.test import TestCase
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.tests.test_models import (
     ProjectMixin,
     RoleMixin,
@@ -37,6 +37,7 @@ from samplesheets.tests.test_io import (
 
 
 app_settings = AppSettingAPI()
+plugin_api = PluginAPI()
 
 
 # Local constants
@@ -104,7 +105,7 @@ class TestGetSampleColls(SamplesheetsUtilsTestBase):
 
     def setUp(self):
         super().setUp()
-        self.irods_backend = get_backend_api('omics_irods')
+        self.irods_backend = plugin_api.get_backend_api('omics_irods')
 
     def test_get_sample_colls(self):
         """Test get_sample_colls() with a minimal ISA-Tab example"""
@@ -236,8 +237,7 @@ class TestGetWebdavUrl(SamplesheetsUtilsTestBase):
     def test_anon_user(self):
         """Test get_webdav_url() with anonymous user for a public project"""
         # Mock public project update
-        self.project.public_guest_access = True
-        self.project.save()
+        self.project.set_public_access(self.role_guest)
         app_settings.set(
             'samplesheets',
             'public_access_ticket',

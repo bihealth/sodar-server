@@ -30,7 +30,7 @@ from test_plus import TestCase, APITestCase
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import Project, RoleAssignment, SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.tests.test_models import (
     ProjectMixin,
     RoleMixin,
@@ -50,6 +50,7 @@ from taskflowbackend.lock_api import ProjectLockAPI
 app_settings = AppSettingAPI()
 lock_api = ProjectLockAPI()
 logger = logging.getLogger(__name__)
+plugin_api = PluginAPI()
 
 
 # SODAR constants
@@ -229,7 +230,7 @@ class TaskflowTestMixin(
             raise ImproperlyConfigured(
                 'TASKFLOW_TEST_MODE not True, cleanup command not allowed'
             )
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         permanent_users = getattr(
             settings, 'TASKFLOW_TEST_PERMANENT_USERS', DEFAULT_PERMANENT_USERS
         )
@@ -295,8 +296,8 @@ class TaskflowTestMixin(
         # Ensure TASKFLOW_TEST_MODE is True to avoid data loss
         if not settings.TASKFLOW_TEST_MODE:
             raise ImproperlyConfigured(TEST_MODE_ERR_MSG)
-        self.taskflow = get_backend_api('taskflow', force=True)
-        self.irods_backend = get_backend_api('omics_irods')
+        self.taskflow = plugin_api.get_backend_api('taskflow', force=True)
+        self.irods_backend = plugin_api.get_backend_api('omics_irods')
         self.irods = self.irods_backend.get_session_obj()
         # Init roles
         self.init_roles()
@@ -421,13 +422,16 @@ class TaskflowProjectTestMixin:
         public_guest_access=False,
     ):
         """Make Project with taskflow for UI view tests"""
+        # TODO: Add support for public_access and viewer role
         post_data = {
             'title': title,
             'type': type,
             'parent': parent.sodar_uuid if parent else None,
             'owner': owner.sodar_uuid,
             'description': description,
-            'public_guest_access': public_guest_access,
+            'public_access': (
+                self.role_guest.pk if public_guest_access else ''
+            ),
         }
         post_data.update(
             app_settings.get_defaults(APP_SETTING_SCOPE_PROJECT, post_safe=True)
@@ -488,6 +492,7 @@ class TaskflowAPIProjectTestMixin:
             'owner': owner.sodar_uuid,
             'description': description,
             'readme': readme,
+            'public_access': '',  # TODO: Add support for public_access
         }
         response = self.request_knox(
             reverse('projectroles:api_project_create'),

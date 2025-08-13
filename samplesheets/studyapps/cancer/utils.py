@@ -1,4 +1,4 @@
-""" Utilities for the cancer study app"""
+"""Utilities for the cancer study app"""
 
 import os
 

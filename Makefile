@@ -6,6 +6,7 @@ define USAGE=
 @echo -e "\tmake black [arg=--<arg>]                    -- format python with black"
 @echo -e "\tmake serve [arg=sync]                       -- start server"
 @echo -e "\tmake flake                                  -- run flake8"
+@echo -e "\tmake js-beautify arg=<path>                 -- run js-beautify on JQuery file(s)"
 @echo -e "\tmake celery                                 -- start celery & celerybeat"
 @echo -e "\tmake demo                                   -- start demo server"
 @echo -e "\tmake samplesheets_vue                       -- start samplesheet vue.js app"
@@ -24,7 +25,7 @@ arg =
 
 .PHONY: black
 black:
-	black . -l 80 --skip-string-normalization --exclude ".git|.venv|.tox|env|src|docs|migrations|node_modules|versioneer.py|_version.py" $(arg)
+	black . $(arg)
 
 
 .PHONY: sync_taskflow
@@ -44,6 +45,11 @@ endif
 .PHONY: flake
 flake:
 	flake8 .
+
+
+.PHONY: js-beautify
+js-beautify:
+	js-beautify -anr -s 2 -w 80 $(arg)
 
 
 .PHONY: celery

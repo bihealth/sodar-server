@@ -12,7 +12,7 @@ from test_plus.test import TestCase
 
 # Projectroles dependency
 from projectroles.constants import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.tests.test_models import (
     ProjectMixin,
     RoleMixin,
@@ -33,6 +33,10 @@ from landingzones.tests.test_models import LandingZoneMixin
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
 
+plugin_api = PluginAPI()
+
+
+# Local constants
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
@@ -128,7 +132,7 @@ class TestInactiveZones(LandingzonesCommandTestBase):
                 config_data={},
             )
 
-        self.irods_backend = get_backend_api('omics_irods')
+        self.irods_backend = plugin_api.get_backend_api('omics_irods')
         self.irods = self.irods_backend.get_session_obj()
 
         # Create iRODS collections

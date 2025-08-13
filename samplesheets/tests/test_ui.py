@@ -17,7 +17,7 @@ from selenium.webdriver.support import expected_conditions as ec
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.tests.test_ui import UITestBase
 
 from samplesheets.forms import TPL_DIR_FIELD, TPL_DIR_LABEL
@@ -45,6 +45,7 @@ from samplesheets.views_ajax import ALERT_ACTIVE_REQS
 
 
 app_settings = AppSettingAPI()
+plugin_api = PluginAPI()
 
 
 # Local constants
@@ -152,7 +153,7 @@ class TestProjectSheetsView(IrodsDataRequestMixin, SamplesheetsUITestBase):
     def test_render_alert(self):
         """Test rendering alert retrieved from SODAR context"""
         # NOTE: Testing here as we don't (yet) have vue tests for entire app
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         self.investigation.irods_status = True
         self.investigation.save()
         self.make_irods_request(

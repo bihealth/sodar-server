@@ -6,7 +6,7 @@ from test_plus.test import TestCase
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.tests.test_models import (
     ProjectMixin,
     RoleMixin,
@@ -27,6 +27,7 @@ from samplesheets.tests.test_sheet_config import SheetConfigMixin
 
 
 app_settings = AppSettingAPI()
+plugin_api = PluginAPI()
 
 
 # Local constants
@@ -83,7 +84,7 @@ class SamplesheetsRenderingTestBase(
         self.assay = self.study.assays.first()
         self.tb = SampleSheetTableBuilder()
         # Set up helpers
-        self.cache_backend = get_backend_api('sodar_cache')
+        self.cache_backend = plugin_api.get_backend_api('sodar_cache')
         self.cache_name = STUDY_TABLE_CACHE_ITEM.format(
             study=self.study.sodar_uuid
         )

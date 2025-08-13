@@ -7,7 +7,7 @@ from test_plus.test import TestCase
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.tests.test_models import (
     ProjectMixin,
     RoleMixin,
@@ -24,6 +24,9 @@ from samplesheets.tests.test_io import (
     SampleSheetIOMixin,
     SHEET_DIR,
 )
+
+
+plugin_api = PluginAPI()
 
 
 # Local constants
@@ -59,7 +62,7 @@ class SamplesheetsPluginTestBase(
         self.ret_data = dict(
             study={'display_name': self.study.get_display_name()}
         )
-        self.irods_backend = get_backend_api('omics_irods')
+        self.irods_backend = plugin_api.get_backend_api('omics_irods')
 
 
 class TestGetIrodsContent(SamplesheetsPluginTestBase):
@@ -102,7 +105,7 @@ class TestUpdateCacheRows(SamplesheetsPluginTestBase):
         super().setUp()
         # NOTE: Using dna_sequencing as the example plugin here
         self.plugin = DnaSequencingPlugin()
-        self.cache_backend = get_backend_api('sodar_cache')
+        self.cache_backend = plugin_api.get_backend_api('sodar_cache')
         item_name = 'irods/rows/{}'.format(self.assay.sodar_uuid)
         self.item_kwargs = {
             'app_name': ASSAY_PLUGIN_NAME,

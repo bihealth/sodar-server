@@ -73,8 +73,7 @@ class TestSyncModifyAPI(
         """Test sync with public guest access"""
         self.investigation.irods_status = True
         self.investigation.save()
-        self.project.public_guest_access = True
-        self.project.save()
+        self.project.set_public_access(self.role_guest)
         self.assertFalse(self.irods.collections.exists(self.project_path))
         self.assertFalse(self.irods.collections.exists(self.sample_path))
         self.command.handle()
@@ -90,8 +89,7 @@ class TestSyncModifyAPI(
         """Test sync with public guest access and anonymous access"""
         self.investigation.irods_status = True
         self.investigation.save()
-        self.project.public_guest_access = True
-        self.project.save()
+        self.project.set_public_access(self.role_guest)
         self.assertFalse(self.irods.collections.exists(self.project_path))
         self.assertFalse(self.irods.collections.exists(self.sample_path))
         self.command.handle()
@@ -106,16 +104,14 @@ class TestSyncModifyAPI(
         """Test sync for revoking public guest access"""
         self.investigation.irods_status = True
         self.investigation.save()
-        self.project.public_guest_access = True
-        self.project.save()
+        self.project.set_public_access(self.role_guest)
         self.command.handle()
         self.assertTrue(self.irods.collections.exists(self.sample_path))
         self.assert_irods_access(
             self.project_group, self.sample_path, self.irods_access_read
         )
         self.assert_ticket_access(self.project, False)
-        self.project.public_guest_access = False
-        self.project.save()
+        self.project.set_public_access(None)
         self.assert_irods_access(
             self.project_group, self.sample_path, self.irods_access_read
         )
@@ -126,16 +122,14 @@ class TestSyncModifyAPI(
         """Test sync for revoking public guest access with anonymous access"""
         self.investigation.irods_status = True
         self.investigation.save()
-        self.project.public_guest_access = True
-        self.project.save()
+        self.project.set_public_access(self.role_guest)
         self.command.handle()
         self.assertTrue(self.irods.collections.exists(self.sample_path))
         self.assert_irods_access(
             self.project_group, self.sample_path, self.irods_access_read
         )
         self.assert_ticket_access(self.project, True)
-        self.project.public_guest_access = False
-        self.project.save()
+        self.project.set_public_access(None)
         self.command.handle()
         self.assert_irods_access(
             self.project_group, self.sample_path, self.irods_access_read

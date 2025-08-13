@@ -16,7 +16,7 @@ from django.urls import reverse
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 # Appalerts dependency
 from appalerts.models import AppAlert
@@ -51,6 +51,7 @@ from landingzones.views import (
 
 
 app_settings = AppSettingAPI()
+plugin_api = PluginAPI()
 User = auth.get_user_model()
 
 
@@ -97,7 +98,7 @@ class LandingZoneTaskflowMixin:
         :return: Updated LandingZone object
         :raise taskflow.FlowSubmitException if submit fails
         """
-        timeline = get_backend_api('timeline_backend')
+        timeline = plugin_api.get_backend_api('timeline_backend')
         user = request.user if request else zone.user
         self.assertEqual(zone.status, ZONE_STATUS_CREATING)
 
@@ -505,7 +506,7 @@ class TestZoneMoveView(
 
     def setUp(self):
         super().setUp()
-        self.timeline = get_backend_api('timeline_backend')
+        self.timeline = plugin_api.get_backend_api('timeline_backend')
         self.user_owner = self.make_user('user_owner')
         # Make project with owner in Taskflow and Django
         self.project, self.owner_as = self.make_project_taskflow(

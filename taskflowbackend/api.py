@@ -20,7 +20,7 @@ from landingzones.models import LandingZone
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 from taskflowbackend import flows
 from taskflowbackend.irods_utils import get_flow_role as _get_flow_role
@@ -31,6 +31,7 @@ from taskflowbackend.tasks_celery import submit_flow_task
 app_settings = AppSettingAPI()
 lock_api = ProjectLockAPI()
 logger = logging.getLogger(__name__)
+plugin_api = PluginAPI()
 
 
 # SODAR constants
@@ -308,7 +309,7 @@ class TaskflowAPI:
         :return: Boolean
         :raise: FlowSubmitException if submission fails
         """
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         if not irods_backend:
             raise Exception('Irodsbackend not enabled')
         try:

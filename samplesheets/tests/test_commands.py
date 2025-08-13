@@ -8,7 +8,7 @@ from test_plus.test import TestCase
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.tests.test_models import (
     ProjectMixin,
     RoleMixin,
@@ -36,6 +36,9 @@ from samplesheets.tests.test_io import (
     SHEET_DIR_SPECIAL,
 )
 from samplesheets.utils import get_alt_names
+
+
+plugin_api = PluginAPI()
 
 
 # Local constants
@@ -104,7 +107,7 @@ class TestNormalizesheets(
         self.assay = self.study.assays.first()
         # Set up study tables in cache
         self.tb = SampleSheetTableBuilder()
-        self.cache_backend = get_backend_api('sodar_cache')
+        self.cache_backend = plugin_api.get_backend_api('sodar_cache')
         self.cache_name = STUDY_TABLE_CACHE_ITEM.format(
             study=self.study.sodar_uuid
         )
@@ -249,7 +252,7 @@ class TestSyncstudytables(
         )
         self.cache_args = [APP_NAME, self.cache_name, self.project]
         self.cache_args2 = [APP_NAME, self.cache_name2, self.project2]
-        self.cache_backend = get_backend_api('sodar_cache')
+        self.cache_backend = plugin_api.get_backend_api('sodar_cache')
 
     def test_sync_all(self):
         """Test syncstudytables for all projects"""

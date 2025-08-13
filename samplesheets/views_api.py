@@ -43,7 +43,7 @@ from projectroles.models import (
     SODAR_CONSTANTS,
     ROLE_RANKING,
 )
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.views_api import (
     SODARAPIBaseProjectMixin,
     SODARAPIGenericProjectMixin,
@@ -79,6 +79,7 @@ from samplesheets.views import (
 
 app_settings = AppSettingAPI()
 logger = logging.getLogger(__name__)
+plugin_api = PluginAPI()
 table_builder = SampleSheetTableBuilder()
 
 
@@ -201,8 +202,8 @@ class IrodsCollsCreateAPIView(
 
     def post(self, request, *args, **kwargs):
         """POST request for creating iRODS collections"""
-        irods_backend = get_backend_api('omics_irods')
-        taskflow = get_backend_api('taskflow')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
+        taskflow = plugin_api.get_backend_api('taskflow')
         ex_msg = 'Creating iRODS collections failed: '
         investigation = Investigation.objects.filter(
             project__sodar_uuid=self.kwargs.get('project'), active=True
@@ -532,7 +533,7 @@ class IrodsAccessTicketCreateAPIView(
 
     def perform_create(self, serializer):
         """Override perform_create() to create IrodsAccessTicket"""
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         try:
             with irods_backend.get_session() as irods:
                 ticket = irods_backend.issue_ticket(
@@ -603,7 +604,7 @@ class IrodsAccessTicketUpdateAPIView(
 
     def perform_update(self, serializer):
         """Override perform_update() to update IrodsAccessTicket"""
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         if not set(serializer.initial_data) & {
             'label',
             'date_expires',
@@ -654,7 +655,7 @@ class IrodsAccessTicketDestroyAPIView(
 
     def perform_destroy(self, instance):
         """Override perform_destroy() to delete IrodsAccessTicket"""
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         try:
             with irods_backend.get_session() as irods:
                 irods_backend.delete_ticket(irods, instance.ticket)
@@ -876,9 +877,9 @@ class IrodsDataRequestAcceptAPIView(
 
     def post(self, request, *args, **kwargs):
         """POST request for accepting an iRODS data request"""
-        timeline = get_backend_api('timeline_backend')
-        taskflow = get_backend_api('taskflow')
-        app_alerts = get_backend_api('appalerts_backend')
+        timeline = plugin_api.get_backend_api('timeline_backend')
+        taskflow = plugin_api.get_backend_api('taskflow')
+        app_alerts = plugin_api.get_backend_api('appalerts_backend')
         project = self.get_project()
         irods_request = IrodsDataRequest.objects.filter(
             sodar_uuid=self.kwargs.get('irodsdatarequest')
@@ -934,8 +935,8 @@ class IrodsDataRequestRejectAPIView(
 
     def post(self, request, *args, **kwargs):
         """POST request for rejecting an iRODS data request"""
-        timeline = get_backend_api('timeline_backend')
-        app_alerts = get_backend_api('appalerts_backend')
+        timeline = plugin_api.get_backend_api('timeline_backend')
+        app_alerts = plugin_api.get_backend_api('appalerts_backend')
         project = self.get_project()
         irods_request = IrodsDataRequest.objects.filter(
             sodar_uuid=self.kwargs.get('irodsdatarequest')
@@ -1011,7 +1012,7 @@ class SampleDataFileExistsAPIView(SamplesheetsAPIVersioningMixin, APIView):
                 raise PermissionDenied(FILE_EXISTS_RESTRICT_MSG)
         if not settings.ENABLE_IRODS:
             raise APIException('iRODS not enabled')
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         if not irods_backend:
             raise APIException('iRODS backend not enabled')
 
@@ -1128,7 +1129,7 @@ class ProjectIrodsFileListAPIView(
         elif page:
             page = int(page)
 
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         project = self.get_project()
         path = irods_backend.get_sample_path(project)
         page_size = settings.SODAR_API_PAGE_SIZE

@@ -8,13 +8,14 @@ from django.utils.timezone import localtime
 
 # Projectroles dependency
 from projectroles.management.logging import ManagementCommandLogger
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 from landingzones.constants import ZONE_STATUS_MOVED, ZONE_STATUS_DELETED
 from landingzones.models import LandingZone
 
 
 logger = ManagementCommandLogger(__name__)
+plugin_api = PluginAPI()
 
 
 def get_inactive_zones(weeks=2):
@@ -66,7 +67,7 @@ class Command(BaseCommand):
     help = 'Returns list of landing zones last modified over two weeks ago'
 
     def handle(self, *args, **options):
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         zones = get_inactive_zones()
         with irods_backend.get_session() as irods:
             output = get_output(zones, irods_backend, irods)

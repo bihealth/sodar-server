@@ -3,13 +3,14 @@ import logging
 from datetime import datetime as dt
 
 # Projectroles dependency
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 from landingzones.configapps.bih_proteomics_smb.urls import urlpatterns
 from landingzones.plugins import LandingZoneConfigPluginPoint
 
 
 logger = logging.getLogger(__name__)
+plugin_api = PluginAPI()
 
 
 # Local constants
@@ -73,7 +74,7 @@ class LandingZoneConfigPlugin(LandingZoneConfigPluginPoint):
 
         :param zone: LandingZone object
         """
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         if not irods_backend:
             return
         if (

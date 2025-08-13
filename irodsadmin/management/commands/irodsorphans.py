@@ -11,7 +11,7 @@ from django.template.defaultfilters import filesizeformat
 # Projectroles dependency
 from projectroles.management.logging import ManagementCommandLogger
 from projectroles.models import Project, PROJECT_TYPE_PROJECT
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 # Landingzones dependency
 from landingzones.constants import ZONE_STATUS_MOVED, ZONE_STATUS_DELETED
@@ -24,6 +24,7 @@ from samplesheets.views import TRACK_HUBS_COLL, RESULTS_COLL, MISC_FILES_COLL
 
 
 logger = ManagementCommandLogger(__name__)
+plugin_api = PluginAPI()
 table_builder = SampleSheetTableBuilder()
 
 
@@ -39,7 +40,7 @@ class Command(BaseCommand):
 
     def __init__(self):
         super().__init__()
-        self.irods_backend = get_backend_api('omics_irods')
+        self.irods_backend = plugin_api.get_backend_api('omics_irods')
 
     def _get_assay_collections(self, assays):
         """Return a list of all assay collection names."""

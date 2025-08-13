@@ -1,13 +1,16 @@
 """Taskflow tasks for the samplesheets app"""
 
 # Projectroles dependency
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 # Samplesheets dependency
 from samplesheets.models import Investigation
 
 # Taskflowbackend dependency
 from taskflowbackend.tasks.sodar_tasks import SODARBaseTask
+
+
+plugin_api = PluginAPI()
 
 
 class SetIrodsCollStatusTask(SODARBaseTask):
@@ -39,7 +42,7 @@ class RemoveSampleSheetsTask(SODARBaseTask):
     """Remove sample sheets from a project"""
 
     def execute(self, *args, **kwargs):
-        cache_backend = get_backend_api('sodar_cache')
+        cache_backend = plugin_api.get_backend_api('sodar_cache')
         investigation = Investigation.objects.get(
             project=self.project, active=True
         )

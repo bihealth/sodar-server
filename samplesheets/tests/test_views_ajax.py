@@ -11,7 +11,7 @@ from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 # Sodarcache dependency
 from sodarcache.models import JSONCacheItem
@@ -66,6 +66,7 @@ from samplesheets.views_ajax import (
 
 
 conf_api = SheetConfigAPI()
+plugin_api = PluginAPI()
 table_builder = SampleSheetTableBuilder()
 
 
@@ -184,7 +185,7 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
     def setUp(self):
         super().setUp()
         self.maxDiff = None
-        self.irods_backend = get_backend_api('omics_irods')
+        self.irods_backend = plugin_api.get_backend_api('omics_irods')
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
@@ -479,7 +480,7 @@ class TestStudyTablesAjaxView(IrodsAccessTicketMixin, SamplesheetsViewTestBase):
         # Allow sample sheet editing in project
         app_settings.set(APP_NAME, 'allow_editing', True, project=self.project)
         # Set up helpers
-        self.cache_backend = get_backend_api('sodar_cache')
+        self.cache_backend = plugin_api.get_backend_api('sodar_cache')
         self.cache_name = STUDY_TABLE_CACHE_ITEM.format(
             study=self.study.sodar_uuid
         )
@@ -673,7 +674,7 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
         # Set up POST data
         self.values = {'updated_cells': []}
         # Set up helpers
-        self.cache_backend = get_backend_api('sodar_cache')
+        self.cache_backend = plugin_api.get_backend_api('sodar_cache')
         self.cache_name = STUDY_TABLE_CACHE_ITEM.format(
             study=self.study.sodar_uuid
         )
@@ -1405,7 +1406,7 @@ class TestSheetRowInsertAjaxView(
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
         # Set up helpers
-        self.cache_backend = get_backend_api('sodar_cache')
+        self.cache_backend = plugin_api.get_backend_api('sodar_cache')
         self.cache_name = STUDY_TABLE_CACHE_ITEM.format(
             study=self.study.sodar_uuid
         )
@@ -1668,7 +1669,7 @@ class TestSheetRowDeleteAjaxView(
         self.update_assay_row_uuids()
 
         # Set up helpers
-        self.cache_backend = get_backend_api('sodar_cache')
+        self.cache_backend = plugin_api.get_backend_api('sodar_cache')
         self.cache_name = STUDY_TABLE_CACHE_ITEM.format(
             study=self.study.sodar_uuid
         )
@@ -1881,7 +1882,7 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, SamplesheetsViewTestBase):
                 }
             ]
         }
-        self.cache_backend = get_backend_api('sodar_cache')
+        self.cache_backend = plugin_api.get_backend_api('sodar_cache')
         self.cache_name = STUDY_TABLE_CACHE_ITEM.format(
             study=self.study.sodar_uuid
         )

@@ -23,7 +23,7 @@ from rest_framework.views import APIView
 from drf_spectacular.utils import extend_schema, inline_serializer
 
 # Projectroles dependency
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.views_api import (
     SODARAPIBaseProjectMixin,
     SODARAPIGenericProjectMixin,
@@ -52,6 +52,7 @@ from landingzones.views import (
 
 
 logger = logging.getLogger(__name__)
+plugin_api = PluginAPI()
 
 
 # Local constants
@@ -268,7 +269,7 @@ class ZoneCreateAPIView(
         """
         ex_prefix = 'Creating landing zone failed: '
         # Check taskflow status
-        if not get_backend_api('taskflow'):
+        if not plugin_api.get_backend_api('taskflow'):
             self._raise_503('{}Taskflow not enabled'.format(ex_prefix))
 
         # Ensure project has investigation with iRODS collections created
@@ -439,7 +440,7 @@ class ZoneSubmitMoveAPIView(ZoneMoveMixin, ZoneSubmitBaseAPIView):
 
     def post(self, request, *args, **kwargs):
         """POST request for initiating landing zone validation/moving"""
-        taskflow = get_backend_api('taskflow')
+        taskflow = plugin_api.get_backend_api('taskflow')
         zone = LandingZone.objects.filter(
             sodar_uuid=self.kwargs['landingzone']
         ).first()

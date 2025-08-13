@@ -33,7 +33,7 @@ class TestGetStatistics(TaskflowViewTestBase):
             parent=self.category,
             owner=self.user,
             description='description',
-            public_guest_access=False,
+            public_guest_access=False,  # TODO: Update for public_access
         )
         # Set up test collection
         self.test_path = os.path.join(

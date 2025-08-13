@@ -12,11 +12,12 @@ from config.celery import app
 from projectroles.app_settings import AppSettingAPI
 from projectroles.constants import SODAR_CONSTANTS
 from projectroles.models import Project
-from projectroles.plugins import get_backend_api, get_app_plugin
+from projectroles.plugins import PluginAPI
 
 
 app_settings = AppSettingAPI()
 logger = logging.getLogger(__name__)
+plugin_api = PluginAPI()
 User = auth.get_user_model()
 
 
@@ -46,7 +47,7 @@ def update_project_cache_task(
         return
     user = User.objects.filter(sodar_uuid=user_uuid).first()
 
-    timeline = get_backend_api('timeline_backend')
+    timeline = plugin_api.get_backend_api('timeline_backend')
     tl_event = None
     if timeline:
         tl_event = timeline.add_event(
@@ -64,7 +65,7 @@ def update_project_cache_task(
             project.get_log_title()
         )
     )
-    app_plugin = get_app_plugin(APP_NAME)
+    app_plugin = plugin_api.get_app_plugin(APP_NAME)
 
     try:
         app_plugin.update_cache(project=project, user=user)
@@ -97,7 +98,7 @@ def update_project_cache_task(
         )
 
     if add_alert and user:
-        app_alerts = get_backend_api('appalerts_backend')
+        app_alerts = plugin_api.get_backend_api('appalerts_backend')
         if app_alerts:
             app_alerts.add_alert(
                 app_name=APP_NAME,
@@ -122,7 +123,7 @@ def sheet_sync_task(_self):
         logger.info('Site read-only mode enabled, skipping')
         return
 
-    timeline = get_backend_api('timeline_backend')
+    timeline = plugin_api.get_backend_api('timeline_backend')
     tl_add = False
     tl_status_type = timeline.TL_STATUS_OK if timeline else 'OK'
     tl_status_desc = 'Sync OK'

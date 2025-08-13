@@ -16,11 +16,12 @@ from django.urls import reverse
 from django.views.generic import TemplateView, View
 
 # Projectroles dependency
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.views import LoggedInPermissionMixin, HTTPRefererMixin
 
 
 logger = logging.getLogger(__name__)
+plugin_api = PluginAPI()
 
 
 class IrodsConfigMixin:
@@ -79,8 +80,10 @@ class IrodsInfoView(LoggedInPermissionMixin, HTTPRefererMixin, TemplateView):
         context = super().get_context_data(*args, **kwargs)
 
         # HACK for #909
-        ib_enabled = True if get_backend_api('omics_irods') else False
-        irods_backend = get_backend_api('omics_irods')
+        ib_enabled = (
+            True if plugin_api.get_backend_api('omics_irods') else False
+        )
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         unavail_info = {
             'server_ok': False,
             'server_host': settings.IRODS_HOST_FQDN,
@@ -121,7 +124,7 @@ class IrodsConfigView(
     permission_required = 'irodsinfo.get_config'
 
     def get(self, request, *args, **kwargs):
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         if not irods_backend:
             messages.error(request, 'iRODS Backend not enabled.')
             return redirect(reverse('irodsinfo:info'))

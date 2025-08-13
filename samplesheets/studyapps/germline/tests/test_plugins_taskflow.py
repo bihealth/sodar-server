@@ -8,7 +8,7 @@ from django.urls import reverse
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import TaskflowViewTestBase
@@ -24,6 +24,7 @@ from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 
 
 app_settings = AppSettingAPI()
+plugin_api = PluginAPI()
 
 
 # SODAR constants
@@ -82,7 +83,7 @@ class TestGermlinePlugin(
         self.source_path = os.path.join(self.assay_path, LIBRARY_ID)
         self.parent_path = os.path.join(self.assay_path, LIBRARY_ID_PARENT)
         self.source = self.study.get_sources().first()
-        self.cache_backend = get_backend_api('sodar_cache')
+        self.cache_backend = plugin_api.get_backend_api('sodar_cache')
         self.cache_name = 'irods/{}'.format(self.study.sodar_uuid)
 
     def test_plugin_retrieval(self):

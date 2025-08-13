@@ -1,5 +1,5 @@
 # Optional LDAP dependencies go here
 -r base.txt
 
-django-auth-ldap>=5.1.0, <5.2
+django-auth-ldap>=5.2.0, <5.3
 python-ldap>=3.4.4, <3.5

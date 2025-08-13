@@ -4,7 +4,10 @@ from config.celery import app
 
 # Projectroles dependency
 from projectroles.models import Project
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
+
+
+plugin_api = PluginAPI()
 
 
 # Celery task for async flow submitting
@@ -16,9 +19,9 @@ def submit_flow_task(
     flow_data,
     tl_uuid,
 ):
-    irods_backend = get_backend_api('omics_irods')
-    taskflow = get_backend_api('taskflow')
-    timeline = get_backend_api('timeline_backend')
+    irods_backend = plugin_api.get_backend_api('omics_irods')
+    taskflow = plugin_api.get_backend_api('taskflow')
+    timeline = plugin_api.get_backend_api('timeline_backend')
     project = Project.objects.get(sodar_uuid=project_uuid)
     tl_event = None
     if timeline and tl_uuid:

@@ -16,7 +16,7 @@ from test_plus import TestCase
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.tests.test_models import ProjectMixin
 
 # Timeline dependency
@@ -42,6 +42,9 @@ from taskflowbackend.tests.base import (
 )
 from taskflowbackend.tasks.irods_tasks import *  # noqa
 from taskflowbackend.tasks.sodar_tasks import TimelineEventExtraDataUpdateTask
+
+
+plugin_api = PluginAPI()
 
 
 # SODAR constants
@@ -2919,7 +2922,7 @@ class TestTimelineEventExtraDataUpdateTask(
         )
 
     def setUp(self):
-        self.irods_backend = get_backend_api('omics_irods')
+        self.irods_backend = plugin_api.get_backend_api('omics_irods')
         self.project = self.make_project(
             'TestProject', PROJECT_TYPE_PROJECT, None
         )

@@ -2,6 +2,9 @@ import os
 
 from django.conf import settings
 
+# Projectroles dependency
+from projectroles.models import SODAR_CONSTANTS
+
 # Samplesheets dependency
 from samplesheets import tasks_taskflow as ss_tasks
 
@@ -9,6 +12,11 @@ from taskflowbackend.flows.base_flow import BaseLinearFlow
 from taskflowbackend.tasks import irods_tasks
 
 
+# SODAR constants
+PROJECT_ROLE_GUEST = SODAR_CONSTANTS['PROJECT_ROLE_GUEST']
+
+
+# Local constants
 PUBLIC_GROUP = 'public'
 
 
@@ -62,7 +70,10 @@ class Flow(BaseLinearFlow):
                 )
             )
         # If project is public, add public access to sample repository
-        if self.project.public_guest_access:
+        if (
+            self.project.public_access
+            and self.project.public_access.name == PROJECT_ROLE_GUEST
+        ):
             self.add_task(
                 irods_tasks.SetAccessTask(
                     name='Set public access to sample collection',
@@ -77,7 +88,10 @@ class Flow(BaseLinearFlow):
             )
         # Create access ticket depending on anonymous accesss
         if (
-            self.project.public_guest_access
+            (
+                self.project.public_access
+                and self.project.public_access.name == PROJECT_ROLE_GUEST
+            )
             and settings.PROJECTROLES_ALLOW_ANONYMOUS
             and self.flow_data.get('ticket_str')
         ):

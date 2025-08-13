@@ -11,7 +11,7 @@ from config.celery import app
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import Project
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 from landingzones.constants import STATUS_ALLOW_UPDATE, STATUS_LOCKING
 from landingzones.views import ZoneMoveMixin
@@ -19,8 +19,10 @@ from landingzones.views import ZoneMoveMixin
 
 app_settings = AppSettingAPI()
 logger = logging.getLogger(__name__)
+plugin_api = PluginAPI()
 
 
+# Local constants
 APP_NAME = 'landingzones'
 
 
@@ -90,7 +92,7 @@ class TriggerZoneMoveTask(ZoneMoveMixin):
             logger.info('Site read-only mode enabled, skipping')
             return
         try:
-            irods_backend = get_backend_api('omics_irods')
+            irods_backend = plugin_api.get_backend_api('omics_irods')
         except Exception as ex:
             logger.error('Exception raised by irodsbackend: {}'.format(ex))
             return

@@ -16,7 +16,7 @@ from rest_framework.response import Response
 
 # Projectroles dependency
 from projectroles.constants import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.views_ajax import SODARBaseProjectAjaxView
 
 # Irodsbackend dependency
@@ -56,6 +56,7 @@ from samplesheets.views import (
 
 
 conf_api = SheetConfigAPI()
+plugin_api = PluginAPI()
 table_builder = SampleSheetTableBuilder()
 
 
@@ -173,7 +174,7 @@ class BaseSheetEditAjaxView(SODARBaseProjectAjaxView):
         """
         # TODO: Implement removal of unused ontologies (see issue #967)
         # TODO: Update existing refs for SODAR ontology data?
-        ontology_backend = get_backend_api('ontologyaccess_backend')
+        ontology_backend = plugin_api.get_backend_api('ontologyaccess_backend')
         if not ontology_backend:
             logger.error(
                 'Ontologyaccess backend not enabled, unable to update '
@@ -282,7 +283,7 @@ class SheetContextAjaxView(SODARBaseProjectAjaxView):
         project = self.get_project()
         inv = Investigation.objects.filter(project=project, active=True).first()
         studies = Study.objects.filter(investigation=inv).order_by('pk')
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
 
         # General context data for Vue app
         ret_data = {
@@ -601,7 +602,7 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
     def get(self, request, *args, **kwargs):
         from samplesheets.plugins import get_irods_content
 
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         study = Study.objects.filter(sodar_uuid=self.kwargs['study']).first()
         if not study:
             return Response(
@@ -678,7 +679,9 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
 
         # Set up editing
         if edit:
-            ontology_backend = get_backend_api('ontologyaccess_backend')
+            ontology_backend = plugin_api.get_backend_api(
+                'ontologyaccess_backend'
+            )
             # Get study config
             ret_data['study_config'] = sheet_config['studies'][
                 str(study.sodar_uuid)
@@ -804,7 +807,7 @@ class SheetCellEditAjaxView(BaseSheetEditAjaxView):
                 node_obj.name, node_obj.sodar_uuid, cell
             )
         )
-        cache_backend = get_backend_api('sodar_cache')
+        cache_backend = plugin_api.get_backend_api('sodar_cache')
         cache_item = cache_backend.get_cache_item(
             app_name=assay_plugin.app_name,
             name='irods/rows/{}'.format(assay.sodar_uuid),
@@ -812,7 +815,7 @@ class SheetCellEditAjaxView(BaseSheetEditAjaxView):
         )
         if not cache_item:
             return None
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         # NOTE: Can we assume all assay apps ever will follow this convention?
         #       (At the time of implementation they do)
         obj_path = os.path.join(irods_backend.get_path(assay), node_obj.name)
@@ -1588,7 +1591,7 @@ class SheetVersionSaveAjaxView(SheetVersionMixin, SODARBaseProjectAjaxView):
     permission_required = 'samplesheets.edit_sheet'
 
     def post(self, request, *args, **kwargs):
-        timeline = get_backend_api('timeline_backend')
+        timeline = plugin_api.get_backend_api('timeline_backend')
         log_msg = 'Save sheet version: '
         isa_version = None
         project = self.get_project()
@@ -1654,7 +1657,7 @@ class SheetEditFinishAjaxView(SheetVersionMixin, SODARBaseProjectAjaxView):
             logger.info(log_msg + 'nothing updated')
             return Response({'detail': 'ok'}, status=200)  # Nothing to do
 
-        timeline = get_backend_api('timeline_backend')
+        timeline = plugin_api.get_backend_api('timeline_backend')
         isa_version = None
         project = self.get_project()
         inv = Investigation.objects.filter(project=project, active=True).first()
@@ -1720,7 +1723,7 @@ class SheetEditConfigAjaxView(SODARBaseProjectAjaxView):
         fields = request.data.get('fields')
         if not fields:
             return Response({'detail': 'No fields provided'}, status=400)
-        timeline = get_backend_api('timeline_backend')
+        timeline = plugin_api.get_backend_api('timeline_backend')
         project = self.get_project()
         sheet_config = app_settings.get(
             APP_NAME, 'sheet_config', project=project
@@ -1845,7 +1848,7 @@ class StudyDisplayConfigAjaxView(SODARBaseProjectAjaxView):
         if not study:
             return Response({'detail': 'Study not found'}, status=404)
 
-        timeline = get_backend_api('timeline_backend')
+        timeline = plugin_api.get_backend_api('timeline_backend')
         project = study.investigation.project
         # Set current configuration as default if selected
         set_default = request.data.get('set_default')
@@ -1902,7 +1905,7 @@ class IrodsDataRequestCreateAjaxView(
     permission_required = 'samplesheets.edit_sheet'
 
     def post(self, request, *args, **kwargs):
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         path = irods_backend.sanitize_path(request.data.get('path'))
         project = self.get_project()
 
@@ -1943,7 +1946,7 @@ class IrodsDataRequestDeleteAjaxView(
     permission_required = 'samplesheets.edit_sheet'
 
     def post(self, request, *args, **kwargs):
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         path = irods_backend.sanitize_path(request.data.get('path'))
         # Delete database object
         irods_request = IrodsDataRequest.objects.filter(
@@ -1981,7 +1984,7 @@ class IrodsObjectListAjaxView(BaseIrodsAjaxView):
         self.path = None
 
     def get(self, request, *args, **kwargs):
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         if not irods_backend:
             return Response({'detail': 'iRODS backend not enabled'}, status=400)
         # Get files

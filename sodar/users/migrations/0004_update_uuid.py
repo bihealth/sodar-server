@@ -17,6 +17,8 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='user',
             name='sodar_uuid',
-            field=models.UUIDField(default=uuid.uuid4, help_text='User SODAR UUID', unique=True),
+            field=models.UUIDField(
+                default=uuid.uuid4, help_text='User SODAR UUID', unique=True
+            ),
         ),
     ]

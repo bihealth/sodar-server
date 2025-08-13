@@ -18,7 +18,7 @@ from test_plus.test import TestCase
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import AppSetting, SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.tests.test_models import (
     ProjectMixin,
     RoleMixin,
@@ -94,6 +94,7 @@ from samplesheets.views import (
 
 app_settings = AppSettingAPI()
 conf_api = SheetConfigAPI()
+plugin_api = PluginAPI()
 table_builder = SampleSheetTableBuilder()
 
 
@@ -271,8 +272,8 @@ class TestSheetImportView(
 
     def setUp(self):
         super().setUp()
-        self.timeline = get_backend_api('timeline_backend')
-        self.cache_backend = get_backend_api('sodar_cache')
+        self.timeline = plugin_api.get_backend_api('timeline_backend')
+        self.cache_backend = plugin_api.get_backend_api('sodar_cache')
         self.url = reverse(
             'samplesheets:import',
             kwargs={'project': self.project.sodar_uuid},
@@ -930,7 +931,7 @@ class TestSheetExcelExportView(SamplesheetsViewTestBase):
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-        self.timeline = get_backend_api('timeline_backend')
+        self.timeline = plugin_api.get_backend_api('timeline_backend')
 
     def test_getr_study(self):
         """Test SheetExcelExportView GET with study table"""
@@ -962,7 +963,7 @@ class TestSheetISAExportView(SamplesheetsViewTestBase):
         super().setUp()
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
-        self.timeline = get_backend_api('timeline_backend')
+        self.timeline = plugin_api.get_backend_api('timeline_backend')
         self.url = reverse(
             'samplesheets:export_isa',
             kwargs={'project': self.project.sodar_uuid},
@@ -1019,7 +1020,7 @@ class TestSheetDeleteView(SamplesheetsViewTestBase):
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         # Set up helpers
-        self.cache_backend = get_backend_api('sodar_cache')
+        self.cache_backend = plugin_api.get_backend_api('sodar_cache')
         self.url = reverse(
             'samplesheets:delete',
             kwargs={'project': self.project.sodar_uuid},
@@ -1154,8 +1155,8 @@ class TestSheetVersionRestoreView(SamplesheetsViewTestBase):
             investigation_uuid=self.investigation.sodar_uuid
         )
         # Set up helpers
-        self.cache_backend = get_backend_api('sodar_cache')
-        self.timeline = get_backend_api('timeline_backend')
+        self.cache_backend = plugin_api.get_backend_api('sodar_cache')
+        self.timeline = plugin_api.get_backend_api('timeline_backend')
 
     def test_get(self):
         """Test SheetVersionRestoreView GET"""

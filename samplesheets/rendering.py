@@ -16,7 +16,7 @@ from django.conf import settings
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 # Sodarcache dependency (see bihealth/sodar-core#1068)
 from sodarcache.models import JSONCacheItem
@@ -25,14 +25,12 @@ from samplesheets.models import Process, GenericMaterial
 from samplesheets.utils import get_node_obj
 
 
-# Regex for headers
-header_re = re.compile(r'^([a-zA-Z\s]+)[\[](.+)[\]]$')
-# Rexex for simple links and contacts
-link_re = re.compile(r'(.+?)\s?(?:[<|[])(.+?)(?:[>\]])')
-logger = logging.getLogger(__name__)
 app_settings = AppSettingAPI()
+logger = logging.getLogger(__name__)
+plugin_api = PluginAPI()
 
 
+# Local constants
 APP_NAME = 'samplesheets'
 TOP_HEADER_MATERIAL_COLOURS = {
     'SOURCE': 'info',
@@ -84,6 +82,10 @@ MODEL_JSON_ATTRS = [
 ]
 STUDY_TABLE_CACHE_ITEM = 'sheet/tables/study/{study}'
 SIMPLE_LINK_TEMPLATE = '{label} <{url}>'
+# Regex for headers
+HEADER_RE = re.compile(r'^([a-zA-Z\s]+)[\[](.+)[\]]$')
+# Rexex for simple links and contacts
+LINK_RE = re.compile(r'(.+?)\s?(?:[<|[])(.+?)(?:[>\]])')
 
 
 # Table building ---------------------------------------------------------------
@@ -305,7 +307,7 @@ class SampleSheetTableBuilder:
         headers = [h for h in obj.headers if h not in IGNORED_HEADERS]
 
         for h in headers:
-            list_ref = re.findall(header_re, h)
+            list_ref = re.findall(HEADER_RE, h)
             # Value lists with possible ontology annotation
             if list_ref:
                 h_type = list_ref[0][0]
@@ -472,7 +474,7 @@ class SampleSheetTableBuilder:
                     value = '; '.join(value)
             # Simple link or contact
             else:
-                link_groups = re.findall(link_re, value)
+                link_groups = re.findall(LINK_RE, value)
                 if link_groups:
                     value = link_groups[0][0]
 
@@ -539,8 +541,8 @@ class SampleSheetTableBuilder:
                         contact_vals.append(x[i]['value'])
                 cell_lengths = [
                     (
-                        _get_length(re.findall(link_re, x)[0][0])
-                        if re.findall(link_re, x)
+                        _get_length(re.findall(LINK_RE, x)[0][0])
+                        if re.findall(LINK_RE, x)
                         else len(x or '')
                     )
                     for x in contact_vals
@@ -854,7 +856,7 @@ class SampleSheetTableBuilder:
                 study.get_name(), study.sodar_uuid
             )
         )
-        cache_backend = get_backend_api('sodar_cache')
+        cache_backend = plugin_api.get_backend_api('sodar_cache')
         item_name = STUDY_TABLE_CACHE_ITEM.format(study=study.sodar_uuid)
         project = study.get_project()
         if settings.SHEETS_ENABLE_STUDY_TABLE_CACHE:
@@ -900,7 +902,7 @@ class SampleSheetTableBuilder:
         :param study: Study object
         :param delete: Delete item instead of clearing value if true (bool)
         """
-        cache_backend = get_backend_api('sodar_cache')
+        cache_backend = plugin_api.get_backend_api('sodar_cache')
         if cache_backend:
             item_name = STUDY_TABLE_CACHE_ITEM.format(study=study.sodar_uuid)
             project = study.get_project()

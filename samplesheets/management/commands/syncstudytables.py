@@ -7,7 +7,7 @@ from django.core.management.base import BaseCommand
 # Projectroles dependency
 from projectroles.management.logging import ManagementCommandLogger
 from projectroles.models import Project, SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 from samplesheets.models import Investigation
 from samplesheets.rendering import (
@@ -17,6 +17,7 @@ from samplesheets.rendering import (
 
 
 logger = ManagementCommandLogger(__name__)
+plugin_api = PluginAPI()
 table_builder = SampleSheetTableBuilder()
 
 
@@ -44,7 +45,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        cache_backend = get_backend_api('sodar_cache')
+        cache_backend = plugin_api.get_backend_api('sodar_cache')
         if not cache_backend:
             logger.error('Sodarcache not enabled, exiting')
             sys.exit(1)

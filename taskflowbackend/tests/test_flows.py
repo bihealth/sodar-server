@@ -2008,8 +2008,7 @@ class TestPublicAccessUpdate(
 
     def test_disable_access(self):
         """Test public_access_update to disable public access"""
-        self.project.public_guest_access = True
-        self.project.save()
+        self.project.set_public_access(self.role_guest)
         # Create iRODS collections
         self.make_irods_colls(self.investigation)
         self.assertEqual(self.irods.collections.exists(self.sample_path), True)
@@ -2102,8 +2101,7 @@ class TestPublicAccessUpdate(
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_disable_access_anon(self):
         """Test disabling public access with anonymous access enabled"""
-        self.project.public_guest_access = True
-        self.project.save()
+        self.project.set_public_access(self.role_guest)
         # Create iRODS collections
         self.make_irods_colls(self.investigation, ticket_str=TICKET_STR)
         self.assertEqual(self.irods.collections.exists(self.sample_path), True)
@@ -2537,8 +2535,7 @@ class TestSheetCollsCreate(
 
     def test_create_public_access(self):
         """Test sheet_colls_create with public guest access"""
-        self.project.public_guest_access = True
-        self.project.save()
+        self.project.set_public_access(self.role_guest)
         self.assertEqual(self.irods.collections.exists(self.sample_path), False)
 
         flow_data = {'colls': [RESULTS_COLL, MISC_FILES_COLL]}
@@ -2561,8 +2558,7 @@ class TestSheetCollsCreate(
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_create_anon(self):
         """Test creating colls with public guest access and anonymous access"""
-        self.project.public_guest_access = True
-        self.project.save()
+        self.project.set_public_access(self.role_guest)
         self.assertEqual(self.irods.collections.exists(self.sample_path), False)
         self.assertIsNone(self.irods_backend.get_ticket(self.irods, TICKET_STR))
 

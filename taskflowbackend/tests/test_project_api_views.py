@@ -68,6 +68,7 @@ class TestProjectCreateAPIView(CoreTaskflowAPITestBase):
             'description': 'description',
             'readme': 'readme',
             'owner': str(self.user.sodar_uuid),
+            'public_access': None,
         }
         response = self.request_knox(url, method='POST', data=request_data)
         project = Project.objects.filter(type=PROJECT_TYPE_PROJECT).first()
@@ -119,6 +120,7 @@ class TestProjectUpdateAPIView(CoreTaskflowAPITestBase):
             'parent': '',
             'description': UPDATED_DESC,
             'readme': UPDATED_README,
+            'public_access': None,
         }
         response = self.request_knox(url, method='PUT', data=request_data)
 
@@ -135,7 +137,8 @@ class TestProjectUpdateAPIView(CoreTaskflowAPITestBase):
             'parent': None,
             'description': UPDATED_DESC,
             'readme': UPDATED_README,
-            'public_guest_access': False,
+            'public_access': None,
+            'public_guest_access': False,  # DEPRECATED
             'archive': False,
             'full_title': UPDATED_TITLE,
             'has_public_children': False,
@@ -162,7 +165,7 @@ class TestProjectUpdateAPIView(CoreTaskflowAPITestBase):
             'parent': str(self.category.sodar_uuid),
             'description': UPDATED_DESC,
             'readme': UPDATED_README,
-            'public_guest_access': True,
+            'public_access': self.role_guest.name,
         }
         response = self.request_knox(url, method='PUT', data=request_data)
 
@@ -179,7 +182,8 @@ class TestProjectUpdateAPIView(CoreTaskflowAPITestBase):
             'parent': self.category.pk,
             'description': UPDATED_DESC,
             'readme': UPDATED_README,
-            'public_guest_access': True,
+            'public_access': self.role_guest.pk,
+            'public_guest_access': True,  # DEPRECATED
             'archive': False,
             'full_title': self.category.title + ' / ' + UPDATED_TITLE,
             'has_public_children': False,
@@ -231,7 +235,8 @@ class TestProjectUpdateAPIView(CoreTaskflowAPITestBase):
             'parent': None,
             'description': UPDATED_DESC,
             'readme': UPDATED_README,
-            'public_guest_access': False,
+            'public_access': None,
+            'public_guest_access': False,  # DEPRECATED
             'archive': False,
             'full_title': UPDATED_TITLE,
             'has_public_children': False,
@@ -268,7 +273,8 @@ class TestProjectUpdateAPIView(CoreTaskflowAPITestBase):
             'parent': self.category.pk,
             'description': UPDATED_DESC,
             'readme': UPDATED_README,
-            'public_guest_access': False,
+            'public_access': None,
+            'public_guest_access': False,  # DEPRECATED
             'archive': False,
             'full_title': self.category.title + ' / ' + UPDATED_TITLE,
             'has_public_children': False,

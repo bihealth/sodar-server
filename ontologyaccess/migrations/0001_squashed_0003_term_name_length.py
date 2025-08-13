@@ -56,12 +56,17 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "format_version",
-                    models.CharField(help_text="Format version", max_length=255),
+                    models.CharField(
+                        help_text="Format version", max_length=255
+                    ),
                 ),
                 (
                     "data_version",
                     models.CharField(
-                        blank=True, help_text="Data version", max_length=255, null=True
+                        blank=True,
+                        help_text="Data version",
+                        max_length=255,
+                        null=True,
                     ),
                 ),
                 (
@@ -140,7 +145,9 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "term_id",
-                    models.CharField(help_text="Term ID", max_length=255, unique=True),
+                    models.CharField(
+                        help_text="Term ID", max_length=255, unique=True
+                    ),
                 ),
                 (
                     "alt_ids",
@@ -151,7 +158,10 @@ class Migration(migrations.Migration):
                         size=None,
                     ),
                 ),
-                ("name", models.CharField(help_text="Term name", max_length=1024)),
+                (
+                    "name",
+                    models.CharField(help_text="Term name", max_length=1024),
+                ),
                 (
                     "definition",
                     models.TextField(
@@ -170,12 +180,17 @@ class Migration(migrations.Migration):
                 (
                     "namespace",
                     models.CharField(
-                        blank=True, help_text="Namespace", max_length=255, null=True
+                        blank=True,
+                        help_text="Namespace",
+                        max_length=255,
+                        null=True,
                     ),
                 ),
                 (
                     "comment",
-                    models.TextField(blank=True, help_text="Term comment", null=True),
+                    models.TextField(
+                        blank=True, help_text="Term comment", null=True
+                    ),
                 ),
                 (
                     "is_obsolete",

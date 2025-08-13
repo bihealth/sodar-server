@@ -63,7 +63,8 @@ Available Projects
     sample sheets into a project.
 Starred Button
     Filter projects to those that you have favourited by clicking on the star
-    icon in the project views.
+    icon in the project views. The starred status toggle will be remembered the
+    next time you navigate to this view.
 Page Dropdown
     Choose how many categories and projects are displayed on each page of the
     list. This value will be saved for subsequent visits to the site. Pagination

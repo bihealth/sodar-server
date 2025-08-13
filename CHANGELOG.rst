@@ -5,6 +5,27 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+Unreleased
+==========
+
+Added
+-----
+
+- **General**
+    - ``pyproject.toml`` configuration file (#2187)
+
+Changed
+-------
+
+- **General**
+    - Upgrade to django-sodar-core v1.2.0 (#2187)
+    - Upgrade general Python depedencies (#2187)
+    - Refactor plugin helpers to use ``PluginAPI`` (#2187)
+    - Move black configuration to ``pyproject.toml`` (#2187)
+    - Reformat migrations (#2187)
+    - Reformat JQuery (#2187)
+
+
 v1.1.4 (2025-08-12)
 ===================
 

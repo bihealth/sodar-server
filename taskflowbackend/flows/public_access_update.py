@@ -16,7 +16,7 @@ class Flow(BaseLinearFlow):
         return super().validate()
 
     def build(self, force_fail=False):
-        # TODO: Use project.public_guest_access instead of flow_data['access']?
+        # TODO: Use project.public_access instead of flow_data['access']?
         access_name = 'read' if self.flow_data['access'] else 'null'
         ticket_str = self.flow_data.get('ticket_str')
 

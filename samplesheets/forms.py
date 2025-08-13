@@ -17,7 +17,7 @@ from django.utils import timezone
 from projectroles.app_settings import AppSettingAPI
 from projectroles.forms import MultipleFileField
 from projectroles.models import Project
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 from samplesheets.io import SampleSheetIO, ARCHIVE_TYPES
 from samplesheets.utils import clean_sheet_dir_name
@@ -34,6 +34,7 @@ from samplesheets.models import (
 
 
 app_settings = AppSettingAPI()
+plugin_api = PluginAPI()
 
 
 # Local constants
@@ -380,7 +381,7 @@ class SheetTemplateCreateForm(forms.Form):
         return self.cleaned_data
 
     def save(self):
-        tpl_backend = get_backend_api('isatemplates_backend')
+        tpl_backend = plugin_api.get_backend_api('isatemplates_backend')
         extra_context = {k: v for k, v in self.cleaned_data.items()}
         for k in self.json_fields:
             if not isinstance(extra_context[k], dict):
@@ -478,7 +479,7 @@ class IrodsAccessTicketForm(IrodsAccessTicketValidateMixin, forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         if self.instance.pk:
             cleaned_data['path'] = self.instance.path
         if cleaned_data['allowed_hosts']:
@@ -512,7 +513,7 @@ class IrodsDataRequestForm(IrodsDataRequestValidateMixin, forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         cleaned_data['path'] = irods_backend.sanitize_path(cleaned_data['path'])
         try:
             self.validate_request_path(

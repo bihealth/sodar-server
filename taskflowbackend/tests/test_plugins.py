@@ -8,7 +8,7 @@ from django.test import RequestFactory
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import RoleAssignment, SODAR_CONSTANTS
-from projectroles.plugins import BackendPluginPoint, get_backend_api
+from projectroles.plugins import BackendPluginPoint, PluginAPI
 
 # Irodsbackend dependency
 from irodsbackend.api import USER_GROUP_TEMPLATE, OWNER_GROUP_TEMPLATE
@@ -20,6 +20,7 @@ from taskflowbackend.tests.base import TaskflowViewTestBase
 
 
 app_settings = AppSettingAPI()
+plugin_api = PluginAPI()
 
 
 # SODAR constants
@@ -46,7 +47,7 @@ class ModifyAPITaskflowTestBase(TaskflowViewTestBase):
         self.req_factory = RequestFactory()
         self.request = self.req_factory.get('/')
         self.request.user = self.user
-        self.timeline = get_backend_api('timeline_backend')
+        self.timeline = plugin_api.get_backend_api('timeline_backend')
 
 
 class TestPerformProjectModify(ModifyAPITaskflowTestBase):

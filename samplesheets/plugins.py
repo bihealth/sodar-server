@@ -23,7 +23,7 @@ from projectroles.plugins import (
     PluginAppSettingDef,
     PluginObjectLink,
     PluginSearchResult,
-    get_backend_api,
+    PluginAPI,
 )
 from projectroles.utils import build_secret
 
@@ -53,6 +53,7 @@ from samplesheets.views import (
 
 app_settings = AppSettingAPI()
 logger = logging.getLogger(__name__)
+plugin_api = PluginAPI()
 table_builder = SampleSheetTableBuilder()
 
 
@@ -483,7 +484,7 @@ class ProjectAppPlugin(
         :param keywords: List (optional)
         :return: List of PluginSearchResult objects
         """
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         ret = []
         # Materials
         if not search_type or search_type in MATERIAL_SEARCH_TYPES:
@@ -554,7 +555,7 @@ class ProjectAppPlugin(
                 )
 
         elif column_id == 'files':
-            irods_backend = get_backend_api('omics_irods')
+            irods_backend = plugin_api.get_backend_api('omics_irods')
             if (
                 irods_backend
                 and investigation
@@ -632,13 +633,13 @@ class ProjectAppPlugin(
         )
         if (
             not ticket_str
-            and project.public_guest_access
+            and project.public_access
             and settings.PROJECTROLES_ALLOW_ANONYMOUS
         ):
             ticket_str = build_secret(16)
 
         flow_data = {
-            'access': project.public_guest_access,
+            'access': project.public_access is not None,
             'path': sample_path,
             'ticket_str': ticket_str,
         }
@@ -654,10 +655,7 @@ class ProjectAppPlugin(
                 raise ex
 
         # Update/delete ticket in project settings
-        if (
-            project.public_guest_access
-            and settings.PROJECTROLES_ALLOW_ANONYMOUS
-        ):
+        if project.public_access and settings.PROJECTROLES_ALLOW_ANONYMOUS:
             app_settings.set(
                 APP_NAME,
                 'public_access_ticket',
@@ -688,8 +686,8 @@ class ProjectAppPlugin(
         :param old_settings: Old app settings in case of update (dict or None)
         :param request: Request object or None
         """
-        taskflow = get_backend_api('taskflow')
-        irods_backend = get_backend_api('omics_irods')
+        taskflow = plugin_api.get_backend_api('taskflow')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
 
         # Check for conditions and skip if not met
         def _skip(msg):
@@ -704,8 +702,9 @@ class ProjectAppPlugin(
             )
         if action == PROJECT_ACTION_CREATE:
             return _skip('Project newly created, no Investigation available')
-        if project.public_guest_access == old_data.get('public_guest_access'):
-            return _skip('Public guest access unchanged')
+        pa = project.public_access.name if project.public_access else None
+        if pa == old_data.get('public_access'):
+            return _skip('Public access unchanged')
         investigation = Investigation.objects.filter(
             project=project, active=True
         ).first()
@@ -717,7 +716,8 @@ class ProjectAppPlugin(
         # Submit flow
         logger.info(
             'Setting project public access status for {} to: {} '.format(
-                project.get_log_title(), project.public_guest_access
+                project.get_log_title(),
+                project.public_access.name if project.public_access else 'None',
             )
         )
         self._update_public_access(project, taskflow, irods_backend)
@@ -734,8 +734,8 @@ class ProjectAppPlugin(
 
         :param project: Current project object (Project)
         """
-        taskflow = get_backend_api('taskflow')
-        irods_backend = get_backend_api('omics_irods')
+        taskflow = plugin_api.get_backend_api('taskflow')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
 
         # Set up investigation collections
         investigation = Investigation.objects.filter(
@@ -767,8 +767,8 @@ class ProjectAppPlugin(
         # NOTE: This will not sync cached study render tables, they are created
         #       synchronously upon access if not up-to-date. To sync the cache
         #       for all study tables, use the syncstudytables command.
-        cache_backend = get_backend_api('sodar_cache')
-        irods_backend = get_backend_api('omics_irods')
+        cache_backend = plugin_api.get_backend_api('sodar_cache')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         if not cache_backend or not irods_backend:
             backends = {
                 'cache_backend': cache_backend,
@@ -960,7 +960,7 @@ class SampleSheetAssayPluginPoint(PluginPoint):
 
     def __init__(self):
         super().__init__()
-        self.irods_backend = get_backend_api('omics_irods')
+        self.irods_backend = plugin_api.get_backend_api('omics_irods')
 
     def get_assay_path(self, assay):
         """
@@ -1042,7 +1042,7 @@ class SampleSheetAssayPluginPoint(PluginPoint):
         ):
             return
         try:
-            cache_backend = get_backend_api('sodar_cache')
+            cache_backend = plugin_api.get_backend_api('sodar_cache')
         except Exception:
             return
         if not cache_backend or not self.irods_backend:
@@ -1132,7 +1132,7 @@ def get_irods_content(inv, study, irods_backend, ret_data):
     :param ret_data: Return data to be modified (dict)
     :return: Dict
     """
-    cache_backend = get_backend_api('sodar_cache')
+    cache_backend = plugin_api.get_backend_api('sodar_cache')
     ret_data = deepcopy(ret_data)
     if not (inv.irods_status and irods_backend):
         return ret_data

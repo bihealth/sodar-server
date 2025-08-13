@@ -8,7 +8,7 @@ from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.models import Project, SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 from samplesheets.models import Investigation, Study, GenericMaterial
 from samplesheets.plugins import SampleSheetStudyPluginPoint
@@ -29,6 +29,7 @@ from samplesheets.utils import get_index_by_header
 
 
 logger = logging.getLogger(__name__)
+plugin_api = PluginAPI()
 table_builder = SampleSheetTableBuilder()
 User = auth.get_user_model()
 
@@ -66,7 +67,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         :param study_tables: Rendered study tables (dict)
         :return: Dict or None if not found
         """
-        cache_backend = get_backend_api('sodar_cache')
+        cache_backend = plugin_api.get_backend_api('sodar_cache')
         cache_item = None
         # Get iRODS URLs from cache if it's available
         if cache_backend:
@@ -161,7 +162,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         :param study_tables: Rendered study tables (dict)
         :return: Dict or None
         """
-        cache_backend = get_backend_api('sodar_cache')
+        cache_backend = plugin_api.get_backend_api('sodar_cache')
         cache_item = None
         query_id = None
         find_by_source = False
@@ -418,8 +419,8 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         if name and name.split('/')[0] != 'irods':
             logger.debug('Unknown cache item name "{}", skipping'.format(name))
             return
-        cache_backend = get_backend_api('sodar_cache')
-        irods_backend = get_backend_api('omics_irods')
+        cache_backend = plugin_api.get_backend_api('sodar_cache')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         projects = (
             [project]
             if project

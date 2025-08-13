@@ -11,7 +11,7 @@ from django.db import transaction
 from projectroles.app_settings import AppSettingAPI
 from projectroles.management.logging import ManagementCommandLogger
 from projectroles.models import Project, SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 from samplesheets.models import Investigation
 from samplesheets.rendering import STUDY_TABLE_CACHE_ITEM
@@ -22,6 +22,7 @@ from samplesheets.views_ajax import SheetVersionMixin
 
 app_settings = AppSettingAPI()
 logger = ManagementCommandLogger(__name__)
+plugin_api = PluginAPI()
 
 
 # SODAR constants
@@ -75,7 +76,7 @@ class Command(SheetVersionMixin, BaseCommand):
         if not inv:
             return
         th_count = 0
-        cache_backend = get_backend_api('sodar_cache')
+        cache_backend = plugin_api.get_backend_api('sodar_cache')
         for study in inv.studies.all():
             item_name = STUDY_TABLE_CACHE_ITEM.format(study=study.sodar_uuid)
             item = cache_backend.get_cache_item(
@@ -121,8 +122,8 @@ class Command(SheetVersionMixin, BaseCommand):
         )
 
     def handle(self, *args, **options):
-        timeline = get_backend_api('timeline_backend')
-        cache_backend = get_backend_api('sodar_cache')
+        timeline = plugin_api.get_backend_api('timeline_backend')
+        cache_backend = plugin_api.get_backend_api('sodar_cache')
         if not cache_backend:
             logger.error('Sodarcache not enabled, exiting')
             sys.exit(1)

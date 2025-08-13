@@ -12,16 +12,18 @@ from sodar.users.auth import fallback_to_auth_basic
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.views_ajax import SODARBaseProjectAjaxView
 
 
 logger = logging.getLogger(__name__)
+plugin_api = PluginAPI()
 
 
 # SODAR constants
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
+PROJECT_ROLE_GUEST = SODAR_CONSTANTS['PROJECT_ROLE_GUEST']
 
 # Local constants
 ERROR_NOT_IN_PROJECT = 'Collection does not belong to project'
@@ -72,7 +74,10 @@ class BaseIrodsAjaxView(SODARBaseProjectAjaxView):
         # Public guest access
         if (
             path.startswith(self.irods_backend.get_sample_path(self.project))
-            and self.project.public_guest_access
+            and (
+                self.project.public_access
+                and self.project.public_access.name == PROJECT_ROLE_GUEST
+            )
             and (user.is_authenticated or settings.PROJECTROLES_ALLOW_ANONYMOUS)
         ):
             return True
@@ -108,7 +113,7 @@ class BaseIrodsAjaxView(SODARBaseProjectAjaxView):
         """Perform required checks before processing a request"""
         self.project = self.get_project()
         try:
-            self.irods_backend = get_backend_api('omics_irods')
+            self.irods_backend = plugin_api.get_backend_api('omics_irods')
         except Exception as ex:
             return JsonResponse(self._get_detail(ex), status=500)
         if not self.irods_backend:

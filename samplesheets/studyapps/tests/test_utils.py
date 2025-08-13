@@ -10,7 +10,7 @@ from test_plus.test import TestCase
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import Role, SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
 
 from samplesheets.plugins import IGV_DEFAULT_GENOME
@@ -24,6 +24,7 @@ from samplesheets.tests.test_io import SampleSheetIOMixin
 
 
 app_settings = AppSettingAPI()
+plugin_api = PluginAPI()
 
 
 # Local constants
@@ -214,7 +215,7 @@ class TestGetIGVXML(StudyAppUtilsTestBase):
 
     def setUp(self):
         super().setUp()
-        self.irods_backend = get_backend_api('omics_irods')
+        self.irods_backend = plugin_api.get_backend_api('omics_irods')
         self.project_path = self.irods_backend.get_path(self.project)
         self.bam_urls = {
             'P1001-N1-DNA1-WGS1': os.path.join(

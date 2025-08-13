@@ -12,7 +12,7 @@ from projectroles.models import RoleAssignment, SODAR_CONSTANTS, ROLE_RANKING
 from projectroles.plugins import (
     BackendPluginPoint,
     ProjectModifyPluginMixin,
-    get_backend_api,
+    PluginAPI,
 )
 
 from taskflowbackend.api import TaskflowAPI
@@ -21,12 +21,11 @@ from taskflowbackend.irods_utils import get_flow_role
 
 app_settings = AppSettingAPI()
 logger = logging.getLogger(__name__)
+plugin_api = PluginAPI()
 User = get_user_model()
 
 
 # SODAR constants
-PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
-PROJECT_TYPE_CATEGORY = SODAR_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
 PROJECT_ROLE_FINDER = SODAR_CONSTANTS['PROJECT_ROLE_FINDER']
@@ -77,13 +76,9 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         :param project: Project object
         :return: List
         """
-        if project.type != PROJECT_TYPE_CATEGORY:
+        if project.is_project():
             return []
-        return [
-            p
-            for p in project.get_children(flat=True)
-            if p.type == PROJECT_TYPE_PROJECT
-        ]
+        return [p for p in project.get_children(flat=True) if p.is_project()]
 
     # API methods --------------------------------------------------------------
 
@@ -112,7 +107,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         :param request: Request object or None
         """
         # Skip for categories unless moving under a different category
-        if project.type == PROJECT_TYPE_CATEGORY and (
+        if project.is_category() and (
             action == PROJECT_ACTION_CREATE
             or old_data['parent'] == project.parent
         ):
@@ -120,7 +115,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
             return
 
         taskflow = self.get_api()
-        timeline = get_backend_api('timeline_backend')
+        timeline = plugin_api.get_backend_api('timeline_backend')
         owner = project.get_owner().user
         all_roles = [
             a for a in project.get_roles() if a.role.rank < RANK_FINDER
@@ -128,7 +123,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         all_members = [a.user.username for a in all_roles]
         children = self._get_child_projects(project)
 
-        if project.type == PROJECT_TYPE_PROJECT:
+        if project.is_project():
             flow_data = {
                 'owner': owner.username,
                 'settings': project_settings,
@@ -230,8 +225,8 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         if action == PROJECT_ACTION_UPDATE:
             return  # Reverting an update is not needed as no other app can fail
 
-        irods_backend = get_backend_api('omics_irods')
-        timeline = get_backend_api('timeline_backend')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
+        timeline = plugin_api.get_backend_api('timeline_backend')
         project_path = irods_backend.get_path(project)
 
         with irods_backend.get_session() as irods:
@@ -299,7 +294,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
             return
 
         taskflow = self.get_api()
-        timeline = get_backend_api('timeline_backend')
+        timeline = plugin_api.get_backend_api('timeline_backend')
         project = role_as.project
         user = role_as.user
         children = self._get_child_projects(project)
@@ -313,7 +308,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
             if parent_role_as and parent_role_as.role.rank < role_rank:
                 role_rank = parent_role_as.role.rank
 
-        if project.type == PROJECT_TYPE_PROJECT:
+        if project.is_project():
             flow_data['roles_add'].append(
                 get_flow_role(project, user, role_rank)
             )
@@ -361,7 +356,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         :param old_role: Role object for previous role in case of an update
         :param request: Request object or None
         """
-        timeline = get_backend_api('timeline_backend')
+        timeline = plugin_api.get_backend_api('timeline_backend')
         project = role_as.project
         user = role_as.user
         user_name = user.username
@@ -380,7 +375,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
             )
 
         # Revert creation or update from finder role for project
-        if project.type == PROJECT_TYPE_PROJECT and (
+        if project.is_project() and (
             action == PROJECT_ACTION_CREATE
             or (old_role and old_role.rank >= RANK_FINDER)
         ):
@@ -391,7 +386,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
             )
         # Update project owner/delegate
         elif (
-            project.type == PROJECT_TYPE_PROJECT
+            project.is_project()
             and action == PROJECT_ACTION_UPDATE
             and owner_update
         ):
@@ -402,7 +397,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                 )
             )
         # Update roles in category child projects
-        elif project.type == PROJECT_TYPE_CATEGORY:
+        elif project.is_category():
             children = self._get_child_projects(project)
             for c in children:
                 # Search for inherited roles for child
@@ -454,13 +449,13 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         :param role_as: RoleAssignment object
         :param request: Request object or None
         """
-        timeline = get_backend_api('timeline_backend')
+        timeline = plugin_api.get_backend_api('timeline_backend')
         project = role_as.project
         user = role_as.user
         user_name = user.username
         flow_data = {'roles_add': [], 'roles_delete': []}
 
-        if project.type == PROJECT_TYPE_PROJECT:
+        if project.is_project():
             inh_as = (
                 RoleAssignment.objects.filter(
                     user=user, project__in=project.get_parents()
@@ -532,13 +527,13 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         :param role_as: RoleAssignment object
         :param request: Request object or None
         """
-        timeline = get_backend_api('timeline_backend')
+        timeline = plugin_api.get_backend_api('timeline_backend')
         project = role_as.project
         user = role_as.user
         user_name = user.username
         flow_data = {'roles_add': [], 'roles_delete': []}
 
-        if project.type == PROJECT_TYPE_PROJECT:
+        if project.is_project():
             user_as = project.get_role(user)
             if user_as and user_as.role.rank < RANK_FINDER:
                 flow_data['roles_add'].append(
@@ -603,13 +598,13 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         :param old_owner_role: Role object for new role of old owner or None
         :param request: Request object or None
         """
-        timeline = get_backend_api('timeline_backend')
+        timeline = plugin_api.get_backend_api('timeline_backend')
         n_user_name = new_owner.username
         o_user_name = old_owner.username
         o_rank = old_owner_role.rank if old_owner_role else None
         flow_data = {'roles_add': [], 'roles_delete': []}
 
-        if project.type == PROJECT_TYPE_PROJECT:
+        if project.is_project():
             flow_data['roles_add'].append(
                 get_flow_role(
                     project, n_user_name, ROLE_RANKING[PROJECT_ROLE_OWNER]
@@ -678,10 +673,10 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         :param project: Current project object (Project)
         """
         # Skip for categories, inherited roles get synced for projects
-        if project.type != PROJECT_TYPE_PROJECT:
+        if project.is_category():
             logger.debug('Skipping: {}'.format(IRODS_CAT_SKIP_MSG))
             return
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         if not irods_backend:
             logger.error('iRODS backend not enabled')
             return
@@ -727,15 +722,15 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         """
         # NOTE: Checks for project/category permissions done in SODAR Core views
         # Skip for categories, nothing to do
-        if project.type != PROJECT_TYPE_PROJECT:
+        if project.is_category():
             logger.debug('Skipping: {}'.format(IRODS_CAT_SKIP_MSG))
             return
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         if not irods_backend:
             logger.error('iRODS backend not enabled')
             return
 
-        timeline = get_backend_api('timeline_backend')
+        timeline = plugin_api.get_backend_api('timeline_backend')
         tl_event = None
         project_path = irods_backend.get_path(project)
         user_group = irods_backend.get_group_name(project)

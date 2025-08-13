@@ -6,14 +6,13 @@ from rest_framework.versioning import AcceptHeaderVersioning
 from rest_framework.views import APIView
 
 # Projectroles dependency
-from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from rest_framework.response import Response
 from projectroles.views_api import SODARAPIGenericProjectMixin
 
 
-# SODAR constants
-PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
+plugin_api = PluginAPI()
+
 
 # Local constants
 TASKFLOW_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar.taskflowbackend+json'
@@ -62,14 +61,14 @@ class ProjectLockStatusAPIView(
     serializer_class = None
 
     def get(self, request, *args, **kwargs):
-        taskflow = get_backend_api('taskflow')
+        taskflow = plugin_api.get_backend_api('taskflow')
         if not taskflow:
             return Response(
                 {'detail': 'Taskflow backend not enabled'},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
         project = self.get_project()
-        if project.type != PROJECT_TYPE_PROJECT:
+        if project.is_category():
             return Response(
                 {'detail': CATEGORY_EX_MSG}, status=status.HTTP_400_BAD_REQUEST
             )

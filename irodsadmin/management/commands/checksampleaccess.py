@@ -17,13 +17,14 @@ from django.core.management.base import BaseCommand
 
 # Projectroles dependency
 from projectroles.management.logging import ManagementCommandLogger
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 # Samplesheets dependency
 from samplesheets.models import Investigation
 
 
 logger = ManagementCommandLogger(__name__)
+plugin_api = PluginAPI()
 
 
 # Local constants
@@ -46,7 +47,7 @@ class Command(BaseCommand):
 
     def __init__(self):
         super().__init__()
-        self.irods_backend = get_backend_api('omics_irods')
+        self.irods_backend = plugin_api.get_backend_api('omics_irods')
 
     @classmethod
     def _check_access(

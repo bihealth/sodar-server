@@ -12,7 +12,7 @@ from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 # Appalerts dependency
 from appalerts.models import AppAlert
@@ -59,6 +59,9 @@ from landingzones.views_api import (
 )
 
 
+plugin_api = PluginAPI()
+
+
 # SODAR constants
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
@@ -88,7 +91,7 @@ class ZoneAPIViewTaskflowTestBase(
     def setUp(self):
         super().setUp()
         # Get iRODS backend for session access
-        self.irods_backend = get_backend_api('omics_irods')
+        self.irods_backend = plugin_api.get_backend_api('omics_irods')
         self.assertIsNotNone(self.irods_backend)
         self.irods = self.irods_backend.get_session_obj()
         # Make project with owner in Taskflow and Django

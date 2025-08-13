@@ -1,0 +1,8 @@
+[build-system]
+requires = ["setuptools>=80.9.0", "versioneer[toml]==0.29"]
+build-backend = "setuptools.build_meta"
+
+[tool.black]
+line-length = 80
+skip-string-normalization = true
+exclude = ".git|.venv|.tox|build|env|src|docs_manual|node_modules|versioneer.py|_version.py"

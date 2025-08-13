@@ -14,7 +14,7 @@ from test_plus.test import TestCase
 
 # Projectroles dependency
 from projectroles.constants import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.tests.test_models import (
     ProjectMixin,
     RoleMixin,
@@ -42,6 +42,9 @@ from irodsadmin.management.commands.checksampleaccess import (
     CHECK_ACCESS_USER_MSG,
 )
 from irodsadmin.management.commands.irodsorphans import Command, DELETED
+
+
+plugin_api = PluginAPI()
 
 
 # SODAR constants
@@ -264,7 +267,7 @@ class TestIrodsOrphans(
             configuration=None,
             config_data={},
         )
-        self.irods_backend = get_backend_api('omics_irods')
+        self.irods_backend = plugin_api.get_backend_api('omics_irods')
         self.irods = self.irods_backend.get_session_obj()
 
         # Create the actual assay, study and landing zone in the irods session

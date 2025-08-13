@@ -6,7 +6,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import APIException
 
 # Projectroles dependency
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.serializers import SODARProjectModelSerializer
 
 # Samplesheets dependency
@@ -19,6 +19,9 @@ from landingzones.constants import (
 )
 from landingzones.models import LandingZone
 from landingzones.utils import get_zone_title
+
+
+plugin_api = PluginAPI()
 
 
 # Local constants
@@ -63,7 +66,7 @@ class LandingZoneSerializer(SODARProjectModelSerializer):
         return obj.is_locked()
 
     def get_irods_path(self, obj: LandingZone) -> Optional[str]:
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         if irods_backend and obj.status not in [
             ZONE_STATUS_OK,
             ZONE_STATUS_DELETED,

@@ -3,7 +3,7 @@
 import logging
 
 # Projectroles dependency
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 from samplesheets.models import GenericMaterial
 from samplesheets.studyapps.utils import (
@@ -15,6 +15,7 @@ from samplesheets.utils import get_index_by_header
 
 
 logger = logging.getLogger(__name__)
+plugin_api = PluginAPI()
 
 
 def get_pedigree_file_path(file_type, source, study_tables):
@@ -27,7 +28,7 @@ def get_pedigree_file_path(file_type, source, study_tables):
     :param study_tables: Render study tables
     :return: String
     """
-    irods_backend = get_backend_api('omics_irods')
+    irods_backend = plugin_api.get_backend_api('omics_irods')
     if not irods_backend:
         raise Exception('iRODS Backend not available')
 

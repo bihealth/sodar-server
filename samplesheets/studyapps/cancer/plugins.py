@@ -8,7 +8,7 @@ from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.models import Project, SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 from samplesheets.models import Investigation, Study, Assay, GenericMaterial
 from samplesheets.plugins import SampleSheetStudyPluginPoint
@@ -22,6 +22,7 @@ from samplesheets.utils import get_isa_field_name, get_last_material_index
 
 
 logger = logging.getLogger(__name__)
+plugin_api = PluginAPI()
 table_builder = SampleSheetTableBuilder()
 User = auth.get_user_model()
 
@@ -97,7 +98,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
 
         logger.debug('Set shortcut column data..')
         # Get iRODS URLs from cache
-        cache_backend = get_backend_api('sodar_cache')
+        cache_backend = plugin_api.get_backend_api('sodar_cache')
         cache_item = None
         if cache_backend:
             cache_item = cache_backend.get_cache_item(
@@ -149,7 +150,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         :param study_tables: Rendered study tables (dict)
         :return: Dict or None
         """
-        cache_backend = get_backend_api('sodar_cache')
+        cache_backend = plugin_api.get_backend_api('sodar_cache')
         case_id = kwargs['case'][0]
         source = GenericMaterial.objects.filter(
             study=study, name=case_id
@@ -250,7 +251,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         :param user: User object or None
         :param cache_backend: Sodarcache backend object
         """
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         item_name = 'irods/{}'.format(study.sodar_uuid)
         bam_paths = {}
         vcf_paths = {}
@@ -311,7 +312,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         # Omit for mass spectrometry studies (workaround for issue #482)
         if name and name.split('/')[0] != 'irods':
             return
-        cache_backend = get_backend_api('sodar_cache')
+        cache_backend = plugin_api.get_backend_api('sodar_cache')
         if not cache_backend:
             return
         projects = (

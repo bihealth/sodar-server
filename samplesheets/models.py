@@ -17,7 +17,7 @@ from django.utils.timezone import localtime
 
 # Projectroles dependency
 from projectroles.models import Project
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 from samplesheets.utils import (
     get_alt_names,
@@ -28,10 +28,9 @@ from samplesheets.utils import (
 )
 
 
-# Access Django user model
 AUTH_USER_MODEL = getattr(settings, 'AUTH_USER_MODEL', 'auth.User')
-
 logger = logging.getLogger(__name__)
+plugin_api = PluginAPI()
 
 
 # Local constants
@@ -1435,13 +1434,13 @@ class IrodsDataRequest(models.Model):
 
     def is_data_object(self):
         """Return True if data object exists for the object path"""
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         with irods_backend.get_session() as irods:
             return irods.data_objects.exists(self.path)
 
     def is_collection(self):
         """Return True if iRODS collection exists for the object path"""
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         with irods_backend.get_session() as irods:
             return irods.collections.exists(self.path)
 
@@ -1450,7 +1449,7 @@ class IrodsDataRequest(models.Model):
         Return shortened layout-friendly path, omitting the full path to the
         assay root.
         """
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         pp_len = len(irods_backend.get_projects_path().split('/'))
         # NOTE: This only works for assays, needs to be changed if studies are
         #       supported
@@ -1458,7 +1457,7 @@ class IrodsDataRequest(models.Model):
 
     def get_assay(self):
         """Return Assay object for request path or None if not found"""
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         a_uuid = irods_backend.get_uuid_from_path(self.path, 'assay')
         return Assay.objects.filter(sodar_uuid=a_uuid).first()
 

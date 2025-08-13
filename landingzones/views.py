@@ -16,7 +16,7 @@ from django.views.generic import TemplateView, CreateView, UpdateView
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS, ROLE_RANKING
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.views import (
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
@@ -47,6 +47,7 @@ from landingzones.utils import cleanup_file_prohibit
 
 app_settings = AppSettingAPI()
 logger = logging.getLogger(__name__)
+plugin_api = PluginAPI()
 User = auth.get_user_model()
 
 
@@ -114,7 +115,7 @@ class ProjectZoneInfoMixin:
         :param project: Project object
         :return: Dict
         """
-        taskflow = get_backend_api('taskflow')
+        taskflow = plugin_api.get_backend_api('taskflow')
         ret = {}
         # Project lock status
         project_lock = False
@@ -230,9 +231,9 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
         :param sync: Whether method is called from syncmodifyapi (boolean)
         :raise: taskflow.FlowSubmitException if taskflow submit fails
         """
-        taskflow = get_backend_api('taskflow')
-        timeline = get_backend_api('timeline_backend')
-        irods_backend = get_backend_api('omics_irods')
+        taskflow = plugin_api.get_backend_api('taskflow')
+        timeline = plugin_api.get_backend_api('timeline_backend')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         project = zone.project
         tl_event = None
         config_str = (
@@ -281,7 +282,7 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
             colls = [RESULTS_COLL, MISC_FILES_COLL, TRACK_HUBS_COLL]
             plugin = zone.assay.get_plugin()
             # First try the cache
-            cache_backend = get_backend_api('sodar_cache')
+            cache_backend = plugin_api.get_backend_api('sodar_cache')
             if plugin and cache_backend:
                 cache_obj = cache_backend.get_cache_item(
                     'samplesheets.assayapps.'
@@ -368,7 +369,7 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
         :param form: LandingZoneForm object
         :raise: taskflow.FlowSubmitException if taskflow submit fails
         """
-        timeline = get_backend_api('timeline_backend')
+        timeline = plugin_api.get_backend_api('timeline_backend')
         user = request.user if request else None
 
         # Add event in Timeline
@@ -408,9 +409,9 @@ class ZoneDeleteMixin(ZoneConfigPluginMixin):
         :param zone: LandingZone object
         :raise: taskflow.FlowSubmitException if taskflow submit fails
         """
-        irods_backend = get_backend_api('omics_irods')
-        taskflow = get_backend_api('taskflow')
-        timeline = get_backend_api('timeline_backend')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
+        taskflow = plugin_api.get_backend_api('taskflow')
+        timeline = plugin_api.get_backend_api('timeline_backend')
         tl_event = None
         project = zone.project
 
@@ -476,8 +477,8 @@ class ZoneMoveMixin(ZoneConfigPluginMixin):
         if not request and hasattr(self, 'request'):
             request = self.request
         user = request.user if request else zone.user
-        timeline = get_backend_api('timeline_backend')
-        taskflow = get_backend_api('taskflow')
+        timeline = plugin_api.get_backend_api('timeline_backend')
+        taskflow = plugin_api.get_backend_api('taskflow')
         project = zone.project
         tl_event = None
         event_name = 'zone_validate' if validate_only else 'zone_move'
@@ -553,7 +554,7 @@ class ProjectZoneView(
         project = context['project']
         # iRODS backend
         context['irods_backend_enabled'] = (
-            True if get_backend_api('omics_irods') else False
+            True if plugin_api.get_backend_api('omics_irods') else False
         )
         # Landing zones
         zones = (
@@ -615,7 +616,7 @@ class ZoneCreateView(
         return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
-        taskflow = get_backend_api('taskflow')
+        taskflow = plugin_api.get_backend_api('taskflow')
         context = self.get_context_data()
         project = context['project']
         investigation = context['investigation']
@@ -811,7 +812,7 @@ class ZoneDeleteView(
         return super().get(request, *args, **kwargs)
 
     def post(self, *args, **kwargs):
-        taskflow = get_backend_api('taskflow')
+        taskflow = plugin_api.get_backend_api('taskflow')
         zone = LandingZone.objects.get(sodar_uuid=self.kwargs['landingzone'])
         redirect_url = reverse(
             'landingzones:list', kwargs={'project': zone.project.sodar_uuid}
@@ -871,7 +872,7 @@ class ZoneMoveView(
         """Override get() to ensure the zone status"""
         zone = LandingZone.objects.get(sodar_uuid=self.kwargs['landingzone'])
         try:
-            irods_backend = get_backend_api('omics_irods')
+            irods_backend = plugin_api.get_backend_api('omics_irods')
             path = irods_backend.get_path(zone)
             with irods_backend.get_session() as irods:
                 stats = irods_backend.get_stats(irods, path)
@@ -907,8 +908,8 @@ class ZoneMoveView(
         return super().get(request, *args, **kwargs)
 
     def post(self, request, **kwargs):
-        taskflow = get_backend_api('taskflow')
-        irods_backend = get_backend_api('omics_irods')
+        taskflow = plugin_api.get_backend_api('taskflow')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         zone = LandingZone.objects.get(sodar_uuid=self.kwargs['landingzone'])
         project = zone.project
         redirect_url = reverse(

@@ -43,17 +43,26 @@ Display project UUID copying link
     Enabling this will add an icon next to the project title on each project
     view. Clicking it will copy the project identifier (UUID) into the
     clipboard.
+Receive alerts for project updates
+    Receive UI alerts for category or project creation, updating, moving,
+    archiving and deletion.
 Receive email for project updates
     Receive email notifications for category or project creation, updating,
     moving and archiving.
+Receive alerts for project membership updates
+    Receive UI alerts for category or project membership updates and invitation
+    activity.
 Receive email for project membership updates
     Receive email notifications for category or project membership updates and
     member invitation activity.
-
+Project list title highlight
+    Highlight project title in paths displayed in the project list.
+Project list page size
+    Amount of projects per page in the project list.
 
 .. figure:: _static/sodar_ui/user_profile_settings.png
     :align: center
-    :scale: 60%
+    :scale: 55%
 
     User settings view
 

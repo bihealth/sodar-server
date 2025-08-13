@@ -11,7 +11,7 @@ from django.views.generic import View
 from sodar.users.auth import fallback_to_auth_basic
 
 # Projectroles dependency
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.views import (
     LoggedInPermissionMixin,
     ProjectContextMixin,
@@ -24,6 +24,7 @@ from samplesheets.utils import get_sheets_url, get_last_material_index
 from samplesheets.studyapps.utils import get_igv_xml
 
 
+plugin_api = PluginAPI()
 table_builder = SampleSheetTableBuilder()
 
 
@@ -75,7 +76,7 @@ class IGVSessionFileRenderView(BaseCancerConfigView):
     def get(self, request, *args, **kwargs):
         """Override get() to return IGV session file"""
         super(IGVSessionFileRenderView, self).get(request, *args, **kwargs)
-        cache_backend = get_backend_api('sodar_cache')
+        cache_backend = plugin_api.get_backend_api('sodar_cache')
         webdav_url = settings.IRODS_WEBDAV_URL
         study = self.material.study
         project = study.get_project()

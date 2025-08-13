@@ -19,7 +19,7 @@ from test_plus.test import TestCase
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.tests.test_models import (
     ProjectMixin,
     RoleMixin,
@@ -46,6 +46,9 @@ from samplesheets.models import (
 )
 from samplesheets.plugins import SampleSheetStudyPluginPoint
 from samplesheets.utils import get_alt_names
+
+
+plugin_api = PluginAPI()
 
 
 # Local constants
@@ -1614,7 +1617,7 @@ class TestIrodsDataRequest(IrodsDataRequestMixin, SamplesheetsModelTestBase):
 
     def setUp(self):
         super().setUp()
-        self.irods_backend = get_backend_api('omics_irods')
+        self.irods_backend = plugin_api.get_backend_api('omics_irods')
         self.request_path = os.path.join(
             self.irods_backend.get_path(self.assay), 'file.txt'
         )

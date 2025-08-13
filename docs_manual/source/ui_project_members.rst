@@ -8,9 +8,14 @@ project or a category. These roles control the access to project data and SODAR
 functions. Users with sufficient access can also add, update and remove roles
 through this view.
 
+Sorting of the members can be changed by clicking on a column header in the
+member table. Members can be filtered from the :guilabel:`Filter` text input in
+the top of the member card. In large projects, the member list appears
+paginated.
+
 .. figure:: _static/sodar_ui/project_members.png
     :align: center
-    :scale: 60%
+    :scale: 55%
 
     Project members view
 
@@ -39,7 +44,12 @@ Project Contributor
     e.g. uploading files and editing sample sheets, with some limitations. For
     example, modifying project metadata or user roles is not allowed.
 Project Guest
-    Read-only access to project data.
+    Full read-only access to project data. Can read all data in project
+    including raw data files, but will not be able to modify any data or upload
+    files to iRODS.
+Project Viewer
+    Limited read-only access to project data. Can see the project readme,
+    members and sample sheets. Can not access any files in iRODS mass storage.
 Project Finder
     A role assignable only to users in categories. A user with a finder role can
     see child categories and projects along with their member lists without

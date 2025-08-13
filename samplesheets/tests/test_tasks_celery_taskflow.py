@@ -6,7 +6,7 @@ from django.urls import reverse
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 # Appalerts dependency
 from appalerts.models import AppAlert
@@ -34,6 +34,7 @@ from samplesheets.tests.test_views_taskflow import (
 
 
 app_settings = AppSettingAPI()
+plugin_api = PluginAPI()
 User = auth.get_user_model()
 
 
@@ -68,7 +69,7 @@ class TestUpdateProjectCacheTask(
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-        self.app_alerts = get_backend_api('appalerts_backend')
+        self.app_alerts = plugin_api.get_backend_api('appalerts_backend')
         self.make_irods_colls(self.investigation)
 
     def test_update_cache(self):

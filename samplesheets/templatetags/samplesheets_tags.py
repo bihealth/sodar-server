@@ -4,7 +4,7 @@ from django import template
 from django.conf import settings
 
 # Projectroles dependency
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 from samplesheets.models import (
     Investigation,
@@ -12,6 +12,10 @@ from samplesheets.models import (
     Assay,
     GENERIC_MATERIAL_TYPES,
 )
+
+
+plugin_api = PluginAPI()
+register = template.Library()
 
 
 # Local constants
@@ -29,9 +33,6 @@ REQUEST_STATUS_CLASSES = {
     'ACCEPTED': 'bg-success text-white',
     'REJECTED': 'bg-danger text-white',
 }
-
-
-register = template.Library()
 
 
 # General ----------------------------------------------------------------------
@@ -57,7 +58,7 @@ def get_search_item_type(item):
 @register.simple_tag
 def get_irods_tree(investigation):
     """Return HTML for iRODS collections"""
-    irods_backend = get_backend_api('omics_irods')
+    irods_backend = plugin_api.get_backend_api('omics_irods')
     if not irods_backend:
         return ''
     ret = '<ul><li>{}<ul>'.format(settings.IRODS_SAMPLE_COLL)
@@ -95,7 +96,7 @@ def get_irods_path(obj, sub_path=None):
     :param sub_path: If defined, add a sub path below object
     :return: String or none
     """
-    irods_backend = get_backend_api('omics_irods')
+    irods_backend = plugin_api.get_backend_api('omics_irods')
     if irods_backend:
         path = irods_backend.get_path(obj)
         if sub_path:

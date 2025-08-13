@@ -13,12 +13,15 @@ from projectroles.views import (
     ProjectPermissionMixin,
     ProjectContextMixin,
 )
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.utils import build_secret
 
 # Landingzones dependency
 from landingzones.models import LandingZone
 from landingzones.views import ZoneConfigContextMixin
+
+
+plugin_api = PluginAPI()
 
 
 # Local constants
@@ -56,7 +59,7 @@ class ZoneTicketGetView(
 
     def post(self, *args, **kwargs):
         """POST function for generating/refreshing a ticket"""
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         zone = LandingZone.objects.get(sodar_uuid=self.kwargs['landingzone'])
         redirect_url = reverse(
             'landingzones:list', kwargs={'project': zone.project.sodar_uuid}

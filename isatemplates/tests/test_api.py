@@ -7,7 +7,7 @@ from django.test import override_settings
 from test_plus.test import TestCase
 
 # Projectroles dependency
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 from isatemplates.api import ISATemplateAPI
 from isatemplates.models import CookiecutterISATemplate
@@ -16,6 +16,9 @@ from isatemplates.tests.test_models import (
     TEMPLATE_NAME,
     TEMPLATE_DESC,
 )
+
+
+plugin_api = PluginAPI()
 
 
 # Local constants
@@ -34,12 +37,12 @@ class TestISATemplateAPI(CookiecutterISATemplateMixin, TestCase):
         self.user = self.make_user('superuser')
         self.user.is_superuser = True
         self.user.save()
-        self.tpl_backend = get_backend_api('isatemplates_backend')
+        self.tpl_backend = plugin_api.get_backend_api('isatemplates_backend')
 
     def test_get_backend_api(self):
         """Test get_backend_api() with isatemplates backend"""
         self.assertIsInstance(
-            get_backend_api('isatemplates_backend'), ISATemplateAPI
+            plugin_api.get_backend_api('isatemplates_backend'), ISATemplateAPI
         )
 
     def test_get_list(self):

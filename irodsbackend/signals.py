@@ -10,10 +10,11 @@ from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.models import AUTH_TYPE_OIDC
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 
 logger = logging.getLogger(__name__)
+plugin_api = PluginAPI()
 
 
 APP_NAME = 'omics_irods'
@@ -26,7 +27,7 @@ OIDC_USER_PW_MSG = (
 def create_irods_user(sender, user, **kwargs):
     """Signal for creating iRODS user for LDAP user or SODAR auth"""
     try:
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
     except Exception as ex:
         logger.error('Exception initializing irodsbackend: {}'.format(ex))
         return
@@ -69,7 +70,7 @@ def create_irods_user(sender, user, **kwargs):
                     )
                     return
                 # Add user alert
-                app_alerts = get_backend_api('appalerts_backend')
+                app_alerts = plugin_api.get_backend_api('appalerts_backend')
                 if app_alerts:
                     if user.get_auth_type() == AUTH_TYPE_OIDC:
                         pw_msg = OIDC_USER_PW_MSG

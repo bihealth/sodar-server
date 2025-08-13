@@ -20,11 +20,11 @@ Versioning
 Media Type
     ``application/vnd.bihealth.sodar-core.projectroles+json``
 Current Version
-    ``1.1``
+    ``2.0``
 Accepted Versions
-    ``1.0``, ``1.1``
+    ``1.0``, ``1.1``, ``2.0``
 Header Example
-    ``Accept: application/vnd.bihealth.sodar-core.projectroles+json; version=1.1``
+    ``Accept: application/vnd.bihealth.sodar-core.projectroles+json; version=2.0``
 
 API Views
 ---------

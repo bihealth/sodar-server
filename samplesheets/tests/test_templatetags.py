@@ -8,7 +8,7 @@ from django.urls import reverse
 from test_plus.test import TestCase
 
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.tests.test_models import (
     ProjectMixin,
     RoleMixin,
@@ -36,6 +36,10 @@ from samplesheets.tests.test_models import (
     IRODS_REQUEST_ACTION_DELETE,
     IRODS_REQUEST_STATUS_ACTIVE,
 )
+
+
+plugin_api = PluginAPI()
+
 
 # Local constants
 IRODS_SAMPLE_COLL = settings.IRODS_SAMPLE_COLL
@@ -98,7 +102,7 @@ class TestSamplesheetsTemplateTags(
             comments=DEFAULT_COMMENTS,
         )
         # Setup iRODS backend for the test
-        self.irods_backend = get_backend_api('omics_irods')
+        self.irods_backend = plugin_api.get_backend_api('omics_irods')
 
     def test_get_investigation(self):
         """Test get_investigation()"""

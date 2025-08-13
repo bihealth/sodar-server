@@ -5,7 +5,10 @@ from django.core.checks import Error, Warning, register
 
 
 # Projectroles dependency
-from projectroles.plugins import get_app_plugin
+from projectroles.plugins import PluginAPI
+
+
+plugin_api = PluginAPI()
 
 
 W001_MSG = (
@@ -70,7 +73,7 @@ def check_token_app_oidc(app_configs, **kwargs):
     if (
         settings.ENABLE_IRODS
         and settings.ENABLE_OIDC
-        and not get_app_plugin('tokens')
+        and not plugin_api.get_app_plugin('tokens')
     ):
         ret.append(W003)
     return ret

@@ -9,7 +9,7 @@ from django.urls import reverse
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.email import send_generic_mail, get_email_user
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 # Samplesheets dependency
 from samplesheets.tasks_celery import update_project_cache_task
@@ -27,9 +27,11 @@ from landingzones.constants import (
     ZONE_STATUS_DELETED,
 )
 
-User = auth.get_user_model()
-logger = logging.getLogger(__name__)
+
 app_settings = AppSettingAPI()
+logger = logging.getLogger(__name__)
+plugin_api = PluginAPI()
+User = auth.get_user_model()
 
 
 # Local constants
@@ -240,7 +242,7 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
         :param status_info: Detailed zone status info (string)
         :param extra_data: Optional extra data (dict)
         """
-        app_alerts = get_backend_api('appalerts_backend')
+        app_alerts = plugin_api.get_backend_api('appalerts_backend')
         # Refresh in case sheets have been replaced (see issue #1839)
         zone.refresh_from_db()
         zone.set_status(

@@ -6,7 +6,7 @@ from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.tests.test_views_api import APIViewTestBase
 
 # Samplesheets dependency
@@ -24,6 +24,9 @@ from landingzones.views_api import (
     LANDINGZONES_API_MEDIA_TYPE,
     LANDINGZONES_API_DEFAULT_VERSION,
 )
+
+
+plugin_api = PluginAPI()
 
 
 # SODAR constants
@@ -76,7 +79,7 @@ class TestLandingZoneListAPIView(LandingZoneAPIViewTestBase):
 
     def setUp(self):
         super().setUp()
-        self.irods_backend = get_backend_api('omics_irods')
+        self.irods_backend = plugin_api.get_backend_api('omics_irods')
         self.url = reverse(
             'landingzones:api_list', kwargs={'project': self.project.sodar_uuid}
         )
@@ -203,7 +206,7 @@ class TestLandingZoneRetrieveAPIView(LandingZoneAPIViewTestBase):
 
     def test_get(self):
         """Test LandingZoneRetrieveAPIView GET as zone owner"""
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         url = reverse(
             'landingzones:api_retrieve',
             kwargs={'landingzone': self.zone.sodar_uuid},

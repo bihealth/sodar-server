@@ -14,9 +14,12 @@ from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 from samplesheets.constants import DEFAULT_EXTERNAL_LINK_LABELS
+
+
+plugin_api = PluginAPI()
 
 
 # Local constants
@@ -46,7 +49,7 @@ def get_sample_colls(investigation):
     :return: List
     """
     ret = []
-    irods_backend = get_backend_api('omics_irods')
+    irods_backend = plugin_api.get_backend_api('omics_irods')
     if irods_backend:
         for study in investigation.studies.all():
             ret.append(irods_backend.get_sub_path(study))
@@ -338,10 +341,11 @@ def get_webdav_url(project, user):
         return None
     if user and user.is_authenticated:
         return settings.IRODS_WEBDAV_URL.rstrip('/')
+    # TODO: Update for viewer role
     elif (
         (not user or user.is_anonymous)
         and settings.PROJECTROLES_ALLOW_ANONYMOUS
-        and project.public_guest_access
+        and project.public_access
     ):
         app_settings = AppSettingAPI()
         ticket = app_settings.get(

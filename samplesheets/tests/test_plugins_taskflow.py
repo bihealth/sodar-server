@@ -81,7 +81,7 @@ class TestPerformProjectModify(
             parent=self.category,
             owner=self.user,
             description='description',
-            public_guest_access=False,
+            public_guest_access=False,  # TODO: Update for public_access
         )
         self.sample_path = self.irods_backend.get_sample_path(self.project)
         # Import investigation
@@ -101,15 +101,14 @@ class TestPerformProjectModify(
         """Test enabling anonymous guest access to project in iRODS"""
         self.assert_irods_access(IRODS_GROUP_PUBLIC, self.sample_path, None)
         self.assert_ticket_access(self.project, False)
-        self.project.public_guest_access = True
-        self.project.save()
+        self.project.set_public_access(self.role_guest)
         self.plugin.perform_project_modify(
             project=self.project,
             action=PROJECT_ACTION_UPDATE,
             project_settings=app_settings.get_all_by_scope(
                 APP_SETTING_SCOPE_PROJECT, project=self.project
             ),
-            old_data={'parent': self.category},
+            old_data={'parent': self.category, 'public_access': None},
             request=self.request,
         )
         self.assert_irods_access(
@@ -121,15 +120,14 @@ class TestPerformProjectModify(
         """Test enabling guest access in iRODS without anon accesss"""
         self.assert_irods_access(IRODS_GROUP_PUBLIC, self.sample_path, None)
         self.assert_ticket_access(self.project, False)
-        self.project.public_guest_access = True
-        self.project.save()
+        self.project.set_public_access(self.role_guest)
         self.plugin.perform_project_modify(
             project=self.project,
             action=PROJECT_ACTION_UPDATE,
             project_settings=app_settings.get_all_by_scope(
                 APP_SETTING_SCOPE_PROJECT, project=self.project
             ),
-            old_data={'parent': self.category},
+            old_data={'parent': self.category, 'public_access': None},
             request=self.request,
         )
         self.assert_irods_access(
@@ -141,15 +139,14 @@ class TestPerformProjectModify(
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_revoke_public_access_anon(self):
         """Test revoking anonymous guest access to project from iRODS"""
-        self.project.public_guest_access = True
-        self.project.save()
+        self.project.set_public_access(self.role_guest)
         self.plugin.perform_project_modify(
             project=self.project,
             action=PROJECT_ACTION_UPDATE,
             project_settings=app_settings.get_all_by_scope(
                 APP_SETTING_SCOPE_PROJECT, project=self.project
             ),
-            old_data={'parent': self.category},
+            old_data={'parent': self.category, 'public_access': None},
             request=self.request,
         )
         self.assert_irods_access(
@@ -160,15 +157,17 @@ class TestPerformProjectModify(
             APP_NAME, 'public_access_ticket', project=self.project
         )
 
-        self.project.public_guest_access = False
-        self.project.save()
+        self.project.set_public_access(None)
         self.plugin.perform_project_modify(
             project=self.project,
             action=PROJECT_ACTION_UPDATE,
             project_settings=app_settings.get_all_by_scope(
                 APP_SETTING_SCOPE_PROJECT, project=self.project
             ),
-            old_data={'parent': self.category},
+            old_data={
+                'parent': self.category,
+                'public_access': self.role_guest,
+            },
             old_settings={
                 'settings.samplesheets.public_access_ticket': ticket_str
             },
@@ -179,9 +178,7 @@ class TestPerformProjectModify(
 
     def test_revoke_anon_access(self):
         """Test revoking iRODS guest access if anon site access is disabled"""
-        self.project.public_guest_access = True
-        self.project.save()
-
+        self.project.set_public_access(self.role_guest)
         with override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True):
             self.plugin.perform_project_modify(
                 project=self.project,
@@ -189,7 +186,7 @@ class TestPerformProjectModify(
                 project_settings=app_settings.get_all_by_scope(
                     APP_SETTING_SCOPE_PROJECT, project=self.project
                 ),
-                old_data={'parent': self.category},
+                old_data={'parent': self.category, 'public_access': None},
                 request=self.request,
             )
         self.assert_irods_access(
@@ -206,7 +203,10 @@ class TestPerformProjectModify(
             project_settings=app_settings.get_all_by_scope(
                 APP_SETTING_SCOPE_PROJECT, project=self.project
             ),
-            old_data={'parent': self.category},
+            old_data={
+                'parent': self.category,
+                'public_access': self.role_guest,
+            },
             old_settings={
                 'settings.samplesheets.public_access_ticket': ticket_str
             },
@@ -236,7 +236,7 @@ class TestPerformProjectSync(
             parent=self.category,
             owner=self.user,
             description='description',
-            public_guest_access=False,
+            public_guest_access=False,  # TODO: Update for public_access
         )
         self.sample_path = self.irods_backend.get_sample_path(self.project)
 
@@ -276,8 +276,7 @@ class TestPerformProjectSync(
 
     def test_sync_public_access(self):
         """Test sync with public access and anon site access disabled"""
-        self.project.public_guest_access = True
-        self.project.save()
+        self.project.set_public_access(self.role_guest)
         self.assertEqual(
             app_settings.get(APP_NAME, 'public_access_ticket', self.project),
             '',
@@ -306,8 +305,7 @@ class TestPerformProjectSync(
 
         investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.make_irods_colls(investigation)
-        self.project.public_guest_access = True
-        self.project.save()
+        self.project.set_public_access(self.role_guest)
         self.plugin.perform_project_sync(self.project)
 
         self.assertEqual(self.irods.collections.exists(self.sample_path), True)
@@ -330,7 +328,7 @@ class TestPerformProjectSync(
 
         investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.make_irods_colls(investigation)
-        # NOTE: Project.public_guest_access = False
+        # NOTE: Project.public_access = None
         ticket_new = self.irods_backend.issue_ticket(
             self.irods, 'read', self.sample_path
         )

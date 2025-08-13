@@ -10,7 +10,7 @@ from django.urls import reverse
 from rest_framework.response import Response
 
 # Projectroles dependency
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.views_ajax import SODARBaseProjectAjaxView
 
 from landingzones.models import LandingZone
@@ -18,6 +18,7 @@ from landingzones.views import ProjectZoneInfoMixin
 
 
 logger = logging.getLogger(__name__)
+plugin_api = PluginAPI()
 
 
 # Local constants
@@ -98,7 +99,7 @@ class ZoneIrodsListRetrieveAjaxView(ZoneBaseAjaxView):
     permission_required = 'landingzones.view_zone_own'
 
     def get(self, request, *args, **kwargs):
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         if not irods_backend:
             return Response({'detail': 'iRODS backend not enabled'}, status=503)
         # TODO: Remove repetition
@@ -156,7 +157,7 @@ class ZoneChecksumStatusRetrieveAjaxView(ZoneBaseAjaxView):
     permission_required = 'landingzones.view_zone_own'
 
     def post(self, request, *args, **kwargs):
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         if not irods_backend:
             return Response({'detail': 'iRODS backend not enabled'}, status=503)
 

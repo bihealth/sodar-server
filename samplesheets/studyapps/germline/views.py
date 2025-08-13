@@ -8,7 +8,7 @@ from django.shortcuts import redirect
 from django.views.generic import View
 
 # Projectroles dependency
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.views import (
     LoggedInPermissionMixin,
     ProjectContextMixin,
@@ -26,6 +26,7 @@ from samplesheets.utils import get_sheets_url
 from sodar.users.auth import fallback_to_auth_basic
 
 
+plugin_api = PluginAPI()
 table_builder = SampleSheetTableBuilder()
 
 
@@ -49,7 +50,7 @@ class BaseGermlineConfigView(
         Override get() to set up stuff and return with failure if something is
         missing.
         """
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         self.redirect_url = get_sheets_url(self.get_project())
 
         try:

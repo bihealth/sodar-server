@@ -19,7 +19,7 @@ from projectroles.models import (
     ProjectInvite,
     SODAR_CONSTANTS,
 )
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.tests.test_models import ProjectInviteMixin
 
 # Timeline dependency
@@ -29,6 +29,7 @@ from taskflowbackend.tests.base import TaskflowViewTestBase
 
 
 app_settings = AppSettingAPI()
+plugin_api = PluginAPI()
 User = auth.get_user_model()
 
 
@@ -58,7 +59,7 @@ class TestProjectCreateView(TaskflowViewTestBase):
 
     def setUp(self):
         super().setUp()
-        self.timeline = get_backend_api('timeline_backend')
+        self.timeline = plugin_api.get_backend_api('timeline_backend')
 
     def test_post(self):
         """Test ProjectCreateView POST with taskflow"""
@@ -85,7 +86,8 @@ class TestProjectCreateView(TaskflowViewTestBase):
             'type': PROJECT_TYPE_PROJECT,
             'parent': self.category.pk,
             'description': 'description',
-            'public_guest_access': False,
+            'public_access': None,
+            'public_guest_access': False,  # DEPRECATED
             'archive': False,
             'full_title': self.category.title + ' / TestProject',
             'has_public_children': False,
@@ -164,7 +166,7 @@ class TestProjectUpdateView(TaskflowViewTestBase):
             description='description',
         )
         self.user_new = self.make_user('user_new')
-        self.timeline = get_backend_api('timeline_backend')
+        self.timeline = plugin_api.get_backend_api('timeline_backend')
 
     def test_post(self):
         """Test ProjectUpdateView POST with taskflow"""
@@ -180,7 +182,7 @@ class TestProjectUpdateView(TaskflowViewTestBase):
                 'owner': str(self.user.sodar_uuid),  # NOTE: Must add owner
                 'readme': 'updated readme',
                 'parent': str(self.category.sodar_uuid),
-                'public_guest_access': True,
+                'public_access': self.role_guest.pk,
             }
         )
         request_data.update(
@@ -212,7 +214,8 @@ class TestProjectUpdateView(TaskflowViewTestBase):
             'type': PROJECT_TYPE_PROJECT,
             'parent': self.category.pk,
             'description': 'updated description',
-            'public_guest_access': True,
+            'public_access': self.role_guest.pk,
+            'public_guest_access': True,  # DEPRECATED
             'archive': False,
             'full_title': self.category.title + ' / updated title',
             'has_public_children': False,
@@ -270,7 +273,7 @@ class TestProjectUpdateView(TaskflowViewTestBase):
                 'owner': str(self.user.sodar_uuid),  # NOTE: Must add owner
                 'readme': 'updated readme',
                 'parent': str(new_category.sodar_uuid),
-                'public_guest_access': True,
+                'public_access': self.role_guest.pk,
             }
         )
         request_data.update(
@@ -326,7 +329,7 @@ class TestProjectUpdateView(TaskflowViewTestBase):
                 'owner': str(self.user.sodar_uuid),  # NOTE: Must add owner
                 'readme': 'updated readme',
                 'parent': str(self.category.sodar_uuid),
-                'public_guest_access': True,
+                'public_access': self.role_guest.pk,
             }
         )
         request_data.update(
@@ -1155,7 +1158,7 @@ class TestProjectDeleteView(TaskflowViewTestBase):
         self.owner_group = self.irods_backend.get_group_name(
             self.project, owner=True
         )
-        self.timeline = get_backend_api('timeline_backend')
+        self.timeline = plugin_api.get_backend_api('timeline_backend')
         self.url = reverse(
             'projectroles:delete',
             kwargs={'project': self.project.sodar_uuid},

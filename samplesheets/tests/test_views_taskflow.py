@@ -21,7 +21,7 @@ from django.utils import timezone
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.views import NO_AUTH_MSG
 
 # Appalerts dependency
@@ -65,6 +65,7 @@ from samplesheets.views import (
 
 
 app_settings = AppSettingAPI()
+plugin_api = PluginAPI()
 User = auth.get_user_model()
 
 
@@ -150,7 +151,7 @@ class SampleSheetPublicAccessMixin:
         """
         Set project public access by issuing a project update POST request.
 
-        :param access: Bool
+        :param access: Role object or None
         """
         with self.login(self.user):
             response = self.client.patch(
@@ -159,12 +160,12 @@ class SampleSheetPublicAccessMixin:
                     kwargs={'project': self.project.sodar_uuid},
                 ),
                 format='json',
-                data={'public_guest_access': access},
+                data={'public_access': access.name if access else None},
                 content_type='application/json',
             )
         self.assertEqual(response.status_code, 200)
         self.project.refresh_from_db()
-        self.assertEqual(self.project.public_guest_access, access)
+        self.assertEqual(self.project.public_access, access)
 
 
 class IrodsAccessTicketViewTestMixin:
@@ -263,7 +264,7 @@ class IrodsDataRequestViewTestBase(
         :param count: Integer
         :param kwargs: Extra kwargs for query (dict, optional)
         """
-        timeline = get_backend_api('timeline_backend')
+        timeline = plugin_api.get_backend_api('timeline_backend')
         TimelineEvent, _ = timeline.get_models()
         self.assertEqual(
             TimelineEvent.objects.filter(
@@ -306,7 +307,7 @@ class IrodsDataRequestViewTestBase(
             self.project, self.user_guest, self.role_guest
         )
         # Get appalerts API and model
-        self.app_alerts = get_backend_api('appalerts_backend')
+        self.app_alerts = plugin_api.get_backend_api('appalerts_backend')
         self.app_alert_model = self.app_alerts.get_model()
         # Set default POST data
         self.post_data = {
@@ -375,7 +376,7 @@ class TestIrodsCollsCreateView(
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_post_anon(self):
         """Test POST with anonymous access enabled"""
-        self.set_public_access(True)
+        self.set_public_access(self.role_guest)
         self.assertEqual(self.investigation.irods_status, False)
         self.assertEqual(
             app_settings.get(
@@ -424,7 +425,7 @@ class TestSheetDeleteView(
 
     def setUp(self):
         super().setUp()
-        self.irods_backend = get_backend_api('omics_irods')
+        self.irods_backend = plugin_api.get_backend_api('omics_irods')
         self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
@@ -435,7 +436,7 @@ class TestSheetDeleteView(
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-        self.timeline = get_backend_api('timeline_backend')
+        self.timeline = plugin_api.get_backend_api('timeline_backend')
         self.url = reverse(
             'samplesheets:delete',
             kwargs={'project': self.project.sodar_uuid},
@@ -1646,7 +1647,7 @@ class TestIrodsDataRequestAcceptView(
 
     def setUp(self):
         super().setUp()
-        self.timeline = get_backend_api('timeline_backend')
+        self.timeline = plugin_api.get_backend_api('timeline_backend')
         self.url_create = reverse(
             'samplesheets:irods_request_create',
             kwargs={'project': self.project.sodar_uuid},
@@ -2746,6 +2747,8 @@ class TestSampleDataPublicAccess(
 ):
     """Tests for granting/revoking public guest access for projects"""
 
+    # TODO: Add tests for viewer role once supported
+
     def setUp(self):
         super().setUp()
         # Create user in iRODS
@@ -2760,7 +2763,7 @@ class TestSampleDataPublicAccess(
             settings.IRODS_ZONE, PUBLIC_USER_NAME
         )
         self.assertTrue(self.irods.collections.exists(self.user_home_path))
-        self.user_session = get_backend_api(
+        self.user_session = plugin_api.get_backend_api(
             'omics_irods',
             user_name=PUBLIC_USER_NAME,
             user_pass=PUBLIC_USER_PASS,
@@ -2773,7 +2776,7 @@ class TestSampleDataPublicAccess(
             parent=self.category,
             owner=self.user,
             description='description',
-            public_guest_access=True,
+            public_guest_access=True,  # TODO: Update for public_access
         )
 
         # Import investigation and create collections
@@ -2802,7 +2805,7 @@ class TestSampleDataPublicAccess(
 
     def test_public_access_disable(self):
         """Test public access with disabled access"""
-        self.set_public_access(False)
+        self.set_public_access(None)
         obj = self.irods.data_objects.get(self.file_path)  # Test with owner
         self.assertIsNotNone(obj)
         with self.assertRaises(CollectionDoesNotExist):
@@ -2810,8 +2813,8 @@ class TestSampleDataPublicAccess(
 
     def test_public_access_reenable(self):
         """Test public access with disabled and re-enabled access"""
-        self.set_public_access(False)
-        self.set_public_access(True)
+        self.set_public_access(None)
+        self.set_public_access(self.role_guest)
         obj = self.irods.data_objects.get(self.file_path)  # Test with owner
         self.assertIsNotNone(obj)
         obj = self.user_session.data_objects.get(self.file_path)
@@ -2830,7 +2833,7 @@ class TestSampleDataPublicAccess(
 
     def test_public_access_nested_disable(self):
         """Test public access for nested collection with disabled access"""
-        self.set_public_access(False)
+        self.set_public_access(None)
         new_coll_path = self.sample_path + '/new_coll'
         coll = self.irods.collections.create(new_coll_path)  # Test with owner
         self.assertIsNotNone(coll)
@@ -2943,10 +2946,11 @@ class TestProjectUpdateView(TaskflowViewTestBase):
             owner=self.user,
             description='description',
         )
-        self.values = model_to_dict(self.project)
-        self.values['parent'] = self.category.sodar_uuid
-        self.values['owner'] = self.user.sodar_uuid
-        self.values.update(
+        self.post_data = model_to_dict(self.project)
+        self.post_data['public_access'] = ''
+        self.post_data['parent'] = self.category.sodar_uuid
+        self.post_data['owner'] = self.user.sodar_uuid
+        self.post_data.update(
             app_settings.get_all_by_scope(
                 APP_SETTING_SCOPE_PROJECT, project=self.project, post_safe=True
             )
@@ -2958,9 +2962,9 @@ class TestProjectUpdateView(TaskflowViewTestBase):
 
     def test_post_sync_default(self):
         """Test POST with default sheet sync values"""
-        self.values['description'] = 'updated description'
+        self.post_data['description'] = 'updated description'
         with self.login(self.user):
-            response = self.client.post(self.url, self.values)
+            response = self.client.post(self.url, self.post_data)
         self.assertEqual(response.status_code, 302)
         self.assertFalse(
             app_settings.get(
@@ -2980,7 +2984,7 @@ class TestProjectUpdateView(TaskflowViewTestBase):
 
     def test_post_sync_enable(self):
         """Test POST with enabled sync and correct url/token"""
-        self.values['description'] = 'updated description'
+        self.post_data['description'] = 'updated description'
         self.assertFalse(
             app_settings.get(
                 APP_NAME, 'sheet_sync_enable', project=self.project
@@ -2997,11 +3001,13 @@ class TestProjectUpdateView(TaskflowViewTestBase):
             '',
         )
 
-        self.values['settings.samplesheets.sheet_sync_enable'] = True
-        self.values['settings.samplesheets.sheet_sync_url'] = SHEET_SYNC_URL
-        self.values['settings.samplesheets.sheet_sync_token'] = SHEET_SYNC_TOKEN
+        self.post_data['settings.samplesheets.sheet_sync_enable'] = True
+        self.post_data['settings.samplesheets.sheet_sync_url'] = SHEET_SYNC_URL
+        self.post_data['settings.samplesheets.sheet_sync_token'] = (
+            SHEET_SYNC_TOKEN
+        )
         with self.login(self.user):
-            response = self.client.post(self.url, self.values)
+            response = self.client.post(self.url, self.post_data)
             self.assertRedirects(
                 response,
                 reverse(
@@ -3031,52 +3037,56 @@ class TestProjectUpdateView(TaskflowViewTestBase):
 
     def test_post_sync_no_url_or_token(self):
         """Test POST with enabled sync and no URL or token"""
-        self.values['settings.samplesheets.sheet_sync_enable'] = True
+        self.post_data['settings.samplesheets.sheet_sync_enable'] = True
         with self.login(self.user):
-            response = self.client.post(self.url, self.values)
+            response = self.client.post(self.url, self.post_data)
         self.assertEqual(response.status_code, 200)
 
     def test_post_sync_no_token(self):
         """Test POST with enabled sync and no token"""
-        self.values['settings.samplesheets.sheet_sync_enable'] = True
-        self.values['settings.samplesheets.sheet_sync_url'] = SHEET_SYNC_URL
+        self.post_data['settings.samplesheets.sheet_sync_enable'] = True
+        self.post_data['settings.samplesheets.sheet_sync_url'] = SHEET_SYNC_URL
         with self.login(self.user):
-            response = self.client.post(self.url, self.values)
+            response = self.client.post(self.url, self.post_data)
         self.assertEqual(response.status_code, 200)
 
     def test_post_sync_no_url(self):
         """Test POST with enabled sync and no URL or token"""
-        self.values['settings.samplesheets.sheet_sync_enable'] = True
-        self.values['settings.samplesheets.sheet_sync_token'] = SHEET_SYNC_TOKEN
+        self.post_data['settings.samplesheets.sheet_sync_enable'] = True
+        self.post_data['settings.samplesheets.sheet_sync_token'] = (
+            SHEET_SYNC_TOKEN
+        )
         with self.login(self.user):
-            response = self.client.post(self.url, self.values)
+            response = self.client.post(self.url, self.post_data)
         self.assertEqual(response.status_code, 200)
 
     def test_post_sync_invalid_url(self):
         """Test POST with enabled sync and no token"""
-        self.values['settings.samplesheets.sheet_sync_enable'] = True
-        self.values['settings.samplesheets.sheet_sync_url'] = (
+        self.post_data['settings.samplesheets.sheet_sync_enable'] = True
+        self.post_data['settings.samplesheets.sheet_sync_url'] = (
             SHEET_SYNC_URL_INVALID
         )
         with self.login(self.user):
-            response = self.client.post(self.url, self.values)
+            response = self.client.post(self.url, self.post_data)
         self.assertEqual(response.status_code, 200)
 
     def test_post_sync_disabled(self):
         """Test POST with disabled sync and valid input"""
-        self.values['settings.samplesheets.sheet_sync_enable'] = False
-        self.values['settings.samplesheets.sheet_sync_url'] = SHEET_SYNC_URL
-        self.values['settings.samplesheets.sheet_sync_token'] = SHEET_SYNC_TOKEN
+        self.post_data['settings.samplesheets.sheet_sync_enable'] = False
+        self.post_data['settings.samplesheets.sheet_sync_url'] = SHEET_SYNC_URL
+        self.post_data['settings.samplesheets.sheet_sync_token'] = (
+            SHEET_SYNC_TOKEN
+        )
         with self.login(self.user):
-            response = self.client.post(self.url, self.values)
+            response = self.client.post(self.url, self.post_data)
         self.assertEqual(response.status_code, 302)
 
     def test_post_sync_disabled_invalid_url(self):
         """Test POST with disabled sync and invalid input"""
-        self.values['settings.samplesheets.sheet_sync_enable'] = False
-        self.values['settings.samplesheets.sheet_sync_url'] = (
+        self.post_data['settings.samplesheets.sheet_sync_enable'] = False
+        self.post_data['settings.samplesheets.sheet_sync_url'] = (
             SHEET_SYNC_URL_INVALID
         )
         with self.login(self.user):
-            response = self.client.post(self.url, self.values)
+            response = self.client.post(self.url, self.post_data)
         self.assertEqual(response.status_code, 200)

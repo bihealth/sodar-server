@@ -18,7 +18,7 @@ from django.utils import timezone
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 # Timeline dependency
 from timeline.models import TimelineEvent
@@ -68,6 +68,7 @@ from samplesheets.views_api import (
 
 
 app_settings = AppSettingAPI()
+plugin_api = PluginAPI()
 
 
 # SODAR constants
@@ -183,7 +184,7 @@ class IrodsAccessTicketAPIViewTestBase(
             os.path.join(self.assay_path, 'coll')
         )
         # Get appalerts API and model
-        self.app_alerts = get_backend_api('appalerts_backend')
+        self.app_alerts = plugin_api.get_backend_api('appalerts_backend')
         self.app_alert_model = self.app_alerts.get_model()
 
 
@@ -252,7 +253,7 @@ class IrodsDataRequestAPIViewTestBase(
         self.file_obj = self.irods.data_objects.create(self.obj_path)
 
         # Setup for tests
-        self.app_alerts = get_backend_api('appalerts_backend')
+        self.app_alerts = plugin_api.get_backend_api('appalerts_backend')
         self.app_alert_model = self.app_alerts.get_model()
         self.url = reverse(
             'samplesheets:api_irods_request_create',
@@ -1457,8 +1458,8 @@ class TestProjectIrodsFileListAPIView(SampleSheetAPITaskflowTestBase):
 
     def setUp(self):
         super().setUp()
-        self.taskflow = get_backend_api('taskflow', force=True)
-        self.irods_backend = get_backend_api('omics_irods')
+        self.taskflow = plugin_api.get_backend_api('taskflow', force=True)
+        self.irods_backend = plugin_api.get_backend_api('omics_irods')
         self.irods = self.irods_backend.get_session_obj()
         # Make project with owner in Taskflow and Django
         self.project, self.owner_as = self.make_project_taskflow(

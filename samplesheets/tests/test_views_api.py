@@ -12,7 +12,7 @@ from django.utils import timezone
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.tests.test_models import RemoteSiteMixin, RemoteProjectMixin
 from projectroles.tests.test_views_api import APIViewTestBase
 
@@ -75,6 +75,7 @@ from samplesheets.views_api import (
 
 app_settings = AppSettingAPI()
 conf_api = SheetConfigAPI()
+plugin_api = PluginAPI()
 table_builder = SampleSheetTableBuilder()
 
 
@@ -123,7 +124,7 @@ class IrodsAccessTicketAPITestBase(
         )
         self.token_contrib = self.get_token(self.user_contributor)
         # Get appalerts API and model
-        self.app_alerts = get_backend_api('appalerts_backend')
+        self.app_alerts = plugin_api.get_backend_api('appalerts_backend')
         self.app_alert_model = self.app_alerts.get_model()
 
 
@@ -193,7 +194,7 @@ class TestSheetImportAPIView(
 
     def setUp(self):
         super().setUp()
-        self.cache_backend = get_backend_api('sodar_cache')
+        self.cache_backend = plugin_api.get_backend_api('sodar_cache')
         self.url = reverse(
             'samplesheets:api_import',
             kwargs={'project': self.project.sodar_uuid},
@@ -845,7 +846,7 @@ class TestIrodsDataRequestRetrieveAPIView(
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
         # Set up iRODS backend and paths
-        self.irods_backend = get_backend_api('omics_irods')
+        self.irods_backend = plugin_api.get_backend_api('omics_irods')
         self.assay_path = self.irods_backend.get_path(self.assay)
         # Make request
         self.request = self.make_irods_request(
@@ -894,7 +895,7 @@ class TestIrodsDataRequestListAPIView(
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-        self.irods_backend = get_backend_api('omics_irods')
+        self.irods_backend = plugin_api.get_backend_api('omics_irods')
         self.assay_path = self.irods_backend.get_path(self.assay)
         self.request = self.make_irods_request(
             project=self.project,
@@ -1015,7 +1016,7 @@ class TestIrodsDataRequestDestroyAPIView(
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
         # Set up iRODS backend and paths
-        self.irods_backend = get_backend_api('omics_irods')
+        self.irods_backend = plugin_api.get_backend_api('omics_irods')
         self.assay_path = self.irods_backend.get_path(self.assay)
         self.obj_path = os.path.join(self.assay_path, IRODS_FILE_NAME)
 

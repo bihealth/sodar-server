@@ -4,13 +4,16 @@ from django import forms
 
 # Projectroles dependency
 from projectroles.models import Project
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 # Samplesheets dependency
 from samplesheets.models import Assay
 
 from landingzones.models import LandingZone
 from landingzones.utils import get_zone_title
+
+
+plugin_api = PluginAPI()
 
 
 class LandingZoneForm(forms.ModelForm):
@@ -52,7 +55,7 @@ class LandingZoneForm(forms.ModelForm):
     ):
         """Override for form initialization"""
         super().__init__(*args, **kwargs)
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         from landingzones.plugins import LandingZoneConfigPluginPoint
 
         config_plugins = LandingZoneConfigPluginPoint.get_plugins()
