@@ -55,7 +55,7 @@ class LandingzonesPluginTestBase(
     def setUp(self):
         # Init roles
         self.init_roles()
-        # Make users
+        # Init users
         self.superuser = self.make_user('superuser')
         self.superuser.is_superuser = True
         self.superuser.save()
