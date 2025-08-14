@@ -109,6 +109,7 @@ REMOTE_LEVEL_READ_ROLES = SODAR_CONSTANTS['REMOTE_LEVEL_READ_ROLES']
 
 # Local constants
 APP_NAME = 'samplesheets'
+APP_NAME_PR = 'projectroles'
 WARNING_STATUS_MSG = 'OK with warnings, see extra data'
 TARGET_ALTAMISA_VERSION = '0.2.4'  # For warnings etc.
 MISC_FILES_COLL_ID = 'misc_files'
@@ -1142,14 +1143,19 @@ class IrodsDataRequestModifyMixin:
 
     def has_irods_request_update_perms(self, request, irods_request):
         """Check permissions for iRODS data request updating"""
+        project = irods_request.project
+        # TODO: Use is_project_accessible() once fixed
+        #       (see bihealth/sodar-core#1744)
+        if not request.user.is_superuser and app_settings.get(
+            APP_NAME_PR, 'project_access_block', project=project
+        ):
+            return False
         if (
             request.user.is_superuser
-            or request.user.has_perm(
-                'samplesheets.manage_sheet', irods_request.project
-            )
+            or request.user.has_perm('samplesheets.manage_sheet', project)
             or (
                 request.user == irods_request.user
-                and can_modify_project_data(request.user, irods_request.project)
+                and can_modify_project_data(request.user, project)
             )
         ):
             return True

@@ -125,6 +125,13 @@ class TestInvestigationRetrieveAPIView(
         self.assert_response_api(self.url, self.bad_users_read, 200)
         self.assert_response_api(self.url, self.anonymous, 401)
 
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response_api(self.url, self.superuser, 200)
+        self.assert_response_api(self.url, self.auth_non_superusers, 403)
+        self.assert_response_api(self.url, self.anonymous, 401)
+
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
         self.set_site_read_only()
@@ -267,6 +274,37 @@ class TestSheetImportAPIView(
             cleanup_method=self._cleanup_import,
         )
 
+    def test_post_block(self):
+        """Test POST with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response_api(
+            self.url,
+            self.superuser,
+            status_code=200,
+            method='POST',
+            format='multipart',
+            data=self.post_data,
+            cleanup_method=self._cleanup_import,
+        )
+        self.assert_response_api(
+            self.url,
+            self.auth_non_superusers,
+            status_code=403,
+            method='POST',
+            format='multipart',
+            data=self.post_data,
+            cleanup_method=self._cleanup_import,
+        )
+        self.assert_response_api(
+            self.url,
+            self.anonymous,
+            status_code=401,
+            method='POST',
+            format='multipart',
+            data=self.post_data,
+            cleanup_method=self._cleanup_import,
+        )
+
     def test_post_read_only(self):
         """Test POST with site read-only mode"""
         self.set_site_read_only()
@@ -342,6 +380,13 @@ class TestSheetISAExportAPIView(
         self.assert_response_api(self.url, self.bad_users_read, 200)
         self.assert_response_api(self.url, self.anonymous, 401)
 
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response_api(self.url, self.superuser, 200)
+        self.assert_response_api(self.url, self.auth_non_superusers, 403)
+        self.assert_response_api(self.url, self.anonymous, 401)
+
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
         self.set_site_read_only()
@@ -397,6 +442,13 @@ class TestIrodsAccessTicketListAPIView(
         self.assert_response_api(self.url, self.bad_users_write, 403)
         self.assert_response_api(self.url, self.anonymous, 401)
 
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response_api(self.url, self.superuser, 200)
+        self.assert_response_api(self.url, self.auth_non_superusers, 403)
+        self.assert_response_api(self.url, self.anonymous, 401)
+
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
         self.set_site_read_only()
@@ -449,6 +501,13 @@ class TestIrodsAccessTicketRetrieveAPIView(
         self.assert_response_api(self.url, self.bad_users_write, 403)
         self.assert_response_api(self.url, self.anonymous, 401)
 
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response_api(self.url, self.superuser, 200)
+        self.assert_response_api(self.url, self.auth_non_superusers, 403)
+        self.assert_response_api(self.url, self.anonymous, 401)
+
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
         self.set_site_read_only()
@@ -486,6 +545,13 @@ class TestIrodsDataRequestListAPIView(SamplesheetsAPIPermissionTestBase):
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
+        self.assert_response_api(self.url, self.superuser, 200)
+        self.assert_response_api(self.url, self.auth_non_superusers, 403)
+        self.assert_response_api(self.url, self.anonymous, 401)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
         self.assert_response_api(self.url, self.superuser, 200)
         self.assert_response_api(self.url, self.auth_non_superusers, 403)
         self.assert_response_api(self.url, self.anonymous, 401)
@@ -536,6 +602,13 @@ class TestIrodsDataRequestRetrieveAPIView(
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
+        self.assert_response_api(self.url, self.superuser, 200)
+        self.assert_response_api(self.url, self.auth_non_superusers, 403)
+        self.assert_response_api(self.url, self.anonymous, 401)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
         self.assert_response_api(self.url, self.superuser, 200)
         self.assert_response_api(self.url, self.auth_non_superusers, 403)
         self.assert_response_api(self.url, self.anonymous, 401)
@@ -606,6 +679,21 @@ class TestIrodsDataRequestRejectAPIView(
     def test_post_archive(self):
         """Test POST with archived project"""
         self.project.set_archive()
+        self.assert_response_api(
+            self.url,
+            self.superuser,
+            200,
+            method='POST',
+            cleanup_method=self._cleanup,
+        )
+        self.assert_response_api(
+            self.url, self.auth_non_superusers, 403, method='POST'
+        )
+        self.assert_response_api(self.url, self.anonymous, 401, method='POST')
+
+    def test_post_block(self):
+        """Test POST with project access block"""
+        self.set_access_block(self.project)
         self.assert_response_api(
             self.url,
             self.superuser,
@@ -695,6 +783,21 @@ class TestIrodsDataRequestDestroyAPIView(
     def test_delete_archive(self):
         """Test DELETE with archived project"""
         self.project.set_archive()
+        self.assert_response_api(
+            self.url,
+            self.superuser,
+            204,
+            method='DELETE',
+            cleanup_method=self._make_request,
+        )
+        self.assert_response_api(
+            self.url, self.auth_non_superusers, 403, method='DELETE'
+        )
+        self.assert_response_api(self.url, self.anonymous, 401, method='DELETE')
+
+    def test_delete_block(self):
+        """Test DELETE with project access block"""
+        self.set_access_block(self.project)
         self.assert_response_api(
             self.url,
             self.superuser,
@@ -802,6 +905,16 @@ class TestRemoteSheetGetAPIView(
             level=SODAR_CONSTANTS['REMOTE_LEVEL_READ_ROLES'],
         )
         self.assert_response(self.url, self.anonymous, 200)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.make_remote_project(
+            project_uuid=self.project.sodar_uuid,
+            site=self.target_site,
+            level=SODAR_CONSTANTS['REMOTE_LEVEL_READ_ROLES'],
+        )
+        self.assert_response(self.url, self.anonymous, 403)
 
     def test_get_read_only(self):
         """Test GET with site read-only mode"""

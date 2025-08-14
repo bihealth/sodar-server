@@ -111,6 +111,13 @@ class TestZoneListAPIView(ZoneAPIPermissionTestBase):
         self.assert_response(self.url, self.user_no_roles, 403)
         self.assert_response(self.url, self.anonymous, 401)
 
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response_api(self.url, self.superuser, 200)
+        self.assert_response_api(self.url, self.auth_non_superusers, 403)
+        self.assert_response_api(self.url, self.anonymous, 401)
+
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
         self.set_site_read_only()
@@ -166,6 +173,13 @@ class TestZoneRetrieveAPIView(ZoneAPIPermissionTestBase):
         self.project.set_public()
         self.assert_response(self.url, self.user_no_roles, 403)
         self.assert_response(self.url, self.anonymous, 401)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response_api(self.url, self.superuser, 200)
+        self.assert_response_api(self.url, self.auth_non_superusers, 403)
+        self.assert_response_api(self.url, self.anonymous, 401)
 
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
@@ -283,6 +297,33 @@ class TestZoneUpdateAPIView(ZoneAPIPermissionTestBase):
         self.assert_response_api(
             self.url,
             self.user_no_roles,
+            403,
+            method='PATCH',
+            data=self.post_data,
+            knox=True,
+        )
+        self.assert_response_api(
+            self.url,
+            self.anonymous,
+            401,
+            method='PATCH',
+            data=self.post_data,
+        )
+
+    def test_patch_block(self):
+        """Test PATCH with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response_api(
+            self.url,
+            self.superuser,
+            200,
+            method='PATCH',
+            data=self.post_data,
+            knox=True,
+        )
+        self.assert_response_api(
+            self.url,
+            self.auth_non_superusers,
             403,
             method='PATCH',
             data=self.post_data,

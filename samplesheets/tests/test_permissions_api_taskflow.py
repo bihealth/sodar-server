@@ -9,6 +9,9 @@ from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 
+# Projectroles dependency
+from projectroles.tests.test_permissions import PermissionTestMixin
+
 # Irodsbackend dependency
 from irodsbackend.api import TICKET_MODE_READ
 
@@ -46,6 +49,7 @@ IRODS_FILE_MD5 = '7265f4d211b56873a381d321f586e4a9'
 class SheetTaskflowAPIPermissionTestBase(
     SampleSheetIOMixin,
     SampleSheetTaskflowMixin,
+    PermissionTestMixin,
     TaskflowAPIPermissionTestBase,
 ):
     """Base class for samplesheets REST API view permission tests"""
@@ -150,6 +154,16 @@ class TestSampleDataFileExistsAPIView(SheetTaskflowAPIPermissionTestBase):
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
+        self.assert_response_api(
+            self.url, self.auth_users, 200, data=self.get_data
+        )
+        self.assert_response_api(
+            self.url, self.anonymous, 401, data=self.get_data
+        )
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
         self.assert_response_api(
             self.url, self.auth_users, 200, data=self.get_data
         )
@@ -271,6 +285,28 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
             self.url, self.anonymous, 401, method='post', data=self.post_data
         )
 
+    def test_post_block(self):
+        """Test POST with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response_api(
+            self.url,
+            self.superuser,
+            201,
+            method='post',
+            data=self.post_data,
+            cleanup_method=self._delete_ticket,
+        )
+        self.assert_response_api(
+            self.url,
+            self.auth_non_superusers,
+            403,
+            method='post',
+            data=self.post_data,
+        )
+        self.assert_response_api(
+            self.url, self.anonymous, 401, method='post', data=self.post_data
+        )
+
     def test_post_read_only(self):
         """Test POST with site read-only mode"""
         self.set_site_read_only()
@@ -343,6 +379,23 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
     def test_patch_archive(self):
         """Test PATCH with archived project"""
         self.project.set_archive()
+        self.assert_response_api(
+            self.url, self.superuser, 200, method='patch', data=self.post_data
+        )
+        self.assert_response_api(
+            self.url,
+            self.auth_non_superusers,
+            403,
+            method='patch',
+            data=self.post_data,
+        )
+        self.assert_response_api(
+            self.url, self.anonymous, 401, method='patch', data=self.post_data
+        )
+
+    def test_patch_block(self):
+        """Test PATCH with project access block"""
+        self.set_access_block(self.project)
         self.assert_response_api(
             self.url, self.superuser, 200, method='patch', data=self.post_data
         )
@@ -440,6 +493,21 @@ class TestIrodsAccessTicketDestroyAPIView(IrodsAccessTicketAPIViewTestBase):
         )
         self.assert_response_api(self.url, self.anonymous, 401, method='DELETE')
 
+    def test_delete_block(self):
+        """Test DELETE with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response_api(
+            self.url,
+            self.superuser,
+            204,
+            method='DELETE',
+            cleanup_method=self._create_irods_ticket,
+        )
+        self.assert_response_api(
+            self.url, self.auth_non_superusers, 403, method='DELETE'
+        )
+        self.assert_response_api(self.url, self.anonymous, 401, method='DELETE')
+
     def test_delete_read_only(self):
         """Test DELETE with site read-only mode"""
         self.set_site_read_only()
@@ -484,6 +552,13 @@ class TestIrodsDataRequestListAPIView(SheetTaskflowAPIPermissionTestBase):
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
+        self.assert_response_api(self.url, self.superuser, 200)
+        self.assert_response_api(self.url, self.auth_non_superusers, 403)
+        self.assert_response_api(self.url, self.anonymous, 401)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
         self.assert_response_api(self.url, self.superuser, 200)
         self.assert_response_api(self.url, self.auth_non_superusers, 403)
         self.assert_response_api(self.url, self.anonymous, 401)
@@ -534,6 +609,23 @@ class TestIrodsDataRequestCreateAPIView(IrodsDataRequestAPIViewTestBase):
     def test_post_archive(self):
         """Test POST with archived project"""
         self.project.set_archive()
+        self.assert_response_api(
+            self.url, self.superuser, 201, method='POST', data=self.post_data
+        )
+        self.assert_response_api(
+            self.url,
+            self.auth_non_superusers,
+            403,
+            method='POST',
+            data=self.post_data,
+        )
+        self.assert_response_api(
+            self.url, self.anonymous, 401, method='POST', data=self.post_data
+        )
+
+    def test_post_block(self):
+        """Test POST with project access block"""
+        self.set_access_block(self.project)
         self.assert_response_api(
             self.url, self.superuser, 201, method='POST', data=self.post_data
         )
@@ -624,6 +716,23 @@ class TestIrodsDataRequestUpdateAPIView(
     def test_post_archive(self):
         """Test POST with archived project"""
         self.project.set_archive()
+        self.assert_response_api(
+            self.url, self.superuser, 200, method='PUT', data=self.update_data
+        )
+        self.assert_response_api(
+            self.url,
+            self.auth_non_superusers,
+            403,
+            method='PUT',
+            data=self.update_data,
+        )
+        self.assert_response_api(
+            self.url, self.anonymous, 401, method='PUT', data=self.update_data
+        )
+
+    def test_post_block(self):
+        """Test POST with project access block"""
+        self.set_access_block(self.project)
         self.assert_response_api(
             self.url, self.superuser, 200, method='PUT', data=self.update_data
         )
@@ -729,6 +838,21 @@ class TestIrodsDataRequestAcceptAPIView(
         )
         self.assert_response_api(self.url, self.anonymous, 401, method='POST')
 
+    def test_post_block(self):
+        """Test POST with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response_api(
+            self.url,
+            self.superuser,
+            200,
+            method='POST',
+            cleanup_method=self._cleanup,
+        )
+        self.assert_response_api(
+            self.url, self.auth_non_superusers, 403, method='POST'
+        )
+        self.assert_response_api(self.url, self.anonymous, 401, method='POST')
+
     def test_post_read_only(self):
         """Test POST with site read-only mode"""
         self.set_site_read_only()
@@ -803,6 +927,16 @@ class TestProjectIrodsFileListAPIView(SheetTaskflowAPIPermissionTestBase):
         self.assert_response_api(self.url, self.anonymous, 401)
         self.project.set_public()
         self.assert_response_api(self.url, self.bad_users, 200)
+        self.assert_response_api(self.url, self.anonymous, 401)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response_api(self.url, self.superuser, 200)
+        self.assert_response_api(self.url, self.auth_non_superusers, 403)
+        self.assert_response_api(self.url, self.anonymous, 401)
+        self.project.set_public()
+        self.assert_response_api(self.url, self.bad_users, 403)
         self.assert_response_api(self.url, self.anonymous, 401)
 
     def test_get_read_only(self):

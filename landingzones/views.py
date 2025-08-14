@@ -22,6 +22,7 @@ from projectroles.views import (
     ProjectPermissionMixin,
     ProjectContextMixin,
     CurrentUserFormMixin,
+    PROJECT_BLOCK_MSG,
 )
 
 # Samplesheets dependency
@@ -56,7 +57,7 @@ PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
 
 # Local constants
 APP_NAME = 'landingzones'
-SAMPLESHEETS_APP_NAME = 'samplesheets'
+APP_NAME_PR = 'projectroles'
 ZONE_MOVE_INVALID_STATUS = 'Zone not in active state, unable to trigger action.'
 ZONE_MOVE_NO_FILES = 'No files in landing zone, nothing to do.'
 ZONE_UPDATE_ACTIONS = ['update', 'move', 'delete']
@@ -699,12 +700,22 @@ class ZoneUpdateView(
     def get(self, request, *args, **kwargs):
         """Override get() to ensure the zone status"""
         zone = LandingZone.objects.get(sodar_uuid=self.kwargs['landingzone'])
+        project = zone.project
         redirect_url = reverse(
-            'landingzones:list', kwargs={'project': zone.project.sodar_uuid}
+            'landingzones:list', kwargs={'project': project.sodar_uuid}
         )
+        # Check for project access block
+        # TODO: Use is_project_accessible() once fixed
+        #       (see bihealth/sodar-core#1744)
+        if not self.request.user.is_superuser and app_settings.get(
+            APP_NAME_PR, 'project_access_block', project=project
+        ):
+            msg = PROJECT_BLOCK_MSG.format(project_type='project')
+            messages.error(request, msg)
+            return redirect(redirect_url)
         # Check permissions
         if not self.request.user.has_perm(
-            self.get_permission_required(zone.user), zone.project
+            self.get_permission_required(zone.user), project
         ):
             msg = 'You do not have permission to update this landing zone.'
             messages.error(request, msg)

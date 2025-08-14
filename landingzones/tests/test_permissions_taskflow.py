@@ -113,6 +113,12 @@ class TestZoneMoveView(ZonePermissionTaskflowTestBase):
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
 
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
+
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
         self.set_site_read_only()

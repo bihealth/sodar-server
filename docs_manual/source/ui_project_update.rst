@@ -95,8 +95,12 @@ IP restrict
     Restrict project access to specific IP addresses if this is set.
 IP allow list
     List of accepted IP addresses for the IP Restrict setting.
+Block project access
+    Temporarily block user access to project. Only available for superusers.
+    This will block all non-superuser access to the project's UI and REST API
+    views in SODAR. Project iRODS collections will remain accessible.
 
-When creating a new project, the following fields are included:
+When creating a new project, the following fields are also included:
 
 Type
     Project type. This can either be *Project* or *Category*. The type can not

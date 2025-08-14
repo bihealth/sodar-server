@@ -105,6 +105,12 @@ class TestProjectZoneView(LandingzonesPermissionTestBase):
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
 
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
+
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
         self.set_site_read_only()
@@ -174,6 +180,12 @@ class TestZoneCreateView(LandingzonesPermissionTestBase):
         self.assert_response(self.url, self.non_superusers, 302)
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
@@ -251,6 +263,14 @@ class TestZoneUpdateView(LandingzonesPermissionTestBase):
             redirect_user=self.redirect_url,
         )
 
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(
+            self.url, self.non_superusers, 302, redirect_user=self.redirect_url
+        )
+
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
         self.set_site_read_only()
@@ -310,6 +330,12 @@ class TestZoneDeleteView(LandingzonesPermissionTestBase):
         self.assert_response(self.url, self.bad_users_write, 302)
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
     def test_get_read_only(self):
         """Test GET with site read-only mode"""

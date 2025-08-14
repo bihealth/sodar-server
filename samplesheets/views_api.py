@@ -38,6 +38,7 @@ from drf_spectacular.utils import extend_schema, inline_serializer
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import (
+    Project,
     RoleAssignment,
     RemoteSite,
     SODAR_CONSTANTS,
@@ -88,6 +89,7 @@ PROJECT_ROLE_GUEST = SODAR_CONSTANTS['PROJECT_ROLE_GUEST']
 
 # Local constants
 APP_NAME = 'samplesheets'
+APP_NAME_PR = 'projectroles'
 SAMPLESHEETS_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar.samplesheets+json'
 SAMPLESHEETS_API_ALLOWED_VERSIONS = ['1.0', '1.1']
 SAMPLESHEETS_API_DEFAULT_VERSION = '1.1'
@@ -1218,6 +1220,15 @@ class RemoteSheetGetAPIView(APIView):
             return Response(
                 'No project access for remote site, unauthorized', status=401
             )
+        if not request.user.is_superuser:
+            source_project = Project.objects.get(sodar_uuid=kwargs['project'])
+            if app_settings.get(
+                APP_NAME_PR, 'project_access_block', project=source_project
+            ):
+                return Response(
+                    'Project access temporarily blocked by superuser',
+                    status=403,
+                )
         try:
             investigation = Investigation.objects.get(
                 project=target_project.get_project(), active=True

@@ -138,6 +138,12 @@ class TestProjectSheetsView(SamplesheetsPermissionTestBase):
         )
         self.assert_response(self.url, self.anonymous, 302)
 
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
+
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
         self.set_site_read_only()
@@ -175,6 +181,18 @@ class TestSheetImportView(SamplesheetsPermissionTestBase):
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
 
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
+
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
+
     def test_get_sync(self):
         """Test GET with sync enabled"""
         app_settings.set(
@@ -193,12 +211,6 @@ class TestSheetImportView(SamplesheetsPermissionTestBase):
         self.assert_response(self.url, self.all_users, 302)
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
-
-    def test_get_read_only(self):
-        """Test GET with site read-only mode"""
-        self.set_site_read_only()
-        self.assert_response(self.url, self.superuser, 200)
-        self.assert_response(self.url, self.non_superusers, 302)
 
 
 class TestSheetTemplateSelectView(SamplesheetsPermissionTestBase):
@@ -234,6 +246,20 @@ class TestSheetTemplateSelectView(SamplesheetsPermissionTestBase):
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
 
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.investigation.delete()
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
+
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.investigation.delete()
+        self.set_site_read_only()
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
+
     def test_get_sync(self):
         """Test GET with sync enabled"""
         app_settings.set(
@@ -242,13 +268,6 @@ class TestSheetTemplateSelectView(SamplesheetsPermissionTestBase):
         self.assert_response(self.url, self.all_users, 302)
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
-
-    def test_get_read_only(self):
-        """Test GET with site read-only mode"""
-        self.investigation.delete()
-        self.set_site_read_only()
-        self.assert_response(self.url, self.superuser, 200)
-        self.assert_response(self.url, self.non_superusers, 302)
 
 
 class TestSheetTemplateCreateView(ProjectPermissionTestBase):
@@ -304,6 +323,18 @@ class TestSheetTemplateCreateView(ProjectPermissionTestBase):
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
 
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
+
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
+
     def test_get_sync(self):
         """Test GET with sync enabled"""
         app_settings.set(
@@ -312,12 +343,6 @@ class TestSheetTemplateCreateView(ProjectPermissionTestBase):
         self.assert_response(self.url, self.all_users, 302)
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
-
-    def test_get_read_only(self):
-        """Test GET with site read-only mode"""
-        self.set_site_read_only()
-        self.assert_response(self.url, self.superuser, 200)
-        self.assert_response(self.url, self.non_superusers, 302)
 
 
 class TestSheetExcelExportView(SamplesheetsPermissionTestBase):
@@ -359,6 +384,18 @@ class TestSheetExcelExportView(SamplesheetsPermissionTestBase):
         )
         self.assert_response(self.study_url, self.anonymous, 302)
 
+    def test_get_study_block(self):
+        """Test GET for study table with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.study_url, self.superuser, 200)
+        self.assert_response(self.study_url, self.non_superusers, 302)
+
+    def test_get_study_read_only(self):
+        """Test GET for study table with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.study_url, self.good_users_read, 200)
+        self.assert_response(self.study_url, self.bad_users_read, 302)
+
     def test_get_assay(self):
         """Test GET for assay table"""
         self.assert_response(self.assay_url, self.good_users_read, 200)
@@ -385,12 +422,6 @@ class TestSheetExcelExportView(SamplesheetsPermissionTestBase):
             self.assay_url, [self.user_finder_cat, self.user_no_roles], 200
         )
         self.assert_response(self.assay_url, self.anonymous, 302)
-
-    def test_get_study_read_only(self):
-        """Test GET for study table with site read-only mode"""
-        self.set_site_read_only()
-        self.assert_response(self.study_url, self.good_users_read, 200)
-        self.assert_response(self.study_url, self.bad_users_read, 302)
 
 
 class TestSheetISAExportView(SamplesheetsPermissionTestBase):
@@ -430,6 +461,12 @@ class TestSheetISAExportView(SamplesheetsPermissionTestBase):
         )
         self.assert_response(self.url, self.anonymous, 302)
 
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
+
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
         self.set_site_read_only()
@@ -466,6 +503,12 @@ class TestSheetDeleteView(SamplesheetsPermissionTestBase):
         self.assert_response(self.url, self.non_superusers, 302)
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
@@ -509,6 +552,12 @@ class TestSheetVersionListView(SamplesheetsPermissionTestBase):
             self.url, [self.user_finder_cat, self.user_no_roles], 200
         )
         self.assert_response(self.url, self.anonymous, 302)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
@@ -558,6 +607,12 @@ class TestSheetVersionCompareView(SamplesheetsPermissionTestBase):
             self.url, [self.user_finder_cat, self.user_no_roles], 200
         )
         self.assert_response(self.url, self.anonymous, 302)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
@@ -610,6 +665,12 @@ class TestSheetVersionCompareFileView(SamplesheetsPermissionTestBase):
         )
         self.assert_response(self.url, self.anonymous, 302)
 
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
+
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
         self.set_site_read_only()
@@ -650,6 +711,12 @@ class TestSheetVersionRestoreView(SamplesheetsPermissionTestBase):
         self.assert_response(self.url, self.non_superusers, 302)
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
@@ -692,6 +759,12 @@ class TestSheetVersionUpdateView(SamplesheetsPermissionTestBase):
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
 
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
+
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
         self.set_site_read_only()
@@ -732,6 +805,12 @@ class TestSheetVersionDeleteView(SamplesheetsPermissionTestBase):
         self.assert_response(self.url, self.non_superusers, 302)
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
@@ -812,6 +891,20 @@ class TestSheetVersionDeleteBatchView(SamplesheetsPermissionTestBase):
             data=self.post_data,
         )
 
+    def test_post_block(self):
+        """Test POST with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(
+            self.url, self.superuser, 200, method='POST', data=self.post_data
+        )
+        self.assert_response(
+            self.url,
+            self.non_superusers,
+            302,
+            method='POST',
+            data=self.post_data,
+        )
+
     def test_post_read_only(self):
         """Test POST with site read-only mode"""
         self.set_site_read_only()
@@ -858,6 +951,12 @@ class TestIrodsAccessTicketListView(SamplesheetsPermissionTestBase):
         self.project.set_public()
         self.assert_response(self.url, self.user_no_roles, 302)
 
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
+
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
         self.set_site_read_only()
@@ -896,6 +995,12 @@ class TestIrodsAccessTicketCreateView(SamplesheetsPermissionTestBase):
         self.assert_response(self.url, self.bad_users_write, 302)
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
@@ -943,6 +1048,12 @@ class TestIrodsAccessTicketUpdateView(
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
 
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
+
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
         self.set_site_read_only()
@@ -989,6 +1100,12 @@ class TestIrodsAccessTicketDeleteView(
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
 
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
+
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
         self.set_site_read_only()
@@ -1027,6 +1144,12 @@ class TestIrodsDataRequestListView(SamplesheetsPermissionTestBase):
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
 
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
+
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
         self.set_site_read_only()
@@ -1064,6 +1187,12 @@ class TestIrodsDataRequestCreateView(SamplesheetsPermissionTestBase):
         self.assert_response(self.url, self.non_superusers, 302)
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
@@ -1128,6 +1257,12 @@ class TestIrodsDataRequestUpdateView(
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
 
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
+
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
         self.set_site_read_only()
@@ -1174,6 +1309,12 @@ class TestIrodsDataRequestAcceptView(
         self.assert_response(self.url, self.non_superusers, 302)
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
@@ -1240,6 +1381,12 @@ class TestIrodsDataRequestDeleteView(
         self.assert_response(self.url, self.non_superusers, 302)
         self.project.set_public()
         self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
     def test_get_read_only(self):
         """Test GET with site read-only mode"""

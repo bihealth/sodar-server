@@ -6,6 +6,7 @@ from django.test import override_settings
 from django.urls import reverse
 
 # Projectroles dependency
+from projectroles.tests.test_permissions import PermissionTestMixin
 from projectroles.utils import build_secret
 
 # Samplesheets dependency
@@ -41,6 +42,7 @@ class ZoneAPIPermissionTaskflowTestBase(
     SampleSheetTaskflowMixin,
     LandingZoneMixin,
     LandingZoneTaskflowMixin,
+    PermissionTestMixin,
     TaskflowAPIPermissionTestBase,
 ):
     """Base class for landing zone permission tests with Taskflow"""
@@ -173,6 +175,31 @@ class TestZoneCreateAPIViewPermissions(ZoneAPIPermissionTaskflowTestBase):
             self.url,
             self.user_no_roles,
             403,
+            method='POST',
+            data=self._get_post_data(),
+        )
+
+    def test_post_block(self):
+        """Test POST with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response_api(
+            self.url,
+            self.superuser,
+            201,
+            method='POST',
+            data=self._get_post_data(),
+        )
+        self.assert_response_api(
+            self.url,
+            self.auth_non_superusers,
+            403,
+            method='POST',
+            data=self._get_post_data(),
+        )
+        self.assert_response_api(
+            self.url,
+            self.anonymous,
+            401,
             method='POST',
             data=self._get_post_data(),
         )
@@ -362,6 +389,29 @@ class TestZoneSubmitDeleteAPIViewPermissions(ZoneAPIPermissionTaskflowTestBase):
             self.url,
             self.user_no_roles,
             403,
+            method='POST',
+        )
+
+    def test_post_block(self):
+        """Test POST with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response_api(
+            self.url,
+            self.superuser,
+            200,
+            method='POST',
+            cleanup_method=self._cleanup,
+        )
+        self.assert_response_api(
+            self.url,
+            self.auth_non_superusers,
+            403,
+            method='POST',
+        )
+        self.assert_response_api(
+            self.url,
+            self.anonymous,
+            401,
             method='POST',
         )
 
@@ -560,6 +610,29 @@ class TestZoneSubmitMoveAPIViewPermissions(ZoneAPIPermissionTaskflowTestBase):
             self.url,
             self.user_no_roles,
             403,
+            method='POST',
+        )
+
+    def test_post_block(self):
+        """Test POST with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response_api(
+            self.url,
+            self.superuser,
+            200,
+            method='POST',
+            cleanup_method=self._cleanup,
+        )
+        self.assert_response_api(
+            self.url,
+            self.auth_non_superusers,
+            403,
+            method='POST',
+        )
+        self.assert_response_api(
+            self.url,
+            self.anonymous,
+            401,
             method='POST',
         )
 
