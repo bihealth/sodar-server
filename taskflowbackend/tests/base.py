@@ -342,11 +342,13 @@ class TaskflowPermissionTestMixin(
         self.user_delegate_cat = self.make_user('user_delegate_cat')
         self.user_contributor_cat = self.make_user('user_contributor_cat')
         self.user_guest_cat = self.make_user('user_guest_cat')
+        self.user_viewer_cat = self.make_user('user_viewer_cat')
         self.user_finder_cat = self.make_user('user_finder_cat')
         self.user_owner = self.make_user('user_owner')
         self.user_delegate = self.make_user('user_delegate')
         self.user_contributor = self.make_user('user_contributor')
         self.user_guest = self.make_user('user_guest')
+        self.user_viewer = self.make_user('user_viewer')
         # User without role assignments
         self.user_no_roles = self.make_user('user_no_roles')
 
@@ -360,6 +362,9 @@ class TaskflowPermissionTestMixin(
         )
         self.guest_as_cat = self.make_assignment(
             self.category, self.user_guest_cat, self.role_guest
+        )
+        self.viewer_as_cat = self.make_assignment(
+            self.category, self.user_viewer_cat, self.role_viewer
         )
         self.finder_as_cat = self.make_assignment(
             self.category, self.user_finder_cat, self.role_finder
@@ -380,6 +385,9 @@ class TaskflowPermissionTestMixin(
         )
         self.guest_as = self.make_assignment_taskflow(
             self.project, self.user_guest, self.role_guest
+        )
+        self.viewer_as = self.make_assignment(
+            self.project, self.user_viewer, self.role_viewer
         )
 
         # Permission test user group helpers

@@ -61,9 +61,11 @@ class TestZoneIrodsListRetrieveAjaxView(
         ]
         self.bad_users = [
             self.user_guest_cat,  # Inherited
+            self.user_viewer_cat,  # Inherited
             self.user_finder_cat,  # Inherited
             self.user_contributor_cat,  # Inherited, no access to zone
             self.user_guest,
+            self.user_viewer,
             self.user_no_roles,
             self.anonymous,
         ]

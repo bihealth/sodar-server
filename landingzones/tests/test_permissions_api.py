@@ -56,8 +56,10 @@ class ZoneAPIPermissionTestBase(
         ]
         self.bad_users = [
             self.user_guest_cat,  # Inherited
+            self.user_viewer_cat,  # Inherited
             self.user_finder_cat,  # Inherited
             self.user_guest,
+            self.user_viewer,
             self.user_no_roles,
         ]
         self.good_users_owner = [
@@ -70,9 +72,11 @@ class ZoneAPIPermissionTestBase(
         self.bad_users_owner = [
             self.user_contributor_cat,
             self.user_guest_cat,
+            self.user_viewer_cat,
             self.user_finder_cat,
             self.user_contributor,
             self.user_guest,
+            self.user_viewer,
             self.user_no_roles,
         ]
 

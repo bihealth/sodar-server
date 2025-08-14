@@ -51,8 +51,10 @@ class LandingzonesPermissionTestBase(
         ]
         self.bad_users_read = [
             self.user_guest_cat,  # Inherited
+            self.user_viewer_cat,  # Inherited
             self.user_finder_cat,  # Inherited
             self.user_guest,
+            self.user_viewer,
             self.user_no_roles,
             self.anonymous,
         ]
@@ -68,8 +70,10 @@ class LandingzonesPermissionTestBase(
         self.bad_users_write = [
             self.user_contributor_cat,  # Inherited
             self.user_guest_cat,  # Inherited
+            self.user_viewer_cat,  # Inherited
             self.user_finder_cat,  # Inherited
             self.user_guest,
+            self.user_viewer,
             self.user_no_roles,
             self.anonymous,
         ]
