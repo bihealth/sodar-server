@@ -26,6 +26,8 @@ Changed
     - Reformat JQuery (#2187)
 - **Landingzones**
     - Update views for project access blocking support (#2233)
+    - Update app for project viewer role (#2200)
+    - Hide project list zone column content for guest roles and below (#2200)
 - **Samplesheets**
     - Update views for project access blocking support (#2233)
 

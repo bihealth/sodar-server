@@ -1404,11 +1404,15 @@ class TestHomeView(LandingZoneUITestBase):
         self.investigation.irods_status = True
         self.investigation.save()
         self.login_and_redirect(self.user_guest, self.url)
-        self._wait_for_elem('none')
+        WebDriverWait(self.selenium, self.wait_time).until(
+            ec.invisibility_of_element_located(
+                (By.CLASS_NAME, 'sodar-pr-project-list-load-icon')
+            )
+        )
+        # No icon should exist
         self._assert_list_elem('active', False)
-        # Guest doesn't have perms to create
         self._assert_list_elem('create', False)
-        self._assert_list_elem('none', True)
+        self._assert_list_elem('none', False)
 
     def test_render_zone_own_active(self):
         """Test project list rendering with own active zone"""
