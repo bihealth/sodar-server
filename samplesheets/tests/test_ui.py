@@ -2,7 +2,6 @@
 
 import json
 import os
-import time
 
 from cubi_isa_templates import _TEMPLATES as ISA_TEMPLATES
 from datetime import timedelta

@@ -478,6 +478,9 @@ class SheetContextAjaxView(SODARBaseProjectAjaxView):
             'view_tickets': request.user.has_perm(
                 'samplesheets.view_tickets', project
             ),
+            'view_files': request.user.has_perm(
+                'samplesheets.view_files', project
+            ),
             'is_superuser': request.user.is_superuser,
         }
 

@@ -272,6 +272,7 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
                 'view_versions': True,
                 'update_cache': True,
                 'view_tickets': True,
+                'view_files': True,
                 'is_superuser': True,
             },
             'sheet_stats': {
@@ -341,6 +342,7 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
                 'view_versions': True,
                 'update_cache': True,
                 'view_tickets': True,
+                'view_files': True,
                 'is_superuser': True,
             },
             'sheet_stats': {},
@@ -386,14 +388,8 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
             path=self.irods_backend.get_path(self.assay) + '/test/xxx.bam',
             user=self.user,
         )
-        user_contributor = self.make_user('user_contributor')
-        self.make_assignment(
-            self.project, user_contributor, self.role_contributor
-        )
-
-        with self.login(user_contributor):
+        with self.login(self.user_contributor):
             response = self.client.get(self.url)
-
         self.assertEqual(response.status_code, 200)
         rd = json.loads(response.data)
         self.assertEqual(len(rd['alerts']), 0)
@@ -424,6 +420,46 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
             ]['display_row_links']
         )
 
+    def test_get_guest(self):
+        """Test GET as guest"""
+        with self.login(self.user_guest):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        rd = json.loads(response.data)
+        expected = {
+            'edit_sheet': False,
+            'manage_sheet': False,
+            'create_colls': False,
+            'export_sheet': True,
+            'delete_sheet': False,
+            'view_versions': True,
+            'update_cache': False,
+            'view_tickets': False,
+            'view_files': True,
+            'is_superuser': False,
+        }
+        self.assertEqual(rd['perms'], expected)
+
+    def test_get_viewer(self):
+        """Test GET as viewer"""
+        with self.login(self.user_viewer):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        rd = json.loads(response.data)
+        expected = {
+            'edit_sheet': False,
+            'manage_sheet': False,
+            'create_colls': False,
+            'export_sheet': True,
+            'delete_sheet': False,
+            'view_versions': True,
+            'update_cache': False,
+            'view_tickets': False,
+            'view_files': False,  # No access to files for viewer
+            'is_superuser': False,
+        }
+        self.assertEqual(rd['perms'], expected)
+
     def test_get_read_only_owner(self):
         """Test GET with site read-only mode as owner"""
         app_settings.set('projectroles', 'site_read_only', True)
@@ -441,6 +477,7 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
             'view_versions': True,
             'update_cache': False,
             'view_tickets': True,
+            'view_files': True,
             'is_superuser': False,
         }
         self.assertEqual(rd['perms'], expected)
@@ -462,6 +499,7 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
             'view_versions': True,
             'update_cache': True,
             'view_tickets': True,
+            'view_files': True,
             'is_superuser': True,
         }
         self.assertEqual(rd['perms'], expected)

@@ -1,5 +1,5 @@
 <template>
-  <span v-if="assayShortcuts">
+  <span v-if="assayShortcuts && sodarContext.perms.view_files">
     <div class="card sodar-ss-assay-shortcut-card">
       <div class="card-header">
         <h4>Assay Shortcuts</h4>

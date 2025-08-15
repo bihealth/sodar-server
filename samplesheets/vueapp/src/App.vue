@@ -65,6 +65,7 @@
 
           <assay-shortcut-card
               v-if="!editMode &&
+                    sodarContext.perms.view_files &&
                     sodarContext.irods_status &&
                     assayShortcuts[assayUuid]"
               :sodar-context="sodarContext"

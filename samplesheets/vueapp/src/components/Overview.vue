@@ -30,7 +30,8 @@
             </span>
           </dd>
         </dl>
-        <dl class="row pb-0">
+        <dl v-if="sodarContext.perms.view_files"
+            class="row pb-0" id="sodar-ss-overview-irods">
           <dt class="col-md-3">iRODS Repository</dt>
           <dd class="col-md-9">
             <span v-if="sodarContext.irods_status">

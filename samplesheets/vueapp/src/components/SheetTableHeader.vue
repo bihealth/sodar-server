@@ -32,7 +32,9 @@
     <div :class="'col-' + rightColWidth + ' text-right pr-0'">
       <span v-if="!params.assayMode" class="mr-2 sodar-ss-study-title-badge">
         <!-- iRODS collection status / stats badge -->
-        <span v-if="!params.assayMode && !params.editMode"
+        <span v-if="!params.assayMode &&
+                    !params.editMode &&
+                    params.sodarContext.perms.view_files"
               class="badge-group text-nowrap">
           <span class="badge badge-pill badge-secondary">iRODS</span>
             <irods-stats-badge
@@ -48,15 +50,17 @@
           </span>
         </span>
       </span>
-      <irods-buttons
-          :irods-status="params.sodarContext.irods_status"
-          :irods-backend-enabled="params.sodarContext.irods_backend_enabled"
-          :irods-webdav-url="params.sodarContext.irods_webdav_url"
-          :irods-path="tableContext.irods_path"
-          :show-file-list="false"
-          :edit-mode="params.editMode"
-          :notify-callback="params.showNotificationCb">
-      </irods-buttons>
+      <span v-if="params.sodarContext.perms.view_files">
+        <irods-buttons
+            :irods-status="params.sodarContext.irods_status"
+            :irods-backend-enabled="params.sodarContext.irods_backend_enabled"
+            :irods-webdav-url="params.sodarContext.irods_webdav_url"
+            :irods-path="tableContext.irods_path"
+            :show-file-list="false"
+            :edit-mode="params.editMode"
+            :notify-callback="params.showNotificationCb">
+        </irods-buttons>
+      </span>
     </div>
   </div>
 </template>
