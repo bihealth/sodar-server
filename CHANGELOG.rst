@@ -30,6 +30,7 @@ Changed
     - Hide project list zone column content for guest roles and below (#2200)
 - **Samplesheets**
     - Update views for project access blocking support (#2233)
+    - Update app for project viewer role (#2200)
 
 
 v1.1.4 (2025-08-12)

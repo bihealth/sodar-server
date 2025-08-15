@@ -25,7 +25,8 @@ rules.add_perm(
     pr_rules.is_project_owner
     | pr_rules.is_project_delegate
     | pr_rules.is_project_contributor
-    | pr_rules.is_project_guest,
+    | pr_rules.is_project_guest
+    | pr_rules.is_project_viewer,
 )
 
 # Allow creating, importing or modifying the project's sample sheet
@@ -52,7 +53,8 @@ rules.add_perm(
     pr_rules.is_project_owner
     | pr_rules.is_project_delegate
     | pr_rules.is_project_contributor
-    | pr_rules.is_project_guest,
+    | pr_rules.is_project_guest
+    | pr_rules.is_project_viewer,
 )
 
 # Allow viewing sample sheet versions
@@ -61,7 +63,8 @@ rules.add_perm(
     pr_rules.is_project_owner
     | pr_rules.is_project_delegate
     | pr_rules.is_project_contributor
-    | pr_rules.is_project_guest,
+    | pr_rules.is_project_guest
+    | pr_rules.is_project_viewer,
 )
 
 # Allow creating collection structure in iRODS
@@ -115,4 +118,13 @@ rules.add_perm(
         | pr_rules.is_project_delegate
         | pr_rules.is_project_contributor
     ),
+)
+
+# Allow viewing files in project iRODS sample data repository
+rules.add_perm(
+    'samplesheets.view_files',
+    pr_rules.is_project_owner
+    | pr_rules.is_project_delegate
+    | pr_rules.is_project_contributor
+    | pr_rules.is_project_guest,
 )

@@ -1119,7 +1119,7 @@ class ProjectIrodsFileListAPIView(
     """
 
     http_method_names = ['get']
-    permission_required = 'samplesheets.view_sheet'
+    permission_required = 'samplesheets.view_files'
 
     def get(self, request, *args, **kwargs):
         if not settings.ENABLE_IRODS:

@@ -47,10 +47,12 @@ class SampleSheetsAjaxPermissionTestBase(
             self.user_delegate_cat,  # Inherited
             self.user_contributor_cat,  # Inherited
             self.user_guest_cat,  # Inherited
+            self.user_viewer_cat,  # Inherited
             self.user_owner,
             self.user_delegate,
             self.user_contributor,
             self.user_guest,
+            self.user_viewer,
         ]
         self.bad_users_read = [
             self.user_finder_cat,
@@ -69,8 +71,10 @@ class SampleSheetsAjaxPermissionTestBase(
         ]
         self.bad_users_write = [
             self.user_guest_cat,
+            self.user_viewer_cat,
             self.user_finder_cat,
             self.user_guest,
+            self.user_viewer,
             self.user_no_roles,
             self.anonymous,
         ]
@@ -890,8 +894,10 @@ class TestIrodsDataRequestDeleteAjaxView(
             self.user_owner,
             self.user_delegate,
             self.user_guest_cat,
+            self.user_viewer_cat,
             self.user_finder_cat,
             self.user_guest,
+            self.user_viewer,
             self.user_no_roles,
             self.anonymous,
         ]
