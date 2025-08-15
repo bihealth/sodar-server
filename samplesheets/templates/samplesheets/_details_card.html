@@ -12,6 +12,7 @@
 {% endif %}
 
 {% has_perm 'samplesheets.view_sheet' request.user project as can_view_sheet %}
+{% has_perm 'samplesheets.view_files' request.user project as can_view_files %}
 
 {% get_investigation project as investigation %}
 
@@ -34,24 +35,30 @@
 </style>
 
 {% if not investigation %}
-  <div class="card-body bg-faded font-italic text-center">
+  <div class="card-body bg-faded font-italic text-center"
+       id="sodar-ss-details-card-no-sheets">
     <p>No sample sheets available.</p>
   </div>
 {% elif investigation and not investigation.irods_status %}
-  <div class="card-body bg-faded font-italic text-center">
+  <div class="card-body bg-faded font-italic text-center"
+       id="sodar-ss-details-card-no-irods">
     <p>Sample sheets available, sample repository not created in iRODS.</p>
   </div>
 {% elif investigation and can_view_sheet %}
   <!-- Irodsbackend -->
-  {% get_backend_include 'omics_irods' 'js' as irodsbackend_js %}
-  {{ irodsbackend_js|safe }}
+  {% if can_view_files %}
+    {% get_backend_include 'omics_irods' 'js' as irodsbackend_js %}
+    {{ irodsbackend_js|safe }}
+  {% endif %}
 
   <table class="table sodar-card-table" id="sodar-ss-details-table">
     <thead>
       <tr>
-        <th>Investigation/Study/Assay</th>
-        <th>Statistics</th>
-        <th>Links</th>
+        <th id="sodar-ss-details-table-th-inv">Investigation/Study/Assay</th>
+        {% if can_view_files %}
+          <th id="sodar-ss-details-table-th-stats">Statistics</th>
+          <th id="sodar-ss-details-table-th-links">Links</th>
+        {% endif %}
       </tr>
     </thead>
     <tbody>
@@ -62,17 +69,19 @@
             {{ investigation.title | default:'Untitled Investigation' }}
           </a>
         </td>
-        <td>
-          {% get_irods_path investigation as irods_inv_path %}
-          {% get_stats_html irods_inv_path project as stats_html %}
-          {{ stats_html | safe }}
-        </td>
-        <td>
-          {% if irods_backend_enabled %}
-            {% get_irods_path investigation as root_irods_path %}
-            {% include 'irodsbackend/_irods_buttons.html' with irods_colls=investigation.irods_status irods_path=root_irods_path list_url=None data_table=False show_file_list=False %}
-          {% endif %}
-        </td>
+        {% if can_view_files %}
+          <td>
+            {% get_irods_path investigation as irods_inv_path %}
+            {% get_stats_html irods_inv_path project as stats_html %}
+            {{ stats_html | safe }}
+          </td>
+          <td>
+            {% if irods_backend_enabled %}
+              {% get_irods_path investigation as root_irods_path %}
+              {% include 'irodsbackend/_irods_buttons.html' with irods_colls=investigation.irods_status irods_path=root_irods_path list_url=None data_table=False show_file_list=False %}
+            {% endif %}
+          </td>
+        {% endif %}
       </tr>
       {% for study in investigation.studies.all %}
         <tr>
@@ -80,17 +89,19 @@
             {% autoescape off %}{% get_icon study %}{% endautoescape %}
              <a href="{{ study.get_url }}">{{ study.get_display_name }}</a>
           </td>
-          <td>
-            {% get_irods_path study as irods_study_path %}
-            {% get_stats_html irods_study_path project as stats_html %}
-            {{ stats_html | safe }}
-          </td>
-          <td>
-            {% if irods_backend_enabled %}
-              {% get_irods_path study as study_irods_path %}
-              {% include 'irodsbackend/_irods_buttons.html' with project=project irods_colls=investigation.irods_status irods_path=study_irods_path list_url=None data_table=False show_file_list=False %}
-            {% endif %}
-          </td>
+          {% if can_view_files %}
+            <td>
+              {% get_irods_path study as irods_study_path %}
+              {% get_stats_html irods_study_path project as stats_html %}
+              {{ stats_html | safe }}
+            </td>
+            <td>
+              {% if irods_backend_enabled %}
+                {% get_irods_path study as study_irods_path %}
+                {% include 'irodsbackend/_irods_buttons.html' with project=project irods_colls=investigation.irods_status irods_path=study_irods_path list_url=None data_table=False show_file_list=False %}
+              {% endif %}
+            </td>
+          {% endif %}
         </tr>
         {% for assay in study.assays.all %}
           <tr>
@@ -99,17 +110,19 @@
                <a href="{{ assay.get_url }}">{{ assay.get_display_name }}</a>
               {% get_irods_path assay as irods_assay_path %}
             </td>
-            <td>
-              {% get_irods_path assay as irods_assay_path %}
-              {% get_stats_html irods_assay_path project as stats_html %}
-              {{ stats_html | safe }}
-            </td>
-            <td>
-              {% if irods_backend_enabled %}
-                {% get_irods_path assay as assay_irods_path %}
-                {% include 'irodsbackend/_irods_buttons.html' with irods_colls=investigation.irods_status irods_path=assay_irods_path list_url=None data_table=False show_file_list=False %}
-              {% endif %}
-            </td>
+            {% if can_view_files %}
+              <td>
+                {% get_irods_path assay as irods_assay_path %}
+                {% get_stats_html irods_assay_path project as stats_html %}
+                {{ stats_html | safe }}
+              </td>
+              <td>
+                {% if irods_backend_enabled %}
+                  {% get_irods_path assay as assay_irods_path %}
+                  {% include 'irodsbackend/_irods_buttons.html' with irods_colls=investigation.irods_status irods_path=assay_irods_path list_url=None data_table=False show_file_list=False %}
+                {% endif %}
+              </td>
+            {% endif %}
           </tr>
         {% endfor %}
       {% endfor %}
