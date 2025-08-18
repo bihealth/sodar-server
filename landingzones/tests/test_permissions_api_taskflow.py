@@ -92,8 +92,10 @@ class TestZoneCreateAPIViewPermissions(ZoneAPIPermissionTaskflowTestBase):
         ]
         bad_users = [
             self.user_guest_cat,
+            self.user_viewer_cat,
             self.user_finder_cat,
             self.user_guest,
+            self.user_viewer,
             self.user_no_roles,
         ]
         self.assert_response_api(
@@ -305,8 +307,10 @@ class TestZoneSubmitDeleteAPIViewPermissions(ZoneAPIPermissionTaskflowTestBase):
         self.bad_users = [
             self.user_contributor_cat,
             self.user_guest_cat,
+            self.user_viewer_cat,
             self.user_finder_cat,
             self.user_guest,
+            self.user_viewer,
             self.user_no_roles,
         ]
 
@@ -529,8 +533,10 @@ class TestZoneSubmitMoveAPIViewPermissions(ZoneAPIPermissionTaskflowTestBase):
         bad_users = [
             self.user_contributor_cat,
             self.user_guest_cat,
+            self.user_viewer_cat,
             self.user_finder_cat,
             self.user_guest,
+            self.user_viewer,
             self.user_no_roles,
         ]
         self.assert_response_api(

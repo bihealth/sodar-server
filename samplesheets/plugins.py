@@ -16,7 +16,7 @@ from djangoplugins.point import PluginPoint
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.models import Project, SODAR_CONSTANTS
+from projectroles.models import Project, SODAR_CONSTANTS, ROLE_RANKING
 from projectroles.plugins import (
     ProjectAppPluginPoint,
     ProjectModifyPluginMixin,
@@ -64,6 +64,7 @@ PROJECT_ACTION_UPDATE = SODAR_CONSTANTS['PROJECT_ACTION_UPDATE']
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
 PROJECT_ROLE_CONTRIBUTOR = SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR']
+PROJECT_ROLE_VIEWER = SODAR_CONSTANTS['PROJECT_ROLE_VIEWER']
 APP_SETTING_SCOPE_PROJECT = SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT']
 APP_SETTING_SCOPE_USER = SODAR_CONSTANTS['APP_SETTING_SCOPE_USER']
 APP_SETTING_SCOPE_PROJECT_USER = SODAR_CONSTANTS[
@@ -227,6 +228,7 @@ SHEETS_APP_SETTINGS = [
         user_modifiable=True,
     ),
 ]
+
 SHEETS_INFO_SETTINGS = [
     'SHEETS_ALLOW_CRITICAL',
     'SHEETS_API_FILE_EXISTS_RESTRICT',
@@ -247,6 +249,7 @@ SHEETS_INFO_SETTINGS = [
     'SHEETS_IGV_OMIT_BAM',
     'SHEETS_IGV_OMIT_VCF',
 ]
+
 MATERIAL_SEARCH_TYPES = ['source', 'sample']
 SKIP_MSG_NO_INV = 'No investigation for project'
 SKIP_MSG_NO_COLLS = 'Investigation collections not created in iRODS'
@@ -254,6 +257,29 @@ SYNC_URL_RE = (
     r'/samplesheets/sync/[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]'
     r'{3}-?[a-f0-9]{12}'
 )
+SHEET_COL_VIEW = (
+    '<a href="{url}" title="View project sample sheets">'
+    '<i class="iconify text-primary" data-icon="mdi:flask"></i></a>'
+)
+SHEET_COL_IMPORT = (
+    '<a href="{url}" title="Import sample sheet into project">'
+    '<i class="iconify text-primary" data-icon="mdi:plus-thick"></i></a>'
+)
+SHEET_COL_NO_SHEETS = (
+    '<i class="iconify text-muted" data-icon="mdi:flask" '
+    'title="No sample sheets in project"></i>'
+)
+FILE_COL_BROWSE = (
+    '<a href="{url}" target="_blank" '
+    'title="View project sample files in iRODS">'
+    '<i class="iconify text-primary" data-icon="mdi:folder-open"></i></a>'
+)
+FILE_COL_UNAVAILABLE = (
+    '<i class="iconify text-muted" '
+    'data-icon="mdi:folder-open" title="{title}"></i>'
+)
+FILE_COL_TITLE_NO_FILES = 'No project sample files in iRODS'
+FILE_COL_TITLE_NO_DAV = 'iRODS WebDAV unavailable'
 
 
 # Samplesheets project app plugin ----------------------------------------------
@@ -521,40 +547,31 @@ class ProjectAppPlugin(
         :param user: User object (current user)
         :return: String (may contain HTML), integer or None
         """
-        investigation = Investigation.objects.filter(project=project).first()
+        investigation = Investigation.objects.filter(
+            project=project, active=True
+        ).first()
 
         if column_id == 'sheets':
             if investigation:
-                return (
-                    '<a href="{}" title="View project sample sheets">'
-                    # 'data-toggle="tooltip" data-placement="top">'
-                    '<i class="iconify text-primary" '
-                    'data-icon="mdi:flask"></i></a>'.format(
-                        get_sheets_url(project)
-                    )
-                )
+                return SHEET_COL_VIEW.format(url=get_sheets_url(project))
             elif user.has_perm(
                 'samplesheets.edit_sheet', project
             ) and not app_settings.get(APP_NAME, 'sheet_sync_enable', project):
-                return (
-                    '<a href="{}" title="Import sample sheet into project">'
-                    # 'data-toggle="tooltip" data-placement="top">'
-                    '<i class="iconify text-primary" '
-                    'data-icon="mdi:plus-thick"></i></a>'.format(
-                        reverse(
-                            'samplesheets:import',
-                            kwargs={'project': project.sodar_uuid},
-                        )
-                    )
+                url = reverse(
+                    'samplesheets:import',
+                    kwargs={'project': project.sodar_uuid},
                 )
-            else:
-                return (
-                    '<i class="iconify text-muted" data-icon="mdi:flask" '
-                    'title="No sample sheets in project"></i>'
-                    # 'data-toggle="tooltip" data-placement="top"></i>'
-                )
+                return SHEET_COL_IMPORT.format(url=url)
+            return SHEET_COL_NO_SHEETS
 
         elif column_id == 'files':
+            # Omit for viewer role or below
+            role_as = project.get_role(user)
+            if not user.is_superuser and (
+                not role_as
+                or role_as.role.rank >= ROLE_RANKING[PROJECT_ROLE_VIEWER]
+            ):
+                return ''
             irods_backend = plugin_api.get_backend_api('omics_irods')
             if (
                 irods_backend
@@ -562,26 +579,16 @@ class ProjectAppPlugin(
                 and investigation.irods_status
                 and settings.IRODS_WEBDAV_ENABLED
             ):
-                return (
-                    '<a href="{}" target="_blank" '
-                    'title="View project sample files in iRODS">'
-                    # 'data-toggle="tooltip" data-placement="top">'
-                    '<i class="iconify text-primary" '
-                    'data-icon="mdi:folder-open"></i></a>'.format(
-                        settings.IRODS_WEBDAV_URL
-                        + irods_backend.get_sample_path(project)
-                    )
+                url = settings.IRODS_WEBDAV_URL + irods_backend.get_sample_path(
+                    project
                 )
-            return (
-                '<i class="iconify text-muted" '
-                'data-icon="mdi:folder-open" title="{}" '
-                # 'data-toggle="tooltip" data-placement="top" '
-                '></i>'.format(
-                    'No project sample files in iRODS'
-                    if settings.IRODS_WEBDAV_URL
-                    else 'iRODS WebDAV unavailable'
-                )
-            )
+                return FILE_COL_BROWSE.format(url=url)
+            if settings.IRODS_WEBDAV_ENABLED:
+                title = FILE_COL_TITLE_NO_FILES
+            else:
+                title = FILE_COL_TITLE_NO_DAV
+            return FILE_COL_UNAVAILABLE.format(title=title)
+        return ''
 
     def validate_form_app_settings(self, app_settings, project=None, user=None):
         """

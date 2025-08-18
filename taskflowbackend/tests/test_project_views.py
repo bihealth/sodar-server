@@ -440,6 +440,27 @@ class TestRoleAssignmentCreateView(TaskflowViewTestBase):
         self.assertIsNotNone(role_as)
         self.assert_group_member(self.project, self.user_new, True, True)
 
+    def test_post_viewer(self):
+        """Test POST with viewer role"""
+        self.assertEqual(RoleAssignment.objects.count(), 2)
+        self.assert_group_member(self.project, self.user_new, False, False)
+
+        request_data = {
+            'project': self.project.sodar_uuid,
+            'user': self.user_new.sodar_uuid,
+            'role': self.role_viewer.pk,
+        }
+        with self.login(self.user):
+            self.client.post(self.url, request_data)
+
+        self.assertEqual(RoleAssignment.objects.count(), 3)
+        role_as = RoleAssignment.objects.get(
+            project=self.project, user=self.user_new, role=self.role_viewer
+        )
+        self.assertIsNotNone(role_as)
+        # iRODS access should not be granted
+        self.assert_group_member(self.project, self.user_new, False, False)
+
     def test_post_inherited(self):
         """Test POST with inherited member role"""
         self.assertEqual(RoleAssignment.objects.count(), 2)
@@ -468,6 +489,21 @@ class TestRoleAssignmentCreateView(TaskflowViewTestBase):
         self.assertEqual(RoleAssignment.objects.count(), 3)
         self.assert_group_member(self.project, self.user_new, True, True)
 
+    def test_post_inherited_viewer(self):
+        """Test POST with inherited viewer role"""
+        self.assertEqual(RoleAssignment.objects.count(), 2)
+        self.assert_group_member(self.project, self.user_new, False, False)
+        request_data = {
+            'project': self.category.sodar_uuid,
+            'user': self.user_new.sodar_uuid,
+            'role': self.role_viewer.pk,
+        }
+        with self.login(self.user):
+            self.client.post(self.url_cat, request_data)
+        self.assertEqual(RoleAssignment.objects.count(), 3)
+        # iRODS access should not be granted
+        self.assert_group_member(self.project, self.user_new, False, False)
+
     def test_post_inherited_finder(self):
         """Test POST with inherited finder role"""
         self.assertEqual(RoleAssignment.objects.count(), 2)
@@ -480,7 +516,6 @@ class TestRoleAssignmentCreateView(TaskflowViewTestBase):
         with self.login(self.user):
             self.client.post(self.url_cat, request_data)
         self.assertEqual(RoleAssignment.objects.count(), 3)
-        # iRODS access should not be granted
         self.assert_group_member(self.project, self.user_new, False, False)
 
 
@@ -563,6 +598,51 @@ class TestRoleAssignmentUpdateView(TaskflowViewTestBase):
         self.assertIsNotNone(role_as)
         self.assert_group_member(self.project, self.user_update, True, True)
 
+    def test_post_viewer(self):
+        """Test POST with viewer role"""
+        self.assertEqual(RoleAssignment.objects.count(), 3)
+        self.assert_group_member(self.project, self.user_update, True, False)
+
+        request_data = {
+            'project': self.project.sodar_uuid,
+            'user': self.user_update.sodar_uuid,
+            'role': self.role_viewer.pk,
+        }
+        with self.login(self.user):
+            self.client.post(self.url, request_data)
+
+        self.assertEqual(RoleAssignment.objects.count(), 3)
+        role_as = RoleAssignment.objects.get(
+            project=self.project, user=self.user_update, role=self.role_viewer
+        )
+        self.assertIsNotNone(role_as)
+        # iRODS access should not be granted
+        self.assert_group_member(self.project, self.user_update, False, False)
+
+    def test_post_from_inherited_viewer(self):
+        """Test POST with update from inherited viewer role"""
+        user_new = self.make_user('user_new')
+        role_as = self.make_assignment_taskflow(
+            self.category, user_new, self.role_viewer
+        )
+        self.assertEqual(RoleAssignment.objects.count(), 4)
+        self.assert_group_member(self.project, user_new, False, False)
+        request_data = {
+            'project': self.category.sodar_uuid,
+            'user': user_new.sodar_uuid,
+            'role': self.role_guest.pk,
+        }
+        with self.login(self.user):
+            self.client.post(
+                reverse(
+                    'projectroles:role_update',
+                    kwargs={'roleassignment': role_as.sodar_uuid},
+                ),
+                request_data,
+            )
+        self.assertEqual(RoleAssignment.objects.count(), 4)
+        self.assert_group_member(self.project, user_new, True, False)
+
     def test_post_from_inherited_finder(self):
         """Test POST with update from inherited finder role"""
         user_new = self.make_user('user_new')
@@ -586,6 +666,30 @@ class TestRoleAssignmentUpdateView(TaskflowViewTestBase):
             )
         self.assertEqual(RoleAssignment.objects.count(), 4)
         self.assert_group_member(self.project, user_new, True, False)
+
+    def test_post_to_inherited_viewer(self):
+        """Test POST with update to inherited viewer role"""
+        user_new = self.make_user('user_new')
+        role_as = self.make_assignment_taskflow(
+            self.category, user_new, self.role_guest
+        )
+        self.assertEqual(RoleAssignment.objects.count(), 4)
+        self.assert_group_member(self.project, user_new, True, False)
+        request_data = {
+            'project': self.category.sodar_uuid,
+            'user': user_new.sodar_uuid,
+            'role': self.role_viewer.pk,
+        }
+        with self.login(self.user):
+            self.client.post(
+                reverse(
+                    'projectroles:role_update',
+                    kwargs={'roleassignment': role_as.sodar_uuid},
+                ),
+                request_data,
+            )
+        self.assertEqual(RoleAssignment.objects.count(), 4)
+        self.assert_group_member(self.project, user_new, False, False)
 
     def test_post_to_inherited_finder(self):
         """Test POST with update to inherited finder role"""
@@ -661,6 +765,31 @@ class TestRoleAssignmentOwnerTransferView(TaskflowViewTestBase):
         self.assert_group_member(self.project, self.user_new, True, True)
         self.assert_group_member(self.project, self.user_owner_cat, True, True)
 
+    def test_post_viewer(self):
+        """Test POST with viewer role set for old owner"""
+        self.assertEqual(RoleAssignment.objects.count(), 3)
+        self.assert_group_member(self.project, self.user, True, True)
+        self.assert_group_member(self.project, self.user_new, True, False)
+        self.assert_group_member(self.project, self.user_owner_cat, True, True)
+
+        post_data = {
+            'project': self.project.sodar_uuid,
+            'old_owner_role': self.role_viewer.pk,
+            'new_owner': self.user_new.sodar_uuid,
+        }
+        with self.login(self.user):
+            self.client.post(self.url, post_data)
+
+        self.assertEqual(RoleAssignment.objects.count(), 3)
+        role_as = RoleAssignment.objects.get(
+            project=self.project, user=self.user_new
+        )
+        self.assertEqual(role_as.role, self.role_owner)
+        # No iRODS access for old owner with viewer role
+        self.assert_group_member(self.project, self.user, False, False)
+        self.assert_group_member(self.project, self.user_new, True, True)
+        self.assert_group_member(self.project, self.user_owner_cat, True, True)
+
     def test_post_category(self):
         """Test POST with category"""
         self.make_assignment_taskflow(
@@ -682,6 +811,31 @@ class TestRoleAssignmentOwnerTransferView(TaskflowViewTestBase):
         self.assert_group_member(self.project, self.user, True, True)
         self.assert_group_member(self.project, self.user_owner_cat, True, False)
 
+    def test_post_category_viewer(self):
+        """Test POST with category and viewer role for old owner"""
+        self.make_assignment_taskflow(
+            self.category, self.user, self.role_contributor
+        )
+        self.assertEqual(RoleAssignment.objects.count(), 4)
+        self.assert_group_member(self.project, self.user, True, True)
+        self.assert_group_member(self.project, self.user_owner_cat, True, True)
+
+        with self.login(self.user):
+            self.client.post(
+                self.url_cat,
+                data={
+                    'project': self.category.sodar_uuid,
+                    'old_owner_role': self.role_viewer.pk,
+                    'new_owner': self.user.sodar_uuid,
+                },
+            )
+
+        self.assertEqual(RoleAssignment.objects.count(), 4)
+        self.assert_group_member(self.project, self.user, True, True)
+        self.assert_group_member(
+            self.project, self.user_owner_cat, False, False
+        )
+
     def test_post_category_finder(self):
         """Test POST with category and finder role for old owner"""
         self.make_assignment_taskflow(
@@ -693,10 +847,7 @@ class TestRoleAssignmentOwnerTransferView(TaskflowViewTestBase):
 
         with self.login(self.user):
             self.client.post(
-                reverse(
-                    'projectroles:role_owner_transfer',
-                    kwargs={'project': self.category.sodar_uuid},
-                ),
+                self.url_cat,
                 data={
                     'project': self.category.sodar_uuid,
                     'old_owner_role': self.role_finder.pk,
@@ -721,10 +872,7 @@ class TestRoleAssignmentOwnerTransferView(TaskflowViewTestBase):
 
         with self.login(self.user):
             self.client.post(
-                reverse(
-                    'projectroles:role_owner_transfer',
-                    kwargs={'project': self.category.sodar_uuid},
-                ),
+                self.url_cat,
                 data={
                     'project': self.category.sodar_uuid,
                     'old_owner_role': self.role_delegate.pk,
@@ -747,10 +895,7 @@ class TestRoleAssignmentOwnerTransferView(TaskflowViewTestBase):
 
         with self.login(self.user):
             self.client.post(
-                reverse(
-                    'projectroles:role_owner_transfer',
-                    kwargs={'project': self.category.sodar_uuid},
-                ),
+                self.url_cat,
                 data={
                     'project': self.category.sodar_uuid,
                     'old_owner_role': 0,
@@ -914,6 +1059,26 @@ class TestRoleAssignmentDeleteView(TaskflowViewTestBase):
             )
         self.assertEqual(RoleAssignment.objects.count(), 3)
         self.assert_group_member(self.project, self.user_new, True, True)
+
+    def test_post_local_with_inherited_viewer(self):
+        """Test POST for local role with inherited viewer role"""
+        self.make_assignment_taskflow(
+            self.category, self.user_new, self.role_viewer
+        )
+        role_as = self.make_assignment_taskflow(
+            self.project, self.user_new, self.role_guest
+        )
+        self.assertEqual(RoleAssignment.objects.count(), 4)
+        self.assert_group_member(self.project, self.user_new, True, False)
+        with self.login(self.user):
+            self.client.post(
+                reverse(
+                    'projectroles:role_delete',
+                    kwargs={'roleassignment': role_as.sodar_uuid},
+                ),
+            )
+        self.assertEqual(RoleAssignment.objects.count(), 3)
+        self.assert_group_member(self.project, self.user_new, False, False)
 
     def test_post_local_with_inherited_finder(self):
         """Test POST for local role with inherited finder role"""

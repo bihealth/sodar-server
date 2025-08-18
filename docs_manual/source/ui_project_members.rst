@@ -48,8 +48,10 @@ Project Guest
     including raw data files, but will not be able to modify any data or upload
     files to iRODS.
 Project Viewer
-    Limited read-only access to project data. Can see the project readme,
-    members and sample sheets. Can not access any files in iRODS mass storage.
+    Limited read-only access to project data. A viewer can see the project
+    readme, category statistics and category or project members. They can also
+    view the sample sheets in a project. Viewers can not access project files in
+    iRODS mass storage.
 Project Finder
     A role assignable only to users in categories. A user with a finder role can
     see child categories and projects along with their member lists without

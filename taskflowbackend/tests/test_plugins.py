@@ -133,6 +133,8 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
         self.make_assignment(
             self.category, user_contrib_cat, self.role_contributor
         )
+        user_viewer_cat = self.make_user('user_viewer_cat')
+        self.make_assignment(self.category, user_viewer_cat, self.role_viewer)
         user_finder_cat = self.make_user('user_finder_cat')
         self.make_assignment(self.category, user_finder_cat, self.role_finder)
         project = self.make_project(
@@ -155,7 +157,9 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
         self.assert_group_member(project, self.user_owner_cat, True, True)
         # Contributor should not be in owner/delegate group
         self.assert_group_member(project, user_contrib_cat, True, False)
-        # Finder role should not be added
+        # Viewer and finder roles should not be added
+        with self.assertRaises(UserDoesNotExist):
+            self.irods.users.get(user_viewer_cat.username)
         with self.assertRaises(UserDoesNotExist):
             self.irods.users.get(user_finder_cat.username)
 
@@ -165,6 +169,8 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
         self.make_assignment(
             self.category, user_contrib_cat, self.role_contributor
         )
+        user_viewer_cat = self.make_user('user_viewer_cat')
+        self.make_assignment(self.category, user_viewer_cat, self.role_viewer)
         user_finder_cat = self.make_user('user_finder_cat')
         self.make_assignment(self.category, user_finder_cat, self.role_finder)
         # Create subcategory
@@ -178,6 +184,8 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
         self.assert_irods_coll(project, expected=False)
         with self.assertRaises(UserDoesNotExist):
             self.irods.users.get(user_contrib_cat.username)
+        with self.assertRaises(UserDoesNotExist):
+            self.irods.users.get(user_viewer_cat.username)
         with self.assertRaises(UserDoesNotExist):
             self.irods.users.get(user_finder_cat.username)
 
@@ -194,13 +202,38 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
         self.assert_group_member(project, self.user_owner_cat, True, True)
         self.assert_group_member(project, user_contrib_cat, True, False)
         with self.assertRaises(UserDoesNotExist):
+            self.irods.users.get(user_viewer_cat.username)
+        with self.assertRaises(UserDoesNotExist):
             self.irods.users.get(user_finder_cat.username)
 
-    def test_create_inherited_override_child(self):
-        """Test creation with role overridden in child category"""
+    def test_create_inherited_override_child_viewer(self):
+        """Test creation with viewer role overridden in child category"""
+        user_viewer_cat = self.make_user('user_viewer_cat')
+        self.make_assignment(self.category, user_viewer_cat, self.role_viewer)
+        # Create subcategory with overridden role
+        sub_cat = self.make_project(
+            'SubCategory', PROJECT_TYPE_CATEGORY, self.category
+        )
+        self.make_assignment(sub_cat, self.user_owner_cat, self.role_owner)
+        self.make_assignment(sub_cat, user_viewer_cat, self.role_guest)
+        project = self.make_project('NewProject', PROJECT_TYPE_PROJECT, sub_cat)
+        self.make_assignment(project, self.user, self.role_owner)
+
+        self.plugin.perform_project_modify(
+            project=project,
+            action=PROJECT_ACTION_CREATE,
+            project_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=project
+            ),
+            request=self.request,
+        )
+        # Since there is an overridden role, this should be created
+        self.assert_group_member(project, user_viewer_cat, True, False)
+
+    def test_create_inherited_override_child_finder(self):
+        """Test creation with finder role overridden in child category"""
         user_finder_cat = self.make_user('user_finder_cat')
         self.make_assignment(self.category, user_finder_cat, self.role_finder)
-        # Create subcategory with overridden role
         sub_cat = self.make_project(
             'SubCategory', PROJECT_TYPE_CATEGORY, self.category
         )
@@ -217,14 +250,36 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
             ),
             request=self.request,
         )
-        # Since there is an overridden role, this should be created
         self.assert_group_member(project, user_finder_cat, True, False)
 
-    def test_create_inherited_override_parent(self):
-        """Test creation with role overridden in parent category"""
+    def test_create_inherited_override_parent_viewer(self):
+        """Test creation with viewer role overridden in parent category"""
         user_guest_cat = self.make_user('user_guest_cat')
         self.make_assignment(self.category, user_guest_cat, self.role_guest)
-        # Create subcategory with finder role role
+        # Create subcategory with viewer role
+        sub_cat = self.make_project(
+            'SubCategory', PROJECT_TYPE_CATEGORY, self.category
+        )
+        self.make_assignment(sub_cat, self.user_owner_cat, self.role_owner)
+        self.make_assignment(sub_cat, user_guest_cat, self.role_viewer)
+        project = self.make_project('NewProject', PROJECT_TYPE_PROJECT, sub_cat)
+        self.make_assignment(project, self.user, self.role_owner)
+
+        self.plugin.perform_project_modify(
+            project=project,
+            action=PROJECT_ACTION_CREATE,
+            project_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=project
+            ),
+            request=self.request,
+        )
+        # Since the role is overridden by parent, this should be created
+        self.assert_group_member(project, user_guest_cat, True, False)
+
+    def test_create_inherited_override_parent_finder(self):
+        """Test creation with finder role overridden in parent category"""
+        user_guest_cat = self.make_user('user_guest_cat')
+        self.make_assignment(self.category, user_guest_cat, self.role_guest)
         sub_cat = self.make_project(
             'SubCategory', PROJECT_TYPE_CATEGORY, self.category
         )
@@ -241,7 +296,6 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
             ),
             request=self.request,
         )
-        # Since the finder role is overridden by parent, this should be created
         self.assert_group_member(project, user_guest_cat, True, False)
 
     def test_create_category(self):
@@ -311,6 +365,7 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
         user_contributor = self.make_user('user_contributor')
         user_owner_cat_new = self.make_user('user_owner_cat_new')
         user_guest_cat_new = self.make_user('user_guest_cat_new')
+        user_viewer_cat_new = self.make_user('user_viewer_cat_new')
         user_finder_cat_new = self.make_user('user_finder_cat_new')
         self.make_assignment_taskflow(
             project, user_contributor, self.role_contributor
@@ -322,6 +377,7 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
         self.assert_group_member(project, user_contributor, True, False)
         self.assert_group_member(project, user_owner_cat_new, False, False)
         self.assert_group_member(project, user_guest_cat_new, False, False)
+        self.assert_group_member(project, user_viewer_cat_new, False, False)
         self.assert_group_member(project, user_finder_cat_new, False, False)
         project_coll = self.irods.collections.get(project_path)
         self.assertEqual(
@@ -334,6 +390,12 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
         )
         self.make_assignment(new_category, user_owner_cat_new, self.role_owner)
         self.make_assignment(new_category, user_guest_cat_new, self.role_guest)
+        self.make_assignment(
+            new_category, user_viewer_cat_new, self.role_viewer
+        )
+        self.make_assignment(
+            new_category, user_finder_cat_new, self.role_finder
+        )
         project.parent = new_category
         project.save()
         self.plugin.perform_project_modify(
@@ -359,7 +421,8 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
         # Users of new category should have access
         self.assert_group_member(project, user_owner_cat_new, True, True)
         self.assert_group_member(project, user_guest_cat_new, True, False)
-        # Finder should not have access
+        # Viewer and finder should not have access
+        self.assert_group_member(project, user_viewer_cat_new, False, False)
         self.assert_group_member(project, user_finder_cat_new, False, False)
 
     def test_update_category(self):
@@ -412,12 +475,16 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
         # Create new root category with users
         user_owner_cat_new = self.make_user('user_owner_cat_new')
         user_guest_cat_new = self.make_user('user_guest_cat_new')
+        user_viewer_cat_new = self.make_user('user_viewer_cat_new')
         user_finder_cat_new = self.make_user('user_finder_cat_new')
         new_category = self.make_project(
             'NewCategory', PROJECT_TYPE_CATEGORY, None
         )
         self.make_assignment(new_category, user_owner_cat_new, self.role_owner)
         self.make_assignment(new_category, user_guest_cat_new, self.role_guest)
+        self.make_assignment(
+            new_category, user_viewer_cat_new, self.role_viewer
+        )
         self.make_assignment(
             new_category, user_finder_cat_new, self.role_finder
         )
@@ -427,6 +494,7 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
         self.assert_group_member(project, self.user_owner_cat, True, True)
         self.assert_group_member(project, user_owner_cat_new, False, False)
         self.assert_group_member(project, user_guest_cat_new, False, False)
+        self.assert_group_member(project, user_viewer_cat_new, False, False)
         self.assert_group_member(project, user_finder_cat_new, False, False)
         self.assert_irods_coll(project, expected=True)
 
@@ -451,6 +519,7 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
         self.assert_group_member(project, self.user_owner_cat, True, True)
         self.assert_group_member(project, user_owner_cat_new, True, True)
         self.assert_group_member(project, user_guest_cat_new, True, False)
+        self.assert_group_member(project, user_viewer_cat_new, False, False)
         self.assert_group_member(project, user_finder_cat_new, False, False)
 
 
@@ -543,6 +612,20 @@ class TestPerformRoleModify(ModifyAPITaskflowTestBase):
             self.timeline.TL_STATUS_OK,
         )
 
+    def test_create_viewer(self):
+        """Test creating viewer role assignment"""
+        role_as = self.make_assignment(
+            self.project, self.user_new, self.role_viewer
+        )
+        self.assert_group_member(self.project, self.user_new, False, False)
+        self.plugin.perform_role_modify(
+            role_as=role_as,
+            action=PROJECT_ACTION_CREATE,
+            request=self.request,
+        )
+        # Viewer should not be granted iRODS access
+        self.assert_group_member(self.project, self.user_new, False, False)
+
     def test_create_parent(self):
         """Test creating parent assignment"""
         role_as = self.make_assignment(
@@ -569,19 +652,17 @@ class TestPerformRoleModify(ModifyAPITaskflowTestBase):
             self.timeline.TL_STATUS_OK,
         )
 
-    def test_create_parent_finder(self):
-        """Test creating parent finder assignment"""
+    def test_create_parent_viewer(self):
+        """Test creating parent viewer assignment"""
         role_as = self.make_assignment(
-            self.category, self.user_new, self.role_finder
+            self.category, self.user_new, self.role_viewer
         )
         self.assert_group_member(self.project, self.user_new, False, False)
-
         self.plugin.perform_role_modify(
             role_as=role_as,
             action=PROJECT_ACTION_CREATE,
             request=self.request,
         )
-
         # Should still be False
         self.assert_group_member(self.project, self.user_new, False, False)
         tl_events = TimelineEvent.objects.filter(
@@ -592,9 +673,44 @@ class TestPerformRoleModify(ModifyAPITaskflowTestBase):
         )
         self.assertEqual(tl_events.count(), 1)
 
-    def test_create_parent_override(self):
-        """Test creating overriding parent assignment"""
+    def test_create_parent_finder(self):
+        """Test creating parent finder assignment"""
+        role_as = self.make_assignment(
+            self.category, self.user_new, self.role_finder
+        )
+        self.assert_group_member(self.project, self.user_new, False, False)
+        self.plugin.perform_role_modify(
+            role_as=role_as,
+            action=PROJECT_ACTION_CREATE,
+            request=self.request,
+        )
+        self.assert_group_member(self.project, self.user_new, False, False)
+
+    def test_create_parent_override_viewer(self):
+        """Test creating overriding parent assignment for viewer role"""
         # Make sub category and place project under it
+        sub_cat = self.make_project(
+            'SubCategory', PROJECT_TYPE_CATEGORY, self.category
+        )
+        self.make_assignment(sub_cat, self.user_owner_cat, self.role_owner)
+        self.project.parent = sub_cat
+        self.project.save()
+
+        self.make_assignment_taskflow(sub_cat, self.user_new, self.role_viewer)
+        self.assert_group_member(self.project, self.user_new, False, False)
+
+        role_as = self.make_assignment(
+            self.category, self.user_new, self.role_guest
+        )
+        self.plugin.perform_role_modify(
+            role_as=role_as,
+            action=PROJECT_ACTION_CREATE,
+            request=self.request,
+        )
+        self.assert_group_member(self.project, self.user_new, True, False)
+
+    def test_create_parent_override_finder(self):
+        """Test creating overriding parent assignment for finder role"""
         sub_cat = self.make_project(
             'SubCategory', PROJECT_TYPE_CATEGORY, self.category
         )
@@ -615,8 +731,24 @@ class TestPerformRoleModify(ModifyAPITaskflowTestBase):
         )
         self.assert_group_member(self.project, self.user_new, True, False)
 
-    def test_create_parent_overridden(self):
-        """Test creating overridden parent assignment"""
+    def test_create_parent_overridden_viewer(self):
+        """Test creating overridden parent viewer assignment"""
+        self.make_assignment_taskflow(
+            self.project, self.user_new, self.role_guest
+        )
+        self.assert_group_member(self.project, self.user_new, True, False)
+        role_as = self.make_assignment(
+            self.category, self.user_new, self.role_viewer
+        )
+        self.plugin.perform_role_modify(
+            role_as=role_as,
+            action=PROJECT_ACTION_CREATE,
+            request=self.request,
+        )
+        self.assert_group_member(self.project, self.user_new, True, False)
+
+    def test_create_parent_overridden_finder(self):
+        """Test creating overridden parent finder assignment"""
         self.make_assignment_taskflow(
             self.project, self.user_new, self.role_guest
         )
@@ -687,6 +819,22 @@ class TestPerformRoleModify(ModifyAPITaskflowTestBase):
         )
         self.assert_group_member(self.project, self.user_new, True, False)
 
+    def test_update_to_viewer(self):
+        """Test updating assignment to viewer"""
+        role_as = self.make_assignment_taskflow(
+            self.category, self.user_new, self.role_contributor
+        )
+        self.assert_group_member(self.project, self.user_new, True, False)
+        role_as.role = self.role_viewer
+        role_as.save()
+        self.plugin.perform_role_modify(
+            role_as=role_as,
+            action=PROJECT_ACTION_UPDATE,
+            old_role=self.role_contributor,
+            request=self.request,
+        )
+        self.assert_group_member(self.project, self.user_new, False, False)
+
     def test_update_to_finder(self):
         """Test updating assignment to finder"""
         role_as = self.make_assignment_taskflow(
@@ -702,6 +850,22 @@ class TestPerformRoleModify(ModifyAPITaskflowTestBase):
             request=self.request,
         )
         self.assert_group_member(self.project, self.user_new, False, False)
+
+    def test_update_from_viewer(self):
+        """Test updating assignment from viewer"""
+        role_as = self.make_assignment_taskflow(
+            self.category, self.user_new, self.role_viewer
+        )
+        self.assert_group_member(self.project, self.user_new, False, False)
+        role_as.role = self.role_guest
+        role_as.save()
+        self.plugin.perform_role_modify(
+            role_as=role_as,
+            action=PROJECT_ACTION_UPDATE,
+            old_role=self.role_viewer,
+            request=self.request,
+        )
+        self.assert_group_member(self.project, self.user_new, True, False)
 
     def test_update_from_finder(self):
         """Test updating assignment from finder"""
@@ -719,8 +883,32 @@ class TestPerformRoleModify(ModifyAPITaskflowTestBase):
         )
         self.assert_group_member(self.project, self.user_new, True, False)
 
-    def test_update_parent_override(self):
-        """Test updating overriding parent assignment"""
+    def test_update_parent_override_viewer(self):
+        """Test updating overriding parent assignment for viewer"""
+        sub_cat = self.make_project(
+            'SubCategory', PROJECT_TYPE_CATEGORY, self.category
+        )
+        self.make_assignment(sub_cat, self.user_owner_cat, self.role_owner)
+        self.project.parent = sub_cat
+        self.project.save()
+
+        self.make_assignment_taskflow(sub_cat, self.user_new, self.role_viewer)
+        role_as = self.make_assignment_taskflow(
+            self.category, self.user_new, self.role_viewer
+        )
+        self.assert_group_member(self.project, self.user_new, False, False)
+
+        role_as.role = self.role_guest
+        self.plugin.perform_role_modify(
+            role_as=role_as,
+            action=PROJECT_ACTION_UPDATE,
+            old_role=self.role_viewer,
+            request=self.request,
+        )
+        self.assert_group_member(self.project, self.user_new, True, False)
+
+    def test_update_parent_override_finder(self):
+        """Test updating overriding parent assignment for finder"""
         sub_cat = self.make_project(
             'SubCategory', PROJECT_TYPE_CATEGORY, self.category
         )
@@ -743,8 +931,32 @@ class TestPerformRoleModify(ModifyAPITaskflowTestBase):
         )
         self.assert_group_member(self.project, self.user_new, True, False)
 
-    def test_update_parent_overridden(self):
-        """Test updating overridden parent assignment"""
+    def test_update_parent_overridden_viewer(self):
+        """Test updating overridden parent viewer assignment"""
+        sub_cat = self.make_project(
+            'SubCategory', PROJECT_TYPE_CATEGORY, self.category
+        )
+        self.make_assignment(sub_cat, self.user_owner_cat, self.role_owner)
+        self.project.parent = sub_cat
+        self.project.save()
+
+        self.make_assignment_taskflow(sub_cat, self.user_new, self.role_guest)
+        role_as = self.make_assignment_taskflow(
+            self.category, self.user_new, self.role_guest
+        )
+        self.assert_group_member(self.project, self.user_new, True, False)
+
+        role_as.role = self.role_viewer
+        self.plugin.perform_role_modify(
+            role_as=role_as,
+            action=PROJECT_ACTION_UPDATE,
+            old_role=self.role_guest,
+            request=self.request,
+        )
+        self.assert_group_member(self.project, self.user_new, True, False)
+
+    def test_update_parent_overridden_finder(self):
+        """Test updating overridden parent finder assignment"""
         sub_cat = self.make_project(
             'SubCategory', PROJECT_TYPE_CATEGORY, self.category
         )
@@ -852,6 +1064,22 @@ class TestPerformRoleModify(ModifyAPITaskflowTestBase):
         )
         self.assert_group_member(self.project, self.user_new, True, False)
 
+    def test_revert_create_parent_viewer_override(self):
+        """Test reverting parent viewer role creation with overriding child role"""
+        self.make_assignment_taskflow(
+            self.project, self.user_new, self.role_contributor
+        )
+        role_as = self.make_assignment_taskflow(
+            self.category, self.user_new, self.role_viewer
+        )
+        self.assert_group_member(self.project, self.user_new, True, False)
+        self.plugin.revert_role_modify(
+            role_as=role_as,
+            action=PROJECT_ACTION_CREATE,
+            request=self.request,
+        )
+        self.assert_group_member(self.project, self.user_new, True, False)
+
     def test_revert_create_parent_finder_override(self):
         """Test reverting parent finder role creation with overriding child role"""
         self.make_assignment_taskflow(
@@ -868,9 +1096,31 @@ class TestPerformRoleModify(ModifyAPITaskflowTestBase):
         )
         self.assert_group_member(self.project, self.user_new, True, False)
 
+    def test_revert_create_parent_viewer_overridden(self):
+        """Test reverting parent role creation with overridden viewer role"""
+        # Create subcategory and assign category under it
+        sub_cat = self.make_project(
+            'SubCategory', PROJECT_TYPE_CATEGORY, self.category
+        )
+        self.make_assignment(sub_cat, self.user_owner_cat, self.role_owner)
+        self.project.parent = sub_cat
+        self.project.save()
+
+        self.make_assignment_taskflow(sub_cat, self.user_new, self.role_viewer)
+        role_as = self.make_assignment_taskflow(
+            self.category, self.user_new, self.role_contributor
+        )
+        self.assert_group_member(self.project, self.user_new, True, False)
+
+        self.plugin.revert_role_modify(
+            role_as=role_as,
+            action=PROJECT_ACTION_CREATE,
+            request=self.request,
+        )
+        self.assert_group_member(self.project, self.user_new, False, False)
+
     def test_revert_create_parent_finder_overridden(self):
         """Test reverting parent role creation with overridden finder role"""
-        # Create subcategory and assign category under it
         sub_cat = self.make_project(
             'SubCategory', PROJECT_TYPE_CATEGORY, self.category
         )
@@ -942,6 +1192,22 @@ class TestPerformRoleModify(ModifyAPITaskflowTestBase):
         )
         self.assert_group_member(self.project, self.user_new, True, True)
 
+    def test_revert_update_parent_to_viewer(self):
+        """Test reverting parent role update to viewer"""
+        role_as = self.make_assignment_taskflow(
+            self.category, self.user_new, self.role_viewer
+        )
+        self.assert_group_member(self.project, self.user_new, False, False)
+        role_as.role = self.role_guest
+        role_as.save()
+        self.plugin.revert_role_modify(
+            role_as=role_as,
+            action=PROJECT_ACTION_UPDATE,
+            old_role=self.role_guest,
+            request=self.request,
+        )
+        self.assert_group_member(self.project, self.user_new, True, False)
+
     def test_revert_update_parent_to_finder(self):
         """Test reverting parent role update to finder"""
         role_as = self.make_assignment_taskflow(
@@ -958,6 +1224,22 @@ class TestPerformRoleModify(ModifyAPITaskflowTestBase):
         )
         self.assert_group_member(self.project, self.user_new, True, False)
 
+    def test_revert_update_parent_from_viewer(self):
+        """Test reverting parent role update from viewer"""
+        role_as = self.make_assignment_taskflow(
+            self.category, self.user_new, self.role_guest
+        )
+        self.assert_group_member(self.project, self.user_new, True, False)
+        role_as.role = self.role_guest
+        role_as.save()
+        self.plugin.revert_role_modify(
+            role_as=role_as,
+            action=PROJECT_ACTION_UPDATE,
+            old_role=self.role_viewer,
+            request=self.request,
+        )
+        self.assert_group_member(self.project, self.user_new, False, False)
+
     def test_revert_update_parent_from_finder(self):
         """Test reverting parent role update from finder"""
         role_as = self.make_assignment_taskflow(
@@ -973,6 +1255,25 @@ class TestPerformRoleModify(ModifyAPITaskflowTestBase):
             request=self.request,
         )
         self.assert_group_member(self.project, self.user_new, False, False)
+
+    def test_revert_update_parent_from_viewer_override(self):
+        """Test reverting parent role update from viewer with overriding child role"""
+        self.make_assignment_taskflow(
+            self.project, self.user_new, self.role_contributor
+        )
+        role_as = self.make_assignment_taskflow(
+            self.category, self.user_new, self.role_guest
+        )
+        self.assert_group_member(self.project, self.user_new, True, False)
+        role_as.role = self.role_guest
+        role_as.save()
+        self.plugin.revert_role_modify(
+            role_as=role_as,
+            action=PROJECT_ACTION_UPDATE,
+            old_role=self.role_viewer,
+            request=self.request,
+        )
+        self.assert_group_member(self.project, self.user_new, True, False)
 
     def test_revert_update_parent_from_finder_override(self):
         """Test reverting parent role update from finder with overriding child role"""
@@ -1091,6 +1392,19 @@ class TestPerformRoleDelete(ModifyAPITaskflowTestBase):
         self.plugin.perform_role_delete(self.role_as, self.request)
         self.assert_group_member(self.project, self.user_new, True, False)
 
+    def test_delete_inherited_viewer_with_local(self):
+        """Test deleting inherited viewer role with local role also set"""
+        self.role_as = self.make_assignment_taskflow(
+            self.category, self.user_new, self.role_viewer
+        )
+        self.assert_group_member(self.project, self.user_new, False, False)
+        self.make_assignment_taskflow(
+            self.project, self.user_new, self.role_guest
+        )
+        self.assert_group_member(self.project, self.user_new, True, False)
+        self.plugin.perform_role_delete(self.role_as, self.request)
+        self.assert_group_member(self.project, self.user_new, True, False)
+
     def test_delete_inherited_finder_with_local(self):
         """Test deleting inherited finder role with local role also set"""
         self.role_as = self.make_assignment_taskflow(
@@ -1104,9 +1418,30 @@ class TestPerformRoleDelete(ModifyAPITaskflowTestBase):
         self.plugin.perform_role_delete(self.role_as, self.request)
         self.assert_group_member(self.project, self.user_new, True, False)
 
+    def test_delete_inherited_with_viewer_child(self):
+        """Test deleting inherited role with viewer role in child"""
+        # Set up new top level category and place self.category under it
+        top_cat = self.make_project(
+            'NewTopCategory', PROJECT_TYPE_CATEGORY, None
+        )
+        self.make_assignment(top_cat, self.user_owner_cat, self.role_owner)
+        self.category.parent = top_cat
+        self.category.save()
+
+        self.make_assignment_taskflow(
+            self.category, self.user_new, self.role_viewer
+        )
+        self.assert_group_member(self.project, self.user_new, False, False)
+        self.role_as = self.make_assignment_taskflow(
+            top_cat, self.user_new, self.role_guest
+        )
+        self.assert_group_member(self.project, self.user_new, True, False)
+
+        self.plugin.perform_role_delete(self.role_as, self.request)
+        self.assert_group_member(self.project, self.user_new, False, False)
+
     def test_delete_inherited_with_finder_child(self):
         """Test deleting inherited role with finder role in child"""
-        # Set up new top level category and place self.category under it
         top_cat = self.make_project(
             'NewTopCategory', PROJECT_TYPE_CATEGORY, None
         )
@@ -1222,6 +1557,21 @@ class TestPerformRoleDelete(ModifyAPITaskflowTestBase):
         self.plugin.revert_role_delete(self.role_as, self.request)
         self.assert_group_member(self.project, self.user_new, True, True)
 
+    def test_revert_inherited_viewer_with_local(self):
+        """Test reverting inherited viewer role deletion with local member role"""
+        self.role_as = self.make_assignment_taskflow(
+            self.category, self.user_new, self.role_viewer
+        )
+        self.assert_group_member(self.project, self.user_new, False, False)
+        self.make_assignment_taskflow(
+            self.project, self.user_new, self.role_guest
+        )
+        self.assert_group_member(self.project, self.user_new, True, False)
+        self.plugin.perform_role_delete(self.role_as, self.request)
+        self.assert_group_member(self.project, self.user_new, True, False)
+        self.plugin.revert_role_delete(self.role_as, self.request)
+        self.assert_group_member(self.project, self.user_new, True, False)
+
     def test_revert_inherited_finder_with_local(self):
         """Test reverting inherited finder role deletion with local member role"""
         self.role_as = self.make_assignment_taskflow(
@@ -1234,6 +1584,28 @@ class TestPerformRoleDelete(ModifyAPITaskflowTestBase):
         self.assert_group_member(self.project, self.user_new, True, False)
         self.plugin.perform_role_delete(self.role_as, self.request)
         self.assert_group_member(self.project, self.user_new, True, False)
+        self.plugin.revert_role_delete(self.role_as, self.request)
+        self.assert_group_member(self.project, self.user_new, True, False)
+
+    def test_revert_inherited_with_viewer_child(self):
+        """Test reverting inherited role deletion with viewer role in child"""
+        top_cat = self.make_project(
+            'NewTopCategory', PROJECT_TYPE_CATEGORY, None
+        )
+        self.make_assignment(top_cat, self.user_owner_cat, self.role_owner)
+        self.category.parent = top_cat
+        self.category.save()
+
+        self.make_assignment_taskflow(
+            self.category, self.user_new, self.role_viewer
+        )
+        self.assert_group_member(self.project, self.user_new, False, False)
+        self.role_as = self.make_assignment_taskflow(
+            top_cat, self.user_new, self.role_guest
+        )
+        self.assert_group_member(self.project, self.user_new, True, False)
+        self.plugin.perform_role_delete(self.role_as, self.request)
+        self.assert_group_member(self.project, self.user_new, False, False)
         self.plugin.revert_role_delete(self.role_as, self.request)
         self.assert_group_member(self.project, self.user_new, True, False)
 
@@ -1306,6 +1678,27 @@ class TestPerformOwnerTransfer(ModifyAPITaskflowTestBase):
             self.timeline.TL_STATUS_OK,
         )
 
+    def test_transfer_category_old_owner_viewer(self):
+        """Test category owner transfer with viewer role for old owner"""
+        self.make_assignment_taskflow(
+            self.category, self.user_new, self.role_contributor
+        )
+        self.assert_group_member(self.project, self.user, True, True)
+        self.assert_group_member(self.project, self.user_new, True, False)
+        self.assert_group_member(self.project, self.user_owner_cat, True, True)
+        self.plugin.perform_owner_transfer(
+            project=self.category,
+            new_owner=self.user_new,
+            old_owner=self.user_owner_cat,
+            old_owner_role=self.role_viewer,
+            request=self.request,
+        )
+        self.assert_group_member(self.project, self.user, True, True)
+        self.assert_group_member(self.project, self.user_new, True, True)
+        self.assert_group_member(
+            self.project, self.user_owner_cat, False, False
+        )
+
     def test_transfer_category_old_owner_finder(self):
         """Test category owner transfer with finder role for old owner"""
         self.make_assignment_taskflow(
@@ -1348,6 +1741,25 @@ class TestPerformOwnerTransfer(ModifyAPITaskflowTestBase):
             self.project, self.user_owner_cat, False, False
         )
 
+    def test_transfer_category_to_viewer(self):
+        """Test category owner transfer to user with viewer role"""
+        self.make_assignment_taskflow(
+            self.category, self.user_new, self.role_viewer
+        )
+        self.assert_group_member(self.project, self.user, True, True)
+        self.assert_group_member(self.project, self.user_new, False, False)
+        self.assert_group_member(self.project, self.user_owner_cat, True, True)
+        self.plugin.perform_owner_transfer(
+            project=self.category,
+            new_owner=self.user_new,
+            old_owner=self.user_owner_cat,
+            old_owner_role=self.role_contributor,
+            request=self.request,
+        )
+        self.assert_group_member(self.project, self.user, True, True)
+        self.assert_group_member(self.project, self.user_new, True, True)
+        self.assert_group_member(self.project, self.user_owner_cat, True, False)
+
     def test_transfer_category_to_finder(self):
         """Test category owner transfer to user with finder role"""
         self.make_assignment_taskflow(
@@ -1383,6 +1795,25 @@ class TestPerformOwnerTransfer(ModifyAPITaskflowTestBase):
             request=self.request,
         )
         self.assert_group_member(self.project, self.user, True, False)
+        self.assert_group_member(self.project, self.user_new, True, True)
+        self.assert_group_member(self.project, self.user_owner_cat, True, True)
+
+    def test_transfer_project_old_owner_viewer(self):
+        """Test project owner transfer with viewer role for old owner"""
+        self.make_assignment_taskflow(
+            self.project, self.user_new, self.role_contributor
+        )
+        self.assert_group_member(self.project, self.user, True, True)
+        self.assert_group_member(self.project, self.user_new, True, False)
+        self.assert_group_member(self.project, self.user_owner_cat, True, True)
+        self.plugin.perform_owner_transfer(
+            project=self.project,
+            new_owner=self.user_new,
+            old_owner=self.user,
+            old_owner_role=self.role_viewer,
+            request=self.request,
+        )
+        self.assert_group_member(self.project, self.user, False, False)
         self.assert_group_member(self.project, self.user_new, True, True)
         self.assert_group_member(self.project, self.user_owner_cat, True, True)
 
@@ -1585,6 +2016,20 @@ class TestPerformProjectSync(ModifyAPITaskflowTestBase):
         self.assert_group_member(project, self.user_owner_cat, True, True)
         self.assert_group_member(project, user_new, True, True)
 
+    def test_sync_new_inherited_viewer(self):
+        """Test sync with new inherited viewer"""
+        project = self._make_project_tf()
+        user_new = self.make_user('user_new')
+        self.make_assignment(self.category, user_new, self.role_viewer)
+        with self.assertRaises(UserDoesNotExist):
+            self.irods.users.get(user_new.username)
+        self.plugin.perform_project_sync(project)
+        self.assert_group_member(project, self.user, True, True)
+        self.assert_group_member(project, self.user_owner_cat, True, True)
+        # Viewer should not have been created
+        with self.assertRaises(UserDoesNotExist):
+            self.irods.users.get(user_new.username)
+
     def test_sync_new_inherited_finder(self):
         """Test sync with new inherited finder"""
         project = self._make_project_tf()
@@ -1646,6 +2091,22 @@ class TestPerformProjectSync(ModifyAPITaskflowTestBase):
         self.assert_group_member(project, self.user_owner_cat, True, True)
         self.assert_group_member(project, user_new, False, False)
 
+    def test_sync_inherited_viewer(self):
+        """Test sync with role changed to viewer"""
+        project = self._make_project_tf()
+        user_new = self.make_user('user_new')
+        role_as = self.make_assignment_taskflow(
+            self.category, user_new, self.role_guest
+        )
+        self.assert_group_member(project, user_new, True, False)
+        # Change role to viewer locally
+        role_as.role = self.role_viewer
+        role_as.save()
+        self.plugin.perform_project_sync(project)
+        self.assert_group_member(project, self.user, True, True)
+        self.assert_group_member(project, self.user_owner_cat, True, True)
+        self.assert_group_member(project, user_new, False, False)
+
     def test_sync_inherited_finder(self):
         """Test sync with role changed to finder"""
         project = self._make_project_tf()
@@ -1654,7 +2115,6 @@ class TestPerformProjectSync(ModifyAPITaskflowTestBase):
             self.category, user_new, self.role_guest
         )
         self.assert_group_member(project, user_new, True, False)
-        # Change role to finder locally
         role_as.role = self.role_finder
         role_as.save()
         self.plugin.perform_project_sync(project)

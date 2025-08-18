@@ -210,10 +210,11 @@ class SamplesheetsViewTestBase(
         self.user.is_staff = True
         self.user.is_superuser = True
         self.user.save()
-        self.user_owner = self.make_user('owner')
-        self.user_delegate = self.make_user('delegate')
-        self.user_contributor = self.make_user('contributor')
-        self.user_guest = self.make_user('guest')
+        self.user_owner = self.make_user('user_owner')
+        self.user_delegate = self.make_user('user_delegate')
+        self.user_contributor = self.make_user('user_contributor')
+        self.user_guest = self.make_user('user_guest')
+        self.user_viewer = self.make_user('user_viewer')
         self.user_no_roles = self.make_user('user_no_roles')
         # Init projects
         self.category = self.make_project(
@@ -233,6 +234,9 @@ class SamplesheetsViewTestBase(
         )
         self.guest_as = self.make_assignment(
             self.project, self.user_guest, self.role_guest
+        )
+        self.viewer_as = self.make_assignment(
+            self.project, self.user_viewer, self.role_viewer
         )
 
 

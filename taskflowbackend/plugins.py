@@ -28,7 +28,7 @@ User = get_user_model()
 # SODAR constants
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
-PROJECT_ROLE_FINDER = SODAR_CONSTANTS['PROJECT_ROLE_FINDER']
+PROJECT_ROLE_VIEWER = SODAR_CONSTANTS['PROJECT_ROLE_VIEWER']
 PROJECT_ACTION_CREATE = SODAR_CONSTANTS['PROJECT_ACTION_CREATE']
 PROJECT_ACTION_UPDATE = SODAR_CONSTANTS['PROJECT_ACTION_UPDATE']
 APP_SETTING_SCOPE_PROJECT = SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT']
@@ -38,7 +38,7 @@ APP_NAME = 'taskflowbackend'
 IRODS_CAT_SKIP_MSG = 'Categories are not synchronized into iRODS'
 RANK_OWNER = ROLE_RANKING[PROJECT_ROLE_OWNER]
 RANK_DELEGATE = ROLE_RANKING[PROJECT_ROLE_DELEGATE]
-RANK_FINDER = ROLE_RANKING[PROJECT_ROLE_FINDER]
+RANK_VIEWER = ROLE_RANKING[PROJECT_ROLE_VIEWER]
 TASKFLOW_INFO_SETTINGS = [
     'TASKFLOW_IRODS_CONN_TIMEOUT',
     'TASKFLOW_LOCK_RETRY_COUNT',
@@ -118,7 +118,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         timeline = plugin_api.get_backend_api('timeline_backend')
         owner = project.get_owner().user
         all_roles = [
-            a for a in project.get_roles() if a.role.rank < RANK_FINDER
+            a for a in project.get_roles() if a.role.rank < RANK_VIEWER
         ]
         all_members = [a.user.username for a in all_roles]
         children = self._get_child_projects(project)
@@ -283,11 +283,12 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                     and old_role.rank > RANK_DELEGATE
                 )
             )
-        # Skip for update (unless updating to/from finder, owner or delegate)
+        # Skip for update (unless updating to/from viewer, finder, owner or
+        # delegate)
         if (
             action == PROJECT_ACTION_UPDATE
-            and role_as.role.rank < RANK_FINDER
-            and old_role.rank < RANK_FINDER
+            and role_as.role.rank < RANK_VIEWER
+            and old_role.rank < RANK_VIEWER
             and not owner_update
         ):
             logger.debug('Skipping: No iRODS update needed')
@@ -309,13 +310,20 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                 role_rank = parent_role_as.role.rank
 
         if project.is_project():
-            flow_data['roles_add'].append(
-                get_flow_role(project, user, role_rank)
-            )
+            if role_as.role.rank < RANK_VIEWER:
+                flow_data['roles_add'].append(
+                    get_flow_role(project, user, role_rank)
+                )
+            elif old_role and old_role.rank < RANK_VIEWER:
+                flow_data['roles_delete'].append(
+                    get_flow_role(project, user, role_rank)
+                )
         elif children:  # Category children
             for c in children:
                 c_role = c.get_role(user)
-                if role_as.role.rank >= RANK_FINDER and not c_role:
+                if role_as.role.rank >= RANK_VIEWER and (
+                    not c_role or c_role.role.rank >= RANK_VIEWER
+                ):
                     flow_data['roles_delete'].append(
                         get_flow_role(c, user, role_rank)
                     )
@@ -374,10 +382,10 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                 )
             )
 
-        # Revert creation or update from finder role for project
+        # Revert creation or update from viewer/finder role for project
         if project.is_project() and (
             action == PROJECT_ACTION_CREATE
-            or (old_role and old_role.rank >= RANK_FINDER)
+            or (old_role and old_role.rank >= RANK_VIEWER)
         ):
             flow_data['roles_delete'].append(
                 get_flow_role(
@@ -413,13 +421,13 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                 batch_role = get_flow_role(
                     c, user_name, c_as.role.rank if c_as else None
                 )
-                local_access = c_as and c_as.role.rank < RANK_FINDER
+                local_access = c_as and c_as.role.rank < RANK_VIEWER
                 if action == PROJECT_ACTION_CREATE and not local_access:
                     flow_data['roles_delete'].append(batch_role)
                 elif action == PROJECT_ACTION_UPDATE:
-                    if old_role.rank < RANK_FINDER or local_access:
+                    if old_role.rank < RANK_VIEWER or local_access:
                         flow_data['roles_add'].append(batch_role)
-                    elif old_role.rank >= RANK_FINDER and not local_access:
+                    elif old_role.rank >= RANK_VIEWER and not local_access:
                         flow_data['roles_delete'].append(batch_role)
 
         if flow_data['roles_add'] or flow_data['roles_delete']:
@@ -463,7 +471,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                 .order_by('role__rank')
                 .first()
             )
-            if not inh_as or inh_as.role.rank >= RANK_FINDER:
+            if not inh_as or inh_as.role.rank >= RANK_VIEWER:
                 flow_data['roles_delete'].append(
                     get_flow_role(
                         project, user_name, inh_as.role.rank if inh_as else None
@@ -485,7 +493,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                     .exclude(sodar_uuid=role_as.sodar_uuid)
                     .first()
                 )
-                if not c_as or c_as.role.rank >= RANK_FINDER:
+                if not c_as or c_as.role.rank >= RANK_VIEWER:
                     flow_data['roles_delete'].append(
                         get_flow_role(
                             c, user_name, c_as.role.rank if c_as else None
@@ -535,7 +543,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
 
         if project.is_project():
             user_as = project.get_role(user)
-            if user_as and user_as.role.rank < RANK_FINDER:
+            if user_as and user_as.role.rank < RANK_VIEWER:
                 flow_data['roles_add'].append(
                     get_flow_role(project, user_name, user_as.role.rank)
                 )
@@ -543,7 +551,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
             children = self._get_child_projects(project)
             for c in children:
                 # NOTE: role_as still exists so it has to be excluded
-                if role_as.role.rank < RANK_FINDER:
+                if role_as.role.rank < RANK_VIEWER:
                     flow_data['roles_add'].append(
                         get_flow_role(c, user_name, role_as.role.rank)
                     )
@@ -556,7 +564,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                         .exclude(sodar_uuid=role_as.sodar_uuid)
                         .first()
                     )
-                    if c_as and c_as.role.rank < RANK_FINDER:
+                    if c_as and c_as.role.rank < RANK_VIEWER:
                         k = 'roles_add'
                     else:
                         k = 'roles_delete'
@@ -610,7 +618,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                     project, n_user_name, ROLE_RANKING[PROJECT_ROLE_OWNER]
                 )
             )
-            if not old_owner_role or old_owner_role.rank >= RANK_FINDER:
+            if not old_owner_role or old_owner_role.rank >= RANK_VIEWER:
                 flow_data['roles_delete'].append(
                     get_flow_role(project, o_user_name, RANK_OWNER)
                 )
@@ -627,7 +635,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                         c, n_user_name, ROLE_RANKING[PROJECT_ROLE_OWNER]
                     )
                 )
-                if not old_owner_role or old_owner_role.rank >= RANK_FINDER:
+                if not old_owner_role or old_owner_role.rank >= RANK_VIEWER:
                     flow_data['roles_delete'].append(
                         get_flow_role(c, o_user_name, RANK_OWNER)
                     )
@@ -697,7 +705,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
             for irods_user in irods.user_groups.getmembers(project_group):
                 user = User.objects.filter(username=irods_user.name).first()
                 role_as = project.get_role(user)
-                if not role_as or role_as.role.rank >= RANK_FINDER:
+                if not role_as or role_as.role.rank >= RANK_VIEWER:
                     flow_data['roles_delete'].append(
                         get_flow_role(
                             project,

@@ -113,4 +113,11 @@ describe('AssayShortcutCard.vue', () => {
     expect(spySetTitle).toHaveBeenCalled()
     expect(spyShowModal).toHaveBeenCalled()
   })
+
+  it('does not render assay shortcuts if user lacks view files perm', () => {
+    propsData.sodarContext.perms.view_files = false
+    const wrapper = mount(AssayShortcutCard, { localVue, propsData: propsData })
+
+    expect(wrapper.find('.sodar-ss-assay-shortcut-card').exists()).toBe(false)
+  })
 })

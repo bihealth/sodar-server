@@ -79,6 +79,105 @@ class SamplesheetsUITestBase(SampleSheetIOMixin, SheetConfigMixin, UITestBase):
         self.assay = self.study.assays.first()
 
 
+class TestProjectDetailView(IrodsDataRequestMixin, SamplesheetsUITestBase):
+    """Tests for samplesheets details card in ProjectDetailView"""
+
+    def setUp(self):
+        super().setUp()
+        self.setup_investigation()
+        self.url = reverse(
+            'projectroles:detail', kwargs={'project': self.project.sodar_uuid}
+        )
+
+    def test_render_contributor(self):
+        """Test rendering samplesheets detail card as contributor"""
+        self.investigation.irods_status = True
+        self.investigation.save()
+        self.login_and_redirect(self.user_contributor, self.url)
+        with self.assertRaises(NoSuchElementException):
+            self.selenium.find_element(By.ID, 'sodar-ss-details-card-no-sheets')
+        with self.assertRaises(NoSuchElementException):
+            self.selenium.find_element(By.ID, 'sodar-ss-details-card-no-irods')
+        self.assertIsNotNone(
+            self.selenium.find_element(By.ID, 'sodar-ss-details-table')
+        )
+        self.assertIsNotNone(
+            self.selenium.find_element(By.ID, 'sodar-ss-details-table-th-inv')
+        )
+        self.assertIsNotNone(
+            self.selenium.find_element(By.ID, 'sodar-ss-details-table-th-stats')
+        )
+        self.assertIsNotNone(
+            self.selenium.find_element(By.ID, 'sodar-ss-details-table-th-links')
+        )
+
+    def test_render_guest(self):
+        """Test rendering samplesheets detail card as guest"""
+        self.investigation.irods_status = True
+        self.investigation.save()
+        self.login_and_redirect(self.user_guest, self.url)
+        with self.assertRaises(NoSuchElementException):
+            self.selenium.find_element(By.ID, 'sodar-ss-details-card-no-sheets')
+        with self.assertRaises(NoSuchElementException):
+            self.selenium.find_element(By.ID, 'sodar-ss-details-card-no-irods')
+        self.assertIsNotNone(
+            self.selenium.find_element(By.ID, 'sodar-ss-details-table')
+        )
+        self.assertIsNotNone(
+            self.selenium.find_element(By.ID, 'sodar-ss-details-table-th-inv')
+        )
+        self.assertIsNotNone(
+            self.selenium.find_element(By.ID, 'sodar-ss-details-table-th-stats')
+        )
+        self.assertIsNotNone(
+            self.selenium.find_element(By.ID, 'sodar-ss-details-table-th-links')
+        )
+
+    def test_render_viewer(self):
+        """Test rendering samplesheets detail card as viewer"""
+        self.investigation.irods_status = True
+        self.investigation.save()
+        self.login_and_redirect(self.user_viewer, self.url)
+        with self.assertRaises(NoSuchElementException):
+            self.selenium.find_element(By.ID, 'sodar-ss-details-card-no-sheets')
+        with self.assertRaises(NoSuchElementException):
+            self.selenium.find_element(By.ID, 'sodar-ss-details-card-no-irods')
+        self.assertIsNotNone(
+            self.selenium.find_element(By.ID, 'sodar-ss-details-table')
+        )
+        self.assertIsNotNone(
+            self.selenium.find_element(By.ID, 'sodar-ss-details-table-th-inv')
+        )
+        with self.assertRaises(NoSuchElementException):
+            self.selenium.find_element(By.ID, 'sodar-ss-details-table-th-stats')
+        with self.assertRaises(NoSuchElementException):
+            self.selenium.find_element(By.ID, 'sodar-ss-details-table-th-links')
+
+    def test_render_irods_status_false(self):
+        """Test rendering samplesheets detail card with irods_status=False"""
+        self.assertEqual(self.investigation.irods_status, False)
+        self.login_and_redirect(self.user_contributor, self.url)
+        with self.assertRaises(NoSuchElementException):
+            self.selenium.find_element(By.ID, 'sodar-ss-details-card-no-sheets')
+        self.assertIsNotNone(
+            self.selenium.find_element(By.ID, 'sodar-ss-details-card-no-irods')
+        )
+        with self.assertRaises(NoSuchElementException):
+            self.selenium.find_element(By.ID, 'sodar-ss-details-table')
+
+    def test_render_no_investigation(self):
+        """Test rendering samplesheets detail card with no investigation"""
+        self.investigation.delete()
+        self.login_and_redirect(self.user_contributor, self.url)
+        self.assertIsNotNone(
+            self.selenium.find_element(By.ID, 'sodar-ss-details-card-no-sheets')
+        )
+        with self.assertRaises(NoSuchElementException):
+            self.selenium.find_element(By.ID, 'sodar-ss-details-card-no-irods')
+        with self.assertRaises(NoSuchElementException):
+            self.selenium.find_element(By.ID, 'sodar-ss-details-table')
+
+
 class TestProjectSheetsView(IrodsDataRequestMixin, SamplesheetsUITestBase):
     """Tests for the project sheets view UI"""
 

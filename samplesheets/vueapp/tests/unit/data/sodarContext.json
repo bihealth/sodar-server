@@ -67,6 +67,7 @@
     "view_versions": true,
     "update_cache": true,
     "view_tickets": true,
+    "view_files": true,
     "is_superuser": true
   },
   "sheet_stats": {

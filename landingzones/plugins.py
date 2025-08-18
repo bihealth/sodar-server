@@ -7,7 +7,7 @@ from django.urls import reverse
 from djangoplugins.point import PluginPoint
 
 # Projectroles dependency
-from projectroles.models import SODAR_CONSTANTS
+from projectroles.models import SODAR_CONSTANTS, ROLE_RANKING
 from projectroles.plugins import (
     ProjectAppPluginPoint,
     ProjectModifyPluginMixin,
@@ -34,6 +34,7 @@ plugin_api = PluginAPI()
 
 
 # SODAR constants
+PROJECT_ROLE_GUEST = SODAR_CONSTANTS['PROJECT_ROLE_GUEST']
 APP_SETTING_SCOPE_PROJECT = SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT']
 APP_SETTING_SCOPE_USER = SODAR_CONSTANTS['APP_SETTING_SCOPE_USER']
 APP_SETTING_SCOPE_SITE = SODAR_CONSTANTS['APP_SETTING_SCOPE_SITE']
@@ -98,6 +99,23 @@ LANDINGZONES_INFO_SETTINGS = [
     'LANDINGZONES_ZONE_CREATE_LIMIT',
     'LANDINGZONES_ZONE_VALIDATE_LIMIT',
 ]
+
+LZ_PROJECT_COL_ACTIVE = (
+    '<a href="{url}" title="{title}" class="sodar-lz-project-list-active">'
+    '<i class="iconify text-success" data-icon="mdi:briefcase">'
+    '</i></a>'
+)
+LZ_PROJECT_COL_CREATE = (
+    '<a href="{url}" title="Create landing zone in project" '
+    'class="sodar-lz-project-list-create">'
+    '<i class="iconify" data-icon="mdi:plus-thick"></i></a>'
+)
+LZ_PROJECT_COL_NO_ZONES = (
+    '<span class="sodar-lz-project-list-none">'
+    '<i class="iconify text-muted" data-icon="mdi:briefcase" '
+    'class="sodar-lz-project-list-none" '
+    'title="No available landing zones"></i></span>'
+)
 
 
 # Landingzones project app plugin ----------------------------------------------
@@ -247,6 +265,12 @@ class ProjectAppPlugin(
         """
         if not user or user.is_anonymous or column_id != 'zones':
             return ''
+        # Omit for guest role or below
+        role_as = project.get_role(user)
+        if not user.is_superuser and (
+            not role_as or role_as.role.rank >= ROLE_RANKING[PROJECT_ROLE_GUEST]
+        ):
+            return ''
         investigation = Investigation.objects.filter(
             project=project, active=True
         ).first()
@@ -260,46 +284,25 @@ class ProjectAppPlugin(
         )
 
         if investigation and investigation.irods_status and active_count > 0:
-            return (
-                '<a href="{}" title="{}" class="sodar-lz-project-list-active">'
-                # 'data-toggle="tooltip" data-placement="top">'
-                '<i class="iconify text-success" data-icon="mdi:briefcase">'
-                '</i></a>'.format(
-                    reverse(
-                        'landingzones:list',
-                        kwargs={'project': project.sodar_uuid},
-                    ),
-                    '{} landing zone{} {}'.format(
-                        active_count,
-                        's' if active_count != 1 else '',
-                        'in total' if user.is_superuser else 'owned by you',
-                    ),
-                )
+            url = reverse(
+                'landingzones:list', kwargs={'project': project.sodar_uuid}
             )
+            title = '{} landing zone{} {}'.format(
+                active_count,
+                's' if active_count != 1 else '',
+                'in total' if user.is_superuser else 'owned by you',
+            )
+            return LZ_PROJECT_COL_ACTIVE.format(url=url, title=title)
         elif (
             investigation
             and investigation.irods_status
             and user.has_perm('landingzones.create_zone', project)
         ):
-            return (
-                '<a href="{}" title="Create landing zone in project" '
-                'class="sodar-lz-project-list-create">'
-                # 'data-toggle="tooltip" data-placement="top">'
-                '<i class="iconify" data-icon="mdi:plus-thick"></i>'
-                '</a>'.format(
-                    reverse(
-                        'landingzones:create',
-                        kwargs={'project': project.sodar_uuid},
-                    )
-                )
+            url = reverse(
+                'landingzones:create', kwargs={'project': project.sodar_uuid}
             )
-        return (
-            '<span class="sodar-lz-project-list-none">'
-            '<i class="iconify text-muted" data-icon="mdi:briefcase" '
-            'class="sodar-lz-project-list-none" '
-            'title="No available landing zones"></i></span>'
-            # 'data-toggle="tooltip" data-placement="top"></i>'
-        )
+            return LZ_PROJECT_COL_CREATE.format(url=url)
+        return LZ_PROJECT_COL_NO_ZONES
 
     def perform_project_sync(self, project):
         """

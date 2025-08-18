@@ -1,13 +1,19 @@
 """Tests for plugins in the samplesheets app"""
 
-# NOTE: These are generic tests for common plugin methods and helpers,
-# study/assay plugin specific tests should go in their own modules
+# NOTE: These are tests for samplesheets ProjectAppPlugin as well as generic
+# tests for common plugin methods and helpers. Study/assay plugin specific tests
+# should go in their own modules
+
+from django.conf import settings
+from django.test import override_settings
+from django.urls import reverse
 
 from test_plus.test import TestCase
 
 # Projectroles dependency
+from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import PluginAPI
+from projectroles.plugins import ProjectAppPluginPoint, PluginAPI
 from projectroles.tests.test_models import (
     ProjectMixin,
     RoleMixin,
@@ -15,24 +21,38 @@ from projectroles.tests.test_models import (
 )
 
 from samplesheets.models import GenericMaterial
-from samplesheets.plugins import get_irods_content
+from samplesheets.plugins import (
+    get_irods_content,
+    SHEET_COL_VIEW,
+    SHEET_COL_IMPORT,
+    SHEET_COL_NO_SHEETS,
+    FILE_COL_BROWSE,
+    FILE_COL_UNAVAILABLE,
+    FILE_COL_TITLE_NO_FILES,
+    FILE_COL_TITLE_NO_DAV,
+)
 from samplesheets.assayapps.dna_sequencing.plugins import (
     SampleSheetAssayPlugin as DnaSequencingPlugin,
 )
 from samplesheets.rendering import SampleSheetTableBuilder
-from samplesheets.tests.test_io import (
-    SampleSheetIOMixin,
-    SHEET_DIR,
-)
+from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
 
+app_settings = AppSettingAPI()
 plugin_api = PluginAPI()
 
 
+# SODAR constants
+PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
+PROJECT_TYPE_CATEGORY = SODAR_CONSTANTS['PROJECT_TYPE_CATEGORY']
+
 # Local constants
+APP_NAME = 'samplesheets'
 SHEET_PATH = SHEET_DIR + 'i_minimal2.zip'
 MATERIAL_NAME = '0815-N1-DNA1'
 ASSAY_PLUGIN_NAME = 'samplesheets.assayapps.dna_sequencing'
+SHEET_COL_ID = 'sheets'
+FILE_COL_ID = 'files'
 
 
 class SamplesheetsPluginTestBase(
@@ -43,11 +63,20 @@ class SamplesheetsPluginTestBase(
     def setUp(self):
         # Init roles
         self.init_roles()
-        # Make owner user
-        self.user_owner = self.make_user('owner')
-        # Init project and assignment
+        # Init users
+        self.superuser = self.make_user('superuser')
+        self.superuser.is_superuser = True
+        self.superuser.save()
+        self.user_owner = self.make_user('user_owner')
+        # Init projects and assignments
+        self.category = self.make_project(
+            'TestCategory', PROJECT_TYPE_CATEGORY, None
+        )
+        self.owner_as_cat = self.make_assignment(
+            self.category, self.user_owner, self.role_owner
+        )
         self.project = self.make_project(
-            'TestProject', SODAR_CONSTANTS['PROJECT_TYPE_PROJECT'], None
+            'TestProject', PROJECT_TYPE_PROJECT, self.category
         )
         self.owner_as = self.make_assignment(
             self.project, self.user_owner, self.role_owner
@@ -65,8 +94,147 @@ class SamplesheetsPluginTestBase(
         self.irods_backend = plugin_api.get_backend_api('omics_irods')
 
 
+class TestGetProjectListValue(SamplesheetsPluginTestBase):
+    """Tests for samplesheets ProjectAppPlugin.get_project_list_value()"""
+
+    def setUp(self):
+        super().setUp()
+        self.plugin = ProjectAppPluginPoint.get_plugin('samplesheets')
+        self.sheets_url = reverse(
+            'samplesheets:project_sheets',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        self.import_url = reverse(
+            'samplesheets:import', kwargs={'project': self.project.sodar_uuid}
+        )
+        self.webdav_url = (
+            settings.IRODS_WEBDAV_URL
+            + self.irods_backend.get_sample_path(self.project)
+        )
+
+    def test_get_project_list_value_sheets(self):
+        """Test get_project_list_value() with sheets column"""
+        res = self.plugin.get_project_list_value(
+            SHEET_COL_ID, self.project, self.user_owner
+        )
+        expected = SHEET_COL_VIEW.format(url=self.sheets_url)
+        self.assertEqual(res, expected)
+
+    def test_get_project_list_value_sheets_no_inv(self):
+        """Test sheets column with no investigation and edit_sheet perm"""
+        self.investigation.active = False
+        self.investigation.save()
+        self.assertTrue(
+            self.user_owner.has_perm('samplesheets.edit_sheet', self.project)
+        )
+        res = self.plugin.get_project_list_value(
+            SHEET_COL_ID, self.project, self.user_owner
+        )
+        expected = SHEET_COL_IMPORT.format(url=self.import_url)
+        self.assertEqual(res, expected)
+
+    def test_get_project_list_value_sheets_no_inv_no_perm(self):
+        """Test sheets column with no investigation and no perm"""
+        user_new = self.make_user('user_new')
+        self.make_assignment(self.project, user_new, self.role_guest)
+        self.investigation.active = False
+        self.investigation.save()
+        self.assertFalse(
+            user_new.has_perm('samplesheets.edit_sheet', self.project)
+        )
+        res = self.plugin.get_project_list_value(
+            SHEET_COL_ID, self.project, user_new
+        )
+        self.assertEqual(res, SHEET_COL_NO_SHEETS)
+
+    def test_get_project_list_value_sheets_sync(self):
+        """Test sheets column with no investigation and sheet sync enabled"""
+        app_settings.set(
+            APP_NAME, 'sheet_sync_enable', True, project=self.project
+        )
+        self.investigation.active = False
+        self.investigation.save()
+        res = self.plugin.get_project_list_value(
+            SHEET_COL_ID, self.project, self.user_owner
+        )
+        self.assertEqual(res, SHEET_COL_NO_SHEETS)
+
+    def test_get_project_list_value_sheets_guest(self):
+        """Test sheets column as guest"""
+        user_new = self.make_user('user_new')
+        self.make_assignment(self.project, user_new, self.role_guest)
+        res = self.plugin.get_project_list_value(
+            SHEET_COL_ID, self.project, user_new
+        )
+        expected = SHEET_COL_VIEW.format(url=self.sheets_url)
+        self.assertEqual(res, expected)
+
+    def test_get_project_list_value_sheets_viewer(self):
+        """Test sheets column as viewer"""
+        user_new = self.make_user('user_new')
+        self.make_assignment(self.project, user_new, self.role_viewer)
+        res = self.plugin.get_project_list_value(
+            SHEET_COL_ID, self.project, user_new
+        )
+        expected = SHEET_COL_VIEW.format(url=self.sheets_url)
+        self.assertEqual(res, expected)
+
+    def test_get_project_list_value_files(self):
+        """Test get_project_list_value() with files column"""
+        res = self.plugin.get_project_list_value(
+            FILE_COL_ID, self.project, self.user_owner
+        )
+        expected = FILE_COL_BROWSE.format(url=self.webdav_url)
+        self.assertEqual(res, expected)
+
+    def test_get_project_list_value_files_irods_status_false(self):
+        """Test files column with irods_status=False"""
+        self.investigation.irods_status = False
+        self.investigation.save()
+        res = self.plugin.get_project_list_value(
+            FILE_COL_ID, self.project, self.user_owner
+        )
+        expected = FILE_COL_UNAVAILABLE.format(title=FILE_COL_TITLE_NO_FILES)
+        self.assertEqual(res, expected)
+
+    @override_settings(IRODS_WEBDAV_ENABLED=False)
+    def test_get_project_list_value_files_disable_webdav(self):
+        """Test files column with disabled WebDAV"""
+        res = self.plugin.get_project_list_value(
+            FILE_COL_ID, self.project, self.user_owner
+        )
+        expected = FILE_COL_UNAVAILABLE.format(title=FILE_COL_TITLE_NO_DAV)
+        self.assertEqual(res, expected)
+
+    def test_get_project_list_value_files_guest(self):
+        """Test files column as guest"""
+        user_new = self.make_user('user_new')
+        self.make_assignment(self.project, user_new, self.role_guest)
+        res = self.plugin.get_project_list_value(
+            FILE_COL_ID, self.project, user_new
+        )
+        expected = FILE_COL_BROWSE.format(url=self.webdav_url)
+        self.assertEqual(res, expected)
+
+    def test_get_project_list_value_files_viewer(self):
+        """Test files column as viewer"""
+        user_new = self.make_user('user_new')
+        self.make_assignment(self.project, user_new, self.role_viewer)
+        res = self.plugin.get_project_list_value(
+            FILE_COL_ID, self.project, user_new
+        )
+        self.assertEqual(res, '')
+
+    def test_get_project_list_value_invalid_column_id(self):
+        """Test get_project_list_value() with invalid column ID"""
+        res = self.plugin.get_project_list_value(
+            'INVALID_COLUMN', self.project, self.user_owner
+        )
+        self.assertEqual(res, '')
+
+
 class TestGetIrodsContent(SamplesheetsPluginTestBase):
-    """Tests for get_irods_content()"""
+    """Tests for the get_irods_content() helper"""
 
     def test_get_irods_content(self):
         """Test get_irods_content()"""

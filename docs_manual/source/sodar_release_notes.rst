@@ -13,6 +13,7 @@ v1.2.0 (WIP)
 
 Major feature update and SODAR Core 1.2 upgrade.
 
+- Add project viewer role support
 - Upgrade to SODAR Core v1.2.0
 
 

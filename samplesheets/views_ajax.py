@@ -423,7 +423,12 @@ class SheetContextAjaxView(SODARBaseProjectAjaxView):
             for a in s.assays.all().order_by('pk'):
                 assay_plugin = a.get_plugin()
                 row_links = True
-                if ROW_LINK_DISPLAY_COMMENT in a.comments:
+                # Skip row links if no view_files perm
+                if not self.request.user.has_perm(
+                    'samplesheets.view_files', project
+                ):
+                    row_links = False
+                elif ROW_LINK_DISPLAY_COMMENT in a.comments:
                     try:
                         row_links = get_bool(
                             a.comments[ROW_LINK_DISPLAY_COMMENT]
@@ -477,6 +482,9 @@ class SheetContextAjaxView(SODARBaseProjectAjaxView):
             ),
             'view_tickets': request.user.has_perm(
                 'samplesheets.view_tickets', project
+            ),
+            'view_files': request.user.has_perm(
+                'samplesheets.view_files', project
             ),
             'is_superuser': request.user.is_superuser,
         }
@@ -662,7 +670,10 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
             )
 
         # Get iRODS content if NOT editing and collections have been created
-        if not edit:
+        # Skip if no view_files perm
+        if not edit and request.user.has_perm(
+            'samplesheets.view_files', project
+        ):
             logger.debug('Retrieving iRODS content for study..')
             ret_data = get_irods_content(inv, study, irods_backend, ret_data)
 

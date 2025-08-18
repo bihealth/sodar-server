@@ -13,6 +13,12 @@ Added
 
 - **General**
     - ``pyproject.toml`` configuration file (#2187)
+- **Landingzones**
+    - Project viewer role support (#2200)
+- **Samplesheets**
+    - Project viewer role support (#2200)
+- **Taskflowbackend**
+    - Project viewer role support (#2200)
 
 Changed
 -------
@@ -26,6 +32,7 @@ Changed
     - Reformat JQuery (#2187)
 - **Landingzones**
     - Update views for project access blocking support (#2233)
+    - Hide project list zone column content for guest roles and below (#2200)
 - **Samplesheets**
     - Update views for project access blocking support (#2233)
 
