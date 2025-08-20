@@ -74,7 +74,6 @@ class TestCheckSampleAccess(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         # Set up investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)

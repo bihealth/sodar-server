@@ -56,8 +56,6 @@ class TestPerformProjectSync(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
-            public_guest_access=False,  # TODO: Update for public_access
         )
         self.project_path = self.irods_backend.get_sample_path(self.project)
         # Import investigation

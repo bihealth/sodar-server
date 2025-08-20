@@ -146,7 +146,6 @@ class IRODSTaskTestBase(TaskTestMixin, TaskflowViewTestBase):
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         # Init vars and iRODS collections
         self.project_path = self.irods_backend.get_path(self.project)

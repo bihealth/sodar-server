@@ -280,7 +280,6 @@ class IrodsDataRequestViewTestBase(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
@@ -336,7 +335,6 @@ class TestIrodsCollsCreateView(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
@@ -431,7 +429,6 @@ class TestSheetDeleteView(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
@@ -628,7 +625,6 @@ class TestIrodsAccessTicketListView(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
@@ -685,7 +681,6 @@ class TestIrodsAccessTicketCreateView(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
@@ -1039,7 +1034,6 @@ class TestIrodsAccessTicketUpdateView(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
@@ -1247,7 +1241,6 @@ class TestIrodsAccessTicketDeleteView(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
@@ -2775,8 +2768,7 @@ class TestSampleDataPublicAccess(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
-            public_guest_access=True,  # TODO: Update for public_access
+            public_access=self.role_guest,
         )
 
         # Import investigation and create collections
@@ -2853,7 +2845,6 @@ class TestProjectSearchView(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()

@@ -111,7 +111,6 @@ class SampleSheetAPITaskflowTestBase(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
@@ -161,7 +160,6 @@ class IrodsAccessTicketAPIViewTestBase(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         # Set up investigation and collections
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
@@ -226,7 +224,6 @@ class IrodsDataRequestAPIViewTestBase(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         # Init users (owner = user_cat, superuser = user)
         self.user_delegate = self.make_user('user_delegate')
@@ -1467,7 +1464,6 @@ class TestProjectIrodsFileListAPIView(SampleSheetAPITaskflowTestBase):
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)

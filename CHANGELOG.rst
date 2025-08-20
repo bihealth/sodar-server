@@ -30,11 +30,15 @@ Changed
     - Move black configuration to ``pyproject.toml`` (#2187)
     - Reformat migrations (#2187)
     - Reformat JQuery (#2187)
+- **Irodsbackend**
+    - Update app for ``public_access`` support (#2202)
 - **Landingzones**
     - Update views for project access blocking support (#2233)
     - Hide project list zone column content for guest roles and below (#2200)
+    - Update app for ``public_access`` support (#2202)
 - **Samplesheets**
     - Update views for project access blocking support (#2233)
+    - Update app for ``public_access`` support (#2202)
 
 
 v1.1.4 (2025-08-12)

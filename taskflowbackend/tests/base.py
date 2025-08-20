@@ -375,7 +375,6 @@ class TaskflowPermissionTestMixin(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user_owner,
-            description='description',
         )
         self.delegate_as = self.make_assignment_taskflow(
             self.project, self.user_delegate, self.role_delegate
@@ -427,19 +426,27 @@ class TaskflowProjectTestMixin:
         parent,
         owner,
         description='',
-        public_guest_access=False,
+        public_access=None,
     ):
-        """Make Project with taskflow for UI view tests"""
-        # TODO: Add support for public_access and viewer role
+        """
+        Make Project with taskflow for UI view tests.
+
+        :param title: Project title (string)
+        :param type: Project type (string, PROJECT_TYPE_PROJECT or
+                     PROJECT_TYPE_CATEGORY)
+        :param parent: Parent category (Project or None)
+        :param owner: Owner user (SODARUser)
+        :param description: Project description (string, optional)
+        :param public_access: Public access level (Role, optional)
+        :return: Project, RoleAssignment
+        """
         post_data = {
             'title': title,
             'type': type,
             'parent': parent.sodar_uuid if parent else None,
             'owner': owner.sodar_uuid,
             'description': description,
-            'public_access': (
-                self.role_guest.pk if public_guest_access else ''
-            ),
+            'public_access': public_access.pk if public_access else '',
         }
         post_data.update(
             app_settings.get_defaults(APP_SETTING_SCOPE_PROJECT, post_safe=True)
@@ -500,7 +507,7 @@ class TaskflowAPIProjectTestMixin:
             'owner': owner.sodar_uuid,
             'description': description,
             'readme': readme,
-            'public_access': '',  # TODO: Add support for public_access
+            'public_access': '',
         }
         response = self.request_knox(
             reverse('projectroles:api_project_create'),

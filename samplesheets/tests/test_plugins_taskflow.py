@@ -80,8 +80,6 @@ class TestPerformProjectModify(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
-            public_guest_access=False,  # TODO: Update for public_access
         )
         self.sample_path = self.irods_backend.get_sample_path(self.project)
         # Import investigation
@@ -96,27 +94,7 @@ class TestPerformProjectModify(
         self.request = self.req_factory.get('/')
         self.request.user = self.user
 
-    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
-    def test_grant_public_access_anon(self):
-        """Test enabling anonymous guest access to project in iRODS"""
-        self.assert_irods_access(IRODS_GROUP_PUBLIC, self.sample_path, None)
-        self.assert_ticket_access(self.project, False)
-        self.project.set_public_access(self.role_guest)
-        self.plugin.perform_project_modify(
-            project=self.project,
-            action=PROJECT_ACTION_UPDATE,
-            project_settings=app_settings.get_all_by_scope(
-                APP_SETTING_SCOPE_PROJECT, project=self.project
-            ),
-            old_data={'parent': self.category, 'public_access': None},
-            request=self.request,
-        )
-        self.assert_irods_access(
-            IRODS_GROUP_PUBLIC, self.sample_path, self.irods_access_read
-        )
-        self.assert_ticket_access(self.project, True)
-
-    def test_grant_public_access_no_anon(self):
+    def test_grant_public_access_guest(self):
         """Test enabling guest access in iRODS without anon accesss"""
         self.assert_irods_access(IRODS_GROUP_PUBLIC, self.sample_path, None)
         self.assert_ticket_access(self.project, False)
@@ -136,9 +114,107 @@ class TestPerformProjectModify(
         # Access should not be granted
         self.assert_ticket_access(self.project, False)
 
+    def test_grant_public_access_viewer(self):
+        """Test enabling viewer access in iRODS without anon accesss"""
+        self.assert_irods_access(IRODS_GROUP_PUBLIC, self.sample_path, None)
+        self.assert_ticket_access(self.project, False)
+        self.project.set_public_access(self.role_viewer)
+        self.plugin.perform_project_modify(
+            project=self.project,
+            action=PROJECT_ACTION_UPDATE,
+            project_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=self.project
+            ),
+            old_data={'parent': self.category, 'public_access': None},
+            request=self.request,
+        )
+        self.assert_irods_access(IRODS_GROUP_PUBLIC, self.sample_path, None)
+        self.assert_ticket_access(self.project, False)
+
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
-    def test_revoke_public_access_anon(self):
-        """Test revoking anonymous guest access to project from iRODS"""
+    def test_grant_public_access_anon_guest(self):
+        """Test enabling anonymous guest access to project in iRODS"""
+        self.assert_irods_access(IRODS_GROUP_PUBLIC, self.sample_path, None)
+        self.assert_ticket_access(self.project, False)
+        self.project.set_public_access(self.role_guest)
+        self.plugin.perform_project_modify(
+            project=self.project,
+            action=PROJECT_ACTION_UPDATE,
+            project_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=self.project
+            ),
+            old_data={'parent': self.category, 'public_access': None},
+            request=self.request,
+        )
+        self.assert_irods_access(
+            IRODS_GROUP_PUBLIC, self.sample_path, self.irods_access_read
+        )
+        # Access should be granted for anonymous
+        self.assert_ticket_access(self.project, True)
+
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_grant_public_access_anon_viewer(self):
+        """Test enabling anonymous viewer access to project in iRODS"""
+        self.assert_irods_access(IRODS_GROUP_PUBLIC, self.sample_path, None)
+        self.assert_ticket_access(self.project, False)
+        self.project.set_public_access(self.role_viewer)
+        self.plugin.perform_project_modify(
+            project=self.project,
+            action=PROJECT_ACTION_UPDATE,
+            project_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=self.project
+            ),
+            old_data={'parent': self.category, 'public_access': None},
+            request=self.request,
+        )
+        # No public group access for viewer
+        self.assert_irods_access(IRODS_GROUP_PUBLIC, self.sample_path, None)
+        # Access should not be granted to viewer
+        self.assert_ticket_access(self.project, False)
+
+    def test_revoke_public_access_guest(self):
+        """Test revoking public guest access with no anon access"""
+        self.project.set_public_access(self.role_guest)
+        with override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True):
+            self.plugin.perform_project_modify(
+                project=self.project,
+                action=PROJECT_ACTION_UPDATE,
+                project_settings=app_settings.get_all_by_scope(
+                    APP_SETTING_SCOPE_PROJECT, project=self.project
+                ),
+                old_data={'parent': self.category, 'public_access': None},
+                request=self.request,
+            )
+        self.assert_irods_access(
+            IRODS_GROUP_PUBLIC, self.sample_path, self.irods_access_read
+        )
+        self.assert_ticket_access(self.project, True)
+        ticket_str = app_settings.get(
+            APP_NAME, 'public_access_ticket', project=self.project
+        )
+
+        self.project.set_public_access(None)
+        self.plugin.perform_project_modify(
+            project=self.project,
+            action=PROJECT_ACTION_UPDATE,
+            project_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=self.project
+            ),
+            old_data={
+                'parent': self.category,
+                'public_access': self.role_guest.name,
+            },
+            old_settings={
+                'settings.samplesheets.public_access_ticket': ticket_str
+            },
+            request=self.request,
+        )
+        self.assert_irods_access(IRODS_GROUP_PUBLIC, self.sample_path, None)
+        self.assert_ticket_access(self.project, False, ticket_str)
+
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_revoke_public_access_guest_anon(self):
+        """Test revoking public guest access with anon access"""
         self.project.set_public_access(self.role_guest)
         self.plugin.perform_project_modify(
             project=self.project,
@@ -166,7 +242,7 @@ class TestPerformProjectModify(
             ),
             old_data={
                 'parent': self.category,
-                'public_access': self.role_guest,
+                'public_access': self.role_guest.name,
             },
             old_settings={
                 'settings.samplesheets.public_access_ticket': ticket_str
@@ -176,9 +252,9 @@ class TestPerformProjectModify(
         self.assert_irods_access(IRODS_GROUP_PUBLIC, self.sample_path, None)
         self.assert_ticket_access(self.project, False, ticket_str)
 
-    def test_revoke_anon_access(self):
-        """Test revoking iRODS guest access if anon site access is disabled"""
-        self.project.set_public_access(self.role_guest)
+    def test_revoke_public_access_viewer(self):
+        """Test revoking public viewer access with no anon access"""
+        self.project.set_public_access(self.role_viewer)
         with override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True):
             self.plugin.perform_project_modify(
                 project=self.project,
@@ -189,14 +265,10 @@ class TestPerformProjectModify(
                 old_data={'parent': self.category, 'public_access': None},
                 request=self.request,
             )
-        self.assert_irods_access(
-            IRODS_GROUP_PUBLIC, self.sample_path, self.irods_access_read
-        )
-        self.assert_ticket_access(self.project, True)
-        ticket_str = app_settings.get(
-            APP_NAME, 'public_access_ticket', project=self.project
-        )
+        self.assert_irods_access(IRODS_GROUP_PUBLIC, self.sample_path, None)
+        self.assert_ticket_access(self.project, False)
 
+        self.project.set_public_access(None)
         self.plugin.perform_project_modify(
             project=self.project,
             action=PROJECT_ACTION_UPDATE,
@@ -205,17 +277,44 @@ class TestPerformProjectModify(
             ),
             old_data={
                 'parent': self.category,
-                'public_access': self.role_guest,
-            },
-            old_settings={
-                'settings.samplesheets.public_access_ticket': ticket_str
+                'public_access': self.role_viewer.name,
             },
             request=self.request,
         )
-        self.assert_irods_access(
-            IRODS_GROUP_PUBLIC, self.sample_path, self.irods_access_read
+        self.assert_irods_access(IRODS_GROUP_PUBLIC, self.sample_path, None)
+        self.assert_ticket_access(self.project, False)
+
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_revoke_public_access_viewer_anon(self):
+        """Test revoking public viewer access with anon access"""
+        self.project.set_public_access(self.role_viewer)
+        self.plugin.perform_project_modify(
+            project=self.project,
+            action=PROJECT_ACTION_UPDATE,
+            project_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=self.project
+            ),
+            old_data={'parent': self.category, 'public_access': None},
+            request=self.request,
         )
-        self.assert_ticket_access(self.project, False, ticket_str)
+        self.assert_irods_access(IRODS_GROUP_PUBLIC, self.sample_path, None)
+        self.assert_ticket_access(self.project, False)
+
+        self.project.set_public_access(None)
+        self.plugin.perform_project_modify(
+            project=self.project,
+            action=PROJECT_ACTION_UPDATE,
+            project_settings=app_settings.get_all_by_scope(
+                APP_SETTING_SCOPE_PROJECT, project=self.project
+            ),
+            old_data={
+                'parent': self.category,
+                'public_access': self.role_viewer.name,
+            },
+            request=self.request,
+        )
+        self.assert_irods_access(IRODS_GROUP_PUBLIC, self.sample_path, None)
+        self.assert_ticket_access(self.project, False)
 
 
 class TestPerformProjectSync(
@@ -235,8 +334,6 @@ class TestPerformProjectSync(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
-            public_guest_access=False,  # TODO: Update for public_access
         )
         self.sample_path = self.irods_backend.get_sample_path(self.project)
 

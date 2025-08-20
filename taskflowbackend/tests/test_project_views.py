@@ -163,7 +163,6 @@ class TestProjectUpdateView(TaskflowViewTestBase):
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         self.user_new = self.make_user('user_new')
         self.timeline = plugin_api.get_backend_api('timeline_backend')
@@ -370,7 +369,6 @@ class TestRoleAssignmentCreateView(TaskflowViewTestBase):
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         self.user_new = self.make_user('user_new')
         self.irods_user_group = self.irods.user_groups.get(
@@ -529,7 +527,6 @@ class TestRoleAssignmentUpdateView(TaskflowViewTestBase):
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         # Create guest user and role
         self.user_update = self.make_user('user_update')
@@ -726,7 +723,6 @@ class TestRoleAssignmentOwnerTransferView(TaskflowViewTestBase):
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         self.user_new = self.make_user('newuser')
         self.role_as = self.make_assignment_taskflow(
@@ -920,7 +916,6 @@ class TestRoleAssignmentDeleteView(TaskflowViewTestBase):
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         self.user_new = self.make_user('newuser')
 
@@ -1111,7 +1106,6 @@ class TestProjectInviteAcceptView(ProjectInviteMixin, TaskflowViewTestBase):
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         self.user_new = self.make_user('newuser')
 
@@ -1315,7 +1309,6 @@ class TestProjectDeleteView(TaskflowViewTestBase):
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         self.project_uuid = self.project.sodar_uuid
         self.project_path = self.irods_backend.get_path(self.project)

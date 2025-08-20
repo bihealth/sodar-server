@@ -64,6 +64,7 @@ PROJECT_ACTION_UPDATE = SODAR_CONSTANTS['PROJECT_ACTION_UPDATE']
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
 PROJECT_ROLE_CONTRIBUTOR = SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR']
+PROJECT_ROLE_GUEST = SODAR_CONSTANTS['PROJECT_ROLE_GUEST']
 PROJECT_ROLE_VIEWER = SODAR_CONSTANTS['PROJECT_ROLE_VIEWER']
 APP_SETTING_SCOPE_PROJECT = SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT']
 APP_SETTING_SCOPE_USER = SODAR_CONSTANTS['APP_SETTING_SCOPE_USER']
@@ -646,7 +647,8 @@ class ProjectAppPlugin(
             ticket_str = build_secret(16)
 
         flow_data = {
-            'access': project.public_access is not None,
+            'access': project.public_access is not None
+            and project.public_access.name == PROJECT_ROLE_GUEST,
             'path': sample_path,
             'ticket_str': ticket_str,
         }
@@ -709,6 +711,7 @@ class ProjectAppPlugin(
             )
         if action == PROJECT_ACTION_CREATE:
             return _skip('Project newly created, no Investigation available')
+
         pa = project.public_access.name if project.public_access else None
         if pa == old_data.get('public_access'):
             return _skip('Public access unchanged')

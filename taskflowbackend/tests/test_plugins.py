@@ -534,7 +534,6 @@ class TestRevertProjectModify(ModifyAPITaskflowTestBase):
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         self.project_group = self.irods_backend.get_group_name(self.project)
         self.owner_group = self.irods_backend.get_group_name(self.project, True)
@@ -581,7 +580,6 @@ class TestPerformRoleModify(ModifyAPITaskflowTestBase):
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         self.project_group = self.irods_backend.get_group_name(self.project)
         self.user_new = self.make_user('user_new')
@@ -1305,7 +1303,6 @@ class TestPerformRoleDelete(ModifyAPITaskflowTestBase):
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         self.user_new = self.make_user('user_new')
         self.project_group = self.irods_backend.get_group_name(self.project)
@@ -1642,7 +1639,6 @@ class TestPerformOwnerTransfer(ModifyAPITaskflowTestBase):
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         self.user_new = self.make_user('user_new')
 

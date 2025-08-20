@@ -70,7 +70,9 @@ class TestIrodsStatisticsAjaxView(
             self.user_guest,
         ]
         self.bad_users = [
+            self.user_viewer_cat,  # Inherited
             self.user_finder_cat,
+            self.user_viewer,
             self.user_no_roles,
             self.anonymous,
         ]
@@ -79,32 +81,40 @@ class TestIrodsStatisticsAjaxView(
         """Test IrodsStatisticsAjaxView GET"""
         self.assert_response(self.url, self.good_users, 200)
         self.assert_response(self.url, self.bad_users, 403)
-        self.project.set_public()
+        self.project.set_public_access(self.role_guest)
         self.assert_response(self.url, self.user_no_roles, 200)
         self.assert_response(self.url, self.anonymous, 403)
+        self.project.set_public_access(self.role_viewer)
+        self.assert_response(self.url, self.no_role_users, 403)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous access"""
-        self.project.set_public()
+        self.project.set_public_access(self.role_guest)
         self.assert_response(self.url, self.anonymous, 200)
+        self.project.set_public_access(self.role_viewer)
+        self.assert_response(self.url, self.anonymous, 403)
 
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
         self.assert_response(self.url, self.good_users, 200)
         self.assert_response(self.url, self.bad_users, 403)
-        self.project.set_public()
+        self.project.set_public_access(self.role_guest)
         self.assert_response(self.url, self.user_no_roles, 200)
         self.assert_response(self.url, self.anonymous, 403)
+        self.project.set_public_access(self.role_viewer)
+        self.assert_response(self.url, self.no_role_users, 403)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon_no_perms(self):
         """Test GET with anonymous access and no collection perms"""
-        self.project.set_public()
         url = self.irods_backend.get_url(
             view='stats', project=self.project, path=self.project_path
         )
+        self.project.set_public_access(self.role_guest)
+        self.assert_response(url, self.anonymous, 403)
+        self.project.set_public_access(self.role_viewer)
         self.assert_response(url, self.anonymous, 403)
 
     def test_get_not_in_project(self):
@@ -131,9 +141,11 @@ class TestIrodsStatisticsAjaxView(
         bad_users = [
             self.user_contributor_cat,
             self.user_guest_cat,
+            self.user_viewer_cat,
             self.user_finder_cat,
             self.user_contributor,
             self.user_guest,
+            self.user_viewer,
             self.user_no_roles,
             self.anonymous,
         ]
@@ -160,7 +172,13 @@ class TestIrodsStatisticsAjaxView(
             self.user_contributor,
             self.user_guest,
         ]
-        bad_users = [self.user_finder_cat, self.user_no_roles, self.anonymous]
+        bad_users = [
+            self.user_viewer_cat,
+            self.user_finder_cat,
+            self.user_viewer,
+            self.user_no_roles,
+            self.anonymous,
+        ]
         self.assert_response(
             url, good_users, 200, method='POST', data=post_data
         )
@@ -194,13 +212,16 @@ class TestIrodsStatisticsAjaxView(
         bad_users = [
             self.user_contributor_cat,
             self.user_guest_cat,
+            self.user_viewer_cat,
             self.user_finder_cat,
             self.user_guest,
+            self.user_viewer,
             self.user_no_roles,
             self.anonymous,
         ]
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 403)
-        self.project.set_public()
-        self.assert_response(url, self.user_no_roles, 403)
-        self.assert_response(url, self.anonymous, 403)
+        self.project.set_public_access(self.role_guest)
+        self.assert_response(url, self.bad_users, 403)
+        self.project.set_public_access(self.role_viewer)
+        self.assert_response(url, self.bad_users, 403)

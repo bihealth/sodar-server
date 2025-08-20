@@ -30,7 +30,6 @@ class TestProjectLockStatusAPIView(TaskflowAPIViewTestBase):
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         self.url = reverse(
             'taskflowbackend:api_lock_status',

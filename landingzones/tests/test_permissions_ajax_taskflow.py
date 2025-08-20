@@ -74,14 +74,16 @@ class TestZoneIrodsListRetrieveAjaxView(
         """Test ZoneIrodsListRetrieveAjaxView GET"""
         self.assert_response(self.url, self.good_users, 200)
         self.assert_response(self.url, self.bad_users, 403)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 403)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 403)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 403)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 403)
 
     def test_get_archive(self):
         """Test GET with archived project"""

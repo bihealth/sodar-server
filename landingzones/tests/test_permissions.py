@@ -92,13 +92,16 @@ class TestProjectZoneView(LandingzonesPermissionTestBase):
         """Test ProjectZoneView GET"""
         self.assert_response(self.url, self.good_users_read, 200)
         self.assert_response(self.url, self.bad_users_read, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous access"""
-        self.project.set_public()
+        self.project.set_public_access(self.role_guest)
+        self.assert_response(self.url, self.anonymous, 302)
+        self.project.set_public_access(self.role_viewer)
         self.assert_response(self.url, self.anonymous, 302)
 
     def test_get_archive(self):
@@ -106,8 +109,9 @@ class TestProjectZoneView(LandingzonesPermissionTestBase):
         self.project.set_archive()
         self.assert_response(self.url, self.good_users_read, 200)
         self.assert_response(self.url, self.bad_users_read, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
 
     def test_get_block(self):
         """Test GET with project access block"""
@@ -126,8 +130,9 @@ class TestProjectZoneView(LandingzonesPermissionTestBase):
         """Test GET with disabled non-superuser access"""
         self.assert_response(self.url, self.good_users_read, 200)
         self.assert_response(self.url, self.bad_users_read, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
 
 
 class TestZoneCreateView(LandingzonesPermissionTestBase):
@@ -150,31 +155,35 @@ class TestZoneCreateView(LandingzonesPermissionTestBase):
         """Test ZoneCreateView GET with no sheets"""
         self.assert_response(self.url, self.superuser, 200)
         self.assert_response(self.url, self.non_superusers, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
 
     def test_get_investigation(self):
         """Test GET with investigation"""
         self._set_up_investigation()
         self.assert_response(self.url, self.superuser, 200)
         self.assert_response(self.url, self.non_superusers, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
 
     def test_get_colls(self):
         """Test GET with investigation and collections"""
         self._set_up_investigation(True)
         self.assert_response(self.url, self.good_users_read, 200)
         self.assert_response(self.url, self.bad_users_read, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous access"""
         self._set_up_investigation(True)
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 302)
 
     def test_get_archive(self):
         """Test GET with archived project"""
@@ -182,8 +191,9 @@ class TestZoneCreateView(LandingzonesPermissionTestBase):
         self.project.set_archive()
         self.assert_response(self.url, self.superuser, 200)
         self.assert_response(self.url, self.non_superusers, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
 
     def test_get_block(self):
         """Test GET with project access block"""
@@ -236,21 +246,23 @@ class TestZoneUpdateView(LandingzonesPermissionTestBase):
         self.assert_response(
             self.url, self.bad_users_write, 302, redirect_user=self.redirect_url
         )
-        self.project.set_public()
-        self.assert_response(
-            self.url,
-            self.no_role_users,
-            302,
-            redirect_user=self.redirect_url,
-        )
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.url,
+                self.no_role_users,
+                302,
+                redirect_user=self.redirect_url,
+            )
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous access"""
-        self.project.set_public()
-        self.assert_response(
-            self.url, self.anonymous, 302, redirect_user=self.redirect_url
-        )
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.url, self.anonymous, 302, redirect_user=self.redirect_url
+            )
 
     def test_get_archive(self):
         """Test GET with archived project"""
@@ -259,13 +271,14 @@ class TestZoneUpdateView(LandingzonesPermissionTestBase):
         self.assert_response(
             self.url, self.non_superusers, 302, redirect_user=self.redirect_url
         )
-        self.project.set_public()
-        self.assert_response(
-            self.url,
-            self.no_role_users,
-            302,
-            redirect_user=self.redirect_url,
-        )
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.url,
+                self.no_role_users,
+                302,
+                redirect_user=self.redirect_url,
+            )
 
     def test_get_block(self):
         """Test GET with project access block"""
@@ -318,22 +331,25 @@ class TestZoneDeleteView(LandingzonesPermissionTestBase):
         """Test ZoneDeleteView GET"""
         self.assert_response(self.url, self.good_users_write, 200)
         self.assert_response(self.url, self.bad_users_write, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 302)
 
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
         self.assert_response(self.url, self.good_users_write, 200)
         self.assert_response(self.url, self.bad_users_write, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
 
     def test_get_block(self):
         """Test GET with project access block"""

@@ -38,10 +38,11 @@ ReadMe
 Public access
     Enable public access to the project for anyone using SODAR. Either grants
     full read-only access as project guest, or a partial read-only access as
-    project viewer. This feature should be used with caution and is generally
-    intended for demonstration projects. If your SODAR server allows anonymous
-    users, this will grant specified access to anyone browsing the site even if
-    they have not logged in.
+    project viewer. For more information on the differences between these roles,
+    see :ref:`ui_project_members_roles`. This feature should be used with
+    caution and is generally intended for demonstration projects. If your SODAR
+    server allows anonymous users, this will grant specified access to anyone
+    browsing the site even if they have not logged in.
 Enable project on {target remote site}
     Enable access to project for project members on the selected target site.
     Target sites for which project owner/delegation modifying is enabled by an

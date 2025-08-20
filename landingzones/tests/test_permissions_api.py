@@ -95,15 +95,17 @@ class TestZoneListAPIView(ZoneAPIPermissionTestBase):
         self.assert_response(self.url, self.good_users, 200)
         self.assert_response(self.url, self.bad_users, 403)
         self.assert_response(self.url, self.anonymous, 401)
-        self.project.set_public()
-        self.assert_response(self.url, self.user_no_roles, 403)
-        self.assert_response(self.url, self.anonymous, 401)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.user_no_roles, 403)
+            self.assert_response(self.url, self.anonymous, 401)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 401)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 401)
 
     def test_get_archive(self):
         """Test GET with archived project"""
@@ -111,9 +113,10 @@ class TestZoneListAPIView(ZoneAPIPermissionTestBase):
         self.assert_response(self.url, self.good_users, 200)
         self.assert_response(self.url, self.bad_users, 403)
         self.assert_response(self.url, self.anonymous, 401)
-        self.project.set_public()
-        self.assert_response(self.url, self.user_no_roles, 403)
-        self.assert_response(self.url, self.anonymous, 401)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.user_no_roles, 403)
+            self.assert_response(self.url, self.anonymous, 401)
 
     def test_get_block(self):
         """Test GET with project access block"""
@@ -158,15 +161,17 @@ class TestZoneRetrieveAPIView(ZoneAPIPermissionTestBase):
         self.assert_response(self.url, self.good_users_owner, 200)
         self.assert_response(self.url, self.bad_users_owner, 403)
         self.assert_response(self.url, self.anonymous, 401)
-        self.project.set_public()
-        self.assert_response(self.url, self.user_no_roles, 403)
-        self.assert_response(self.url, self.anonymous, 401)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.user_no_roles, 403)
+            self.assert_response(self.url, self.anonymous, 401)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 401)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 401)
 
     def test_get_archive(self):
         """Test GET with archived project"""
@@ -174,9 +179,10 @@ class TestZoneRetrieveAPIView(ZoneAPIPermissionTestBase):
         self.assert_response(self.url, self.good_users_owner, 200)
         self.assert_response(self.url, self.bad_users_owner, 403)
         self.assert_response(self.url, self.anonymous, 401)
-        self.project.set_public()
-        self.assert_response(self.url, self.user_no_roles, 403)
-        self.assert_response(self.url, self.anonymous, 401)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.user_no_roles, 403)
+            self.assert_response(self.url, self.anonymous, 401)
 
     def test_get_block(self):
         """Test GET with project access block"""
@@ -243,33 +249,35 @@ class TestZoneUpdateAPIView(ZoneAPIPermissionTestBase):
             method='PATCH',
             data=self.post_data,
         )
-        self.project.set_public()
-        self.assert_response_api(
-            self.url,
-            self.user_no_roles,
-            403,
-            method='PATCH',
-            data=self.post_data,
-            knox=True,
-        )
-        self.assert_response_api(
-            self.url,
-            self.anonymous,
-            401,
-            method='PATCH',
-            data=self.post_data,
-        )
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response_api(
+                self.url,
+                self.user_no_roles,
+                403,
+                method='PATCH',
+                data=self.post_data,
+                knox=True,
+            )
+            self.assert_response_api(
+                self.url,
+                self.anonymous,
+                401,
+                method='PATCH',
+                data=self.post_data,
+            )
 
     def test_patch_anon(self):
         """Test PATCH with anonymous access"""
-        self.project.set_public()
-        self.assert_response_api(
-            self.url,
-            self.anonymous,
-            401,
-            method='PATCH',
-            data=self.post_data,
-        )
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response_api(
+                self.url,
+                self.anonymous,
+                401,
+                method='PATCH',
+                data=self.post_data,
+            )
 
     def test_patch_archive(self):
         """Test PATCH with archived project"""
@@ -297,22 +305,23 @@ class TestZoneUpdateAPIView(ZoneAPIPermissionTestBase):
             method='PATCH',
             data=self.post_data,
         )
-        self.project.set_public()
-        self.assert_response_api(
-            self.url,
-            self.user_no_roles,
-            403,
-            method='PATCH',
-            data=self.post_data,
-            knox=True,
-        )
-        self.assert_response_api(
-            self.url,
-            self.anonymous,
-            401,
-            method='PATCH',
-            data=self.post_data,
-        )
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response_api(
+                self.url,
+                self.user_no_roles,
+                403,
+                method='PATCH',
+                data=self.post_data,
+                knox=True,
+            )
+            self.assert_response_api(
+                self.url,
+                self.anonymous,
+                401,
+                method='PATCH',
+                data=self.post_data,
+            )
 
     def test_patch_block(self):
         """Test PATCH with project access block"""

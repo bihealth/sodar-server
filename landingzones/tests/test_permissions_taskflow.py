@@ -98,22 +98,25 @@ class TestZoneMoveView(ZonePermissionTaskflowTestBase):
         ]
         self.assert_response(self.url, good_users, 200)
         self.assert_response(self.url, bad_users, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 302)
 
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
         self.assert_response(self.url, self.superuser, 200)
         self.assert_response(self.url, self.non_superusers, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
 
     def test_get_block(self):
         """Test GET with project access block"""

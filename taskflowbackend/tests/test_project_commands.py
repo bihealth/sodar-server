@@ -49,7 +49,6 @@ class TestBatchUpdateRoles(BatchUpdateRolesMixin, TaskflowViewTestBase):
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         # Init command class
         self.command = BatchUpdateRolesCommand()

@@ -254,7 +254,7 @@ class TestGetWebdavUrl(SamplesheetsUtilsTestBase):
     def test_anon_user_not_allowed(self):
         """Test get_webdav_url() with anonymous user without anon access"""
         # Mock public project update
-        self.project.set_public()
+        self.project.set_public_access(self.role_guest)
         app_settings.set(
             'samplesheets',
             'public_access_ticket',

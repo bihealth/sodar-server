@@ -186,6 +186,12 @@ iRODS links are applied to different sample sheets, see
 Certain buttons may appear inactive in the UI. This denotes that the collections
 these link point to have not been created or do not contain any files.
 
+.. note::
+
+    Users with a :ref:`project viewer <ui_project_members_roles>` role can only
+    see the sample sheets study design metadata in this application. iRODS links
+    will not be displayed.
+
 Study Links and IGV Integration
 -------------------------------
 

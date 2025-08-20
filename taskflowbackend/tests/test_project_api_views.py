@@ -104,7 +104,6 @@ class TestProjectUpdateAPIView(CoreTaskflowAPITestBase):
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
 
     def test_put_category(self):
@@ -343,7 +342,6 @@ class TestRoleAssignmentCreateAPIView(CoreTaskflowAPITestBase):
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         # Create user for assignments
         self.user_new = self.make_user('user_new')
@@ -469,7 +467,6 @@ class TestRoleAssignmentUpdateAPIView(CoreTaskflowAPITestBase):
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         self.user_new = self.make_user('user_new')
 
@@ -624,7 +621,6 @@ class TestRoleAssignmentOwnerTransferAPIView(CoreTaskflowAPITestBase):
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user_owner,
-            description='description',
         )
         self.user_new = self.make_user('user_new')
         self.url = reverse(
@@ -873,7 +869,6 @@ class TestRoleAssignmentDestroyAPIView(CoreTaskflowAPITestBase):
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         self.user_new = self.make_user('user_new')
 

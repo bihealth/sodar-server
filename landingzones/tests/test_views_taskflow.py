@@ -179,7 +179,6 @@ class TestProjectZoneView(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
@@ -217,7 +216,6 @@ class TestZoneCreateView(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
@@ -514,7 +512,6 @@ class TestZoneMoveView(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user_owner,
-            description='description',
         )
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
@@ -1258,7 +1255,6 @@ class TestZoneDeleteView(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()

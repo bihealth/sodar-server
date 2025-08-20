@@ -59,32 +59,35 @@ class TestZoneStatusRetrieveAjaxView(LandingzonesPermissionTestBase):
         """Test ZoneStatusRetrieveAjaxView POST"""
         self.assert_response(self.url, self.good_users, 200, method='POST')
         self.assert_response(self.url, self.bad_users, 403, method='POST')
-        self.project.set_public()
-        self.assert_response(
-            self.url,
-            self.no_role_users,
-            403,
-            method='POST',
-        )
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.url,
+                self.no_role_users,
+                403,
+                method='POST',
+            )
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_post_anon(self):
         """Test POST with anonymous access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 403, method='POST')
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 403, method='POST')
 
     def test_post_archive(self):
         """Test POST with archived project"""
         self.project.set_archive()
         self.assert_response(self.url, self.good_users, 200, method='POST')
         self.assert_response(self.url, self.bad_users, 403, method='POST')
-        self.project.set_public()
-        self.assert_response(
-            self.url,
-            self.no_role_users,
-            403,
-            method='POST',
-        )
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.url,
+                self.no_role_users,
+                403,
+                method='POST',
+            )
 
     def test_post_block(self):
         """Test POST with project access block"""
@@ -144,22 +147,25 @@ class TestZoneStatusInfoRetrieveAjaxView(LandingzonesPermissionTestBase):
         """Test ZoneStatusInfoRetrieveAjaxView GET"""
         self.assert_response(self.url, self.good_users, 200)
         self.assert_response(self.url, self.bad_users, 403)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 403)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 403)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 403)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 403)
 
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
         self.assert_response(self.url, self.good_users, 200)
         self.assert_response(self.url, self.bad_users, 403)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 403)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 403)
 
     def test_get_block(self):
         """Test GET with project access block"""
@@ -220,22 +226,29 @@ class TestZoneChecksumStatusRetrieveAjaxView(LandingzonesPermissionTestBase):
         """Test ZoneStatusInfoRetrieveAjaxView POST"""
         self.assert_response(self.url, self.good_users, 200, method='POST')
         self.assert_response(self.url, self.bad_users, 403, method='POST')
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 403, method='POST')
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.url, self.no_role_users, 403, method='POST'
+            )
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_post_anon(self):
         """Test POST with anonymous access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 403, method='POST')
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 403, method='POST')
 
     def test_post_archive(self):
         """Test POST with archived project"""
         self.project.set_archive()
         self.assert_response(self.url, self.good_users, 200, method='POST')
         self.assert_response(self.url, self.bad_users, 403, method='POST')
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 403, method='POST')
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.url, self.no_role_users, 403, method='POST'
+            )
 
     def test_post_block(self):
         """Test POST with project access block"""

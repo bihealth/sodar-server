@@ -60,7 +60,6 @@ class TestTriggerZoneMoveTask(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)

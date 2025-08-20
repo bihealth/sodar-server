@@ -76,7 +76,7 @@ class BaseGermlineConfigView(
 class IGVSessionFileRenderView(BaseGermlineConfigView):
     """IGV session file rendering view"""
 
-    permission_required = 'samplesheets.view_sheet'
+    permission_required = 'samplesheets.view_files'
 
     def get(self, request, *args, **kwargs):
         """Override get() to return IGV session file"""

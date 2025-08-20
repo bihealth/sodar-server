@@ -9,7 +9,7 @@ from projectroles.management.commands.syncmodifyapi import (
 from projectroles.models import SODAR_CONSTANTS
 
 # Taskflowbackend dependency
-from taskflowbackend.tests.base import TaskflowViewTestBase
+from taskflowbackend.tests.base import TaskflowViewTestBase, IRODS_GROUP_PUBLIC
 
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_plugins_taskflow import (
@@ -81,6 +81,9 @@ class TestSyncModifyAPI(
         self.assert_irods_access(
             self.project_group, self.sample_path, self.irods_access_read
         )
+        self.assert_irods_access(
+            IRODS_GROUP_PUBLIC, self.sample_path, self.irods_access_read
+        )
         # Anonymous access not granted, ticket should not be created
         self.assert_ticket_access(self.project, False)
 
@@ -97,8 +100,43 @@ class TestSyncModifyAPI(
         self.assert_irods_access(
             self.project_group, self.sample_path, self.irods_access_read
         )
+        self.assert_irods_access(
+            IRODS_GROUP_PUBLIC, self.sample_path, self.irods_access_read
+        )
         # Ticket access should be granted with anonymous access
         self.assert_ticket_access(self.project, True)
+
+    def test_sync_public_viewer_access(self):
+        """Test sync with public viewer access"""
+        self.investigation.irods_status = True
+        self.investigation.save()
+        self.project.set_public_access(self.role_viewer)
+        self.assertFalse(self.irods.collections.exists(self.project_path))
+        self.assertFalse(self.irods.collections.exists(self.sample_path))
+        self.command.handle()
+        self.assertTrue(self.irods.collections.exists(self.sample_path))
+        self.assert_irods_access(
+            self.project_group, self.sample_path, self.irods_access_read
+        )
+        self.assert_irods_access(IRODS_GROUP_PUBLIC, self.sample_path, None)
+        self.assert_ticket_access(self.project, False)
+
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_sync_public_viewer_access_anon(self):
+        """Test sync with public viewer access and anonymous access"""
+        self.investigation.irods_status = True
+        self.investigation.save()
+        self.project.set_public_access(self.role_viewer)
+        self.assertFalse(self.irods.collections.exists(self.project_path))
+        self.assertFalse(self.irods.collections.exists(self.sample_path))
+        self.command.handle()
+        self.assertTrue(self.irods.collections.exists(self.sample_path))
+        self.assert_irods_access(
+            self.project_group, self.sample_path, self.irods_access_read
+        )
+        self.assert_irods_access(IRODS_GROUP_PUBLIC, self.sample_path, None)
+        # Ticket access should not be granted for viewer role
+        self.assert_ticket_access(self.project, False)
 
     def test_sync_public_guest_access_revoke(self):
         """Test sync for revoking public guest access"""
@@ -110,11 +148,16 @@ class TestSyncModifyAPI(
         self.assert_irods_access(
             self.project_group, self.sample_path, self.irods_access_read
         )
+        self.assert_irods_access(
+            IRODS_GROUP_PUBLIC, self.sample_path, self.irods_access_read
+        )
         self.assert_ticket_access(self.project, False)
         self.project.set_public_access(None)
+        self.command.handle()
         self.assert_irods_access(
             self.project_group, self.sample_path, self.irods_access_read
         )
+        self.assert_irods_access(IRODS_GROUP_PUBLIC, self.sample_path, None)
         self.assert_ticket_access(self.project, False)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
@@ -128,10 +171,33 @@ class TestSyncModifyAPI(
         self.assert_irods_access(
             self.project_group, self.sample_path, self.irods_access_read
         )
+        self.assert_irods_access(
+            IRODS_GROUP_PUBLIC, self.sample_path, self.irods_access_read
+        )
         self.assert_ticket_access(self.project, True)
         self.project.set_public_access(None)
         self.command.handle()
         self.assert_irods_access(
             self.project_group, self.sample_path, self.irods_access_read
         )
+        self.assert_irods_access(IRODS_GROUP_PUBLIC, self.sample_path, None)
+        self.assert_ticket_access(self.project, False)
+
+    def test_sync_public_guest_viewer_revoke(self):
+        """Test sync for revoking public viewer access"""
+        self.investigation.irods_status = True
+        self.investigation.save()
+        self.project.set_public_access(self.role_viewer)
+        self.command.handle()
+        self.assertTrue(self.irods.collections.exists(self.sample_path))
+        self.assert_irods_access(
+            self.project_group, self.sample_path, self.irods_access_read
+        )
+        self.assert_irods_access(IRODS_GROUP_PUBLIC, self.sample_path, None)
+        self.assert_ticket_access(self.project, False)
+        self.project.set_public_access(None)
+        self.assert_irods_access(
+            self.project_group, self.sample_path, self.irods_access_read
+        )
+        self.assert_irods_access(IRODS_GROUP_PUBLIC, self.sample_path, None)
         self.assert_ticket_access(self.project, False)
