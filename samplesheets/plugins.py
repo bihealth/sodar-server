@@ -6,23 +6,31 @@ import re
 import time
 
 from copy import deepcopy
-from irods.exception import NetworkException
+from math import modf
+from irods.exception import CollectionDoesNotExist, NetworkException
 from urllib.parse import urlparse
 
 from django.conf import settings
+from django.template.defaultfilters import filesizeformat
 from django.urls import reverse
 
 from djangoplugins.point import PluginPoint
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.models import Project, SODAR_CONSTANTS, ROLE_RANKING
+from projectroles.models import (
+    Project,
+    SODAR_CONSTANTS,
+    ROLE_RANKING,
+    CAT_DELIMITER,
+)
 from projectroles.plugins import (
     ProjectAppPluginPoint,
     ProjectModifyPluginMixin,
     PluginAppSettingDef,
     PluginObjectLink,
     PluginSearchResult,
+    PluginCategoryStatistic,
     PluginAPI,
 )
 from projectroles.utils import build_secret
@@ -36,6 +44,7 @@ from samplesheets.models import (
     IrodsAccessTicket,
     IrodsDataRequest,
     ISA_META_ASSAY_PLUGIN,
+    ITEM_TYPE_SAMPLE,
 )
 from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.urls import urlpatterns
@@ -49,6 +58,10 @@ from samplesheets.views import (
     MISC_FILES_COLL_ID,
     APP_NAME,
 )
+
+# Sodarcache dependency
+# TODO: Use get_model() (see bihealth/sodar-core#1746)
+from sodarcache.models import JSONCacheItem
 
 
 app_settings = AppSettingAPI()
@@ -281,6 +294,10 @@ FILE_COL_UNAVAILABLE = (
 )
 FILE_COL_TITLE_NO_FILES = 'No project sample files in iRODS'
 FILE_COL_TITLE_NO_DAV = 'iRODS WebDAV unavailable'
+IRODS_STATS_CACHE_PREFIX = 'irods/stats/project/'
+IRODS_STATS_CACHE_NAME = IRODS_STATS_CACHE_PREFIX + '{uuid}'
+ASSAY_SHORTCUT_CACHE_NAME = 'irods/shortcuts/assay/{uuid}'
+EMPTY_IRODS_STATS = {'file_count': 0, 'total_size': 0}
 
 
 # Samplesheets project app plugin ----------------------------------------------
@@ -764,6 +781,94 @@ class ProjectAppPlugin(
             return
         self._update_public_access(project, taskflow, irods_backend)
 
+    @classmethod
+    def update_irods_stats_cache(
+        cls, project, irods_backend, cache_backend, irods, user=None
+    ):
+        """
+        Update project iRODS stats cache in the database.
+
+        Creates a sodarcache item with the name of
+        "irods/stats/project/{Project.sodar_uuid}".
+
+        :param project: Project object
+        :param irods_backend: IrodsAPI object
+        :param cache_backend: SODARCacheAPI object
+        :param irods: IRODSSession object
+        :param user: User triggering the update (SODARUser or None)
+        :return: JSONCacheItem object
+        """
+        path = irods_backend.get_sample_path(project)
+        try:
+            irods.collections.get(path)
+            data = irods_backend.get_stats(irods, path)
+        except CollectionDoesNotExist:
+            data = EMPTY_IRODS_STATS
+        except Exception as ex:
+            logger.error(
+                f'Exception in update_irods_stats_cache() for project '
+                f'{project.get_log_title()}: {ex}'
+            )
+            data = EMPTY_IRODS_STATS
+        return cache_backend.set_cache_item(
+            app_name=APP_NAME,
+            name=IRODS_STATS_CACHE_NAME.format(uuid=project.sodar_uuid),
+            data=data,
+            project=project,
+            user=user,
+        )
+
+    @classmethod
+    def update_assay_shortcut_cache(
+        cls, assay, irods_backend, cache_backend, irods, user
+    ):
+        """
+        Update assay shortcut cache in the database.
+
+        Creates a sodarcache item with the name of
+        "irods/shortcuts/assay/{Assay.sodar_uuid}".
+
+        :param assay: Assay object
+        :param irods_backend: IrodsAPI object
+        :param cache_backend: SODARCacheAPI object
+        :param irods: IRODSSession object
+        :param user: User triggering the update (SODARUser or None)
+        :return: JSONCacheItem object
+        """
+        assay_path = irods_backend.get_path(assay)
+        assay_plugin = assay.get_plugin()
+        # Default assay shortcuts
+        cache_data = {
+            'shortcuts': {
+                'results_reports': irods.collections.exists(
+                    assay_path + '/' + RESULTS_COLL
+                ),
+                'misc_files': irods.collections.exists(
+                    assay_path + '/' + MISC_FILES_COLL
+                ),
+            }
+        }
+        # Plugin assay shortcuts
+        if assay_plugin:
+            plugin_shortcuts = assay_plugin.get_shortcuts(assay) or []
+            for sc in plugin_shortcuts:
+                cache_data['shortcuts'][sc['id']] = irods.collections.exists(
+                    sc['path']
+                )
+        cache_data['shortcuts']['track_hubs'] = [
+            c.path
+            for c in irods_backend.get_child_colls(
+                irods, os.path.join(assay_path, TRACK_HUBS_COLL)
+            )
+        ]
+        cache_backend.set_cache_item(
+            name=ASSAY_SHORTCUT_CACHE_NAME.format(uuid=assay.sodar_uuid),
+            app_name='samplesheets',
+            user=user,
+            data=cache_data,
+            project=assay.get_project(),
+        )
+
     def update_cache(self, name=None, project=None, user=None):
         """
         Update cached data for this app, limitable to item ID and/or project.
@@ -794,7 +899,7 @@ class ProjectAppPlugin(
         for study_plugin in SampleSheetStudyPluginPoint.get_plugins():
             study_plugin.update_cache(name, project, user)
 
-        # Assay shortcuts
+        # Set up for iRODS stats and assay shortcuts
         projects = (
             [project]
             if project
@@ -806,45 +911,107 @@ class ProjectAppPlugin(
         )
 
         with irods_backend.get_session() as irods:
+            # iRODS stats
+            for project in projects:
+                self.update_irods_stats_cache(
+                    project, irods_backend, cache_backend, irods, user
+                )
+            # Assay shortcuts
             for assay in assays:
-                item_name = 'irods/shortcuts/assay/{}'.format(assay.sodar_uuid)
-                assay_path = irods_backend.get_path(assay)
-                assay_plugin = assay.get_plugin()
-                # Default assay shortcuts
-                cache_data = {
-                    'shortcuts': {
-                        'results_reports': irods.collections.exists(
-                            assay_path + '/' + RESULTS_COLL
-                        ),
-                        'misc_files': irods.collections.exists(
-                            assay_path + '/' + MISC_FILES_COLL
-                        ),
-                    }
-                }
-                # Plugin assay shortcuts
-                if assay_plugin:
-                    plugin_shortcuts = assay_plugin.get_shortcuts(assay) or []
-                    for sc in plugin_shortcuts:
-                        cache_data['shortcuts'][sc['id']] = (
-                            irods.collections.exists(sc['path'])
-                        )
-                cache_data['shortcuts']['track_hubs'] = [
-                    c.path
-                    for c in irods_backend.get_child_colls(
-                        irods, os.path.join(assay_path, TRACK_HUBS_COLL)
-                    )
-                ]
-                cache_backend.set_cache_item(
-                    name=item_name,
-                    app_name='samplesheets',
-                    user=user,
-                    data=cache_data,
-                    project=assay.get_project(),
+                self.update_assay_shortcut_cache(
+                    assay, irods_backend, cache_backend, irods, user
                 )
 
         # Assay sub-app plugins
         for assay_plugin in SampleSheetAssayPluginPoint.get_plugins():
             assay_plugin.update_cache(name, project, user)
+
+    def get_category_stats(
+        self, category: Project
+    ) -> list[PluginCategoryStatistic]:
+        """
+        Return app statistics for the given category. Expected to return
+        cumulative statistics for all projects under the category and its
+        possible subcategories.
+
+        :param category: Project object of CATEGORY type
+        :return: List of PluginCategoryStatistic objects
+        """
+        cache_backend = plugin_api.get_backend_api('sodar_cache')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
+        ret = []
+
+        # Sample count
+        title_k = 'study__investigation__project__full_title__startswith'
+        query_kw = {
+            'item_type': ITEM_TYPE_SAMPLE,
+            title_k: category.full_title + CAT_DELIMITER,
+        }
+        ret.append(
+            PluginCategoryStatistic(
+                plugin=self,
+                title='Samples',
+                value=GenericMaterial.objects.filter(**query_kw).count(),
+                description='Samples in studies under this category',
+                icon='mdi:flask',
+            )
+        )
+
+        # iRODS stats
+        if not cache_backend or not irods_backend:  # Skip if not enabled
+            return ret
+        projects = Project.objects.filter(
+            type=PROJECT_TYPE_PROJECT,
+            full_title__startswith=category.full_title + CAT_DELIMITER,
+        )
+        # TODO: Use get_model() (see bihealth/sodar-core#1746)
+        all_stats = JSONCacheItem.objects.filter(
+            name__startswith=IRODS_STATS_CACHE_PREFIX
+        )
+        file_count = 0
+        total_size = 0
+        found_projects = []
+        for s in all_stats:
+            if s.project in projects:
+                file_count += s.data.get('file_count', 0)
+                total_size += s.data.get('total_size', 0)
+                found_projects.append(s.project)
+        # Create missing stats and add to total count
+        missing_projects = [p for p in projects if p not in found_projects]
+        if missing_projects:
+            with irods_backend.get_session() as irods:
+                for project in missing_projects:
+                    s = self.update_irods_stats_cache(
+                        project, irods_backend, cache_backend, irods
+                    )
+                    file_count += s.data.get('file_count', 0)
+                    total_size += s.data.get('total_size', 0)
+        ret.append(
+            PluginCategoryStatistic(
+                plugin=self,
+                title='Files',
+                value=file_count,
+                description='Number of files stored in iRODS under this '
+                'category',
+                icon='mdi:file-multiple',
+            )
+        )
+        size_s = filesizeformat(total_size).split('\xa0')
+        size_f = float(size_s[0])
+        f, _ = modf(size_f)
+        size_display = int(size_f) if f == 0 else size_f
+        ret.append(
+            PluginCategoryStatistic(
+                plugin=self,
+                title='Data',
+                value=size_display,
+                unit=size_s[1],
+                description='Total size of files stored in iRODS under this '
+                'category',
+                icon='mdi:database',
+            )
+        )
+        return ret
 
 
 # Samplesheets study sub-app plugin --------------------------------------------

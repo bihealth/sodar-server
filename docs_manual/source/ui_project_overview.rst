@@ -45,6 +45,17 @@ Timeline Overview
     Displays the five most recent events taken in the project. Your project role
     define the events that you can see.
 
+In the overview of a category, you can also see cumulative statistics for all
+projects under that category. These statistics list the amount of projects,
+members, samples and files along with the total size of data in iRODS under the
+category.
+
+.. figure:: _static/sodar_ui/category_stats.png
+    :align: center
+    :scale: 55%
+
+    Category overview with statistics
+
 
 Sidebar
 =======

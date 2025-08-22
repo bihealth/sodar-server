@@ -17,6 +17,9 @@ Added
     - Project viewer role support (#2200)
 - **Samplesheets**
     - Project viewer role support (#2200)
+    - Category statistics for sample count and iRODS statistics (#2213)
+    - Project iRODS stats caching (#2213)
+    - ``ProjectAppPlugin.update_irods_stats_cache()`` helper (#2213)
 - **Taskflowbackend**
     - Project viewer role support (#2200)
 
@@ -39,6 +42,7 @@ Changed
 - **Samplesheets**
     - Update views for project access blocking support (#2233)
     - Update app for ``public_access`` support (#2202)
+    - Refactor ``ProjectAppPlugin.update_cache()`` (#2213)
 
 
 v1.1.4 (2025-08-12)

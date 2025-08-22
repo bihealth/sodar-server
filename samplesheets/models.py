@@ -36,11 +36,16 @@ plugin_api = PluginAPI()
 # Local constants
 DEFAULT_LENGTH = 255
 
+ITEM_TYPE_SOURCE = 'SOURCE'
+ITEM_TYPE_MATERIAL = 'MATERIAL'
+ITEM_TYPE_SAMPLE = 'SAMPLE'
+ITEM_TYPE_DATA = 'DATA'
+
 GENERIC_MATERIAL_TYPES = {
-    'SOURCE': 'Source',
-    'MATERIAL': 'Material',
-    'SAMPLE': 'Sample',
-    'DATA': 'Data File',
+    ITEM_TYPE_SOURCE: 'Source',
+    ITEM_TYPE_MATERIAL: 'Material',
+    ITEM_TYPE_SAMPLE: 'Sample',
+    ITEM_TYPE_DATA: 'Data File',
 }
 
 # Map JSON attributes to altamISA headers
@@ -851,7 +856,7 @@ class GenericMaterial(NodeMixin, BaseSampleSheet):
                 'Field "characteristics" should not be included for a data '
                 'file'
             )
-        if self.item_type != 'SAMPLE' and self.factor_values:
+        if self.item_type != ITEM_TYPE_SAMPLE and self.factor_values:
             raise ValidationError('Factor values included for a non-sample')
 
     # Custom row-level functions
@@ -868,7 +873,7 @@ class GenericMaterial(NodeMixin, BaseSampleSheet):
         """
         If the material is a SAMPLE, return assays where it is used, else None.
         """
-        if self.item_type != 'SAMPLE':
+        if self.item_type != ITEM_TYPE_SAMPLE:
             return None
         return Assay.objects.filter(
             study=self.study, arcs__contains=[self.unique_name]

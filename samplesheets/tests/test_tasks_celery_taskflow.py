@@ -21,6 +21,11 @@ from taskflowbackend.tests.base import TaskflowViewTestBase
 from timeline.models import TimelineEvent
 
 from samplesheets.models import ISATab
+from samplesheets.plugins import (
+    ASSAY_SHORTCUT_CACHE_NAME,
+    EMPTY_IRODS_STATS,
+    IRODS_STATS_CACHE_NAME,
+)
 from samplesheets.tasks_celery import (
     update_project_cache_task,
     sheet_sync_task,
@@ -89,12 +94,17 @@ class TestUpdateProjectCacheTask(
         )
 
         self.assertEqual(
-            JSONCacheItem.objects.filter(project=self.project).count(), 1
+            JSONCacheItem.objects.filter(project=self.project).count(), 2
         )
-        cache_item = JSONCacheItem.objects.first()
+        cache_items = list(JSONCacheItem.objects.all())
         self.assertEqual(
-            cache_item.name,
-            'irods/shortcuts/assay/{}'.format(self.assay.sodar_uuid),
+            cache_items[0].name,
+            IRODS_STATS_CACHE_NAME.format(uuid=self.project.sodar_uuid),
+        )
+        self.assertEqual(cache_items[0].data, EMPTY_IRODS_STATS)
+        self.assertEqual(
+            cache_items[1].name,
+            ASSAY_SHORTCUT_CACHE_NAME.format(uuid=self.assay.sodar_uuid),
         )
         expected_data = {
             'shortcuts': {
@@ -103,7 +113,7 @@ class TestUpdateProjectCacheTask(
                 'results_reports': False,
             }
         }
-        self.assertEqual(cache_item.data, expected_data)
+        self.assertEqual(cache_items[1].data, expected_data)
         self.assertEqual(
             AppAlert.objects.filter(alert_name=CACHE_UPDATE_EVENT).count(), 1
         )
@@ -126,7 +136,7 @@ class TestUpdateProjectCacheTask(
         )
 
         self.assertEqual(
-            JSONCacheItem.objects.filter(project=self.project).count(), 1
+            JSONCacheItem.objects.filter(project=self.project).count(), 2
         )
         self.assertEqual(
             AppAlert.objects.filter(alert_name=CACHE_UPDATE_EVENT).count(), 0
@@ -146,7 +156,7 @@ class TestUpdateProjectCacheTask(
         update_project_cache_task(self.project.sodar_uuid, None, add_alert=True)
 
         self.assertEqual(
-            JSONCacheItem.objects.filter(project=self.project).count(), 1
+            JSONCacheItem.objects.filter(project=self.project).count(), 2
         )
         self.assertEqual(
             AppAlert.objects.filter(alert_name=CACHE_UPDATE_EVENT).count(), 0

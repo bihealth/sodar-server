@@ -20,7 +20,11 @@ from projectroles.tests.test_models import (
     RoleAssignmentMixin,
 )
 
-from samplesheets.models import GenericMaterial
+from samplesheets.models import (
+    GenericMaterial,
+    ITEM_TYPE_MATERIAL,
+    ITEM_TYPE_SAMPLE,
+)
 from samplesheets.plugins import (
     get_irods_content,
     SHEET_COL_VIEW,
@@ -95,7 +99,7 @@ class SamplesheetsPluginTestBase(
 
 
 class TestGetProjectListValue(SamplesheetsPluginTestBase):
-    """Tests for samplesheets ProjectAppPlugin.get_project_list_value()"""
+    """Tests for ProjectAppPlugin.get_project_list_value()"""
 
     def setUp(self):
         super().setUp()
@@ -231,6 +235,79 @@ class TestGetProjectListValue(SamplesheetsPluginTestBase):
             'INVALID_COLUMN', self.project, self.user_owner
         )
         self.assertEqual(res, '')
+
+
+class TestGetCategoryStats(SamplesheetsPluginTestBase):
+    """Tests for ProjectAppPlugin.get_category_stats()"""
+
+    def setUp(self):
+        super().setUp()
+        self.plugin = ProjectAppPluginPoint.get_plugin('samplesheets')
+        self.sample_kw = {'item_type': ITEM_TYPE_SAMPLE, 'study': self.study}
+
+    # NOTE: For iRODS stats tests, see test_plugins_taskflow
+
+    def test_get_category_stats(self):
+        """Test get_category_stats()"""
+        res = self.plugin.get_category_stats(self.category)
+        self.assertEqual(len(res), 3)
+        self.assertIsInstance(res[0].plugin, self.plugin.__class__)
+        self.assertEqual(res[0].title, 'Samples')
+        self.assertEqual(res[0].value, 1)  # One sample in i_minimal2
+
+    def test_get_category_stats_multi_sample(self):
+        """Test get_category_stats() with multiple samples in same study"""
+        GenericMaterial.objects.create(
+            name='0816-N1', unique_name='0816-N1-1-1', **self.sample_kw
+        )
+        GenericMaterial.objects.create(
+            name='0817-N1', unique_name='0817-N1-1-1', **self.sample_kw
+        )
+        res = self.plugin.get_category_stats(self.category)
+        self.assertEqual(res[0].value, 3)
+
+    def test_get_category_stats_no_inv(self):
+        """Test get_category_stats() with no investigation"""
+        self.investigation.delete()
+        res = self.plugin.get_category_stats(self.category)
+        self.assertEqual(res[0].value, 0)
+
+    def test_get_category_stats_multi_inv(self):
+        """Test get_category_stats() with multiple investigations under category"""
+        new_project = self.make_project(
+            'NewProject', PROJECT_TYPE_PROJECT, self.category
+        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, new_project)
+        res = self.plugin.get_category_stats(self.category)
+        self.assertEqual(res[0].value, 2)
+
+    def test_get_category_stats_no_sample(self):
+        """Test get_category_stats() with no sample"""
+        material = GenericMaterial.objects.filter(
+            item_type=ITEM_TYPE_SAMPLE, study=self.study
+        ).first()
+        material.item_type = ITEM_TYPE_MATERIAL
+        material.save()
+        res = self.plugin.get_category_stats(self.category)
+        self.assertEqual(res[0].value, 0)
+
+    def test_get_category_stats_no_projects(self):
+        """Test get_category_stats() with no projects under category"""
+        new_category = self.make_project(
+            'NewCategory', PROJECT_TYPE_CATEGORY, None
+        )
+        res = self.plugin.get_category_stats(new_category)
+        self.assertEqual(res[0].value, 0)
+
+    def test_get_category_stats_subcategory(self):
+        """Test get_category_stats() with project in subcategory"""
+        sub_cat = self.make_project(
+            'SubCategory', PROJECT_TYPE_CATEGORY, self.category
+        )
+        self.project.parent = sub_cat
+        self.project.save()
+        res = self.plugin.get_category_stats(self.category)
+        self.assertEqual(res[0].value, 1)
 
 
 class TestGetIrodsContent(SamplesheetsPluginTestBase):
