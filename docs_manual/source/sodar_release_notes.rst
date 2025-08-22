@@ -15,7 +15,7 @@ Major feature update and SODAR Core 1.2 upgrade.
 
 - Add project viewer role support
 - Add category statistics for sample count and iRODS data
-- Upgrade to SODAR Core v1.2.0
+- Upgrade to SODAR Core v1.2.1
 
 
 v1.1.4 (2025-08-12)

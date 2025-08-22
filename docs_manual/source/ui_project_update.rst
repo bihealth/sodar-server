@@ -100,6 +100,12 @@ Block project access
     Temporarily block user access to project. Only available for superusers.
     This will block all non-superuser access to the project's UI and REST API
     views in SODAR. Project iRODS collections will remain accessible.
+Display public category statistics
+    Display top level category statistics to all users. Only available for
+    superusers in top level categories. Toggling this enables everyone
+    regardless of roles to see the readme and general statistics about projects
+    under the category. The users will not gain any other rights to the category
+    without having roles explicitly granted to them.
 
 When creating a new project, the following fields are also included:
 

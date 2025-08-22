@@ -60,8 +60,6 @@ from samplesheets.views import (
 )
 
 # Sodarcache dependency
-# TODO: Use get_model() (see bihealth/sodar-core#1746)
-from sodarcache.models import JSONCacheItem
 
 
 app_settings = AppSettingAPI()
@@ -964,8 +962,8 @@ class ProjectAppPlugin(
             type=PROJECT_TYPE_PROJECT,
             full_title__startswith=category.full_title + CAT_DELIMITER,
         )
-        # TODO: Use get_model() (see bihealth/sodar-core#1746)
-        all_stats = JSONCacheItem.objects.filter(
+        cache_model = cache_backend.get_model()
+        all_stats = cache_model.objects.filter(
             name__startswith=IRODS_STATS_CACHE_PREFIX
         )
         file_count = 0
