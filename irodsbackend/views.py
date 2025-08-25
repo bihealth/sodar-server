@@ -2,6 +2,10 @@
 
 import logging
 
+from typing import Union
+
+from irods.session import iRODSSession
+
 from django.conf import settings
 from django.http import HttpResponse, JsonResponse
 from django.views.generic import View
@@ -11,7 +15,7 @@ from rest_framework.response import Response
 from sodar.users.auth import fallback_to_auth_basic
 
 # Projectroles dependency
-from projectroles.models import SODAR_CONSTANTS
+from projectroles.models import SODARUser, SODAR_CONSTANTS
 from projectroles.plugins import PluginAPI
 from projectroles.views_ajax import SODARBaseProjectAjaxView
 
@@ -53,7 +57,7 @@ class BaseIrodsAjaxView(SODARBaseProjectAjaxView):
         self.path = None
 
     @staticmethod
-    def _get_detail(msg):
+    def _get_detail(msg: Union[Exception, str]) -> dict:
         """
         Return detail message as a dict to be returned as JSON.
 
@@ -62,7 +66,9 @@ class BaseIrodsAjaxView(SODARBaseProjectAjaxView):
         """
         return {'detail': str(msg)}
 
-    def _check_collection_perm(self, path, user, irods):
+    def _check_collection_perm(
+        self, path: str, user: SODARUser, irods: iRODSSession
+    ) -> bool:
         """
         Check if request user has any perms for iRODS collection by path.
 

@@ -599,14 +599,14 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
 class TestIrodsAPITickets(IrodsAPITaskflowTestBase):
     """Tests for IrodsAPI ticket methods with Taskflow"""
 
-    def _get_ticket_res(self, ticket):
+    def _get_ticket_res(self, ticket: Ticket) -> dict:
         """Return iRODS database ticket query result"""
         query = self.irods.query(TicketQuery.Ticket).filter(
             TicketQuery.Ticket.string == ticket._ticket
         )
         return list(query)[0]
 
-    def _get_host_res(self, ticket_id):
+    def _get_host_res(self, ticket_id) -> list:
         """Return iRODS database ticket allowed hosts query result"""
         query = self.irods.query(TicketQuery.AllowedHosts).filter(
             TicketQuery.AllowedHosts.ticket_id == ticket_id
