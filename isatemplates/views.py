@@ -48,7 +48,14 @@ CUBI_TPL_DICT = {t.name: t for t in CUBI_TEMPLATES}
 class ISATemplateModifyMixin:
     """Modification helpers for ISA-Tab template views"""
 
-    def handle_modify(self, obj, action):
+    def handle_modify(self, obj: CookiecutterISATemplate, action: str) -> str:
+        """
+        Handle template modification after parsing the template form.
+
+        :param obj: CookiecutterISATemplate object
+        :param action: String
+        :return: URL for redirecting (string)
+        """
         timeline = plugin_api.get_backend_api('timeline_backend')
         if timeline:
             tl_extra = {}

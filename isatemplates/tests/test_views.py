@@ -6,8 +6,10 @@ import os
 import zipfile
 
 from cubi_isa_templates import _TEMPLATES as CUBI_TEMPLATES
+from typing import Union
 
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db.models import QuerySet
 from django.forms.models import model_to_dict
 from django.test import override_settings
 from django.urls import reverse
@@ -59,7 +61,9 @@ class ISATemplateViewTestBase(
     """Base blass for ISA template view tests"""
 
     @classmethod
-    def get_zip(cls, path, zip_name, omit=None):
+    def get_zip(
+        cls, path: str, zip_name: str, omit: Union[list, str, None] = None
+    ) -> SimpleUploadedFile:
         """
         Read template files into an uploadable in-memory Zip archive.
 
@@ -576,7 +580,7 @@ class TestISATemplateCreateView(ISATemplateViewTestBase):
 class TestISATemplateUpdateView(ISATemplateViewTestBase):
     """Tests for ISATemplateUpdateView"""
 
-    def _get_files(self):
+    def _get_files(self) -> QuerySet:
         return CookiecutterISAFile.objects.filter(template=self.template)
 
     def setUp(self):
@@ -795,7 +799,7 @@ class TestISATemplateUpdateView(ISATemplateViewTestBase):
 class TestISATemplateDeleteView(ISATemplateViewTestBase):
     """Tests for ISATemplateDeleteView"""
 
-    def _get_files(self):
+    def _get_files(self) -> QuerySet:
         return CookiecutterISAFile.objects.filter(template=self.template)
 
     def setUp(self):

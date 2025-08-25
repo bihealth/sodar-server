@@ -7,12 +7,16 @@ import string
 
 from cubi_isa_templates import _TEMPLATES as CUBI_TEMPLATES
 from collections import OrderedDict
+from typing import Optional
 
 from django.core.exceptions import ValidationError
 from django.forms.models import model_to_dict
 from django.utils.text import slugify
 
 from test_plus.test import TestCase
+
+# Projectroles dependency
+from projectroles.models import SODARUser
 
 from isatemplates.models import CookiecutterISAFile, CookiecutterISATemplate
 
@@ -33,9 +37,15 @@ INV_PATH = os.path.join(TEMPLATE_PATH, ISA_FILE_DIR, INV_FILE_NAME)
 class CookiecutterISATemplateMixin:
     """Helpers for CookiecutterISATemplate model testing"""
 
+    @classmethod
     def make_isa_template(
-        self, name, description, configuration, active=True, user=None
-    ):
+        cls,
+        name: Optional[str],
+        description: str,
+        configuration: str,
+        active: bool = True,
+        user: Optional[SODARUser] = None,
+    ) -> CookiecutterISATemplate:
         """
         Create and save a CookiecutterISATemplate object.
 
@@ -58,11 +68,14 @@ class CookiecutterISATemplateMixin:
 class CookiecutterISAFileMixin:
     """Helpers for CookiecutterISAFile model testing"""
 
-    def make_isa_file(self, template, file_name, content):
+    @classmethod
+    def make_isa_file(
+        cls, template: CookiecutterISATemplate, file_name: str, content: str
+    ) -> CookiecutterISAFile:
         """
         Create and save a CookiecutterISAFile object.
 
-        :param template: CookiecutterISATemplate file
+        :param template: CookiecutterISATemplate object
         :param file_name: String
         :param content: String
         :return: CookiecutterISAFile object

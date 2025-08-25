@@ -29,7 +29,7 @@ class TestISATemplateAPI(CookiecutterISATemplateMixin, TestCase):
     """Tests for ISATemplateAPI"""
 
     @classmethod
-    def _sort_list(cls, tpl_list):
+    def _sort_list(cls, tpl_list: list) -> list:
         """Sort template list"""
         return sorted(tpl_list, key=lambda x: x['description'].lower())
 

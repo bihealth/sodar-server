@@ -1,5 +1,8 @@
 """Plugins for the isatemplates app"""
 
+from typing import Optional, Union
+from uuid import UUID
+
 from django.urls import reverse
 
 # Projectroles dependency
@@ -45,7 +48,9 @@ class SiteAppPlugin(SiteAppPluginPoint):
     #: Names of plugin specific Django settings to display in siteinfo
     info_settings = ISATEMPLATES_INFO_SETTINGS
 
-    def get_object_link(self, model_str, uuid):
+    def get_object_link(
+        self, model_str: str, uuid: Union[str, UUID]
+    ) -> Optional[PluginObjectLink]:
         """
         Return URL referring to an object used by the app, along with a name to
         be shown to the user for linking.
@@ -65,8 +70,9 @@ class SiteAppPlugin(SiteAppPluginPoint):
                 ),
                 name=obj.description,
             )
+        return None
 
-    def get_statistics(self):
+    def get_statistics(self) -> dict:
         """
         Return app statistics as a dict. Should take the form of
         {id: {label, value, url (optional), description (optional)}}.
@@ -105,6 +111,6 @@ class BackendPlugin(BackendPluginPoint):
     #: Names of plugin specific Django settings to display in siteinfo
     info_settings = None
 
-    def get_api(self, **kwargs):
+    def get_api(self, **kwargs) -> ISATemplateAPI:
         """Return API entry point object"""
         return ISATemplateAPI()

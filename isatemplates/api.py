@@ -4,8 +4,9 @@ import os
 import tempfile
 
 from cookiecutter.main import cookiecutter
-from cubi_isa_templates import _TEMPLATES as ISA_TEMPLATES
+from cubi_isa_templates import IsaTabTemplate, _TEMPLATES as ISA_TEMPLATES
 from pathlib import Path
+from typing import Union
 
 from django.conf import settings
 
@@ -20,20 +21,23 @@ class ISATemplateAPI:
     """Backend API for ISA-Tab template retrieval"""
 
     @classmethod
-    def _get_list_val(cls, t):
+    def _get_list_val(
+        cls, template: Union[CookiecutterISATemplate, IsaTabTemplate]
+    ) -> dict:
         """
         Return list value for a template.
 
-        :param t: CookiecutterISATemplate or IsaTabTemplate object
+        :param template: CookiecutterISATemplate or IsaTabTemplate object
         :return: Dict
         """
         return {
-            'name': t.name,
-            'description': t.description[0].upper() + t.description[1:],
+            'name': template.name,
+            'description': template.description[0].upper()
+            + template.description[1:],
         }
 
     @classmethod
-    def get_list(cls):
+    def get_list(cls) -> list[dict]:
         """
         Return list of available ISA-Tab templates.
 
@@ -48,13 +52,15 @@ class ISATemplateAPI:
         return sorted(ret, key=lambda x: x['description'].lower())
 
     @classmethod
-    def get_template(cls, name):
+    def get_template(
+        cls, name: str
+    ) -> Union[CookiecutterISATemplate, IsaTabTemplate]:
         """
         Return template by name. Returns either a cubi-isa-templates ISATemplate
         object or a SODAR CookiecutterISATemplate object.
 
         :param name: String
-        :return: ISATemplate or CookiecutterISATemplate object
+        :return: IsaTabTemplate or CookiecutterISATemplate object
         :raise: ValueError if enabled template with name is not found
         """
         try:
@@ -67,7 +73,7 @@ class ISATemplateAPI:
         raise ValueError(f'Template not found: {name}')
 
     @classmethod
-    def is_template(self, name):
+    def is_template(self, name: str) -> bool:
         """
         Return whether active template exists by name.
 
@@ -83,13 +89,18 @@ class ISATemplateAPI:
         return False
 
     @classmethod
-    def run_cookiecutter_custom(cls, sheet_tpl, output_dir, extra_context={}):
+    def run_cookiecutter_custom(
+        cls,
+        sheet_tpl: CookiecutterISATemplate,
+        output_dir: str,
+        extra_context: dict = {},
+    ):
         """
         Run cookiecutter on a custom template. Creates ISA-Tab files from the
         template in the given output directory.
 
         :param sheet_tpl: CookiecutterISATemplate object
-        :param output_dir: Writeable directory object (e.g. TemporaryDirectory)
+        :param output_dir: Path to writeable directory (str)
         :param extra_context: Overrides for default values (dict)
         :raise: ValueError if sheet_tpl is not a CookiecutterISATemplate object
         """
@@ -111,6 +122,6 @@ class ISATemplateAPI:
             )
 
     @classmethod
-    def get_model(cls):
+    def get_model(cls) -> type[CookiecutterISATemplate]:
         """Return CookiecutterISATemplate model"""
         return CookiecutterISATemplate
