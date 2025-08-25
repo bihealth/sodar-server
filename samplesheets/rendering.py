@@ -6,13 +6,14 @@ import logging
 import re
 import time
 
-from datetime import date
-from packaging import version
-
 from altamisa.constants import table_headers as th
 from altamisa.isatab.write_assay_study import RefTableBuilder
+from datetime import date
+from packaging import version
+from typing import Any, Optional, Union
 
 from django.conf import settings
+from django.db.models import Model, QuerySet
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
@@ -21,7 +22,13 @@ from projectroles.plugins import PluginAPI
 # Sodarcache dependency (see bihealth/sodar-core#1068)
 from sodarcache.models import JSONCacheItem
 
-from samplesheets.models import Process, GenericMaterial
+from samplesheets.models import (
+    Study,
+    Assay,
+    Process,
+    GenericMaterial,
+    Investigation,
+)
 from samplesheets.utils import get_node_obj
 
 
@@ -121,7 +128,7 @@ class SampleSheetTableBuilder:
     # General Data and Cell Functions ------------------------------------------
 
     @classmethod
-    def _get_value(cls, field):
+    def _get_value(cls, field: Union[dict, str]) -> str:
         """
         Return value of a field which can be either free text or term reference.
 
@@ -136,7 +143,9 @@ class SampleSheetTableBuilder:
             return field['value']
         return ''
 
-    def _add_top_header(self, obj, colspan):
+    def _add_top_header(
+        self, obj: Union[GenericMaterial, Process], colspan: int
+    ):
         """
         Append columns to top header.
 
@@ -164,7 +173,12 @@ class SampleSheetTableBuilder:
         self._node_idx += 1
         self._field_idx = 0
 
-    def _add_header(self, name, header_type=None, obj=None):
+    def _add_header(
+        self,
+        name: str,
+        header_type: Optional[str] = None,
+        obj: Optional[Model] = None,
+    ):
         """
         Add column field header value.
 
@@ -240,13 +254,13 @@ class SampleSheetTableBuilder:
 
     def _add_cell(
         self,
-        value,
-        header_name,
-        unit=None,
-        link=None,
-        header_type=None,
-        obj=None,
-        tooltip=None,
+        value: Union[date, dict, list, str, None],
+        header_name: str,
+        unit: Union[dict, str, None] = None,
+        link: Optional[str] = None,
+        header_type: Optional[str] = None,
+        obj: Optional[Model] = None,
+        tooltip: Optional[str] = None,
     ):
         """
         Add cell data. Also maintain column value list and insert header if on
@@ -254,9 +268,9 @@ class SampleSheetTableBuilder:
 
         :param value: Value to be displayed in the cell
         :param header_name: Name of the column header
-        :param unit: Unit to be displayed in the cell
-        :param link: Link from the value (URL string)
-        :param header_type: Header type (string)
+        :param unit: Unit to be displayed in the cell (dict, string or None)
+        :param link: Link from the value (URL string or None)
+        :param header_type: Header type (string or None)
         :param obj: Original Django model object
         :param tooltip: Tooltip to be shown on mouse hover (string)
         """
@@ -295,7 +309,7 @@ class SampleSheetTableBuilder:
             self._col_values[self._col_idx] = 1
         self._col_idx += 1
 
-    def _add_ordered_element(self, obj):
+    def _add_ordered_element(self, obj: Union[GenericMaterial, Process]):
         """
         Append GenericMaterial or Process element to row along with its
         attributes. To be used with altamISA v0.1+, requires the "headers"
@@ -384,7 +398,13 @@ class SampleSheetTableBuilder:
         if self._first_row:
             self._add_top_header(obj, len(self._field_header) - old_header_len)
 
-    def _add_annotation(self, ann, header, header_type, obj):
+    def _add_annotation(
+        self,
+        ann: Union[dict, str],
+        header: str,
+        header_type: Optional[str],
+        obj: Union[GenericMaterial, Process],
+    ):
         """
         Append an ontology annotation or list of values to a row as a single
         cell.
@@ -457,7 +477,7 @@ class SampleSheetTableBuilder:
         """Add UI specific data to a table"""
         # TODO: Un-hackify
 
-        def _get_length(value, col_type=None):
+        def _get_length(value: Any, col_type: Optional[str] = None) -> int:
             """Return estimated length for proportional text"""
             if not value:
                 return 0
@@ -483,7 +503,7 @@ class SampleSheetTableBuilder:
             wc = sum([value.count(c) for c in WIDE_CHARS])
             return round(len(value) - nc - wc + 0.6 * nc + 1.3 * wc)
 
-        def _is_num(value):
+        def _is_num(value: Any) -> bool:
             """Return whether a value contains only integers/doubles"""
             # Supports lists
             values = value if isinstance(value, list) else [value]
@@ -578,7 +598,13 @@ class SampleSheetTableBuilder:
             else:
                 grp_idx += 1
 
-    def _build_table(self, table_refs, node_map=None, study=None, assay=None):
+    def _build_table(
+        self,
+        table_refs: list[list],
+        node_map: Optional[dict] = None,
+        study: Optional[Study] = None,
+        assay: Optional[Assay] = None,
+    ) -> dict:
         """
         Build a table from the node graph reference.
 
@@ -628,7 +654,9 @@ class SampleSheetTableBuilder:
         }
 
     @classmethod
-    def build_study_reference(cls, study, nodes=None):
+    def build_study_reference(
+        cls, study: Study, nodes: Optional[list] = None
+    ) -> tuple[list, list]:
         """
         Get study reference table for building final table data.
 
@@ -661,7 +689,7 @@ class SampleSheetTableBuilder:
         return all_refs
 
     @classmethod
-    def get_sample_idx(cls, all_refs):
+    def get_sample_idx(cls, all_refs: list) -> int:
         """
         Get sample index for a reference table.
 
@@ -671,7 +699,7 @@ class SampleSheetTableBuilder:
         return [i for i, col in enumerate(all_refs[0]) if '-sample-' in col][0]
 
     @classmethod
-    def get_node_map(cls, nodes):
+    def get_node_map(cls, nodes: Union[list, QuerySet]) -> dict:
         """
         Get dict mapped by unique name for a QuerySet or list of node objects.
 
@@ -681,11 +709,13 @@ class SampleSheetTableBuilder:
         return {n.unique_name: n for n in nodes}
 
     @classmethod
-    def get_study_refs(cls, all_refs, sample_idx=None):
+    def get_study_refs(
+        cls, all_refs: list, sample_idx: Optional[int] = None
+    ) -> list:
         """
         Get study table references without duplicates.
 
-        :param all_refs: All references for a study.
+        :param all_refs: All references for a study (list)
         :param sample_idx: Integer for sample column index (optional)
         :return: List
         """
@@ -695,11 +725,17 @@ class SampleSheetTableBuilder:
         return list(sr for sr, _ in itertools.groupby(sr))
 
     @classmethod
-    def get_assay_refs(cls, all_refs, assay_id, sample_idx, study_cols=True):
+    def get_assay_refs(
+        cls,
+        all_refs: list,
+        assay_id: int,
+        sample_idx: int,
+        study_cols: bool = True,
+    ) -> list:
         """
         Return assay table references based on assay ID.
 
-        :param all_refs:
+        :param all_refs: List of assay references
         :param assay_id: Integer for assay ID
         :param sample_idx: Integer for sample column index
         :param study_cols: Include study columns if True (bool)
@@ -716,7 +752,7 @@ class SampleSheetTableBuilder:
                 assay_refs.append(row[start_idx:])
         return assay_refs
 
-    def get_headers(self, investigation):
+    def get_headers(self, investigation: Investigation) -> dict:
         """
         Return lists of headers for the studies and assays in an investigation.
 
@@ -749,7 +785,7 @@ class SampleSheetTableBuilder:
             ret['studies'].append(study_data)
         return ret
 
-    def build_study_tables(self, study, use_config=True):
+    def build_study_tables(self, study: Study, use_config: bool = True) -> dict:
         """
         Build study table and associated assay tables for rendering.
 
@@ -821,7 +857,9 @@ class SampleSheetTableBuilder:
             logger.debug(f'Building assay OK ({time.time() - a_start:.1f}s)')
         return ret
 
-    def build_inv_tables(self, investigation, use_config=True):
+    def build_inv_tables(
+        self, investigation: Investigation, use_config: bool = True
+    ) -> dict:
         """
         Build all study and assay tables of an investigation for rendering.
 
@@ -834,7 +872,7 @@ class SampleSheetTableBuilder:
             ret[study] = self.build_study_tables(study, use_config=use_config)
         return ret
 
-    def get_study_tables(self, study, save_cache=True):
+    def get_study_tables(self, study: Study, save_cache: bool = True) -> dict:
         """
         Get study and assay tables for rendering. Retrieve from sodarcache or
         build and save to cache if not found.
@@ -883,7 +921,7 @@ class SampleSheetTableBuilder:
         return study_tables
 
     @classmethod
-    def clear_study_cache(cls, study, delete=False):
+    def clear_study_cache(cls, study: Study, delete: bool = False):
         """
         Clear study render table data from sodarcache, if cache is enabled and
         cached tables exist.

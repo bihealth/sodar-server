@@ -5,12 +5,14 @@ import os
 import uuid
 
 from altamisa.constants import table_headers as th
+from datetime import datetime
+from typing import Any, Optional, Union
 
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Q
+from django.db.models import Q, QuerySet
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.timezone import localtime
@@ -118,7 +120,7 @@ class BaseSampleSheet(models.Model):
         abstract = True
 
     # Custom row-level functions
-    def get_study(self):
+    def get_study(self) -> Optional['Study']:
         """Return associated study if it exists"""
         if hasattr(self, 'assay') and self.assay:
             return self.assay.study
@@ -126,8 +128,9 @@ class BaseSampleSheet(models.Model):
             return self.study
         elif isinstance(self, Study):
             return self
+        return None
 
-    def get_project(self):
+    def get_project(self) -> Optional[Project]:
         """Return associated project"""
         if isinstance(self, Investigation):
             return self.project
@@ -140,6 +143,7 @@ class BaseSampleSheet(models.Model):
                 return self.study.investigation.project
             elif self.assay:
                 return self.assay.study.investigation.project
+        return None
 
 
 # Investigation ----------------------------------------------------------------
@@ -262,27 +266,27 @@ class Investigation(BaseSampleSheet):
 
     # Custom row-level functions
 
-    def get_assays(self):
+    def get_assays(self) -> QuerySet['Assay']:
         """Return assays in the studies of this investigation"""
         return Assay.objects.filter(study__investigation=self).order_by(
             'file_name'
         )
 
-    def get_configuration(self):
+    def get_configuration(self) -> Optional[str]:
         """Return used configuration as string if found"""
         # TODO: Do this with a nice regex instead, too tired now
         if CONFIG_LABEL_CREATE not in self.comments:
             return None
         return get_config_name(get_comment(self, CONFIG_LABEL_CREATE))
 
-    def get_material_count(self, item_type):
+    def get_material_count(self, item_type: str) -> int:
         """Return matieral count of a certain type within the investigation"""
         return GenericMaterial.objects.filter(
             Q(item_type=item_type),
             Q(study__investigation=self) | Q(assay__study__investigation=self),
         ).count()
 
-    def get_url(self):
+    def get_url(self) -> str:
         """Return the URL for this investigation"""
         return reverse(
             'samplesheets:project_sheets',
@@ -379,15 +383,15 @@ class Study(BaseSampleSheet):
 
     # Custom row-level functions
 
-    def get_name(self):
+    def get_name(self) -> str:
         """Return simple printable name for study"""
         return self.title if self.title else self.identifier
 
-    def get_display_name(self):
+    def get_display_name(self) -> str:
         """Return display name for study"""
         return self.title.strip('.').title() if self.title else self.identifier
 
-    def get_nodes(self):
+    def get_nodes(self) -> list:
         """Return list of all nodes (materials and processes) for study"""
         return list(
             GenericMaterial.objects.filter(study=self).order_by('pk')
@@ -397,14 +401,14 @@ class Study(BaseSampleSheet):
             .prefetch_related('protocol')
         )
 
-    def get_sources(self):
+    def get_sources(self) -> QuerySet['GenericMaterial']:
         """Return sources used in study"""
         # TODO: Add tests
         return GenericMaterial.objects.filter(
             study=self, item_type='SOURCE'
         ).order_by('name')
 
-    def get_plugin(self):
+    def get_plugin(self) -> Any:
         """Return active study app plugin or None if not found"""
         from samplesheets.plugins import SampleSheetStudyPluginPoint
 
@@ -422,7 +426,7 @@ class Study(BaseSampleSheet):
                 return plugin
         return None
 
-    def get_url(self):
+    def get_url(self) -> str:
         """Return the URL for this study"""
         return (
             reverse(
@@ -562,15 +566,15 @@ class Assay(BaseSampleSheet):
 
     # Custom row-level functions
 
-    def get_name(self):
+    def get_name(self) -> str:
         """Return simple idenfitying name for assay"""
         return ''.join(str(self.file_name)[2:].split('.')[:-1])
 
-    def get_display_name(self):
+    def get_display_name(self) -> str:
         """Return display name for assay"""
         return ' '.join(s for s in self.get_name().split('_')).title()
 
-    def get_plugin(self):
+    def get_plugin(self) -> Any:
         """Return the active assay app plugin or None if not found"""
         # TODO: Log warning if there are multiple plugins found?
         from samplesheets.plugins import SampleSheetAssayPluginPoint
@@ -596,7 +600,7 @@ class Assay(BaseSampleSheet):
             if search_fields in plugin.assay_fields:
                 return plugin
 
-    def get_url(self):
+    def get_url(self) -> str:
         """Return the URL for this assay"""
         return (
             reverse(
@@ -616,7 +620,9 @@ class NodeMixin:
     TODO: Eventually should go into a node base class (see issue #922)
     """
 
-    def get_header_idx(self, header_name, header_type=None):
+    def get_header_idx(
+        self, header_name: str, header_type: Optional[str] = None
+    ) -> Optional[int]:
         """
         Return index of a header in headers.
 
@@ -630,14 +636,16 @@ class NodeMixin:
             f'{ATTR_HEADER_MAP[header_type]}[{header_name}]'
         )
 
-    def is_ontology_field(self, header_name, header_type=None):
+    def is_ontology_field(
+        self, header_name: str, header_type: Optional[str] = None
+    ) -> bool:
         """
-        Return true if an ontology value is expected for a field according to
+        Return True if an ontology value is expected for a field according to
         the node header.
 
-        :param header_type: Header type (string)
         :param header_name: Header name (string)
-        :return: Boolean or None
+        :param header_type: Header type (string, optional)
+        :return: Boolean
         """
         idx = self.get_header_idx(header_name, header_type)
         if (
@@ -647,14 +655,18 @@ class NodeMixin:
             in [th.TERM_SOURCE_REF, th.TERM_ACCESSION_NUMBER]
         ):
             return True
+        return False
 
-    def has_unit(self, header_name, header_type=None):
+    def has_unit(
+        self, header_name: str, header_type: Optional[str] = None
+    ) -> bool:
         """
-        Return true if a unit is expected for a field according to the node
+        Return True if a unit is expected for a field according to the node
         header.
-        :param header_type: Header type (string)
+
         :param header_name: Header name (string)
-        :return: Boolean or None
+        :param header_type: Header type (string, optional)
+        :return: Boolean
         """
         idx = self.get_header_idx(header_name, header_type)
         if (
@@ -665,14 +677,16 @@ class NodeMixin:
             return True
         return False
 
-    def has_ontology_unit(self, header_name, header_type=None):
+    def has_ontology_unit(
+        self, header_name: str, header_type: Optional[str] = None
+    ) -> bool:
         """
-        Return true if an unit ontology reference is expected for a field
+        Return True if an unit ontology reference is expected for a field
         according to the node header.
 
-        :param header_type: Header type (string)
         :param header_name: Header name (string)
-        :return: Boolean or None
+        :param header_type: Header type (string, optional)
+        :return: Boolean
         """
         idx = self.get_header_idx(header_name, header_type)
         if idx and self.is_ontology_field(header_name, header_type):
@@ -691,7 +705,12 @@ class NodeMixin:
 class GenericMaterialManager(models.Manager):
     """Manager for custom table-level GenericMaterial queries"""
 
-    def find(self, search_terms, keywords=None, item_types=None):
+    def find(
+        self,
+        search_terms: list[str],
+        keywords: Optional[dict] = None,
+        item_types: Optional[list] = None,
+    ) -> QuerySet:
         """
         Return objects matching the query.
 
@@ -866,7 +885,7 @@ class GenericMaterial(NodeMixin, BaseSampleSheet):
 
     # Custom row-level functions
 
-    def get_parent(self):
+    def get_parent(self) -> Union[Assay, Study, None]:
         """Return parent assay or study"""
         if self.assay:
             return self.assay
@@ -874,7 +893,7 @@ class GenericMaterial(NodeMixin, BaseSampleSheet):
             return self.study
         return None  # This should not happen and is caught during validation
 
-    def get_sample_assays(self):
+    def get_sample_assays(self) -> Optional[QuerySet]:
         """
         If the material is a SAMPLE, return assays where it is used, else None.
         """
@@ -1018,12 +1037,13 @@ class Process(NodeMixin, BaseSampleSheet):
 
     # Custom row-level functions
 
-    def get_parent(self):
+    def get_parent(self) -> Union[Assay, Study, None]:
         """Return parent assay or study"""
         if self.assay:
             return self.assay
         elif self.study:
             return self.study
+        return None
 
 
 # ISA-Tab File Saving ----------------------------------------------------------
@@ -1123,11 +1143,11 @@ class ISATab(models.Model):
 
     # Custom row-level functions
 
-    def get_name(self):
+    def get_name(self) -> str:
         """Return version timestamp as its name"""
         return localtime(self.date_created).strftime('%Y-%m-%d %H:%M:%S')
 
-    def get_full_name(self):
+    def get_full_name(self) -> str:
         """Return full name with investigation title or archive name"""
         investigation = Investigation.objects.filter(
             sodar_uuid=self.investigation_uuid
@@ -1255,28 +1275,28 @@ class IrodsAccessTicket(models.Model):
             ', '.join(repr(v) for v in values)
         )
 
-    def get_project(self):
+    def get_project(self) -> Project:
         return self.study.investigation.project
 
     @classmethod
-    def get_project_filter_key(cls):
+    def get_project_filter_key(cls) -> str:
         return 'study__investigation__project'
 
-    def get_coll_name(self):
+    def get_coll_name(self) -> str:
         return os.path.basename(self.path)
 
-    def get_date_created(self):
+    def get_date_created(self) -> str:
         return localtime(self.date_created).strftime('%Y-%m-%d %H:%M')
 
-    def get_date_expires(self):
+    def get_date_expires(self) -> Optional[str]:
         if self.date_expires:
             return localtime(self.date_expires).strftime('%Y-%m-%d')
         return None
 
-    def get_label(self):
+    def get_label(self) -> str:
         return self.label or self.get_date_created()
 
-    def get_display_name(self):
+    def get_display_name(self) -> str:
         assay_name = ''
         if (
             Assay.objects.filter(
@@ -1287,20 +1307,20 @@ class IrodsAccessTicket(models.Model):
             assay_name = f'{self.assay.get_display_name()} / '
         return f'{assay_name}{self.get_coll_name()} / {self.get_label()}'
 
-    def get_webdav_link(self):
+    def get_webdav_link(self) -> str:
         return settings.IRODS_WEBDAV_URL_ANON_TMPL.format(
             user=settings.IRODS_WEBDAV_USER_ANON,
             ticket=self.ticket,
             path=self.path,
         )
 
-    def get_allowed_hosts_list(self):
+    def get_allowed_hosts_list(self) -> list[str]:
         """Return allowed_hosts as list"""
         if not self.allowed_hosts:
             return []
         return [h.strip() for h in self.allowed_hosts.split(',') if h.strip()]
 
-    def is_active(self):
+    def is_active(self) -> datetime:
         return self.date_expires is None or self.date_expires >= timezone.now()
 
 
@@ -1429,27 +1449,27 @@ class IrodsDataRequest(models.Model):
 
     # Custom row-level functions
 
-    def get_display_name(self):
+    def get_display_name(self) -> str:
         """Return display name for object"""
         return f'{self.action.capitalize()} {self.get_short_path()}'
 
-    def get_date_created(self):
+    def get_date_created(self) -> str:
         """Return formatted version of date_created"""
         return localtime(self.date_created).strftime('%Y-%m-%d %H:%M')
 
-    def is_data_object(self):
+    def is_data_object(self) -> bool:
         """Return True if data object exists for the object path"""
         irods_backend = plugin_api.get_backend_api('omics_irods')
         with irods_backend.get_session() as irods:
             return irods.data_objects.exists(self.path)
 
-    def is_collection(self):
+    def is_collection(self) -> bool:
         """Return True if iRODS collection exists for the object path"""
         irods_backend = plugin_api.get_backend_api('omics_irods')
         with irods_backend.get_session() as irods:
             return irods.collections.exists(self.path)
 
-    def get_short_path(self):
+    def get_short_path(self) -> str:
         """
         Return shortened layout-friendly path, omitting the full path to the
         assay root.
@@ -1460,13 +1480,13 @@ class IrodsDataRequest(models.Model):
         #       supported
         return '/'.join(self.path.split('/')[pp_len + 5 :])
 
-    def get_assay(self):
+    def get_assay(self) -> Assay:
         """Return Assay object for request path or None if not found"""
         irods_backend = plugin_api.get_backend_api('omics_irods')
         a_uuid = irods_backend.get_uuid_from_path(self.path, 'assay')
         return Assay.objects.filter(sodar_uuid=a_uuid).first()
 
-    def get_assay_name(self):
+    def get_assay_name(self) -> str:
         """Return title of related assay or "N/A" if not found"""
         assay = self.get_assay()
         if not assay:

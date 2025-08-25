@@ -7,6 +7,7 @@ import tempfile
 
 from cookiecutter.main import cookiecutter
 from cubi_isa_templates import IsaTabTemplate
+from typing import Any, Optional
 
 from django import forms
 from django.conf import settings
@@ -16,7 +17,7 @@ from django.utils import timezone
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.forms import MultipleFileField
-from projectroles.models import Project
+from projectroles.models import Project, SODARUser
 from projectroles.plugins import PluginAPI
 
 from samplesheets.io import SampleSheetIO, ARCHIVE_TYPES
@@ -49,7 +50,13 @@ TPL_DIR_LABEL = 'Output directory'
 class IrodsAccessTicketValidateMixin:
     """Validation helpers for iRODS access tickets"""
 
-    def validate_data(self, irods_backend, project, instance, data):
+    def validate_data(
+        self,
+        irods_backend: Any,
+        project: Project,
+        instance: Optional[IrodsAccessTicket],
+        data: dict,
+    ):
         """
         Validate iRODS access ticket data.
 
@@ -119,7 +126,13 @@ class IrodsAccessTicketValidateMixin:
 class IrodsDataRequestValidateMixin:
     """Validation helpers for iRODS data requests"""
 
-    def validate_request_path(self, irods_backend, project, instance, path):
+    def validate_request_path(
+        self,
+        irods_backend: Any,
+        project: Project,
+        instance: Optional[IrodsDataRequest],
+        path: str,
+    ):
         """
         Validate path for IrodsAccessRequest.
 
@@ -197,7 +210,12 @@ class SheetImportForm(forms.Form):
         fields = ['file_upload']
 
     def __init__(
-        self, project=None, replace=False, current_user=None, *args, **kwargs
+        self,
+        project: Optional[Project] = None,
+        replace: bool = False,
+        current_user: Optional[SODARUser] = None,
+        *args,
+        **kwargs,
     ):
         """Override form initialization"""
         super().__init__(*args, **kwargs)
@@ -286,7 +304,7 @@ class SheetTemplateCreateForm(forms.Form):
     """Form for creating sample sheets from an ISA-Tab template"""
 
     @classmethod
-    def _get_tsv_data(cls, path, file_names):
+    def _get_tsv_data(cls, path: str, file_names: list[str]) -> list[dict]:
         ret = {}
         for n in file_names:
             with open(os.path.join(path, n)) as f:
@@ -294,7 +312,12 @@ class SheetTemplateCreateForm(forms.Form):
         return ret
 
     def __init__(
-        self, project=None, sheet_tpl=None, current_user=None, *args, **kwargs
+        self,
+        project: Optional[Project] = None,
+        sheet_tpl: Any = None,
+        current_user: Optional[SODARUser] = None,
+        *args,
+        **kwargs,
     ):
         """Override form initialization"""
         super().__init__(*args, **kwargs)
@@ -441,7 +464,7 @@ class IrodsAccessTicketForm(IrodsAccessTicketValidateMixin, forms.ModelForm):
         model = IrodsAccessTicket
         fields = ('path', 'label', 'date_expires', 'allowed_hosts')
 
-    def __init__(self, project=None, *args, **kwargs):
+    def __init__(self, project: Optional[Project] = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.instance.pk:
             self.project = self.instance.get_project()
@@ -505,7 +528,7 @@ class IrodsDataRequestForm(IrodsDataRequestValidateMixin, forms.ModelForm):
         model = IrodsDataRequest
         fields = ['path', 'description']
 
-    def __init__(self, project=None, *args, **kwargs):
+    def __init__(self, project: Optional[Project] = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if project:
             self.project = Project.objects.filter(sodar_uuid=project).first()

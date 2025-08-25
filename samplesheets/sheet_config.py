@@ -3,13 +3,14 @@
 import logging
 
 from packaging import version
+from typing import Optional
 
 from django.conf import settings
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 
-from samplesheets.models import Protocol
+from samplesheets.models import Investigation, Protocol
 from samplesheets.rendering import SampleSheetTableBuilder
 
 
@@ -31,7 +32,9 @@ class SheetConfigAPI:
     """API for sample sheet edit and display configuration management"""
 
     @classmethod
-    def _get_default_protocol(cls, investigation, render_table, idx):
+    def _get_default_protocol(
+        cls, investigation: Investigation, render_table: dict, idx: int
+    ) -> Optional[str]:
         """
         Get UUID of a default protocol for a column.
 
@@ -60,8 +63,12 @@ class SheetConfigAPI:
 
     @classmethod
     def _restore_config_table(
-        cls, investigation, render_table, config_table, start_idx=0
-    ):
+        cls,
+        investigation: Investigation,
+        render_table: dict,
+        config_table: dict,
+        start_idx: int = 0,
+    ) -> dict:
         """
         Update sheet config for a restore action for a single study/assay table.
 
@@ -69,6 +76,7 @@ class SheetConfigAPI:
         :param render_table: Table from SampleSheetTableBuilder (dict)
         :param config_table: Table in an existing sheet config (dict)
         :param start_idx: Starting index for table
+        :return: Dict
         """
         i = start_idx
         for node in config_table['nodes']:
@@ -81,7 +89,9 @@ class SheetConfigAPI:
                 i += 1
         return config_table
 
-    def get_sheet_config(self, investigation, inv_tables=None):
+    def get_sheet_config(
+        self, investigation: Investigation, inv_tables: Optional[dict] = None
+    ) -> dict:
         """
         Get or build a sheet edit configuration for an investigation.
 
@@ -124,7 +134,9 @@ class SheetConfigAPI:
         return sheet_config
 
     @classmethod
-    def build_sheet_config(cls, investigation, inv_tables):
+    def build_sheet_config(
+        cls, investigation: Investigation, inv_tables: dict
+    ) -> dict:
         """
         Build sample sheet edit configuration.
         NOTE: Will be built from configuration template(s) eventually
@@ -139,7 +151,9 @@ class SheetConfigAPI:
             'studies': {},
         }
 
-        def _build_nodes(study_tables, assay_uuid=None):
+        def _build_nodes(
+            study_tables: dict, assay_uuid: Optional[str] = None
+        ) -> list:
             nodes = []
             sample_found = False
             ti = 0
@@ -201,7 +215,7 @@ class SheetConfigAPI:
         return ret
 
     @classmethod
-    def validate_sheet_config(cls, config):
+    def validate_sheet_config(cls, config: dict):
         """
         Validate sheet edit configuration.
 
@@ -221,7 +235,9 @@ class SheetConfigAPI:
             )
 
     @classmethod
-    def restore_sheet_config(cls, investigation, inv_tables, sheet_config):
+    def restore_sheet_config(
+        cls, investigation: Investigation, inv_tables: dict, sheet_config: dict
+    ):
         """
         Update sheet config on sample sheet restore.
 
@@ -256,7 +272,7 @@ class SheetConfigAPI:
         logger.info('Restored sheet config updated')
 
     @classmethod
-    def build_display_config(cls, inv_tables, sheet_config):
+    def build_display_config(cls, inv_tables: dict, sheet_config: dict) -> dict:
         """
         Build default display config for project sample sheet columns.
 

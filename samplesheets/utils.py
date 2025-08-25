@@ -8,15 +8,22 @@ import string
 
 from openpyxl import Workbook
 from openpyxl.workbook.child import INVALID_TITLE_REGEX
+from typing import Any, Optional, Union
 
 from django.conf import settings
+from django.db.models import Model
+from django.http import HttpResponse
 from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
+from projectroles.models import Project, SODARUser
 from projectroles.plugins import PluginAPI
 
 from samplesheets.constants import DEFAULT_EXTERNAL_LINK_LABELS
+
+# NOTE: Can't import samplesheets models for type hints due to circular import
+# TODO: Refactor utils into models and/or other modules where applicable
 
 
 plugin_api = PluginAPI()
@@ -29,24 +36,24 @@ CONFIG_LABEL_OPEN = 'Last Opened With Configuration'
 NAME_FIELDS = ['name', 'protocol']
 
 
-def get_alt_names(name):
+def get_alt_names(name: str) -> list[str]:
     """
     Return list of alternative names for an object.
 
     :param name: Original name/ID (string)
-    :return: List
+    :return: List of strings
     """
     name = name.lower()  # Convert all versions lowercase for indexed search
     return [name.replace('_', '-'), re.sub(r'[^a-zA-Z0-9]', '', name), name]
 
 
-def get_sample_colls(investigation):
+def get_sample_colls(investigation: Any) -> list[str]:
     """
     Return study and assay collections without parent colls for the sample data
     collection structure.
 
     :param investigation: Investigation object
-    :return: List
+    :return: List of strings
     """
     ret = []
     irods_backend = plugin_api.get_backend_api('omics_irods')
@@ -58,7 +65,7 @@ def get_sample_colls(investigation):
     return ret
 
 
-def compare_inv_replace(inv1, inv2):
+def compare_inv_replace(inv1: Any, inv2: Any) -> bool:
     """
     Compare investigations for critical differences for replacing.
 
@@ -79,13 +86,16 @@ def compare_inv_replace(inv1, inv2):
 
 
 def get_index_by_header(
-    render_table, header_value, obj_cls=None, item_type=None
-):
+    render_table: dict,
+    header_value: str,
+    obj_cls: Optional[Model] = None,
+    item_type: Optional[str] = None,
+) -> Optional[int]:
     """
     Return the column index based on field header value.
 
-    :param render_table: Study/assay render table
-    :param header_value: Header value
+    :param render_table: Study/assay render table (dict)
+    :param header_value: Header value (string)
     :param obj_cls: Class of Dango model object for searched header (optional)
     :param item_type: Type of searched item in GenericMaterial (optional)
     :return: Int or None if not found
@@ -103,8 +113,13 @@ def get_index_by_header(
 
 
 # TODO: Add tests
-def get_last_material_index(table):
-    """Return index of the last non-DATA material in a table row"""
+def get_last_material_index(table: dict) -> Optional[int]:
+    """
+    Return index of the last non-DATA material in a table row.
+
+    :param table: Study/assay render table (dict)
+    :return: Int or None if not found
+    """
     row = table['table_data'][0]
     for i in range(len(row) - 1, -1, -1):
         cell = row[i]
@@ -119,8 +134,14 @@ def get_last_material_index(table):
     return None
 
 
-def get_last_material_name(row, table):
-    """Return name of the last non-DATA material in a table row"""
+def get_last_material_name(row: list[dict], table: dict) -> Optional[str]:
+    """
+    Return name of the last non-DATA material in a table row.
+
+    :param row: List of dicts
+    :param table: Dict
+    :return: String or None if not found
+    """
     name = None
     for i in range(len(row)):
         cell = row[i]
@@ -135,7 +156,7 @@ def get_last_material_name(row, table):
     return name
 
 
-def get_isa_field_name(field):
+def get_isa_field_name(field: Union[dict, str]) -> str:
     """
     Return the name of an ISA field. In case of an ontology reference, returns
     field['name'].
@@ -148,7 +169,7 @@ def get_isa_field_name(field):
     return field
 
 
-def get_sheets_url(project):
+def get_sheets_url(project: Project) -> str:
     """
     Return sample sheets app URL for project.
 
@@ -160,14 +181,14 @@ def get_sheets_url(project):
     )
 
 
-def get_comment(obj, key):
+def get_comment(obj: Any, key: str) -> Optional[str]:
     """
     Return comment value for object based on key or None if not found.
     TODO: Remove once reimporting sample sheets (#629, #631)
 
     :param obj: Object parsed from ISA-Tab
     :param key: Key for comment
-    :return: String
+    :return: String or None
     """
     if (
         not hasattr(obj, 'comments')
@@ -180,12 +201,12 @@ def get_comment(obj, key):
     return obj.comments[key]
 
 
-def get_comments(obj):
+def get_comments(obj: Any) -> Optional[dict]:
     """
     Return comments for an object or None if they don't exist.
 
     :param obj: Object parsed from ISA-Tab
-    :return: Dict
+    :return: Dict or None
     """
     if not hasattr(obj, 'comments') or not obj.comments:
         return None
@@ -200,7 +221,9 @@ def get_comments(obj):
     return ret
 
 
-def get_unique_name(study, assay, name, item_type=None):
+def get_unique_name(
+    study: Any, assay: Any, name: str, item_type: Optional[str] = None
+):
     """
     Return unique name for a node.
 
@@ -231,7 +254,7 @@ def get_unique_name(study, assay, name, item_type=None):
     )
 
 
-def get_node_obj(**query_kwargs):
+def get_node_obj(**query_kwargs) -> Any:
     """
     Get either a GenericMaterial or Process based on query kwargs.
 
@@ -248,12 +271,12 @@ def get_node_obj(**query_kwargs):
     return obj
 
 
-def get_config_name(config):
+def get_config_name(config: str) -> str:
     """
     Return sample sheet configuration name. Remove any identifying local
     directory information if present.
 
-    :param config_val: Original configuration name (string)
+    :param config: Original configuration name (string)
     :return: String
     """
     if config.find('/') == -1 and config.find('\\') == -1:
@@ -261,7 +284,7 @@ def get_config_name(config):
     return re.split('[/\\\\]', config)[-1]
 
 
-def write_excel_table(table, output, display_name):
+def write_excel_table(table: dict, output: HttpResponse, display_name: str):
     """
     Write an Excel 2010 file (.xlsx) from a rendered study/assay table.
 
@@ -301,7 +324,7 @@ def write_excel_table(table, output, display_name):
     wb.save(output)
 
 
-def get_top_header(table, field_idx):
+def get_top_header(table: dict, field_idx: int) -> Optional[dict]:
     """
     Return top header by field header index.
 
@@ -316,7 +339,7 @@ def get_top_header(table, field_idx):
             return th
 
 
-def clean_sheet_dir_name(name):
+def clean_sheet_dir_name(name: str) -> str:
     """
     Clean up / sanitize sample sheet directory name.
 
@@ -326,7 +349,7 @@ def clean_sheet_dir_name(name):
     return re.sub(r'[\s]+', '_', re.sub(r'[^\w\s-]', '', name).strip())
 
 
-def get_webdav_url(project, user):
+def get_webdav_url(project: Project, user: SODARUser) -> Optional[str]:
     """
     Return the WebDAV URL for accessing sample data under a specific project.
     If the project has public guest access with anonymous users enabled, return
@@ -358,7 +381,7 @@ def get_webdav_url(project, user):
         )
 
 
-def get_ext_link_labels():
+def get_ext_link_labels() -> dict:
     """
     Return external link labels and URLs. Retrieve from config file set in
     SHEETS_EXTERNAL_LINK_PATH or default values.
@@ -372,7 +395,7 @@ def get_ext_link_labels():
     return DEFAULT_EXTERNAL_LINK_LABELS
 
 
-def get_latest_file_path(paths):
+def get_latest_file_path(paths: list[str]) -> str:
     """
     Return last file by file name.
 
@@ -381,7 +404,7 @@ def get_latest_file_path(paths):
     return sorted(paths, key=lambda x: x.split('/')[-1], reverse=True)[0]
 
 
-def get_bool(bool_string):
+def get_bool(bool_string: str) -> bool:
     """
     Return freeform string as boolean.
 
@@ -391,8 +414,6 @@ def get_bool(bool_string):
     :raise: ValueError if value is not a string or can't be parsed
     :return: bool
     """
-    if not isinstance(bool_string, str):
-        raise ValueError('Value is not a string')
     if bool_string.strip().lower() in ['1', 't', 'true', 'y', 'yes']:
         return True
     if bool_string.strip().lower() in ['0', 'f', 'false', 'n', 'no']:

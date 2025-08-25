@@ -19,7 +19,7 @@ class SetIrodsCollStatusTask(SODARBaseTask):
     #: Investigation object for the project
     investigation = None
 
-    def execute(self, irods_status, *args, **kwargs):
+    def execute(self, irods_status: bool, *args, **kwargs):
         # Get initial data
         self.investigation = Investigation.objects.get(
             project=self.project, active=True
@@ -32,7 +32,7 @@ class SetIrodsCollStatusTask(SODARBaseTask):
             self.data_modified = True
         super().execute(*args, **kwargs)
 
-    def revert(self, irods_status, *args, **kwargs):
+    def revert(self, irods_status: bool, *args, **kwargs):
         if self.data_modified is True:
             self.investigation.irods_status = self.execute_data['irods_status']
             self.investigation.save()

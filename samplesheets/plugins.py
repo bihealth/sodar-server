@@ -8,9 +8,13 @@ import time
 from copy import deepcopy
 from math import modf
 from irods.exception import CollectionDoesNotExist, NetworkException
+from irods.session import iRODSSession
+from typing import Any, Optional, Union
 from urllib.parse import urlparse
+from uuid import UUID
 
 from django.conf import settings
+from django.http import HttpRequest
 from django.template.defaultfilters import filesizeformat
 from django.urls import reverse
 
@@ -20,6 +24,7 @@ from djangoplugins.point import PluginPoint
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import (
     Project,
+    SODARUser,
     SODAR_CONSTANTS,
     ROLE_RANKING,
     CAT_DELIMITER,
@@ -375,49 +380,14 @@ class ProjectAppPlugin(
     #: Names of plugin specific Django settings to display in siteinfo
     info_settings = SHEETS_INFO_SETTINGS
 
-    def get_object_link(self, model_str, uuid):
-        """
-        Return URL referring to an object used by the app, along with a name to
-        be shown to the user for linking.
-
-        :param model_str: Object class (string)
-        :param uuid: sodar_uuid of the referred object
-        :return: PluginObjectLink or None if not found
-        """
-        obj = self.get_object(eval(model_str), uuid)
-        if not obj:
-            return None
-        if obj.__class__ == IrodsAccessTicket:
-            return PluginObjectLink(
-                url=reverse(
-                    'samplesheets:irods_tickets',
-                    kwargs={'project': obj.get_project().sodar_uuid},
-                ),
-                name=obj.get_display_name(),
-            )
-        if obj.__class__ in [Investigation, Study, Assay]:
-            return PluginObjectLink(
-                url=obj.get_url(),
-                name=(
-                    obj.title
-                    if obj.__class__ == Investigation
-                    else obj.get_display_name()
-                ),
-            )
-        url_kwargs = {'project': obj.project.sodar_uuid}
-        if obj.__class__ == ISATab:
-            return PluginObjectLink(
-                url=reverse('samplesheets:versions', kwargs=url_kwargs),
-                name=obj.get_full_name(),
-            )
-        if obj.__class__ == IrodsDataRequest:
-            return PluginObjectLink(
-                url=reverse('samplesheets:irods_requests', kwargs=url_kwargs),
-                name=obj.get_display_name(),
-            )
-
     @classmethod
-    def _get_search_materials(cls, search_terms, user, keywords, item_types):
+    def _get_search_materials(
+        cls,
+        search_terms: list[str],
+        user: SODARUser,
+        keywords: list[str],
+        item_types: list[str],
+    ) -> list[dict]:
         """Return materials for search results"""
         ret = []
         materials = GenericMaterial.objects.find(
@@ -441,7 +411,9 @@ class ProjectAppPlugin(
         return ret
 
     @classmethod
-    def _get_search_files(cls, search_terms, user, irods_backend):
+    def _get_search_files(
+        cls, search_terms: list[str], user: SODARUser, irods_backend: Any
+    ) -> list[dict]:
         """Return iRODS files for search results"""
         ret = []
         try:
@@ -512,7 +484,56 @@ class ProjectAppPlugin(
             ret.sort(key=lambda x: x['name'].lower())
         return ret
 
-    def search(self, search_terms, user, search_type=None, keywords=None):
+    def get_object_link(
+        self, model_str: str, uuid: Union[str, UUID]
+    ) -> Optional[PluginObjectLink]:
+        """
+        Return URL referring to an object used by the app, along with a name to
+        be shown to the user for linking.
+
+        :param model_str: Object class (string)
+        :param uuid: sodar_uuid of the referred object
+        :return: PluginObjectLink or None if not found
+        """
+        obj = self.get_object(eval(model_str), uuid)
+        if not obj:
+            return None
+        if obj.__class__ == IrodsAccessTicket:
+            return PluginObjectLink(
+                url=reverse(
+                    'samplesheets:irods_tickets',
+                    kwargs={'project': obj.get_project().sodar_uuid},
+                ),
+                name=obj.get_display_name(),
+            )
+        if obj.__class__ in [Investigation, Study, Assay]:
+            return PluginObjectLink(
+                url=obj.get_url(),
+                name=(
+                    obj.title
+                    if obj.__class__ == Investigation
+                    else obj.get_display_name()
+                ),
+            )
+        url_kwargs = {'project': obj.project.sodar_uuid}
+        if obj.__class__ == ISATab:
+            return PluginObjectLink(
+                url=reverse('samplesheets:versions', kwargs=url_kwargs),
+                name=obj.get_full_name(),
+            )
+        if obj.__class__ == IrodsDataRequest:
+            return PluginObjectLink(
+                url=reverse('samplesheets:irods_requests', kwargs=url_kwargs),
+                name=obj.get_display_name(),
+            )
+
+    def search(
+        self,
+        search_terms: list[str],
+        user: SODARUser,
+        search_type: Optional[str] = None,
+        keywords: Optional[list[str]] = None,
+    ) -> list[PluginSearchResult]:
         """
         Return app items based on one or more search terms, user, optional type
         and optional keywords.
@@ -551,7 +572,9 @@ class ProjectAppPlugin(
             ret.append(r)
         return ret
 
-    def get_project_list_value(self, column_id, project, user):
+    def get_project_list_value(
+        self, column_id: str, project: Project, user: SODARUser
+    ) -> Union[str, int, None]:
         """
         Return a value for the optional additional project list column specific
         to a project.
@@ -604,7 +627,12 @@ class ProjectAppPlugin(
             return FILE_COL_UNAVAILABLE.format(title=title)
         return ''
 
-    def validate_form_app_settings(self, app_settings, project=None, user=None):
+    def validate_form_app_settings(
+        self,
+        app_settings: dict,
+        project: Optional[Project] = None,
+        user: Optional[SODARUser] = None,
+    ) -> Optional[dict]:
         """
         Validate app settings form data and return a dict of errors.
 
@@ -639,7 +667,9 @@ class ProjectAppPlugin(
     # Project Modify API Implementation ----------------------------------------
 
     @classmethod
-    def _update_public_access(cls, project, taskflow, irods_backend):
+    def _update_public_access(
+        cls, project: Project, taskflow: Any, irods_backend: Any
+    ):
         """
         Update project public access.
 
@@ -691,12 +721,12 @@ class ProjectAppPlugin(
 
     def perform_project_modify(
         self,
-        project,
-        action,
-        project_settings,
-        old_data=None,
-        old_settings=None,
-        request=None,
+        project: Project,
+        action: str,
+        project_settings: dict,
+        old_data: Optional[dict] = None,
+        old_settings: Optional[dict] = None,
+        request: Optional[HttpRequest] = None,
     ):
         """
         Perform additional actions to finalize project creation or update.
@@ -748,7 +778,7 @@ class ProjectAppPlugin(
 
     # NOTE: No reverting from API needed as this always gets called last
 
-    def perform_project_sync(self, project):
+    def perform_project_sync(self, project: Project):
         """
         Synchronize existing projects to ensure related data exists when the
         syncmodifyapi management comment is called. Should mostly be used in
@@ -779,7 +809,12 @@ class ProjectAppPlugin(
 
     @classmethod
     def update_irods_stats_cache(
-        cls, project, irods_backend, cache_backend, irods, user=None
+        cls,
+        project: Project,
+        irods_backend: Any,
+        cache_backend: Any,
+        irods: iRODSSession,
+        user: Optional[SODARUser] = None,
     ):
         """
         Update project iRODS stats cache in the database.
@@ -816,7 +851,12 @@ class ProjectAppPlugin(
 
     @classmethod
     def update_assay_shortcut_cache(
-        cls, assay, irods_backend, cache_backend, irods, user
+        cls,
+        assay: Assay,
+        irods_backend: Any,
+        cache_backend: Any,
+        irods: iRODSSession,
+        user: Optional[SODARUser] = None,
     ):
         """
         Update assay shortcut cache in the database.
@@ -865,7 +905,12 @@ class ProjectAppPlugin(
             project=assay.get_project(),
         )
 
-    def update_cache(self, name=None, project=None, user=None):
+    def update_cache(
+        self,
+        name: Optional[str] = None,
+        project: Optional[Project] = None,
+        user: Optional[SODARUser] = None,
+    ):
         """
         Update cached data for this app, limitable to item ID and/or project.
 
@@ -1038,7 +1083,7 @@ class SampleSheetStudyPluginPoint(PluginPoint):
     # TODO: TBD: Do we need this?
     permission = None
 
-    def get_shortcut_column(self, study, study_tables):
+    def get_shortcut_column(self, study: Study, study_tables: dict) -> dict:
         """
         Return structure containing links for an extra study table links column.
 
@@ -1049,7 +1094,9 @@ class SampleSheetStudyPluginPoint(PluginPoint):
         # TODO: Implement this in your study plugin
         return None
 
-    def get_shortcut_links(self, study, study_tables, **kwargs):
+    def get_shortcut_links(
+        self, study: Study, study_tables: dict, **kwargs
+    ) -> dict:
         """
         Return links for shortcut modal.
 
@@ -1059,7 +1106,12 @@ class SampleSheetStudyPluginPoint(PluginPoint):
         """
         return None
 
-    def update_cache(self, name=None, project=None, user=None):
+    def update_cache(
+        self,
+        name: Optional[str] = None,
+        project: Optional[Project] = None,
+        user: Optional[SODARUser] = None,
+    ):
         """
         Update cached data for this app, limitable to item ID and/or project.
 
@@ -1071,7 +1123,7 @@ class SampleSheetStudyPluginPoint(PluginPoint):
         return None
 
 
-def get_study_plugin(plugin_name):
+def get_study_plugin(plugin_name: str) -> Optional[SampleSheetStudyPluginPoint]:
     """
     Return active study plugin.
 
@@ -1135,12 +1187,12 @@ class SampleSheetAssayPluginPoint(PluginPoint):
         super().__init__()
         self.irods_backend = plugin_api.get_backend_api('omics_irods')
 
-    def get_assay_path(self, assay):
+    def get_assay_path(self, assay: Assay) -> Optional[str]:
         """
         Return the iRODS path for the given assay.
 
         :param assay: Assay object
-        :return: Full iRODS path for the assay
+        :return: String with full iRODS path or None
         """
         if not self.assay_path:
             self.assay_path = (
@@ -1150,7 +1202,9 @@ class SampleSheetAssayPluginPoint(PluginPoint):
             )
         return self.assay_path
 
-    def get_row_path(self, row, table, assay, assay_path):
+    def get_row_path(
+        self, row: list[dict], table: dict, assay: Assay, assay_path: str
+    ) -> Optional[str]:
         """
         Return iRODS path for an assay row in a sample sheet. If None,
         display default path.
@@ -1165,7 +1219,9 @@ class SampleSheetAssayPluginPoint(PluginPoint):
         # TODO: Implement this in your assay plugin if display_row_links=True
         return None
 
-    def update_row(self, row, table, assay, index):
+    def update_row(
+        self, row: list[dict], table: dict, assay: Assay, index: int
+    ) -> list[dict]:
         """
         Update render table row with e.g. links. Return the modified row.
 
@@ -1178,7 +1234,7 @@ class SampleSheetAssayPluginPoint(PluginPoint):
         # TODO: Implement this in your assay plugin
         raise NotImplementedError('Implement update_row() in your assay plugin')
 
-    def get_shortcuts(self, assay):
+    def get_shortcuts(self, assay: Assay) -> Optional[list]:
         """
         Return assay iRODS shortcuts.
 
@@ -1188,7 +1244,12 @@ class SampleSheetAssayPluginPoint(PluginPoint):
         # TODO: Implement this in your app plugin
         return None
 
-    def update_cache(self, name=None, project=None, user=None):
+    def update_cache(
+        self,
+        name: Optional[str] = None,
+        project: Optional[str] = None,
+        user: Optional[SODARUser] = None,
+    ):
         """
         Update cached data for this app, limitable to item ID and/or project.
 
@@ -1201,7 +1262,13 @@ class SampleSheetAssayPluginPoint(PluginPoint):
 
     # Common cache update utilities --------------------------------------
 
-    def update_cache_rows(self, app_name, name=None, project=None, user=None):
+    def update_cache_rows(
+        self,
+        app_name: str,
+        name: Optional[str] = None,
+        project: Optional[Project] = None,
+        user: Optional[SODARUser] = None,
+    ):
         """
         Update cache for row-based iRODS links using get_row_path().
 
@@ -1282,7 +1349,7 @@ class SampleSheetAssayPluginPoint(PluginPoint):
                 )
 
 
-def get_assay_plugin(plugin_name):
+def get_assay_plugin(plugin_name: str) -> Optional[SampleSheetAssayPluginPoint]:
     """
     Return active assay plugin.
 
@@ -1295,7 +1362,9 @@ def get_assay_plugin(plugin_name):
         return None
 
 
-def get_irods_content(inv, study, irods_backend, ret_data):
+def get_irods_content(
+    inv: Investigation, study: Study, irods_backend: Any, ret_data: dict
+) -> dict:
     """
     Return iRODS content for a study.
 
