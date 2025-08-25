@@ -2,10 +2,12 @@
 
 import logging
 
+from django.db.models import QuerySet
+
 # Projectroles dependency
 from projectroles.plugins import PluginAPI
 
-from samplesheets.models import GenericMaterial
+from samplesheets.models import Study, GenericMaterial
 from samplesheets.studyapps.utils import (
     get_igv_omit_list,
     check_igv_file_path,
@@ -18,7 +20,9 @@ logger = logging.getLogger(__name__)
 plugin_api = PluginAPI()
 
 
-def get_pedigree_file_path(file_type, source, study_tables):
+def get_pedigree_file_path(
+    file_type: str, source: GenericMaterial, study_tables: dict
+) -> str:
     """
     Return iRODS path for the most recent file of type "bam" or "vcf"
     linked to the source.
@@ -96,7 +100,7 @@ def get_pedigree_file_path(file_type, source, study_tables):
     return sorted(file_paths, key=lambda x: x.split('/')[-1])[-1]
 
 
-def get_families(study):
+def get_families(study: Study) -> list[str]:
     """
     Return list of families.
 
@@ -128,7 +132,9 @@ def get_families(study):
     return ret
 
 
-def get_family_sources(study, family_id):
+def get_family_sources(
+    study: Study, family_id: str
+) -> QuerySet[GenericMaterial]:
     """
     Return sources for a family in a study.
 

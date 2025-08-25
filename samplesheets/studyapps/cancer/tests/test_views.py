@@ -32,7 +32,7 @@ class TestIGVSessionFileRenderView(
     """Tests for cancer plugin IGVSessionFileRenderView"""
 
     @staticmethod
-    def _get_auth_header(username, password):
+    def _get_auth_header(username: str, password: str) -> dict:
         """Return basic auth header"""
         credentials = base64.b64encode(
             f'{username}:{password}'.encode('utf-8')

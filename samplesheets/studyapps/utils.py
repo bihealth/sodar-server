@@ -6,10 +6,14 @@ from lxml import etree as ET
 from pathlib import PurePosixPath
 
 from django.conf import settings
+from django.http import HttpRequest
 from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
+from projectroles.models import Project
+
+from samplesheets.models import GenericMaterial
 
 
 app_settings = AppSettingAPI()
@@ -22,7 +26,7 @@ FILE_TYPE_SUFFIX_CRAM = '.cram'  # Special case grouped together with bam
 INVALID_TYPE_MSG = 'Invalid value for file_type'
 
 
-def get_igv_omit_list(project, file_type):
+def get_igv_omit_list(project: Project, file_type: str) -> list:
     """
     Get list of IGV omit glob patterns for a specific file type in a project.
     NOTE: Added as a separate method to avoid redundant database queries.
@@ -45,7 +49,7 @@ def get_igv_omit_list(project, file_type):
     ]
 
 
-def check_igv_file_suffix(file_name, file_type):
+def check_igv_file_suffix(file_name: str, file_type: str) -> bool:
     """
     Check if file name corresponds to the specified file type.
 
@@ -64,7 +68,7 @@ def check_igv_file_suffix(file_name, file_type):
     )
 
 
-def check_igv_file_path(path, omit_list):
+def check_igv_file_path(path: str, omit_list: list) -> bool:
     """
     Check if file path is acceptable for IGV session inclusion. Returns False if
     pattern is found in IGV omit settings.
@@ -78,7 +82,9 @@ def check_igv_file_path(path, omit_list):
     )
 
 
-def get_igv_session_url(source, app_name, merge=False):
+def get_igv_session_url(
+    source: GenericMaterial, app_name: str, merge: bool = False
+) -> str:
     """
     Return URL for opening a generated session file in IGV.
 
@@ -100,7 +106,7 @@ def get_igv_session_url(source, app_name, merge=False):
     )
 
 
-def get_igv_irods_url(irods_path, merge=True):
+def get_igv_irods_url(irods_path: str, merge: bool = True) -> str:
     """
     Return URL for opening an iRODS file in IGV.
 
@@ -113,7 +119,14 @@ def get_igv_irods_url(irods_path, merge=True):
     )
 
 
-def get_igv_xml(project, bam_urls, vcf_urls, vcf_title, request, string=True):
+def get_igv_xml(
+    project: Project,
+    bam_urls: dict,
+    vcf_urls: dict,
+    vcf_title: str,
+    request: HttpRequest,
+    string=True,
+) -> str:
     """
     Build IGV session XML file.
 
@@ -121,7 +134,7 @@ def get_igv_xml(project, bam_urls, vcf_urls, vcf_title, request, string=True):
     :param bam_urls: BAM/CRAM file URLs (dict {name: url})
     :param vcf_urls: VCF file URLs (dict {name: url})
     :param vcf_title: VCF title to prefix to VCF title strings (string)
-    :param request: Django request
+    :param request: HttpRequest object
     :param string: Convert result to string (bool, default=True)
     :return: String (contains XML)
     """

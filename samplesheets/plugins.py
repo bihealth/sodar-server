@@ -1083,26 +1083,28 @@ class SampleSheetStudyPluginPoint(PluginPoint):
     # TODO: TBD: Do we need this?
     permission = None
 
-    def get_shortcut_column(self, study: Study, study_tables: dict) -> dict:
+    def get_shortcut_column(
+        self, study: Study, study_tables: dict
+    ) -> Optional[dict]:
         """
         Return structure containing links for an extra study table links column.
 
         :param study: Study object
         :param study_tables: Rendered study tables (dict)
-        :return: Dict
+        :return: Dict or None if not found
         """
         # TODO: Implement this in your study plugin
         return None
 
     def get_shortcut_links(
         self, study: Study, study_tables: dict, **kwargs
-    ) -> dict:
+    ) -> Optional[dict]:
         """
         Return links for shortcut modal.
 
         :param study: Study object
         :param study_tables: Rendered study tables (dict)
-        :return: Dict
+        :return: Dict or None if not found
         """
         return None
 

@@ -2,12 +2,14 @@
 
 import logging
 
+from typing import Any, Optional
+
 from django.conf import settings
 from django.contrib import auth
 from django.urls import reverse
 
 # Projectroles dependency
-from projectroles.models import Project, SODAR_CONSTANTS
+from projectroles.models import Project, SODARUser, SODAR_CONSTANTS
 from projectroles.plugins import PluginAPI
 
 from samplesheets.models import Investigation, Study, GenericMaterial
@@ -59,7 +61,9 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
     #: Required permission for accessing the plugin
     permission = None
 
-    def get_shortcut_column(self, study, study_tables):
+    def get_shortcut_column(
+        self, study: Study, study_tables: dict
+    ) -> Optional[dict]:
         """
         Return structure containing links for an extra study table links column.
 
@@ -154,13 +158,15 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             )
         return ret
 
-    def get_shortcut_links(self, study, study_tables, **kwargs):
+    def get_shortcut_links(
+        self, study: Study, study_tables: dict, **kwargs
+    ) -> Optional[dict]:
         """
         Return links for shortcut modal.
 
         :param study: Study object
         :param study_tables: Rendered study tables (dict)
-        :return: Dict or None
+        :return: Dict or None if not found
         """
         cache_backend = plugin_api.get_backend_api('sodar_cache')
         cache_item = None
@@ -287,7 +293,13 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         return ret
 
     @classmethod
-    def _update_study_cache(cls, study, user, cache_backend, irods_backend):
+    def _update_study_cache(
+        cls,
+        study: Study,
+        user: Optional[SODARUser],
+        cache_backend: Any,
+        irods_backend: Any,
+    ):
         """
         Update germline study app cache for a single study.
 
@@ -408,7 +420,12 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             project=study.investigation.project,
         )
 
-    def update_cache(self, name=None, project=None, user=None):
+    def update_cache(
+        self,
+        name: Optional[str] = None,
+        project: Optional[str] = None,
+        user: Optional[SODARUser] = None,
+    ):
         """
         Update cached data for this app, limitable to item ID and/or project.
 
