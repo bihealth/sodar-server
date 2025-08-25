@@ -98,7 +98,9 @@ class ZoneSubmitBaseAPIView(
     serializer_class = None  # Need to explicitly set this None for spectacular
 
     @classmethod
-    def _validate_zone_obj(cls, zone, allowed_status_types, action):
+    def _validate_zone_obj(
+        cls, zone: LandingZone, allowed_status_types: list[str], action: str
+    ):
         """
         Manually validate given the LandingZone object for an update.
 
@@ -248,7 +250,7 @@ class ZoneCreateAPIView(
     serializer_class = LandingZoneSerializer
 
     @classmethod
-    def _raise_503(cls, msg):
+    def _raise_503(cls, msg: str):
         ex = APIException(msg)
         ex.status_code = 503
         raise ex
@@ -320,6 +322,18 @@ class ZoneUpdateAPIView(
     permission_required = 'landingzones.update_zone_all'
     serializer_class = LandingZoneSerializer
 
+    @classmethod
+    def _validate_update_fields(
+        cls, serializer: serializers.Serializer
+    ) -> bool:
+        """
+        Validate that only allowed fields are updated.
+        """
+        for field in serializer.validated_data.keys():
+            if field not in ZONE_UPDATE_FIELDS:
+                return False
+        return True
+
     def get_serializer_context(self, *args, **kwargs):
         context = super().get_serializer_context(*args, **kwargs)
         if sys.argv[1:2] == ['generateschema']:
@@ -330,15 +344,6 @@ class ZoneUpdateAPIView(
 
     def put(self, request, *args, **kwargs):
         return self.partial_update(request, *args, **kwargs)
-
-    def _validate_update_fields(self, serializer):
-        """
-        Validate that only allowed fields are updated.
-        """
-        for field in serializer.validated_data.keys():
-            if field not in ZONE_UPDATE_FIELDS:
-                return False
-        return True
 
     def perform_update(self, serializer):
         """

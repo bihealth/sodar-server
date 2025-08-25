@@ -3,19 +3,21 @@
 import logging
 
 from irods.exception import GroupDoesNotExist
+from typing import Optional
 
 from django.conf import settings
 from django.contrib import auth
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ImproperlyConfigured
+from django.http import HttpRequest
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.views.generic import TemplateView, CreateView, UpdateView
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.models import SODAR_CONSTANTS, ROLE_RANKING
+from projectroles.models import Project, SODAR_CONSTANTS, ROLE_RANKING
 from projectroles.plugins import PluginAPI
 from projectroles.views import (
     LoggedInPermissionMixin,
@@ -109,7 +111,7 @@ class ProjectZoneInfoMixin:
     """
 
     @classmethod
-    def get_project_zone_info(cls, project):
+    def get_project_zone_info(cls, project: Project) -> dict:
         """
         Return project zone info for view context and Ajax views.
 
@@ -179,7 +181,9 @@ class ZoneConfigPluginMixin:
     """Landing zone configuration plugin operations"""
 
     @classmethod
-    def get_flow_data(cls, zone, flow_name, data):
+    def get_flow_data(
+        cls, zone: LandingZone, flow_name: str, data: dict
+    ) -> dict:
         """
         Update flow data parameters according to config.
 
@@ -203,8 +207,13 @@ class ZoneConfigPluginMixin:
 class ZoneModifyMixin(ZoneConfigPluginMixin):
     """Mixin to be used in zone creation/update in UI and REST API views"""
 
-    def check_create_limit(self, project):
-        """Raise Exception if zone create limit has been reached"""
+    @classmethod
+    def check_create_limit(cls, project: Project):
+        """
+        Raise Exception if zone create limit has been reached.
+
+        :param project: Project object
+        """
         limit = settings.LANDINGZONES_ZONE_CREATE_LIMIT
         if limit and limit > 0:
             zones = LandingZone.objects.filter(project=project).exclude(
@@ -215,11 +224,11 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
 
     def submit_create(
         self,
-        zone,
-        create_colls=False,
-        restrict_colls=False,
-        request=None,
-        sync=False,
+        zone: LandingZone,
+        create_colls: bool = False,
+        restrict_colls: bool = False,
+        request: HttpRequest = None,
+        sync: bool = False,
     ):
         """
         Handle timeline updating and taskflow initialization after a LandingZone
@@ -228,7 +237,7 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
         :param zone: LandingZone object
         :param create_colls: Auto-create expected collections (boolean)
         :param restrict_colls: Restrict access to created collections (boolean)
-        :param request: HTTPRequest object or None
+        :param request: HttpRequest object or None
         :param sync: Whether method is called from syncmodifyapi (boolean)
         :raise: taskflow.FlowSubmitException if taskflow submit fails
         """
@@ -362,12 +371,14 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
             zone.delete()
             raise ex
 
-    def update_zone(self, zone, request=None):
+    def update_zone(
+        self, zone: LandingZone, request: Optional[HttpRequest] = None
+    ):
         """
         Handle timeline updating after a LandingZone object has been updated.
 
         :param zone: LandingZone object
-        :param form: LandingZoneForm object
+        :param request: HttpRequest object or None
         :raise: taskflow.FlowSubmitException if taskflow submit fails
         """
         timeline = plugin_api.get_backend_api('timeline_backend')
@@ -401,7 +412,7 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
 class ZoneDeleteMixin(ZoneConfigPluginMixin):
     """Mixin to be used in zone creation"""
 
-    def submit_delete(self, zone):
+    def submit_delete(self, zone: LandingZone):
         """
         Handle timeline updating and initialize taskflow operation for
         LandingZone deletion, or delete zone directly if no iRODS collection is
@@ -465,14 +476,19 @@ class ZoneDeleteMixin(ZoneConfigPluginMixin):
 class ZoneMoveMixin(ZoneConfigPluginMixin):
     """Mixin to be used in zone validation/moving"""
 
-    def submit_validate_move(self, zone, validate_only, request=None):
+    def submit_validate_move(
+        self,
+        zone: LandingZone,
+        validate_only: bool,
+        request: Optional[HttpRequest] = None,
+    ):
         """
         Handle timeline updating and initialize taskflow operation for
         LandingZone moving and/or validation.
 
         :param zone: LandingZone object
         :param validate_only: Only perform validation if true (bool)
-        :param request: Request object (optional)
+        :param request: HttpRequest object or None
         :raise: taskflow.FlowSubmitException if taskflow submit fails
         """
         if not request and hasattr(self, 'request'):

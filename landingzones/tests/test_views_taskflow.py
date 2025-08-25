@@ -6,10 +6,12 @@ import time
 from irods.access import iRODSAccess
 from irods.exception import GroupDoesNotExist
 from irods.test.helpers import make_object
+from typing import Optional
 
 from django.contrib import auth
 from django.contrib.messages import get_messages
 from django.core import mail
+from django.http import HttpRequest
 from django.test import override_settings
 from django.urls import reverse
 
@@ -86,8 +88,12 @@ class LandingZoneTaskflowMixin:
     """Taskflow helpers for landingzones tests"""
 
     def make_zone_taskflow(
-        self, zone, colls=None, restrict_colls=False, request=None
-    ):
+        self,
+        zone: LandingZone,
+        colls: Optional[list[str]] = None,
+        restrict_colls: bool = False,
+        request: HttpRequest = None,
+    ) -> LandingZone:
         """
         Create landing zone in iRODS using taskflowbackend.
 
@@ -129,7 +135,9 @@ class LandingZoneTaskflowMixin:
         self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
         return zone
 
-    def assert_zone_status(self, zone, status=ZONE_STATUS_ACTIVE):
+    def assert_zone_status(
+        self, zone: LandingZone, status: str = ZONE_STATUS_ACTIVE
+    ):
         """
         Assert status of landing zone(s) after waiting for async taskflow
         operation to finish.
@@ -144,7 +152,7 @@ class LandingZoneTaskflowMixin:
             time.sleep(ASYNC_WAIT_SECONDS)
         raise AssertionError(f'Timed out waiting for zone status "{status}"')
 
-    def assert_zone_count(self, count):
+    def assert_zone_count(self, count: int):
         """
         Assert landing zone count after waiting for async taskflow
         operation to finish.

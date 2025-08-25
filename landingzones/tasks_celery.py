@@ -3,8 +3,11 @@
 import logging
 import os
 
+from typing import Any
+
 from django.conf import settings
 from django.db.models import Count
+from django.http import HttpRequest
 
 from config.celery import app
 
@@ -46,8 +49,16 @@ def trigger_zone_move():
 class TriggerZoneMoveTask(ZoneMoveMixin):
     """Task for triggering landing zone validation and moving"""
 
-    def handle_project(self, project, request, irods_backend):
-        """Handle zone triggering for a single project"""
+    def handle_project(
+        self, project: Project, request: HttpRequest, irods_backend: Any
+    ):
+        """
+        Handle zone triggering for a single project.
+
+        :param project: Project object
+        :param request: HttpRequest object
+        :param irods_backend: IrodsAPI object
+        """
         irods = irods_backend.get_session_obj()
         for zone in project.landing_zones.filter(
             status__in=STATUS_ALLOW_UPDATE
@@ -81,7 +92,7 @@ class TriggerZoneMoveTask(ZoneMoveMixin):
                 )
         irods.cleanup()
 
-    def run(self, request=None):
+    def run(self, request: HttpRequest = None):
         if app_settings.get('projectroles', 'site_read_only'):
             logger.info('Site read-only mode enabled, skipping')
             return

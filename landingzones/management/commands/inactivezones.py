@@ -1,8 +1,11 @@
 """Inactivezones management command"""
 
 from datetime import timedelta
+from irods.session import iRODSSession
+from typing import Any
 
 from django.core.management.base import BaseCommand
+from django.db.models import QuerySet
 from django.template.defaultfilters import filesizeformat
 from django.utils.timezone import localtime
 
@@ -18,15 +21,28 @@ logger = ManagementCommandLogger(__name__)
 plugin_api = PluginAPI()
 
 
-def get_inactive_zones(weeks=2):
-    """Return landing zones last modified over n weeks ago"""
+def get_inactive_zones(weeks: int = 2) -> QuerySet[LandingZone]:
+    """
+    Return landing zones last modified over nNweeks ago.
+
+    :param weeks: Amount of weeks (integer, default=2)
+    :return: QuerySet of LandingZone objects
+    """
     return LandingZone.objects.filter(
         date_modified__lte=localtime() - timedelta(weeks=weeks)
     ).exclude(status__in=(ZONE_STATUS_MOVED, ZONE_STATUS_DELETED))
 
 
-def get_output(zones, irods_backend, irods):
-    """Return list of inactive landing zone details"""
+def get_output(
+    zones: QuerySet[LandingZone], irods_backend: Any, irods: iRODSSession
+) -> list[str]:
+    """
+    Return list of inactive landing zone details.
+
+    :param zones: QuerySet of LandingZone objects
+    :param irods_backend: IrodsAPI object
+    :return: List of strings
+    """
     lines = []
     for zone in zones:
         path = irods_backend.get_path(zone)

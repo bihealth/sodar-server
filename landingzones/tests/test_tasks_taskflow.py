@@ -27,11 +27,11 @@ TASK_NAME = 'set landing zone status'
 class TestSetLandingZoneStatusTask(ViewTestBase):
     """Tests for SetLandingZoneStatusTask"""
 
-    def _get_task(self, force_fail=False):
+    def _get_task(self, force_fail: bool = False) -> SetLandingZoneStatusTask:
         """Initialize and return task"""
         return SetLandingZoneStatusTask(TASK_NAME, self.project, force_fail)
 
-    def _assert_owner_alert(self, count, name='zone_move'):
+    def _assert_owner_alert(self, count: int, name: str = 'zone_move'):
         """Assert owner alert count"""
         self.assertEqual(
             AppAlert.objects.filter(
@@ -43,7 +43,7 @@ class TestSetLandingZoneStatusTask(ViewTestBase):
             count,
         )
 
-    def _assert_member_alerts(self, count):
+    def _assert_member_alerts(self, count: int):
         """Assert member alert count"""
         self.assertEqual(
             AppAlert.objects.filter(

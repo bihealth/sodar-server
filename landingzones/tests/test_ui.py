@@ -61,7 +61,7 @@ class LandingZoneUITestBase(
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
-    def assert_element(self, by, element, expected=True):
+    def assert_element(self, by: str, element: str, expected: bool = True):
         """Assert element existence for an already logged in user"""
         # TODO: Add this into UITestBase (see bihealth/sodar-core#1104)
         if expected:
@@ -70,14 +70,14 @@ class LandingZoneUITestBase(
             with self.assertRaises(NoSuchElementException):
                 self.selenium.find_element(by, element)
 
-    def assert_enabled(self, element, expected=True):
+    def assert_enabled(self, element: str, expected: bool = True):
         """Assert link or button is enabled"""
         if expected:
             self.assertNotIn('disabled', element.get_attribute('class'))
         else:
             self.assertIn('disabled', element.get_attribute('class'))
 
-    def wait_for_status(self, status_elem, status):
+    def wait_for_status(self, status_elem: str, status: str):
         """Wait for a specific status in the zone status element"""
         for i in range(0, 25):
             if status_elem.text == status:
@@ -1354,14 +1354,14 @@ class TestProjectDetailView(LandingZoneUITestBase):
 class TestHomeView(LandingZoneUITestBase):
     """Tests for HomeView landingzones content"""
 
-    def _wait_for_elem(self, suffix):
+    def _wait_for_elem(self, suffix: str):
         WebDriverWait(self.selenium, self.wait_time).until(
             ec.presence_of_element_located(
                 (By.CLASS_NAME, 'sodar-lz-project-list-' + suffix)
             )
         )
 
-    def _assert_list_elem(self, suffix, expected):
+    def _assert_list_elem(self, suffix: str, expected: bool):
         self.assert_element(
             By.CLASS_NAME, 'sodar-lz-project-list-' + suffix, expected
         )

@@ -10,6 +10,7 @@ from django.urls import reverse
 from rest_framework.response import Response
 
 # Projectroles dependency
+from projectroles.models import SODARUser
 from projectroles.plugins import PluginAPI
 from projectroles.views_ajax import SODARBaseProjectAjaxView
 
@@ -28,7 +29,14 @@ STATUS_TRUNCATE_LEN = 320
 class ZoneBaseAjaxView(SODARBaseProjectAjaxView):
     """Base view for landingzones Ajax Views"""
 
-    def check_zone_permission(self, zone, user):
+    def check_zone_permission(self, zone: LandingZone, user: SODARUser) -> bool:
+        """
+        Check user viewing permission for landing zone.
+
+        :param zone: LandingZone object
+        :param user: SODARUser object
+        :return: bool
+        """
         permission = (
             'landingzones.view_zone_own'
             if zone.user == self.request.user
