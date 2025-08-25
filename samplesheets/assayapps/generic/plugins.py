@@ -2,10 +2,16 @@
 
 import re
 
+from typing import Optional
+
 from altamisa.constants import table_headers as th
 
 from django.conf import settings
 
+# Projectroles dependency
+from projectroles.models import SODARUser
+
+from samplesheets.models import Assay
 from samplesheets.plugins import SampleSheetAssayPluginPoint
 from samplesheets.rendering import SIMPLE_LINK_TEMPLATE
 from samplesheets.utils import get_top_header
@@ -51,15 +57,18 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
     display_row_links = True
 
     @staticmethod
-    def _link_from_comment(cell, header, top_header, target_cols, url):
+    def _link_from_comment(
+        cell, header: dict, top_header: dict, target_cols: list, url: str
+    ) -> bool:
         """
-        Creates collection links for targeted columns.
+        Create collection links for targeted columns.
 
         :param cell: Dict (obtained by iterating over a row)
-        :param header: Column header
-        :param top_header: Column top header
-        :param target_cols: List of column names.
-        :param url: Base URL for link target.
+        :param header: Column header (dict)
+        :param top_header: Column top header (dict)
+        :param target_cols: List of column names
+        :param url: Base URL for link target
+        :return: Bool
         """
         # Special case for material names
         if (
@@ -79,15 +88,17 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         return False
 
     @classmethod
-    def _get_col_value(cls, target_col, row, table):
+    def _get_col_value(
+        cls, target_col: str, row: list[dict], table: dict
+    ) -> Optional[str]:
         """
         Return value of last matched column.
 
-        :param target_col: Column name string to look for.
+        :param target_col: Column name (string)
         :param row: List of dicts (a row returned by SampleSheetTableBuilder)
         :param table: Full table with headers (dict returned by
                       SampleSheetTableBuilder)
-        :return: String with cell value of last matched column.
+        :return: String with cell value of last matched column or None
         """
         # Returns last match of row
         value = None
@@ -103,7 +114,9 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             return value[0]['name']
         return None
 
-    def get_row_path(self, row, table, assay, assay_path):
+    def get_row_path(
+        self, row: list[dict], table: dict, assay: Assay, assay_path: str
+    ) -> Optional[str]:
         """
         Return iRODS path for an assay row in a sample sheet. If None,
         display default path. Used if display_row_links = True.
@@ -132,7 +145,9 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             return assay_path + data_path
         return None
 
-    def update_row(self, row, table, assay, index):
+    def update_row(
+        self, row: list[dict], table: dict, assay: Assay, index: int
+    ) -> list[dict]:
         """
         Update render table row with e.g. links. Return the modified row.
 
@@ -208,7 +223,12 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                 )
         return row
 
-    def update_cache(self, name=None, project=None, user=None):
+    def update_cache(
+        self,
+        name: Optional[str] = None,
+        project: Optional[str] = None,
+        user: Optional[SODARUser] = None,
+    ):
         """
         Update cached data for this app, limitable to item ID and/or project.
 

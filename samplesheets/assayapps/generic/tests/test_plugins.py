@@ -3,6 +3,7 @@
 import os
 
 from copy import deepcopy
+from typing import Optional
 
 from samplesheets.assayapps.generic.plugins import (
     DATA_COMMENT_PREFIX,
@@ -34,7 +35,7 @@ class TestGenericAssayPlugin(AssayPluginTestBase):
     plugin_name = PLUGIN_NAME
     template_name = 'generic'
 
-    def _get_row_path(self):
+    def _get_row_path(self) -> Optional[str]:
         """Shortcut for plugin get_row_path() call with first assay row"""
         return self.plugin.get_row_path(
             self.assay_table['table_data'][0],
@@ -43,7 +44,7 @@ class TestGenericAssayPlugin(AssayPluginTestBase):
             self.assay_path,
         )
 
-    def _update_row(self):
+    def _update_row(self) -> list[dict]:
         """Shortcut for plugin update_row() with first assay row"""
         return self.plugin.update_row(
             self.assay_table['table_data'][0], self.assay_table, self.assay, 0
