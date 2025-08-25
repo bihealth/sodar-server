@@ -351,7 +351,7 @@ class TestUpdateCacheRows(SamplesheetsPluginTestBase):
         # NOTE: Using dna_sequencing as the example plugin here
         self.plugin = DnaSequencingPlugin()
         self.cache_backend = plugin_api.get_backend_api('sodar_cache')
-        item_name = 'irods/rows/{}'.format(self.assay.sodar_uuid)
+        item_name = f'irods/rows/{self.assay.sodar_uuid}'
         self.item_kwargs = {
             'app_name': ASSAY_PLUGIN_NAME,
             'name': item_name,

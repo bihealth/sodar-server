@@ -112,9 +112,7 @@ class LandingZone(models.Model):
         unique_together = ('title', 'project', 'user')
 
     def __str__(self):
-        return '{}: {}/{}'.format(
-            self.project.title, self.user.username, self.title
-        )
+        return f'{self.project.title}: {self.user.username}/{self.title}'
 
     def __repr__(self):
         values = (self.project.title, self.user.username, self.title)
@@ -129,7 +127,7 @@ class LandingZone(models.Model):
     def set_status(self, status, status_info=None):
         """Set zone status"""
         if status not in lc.ZONE_STATUS_TYPES:
-            raise TypeError('Unknown status "{}"'.format(status))
+            raise TypeError(f'Unknown status "{status}"')
         # Refresh object in case foreign keys have changed (see #2175)
         self.refresh_from_db()
         self.status = status

@@ -113,9 +113,7 @@ class ZoneSubmitBaseAPIView(
         # Validate zone
         if zone.status not in allowed_status_types:
             raise ValidationError(
-                'Unable to {} landing zone: status={}'.format(
-                    action, zone.status
-                )
+                f'Unable to {action} landing zone: status={zone.status}'
             )
 
 
@@ -270,7 +268,7 @@ class ZoneCreateAPIView(
         ex_prefix = 'Creating landing zone failed: '
         # Check taskflow status
         if not plugin_api.get_backend_api('taskflow'):
-            self._raise_503('{}Taskflow not enabled'.format(ex_prefix))
+            self._raise_503(f'{ex_prefix}Taskflow not enabled')
 
         # Ensure project has investigation with iRODS collections created
         project = self.get_project()
@@ -279,7 +277,7 @@ class ZoneCreateAPIView(
         ).first()
         # NOTE: Lack of investigation is already caught in serializer
         if not investigation.irods_status:
-            self._raise_503('{}{}'.format(ex_prefix, ZONE_NO_COLLS_MSG))
+            self._raise_503(f'{ex_prefix}{ZONE_NO_COLLS_MSG}')
 
         # If all is OK, go forward with object creation and taskflow submission
         create_colls = serializer.validated_data.pop('create_colls')
@@ -293,7 +291,7 @@ class ZoneCreateAPIView(
                 request=self.request,
             )
         except Exception as ex:
-            raise APIException('{}{}'.format(ex_prefix, ex))
+            raise APIException(f'{ex_prefix}{ex}')
 
 
 class ZoneUpdateAPIView(
@@ -350,13 +348,13 @@ class ZoneUpdateAPIView(
         # Check that only allowed fields are updated
         if not self._validate_update_fields(serializer):
             # Should raise 400 Bad Request
-            raise ValidationError('{}Invalid update fields'.format(ex_msg))
+            raise ValidationError(f'{ex_msg}Invalid update fields')
         # If all is OK, go forward with object update and taskflow submission
         super().perform_update(serializer)
         try:
             self.update_zone(zone=serializer.instance, request=self.request)
         except Exception as ex:
-            raise APIException('{}{}'.format(ex_msg, ex))
+            raise APIException(f'{ex_msg}{ex}')
 
 
 @extend_schema(
@@ -393,9 +391,7 @@ class ZoneSubmitDeleteAPIView(ZoneDeleteMixin, ZoneSubmitBaseAPIView):
         try:
             self.submit_delete(zone)
         except Exception as ex:
-            raise APIException(
-                'Initiating landing zone deletion failed: {}'.format(ex)
-            )
+            raise APIException(f'Initiating landing zone deletion failed: {ex}')
         return Response(
             {
                 'detail': 'Landing zone deletion initiated',
@@ -473,13 +469,13 @@ class ZoneSubmitMoveAPIView(ZoneMoveMixin, ZoneSubmitBaseAPIView):
         try:
             self.submit_validate_move(zone, validate_only)
         except Exception as ex:
-            ex_msg = 'Initiating landing zone {} failed: '.format(action_msg)
+            ex_msg = f'Initiating landing zone {action_msg} failed: '
             if taskflow:
                 taskflow.raise_submit_api_exception(ex_msg, ex)
-            raise APIException('{}{}'.format(ex_msg, ex))
+            raise APIException(f'{ex_msg}{ex}')
         return Response(
             {
-                'detail': 'Landing zone {} initiated'.format(action_msg),
+                'detail': f'Landing zone {action_msg} initiated',
                 'sodar_uuid': str(zone.sodar_uuid),
             },
             status=status.HTTP_200_OK,

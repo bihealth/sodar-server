@@ -73,7 +73,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         if cache_backend:
             cache_item = cache_backend.get_cache_item(
                 app_name=APP_NAME,
-                name='irods/{}'.format(study.sodar_uuid),
+                name=f'irods/{study.sodar_uuid}',
                 project=study.get_project(),
             )
 
@@ -177,7 +177,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
 
         webdav_url = settings.IRODS_WEBDAV_URL
         ret = {
-            'title': 'Pedigree-Wise Links for {}'.format(query_id),
+            'title': f'Pedigree-Wise Links for {query_id}',
             'data': {
                 'session': {'title': 'IGV Session File', 'files': []},
                 'bam': {'title': 'BAM/CRAM Files', 'files': []},
@@ -194,7 +194,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         if cache_backend:
             cache_item = cache_backend.get_cache_item(
                 app_name=APP_NAME,
-                name='irods/{}'.format(study.sodar_uuid),
+                name=f'irods/{study.sodar_uuid}',
                 project=study.get_project(),
             )
 
@@ -296,7 +296,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         :param cache_backend: Sodarcache backend object
         :param irods_backend: Irodsbackend object
         """
-        item_name = 'irods/{}'.format(study.sodar_uuid)
+        item_name = f'irods/{study.sodar_uuid}'
         bam_paths = {}
         vcf_paths = {}
         # Get/build render tables
@@ -320,15 +320,16 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         except FileNotFoundError:
             logger.debug('No data objects found')
         except Exception as ex:
-            logger.error('Error querying for study objects: {}'.format(ex))
+            logger.error(f'Error querying for study objects: {ex}')
 
         project = study.get_project()
         bam_omit_list = get_igv_omit_list(project, 'bam')
         vcf_omit_list = get_igv_omit_list(project, 'vcf')
 
         for assay in study.assays.all():
-            skip_msg = 'skipping pedigree file path search: "{}" ({})'.format(
-                assay.get_display_name(), assay.sodar_uuid
+            skip_msg = (
+                f'skipping pedigree file path search: '
+                f'"{assay.get_display_name()}" ({assay.sodar_uuid})'
             )
             assay_plugin = assay.get_plugin()
             if not assay_plugin:
@@ -417,7 +418,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         """
         # Expected name: "irods/{study_uuid}"
         if name and name.split('/')[0] != 'irods':
-            logger.debug('Unknown cache item name "{}", skipping'.format(name))
+            logger.debug(f'Unknown cache item name "{name}", skipping')
             return
         cache_backend = plugin_api.get_backend_api('sodar_cache')
         irods_backend = plugin_api.get_backend_api('omics_irods')
@@ -435,9 +436,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 continue
             # Only apply for investigations with the correct configuration
             logger.debug(
-                'Updating cache for project {}..'.format(
-                    project.get_log_title()
-                )
+                f'Updating cache for project {project.get_log_title()}..'
             )
             # If a name is given, only update that specific CacheItem
             if name:
@@ -453,9 +452,8 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 ):
                     continue
                 logger.debug(
-                    'Updating cache for study "{}" ({})..'.format(
-                        study.get_display_name(), study.sodar_uuid
-                    )
+                    f'Updating cache for study "{study.get_display_name()}" '
+                    f'({study.sodar_uuid})..'
                 )
                 self._update_study_cache(
                     study, user, cache_backend, irods_backend

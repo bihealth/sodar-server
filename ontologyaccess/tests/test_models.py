@@ -151,8 +151,9 @@ class TestOBOFormatOntology(OBOFormatOntologyTestBase):
 
     def test__str__(self):
         """Test OBOFormatOntology __str__() function"""
-        expected = '{}: {} ({})'.format(
-            self.ontology.name, self.ontology.title, self.ontology.ontology_id
+        expected = (
+            f'{self.ontology.name}: {self.ontology.title} '
+            f'({self.ontology.ontology_id})'
         )
         self.assertEqual(str(self.ontology), expected)
 
@@ -192,7 +193,7 @@ class TestOBOFormatOntologyTerm(OBOFormatOntologyTestBase):
 
     def test__str__(self):
         """Test OBOFormatOntologyTerm __str__() function"""
-        expected = '{} ({})'.format(self.term.term_id, self.term.name)
+        expected = f'{self.term.term_id} ({self.term.name})'
         self.assertEqual(str(self.term), expected)
 
     def test__repr__(self):

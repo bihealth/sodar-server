@@ -331,7 +331,7 @@ class ProjectAppPlugin(
                 zone_path = irods_backend.get_path(zone)
                 if irods.collections.exists(zone_path):
                     continue  # Skip if already there
-                logger.info('Syncing landing zone "{}"..'.format(zone.title))
+                logger.info(f'Syncing landing zone "{zone.title}"..')
                 self.submit_create(zone, create_colls=True, sync=True)
 
 

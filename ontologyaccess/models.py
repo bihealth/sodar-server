@@ -118,7 +118,7 @@ class OBOFormatOntology(models.Model):
         ordering = ['name']
 
     def __str__(self):
-        return '{}: {} ({})'.format(self.name, self.title, self.ontology_id)
+        return f'{self.name}: {self.title} ({self.ontology_id})'
 
     def __repr__(self):
         values = [self.name, self.title, self.ontology_id]
@@ -135,7 +135,7 @@ class OBOFormatOntology(models.Model):
         """Validate name_case"""
         if not self.name.isupper():
             raise ValidationError(
-                'Ontology name "{}" is not in upper case'.format(self.name)
+                f'Ontology name "{self.name}" is not in upper case'
             )
 
     # Custom row-level functions
@@ -259,7 +259,7 @@ class OBOFormatOntologyTerm(models.Model):
         pass
 
     def __str__(self):
-        return '{} ({})'.format(self.term_id, self.name)
+        return f'{self.term_id} ({self.name})'
 
     def __repr__(self):
         values = [self.ontology.name, self.term_id, self.name]

@@ -133,7 +133,7 @@ class ISATemplateForm(forms.ModelForm):
         i = 0
         for isa_study in isa_inv.studies:
             study_path = isa_study.info.path
-            study_id = 'study{}'.format(i)
+            study_id = f'study{i}'
             with open(os.path.join(path, study_path), 'r') as f:
                 s = StudyReader.from_stream(
                     study_id=study_id,
@@ -141,12 +141,12 @@ class ISATemplateForm(forms.ModelForm):
                     filename=study_path,
                 ).read()
             StudyValidator(isa_inv, isa_study, s).validate()
-            logger.debug('Study validation OK: {}'.format(study_path))
+            logger.debug(f'Study validation OK: {study_path}')
             i += 1
             j = 0
             for isa_assay in isa_study.assays:
                 assay_path = isa_assay.path
-                assay_id = 'assay{}'.format(j)
+                assay_id = f'assay{j}'
                 with open(os.path.join(path, assay_path), 'r') as f:
                     a = AssayReader.from_stream(
                         study_id=study_id,
@@ -155,7 +155,7 @@ class ISATemplateForm(forms.ModelForm):
                         filename=assay_path,
                     ).read()
                 AssayValidator(isa_inv, isa_study, isa_assay, a).validate()
-                logger.debug('Assay validation OK: {}'.format(assay_path))
+                logger.debug(f'Assay validation OK: {assay_path}')
                 j += 1
 
     file_upload = MultipleFileField(
@@ -193,7 +193,7 @@ class ISATemplateForm(forms.ModelForm):
                 except Exception as ex:
                     self.add_error(
                         'file_upload',
-                        'Unable to open zip archive: {}'.format(ex),
+                        f'Unable to open zip archive: {ex}',
                     )
                     return self.cleaned_data
                 self.file_data = self._get_files_from_zip(self.isa_zip)
@@ -238,9 +238,7 @@ class ISATemplateForm(forms.ModelForm):
                 user=self.current_user,
             )
             logger.debug(
-                'Created ISA template: {} ({})'.format(
-                    template.name, template.sodar_uuid
-                )
+                f'Created ISA template: {template.name} ({template.sodar_uuid})'
             )
         # Update template
         else:
@@ -252,9 +250,7 @@ class ISATemplateForm(forms.ModelForm):
             self.instance.save()
             template = self.instance
             logger.debug(
-                'Updated ISA template: {} ({})'.format(
-                    template.name, template.sodar_uuid
-                )
+                f'Updated ISA template: {template.name} ({template.sodar_uuid})'
             )
         # Create/update files
         if self.file_data:
@@ -276,9 +272,7 @@ class ISATemplateForm(forms.ModelForm):
                     template=template, file_name=k, content=v
                 )
                 logger.debug(
-                    'Created ISA template file: {} ({})'.format(
-                        k, file.sodar_uuid
-                    )
+                    f'Created ISA template file: {k} ({file.sodar_uuid})'
                 )
         # Validate template content
         if self.file_data:  # No need to validate if files haven't changed
@@ -291,17 +285,14 @@ class ISATemplateForm(forms.ModelForm):
                         extra_context={TPL_DIR_FIELD: TPL_DIR_VALUE},
                     )
                 except Exception as ex:
-                    logger.error(
-                        'Exception running cookiecutter: {}'.format(ex)
-                    )
+                    logger.error(f'Exception running cookiecutter: {ex}')
                     raise ex
                 # Validate with altamISA
                 try:
                     self._validate_isa(output_dir)
                 except Exception as ex:
                     logger.error(
-                        'Exception validating generated ISA-Tab files: '
-                        '{}'.format(ex)
+                        f'Exception validating generated ISA-Tab files: {ex}'
                     )
                     raise ex
         logger.debug('Template save OK')

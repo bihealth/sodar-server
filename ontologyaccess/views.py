@@ -79,9 +79,8 @@ class OBOFormatOntologyImportView(
         self.object = form.save()
         messages.success(
             self.request,
-            'OBO Ontology "{}" imported with {} terms.'.format(
-                self.object.title, self.object.terms.count()
-            ),
+            f'OBO Ontology "{self.object.title}" imported with '
+            f'{self.object.terms.count()} terms.',
         )
         return redirect(redirect_url)
 
@@ -102,10 +101,7 @@ class OBOFormatOntologyUpdateView(
         redirect_url = reverse('ontologyaccess:list')
         self.object = form.save()
         messages.success(
-            self.request,
-            'OBO Ontology "{}" updated'.format(
-                self.object.title,
-            ),
+            self.request, f'OBO Ontology "{self.object.title}" updated'
         )
         return redirect(redirect_url)
 

@@ -38,7 +38,7 @@ class IrodsConfigMixin:
             user_name = (
                 user_name.split('@')[0] + '@' + user_name.split('@')[1].upper()
             )
-        home_path = '/{}/home/{}'.format(settings.IRODS_ZONE, user_name)
+        home_path = f'/{settings.IRODS_ZONE}/home/{user_name}'
         cert_file_name = settings.IRODS_HOST + '.crt'
 
         # Set up irods_environment.json
@@ -66,7 +66,7 @@ class IrodsConfigMixin:
                 auth_scheme = 'PAM'
             irods_env['irods_authentication_scheme'] = auth_scheme
         irods_env = irods_backend.format_env(irods_env)
-        logger.debug('iRODS environment: {}'.format(irods_env))
+        logger.debug(f'iRODS environment: {irods_env}')
         return irods_env
 
 
@@ -107,9 +107,7 @@ class IrodsInfoView(LoggedInPermissionMixin, HTTPRefererMixin, TemplateView):
                 unavail_status = 'Invalid iRODS Query'
         if not context.get('server_info'):
             if unavail_status:
-                unavail_info['server_status'] = 'Unavailable: {}'.format(
-                    unavail_status
-                )
+                unavail_info['server_status'] = f'Unavailable: {unavail_status}'
                 context['server_info'] = unavail_info
 
         context['irods_backend_enabled'] = ib_enabled
@@ -150,17 +148,13 @@ class IrodsConfigView(
                     zip_file.writestr(cert_file_name, cert_file.read())
             except FileNotFoundError:
                 logger.warning(
-                    'iRODS server cert file not found, '
-                    'not adding to archive (path={})'.format(
-                        settings.IRODS_CERT_PATH
-                    )
+                    f'iRODS server cert file not found, '
+                    f'not adding to archive (path={settings.IRODS_CERT_PATH})'
                 )
             zip_file.close()
             response = HttpResponse(
                 io_buf.getvalue(), content_type='application/zip'
             )
             attach_name = 'irods_config.zip'
-        response['Content-Disposition'] = 'attachment; filename={}'.format(
-            attach_name
-        )
+        response['Content-Disposition'] = f'attachment; filename={attach_name}'
         return response

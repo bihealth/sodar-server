@@ -103,7 +103,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         if cache_backend:
             cache_item = cache_backend.get_cache_item(
                 app_name=APP_NAME,
-                name='irods/{}'.format(study.sodar_uuid),
+                name=f'irods/{study.sodar_uuid}',
                 project=study.get_project(),
             )
         # Get source libraries
@@ -162,12 +162,12 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         if cache_backend:
             cache_item = cache_backend.get_cache_item(
                 app_name=APP_NAME,
-                name='irods/{}'.format(study.sodar_uuid),
+                name=f'irods/{study.sodar_uuid}',
                 project=study.get_project(),
             )
         webdav_url = settings.IRODS_WEBDAV_URL
         ret = {
-            'title': 'Case-Wise Links for {}'.format(case_id),
+            'title': f'Case-Wise Links for {case_id}',
             'data': {
                 'session': {'title': 'IGV Session File', 'files': []},
                 'bam': {'title': 'BAM/CRAM Files', 'files': []},
@@ -184,7 +184,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                     {
                         'label': library_name,
                         'url': webdav_url + path,
-                        'title': 'Download {} file'.format(file_type.upper()),
+                        'title': f'Download {file_type.upper()} file',
                         'extra_links': [
                             {
                                 'label': 'Add {} file to IGV'.format(
@@ -252,7 +252,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         :param cache_backend: Sodarcache backend object
         """
         irods_backend = plugin_api.get_backend_api('omics_irods')
-        item_name = 'irods/{}'.format(study.sodar_uuid)
+        item_name = f'irods/{study.sodar_uuid}'
         bam_paths = {}
         vcf_paths = {}
         # Get/build render tables
@@ -291,7 +291,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                         vcf_paths[lib] = vcf_path
 
         updated_data = {'bam': bam_paths, 'vcf': vcf_paths}
-        logger.debug('Set cache item "{}": {}'.format(item_name, updated_data))
+        logger.debug(f'Set cache item "{item_name}": {updated_data}')
         cache_backend.set_cache_item(
             name=item_name,
             app_name=APP_NAME,

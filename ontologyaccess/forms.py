@@ -62,8 +62,8 @@ class OBOFormatOntologyForm(forms.ModelForm):
                 )
             except Exception as ex:
                 # NOTE: Can't bind to FileField
-                print('DEBUG: OWL convert exception: {}'.format(ex))  # DEBUG
-                self.add_error(None, 'OWL convert exception: {}'.format(ex))
+                print(f'DEBUG: OWL convert exception: {ex}')  # DEBUG
+                self.add_error(None, f'OWL convert exception: {ex}')
                 return self.cleaned_data
         else:
             file_data = self.files.get('file_upload').read().decode()
@@ -74,8 +74,8 @@ class OBOFormatOntologyForm(forms.ModelForm):
             else:
                 self.obo_doc = fastobo.loads(file_data)
         except Exception as ex:
-            print('DEBUG: Fastobo exception: {}'.format(ex))  # DEBUG
-            self.add_error(None, 'Fastobo exception: {}'.format(ex))
+            print(f'DEBUG: Fastobo exception: {ex}')  # DEBUG
+            self.add_error(None, f'Fastobo exception: {ex}')
 
         return self.cleaned_data
 

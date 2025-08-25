@@ -19,7 +19,7 @@ class SODARBaseTask(BaseTask):
         super().__init__(
             name, force_fail=force_fail, inject=inject, *args, **kwargs
         )
-        self.name = '<SODAR> {} ({})'.format(name, self.__class__.__name__)
+        self.name = f'<SODAR> {name} ({self.__class__.__name__})'
         self.project = project
 
 

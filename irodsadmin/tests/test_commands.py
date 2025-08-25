@@ -396,7 +396,7 @@ class TestIrodsOrphans(
     def test_get_orphans_assay(self):
         """Test get_orphans() with orphan assay"""
         orphan_path = '{}/assay_{}'.format(
-            self.irods_backend.get_path(self.study), str(uuid.uuid4())
+            self.irods_backend.get_path(self.study), uuid.uuid4()
         )
         self.irods.collections.create(orphan_path)
         # Capture stdout
@@ -422,7 +422,7 @@ class TestIrodsOrphans(
     def test_get_orphans_study(self):
         """Test get_orphans() with orphan study"""
         orphan_path = '{}/sample_data/study_{}'.format(
-            self.irods_backend.get_path(self.project), str(uuid.uuid4())
+            self.irods_backend.get_path(self.project), uuid.uuid4()
         )
         self.irods.collections.create(orphan_path)
         # Capture stdout
@@ -479,11 +479,8 @@ class TestIrodsOrphans(
     def test_get_output_project(self):
         """Test get_orphans() with orphan project"""
         collection = 'aa/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
-        orphan_path = '{}/{}'.format(
-            os.path.dirname(
-                os.path.dirname(self.irods_backend.get_path(self.project))
-            ),
-            collection,
+        orphan_path = os.path.join(
+            self.irods_backend.get_projects_path(), collection
         )
         self.irods.collections.create(orphan_path)
 
@@ -505,7 +502,7 @@ class TestIrodsOrphans(
     def test_get_output_assay_subs(self):
         """Test get_orphans() with orphan assay subcollections"""
         collection = 'UnexpectedCollection'
-        orphan_path = '{}/{}'.format(
+        orphan_path = os.path.join(
             self.irods_backend.get_path(self.assay), collection
         )
         self.irods.collections.create(orphan_path)
@@ -569,7 +566,7 @@ class TestIrodsOrphans(
     def test_command_orphan_assay(self):
         """Test command with orphan assay"""
         orphan_path = '{}/assay_{}'.format(
-            self.irods_backend.get_path(self.study), str(uuid.uuid4())
+            self.irods_backend.get_path(self.study), uuid.uuid4()
         )
         self.irods.collections.create(orphan_path)
         output = self._get_stdout()
@@ -583,7 +580,7 @@ class TestIrodsOrphans(
     def test_command_orphan_study(self):
         """Test command with orphan study"""
         orphan_path = '{}/sample_data/study_{}'.format(
-            self.irods_backend.get_path(self.project), str(uuid.uuid4())
+            self.irods_backend.get_path(self.project), uuid.uuid4()
         )
         self.irods.collections.create(orphan_path)
         output = self._get_stdout()
@@ -616,11 +613,8 @@ class TestIrodsOrphans(
         """Test command with orphan project"""
         project_uuid = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
         collection = 'aa/' + project_uuid
-        orphan_path = '{}/{}'.format(
-            os.path.dirname(
-                os.path.dirname(self.irods_backend.get_path(self.project))
-            ),
-            collection,
+        orphan_path = os.path.join(
+            self.irods_backend.get_projects_path(), collection
         )
         self.irods.collections.create(orphan_path)
         output = self._get_stdout()
@@ -647,7 +641,7 @@ class TestIrodsOrphans(
     def test_command_multiple(self):
         """Test command with multiple orphans"""
         orphan_path = '{}/sample_data/study_{}'.format(
-            self.irods_backend.get_path(self.project), str(uuid.uuid4())
+            self.irods_backend.get_path(self.project), uuid.uuid4()
         )
         self.irods.collections.create(orphan_path)
         collection = '20201031_123456'
@@ -674,14 +668,14 @@ class TestIrodsOrphans(
     def test_command_ordering(self):
         """Test ordering of orphans in command output"""
         orphan_path = '{}/sample_data/study_{}'.format(
-            self.irods_backend.get_path(self.project), str(uuid.uuid4())
+            self.irods_backend.get_path(self.project), uuid.uuid4()
         )
         self.irods.collections.create(orphan_path)
 
         project2 = self.make_project('TestProject2', PROJECT_TYPE_PROJECT, None)
         self.make_assignment(project2, self.user, self.role_owner)
         orphan_path2 = '{}/sample_data/study_{}'.format(
-            self.irods_backend.get_path(project2), str(uuid.uuid4())
+            self.irods_backend.get_path(project2), uuid.uuid4()
         )
         self.irods.collections.create(orphan_path2)
 

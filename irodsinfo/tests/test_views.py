@@ -67,7 +67,7 @@ class TestIrodsConfigView(IrodsinfoViewTestBase):
         self.assertEqual(response['content-type'], 'application/json')
         self.assertEqual(
             response.get('Content-Disposition'),
-            'attachment; filename={}'.format('irods_environment.json'),
+            'attachment; filename=irods_environment.json',
         )
         env_data = json.loads(response.content)
         self.assertEqual(('test', 1) in env_data.items(), False)
@@ -81,7 +81,7 @@ class TestIrodsConfigView(IrodsinfoViewTestBase):
         self.assertEqual(response['content-type'], 'application/json')
         self.assertEqual(
             response.get('Content-Disposition'),
-            'attachment; filename={}'.format('irods_environment.json'),
+            'attachment; filename=irods_environment.json',
         )
         env_data = json.loads(response.content)
         self.assertEqual(('test', 1) in env_data.items(), True)
@@ -95,7 +95,7 @@ class TestIrodsConfigView(IrodsinfoViewTestBase):
         self.assertEqual(response['content-type'], 'application/zip')
         self.assertEqual(
             response.get('Content-Disposition'),
-            'attachment; filename={}'.format('irods_config.zip'),
+            'attachment; filename=irods_config.zip',
         )
         zip_file = zipfile.ZipFile(io.BytesIO(response.content))
         self.assertEqual(len(zip_file.infolist()), 2)

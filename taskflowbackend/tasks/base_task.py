@@ -38,4 +38,4 @@ class BaseTask(task.Task):
 
     def post_revert(self, *args, **kwargs):
         if self.verbose:
-            logger.info('Reverted: {}'.format(self.name))
+            logger.info(f'Reverted: {self.name}')

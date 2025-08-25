@@ -61,7 +61,7 @@ def get_irods_tree(investigation):
     irods_backend = plugin_api.get_backend_api('omics_irods')
     if not irods_backend:
         return ''
-    ret = '<ul><li>{}<ul>'.format(settings.IRODS_SAMPLE_COLL)
+    ret = f'<ul><li>{settings.IRODS_SAMPLE_COLL}<ul>'
     for study in investigation.studies.all():
         ret += '<li>{}'.format(
             irods_backend.get_sub_path(study, include_parent=False)

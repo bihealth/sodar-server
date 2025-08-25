@@ -32,9 +32,8 @@ def get_output(zones, irods_backend, irods):
         path = irods_backend.get_path(zone)
         if not irods.collections.exists(path):
             logger.error(
-                'No iRODS collection found for zone "{}/{}" ({})'.format(
-                    zone.user.username, zone.title, zone.sodar_uuid
-                )
+                f'No iRODS collection found for zone '
+                f'"{zone.user.username}/{zone.title}" ({zone.sodar_uuid})'
             )
             continue
         try:
@@ -55,8 +54,8 @@ def get_output(zones, irods_backend, irods):
             )
         except Exception as ex:
             logger.error(
-                'Exception in retrieving stats for zone "{}/{}" ({}): '
-                '{}'.format(zone.user.username, zone.title, zone.sodar_uuid, ex)
+                f'Exception in retrieving stats for zone '
+                f'"{zone.user.username}/{zone.title}" ({zone.sodar_uuid}): {ex}'
             )
     return lines
 

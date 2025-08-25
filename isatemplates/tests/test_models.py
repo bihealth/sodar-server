@@ -225,7 +225,7 @@ class TestCookiecutterISAFile(
 
     def test_str(self):
         """Test CookiecutterISAFile.__str__()"""
-        expected = '{}: {}'.format(self.template.name, self.file.file_name)
+        expected = f'{self.template.name}: {self.file.file_name}'
         self.assertEqual(self.file.__str__(), expected)
 
     def test_repr(self):

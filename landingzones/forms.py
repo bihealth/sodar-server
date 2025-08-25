@@ -96,10 +96,8 @@ class LandingZoneForm(forms.ModelForm):
                         self.fields['assay'].choices.append(
                             (
                                 assay.sodar_uuid,
-                                '{} / {}'.format(
-                                    assay.study.get_display_name(),
-                                    assay.get_display_name(),
-                                ),
+                                f'{assay.study.get_display_name()} / '
+                                f'{assay.get_display_name()}',
                             )
                         )
         # Updating

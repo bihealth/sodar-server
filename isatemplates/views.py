@@ -76,7 +76,7 @@ class ISATemplateModifyMixin:
             tl_event.add_object(obj, 'template', obj.description)
         messages.success(
             self.request,
-            'ISA-Tab template "{}" {}d.'.format(obj.description, action),
+            f'ISA-Tab template "{obj.description}" {action}d.',
         )
         return reverse('isatemplates:list')
 
@@ -85,7 +85,7 @@ class ISATemplateModifyMixin:
             obj = form.save()
         except Exception as ex:
             messages.error(
-                self.request, 'Exception in modifying template: {}'.format(ex)
+                self.request, f'Exception in modifying template: {ex}'
             )
             return redirect('isatemplates:list')
         return redirect(self.handle_modify(obj, self.form_action))
@@ -232,7 +232,5 @@ class ISATemplateExportView(LoggedInPermissionMixin, View):
         response = HttpResponse(
             zip_io.getvalue(), content_type='application/zip'
         )
-        response['Content-Disposition'] = 'attachment; filename="{}"'.format(
-            zip_name
-        )
+        response['Content-Disposition'] = f'attachment; filename="{zip_name}"'
         return response

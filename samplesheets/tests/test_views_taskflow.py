@@ -1345,7 +1345,7 @@ class TestIrodsDataRequestCreateView(IrodsDataRequestViewTestBase):
         obj = IrodsDataRequest.objects.first()
         self.assertEqual(
             list(get_messages(response.wsgi_request))[0].message,
-            'iRODS data request "{}" created.'.format(obj.get_display_name()),
+            f'iRODS data request "{obj.get_display_name()}" created.',
         )
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         self.assertEqual(obj.path, self.obj_path)
@@ -1484,9 +1484,7 @@ class TestIrodsDataRequestUpdateView(
 
         self.assertEqual(
             list(get_messages(response.wsgi_request))[-1].message,
-            'iRODS data request "{}" updated.'.format(
-                self.request.get_display_name()
-            ),
+            f'iRODS data request "{self.request.get_display_name()}" updated.',
         )
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         self.request.refresh_from_db()
@@ -1725,7 +1723,7 @@ class TestIrodsDataRequestAcceptView(
 
         self.assertEqual(
             list(get_messages(response.wsgi_request))[-1].message,
-            'iRODS data request "{}" accepted.'.format(obj.get_display_name()),
+            f'iRODS data request "{obj.get_display_name()}" accepted.',
         )
         obj.refresh_from_db()
         self.assertEqual(obj.status, IRODS_REQUEST_STATUS_ACCEPTED)
@@ -2451,7 +2449,7 @@ class TestIrodsDataRequestRejectView(
 
         self.assertEqual(
             list(get_messages(response.wsgi_request))[-1].message,
-            'iRODS data request "{}" rejected.'.format(obj.get_display_name()),
+            f'iRODS data request "{obj.get_display_name()}" rejected.',
         )
         obj.refresh_from_db()
         self.assertEqual(obj.status, IRODS_REQUEST_STATUS_REJECTED)
@@ -2752,9 +2750,7 @@ class TestSampleDataPublicAccess(
             user_zone=self.irods.zone,
         )
         self.irods.users.modify(PUBLIC_USER_NAME, 'password', PUBLIC_USER_PASS)
-        self.user_home_path = '/{}/home/{}'.format(
-            settings.IRODS_ZONE, PUBLIC_USER_NAME
-        )
+        self.user_home_path = f'/{settings.IRODS_ZONE}/home/{PUBLIC_USER_NAME}'
         self.assertTrue(self.irods.collections.exists(self.user_home_path))
         self.user_session = plugin_api.get_backend_api(
             'omics_irods',
@@ -2852,7 +2848,7 @@ class TestProjectSearchView(
         self.make_irods_colls(self.investigation)
         self.assay_path = self.irods_backend.get_path(self.assay)
         # Create test file
-        self.file_name = '{}_test.txt'.format(SAMPLE_ID)
+        self.file_name = f'{SAMPLE_ID}_test.txt'
         self.file_path = self.assay_path + '/' + self.file_name
         self.irods.data_objects.create(self.file_path)
 
@@ -2882,7 +2878,7 @@ class TestProjectSearchView(
             response = self.client.get(
                 reverse('projectroles:search')
                 + '?'
-                + urlencode({'s': '{} type:source'.format(SOURCE_ID)})
+                + urlencode({'s': f'{SOURCE_ID} type:source'})
             )
         self.assertEqual(response.status_code, 200)
         data = response.context['app_results'][0]
@@ -2898,7 +2894,7 @@ class TestProjectSearchView(
             response = self.client.get(
                 reverse('projectroles:search')
                 + '?'
-                + urlencode({'s': '{} type:sample'.format(SAMPLE_ID)})
+                + urlencode({'s': f'{SAMPLE_ID} type:sample'})
             )
         self.assertEqual(response.status_code, 200)
         data = response.context['app_results'][0]
@@ -2914,7 +2910,7 @@ class TestProjectSearchView(
             response = self.client.get(
                 reverse('projectroles:search')
                 + '?'
-                + urlencode({'s': '{} type:file'.format(SAMPLE_ID)})
+                + urlencode({'s': f'{SAMPLE_ID} type:file'})
             )
         self.assertEqual(response.status_code, 200)
         data = response.context['app_results'][0]

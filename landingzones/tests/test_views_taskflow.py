@@ -142,9 +142,7 @@ class LandingZoneTaskflowMixin:
             if zone.status == status:
                 return True
             time.sleep(ASYNC_WAIT_SECONDS)
-        raise AssertionError(
-            'Timed out waiting for zone status "{}"'.format(status)
-        )
+        raise AssertionError(f'Timed out waiting for zone status "{status}"')
 
     def assert_zone_count(self, count):
         """
@@ -157,9 +155,7 @@ class LandingZoneTaskflowMixin:
             if LandingZone.objects.count() == count:
                 return True
             time.sleep(ASYNC_WAIT_SECONDS)
-        raise AssertionError(
-            'Timed out waiting for zone count of {}'.format(count)
-        )
+        raise AssertionError(f'Timed out waiting for zone count of {count}')
 
 
 class TestProjectZoneView(
@@ -361,9 +357,7 @@ class TestZoneCreateView(
         plugin = self.assay.get_plugin()
         self.assertIsNotNone(plugin)
         plugin.update_cache(
-            'irods/rows/{}'.format(self.assay.sodar_uuid),
-            self.project,
-            self.user,
+            f'irods/rows/{self.assay.sodar_uuid}', self.project, self.user
         )
 
         self.post_data['create_colls'] = True
@@ -426,9 +420,7 @@ class TestZoneCreateView(
         plugin = self.assay.get_plugin()
         self.assertIsNotNone(plugin)
         plugin.update_cache(
-            'irods/rows/{}'.format(self.assay.sodar_uuid),
-            self.project,
-            self.user,
+            f'irods/rows/{self.assay.sodar_uuid}', self.project, self.user
         )
 
         self.post_data['create_colls'] = True
@@ -1106,7 +1098,7 @@ class TestZoneMoveView(
             self.client.post(self.url_validate)
         self.assert_zone_status(self.zone, ZONE_STATUS_FAILED)
         self.assertTrue('BatchValidateChecksumsTask' in self.zone.status_info)
-        self.assertTrue('File: {};'.format(NO_FILE_CHECKSUM_LABEL))
+        self.assertTrue(f'File: {NO_FILE_CHECKSUM_LABEL};')
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
 

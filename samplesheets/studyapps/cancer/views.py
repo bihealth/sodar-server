@@ -85,7 +85,7 @@ class IGVSessionFileRenderView(BaseCancerConfigView):
         if cache_backend:
             cache_item = cache_backend.get_cache_item(
                 app_name=APP_NAME,
-                name='irods/{}'.format(study.sodar_uuid),
+                name=f'irods/{study.sodar_uuid}',
                 project=project,
             )
         bam_urls = {}
@@ -122,7 +122,5 @@ class IGVSessionFileRenderView(BaseCancerConfigView):
         file_name = self.material.name + '.case.igv.xml'
         # Set up response
         response = HttpResponse(xml_str, content_type='text/xml')
-        response['Content-Disposition'] = 'attachment; filename="{}"'.format(
-            file_name
-        )
+        response['Content-Disposition'] = f'attachment; filename="{file_name}"'
         return response

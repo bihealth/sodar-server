@@ -36,7 +36,7 @@ class TestIGVSessionFileRenderView(
     def _get_auth_header(username, password):
         """Return basic auth header"""
         credentials = base64.b64encode(
-            '{}:{}'.format(username, password).encode('utf-8')
+            f'{username}:{password}'.encode('utf-8')
         ).strip()
         return {
             'HTTP_AUTHORIZATION': 'Basic {}'.format(credentials.decode('utf-8'))
@@ -62,7 +62,7 @@ class TestIGVSessionFileRenderView(
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.get('Content-Disposition'),
-            'attachment; filename="{}.pedigree.igv.xml"'.format(FAMILY_ID),
+            f'attachment; filename="{FAMILY_ID}.pedigree.igv.xml"',
         )
         # NOTE: XML forming tested in TestGetIGVXML
 
@@ -73,14 +73,14 @@ class TestIGVSessionFileRenderView(
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.get('Content-Disposition'),
-            'attachment; filename="{}.pedigree.igv.xml"'.format(FAMILY_ID),
+            f'attachment; filename="{FAMILY_ID}.pedigree.igv.xml"',
         )
 
     def test_get_basic_auth(self):
         """Test GET with basic auth"""
         response = self.client.get(
             self.url,
-            **self._get_auth_header(self.user_contributor.username, 'password')
+            **self._get_auth_header(self.user_contributor.username, 'password'),
         )
         self.assertEqual(response.status_code, 200)
 
@@ -89,7 +89,7 @@ class TestIGVSessionFileRenderView(
         knox_token = self.get_token(self.user_contributor)
         response = self.client.get(
             self.url,
-            **self._get_auth_header(self.user_contributor.username, knox_token)
+            **self._get_auth_header(self.user_contributor.username, knox_token),
         )
         self.assertEqual(response.status_code, 200)
 
@@ -100,7 +100,7 @@ class TestIGVSessionFileRenderView(
             self.url,
             **self._get_auth_header(
                 self.user_contributor.username, EMPTY_KNOX_TOKEN
-            )
+            ),
         )
         self.assertEqual(response.status_code, 401)
 
@@ -109,6 +109,6 @@ class TestIGVSessionFileRenderView(
         knox_token = self.get_token(self.user_contributor)
         response = self.client.get(
             self.url,
-            **self._get_auth_header(self.user_delegate.username, knox_token)
+            **self._get_auth_header(self.user_delegate.username, knox_token),
         )
         self.assertEqual(response.status_code, 401)

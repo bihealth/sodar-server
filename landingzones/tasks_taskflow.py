@@ -130,12 +130,12 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
             alert_msg = 'Failed to delete landing zone'
         else:
             logger.error(
-                'Unknown input for _add_owner_alert(): flow_name={}; '
-                'status={}'.format(flow_name, zone.status)
+                f'Unknown input for _add_owner_alert(): flow_name={flow_name}; '
+                f'status={zone.status}'
             )
             return
 
-        alert_msg += ': {}'.format(zone.title)
+        alert_msg += f': {zone.title}'
         if validate_only:
             alert_name = 'validate'
         elif flow_name == 'landing_zone_delete':
@@ -161,7 +161,7 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
             zone.user.username,
         )
         if zone.user_message:
-            alert_msg += ': {}'.format(zone.user_message)
+            alert_msg += f': {zone.user_message}'
         app_alerts.add_alert(
             app_name=APP_NAME,
             alert_name='zone_move_member',
@@ -179,10 +179,9 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
     def _send_owner_move_email(cls, zone):
         """Send email to zone owner on zone move/validate"""
         server_host = settings.SODAR_API_DEFAULT_HOST.geturl()
-        subject_body = 'Landing zone {}: {} / {}'.format(
-            zone.status.lower(),
-            zone.project.title,
-            zone.title,
+        subject_body = (
+            f'Landing zone {zone.status.lower()}: {zone.project.title} / '
+            f'{zone.title}'
         )
         if zone.status == ZONE_STATUS_MOVED:
             message_body = EMAIL_MSG_MOVED
@@ -213,9 +212,9 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
     def _send_member_move_email(cls, member, zone, file_count):
         """Send member email on landing zone move"""
         server_host = settings.SODAR_API_DEFAULT_HOST.geturl()
-        subject_body = 'Files uploaded in project "{}" by {}'.format(
-            zone.project.title,
-            zone.user.get_full_name(),
+        subject_body = (
+            f'Files uploaded in project "{zone.project.title}" by '
+            f'{zone.user.get_full_name()}'
         )
         message_body = EMAIL_MSG_MEMBER
         email_url = server_host + zone.assay.get_url()
@@ -272,9 +271,7 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
                         validate_only,
                     )
                 except Exception as ex:  # NOTE: We won't fail/revert here
-                    logger.error(
-                        'Exception in _add_owner_alert(): {}'.format(ex)
-                    )
+                    logger.error(f'Exception in _add_owner_alert(): {ex}')
             # NOTE: We only send email on move
             if (
                 settings.PROJECTROLES_SEND_EMAIL
@@ -288,9 +285,7 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
                 try:
                     cls._send_owner_move_email(zone)
                 except Exception as ex:  # NOTE: We won't fail/revert here
-                    logger.error(
-                        'Exception in _send_owner_move_email(): {}'.format(ex)
-                    )
+                    logger.error(f'Exception in _send_owner_move_email(): {ex}')
 
         # Create alerts and send emails to other project members on move
         member_notify = app_settings.get(
@@ -317,18 +312,14 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
                         )
                     except Exception as ex:
                         logger.error(
-                            'Exception in _add_member_move_alert(): {}'.format(
-                                ex
-                            )
+                            f'Exception in _add_member_move_alert(): {ex}'
                         )
                 if settings.PROJECTROLES_SEND_EMAIL:
                     try:
                         cls._send_member_move_email(member, zone, file_count)
                     except Exception as ex:  # NOTE: We won't fail/revert here
                         logger.error(
-                            'Exception in _send_member_move_email(): {}'.format(
-                                ex
-                            )
+                            f'Exception in _send_member_move_email(): {ex}'
                         )
 
         # If zone is removed by moving or deletion, call plugin function
@@ -342,8 +333,8 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
                     config_plugin.cleanup_zone(zone)
                 except Exception as ex:
                     logger.error(
-                        'Unable to cleanup zone "{}" with plugin '
-                        '"{}": {}'.format(zone.title, config_plugin.name, ex)
+                        f'Unable to cleanup zone "{zone.title}" with plugin '
+                        f'"{config_plugin.name}": {ex}'
                     )
 
         # Update cache
@@ -354,12 +345,10 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
                     project_uuid=str(zone.project.sodar_uuid),
                     user_uuid=str(zone.user.sodar_uuid),
                     add_alert=True,
-                    alert_msg='Moved landing zone "{}".'.format(zone.title),
+                    alert_msg=f'Moved landing zone "{zone.title}".',
                 )
             except Exception as ex:
-                logger.error(
-                    'Unable to run project cache update task: {}'.format(ex)
-                )
+                logger.error(f'Unable to run project cache update task: {ex}')
 
 
 class SetLandingZoneStatusTask(BaseLandingZoneStatusTask):
@@ -373,7 +362,7 @@ class SetLandingZoneStatusTask(BaseLandingZoneStatusTask):
         status_info,
         extra_data=None,
         *args,
-        **kwargs
+        **kwargs,
     ):
         # Prevent setting status if already finished (see #1909)
         landing_zone.refresh_from_db()
@@ -392,7 +381,7 @@ class SetLandingZoneStatusTask(BaseLandingZoneStatusTask):
         status_info,
         extra_data=None,
         *args,
-        **kwargs
+        **kwargs,
     ):
         pass  # Disabled, call RevertLandingZoneStatusTask to revert
 
@@ -408,7 +397,7 @@ class RevertLandingZoneFailTask(BaseLandingZoneStatusTask):
         status=ZONE_STATUS_FAILED,
         extra_data=None,
         *args,
-        **kwargs
+        **kwargs,
     ):
         super().execute(*args, **kwargs)
 
@@ -420,7 +409,7 @@ class RevertLandingZoneFailTask(BaseLandingZoneStatusTask):
         status=ZONE_STATUS_FAILED,
         extra_data=None,
         *args,
-        **kwargs
+        **kwargs,
     ):
         status_info = info_prefix
         for k, v in kwargs['flow_failures'].items():

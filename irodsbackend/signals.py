@@ -29,14 +29,12 @@ def create_irods_user(sender, user, **kwargs):
     try:
         irods_backend = plugin_api.get_backend_api('omics_irods')
     except Exception as ex:
-        logger.error('Exception initializing irodsbackend: {}'.format(ex))
+        logger.error(f'Exception initializing irodsbackend: {ex}')
         return
     if not irods_backend or (
         not hasattr(user, 'ldap_username') and not settings.IRODS_SODAR_AUTH
     ):
-        logger.debug(
-            'Skipping iRODS user creation for user "{}"'.format(user.username)
-        )
+        logger.debug(f'Skipping iRODS user creation for user "{user.username}"')
         return  # Skip for local users without SODAR auth, or if no iRODS conn
 
     # Set username
@@ -52,11 +50,11 @@ def create_irods_user(sender, user, **kwargs):
             try:
                 irods.users.get(user_name)
                 logger.debug(
-                    'Skipping iRODS user creation, user "{}" already '
-                    'exists'.format(user_name)
+                    f'Skipping iRODS user creation, user "{user_name}" already '
+                    f'exists'
                 )
             except UserDoesNotExist:
-                logger.info('Creating user "{}" in iRODS..'.format(user_name))
+                logger.info(f'Creating user "{user_name}" in iRODS..')
                 # Create user
                 try:
                     irods.users.create(
@@ -65,9 +63,7 @@ def create_irods_user(sender, user, **kwargs):
                         user_zone=settings.IRODS_ZONE,
                     )
                 except Exception as ex:
-                    logger.error(
-                        'Exception creating user in iRODS: {}'.format(ex)
-                    )
+                    logger.error(f'Exception creating user in iRODS: {ex}')
                     return
                 # Add user alert
                 app_alerts = plugin_api.get_backend_api('appalerts_backend')
@@ -82,17 +78,16 @@ def create_irods_user(sender, user, **kwargs):
                         app_name=APP_NAME,
                         alert_name='irods_user_create',
                         user=user,
-                        message='User account "{}" created in iRODS. {}'.format(
-                            user_name, pw_msg
-                        ),
+                        message=f'User account "{user_name}" created in iRODS. '
+                        f'{pw_msg}',
                         url=alert_url,
                     )
                 logger.info('User creation OK')
     except Exception as ex:
         # NOTE: Logging warning because this does not actually prevent login
         logger.warning(
-            'Unable to update user in iRODS, exception in opening session: '
-            '{}'.format(ex)
+            f'Unable to update user in iRODS, exception in opening session: '
+            f'{ex}'
         )
 
 

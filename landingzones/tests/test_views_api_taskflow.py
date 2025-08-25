@@ -252,9 +252,7 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
         plugin = self.assay.get_plugin()
         self.assertIsNotNone(plugin)
         plugin.update_cache(
-            'irods/rows/{}'.format(self.assay.sodar_uuid),
-            self.project,
-            self.user,
+            f'irods/rows/{self.assay.sodar_uuid}', self.project, self.user
         )
 
         self.post_data['create_colls'] = True
@@ -292,9 +290,7 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
         plugin = self.assay.get_plugin()
         self.assertIsNotNone(plugin)
         plugin.update_cache(
-            'irods/rows/{}'.format(self.assay.sodar_uuid),
-            self.project,
-            self.user,
+            f'irods/rows/{self.assay.sodar_uuid}', self.project, self.user
         )
 
         self.post_data['create_colls'] = True

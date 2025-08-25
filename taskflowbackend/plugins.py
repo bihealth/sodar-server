@@ -156,7 +156,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                 ]
             taskflow.submit(
                 project=project,
-                flow_name='project_{}'.format(action.lower()),
+                flow_name=f'project_{action.lower()}',
                 flow_data=flow_data,
             )
         # If updating parent in category, add role_update_irods_batch call
@@ -196,10 +196,8 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                 app_name=APP_NAME,
                 plugin_name='taskflow',
                 user=request.user if request else None,
-                event_name='project_{}'.format(tl_action),
-                description='{} {} in iRODS'.format(
-                    tl_action, project.type.lower()
-                ),
+                event_name=f'project_{tl_action}',
+                description=f'{tl_action} {project.type.lower()} in iRODS',
                 status_type=timeline.TL_STATUS_OK,
             )
 
@@ -231,21 +229,19 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
 
         with irods_backend.get_session() as irods:
             if irods.collections.exists(project_path):
-                logger.debug(
-                    'Removing project collection: {}'.format(project_path)
-                )
+                logger.debug(f'Removing project collection: {project_path}')
                 irods.collections.remove(project_path)
             project_group = irods_backend.get_group_name(project)
             try:
                 irods.user_groups.get(project_group)
-                logger.debug('Removing user group: {}'.format(project_group))
+                logger.debug(f'Removing user group: {project_group}')
                 irods.users.remove(project_group)
             except GroupDoesNotExist:
                 pass
             project_group = irods_backend.get_group_name(project, owner=True)
             try:
                 irods.user_groups.get(project_group)
-                logger.debug('Removing owner group: {}'.format(project_group))
+                logger.debug(f'Removing owner group: {project_group}')
                 irods.users.remove(project_group)
             except GroupDoesNotExist:
                 pass
@@ -682,7 +678,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         """
         # Skip for categories, inherited roles get synced for projects
         if project.is_category():
-            logger.debug('Skipping: {}'.format(IRODS_CAT_SKIP_MSG))
+            logger.debug(f'Skipping: {IRODS_CAT_SKIP_MSG}')
             return
         irods_backend = plugin_api.get_backend_api('omics_irods')
         if not irods_backend:
@@ -731,7 +727,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         # NOTE: Checks for project/category permissions done in SODAR Core views
         # Skip for categories, nothing to do
         if project.is_category():
-            logger.debug('Skipping: {}'.format(IRODS_CAT_SKIP_MSG))
+            logger.debug(f'Skipping: {IRODS_CAT_SKIP_MSG}')
             return
         irods_backend = plugin_api.get_backend_api('omics_irods')
         if not irods_backend:

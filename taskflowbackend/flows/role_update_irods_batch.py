@@ -32,7 +32,7 @@ class Flow(BaseLinearFlow):
         for user_name in users_add:
             self.add_task(
                 irods_tasks.CreateUserTask(
-                    name='Create user "{}" in irods'.format(user_name),
+                    name=f'Create user "{user_name}" in irods',
                     irods=self.irods,
                     inject={'user_name': user_name, 'user_type': 'rodsuser'},
                 )
@@ -41,7 +41,7 @@ class Flow(BaseLinearFlow):
         for owner_group in owner_groups_add:
             self.add_task(
                 irods_tasks.CreateUserGroupTask(
-                    name='Create owner group "{}" in irods'.format(owner_group),
+                    name=f'Create owner group "{owner_group}" in irods',
                     irods=self.irods,
                     inject={'name': owner_group},
                 )

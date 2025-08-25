@@ -231,7 +231,7 @@ class Command(BaseCommand):
         # Get a sorted list of all project collections
         project_collections = sorted(
             self.irods_backend.get_colls_recursively(
-                irods.collections.get('/{}/projects'.format(irods.zone))
+                irods.collections.get(f'/{irods.zone}/projects')
             ),
             key=lambda coll: coll.path,
         )

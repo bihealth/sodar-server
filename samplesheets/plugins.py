@@ -476,9 +476,7 @@ class ProjectAppPlugin(
             project_uuid = irods_backend.get_uuid_from_path(
                 o['path'], obj_type='project'
             )
-            sample_subpath = '/{}/{}/'.format(
-                project_uuid, settings.IRODS_SAMPLE_COLL
-            )
+            sample_subpath = f'/{project_uuid}/{settings.IRODS_SAMPLE_COLL}/'
             if sample_subpath not in o['path']:
                 continue  # Skip files not in sample data repository
 
@@ -674,7 +672,7 @@ class ProjectAppPlugin(
                 flow_data=flow_data,
             )
         except Exception as ex:
-            logger.error('Public status update taskflow failed: {}'.format(ex))
+            logger.error(f'Public status update taskflow failed: {ex}')
             if settings.DEBUG:
                 raise ex
 
@@ -715,7 +713,7 @@ class ProjectAppPlugin(
 
         # Check for conditions and skip if not met
         def _skip(msg):
-            logger.debug('Skipping: {}'.format(msg))
+            logger.debug(f'Skipping: {msg}')
 
         if not taskflow or not irods_backend:
             return _skip(
@@ -767,7 +765,7 @@ class ProjectAppPlugin(
             project=project, active=True
         ).first()
         if not investigation:
-            logger.debug('Skipping: {}'.format(SKIP_MSG_NO_INV))
+            logger.debug(f'Skipping: {SKIP_MSG_NO_INV}')
             return
         if investigation.irods_status:
             logger.info('Syncing iRODS sample data collections..')
@@ -775,7 +773,7 @@ class ProjectAppPlugin(
 
         # Sync public guest access
         if not investigation.irods_status:
-            logger.debug('Skipping: {}'.format(SKIP_MSG_NO_COLLS))
+            logger.debug(f'Skipping: {SKIP_MSG_NO_COLLS}')
             return
         self._update_public_access(project, taskflow, irods_backend)
 
@@ -888,8 +886,8 @@ class ProjectAppPlugin(
                 'irods_backend': irods_backend,
             }
             raise Exception(
-                'Required backend(s) not found: {}'.format(', ').join(
-                    [b for b in backends.keys() if not backends[b]]
+                'Required backend(s) not found: {}'.format(
+                    ', '.join([b for b in backends.keys() if not backends[b]])
                 )
             )
 
@@ -1256,7 +1254,7 @@ class SampleSheetAssayPluginPoint(PluginPoint):
                 assay_table = study_tables['assays'][str(assay.sodar_uuid)]
                 assay_path = self.irods_backend.get_path(assay)
                 row_paths = []
-                item_name = 'irods/rows/{}'.format(assay.sodar_uuid)
+                item_name = f'irods/rows/{assay.sodar_uuid}'
 
                 for row in assay_table['table_data']:
                     path = self.get_row_path(
@@ -1318,9 +1316,8 @@ def get_irods_content(inv, study, irods_backend, ret_data):
     study_plugin = study.get_plugin()
     if study_plugin:
         logger.debug(
-            'Retrieving study shortcuts for study "{}" (plugin={})..'.format(
-                study.get_display_name(), study_plugin.name
-            )
+            f'Retrieving study shortcuts for study '
+            f'"{study.get_display_name()}" (plugin={study_plugin.name})..'
         )
         shortcuts = study_plugin.get_shortcut_column(study, ret_data['tables'])
         ret_data['tables']['study']['shortcuts'] = shortcuts
@@ -1351,13 +1348,11 @@ def get_irods_content(inv, study, irods_backend, ret_data):
         assay_plugin = assay.get_plugin()
         if assay_plugin:
             logger.debug(
-                'Retrieving assay shortcuts for assay "{}" '
-                '(plugin={})..'.format(
-                    assay.get_display_name(), assay_plugin.name
-                )
+                f'Retrieving assay shortcuts for assay '
+                f'"{assay.get_display_name()}" (plugin={assay_plugin.name})..'
             )
             cache_item = cache_backend.get_cache_item(
-                name='irods/rows/{}'.format(a_uuid),
+                name=f'irods/rows/{a_uuid}',
                 app_name=assay_plugin.app_name,
                 project=assay.get_project(),
             )
@@ -1395,7 +1390,7 @@ def get_irods_content(inv, study, irods_backend, ret_data):
 
         # Check assay shortcut cache and set initial enabled value
         cache_item = cache_backend.get_cache_item(
-            name='irods/shortcuts/assay/{}'.format(a_uuid),
+            name=f'irods/shortcuts/assay/{a_uuid}',
             app_name=APP_NAME,
             project=assay.get_project(),
         )

@@ -2686,7 +2686,7 @@ class TestBatchMoveDataObjectsTask(
         self.assertTrue(self.irods.data_objects.exists(self.dest_obj2_path))
         obj_access = self.get_user_access(
             target=self.irods.data_objects.get(
-                '{}/batch_obj'.format(self.batch_dest_path)
+                f'{self.batch_dest_path}/batch_obj'
             ),
             user_name=DEFAULT_USER_GROUP,
         )

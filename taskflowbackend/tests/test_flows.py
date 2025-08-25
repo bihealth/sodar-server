@@ -1625,9 +1625,7 @@ class TestLandingZoneMoveAltRootPath(
         """Test landing_zone_move with IRODS_ROOT_PATH set"""
         # Assert alt path have been set correctly and returned for all paths
         root_path = self.irods_backend.get_root_path()
-        self.assertEqual(
-            root_path, '/{}/{}'.format(settings.IRODS_ZONE, IRODS_ROOT_PATH)
-        )
+        self.assertEqual(root_path, f'/{settings.IRODS_ZONE}/{IRODS_ROOT_PATH}')
         self.assertTrue(self.project_path.startswith(root_path))
         self.assertTrue(self.sample_path.startswith(root_path))
         self.assertTrue(self.zone_path.startswith(root_path))

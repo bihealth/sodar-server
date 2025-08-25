@@ -33,6 +33,7 @@ Changed
     - Move black configuration to ``pyproject.toml`` (#2187)
     - Reformat migrations (#2187)
     - Reformat JQuery (#2187)
+    - Update format strings (#2197)
 - **Irodsbackend**
     - Update app for ``public_access`` support (#2202)
 - **Landingzones**

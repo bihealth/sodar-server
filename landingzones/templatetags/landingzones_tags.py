@@ -46,9 +46,7 @@ def get_details_zones(project, user):
 @register.simple_tag
 def get_zone_desc_html(zone):
     """Return zone description as HTML"""
-    return '<div><strong>Description</strong><br />{}</div>'.format(
-        zone.description
-    )
+    return f'<div><strong>Description</strong><br />{zone.description}</div>'
 
 
 # TODO: Remove

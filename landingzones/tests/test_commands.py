@@ -153,7 +153,7 @@ class TestInactiveZones(LandingzonesCommandTestBase):
             get_output(zones, self.irods_backend, self.irods),
             [
                 '{};{};{};{};0;0 bytes'.format(
-                    str(self.project.sodar_uuid),
+                    self.project.sodar_uuid,
                     self.project.full_title,
                     self.zone.user.username,
                     self.irods_backend.get_path(self.zone),
@@ -168,7 +168,7 @@ class TestInactiveZones(LandingzonesCommandTestBase):
         ) as cm:
             call_command('inactivezones')
         expected = '{};{};{};{};0;0 bytes'.format(
-            str(self.project.sodar_uuid),
+            self.project.sodar_uuid,
             self.project.full_title,
             self.zone.user.username,
             self.irods_backend.get_path(self.zone),

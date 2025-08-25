@@ -15,7 +15,7 @@ class Flow(BaseLinearFlow):
             if self.irods.data_objects.exists(path):
                 self.add_task(
                     irods_tasks.RemoveDataObjectTask(
-                        name='Remove data object: {}'.format(path),
+                        name=f'Remove data object: {path}',
                         irods=self.irods,
                         inject={'path': path},
                     )
@@ -23,7 +23,7 @@ class Flow(BaseLinearFlow):
             else:
                 self.add_task(
                     irods_tasks.RemoveCollectionTask(
-                        name='Remove collection: {}'.format(path),
+                        name=f'Remove collection: {path}',
                         irods=self.irods,
                         inject={'path': path},
                     )

@@ -246,15 +246,11 @@ class TaskflowTestMixin(
                         settings.IRODS_ROOT_PATH.split('/')[0],
                     )
                     irods.collections.remove(sodar_root, **rm_kwargs)
-                    logger.debug(
-                        'Removed root collection: {}'.format(sodar_root)
-                    )
+                    logger.debug(f'Removed root collection: {sodar_root}')
                 else:
                     projects_root = irods_backend.get_projects_path()
                     irods.collections.remove(projects_root, **rm_kwargs)
-                    logger.debug(
-                        'Removed projects root: {}'.format(projects_root)
-                    )
+                    logger.debug(f'Removed projects root: {projects_root}')
             except Exception:
                 pass  # This is OK, the root just wasn't there
 
@@ -262,14 +258,14 @@ class TaskflowTestMixin(
             for g in irods.query(UserGroup).all():
                 if g[UserGroup.name] not in permanent_users:
                     irods.users.remove(user_name=g[UserGroup.name])
-                    logger.debug('Removed user: {}'.format(g[UserGroup.name]))
+                    logger.debug(f'Removed user: {g[UserGroup.name]}')
 
             # Remove all tickets
             ticket_query = irods.query(TicketQuery.Ticket).all()
             for ticket in ticket_query:
                 ticket_str = ticket[TicketQuery.Ticket.string]
                 irods_backend.delete_ticket(irods, ticket_str)
-                logger.debug('Deleted ticket: {}'.format(ticket_str))
+                logger.debug(f'Deleted ticket: {ticket_str}')
 
             # Remove data objects and unneeded collections from trash
             trash_path = irods_backend.get_trash_path()

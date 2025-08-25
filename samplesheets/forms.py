@@ -64,7 +64,7 @@ class IrodsAccessTicketValidateMixin:
             try:
                 data['path'] = irods_backend.sanitize_path(data['path'])
             except Exception as ex:
-                return 'path', 'Invalid iRODS path: {}'.format(ex)
+                return 'path', f'Invalid iRODS path: {ex}'
             # Ensure path is within project
             if not data['path'].startswith(irods_backend.get_path(project)):
                 return 'path', 'Path is not within the project'
@@ -377,7 +377,7 @@ class SheetTemplateCreateForm(forms.Form):
                 try:
                     json.loads(self.cleaned_data[k])
                 except Exception as ex:
-                    self.add_error(k, 'Invalid JSON: {}'.format(ex))
+                    self.add_error(k, f'Invalid JSON: {ex}')
         return self.cleaned_data
 
     def save(self):
@@ -416,7 +416,7 @@ class SheetTemplateCreateForm(forms.Form):
 
             with open(i_path) as f:
                 isa_data['investigation'] = {
-                    'path': '{}/{}'.format(tpl_dir_name, i_name),
+                    'path': f'{tpl_dir_name}/{i_name}',
                     'tsv': f.read(),
                 }
             isa_data['studies'] = self._get_tsv_data(

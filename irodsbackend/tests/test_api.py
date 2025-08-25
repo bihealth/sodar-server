@@ -143,7 +143,7 @@ class TestIrodsAPI(
         expected = '/{zone}/projects/{uuid_prefix}/{uuid}'.format(
             zone=IRODS_ZONE,
             uuid_prefix=str(self.project.sodar_uuid)[:2],
-            uuid=str(self.project.sodar_uuid),
+            uuid=self.project.sodar_uuid,
         )
         path = self.irods_backend.get_path(self.project)
         self.assertEqual(expected, path)
@@ -155,7 +155,7 @@ class TestIrodsAPI(
             zone=IRODS_ZONE,
             root_path=IRODS_ROOT_PATH,
             uuid_prefix=str(self.project.sodar_uuid)[:2],
-            uuid=str(self.project.sodar_uuid),
+            uuid=self.project.sodar_uuid,
         )
         path = self.irods_backend.get_path(self.project)
         self.assertEqual(expected, path)
@@ -167,9 +167,9 @@ class TestIrodsAPI(
             '/{study}'.format(
                 zone=IRODS_ZONE,
                 uuid_prefix=str(self.project.sodar_uuid)[:2],
-                uuid=str(self.project.sodar_uuid),
+                uuid=self.project.sodar_uuid,
                 sample_coll=SAMPLE_COLL,
-                study='study_' + str(self.study.sodar_uuid),
+                study=f'study_{self.study.sodar_uuid}',
             )
         )
         path = self.irods_backend.get_path(self.study)
@@ -182,10 +182,10 @@ class TestIrodsAPI(
             '/{study}/{assay}'.format(
                 zone=IRODS_ZONE,
                 uuid_prefix=str(self.project.sodar_uuid)[:2],
-                uuid=str(self.project.sodar_uuid),
+                uuid=self.project.sodar_uuid,
                 sample_coll=SAMPLE_COLL,
-                study='study_' + str(self.study.sodar_uuid),
-                assay='assay_' + str(self.assay.sodar_uuid),
+                study=f'study_{self.study.sodar_uuid}',
+                assay=f'assay_{self.assay.sodar_uuid}',
             )
         )
         path = self.irods_backend.get_path(self.assay)
@@ -215,7 +215,7 @@ class TestIrodsAPI(
         expected = '/{zone}/projects/{uuid_prefix}/{uuid}/{sample_coll}'.format(
             zone=IRODS_ZONE,
             uuid_prefix=str(self.project.sodar_uuid)[:2],
-            uuid=str(self.project.sodar_uuid),
+            uuid=self.project.sodar_uuid,
             sample_coll=SAMPLE_COLL,
         )
         path = self.irods_backend.get_sample_path(self.project)
@@ -234,13 +234,13 @@ class TestIrodsAPI(
     @override_settings(IRODS_ROOT_PATH=IRODS_ROOT_PATH)
     def test_get_root_path_with_path(self):
         """Test get_root_path() with root path setting"""
-        expected = '/{}/{}'.format(IRODS_ZONE, IRODS_ROOT_PATH)
+        expected = f'/{IRODS_ZONE}/{IRODS_ROOT_PATH}'
         self.assertEqual(self.irods_backend.get_root_path(), expected)
 
     @override_settings(IRODS_ROOT_PATH=IRODS_ROOT_PATH + '/')
     def test_get_root_path_trailing_slash(self):
         """Test get_root_path() with root path setting and trailing slash"""
-        expected = '/{}/{}'.format(IRODS_ZONE, IRODS_ROOT_PATH)
+        expected = f'/{IRODS_ZONE}/{IRODS_ROOT_PATH}'
         self.assertEqual(self.irods_backend.get_root_path(), expected)
 
     @override_settings(IRODS_ROOT_PATH=IRODS_ROOT_PATH_INVALID)
@@ -257,19 +257,19 @@ class TestIrodsAPI(
 
     def test_get_projects_path(self):
         """Test get_projects_path() with default settings"""
-        expected = '/{}/projects'.format(IRODS_ZONE)
+        expected = f'/{IRODS_ZONE}/projects'
         self.assertEqual(self.irods_backend.get_projects_path(), expected)
 
     @override_settings(IRODS_ROOT_PATH=IRODS_ROOT_PATH)
     def test_get_projects_path_with_root_path(self):
         """Test get_projects_path() with root path setting"""
-        expected = '/{}/{}/projects'.format(IRODS_ZONE, IRODS_ROOT_PATH)
+        expected = f'/{IRODS_ZONE}/{IRODS_ROOT_PATH}/projects'
         self.assertEqual(self.irods_backend.get_projects_path(), expected)
 
     def test_get_trash_pathg(self):
         """Test get_trash_path()"""
         self.assertEqual(
-            self.irods_backend.get_trash_path(), '/{}/trash'.format(IRODS_ZONE)
+            self.irods_backend.get_trash_path(), f'/{IRODS_ZONE}/trash'
         )
 
     def test_get_uuid_from_path_assay(self):

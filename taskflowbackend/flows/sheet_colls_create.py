@@ -40,17 +40,16 @@ class Flow(BaseLinearFlow):
         )
         self.add_task(
             irods_tasks.SetInheritanceTask(
-                name='Set inheritance for sample sheet collection {}'.format(
-                    sample_path
-                ),
+                name=f'Set inheritance for sample sheet collection '
+                f'{sample_path}',
                 irods=self.irods,
                 inject={'path': sample_path, 'inherit': True},
             )
         )
         self.add_task(
             irods_tasks.SetAccessTask(
-                name='Set project user group read access for sample sheet '
-                'collection {}'.format(sample_path),
+                name=f'Set project user group read access for sample sheet '
+                f'collection {sample_path}',
                 irods=self.irods,
                 inject={
                     'access_name': 'read',
@@ -64,7 +63,7 @@ class Flow(BaseLinearFlow):
             coll_path = os.path.join(sample_path, c)
             self.add_task(
                 irods_tasks.CreateCollectionTask(
-                    name='Create collection {}'.format(coll_path),
+                    name=f'Create collection {coll_path}',
                     irods=self.irods,
                     inject={'path': coll_path},
                 )

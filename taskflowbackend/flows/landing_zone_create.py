@@ -114,8 +114,7 @@ class Flow(BaseLinearFlow):
         )
         self.add_task(
             irods_tasks.SetInheritanceTask(
-                name='Set inheritance for landing zone collection '
-                '{}'.format(zone_path),
+                name=f'Set inheritance for landing zone collection {zone_path}',
                 irods=self.irods,
                 inject={'path': zone_path, 'inherit': True},
             )
@@ -124,9 +123,7 @@ class Flow(BaseLinearFlow):
         # Only set own access to root level zone coll if not enforcing colls
         self.add_task(
             irods_tasks.SetAccessTask(
-                name='Set user {} access to landing zone root'.format(
-                    root_access
-                ),
+                name=f'Set user {root_access} access to landing zone root',
                 irods=self.irods,
                 inject={
                     'access_name': root_access,

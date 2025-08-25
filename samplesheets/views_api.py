@@ -211,19 +211,17 @@ class IrodsCollsCreateAPIView(
             project__sodar_uuid=self.kwargs.get('project'), active=True
         ).first()
         if not investigation:
-            raise ValidationError('{}Investigation not found'.format(ex_msg))
+            raise ValidationError(f'{ex_msg}Investigation not found')
         # TODO: TBD: Also allow updating?
         if investigation.irods_status:
-            raise ValidationError(
-                '{}iRODS collections already created'.format(ex_msg)
-            )
+            raise ValidationError(f'{ex_msg}iRODS collections already created')
 
         try:
             self.create_colls(investigation, request)
         except Exception as ex:
             if taskflow:
                 taskflow.raise_submit_api_exception(ex_msg, ex)
-            raise APIException('{}{}'.format(ex_msg, ex))
+            raise APIException(f'{ex_msg}{ex}')
         return Response(
             {
                 'detail': 'iRODS collections created',
@@ -270,7 +268,7 @@ class SheetISAExportAPIView(
         try:
             return self.get_isa_export(project, request, export_format)
         except Exception as ex:
-            raise APIException('Unable to export ISA-Tab: {}'.format(ex))
+            raise APIException(f'Unable to export ISA-Tab: {ex}')
 
 
 @extend_schema(
@@ -332,14 +330,14 @@ class SheetImportAPIView(
             try:
                 zip_file = sheet_io.get_zip_file(file)
             except OSError as ex:
-                raise ParseError('Failed to parse zip archive: {}'.format(ex))
+                raise ParseError(f'Failed to parse zip archive: {ex}')
             isa_data = sheet_io.get_isa_from_zip(zip_file)
         # Multi-file handling
         else:
             try:
                 isa_data = sheet_io.get_isa_from_files(request.FILES.values())
             except Exception as ex:
-                raise ParseError('Failed to parse TSV files: {}'.format(ex))
+                raise ParseError(f'Failed to parse TSV files: {ex}')
 
         # Handle import
         action = 'replace' if old_inv else 'create'
@@ -395,9 +393,8 @@ class SheetImportAPIView(
             isa_version=isa_version,
         )
         ret_data = {
-            'detail': 'Sample sheets {}d for project {}'.format(
-                action, project.get_log_title()
-            )
+            'detail': f'Sample sheets {action}d for project '
+            f'{project.get_log_title()}'
         }
         no_plugin_assays = self.get_assays_without_plugins(investigation)
         if no_plugin_assays:
@@ -549,9 +546,7 @@ class IrodsAccessTicketCreateAPIView(
                     ),
                 )
         except Exception as ex:
-            raise ValidationError(
-                '{} {}'.format('Creating ' + IRODS_TICKET_EX_MSG + ':', ex)
-            )
+            raise ValidationError(f'Creating {IRODS_TICKET_EX_MSG}: {ex}')
 
         serializer.validated_data['ticket'] = ticket.ticket
         serializer.save()
@@ -627,7 +622,7 @@ class IrodsAccessTicketUpdateAPIView(
                 )
         except Exception as ex:
             raise APIException(
-                'Exception updating iRODS access ticket: {}'.format(ex),
+                f'Exception updating iRODS access ticket: {ex}',
             )
         # Add timeline event
         self.add_tl_event(serializer.instance, 'update')
@@ -662,9 +657,7 @@ class IrodsAccessTicketDestroyAPIView(
             with irods_backend.get_session() as irods:
                 irods_backend.delete_ticket(irods, instance.ticket)
         except Exception as ex:
-            raise ValidationError(
-                '{} {}'.format('Deleting ' + IRODS_TICKET_EX_MSG + ':', ex)
-            )
+            raise ValidationError(f'Deleting {IRODS_TICKET_EX_MSG}: {ex}')
         instance.delete()
         # Create timeline event
         self.add_tl_event(instance, 'delete')
@@ -900,7 +893,7 @@ class IrodsDataRequestAcceptAPIView(
             ex_msg = 'Accepting ' + IRODS_REQUEST_EX_MSG + ': '
             if taskflow:
                 taskflow.raise_submit_api_exception(ex_msg, ex, ValidationError)
-            raise ValidationError('{}{}'.format(ex_msg, ex))
+            raise ValidationError(f'{ex_msg}{ex}')
         return Response(
             {'detail': 'iRODS data request accepted'}, status=status.HTTP_200_OK
         )
@@ -953,9 +946,7 @@ class IrodsDataRequestRejectAPIView(
                 app_alerts=app_alerts,
             )
         except Exception as ex:
-            raise APIException(
-                '{} {}'.format('Rejecting ' + IRODS_REQUEST_EX_MSG + ':', ex)
-            )
+            raise APIException(f'Rejecting {IRODS_REQUEST_EX_MSG}: {ex}')
         return Response(
             {'detail': 'iRODS data request rejected'}, status=status.HTTP_200_OK
         )
@@ -1050,9 +1041,7 @@ class SampleDataFileExistsAPIView(SamplesheetsAPIVersioningMixin, APIView):
                     pass  # No results, this is OK
                 except Exception as ex:
                     logger.error(
-                        '{} iRODS query exception: {}'.format(
-                            self.__class__.__name__, ex
-                        )
+                        f'{self.__class__.__name__} iRODS query exception: {ex}'
                     )
                     raise APIException(
                         'iRODS query exception, please contact an admin if '
@@ -1062,7 +1051,7 @@ class SampleDataFileExistsAPIView(SamplesheetsAPIVersioningMixin, APIView):
                     query.remove()
         except Exception as ex:
             return Response(
-                {'detail': 'Unable to connect to iRODS: {}'.format(ex)},
+                {'detail': f'Unable to connect to iRODS: {ex}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         return Response(ret, status=status.HTTP_200_OK)
@@ -1158,10 +1147,10 @@ class ProjectIrodsFileListAPIView(
                     stats = irods_backend.get_stats(irods, path)
                     file_count = stats['file_count']
         except FileNotFoundError as ex:
-            raise NotFound('{}: {}'.format(IRODS_QUERY_ERROR_MSG, ex))
+            raise NotFound(f'{IRODS_QUERY_ERROR_MSG}: {ex}')
         except Exception as ex:
             return Response(
-                {'detail': '{}: {}'.format(IRODS_QUERY_ERROR_MSG, ex)},
+                {'detail': f'{IRODS_QUERY_ERROR_MSG}: {ex}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 

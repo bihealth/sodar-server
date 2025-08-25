@@ -149,7 +149,7 @@ class TestSamplesheetsTemplateTags(
             'samplesheets:project_sheets',
             kwargs={'project': self.project.sodar_uuid},
         )
-        expected += '#/study/{}/filter/Sample1'.format(self.study.sodar_uuid)
+        expected += f'#/study/{self.study.sodar_uuid}/filter/Sample1'
         self.assertEqual(url, expected)
 
     def test_get_irods_path_with_project(self):
@@ -215,7 +215,7 @@ class TestSamplesheetsTemplateTags(
             path=req_path,
             user=self.user_owner,
         )
-        expected = '<span class="text-muted">/</span>{}'.format(MISC_FILES_COLL)
+        expected = f'<span class="text-muted">/</span>{MISC_FILES_COLL}'
         self.assertEqual(s_tags.get_request_path_html(request), expected)
 
     def test_get_request_path_html_nested(self):
@@ -230,8 +230,8 @@ class TestSamplesheetsTemplateTags(
             path=req_path,
             user=self.user_owner,
         )
-        expected = '<span class="text-muted">{}/</span>{}'.format(
-            MISC_FILES_COLL, SUB_COLL
+        expected = (
+            f'<span class="text-muted">{MISC_FILES_COLL}/</span>{SUB_COLL}'
         )
         self.assertEqual(s_tags.get_request_path_html(request), expected)
 

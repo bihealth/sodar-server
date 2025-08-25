@@ -1,5 +1,7 @@
 """Assay app plugin for samplesheets"""
 
+import os
+
 from django.conf import settings
 
 # from samplesheets.models import GenericMaterial, Process
@@ -113,7 +115,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             ):
                 row[i]['value'] = SIMPLE_LINK_TEMPLATE.format(
                     label=row[i]['value'],
-                    url=base_url + '/' + RESULTS_COLL + '/' + row[i]['value'],
+                    url=os.path.join(base_url, RESULTS_COLL, row[i]['value']),
                 )
         return row
 

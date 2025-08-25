@@ -169,8 +169,8 @@ class TestSheetRemoteSyncTask(SheetRemoteSyncTestBase):
 
     def setUp(self):
         super().setUp()
-        self.p_id_source = 'p{}'.format(self.project_source.pk)
-        self.p_id_target = 'p{}'.format(self.project_target.pk)
+        self.p_id_source = f'p{self.project_source.pk}'
+        self.p_id_target = f'p{self.project_target.pk}'
 
     def test_sync_task(self):
         """Test sync"""

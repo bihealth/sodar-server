@@ -254,7 +254,7 @@ class Investigation(BaseSampleSheet):
     )
 
     def __str__(self):
-        return '{}: {}'.format(self.project.title, self.title)
+        return f'{self.project.title}: {self.title}'
 
     def __repr__(self):
         values = (self.project.title, self.title)
@@ -371,7 +371,7 @@ class Study(BaseSampleSheet):
         verbose_name_plural = 'studies'
 
     def __str__(self):
-        return '{}: {}'.format(self.get_project().title, self.get_name())
+        return f'{self.get_project().title}: {self.get_name()}'
 
     def __repr__(self):
         values = (self.get_project().title, self.get_name())
@@ -424,10 +424,13 @@ class Study(BaseSampleSheet):
 
     def get_url(self):
         """Return the URL for this study"""
-        return reverse(
-            'samplesheets:project_sheets',
-            kwargs={'project': self.get_project().sodar_uuid},
-        ) + '#/study/{}'.format(self.sodar_uuid)
+        return (
+            reverse(
+                'samplesheets:project_sheets',
+                kwargs={'project': self.get_project().sodar_uuid},
+            )
+            + f'#/study/{self.sodar_uuid}'
+        )
 
 
 # Protocol ---------------------------------------------------------------------
@@ -482,8 +485,8 @@ class Protocol(BaseSampleSheet):
         unique_together = ('study', 'name')
 
     def __str__(self):
-        return '{}: {}/{}'.format(
-            self.get_project().title, self.study.get_name(), self.name
+        return (
+            f'{self.get_project().title}: {self.study.get_name()}/{self.name}'
         )
 
     def __repr__(self):
@@ -544,8 +547,9 @@ class Assay(BaseSampleSheet):
         ordering = ['study__file_name', 'file_name']
 
     def __str__(self):
-        return '{}: {}/{}'.format(
-            self.get_project().title, self.study.get_name(), self.get_name()
+        return (
+            f'{self.get_project().title}: '
+            f'{self.study.get_name()}/{self.get_name()}'
         )
 
     def __repr__(self):
@@ -579,8 +583,8 @@ class Assay(BaseSampleSheet):
                 )
             except Exception as ex:
                 logger.error(
-                    'Exception raised retrieving assay plugin with name '
-                    '"{}": {}'.format(self.comments[ISA_META_ASSAY_PLUGIN], ex)
+                    f'Exception raised retrieving assay plugin with name '
+                    f'"{self.comments[ISA_META_ASSAY_PLUGIN]}": {ex}'
                 )
 
         # If not found, select by measurement/technology type
@@ -594,10 +598,13 @@ class Assay(BaseSampleSheet):
 
     def get_url(self):
         """Return the URL for this assay"""
-        return reverse(
-            'samplesheets:project_sheets',
-            kwargs={'project': self.get_project().sodar_uuid},
-        ) + '#/assay/{}'.format(self.sodar_uuid)
+        return (
+            reverse(
+                'samplesheets:project_sheets',
+                kwargs={'project': self.get_project().sodar_uuid},
+            )
+            + f'#/assay/{self.sodar_uuid}'
+        )
 
 
 # Materials and data files -----------------------------------------------------
@@ -620,7 +627,7 @@ class NodeMixin:
         if not header_type or header_type in SPECIAL_FIELD_ATTRS:
             return self.headers.index(header_name)
         return self.headers.index(
-            '{}[{}]'.format(ATTR_HEADER_MAP[header_type], header_name)
+            f'{ATTR_HEADER_MAP[header_type]}[{header_name}]'
         )
 
     def is_ontology_field(self, header_name, header_type=None):
@@ -707,9 +714,7 @@ class GenericMaterialManager(models.Manager):
         term_query = Q()
         for i in range(0, ALT_NAMES_COUNT):
             for t in search_terms:
-                term_query.add(
-                    Q(**{'alt_names__{}'.format(i): t.lower()}), Q.OR
-                )
+                term_query.add(Q(**{f'alt_names__{i}': t.lower()}), Q.OR)
         return objects.filter(term_query).order_by('name')
 
 
@@ -1108,8 +1113,8 @@ class ISATab(models.Model):
     )
 
     def __str__(self):
-        return '{}: {} ({})'.format(
-            self.project.title, self.archive_name, self.date_created
+        return (
+            f'{self.project.title}: {self.archive_name} ({self.date_created})'
         )
 
     def __repr__(self):
@@ -1133,7 +1138,7 @@ class ISATab(models.Model):
             name = self.archive_name.split('.')[0]
         else:
             name = self.project.title
-        return name + ' ({})'.format(self.get_name())
+        return f'{name} ({self.get_name()})'
 
 
 class IrodsAccessTicketActiveManager(models.Manager):
@@ -1279,10 +1284,8 @@ class IrodsAccessTicket(models.Model):
             ).count()
             > 1
         ):
-            assay_name = '{} / '.format(self.assay.get_display_name())
-        return '{}{} / {}'.format(
-            assay_name, self.get_coll_name(), self.get_label()
-        )
+            assay_name = f'{self.assay.get_display_name()} / '
+        return f'{assay_name}{self.get_coll_name()} / {self.get_label()}'
 
     def get_webdav_link(self):
         return settings.IRODS_WEBDAV_URL_ANON_TMPL.format(
@@ -1385,9 +1388,7 @@ class IrodsDataRequest(models.Model):
     )
 
     def __str__(self):
-        return '{}: {} {}'.format(
-            self.project.title, self.action, self.get_short_path()
-        )
+        return f'{self.project.title}: {self.action} {self.get_short_path()}'
 
     def __repr__(self):
         values = (
@@ -1412,9 +1413,8 @@ class IrodsDataRequest(models.Model):
         # Compare against uppercase string to support legacy requests
         if self.action.upper() != IRODS_REQUEST_ACTION_DELETE:
             raise ValidationError(
-                'This model currently only supports the action "{}"'.format(
-                    IRODS_REQUEST_ACTION_DELETE
-                )
+                f'This model currently only supports the action '
+                f'"{IRODS_REQUEST_ACTION_DELETE}"'
             )
 
     def _validate_status(self):
@@ -1425,13 +1425,13 @@ class IrodsDataRequest(models.Model):
             IRODS_REQUEST_STATUS_FAILED,
             IRODS_REQUEST_STATUS_REJECTED,
         ]:
-            raise ValidationError('Unknown status "{}"'.format(self.status))
+            raise ValidationError(f'Unknown status "{self.status}"')
 
     # Custom row-level functions
 
     def get_display_name(self):
         """Return display name for object"""
-        return '{} {}'.format(self.action.capitalize(), self.get_short_path())
+        return f'{self.action.capitalize()} {self.get_short_path()}'
 
     def get_date_created(self):
         """Return formatted version of date_created"""

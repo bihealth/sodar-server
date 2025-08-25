@@ -40,9 +40,7 @@ class Flow(BaseLinearFlow):
         ):
             self.add_task(
                 irods_tasks.IssueTicketTask(
-                    name='Issue access ticket "{}" for collection'.format(
-                        ticket_str
-                    ),
+                    name=f'Issue access ticket "{ticket_str}" for collection',
                     irods=self.irods,
                     inject={
                         'access_name': access_name,
@@ -56,9 +54,7 @@ class Flow(BaseLinearFlow):
         elif ticket_str:
             self.add_task(
                 irods_tasks.DeleteTicketTask(
-                    name='Delete access ticket "{}" from collection'.format(
-                        ticket_str
-                    ),
+                    name=f'Delete access ticket "{ticket_str}" from collection',
                     irods=self.irods,
                     inject={
                         'access_name': access_name,

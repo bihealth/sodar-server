@@ -705,7 +705,7 @@ class SampleSheetTableBuilder:
         :param study_cols: Include study columns if True (bool)
         :return: List
         """
-        assay_search_str = '-a{}-'.format(assay_id)
+        assay_search_str = f'-a{assay_id}-'
         assay_refs = []
         start_idx = 0 if study_cols else sample_idx
         for row in all_refs:
@@ -759,9 +759,7 @@ class SampleSheetTableBuilder:
         """
         s_start = time.time()
         logger.debug(
-            'Building study "{}" ({})..'.format(
-                study.get_name(), study.sodar_uuid
-            )
+            f'Building study "{study.get_name()}" ({study.sodar_uuid})..'
         )
         # Get study config for column type detection
         if use_config:
@@ -806,27 +804,21 @@ class SampleSheetTableBuilder:
         # Study ref table without duplicates
         study_refs = self.get_study_refs(all_refs, sample_idx)
         ret['study'] = self._build_table(study_refs, node_map, study=study)
-        logger.debug(
-            'Building study OK ({:.1f}s)'.format(time.time() - s_start)
-        )
+        logger.debug(f'Building study OK ({time.time() - s_start:.1f}s)')
 
         # Assay tables
         assay_id = 0
         for assay in study.assays.all().order_by('pk'):
             a_start = time.time()
             logger.debug(
-                'Building assay "{}" ({})..'.format(
-                    assay.get_name(), assay.sodar_uuid
-                )
+                f'Building assay "{assay.get_name()}" ({assay.sodar_uuid})..'
             )
             assay_refs = self.get_assay_refs(all_refs, assay_id, sample_idx)
             ret['assays'][str(assay.sodar_uuid)] = self._build_table(
                 assay_refs, node_map, assay=assay
             )
             assay_id += 1
-            logger.debug(
-                'Building assay OK ({:.1f}s)'.format(time.time() - a_start)
-            )
+            logger.debug(f'Building assay OK ({time.time() - a_start:.1f}s)')
         return ret
 
     def build_inv_tables(self, investigation, use_config=True):
@@ -852,9 +844,8 @@ class SampleSheetTableBuilder:
         :return: Dict
         """
         logger.info(
-            'Retrieving cached render tables for study "{}" ({})'.format(
-                study.get_name(), study.sodar_uuid
-            )
+            f'Retrieving cached render tables for study "{study.get_name()}" '
+            f'({study.sodar_uuid})'
         )
         cache_backend = plugin_api.get_backend_api('sodar_cache')
         item_name = STUDY_TABLE_CACHE_ITEM.format(study=study.sodar_uuid)
@@ -870,7 +861,7 @@ class SampleSheetTableBuilder:
                 if item and item.data:
                     logger.debug('Returning cached study tables')
                     return item.data
-                logger.debug('Cache item "{}" not set'.format(item_name))
+                logger.debug(f'Cache item "{item_name}" not set')
         else:
             logger.debug(
                 'Study table cache disabled in settings, building new tables'
@@ -886,11 +877,9 @@ class SampleSheetTableBuilder:
                     data=study_tables,
                     project=project,
                 )
-                logger.debug('Set cache item "{}"'.format(item_name))
+                logger.debug(f'Set cache item "{item_name}"')
             except Exception as ex:
-                logger.error(
-                    'Failed to set cache item "{}": {}'.format(item_name, ex)
-                )
+                logger.error(f'Failed to set cache item "{item_name}": {ex}')
         return study_tables
 
     @classmethod
@@ -912,7 +901,7 @@ class SampleSheetTableBuilder:
                 'project': project,
             }
             try:
-                msg = 'Cleared cache item "{}"'.format(item_name)
+                msg = f'Cleared cache item "{item_name}"'
                 if delete:
                     # TODO: Use delete method (see bihealth/sodar-core#1068)
                     item = JSONCacheItem.objects.filter(**item_kwargs).first()
@@ -930,6 +919,4 @@ class SampleSheetTableBuilder:
                         )
                         logger.debug(msg + ' (clear value)')
             except Exception as ex:
-                logger.error(
-                    'Failed to clear cache item "{}": {}'.format(item_name, ex)
-                )
+                logger.error(f'Failed to clear cache item "{item_name}": {ex}')

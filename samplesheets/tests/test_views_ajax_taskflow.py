@@ -84,10 +84,13 @@ class TestStudyLinksAjaxView(
         # Set up other variables
         self.assay_path = self.irods_backend.get_path(self.assay)
         self.source_path = os.path.join(self.assay_path, LIBRARY_ID)
-        self.url = reverse(
-            'samplesheets:ajax_study_links',
-            kwargs={'study': self.study.sodar_uuid},
-        ) + '?family={}'.format(FAMILY_ID)
+        self.url = (
+            reverse(
+                'samplesheets:ajax_study_links',
+                kwargs={'study': self.study.sodar_uuid},
+            )
+            + f'?family={FAMILY_ID}'
+        )
 
     def test_get(self):
         """Test StudyLinksAjaxView GET with no files in iRODS"""
@@ -111,12 +114,8 @@ class TestStudyLinksAjaxView(
     def test_get_files(self):
         """Test GET with files in iRODS"""
         self.irods.collections.create(self.source_path)
-        bam_path = os.path.join(
-            self.source_path, '{}_test.bam'.format(SAMPLE_ID)
-        )
-        vcf_path = os.path.join(
-            self.source_path, '{}_test.vcf.gz'.format(FAMILY_ID)
-        )
+        bam_path = os.path.join(self.source_path, f'{SAMPLE_ID}_test.bam')
+        vcf_path = os.path.join(self.source_path, f'{FAMILY_ID}_test.vcf.gz')
         self.irods.data_objects.create(bam_path)
         self.irods.data_objects.create(vcf_path)
         with self.login(self.user):

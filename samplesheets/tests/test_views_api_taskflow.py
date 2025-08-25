@@ -1480,9 +1480,7 @@ class TestProjectIrodsFileListAPIView(SampleSheetAPITaskflowTestBase):
         self.assertEqual(response.status_code, 404)
         self.assertEqual(
             response.data['detail'],
-            '{}: {}'.format(
-                IRODS_QUERY_ERROR_MSG, 'iRODS collection not found'
-            ),
+            f'{IRODS_QUERY_ERROR_MSG}: iRODS collection not found',
         )
 
     def test_get_empty_collection(self):

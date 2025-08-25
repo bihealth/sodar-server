@@ -216,9 +216,7 @@ class BasicAuthView(View):
     def dispatch(self, request, *args, **kwargs):
         if not settings.IRODS_SODAR_AUTH:
             logger.error(
-                '{} failed: {}'.format(
-                    BASIC_AUTH_LOG_PREFIX, BASIC_AUTH_NOT_ENABLED_MSG
-                )
+                f'{BASIC_AUTH_LOG_PREFIX} failed: {BASIC_AUTH_NOT_ENABLED_MSG}'
             )
             return HttpResponse(BASIC_AUTH_NOT_ENABLED_MSG, status=500)
         return super().dispatch(request, *args, **kwargs)
@@ -226,12 +224,8 @@ class BasicAuthView(View):
     def get(self, request, *args, **kwargs):
         if request.user.is_authenticated:
             logger.info(
-                '{} successful: {}'.format(
-                    BASIC_AUTH_LOG_PREFIX, request.user.username
-                )
+                f'{BASIC_AUTH_LOG_PREFIX} successful: {request.user.username}'
             )
             return HttpResponse('Authenticated', status=200)
-        logger.error(
-            '{} failed: User not authenticated'.format(BASIC_AUTH_LOG_PREFIX)
-        )
+        logger.error(f'{BASIC_AUTH_LOG_PREFIX} failed: User not authenticated')
         return HttpResponse('Unauthorized', status=401)

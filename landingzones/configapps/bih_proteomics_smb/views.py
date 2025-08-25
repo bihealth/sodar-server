@@ -108,7 +108,5 @@ class ZoneTicketGetView(
                 ex_msg = str(ex)
 
         if error:
-            messages.error(
-                self.request, 'Error modifying ticket: {}'.format(ex_msg)
-            )
+            messages.error(self.request, f'Error modifying ticket: {ex_msg}')
         return redirect(redirect_url)

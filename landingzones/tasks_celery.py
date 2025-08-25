@@ -55,19 +55,15 @@ class TriggerZoneMoveTask(ZoneMoveMixin):
             path = os.path.join(
                 irods_backend.get_path(zone), settings.LANDINGZONES_TRIGGER_FILE
             )
-            s = '{}:{} in project "{}" ({})'.format(
-                zone.user.username,
-                zone.title,
-                zone.project.title,
-                zone.project.sodar_uuid,
+            s = (
+                f'{zone.user.username}:{zone.title} in project '
+                f'{zone.project.get_log_title()}'
             )
-            logger.debug(
-                'Searching for trigger file "{}" for zone {}'.format(path, s)
-            )
+            logger.debug(f'Searching for trigger file "{path}" for zone {s}')
             if not irods.data_objects.exists(path):
-                logger.debug('Trigger file not found for zone {}'.format(s))
+                logger.debug(f'Trigger file not found for zone {s}')
                 continue  # Continue looking into other zones in project
-            logger.info('Trigger file found for zone {}'.format(s))
+            logger.info(f'Trigger file found for zone {s}')
             try:
                 irods.data_objects.unlink(path, force=True)
                 logger.debug('Trigger file deleted')
@@ -76,14 +72,12 @@ class TriggerZoneMoveTask(ZoneMoveMixin):
                     zone, validate_only=False, request=request
                 )
                 logger.info(
-                    'Initiated landing zone validation and moving for '
-                    'zone {}'.format(s)
+                    f'Initiated landing zone validation and moving for zone {s}'
                 )
                 break  # Skip the rest of the zones in project
             except Exception as ex:
                 logger.error(
-                    'Triggering automated moving failed in zone '
-                    '{}: {}'.format(s, ex)
+                    f'Triggering automated moving failed in zone {s}: {ex}'
                 )
         irods.cleanup()
 
@@ -94,7 +88,7 @@ class TriggerZoneMoveTask(ZoneMoveMixin):
         try:
             irods_backend = plugin_api.get_backend_api('omics_irods')
         except Exception as ex:
-            logger.error('Exception raised by irodsbackend: {}'.format(ex))
+            logger.error(f'Exception raised by irodsbackend: {ex}')
             return
         if not irods_backend:
             return

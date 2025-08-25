@@ -25,10 +25,11 @@ def get_stats_html(irods_path, project):
     :return: String (contains HTML)
     """
     return (
-        '<span class="badge badge-pill badge-info sodar-irods-stats" '
-        'data-stats-path="{}" data-project-uuid="{}">'
-        '<i class="iconify spin" data-icon="mdi:loading"></i> Updating..'
-        '</span>'.format(irods_path, project.sodar_uuid)
+        f'<span class="badge badge-pill badge-info sodar-irods-stats" '
+        f'data-stats-path="{irods_path}" '
+        f'data-project-uuid="{project.sodar_uuid}">'
+        f'<i class="iconify spin" data-icon="mdi:loading"></i> Updating..'
+        f'</span>'
     )
 
 

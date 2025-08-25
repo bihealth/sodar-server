@@ -153,10 +153,8 @@ class SampleSheetIO:
                 self._warnings['limit_reached'] = True
 
             logger.warning(
-                'altamISA warning: "{}" '
-                '(Category: {})'.format(
-                    warning.message, warning.category.__name__
-                )
+                f'altamISA warning: "{warning.message}" (Category: '
+                f'{warning.category.__name__})'
             )
 
     # Helpers ------------------------------------------------------------------
@@ -193,7 +191,7 @@ class SampleSheetIO:
         try:
             zip_file = ZipFile(file)
         except Exception as ex:
-            raise OSError('Unable to open zip archive: {}'.format(ex))
+            raise OSError(f'Unable to open zip archive: {ex}')
         # Get investigation file path(s)
         inv_paths = cls.get_inv_paths(zip_file)
         if len(inv_paths) == 0:
@@ -255,9 +253,8 @@ class SampleSheetIO:
         for file in files:
             if file.content_type not in ISATAB_TYPES:
                 raise ValueError(
-                    'Invalid content type for file "{}": {}'.format(
-                        file.name, file.content_type
-                    )
+                    f'Invalid content type for file "{file.name}": '
+                    f'{file.content_type}'
                 )
             if file.name.startswith('i_'):
                 isa_data['investigation']['path'] = file.name
@@ -435,9 +432,7 @@ class SampleSheetIO:
         )
         obj_lookup.update({m.unique_name: m for m in materials})
         logger.debug(
-            'Added {} materials to "{}"'.format(
-                len(materials), db_parent.get_name()
-            )
+            f'Added {len(materials)} materials to "{db_parent.get_name()}"'
         )
 
     @classmethod
@@ -499,9 +494,7 @@ class SampleSheetIO:
         )
         obj_lookup.update({p.unique_name: p for p in processes})
         logger.debug(
-            'Added {} processes to "{}"'.format(
-                len(processes), db_parent.get_name()
-            )
+            f'Added {len(processes)} processes to "{db_parent.get_name()}"'
         )
 
     @classmethod
@@ -517,9 +510,7 @@ class SampleSheetIO:
             arc_vals.append([a.tail, a.head])
         db_parent.arcs = arc_vals
         db_parent.save()
-        logger.debug(
-            'Added {} arcs to "{}"'.format(len(arc_vals), db_parent.get_name())
-        )
+        logger.debug(f'Added {len(arc_vals)} arcs to "{db_parent.get_name()}"')
 
     @transaction.atomic
     def import_isa(
@@ -549,7 +540,7 @@ class SampleSheetIO:
         :raise: SampleSheetImportException if critical warnings are raised
         """
         t_start = time.time()
-        logger.info('altamISA version: {}'.format(altamisa.__version__))
+        logger.info(f'altamISA version: {altamisa.__version__}')
         logger.info(
             'Importing investigation{}..'.format(
                 ' from archive "{}"'.format(archive_name)
@@ -589,9 +580,7 @@ class SampleSheetIO:
         db_investigation = Investigation.objects.create(**values)
         # Handle parser warnings for investigation
         self._handle_warnings(ws, db_investigation)
-        logger.info(
-            'Imported investigation "{}"'.format(db_investigation.title)
-        )
+        logger.info(f'Imported investigation "{db_investigation.title}"')
         study_count = 0
         db_studies = []
 
@@ -610,13 +599,13 @@ class SampleSheetIO:
 
         # Create studies
         for isa_study in isa_inv.studies:
-            logger.info('Importing study "{}"..'.format(isa_study.info.title))
+            logger.info(f'Importing study "{isa_study.info.title}"..')
             obj_lookup = {}  # Lookup dict for study materials and processes
-            study_id = 'p{}-s{}'.format(project.pk, study_count)
+            study_id = f'p{project.pk}-s{study_count}'
             input_name = str(isa_study.info.path)
             if input_name not in isa_data['studies']:
                 raise SampleSheetImportException(
-                    'Study not found in import data: "{}"'.format(input_name)
+                    f'Study not found in import data: "{input_name}"'
                 )
             input_file = io.StringIO(isa_data['studies'][input_name]['tsv'])
 
@@ -630,8 +619,9 @@ class SampleSheetIO:
                     ).read()
                     StudyValidator(isa_inv, isa_study, s).validate()
                 except Exception as ex:
-                    ex_msg = 'altamISA exception in study "{}": {}'.format(
-                        isa_study.info.title, ex
+                    ex_msg = (
+                        f'altamISA exception in study '
+                        f'"{isa_study.info.title}": {ex}'
                     )
                     logger.error(ex_msg)
                     raise Exception(ex_msg)
@@ -659,7 +649,7 @@ class SampleSheetIO:
             db_studies.append(db_study)
             # Handle parser warnings for study
             self._handle_warnings(ws, db_study)
-            logger.info('Imported study "{}"'.format(db_study.title))
+            logger.info(f'Imported study "{db_study.title}"')
 
             # Create protocols
             protocol_vals = []
@@ -691,9 +681,7 @@ class SampleSheetIO:
                 p.name: p for p in protocols
             }  # Per study, no update
             logger.debug(
-                'Added {} protocols in study "{}"'.format(
-                    len(protocols), db_study.title
-                )
+                f'Added {len(protocols)} protocols in study "{db_study.title}"'
             )
 
             if len(s.materials.values()) == 0:
@@ -720,15 +708,13 @@ class SampleSheetIO:
                     (a_i for a_i in isa_study.assays if a_i.path == assay_path),
                     None,
                 )
-                logger.info('Importing assay "{}"..'.format(isa_assay.path))
-                assay_id = 'a{}'.format(assay_count)
+                logger.info(f'Importing assay "{isa_assay.path}"..')
+                assay_id = f'a{assay_count}'
                 # HACK to fake a file for altamISA
                 input_name = str(isa_assay.path)
                 if input_name not in isa_data['assays']:
                     raise SampleSheetImportException(
-                        'Assay not found in import data: "{}"'.format(
-                            input_name
-                        )
+                        f'Assay not found in import data: "{input_name}"'
                     )
                 input_file = io.StringIO(isa_data['assays'][input_name]['tsv'])
 
@@ -745,8 +731,9 @@ class SampleSheetIO:
                             isa_inv, isa_study, isa_assay, a
                         ).validate()
                     except Exception as ex:
-                        ex_msg = 'altamISA exception in assay "{}": {}'.format(
-                            isa_assay.path, ex
+                        ex_msg = (
+                            f'altamISA exception in assay "{isa_assay.path}": '
+                            f'{ex}'
                         )
                         logger.error(ex_msg)
                         raise Exception(ex_msg)
@@ -769,9 +756,8 @@ class SampleSheetIO:
                 # Handle parser warnings for assay
                 self._handle_warnings(ws, db_assay)
                 logger.info(
-                    'Imported assay "{}" in study "{}"'.format(
-                        db_assay.file_name, db_study.title
-                    )
+                    f'Imported assay "{db_assay.file_name}" in study '
+                    f'"{db_study.title}"'
                 )
 
                 # Create assay materials (excluding sources and samples)
@@ -827,9 +813,8 @@ class SampleSheetIO:
             db_investigation.save()
 
         logger.info(
-            'Import of investigation "{}" OK ({:.1f}s)'.format(
-                db_investigation.title, time.time() - t_start
-            )
+            f'Import of investigation "{db_investigation.title}" OK '
+            f'({time.time() - t_start:.1f}s)'
         )
 
         # Save original ISA-Tab data
@@ -1394,9 +1379,7 @@ class SampleSheetIO:
                 identifier=study_info.info.identifier,
             )
             logger.info(
-                'Validating and exporting study "{}"..'.format(
-                    db_study.file_name
-                )
+                f'Validating and exporting study "{db_study.file_name}"..'
             )
             with warnings.catch_warnings(record=True) as ws:
                 StudyValidator(
@@ -1417,7 +1400,7 @@ class SampleSheetIO:
 
             ret['studies'][study_info.info.path] = {'tsv': study_out.getvalue()}
             study_out.close()
-            logger.info('Exported study "{}"'.format(db_study.file_name))
+            logger.info(f'Exported study "{db_study.file_name}"')
 
             # Write assays
             for assay_idx, assay_info in enumerate(study_info.assays):
@@ -1426,9 +1409,7 @@ class SampleSheetIO:
                 )
 
                 logger.info(
-                    'Validating and exporting assay "{}"..'.format(
-                        db_assay.file_name
-                    )
+                    f'Validating and exporting assay "{db_assay.file_name}"..'
                 )
 
                 with warnings.catch_warnings(record=True) as ws:
@@ -1453,7 +1434,7 @@ class SampleSheetIO:
 
                 ret['assays'][assay_info.path] = {'tsv': assay_out.getvalue()}
                 assay_out.close()
-                logger.info('Exported assay "{}"'.format(db_assay.file_name))
+                logger.info(f'Exported assay "{db_assay.file_name}"')
 
         return ret
 
@@ -1490,7 +1471,7 @@ class SampleSheetIO:
             description=description,
             parser_version=altamisa.__version__,
         )
-        logger.info('ISA-Tab saved (UUID={})'.format(db_isatab.sodar_uuid))
+        logger.info(f'ISA-Tab saved (UUID={db_isatab.sodar_uuid})')
         return db_isatab
 
 

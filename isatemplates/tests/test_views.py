@@ -875,7 +875,7 @@ class TestISATemplateExportView(ISATemplateViewTestBase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.get('Content-Disposition'),
-            'attachment; filename="{}"'.format(self.template.name + '.zip'),
+            f'attachment; filename="{self.template.name}.zip"',
         )
         f = io.BytesIO(response.content)
         zf = zipfile.ZipFile(f, 'r')

@@ -80,7 +80,7 @@ class IrodsEnvRetrieveAPIView(
             env = self.get_irods_client_env(request.user, irods_backend)
             return Response({'irods_environment': env})
         except Exception as ex:
-            logger.error('iRODS config retrieval failed: {}'.format(ex))
+            logger.error(f'iRODS config retrieval failed: {ex}')
             return Response(
                 {'detail': 'iRODS config retrieval failed'}, status=400
             )

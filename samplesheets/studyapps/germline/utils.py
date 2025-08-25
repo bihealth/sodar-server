@@ -42,8 +42,8 @@ def get_pedigree_file_path(file_type, source, study_tables):
         assay_plugin = assay.get_plugin()
         if not assay_plugin:
             logger.warning(
-                'No plugin for assay, skipping pedigree file path search: '
-                '"{}" ({})'.format(assay.get_display_name(), assay.sodar_uuid)
+                f'No plugin for assay, skipping pedigree file path search: '
+                f'"{assay.get_display_name()}" ({assay.sodar_uuid})'
             )
             continue
         assay_table = study_tables['assays'][str(assay.sodar_uuid)]

@@ -81,12 +81,12 @@ class TestCancerPlugin(
         # Set up plugin and helpers
         self.plugin = SampleSheetStudyPluginPoint.get_plugin(PLUGIN_NAME_CANCER)
         self.tb = SampleSheetTableBuilder()
-        self.cache_name = 'irods/{}'.format(self.study.sodar_uuid)
+        self.cache_name = f'irods/{self.study.sodar_uuid}'
         self.assay_path = self.irods_backend.get_path(self.assay)
         self.source_path = os.path.join(self.assay_path, LIBRARY_ID_NORMAL)
         self.source = self.study.get_sources().first()
         self.cache_backend = plugin_api.get_backend_api('sodar_cache')
-        self.cache_name = 'irods/{}'.format(self.study.sodar_uuid)
+        self.cache_name = f'irods/{self.study.sodar_uuid}'
 
     def test_plugin_retrieval(self):
         """Test retrieving SampleSheetStudyPlugin from the database"""
@@ -126,10 +126,10 @@ class TestCancerPlugin(
         """Test get_shortcut_column() with files in iRODS"""
         self.irods.collections.create(self.source_path)
         bam_path = os.path.join(
-            self.source_path, '{}_test.bam'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_test.bam'
         )
         vcf_path = os.path.join(
-            self.source_path, '{}_test.vcf.gz'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_test.vcf.gz'
         )
         self.irods.data_objects.create(bam_path)
         self.irods.data_objects.create(vcf_path)
@@ -148,10 +148,10 @@ class TestCancerPlugin(
         """Test get_shortcut_column() with CRAM file in iRODS"""
         self.irods.collections.create(self.source_path)
         cram_path = os.path.join(
-            self.source_path, '{}_test.cram'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_test.cram'
         )
         vcf_path = os.path.join(
-            self.source_path, '{}_test.vcf.gz'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_test.vcf.gz'
         )
         self.irods.data_objects.create(cram_path)
         self.irods.data_objects.create(vcf_path)
@@ -193,10 +193,10 @@ class TestCancerPlugin(
         """Test get_shortcut_links() with files in iRODS"""
         self.irods.collections.create(self.source_path)
         bam_path = os.path.join(
-            self.source_path, '{}_test.bam'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_test.bam'
         )
         vcf_path = os.path.join(
-            self.source_path, '{}_test.vcf.gz'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_test.vcf.gz'
         )
         self.irods.data_objects.create(bam_path)
         self.irods.data_objects.create(vcf_path)
@@ -244,10 +244,10 @@ class TestCancerPlugin(
         """Test get_shortcut_links() with CRAM file in iRODS"""
         self.irods.collections.create(self.source_path)
         cram_path = os.path.join(
-            self.source_path, '{}_test.cram'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_test.cram'
         )
         vcf_path = os.path.join(
-            self.source_path, '{}_test.vcf.gz'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_test.vcf.gz'
         )
         self.irods.data_objects.create(cram_path)
         self.irods.data_objects.create(vcf_path)
@@ -295,18 +295,18 @@ class TestCancerPlugin(
         """Test get_shortcut_links() with multiple BAM/VCF files"""
         self.irods.collections.create(self.source_path)
         cram_path = os.path.join(
-            self.source_path, '{}_test_2022-11-06.cram'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_test_2022-11-06.cram'
         )
         bam_path = os.path.join(
-            self.source_path, '{}_test_2022-11-07.bam'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_test_2022-11-07.bam'
         )
         vcf_path = os.path.join(
             self.source_path,
-            '{}_test.vcf_2022-11-06.vcf.gz'.format(SAMPLE_ID_NORMAL),
+            f'{SAMPLE_ID_NORMAL}_test.vcf_2022-11-06.vcf.gz',
         )
         vcf_path2 = os.path.join(
             self.source_path,
-            '{}_test.vcf_2022-11-07.vcf.gz'.format(SAMPLE_ID_NORMAL),
+            f'{SAMPLE_ID_NORMAL}_test.vcf_2022-11-07.vcf.gz',
         )
         self.irods.data_objects.create(cram_path)
         self.irods.data_objects.create(bam_path)
@@ -332,7 +332,7 @@ class TestCancerPlugin(
         """Test get_shortcut_links() with BAM file only"""
         self.irods.collections.create(self.source_path)
         bam_path = os.path.join(
-            self.source_path, '{}_test.bam'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_test.bam'
         )
         self.irods.data_objects.create(bam_path)
         self.plugin.update_cache(self.cache_name, self.project)
@@ -348,7 +348,7 @@ class TestCancerPlugin(
         """Test get_shortcut_links() with CRAM file only"""
         self.irods.collections.create(self.source_path)
         cram_path = os.path.join(
-            self.source_path, '{}_test.cram'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_test.cram'
         )
         self.irods.data_objects.create(cram_path)
         self.plugin.update_cache(self.cache_name, self.project)
@@ -364,7 +364,7 @@ class TestCancerPlugin(
         """Test get_shortcut_links() with VCF file only"""
         self.irods.collections.create(self.source_path)
         vcf_path = os.path.join(
-            self.source_path, '{}_test.vcf.gz'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_test.vcf.gz'
         )
         self.irods.data_objects.create(vcf_path)
         self.plugin.update_cache(self.cache_name, self.project)
@@ -380,7 +380,7 @@ class TestCancerPlugin(
         """Test get_shortcut_links() with a non-BAM/VCF file"""
         self.irods.collections.create(self.source_path)
         bam_path = os.path.join(
-            self.source_path, '{}_test.txt'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_test.txt'
         )
         self.irods.data_objects.create(bam_path)
         self.plugin.update_cache(self.cache_name, self.project)
@@ -397,16 +397,16 @@ class TestCancerPlugin(
         self.irods.collections.create(self.source_path)
         # Create omittable files which come before real ones alphabetically
         bam_path = os.path.join(
-            self.source_path, '{}_test.bam'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_test.bam'
         )
         bam_path_omit = os.path.join(
-            self.source_path, '{}_dragen_evidence.bam'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_dragen_evidence.bam'
         )
         vcf_path = os.path.join(
-            self.source_path, '{}_test.vcf.gz'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_test.vcf.gz'
         )
         vcf_path_omit = os.path.join(
-            self.source_path, '{}_cnv.vcf.gz'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_cnv.vcf.gz'
         )
         self.irods.data_objects.create(bam_path)
         self.irods.data_objects.create(bam_path_omit)
@@ -456,10 +456,10 @@ class TestCancerPlugin(
         """Test get_shortcut_links() with only omittable files in iRODS"""
         self.irods.collections.create(self.source_path)
         bam_path_omit = os.path.join(
-            self.source_path, '{}_dragen_evidence.bam'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_dragen_evidence.bam'
         )
         vcf_path_omit = os.path.join(
-            self.source_path, '{}_cnv.vcf.gz'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_cnv.vcf.gz'
         )
         self.irods.data_objects.create(bam_path_omit)
         self.irods.data_objects.create(vcf_path_omit)
@@ -482,10 +482,10 @@ class TestCancerPlugin(
         )
         self.irods.collections.create(self.source_path)
         bam_path_omit = os.path.join(
-            self.source_path, '{}_dragen_evidence.bam'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_dragen_evidence.bam'
         )
         vcf_path_omit = os.path.join(
-            self.source_path, '{}_cnv.vcf.gz'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_cnv.vcf.gz'
         )
         self.irods.data_objects.create(bam_path_omit)
         self.irods.data_objects.create(vcf_path_omit)
@@ -505,7 +505,7 @@ class TestCancerPlugin(
         )
         self.irods.collections.create(self.source_path)
         cram_path_omit = os.path.join(
-            self.source_path, '{}_omit.cram'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_omit.cram'
         )
         self.irods.data_objects.create(cram_path_omit)
         self.plugin.update_cache(self.cache_name, self.project)
@@ -533,10 +533,10 @@ class TestCancerPlugin(
         )
         self.irods.collections.create(self.source_path)
         bam_path = os.path.join(
-            self.source_path, '{}_test.bam'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_test.bam'
         )
         vcf_path = os.path.join(
-            self.source_path, '{}_test.vcf.gz'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_test.vcf.gz'
         )
         self.irods.data_objects.create(bam_path)
         self.irods.data_objects.create(vcf_path)
@@ -577,10 +577,10 @@ class TestCancerPlugin(
         """Test update_cache() with files in iRODS"""
         self.irods.collections.create(self.source_path)
         bam_path = os.path.join(
-            self.source_path, '{}_test.bam'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_test.bam'
         )
         vcf_path = os.path.join(
-            self.source_path, '{}_test.vcf.gz'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_test.vcf.gz'
         )
         self.irods.data_objects.create(bam_path)
         self.irods.data_objects.create(vcf_path)
@@ -605,10 +605,10 @@ class TestCancerPlugin(
         self.study.save()
         self.irods.collections.create(self.source_path)
         bam_path = os.path.join(
-            self.source_path, '{}_test.bam'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_test.bam'
         )
         vcf_path = os.path.join(
-            self.source_path, '{}_test.vcf.gz'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_test.vcf.gz'
         )
         self.irods.data_objects.create(bam_path)
         self.irods.data_objects.create(vcf_path)
@@ -626,10 +626,10 @@ class TestCancerPlugin(
         """Test update_cache() with CRAM file in iRODS"""
         self.irods.collections.create(self.source_path)
         cram_path = os.path.join(
-            self.source_path, '{}_test.cram'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_test.cram'
         )
         vcf_path = os.path.join(
-            self.source_path, '{}_test.vcf.gz'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_test.vcf.gz'
         )
         self.irods.data_objects.create(cram_path)
         self.irods.data_objects.create(vcf_path)
@@ -648,16 +648,16 @@ class TestCancerPlugin(
         self.irods.collections.create(self.source_path)
         # Create omittable files which come before real ones alphabetically
         bam_path = os.path.join(
-            self.source_path, '{}_test.bam'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_test.bam'
         )
         bam_path_omit = os.path.join(
-            self.source_path, '{}_dragen_evidence.bam'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_dragen_evidence.bam'
         )
         vcf_path = os.path.join(
-            self.source_path, '{}_test.vcf.gz'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_test.vcf.gz'
         )
         vcf_path_omit = os.path.join(
-            self.source_path, '{}_cnv.vcf.gz'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_cnv.vcf.gz'
         )
         self.irods.data_objects.create(bam_path)
         self.irods.data_objects.create(bam_path_omit)
@@ -677,10 +677,10 @@ class TestCancerPlugin(
         """Test update_cache() with only omittable files in iRODS"""
         self.irods.collections.create(self.source_path)
         bam_path_omit = os.path.join(
-            self.source_path, '{}_dragen_evidence.bam'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_dragen_evidence.bam'
         )
         vcf_path_omit = os.path.join(
-            self.source_path, '{}_cnv.vcf.gz'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_cnv.vcf.gz'
         )
         self.irods.data_objects.create(bam_path_omit)
         self.irods.data_objects.create(vcf_path_omit)
@@ -702,10 +702,10 @@ class TestCancerPlugin(
         )
         self.irods.collections.create(self.source_path)
         bam_path_omit = os.path.join(
-            self.source_path, '{}_dragen_evidence.bam'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_dragen_evidence.bam'
         )
         vcf_path_omit = os.path.join(
-            self.source_path, '{}_cnv.vcf.gz'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_cnv.vcf.gz'
         )
         self.irods.data_objects.create(bam_path_omit)
         self.irods.data_objects.create(vcf_path_omit)
@@ -726,10 +726,10 @@ class TestCancerPlugin(
         )
         self.irods.collections.create(self.source_path)
         cram_path_omit = os.path.join(
-            self.source_path, '{}_omit.cram'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_omit.cram'
         )
         vcf_path_omit = os.path.join(
-            self.source_path, '{}_cnv.vcf.gz'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_cnv.vcf.gz'
         )
         self.irods.data_objects.create(cram_path_omit)
         self.irods.data_objects.create(vcf_path_omit)
@@ -758,16 +758,16 @@ class TestCancerPlugin(
         self.irods.collections.create(self.source_path)
         # Create omittable files which come before real ones alphabetically
         bam_path = os.path.join(
-            self.source_path, '{}_test.bam'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_test.bam'
         )
         bam_path_omit = os.path.join(
-            self.source_path, '{}_dragen_evidence.bam'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_dragen_evidence.bam'
         )
         vcf_path = os.path.join(
-            self.source_path, '{}_test.vcf.gz'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_test.vcf.gz'
         )
         vcf_path_omit = os.path.join(
-            self.source_path, '{}_cnv.vcf.gz'.format(SAMPLE_ID_NORMAL)
+            self.source_path, f'{SAMPLE_ID_NORMAL}_cnv.vcf.gz'
         )
         self.irods.data_objects.create(bam_path)
         self.irods.data_objects.create(bam_path_omit)

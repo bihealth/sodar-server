@@ -138,7 +138,5 @@ class IGVSessionFileRenderView(BaseGermlineConfigView):
         # Serve XML
         file_name = fam_id + '.pedigree.igv.xml'
         response = HttpResponse(xml_str, content_type='text/xml')
-        response['Content-Disposition'] = 'attachment; filename="{}"'.format(
-            file_name
-        )
+        response['Content-Disposition'] = f'attachment; filename="{file_name}"'
         return response

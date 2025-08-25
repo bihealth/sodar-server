@@ -43,12 +43,10 @@ class BaseLinearFlow:
         call this. Can be extended with further validation.
         """
         if self.request_mode not in self.supported_modes:
-            raise TypeError(
-                'Request mode "{}" not supported'.format(self.request_mode)
-            )
+            raise TypeError(f'Request mode "{self.request_mode}" not supported')
         for k in self.required_fields:
             if k not in self.flow_data or self.flow_data[k] == '':
-                raise TypeError('Missing or invalid argument: "{}"'.format(k))
+                raise TypeError(f'Missing or invalid argument: "{k}"')
         return True
 
     def add_task(self, task):
@@ -72,7 +70,7 @@ class BaseLinearFlow:
         the flow was rolled back. Also handle project locking and unlocking.
         """
         if verbose:
-            logger.info('Running flow "{}"'.format(self.flow.name))
+            logger.info(f'Running flow "{self.flow.name}"')
         engine = engines.load(self.flow, engine='serial')
         try:
             engine.run()
@@ -99,7 +97,7 @@ class BaseLinearFlow:
         except ForceFailException:
             return False
         except Exception as ex:
-            logger.error('Exception in run_flow(): {}'.format(ex))
+            logger.error(f'Exception in run_flow(): {ex}')
             raise ex
         finally:
             self.irods.cleanup()

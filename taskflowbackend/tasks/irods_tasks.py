@@ -191,7 +191,7 @@ class IrodsBaseTask(BaseTask):
         super().__init__(
             name, force_fail=force_fail, inject=inject, *args, **kwargs
         )
-        self.name = '<iRODS> {} ({})'.format(name, self.__class__.__name__)
+        self.name = f'<iRODS> {name} ({self.__class__.__name__})'
         self.irods = kwargs['irods']
 
     def raise_irods_exception(self, ex, info=None):
@@ -204,7 +204,7 @@ class IrodsBaseTask(BaseTask):
             (str(ex) if str(ex) not in ['', 'None'] else ex.__class__.__name__),
         )
         if info:
-            desc += '\n{}'.format(info)
+            desc += f'\n{info}'
         logger.error(desc)
         raise Exception(desc)
 
@@ -499,9 +499,8 @@ class CleanupAccessTask(IrodsBaseTask):
                 )
                 self.irods.acls.set(acl, recursive=True)
                 logger.debug(
-                    'Removed collection ACL from user "{}": {}'.format(
-                        res[CollectionUser.name], res[Collection.name]
-                    )
+                    f'Removed collection ACL from user '
+                    f'"{res[CollectionUser.name]}": {res[Collection.name]}'
                 )
         query.close()
 
@@ -524,9 +523,8 @@ class CleanupAccessTask(IrodsBaseTask):
                 )
                 self.irods.acls.set(acl, recursive=False)
                 logger.debug(
-                    'Removed data object ACL from user "{}": {}'.format(
-                        res[User.name], obj_path
-                    )
+                    f'Removed data object ACL from user "{res[User.name]}": '
+                    f'{obj_path}'
                 )
         query.close()
 
@@ -550,12 +548,12 @@ class CleanupAccessTask(IrodsBaseTask):
             self._cleanup_coll_access(path, user_ids)
         except Exception as ex:
             # NOTE: No raise, only log
-            logger.error('Exception in _cleanup_coll_access(): {}'.format(ex))
+            logger.error(f'Exception in _cleanup_coll_access(): {ex}')
         # Cleanup data object access
         try:
             self._cleanup_obj_access(path, user_ids)
         except Exception as ex:
-            logger.error('Exception in _cleanup_obj_access(): {}'.format(ex))
+            logger.error(f'Exception in _cleanup_obj_access(): {ex}')
         super().execute(*args, **kwargs)
 
     # NOTE: No revert as these are roles which should not exist
@@ -639,7 +637,7 @@ class AddUserToGroupTask(IrodsBaseTask):
             group = self.irods.user_groups.get(group_name)
         except Exception as ex:
             self.raise_irods_exception(
-                ex, info='Failed to retrieve group "{}"'.format(group_name)
+                ex, info=f'Failed to retrieve group "{group_name}"'
             )
         if not group.hasmember(user_name):
             try:
@@ -648,9 +646,8 @@ class AddUserToGroupTask(IrodsBaseTask):
             except Exception as ex:
                 self.raise_irods_exception(
                     ex,
-                    info='Failed to add user "{}" into group "{}"'.format(
-                        user_name, group_name
-                    ),
+                    info=f'Failed to add user "{user_name}" '
+                    f'into group "{group_name}"',
                 )
         super().execute(*args, **kwargs)
 
@@ -863,21 +860,19 @@ class BatchValidateChecksumsTask(ProgressCounterMixin, IrodsBaseTask):
                 or checksum.lower() != repl_checksum.lower()
             ):
                 log_msg = (
-                    'Checksums do not match for "{}" in resource "{}" '
-                    '(File: {}; iRODS: {})'.format(
-                        os.path.basename(data_obj.path),
-                        replica.resource_name,
-                        checksum or NO_FILE_CHECKSUM_LABEL,
-                        repl_checksum,
-                    )
+                    f'Checksums do not match for '
+                    f'"{os.path.basename(data_obj.path)}" in resource '
+                    f'"{replica.resource_name}" '
+                    f'(File: {checksum or NO_FILE_CHECKSUM_LABEL}; '
+                    f'iRODS: {repl_checksum})'
                 )
                 logger.error(log_msg)
                 ex_path = '/'.join(data_obj.path.split('/')[zone_path_len:])
-                ex_msg = 'Path: {}\nResource: {}\nFile: {}\niRODS: {}'.format(
-                    ex_path,
-                    replica.resource_name,
-                    checksum or NO_FILE_CHECKSUM_LABEL,
-                    repl_checksum,
+                ex_msg = (
+                    f'Path: {ex_path}\n'
+                    f'Resource: {replica.resource_name}\n'
+                    f'File: {checksum or NO_FILE_CHECKSUM_LABEL}\n'
+                    f'iRODS: {repl_checksum}'
                 )
                 raise Exception(ex_msg)
 
@@ -970,7 +965,7 @@ class BatchCreateCollectionsTask(IrodsBaseTask):
                 except Exception as ex:
                     self.raise_irods_exception(
                         ex,
-                        'Failed to create collection: {}'.format(sub_path),
+                        f'Failed to create collection: {sub_path}',
                     )
         super().execute(*args, **kwargs)
 
@@ -1030,10 +1025,11 @@ class BatchMoveDataObjectsTask(ProgressCounterMixin, IrodsBaseTask):
                 )
             except Exception as ex:
                 if ex.__class__.__name__ == 'CAT_NAME_EXISTS_AS_DATAOBJ':
-                    msg = 'Target file already exists: {}'.format(dest_obj_path)
+                    msg = f'Target file already exists: {dest_obj_path}'
                 else:
-                    msg = 'Error moving move data object "{}" to "{}"'.format(
-                        src_path, dest_obj_path
+                    msg = (
+                        f'Error moving move data object "{src_path}" to '
+                        f'"{dest_obj_path}"'
                     )
                 self.raise_irods_exception(ex, msg)
             try:
@@ -1041,16 +1037,14 @@ class BatchMoveDataObjectsTask(ProgressCounterMixin, IrodsBaseTask):
             except Exception as ex:
                 self.raise_irods_exception(
                     ex,
-                    'Error retrieving destination object "{}"'.format(
-                        dest_obj_path
-                    ),
+                    f'Error retrieving destination object "{dest_obj_path}"',
                 )
             try:
                 target_access = self.irods.acls.get(target=target)
             except Exception as ex:
                 self.raise_irods_exception(
                     ex,
-                    'Error getting permissions of target "{}"'.format(target),
+                    f'Error getting permissions of target "{target}"',
                 )
 
             # TODO: Remove repetition, use IrodsAccessMixin
@@ -1083,9 +1077,7 @@ class BatchMoveDataObjectsTask(ProgressCounterMixin, IrodsBaseTask):
                 except Exception as ex:
                     self.raise_irods_exception(
                         ex,
-                        'Error setting permission for "{}"'.format(
-                            dest_coll_path
-                        ),
+                        f'Error setting permission for "{dest_coll_path}"',
                     )
 
             i_prev, time_start = self.update_zone_progress(
@@ -1146,7 +1138,7 @@ class BatchCalculateChecksumTask(ProgressCounterMixin, IrodsBaseTask):
             return
         for j in range(CHECKSUM_RETRY):
             if j > 0:  # Retry if iRODS times out (see #1941)
-                logger.info('Retrying ({})..'.format(j + 1))
+                logger.info(f'Retrying ({j + 1})..')
             try:
                 data_obj.chksum(**{kw.RESC_HIER_STR_KW: replica.resc_hier})
                 return

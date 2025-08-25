@@ -73,8 +73,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         name = options['name'].upper()
-        logger.info('Importing ontology "{}"..'.format(name))
-        logger.debug('Using options: {}'.format(options))
+        logger.info(f'Importing ontology "{name}"..')
+        logger.debug(f'Using options: {options}')
         obo_io = OBOFormatOntologyIO()
 
         # Ensure path or url (but not both) is set
@@ -112,13 +112,13 @@ class Command(BaseCommand):
             try:
                 target = obo_io.owl_to_obo(target)
             except Exception as ex:
-                logger.error('OWL convert exception: {}'.format(ex))
+                logger.error(f'OWL convert exception: {ex}')
                 sys.exit(1)
 
         try:
             obo_doc = fastobo.load(target)
         except Exception as ex:
-            logger.error('Fastobo exception: {}'.format(ex))
+            logger.error(f'Fastobo exception: {ex}')
             sys.exit(1)
 
         # ontology_id = obo_io.get_obo_header(obo_doc, 'ontology')
@@ -128,16 +128,13 @@ class Command(BaseCommand):
             data_version = obo_io.get_obo_header(obo_doc, 'data-version')
             if obo_obj.data_version == data_version:
                 logger.info(
-                    'Identical version of ontology "{}" already exists'.format(
-                        name
-                    )
+                    f'Identical version of ontology "{name}" already exists'
                 )
             else:
                 logger.info(
-                    'Version "{}" of ontology "{}" already exists, please '
-                    'delete the existing version before importing'.format(
-                        obo_obj.data_version, name
-                    )
+                    f'Version "{ obo_obj.data_version}" of ontology "{name}" '
+                    f'already exists, please delete the existing version '
+                    f'before importing'
                 )
                 # TODO: Implement replacing if needed
             logger.info('Import cancelled')

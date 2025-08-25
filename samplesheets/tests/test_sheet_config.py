@@ -182,7 +182,7 @@ class TestSheetConfig(
     def test_build_sheet_config_batch(self):
         """Test build_sheet_config() in batch"""
         for zip_name, zip_file in self.get_isatab_files().items():
-            msg = 'file={}'.format(zip_name)
+            msg = f'file={zip_name}'
             try:
                 investigation = self.import_isa_from_file(
                     zip_file.path, self.project
@@ -313,7 +313,7 @@ class TestDisplayConfig(
     def test_build_config_batch(self):
         """Test building default display configs for example ISA-Tabs"""
         for zip_name, zip_file in self.get_isatab_files().items():
-            msg = 'file={}'.format(zip_name)
+            msg = f'file={zip_name}'
             try:
                 investigation = self.import_isa_from_file(
                     zip_file.path, self.project

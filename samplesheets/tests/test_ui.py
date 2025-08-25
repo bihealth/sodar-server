@@ -215,7 +215,7 @@ class TestProjectSheetsView(IrodsDataRequestMixin, SamplesheetsUITestBase):
             self.assertIsNotNone(
                 self.selenium.find_element(
                     By.ID,
-                    'sodar-ss-grid-assay-{}'.format(self.assay.sodar_uuid),
+                    f'sodar-ss-grid-assay-{self.assay.sodar_uuid}',
                 )
             )
             # Ensure error alert is not generated
@@ -246,7 +246,7 @@ class TestProjectSheetsView(IrodsDataRequestMixin, SamplesheetsUITestBase):
             with self.assertRaises(NoSuchElementException):
                 self.selenium.find_element(
                     By.ID,
-                    'sodar-ss-grid-assay-{}'.format(self.assay.sodar_uuid),
+                    f'sodar-ss-grid-assay-{self.assay.sodar_uuid}',
                 )
 
     def test_render_alert(self):
@@ -326,7 +326,7 @@ class TestSheetTemplateCreateView(SamplesheetsUITestBase):
             )
             for e in form_elems:
                 e_name = e.get_attribute('name')
-                msg = '{}/{}'.format(t.name, e_name)
+                msg = f'{t.name}/{e_name}'
                 if e_name.startswith('_'):
                     self.assertEqual(e.get_attribute('type'), 'hidden', msg=msg)
                 else:
@@ -344,7 +344,7 @@ class TestSheetTemplateCreateView(SamplesheetsUITestBase):
             for e in label_elems:
                 e_name = e.get_attribute('for')[3:]  # Strip "id_"
                 label_text = e.text
-                msg = '{}/{}'.format(t.name, e_name)
+                msg = f'{t.name}/{e_name}'
                 if e_name == TPL_DIR_FIELD:
                     self.assertEqual(label_text, TPL_DIR_LABEL + '*')
                 # Need to use assertIn() because of extra label characters
@@ -378,7 +378,7 @@ class TestSheetTemplateCreateView(SamplesheetsUITestBase):
         # Assert other internal fields remain hidden
         for e in form_elems:
             e_name = e.get_attribute('name')
-            msg = '{}/{}'.format(t.name, e_name)
+            msg = f'{t.name}/{e_name}'
             if e_name.startswith('_') and e_name != TPL_DIR_FIELD:
                 self.assertEqual(e.get_attribute('type'), 'hidden', msg=msg)
         elem = self.selenium.find_element(By.NAME, TPL_DIR_FIELD)

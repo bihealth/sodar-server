@@ -64,7 +64,7 @@ class ISATemplateAPI:
                 template = {t.name: t for t in ISA_TEMPLATES}.get(name)
                 if template:
                     return template
-        raise ValueError('Template not found: {}'.format(name))
+        raise ValueError(f'Template not found: {name}')
 
     @classmethod
     def is_template(self, name):

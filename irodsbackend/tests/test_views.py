@@ -26,7 +26,7 @@ class TestBasicAuthView(SODARAPIViewTestMixin, TestCase):
     def _get_auth_header(username, password):
         """Return basic auth header"""
         credentials = base64.b64encode(
-            '{}:{}'.format(username, password).encode('utf-8')
+            f'{username}:{password}'.encode('utf-8')
         ).strip()
         return {
             'HTTP_AUTHORIZATION': 'Basic {}'.format(credentials.decode('utf-8'))
@@ -55,7 +55,7 @@ class TestBasicAuthView(SODARAPIViewTestMixin, TestCase):
         """Test POST with invalid user"""
         response = self.client.get(
             self.url,
-            **self._get_auth_header(LOCAL_USER_NAME, 'invalid_password')
+            **self._get_auth_header(LOCAL_USER_NAME, 'invalid_password'),
         )
         self.assertEqual(response.status_code, 401)
 

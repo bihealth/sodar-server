@@ -124,7 +124,7 @@ class ProjectZoneInfoMixin:
             try:
                 project_lock = taskflow.is_locked(project)
             except Exception as ex:
-                logger.error('Exception querying lock status: {}'.format(ex))
+                logger.error(f'Exception querying lock status: {ex}')
         ret['project_lock'] = project_lock
         # Active zone count and zone creation limit
         active_count = (
@@ -171,8 +171,8 @@ class ZoneModifyPermissionMixin:
         ).first()
         # NOTE: UI views with PermissionRequiredMixin expect an iterable
         if zone and zone.user == self.request.user:
-            return ['landingzones.{}_zone_own'.format(self.zone_action.lower())]
-        return ['landingzones.{}_zone_all'.format(self.zone_action.lower())]
+            return [f'landingzones.{self.zone_action.lower()}_zone_own']
+        return [f'landingzones.{self.zone_action.lower()}_zone_all']
 
 
 class ZoneConfigPluginMixin:
@@ -238,7 +238,7 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
         project = zone.project
         tl_event = None
         config_str = (
-            ' with configuration "{}"'.format(zone.configuration)
+            f' with configuration "{zone.configuration}"'
             if zone.configuration
             else ''
         )
@@ -260,7 +260,7 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
                 project=project,
                 app_name=APP_NAME,
                 user=request.user if request else None,
-                event_name='zone_{}'.format(tl_action),
+                event_name=f'zone_{tl_action}',
                 description='{} landing zone {{{}}}{} for {{{}}} in '
                 '{{{}}}'.format(tl_action, 'zone', config_str, 'user', 'assay'),
                 status_type=timeline.TL_STATUS_SUBMIT,
@@ -288,7 +288,7 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
                 cache_obj = cache_backend.get_cache_item(
                     'samplesheets.assayapps.'
                     + '_'.join(plugin.name.split('_')[2:]),
-                    'irods/rows/{}'.format(zone.assay.sodar_uuid),
+                    f'irods/rows/{zone.assay.sodar_uuid}',
                     project=zone.project,
                 )
                 if cache_obj and cache_obj.data:
@@ -654,15 +654,13 @@ class ZoneCreateView(
                 request=self.request,
             )
             config_str = (
-                ' with configuration "{}"'.format(zone.configuration)
+                f' with configuration "{zone.configuration}"'
                 if zone.configuration
                 else ''
             )
             msg = (
-                'Landing zone "{}" creation initiated{}: '
-                'see the zone list for the creation status.'.format(
-                    zone.title, config_str
-                )
+                f'Landing zone "{zone.title}" creation initiated{config_str}: '
+                f'see the zone list for the creation status.'
             )
             if (
                 form.cleaned_data.get('create_colls')
@@ -725,8 +723,8 @@ class ZoneUpdateView(
         if zone.status not in STATUS_ALLOW_UPDATE:
             messages.error(
                 request,
-                'Unable to update a landing zone with the '
-                'status of "{}".'.format(zone.status),
+                f'Unable to update a landing zone with the status of '
+                f'"{zone.status}".',
             )
             return redirect(redirect_url)
         return super().get(request, *args, **kwargs)
@@ -769,7 +767,7 @@ class ZoneUpdateView(
         # Update zone
         self.zone = form.save()
         self.update_zone(zone=self.zone, request=self.request)
-        msg = 'Landing zone "{}" was updated.'.format(self.zone.title)
+        msg = f'Landing zone "{self.zone.title}" was updated.'
         messages.success(self.request, msg)
         return super().form_valid(form)
 
@@ -811,8 +809,8 @@ class ZoneDeleteView(
         if zone.status not in STATUS_ALLOW_UPDATE:
             messages.error(
                 request,
-                'Unable to delete a landing zone with the '
-                'status of "{}".'.format(zone.status),
+                f'Unable to delete a landing zone with the status of '
+                f'"{zone.status}".',
             )
             return redirect(
                 reverse(
@@ -837,12 +835,9 @@ class ZoneDeleteView(
             self.submit_delete(zone)
             messages.info(
                 self.request,
-                'Landing zone deletion initiated for "{}/{}" in '
-                'assay {}.'.format(
-                    self.request.user.username,
-                    zone.title,
-                    zone.assay.get_display_name(),
-                ),
+                f'Landing zone deletion initiated for '
+                f'"{self.request.user.username}/{zone.title}" in assay '
+                f'{zone.assay.get_display_name()}.',
             )
         except Exception as ex:
             messages.error(self.request, str(ex))
@@ -907,8 +902,8 @@ class ZoneMoveView(
         if zone.status not in STATUS_ALLOW_UPDATE:
             messages.error(
                 request,
-                'Unable to validate or move a landing zone with the '
-                'status of "{}".'.format(zone.status),
+                f'Unable to validate or move a landing zone with the status of '
+                f'"{zone.status}".',
             )
             return redirect(
                 reverse(

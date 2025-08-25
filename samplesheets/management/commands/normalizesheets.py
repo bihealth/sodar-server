@@ -131,9 +131,7 @@ class Command(SheetVersionMixin, BaseCommand):
         if project_uuid:
             project = Project.objects.filter(sodar_uuid=project_uuid).first()
             if not project:
-                logger.error(
-                    'Project not found with UUID "{}"'.format(project_uuid)
-                )
+                logger.error(f'Project not found with UUID "{project_uuid}"')
                 sys.exit(1)
             projects = [project]
         else:
@@ -149,9 +147,8 @@ class Command(SheetVersionMixin, BaseCommand):
             ).first()
             if not investigation:
                 logger.info(
-                    'No investigation found, skipping project {}'.format(
-                        project.get_log_title()
-                    )
+                    f'No investigation found, skipping project '
+                    f'{project.get_log_title()}'
                 )
                 skip_count += 1
                 continue
@@ -177,9 +174,8 @@ class Command(SheetVersionMixin, BaseCommand):
                     tl_desc = None
             except Exception as ex:
                 logger.error(
-                    'Error normalizing sheets in project {}: {}'.format(
-                        project.get_log_title(), ex
-                    )
+                    f'Error normalizing sheets in project '
+                    f'{project.get_log_title()}: {ex}'
                 )
                 err_count += 1
                 if timeline:

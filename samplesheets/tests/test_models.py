@@ -532,7 +532,7 @@ class TestInvestigation(SamplesheetsModelTestBase):
 
     def test__str__(self):
         """Test Investigation __str__() function"""
-        expected = '{}: {}'.format(self.project.title, INV_TITLE)
+        expected = f'{self.project.title}: {INV_TITLE}'
         self.assertEqual(str(self.investigation), expected)
 
     def test__repr__(self):
@@ -588,7 +588,7 @@ class TestStudy(SamplesheetsModelTestBase):
 
     def test__str__(self):
         """Test Study __str__() function"""
-        expected = '{}: {}'.format(self.project.title, STUDY_TITLE)
+        expected = f'{self.project.title}: {STUDY_TITLE}'
         self.assertEqual(str(self.study), expected)
 
     def test__repr__(self):
@@ -616,10 +616,13 @@ class TestStudy(SamplesheetsModelTestBase):
 
     def test_get_url(self):
         """Test get_url()"""
-        expected = reverse(
-            'samplesheets:project_sheets',
-            kwargs={'project': self.project.sodar_uuid},
-        ) + '#/study/{}'.format(self.study.sodar_uuid)
+        expected = (
+            reverse(
+                'samplesheets:project_sheets',
+                kwargs={'project': self.project.sodar_uuid},
+            )
+            + f'#/study/{self.study.sodar_uuid}'
+        )
         self.assertEqual(self.study.get_url(), expected)
 
     def test_get_plugin_unset(self):
@@ -709,9 +712,7 @@ class TestProtocol(SamplesheetsModelTestBase):
 
     def test__str__(self):
         """Test Protocol __str__() function"""
-        expected = '{}: {}/{}'.format(
-            self.project.title, STUDY_TITLE, PROTOCOL_NAME
-        )
+        expected = f'{self.project.title}: {STUDY_TITLE}/{PROTOCOL_NAME}'
         self.assertEqual(str(self.protocol), expected)
 
     def test__repr__(self):
@@ -753,8 +754,8 @@ class TestAssay(SamplesheetsModelTestBase):
 
     def test__str__(self):
         """Test Assay __str__() function"""
-        expected = '{}: {}/{}'.format(
-            self.project.title, STUDY_TITLE, self.assay.get_name()
+        expected = (
+            f'{self.project.title}: {STUDY_TITLE}/{self.assay.get_name()}'
         )
         self.assertEqual(str(self.assay), expected)
 
@@ -823,10 +824,13 @@ class TestAssay(SamplesheetsModelTestBase):
 
     def test_get_url(self):
         """Test get_url()"""
-        expected = reverse(
-            'samplesheets:project_sheets',
-            kwargs={'project': self.project.sodar_uuid},
-        ) + '#/assay/{}'.format(self.assay.sodar_uuid)
+        expected = (
+            reverse(
+                'samplesheets:project_sheets',
+                kwargs={'project': self.project.sodar_uuid},
+            )
+            + f'#/assay/{self.assay.sodar_uuid}'
+        )
         self.assertEqual(self.assay.get_url(), expected)
 
 
@@ -1504,10 +1508,7 @@ class TestIrodsAccessTicket(IrodsAccessTicketMixin, SamplesheetsModelTestBase):
 
     def test_get_display_name(self):
         """Test get_display_name() with single assay"""
-        expected = '{} / {}'.format(
-            self.ticket.get_coll_name(),
-            self.ticket.get_label(),
-        )
+        expected = f'{self.ticket.get_coll_name()} / {self.ticket.get_label()}'
         self.assertEqual(self.ticket.get_display_name(), expected)
 
     def test_get_display_name_multiple_assays(self):
@@ -1690,9 +1691,9 @@ class TestIrodsDataRequest(IrodsDataRequestMixin, SamplesheetsModelTestBase):
 
     def test_get_display_name(self):
         """Test get_display_name()"""
-        expected = '{} {}'.format(
-            IRODS_REQUEST_ACTION_DELETE.capitalize(),
-            self.request.get_short_path(),
+        expected = (
+            f'{IRODS_REQUEST_ACTION_DELETE.capitalize()} '
+            f'{self.request.get_short_path()}'
         )
         self.assertEqual(self.request.get_display_name(), expected)
 

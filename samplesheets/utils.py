@@ -397,4 +397,4 @@ def get_bool(bool_string):
         return True
     if bool_string.strip().lower() in ['0', 'f', 'false', 'n', 'no']:
         return False
-    raise ValueError('Unable to parse value: {}'.format(bool_string))
+    raise ValueError(f'Unable to parse value: {bool_string}')

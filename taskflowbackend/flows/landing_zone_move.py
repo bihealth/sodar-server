@@ -150,17 +150,16 @@ class Flow(BaseLinearFlow):
 
             self.add_task(
                 irods_tasks.SetInheritanceTask(
-                    name='Set inheritance for landing zone collection '
-                    '{}'.format(zone_path),
+                    name=f'Set inheritance for landing zone collection '
+                    f'{zone_path}',
                     irods=self.irods,
                     inject={'path': zone_path, 'inherit': True},
                 )
             )
             self.add_task(
                 irods_tasks.SetAccessTask(
-                    name='Set admin "{}" owner access for zone coll {}'.format(
-                        admin_name, zone_path
-                    ),
+                    name=f'Set admin "{admin_name}" owner access for zone coll '
+                    f'{zone_path}',
                     irods=self.irods,
                     inject={
                         'access_name': 'own',
@@ -172,8 +171,8 @@ class Flow(BaseLinearFlow):
             )
             self.add_task(
                 irods_tasks.SetAccessTask(
-                    name='Set user "{}" read access for zone collection '
-                    '{}'.format(zone.user.username, zone_path),
+                    name=f'Set user "{zone.user.username}" read access for '
+                    f'zone collection {zone_path}',
                     irods=self.irods,
                     inject={
                         'access_name': 'read',
@@ -186,8 +185,8 @@ class Flow(BaseLinearFlow):
             if owner_group_exists:  # Support for legacy zones
                 self.add_task(
                     irods_tasks.SetAccessTask(
-                        name='Set project owner group read access for zone '
-                        'collection {}'.format(zone_path),
+                        name=f'Set project owner group read access for zone '
+                        f'collection {zone_path}',
                         irods=self.irods,
                         inject={
                             'access_name': 'read',
@@ -202,8 +201,8 @@ class Flow(BaseLinearFlow):
             if script_user:
                 self.add_task(
                     irods_tasks.SetAccessTask(
-                        name='Set script user "{}" read access to landing '
-                        'zone'.format(script_user),
+                        name=f'Set script user "{script_user}" read access to '
+                        f'landing zone',
                         irods=self.irods,
                         inject={
                             'access_name': 'read',
@@ -296,9 +295,7 @@ class Flow(BaseLinearFlow):
         )
         self.add_task(
             irods_tasks.BatchValidateChecksumsTask(
-                name='Batch validate checksums of {} data objects'.format(
-                    file_count
-                ),
+                name=f'Batch validate checksums of {file_count} data objects',
                 irods=self.irods,
                 inject={
                     'landing_zone': zone,
@@ -341,8 +338,8 @@ class Flow(BaseLinearFlow):
                 inject={
                     'landing_zone': zone,
                     'status': ZONE_STATUS_MOVING,
-                    'status_info': 'Validation OK, '
-                    'moving {} files into {}'.format(file_count, SAMPLE_COLL),
+                    'status_info': f'Validation OK, moving {file_count} files '
+                    f'into {SAMPLE_COLL}',
                     'flow_name': self.flow_name,
                 },
             )
@@ -350,15 +347,15 @@ class Flow(BaseLinearFlow):
         if sample_colls:
             self.add_task(
                 irods_tasks.BatchCreateCollectionsTask(
-                    name='Create collections in {}'.format(SAMPLE_COLL),
+                    name=f'Create collections in {SAMPLE_COLL}',
                     irods=self.irods,
                     inject={'coll_paths': sample_colls},
                 )
             )
         self.add_task(
             irods_tasks.BatchMoveDataObjectsTask(
-                name='Move {} files and set project group '
-                'read access'.format(len(zone_objects)),
+                name=f'Move {len(zone_objects)} files and set project group '
+                f'read access',
                 irods=self.irods,
                 inject={
                     'landing_zone': zone,
@@ -373,9 +370,8 @@ class Flow(BaseLinearFlow):
         )
         self.add_task(
             irods_tasks.SetAccessTask(
-                name='Remove user "{}" access from sample collection {}'.format(
-                    zone.user.username, sample_path
-                ),
+                name=f'Remove user "{zone.user.username}" access from sample '
+                f'collection {sample_path}',
                 irods=self.irods,
                 inject={
                     'access_name': 'null',
@@ -388,8 +384,8 @@ class Flow(BaseLinearFlow):
         if owner_group_exists:  # Support for legacy zones
             self.add_task(
                 irods_tasks.SetAccessTask(
-                    name='Remove project owner group access from sample '
-                    'collection {}'.format(sample_path),
+                    name=f'Remove project owner group access from sample '
+                    f'collection {sample_path}',
                     irods=self.irods,
                     inject={
                         'access_name': 'null',
@@ -403,8 +399,8 @@ class Flow(BaseLinearFlow):
         if script_user:
             self.add_task(
                 irods_tasks.SetAccessTask(
-                    name='Remove script user "{}" access to sample path '
-                    'zone'.format(script_user),
+                    name=f'Remove script user "{script_user}" access to sample '
+                    f'path zone',
                     irods=self.irods,
                     inject={
                         'access_name': 'null',

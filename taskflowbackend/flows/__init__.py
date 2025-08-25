@@ -19,7 +19,7 @@ for py in [
 def get_flow(name):
     """Return flow implementation or None if not found"""
     try:
-        return eval('{}.Flow'.format(name))
+        return eval(f'{name}.Flow')
 
     except NameError:
         return None

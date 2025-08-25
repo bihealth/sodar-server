@@ -134,10 +134,9 @@ class TestLandingZone(
 
     def test__str__(self):
         """Test LandingZone __str__ rendering"""
-        expected = '{}: {}/{}'.format(
-            self.landing_zone.project.title,
-            self.landing_zone.user.username,
-            self.landing_zone.title,
+        expected = (
+            f'{self.landing_zone.project.title}: '
+            f'{self.landing_zone.user.username}/{self.landing_zone.title}'
         )
         self.assertEqual(str(self.landing_zone), expected)
 

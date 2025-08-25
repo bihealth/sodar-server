@@ -150,7 +150,7 @@ class CookiecutterISAFile(models.Model):
     )
 
     def __str__(self):
-        return '{}: {}'.format(self.template.name, self.file_name)
+        return f'{self.template.name}: {self.file_name}'
 
     def __repr__(self):
         values = [

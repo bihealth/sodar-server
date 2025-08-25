@@ -43,7 +43,7 @@ def update_project_cache_task(
     try:
         project = Project.objects.get(sodar_uuid=project_uuid)
     except Project.DoesNotExist:
-        logger.error('Project not found (uuid={})'.format(project_uuid))
+        logger.error(f'Project not found (uuid={project_uuid})')
         return
     user = User.objects.filter(sodar_uuid=user_uuid).first()
 
@@ -61,9 +61,7 @@ def update_project_cache_task(
         )
 
     logger.info(
-        'Updating cache asynchronously for project {}'.format(
-            project.get_log_title()
-        )
+        f'Updating cache asynchronously for project {project.get_log_title()}'
     )
     app_plugin = plugin_api.get_app_plugin(APP_NAME)
 
@@ -78,23 +76,19 @@ def update_project_cache_task(
         app_level = 'INFO'
         app_msg = 'Sample sheet iRODS cache updated'
         if alert_msg:
-            app_msg += ': {}'.format(alert_msg)
-        logger.info(
-            'Cache update OK for project {}'.format(project.get_log_title())
-        )
+            app_msg += f': {alert_msg}'
+        logger.info(f'Cache update OK for project {project.get_log_title()}')
     except Exception as ex:
         if tl_event:
             tl_status_type = timeline.TL_STATUS_FAILED
-            tl_status_desc = 'Update failed: {}'.format(ex)
+            tl_status_desc = f'Update failed: {ex}'
             tl_event.set_status(
                 status_type=tl_status_type, status_desc=tl_status_desc
             )
         app_level = 'DANGER'
-        app_msg = 'Sample sheet iRODS cache update failed: {}'.format(ex)
+        app_msg = f'Sample sheet iRODS cache update failed: {ex}'
         logger.error(
-            'Cache update failed for project {}: {}'.format(
-                project.get_log_title(), ex
-            )
+            f'Cache update failed for project {project.get_log_title()}: {ex}'
         )
 
     if add_alert and user:
@@ -141,7 +135,7 @@ def sheet_sync_task(_self):
             if ret:
                 tl_add = True
         except Exception as ex:
-            fail_msg = 'Sync failed: {}'.format(ex)
+            fail_msg = f'Sync failed: {ex}'
             logger.error(fail_msg)
             tl_add = True  # Add timeline event
             tl_status_type = timeline.TL_STATUS_FAILED if timeline else 'FAILED'

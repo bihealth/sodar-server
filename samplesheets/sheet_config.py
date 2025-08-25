@@ -100,7 +100,7 @@ class SheetConfigAPI:
                 sheet_ok = True
             except ValueError as ex:
                 # TODO: Implement updating invalid configs if possible?
-                msg = 'Invalid config, rebuilding.. Exception: "{}"'.format(ex)
+                msg = f'Invalid config, rebuilding.. Exception: "{ex}"'
         else:
             msg = 'No sheet configuration found, building..'
 
@@ -118,9 +118,8 @@ class SheetConfigAPI:
                 project=investigation.project,
             )
             logger.info(
-                'Sheet configuration built for investigation (UUID={})'.format(
-                    investigation.sodar_uuid
-                )
+                f'Sheet configuration built for investigation '
+                f'(UUID={investigation.sodar_uuid})'
             )
         return sheet_config
 
@@ -217,9 +216,8 @@ class SheetConfigAPI:
         min_version = version.parse(settings.SHEETS_CONFIG_VERSION)
         if cfg_version < min_version:
             raise ValueError(
-                'Version "{}" is below minimum version "{}"'.format(
-                    cfg_version, min_version
-                )
+                f'Version "{cfg_version}" is below minimum version '
+                f'"{min_version}"'
             )
 
     @classmethod

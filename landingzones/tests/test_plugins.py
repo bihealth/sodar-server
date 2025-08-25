@@ -137,7 +137,7 @@ class TestGetStatistics(LandingzonesPluginTestBase):
 
     def _make_zone(self, status):
         self.make_landing_zone(
-            'zone_{}'.format(status.lower()),
+            f'zone_{status.lower()}',
             self.project,
             self.user_owner,
             self.assay,

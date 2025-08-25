@@ -83,8 +83,7 @@ class OBOTermQueryAjaxView(OBOOntologyTermMixin, SODARBasePermissionAjaxView):
                 filter_kwargs['ontology__name'] = o_list[0]
             else:
                 filter_kwargs['ontology__name__in'] = o_list
-
-        logger.debug('Term query: {} {}'.format(filter_q, filter_kwargs))
+        logger.debug(f'Term query: {filter_q} {filter_kwargs}')
 
         # Order by ontology list order if set
         order = []
@@ -104,19 +103,19 @@ class OBOTermQueryAjaxView(OBOOntologyTermMixin, SODARBasePermissionAjaxView):
         terms = OBOFormatOntologyTerm.objects.filter(
             filter_q, **filter_kwargs
         ).order_by(*order)
-        logger.debug('Term count: {}'.format(terms.count()))
+        logger.debug(f'Term count: {terms.count()}')
 
         if terms.count() > query_limit:
             ret_data['detail'] = (
-                'Query exceeds {} results. Please refine your search to see '
-                'all results.'.format(query_limit)
+                f'Query exceeds {query_limit} results. Please refine your '
+                f'search to see all results.'
             )
             ret_data['detail_type'] = 'warning'
 
         for t in terms[:query_limit]:
             ret_data['terms'].append(self.get_term_dict(t))
 
-        # logger.debug('Return data: {}'.format(json.dumps(ret_data)))
+        # logger.debug(f'Return data: {json.dumps(ret_data)}')
         return Response(ret_data, status=200)
 
 

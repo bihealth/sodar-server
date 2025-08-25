@@ -37,7 +37,7 @@ class ProjectLockAPI:
     @classmethod
     def get_coordinator(cls):
         """Return a Tooz coordinator object"""
-        host_id = 'sodar_{}'.format(uuid.uuid4())
+        host_id = f'sodar_{uuid.uuid4()}'
         try:
             coordinator = coordination.get_coordinator(
                 backend_url=settings.REDIS_URL,
@@ -48,7 +48,7 @@ class ProjectLockAPI:
                 coordinator.start(start_heart=True)
                 return coordinator
         except coordination.ToozConnectionError as ex:
-            logger.error('Tooz connection error: {}'.format(ex))
+            logger.error(f'Tooz connection error: {ex}')
         return None
 
     @classmethod

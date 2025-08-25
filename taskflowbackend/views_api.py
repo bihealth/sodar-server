@@ -76,7 +76,7 @@ class ProjectLockStatusAPIView(
             lock_status = taskflow.is_locked(project)
         except Exception as ex:
             return Response(
-                {'detail': 'Exception in querying lock status: {}'.format(ex)},
+                {'detail': f'Exception in querying lock status: {ex}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         return Response({'is_locked': lock_status}, status=status.HTTP_200_OK)

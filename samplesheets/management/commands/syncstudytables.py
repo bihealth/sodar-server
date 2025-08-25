@@ -33,7 +33,7 @@ class Command(BaseCommand):
     @classmethod
     def _get_log_study(cls, study):
         """Return logging-friendly study title"""
-        return '"{}" ({})'.format(study.get_title(), study.sodar_uuid)
+        return f'"{study.get_name()}" ({study.sodar_uuid})'
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -63,9 +63,7 @@ class Command(BaseCommand):
             return
         if options.get('project'):
             project = projects.first()
-            logger.info(
-                'Limiting sync to project {}'.format(project.get_log_title())
-            )
+            logger.info(f'Limiting sync to project {project.get_log_title()}')
 
         for project in projects:
             study_count = 0
@@ -75,15 +73,13 @@ class Command(BaseCommand):
                 )
             except Investigation.DoesNotExist:
                 logger.debug(
-                    'No investigation found, skipping for project {}'.format(
-                        project.get_log_title()
-                    )
+                    f'No investigation found, skipping for project '
+                    f'{project.get_log_title()}'
                 )
                 continue
             logger.debug(
-                'Building study render tables for project {}..'.format(
-                    project.get_log_title()
-                )
+                f'Building study render tables for project '
+                f'{project.get_log_title()}..'
             )
             for study in investigation.studies.all():
                 try:
@@ -92,9 +88,8 @@ class Command(BaseCommand):
                     )
                 except Exception as ex:
                     logger.error(
-                        'Error building tables for study {}: {}'.format(
-                            self._get_log_study(study), ex
-                        )
+                        f'Error building tables for study '
+                        f'{self._get_log_study(study)}: {ex}'
                     )
                     continue
                 item_name = STUDY_TABLE_CACHE_ITEM.format(
@@ -107,13 +102,11 @@ class Command(BaseCommand):
                         data=study_tables,
                         project=project,
                     )
-                    logger.info('Set cache item "{}"'.format(item_name))
+                    logger.info(f'Set cache item "{item_name}"')
                     study_count += 1
                 except Exception as ex:
                     logger.error(
-                        'Failed to set cache item "{}": {}'.format(
-                            item_name, ex
-                        )
+                        f'Failed to set cache item "{item_name}": {ex}'
                     )
             logger.info(
                 'Built {} study table{} for project {}'.format(

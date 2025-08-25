@@ -980,7 +980,7 @@ class TestSheetISAExportView(SamplesheetsViewTestBase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.get('Content-Disposition'),
-            'attachment; filename="{}"'.format(self.investigation.archive_name),
+            f'attachment; filename="{self.investigation.archive_name}"',
         )
 
     def test_get_no_investigation(self):
@@ -1011,7 +1011,7 @@ class TestSheetISAExportView(SamplesheetsViewTestBase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.get('Content-Disposition'),
-            'attachment; filename="{}"'.format(filename),
+            f'attachment; filename="{filename}"',
         )
 
 
@@ -1514,11 +1514,8 @@ class TestSheetVersionCompareView(SamplesheetsViewTestBase):
         """Test SheetVersionCompareView GET"""
         with self.login(self.user):
             response = self.client.get(
-                self.url
-                + '?source={}&target={}'.format(
-                    str(self.isa1.sodar_uuid),
-                    str(self.isa2.sodar_uuid),
-                )
+                self.url + f'?source={self.isa1.sodar_uuid}'
+                f'&target={self.isa2.sodar_uuid}'
             )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['source'], str(self.isa1.sodar_uuid))
@@ -1775,7 +1772,7 @@ class TestSheetRemoteSyncView(SheetRemoteSyncTestBase):
             response = self.client.get(self.url)
         self.assertEqual(
             str(list(get_messages(response.wsgi_request))[0]),
-            '{}: {}: 401'.format(SYNC_FAIL_PREFIX, SYNC_FAIL_STATUS_CODE),
+            f'{SYNC_FAIL_PREFIX}: {SYNC_FAIL_STATUS_CODE}: 401',
         )
         self.assertEqual(self.project_target.investigations.count(), 0)
 
@@ -1791,7 +1788,7 @@ class TestSheetRemoteSyncView(SheetRemoteSyncTestBase):
             response = self.client.get(self.url)
         self.assertEqual(
             str(list(get_messages(response.wsgi_request))[0]),
-            '{}: {}'.format(SYNC_FAIL_PREFIX, SYNC_FAIL_UNSET_TOKEN),
+            f'{SYNC_FAIL_PREFIX}: {SYNC_FAIL_UNSET_TOKEN}',
         )
         self.assertEqual(self.project_target.investigations.count(), 0)
 
@@ -1807,7 +1804,7 @@ class TestSheetRemoteSyncView(SheetRemoteSyncTestBase):
             response = self.client.get(self.url)
         self.assertEqual(
             str(list(get_messages(response.wsgi_request))[0]),
-            '{}: {}'.format(SYNC_FAIL_PREFIX, SYNC_FAIL_UNSET_URL),
+            f'{SYNC_FAIL_PREFIX}: {SYNC_FAIL_UNSET_URL}',
         )
 
     def test_get_invalid_url(self):
@@ -1823,7 +1820,7 @@ class TestSheetRemoteSyncView(SheetRemoteSyncTestBase):
             response = self.client.get(self.url)
         self.assertEqual(
             str(list(get_messages(response.wsgi_request))[0]),
-            '{}: {}: {}'.format(SYNC_FAIL_PREFIX, SYNC_FAIL_INVALID_URL, url),
+            f'{SYNC_FAIL_PREFIX}: {SYNC_FAIL_INVALID_URL}: {url}',
         )
         self.assertEqual(self.project_target.investigations.count(), 0)
 
@@ -1843,7 +1840,7 @@ class TestSheetRemoteSyncView(SheetRemoteSyncTestBase):
             response = self.client.get(self.url)
         self.assertEqual(
             str(list(get_messages(response.wsgi_request))[0]),
-            '{}: {}: {}'.format(SYNC_FAIL_PREFIX, SYNC_FAIL_CONNECT, url),
+            f'{SYNC_FAIL_PREFIX}: {SYNC_FAIL_CONNECT}: {url}',
         )
 
     def test_get_no_sheet(self):
@@ -1862,5 +1859,5 @@ class TestSheetRemoteSyncView(SheetRemoteSyncTestBase):
             response = self.client.get(self.url)
         self.assertEqual(
             str(list(get_messages(response.wsgi_request))[0]),
-            '{}: {}: 404'.format(SYNC_FAIL_PREFIX, SYNC_FAIL_STATUS_CODE),
+            f'{SYNC_FAIL_PREFIX}: {SYNC_FAIL_STATUS_CODE}: 404',
         )

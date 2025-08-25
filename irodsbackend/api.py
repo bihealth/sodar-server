@@ -92,7 +92,7 @@ class IrodsAPI:
         irods_env.update(dict(settings.IRODS_ENV_BACKEND))
         # HACK: Clean up environment to avoid python-irodsclient crash
         irods_env = self.format_env(irods_env)
-        # logger.debug('iRODS environment: {}'.format(irods_env))
+        # logger.debug(f'iRODS environment: {irods_env}')
         try:
             irods = iRODSSession(
                 host=settings.IRODS_HOST,
@@ -104,17 +104,13 @@ class IrodsAPI:
             )
             # Ensure we have a connection
             irods.collections.exists(
-                '/{}/home/{}'.format(settings.IRODS_ZONE, self.user_name)
+                f'/{settings.IRODS_ZONE}/home/{self.user_name}'
             )
             return irods
         except Exception as ex:
             logger.error(
-                'Unable to connect to iRODS (host={}, port={}): {} ({})'.format(
-                    settings.IRODS_HOST,
-                    settings.IRODS_PORT,
-                    type(ex).__name__,
-                    ex,
-                )
+                f'Unable to connect to iRODS (host={settings.IRODS_HOST}, '
+                f'port={settings.IRODS_PORT}): {type(ex).__name__} ({ex})'
             )
             raise ex
 
@@ -136,14 +132,11 @@ class IrodsAPI:
     @classmethod
     def _get_query_alias(cls):
         """Return a random iCAT SQL query alias"""
-        return 'sodar_query_{}'.format(
-            ''.join(
-                random.SystemRandom().choice(
-                    string.ascii_lowercase + string.ascii_uppercase
-                )
-                for _ in range(16)
-            )
+        choice = random.SystemRandom().choice(
+            string.ascii_lowercase + string.ascii_uppercase
         )
+        random_id = ''.join(choice for _ in range(16))
+        return f'sodar_query_{random_id}'
 
     @classmethod
     def _send_request(cls, irods, api_id, *args):
@@ -178,9 +171,7 @@ class IrodsAPI:
         if project.__class__.__name__ != 'Project':
             raise ValueError('Argument "project" is not a Project object')
         if project.is_category():
-            raise ValueError(
-                'Project type is not {}'.format(PROJECT_TYPE_PROJECT)
-            )
+            raise ValueError(f'Project type is not {PROJECT_TYPE_PROJECT}')
 
     # Helpers ------------------------------------------------------------------
 
@@ -242,11 +233,8 @@ class IrodsAPI:
 
         def _get_path(obj):
             if not landing_zone:
-                return '{}_{}'.format(
-                    obj.__class__.__name__.lower(), obj.sodar_uuid
-                )
-            else:
-                return slugify(obj.get_display_name()).replace('-', '_')
+                return f'{obj.__class__.__name__.lower()}_{obj.sodar_uuid}'
+            return slugify(obj.get_display_name()).replace('-', '_')
 
         # If assay, add study first
         if obj_class == 'Assay' and include_parent:
@@ -289,21 +277,13 @@ class IrodsAPI:
             return path
         # Investigation (sample data root)
         elif obj_class == 'Investigation':
-            path += '/{sample_dir}'.format(
-                sample_dir=settings.IRODS_SAMPLE_COLL
-            )
+            path += f'/{settings.IRODS_SAMPLE_COLL}'
         # Study (in sample data)
         elif obj_class == 'Study':
-            path += '/{sample_dir}/{study}'.format(
-                sample_dir=settings.IRODS_SAMPLE_COLL,
-                study=cls.get_sub_path(obj),
-            )
+            path += f'/{settings.IRODS_SAMPLE_COLL}/{cls.get_sub_path(obj)}'
         # Assay (in sample data)
         elif obj_class == 'Assay':
-            path += '/{sample_dir}/{study_assay}'.format(
-                sample_dir=settings.IRODS_SAMPLE_COLL,
-                study_assay=cls.get_sub_path(obj),
-            )
+            path += f'/{settings.IRODS_SAMPLE_COLL}/{cls.get_sub_path(obj)}'
         # LandingZone
         elif obj_class == 'LandingZone':
             path += (
@@ -331,7 +311,7 @@ class IrodsAPI:
                 object is of type CATEGORY
         """
         cls._validate_project(project)
-        return cls.get_path(project) + '/' + settings.IRODS_SAMPLE_COLL
+        return os.path.join(cls.get_path(project), settings.IRODS_SAMPLE_COLL)
 
     @classmethod
     def get_zone_path(cls, project):
@@ -357,7 +337,7 @@ class IrodsAPI:
                 raise ValueError(
                     'iRODS zone must not be included in IRODS_ROOT_PATH'
                 )
-        return '/{}{}'.format(irods_zone, root_path)
+        return f'/{irods_zone}{root_path}'
 
     @classmethod
     def get_projects_path(cls):
@@ -388,9 +368,7 @@ class IrodsAPI:
         }
         obj_type = obj_type.lower()
         if obj_type not in path_regex.keys():
-            raise ValueError(
-                'Invalid argument for obj_type "{}"'.format(obj_type)
-            )
+            raise ValueError(f'Invalid argument for obj_type "{obj_type}"')
         s = re.search(path_regex[obj_type], cls.sanitize_path(path))
         if s:
             return s.group(1)
@@ -439,12 +417,12 @@ class IrodsAPI:
         :raise: ValueError if the view or method param is invalid
         """
         if view not in ['list', 'stats']:
-            raise ValueError('Invalid type "{}" for view'.format(view))
+            raise ValueError(f'Invalid type "{view}" for view')
         if method not in ['GET', 'POST']:
-            raise ValueError('Invalid method "{}"'.format(method))
+            raise ValueError(f'Invalid method "{method}"')
 
         url_kwargs = {'project': str(project.sodar_uuid)} if project else None
-        rev_url = reverse('irodsbackend:{}'.format(view), kwargs=url_kwargs)
+        rev_url = reverse(f'irodsbackend:{view}', kwargs=url_kwargs)
 
         if method == 'GET':
             query_string = {'path': cls.sanitize_path(path)}
@@ -575,7 +553,7 @@ class IrodsAPI:
                 coll_path=coll.path
             )
         )
-        # logger.debug('Object stats query = "{}"'.format(sql))
+        # logger.debug(f'Object stats query = "{sql}"')
         query = self.get_query(irods, sql)
 
         try:
@@ -672,14 +650,14 @@ class IrodsAPI:
                 for i, n in enumerate(nl):
                     if i > 0:
                         sql += ' OR '
-                    sql += 'data_name LIKE \'%{}%\''.format(n)
+                    sql += f'data_name LIKE \'%{n}%\''
                 sql += ')'
             if limit:
-                sql += ' LIMIT {}'.format(limit)
+                sql += f' LIMIT {limit}'
             if offset:
-                sql += ' OFFSET {}'.format(offset)
+                sql += f' OFFSET {offset}'
 
-            # logger.debug('Object list query = "{}"'.format(sql))
+            # logger.debug(f'Object list query = "{sql}"')
             columns = [
                 DataObject.name,
                 DataObject.size,
@@ -714,9 +692,8 @@ class IrodsAPI:
                 pass
             except Exception as ex:
                 logger.error(
-                    'iRODS exception in get_objs_recursively(): {}'.format(
-                        ex.__class__.__name__
-                    )
+                    f'iRODS exception in get_objs_recursively(): '
+                    f'{ex.__class__.__name__}'
                 )
             finally:
                 query.remove()
@@ -980,6 +957,4 @@ class IrodsAPI:
         try:
             self._send_request(irods, 'TICKET_ADMIN_AN', 'delete', ticket_str)
         except Exception:
-            raise Exception(
-                'Failed to delete iRODS ticket {}'.format(ticket_str)
-            )
+            raise Exception(f'Failed to delete iRODS ticket {ticket_str}')

@@ -138,7 +138,7 @@ class TaskflowAPI:
         :param default_class: Default API exception class to be returned
         :raises: Exception of varying type
         """
-        msg = '{}{}'.format(msg_prefix, ex)
+        msg = f'{msg_prefix}{ex}'
         if PROJECT_LOCKED_MSG in msg:
             ex = APIException(msg)
             ex.status_code = 503
@@ -179,7 +179,7 @@ class TaskflowAPI:
         """
         flow_cls = flows.get_flow(flow_name)
         if not flow_cls:
-            raise ValueError('Flow "{}" not supported'.format(flow_name))
+            raise ValueError(f'Flow "{flow_name}" not supported')
         flow = flow_cls(
             irods_backend=irods_backend,
             project=project,
@@ -191,7 +191,7 @@ class TaskflowAPI:
         try:
             flow.validate()
         except TypeError as ex:
-            msg = 'Error validating flow: {}'.format(ex)
+            msg = f'Error validating flow: {ex}'
             logger.error(msg)
             raise ex
         return flow
@@ -256,11 +256,11 @@ class TaskflowAPI:
             logger.info('Lock not required (flow.require_lock=False)')
 
         # Build flow
-        logger.info('Building flow "{}"..'.format(flow.flow_name))
+        logger.info(f'Building flow "{flow.flow_name}"..')
         try:
             flow.build(force_fail)
         except Exception as ex:
-            ex_msg = 'Error building flow: {}'.format(ex)
+            ex_msg = f'Error building flow: {ex}'
 
         # Run flow
         if not ex_msg:
@@ -268,7 +268,7 @@ class TaskflowAPI:
             try:
                 flow_result = flow.run()
             except Exception as ex:
-                ex_msg = 'Error running flow: {}'.format(ex)
+                ex_msg = f'Error running flow: {ex}'
 
         # Flow completion
         if flow_result and tl_event and async_mode:
@@ -315,9 +315,7 @@ class TaskflowAPI:
         try:
             json.dumps(flow_data)
         except (TypeError, OverflowError) as ex:
-            logger.error(
-                'Argument flow_data is not JSON serializable: {}'.format(ex)
-            )
+            logger.error(f'Argument flow_data is not JSON serializable: {ex}')
             raise ex
 
         # Launch async submit task if async mode is set
@@ -358,9 +356,7 @@ class TaskflowAPI:
         :param submit_info: Returned information from SODAR Taskflow
         :return: String
         """
-        return 'Taskflow "{}" failed! Reason: "{}"'.format(
-            flow_name, submit_info[:256]
-        )
+        return f'Taskflow "{flow_name}" failed! Reason: "{submit_info[:256]}"'
 
     @classmethod
     def is_locked(cls, project):
