@@ -5,6 +5,7 @@ import os
 
 from cubi_isa_templates import _TEMPLATES as ISA_TEMPLATES
 from datetime import timedelta
+from typing import Optional
 
 from django.urls import reverse
 from django.utils import timezone
@@ -17,6 +18,7 @@ from selenium.webdriver.support import expected_conditions as ec
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
+from projectroles.models import SODARUser
 from projectroles.plugins import PluginAPI
 from projectroles.tests.test_ui import UITestBase
 
@@ -63,7 +65,7 @@ with open(CONFIG_PATH_UPDATED) as fp:
 class SamplesheetsUITestBase(SampleSheetIOMixin, SheetConfigMixin, UITestBase):
     """Base view samplesheets view UI tests"""
 
-    def setup_investigation(self, config_data=None):
+    def setup_investigation(self, config_data: Optional[dict] = None):
         """Setup Investigation, Study and Assay"""
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         if config_data:
@@ -181,7 +183,12 @@ class TestProjectDetailView(IrodsDataRequestMixin, SamplesheetsUITestBase):
 class TestProjectSheetsView(IrodsDataRequestMixin, SamplesheetsUITestBase):
     """Tests for the project sheets view UI"""
 
-    def _login_and_render(self, user, wait_elem=DEFAULT_WAIT_ID, url_suffix=''):
+    def _login_and_render(
+        self,
+        user: SODARUser,
+        wait_elem: str = DEFAULT_WAIT_ID,
+        url_suffix: str = '',
+    ):
         """Login into the sheets view and wait for it to render"""
         url = (
             reverse(

@@ -5,9 +5,12 @@ import pytz
 import uuid
 
 from datetime import timedelta
+from typing import Optional
+from urllib.parse import urlencode
+
 from irods.exception import CollectionDoesNotExist, NoResultFound
 from irods.models import TicketQuery
-from urllib.parse import urlencode
+from irods.session import iRODSSession
 
 from django.conf import settings
 from django.contrib import auth
@@ -20,7 +23,7 @@ from django.utils import timezone
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.models import SODAR_CONSTANTS
+from projectroles.models import Role, SODAR_CONSTANTS
 from projectroles.plugins import PluginAPI
 from projectroles.views import NO_AUTH_MSG
 
@@ -104,7 +107,9 @@ SHEET_SYNC_TOKEN = 'dohdai4EZie0xooF'
 class SampleSheetTaskflowMixin:
     """Taskflow helpers for samplesheets tests"""
 
-    def make_irods_colls(self, investigation, ticket_str=None):
+    def make_irods_colls(
+        self, investigation: Investigation, ticket_str: Optional[str] = None
+    ):
         """
         Create iRODS collection structure for investigation.
 
@@ -126,7 +131,9 @@ class SampleSheetTaskflowMixin:
         investigation.refresh_from_db()
         self.assertEqual(investigation.irods_status, True)
 
-    def make_track_hub_coll(self, session, assay_path, name):
+    def make_track_hub_coll(
+        self, session: iRODSSession, assay_path: str, name: str
+    ) -> str:
         """
         Create iRODS collection for a track hub under assay collection.
 
@@ -147,7 +154,7 @@ class SampleSheetTaskflowMixin:
 class SampleSheetPublicAccessMixin:
     """Helpers for sample sheet public access modification with taskflow"""
 
-    def set_public_access(self, access):
+    def set_public_access(self, access: Role):
         """
         Set project public access by issuing a project update POST request.
 
@@ -171,7 +178,9 @@ class SampleSheetPublicAccessMixin:
 class IrodsAccessTicketViewTestMixin:
     """Helpers for iRODS access ticket view tests"""
 
-    def get_irods_ticket(self, sodar_ticket):
+    def get_irods_ticket(
+        self, sodar_ticket: IrodsAccessTicket
+    ) -> Optional[dict]:
         """
         Query for iRODS access ticket.
 
@@ -187,7 +196,7 @@ class IrodsAccessTicketViewTestMixin:
         except NoResultFound:
             return None
 
-    def get_ticket_hosts(self, ticket_id):
+    def get_ticket_hosts(self, ticket_id: str) -> list:
         """
         Query for iRODS access ticket allowed hosts.
 
@@ -200,7 +209,7 @@ class IrodsAccessTicketViewTestMixin:
         return [h[TicketQuery.AllowedHosts.host] for h in list(query)]
 
     @classmethod
-    def get_tl_event_count(cls, action):
+    def get_tl_event_count(cls, action: str) -> int:
         """
         Return iRODS ticket timeline event count.
 
@@ -212,7 +221,7 @@ class IrodsAccessTicketViewTestMixin:
         ).count()
 
     @classmethod
-    def get_app_alert_count(cls, action):
+    def get_app_alert_count(cls, action: str) -> int:
         """
         Return iRODS ticket app alert count.
 
@@ -255,7 +264,7 @@ class IrodsDataRequestViewTestBase(
         )
 
     # TODO: Move this into SODAR Core (see bihealth/sodar-core#1243)
-    def _assert_tl_count(self, event_name, count, **kwargs):
+    def _assert_tl_count(self, event_name: str, count: int, **kwargs):
         """
         Assert expected timeline event count.
 
@@ -415,7 +424,7 @@ class TestSheetDeleteView(
         self.irods.data_objects.create(self.file_path)
         self.assertEqual(self.irods.data_objects.exists(self.file_path), True)
 
-    def _assert_tl_event_count(self, count):
+    def _assert_tl_event_count(self, count: int):
         self.assertEqual(
             TimelineEvent.objects.filter(event_name='sheet_delete').count(),
             count,
@@ -2171,7 +2180,7 @@ class TestIrodsDataRequestAcceptBatchView(
     """Tests for IrodsDataRequestAcceptBatchView with taskflow"""
 
     @classmethod
-    def _get_request_uuids(cls):
+    def _get_request_uuids(cls) -> str:
         return ','.join(
             [str(r.sodar_uuid) for r in IrodsDataRequest.objects.all()]
         )

@@ -4,6 +4,7 @@ import json
 import os
 
 from cubi_isa_templates import IsaTabTemplate, _TEMPLATES as ISA_TEMPLATES
+from typing import Any
 from urllib.parse import urlencode
 from zipfile import ZipFile
 
@@ -155,7 +156,7 @@ BACKEND_PLUGINS_NO_TPL.remove('isatemplates_backend')
 class SheetTemplateCreateMixin:
     """Sheet template creation helpers"""
 
-    def get_tpl_post_data(self, sheet_tpl):
+    def get_tpl_post_data(self, sheet_tpl: IsaTabTemplate) -> dict:
         """
         Return POST data for creating sheet from template.
 
@@ -178,7 +179,7 @@ class SheetTemplateCreateMixin:
                 ret[k] = json.dumps(v)
         return ret
 
-    def make_sheets_from_cubi_tpl(self, sheet_tpl):
+    def make_sheets_from_cubi_tpl(self, sheet_tpl: IsaTabTemplate):
         """
         Create investigation from CUBI templates by posting to the template
         create view.
@@ -1378,7 +1379,7 @@ class TestSheetVersionDeleteBatchView(
 class TestProjectSearchResultsView(SamplesheetsViewTestBase):
     """Tests for ProjectSearchResultsView view with sample sheet input"""
 
-    def _get_items(self, response):
+    def _get_items(self, response) -> Any:
         return response.context['app_results'][0]['results']['materials'].items
 
     def setUp(self):

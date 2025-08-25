@@ -96,13 +96,13 @@ class TestSampleSheetTableBuilder(
 ):
     """Tests for SampleSheetTableBuilder"""
 
-    def _assert_row_length(self, table):
+    def _assert_row_length(self, table: dict):
         """Assert uniform row length"""
         row_lengths = set([len(r) for r in table['table_data']])
         self.assertEqual(len(row_lengths), 1)
 
     @classmethod
-    def _get_column_set(cls, table, pos):
+    def _get_column_set(cls, table: dict, pos: int) -> set:
         """Return set of distinct values for a column at pos"""
         return set([r[pos]['value'] for r in table['table_data']])
 

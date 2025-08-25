@@ -4,6 +4,8 @@ import csv
 import io
 import os
 import warnings
+
+from typing import Optional
 from zipfile import ZipFile
 
 from altamisa.exceptions import (
@@ -23,7 +25,7 @@ from django.test import override_settings
 from test_plus.test import TestCase
 
 # Projectroles dependency
-from projectroles.models import Role, SODAR_CONSTANTS
+from projectroles.models import Project, Role, SODARUser, SODAR_CONSTANTS
 from projectroles.tests.test_models import (
     ProjectMixin,
     RoleMixin,
@@ -47,7 +49,9 @@ class SampleSheetIOMixin:
     """Helper functions for sample sheet i/o"""
 
     @classmethod
-    def import_isa_from_file(cls, path, project, user=None):
+    def import_isa_from_file(
+        cls, path: str, project: Project, user: Optional[SODARUser] = None
+    ) -> Investigation:
         """
         Import ISA from a zip file.
 
@@ -69,7 +73,9 @@ class SampleSheetIOMixin:
         return investigation
 
     @classmethod
-    def read_isa(cls, path, project):
+    def read_isa(
+        cls, path: str, project: Project
+    ) -> tuple[isa_models.InvestigationInfo, dict, dict]:
         """
         Read ISA-Tab into the altamISA API
 
@@ -133,7 +139,7 @@ class SampleSheetIOMixin:
         return isa_inv, isa_studies, isa_assays
 
     @classmethod
-    def get_isatab_files(cls):
+    def get_isatab_files(cls) -> dict:
         """
         Return all test ISA-Tab files.
 
@@ -147,7 +153,7 @@ class SampleSheetIOMixin:
             )
         }
 
-    def fail_isa(self, zip_name, ex):
+    def fail_isa(self, zip_name: str, ex: Exception):
         """Fail with exception message and ISA-Tab zip file name"""
         self.fail(f'Exception in {zip_name}: {ex}')
 
@@ -262,7 +268,7 @@ class TestSampleSheetIOBatch(SampleSheetIOTestBase):
                     )
 
                 # Compare rows
-                def _get_row(row):
+                def _get_row(row: list) -> list:
                     # HACK for missing tabs for empty fields in certain files
                     # TODO: Fix input files instead
                     if (len(row) == 2 and not row[1]) or (

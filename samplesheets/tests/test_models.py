@@ -7,7 +7,8 @@ import altamisa
 import os
 import re
 
-from datetime import timedelta
+from datetime import datetime, timedelta
+from typing import Optional
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -18,7 +19,7 @@ from django.utils import timezone
 from test_plus.test import TestCase
 
 # Projectroles dependency
-from projectroles.models import SODAR_CONSTANTS
+from projectroles.models import Project, SODARUser, SODAR_CONSTANTS
 from projectroles.plugins import PluginAPI
 from projectroles.tests.test_models import (
     ProjectMixin,
@@ -143,24 +144,24 @@ class SampleSheetModelMixin:
     @classmethod
     def make_investigation(
         cls,
-        identifier,
-        file_name,
-        project,
-        title,
-        description,
-        submission_date=None,
-        public_release_date=None,
-        ontology_source_refs={},
-        publications={},
-        contacts={},
-        comments=None,
-        headers=[],
-        parser_version=DEFAULT_PARSER_VERSION,
-        parser_warnings={},
-        archive_name=None,
-        retraction_data=None,
-        sharing_data=None,
-    ):
+        identifier: str,
+        file_name: str,
+        project: Project,
+        title: str,
+        description: str,
+        submission_date: Optional[datetime] = None,
+        public_release_date: Optional[datetime] = None,
+        ontology_source_refs: dict = {},
+        publications: dict = {},
+        contacts: dict = {},
+        comments: Optional[dict] = None,
+        headers: list = [],
+        parser_version: str = DEFAULT_PARSER_VERSION,
+        parser_warnings: dict = {},
+        archive_name: Optional[str] = None,
+        retraction_data: Optional[dict] = None,
+        sharing_data: Optional[dict] = None,
+    ) -> Investigation:
         """Create Investigation in database"""
         values = {
             'identifier': identifier,
@@ -185,20 +186,20 @@ class SampleSheetModelMixin:
     @classmethod
     def make_study(
         cls,
-        identifier,
-        file_name,
-        investigation,
-        title,
-        description,
-        submission_date=None,
-        public_release_date=None,
-        factors={},
-        contacts={},
-        comments=None,
-        headers=[],
-        retraction_data=None,
-        sharing_data=None,
-    ):
+        identifier: str,
+        file_name: str,
+        investigation: Investigation,
+        title: str,
+        description: str,
+        submission_date: Optional[datetime] = None,
+        public_release_date: Optional[datetime] = None,
+        factors: dict = {},
+        contacts: dict = {},
+        comments: Optional[dict] = None,
+        headers: list = [],
+        retraction_data: Optional[dict] = None,
+        sharing_data: Optional[dict] = None,
+    ) -> Study:
         """Create Study in database"""
         values = {
             'identifier': identifier,
@@ -218,19 +219,19 @@ class SampleSheetModelMixin:
     @classmethod
     def make_protocol(
         cls,
-        name,
-        study,
-        protocol_type,
-        description,
-        uri,
-        version,
-        parameters,
-        components,
-        comments=None,
-        headers=[],
-        retraction_data=None,
-        sharing_data=None,
-    ):
+        name: str,
+        study: Study,
+        protocol_type: str,
+        description: str,
+        uri: str,
+        version: str,
+        parameters: dict,
+        components: dict,
+        comments: Optional[dict] = None,
+        headers: list = [],
+        retraction_data: Optional[dict] = None,
+        sharing_data: Optional[dict] = None,
+    ) -> Protocol:
         """Create Protocol in database"""
         values = {
             'name': name,
@@ -249,17 +250,17 @@ class SampleSheetModelMixin:
     @classmethod
     def make_assay(
         cls,
-        file_name,
-        study,
-        tech_platform,
-        tech_type,
-        measurement_type,
-        arcs,
-        comments=None,
-        headers=[],
-        retraction_data=None,
-        sharing_data=None,
-    ):
+        file_name: str,
+        study: Study,
+        tech_platform: str,
+        tech_type: dict,
+        measurement_type: dict,
+        arcs: list,
+        comments: Optional[dict] = None,
+        headers: list = [],
+        retraction_data: Optional[dict] = None,
+        sharing_data: Optional[dict] = None,
+    ) -> Assay:
         """Create Assay in database"""
         values = {
             'file_name': file_name,
@@ -276,22 +277,22 @@ class SampleSheetModelMixin:
     @classmethod
     def make_material(
         cls,
-        item_type,
-        name,
-        unique_name,
-        characteristics,
-        study,
-        assay,
-        material_type,
-        extra_material_type,
-        factor_values,
-        extract_label={},
-        comments=None,
-        headers=[],
-        retraction_data=None,
-        sharing_data=None,
-    ):
-        """Create Material in database"""
+        item_type: str,
+        name: str,
+        unique_name: str,
+        characteristics: dict,
+        study: Study,
+        assay: Assay,
+        material_type: str,
+        extra_material_type: dict,
+        factor_values: dict,
+        extract_label: dict = {},
+        comments: Optional[dict] = None,
+        headers: list = [],
+        retraction_data: Optional[dict] = None,
+        sharing_data: Optional[dict] = None,
+    ) -> GenericMaterial:
+        """Create GenericMaterial in database"""
         values = {
             'item_type': item_type,
             'name': name,
@@ -311,22 +312,22 @@ class SampleSheetModelMixin:
     @classmethod
     def make_process(
         cls,
-        name,
-        unique_name,
-        name_type,
-        protocol,
-        study,
-        assay,
-        parameter_values,
-        performer,
-        perform_date,
-        first_dimension={},
-        second_dimension={},
-        comments=None,
-        headers=[],
-        retraction_data=None,
-        sharing_data=None,
-    ):
+        name: str,
+        unique_name: str,
+        name_type: str,
+        protocol: Protocol,
+        study: Study,
+        assay: Assay,
+        parameter_values: dict,
+        performer: Optional[str],
+        perform_date: Optional[datetime],
+        first_dimension: dict = {},
+        second_dimension: dict = {},
+        comments: Optional[dict] = None,
+        headers: list = [],
+        retraction_data: Optional[dict] = None,
+        sharing_data: Optional[dict] = None,
+    ) -> Process:
         """Create Material in database"""
         values = {
             'name': name,
@@ -346,29 +347,19 @@ class SampleSheetModelMixin:
         return Process.objects.create(**values)
 
     @classmethod
-    def set_configuration(cls, investigation, config_name):
-        """Set the configuration for an investigation"""
-        investigation.comments[CONFIG_LABEL_CREATE] = {
-            'unit': None,
-            'value': config_name,
-        }
-        investigation.save()
-        return investigation
-
-    @classmethod
     def make_isatab(
         cls,
-        project,
-        data,
-        investigation_uuid=None,
-        archive_name=None,
-        tags=[],
-        parser_version=None,
-        user=None,
-        extra_data={},
-        description=None,
-    ):
-        """Create an ISATab object in the database"""
+        project: Project,
+        data: dict,
+        investigation_uuid: Optional[str] = None,
+        archive_name: Optional[str] = None,
+        tags: list = [],
+        parser_version: Optional[str] = None,
+        user: Optional[SODARUser] = None,
+        extra_data: dict = {},
+        description: Optional[str] = None,
+    ) -> ISATab:
+        """Create ISATab object in database"""
         values = {
             'project': project,
             'data': data,
@@ -382,6 +373,18 @@ class SampleSheetModelMixin:
         }
         return ISATab.objects.create(**values)
 
+    @classmethod
+    def set_configuration(
+        cls, investigation: Investigation, config_name: str
+    ) -> Investigation:
+        """Set the configuration for an investigation"""
+        investigation.comments[CONFIG_LABEL_CREATE] = {
+            'unit': None,
+            'value': config_name,
+        }
+        investigation.save()
+        return investigation
+
 
 class IrodsAccessTicketMixin:
     """Helpers for IrodsAccessTicket model creation"""
@@ -389,16 +392,16 @@ class IrodsAccessTicketMixin:
     @classmethod
     def make_irods_ticket(
         cls,
-        study,
-        assay,
-        path,
-        user=None,
-        label=None,
-        ticket=None,
-        date_expires=None,  # never expires
-        allowed_hosts=None,
-    ):
-        """Create an IrodsAccessTicket object in the database"""
+        study: Study,
+        assay: Assay,
+        path: str,
+        user: Optional[SODARUser] = None,
+        label: Optional[str] = None,
+        ticket: Optional[str] = None,
+        date_expires: Optional[datetime] = None,
+        allowed_hosts: Optional[str] = None,
+    ) -> IrodsAccessTicket:
+        """Create IrodsAccessTicket object in database"""
         if not ticket:
             ticket = build_secret(16)
         values = {
@@ -422,16 +425,16 @@ class IrodsDataRequestMixin:
     @classmethod
     def make_irods_request(
         cls,
-        project,
-        action,
-        path,
-        status,
-        target_path='',
-        status_info='',
-        description='',
-        user=None,
-    ):
-        """Create an IrodsDataRequest object in the database"""
+        project: Project,
+        action: str,
+        path: str,
+        status: str,
+        target_path: str = '',
+        status_info: str = '',
+        description: str = '',
+        user: Optional[SODARUser] = None,
+    ) -> IrodsDataRequest:
+        """Create IrodsDataRequest object in database"""
         values = {
             'project': project,
             'action': action,

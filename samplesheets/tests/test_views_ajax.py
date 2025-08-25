@@ -5,8 +5,10 @@ import json
 import os
 
 from altamisa.constants import table_headers as th
+from typing import Any, Optional
 
 from django.conf import settings
+from django.http import HttpResponse
 from django.urls import reverse
 
 # Projectroles dependency
@@ -105,13 +107,15 @@ VERSION_DESC = 'description'
 class RowEditMixin:
     """Helpers for row insert/deletion"""
 
-    def insert_row(self, path=None, data=None):
+    def insert_row(
+        self, path: Optional[str] = None, data: Optional[dict] = None
+    ) -> HttpResponse:
         """
         Insert row into database, based on file path or dictionary.
 
         :param path: String
         :param data: Dict
-        :return: Response
+        :return: HttpResponse
         """
         if not path and not data:
             raise ValueError('Either path or data required')
@@ -147,7 +151,7 @@ class RowEditMixin:
                 content_type='application/json',
             )
 
-    def update_assay_row_uuids(self, update_sample=True):
+    def update_assay_row_uuids(self, update_sample: bool = True):
         """
         Update UUIDs for freshly added assay row, set self.row_uuids and
         self.row_names.
@@ -698,7 +702,7 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
     """Tests for SheetCellEditAjaxView"""
 
     @classmethod
-    def _convert_ontology_value(cls, value):
+    def _convert_ontology_value(cls, value: Any) -> dict:
         """
         Convert ontology value data sent in an edit request into a format
         expected in the database.
