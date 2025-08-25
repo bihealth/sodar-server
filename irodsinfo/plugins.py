@@ -1,3 +1,5 @@
+"""Plugins for the irodsinfo app"""
+
 # Projectroles dependency
 from projectroles.plugins import SiteAppPluginPoint
 

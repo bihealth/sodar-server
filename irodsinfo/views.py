@@ -7,6 +7,7 @@ import zipfile
 
 from irods.exception import NetworkException, CAT_INVALID_AUTHENTICATION
 from packaging import version
+from typing import Any
 
 from django.conf import settings
 from django.contrib import messages
@@ -16,6 +17,7 @@ from django.urls import reverse
 from django.views.generic import TemplateView, View
 
 # Projectroles dependency
+from projectroles.models import SODARUser
 from projectroles.plugins import PluginAPI
 from projectroles.views import LoggedInPermissionMixin, HTTPRefererMixin
 
@@ -28,9 +30,13 @@ class IrodsConfigMixin:
     """Mixin for iRODS configuration views"""
 
     @staticmethod
-    def get_irods_client_env(user, irods_backend):
+    def get_irods_client_env(user: SODARUser, irods_backend: Any) -> dict:
         """
         Create iRODS configuration file for the current user.
+
+        :param user: SODARUser object
+        :param irods_backend: IrodsAPI object
+        :return: dict
         """
         user_name = user.username
         # Just in case Django mangles the user name case, as it might
