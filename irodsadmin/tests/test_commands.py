@@ -220,7 +220,7 @@ class TestIrodsOrphans(
     """Tests for the irodsorphans management command"""
 
     @staticmethod
-    def _get_stdout():
+    def _get_stdout() -> str:
         """Call irodsorphans management command and return output"""
         out = io.StringIO()
         sys.stdout = out

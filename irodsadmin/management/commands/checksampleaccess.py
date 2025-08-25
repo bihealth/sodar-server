@@ -11,12 +11,14 @@ from irods.models import (
     DataAccess,
     User,
 )
+from irods.session import iRODSSession
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
 # Projectroles dependency
 from projectroles.management.logging import ManagementCommandLogger
+from projectroles.models import Project
 from projectroles.plugins import PluginAPI
 
 # Samplesheets dependency
@@ -51,7 +53,13 @@ class Command(BaseCommand):
 
     @classmethod
     def _check_access(
-        cls, user_id, user_name, access_name, path, admin_id, group_id
+        cls,
+        user_id: int,
+        user_name: str,
+        access_name: str,
+        path: str,
+        admin_id: int,
+        group_id: int,
     ):
         """
         Check a single ACL to see if it corresponds to expected access types.
@@ -82,7 +90,9 @@ class Command(BaseCommand):
         return 0
 
     @classmethod
-    def _check_coll_access(cls, sample_path, admin_id, group_id, irods):
+    def _check_coll_access(
+        cls, sample_path: str, admin_id: int, group_id: int, irods: iRODSSession
+    ) -> int:
         """
         Check collection ACLs under a project sample path.
 
@@ -109,7 +119,9 @@ class Command(BaseCommand):
         return ret
 
     @classmethod
-    def _check_obj_access(cls, sample_path, admin_id, group_id, irods):
+    def _check_obj_access(
+        cls, sample_path: str, admin_id: int, group_id: int, irods: iRODSSession
+    ) -> int:
         """
         Check data object ACLs under a project sample path.
 
@@ -136,7 +148,9 @@ class Command(BaseCommand):
         query.close()
         return ret
 
-    def _check_project(self, project, admin_id, irods):
+    def _check_project(
+        self, project: Project, admin_id: int, irods: iRODSSession
+    ) -> int:
         """
         Check ACLs for a single project.
 
