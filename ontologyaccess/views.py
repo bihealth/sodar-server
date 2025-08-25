@@ -61,7 +61,6 @@ class OBOFormatOntologyDetailView(
             context['ex_term_acc'] = o.term_url.format(
                 id_space=t.get_id_space(), local_id=t.get_local_id()
             )
-
         return context
 
 

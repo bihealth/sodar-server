@@ -1,15 +1,17 @@
 """Import and export utilities for the ontologyaccess app"""
 
 import csv
+import fastobo.header as fh
 import io
 import logging
+import pronto
 import sys
 import urllib
-from importlib import import_module
 
-import fastobo.header as fh
-import pronto
+from importlib import import_module
+from fastobo.doc import OboDoc
 from fastobo.term import TermFrame
+from typing import Optional, Union
 
 from django.conf import settings
 from django.db import transaction
@@ -50,7 +52,7 @@ class OBOFormatOntologyIO:
     """Importing class for OBO format ontologies"""
 
     @classmethod
-    def _create_terms(cls, term_vals):
+    def _create_terms(cls, term_vals: list[dict]):
         """Helper for bulk creating ontology terms"""
         logger.debug(
             'Bulk creating {} terms (start={})'.format(
@@ -62,7 +64,9 @@ class OBOFormatOntologyIO:
         )
 
     @classmethod
-    def owl_to_obo(cls, owl, verbose=False):
+    def owl_to_obo(
+        cls, owl: Union[str, io.BytesIO], verbose: bool = False
+    ) -> io.BytesIO:
         """
         Convert an OWL format ontology into the OBO format.
 
@@ -92,7 +96,14 @@ class OBOFormatOntologyIO:
 
     @classmethod
     @transaction.atomic
-    def import_obo(cls, obo_doc, name, file, title=None, term_url=None):
+    def import_obo(
+        cls,
+        obo_doc: OboDoc,
+        name: str,
+        file: str,
+        title: Optional[str] = None,
+        term_url: Optional[str] = None,
+    ) -> OBOFormatOntology:
         """
         Import data from an OBO format ontology into the SODAR database.
 
@@ -225,7 +236,9 @@ class OBOFormatOntologyIO:
         return obo_obj
 
     @classmethod
-    def get_obo_header(cls, obo_doc, raw_tag, raw_value=True):
+    def get_obo_header(
+        cls, obo_doc: OboDoc, raw_tag: str, raw_value: bool = True
+    ) -> Optional[str]:
         """
         Get header from an OBO format ontology parsed by fastobo.
 
@@ -240,7 +253,7 @@ class OBOFormatOntologyIO:
 
     @classmethod
     @transaction.atomic
-    def import_omim(cls, csv_data, file):
+    def import_omim(cls, csv_data: io.BytesIO, file: str) -> OBOFormatOntology:
         """
         Import OMIM data as a "fake" OBO ontology in the SODAR database.
 

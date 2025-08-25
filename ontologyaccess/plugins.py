@@ -51,11 +51,11 @@ class BackendPlugin(BackendPluginPoint):
     #: Names of plugin specific Django settings to display in siteinfo
     info_settings = ['ONTOLOGYACCESS_BULK_CREATE', 'ONTOLOGYACCESS_QUERY_LIMIT']
 
-    def get_api(self, **kwargs):
+    def get_api(self, **kwargs) -> OntologyAccessAPI:
         """Return API entry point object."""
         return OntologyAccessAPI()
 
-    def get_statistics(self):
+    def get_statistics(self) -> dict:
         return {
             'obo_ontology_count': {
                 'label': 'OBO Ontologies',

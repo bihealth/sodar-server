@@ -6,7 +6,7 @@ from ontologyaccess.models import OBOFormatOntology
 class OntologyAccessAPI:
     """Ontology access API"""
 
-    def get_obo_dict(self, key='name'):
+    def get_obo_dict(self, key: str = 'name') -> dict:
         """
         Return metadata dictionary of available OBO ontologies imported into
         SODAR.
@@ -17,9 +17,7 @@ class OntologyAccessAPI:
         """
         if key not in ['name', 'sodar_uuid']:
             raise ValueError('Key must be either "name" or "sodar_uuid"')
-
         ret = {}
-
         for o in OBOFormatOntology.objects.order_by('name'):
             o_data = {
                 'file': o.file,
@@ -35,5 +33,4 @@ class OntologyAccessAPI:
             else:
                 o_data.update({'name': o.name})
                 ret[str(o.sodar_uuid)] = o_data
-
         return ret
