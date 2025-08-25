@@ -1,15 +1,20 @@
 """Template tags for the samplesheets app"""
 
+from typing import Any, Optional, Union
+
 from django import template
 from django.conf import settings
 
 # Projectroles dependency
+from projectroles.models import Project
 from projectroles.plugins import PluginAPI
 
 from samplesheets.models import (
     Investigation,
     Study,
     Assay,
+    ISATab,
+    IrodsDataRequest,
     GENERIC_MATERIAL_TYPES,
 )
 
@@ -39,7 +44,7 @@ REQUEST_STATUS_CLASSES = {
 
 
 @register.simple_tag
-def get_investigation(project):
+def get_investigation(project: Project) -> Optional[Investigation]:
     """Return active Investigation for a project"""
     try:
         return Investigation.objects.get(project=project, active=True)
@@ -48,7 +53,7 @@ def get_investigation(project):
 
 
 @register.simple_tag
-def get_search_item_type(item):
+def get_search_item_type(item: str) -> str:
     """Return printable version of search item type"""
     if item['type'] == 'file':
         return 'Data File'
@@ -56,7 +61,7 @@ def get_search_item_type(item):
 
 
 @register.simple_tag
-def get_irods_tree(investigation):
+def get_irods_tree(investigation: Investigation) -> str:
     """Return HTML for iRODS collections"""
     irods_backend = plugin_api.get_backend_api('omics_irods')
     if not irods_backend:
@@ -79,7 +84,7 @@ def get_irods_tree(investigation):
 
 
 @register.simple_tag
-def get_material_search_url(item):
+def get_material_search_url(item: dict) -> str:
     """Return search URL for source or sample material"""
     return item['study'].get_url() + '/filter/{}'.format(item['name'])
 
@@ -88,7 +93,7 @@ def get_material_search_url(item):
 
 
 @register.simple_tag
-def get_irods_path(obj, sub_path=None):
+def get_irods_path(obj: Any, sub_path: bool = None) -> Optional[str]:
     """
     Return iRODS path for an object or None if not found.
 
@@ -106,7 +111,7 @@ def get_irods_path(obj, sub_path=None):
 
 
 @register.simple_tag
-def get_icon(obj):
+def get_icon(obj: Union[Assay, Study]) -> str:
     """
     Get Study or Assay icon.
 
@@ -120,7 +125,7 @@ def get_icon(obj):
 
 
 @register.simple_tag
-def get_isatab_tag_html(isatab):
+def get_isatab_tag_html(isatab: ISATab) -> str:
     """
     Return tags for an ISA-Tab as HTML to be displayed in the sheet version
     list.
@@ -140,7 +145,7 @@ def get_isatab_tag_html(isatab):
 
 
 @register.simple_tag
-def get_request_path_html(irods_request):
+def get_request_path_html(irods_request: IrodsDataRequest) -> str:
     """Return IrodsDataRequest short path as HTML"""
     ps = irods_request.get_short_path().split('/')
     ret = '<span class="text-muted">{}/</span>'.format('/'.join(ps[:-1]))
@@ -149,7 +154,7 @@ def get_request_path_html(irods_request):
 
 
 @register.simple_tag
-def get_request_status_class(irods_request):
+def get_request_status_class(irods_request: IrodsDataRequest) -> str:
     """Return IrodsDataRequest status classes"""
     if irods_request.status not in REQUEST_STATUS_CLASSES:
         return ''
@@ -157,7 +162,7 @@ def get_request_status_class(irods_request):
 
 
 @register.filter
-def trim_base_path(path, prefix):
+def trim_base_path(path: str, prefix: str) -> str:
     """Return modified path that was stripped from a given prefix"""
     prefix = prefix.rstrip('/')
     if path.startswith(prefix):
