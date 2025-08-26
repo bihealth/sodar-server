@@ -49,6 +49,15 @@
   {% if can_view_files %}
     {% get_backend_include 'omics_irods' 'js' as irodsbackend_js %}
     {{ irodsbackend_js|safe }}
+    {# If no landingzones access, trigger update here (see #2243) #}
+    {% if role and role.name == 'project guest' %}
+      <script type="text/javascript">
+        $(document).ready(function () {
+          setPeriodicStatsUpdate()
+          updateButtons()
+        })
+      </script>
+    {% endif %}
   {% endif %}
 
   <table class="table sodar-card-table" id="sodar-ss-details-table">

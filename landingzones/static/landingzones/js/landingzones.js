@@ -483,22 +483,8 @@ $(document).ready(function () {
   })
 
   // Update collection stats
-  updateCollectionStats()
-  if ($('table.sodar-lz-table').length === 0) {
-    updateButtons();
-  }
-  let statsSec = 8
-  if (typeof (window.irodsbackendStatusInterval) !== 'undefined') {
-    statsSec = window.irodsbackendStatusInterval
-  }
-  let statsInterval = statsSec * 1000
-  // Poll and update active collections
-  setInterval(function () {
-    if ($('table.sodar-lz-table').length === 0) {
-      updateButtons();
-    }
-    updateCollectionStats()
-  }, statsInterval)
+  setPeriodicStatsUpdate()
+  updateButtons()
 
   // iRODS dir list modal
   $('.sodar-lz-list-modal-btn').click(function () {

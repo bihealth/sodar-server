@@ -14,6 +14,8 @@ Added
 - **General**
     - ``pyproject.toml`` configuration file (#2187)
     - Type hints (#2196)
+- **Irodsbackend**
+    - Add ``setPeriodicStatsUpdate()`` in JQuery (#2243)
 - **Landingzones**
     - Project viewer role support (#2200)
 - **Samplesheets**
@@ -45,6 +47,12 @@ Changed
     - Update views for project access blocking support (#2233)
     - Update app for ``public_access`` support (#2202)
     - Refactor ``ProjectAppPlugin.update_cache()`` (#2213)
+
+Fixed
+-----
+
+- **Samplesheets**
+    - Details card iRODS stats badge fails with guest role (#2243)
 
 
 v1.1.4 (2025-08-12)

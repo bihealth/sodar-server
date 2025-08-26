@@ -34,9 +34,11 @@ let updateCollectionStats = function () {
           let status = data['irods_stats'][path]['status']
           if (status === 200) {
             let fileCount = data['irods_stats'][path][
-              'file_count']
+              'file_count'
+            ]
             let totalSize = data['irods_stats'][path][
-              'total_size']
+              'total_size'
+            ]
             if (fileCount === 1) s = ''
             statsSpan.text(
               fileCount + ' file' + s +
@@ -48,6 +50,22 @@ let updateCollectionStats = function () {
       })
     })
   })
+}
+
+/***********************
+ Periodic status update
+************************/
+let setPeriodicStatsUpdate = function () {
+  updateCollectionStats()
+  let statsSec = 8
+  if (typeof (window.irodsbackendStatusInterval) !== 'undefined') {
+    statsSec = window.irodsbackendStatusInterval
+  }
+  let statsInterval = statsSec * 1000
+  // Poll and update active collections
+  setInterval(function () {
+    updateCollectionStats()
+  }, statsInterval)
 }
 
 /***************************************
