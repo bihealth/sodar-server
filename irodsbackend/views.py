@@ -80,10 +80,7 @@ class BaseIrodsAjaxView(SODARBaseProjectAjaxView):
         # Public guest access
         if (
             path.startswith(self.irods_backend.get_sample_path(self.project))
-            and (
-                self.project.public_access
-                and self.project.public_access.name == PROJECT_ROLE_GUEST
-            )
+            and self.project.get_public_access_name() == PROJECT_ROLE_GUEST
             and (user.is_authenticated or settings.PROJECTROLES_ALLOW_ANONYMOUS)
         ):
             return True

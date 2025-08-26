@@ -69,10 +69,7 @@ class Flow(BaseLinearFlow):
                 )
             )
         # If project is public, add public access to sample repository
-        if (
-            self.project.public_access
-            and self.project.public_access.name == PROJECT_ROLE_GUEST
-        ):
+        if self.project.get_public_access_name() == PROJECT_ROLE_GUEST:
             self.add_task(
                 irods_tasks.SetAccessTask(
                     name='Set public access to sample collection',
@@ -87,10 +84,7 @@ class Flow(BaseLinearFlow):
             )
         # Create access ticket depending on anonymous accesss
         if (
-            (
-                self.project.public_access
-                and self.project.public_access.name == PROJECT_ROLE_GUEST
-            )
+            self.project.get_public_access_name() == PROJECT_ROLE_GUEST
             and settings.PROJECTROLES_ALLOW_ANONYMOUS
             and self.flow_data.get('ticket_str')
         ):

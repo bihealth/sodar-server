@@ -690,8 +690,7 @@ class ProjectAppPlugin(
             ticket_str = build_secret(16)
 
         flow_data = {
-            'access': project.public_access is not None
-            and project.public_access.name == PROJECT_ROLE_GUEST,
+            'access': project.get_public_access_name() == PROJECT_ROLE_GUEST,
             'path': sample_path,
             'ticket_str': ticket_str,
         }
@@ -707,7 +706,10 @@ class ProjectAppPlugin(
                 raise ex
 
         # Update/delete ticket in project settings
-        if project.public_access and settings.PROJECTROLES_ALLOW_ANONYMOUS:
+        if (
+            project.get_public_access_name() == PROJECT_ROLE_GUEST
+            and settings.PROJECTROLES_ALLOW_ANONYMOUS
+        ):
             app_settings.set(
                 APP_NAME,
                 'public_access_ticket',
@@ -755,8 +757,7 @@ class ProjectAppPlugin(
         if action == PROJECT_ACTION_CREATE:
             return _skip('Project newly created, no Investigation available')
 
-        pa = project.public_access.name if project.public_access else None
-        if pa == old_data.get('public_access'):
+        if project.get_public_access_name() == old_data.get('public_access'):
             return _skip('Public access unchanged')
         investigation = Investigation.objects.filter(
             project=project, active=True
@@ -768,10 +769,8 @@ class ProjectAppPlugin(
 
         # Submit flow
         logger.info(
-            'Setting project public access status for {} to: {} '.format(
-                project.get_log_title(),
-                project.public_access.name if project.public_access else 'None',
-            )
+            f'Setting project public access status for '
+            f'{project.get_log_title()} to: {project.get_public_access_name()}'
         )
         self._update_public_access(project, taskflow, irods_backend)
         logger.info('Public access status updated')
