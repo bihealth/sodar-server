@@ -31,6 +31,7 @@ Changed
 
 - **General**
     - Upgrade to django-sodar-core v1.2.1 (#2187, #2245)
+    - Upgrade supported develoment and CI platform to Ubuntu v24.04 (#2067)
     - Upgrade general Python depedencies (#2187)
     - Refactor plugin helpers to use ``PluginAPI`` (#2187)
     - Move black configuration to ``pyproject.toml`` (#2187)
