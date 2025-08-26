@@ -53,6 +53,7 @@ Fixed
 
 - **Samplesheets**
     - Details card iRODS stats badge fails with guest role (#2243)
+    - Sheet Operations dropdown disabled for guest user (#2244)
 
 
 v1.1.4 (2025-08-12)

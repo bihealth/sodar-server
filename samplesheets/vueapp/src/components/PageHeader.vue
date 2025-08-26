@@ -102,8 +102,7 @@
           v-if="!app.editMode"
           id="sodar-ss-op-dropdown"
           :disabled="app.gridsBusy ||
-                     (!app.sheetsAvailable && !app.sodarContext.perms.edit_sheet) ||
-                     (app.sheetsAvailable && !app.sodarContext.perms.view_tickets)"
+                     !(app.sheetsAvailable || app.sodarContext.perms.edit_sheet)"
           right
           variant="primary"
           text="Sheet Operations">
