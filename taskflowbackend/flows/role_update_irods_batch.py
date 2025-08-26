@@ -12,12 +12,12 @@ PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
 class Flow(BaseLinearFlow):
     """Flow for batch updating user roles in iRODS"""
 
-    def validate(self):
+    def validate(self) -> bool:
         self.require_lock = False  # Project lock not required for this flow
         self.required_fields = ['roles_add', 'roles_delete']
         return super().validate()
 
-    def build(self, force_fail=False):
+    def build(self, force_fail: bool = False):
         users_add = set([r['user_name'] for r in self.flow_data['roles_add']])
         min_owner_rank = ROLE_RANKING[PROJECT_ROLE_DELEGATE]
         owner_groups_add = set(

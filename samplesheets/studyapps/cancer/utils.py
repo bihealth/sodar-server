@@ -2,6 +2,10 @@
 
 import os
 
+from irods.session import iRODSSession
+from typing import Any
+
+from samplesheets.models import Assay
 from samplesheets.studyapps.utils import (
     get_igv_omit_list,
     check_igv_file_suffix,
@@ -10,7 +14,13 @@ from samplesheets.studyapps.utils import (
 from samplesheets.utils import get_latest_file_path
 
 
-def get_library_file_path(assay, library_name, file_type, irods_backend, irods):
+def get_library_file_path(
+    assay: Assay,
+    library_name: str,
+    file_type: str,
+    irods_backend: Any,
+    irods: iRODSSession,
+):
     """
     Return iRODS path for the most recent file of type "bam" or "vcf"
     linked to the library. CRAM files are included in "bam" searches.

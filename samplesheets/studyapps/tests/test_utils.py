@@ -210,7 +210,7 @@ class TestCheckIGVFilePath(TestCase):
 class TestGetIGVXML(StudyAppUtilsTestBase):
     """Tests for get_igv_xml()"""
 
-    def _get_all_paths(self):
+    def _get_all_paths(self) -> list:
         return list(self.bam_urls.values()) + list(self.vcf_urls.values())
 
     def setUp(self):

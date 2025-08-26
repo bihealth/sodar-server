@@ -3,13 +3,14 @@
 import os
 
 from irods.ticket import Ticket
+from typing import Optional
 
 from django.forms.models import model_to_dict
 from django.test import RequestFactory, override_settings
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.models import SODAR_CONSTANTS
+from projectroles.models import Project, SODAR_CONSTANTS
 from projectroles.plugins import ProjectAppPluginPoint, PluginAPI
 
 # Taskflowbackend dependency
@@ -47,7 +48,12 @@ class SamplesheetsModifyAPITestMixin:
     implementation.
     """
 
-    def assert_ticket_access(self, project, expected=True, ticket_str=None):
+    def assert_ticket_access(
+        self,
+        project: Project,
+        expected: bool = True,
+        ticket_str: Optional[str] = None,
+    ):
         """
         Assert ticket access in the SODAR database and iRODS.
 

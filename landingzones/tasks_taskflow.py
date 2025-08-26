@@ -2,6 +2,8 @@
 
 import logging
 
+from typing import Any, Optional
+
 from django.conf import settings
 from django.contrib import auth
 from django.urls import reverse
@@ -9,6 +11,7 @@ from django.urls import reverse
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.email import send_generic_mail, get_email_user
+from projectroles.models import SODARUser
 from projectroles.plugins import PluginAPI
 
 # Samplesheets dependency
@@ -26,6 +29,7 @@ from landingzones.constants import (
     ZONE_STATUS_ACTIVE,
     ZONE_STATUS_DELETED,
 )
+from landingzones.models import LandingZone
 
 
 app_settings = AppSettingAPI()
@@ -91,9 +95,22 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
 
     @classmethod
     def _add_owner_alert(
-        cls, app_alerts, zone, flow_name, file_count, validate_only
+        cls,
+        app_alerts: Any,
+        zone: LandingZone,
+        flow_name: str,
+        file_count: int,
+        validate_only: bool,
     ):
-        """Add app alert for zone owner for finished actions"""
+        """
+        Add app alert for zone owner for finished actions.
+
+        :param app_alerts: AppAlertAPI object
+        :param zone: LandingZone object
+        :param flow_name: String
+        :param file_count: Integer
+        :param validate_only: Boolean
+        """
         alert_level = (
             'DANGER'
             if zone.status in [ZONE_STATUS_FAILED, ZONE_STATUS_NOT_CREATED]
@@ -153,8 +170,21 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
         )
 
     @classmethod
-    def _add_member_move_alert(cls, app_alerts, zone, user, file_count):
-        """Add app alert for project member"""
+    def _add_member_move_alert(
+        cls,
+        app_alerts: Any,
+        zone: LandingZone,
+        user: SODARUser,
+        file_count: int,
+    ):
+        """
+        Add app alert for project member.
+
+        :param app_alerts: AppAlertAPI object
+        :param zone: LandingZone object
+        :param user: SODARUser object
+        :param file_count: Integer
+        """
         alert_msg = '{} file{} uploaded by {}.'.format(
             file_count,
             's' if file_count != 1 else '',
@@ -176,8 +206,12 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
         )
 
     @classmethod
-    def _send_owner_move_email(cls, zone):
-        """Send email to zone owner on zone move/validate"""
+    def _send_owner_move_email(cls, zone: LandingZone):
+        """
+        Send email to zone owner on zone move/validate.
+
+        :param zone: LandingZone object
+        """
         server_host = settings.SODAR_API_DEFAULT_HOST.geturl()
         subject_body = (
             f'Landing zone {zone.status.lower()}: {zone.project.title} / '
@@ -209,8 +243,16 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
         send_generic_mail(subject_body, message_body, [zone.user])
 
     @classmethod
-    def _send_member_move_email(cls, member, zone, file_count):
-        """Send member email on landing zone move"""
+    def _send_member_move_email(
+        cls, member: SODARUser, zone: LandingZone, file_count: int
+    ):
+        """
+        Send member email on landing zone move.
+
+        :param member: SODARUser object
+        :param zone: LandingZone object
+        :param file_count: Integer
+        """
         server_host = settings.SODAR_API_DEFAULT_HOST.geturl()
         subject_body = (
             f'Files uploaded in project "{zone.project.title}" by '
@@ -230,7 +272,14 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
         send_generic_mail(subject_body, message_body, [member])
 
     @classmethod
-    def set_status(cls, zone, flow_name, status, status_info, extra_data=None):
+    def set_status(
+        cls,
+        zone: LandingZone,
+        flow_name: str,
+        status: str,
+        status_info: str,
+        extra_data: Optional[dict] = None,
+    ):
         """
         Set landing zone status. Notify users by alerts and emails if
         applicable.
@@ -356,11 +405,11 @@ class SetLandingZoneStatusTask(BaseLandingZoneStatusTask):
 
     def execute(
         self,
-        landing_zone,
-        flow_name,
-        status,
-        status_info,
-        extra_data=None,
+        landing_zone: LandingZone,
+        flow_name: str,
+        status: str,
+        status_info: str,
+        extra_data: Optional[dict] = None,
         *args,
         **kwargs,
     ):
@@ -375,11 +424,11 @@ class SetLandingZoneStatusTask(BaseLandingZoneStatusTask):
 
     def revert(
         self,
-        landing_zone,
-        flow_name,
-        status,
-        status_info,
-        extra_data=None,
+        landing_zone: LandingZone,
+        flow_name: str,
+        status: str,
+        status_info: str,
+        extra_data: Optional[dict] = None,
         *args,
         **kwargs,
     ):
@@ -391,11 +440,11 @@ class RevertLandingZoneFailTask(BaseLandingZoneStatusTask):
 
     def execute(
         self,
-        landing_zone,
-        flow_name,
-        info_prefix,
-        status=ZONE_STATUS_FAILED,
-        extra_data=None,
+        landing_zone: LandingZone,
+        flow_name: str,
+        info_prefix: str,
+        status: str = ZONE_STATUS_FAILED,
+        extra_data: Optional[dict] = None,
         *args,
         **kwargs,
     ):
@@ -403,11 +452,11 @@ class RevertLandingZoneFailTask(BaseLandingZoneStatusTask):
 
     def revert(
         self,
-        landing_zone,
-        flow_name,
-        info_prefix,
-        status=ZONE_STATUS_FAILED,
-        extra_data=None,
+        landing_zone: LandingZone,
+        flow_name: str,
+        info_prefix: str,
+        status: str = ZONE_STATUS_FAILED,
+        extra_data: Optional[dict] = None,
         *args,
         **kwargs,
     ):

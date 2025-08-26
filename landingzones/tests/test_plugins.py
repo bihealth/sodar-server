@@ -135,7 +135,7 @@ class TestGetObjectLink(LandingzonesPluginTestBase):
 class TestGetStatistics(LandingzonesPluginTestBase):
     """Tests for get_statistics()"""
 
-    def _make_zone(self, status):
+    def _make_zone(self, status: str):
         self.make_landing_zone(
             f'zone_{status.lower()}',
             self.project,
@@ -144,7 +144,7 @@ class TestGetStatistics(LandingzonesPluginTestBase):
             status=status,
         )
 
-    def _assert_stats(self, expected):
+    def _assert_stats(self, expected: dict):
         stats = self.plugin.get_statistics()
         for k, v in expected.items():
             self.assertEqual(stats[k]['value'], v)

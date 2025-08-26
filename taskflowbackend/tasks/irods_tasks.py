@@ -9,9 +9,13 @@ import re
 import string
 import time
 
+from datetime import datetime
+from typing import Any, Optional
+
 from irods import keywords as kw
 from irods.access import iRODSAccess
 from irods.column import Like
+from irods.data_object import iRODSDataObject, iRODSReplica
 from irods.exception import (
     GroupDoesNotExist,
     NetworkException,
@@ -65,11 +69,11 @@ class IrodsAccessMixin:
 
     def execute_set_access(
         self,
-        access_name,
-        path,
-        user_name,
-        obj_target,
-        recursive,
+        access_name: str,
+        path: str,
+        user_name: str,
+        obj_target: bool,
+        recursive: bool,
     ):
         """
         Set access for user in a single data object or collection.
@@ -118,10 +122,10 @@ class IrodsAccessMixin:
 
     def revert_set_access(
         self,
-        path,
-        user_name,
-        obj_target,
-        recursive,
+        path: str,
+        user_name: str,
+        obj_target: bool,
+        recursive: bool,
     ):
         """
         Revert setting access for user in a single collection or data object.
@@ -147,8 +151,14 @@ class ProgressCounterMixin:
 
     @classmethod
     def update_zone_progress(
-        cls, zone, status_base, current, previous, total, time_start
-    ):
+        cls,
+        zone: Any,
+        status_base: str,
+        current: int,
+        previous: int,
+        total: int,
+        time_start: datetime,
+    ) -> tuple[int, datetime]:
         """
         Update landing zone status for progress counter.
 
@@ -170,7 +180,7 @@ class ProgressCounterMixin:
         return previous, time_start  # If not updated, return previous values
 
     @classmethod
-    def set_zone_final_status(cls, zone, status_base, total):
+    def set_zone_final_status(cls, zone: Any, status_base: str, total: int):
         """
         Set final progress status for landing zone.
 
@@ -194,14 +204,14 @@ class IrodsBaseTask(BaseTask):
         self.name = f'<iRODS> {name} ({self.__class__.__name__})'
         self.irods = kwargs['irods']
 
-    def raise_irods_exception(self, ex, info=None):
+    def raise_irods_exception(self, ex: Exception, info: Optional[str] = None):
         """
         Raise an exception when taskflow doesn't catch a proper exception from
         the iRODS client.
         """
         desc = '{} failed: {}'.format(
             self.__class__.__name__,
-            (str(ex) if str(ex) not in ['', 'None'] else ex.__class__.__name__),
+            (ex if str(ex) not in ['', 'None'] else ex.__class__.__name__),
         )
         if info:
             desc += f'\n{info}'
@@ -217,7 +227,7 @@ class CreateCollectionTask(IrodsBaseTask):
     Create collection and its parent collections if they doesn't exist (imkdir)
     """
 
-    def execute(self, path, *args, **kwargs):
+    def execute(self, path: str, *args, **kwargs):
         # Create parent collections if they don't exist
         self.execute_data['created_colls'] = []
         for i in range(2, len(path.split('/')) + 1):
@@ -228,7 +238,7 @@ class CreateCollectionTask(IrodsBaseTask):
                 self.data_modified = True
         super().execute(*args, **kwargs)
 
-    def revert(self, path, *args, **kwargs):
+    def revert(self, path: str, *args, **kwargs):
         if self.data_modified:
             for coll_path in reversed(self.execute_data['created_colls']):
                 if self.irods.collections.exists(coll_path):
@@ -245,7 +255,7 @@ class RemoveCollectionTask(IrodsBaseTask):
     #       So we can be sure to recover the correct structure on revert
     #       (if collections with the same path are removed, they are collected
     #       in trash versioned with a timestamp, which we can't know for sure)
-    def execute(self, path, *args, **kwargs):
+    def execute(self, path: str, *args, **kwargs):
         trash_path = (
             '/'
             + path.split('/')[1]
@@ -276,7 +286,7 @@ class RemoveCollectionTask(IrodsBaseTask):
                 raise Exception('Failed to remove collection')
         super().execute(*args, **kwargs)
 
-    def revert(self, path, *args, **kwargs):
+    def revert(self, path: str, *args, **kwargs):
         if self.data_modified:
             src_path = (
                 self.execute_data['trash_path'] + '/' + path.split('/')[-1]
@@ -291,7 +301,7 @@ class RemoveCollectionTask(IrodsBaseTask):
 class RemoveDataObjectTask(IrodsBaseTask):
     """Remove a data object if it exists (irm)"""
 
-    def execute(self, path, *args, **kwargs):
+    def execute(self, path: str, *args, **kwargs):
         trash_path = (
             '/'
             + path.split('/')[1]
@@ -323,7 +333,7 @@ class RemoveDataObjectTask(IrodsBaseTask):
                 raise Exception('Failed to remove data object')
         super().execute(*args, **kwargs)
 
-    def revert(self, path, *args, **kwargs):
+    def revert(self, path: str, *args, **kwargs):
         if self.data_modified:
             src_path = (
                 self.execute_data['trash_path'] + '/' + path.split('/')[-1]
@@ -341,7 +351,15 @@ class SetCollectionMetadataTask(IrodsBaseTask):
     existing value with the same name.
     """
 
-    def execute(self, path, name, value, units=None, *args, **kwargs):
+    def execute(
+        self,
+        path: str,
+        name: str,
+        value: Optional[str],
+        units: Optional[str] = None,
+        *args,
+        **kwargs,
+    ):
         coll = None
         try:
             coll = self.irods.collections.get(path)
@@ -371,7 +389,15 @@ class SetCollectionMetadataTask(IrodsBaseTask):
             self.data_modified = True
         super().execute(*args, **kwargs)
 
-    def revert(self, path, name, value, units=None, *args, **kwargs):
+    def revert(
+        self,
+        path: str,
+        name: str,
+        value: Optional[str],
+        units: Optional[str] = None,
+        *args,
+        **kwargs,
+    ):
         if not self.data_modified:
             return
         coll = self.irods.collections.get(path)
@@ -393,7 +419,7 @@ class SetCollectionMetadataTask(IrodsBaseTask):
 class CreateUserGroupTask(IrodsBaseTask):
     """Create user group if it doesn't exist (iadmin mkgroup)"""
 
-    def execute(self, name, *args, **kwargs):
+    def execute(self, name: str, *args, **kwargs):
         try:
             self.irods.user_groups.get(name)
         except GroupDoesNotExist:
@@ -401,7 +427,7 @@ class CreateUserGroupTask(IrodsBaseTask):
             self.data_modified = True
         super().execute(*args, **kwargs)
 
-    def revert(self, name, *args, **kwargs):
+    def revert(self, name: str, *args, **kwargs):
         if self.data_modified:
             # NOTE: Not group_name
             self.irods.users.remove(user_name=name)
@@ -413,7 +439,7 @@ class CreateUserGroupTask(IrodsBaseTask):
 class SetInheritanceTask(IrodsBaseTask):
     """Set collection inheritance (ichmod inherit)"""
 
-    def execute(self, path, inherit=True, *args, **kwargs):
+    def execute(self, path: str, inherit: bool = True, *args, **kwargs):
         acl = iRODSAccess(
             access_name=INHERIT_STRINGS[inherit],
             path=path,
@@ -422,7 +448,7 @@ class SetInheritanceTask(IrodsBaseTask):
         )
         self.irods.acls.set(acl, recursive=True)
 
-    def revert(self, path, inherit=True, *args, **kwargs):
+    def revert(self, path: str, inherit: bool = True, *args, **kwargs):
         # TODO: Add checks for inheritance status prior to execute
         pass
         '''
@@ -443,12 +469,12 @@ class SetAccessTask(IrodsAccessMixin, IrodsBaseTask):
 
     def execute(
         self,
-        access_name,
-        path,
-        user_name,
-        irods_backend,
-        obj_target=False,
-        recursive=True,
+        access_name: str,
+        path: str,
+        user_name: str,
+        irods_backend: Any,
+        obj_target: bool = False,
+        recursive: bool = True,
         *args,
         **kwargs,
     ):
@@ -466,12 +492,12 @@ class SetAccessTask(IrodsAccessMixin, IrodsBaseTask):
 
     def revert(
         self,
-        access_name,
-        path,
-        user_name,
-        irods_backend,
-        obj_target=False,
-        recursive=True,
+        access_name: str,
+        path: str,
+        user_name: str,
+        irods_backend: Any,
+        obj_target: bool = False,
+        recursive: bool = True,
         *args,
         **kwargs,
     ):
@@ -484,7 +510,7 @@ class SetAccessTask(IrodsAccessMixin, IrodsBaseTask):
 class CleanupAccessTask(IrodsBaseTask):
     """Cleanup access under collection to exclude all but provided users"""
 
-    def _cleanup_coll_access(self, path, user_ids):
+    def _cleanup_coll_access(self, path: str, user_ids: list[int]):
         """Cleanup collection access"""
         query = self.irods.query(
             Collection, CollectionAccess, CollectionUser
@@ -504,7 +530,7 @@ class CleanupAccessTask(IrodsBaseTask):
                 )
         query.close()
 
-    def _cleanup_obj_access(self, path, user_ids):
+    def _cleanup_obj_access(self, path: str, user_ids: list[int]):
         """Cleanup data object access"""
         query = self.irods.query(
             DataObject, DataAccess, Collection, User
@@ -530,8 +556,8 @@ class CleanupAccessTask(IrodsBaseTask):
 
     def execute(
         self,
-        path,
-        user_names,
+        path: str,
+        user_names: list[str],
         *args,
         **kwargs,
     ):
@@ -563,7 +589,13 @@ class IssueTicketTask(IrodsBaseTask):
     """Create access ticket to a collection if not yet available"""
 
     def execute(
-        self, access_name, path, ticket_str, irods_backend, *args, **kwargs
+        self,
+        access_name: str,
+        path: str,
+        ticket_str: str,
+        irods_backend: Any,
+        *args,
+        **kwargs,
     ):
         if not irods_backend.get_ticket(self.irods, ticket_str):
             try:
@@ -576,7 +608,13 @@ class IssueTicketTask(IrodsBaseTask):
         super().execute(*args, **kwargs)
 
     def revert(
-        self, access_name, path, ticket_str, irods_backend, *args, **kwargs
+        self,
+        access_name: str,
+        path: str,
+        ticket_str: str,
+        irods_backend: Any,
+        *args,
+        **kwargs,
     ):
         if self.data_modified:
             irods_backend.delete_ticket(self.irods, ticket_str)
@@ -586,7 +624,13 @@ class DeleteTicketTask(IrodsBaseTask):
     """Delete access ticket if it exists"""
 
     def execute(
-        self, access_name, path, ticket_str, irods_backend, *args, **kwargs
+        self,
+        access_name: str,
+        path: str,
+        ticket_str: str,
+        irods_backend: Any,
+        *args,
+        **kwargs,
     ):
         ticket = irods_backend.get_ticket(self.irods, ticket_str)
         if ticket:
@@ -598,7 +642,13 @@ class DeleteTicketTask(IrodsBaseTask):
         super().execute(*args, **kwargs)
 
     def revert(
-        self, access_name, path, ticket_str, irods_backend, *args, **kwargs
+        self,
+        access_name: str,
+        path: str,
+        ticket_str: str,
+        irods_backend: Any,
+        *args,
+        **kwargs,
     ):
         if self.data_modified:
             irods_backend.issue_ticket(
@@ -611,7 +661,7 @@ class CreateUserTask(IrodsBaseTask):
 
     # NOTE: Password not needed as users log in via LDAP
 
-    def execute(self, user_name, user_type, *args, **kwargs):
+    def execute(self, user_name: str, user_type: str, *args, **kwargs):
         try:
             self.irods.users.get(user_name)
         except UserDoesNotExist:
@@ -623,7 +673,7 @@ class CreateUserTask(IrodsBaseTask):
             self.data_modified = True
         super().execute(*args, **kwargs)
 
-    def revert(self, user_name, user_type, *args, **kwargs):
+    def revert(self, user_name: str, user_type: str, *args, **kwargs):
         # Remove user only if it was added in this run
         if self.data_modified:
             self.irods.users.remove(user_name)
@@ -632,7 +682,7 @@ class CreateUserTask(IrodsBaseTask):
 class AddUserToGroupTask(IrodsBaseTask):
     """Add user to group if not yet added (iadmin atg)"""
 
-    def execute(self, group_name, user_name, *args, **kwargs):
+    def execute(self, group_name: str, user_name: str, *args, **kwargs):
         try:
             group = self.irods.user_groups.get(group_name)
         except Exception as ex:
@@ -651,7 +701,7 @@ class AddUserToGroupTask(IrodsBaseTask):
                 )
         super().execute(*args, **kwargs)
 
-    def revert(self, group_name, user_name, *args, **kwargs):
+    def revert(self, group_name: str, user_name: str, *args, **kwargs):
         if self.data_modified:
             group = self.irods.user_groups.get(group_name)
             group.removemember(user_name=user_name, user_zone=self.irods.zone)
@@ -660,7 +710,7 @@ class AddUserToGroupTask(IrodsBaseTask):
 class RemoveUserFromGroupTask(IrodsBaseTask):
     """Remove user from group (iadmin rfg)"""
 
-    def execute(self, group_name, user_name, *args, **kwargs):
+    def execute(self, group_name: str, user_name: str, *args, **kwargs):
         try:
             group = self.irods.user_groups.get(group_name)
         except GroupDoesNotExist:
@@ -677,7 +727,7 @@ class RemoveUserFromGroupTask(IrodsBaseTask):
                 self.raise_irods_exception(ex)
         super().execute(*args, **kwargs)
 
-    def revert(self, group_name, user_name, *args, **kwargs):
+    def revert(self, group_name: str, user_name: str, *args, **kwargs):
         if self.data_modified:
             group = self.irods.user_groups.get(group_name)
             group.addmember(user_name=user_name, user_zone=self.irods.zone)
@@ -687,7 +737,7 @@ class RemoveUserFromGroupTask(IrodsBaseTask):
 class MoveDataObjectTask(IrodsBaseTask):
     """Move file to destination collection (imv)"""
 
-    def execute(self, src_path, dest_path, *args, **kwargs):
+    def execute(self, src_path: str, dest_path: str, *args, **kwargs):
         try:
             self.irods.data_objects.move(src_path=src_path, dest_path=dest_path)
             self.data_modified = True
@@ -695,7 +745,7 @@ class MoveDataObjectTask(IrodsBaseTask):
             self.raise_irods_exception(ex)
         super().execute(*args, **kwargs)
 
-    def revert(self, src_path, dest_path, *args, **kwargs):
+    def revert(self, src_path: str, dest_path: str, *args, **kwargs):
         if self.data_modified:
             # TODO: First check if final item in path is obj or coll
             new_src = dest_path + '/' + src_path.split('/')[-1]
@@ -714,12 +764,12 @@ class BatchSetAccessTask(IrodsAccessMixin, IrodsBaseTask):
 
     def execute(
         self,
-        access_name,
-        paths,
-        user_name,
-        irods_backend,
-        obj_target=False,
-        recursive=True,
+        access_name: str,
+        paths: str,
+        user_name: str,
+        irods_backend: Any,
+        obj_target: bool = False,
+        recursive: bool = True,
         *args,
         **kwargs,
     ):
@@ -736,12 +786,12 @@ class BatchSetAccessTask(IrodsAccessMixin, IrodsBaseTask):
 
     def revert(
         self,
-        access_name,
-        paths,
-        user_name,
-        irods_backend,
-        obj_target=False,
-        recursive=True,
+        access_name: str,
+        paths: str,
+        user_name: str,
+        irods_backend: Any,
+        obj_target: bool = False,
+        recursive: bool = True,
         *args,
         **kwargs,
     ):
@@ -752,7 +802,14 @@ class BatchSetAccessTask(IrodsAccessMixin, IrodsBaseTask):
 class BatchCheckFileSuffixTask(IrodsBaseTask):
     """Batch check for prohibited file name suffixes"""
 
-    def execute(self, file_paths, suffixes, zone_path, *args, **kwargs):
+    def execute(
+        self,
+        file_paths: list[str],
+        suffixes: list[str],
+        zone_path: str,
+        *args,
+        **kwargs,
+    ):
         suffixes = cleanup_file_prohibit(suffixes)
         if not suffixes:
             super().execute(*args, **kwargs)
@@ -773,7 +830,14 @@ class BatchCheckFileSuffixTask(IrodsBaseTask):
             self.raise_irods_exception(Exception(), msg)
         super().execute(*args, **kwargs)
 
-    def revert(self, file_paths, suffixes, zone_path, *args, **kwargs):
+    def revert(
+        self,
+        file_paths: list[str],
+        suffixes: list[str],
+        zone_path: str,
+        *args,
+        **kwargs,
+    ):
         pass  # Nothing to revert
 
 
@@ -783,7 +847,13 @@ class BatchCheckFileExistTask(IrodsBaseTask):
     """
 
     def execute(
-        self, file_paths, chk_paths, zone_path, chk_suffix, *args, **kwargs
+        self,
+        file_paths: list[str],
+        chk_paths: list[str],
+        zone_path: str,
+        chk_suffix: str,
+        *args,
+        **kwargs,
     ):
         err_paths = []
         for p in file_paths:
@@ -806,7 +876,13 @@ class BatchCheckFileExistTask(IrodsBaseTask):
         super().execute(*args, **kwargs)
 
     def revert(
-        self, file_paths, chk_paths, zone_path, chk_suffix, *args, **kwargs
+        self,
+        file_paths: list[str],
+        chk_paths: list[str],
+        zone_path: str,
+        chk_suffix: str,
+        *args,
+        **kwargs,
     ):
         pass  # Nothing is modified so no need for revert
 
@@ -814,7 +890,9 @@ class BatchCheckFileExistTask(IrodsBaseTask):
 class BatchValidateChecksumsTask(ProgressCounterMixin, IrodsBaseTask):
     """Batch validate checksums of a given list of data object paths"""
 
-    def _read_checksum(self, chk_path, zone_path_len, read_errors):
+    def _read_checksum(
+        self, chk_path: str, zone_path_len: int, read_errors: list
+    ) -> bool:
         """
         Read checksum file. Appends error and returns False if error is
         reached.
@@ -836,7 +914,12 @@ class BatchValidateChecksumsTask(ProgressCounterMixin, IrodsBaseTask):
 
     @classmethod
     def _compare_checksums(
-        cls, data_obj, checksum, zone_path_len, hash_scheme, irods_backend
+        cls,
+        data_obj: iRODSDataObject,
+        checksum: str,
+        zone_path_len: int,
+        hash_scheme: str,
+        irods_backend: Any,
     ):
         """
         Compare object replicate checksums to expected sum. Raises exception if
@@ -878,10 +961,10 @@ class BatchValidateChecksumsTask(ProgressCounterMixin, IrodsBaseTask):
 
     def execute(
         self,
-        landing_zone,
-        file_paths,
-        zone_path,
-        irods_backend,
+        landing_zone: Any,
+        file_paths: list[str],
+        zone_path: str,
+        irods_backend: Any,
         *args,
         **kwargs,
     ):
@@ -938,10 +1021,10 @@ class BatchValidateChecksumsTask(ProgressCounterMixin, IrodsBaseTask):
 
     def revert(
         self,
-        landing_zone,
-        file_paths,
-        zone_path,
-        irods_backend,
+        landing_zone: Any,
+        file_paths: list[str],
+        zone_path: str,
+        irods_backend: Any,
         *args,
         **kwargs,
     ):
@@ -951,7 +1034,7 @@ class BatchValidateChecksumsTask(ProgressCounterMixin, IrodsBaseTask):
 class BatchCreateCollectionsTask(IrodsBaseTask):
     """Batch create collections from a list (imkdir)"""
 
-    def execute(self, coll_paths, *args, **kwargs):
+    def execute(self, coll_paths: list[str], *args, **kwargs):
         # Create parent collections if they don't exist
         self.execute_data['created_colls'] = []
         for path in coll_paths:
@@ -969,7 +1052,7 @@ class BatchCreateCollectionsTask(IrodsBaseTask):
                     )
         super().execute(*args, **kwargs)
 
-    def revert(self, coll_paths, *args, **kwargs):
+    def revert(self, coll_paths: list[str], *args, **kwargs):
         if self.data_modified:
             for coll_path in reversed(self.execute_data['created_colls']):
                 if self.irods.collections.exists(coll_path):
@@ -980,12 +1063,12 @@ class BatchMoveDataObjectsTask(ProgressCounterMixin, IrodsBaseTask):
     """Batch move files (imv) and set access to user group (ichmod)"""
 
     @staticmethod
-    def get_dest_coll_path(src_path, src_root, dest_root):
+    def get_dest_coll_path(src_path: str, src_root: str, dest_root: str) -> str:
         src_depth = len(src_root.split('/'))
         return dest_root + '/' + '/'.join(src_path.split('/')[src_depth:-1])
 
     @staticmethod
-    def get_dest_obj_path(src_path, dest_path):
+    def get_dest_obj_path(src_path: str, dest_path: str) -> str:
         return (
             dest_path
             + ('/' if dest_path[-1] != '/' else '')
@@ -994,13 +1077,13 @@ class BatchMoveDataObjectsTask(ProgressCounterMixin, IrodsBaseTask):
 
     def execute(
         self,
-        landing_zone,
-        src_root,
-        dest_root,
-        src_paths,
-        access_name,
-        user_name,
-        irods_backend,
+        landing_zone: Any,
+        src_root: str,
+        dest_root: str,
+        src_paths: list[str],
+        access_name: str,
+        user_name: str,
+        irods_backend: Any,
         *args,
         **kwargs,
     ):
@@ -1091,12 +1174,13 @@ class BatchMoveDataObjectsTask(ProgressCounterMixin, IrodsBaseTask):
 
     def revert(
         self,
-        landing_zone,
-        src_root,
-        dest_root,
-        access_name,
-        user_name,
-        irods_backend,
+        landing_zone: Any,
+        src_root: str,
+        dest_root: str,
+        src_paths: list[str],
+        access_name: str,
+        user_name: str,
+        irods_backend: Any,
         *args,
         **kwargs,
     ):
@@ -1125,7 +1209,13 @@ class BatchMoveDataObjectsTask(ProgressCounterMixin, IrodsBaseTask):
 class BatchCalculateChecksumTask(ProgressCounterMixin, IrodsBaseTask):
     """Batch calculate checksum for data objects (ichksum)"""
 
-    def _raise_checksum_exception(self, ex, replica, data_obj, info=None):
+    def _raise_checksum_exception(
+        self,
+        ex: Exception,
+        data_obj: iRODSDataObject,
+        replica: iRODSReplica,
+        info: Optional[str] = None,
+    ):
         info_str = (': ' + info) if info else ''
         self.raise_irods_exception(
             ex,
@@ -1133,7 +1223,9 @@ class BatchCalculateChecksumTask(ProgressCounterMixin, IrodsBaseTask):
             f'{replica.resc_hier}\nFile: {data_obj.path}',
         )
 
-    def _compute_checksum(self, data_obj, replica, force):
+    def _compute_checksum(
+        self, data_obj: iRODSDataObject, replica: iRODSReplica, force: bool
+    ):
         if replica.checksum and not force:
             return
         for j in range(CHECKSUM_RETRY):
@@ -1152,12 +1244,19 @@ class BatchCalculateChecksumTask(ProgressCounterMixin, IrodsBaseTask):
                 # Raise if we reached maximum retry count
                 if j == CHECKSUM_RETRY - 1:
                     info = 'maximum network timeout retry attempts reached'
-                    self._raise_checksum_exception(ex, replica, data_obj, info)
+                    self._raise_checksum_exception(ex, data_obj, replica, info)
             # Raise other exceptions normally
             except Exception as ex:
-                self._raise_checksum_exception(ex, replica, data_obj)
+                self._raise_checksum_exception(ex, data_obj, replica)
 
-    def execute(self, landing_zone, file_paths, force, *args, **kwargs):
+    def execute(
+        self,
+        landing_zone: Any,
+        file_paths: list[str],
+        force: bool,
+        *args,
+        **kwargs,
+    ):
         file_count = len(file_paths)
         if file_count == 0:  # Nothing to do
             super().execute(*args, **kwargs)

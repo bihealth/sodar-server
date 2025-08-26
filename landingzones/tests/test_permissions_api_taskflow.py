@@ -62,7 +62,7 @@ class ZoneAPIPermissionTaskflowTestBase(
 class TestZoneCreateAPIViewPermissions(ZoneAPIPermissionTaskflowTestBase):
     """Tests for ZoneCreateAPIView permissions with Taskflow"""
 
-    def _get_post_data(self):
+    def _get_post_data(self) -> dict:
         return {
             'assay': str(self.assay.sodar_uuid),
             'description': ZONE_DESC,

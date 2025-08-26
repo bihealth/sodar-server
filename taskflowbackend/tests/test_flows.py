@@ -40,6 +40,7 @@ from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 from samplesheets.views import RESULTS_COLL, MISC_FILES_COLL
 
+from taskflowbackend.flows.base_flow import BaseLinearFlow
 from taskflowbackend.flows.data_delete import Flow as DataDeleteFlow
 from taskflowbackend.flows.landing_zone_create import (
     Flow as LandingZoneCreateFlow,
@@ -100,7 +101,7 @@ MD5_SUFFIX = '.md5'
 class TaskflowbackendFlowTestBase(TaskflowViewTestBase):
     """Base class for flow tests"""
 
-    def build_and_run(self, flow, force_fail=False):
+    def build_and_run(self, flow: BaseLinearFlow, force_fail: bool = False):
         """Build and run flow"""
         flow.build(force_fail)
         flow.run()

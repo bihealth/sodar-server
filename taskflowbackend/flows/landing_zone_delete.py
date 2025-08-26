@@ -10,13 +10,13 @@ from landingzones.models import LandingZone
 class Flow(BaseLinearFlow):
     """Flow for deleting a landing zone from a project and a user in iRODS"""
 
-    def validate(self):
+    def validate(self) -> bool:
         self.require_lock = False  # Project lock not required for this flow
         self.supported_modes = ['sync', 'async']
         self.required_fields = ['zone_uuid']
         return super().validate()
 
-    def build(self, force_fail=False):
+    def build(self, force_fail: bool = False):
         # Setup
         zone = LandingZone.objects.get(sodar_uuid=self.flow_data['zone_uuid'])
         zone_path = self.irods_backend.get_path(zone)

@@ -1,6 +1,7 @@
 """Tests for models in the ontologyaccess app"""
 
 from importlib import import_module
+from typing import Optional
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -45,17 +46,17 @@ class OBOFormatOntologyModelMixin:
     @classmethod
     def make_obo_ontology(
         cls,
-        name,
-        file,
-        ontology_id,
-        title,
-        format_version=OBO_FORMAT_VERSION,
-        description=None,
-        data_version=None,
-        default_namespace=None,
-        term_url=DEFAULT_TERM_URL,
-        sodar_version=SITE_VERSION,
-    ):
+        name: str,
+        file: str,
+        ontology_id: str,
+        title: str,
+        format_version: str = OBO_FORMAT_VERSION,
+        description: Optional[str] = None,
+        data_version: Optional[str] = None,
+        default_namespace: Optional[str] = None,
+        term_url: str = DEFAULT_TERM_URL,
+        sodar_version: str = SITE_VERSION,
+    ) -> OBOFormatOntology:
         """Create OBOFormatOntology in database"""
         values = {
             'name': name,
@@ -74,16 +75,16 @@ class OBOFormatOntologyModelMixin:
     @classmethod
     def make_obo_term(
         cls,
-        ontology,
-        term_id,
-        name,
-        definition=None,
-        alt_ids=None,
-        synonyms=None,
-        namespace=None,
-        comment=None,
-        is_obsolete=False,
-        replaced_by=None,
+        ontology: OBOFormatOntology,
+        term_id: str,
+        name: str,
+        definition: Optional[str] = None,
+        alt_ids: Optional[list] = None,
+        synonyms: Optional[list] = None,
+        namespace: Optional[str] = None,
+        comment: Optional[str] = None,
+        is_obsolete: bool = False,
+        replaced_by: Optional[str] = None,
     ):
         """Create OBOFormatOntologyTerm in database"""
         values = {

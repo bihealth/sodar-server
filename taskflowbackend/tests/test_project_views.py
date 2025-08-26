@@ -1294,7 +1294,7 @@ class TestProjectInviteAcceptView(ProjectInviteMixin, TaskflowViewTestBase):
 class TestProjectDeleteView(TaskflowViewTestBase):
     """Tests for ProjectDeleteView"""
 
-    def _assert_tl_event(self, count):
+    def _assert_tl_event(self, count: int):
         """Assert timeline event count"""
         tl_events = TimelineEvent.objects.filter(
             app=APP_NAME, event_name='project_delete'

@@ -112,7 +112,7 @@ class CookiecutterISATemplate(models.Model):
 
     # Custom row-level functions
 
-    def get_config_dict(self):
+    def get_config_dict(self) -> OrderedDict:
         """
         Return configuration as ordered dictionary.
 

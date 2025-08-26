@@ -7,6 +7,7 @@ import os
 import pytz
 
 from datetime import timedelta, datetime
+from typing import Optional
 
 from irods.models import TicketQuery
 
@@ -17,7 +18,7 @@ from django.utils import timezone
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.models import SODAR_CONSTANTS
+from projectroles.models import Project, SODARUser, SODAR_CONSTANTS
 from projectroles.plugins import PluginAPI
 
 # Timeline dependency
@@ -195,13 +196,19 @@ class IrodsDataRequestAPIViewTestBase(
     api_version = SAMPLESHEETS_API_DEFAULT_VERSION
 
     # TODO: Retrieve this from a common base/helper class instead of redef
-    def assert_alert_count(self, alert_name, user, count, project=None):
+    def assert_alert_count(
+        self,
+        alert_name: str,
+        user: SODARUser,
+        count: int,
+        project: Optional[Project] = None,
+    ):
         """
         Assert expected app alert count. If project is not specified, default to
         self.project.
 
         :param alert_name: String
-        :param user: User object
+        :param user: SODARUser object
         :param count: Expected count
         :param project: Project object or None
         """
@@ -1057,7 +1064,7 @@ class TestIrodsDataRequestUpdateAPIView(
 ):
     """Tests for IrodsDataRequestUpdateAPIView"""
 
-    def _assert_tl_count(self, count):
+    def _assert_tl_count(self, count: int):
         """Assert timeline TimelineEvent count"""
         self.assertEqual(
             TimelineEvent.objects.filter(

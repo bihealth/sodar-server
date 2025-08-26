@@ -8,11 +8,11 @@ from taskflowbackend.tasks import irods_tasks
 class Flow(BaseLinearFlow):
     """Flow for deleting the project sample sheet in iRODS"""
 
-    def validate(self):
+    def validate(self) -> bool:
         self.required_fields = []
         return super().validate()
 
-    def build(self, force_fail=False):
+    def build(self, force_fail: bool = False):
         sample_path = self.irods_backend.get_sample_path(self.project)
         zone_path = self.irods_backend.get_zone_path(self.project)
 

@@ -13,6 +13,7 @@ Added
 
 - **General**
     - ``pyproject.toml`` configuration file (#2187)
+    - Type hints (#2196)
 - **Landingzones**
     - Project viewer role support (#2200)
 - **Samplesheets**

@@ -11,11 +11,14 @@ import uuid
 
 from base64 import b64decode, b64encode
 from contextlib import contextmanager
+from datetime import datetime
+from typing import Any, Generator, Optional, Union
 
 from irods.api_number import api_number
 from irods.collection import iRODSCollection
 from irods.column import Criterion
 from irods.exception import CollectionDoesNotExist, CAT_NO_ROWS_FOUND
+from django.http import HttpRequest
 from irods.message import TicketAdminRequest, iRODSMessage
 from irods.models import Collection, DataObject, TicketQuery
 from irods.query import SpecificQuery
@@ -23,13 +26,14 @@ from irods.session import iRODSSession
 from irods.ticket import Ticket
 
 from django.conf import settings
+from django.db.models import Model
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.http import urlencode
 from django.utils.text import slugify
 
 # Projectroles dependency
-from projectroles.models import SODAR_CONSTANTS
+from projectroles.models import Project, SODAR_CONSTANTS
 
 
 logger = logging.getLogger(__name__)
@@ -71,13 +75,15 @@ class IrodsAPI:
     class IrodsQueryException(Exception):
         """iRODS query exception"""
 
-    def __init__(self, user_name=None, user_pass=None):
+    def __init__(
+        self, user_name: Optional[str] = None, user_pass: Optional[str] = None
+    ):
         self.user_name = user_name if user_name else settings.IRODS_USER
         self.user_pass = user_pass if user_pass else settings.IRODS_PASS
 
     # Internal functions -------------------------------------------------------
 
-    def _init_irods(self):
+    def _init_irods(self) -> iRODSSession:
         """
         Initialize an iRODS connection.
 
@@ -115,13 +121,14 @@ class IrodsAPI:
             raise ex
 
     @classmethod
-    def _get_datetime(cls, naive_dt, api_format=False):
+    def _get_datetime(cls, naive_dt: datetime, api_format: bool = False) -> str:
         """
         Return a printable datetime in the system timezone from a naive
         datetime object.
 
-        :param naive_dt: Naive DateTime object
+        :param naive_dt: Naive datetime object
         :param api_format: Return in REST API format (bool, default=False)
+        :return: String
         """
         dt = naive_dt.replace(tzinfo=pytz.timezone('GMT'))
         dt = dt.astimezone(timezone.get_default_timezone())
@@ -130,7 +137,7 @@ class IrodsAPI:
         return dt.strftime('%Y-%m-%d %H:%M')
 
     @classmethod
-    def _get_query_alias(cls):
+    def _get_query_alias(cls) -> str:
         """Return a random iCAT SQL query alias"""
         choice = random.SystemRandom().choice(
             string.ascii_lowercase + string.ascii_uppercase
@@ -139,7 +146,9 @@ class IrodsAPI:
         return f'sodar_query_{random_id}'
 
     @classmethod
-    def _send_request(cls, irods, api_id, *args):
+    def _send_request(
+        cls, irods: iRODSSession, api_id: str, *args
+    ) -> iRODSMessage:
         """
         Temporary function for sending a raw API request using
         python-irodsclient.
@@ -147,7 +156,7 @@ class IrodsAPI:
         :param irods: iRODS connection object
         :param api_id: iRODS API ID
         :param *args: Arguments for the request body
-        :return: Response
+        :return: iRODSMessage
         :raise: Exception if iRODS is not initialized
         """
         msg_body = TicketAdminRequest(*args)
@@ -160,7 +169,7 @@ class IrodsAPI:
         return response
 
     @classmethod
-    def _validate_project(cls, project):
+    def _validate_project(cls, project: Project):
         """
         Validate the project parameter for retrieving a project iRODS path.
 
@@ -176,7 +185,7 @@ class IrodsAPI:
     # Helpers ------------------------------------------------------------------
 
     @classmethod
-    def format_env(cls, env):
+    def format_env(cls, env: dict) -> dict:
         """
         Format an iRODS environment dict to ensure values are in a format
         accepted by iRODS.
@@ -190,7 +199,7 @@ class IrodsAPI:
         return env
 
     @classmethod
-    def sanitize_path(cls, path):
+    def sanitize_path(cls, path: str) -> str:
         """
         Validate and sanitize iRODS path.
 
@@ -210,7 +219,9 @@ class IrodsAPI:
         return path
 
     @classmethod
-    def get_sub_path(cls, obj, landing_zone=False, include_parent=True):
+    def get_sub_path(
+        cls, obj: Any, landing_zone: bool = False, include_parent: bool = True
+    ) -> str:
         """
         Get the collection path for a study or assay under the sample data
         collection.
@@ -243,7 +254,7 @@ class IrodsAPI:
         return ret
 
     @classmethod
-    def get_path(cls, obj):
+    def get_path(cls, obj: Model) -> str:
         """
         Return the iRODS path for for a SODAR database object.
 
@@ -301,7 +312,7 @@ class IrodsAPI:
         return path
 
     @classmethod
-    def get_sample_path(cls, project):
+    def get_sample_path(cls, project: Project) -> str:
         """
         Return the iRODS path for project sample data.
 
@@ -314,7 +325,7 @@ class IrodsAPI:
         return os.path.join(cls.get_path(project), settings.IRODS_SAMPLE_COLL)
 
     @classmethod
-    def get_zone_path(cls, project):
+    def get_zone_path(cls, project: Project) -> str:
         """
         Return the iRODS path for project landing zones.
 
@@ -327,7 +338,7 @@ class IrodsAPI:
         return cls.get_path(project) + '/' + settings.IRODS_LANDING_ZONE_COLL
 
     @classmethod
-    def get_root_path(cls):
+    def get_root_path(cls) -> str:
         """Return the SODAR root path in iRODS"""
         irods_zone = settings.IRODS_ZONE
         root_path = ''
@@ -340,17 +351,17 @@ class IrodsAPI:
         return f'/{irods_zone}{root_path}'
 
     @classmethod
-    def get_projects_path(cls):
+    def get_projects_path(cls) -> str:
         """Return the SODAR projects collection path"""
         return cls.get_root_path() + '/projects'
 
     @classmethod
-    def get_trash_path(cls):
+    def get_trash_path(cls) -> str:
         """Return the trash path in the current zone"""
         return '/' + os.path.join(settings.IRODS_ZONE, TRASH_COLL_NAME)
 
     @classmethod
-    def get_uuid_from_path(cls, path, obj_type):
+    def get_uuid_from_path(cls, path: str, obj_type: str) -> Optional[str]:
         """
         Return project, study or assay UUID from iRODS path or None if not
         found.
@@ -374,7 +385,7 @@ class IrodsAPI:
             return s.group(1)
 
     @classmethod
-    def get_group_name(cls, project, owner=False):
+    def get_group_name(cls, project: Project, owner: bool = False) -> str:
         """
         Return iRODS user group name for project.
 
@@ -395,14 +406,14 @@ class IrodsAPI:
     @classmethod
     def get_url(
         cls,
-        view,
-        project=None,
-        path='',
-        colls=False,
-        method='GET',
-        absolute=False,
-        request=None,
-    ):
+        view: str,
+        project: Optional[Project] = None,
+        path: str = '',
+        colls: bool = False,
+        method: str = 'GET',
+        absolute: bool = False,
+        request: HttpRequest = None,
+    ) -> str:
         """
         Get the list or stats URL for an iRODS path.
 
@@ -434,7 +445,7 @@ class IrodsAPI:
         return rev_url
 
     @classmethod
-    def get_checksum_file_suffix(cls):
+    def get_checksum_file_suffix(cls) -> str:
         """
         Return checksum file suffix according to site settings.
 
@@ -444,7 +455,7 @@ class IrodsAPI:
         return '.' + settings.IRODS_HASH_SCHEME.lower()
 
     @classmethod
-    def get_sha256_base64(cls, hex_str, prefix=True):
+    def get_sha256_base64(cls, hex_str: str, prefix: bool = True) -> str:
         """
         Convert SHA256 checksum from hex into base64 as stored in iRODS.
 
@@ -456,7 +467,7 @@ class IrodsAPI:
         return (IRODS_SHA256_PREFIX + ret) if prefix else ret
 
     @classmethod
-    def get_sha256_hex(cls, base64_str):
+    def get_sha256_hex(cls, base64_str: str) -> str:
         """
         Convert SHA256 checksum base64 from into hex. Strips "sha2:" prefix if
         present.
@@ -471,7 +482,7 @@ class IrodsAPI:
     # iRODS Operations ---------------------------------------------------------
 
     @contextmanager
-    def get_session(self):
+    def get_session(self) -> Generator[iRODSSession, Any, None]:
         """
         Return the iRODS session object for direct API access as a generator.
         Use with the "with" keyword to ensure connection cleanup.
@@ -484,7 +495,7 @@ class IrodsAPI:
         finally:
             irods.cleanup()
 
-    def get_session_obj(self):
+    def get_session_obj(self) -> iRODSSession:
         """
         Return the iRODS session object for direct API access.
         NOTE: Connection needs to be manually closed with cleanup()! If
@@ -495,7 +506,7 @@ class IrodsAPI:
         return self._init_irods()
 
     @classmethod
-    def get_info(cls, irods):
+    def get_info(cls, irods: iRODSSession) -> dict:
         """
         Return iRODS server info.
 
@@ -515,7 +526,7 @@ class IrodsAPI:
         }
 
     @classmethod
-    def get_version(cls, irods):
+    def get_version(cls, irods: iRODSSession) -> str:
         """
         Return the version of the iRODS server SODAR is connected to.
 
@@ -524,7 +535,9 @@ class IrodsAPI:
         """
         return '.'.join(str(x) for x in irods.server_version)
 
-    def get_stats(self, irods, path, include_colls=False):
+    def get_stats(
+        self, irods: iRODSSession, path: str, include_colls: bool = False
+    ) -> dict:
         """
         Return file count, total file size and optional subcollection count
         within an iRODS path.
@@ -582,13 +595,15 @@ class IrodsAPI:
         return ret
 
     @classmethod
-    def get_colls_recursively(cls, coll):
+    def get_colls_recursively(
+        cls, coll: iRODSCollection
+    ) -> list[iRODSCollection]:
         """
         Return all subcollections for a coll efficiently (without multiple
         queries).
 
         :param coll: Collection object
-        :return: List
+        :return: List of Collection objects
         """
         query = coll.manager.sess.query(Collection).filter(
             Criterion('like', Collection.parent_name, coll.path + '%')
@@ -597,22 +612,22 @@ class IrodsAPI:
 
     def get_objs_recursively(
         self,
-        irods,
-        coll,
-        include_checksum=False,
-        name_like=None,
-        limit=None,
-        offset=None,
-        api_format=False,
-        checksum=False,
-    ):
+        irods: iRODSSession,
+        coll: iRODSCollection,
+        include_checksum: bool = False,
+        name_like: Union[list[str], str, None] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+        api_format: bool = False,
+        checksum: bool = False,
+    ) -> list[dict]:
         """
         Return objects below a coll recursively. Replacement for the
         non-scalable walk() function in the API. Also gets around the query
         length limitation in iRODS.
 
         :param irods: iRODSSession object
-        :param coll: Collection object
+        :param coll: iRODSCollection object
         :param include_checksum: if True, include .md5/.sha256 files
         :param name_like: Filtering of file names (string or list of strings)
         :param limit: Limit retrieval to N rows (int or None)
@@ -713,16 +728,16 @@ class IrodsAPI:
 
     def get_objects(
         self,
-        irods,
-        path,
-        include_checksum=False,
-        include_colls=False,
-        name_like=None,
-        limit=None,
-        offset=None,
-        api_format=False,
-        checksum=False,
-    ):
+        irods: iRODSSession,
+        path: str,
+        include_checksum: bool = False,
+        include_colls: bool = False,
+        name_like: Union[list[str], str, None] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+        api_format: bool = False,
+        checksum: bool = False,
+    ) -> list[dict]:
         """
         Return a flat iRODS object list recursively under a given path.
 
@@ -772,14 +787,16 @@ class IrodsAPI:
         return ret
 
     @classmethod
-    def get_child_colls(cls, irods, path):
+    def get_child_colls(
+        cls, irods: iRODSSession, path: str
+    ) -> list[iRODSCollection]:
         """
         Return child collections for a collection by path. Does not return
         children recursively.
 
         :param irods: iRODSSession object
         :param path: Full path to iRODS collection
-        :return: List
+        :return: List of iRODSCollection objects
         """
         try:
             coll = irods.collections.get(cls.sanitize_path(path))
@@ -787,7 +804,13 @@ class IrodsAPI:
         except CollectionDoesNotExist:
             return []
 
-    def get_query(self, irods, sql, columns=None, register=True):
+    def get_query(
+        self,
+        irods: iRODSSession,
+        sql: str,
+        columns: Optional[list] = None,
+        register: bool = True,
+    ) -> SpecificQuery:
         """
         Return a SpecificQuery object with a standard query alias. If
         registered, should be removed with remove() after use.
@@ -805,13 +828,13 @@ class IrodsAPI:
 
     def issue_ticket(
         self,
-        irods,
-        mode,
-        path,
-        ticket_str=None,
-        date_expires=None,
-        allowed_hosts=None,
-    ):
+        irods: iRODSSession,
+        mode: str,
+        path: str,
+        ticket_str: Optional[str] = None,
+        date_expires: Optional[datetime] = None,
+        allowed_hosts: Union[list, str, None] = None,
+    ) -> Ticket:
         """
         Issue ticket for a specific iRODS collection or data object.
 
@@ -869,7 +892,11 @@ class IrodsAPI:
         return ticket
 
     def update_ticket(
-        self, irods, ticket_str, date_expires=None, allowed_hosts=None
+        self,
+        irods: iRODSSession,
+        ticket_str: str,
+        date_expires: Optional[datetime] = None,
+        allowed_hosts: Union[list, str, None] = None,
     ):
         """
         Update ticket in iRODS. Allows updating the expiry date and allowed
@@ -931,7 +958,9 @@ class IrodsAPI:
                     host,
                 )
 
-    def get_ticket(self, irods, ticket_str):
+    def get_ticket(
+        self, irods: iRODSSession, ticket_str: str
+    ) -> Optional[Ticket]:
         """
         Get ticket from iRODS.
 
@@ -947,7 +976,7 @@ class IrodsAPI:
             return Ticket(ticket_res[0])
         return None
 
-    def delete_ticket(self, irods, ticket_str):
+    def delete_ticket(self, irods: iRODSSession, ticket_str: str):
         """
         Delete ticket.
 

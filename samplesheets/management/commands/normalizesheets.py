@@ -42,8 +42,15 @@ class Command(SheetVersionMixin, BaseCommand):
         'creates a backup ISA-Tab version of the normalized sheets.'
     )
 
-    def _update_database(self, investigation, check):
-        """Update the sample sheets database model"""
+    @classmethod
+    def _update_database(cls, investigation: Investigation, check: bool) -> int:
+        """
+        Update the samplesheets database model.
+
+        :param investigation: Investigation object
+        :param check: Do not alter databse if True (bool)
+        :return: Updated materials count (int)
+        """
 
         def _update_materials(materials, check):
             """Update materials and return update count"""
@@ -70,8 +77,15 @@ class Command(SheetVersionMixin, BaseCommand):
         )
         return m_count
 
-    def _update_study_tables(self, project, check):
-        """Update cached study render tables"""
+    @classmethod
+    def _update_study_tables(cls, project: Project, check: bool):
+        """
+        Update cached study render tables.
+
+        :param project: Project object
+        :param check: Do not alter databse if True (bool)
+        :return: Affected top header count (int)
+        """
         inv = Investigation.objects.filter(project=project, active=True).first()
         if not inv:
             return

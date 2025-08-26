@@ -12,12 +12,12 @@ PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
 class Flow(BaseLinearFlow):
     """Flow for updating a project. Modifies project metadata and users."""
 
-    def validate(self):
+    def validate(self) -> bool:
         self.required_fields = []
         self.require_lock = False  # Project lock not required for this flow
         return super().validate()
 
-    def build(self, force_fail=False):
+    def build(self, force_fail: bool = False):
         project_path = self.irods_backend.get_path(self.project)
         project_group = self.irods_backend.get_group_name(self.project)
         owner_group = self.irods_backend.get_group_name(self.project, True)

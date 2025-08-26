@@ -5,7 +5,7 @@ from taskflow.patterns import linear_flow as lf
 
 from django.conf import settings
 
-from taskflowbackend.tasks.base_task import ForceFailException
+from taskflowbackend.tasks.base_task import BaseTask, ForceFailException
 
 
 logger = logging.getLogger('taskflowbackend.flows')
@@ -36,7 +36,7 @@ class BaseLinearFlow:
         self.require_lock = True  # Require project lock by default
         self.flow = lf.Flow(flow_name)
 
-    def validate(self):
+    def validate(self) -> bool:
         """
         Method for validating flow parameters. Returns True/False based on
         validation success. Add required kwargs in the flow implementation and
@@ -49,14 +49,16 @@ class BaseLinearFlow:
                 raise TypeError(f'Missing or invalid argument: "{k}"')
         return True
 
-    def add_task(self, task):
+    def add_task(self, task: BaseTask):
         """Add task into the flow"""
         self.flow.add(task)
 
-    def build(self, force_fail=False):
+    def build(self, force_fail: bool = False):
         """
         Build linear flow to be executed for one project. Override this in
         the flow implementation.
+
+        :param force_fail: Force failure of flow for testing if True (bool)
         """
         # Add tasks to self.flow here with self.flow.add()
         # Add force_fail=force_fail to last add() for testing rollback
@@ -64,10 +66,13 @@ class BaseLinearFlow:
         logger.error(msg)
         raise NotImplementedError(msg)
 
-    def run(self, verbose=True):
+    def run(self, verbose: bool = True) -> bool:
         """
         Run the flow. Returns True or False depending on success. If False,
         the flow was rolled back. Also handle project locking and unlocking.
+
+        :param verbose: Enable verbose logging (bool)
+        :return: Bool
         """
         if verbose:
             logger.info(f'Running flow "{self.flow.name}"')

@@ -1,8 +1,11 @@
 """Assay app plugin for samplesheets"""
 
-# Projectroles dependency
-from projectroles.models import SODAR_CONSTANTS
+from typing import Optional
 
+# Projectroles dependency
+from projectroles.models import SODARUser, SODAR_CONSTANTS
+
+from samplesheets.models import Assay
 from samplesheets.plugins import SampleSheetAssayPluginPoint
 from samplesheets.utils import get_last_material_name
 
@@ -62,7 +65,9 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
     #: Toggle displaying of row-based iRODS links in the assay table
     display_row_links = True
 
-    def get_row_path(self, row, table, assay, assay_path):
+    def get_row_path(
+        self, row: list[dict], table: dict, assay: Assay, assay_path: str
+    ) -> Optional[str]:
         """
         Return iRODS path for an assay row in a sample sheet. If None,
         display default path.
@@ -80,7 +85,9 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             return assay_path + '/' + last_material_name
         return None
 
-    def update_row(self, row, table, assay, index):
+    def update_row(
+        self, row: list[dict], table: dict, assay: Assay, index: int
+    ) -> list[dict]:
         """
         Update render table row with e.g. links. Return the modified row.
 
@@ -92,7 +99,12 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         """
         return row
 
-    def update_cache(self, name=None, project=None, user=None):
+    def update_cache(
+        self,
+        name: Optional[str] = None,
+        project: Optional[str] = None,
+        user: Optional[SODARUser] = None,
+    ):
         """
         Update cached data for this app, limitable to item ID and/or project.
 

@@ -1,4 +1,9 @@
+"""Base task class for Taskflow"""
+
 import logging
+
+from typing import Optional
+
 from taskflow import task
 
 
@@ -13,7 +18,13 @@ class BaseTask(task.Task):
     """Common base task"""
 
     def __init__(
-        self, name, force_fail=False, verbose=True, inject=None, *args, **kwargs
+        self,
+        name: str,
+        force_fail: bool = False,
+        verbose: bool = True,
+        inject: Optional[dict] = None,
+        *args,
+        **kwargs,
     ):
         super().__init__(name, inject=inject)
         self.name = name

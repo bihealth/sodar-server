@@ -1000,7 +1000,7 @@ class TestIrodsDataRequestDestroyAPIView(
 ):
     """Tests for IrodsDataRequestDestroyAPIView"""
 
-    def _assert_tl_count(self, count):
+    def _assert_tl_count(self, count: int):
         """Assert timeline TimelineEvent count"""
         self.assertEqual(
             TimelineEvent.objects.filter(

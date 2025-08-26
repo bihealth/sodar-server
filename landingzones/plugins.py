@@ -2,12 +2,20 @@
 
 import logging
 
+from typing import Optional, Union
+from uuid import UUID
+
 from django.urls import reverse
 
 from djangoplugins.point import PluginPoint
 
 # Projectroles dependency
-from projectroles.models import SODAR_CONSTANTS, ROLE_RANKING
+from projectroles.models import (
+    Project,
+    SODARUser,
+    SODAR_CONSTANTS,
+    ROLE_RANKING,
+)
 from projectroles.plugins import (
     ProjectAppPluginPoint,
     ProjectModifyPluginMixin,
@@ -189,7 +197,9 @@ class ProjectAppPlugin(
     #: Names of plugin specific Django settings to display in siteinfo
     info_settings = LANDINGZONES_INFO_SETTINGS
 
-    def get_object_link(self, model_str, uuid):
+    def get_object_link(
+        self, model_str: str, uuid: Union[str, UUID]
+    ) -> Optional[PluginObjectLink]:
         """
         Return URL referring to an object used by the app, along with a name to
         be shown to the user for linking.
@@ -216,7 +226,7 @@ class ProjectAppPlugin(
                 url=obj.get_url(), name=obj.get_display_name()
             )
 
-    def get_statistics(self):
+    def get_statistics(self) -> dict:
         """
         Return app statistics as a dict. Should take the form of
         {id: {label, value, url (optional), description (optional)}}.
@@ -253,7 +263,9 @@ class ProjectAppPlugin(
             },
         }
 
-    def get_project_list_value(self, column_id, project, user):
+    def get_project_list_value(
+        self, column_id: str, project: Project, user: SODARUser
+    ) -> Union[str, int, None]:
         """
         Return a value for the optional additional project list column specific
         to a project.
@@ -304,7 +316,7 @@ class ProjectAppPlugin(
             return LZ_PROJECT_COL_CREATE.format(url=url)
         return LZ_PROJECT_COL_NO_ZONES
 
-    def perform_project_sync(self, project):
+    def perform_project_sync(self, project: Project):
         """
         Synchronize existing projects to ensure related data exists when the
         syncmodifyapi management comment is called. Should mostly be used in
@@ -386,7 +398,7 @@ class LandingZoneConfigPluginPoint(PluginPoint):
     permission = None
 
     # TODO: Implement this in your config plugin if needed
-    def cleanup_zone(self, zone):
+    def cleanup_zone(self, zone: LandingZone):
         """
         Perform actions before landing zone deletion.
 
@@ -395,7 +407,9 @@ class LandingZoneConfigPluginPoint(PluginPoint):
         pass
 
     # TODO: Implement this in your config plugin if needed
-    def get_extra_flow_data(self, zone, flow_name):
+    def get_extra_flow_data(
+        self, zone: LandingZone, flow_name: str
+    ) -> Optional[dict]:
         """
         Return extra zone data parameters.
 
@@ -406,7 +420,9 @@ class LandingZoneConfigPluginPoint(PluginPoint):
         pass
 
 
-def get_zone_config_plugin(zone):
+def get_zone_config_plugin(
+    zone: LandingZone,
+) -> Optional[LandingZoneConfigPluginPoint]:
     """
     Return active landing zone configuration plugin.
 

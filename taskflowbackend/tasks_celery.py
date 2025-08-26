@@ -14,10 +14,10 @@ plugin_api = PluginAPI()
 @app.task(bind=True)
 def submit_flow_task(
     _self,
-    project_uuid,
-    flow_name,
-    flow_data,
-    tl_uuid,
+    project_uuid: str,
+    flow_name: str,
+    flow_data: dict,
+    tl_uuid: str,
 ):
     irods_backend = plugin_api.get_backend_api('omics_irods')
     taskflow = plugin_api.get_backend_api('taskflow')

@@ -11,13 +11,13 @@ from django.utils.text import slugify
 SUFFIX_CLEAN_RE = re.compile(r'\A\W+|\W+\Z')
 
 
-def get_zone_title(suffix):
+def get_zone_title(suffix: str) -> str:
     """Return the full title for a landing zone based on a suffix"""
     title = dt.now().strftime('%Y%m%d_%H%M%S')
     return title + '_' + slugify(suffix).replace('-', '_') if suffix else title
 
 
-def cleanup_file_prohibit(prohibit_val):
+def cleanup_file_prohibit(prohibit_val: str) -> list[str]:
     """
     Return cleaned up file_name_prohibit setting value.
 

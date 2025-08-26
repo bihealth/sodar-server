@@ -138,7 +138,7 @@ class TestProjectZoneView(LandingzonesPermissionTestBase):
 class TestZoneCreateView(LandingzonesPermissionTestBase):
     """Tests for ZoneCreateView permissions"""
 
-    def _set_up_investigation(self, colls=False):
+    def _set_up_investigation(self, colls: bool = False):
         """set up investigation and optional iRODS colls"""
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         if colls:

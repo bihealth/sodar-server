@@ -25,7 +25,7 @@ class OBOOntologyTermMixin:
     """Mixin for OBOFormatOntologyTerm helpers"""
 
     @classmethod
-    def get_term_dict(cls, term):
+    def get_term_dict(cls, term: OBOFormatOntologyTerm) -> dict:
         """
         Return term dictionary.
         TODO: Replace with a serializer if we ever do standardized API views
@@ -111,10 +111,8 @@ class OBOTermQueryAjaxView(OBOOntologyTermMixin, SODARBasePermissionAjaxView):
                 f'search to see all results.'
             )
             ret_data['detail_type'] = 'warning'
-
         for t in terms[:query_limit]:
             ret_data['terms'].append(self.get_term_dict(t))
-
         # logger.debug(f'Return data: {json.dumps(ret_data)}')
         return Response(ret_data, status=200)
 
@@ -135,5 +133,4 @@ class OBOTermListAjaxView(OBOOntologyTermMixin, SODARBasePermissionAjaxView):
         terms = OBOFormatOntologyTerm.objects.filter(q_list)
         for t in terms:
             ret_data['terms'].append(self.get_term_dict(t))
-
         return Response(ret_data, status=200)

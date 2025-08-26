@@ -2,13 +2,23 @@
 
 import logging
 
+from typing import Optional
+
 from irods.exception import GroupDoesNotExist
 
 from django.contrib.auth import get_user_model
+from django.http import HttpRequest
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.models import RoleAssignment, SODAR_CONSTANTS, ROLE_RANKING
+from projectroles.models import (
+    Project,
+    Role,
+    RoleAssignment,
+    SODARUser,
+    SODAR_CONSTANTS,
+    ROLE_RANKING,
+)
 from projectroles.plugins import (
     BackendPluginPoint,
     ProjectModifyPluginMixin,
@@ -69,7 +79,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
     # Internal helpers ---------------------------------------------------------
 
     @classmethod
-    def _get_child_projects(cls, project):
+    def _get_child_projects(cls, project: Project):
         """
         Return category children of type PROJECT.
 
@@ -88,12 +98,12 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
 
     def perform_project_modify(
         self,
-        project,
-        action,
-        project_settings,
-        old_data=None,
-        old_settings=None,
-        request=None,
+        project: Project,
+        action: str,
+        project_settings: dict,
+        old_data: Optional[dict] = None,
+        old_settings: Optional[dict] = None,
+        request: Optional[HttpRequest] = None,
         **kwargs,
     ):
         """
@@ -203,12 +213,12 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
 
     def revert_project_modify(
         self,
-        project,
-        action,
-        project_settings,
-        old_data=None,
-        old_settings=None,
-        request=None,
+        project: Project,
+        action: str,
+        project_settings: dict,
+        old_data: Optional[dict] = None,
+        old_settings: Optional[dict] = None,
+        request: Optional[HttpRequest] = None,
     ):
         """
         Revert project creation or update if errors have occurred in other apps.
@@ -257,7 +267,13 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                 status_type=timeline.TL_STATUS_OK,
             )
 
-    def perform_role_modify(self, role_as, action, old_role=None, request=None):
+    def perform_role_modify(
+        self,
+        role_as: RoleAssignment,
+        action: str,
+        old_role: Optional[Role] = None,
+        request: Optional[HttpRequest] = None,
+    ):
         """
         Perform additional actions to finalize role assignment creation or
         update.
@@ -350,7 +366,13 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
             )
             tl_event.add_object(obj=user, label='user', name=user.username)
 
-    def revert_role_modify(self, role_as, action, old_role=None, request=None):
+    def revert_role_modify(
+        self,
+        role_as: RoleAssignment,
+        action: str,
+        old_role: Optional[Role] = None,
+        request: Optional[HttpRequest] = None,
+    ):
         """
         Revert role assignment creation or update if errors have occurred in
         other apps.
@@ -446,7 +468,11 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
             )
             tl_event.add_object(user, 'user', user_name)
 
-    def perform_role_delete(self, role_as, request=None):
+    def perform_role_delete(
+        self,
+        role_as: RoleAssignment,
+        request: Optional[HttpRequest] = None,
+    ):
         """
         Perform additional actions to finalize role assignment deletion.
 
@@ -523,7 +549,11 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
             )
             tl_event.add_object(obj=user, label='user', name=user_name)
 
-    def revert_role_delete(self, role_as, request=None):
+    def revert_role_delete(
+        self,
+        role_as: RoleAssignment,
+        request: Optional[HttpRequest] = None,
+    ):
         """
         Revert role assignment deletion deletion if errors have occurred in
         other apps.
@@ -591,7 +621,12 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
             tl_event.add_object(role_as.user, 'user', user_name)
 
     def perform_owner_transfer(
-        self, project, new_owner, old_owner, old_owner_role=None, request=None
+        self,
+        project: Project,
+        new_owner: SODARUser,
+        old_owner: SODARUser,
+        old_owner_role: Optional[Role] = None,
+        request: Optional[HttpRequest] = None,
     ):
         """
         Perform additional actions to finalize project ownership transfer.
@@ -667,7 +702,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
     # NOTE: revert_owner_transfer() not needed at the moment
     # (No other plugin gets called after taskflowbackend)
 
-    def perform_project_sync(self, project):
+    def perform_project_sync(self, project: Project):
         """
         Synchronize existing projects to ensure related data exists when the
         syncmodifyapi management comment is called. Should mostly be used in
@@ -716,7 +751,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                 flow_data=flow_data,
             )
 
-    def perform_project_delete(self, project):
+    def perform_project_delete(self, project: Project):
         """
         Perform additional actions to finalize project deletion.
 

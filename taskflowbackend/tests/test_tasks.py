@@ -2,6 +2,7 @@
 
 import uuid
 
+from irods.access import iRODSAccess
 from irods.collection import iRODSCollection
 from irods.data_object import iRODSDataObject
 from irods.exception import CollectionDoesNotExist, DataObjectDoesNotExist
@@ -102,10 +103,10 @@ class TaskTestMixin:
     irods_backend = None
     project = None
 
-    def run_flow(self):
+    def run_flow(self) -> bool:
         return self.flow.run(verbose=False)
 
-    def init_flow(self):
+    def init_flow(self) -> BaseLinearFlow:
         return BaseLinearFlow(
             irods_backend=self.irods_backend,
             project=self.project,
@@ -117,7 +118,13 @@ class TaskTestMixin:
 class IRODSTaskTestBase(TaskTestMixin, TaskflowViewTestBase):
     """Base test class for iRODS tasks"""
 
-    def add_task(self, cls, name, inject, force_fail=False):
+    def add_task(
+        self,
+        cls: Any,
+        name: str,
+        inject: Optional[dict],
+        force_fail: bool = False,
+    ):
         """Add task based on IrodsBaseTask"""
         self.flow.add_task(
             cls(
@@ -129,10 +136,12 @@ class IRODSTaskTestBase(TaskTestMixin, TaskflowViewTestBase):
             )
         )
 
-    def get_test_coll(self):
+    def get_test_coll(self) -> iRODSCollection:
         return self.irods.collections.get(self.test_coll_path)
 
-    def get_user_access(self, target, user_name):
+    def get_user_access(
+        self, target: iRODSCollection, user_name: str
+    ) -> Optional[iRODSAccess]:
         target_access = self.irods.acls.get(target=target)
         return next(
             (x for x in target_access if x.user_name == user_name), None
@@ -1076,7 +1085,9 @@ class TestSetAccessTask(IRODSTaskTestBase):
 class TestCleanupAccessTask(IRODSTaskTestBase):
     """Tests for CleanupccessTask"""
 
-    def set_irods_access(self, path, user_name, access, recursive=True):
+    def set_irods_access(
+        self, path: str, user_name: str, access: str, recursive: bool = True
+    ):
         """Set iRODS access"""
         if recursive and self.irods.data_objects.exists(path):
             recursive = False
@@ -2908,7 +2919,13 @@ class TestTimelineEventExtraDataUpdateTask(
 ):
     """Tests for TimelineEventExtraDataUpdateTask"""
 
-    def add_task(self, cls, name, inject, force_fail=False):
+    def add_task(
+        self,
+        cls: Any,
+        name: str,
+        inject: Optional[dict],
+        force_fail: bool = False,
+    ):
         """Add task based on SODARBaseTask"""
         self.flow.add_task(
             cls(

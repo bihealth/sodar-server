@@ -4,8 +4,13 @@ import re
 import sys
 
 from itertools import chain
+from typing import Optional
+
+from irods.models import Collection
+from irods.session import iRODSSession
 
 from django.core.management.base import BaseCommand
+from django.db.models import QuerySet
 from django.template.defaultfilters import filesizeformat
 
 # Projectroles dependency
@@ -42,12 +47,22 @@ class Command(BaseCommand):
         super().__init__()
         self.irods_backend = plugin_api.get_backend_api('omics_irods')
 
-    def _get_assay_collections(self, assays):
-        """Return a list of all assay collection names."""
+    def _get_assay_collections(self, assays: QuerySet) -> list[str]:
+        """
+        Return a list of all assay collection names.
+
+        :param assays: QuerySet of Assay objects
+        :return: List of strings
+        """
         return [self.irods_backend.get_path(a) for a in assays]
 
-    def _get_assay_subcollections(self, studies):
-        """Return a list of all assay row collection names."""
+    def _get_assay_subcollections(self, studies: QuerySet) -> list[str]:
+        """
+        Return a list of all assay row collection names.
+
+        :param studies: QuerySet of Study objects
+        :return: List of strings
+        """
         collections = []
         for study in studies:
             try:
@@ -89,14 +104,21 @@ class Command(BaseCommand):
                     collections.append(assay_path + '/' + MISC_FILES_COLL)
         return collections
 
-    def _get_study_collections(self, studies):
-        """Return a list of all study collection names."""
+    def _get_study_collections(self, studies: QuerySet) -> list[str]:
+        """
+        Return a list of all study collection names.
+
+        :param studies: QuerySet of Study objects
+        :return: List of strings
+        """
         return [self.irods_backend.get_path(s) for s in studies]
 
-    def _get_zone_collections(self):
+    def _get_zone_collections(self) -> list[str]:
         """
         Return a list of all landing zone collection names that are not MOVED or
         DELETED.
+
+        :return: List of strings
         """
         return [
             self.irods_backend.get_path(lz)
@@ -105,17 +127,24 @@ class Command(BaseCommand):
             )
         ]
 
-    def _get_project_collections(self):
-        """Return a list of all study collection names."""
+    def _get_project_collections(self) -> list[str]:
+        """
+        Return a list of all study collection names.
+
+        :return: List of strings
+        """
         return [
             self.irods_backend.get_path(p)
             for p in Project.objects.all().order_by('full_title')
         ]
 
-    def _is_zone(self, collection):
+    def _is_zone(self, collection: Collection) -> Optional[re.Match[str]]:
         """
         Check if a given collection matches the format of path to a landing zone
         collection.
+
+        :param collection: Collection object
+        :return: Match or None
         """
         projects_path = self.irods_backend.get_projects_path()
         pattern = (
@@ -128,10 +157,15 @@ class Command(BaseCommand):
             r'^\d{8}_\d{6}', collection.name
         )
 
-    def _is_assay_or_study(self, collection):
+    def _is_assay_or_study(
+        self, collection: Collection
+    ) -> Optional[re.Match[str]]:
         """
         Check if a given collection matches the format of path to a study or
         assay collection.
+
+        :param collection: Collection object
+        :return: Match or None
         """
         projects_path = self.irods_backend.get_projects_path()
         pattern = (
@@ -142,10 +176,15 @@ class Command(BaseCommand):
         )
         return re.search(pattern, collection.path)
 
-    def _is_assay_orphan(self, collection):
+    def _is_assay_orphan(
+        self, collection: Collection
+    ) -> Optional[re.Match[str]]:
         """
         Check if a given collection matches the format of path to a study or
         assay orphan.
+
+        :param collection: Collection object
+        :return: Match or None
         """
         projects_path = self.irods_backend.get_projects_path()
         pattern = (
@@ -156,10 +195,17 @@ class Command(BaseCommand):
         )
         return re.search(pattern, collection.path)
 
-    def _is_project(self, projects_path, collection):
+    @classmethod
+    def _is_project(
+        cls, projects_path: str, collection: Collection
+    ) -> Optional[re.Match[str]]:
         """
         Check if a given collection matches the format of path to a project
         collection under the projects path.
+
+        :param projects_path: String
+        :param collection: Collection object
+        :return: Match or None
         """
         pattern = (
             r'^'
@@ -168,8 +214,15 @@ class Command(BaseCommand):
         )
         return re.search(r'{}'.format(pattern), collection.path)
 
-    def _sort_colls_on_projects(self, collections):
-        """Helper function to sort collections based on project list"""
+    def _sort_colls_on_projects(
+        self, collections: list[Collection]
+    ) -> list[Collection]:
+        """
+        Return list of sorted collections based on project list.
+
+        :param collections: List of Collection objects
+        :return: List of Collection objects
+        """
         colls_with_project = []
         colls_no_project = []
         temp_paths = []
@@ -223,19 +276,25 @@ class Command(BaseCommand):
         )
         return sorted_colls + colls_no_project
 
-    def _get_orphans(self, irods, expected, assays):
+    def _get_orphans(
+        self, irods: iRODSSession, expected: list[str], assays: list[Assay]
+    ):
         """
-        Return a list of orphans in a given irods session that are not in a given
+        Return a list of orphans in a given irods session that are not in given
         list of expected collections.
+
+        :param irods: iRODSSession object
+        :param expected: List of strings
+        :param assays: List of Assay objects
         """
         # Get a sorted list of all project collections
-        project_collections = sorted(
+        project_colls = sorted(
             self.irods_backend.get_colls_recursively(
                 irods.collections.get(f'/{irods.zone}/projects')
             ),
             key=lambda coll: coll.path,
         )
-        assay_collections = list(
+        assay_colls = list(
             chain.from_iterable(
                 self.irods_backend.get_child_colls(
                     irods, self.irods_backend.get_path(a)
@@ -244,11 +303,11 @@ class Command(BaseCommand):
                 if a.get_plugin()
             )
         )
-        assay_coll_paths = [coll.path for coll in assay_collections]
+        assay_coll_paths = [coll.path for coll in assay_colls]
 
         # Sort collections by project full_title
         sorted_collections = self._sort_colls_on_projects(
-            project_collections + assay_collections
+            project_colls + assay_colls
         )
 
         projects_path = self.irods_backend.get_projects_path()

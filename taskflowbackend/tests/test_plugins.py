@@ -7,7 +7,7 @@ from django.test import RequestFactory
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.models import RoleAssignment, SODAR_CONSTANTS
+from projectroles.models import Project, RoleAssignment, SODAR_CONSTANTS
 from projectroles.plugins import BackendPluginPoint, PluginAPI
 
 # Irodsbackend dependency
@@ -34,7 +34,7 @@ APP_SETTING_SCOPE_PROJECT = SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT']
 class ModifyAPITaskflowTestBase(TaskflowViewTestBase):
     """Base class for project modify API tests"""
 
-    def _make_project_tf(self):
+    def _make_project_tf(self) -> Project:
         project, _ = self.make_project_taskflow(
             'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
         )

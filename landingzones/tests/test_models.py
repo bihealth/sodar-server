@@ -1,11 +1,13 @@
 """Tests for models in the landingzones app"""
 
+from typing import Optional
+
 from django.forms.models import model_to_dict
 
 from test_plus.test import TestCase
 
 # Projectroles dependency
-from projectroles.models import SODAR_CONSTANTS
+from projectroles.models import Project, SODARUser, SODAR_CONSTANTS
 from projectroles.tests.test_models import (
     ProjectMixin,
     RoleMixin,
@@ -13,6 +15,7 @@ from projectroles.tests.test_models import (
 )
 
 # Samplesheets dependency
+from samplesheets.models import Assay
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
 from landingzones.constants import (
@@ -49,16 +52,16 @@ class LandingZoneMixin:
     @classmethod
     def make_landing_zone(
         cls,
-        title,
-        project,
-        user,
-        assay,
-        description='',
-        user_message='',
-        status=ZONE_STATUS_CREATING,
-        configuration=None,
-        config_data={},
-    ):
+        title: str,
+        project: Project,
+        user: SODARUser,
+        assay: Assay,
+        description: str = '',
+        user_message: str = '',
+        status: str = ZONE_STATUS_CREATING,
+        configuration: Optional[str] = None,
+        config_data: dict = {},
+    ) -> LandingZone:
         values = {
             'title': title,
             'project': project,
@@ -71,9 +74,7 @@ class LandingZoneMixin:
             'configuration': configuration,
             'config_data': config_data,
         }
-        result = LandingZone(**values)
-        result.save()
-        return result
+        return LandingZone.objects.create(**values)
 
 
 class TestLandingZone(

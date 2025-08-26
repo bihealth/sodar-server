@@ -1,7 +1,14 @@
 """iRODS utilities for the taskflowbackend app"""
 
+from typing import Optional
 
-def get_flow_role(project, user, role_rank=None):
+# Projectroles dependency
+from projectroles.models import Project, SODARUser
+
+
+def get_flow_role(
+    project: Project, user: SODARUser, role_rank: Optional[int] = None
+) -> dict:
     """
     Return role dict for taskflows performing role modification.
 

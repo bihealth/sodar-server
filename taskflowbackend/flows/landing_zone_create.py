@@ -12,13 +12,13 @@ import landingzones.tasks_taskflow as lz_tasks
 class Flow(BaseLinearFlow):
     """Flow for creating a landing zone for an assay and a user in iRODS"""
 
-    def validate(self):
+    def validate(self) -> bool:
         self.require_lock = False  # Project lock not required for this flow
         self.required_fields = ['zone_uuid', 'colls', 'restrict_colls']
         self.supported_modes = ['sync', 'async']
         return super().validate()
 
-    def build(self, force_fail=False):
+    def build(self, force_fail: bool = False):
         project_group = self.irods_backend.get_group_name(self.project)
         owner_group = self.irods_backend.get_group_name(self.project, True)
         zone_root = self.irods_backend.get_zone_path(self.project)

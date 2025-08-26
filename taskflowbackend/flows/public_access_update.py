@@ -10,12 +10,12 @@ PUBLIC_GROUP = 'public'
 class Flow(BaseLinearFlow):
     """Flow for granting or revoking public access in a collection"""
 
-    def validate(self):
+    def validate(self) -> bool:
         self.required_fields = ['path', 'access']
         self.require_lock = False  # Project lock not required for this flow
         return super().validate()
 
-    def build(self, force_fail=False):
+    def build(self, force_fail: bool = False):
         access_name = 'read' if self.flow_data['access'] else 'null'
         ticket_str = self.flow_data.get('ticket_str')
 

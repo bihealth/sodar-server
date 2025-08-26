@@ -53,7 +53,7 @@ class ISATemplateForm(forms.ModelForm):
     """Form for importing and updating a custom ISA-Tab template."""
 
     @classmethod
-    def _get_files_from_zip(cls, zip_file):
+    def _get_files_from_zip(cls, zip_file: ZipFile) -> dict:
         """
         Return template files from Zip archive.
 
@@ -74,7 +74,7 @@ class ISATemplateForm(forms.ModelForm):
         return ret
 
     @classmethod
-    def _get_files_from_multi(cls, files):
+    def _get_files_from_multi(cls, files: list) -> dict:
         """
         Return template files from multi-file upload.
 
@@ -113,11 +113,11 @@ class ISATemplateForm(forms.ModelForm):
             return
 
     @classmethod
-    def _validate_isa(cls, output_dir):
+    def _validate_isa(cls, output_dir: str):
         """
         Validate ISA-Tab files with default values using altamISA.
 
-        :param output_dir: Output directory object
+        :param output_dir: Output directory path (string)
         """
         path = os.path.join(output_dir, TPL_DIR_VALUE)
         fl = sorted(

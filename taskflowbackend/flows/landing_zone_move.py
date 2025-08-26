@@ -30,7 +30,9 @@ class Flow(BaseLinearFlow):
     sample data collection in iRODS.
     """
 
-    def _add_extra_data_task(self, zone_path, zone_objects_no_chk, zone_stats):
+    def _add_extra_data_task(
+        self, zone_path: str, zone_objects_no_chk: list[str], zone_stats: dict
+    ):
         """Helper for adding TimelineEventExtraDataUpdateTask to flow"""
         files = [p[len(zone_path) + 1 :] for p in zone_objects_no_chk]
         self.add_task(
@@ -47,14 +49,14 @@ class Flow(BaseLinearFlow):
             )
         )
 
-    def validate(self):
+    def validate(self) -> bool:
         # Only require lock if moving
         self.require_lock = not self.flow_data.get('validate_only', False)
         self.supported_modes = ['sync', 'async']
         self.required_fields = ['zone_uuid']
         return super().validate()
 
-    def build(self, force_fail=False):
+    def build(self, force_fail: bool = False):
         validate_only = self.flow_data.get('validate_only', False)
         zone = LandingZone.objects.get(sodar_uuid=self.flow_data['zone_uuid'])
         project_group = self.irods_backend.get_group_name(self.project)

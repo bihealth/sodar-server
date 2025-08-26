@@ -15,6 +15,10 @@ import hashlib
 import logging
 import os
 
+from typing import Any, Optional, Union
+
+from irods.collection import iRODSCollection
+from irods.data_object import iRODSDataObject
 from irods.exception import CollectionDoesNotExist
 from irods.keywords import REG_CHKSUM_KW
 from irods.models import TicketQuery, UserGroup
@@ -29,7 +33,13 @@ from test_plus import TestCase, APITestCase
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.models import Project, RoleAssignment, SODAR_CONSTANTS
+from projectroles.models import (
+    Project,
+    Role,
+    RoleAssignment,
+    SODARUser,
+    SODAR_CONSTANTS,
+)
 from projectroles.plugins import PluginAPI
 from projectroles.tests.test_models import (
     ProjectMixin,
@@ -82,7 +92,7 @@ class ProjectLockMixin:
     #: Project lock coordinator
     coordinator = None
 
-    def lock_project(self, project):
+    def lock_project(self, project: Project):
         self.coordinator = lock_api.get_coordinator()
         lock_id = str(project.sodar_uuid)
         lock = self.coordinator.get_lock(lock_id)
@@ -100,8 +110,13 @@ class TaskflowTestMixin(
     irods = None
 
     def make_irods_object(
-        self, coll, obj_name, content=None, content_length=1024, checksum=True
-    ):
+        self,
+        coll: iRODSCollection,
+        obj_name: str,
+        content: Optional[str] = None,
+        content_length: int = 1024,
+        checksum: bool = True,
+    ) -> iRODSDataObject:
         """
         Create and put a data object into iRODS.
 
@@ -118,7 +133,12 @@ class TaskflowTestMixin(
         obj_kwargs = {REG_CHKSUM_KW: ''} if checksum else {}
         return make_object(self.irods, obj_path, content, **obj_kwargs)
 
-    def make_checksum_object(self, obj, scheme=HASH_SCHEME_MD5, content=None):
+    def make_checksum_object(
+        self,
+        obj: iRODSDataObject,
+        scheme: str = HASH_SCHEME_MD5,
+        content: Optional[str] = None,
+    ) -> iRODSDataObject:
         """
         Create and put a checksum object for an existing object in iRODS.
 
@@ -132,7 +152,7 @@ class TaskflowTestMixin(
         return make_object(self.irods, chk_path, chk_content)
 
     @classmethod
-    def get_checksum(cls, obj, scheme=HASH_SCHEME_MD5):
+    def get_checksum(cls, obj: iRODSDataObject, scheme: str = HASH_SCHEME_MD5):
         """
         Return the checksum for an iRODS object.
 
@@ -144,7 +164,12 @@ class TaskflowTestMixin(
             method = getattr(hashlib, scheme.lower())
             return method(obj_fp.read()).hexdigest()
 
-    def assert_irods_access(self, user_name, target, expected):
+    def assert_irods_access(
+        self,
+        user_name: str,
+        target: Union[iRODSCollection, iRODSDataObject, str],
+        expected: Optional[str],
+    ):
         """
         Assert access for a specific user for a target object or collection.
 
@@ -166,7 +191,11 @@ class TaskflowTestMixin(
         self.assertEqual(access, expected)
 
     def assert_group_member(
-        self, project, user, status=True, status_owner=None
+        self,
+        project: Project,
+        user: SODARUser,
+        status: bool = True,
+        status_owner: Optional[bool] = None,
     ):
         """
         Assert user membership in iRODS project user group and, optionally,
@@ -189,7 +218,9 @@ class TaskflowTestMixin(
             )
             self.assertEqual(owner_group.hasmember(user.username), status_owner)
 
-    def assert_irods_coll(self, target, sub_path=None, expected=True):
+    def assert_irods_coll(
+        self, target: Any, sub_path: Optional[str] = None, expected: bool = True
+    ):
         """
         Assert the existence of iRODS collection by object or path. Requires
         irods_backend and irods to be present in the class.
@@ -206,7 +237,7 @@ class TaskflowTestMixin(
             path += '/' + sub_path
         self.assertEqual(self.irods.collections.exists(path), expected)
 
-    def assert_irods_obj(self, path, expected=True):
+    def assert_irods_obj(self, path: str, expected: bool = True):
         """
         Assert the existence of an iRODS data object. Requires irods to be
         present in the class.
@@ -417,13 +448,13 @@ class TaskflowProjectTestMixin:
 
     def make_project_taskflow(
         self,
-        title,
-        type,
-        parent,
-        owner,
-        description='',
-        public_access=None,
-    ):
+        title: str,
+        type: str,
+        parent: Optional[Project],
+        owner: SODARUser,
+        description: str = '',
+        public_access: Optional[Role] = None,
+    ) -> tuple[Project, RoleAssignment]:
         """
         Make Project with taskflow for UI view tests.
 
@@ -464,7 +495,9 @@ class TaskflowProjectTestMixin:
         owner_as = project.get_owner()
         return project, owner_as
 
-    def make_assignment_taskflow(self, project, user, role):
+    def make_assignment_taskflow(
+        self, project: Project, user: SODARUser, role: Role
+    ) -> RoleAssignment:
         """Make RoleAssignment with taskflow for UI view tests"""
         post_data = {
             'project': project.sodar_uuid,
@@ -493,7 +526,13 @@ class TaskflowAPIProjectTestMixin:
     """Helpers for API view project management with Taskflow"""
 
     def make_project_taskflow(
-        self, title, type, parent, owner, description='', readme=''
+        self,
+        title: str,
+        type: str,
+        parent: Optional[Project],
+        owner: SODARUser,
+        description: str = '',
+        readme: str = '',
     ):
         """Make Project with taskflow for API view tests"""
         post_data = {
@@ -517,7 +556,9 @@ class TaskflowAPIProjectTestMixin:
         project = Project.objects.get(title=title)
         return project, project.get_owner()
 
-    def make_assignment_taskflow(self, project, user, role):
+    def make_assignment_taskflow(
+        self, project: Project, user: SODARUser, role: Role
+    ) -> RoleAssignment:
         """Make RoleAssignment with taskflow for API view tests"""
         url = reverse(
             'projectroles:api_role_create',
@@ -573,7 +614,7 @@ class TaskflowAPIPermissionTestBase(
     """Base class for testing API view permissions with taskflow"""
 
     # TODO: Get this from SODAR Core
-    def set_site_read_only(self, value=True):
+    def set_site_read_only(self, value: bool = True):
         """
         Helper to set site read only mode to the desired value.
 

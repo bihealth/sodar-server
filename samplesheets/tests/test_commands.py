@@ -3,6 +3,7 @@
 import uuid
 
 from django.core.management import call_command
+from django.db.models import QuerySet
 
 from test_plus.test import TestCase
 
@@ -25,7 +26,7 @@ from samplesheets.management.commands.normalizesheets import (
     LIB_NAME,
     LIB_NAME_REPLACE,
 )
-from samplesheets.models import GenericMaterial, ISATab
+from samplesheets.models import Assay, GenericMaterial, ISATab
 from samplesheets.rendering import (
     SampleSheetTableBuilder,
     STUDY_TABLE_CACHE_ITEM,
@@ -54,14 +55,18 @@ class TestNormalizesheets(
 ):
     """Tests for the normalizesheets command"""
 
-    def _assert_material_header(self, materials, header, expected):
+    def _assert_material_header(
+        self, materials: QuerySet[GenericMaterial], header: str, expected: int
+    ):
         """Assert count of materials which contain a specific header name"""
         self.assertEqual(
             materials.filter(headers__icontains=header).count(),
             expected,
         )
 
-    def _assert_study_table_header(self, study_tables, assay, header, expected):
+    def _assert_study_table_header(
+        self, study_tables: dict, assay: Assay, header: str, expected: int
+    ):
         """
         Assert count of assay table headers which contain a specific header
         name.
@@ -81,7 +86,7 @@ class TestNormalizesheets(
             expected,
         )
 
-    def _assert_tl_event(self, expected):
+    def _assert_tl_event(self, expected: int):
         self.assertEqual(
             TimelineEvent.objects.filter(
                 event_name='sheet_normalize', project=self.project

@@ -23,11 +23,11 @@ PUBLIC_GROUP = 'public'
 class Flow(BaseLinearFlow):
     """Flow for creating a directory structure for a sample sheet in iRODS"""
 
-    def validate(self):
+    def validate(self) -> bool:
         self.required_fields = ['colls']
         return super().validate()
 
-    def build(self, force_fail=False):
+    def build(self, force_fail: bool = False):
         sample_path = self.irods_backend.get_sample_path(self.project)
         project_group = self.irods_backend.get_group_name(self.project)
 

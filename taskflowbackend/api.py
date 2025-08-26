@@ -4,6 +4,8 @@ import json
 import logging
 import redis
 
+from typing import Any, Optional
+
 from django.conf import settings
 
 from rest_framework.exceptions import APIException
@@ -19,10 +21,11 @@ from landingzones.models import LandingZone
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.models import SODAR_CONSTANTS
+from projectroles.models import Project, SODARUser, SODAR_CONSTANTS
 from projectroles.plugins import PluginAPI
 
 from taskflowbackend import flows
+from taskflowbackend.flows.base_flow import BaseLinearFlow
 from taskflowbackend.irods_utils import get_flow_role as _get_flow_role
 from taskflowbackend.lock_api import ProjectLockAPI, PROJECT_LOCKED_MSG
 from taskflowbackend.tasks_celery import submit_flow_task
@@ -54,7 +57,12 @@ class TaskflowAPI:
     project_locked_msg = PROJECT_LOCKED_MSG
 
     @classmethod
-    def _raise_flow_exception(cls, ex_msg, tl_event=None, zone=None):
+    def _raise_flow_exception(
+        cls,
+        ex_msg: str,
+        tl_event: Any = None,
+        zone: Optional[LandingZone] = None,
+    ):
         """
         Handle and raise exception with flow building or execution. Updates the
         status of timeline event and/or landing zone if provided.
@@ -79,7 +87,12 @@ class TaskflowAPI:
         raise cls.FlowSubmitException(ex_msg)
 
     @classmethod
-    def _raise_run_flow_exception(cls, ex_msg, tl_event=None, zone=None):
+    def _raise_run_flow_exception(
+        cls,
+        ex_msg: str,
+        tl_event: Any = None,
+        zone: Optional[LandingZone] = None,
+    ):
         """
         Wrapper for _raise_flow_exception() to be called from run_flow().
 
@@ -102,7 +115,12 @@ class TaskflowAPI:
         cls._raise_flow_exception(ex_msg, tl_event, ex_zone)
 
     @classmethod
-    def _raise_lock_exception(cls, ex_msg, tl_event=None, zone=None):
+    def _raise_lock_exception(
+        cls,
+        ex_msg: str,
+        tl_event: Any = None,
+        zone: Optional[LandingZone] = None,
+    ):
         """
         Raise exception specifically for project lock errors. Updates the status
         of the landing zone only if zone has not yet been finished by a
@@ -127,7 +145,7 @@ class TaskflowAPI:
     # HACK for returning 503 if project is locked (see #1505, #1847)
     @classmethod
     def raise_submit_api_exception(
-        cls, msg_prefix, ex, default_class=APIException
+        cls, msg_prefix: str, ex: Exception, default_class: Any = APIException
     ):
         """
         Raise zone submit API exception. Selects appropriate API response based
@@ -146,7 +164,9 @@ class TaskflowAPI:
         raise default_class(msg)
 
     @classmethod
-    def get_flow_role(cls, project, user, role_rank=None):
+    def get_flow_role(
+        cls, project: Project, user: SODARUser, role_rank: Optional[int] = None
+    ) -> dict:
         """
         Return role dict for taskflows performing role modification.
 
@@ -160,13 +180,13 @@ class TaskflowAPI:
     @classmethod
     def get_flow(
         cls,
-        irods_backend,
-        project,
-        flow_name,
-        flow_data,
-        async_mode=False,
-        tl_event=None,
-    ):
+        irods_backend: Any,
+        project: Project,
+        flow_name: str,
+        flow_data: dict,
+        async_mode: bool = False,
+        tl_event: Any = None,
+    ) -> BaseLinearFlow:
         """
         Get and create a taskflow.
 
@@ -176,6 +196,7 @@ class TaskflowAPI:
         :param flow_data: Flow parameters (dict)
         :param async_mode: Set up flow asynchronously if True (boolean)
         :param tl_event: TimelineEvent object for timeline updating or None
+        :return: Flow object inheriting BaseLinearFlow
         """
         flow_cls = flows.get_flow(flow_name)
         if not flow_cls:
@@ -199,12 +220,12 @@ class TaskflowAPI:
     @classmethod
     def run_flow(
         cls,
-        flow,
-        project,
-        force_fail=False,
-        async_mode=False,
-        tl_event=None,
-    ):
+        flow: BaseLinearFlow,
+        project: Project,
+        force_fail: bool = False,
+        async_mode: bool = False,
+        tl_event: Any = None,
+    ) -> dict:
         """
         Run a flow, either synchronously or asynchronously.
 
@@ -289,13 +310,13 @@ class TaskflowAPI:
 
     def submit(
         self,
-        project,
-        flow_name,
-        flow_data,
-        async_mode=False,
-        tl_event=None,
-        force_fail=False,
-    ):
+        project: Project,
+        flow_name: str,
+        flow_data: dict,
+        async_mode: bool = False,
+        tl_event: Any = None,
+        force_fail: bool = False,
+    ) -> Optional[dict]:
         """
         Submit taskflow for SODAR project data modification.
 
@@ -306,7 +327,7 @@ class TaskflowAPI:
         :param async_mode: Run flow asynchronously (boolean, default False)
         :param tl_event: Corresponding TimelineEvent (optional)
         :param force_fail: Make flow fail on purpose (boolean, default False)
-        :return: Boolean
+        :return: Dict or None
         :raise: FlowSubmitException if submission fails
         """
         irods_backend = plugin_api.get_backend_api('omics_irods')
@@ -348,7 +369,7 @@ class TaskflowAPI:
         )
 
     @classmethod
-    def get_error_msg(cls, flow_name, submit_info):
+    def get_error_msg(cls, flow_name: str, submit_info: str) -> str:
         """
         Return a printable version of a SODAR Taskflow error message.
 
@@ -359,7 +380,7 @@ class TaskflowAPI:
         return f'Taskflow "{flow_name}" failed! Reason: "{submit_info[:256]}"'
 
     @classmethod
-    def is_locked(cls, project):
+    def is_locked(cls, project: Project) -> bool:
         """
         Return lock status for project, True meaning locked.
 

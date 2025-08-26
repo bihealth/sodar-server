@@ -5,7 +5,10 @@ import io
 import logging
 import time
 import warnings
+
 from fnmatch import fnmatch
+from typing import Any, Optional, Union
+from uuid import UUID
 from zipfile import ZipFile
 
 import altamisa
@@ -21,13 +24,17 @@ from altamisa.isatab import (
     StudyWriter,
     AssayWriter,
     models as isa_models,
+    PublicationInfo,
 )
 
 from django.db import transaction
 from django.conf import settings
+from django.core.files.uploadedfile import UploadedFile
+from django.db.models import QuerySet
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
+from projectroles.models import Project, SODARUser
 
 from samplesheets.models import (
     Investigation,
@@ -86,7 +93,7 @@ EMPTY_TABLE_ERR_MSG = (
 
 
 class SampleSheetIO:
-    def __init__(self, warn=True, allow_critical=False):
+    def __init__(self, warn: bool = True, allow_critical: bool = False):
         """
         Initializate SampleSheetIO.
 
@@ -101,7 +108,7 @@ class SampleSheetIO:
     # General internal functions -----------------------------------------------
 
     @classmethod
-    def _init_warnings(cls):
+    def _init_warnings(cls) -> dict:
         """Initialize warnings"""
         return {
             'investigation': [],
@@ -113,7 +120,9 @@ class SampleSheetIO:
             'use_file_names': True,  # HACK for issue #644
         }
 
-    def _handle_warnings(self, warnings, db_obj):
+    def _handle_warnings(
+        self, warnings: list, db_obj: Union[Assay, Investigation, Study]
+    ):
         """
         Store and log warnings resulting from an altamISA operation.
 
@@ -160,7 +169,7 @@ class SampleSheetIO:
     # Helpers ------------------------------------------------------------------
 
     @classmethod
-    def get_inv_paths(cls, zip_file):
+    def get_inv_paths(cls, zip_file: ZipFile) -> list[str]:
         """
         Return investigation file paths from a zip file.
 
@@ -176,7 +185,7 @@ class SampleSheetIO:
         return ret
 
     @classmethod
-    def get_zip_file(cls, file):
+    def get_zip_file(cls, file: UploadedFile) -> ZipFile:
         """
         Return uploaded file as ZipFile. Raises an exception if the file is
         corrupt or not a zip file.
@@ -201,12 +210,14 @@ class SampleSheetIO:
         return zip_file
 
     @classmethod
-    def get_import_file(cls, zip_file, file_name):
+    def get_import_file(
+        cls, zip_file: ZipFile, file_name: str
+    ) -> io.TextIOWrapper:
         file = zip_file.open(str(file_name), 'r')
         return io.TextIOWrapper(file)
 
     @classmethod
-    def get_isa_from_zip(cls, zip_file):
+    def get_isa_from_zip(cls, zip_file: ZipFile) -> dict:
         """
         Read ISA-Tab files from a Zip archive into a dictionary.
 
@@ -214,7 +225,6 @@ class SampleSheetIO:
         :return: Dict
         """
         ret = {'investigation': {}, 'studies': {}, 'assays': {}}
-
         for isa_path in [n for n in zip_file.namelist() if not n.endswith('/')]:
             isa_name = isa_path.split('/')[-1]
             if isa_name.startswith('i_'):
@@ -236,11 +246,10 @@ class SampleSheetIO:
                     .read()
                     .decode('utf-8')
                 }
-
         return ret
 
     @classmethod
-    def get_isa_from_files(cls, files):
+    def get_isa_from_files(cls, files: list[UploadedFile]) -> dict:
         """
         Get ISA-Tab data from a list of text files.
 
@@ -249,7 +258,6 @@ class SampleSheetIO:
         :raise: ValueError if file content types are incorrect
         """
         isa_data = {'investigation': {}, 'studies': {}, 'assays': {}}
-
         for file in files:
             if file.content_type not in ISATAB_TYPES:
                 raise ValueError(
@@ -267,51 +275,54 @@ class SampleSheetIO:
                 isa_data['assays'][file.name] = {
                     'tsv': file.read().decode('utf-8')
                 }
-
         return isa_data
 
-    def get_warnings(self):
+    def get_warnings(self) -> dict:
         """Return warnings from previous operation"""
         return self._warnings
 
     # Import -------------------------------------------------------------------
 
     @classmethod
-    def _get_zip_path(cls, inv_path, file_path):
+    def _get_zip_path(cls, inv_path: str, file_path: str) -> str:
         return '{}{}{}'.format(
             inv_path, '/' if inv_path else '', str(file_path)
         )
 
     @classmethod
-    def _get_study(cls, o):
+    def _get_study(cls, obj: Any) -> Optional[Study]:
         """Return study for a potentially unknown type of object"""
-        if isinstance(o, Study):
-            return o
-        elif hasattr(o, 'study'):
-            return o.study
+        if isinstance(obj, Study):
+            return obj
+        elif hasattr(obj, 'study'):
+            return obj.study
+        return None
 
     @classmethod
-    def _import_ref_val(cls, o):
+    def _import_ref_val(cls, obj: Any) -> Optional[str]:
         """Get altamISA string/ref value"""
-        if isinstance(o, (isa_models.OntologyRef, isa_models.OntologyTermRef)):
-            o = attr.asdict(o)
-            if o and 'value' in o and isinstance(o['value'], str):
-                o['value'] = o['value'].strip()
-            return o
-        elif isinstance(o, str):
-            return o.strip()
+        if isinstance(
+            obj, (isa_models.OntologyRef, isa_models.OntologyTermRef)
+        ):
+            obj = attr.asdict(obj)
+            if obj and 'value' in obj and isinstance(obj['value'], str):
+                obj['value'] = obj['value'].strip()
+            return obj
+        elif isinstance(obj, str):
+            return obj.strip()
+        return None
 
     @classmethod
-    def _import_multi_val(cls, o):
+    def _import_multi_val(cls, obj: Any) -> Optional[list]:
         """Get value where the member type can vary"""
-        if isinstance(o, list) and len(o) > 1:
-            return [cls._import_ref_val(x) for x in o]
-        elif isinstance(o, list) and len(o) == 1:
-            o = o[0]  # Store lists of 1 item as single objects
-        return cls._import_ref_val(o)
+        if isinstance(obj, list) and len(obj) > 1:
+            return [cls._import_ref_val(x) for x in obj]
+        elif isinstance(obj, list) and len(obj) == 1:
+            obj = obj[0]  # Store lists of 1 item as single objects
+        return cls._import_ref_val(obj)
 
     @classmethod
-    def _import_ontology_vals(cls, vals):
+    def _import_ontology_vals(cls, vals: list) -> dict:
         """Get value data from potential ontology references"""
         ret = {}
         for v in vals:
@@ -326,20 +337,23 @@ class SampleSheetIO:
         return ret
 
     @classmethod
-    def _import_comments(cls, comments):
+    def _import_comments(cls, comments: list) -> dict:
         """Get comments field as dict"""
         return {v.name: v.value for v in comments}
 
     @classmethod
-    def _import_tuple_list(cls, tuples):
+    def _import_tuple_list(cls, tuples: Union[dict, list, tuple]) -> list:
         """Get list of dicts from tuples for JSONField"""
         if isinstance(tuples, dict):
             return [cls._import_multi_val(v) for v in tuples.values()]
         elif type(tuples) in [tuple, list]:
             return [cls._import_multi_val(v) for v in tuples]
+        return []
 
     @classmethod
-    def _import_publications(cls, publications):
+    def _import_publications(
+        cls, publications: list[isa_models.PublicationInfo]
+    ) -> list[dict]:
         """
         Convert altamISA publications tuple into a list to be stored into a
         JSONField.
@@ -361,7 +375,9 @@ class SampleSheetIO:
         ]
 
     @classmethod
-    def _import_contacts(cls, contacts):
+    def _import_contacts(
+        cls, contacts: tuple[isa_models.ContactInfo]
+    ) -> list[dict]:
         """
         Convert altamISA converts tuple into a list to be stored into a
         JSONField.
@@ -387,7 +403,9 @@ class SampleSheetIO:
         ]
 
     @classmethod
-    def _import_materials(cls, materials, db_parent, obj_lookup):
+    def _import_materials(
+        cls, materials: dict, db_parent: Union[Assay, Study], obj_lookup: dict
+    ):
         """
         Create material objects in Django database.
 
@@ -437,7 +455,11 @@ class SampleSheetIO:
 
     @classmethod
     def _import_processes(
-        cls, processes, db_parent, obj_lookup, protocol_lookup
+        cls,
+        processes: dict,
+        db_parent: Union[Assay, Study],
+        obj_lookup: dict,
+        protocol_lookup: dict,
     ):
         """
         Create processes of a process sequence in the database.
@@ -498,7 +520,9 @@ class SampleSheetIO:
         )
 
     @classmethod
-    def _import_arcs(cls, arcs, db_parent):
+    def _import_arcs(
+        cls, arcs: tuple[isa_models.Arc], db_parent: Union[Assay, Study]
+    ):
         """
         Create process/material arcs according to the altamISA structure
 
@@ -515,15 +539,15 @@ class SampleSheetIO:
     @transaction.atomic
     def import_isa(
         self,
-        isa_data,
-        project,
-        archive_name=None,
-        user=None,
-        replace=False,
-        replace_uuid=None,
-        save_isa=True,
-        from_template=False,
-    ):
+        isa_data: dict,
+        project: Project,
+        archive_name: Optional[str] = None,
+        user: Optional[SODARUser] = None,
+        replace: bool = False,
+        replace_uuid: Union[str, UUID, None] = None,
+        save_isa: bool = True,
+        from_template: bool = False,
+    ) -> Investigation:
         """
         Import ISA investigation and its studies/assays from a dictionary of
         ISA-Tab files into the SODAR database using the altamISA parser.
@@ -835,13 +859,12 @@ class SampleSheetIO:
                 user=user,
                 archive_name=archive_name,
             )
-
         return db_investigation
 
     # Export -------------------------------------------------------------------
 
     @classmethod
-    def _get_arc_nodes(cls, nodes, arcs):
+    def _get_arc_nodes(cls, nodes: dict, arcs: list[list]) -> list:
         """
         Return nodes referred to in arcs.
 
@@ -858,16 +881,18 @@ class SampleSheetIO:
         for a in arcs:
             _get_node(a[0])
             _get_node(a[1])
-        return ret.values()
+        return list(ret.values())
 
     @classmethod
-    def _export_val(cls, value):
+    def _export_val(
+        cls, value: Union[dict, str]
+    ) -> Union[list, str, isa_models.OntologyTermRef, None]:
         """
         Build a "FreeTextOrTermRef" value out of a string/dict value in a
         JSONField. Can also be used for units.
 
         :param value: String or dict
-        :return: String or OntologyTermRef
+        :return: List, string, OntologyTermRef or None
         """
         if isinstance(value, str):
             return value
@@ -883,7 +908,7 @@ class SampleSheetIO:
             )
 
     @classmethod
-    def _export_comments(cls, comments):
+    def _export_comments(cls, comments: dict) -> tuple[isa_models.Comment]:
         """
         Build comments from JSON stored in a SODAR model object.
 
@@ -907,7 +932,9 @@ class SampleSheetIO:
         )
 
     @classmethod
-    def _export_publications(cls, publications):
+    def _export_publications(
+        cls, publications: list[dict]
+    ) -> tuple[PublicationInfo, ...]:
         """
         Build publications from a JSONField stored in an Investigation or Study
         object.
@@ -929,7 +956,9 @@ class SampleSheetIO:
         )
 
     @classmethod
-    def _export_contacts(cls, contacts):
+    def _export_contacts(
+        cls, contacts: list[dict]
+    ) -> tuple[isa_models.ContactInfo, ...]:
         """
         Build contacts from a JSONField stored in an Investigation or Study
         object.
@@ -955,7 +984,7 @@ class SampleSheetIO:
         )
 
     @classmethod
-    def _export_source_refs(cls, source_refs):
+    def _export_source_refs(cls, source_refs: dict) -> dict:
         """
         Build ontology source references from a JSONField stored in an
         Investigation object.
@@ -976,7 +1005,9 @@ class SampleSheetIO:
         }
 
     @classmethod
-    def _export_study_design(cls, study_design):
+    def _export_study_design(
+        cls, study_design: list
+    ) -> tuple[isa_models.DesignDescriptorsInfo, ...]:
         """
         Build study design descriptors from a JSONField in a Study object.
 
@@ -993,7 +1024,9 @@ class SampleSheetIO:
         )
 
     @classmethod
-    def _export_components(cls, components):
+    def _export_components(
+        cls, components: dict
+    ) -> Union[tuple[isa_models.ProtocolComponentInfo], Any]:
         """
         Build protocol components from JSON stored in a Protocol object.
 
@@ -1011,7 +1044,9 @@ class SampleSheetIO:
         )
 
     @classmethod
-    def _export_characteristics(cls, characteristics):
+    def _export_characteristics(
+        cls, characteristics: dict
+    ) -> tuple[isa_models.Characteristics, ...]:
         """
         Build characteristics from JSON stored in a SODAR model object.
 
@@ -1032,7 +1067,7 @@ class SampleSheetIO:
         )
 
     @classmethod
-    def _export_factors(cls, factors):
+    def _export_factors(cls, factors: dict) -> dict[isa_models.FactorInfo, Any]:
         """
         Build factor references from JSON stored in a Study object.
 
@@ -1050,7 +1085,9 @@ class SampleSheetIO:
         }
 
     @classmethod
-    def _export_factor_vals(cls, factor_values):
+    def _export_factor_vals(
+        cls, factor_values: dict
+    ) -> tuple[isa_models.FactorValue, ...]:
         """
         Build factor values from JSON stored in a GenericMaterial object.
 
@@ -1073,7 +1110,7 @@ class SampleSheetIO:
         )
 
     @classmethod
-    def _export_parameters(cls, parameters):
+    def _export_parameters(cls, parameters: list) -> dict:
         """
         Build parameters for a protocol from JSON stored in a Protocol
         object.
@@ -1084,7 +1121,9 @@ class SampleSheetIO:
         return {p['name']: cls._export_val(p) for p in parameters}
 
     @classmethod
-    def _export_param_values(cls, param_values):
+    def _export_param_values(
+        cls, param_values: dict
+    ) -> tuple[isa_models.ParameterValue, ...]:
         """
         Build parameter values from JSON stored in a Process object.
 
@@ -1105,7 +1144,7 @@ class SampleSheetIO:
         )
 
     @classmethod
-    def _export_arcs(cls, arcs):
+    def _export_arcs(cls, arcs: list[list]) -> tuple[isa_models.Arc, ...]:
         """
         Build arcs from ArrayField stored in a Study or Assay object.
 
@@ -1119,11 +1158,13 @@ class SampleSheetIO:
         )
 
     @classmethod
-    def _export_materials(cls, materials, study_data=True):
+    def _export_materials(
+        cls, materials: Union[list, QuerySet], study_data: bool = True
+    ) -> dict:
         """
         Export materials from SODAR model objects.
 
-        :param materials: QuerySet or array of GenericMaterial objects
+        :param materials: QuerySet or list of GenericMaterial objects
         :param study_data: If False, strip data not expected in an assay
         :return: Dict
         """
@@ -1170,11 +1211,11 @@ class SampleSheetIO:
         return ret
 
     @classmethod
-    def _export_processes(cls, processes):
+    def _export_processes(cls, processes: Union[list, QuerySet]) -> dict:
         """
         Export processes from SODAR model objects.
 
-        :param processes: QuerySet or array of Process objects
+        :param processes: QuerySet or list of Process objects
         :return: Dict
         """
         ret = {}
@@ -1203,7 +1244,7 @@ class SampleSheetIO:
             )
         return ret
 
-    def export_isa(self, investigation):
+    def export_isa(self, investigation: Investigation) -> dict:
         """
         Import ISA investigation and its studies/assays from the SODAR database
         model into an ISA-Tab archive.
@@ -1435,20 +1476,19 @@ class SampleSheetIO:
                 ret['assays'][assay_info.path] = {'tsv': assay_out.getvalue()}
                 assay_out.close()
                 logger.info(f'Exported assay "{db_assay.file_name}"')
-
         return ret
 
     @classmethod
     def save_isa(
         cls,
-        project,
-        inv_uuid,
-        isa_data,
-        tags=None,
-        user=None,
-        archive_name=None,
-        description=None,
-    ):
+        project: Project,
+        inv_uuid: Union[str, UUID],
+        isa_data: dict,
+        tags: Optional[list] = None,
+        user: Optional[SODARUser] = None,
+        archive_name: Optional[str] = None,
+        description: Optional[str] = None,
+    ) -> ISATab:
         """
         Save a copy of an ISA-Tab investigation into the SODAR database.
 

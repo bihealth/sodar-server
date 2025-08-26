@@ -2,6 +2,8 @@
 
 import logging
 
+from typing import Optional
+
 from django.conf import settings
 from django.contrib import auth
 from django.urls import reverse
@@ -23,6 +25,7 @@ User = auth.get_user_model()
 
 # SODAR constants
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
+
 # Local constants
 APP_NAME = 'samplesheets'
 CACHE_UPDATE_EVENT = 'sheet_cache_update'
@@ -30,11 +33,16 @@ CACHE_UPDATE_EVENT = 'sheet_cache_update'
 
 @app.task(bind=True)
 def update_project_cache_task(
-    _self, project_uuid, user_uuid, add_alert=False, alert_msg=None
+    _self,
+    project_uuid: Optional[str],
+    user_uuid: Optional[str],
+    add_alert: bool = False,
+    alert_msg: Optional[str] = None,
 ):
     """
     Update project iRODS cache asynchronously.
 
+    :param _self: Self
     :param project_uuid: Project UUID for cache item
     :param user_uuid: User UUID or None
     :param add_alert: Add app alert for action if True (bool, default=False)

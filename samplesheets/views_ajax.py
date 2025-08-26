@@ -6,9 +6,11 @@ import os
 from altamisa.constants import table_headers as th
 from datetime import datetime as dt
 from packaging import version
+from typing import Optional, Union
 
 from django.conf import settings
 from django.db import transaction
+from django.http import HttpRequest
 from django.middleware.csrf import get_token
 from django.urls import reverse
 
@@ -16,6 +18,7 @@ from rest_framework.response import Response
 
 # Projectroles dependency
 from projectroles.constants import SODAR_CONSTANTS
+from projectroles.models import SODARUser
 from projectroles.plugins import PluginAPI
 from projectroles.views_ajax import SODARBaseProjectAjaxView
 
@@ -102,12 +105,18 @@ class BaseSheetEditAjaxView(SODARBaseProjectAjaxView):
     class SheetEditException(Exception):
         pass
 
-    def _raise_ex(self, msg):
+    def _raise_ex(self, msg: Union[Exception, str]):
         logger.error(msg)
         raise self.SheetEditException(msg)
 
     @classmethod
-    def _get_attr_value(cls, node_obj, cell, header_name, header_type):
+    def _get_attr_value(
+        cls,
+        node_obj: Union[GenericMaterial, Process],
+        cell: dict,
+        header_name: str,
+        header_type: str,
+    ) -> Union[dict, list, str]:
         """
         Get node object attribute value in a format saveable into the database.
 
@@ -133,7 +142,9 @@ class BaseSheetEditAjaxView(SODARBaseProjectAjaxView):
         return val
 
     @classmethod
-    def _get_ontology_names(cls, cells=None, nodes=None):
+    def _get_ontology_names(
+        cls, cells: Optional[list] = None, nodes: Optional[list] = None
+    ) -> list:
         """
         Return unique ontology names from ontology field in a list of nodes.
 
@@ -164,7 +175,9 @@ class BaseSheetEditAjaxView(SODARBaseProjectAjaxView):
 
     @classmethod
     @transaction.atomic
-    def _update_ontology_refs(cls, investigation, edit_names):
+    def _update_ontology_refs(
+        cls, investigation: Investigation, edit_names: list[str]
+    ):
         """
         Update investigation ontology refs, adding references to ontologies
         currently missing.
@@ -229,12 +242,17 @@ class SheetVersionMixin:
     """Mixin for sheet version saving"""
 
     @classmethod
-    def save_version(cls, investigation, request=None, description=None):
+    def save_version(
+        cls,
+        investigation: Investigation,
+        request: Optional[HttpRequest] = None,
+        description: Optional[str] = None,
+    ) -> ISATab:
         """
         Save current version of an investigation as ISA-Tab into the database.
 
         :param investigation: Investigation object
-        :param request: HTTP request or None
+        :param request: HttpRequest object or None
         :param description: Version description (string, optional)
         :return: ISATab object
         :raise: Exception if ISA-Tab saving fails
@@ -501,11 +519,12 @@ class SheetContextAjaxView(SODARBaseProjectAjaxView):
 class StudyTablesAjaxView(SODARBaseProjectAjaxView):
     """View to retrieve study tables built from the sample sheet graph"""
 
-    def _get_table_height(self, table, user, edit):
+    @classmethod
+    def _get_table_height(cls, table: dict, user: SODARUser, edit: bool) -> int:
         """
         Return table height in pixels.
 
-        :param table: Study or assay render table
+        :param table: Study or assay render table (dict)
         :param user: User object making the request
         :param edit: Edit mode enabled (boolean)
         :return: Integer
@@ -523,7 +542,13 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
             default_height,
         )
 
-    def _get_display_config(self, investigation, user, sheet_config=None):
+    @classmethod
+    def _get_display_config(
+        cls,
+        investigation: Investigation,
+        user: SODARUser,
+        sheet_config: Optional[dict] = None,
+    ) -> dict:
         """Get or create display configuration for an investigation"""
         project = investigation.project
         user_config_found = True
@@ -770,7 +795,10 @@ class SheetWarningsAjaxView(SODARBaseProjectAjaxView):
 class SheetCellEditAjaxView(BaseSheetEditAjaxView):
     """Ajax view to edit sample sheet cells"""
 
-    def _verify_update(self, node_obj, cell):
+    @classmethod
+    def _verify_update(
+        cls, node_obj: Union[GenericMaterial, Process], cell: dict
+    ) -> Optional[str]:
         """
         Verify cell update. Return None is all is OK, else return message to be
         displayed as alert to confirm the update.
@@ -818,14 +846,19 @@ class SheetCellEditAjaxView(BaseSheetEditAjaxView):
         return None
 
     @transaction.atomic
-    def _update_cell(self, node_obj, cell, save=False):
+    def _update_cell(
+        self,
+        node_obj: Union[GenericMaterial, Process],
+        cell: dict,
+        save: bool = False,
+    ) -> Optional[str]:
         """
         Update a single cell in an object.
 
         :param node_obj: GenericMaterial or Process object
         :param cell: Cell update data from the client (dict)
         :param save: If True, save object after successful call (boolean)
-        :return: String
+        :return: String or None
         :raise: SheetEditException if the operation fails.
         """
         ok_msg = None
@@ -999,7 +1032,7 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
     """Ajax view for inserting rows into sample sheets"""
 
     @classmethod
-    def _get_name(cls, node):
+    def _get_name(cls, node: dict) -> Optional[str]:
         """
         Return non-unique name for a node retrieved from the editor for a new
         row, or None if the name does not exist.
@@ -1016,7 +1049,9 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
         return None
 
     @classmethod
-    def _add_node_attr(cls, node_obj, cell):
+    def _add_node_attr(
+        cls, node_obj: Union[GenericMaterial, Process], cell: dict
+    ):
         """
         Add common node attribute from cell in a new row node.
 
@@ -1064,12 +1099,20 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
             node_obj.extract_label = cell['value']
 
     @classmethod
-    def _collapse_process(cls, row_nodes, node, node_idx, comp_table, node_obj):
+    def _collapse_process(
+        cls,
+        row_nodes: list[dict],
+        node: dict,
+        node_idx: int,
+        comp_table: dict,
+        node_obj: Process,
+    ) -> Optional[str]:
         """
         Collapse process into an existing one.
 
         :param row_nodes: List of dicts from editor UI
         :param node: Dict from editor UI
+        :param node_idx: Node index (integer)
         :param comp_table: Study/assay table generated by
                            SampleSheetTableBuilder (dict)
         :param node_obj: Unsaved Process object
@@ -1171,7 +1214,7 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
             logger.debug('Collapse: Identical process not found')
 
     @transaction.atomic
-    def _insert_row(self, row):
+    def _insert_row(self, row: dict):
         """
         Insert row into a sample sheet.
 
@@ -1398,7 +1441,7 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
 class SheetRowDeleteAjaxView(BaseSheetEditAjaxView):
     """Ajax view for deleting rows from sample sheets"""
 
-    def _delete_node(self, node):
+    def _delete_node(self, node: dict):
         """
         Delete node object from the database.
 
@@ -1415,7 +1458,7 @@ class SheetRowDeleteAjaxView(BaseSheetEditAjaxView):
             node['obj'].delete()
 
     @transaction.atomic
-    def _delete_row(self, row):
+    def _delete_row(self, row: dict):
         """
         Delete row from a study/assay table. Also delete node objects from the
         database if unused after the row deletion.

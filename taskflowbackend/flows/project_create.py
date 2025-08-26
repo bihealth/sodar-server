@@ -15,11 +15,11 @@ class Flow(BaseLinearFlow):
     groups for access, also assigning membership in owner group to owner.
     """
 
-    def validate(self):
+    def validate(self) -> bool:
         self.required_fields = ['owner']
         return super().validate()
 
-    def build(self, force_fail=False):
+    def build(self, force_fail: bool = False):
         project_path = self.irods_backend.get_path(self.project)
         project_group = self.irods_backend.get_group_name(self.project)
         owner_group = self.irods_backend.get_group_name(self.project, True)
