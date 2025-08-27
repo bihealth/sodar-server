@@ -53,9 +53,6 @@ versioneer==0.29
 # Redis support
 redis>=6.2.0, <6.3
 
-# Profiling
-django-cprofile-middleware==1.0.5
-
 
 #####################
 # SODAR Core imports
