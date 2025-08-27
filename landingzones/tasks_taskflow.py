@@ -310,7 +310,13 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
             and flow_name != 'landing_zone_create'
             and (file_count > 0 or zone.status != ZONE_STATUS_MOVED)
         ):
-            if app_alerts and zone.user.is_active:
+            if (
+                app_alerts
+                and zone.user.is_active
+                and app_settings.get(
+                    APP_NAME, 'notify_alert_zone_status', user=zone.user
+                )
+            ):
                 try:
                     cls._add_owner_alert(
                         app_alerts,

@@ -1092,6 +1092,9 @@ class IrodsDataRequestModifyMixin:
             app_alerts
             and irods_request.user != request.user
             and irods_request.user.is_active
+            and app_settings.get(
+                APP_NAME, 'notify_alert_irods_request', user=irods_request.user
+            )
         ):
             app_alerts.add_alert(
                 app_name=APP_NAME,
@@ -1106,7 +1109,7 @@ class IrodsDataRequestModifyMixin:
                 ),
                 project=project,
             )
-            # Handle project alerts
+        if app_alerts:  # Handle project alerts
             cls.handle_alerts_deactivate(irods_request, app_alerts)
 
     @classmethod
@@ -1178,6 +1181,9 @@ class IrodsDataRequestModifyMixin:
             app_alerts
             and irods_request.user != request.user
             and irods_request.user.is_active
+            and app_settings.get(
+                APP_NAME, 'notify_alert_irods_request', user=irods_request.user
+            )
         ):
             app_alerts.add_alert(
                 app_name=APP_NAME,
@@ -1192,7 +1198,7 @@ class IrodsDataRequestModifyMixin:
                 ),
                 project=project,
             )
-            # Handle project alerts
+        if app_alerts:  # Handle project alerts
             cls.handle_alerts_deactivate(irods_request, app_alerts)
 
     def has_irods_request_update_perms(

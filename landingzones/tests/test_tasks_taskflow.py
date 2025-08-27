@@ -122,8 +122,26 @@ class TestSetLandingZoneStatusTask(ViewTestBase):
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].recipients(), [self.user_owner.email])
 
-    def test_execute_disable_owner_notify(self):
-        """Test execute() with owner notify disabled"""
+    def test_execute_disable_owner_alert_notify(self):
+        """Test execute() with owner email notify disabled"""
+        app_settings.set(
+            APP_NAME,
+            'notify_alert_zone_status',
+            False,
+            user=self.zone.user,
+        )
+        self.assertEqual(self.zone.status, lc.ZONE_STATUS_ACTIVE)
+        self._assert_owner_alert(0)
+        self._assert_member_alerts(0)
+        self.assertEqual(len(mail.outbox), 0)
+        self._get_task().execute(**self.task_kw)
+        self.zone.refresh_from_db()
+        self.assertEqual(self.zone.status, lc.ZONE_STATUS_MOVED)
+        self._assert_owner_alert(0)  # No alert for owner
+        self._assert_member_alerts(0)
+
+    def test_execute_disable_owner_email_notify(self):
+        """Test execute() with owner email notify disabled"""
         app_settings.set(
             APP_NAME,
             'notify_email_zone_status',

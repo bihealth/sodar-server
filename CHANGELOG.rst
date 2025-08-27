@@ -18,11 +18,13 @@ Added
     - Add ``setPeriodicStatsUpdate()`` in JQuery (#2243)
 - **Landingzones**
     - Project viewer role support (#2200)
+    - ``notify_alert_zone_status`` user app setting (#2205)
 - **Samplesheets**
     - Project viewer role support (#2200)
     - Category statistics for sample count and iRODS statistics (#2213)
     - Project iRODS stats caching (#2213)
     - ``ProjectAppPlugin.update_irods_stats_cache()`` helper (#2213)
+    - ``notify_alert_irods_request`` user app setting (#2205)
 - **Taskflowbackend**
     - Project viewer role support (#2200)
 

@@ -225,13 +225,23 @@ SHEETS_APP_SETTINGS = [
         user_modifiable=True,
     ),
     PluginAppSettingDef(
+        name='notify_alert_irods_request',
+        scope=APP_SETTING_SCOPE_USER,
+        type=APP_SETTING_TYPE_BOOLEAN,
+        default=True,
+        label='Receive alerts for iRODS data requests',
+        description='Receive UI alerts for iRODS data request accepting and '
+        'rejecting.',
+        user_modifiable=True,
+    ),
+    PluginAppSettingDef(
         name='notify_email_irods_request',
         scope=APP_SETTING_SCOPE_USER,
         type=APP_SETTING_TYPE_BOOLEAN,
         default=True,
         label='Receive email for iRODS data requests',
         description='Receive email notifications for iRODS data request '
-        'accepting and rejecting',
+        'accepting and rejecting.',
         user_modifiable=True,
     ),
     PluginAppSettingDef(

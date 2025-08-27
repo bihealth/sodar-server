@@ -21,9 +21,10 @@ Through the user profile, you can modify global user-specific settings for your
 account by clicking the :guilabel:`Update Settings` button. The following user
 settings are available:
 
+Receive alerts for landing zone status updates
+    Receive UI alerts for status updates on your own landing zones.
 Receive email for landing zone status updates
     Receive email notifications for status updates on your own landing zones.
-    If unchecked, you can still see the alerts in the SODAR GUI.
 Sample sheet table height
     Choose the maximum height of study and assay tables in the sample sheets app
     from a set of options. In browsing mode, table height will fit the table
@@ -33,9 +34,10 @@ Display template output directory field
     Display or hide the "output directory" field in sample sheet template
     creation form. This can be enabled if there is need to control the output
     directory in sample sheet ISA-Tab exports. Defaults to false.
+Receive alerts for iRODS data requests
+    Receive UI alerts for for iRODS data request accepting or rejecting.
 Receive email for iRODS data requests
     Receive email notifications for iRODS data request accepting or rejecting.
-    If unchecked, you can still see the alerts in the SODAR GUI.
 Receive email for admin alerts
     Receive email notifications for admin alerts where the admin has enabled
     email alering. If unchecked, you can still see the alerts in the SODAR GUI.

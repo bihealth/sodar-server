@@ -2083,6 +2083,36 @@ class TestIrodsDataRequestAcceptView(
         self.assertEqual(self.irods.collections.exists(coll_path), False)
         self.assert_irods_obj(obj_path2, False)
 
+    def test_post_disable_alert_notify(self):
+        """Test POST wth disabled alert notifications"""
+        app_settings.set(
+            APP_NAME,
+            'notify_alert_irods_request',
+            False,
+            user=self.user_contributor,
+        )
+        self.assert_irods_obj(self.obj_path)
+        obj = self.make_irods_request(
+            project=self.project,
+            action=IRODS_REQUEST_ACTION_DELETE,
+            path=self.obj_path,
+            status=IRODS_REQUEST_STATUS_ACTIVE,
+            user=self.user_contributor,
+        )
+        with self.login(self.user):
+            self.client.post(
+                reverse(
+                    'samplesheets:irods_request_accept',
+                    kwargs={'irodsdatarequest': obj.sodar_uuid},
+                ),
+                {'confirm': True},
+            )
+        obj.refresh_from_db()
+        self.assertEqual(obj.status, IRODS_REQUEST_STATUS_ACCEPTED)
+        self.assert_irods_obj(self.obj_path, False)
+        # No alert for contributor
+        self._assert_alert_count(EVENT_ACCEPT, self.user_contributor, 0)
+
     def test_post_disable_email_notify(self):
         """Test POST wth disabled email notifications"""
         app_settings.set(
@@ -2627,6 +2657,35 @@ class TestIrodsDataRequestRejectView(
                 ),
             )
         self.assertEqual(response.status_code, 404)
+
+    def test_get_disable_alert_notify(self):
+        """Test GET with disabled alert notifications"""
+        app_settings.set(
+            APP_NAME,
+            'notify_alert_irods_request',
+            False,
+            user=self.user_contributor,
+        )
+        self.assert_irods_obj(self.obj_path)
+        obj = self.make_irods_request(
+            project=self.project,
+            action=IRODS_REQUEST_ACTION_DELETE,
+            path=self.obj_path,
+            status=IRODS_REQUEST_STATUS_ACTIVE,
+            user=self.user_contributor,
+        )
+        with self.login(self.user):
+            self.client.get(
+                reverse(
+                    'samplesheets:irods_request_reject',
+                    kwargs={'irodsdatarequest': obj.sodar_uuid},
+                ),
+            )
+        obj.refresh_from_db()
+        self.assertEqual(obj.status, IRODS_REQUEST_STATUS_REJECTED)
+        self.assert_irods_obj(self.obj_path)
+        # No alert for contributor
+        self._assert_alert_count(EVENT_REJECT, self.user_contributor, 0)
 
     def test_get_disable_email_notify(self):
         """Test GET with disabled email notifications"""

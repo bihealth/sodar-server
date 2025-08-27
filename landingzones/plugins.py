@@ -59,7 +59,17 @@ LANDINGZONES_APP_SETTINGS = [
         default=True,
         label='Notify members of landing zone uploads',
         description='Notify project members via alerts and email if new files '
-        'are uploaded from landing zones',
+        'are uploaded from landing zones.',
+        user_modifiable=True,
+    ),
+    PluginAppSettingDef(
+        name='notify_alert_zone_status',
+        scope=APP_SETTING_SCOPE_USER,
+        type=APP_SETTING_TYPE_BOOLEAN,
+        default=True,
+        label='Receive alerts for landing zone status updates',
+        description='Receive UI alerts for status changes in your landing '
+        'zones.',
         user_modifiable=True,
     ),
     PluginAppSettingDef(
@@ -69,7 +79,7 @@ LANDINGZONES_APP_SETTINGS = [
         default=True,
         label='Receive email for landing zone status updates',
         description='Receive email notifications for status changes in your '
-        'landing zones',
+        'landing zones.',
         user_modifiable=True,
     ),
     PluginAppSettingDef(
