@@ -3,11 +3,18 @@
 import logging
 import sys
 
+from packaging.version import parse as parse_version
+
 from django.conf import settings
 from django.urls import reverse
 
 from rest_framework import serializers, status
-from rest_framework.exceptions import APIException, NotFound, PermissionDenied
+from rest_framework.exceptions import (
+    APIException,
+    NotAcceptable,
+    NotFound,
+    PermissionDenied,
+)
 from rest_framework.generics import (
     ListAPIView,
     RetrieveAPIView,
@@ -23,11 +30,13 @@ from rest_framework.views import APIView
 from drf_spectacular.utils import extend_schema, inline_serializer
 
 # Projectroles dependency
+from projectroles.app_settings import AppSettingAPI
 from projectroles.plugins import PluginAPI
 from projectroles.views_api import (
     SODARAPIBaseProjectMixin,
     SODARAPIGenericProjectMixin,
     SODARPageNumberPagination,
+    VIEW_NOT_ACCEPTABLE_VERSION_MSG,
 )
 
 # Samplesheets dependency
@@ -41,6 +50,7 @@ from landingzones.constants import (
 )
 from landingzones.models import LandingZone
 from landingzones.serializers import LandingZoneSerializer
+from landingzones.utils import cleanup_file_prohibit
 from landingzones.views import (
     ZoneModifyPermissionMixin,
     ZoneModifyMixin,
@@ -51,15 +61,25 @@ from landingzones.views import (
 )
 
 
+app_settings = AppSettingAPI()
 logger = logging.getLogger(__name__)
 plugin_api = PluginAPI()
 
 
 # Local constants
+APP_NAME = 'landingzones'
 LANDINGZONES_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar.landingzones+json'
-LANDINGZONES_API_ALLOWED_VERSIONS = ['1.0']
-LANDINGZONES_API_DEFAULT_VERSION = '1.0'
+LANDINGZONES_API_ALLOWED_VERSIONS = ['1.0', '1.1']
+LANDINGZONES_API_DEFAULT_VERSION = '1.1'
 ZONE_NO_COLLS_MSG = 'iRODS collections not created for project'
+ZONE_SETTINGS = [
+    'LANDINGZONES_DISABLE_FOR_USERS',
+    'LANDINGZONES_TRIGGER_ENABLE',
+    'LANDINGZONES_TRIGGER_FILE',
+    'LANDINGZONES_ZONE_CREATE_LIMIT',
+    'LANDINGZONES_ZONE_VALIDATE_LIMIT',
+]
+VERSION_1_1 = parse_version('1.1')
 
 
 # Mixins and Base Views --------------------------------------------------------
@@ -485,3 +505,52 @@ class ZoneSubmitMoveAPIView(ZoneMoveMixin, ZoneSubmitBaseAPIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class ZoneSettingsRetrieveAPIView(
+    LandingzonesAPIVersioningMixin, SODARAPIGenericProjectMixin, APIView
+):
+    """
+    Retrieve currently active settings related to landing zone creation for a
+    specific project. The following settings are returned:
+
+    ``LANDINGZONES_DISABLE_FOR_USERS``
+        Disable landing zone creation for non-superusers (boolean)
+    ``LANDINGZONES_TRIGGER_ENABLE``
+        Enable landing zone move triggering by uploaded file (boolean)
+    ``LANDINGZONES_TRIGGER_FILE``
+        File name for landing zone file triggering (string)
+    ``LANDINGZONES_ZONE_CREATE_LIMIT``
+        Zone creation limit per project (integer or None)
+    ``LANDINGZONES_ZONE_VALIDATE_LIMIT``
+        Zone validation limit per project (integer)
+    ``file_name_prohibit``
+        Prohibited file name suffixes for zones in this project (list)
+
+    **URL:** ``/landingzones/api/settings/retrieve/{Project.sodar_uuid}``
+
+    **Methods:** ``GET``
+
+    **Returns:**
+
+    - ``settings``: Setting names and values (dict)
+
+    **Version Changes**:
+
+    - ``1.1``: Add view
+    """
+
+    lookup_field = 'sodar_uuid'
+    lookup_url_kwarg = 'landingzone'
+    permission_required = 'landingzones.view_zone_own'
+
+    def get(self, request, *args, **kwargs):
+        if parse_version(self.request.version) < VERSION_1_1:
+            raise NotAcceptable(VIEW_NOT_ACCEPTABLE_VERSION_MSG)
+        project = self.get_project()
+        ret = {k: getattr(settings, k) for k in ZONE_SETTINGS}
+        prohibit_val = app_settings.get(
+            APP_NAME, 'file_name_prohibit', project=project
+        )
+        ret['file_name_prohibit'] = cleanup_file_prohibit(prohibit_val)
+        return Response({'settings': ret}, status=200)

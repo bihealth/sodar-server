@@ -378,4 +378,57 @@ class TestZoneUpdateAPIView(ZoneAPIPermissionTestBase):
         )
 
 
+class TestZoneSettingsRetrieveAPIView(ZoneAPIPermissionTestBase):
+    """Tests for ZoneSettingsRetrieveAPIView permissions"""
+
+    def setUp(self):
+        super().setUp()
+        self.url = reverse(
+            'landingzones:api_settings_retrieve',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+
+    def test_get(self):
+        """Test ZoneSettingsRetrieveAPIView GET"""
+        self.assert_response(self.url, self.good_users, 200)
+        self.assert_response(self.url, self.bad_users, 403)
+        self.assert_response(self.url, self.anonymous, 401)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.user_no_roles, 403)
+            self.assert_response(self.url, self.anonymous, 401)
+
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_get_anon(self):
+        """Test GET with anonymous access"""
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 401)
+
+    def test_get_archive(self):
+        """Test GET with archived project"""
+        self.project.set_archive()
+        self.assert_response(self.url, self.good_users, 200)
+        self.assert_response(self.url, self.bad_users, 403)
+        self.assert_response(self.url, self.anonymous, 401)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.user_no_roles, 403)
+            self.assert_response(self.url, self.anonymous, 401)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response_api(self.url, self.superuser, 200)
+        self.assert_response_api(self.url, self.auth_non_superusers, 403)
+        self.assert_response_api(self.url, self.anonymous, 401)
+
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.good_users, 200)
+        self.assert_response(self.url, self.bad_users, 403)
+        self.assert_response(self.url, self.anonymous, 401)
+
+
 # NOTE: For other API view tests, see test_permissions_api_taskflow

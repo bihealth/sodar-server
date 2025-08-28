@@ -5,6 +5,7 @@ import json
 from django.urls import reverse
 
 # Projectroles dependency
+from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import PluginAPI
 from projectroles.tests.test_views_api import APIViewTestBase
@@ -26,6 +27,7 @@ from landingzones.views_api import (
 )
 
 
+app_settings = AppSettingAPI()
 plugin_api = PluginAPI()
 
 
@@ -38,6 +40,7 @@ PROJECT_TYPE_CATEGORY = SODAR_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 # Local constants
+APP_NAME = 'landingzones'
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 ZONE_STATUS = ZONE_STATUS_VALIDATING
 ZONE_STATUS_INFO = 'Testing'
@@ -296,3 +299,44 @@ class TestLandingZoneUpdateAPIView(LandingZoneAPIViewTestBase):
         data = {'title': 'New title'}
         response = self.request_knox(self.url, method='PUT', data=data)
         self.assertEqual(response.status_code, 400)
+
+
+class TestZoneSettingsRetrieveAPIView(LandingZoneAPIViewTestBase):
+    """Tests for ZoneSettingsRetrieveAPIView"""
+
+    def setUp(self):
+        super().setUp()
+        self.url = reverse(
+            'landingzones:api_settings_retrieve',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+
+    def test_get(self):
+        """Test ZoneSettingsRetrieveAPIView GET"""
+        response = self.request_knox(self.url)
+        self.assertEqual(response.status_code, 200)
+        expected = {
+            'LANDINGZONES_DISABLE_FOR_USERS': False,
+            'LANDINGZONES_TRIGGER_ENABLE': True,
+            'LANDINGZONES_TRIGGER_FILE': '.sodar_validate_and_move',
+            'LANDINGZONES_ZONE_CREATE_LIMIT': None,
+            'LANDINGZONES_ZONE_VALIDATE_LIMIT': 4,
+            'file_name_prohibit': [],
+        }
+        self.assertEqual(response.data['settings'], expected)
+
+    def test_get_file_name_prohibit_set(self):
+        """Test GET with file_name_prohibit value set"""
+        app_settings.set(
+            APP_NAME, 'file_name_prohibit', 'bam, vcf.gz', project=self.project
+        )
+        response = self.request_knox(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.data['settings']['file_name_prohibit'], ['bam', 'vcf.gz']
+        )
+
+    def test_get_v1_0(self):
+        """Test GET with API version 1.0 (should fail)"""
+        response = self.request_knox(self.url, version='1.0')
+        self.assertEqual(response.status_code, 406)

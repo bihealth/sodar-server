@@ -19,6 +19,7 @@ Added
 - **Landingzones**
     - Project viewer role support (#2200)
     - ``notify_alert_zone_status`` user app setting (#2205)
+    - ``ZoneSettingsRetrieveAPIView`` REST API view (#2174)
 - **Samplesheets**
     - Project viewer role support (#2200)
     - Category statistics for sample count and iRODS statistics (#2213)
@@ -47,6 +48,7 @@ Changed
     - Update views for project access blocking support (#2233)
     - Hide project list zone column content for guest roles and below (#2200)
     - Update app for ``public_access`` support (#2202)
+    - Upgrade landingzones REST API version to v1.1 (#2174)
 - **Samplesheets**
     - Update views for project access blocking support (#2233)
     - Update app for ``public_access`` support (#2202)

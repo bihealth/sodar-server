@@ -77,6 +77,11 @@ urls_api = [
         view=views_api.ZoneSubmitMoveAPIView.as_view(),
         name='api_submit_move',
     ),
+    path(
+        route='api/settings/retrieve/<uuid:project>',
+        view=views_api.ZoneSettingsRetrieveAPIView.as_view(),
+        name='api_settings_retrieve',
+    ),
 ]
 
 # Ajax API views

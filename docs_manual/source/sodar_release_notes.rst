@@ -16,8 +16,19 @@ Major feature update and SODAR Core 1.2 upgrade.
 - Add project viewer role support
 - Add category statistics for sample count and iRODS data
 - Add user opt-out settings for app alert notifications
+- Add landing zone settings retrieval REST API view
+- Upgrade landingzones REST API version to v1.1
 - Upgrade supported development platform to Ubuntu 24.04
 - Upgrade to SODAR Core v1.2.1
+
+REST API Updates
+----------------
+
+- Landing Zones API
+    * Current version: ``1.1`` (non-breaking changes)
+    * Allowed versions: ``1.0``, ``1.1``
+    * ``ZoneSettingsRetrieveAPIView``
+        + Add view
 
 
 v1.1.4 (2025-08-12)
