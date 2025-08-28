@@ -55,6 +55,8 @@ Changed
 Fixed
 -----
 
+- **General**
+    - Local settings used for ``geticons`` and ``collectstatic`` in CI (#2251)
 - **Samplesheets**
     - Details card iRODS stats badge fails with guest role (#2243)
     - Sheet Operations dropdown disabled for guest user (#2244)
@@ -64,6 +66,7 @@ Removed
 
 - **General**
     - django-cprofile-middleware dependency (#2249)
+    - ``local.txt`` dependencies from CI (#2250)
 
 
 v1.1.4 (2025-08-12)

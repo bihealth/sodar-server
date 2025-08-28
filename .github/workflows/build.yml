@@ -63,7 +63,7 @@ jobs:
       - name: Install project Python dependencies
         run: |
           pip install wheel==0.42.0
-          pip install -r requirements/local.txt --use-pep517
+          pip install -r requirements/base.txt --use-pep517
           pip install -r requirements/test.txt --use-pep517
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -74,9 +74,9 @@ jobs:
           npm ci --prefix samplesheets/vueapp
           nohup npm run -prefix samplesheets/vueapp serve &
       - name: Download icons
-        run: python manage.py geticons
+        run: python manage.py geticons --settings=config.settings.test
       - name: Run collectstatic
-        run: python manage.py collectstatic --noinput
+        run: python manage.py collectstatic --noinput --settings=config.settings.test
       - name: Run Django tests
         run: |
           coverage run --rcfile=.coveragerc manage.py test -v 2 --settings=config.settings.test
