@@ -35,7 +35,7 @@ Changed
     - Upgrade to django-sodar-core v1.2.1 (#2187, #2245)
     - Upgrade to Nodejs v22 (#2229)
     - Upgrade supported develoment and CI platform to Ubuntu v24.04 (#2067)
-    - Upgrade general Python depedencies (#2187)
+    - Upgrade general Python depedencies (#2187, #2232)
     - Refactor plugin helpers to use ``PluginAPI`` (#2187)
     - Move black configuration to ``pyproject.toml`` (#2187)
     - Reformat migrations (#2187)
@@ -51,6 +51,7 @@ Changed
     - Update views for project access blocking support (#2233)
     - Update app for ``public_access`` support (#2202)
     - Refactor ``ProjectAppPlugin.update_cache()`` (#2213)
+    - Upgrade critical Vue app dependencies (#2232)
 
 Fixed
 -----
@@ -67,6 +68,7 @@ Removed
 - **General**
     - django-cprofile-middleware dependency (#2249)
     - ``local.txt`` dependencies from CI (#2250)
+    - Legacy ``local_extra.txt`` dependency file (#2252)
 
 
 v1.1.4 (2025-08-12)

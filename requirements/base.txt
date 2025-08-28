@@ -96,26 +96,26 @@ altamisa==0.3.0
 python-irodsclient==3.1.1
 
 # XML generating
-lxml==4.9.1
+lxml==6.0.1
 
 # Excel file generating
-openpyxl==3.0.10
+openpyxl==3.1.5
 
 # Webpack loader for Vue.js
-django-webpack-loader==1.6.0
+django-webpack-loader==3.2.1
 
 # OBO ontology file parsing
-fastobo==0.12.2
-pronto==2.5.0  # For OWL conversion
+fastobo==0.13.0
+pronto==2.7.0  # For OWL conversion
 
 # CUBI ISA-Tab templates
-cookiecutter==2.2.3
+cookiecutter==2.6.0
 cubi-isa-templates==0.1.2
 # -e git+https://github.com/bihealth/cubi-isa-templates.git@d3ebe866f3823d81fdb358042ef7ed4d8b8fd100#egg=cubi-isa-templates
 
 # Taskflow requirements
-tooz==6.3.0
-taskflow==5.0.0
+tooz==7.0.0
+taskflow==6.0.2
 
 # DRF-spectacular for OpenAPI schema generation
 drf-spectacular>=0.28.0, <0.29
