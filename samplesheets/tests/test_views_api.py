@@ -5,6 +5,7 @@ import os
 
 from datetime import timedelta
 
+from django.conf import settings
 from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -93,6 +94,8 @@ SHEET_PATH_NO_PLUGIN_ASSAY = SHEET_DIR_SPECIAL + 'i_small_assay_no_plugin.zip'
 IRODS_FILE_NAME = 'test1.txt'
 IRODS_FILE_MD5 = '0b26e313ed4a7ca6904b0e9369e5b957'
 TICKET_PATH = '/test/path'
+BACKEND_PLUGINS_NO_IRODS = settings.ENABLED_BACKEND_PLUGINS.copy()
+BACKEND_PLUGINS_NO_IRODS.remove('omics_irods')
 
 
 # TODO: Add testing for study table cache updates
@@ -1046,9 +1049,9 @@ class TestIrodsDataRequestDestroyAPIView(
 class TestSampleDataFileExistsAPIView(SampleSheetAPIViewTestBase):
     """Tests for SampleDataFileExistsAPIView"""
 
-    @override_settings(ENABLE_IRODS=False)
-    def test_get_no_irods(self):
-        """Test SampleDataFileExistsAPIView GET without iRODS (should fail)"""
+    @override_settings(ENABLED_BACKEND_PLUGINS=BACKEND_PLUGINS_NO_IRODS)
+    def test_get_no_irods_backend(self):
+        """Test SampleDataFileExistsAPIView GET without iRODS backend (should fail)"""
         url = reverse('samplesheets:api_file_exists')
         response = self.request_knox(url, data={'checksum': IRODS_FILE_MD5})
         self.assertEqual(response.status_code, 500)

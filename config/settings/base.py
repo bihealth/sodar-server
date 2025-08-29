@@ -679,7 +679,6 @@ TOKENS_CREATE_PROJECT_USER_RESTRICT = env.bool(
 
 
 # iRODS settings shared by iRODS using apps
-ENABLE_IRODS = env.bool('ENABLE_IRODS', True)
 IRODS_HOST = env.str('IRODS_HOST', '127.0.0.1')
 IRODS_HOST_FQDN = env.str('IRODS_HOST_FQDN', IRODS_HOST)
 IRODS_PORT = env.int('IRODS_PORT', 4477)

@@ -23,7 +23,6 @@ class TestIrodsbackendChecks(TestCase):
 
     def test_check_sodar_auth_oidc(self):
         """Test check_sodar_auth_oidc() with default settings"""
-        self.assertEqual(settings.ENABLE_IRODS, True)
         self.assertEqual(settings.IRODS_SODAR_AUTH, True)
         self.assertEqual(settings.ENABLE_OIDC, False)
         self.assertEqual(checks.check_sodar_auth_oidc(AC), [])
@@ -40,7 +39,6 @@ class TestIrodsbackendChecks(TestCase):
 
     def test_check_sodar_auth_local(self):
         """Test check_sodar_auth_local() with default settings"""
-        self.assertEqual(settings.ENABLE_IRODS, True)
         self.assertEqual(settings.IRODS_SODAR_AUTH, True)
         self.assertEqual(settings.ENABLE_LDAP, False)
         self.assertEqual(settings.ENABLE_OIDC, False)
@@ -53,7 +51,6 @@ class TestIrodsbackendChecks(TestCase):
 
     def test_check_token_app_oidc(self):
         """Test check_token_app_oidc() with default settings"""
-        self.assertEqual(settings.ENABLE_IRODS, True)
         self.assertEqual(settings.ENABLE_OIDC, False)
         self.assertIsNotNone(plugin_api.get_app_plugin('tokens'))
         self.assertEqual(checks.check_token_app_oidc(AC), [])

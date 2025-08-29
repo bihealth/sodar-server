@@ -32,6 +32,18 @@ All instructions assume you are running the previous major release of SODAR
 before performing the upgrade.
 
 
+.. _admin_upgrade_v1.2:
+
+v1.2
+====
+
+The following changes have been made to environment variables:
+
+- ``ENABLE_IRODS`` setting removed. If you need to set up a SODAR instance
+  without iRODS and file access, disable the ``omics_irods`` and
+  ``taskflowbackend`` backends along with other iRODS using apps.
+
+
 .. _admin_upgrade_v1.1:
 
 v1.1

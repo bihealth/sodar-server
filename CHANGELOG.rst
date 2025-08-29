@@ -71,6 +71,7 @@ Removed
     - django-cprofile-middleware dependency (#2249)
     - ``local.txt`` dependencies from CI (#2250)
     - Legacy ``local_extra.txt`` dependency file (#2252)
+    - Legacy ``ENABLE_IRODS`` Django setting (#2100)
 
 
 v1.1.4 (2025-08-12)

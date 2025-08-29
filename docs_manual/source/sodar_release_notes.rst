@@ -21,6 +21,8 @@ Major feature update and SODAR Core 1.2 upgrade.
 - Upgrade supported development platform to Ubuntu 24.04
 - Upgrade to SODAR Core v1.2.1
 
+:ref:`Administrator upgrade guide for v1.2 <admin_upgrade_v1.2>`
+
 REST API Updates
 ----------------
 

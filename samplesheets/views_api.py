@@ -1003,8 +1003,6 @@ class SampleDataFileExistsAPIView(SamplesheetsAPIVersioningMixin, APIView):
             )
             if roles.count() == 0:
                 raise PermissionDenied(FILE_EXISTS_RESTRICT_MSG)
-        if not settings.ENABLE_IRODS:
-            raise APIException('iRODS not enabled')
         irods_backend = plugin_api.get_backend_api('omics_irods')
         if not irods_backend:
             raise APIException('iRODS backend not enabled')
@@ -1111,8 +1109,6 @@ class ProjectIrodsFileListAPIView(
     permission_required = 'samplesheets.view_files'
 
     def get(self, request, *args, **kwargs):
-        if not settings.ENABLE_IRODS:
-            raise APIException('iRODS not enabled')
         version = parse_version(request.version)
         page = request.GET.get('page')
         if page and version < parse_version('1.1'):
