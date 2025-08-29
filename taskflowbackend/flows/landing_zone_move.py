@@ -2,6 +2,9 @@ from irods.exception import GroupDoesNotExist
 
 from django.conf import settings
 
+# Samplesheets dependency
+import samplesheets.tasks_taskflow as ss_tasks
+
 # Landingzones dependency
 from landingzones.constants import (
     ZONE_STATUS_MOVED,
@@ -436,6 +439,17 @@ class Flow(BaseLinearFlow):
                     ),
                     'flow_name': self.flow_name,
                     'extra_data': {'file_count': file_count},
+                },
+            )
+        )
+        self.add_task(
+            ss_tasks.UpdateProjectSheetCacheTask(
+                name='Trigger asynchronous project sheet cache update',
+                project=self.project,
+                inject={
+                    'user': self.user,
+                    'add_alert': True,
+                    'alert_msg': f'Moved landing zone "{zone.title}".',
                 },
                 force_fail=force_fail,
             )

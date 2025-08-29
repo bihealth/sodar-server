@@ -26,6 +26,7 @@ Added
     - Project iRODS stats caching (#2213)
     - ``ProjectAppPlugin.update_irods_stats_cache()`` helper (#2213)
     - ``notify_alert_irods_request`` user app setting (#2205)
+    - ``UpdateProjectSheetCacheTask`` Taskflow task (#2254)
 - **Taskflowbackend**
     - Project viewer role support (#2200)
     - ``user`` arg for ``TaskflowAPI.submit()`` (#2157)
@@ -50,6 +51,7 @@ Changed
     - Hide project list zone column content for guest roles and below (#2200)
     - Update app for ``public_access`` support (#2202)
     - Upgrade landingzones REST API version to v1.1 (#2174)
+    - Move project sheet cache update to ``UpdateProjectSheetCacheTask`` (#2254)
 - **Samplesheets**
     - Update views for project access blocking support (#2233)
     - Update app for ``public_access`` support (#2202)
@@ -64,6 +66,8 @@ Fixed
 - **Samplesheets**
     - Details card iRODS stats badge fails with guest role (#2243)
     - Sheet Operations dropdown disabled for guest user (#2244)
+- **Taskflowbackend**
+    - Incorrect user in landing zone move sheet cache update timeline event (#2152)
 
 Removed
 -------

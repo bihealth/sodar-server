@@ -14,9 +14,6 @@ from projectroles.email import send_generic_mail, get_email_user
 from projectroles.models import SODARUser
 from projectroles.plugins import PluginAPI
 
-# Samplesheets dependency
-from samplesheets.tasks_celery import update_project_cache_task
-
 # Taskflowbackend dependency
 from taskflowbackend.tasks.sodar_tasks import SODARBaseTask
 
@@ -391,19 +388,7 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
                         f'Unable to cleanup zone "{zone.title}" with plugin '
                         f'"{config_plugin.name}": {ex}'
                     )
-
-        # Update cache
-        # TODO: Move into separate task?
-        if status == ZONE_STATUS_MOVED and settings.SHEETS_ENABLE_CACHE:
-            try:
-                update_project_cache_task.delay(
-                    project_uuid=str(zone.project.sodar_uuid),
-                    user_uuid=str(zone.user.sodar_uuid),
-                    add_alert=True,
-                    alert_msg=f'Moved landing zone "{zone.title}".',
-                )
-            except Exception as ex:
-                logger.error(f'Unable to run project cache update task: {ex}')
+        # NOTE: Sheet cache update moved to samplesheets.tasks_taskflow
 
 
 class SetLandingZoneStatusTask(BaseLandingZoneStatusTask):
