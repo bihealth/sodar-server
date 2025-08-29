@@ -121,6 +121,7 @@ class SampleSheetTaskflowMixin:
         project = investigation.project
         values = {
             'project': project,
+            'user': None,
             'flow_name': 'sheet_colls_create',
             'flow_data': {
                 'colls': get_sample_colls(investigation),

@@ -245,6 +245,7 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
         timeline = plugin_api.get_backend_api('timeline_backend')
         irods_backend = plugin_api.get_backend_api('omics_irods')
         project = zone.project
+        req_user = request.user if request else None
         tl_event = None
         config_str = (
             f' with configuration "{zone.configuration}"'
@@ -268,7 +269,7 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
             tl_event = timeline.add_event(
                 project=project,
                 app_name=APP_NAME,
-                user=request.user if request else None,
+                user=req_user,
                 event_name=f'zone_{tl_action}',
                 description='{} landing zone {{{}}}{} for {{{}}} in '
                 '{{{}}}'.format(tl_action, 'zone', config_str, 'user', 'assay'),
@@ -341,6 +342,7 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
                 try:
                     taskflow.submit(
                         project=project,
+                        user=req_user,
                         flow_name='role_update_irods_batch',
                         flow_data=flow_data,
                         async_mode=False,
@@ -362,6 +364,7 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
         try:
             taskflow.submit(
                 project=project,
+                user=req_user,
                 flow_name=flow_name,
                 flow_data=flow_data,
                 async_mode=True,
@@ -426,13 +429,14 @@ class ZoneDeleteMixin(ZoneConfigPluginMixin):
         timeline = plugin_api.get_backend_api('timeline_backend')
         tl_event = None
         project = zone.project
+        req_user = self.request.user
 
         # Init Timeline event
         if timeline:
             tl_event = timeline.add_event(
                 project=project,
                 app_name=APP_NAME,
-                user=self.request.user,
+                user=req_user,
                 event_name='zone_delete',
                 description='delete landing zone {{{}}} in {{{}}} '
                 'from {{{}}}'.format('zone', 'assay', 'user'),
@@ -461,6 +465,7 @@ class ZoneDeleteMixin(ZoneConfigPluginMixin):
                 tl_event.set_status(timeline.TL_STATUS_SUBMIT)
             taskflow.submit(
                 project=project,
+                user=req_user,
                 flow_name=flow_name,
                 flow_data=flow_data,
                 async_mode=True,
@@ -542,6 +547,7 @@ class ZoneMoveMixin(ZoneConfigPluginMixin):
             flow_data['validate_only'] = True
         taskflow.submit(
             project=project,
+            user=request.user if request else None,
             flow_name='landing_zone_move',
             flow_data=flow_data,
             async_mode=True,

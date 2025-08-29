@@ -125,6 +125,7 @@ class LandingZoneTaskflowMixin:
         }
         values = {
             'project': zone.project,
+            'user': request.user if request else None,
             'flow_name': 'landing_zone_create',
             'flow_data': flow_data,
             'async_mode': True,

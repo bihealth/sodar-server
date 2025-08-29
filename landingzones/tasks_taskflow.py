@@ -393,7 +393,7 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
                     )
 
         # Update cache
-        # TODO: TBD: Move into separate task?
+        # TODO: Move into separate task?
         if status == ZONE_STATUS_MOVED and settings.SHEETS_ENABLE_CACHE:
             try:
                 update_project_cache_task.delay(

@@ -132,6 +132,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         ]
         all_members = [a.user.username for a in all_roles]
         children = self._get_child_projects(project)
+        req_user = request.user if request else None
 
         if project.is_project():
             flow_data = {
@@ -166,6 +167,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                 ]
             taskflow.submit(
                 project=project,
+                user=req_user,
                 flow_name=f'project_{action.lower()}',
                 flow_data=flow_data,
             )
@@ -192,6 +194,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                         )
             taskflow.submit(
                 project=None,
+                user=req_user,
                 flow_name='role_update_irods_batch',
                 flow_data=flow_data,
             )
@@ -205,7 +208,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                 project=project,
                 app_name=APP_NAME,
                 plugin_name='taskflow',
-                user=request.user if request else None,
+                user=req_user,
                 event_name=f'project_{tl_action}',
                 description=f'{tl_action} {project.type.lower()} in iRODS',
                 status_type=timeline.TL_STATUS_OK,
@@ -309,6 +312,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         taskflow = self.get_api()
         timeline = plugin_api.get_backend_api('timeline_backend')
         project = role_as.project
+        req_user = request.user if request else None
         user = role_as.user
         children = self._get_child_projects(project)
         flow_data = {'roles_add': [], 'roles_delete': []}
@@ -348,6 +352,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                     )
         taskflow.submit(
             project=None,
+            user=req_user,
             flow_name='role_update_irods_batch',
             flow_data=flow_data,
         )
@@ -357,7 +362,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                 project=project,
                 app_name=APP_NAME,
                 plugin_name='taskflow',
-                user=request.user if request else None,
+                user=req_user,
                 event_name='role_update',
                 description='update {} iRODS access for user {{{}}}'.format(
                     project.type.lower(), 'user'
@@ -384,6 +389,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         """
         timeline = plugin_api.get_backend_api('timeline_backend')
         project = role_as.project
+        req_user = request.user if request else None
         user = role_as.user
         user_name = user.username
         flow_data = {'roles_add': [], 'roles_delete': []}
@@ -451,6 +457,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         if flow_data['roles_add'] or flow_data['roles_delete']:
             self.get_api().submit(
                 project=None,
+                user=req_user,
                 flow_name='role_update_irods_batch',
                 flow_data=flow_data,
             )
@@ -460,7 +467,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                 project=project,
                 app_name=APP_NAME,
                 plugin_name='taskflow',
-                user=request.user if request else None,
+                user=req_user,
                 event_name='role_update_revert',
                 description='revert adding iRODS access for '
                 'user {{{}}}'.format('user'),
@@ -481,6 +488,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         """
         timeline = plugin_api.get_backend_api('timeline_backend')
         project = role_as.project
+        req_user = request.user if request else None
         user = role_as.user
         user_name = user.username
         flow_data = {'roles_add': [], 'roles_delete': []}
@@ -533,6 +541,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         if flow_data['roles_add'] or flow_data['roles_delete']:
             self.get_api().submit(
                 project=None,
+                user=req_user,
                 flow_name='role_update_irods_batch',
                 flow_data=flow_data,
             )
@@ -542,7 +551,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                 project=project,
                 app_name=APP_NAME,
                 plugin_name='taskflow',
-                user=request.user if request else None,
+                user=req_user,
                 event_name='role_delete',
                 description='remove project iRODS access from user {user}',
                 status_type=timeline.TL_STATUS_OK,
@@ -563,6 +572,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         """
         timeline = plugin_api.get_backend_api('timeline_backend')
         project = role_as.project
+        req_user = request.user if request else None
         user = role_as.user
         user_name = user.username
         flow_data = {'roles_add': [], 'roles_delete': []}
@@ -603,6 +613,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         if flow_data['roles_add'] or flow_data['roles_delete']:
             self.get_api().submit(
                 project=None,
+                user=req_user,
                 flow_name='role_update_irods_batch',
                 flow_data=flow_data,
             )
@@ -612,7 +623,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                 project=role_as.project,
                 app_name=APP_NAME,
                 plugin_name='taskflow',
-                user=request.user if request else None,
+                user=req_user,
                 event_name='role_delete_revert',
                 description='revert removing iRODS access from '
                 'user {{{}}}'.format('user'),
@@ -641,6 +652,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         n_user_name = new_owner.username
         o_user_name = old_owner.username
         o_rank = old_owner_role.rank if old_owner_role else None
+        req_user = request.user if request else None
         flow_data = {'roles_add': [], 'roles_delete': []}
 
         if project.is_project():
@@ -677,6 +689,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         if flow_data['roles_add'] or flow_data['roles_delete']:
             self.get_api().submit(
                 project=None,
+                user=req_user,
                 flow_name='role_update_irods_batch',
                 flow_data=flow_data,
             )
@@ -686,7 +699,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                 project=project,
                 app_name=APP_NAME,
                 plugin_name='taskflow',
-                user=request.user if request else None,
+                user=req_user,
                 event_name='role_owner_transfer',
                 description='update iRODS access for ownership transfer '
                 'from {old_owner} to {new_owner}',
@@ -747,6 +760,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         if flow_data['roles_delete']:
             self.get_api().submit(
                 project=None,
+                user=None,
                 flow_name='role_update_irods_batch',
                 flow_data=flow_data,
             )

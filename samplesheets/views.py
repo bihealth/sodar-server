@@ -718,6 +718,7 @@ class IrodsCollsCreateViewMixin:
         timeline = plugin_api.get_backend_api('timeline_backend')
         taskflow = plugin_api.get_backend_api('taskflow')
         project = investigation.project
+        req_user = request.user if request else None
         tl_event = None
         action = 'update' if investigation.irods_status else 'create'
 
@@ -727,7 +728,7 @@ class IrodsCollsCreateViewMixin:
             tl_event = timeline.add_event(
                 project=project,
                 app_name=APP_NAME,
-                user=request.user if request else None,
+                user=req_user,
                 event_name='sheet_colls_' + tl_action,
                 description=tl_action + ' iRODS collection structure for '
                 '{investigation}',
@@ -754,7 +755,10 @@ class IrodsCollsCreateViewMixin:
             'ticket_str': ticket_str,
         }
         taskflow.submit(
-            project=project, flow_name='sheet_colls_create', flow_data=flow_data
+            project=project,
+            user=req_user,
+            flow_name='sheet_colls_create',
+            flow_data=flow_data,
         )
         app_settings.set(
             APP_NAME, 'public_access_ticket', ticket_str, project=project
@@ -1044,6 +1048,7 @@ class IrodsDataRequestModifyMixin:
         try:
             taskflow.submit(
                 project=project,
+                user=request.user,
                 flow_name=flow_name,
                 flow_data=flow_data,
                 tl_event=tl_event,
@@ -1798,6 +1803,7 @@ class SheetDeleteView(
         taskflow = plugin_api.get_backend_api('taskflow')
         tl_event = None
         project = Project.objects.get(sodar_uuid=kwargs['project'])
+        req_user = self.request.user
         investigation = Investigation.objects.get(project=project, active=True)
         redirect_url = get_sheets_url(project)
 
@@ -1824,7 +1830,7 @@ class SheetDeleteView(
             tl_event = timeline.add_event(
                 project=project,
                 app_name=APP_NAME,
-                user=self.request.user,
+                user=req_user,
                 event_name='sheet_delete',
                 description='delete investigation {investigation}',
             )
@@ -1857,7 +1863,10 @@ class SheetDeleteView(
                 tl_event.set_status(timeline.TL_STATUS_SUBMIT)
             try:
                 taskflow.submit(
-                    project=project, flow_name='sheet_delete', flow_data={}
+                    project=project,
+                    user=req_user,
+                    flow_name='sheet_delete',
+                    flow_data={},
                 )
                 if tl_event:
                     tl_event.set_status(timeline.TL_STATUS_OK)

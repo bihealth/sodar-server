@@ -182,6 +182,7 @@ class TaskflowAPI:
         cls,
         irods_backend: Any,
         project: Project,
+        user: Optional[SODARUser],
         flow_name: str,
         flow_data: dict,
         async_mode: bool = False,
@@ -192,6 +193,7 @@ class TaskflowAPI:
 
         :param irods_backend: IrodsbackendAPI instance
         :param project: Project object
+        :param user: User submitting the flow (SODARUser or None)
         :param flow_name: Name of flow (string)
         :param flow_data: Flow parameters (dict)
         :param async_mode: Set up flow asynchronously if True (boolean)
@@ -204,6 +206,7 @@ class TaskflowAPI:
         flow = flow_cls(
             irods_backend=irods_backend,
             project=project,
+            user=user,
             flow_name=flow_name,
             flow_data=flow_data,
             async_mode=async_mode,
@@ -311,6 +314,7 @@ class TaskflowAPI:
     def submit(
         self,
         project: Project,
+        user: Optional[SODARUser],
         flow_name: str,
         flow_data: dict,
         async_mode: bool = False,
@@ -321,6 +325,7 @@ class TaskflowAPI:
         Submit taskflow for SODAR project data modification.
 
         :param project: Project object
+        :param user: User submitting the flow (SODARUser or None)
         :param flow_name: Name of flow to be executed (string)
         :param flow_data: Input data for flow execution (dict, must be JSON
                           serializable)
@@ -341,10 +346,10 @@ class TaskflowAPI:
 
         # Launch async submit task if async mode is set
         if async_mode:
-            project_uuid = project.sodar_uuid
             tl_uuid = tl_event.sodar_uuid if tl_event else None
             submit_flow_task.delay(
-                project_uuid,
+                project.sodar_uuid,
+                user.sodar_uuid if user else None,
                 flow_name,
                 flow_data,
                 tl_uuid,
@@ -355,6 +360,7 @@ class TaskflowAPI:
         flow = self.get_flow(
             irods_backend,
             project,
+            user,
             flow_name,
             flow_data,
             async_mode,

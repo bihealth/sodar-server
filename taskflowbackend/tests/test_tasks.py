@@ -110,6 +110,7 @@ class TaskTestMixin:
         return BaseLinearFlow(
             irods_backend=self.irods_backend,
             project=self.project,
+            user=None,
             flow_name=str(uuid.uuid4()),
             flow_data={},
         )

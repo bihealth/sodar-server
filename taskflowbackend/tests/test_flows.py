@@ -101,6 +101,19 @@ MD5_SUFFIX = '.md5'
 class TaskflowbackendFlowTestBase(TaskflowViewTestBase):
     """Base class for flow tests"""
 
+    def set_flow_kw(self):
+        """
+        Set default flow kwargs in self.flow_kw.
+
+        NOTE: Must be a method because self.project may not be initialized at
+              setUp()
+        """
+        self.flow_kw = {
+            'irods_backend': self.irods_backend,
+            'project': self.project,
+            'user': self.user,
+        }
+
     def build_and_run(self, flow: BaseLinearFlow, force_fail: bool = False):
         """Build and run flow"""
         flow.build(force_fail)
@@ -116,11 +129,11 @@ class TestDataDelete(TaskflowbackendFlowTestBase):
             'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
         )
         self.project_path = self.irods_backend.get_path(self.project)
-        # Set up iRODS data
         self.coll_path = os.path.join(self.project_path, COLL_NAME)
         self.coll = self.irods.collections.create(self.coll_path)
         self.obj_path = os.path.join(self.project_path, OBJ_NAME)
         self.obj = self.irods.data_objects.create(self.obj_path)
+        self.set_flow_kw()
 
     def test_delete(self):
         """Test data_delete for deleting a collection and a data object"""
@@ -129,10 +142,7 @@ class TestDataDelete(TaskflowbackendFlowTestBase):
 
         flow_data = {'paths': [self.coll_path, self.obj_path]}
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='data_delete',
-            flow_data=flow_data,
+            flow_name='data_delete', flow_data=flow_data, **self.flow_kw
         )
         self.assertEqual(type(flow), DataDeleteFlow)
         self.build_and_run(flow)
@@ -144,10 +154,7 @@ class TestDataDelete(TaskflowbackendFlowTestBase):
         """Test data_delete with locked project (should fail)"""
         flow_data = {'paths': [self.coll_path, self.obj_path]}
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='data_delete',
-            flow_data=flow_data,
+            flow_name='data_delete', flow_data=flow_data, **self.flow_kw
         )
         self.lock_project(self.project)
         with self.assertRaises(self.taskflow.FlowSubmitException):
@@ -167,10 +174,7 @@ class TestDataDelete(TaskflowbackendFlowTestBase):
 
         flow_data = {'paths': [self.coll_path]}
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='data_delete',
-            flow_data=flow_data,
+            flow_name='data_delete', flow_data=flow_data, **self.flow_kw
         )
         self.build_and_run(flow)
 
@@ -214,6 +218,7 @@ class TestLandingZoneCreate(
         self.zone_root_path = self.irods_backend.get_zone_path(self.project)
         self.zone_path = self.irods_backend.get_path(self.zone)
         self.owner_group = self.irods_backend.get_group_name(self.project, True)
+        self.set_flow_kw()
 
     def test_create(self):
         """Test landing_zone_create for creating a zone"""
@@ -226,10 +231,7 @@ class TestLandingZoneCreate(
             'restrict_colls': False,
         }
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='landing_zone_create',
-            flow_data=flow_data,
+            flow_name='landing_zone_create', flow_data=flow_data, **self.flow_kw
         )
         self.assertEqual(type(flow), LandingZoneCreateFlow)
         self.build_and_run(flow)
@@ -260,10 +262,7 @@ class TestLandingZoneCreate(
             'restrict_colls': False,
         }
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='landing_zone_create',
-            flow_data=flow_data,
+            flow_name='landing_zone_create', flow_data=flow_data, **self.flow_kw
         )
         self.lock_project(self.project)
         self.taskflow.run_flow(flow, self.project)  # Lock not required
@@ -281,10 +280,7 @@ class TestLandingZoneCreate(
             'restrict_colls': False,
         }
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='landing_zone_create',
-            flow_data=flow_data,
+            flow_name='landing_zone_create', flow_data=flow_data, **self.flow_kw
         )
         self.assertEqual(type(flow), LandingZoneCreateFlow)
         self.build_and_run(flow, force_fail=True)
@@ -306,10 +302,7 @@ class TestLandingZoneCreate(
             'restrict_colls': False,
         }
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='landing_zone_create',
-            flow_data=flow_data,
+            flow_name='landing_zone_create', flow_data=flow_data, **self.flow_kw
         )
         self.assertEqual(type(flow), LandingZoneCreateFlow)
         self.build_and_run(flow)
@@ -340,10 +333,7 @@ class TestLandingZoneCreate(
             'restrict_colls': True,
         }
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='landing_zone_create',
-            flow_data=flow_data,
+            flow_name='landing_zone_create', flow_data=flow_data, **self.flow_kw
         )
         self.assertEqual(type(flow), LandingZoneCreateFlow)
         self.build_and_run(flow)
@@ -382,10 +372,7 @@ class TestLandingZoneCreate(
             'restrict_colls': True,
         }
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='landing_zone_create',
-            flow_data=flow_data,
+            flow_name='landing_zone_create', flow_data=flow_data, **self.flow_kw
         )
         self.assertEqual(type(flow), LandingZoneCreateFlow)
         self.build_and_run(flow, force_fail=True)
@@ -410,10 +397,7 @@ class TestLandingZoneCreate(
             'script_user': SCRIPT_USER_NAME,
         }
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='landing_zone_create',
-            flow_data=flow_data,
+            flow_name='landing_zone_create', flow_data=flow_data, **self.flow_kw
         )
         self.assertEqual(type(flow), LandingZoneCreateFlow)
         self.build_and_run(flow)
@@ -442,10 +426,7 @@ class TestLandingZoneCreate(
             'script_user': SCRIPT_USER_NAME,
         }
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='landing_zone_create',
-            flow_data=flow_data,
+            flow_name='landing_zone_create', flow_data=flow_data, **self.flow_kw
         )
         self.assertEqual(type(flow), LandingZoneCreateFlow)
         flow.build()
@@ -473,10 +454,7 @@ class TestLandingZoneCreate(
             'script_user': SCRIPT_USER_NAME,
         }
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='landing_zone_create',
-            flow_data=flow_data,
+            flow_name='landing_zone_create', flow_data=flow_data, **self.flow_kw
         )
         self.assertEqual(type(flow), LandingZoneCreateFlow)
         self.build_and_run(flow, force_fail=True)
@@ -502,12 +480,11 @@ class TestLandingZoneDelete(
         )
         self.project_group = self.irods_backend.get_group_name(self.project)
         self.project_path = self.irods_backend.get_path(self.project)
-        # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-        # Create iRODS collections
         self.make_irods_colls(self.investigation)
+        self.set_flow_kw()
 
     def test_delete(self):
         """Test landing_zone_delete with empty landing zone"""
@@ -526,10 +503,7 @@ class TestLandingZoneDelete(
 
         flow_data = {'zone_uuid': str(zone.sodar_uuid)}
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='landing_zone_delete',
-            flow_data=flow_data,
+            flow_name='landing_zone_delete', flow_data=flow_data, **self.flow_kw
         )
         self.assertEqual(type(flow), LandingZoneDeleteFlow)
         self.build_and_run(flow)
@@ -551,10 +525,7 @@ class TestLandingZoneDelete(
         self.make_zone_taskflow(zone)
         flow_data = {'zone_uuid': str(zone.sodar_uuid)}
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='landing_zone_delete',
-            flow_data=flow_data,
+            flow_name='landing_zone_delete', flow_data=flow_data, **self.flow_kw
         )
         self.lock_project(self.project)
         self.taskflow.run_flow(flow, self.project)  # Lock not required
@@ -584,10 +555,7 @@ class TestLandingZoneDelete(
 
         flow_data = {'zone_uuid': str(zone.sodar_uuid)}
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='landing_zone_delete',
-            flow_data=flow_data,
+            flow_name='landing_zone_delete', flow_data=flow_data, **self.flow_kw
         )
         self.build_and_run(flow)
 
@@ -627,10 +595,7 @@ class TestLandingZoneDelete(
 
         flow_data = {'zone_uuid': str(zone.sodar_uuid)}
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='landing_zone_delete',
-            flow_data=flow_data,
+            flow_name='landing_zone_delete', flow_data=flow_data, **self.flow_kw
         )
         self.build_and_run(flow)
 
@@ -655,10 +620,7 @@ class TestLandingZoneDelete(
         self.assertEqual(zone.status, ZONE_STATUS_DELETED)
         flow_data = {'zone_uuid': str(zone.sodar_uuid)}
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='landing_zone_delete',
-            flow_data=flow_data,
+            flow_name='landing_zone_delete', flow_data=flow_data, **self.flow_kw
         )
         self.build_and_run(flow)
         zone.refresh_from_db()
@@ -679,10 +641,7 @@ class TestLandingZoneDelete(
         self.assertEqual(zone.status, ZONE_STATUS_DELETED)
         flow_data = {'zone_uuid': str(zone.sodar_uuid)}
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='landing_zone_delete',
-            flow_data=flow_data,
+            flow_name='landing_zone_delete', flow_data=flow_data, **self.flow_kw
         )
         self.build_and_run(flow)
         zone.refresh_from_db()
@@ -728,6 +687,7 @@ class TestLandingZoneMove(
         self.owner_group = self.irods_backend.get_group_name(
             self.project, owner=True
         )
+        self.set_flow_kw()
 
     def test_move(self):
         """Test landing_zone_move"""
@@ -768,11 +728,10 @@ class TestLandingZoneMove(
 
         flow_data = {'zone_uuid': str(self.zone.sodar_uuid)}
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
             flow_name='landing_zone_move',
             flow_data=flow_data,
             tl_event=tl_event,
+            **self.flow_kw,
         )
         self.assertEqual(type(flow), LandingZoneMoveFlow)
         self.build_and_run(flow)
@@ -843,11 +802,10 @@ class TestLandingZoneMove(
 
         flow_data = {'zone_uuid': str(self.zone.sodar_uuid)}
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
             flow_name='landing_zone_move',
             flow_data=flow_data,
             tl_event=None,
+            **self.flow_kw,
         )
         self.assertEqual(type(flow), LandingZoneMoveFlow)
         self.build_and_run(flow)
@@ -911,11 +869,10 @@ class TestLandingZoneMove(
 
         flow_data = {'zone_uuid': str(self.zone.sodar_uuid)}
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
             flow_name='landing_zone_move',
             flow_data=flow_data,
             tl_event=None,
+            **self.flow_kw,
         )
         self.build_and_run(flow)
 
@@ -979,11 +936,10 @@ class TestLandingZoneMove(
             'access_cleanup': False,
         }
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
             flow_name='landing_zone_move',
             flow_data=flow_data,
             tl_event=None,
+            **self.flow_kw,
         )
         self.build_and_run(flow)
 
@@ -1016,10 +972,7 @@ class TestLandingZoneMove(
         self.make_checksum_object(obj)
         flow_data = {'zone_uuid': str(self.zone.sodar_uuid)}
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='landing_zone_move',
-            flow_data=flow_data,
+            flow_name='landing_zone_move', flow_data=flow_data, **self.flow_kw
         )
         self.lock_project(self.project)
         with self.assertRaises(self.taskflow.FlowSubmitException):
@@ -1053,10 +1006,7 @@ class TestLandingZoneMove(
 
         flow_data = {'zone_uuid': str(self.zone.sodar_uuid)}
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='landing_zone_move',
-            flow_data=flow_data,
+            flow_name='landing_zone_move', flow_data=flow_data, **self.flow_kw
         )
         self.assertEqual(type(flow), LandingZoneMoveFlow)
         self.build_and_run(flow)
@@ -1088,10 +1038,7 @@ class TestLandingZoneMove(
 
         flow_data = {'zone_uuid': str(self.zone.sodar_uuid)}
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='landing_zone_move',
-            flow_data=flow_data,
+            flow_name='landing_zone_move', flow_data=flow_data, **self.flow_kw
         )
         flow.build()
         with self.assertRaises(Exception):
@@ -1130,10 +1077,7 @@ class TestLandingZoneMove(
 
         flow_data = {'zone_uuid': str(self.zone.sodar_uuid)}
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='landing_zone_move',
-            flow_data=flow_data,
+            flow_name='landing_zone_move', flow_data=flow_data, **self.flow_kw
         )
         self.build_and_run(flow)
 
@@ -1168,10 +1112,7 @@ class TestLandingZoneMove(
 
         flow_data = {'zone_uuid': str(self.zone.sodar_uuid)}
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='landing_zone_move',
-            flow_data=flow_data,
+            flow_name='landing_zone_move', flow_data=flow_data, **self.flow_kw
         )
         flow.build()
         with self.assertRaises(Exception):
@@ -1199,10 +1140,7 @@ class TestLandingZoneMove(
         sample_obj = self.make_irods_object(sample_coll, COLL_NAME)
         flow_data = {'zone_uuid': str(self.zone.sodar_uuid)}
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='landing_zone_move',
-            flow_data=flow_data,
+            flow_name='landing_zone_move', flow_data=flow_data, **self.flow_kw
         )
         flow.build()
         with self.assertRaisesRegex(Exception, 'CAT_NAME_EXISTS_AS_DATAOBJ'):
@@ -1248,11 +1186,10 @@ class TestLandingZoneMove(
 
         flow_data = {'zone_uuid': str(self.zone.sodar_uuid)}
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
             flow_name='landing_zone_move',
             flow_data=flow_data,
             tl_event=None,
+            **self.flow_kw,
         )
         self.assertEqual(type(flow), LandingZoneMoveFlow)
         self.build_and_run(flow)
@@ -1301,11 +1238,10 @@ class TestLandingZoneMove(
             extra_data={},
         )
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
             flow_name='landing_zone_move',
             flow_data=flow_data,
             tl_event=tl_event,
+            **self.flow_kw,
         )
         self.build_and_run(flow)
 
@@ -1342,10 +1278,7 @@ class TestLandingZoneMove(
             'validate_only': True,
         }
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='landing_zone_move',
-            flow_data=flow_data,
+            flow_name='landing_zone_move', flow_data=flow_data, **self.flow_kw
         )
         self.build_and_run(flow)
         self.zone.refresh_from_db()
@@ -1371,10 +1304,7 @@ class TestLandingZoneMove(
             'validate_only': True,
         }
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='landing_zone_move',
-            flow_data=flow_data,
+            flow_name='landing_zone_move', flow_data=flow_data, **self.flow_kw
         )
         self.build_and_run(flow)
 
@@ -1403,10 +1333,7 @@ class TestLandingZoneMove(
             'validate_only': True,
         }
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='landing_zone_move',
-            flow_data=flow_data,
+            flow_name='landing_zone_move', flow_data=flow_data, **self.flow_kw
         )
         self.build_and_run(flow)
 
@@ -1435,10 +1362,7 @@ class TestLandingZoneMove(
             'file_name_prohibit': 'txt',
         }
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='landing_zone_move',
-            flow_data=flow_data,
+            flow_name='landing_zone_move', flow_data=flow_data, **self.flow_kw
         )
         with self.assertRaisesRegex(Exception, OBJ_NAME):
             self.build_and_run(flow)
@@ -1457,10 +1381,7 @@ class TestLandingZoneMove(
             'validate_only': True,
         }
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='landing_zone_move',
-            flow_data=flow_data,
+            flow_name='landing_zone_move', flow_data=flow_data, **self.flow_kw
         )
         self.lock_project(self.project)
         self.taskflow.run_flow(flow, self.project)
@@ -1483,10 +1404,7 @@ class TestLandingZoneMove(
 
         flow_data = {'zone_uuid': str(self.zone.sodar_uuid)}
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='landing_zone_move',
-            flow_data=flow_data,
+            flow_name='landing_zone_move', flow_data=flow_data, **self.flow_kw
         )
         self.build_and_run(flow, force_fail=True)
 
@@ -1554,10 +1472,7 @@ class TestLandingZoneMove(
 
         flow_data = {'zone_uuid': str(new_zone.sodar_uuid)}
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='landing_zone_move',
-            flow_data=flow_data,
+            flow_name='landing_zone_move', flow_data=flow_data, **self.flow_kw
         )
         self.build_and_run(flow)
 
@@ -1621,6 +1536,7 @@ class TestLandingZoneMoveAltRootPath(
         self.sample_path = self.irods_backend.get_path(self.assay)
         self.zone_path = self.irods_backend.get_path(self.zone)
         self.project_group = self.irods_backend.get_group_name(self.project)
+        self.set_flow_kw()
 
     def test_move_alt_root_path(self):
         """Test landing_zone_move with IRODS_ROOT_PATH set"""
@@ -1659,10 +1575,7 @@ class TestLandingZoneMoveAltRootPath(
 
         flow_data = {'zone_uuid': str(self.zone.sodar_uuid)}
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='landing_zone_move',
-            flow_data=flow_data,
+            flow_name='landing_zone_move', flow_data=flow_data, **self.flow_kw
         )
         self.build_and_run(flow)
 
@@ -1701,6 +1614,7 @@ class TestProjectCreate(TaskflowbackendFlowTestBase):
         self.project_group = self.irods_backend.get_group_name(self.project)
         self.owner_group = self.irods_backend.get_group_name(self.project, True)
         self.user_assign = self.make_user('user_assign')
+        self.set_flow_kw()
 
     def test_create(self):
         """Test project_create for creating a project"""
@@ -1721,10 +1635,7 @@ class TestProjectCreate(TaskflowbackendFlowTestBase):
             ],
         }
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='project_create',
-            flow_data=flow_data,
+            flow_name='project_create', flow_data=flow_data, **self.flow_kw
         )
         self.assertEqual(type(flow), ProjectCreateFlow)
         self.build_and_run(flow)
@@ -1777,10 +1688,7 @@ class TestProjectCreate(TaskflowbackendFlowTestBase):
             ],
         }
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='project_create',
-            flow_data=flow_data,
+            flow_name='project_create', flow_data=flow_data, **self.flow_kw
         )
         self.build_and_run(flow)
         self.assert_group_member(self.project, self.user_assign, True, True)
@@ -1798,10 +1706,7 @@ class TestProjectCreate(TaskflowbackendFlowTestBase):
             ],
         }
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='project_create',
-            flow_data=flow_data,
+            flow_name='project_create', flow_data=flow_data, **self.flow_kw
         )
         self.build_and_run(flow)
         self.assert_group_member(self.project, self.user_assign, True, False)
@@ -1816,6 +1721,7 @@ class TestProjectUpdate(TaskflowbackendFlowTestBase):
             'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
         )
         self.project_path = self.irods_backend.get_path(self.project)
+        self.set_flow_kw()
 
     def test_update_metadata(self):
         """Test project_update with updated metadata"""
@@ -1833,10 +1739,7 @@ class TestProjectUpdate(TaskflowbackendFlowTestBase):
         self.project.description = UPDATED_DESC
         self.project.save()
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='project_update',
-            flow_data={},
+            flow_name='project_update', flow_data={}, **self.flow_kw
         )
         self.assertEqual(type(flow), ProjectUpdateFlow)
         self.build_and_run(flow)
@@ -1858,10 +1761,7 @@ class TestProjectUpdate(TaskflowbackendFlowTestBase):
         self.project.title = UPDATED_TITLE
         self.project.save()
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='project_update',
-            flow_data={},
+            flow_name='project_update', flow_data={}, **self.flow_kw
         )
         self.lock_project(self.project)
         self.taskflow.run_flow(flow, self.project)  # Lock not required
@@ -1911,10 +1811,7 @@ class TestProjectUpdate(TaskflowbackendFlowTestBase):
             ],
         }
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='project_update',
-            flow_data=flow_data,
+            flow_name='project_update', flow_data=flow_data, **self.flow_kw
         )
         self.build_and_run(flow)
 
@@ -1945,9 +1842,9 @@ class TestPublicAccessUpdate(
         )
         self.project_group = self.irods_backend.get_group_name(self.project)
         self.project_path = self.irods_backend.get_path(self.project)
-        # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.sample_path = self.irods_backend.get_sample_path(self.project)
+        self.set_flow_kw()
 
     def test_enable_access(self):
         """Test public_access_update to enable public access"""
@@ -1964,10 +1861,9 @@ class TestPublicAccessUpdate(
             'access': True,
         }
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
             flow_name='public_access_update',
             flow_data=flow_data,
+            **self.flow_kw,
         )
         self.assertEqual(type(flow), PublicAccessUpdateFlow)
         self.build_and_run(flow)
@@ -1991,10 +1887,9 @@ class TestPublicAccessUpdate(
             'access': True,
         }
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
             flow_name='public_access_update',
             flow_data=flow_data,
+            **self.flow_kw,
         )
         self.lock_project(self.project)
         self.taskflow.run_flow(flow, self.project)  # Lock not required
@@ -2023,10 +1918,9 @@ class TestPublicAccessUpdate(
             'access': False,
         }
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
             flow_name='public_access_update',
             flow_data=flow_data,
+            **self.flow_kw,
         )
         self.build_and_run(flow)
 
@@ -2049,10 +1943,9 @@ class TestPublicAccessUpdate(
             'access': True,
         }
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
             flow_name='public_access_update',
             flow_data=flow_data,
+            **self.flow_kw,
         )
         self.assertEqual(type(flow), PublicAccessUpdateFlow)
         self.build_and_run(flow, force_fail=True)
@@ -2078,10 +1971,9 @@ class TestPublicAccessUpdate(
             'ticket_str': TICKET_STR,
         }
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
             flow_name='public_access_update',
             flow_data=flow_data,
+            **self.flow_kw,
         )
         self.assertEqual(type(flow), PublicAccessUpdateFlow)
         with override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True):
@@ -2120,10 +2012,9 @@ class TestPublicAccessUpdate(
             'ticket_str': TICKET_STR,
         }
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
             flow_name='public_access_update',
             flow_data=flow_data,
+            **self.flow_kw,
         )
         self.build_and_run(flow)
 
@@ -2142,13 +2033,13 @@ class TestRoleUpdateIrodsBatch(TaskflowbackendFlowTestBase):
         self.project, self.owner_as = self.make_project_taskflow(
             'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
         )
-        # self.project_path = self.irods_backend.get_path(self.project)
         self.project_group = self.irods_backend.get_group_name(self.project)
         self.owner_group = self.irods_backend.get_group_name(self.project, True)
         self.project_group = self.irods.user_groups.get(self.project_group)
         self.owner_group = self.irods.user_groups.get(self.owner_group)
         self.user_new = self.make_user('user_new')
         self.user_new2 = self.make_user('user_new2')
+        self.set_flow_kw()
 
     def test_add(self):
         """Test role_update_irods_batch for adding users"""
@@ -2171,10 +2062,9 @@ class TestRoleUpdateIrodsBatch(TaskflowbackendFlowTestBase):
             'roles_delete': [],
         }
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
             flow_name='role_update_irods_batch',
             flow_data=flow_data,
+            **self.flow_kw,
         )
         self.assertEqual(type(flow), RoleUpdateIrodsBatchFlow)
         self.build_and_run(flow)
@@ -2202,10 +2092,9 @@ class TestRoleUpdateIrodsBatch(TaskflowbackendFlowTestBase):
             'roles_delete': [],
         }
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
             flow_name='role_update_irods_batch',
             flow_data=flow_data,
+            **self.flow_kw,
         )
         self.build_and_run(flow)
         self.assert_group_member(self.project, self.user_new, True, False)
@@ -2225,10 +2114,9 @@ class TestRoleUpdateIrodsBatch(TaskflowbackendFlowTestBase):
             'roles_delete': [],
         }
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
             flow_name='role_update_irods_batch',
             flow_data=flow_data,
+            **self.flow_kw,
         )
         self.build_and_run(flow)
         self.assert_group_member(self.project, self.user_new, True, True)
@@ -2247,10 +2135,9 @@ class TestRoleUpdateIrodsBatch(TaskflowbackendFlowTestBase):
             'roles_delete': [],
         }
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
             flow_name='role_update_irods_batch',
             flow_data=flow_data,
+            **self.flow_kw,
         )
         self.lock_project(self.project)
         self.taskflow.run_flow(flow, self.project)  # Lock not required
@@ -2280,10 +2167,9 @@ class TestRoleUpdateIrodsBatch(TaskflowbackendFlowTestBase):
             'roles_delete': [],
         }
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
             flow_name='role_update_irods_batch',
             flow_data=flow_data,
+            **self.flow_kw,
         )
         self.build_and_run(flow)
 
@@ -2318,10 +2204,9 @@ class TestRoleUpdateIrodsBatch(TaskflowbackendFlowTestBase):
             'roles_delete': [],
         }
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
             flow_name='role_update_irods_batch',
             flow_data=flow_data,
+            **self.flow_kw,
         )
         self.build_and_run(flow)
 
@@ -2360,10 +2245,9 @@ class TestRoleUpdateIrodsBatch(TaskflowbackendFlowTestBase):
             ],
         }
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
             flow_name='role_update_irods_batch',
             flow_data=flow_data,
+            **self.flow_kw,
         )
         self.build_and_run(flow)
 
@@ -2402,10 +2286,9 @@ class TestRoleUpdateIrodsBatch(TaskflowbackendFlowTestBase):
             ],
         }
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
             flow_name='role_update_irods_batch',
             flow_data=flow_data,
+            **self.flow_kw,
         )
         self.build_and_run(flow)
 
@@ -2430,10 +2313,9 @@ class TestRoleUpdateIrodsBatch(TaskflowbackendFlowTestBase):
             'roles_delete': [],
         }
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
             flow_name='role_update_irods_batch',
             flow_data=flow_data,
+            **self.flow_kw,
         )
         self.taskflow.run_flow(flow, self.project)
         self.assert_group_member(self.project, self.user_new, True, True)
@@ -2457,10 +2339,9 @@ class TestRoleUpdateIrodsBatch(TaskflowbackendFlowTestBase):
             'roles_delete': [],
         }
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
             flow_name='role_update_irods_batch',
             flow_data=flow_data,
+            **self.flow_kw,
         )
         self.taskflow.run_flow(flow, self.project)
         self.assert_group_member(self.project, self.user_new, True, False)
@@ -2480,9 +2361,9 @@ class TestSheetCollsCreate(
         )
         self.project_group = self.irods_backend.get_group_name(self.project)
         self.project_path = self.irods_backend.get_path(self.project)
-        # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.sample_path = self.irods_backend.get_sample_path(self.project)
+        self.set_flow_kw()
 
     def test_create(self):
         """Test sheet_colls_create for creating sample repository collections"""
@@ -2491,10 +2372,7 @@ class TestSheetCollsCreate(
 
         flow_data = {'colls': [RESULTS_COLL, MISC_FILES_COLL]}
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='sheet_colls_create',
-            flow_data=flow_data,
+            flow_name='sheet_colls_create', flow_data=flow_data, **self.flow_kw
         )
         self.assertEqual(type(flow), SheetCollsCreateFlow)
         self.build_and_run(flow)
@@ -2521,10 +2399,7 @@ class TestSheetCollsCreate(
         """Test sheet_colls_create with locked project (should fail)"""
         flow_data = {'colls': [RESULTS_COLL, MISC_FILES_COLL]}
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='sheet_colls_create',
-            flow_data=flow_data,
+            flow_name='sheet_colls_create', flow_data=flow_data, **self.flow_kw
         )
         self.lock_project(self.project)
         with self.assertRaises(self.taskflow.FlowSubmitException):
@@ -2539,10 +2414,7 @@ class TestSheetCollsCreate(
 
         flow_data = {'colls': [RESULTS_COLL, MISC_FILES_COLL]}
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='sheet_colls_create',
-            flow_data=flow_data,
+            flow_name='sheet_colls_create', flow_data=flow_data, **self.flow_kw
         )
         self.build_and_run(flow)
 
@@ -2566,10 +2438,7 @@ class TestSheetCollsCreate(
             'ticket_str': TICKET_STR,
         }
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='sheet_colls_create',
-            flow_data=flow_data,
+            flow_name='sheet_colls_create', flow_data=flow_data, **self.flow_kw
         )
         self.build_and_run(flow)
 
@@ -2591,10 +2460,7 @@ class TestSheetCollsCreate(
 
         flow_data = {'colls': [RESULTS_COLL, MISC_FILES_COLL]}
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='sheet_colls_create',
-            flow_data=flow_data,
+            flow_name='sheet_colls_create', flow_data=flow_data, **self.flow_kw
         )
         self.build_and_run(flow, force_fail=True)
 
@@ -2614,10 +2480,7 @@ class TestSheetCollsCreate(
             'ticket_str': TICKET_STR,
         }
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='sheet_colls_create',
-            flow_data=flow_data,
+            flow_name='sheet_colls_create', flow_data=flow_data, **self.flow_kw
         )
         self.build_and_run(flow, force_fail=True)
 
@@ -2643,11 +2506,11 @@ class TestSheetDelete(
         )
         self.project_group = self.irods_backend.get_group_name(self.project)
         self.project_path = self.irods_backend.get_path(self.project)
-        # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
         self.sample_path = self.irods_backend.get_sample_path(self.project)
+        self.set_flow_kw()
 
     def test_delete(self):
         """Test sheet_delete for deleting project sample sheets"""
@@ -2657,10 +2520,7 @@ class TestSheetDelete(
             ).first()
         )
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='sheet_delete',
-            flow_data={},
+            flow_name='sheet_delete', flow_data={}, **self.flow_kw
         )
         self.assertEqual(type(flow), SheetDeleteFlow)
         self.build_and_run(flow)
@@ -2673,10 +2533,7 @@ class TestSheetDelete(
     def test_delete_locked(self):
         """Test sheet_delete with locked project (should fail)"""
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='sheet_delete',
-            flow_data={},
+            flow_name='sheet_delete', flow_data={}, **self.flow_kw
         )
         self.lock_project(self.project)
         with self.assertRaises(self.taskflow.FlowSubmitException):
@@ -2698,10 +2555,7 @@ class TestSheetDelete(
         self.assertEqual(self.irods.collections.exists(self.sample_path), True)
 
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='sheet_delete',
-            flow_data={},
+            flow_name='sheet_delete', flow_data={}, **self.flow_kw
         )
         self.assertEqual(type(flow), SheetDeleteFlow)
         self.build_and_run(flow)
@@ -2736,10 +2590,7 @@ class TestSheetDelete(
         self.assertEqual(self.irods.collections.exists(zone_path), True)
 
         flow = self.taskflow.get_flow(
-            irods_backend=self.irods_backend,
-            project=self.project,
-            flow_name='sheet_delete',
-            flow_data={},
+            flow_name='sheet_delete', flow_data={}, **self.flow_kw
         )
         self.assertEqual(type(flow), SheetDeleteFlow)
         self.build_and_run(flow)

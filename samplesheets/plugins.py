@@ -707,6 +707,7 @@ class ProjectAppPlugin(
         try:
             taskflow.submit(
                 project=project,
+                user=None,
                 flow_name='public_access_update',
                 flow_data=flow_data,
             )
