@@ -1,8 +1,9 @@
 """Tests for Ajax API views in the landingzones app with Taskflow"""
 
 import json
-import os
 import pytz
+
+from irods.path import iRODSPath
 
 from django.conf import settings
 from django.test import override_settings
@@ -82,7 +83,7 @@ class TestZoneIrodsListRetrieveAjaxView(
         )  # NOTE: make_zone_taskflow() called in tests
         # Set up helpers
         self.zone_path = self.irods_backend.get_path(self.zone)
-        self.misc_path = os.path.join(self.zone_path, MISC_FILES_DIR)
+        self.misc_path = iRODSPath(self.zone_path, MISC_FILES_DIR)
         self.url = reverse(
             'landingzones:ajax_irods_list',
             kwargs={'landingzone': self.zone.sodar_uuid},
@@ -99,7 +100,7 @@ class TestZoneIrodsListRetrieveAjaxView(
                 {
                     'name': ZONE_COLLS[i],
                     'type': IRODS_TYPE_COLL,
-                    'path': os.path.join(self.zone_path, ZONE_COLLS[i]),
+                    'path': iRODSPath(self.zone_path, ZONE_COLLS[i]),
                 }
                 for i in range(len(ZONE_COLLS))
             ],
@@ -271,7 +272,7 @@ class TestZoneChecksumStatusRetrieveAjaxView(
         self.zone_path = self.irods_backend.get_path(self.zone)
         self.make_zone_taskflow(self.zone, [MISC_FILES_DIR])
         # Set up helpers
-        self.misc_path = os.path.join(self.zone_path, MISC_FILES_DIR)
+        self.misc_path = iRODSPath(self.zone_path, MISC_FILES_DIR)
         self.misc_coll = self.irods.collections.get(self.misc_path)
         self.url = reverse(
             'landingzones:ajax_irods_checksum',
@@ -334,7 +335,7 @@ class TestZoneChecksumStatusRetrieveAjaxView(
 
     def test_post_path_outside_zone(self):
         """Test POST with path outside zone (should fail)"""
-        path = os.path.join(
+        path = iRODSPath(
             self.irods_backend.get_sample_path(self.project), TEST_OBJ_NAME
         )
         post_data = {'paths': [path]}
@@ -346,7 +347,7 @@ class TestZoneChecksumStatusRetrieveAjaxView(
 
     def test_post_invalid_path(self):
         """Test POST with invalid path (should fail)"""
-        path = os.path.join(self.zone_path, '..', TEST_OBJ_NAME)
+        path = iRODSPath(self.zone_path, '..', TEST_OBJ_NAME)
         post_data = {'paths': [path]}
         with self.login(self.user_owner):
             response = self.client.post(

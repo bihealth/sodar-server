@@ -101,10 +101,9 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             elif header['value'].lower() == SCAN_NAME:
                 scan_name = cell['value']
             if hybrid_name and scan_name:
-                row_path = '/'.join(
+                return '/'.join(
                     [assay_path, RAW_DATA_COLL, hybrid_name, scan_name]
                 )
-                return row_path
         return None
 
     def update_row(

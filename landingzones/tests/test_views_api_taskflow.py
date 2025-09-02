@@ -3,9 +3,9 @@ Tests for REST API views in the landingzones app with SODAR Taskflow enabled
 """
 
 import json
-import os
 
 from irods.exception import GroupDoesNotExist
+from irods.path import iRODSPath
 
 from django.test import override_settings
 from django.urls import reverse
@@ -235,10 +235,10 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
         )
         for c in ZONE_BASE_COLLS:
             self.assert_irods_access(
-                self.user.username, os.path.join(zone_path, c), IRODS_ACCESS_OWN
+                self.user.username, iRODSPath(zone_path, c), IRODS_ACCESS_OWN
             )
             self.assert_irods_access(
-                self.owner_group, os.path.join(zone_path, c), IRODS_ACCESS_OWN
+                self.owner_group, iRODSPath(zone_path, c), IRODS_ACCESS_OWN
             )
 
     def test_post_colls_plugin(self):
@@ -273,10 +273,10 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
         )
         for c in ZONE_ALL_COLLS:
             self.assert_irods_access(
-                self.user.username, os.path.join(zone_path, c), IRODS_ACCESS_OWN
+                self.user.username, iRODSPath(zone_path, c), IRODS_ACCESS_OWN
             )
             self.assert_irods_access(
-                self.owner_group, os.path.join(zone_path, c), IRODS_ACCESS_OWN
+                self.owner_group, iRODSPath(zone_path, c), IRODS_ACCESS_OWN
             )
 
     def test_post_colls_plugin_restrict(self):
@@ -313,10 +313,10 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
         )
         for c in ZONE_ALL_COLLS:
             self.assert_irods_access(
-                self.user.username, os.path.join(zone_path, c), IRODS_ACCESS_OWN
+                self.user.username, iRODSPath(zone_path, c), IRODS_ACCESS_OWN
             )
             self.assert_irods_access(
-                self.owner_group, os.path.join(zone_path, c), IRODS_ACCESS_OWN
+                self.owner_group, iRODSPath(zone_path, c), IRODS_ACCESS_OWN
             )
 
     # TODO: Test without sodarcache (see issue #1157)
@@ -537,7 +537,7 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
         self.assert_zone_status(self.zone, ZONE_STATUS_MOVED)
         self.assertEqual(len(self.zone_coll.data_objects), 0)
         self.assertEqual(len(self.assay_coll.data_objects), 2)
-        obj_path = os.path.join(self.assay_path, TEST_OBJ_NAME)
+        obj_path = iRODSPath(self.assay_path, TEST_OBJ_NAME)
         self.assert_irods_access(self.owner_group, obj_path, None)
         self.assert_irods_access(self.user.username, obj_path, None)
         self.assert_irods_access(
@@ -590,7 +590,7 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
         )
         new_zone_path = self.irods_backend.get_path(zone)
         zone_results_coll = self.irods.collections.get(
-            os.path.join(new_zone_path, RESULTS_COLL)
+            iRODSPath(new_zone_path, RESULTS_COLL)
         )
         irods_obj = self.make_irods_object(zone_results_coll, TEST_OBJ_NAME)
         self.make_checksum_object(irods_obj)
@@ -608,10 +608,10 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
         self.assertEqual(response.data['sodar_uuid'], str(zone.sodar_uuid))
         self.assert_zone_status(zone, ZONE_STATUS_MOVED)
         self.assertEqual(len(zone_results_coll.data_objects), 0)
-        assay_results_path = os.path.join(self.sample_path, RESULTS_COLL)
+        assay_results_path = iRODSPath(self.sample_path, RESULTS_COLL)
         assay_results_coll = self.irods.collections.get(assay_results_path)
         self.assertEqual(len(assay_results_coll.data_objects), 2)
-        sample_obj_path = os.path.join(assay_results_path, TEST_OBJ_NAME)
+        sample_obj_path = iRODSPath(assay_results_path, TEST_OBJ_NAME)
         self.assert_irods_access(
             self.project_group,
             sample_obj_path,

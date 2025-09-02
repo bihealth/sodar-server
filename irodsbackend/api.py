@@ -2,7 +2,6 @@
 
 import logging
 import math
-import os
 import pytz
 import random
 import re
@@ -21,6 +20,7 @@ from irods.exception import CollectionDoesNotExist, CAT_NO_ROWS_FOUND
 from django.http import HttpRequest
 from irods.message import TicketAdminRequest, iRODSMessage
 from irods.models import Collection, DataObject, TicketQuery
+from irods.path import iRODSPath
 from irods.query import SpecificQuery
 from irods.session import iRODSSession
 from irods.ticket import Ticket
@@ -43,6 +43,7 @@ logger = logging.getLogger(__name__)
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 # Local constants
+PROJECTS_COLL = 'projects'
 ACCEPTED_PATH_TYPES = [
     'Assay',
     'LandingZone',
@@ -199,12 +200,12 @@ class IrodsAPI:
         return env
 
     @classmethod
-    def sanitize_path(cls, path: str) -> str:
+    def sanitize_path(cls, path: Union[str, iRODSPath]) -> str:
         """
         Validate and sanitize iRODS path.
 
         :param path: Full or partial iRODS path to collection or data object
-                     (string)
+                     (string or iRODSPath)
         :raise: ValueError if iRODS path is invalid or unacceptable
         :return: Sanitized iRODS path (string)
         """
@@ -227,8 +228,8 @@ class IrodsAPI:
         collection.
 
         :param obj: Study or Assay object
-        :param landing_zone: Return dir for landing zone if True (bool)
-        :param include_parent: Include parent dir if True (bool)
+        :param landing_zone: Return landing zone notation if True (bool)
+        :param include_parent: Include assay parent collection if True (bool)
         :return: String
         :raise: TypeError if obj type is not correct
         :raise: NotImplementedError if get_display_name() is not found in obj
@@ -278,36 +279,32 @@ class IrodsAPI:
             raise ValueError('Project not found for given object')
 
         # Base path (project)
-        path = '{root_path}/projects/{uuid_prefix}/{uuid}'.format(
-            root_path=cls.get_root_path(),
-            uuid_prefix=str(project.sodar_uuid)[:2],
-            uuid=project.sodar_uuid,
+        path = iRODSPath(
+            cls.get_root_path(),
+            PROJECTS_COLL,
+            str(project.sodar_uuid)[:2],
+            str(project.sodar_uuid),
         )
         # Project
         if obj_class == 'Project':
             return path
         # Investigation (sample data root)
         elif obj_class == 'Investigation':
-            path += f'/{settings.IRODS_SAMPLE_COLL}'
+            path += iRODSPath(settings.IRODS_SAMPLE_COLL)
         # Study (in sample data)
         elif obj_class == 'Study':
-            path += f'/{settings.IRODS_SAMPLE_COLL}/{cls.get_sub_path(obj)}'
+            path += iRODSPath(settings.IRODS_SAMPLE_COLL, cls.get_sub_path(obj))
         # Assay (in sample data)
         elif obj_class == 'Assay':
-            path += f'/{settings.IRODS_SAMPLE_COLL}/{cls.get_sub_path(obj)}'
+            path += iRODSPath(settings.IRODS_SAMPLE_COLL, cls.get_sub_path(obj))
         # LandingZone
         elif obj_class == 'LandingZone':
-            path += (
-                '/{zone_coll}/{user}/{study_assay}/{zone_title}'
-                '{zone_config}'.format(
-                    zone_coll=settings.IRODS_LANDING_ZONE_COLL,
-                    user=obj.user.username,
-                    study_assay=cls.get_sub_path(obj.assay, landing_zone=True),
-                    zone_title=obj.title,
-                    zone_config=(
-                        '_' + obj.configuration if obj.configuration else ''
-                    ),
-                )
+            path += iRODSPath(
+                settings.IRODS_LANDING_ZONE_COLL,
+                obj.user.username,
+                cls.get_sub_path(obj.assay, landing_zone=True),
+                obj.title
+                + ('_' + obj.configuration if obj.configuration else ''),
             )
         return path
 
@@ -322,7 +319,7 @@ class IrodsAPI:
                 object is of type CATEGORY
         """
         cls._validate_project(project)
-        return os.path.join(cls.get_path(project), settings.IRODS_SAMPLE_COLL)
+        return iRODSPath(cls.get_path(project), settings.IRODS_SAMPLE_COLL)
 
     @classmethod
     def get_zone_path(cls, project: Project) -> str:
@@ -335,7 +332,9 @@ class IrodsAPI:
                 object is of type CATEGORY
         """
         cls._validate_project(project)
-        return cls.get_path(project) + '/' + settings.IRODS_LANDING_ZONE_COLL
+        return iRODSPath(
+            cls.get_path(project), settings.IRODS_LANDING_ZONE_COLL
+        )
 
     @classmethod
     def get_root_path(cls) -> str:
@@ -348,25 +347,27 @@ class IrodsAPI:
                 raise ValueError(
                     'iRODS zone must not be included in IRODS_ROOT_PATH'
                 )
-        return f'/{irods_zone}{root_path}'
+        return iRODSPath(irods_zone, root_path)
 
     @classmethod
     def get_projects_path(cls) -> str:
         """Return the SODAR projects collection path"""
-        return cls.get_root_path() + '/projects'
+        return iRODSPath(cls.get_root_path(), PROJECTS_COLL)
 
     @classmethod
     def get_trash_path(cls) -> str:
         """Return the trash path in the current zone"""
-        return '/' + os.path.join(settings.IRODS_ZONE, TRASH_COLL_NAME)
+        return iRODSPath(settings.IRODS_ZONE, TRASH_COLL_NAME)
 
     @classmethod
-    def get_uuid_from_path(cls, path: str, obj_type: str) -> Optional[str]:
+    def get_uuid_from_path(
+        cls, path: Union[str, iRODSPath], obj_type: str
+    ) -> Optional[str]:
         """
         Return project, study or assay UUID from iRODS path or None if not
         found.
 
-        :param path: Full iRODS path (string)
+        :param path: Full iRODS path (string or iRODSPath)
         :param obj_type: Type of object ("project", "study" or "assay")
         :return: String or None
         :raise: ValueError if obj_type is not accepted
@@ -408,7 +409,7 @@ class IrodsAPI:
         cls,
         view: str,
         project: Optional[Project] = None,
-        path: str = '',
+        path: Union[str, iRODSPath] = '',
         colls: bool = False,
         method: str = 'GET',
         absolute: bool = False,
@@ -418,7 +419,7 @@ class IrodsAPI:
         Get the list or stats URL for an iRODS path.
 
         :param view: View of the URL ("stats" or "list")
-        :param path: Full iRODS path (string)
+        :param path: Full iRODS path (string or iRODSPath)
         :param project: Project object or None
         :param colls: Include collections in list (boolean, default=False)
         :param method: Method for the function (string)
@@ -536,14 +537,17 @@ class IrodsAPI:
         return '.'.join(str(x) for x in irods.server_version)
 
     def get_stats(
-        self, irods: iRODSSession, path: str, include_colls: bool = False
+        self,
+        irods: iRODSSession,
+        path: Union[str, iRODSPath],
+        include_colls: bool = False,
     ) -> dict:
         """
         Return file count, total file size and optional subcollection count
         within an iRODS path.
 
         :param irods: iRODSSession object
-        :param path: Full path to iRODS collection
+        :param path: Full path to iRODS collection (string or iRODSPath)
         :param include_colls: Include subcollection count (bool, default=False)
         :return: Dict
         """
@@ -686,7 +690,9 @@ class IrodsAPI:
             try:
                 results = query.get_results()
                 for row in results:
-                    obj_path = row[Collection.name] + '/' + row[DataObject.name]
+                    obj_path = iRODSPath(
+                        row[Collection.name], row[DataObject.name]
+                    )
                     if q_count > 1 and obj_path in path_lookup:
                         continue  # Skip possible dupes in case of split query
                     d = {
@@ -729,7 +735,7 @@ class IrodsAPI:
     def get_objects(
         self,
         irods: iRODSSession,
-        path: str,
+        path: Union[str, iRODSPath],
         include_checksum: bool = False,
         include_colls: bool = False,
         name_like: Union[list[str], str, None] = None,
@@ -742,7 +748,7 @@ class IrodsAPI:
         Return a flat iRODS object list recursively under a given path.
 
         :param irods: iRODSSession object
-        :param path: Full path to iRODS collection
+        :param path: Full path to iRODS collection (string or iRODSPath)
         :param include_checksum: Include .md5/.sha256 files (bool)
         :param include_colls: Include collections (bool)
         :param name_like: Filtering of file names (string or list of strings)
@@ -788,14 +794,14 @@ class IrodsAPI:
 
     @classmethod
     def get_child_colls(
-        cls, irods: iRODSSession, path: str
+        cls, irods: iRODSSession, path: Union[str, iRODSPath]
     ) -> list[iRODSCollection]:
         """
         Return child collections for a collection by path. Does not return
         children recursively.
 
         :param irods: iRODSSession object
-        :param path: Full path to iRODS collection
+        :param path: Full path to iRODS collection (string or iRODSPath)
         :return: List of iRODSCollection objects
         """
         try:
@@ -830,7 +836,7 @@ class IrodsAPI:
         self,
         irods: iRODSSession,
         mode: str,
-        path: str,
+        path: Union[str, iRODSPath],
         ticket_str: Optional[str] = None,
         date_expires: Optional[datetime] = None,
         allowed_hosts: Union[list, str, None] = None,
@@ -840,7 +846,7 @@ class IrodsAPI:
 
         :param irods: iRODSSession object
         :param mode: "read" or "write"
-        :param path: iRODS path for creating the ticket
+        :param path: iRODS path for creating the ticket (string or iRODSPath)
         :param ticket_str: String to use as the ticket
         :param date_expires: Expiry date (DateTime object, optional)
         :param allowed_hosts: Restrict access to given hosts (string or list,

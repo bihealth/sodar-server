@@ -2,6 +2,8 @@
 
 from typing import Optional
 
+from irods.path import iRODSPath
+
 from django.conf import settings
 
 # Projectroles dependency
@@ -96,7 +98,9 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         # Get the value of Mass cytometry Assay Name column
         mc_assay_name = self._get_mc_assay_name(row, table)
         if mc_assay_name:
+            # NOTE: Not using iRODSPath here because it supports ".."
             return assay_path + '/' + mc_assay_name
+        return None
 
     def update_row(
         self, row: list[dict], table: dict, assay: Assay, index: int
@@ -137,11 +141,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             ):
                 row[i]['value'] = SIMPLE_LINK_TEMPLATE.format(
                     label=row[i]['value'],
-                    url=base_url
-                    + '/'
-                    + MISC_FILES_COLL
-                    + '/'
-                    + row[i]['value'],
+                    url=base_url + iRODSPath(MISC_FILES_COLL, row[i]['value']),
                 )
 
             # Create report file links in processes
@@ -152,7 +152,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             ):
                 row[i]['value'] = SIMPLE_LINK_TEMPLATE.format(
                     label=row[i]['value'],
-                    url=base_url + '/' + mc_assay_name + '/' + row[i]['value'],
+                    url=base_url + iRODSPath(mc_assay_name, row[i]['value']),
                 )
 
             # Create data file links
@@ -165,8 +165,8 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                 and row[i]['value']
                 and isinstance(row[i]['value'], str)
             ):
-                row[i]['link'] = (
-                    base_url + '/' + mc_assay_name + '/' + row[i]['value']
+                row[i]['link'] = base_url + iRODSPath(
+                    mc_assay_name, row[i]['value']
                 )
         return row
 

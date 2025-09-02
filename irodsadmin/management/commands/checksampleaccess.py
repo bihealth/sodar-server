@@ -1,7 +1,5 @@
 """Checkaccess management command"""
 
-import os
-
 from irods.column import Like
 from irods.models import (
     Collection,
@@ -11,6 +9,7 @@ from irods.models import (
     DataAccess,
     User,
 )
+from irods.path import iRODSPath
 from irods.session import iRODSSession
 
 from django.conf import settings
@@ -136,7 +135,7 @@ class Command(BaseCommand):
             Like(Collection.name, sample_path + '%')
         )
         for r in query:
-            path = os.path.join(r[Collection.name], r[DataObject.name])
+            path = iRODSPath(r[Collection.name], r[DataObject.name])
             ret += cls._check_access(
                 r[DataAccess.user_id],
                 r[User.name],

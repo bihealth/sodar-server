@@ -134,15 +134,15 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             for name, value in sorted(assay.comments.items())
             if name.startswith(DATA_COMMENT_PREFIX)
         ]
-        data_collections = []
+        data_colls = []
         for column_name in data_columns:
             col_value = self._get_col_value(column_name, row, table)
             if col_value:
-                data_collections.append(col_value)
+                data_colls.append(col_value)
         # Build iRODS path from list and stop at first None value
-        if data_collections:
-            data_path = '/' + '/'.join(data_collections)
-            return assay_path + data_path
+        if data_colls:
+            # NOTE: Not using iRODSPath here because it supports ".."
+            return assay_path + '/' + '/'.join(data_colls)
         return None
 
     def update_row(

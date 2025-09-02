@@ -7,6 +7,7 @@ from itertools import chain
 from typing import Optional
 
 from irods.models import Collection
+from irods.path import iRODSPath
 from irods.session import iRODSSession
 
 from django.core.management.base import BaseCommand
@@ -99,9 +100,9 @@ class Command(BaseCommand):
                             collections.append(shortcut['path'])
 
                     # Add default expected subcollections of assay collection
-                    collections.append(assay_path + '/' + TRACK_HUBS_COLL)
-                    collections.append(assay_path + '/' + RESULTS_COLL)
-                    collections.append(assay_path + '/' + MISC_FILES_COLL)
+                    collections.append(iRODSPath(assay_path, TRACK_HUBS_COLL))
+                    collections.append(iRODSPath(assay_path, RESULTS_COLL))
+                    collections.append(iRODSPath(assay_path, MISC_FILES_COLL))
         return collections
 
     def _get_study_collections(self, studies: QuerySet) -> list[str]:

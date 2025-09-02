@@ -1,9 +1,10 @@
 """Tests for REST API views in the samplesheets app"""
 
 import json
-import os
 
 from datetime import timedelta
+
+from irods.path import iRODSPath
 
 from django.conf import settings
 from django.test import override_settings
@@ -855,7 +856,7 @@ class TestIrodsDataRequestRetrieveAPIView(
         self.request = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
-            path=os.path.join(self.assay_path, IRODS_FILE_NAME),
+            path=iRODSPath(self.assay_path, IRODS_FILE_NAME),
             status=IRODS_REQUEST_STATUS_ACTIVE,
             user=self.user_contributor,
         )
@@ -903,7 +904,7 @@ class TestIrodsDataRequestListAPIView(
         self.request = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
-            path=os.path.join(self.assay_path, IRODS_FILE_NAME),
+            path=iRODSPath(self.assay_path, IRODS_FILE_NAME),
             status=IRODS_REQUEST_STATUS_ACTIVE,
             user=self.user_contributor,
         )
@@ -1021,7 +1022,7 @@ class TestIrodsDataRequestDestroyAPIView(
         # Set up iRODS backend and paths
         self.irods_backend = plugin_api.get_backend_api('omics_irods')
         self.assay_path = self.irods_backend.get_path(self.assay)
-        self.obj_path = os.path.join(self.assay_path, IRODS_FILE_NAME)
+        self.obj_path = iRODSPath(self.assay_path, IRODS_FILE_NAME)
 
     def test_delete(self):
         """Test IrodsDataRequestDestroyAPIView DELETE"""

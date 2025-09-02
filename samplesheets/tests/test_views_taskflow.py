@@ -1,6 +1,5 @@
 """Tests for UI views in the samplesheets app with taskflow"""
 
-import os
 import pytz
 import uuid
 
@@ -10,6 +9,7 @@ from urllib.parse import urlencode
 
 from irods.exception import CollectionDoesNotExist, NoResultFound
 from irods.models import TicketQuery
+from irods.path import iRODSPath
 from irods.session import iRODSSession
 
 from django.conf import settings
@@ -143,12 +143,12 @@ class SampleSheetTaskflowMixin:
         :param name: Track hub collection name (string)
         :return: Path to track hub (string)
         """
-        track_hubs_path = assay_path + '/TrackHubs'
+        track_hubs_path = iRODSPath(assay_path, 'TrackHubs')
         try:
             session.collections.get(track_hubs_path)
         except CollectionDoesNotExist:
             session.collections.create(track_hubs_path)
-        track_hub = session.collections.create(track_hubs_path + '/' + name)
+        track_hub = session.collections.create(iRODSPath(track_hubs_path, name))
         return track_hub.path
 
 
@@ -298,8 +298,8 @@ class IrodsDataRequestViewTestBase(
         # Set up iRODS data
         self.make_irods_colls(self.investigation)
         self.assay_path = self.irods_backend.get_path(self.assay)
-        self.obj_path = os.path.join(self.assay_path, IRODS_FILE_NAME)
-        self.obj_path2 = os.path.join(self.assay_path, IRODS_FILE_NAME2)
+        self.obj_path = iRODSPath(self.assay_path, IRODS_FILE_NAME)
+        self.obj_path2 = iRODSPath(self.assay_path, IRODS_FILE_NAME2)
         self.file_obj = self.irods.data_objects.create(self.obj_path)
         self.file_obj2 = self.irods.data_objects.create(self.obj_path2)
         # Init users (owner = user_cat, superuser = user)
@@ -421,7 +421,7 @@ class TestSheetDeleteView(
         self.assert_irods_coll(self.study)
         self.assert_irods_coll(self.assay)
         self.assay_path = self.irods_backend.get_path(self.assay)
-        self.file_path = self.assay_path + '/' + IRODS_FILE_NAME
+        self.file_path = iRODSPath(self.assay_path, IRODS_FILE_NAME)
         self.irods.data_objects.create(self.file_path)
         self.assertEqual(self.irods.data_objects.exists(self.file_path), True)
 
@@ -642,9 +642,7 @@ class TestIrodsAccessTicketListView(
         self.make_irods_colls(self.investigation)
         # Create collection under assay
         assay_path = self.irods_backend.get_path(self.assay)
-        self.coll = self.irods.collections.create(
-            os.path.join(assay_path, 'coll')
-        )
+        self.coll = self.irods.collections.create(iRODSPath(assay_path, 'coll'))
         self.url = reverse(
             'samplesheets:irods_tickets',
             kwargs={'project': self.project.sodar_uuid},
@@ -698,7 +696,7 @@ class TestIrodsAccessTicketCreateView(
         self.make_irods_colls(self.investigation)
         self.assay_path = self.irods_backend.get_path(self.assay)
         self.coll = self.irods.collections.create(
-            os.path.join(self.assay_path, 'coll')
+            iRODSPath(self.assay_path, 'coll')
         )
         self.date_expires = (timezone.localtime() + timedelta(days=1)).strftime(
             '%Y-%m-%d'
@@ -934,7 +932,7 @@ class TestIrodsAccessTicketCreateView(
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
         self.assertEqual(self.get_tl_event_count('create'), 0)
         self.assertEqual(self.get_app_alert_count('create'), 0)
-        self.post_data['path'] = self.coll.path + '/..'
+        self.post_data['path'] = iRODSPath(self.coll.path, '/..')
         with self.login(self.user):
             response = self.client.post(self.url, self.post_data)
         self.assertEqual(response.status_code, 200)
@@ -974,7 +972,7 @@ class TestIrodsAccessTicketCreateView(
     def test_post_non_existing_path(self):
         """Test POST with non-existing path (should fail)"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
-        self.post_data['path'] = os.path.join(
+        self.post_data['path'] = iRODSPath(
             self.assay_path, 'NOT-A-REAL-COLLECTION'
         )
         with self.login(self.user):
@@ -1051,7 +1049,7 @@ class TestIrodsAccessTicketUpdateView(
         self.make_irods_colls(self.investigation)
         self.assay_path = self.irods_backend.get_path(self.assay)
         self.coll = self.irods.collections.create(
-            os.path.join(self.assay_path, 'coll')
+            iRODSPath(self.assay_path, 'coll')
         )
         # Create ticket
         self.date_expires = timezone.localtime() + timedelta(days=1)
@@ -1258,7 +1256,7 @@ class TestIrodsAccessTicketDeleteView(
         self.make_irods_colls(self.investigation)
         self.assay_path = self.irods_backend.get_path(self.assay)
         self.coll = self.irods.collections.create(
-            os.path.join(self.assay_path, 'coll')
+            iRODSPath(self.assay_path, 'coll')
         )
         # Create ticket in database and iRODS
         self.ticket = self.make_irods_ticket(
@@ -1437,7 +1435,7 @@ class TestIrodsDataRequestCreateView(IrodsDataRequestViewTestBase):
 
     def test_post_multiple(self):
         """Test POST with multiple requests for same path"""
-        path2 = os.path.join(self.assay_path, IRODS_FILE_NAME2)
+        path2 = iRODSPath(self.assay_path, IRODS_FILE_NAME2)
         self.irods.data_objects.create(path2)
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         self._assert_tl_count(EVENT_CREATE, 0)
@@ -1609,7 +1607,7 @@ class TestIrodsDataRequestDeleteView(
     def test_post_one_of_multiple(self):
         """Test POST for one of multiple requests"""
         self._assert_tl_count(EVENT_DELETE, 0)
-        obj_path2 = os.path.join(self.assay_path, IRODS_FILE_NAME2)
+        obj_path2 = iRODSPath(self.assay_path, IRODS_FILE_NAME2)
         self.irods.data_objects.create(obj_path2)
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
 
@@ -1677,7 +1675,7 @@ class TestIrodsDataRequestAcceptView(
 
     def test_get_coll(self):
         """Test GET with collection request"""
-        coll_path = os.path.join(self.assay_path, 'request_coll')
+        coll_path = iRODSPath(self.assay_path, 'request_coll')
         self.irods.collections.create(coll_path)
         self.assertEqual(self.irods.collections.exists(coll_path), True)
         obj = self.make_irods_request(
@@ -1967,7 +1965,7 @@ class TestIrodsDataRequestAcceptView(
 
     def test_post_one_of_multiple(self):
         """Test POST for one of multiple requests"""
-        obj_path2 = os.path.join(self.assay_path, IRODS_FILE_NAME2)
+        obj_path2 = iRODSPath(self.assay_path, IRODS_FILE_NAME2)
         self.irods.data_objects.create(obj_path2)
         self.assert_irods_obj(self.obj_path)
         self.assert_irods_obj(obj_path2)
@@ -2049,8 +2047,8 @@ class TestIrodsDataRequestAcceptView(
 
     def test_post_collection(self):
         """Test POST with multiple objects in collection"""
-        coll_path = os.path.join(self.assay_path, 'request_coll')
-        obj_path2 = os.path.join(coll_path, IRODS_FILE_NAME)
+        coll_path = iRODSPath(self.assay_path, 'request_coll')
+        obj_path2 = iRODSPath(coll_path, IRODS_FILE_NAME)
         self.irods.collections.create(coll_path)
         self.irods.data_objects.create(obj_path2)
         self.assertEqual(self.irods.collections.exists(coll_path), True)
@@ -2271,7 +2269,7 @@ class TestIrodsDataRequestAcceptBatchView(
 
     def test_get_coll(self):
         """Test GET with collection"""
-        coll_path = os.path.join(self.assay_path, 'request_coll')
+        coll_path = iRODSPath(self.assay_path, 'request_coll')
         self.irods.collections.create(coll_path)
         self.assertEqual(self.irods.collections.exists(coll_path), True)
         self.make_irods_request(
@@ -2608,7 +2606,7 @@ class TestIrodsDataRequestRejectView(
 
     def test_get_one_of_multiple(self):
         """Test GET with one of multiple requests"""
-        obj_path2 = os.path.join(self.assay_path, IRODS_FILE_NAME2)
+        obj_path2 = iRODSPath(self.assay_path, IRODS_FILE_NAME2)
         self.irods.data_objects.create(obj_path2)
         self.assert_irods_obj(self.obj_path)
         self.assert_irods_obj(obj_path2)
@@ -2843,7 +2841,7 @@ class TestSampleDataPublicAccess(
         self.sample_path = self.irods_backend.get_sample_path(self.project)
 
         # Create test file
-        self.file_path = self.sample_path + '/' + IRODS_FILE_NAME
+        self.file_path = iRODSPath(self.sample_path, IRODS_FILE_NAME)
         self.irods.data_objects.create(self.file_path)
 
     def tearDown(self):
@@ -2882,7 +2880,7 @@ class TestSampleDataPublicAccess(
 
     def test_public_access_nested(self):
         """Test public access for nested collection"""
-        new_coll_path = self.sample_path + '/new_coll'
+        new_coll_path = iRODSPath(self.sample_path, 'new_coll')
         coll = self.irods.collections.create(new_coll_path)  # Test with owner
         self.assertIsNotNone(coll)
         coll = self.user_session.collections.get(new_coll_path)
@@ -2891,7 +2889,7 @@ class TestSampleDataPublicAccess(
     def test_public_access_nested_disable(self):
         """Test public access for nested collection with disabled access"""
         self.set_public_access(None)
-        new_coll_path = self.sample_path + '/new_coll'
+        new_coll_path = iRODSPath(self.sample_path, 'new_coll')
         coll = self.irods.collections.create(new_coll_path)  # Test with owner
         self.assertIsNotNone(coll)
         with self.assertRaises(CollectionDoesNotExist):
@@ -2918,7 +2916,7 @@ class TestProjectSearchView(
         self.assay_path = self.irods_backend.get_path(self.assay)
         # Create test file
         self.file_name = f'{SAMPLE_ID}_test.txt'
-        self.file_path = self.assay_path + '/' + self.file_name
+        self.file_path = iRODSPath(self.assay_path, self.file_name)
         self.irods.data_objects.create(self.file_path)
 
     def test_get(self):

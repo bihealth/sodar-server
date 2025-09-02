@@ -1,9 +1,9 @@
 """Utilities for the cancer study app"""
 
-import os
-
-from irods.session import iRODSSession
 from typing import Any
+
+from irods.path import iRODSPath
+from irods.session import iRODSSession
 
 from samplesheets.models import Assay
 from samplesheets.studyapps.utils import (
@@ -33,7 +33,7 @@ def get_library_file_path(
     :return: String
     """
     assay_path = irods_backend.get_path(assay)
-    query_path = os.path.join(assay_path, library_name)
+    query_path = iRODSPath(assay_path, library_name)
     file_paths = []
     omit_list = get_igv_omit_list(assay.get_project(), file_type)
     try:

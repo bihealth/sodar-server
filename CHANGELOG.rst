@@ -44,6 +44,7 @@ Changed
     - Reformat migrations (#2187)
     - Reformat JQuery (#2187)
     - Update format strings (#2197)
+    - Refactor iRODS path handling (#2218)
 - **Irodsbackend**
     - Update app for ``public_access`` support (#2202)
 - **Landingzones**

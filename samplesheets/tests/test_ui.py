@@ -1,11 +1,12 @@
 """UI tests for the samplesheets app"""
 
 import json
-import os
 
 from cubi_isa_templates import _TEMPLATES as ISA_TEMPLATES
 from datetime import timedelta
 from typing import Optional
+
+from irods.path import iRODSPath
 
 from django.urls import reverse
 from django.utils import timezone
@@ -265,7 +266,7 @@ class TestProjectSheetsView(IrodsDataRequestMixin, SamplesheetsUITestBase):
         self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
-            path=os.path.join(
+            path=iRODSPath(
                 irods_backend.get_path(self.assay), 'test', 'xxx.bam'
             ),
             status=IRODS_REQUEST_STATUS_ACTIVE,

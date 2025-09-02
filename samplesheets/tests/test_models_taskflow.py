@@ -1,6 +1,6 @@
 """Tests for models in the samplesheets app"""
 
-import os
+from irods.path import iRODSPath
 
 # Projectroles dependency
 from projectroles.constants import SODAR_CONSTANTS
@@ -54,8 +54,8 @@ class TestIrodsDataRequest(
         # Create iRODS collections
         self.make_irods_colls(self.investigation)
         self.assay_path = self.irods_backend.get_path(self.assay)
-        self.obj_path = os.path.join(self.assay_path, TEST_FILE_NAME)
-        self.coll_path = os.path.join(self.assay_path, TEST_COLL_NAME)
+        self.obj_path = iRODSPath(self.assay_path, TEST_FILE_NAME)
+        self.coll_path = iRODSPath(self.assay_path, TEST_COLL_NAME)
         # Create objects
         self.file_obj = self.irods.data_objects.create(self.obj_path)
         self.coll = self.irods.collections.create(self.coll_path)

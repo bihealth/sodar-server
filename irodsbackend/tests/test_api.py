@@ -1,7 +1,10 @@
 """Tests for the API in the irodsbackend app"""
 
+from irods.path import iRODSPath
+
 from django.conf import settings
 from django.test import override_settings
+from django.utils.text import slugify
 
 from test_plus.test import TestCase
 
@@ -128,6 +131,12 @@ class TestIrodsAPI(
             self.irods_backend.sanitize_path('sodarZone/projects/'),
             '/sodarZone/projects',
         )
+        self.assertEqual(
+            self.irods_backend.sanitize_path(
+                iRODSPath('sodarZone', 'projects')
+            ),
+            '/sodarZone/projects',
+        )
         with self.assertRaises(ValueError) as ex:
             self.irods_backend.sanitize_path('')
             self.assertEqual(ex, ERROR_PATH_UNSET)
@@ -137,6 +146,48 @@ class TestIrodsAPI(
         with self.assertRaises(ValueError) as ex:
             self.irods_backend.sanitize_path('../home')
             self.assertEqual(ex, ERROR_PATH_PARENT)
+
+    def test_get_sub_path_study(self):
+        """Test get_sub_path() with study"""
+        res = self.irods_backend.get_sub_path(self.study)
+        self.assertEqual(res, f'study_{self.study.sodar_uuid}')
+
+    def test_get_sub_path_assay(self):
+        """Test get_sub_path() with assay"""
+        res = self.irods_backend.get_sub_path(self.assay)
+        self.assertEqual(
+            res, f'study_{self.study.sodar_uuid}/assay_{self.assay.sodar_uuid}'
+        )
+
+    def test_get_sub_path_assay_no_parent(self):
+        """Test get_sub_path() with assay and no parent"""
+        res = self.irods_backend.get_sub_path(self.assay, include_parent=False)
+        self.assertEqual(res, f'assay_{self.assay.sodar_uuid}')
+
+    def test_get_sub_path_study_zone(self):
+        """Test get_sub_path() with study and landing zone notation"""
+        res = self.irods_backend.get_sub_path(self.study, landing_zone=True)
+        self.assertEqual(
+            res, slugify(self.study.get_display_name()).replace('-', '_')
+        )
+
+    def test_get_sub_path_assay_zone(self):
+        """Test get_sub_path() with assay and landing zone notation"""
+        res = self.irods_backend.get_sub_path(self.assay, landing_zone=True)
+        expected = '{}/{}'.format(
+            slugify(self.study.get_display_name()).replace('-', '_'),
+            slugify(self.assay.get_display_name()).replace('-', '_'),
+        )
+        self.assertEqual(res, expected)
+
+    def test_get_sub_path_assay_zone_no_parent(self):
+        """Test get_sub_path() with assay, landing zone and no parent"""
+        res = self.irods_backend.get_sub_path(
+            self.assay, landing_zone=True, include_parent=False
+        )
+        self.assertEqual(
+            res, slugify(self.assay.get_display_name()).replace('-', '_')
+        )
 
     def test_get_path_project(self):
         """Test get_irods_path() with Project object"""

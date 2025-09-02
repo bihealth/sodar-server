@@ -1,4 +1,4 @@
-import os
+from irods.path import iRODSPath
 
 from taskflowbackend.flows.base_flow import BaseLinearFlow
 from taskflowbackend.tasks import irods_tasks
@@ -23,7 +23,7 @@ class Flow(BaseLinearFlow):
         owner_group = self.irods_backend.get_group_name(self.project, True)
         zone_root = self.irods_backend.get_zone_path(self.project)
         zone = LandingZone.objects.get(sodar_uuid=self.flow_data['zone_uuid'])
-        user_path = os.path.join(zone_root, zone.user.username)
+        user_path = iRODSPath(zone_root, zone.user.username)
         zone_path = self.irods_backend.get_path(zone)
         root_access = 'read' if self.flow_data['restrict_colls'] else 'own'
 
@@ -177,7 +177,7 @@ class Flow(BaseLinearFlow):
         # Create collections
         if self.flow_data['colls']:
             colls_full_path = [
-                os.path.join(zone_path, c) for c in self.flow_data['colls']
+                iRODSPath(zone_path, c) for c in self.flow_data['colls']
             ]
             coll_count = len(self.flow_data['colls'])
             self.add_task(

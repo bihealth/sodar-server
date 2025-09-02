@@ -1,7 +1,5 @@
 """Assay app plugin for samplesheets"""
 
-import os
-
 from typing import Optional
 
 from django.conf import settings
@@ -68,7 +66,8 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
 
         """
         # TODO: Alternatives for RawData?
-        return assay_path + '/' + RAW_DATA_COLL
+        # NOTE: Not using iRODSPath here because it supports ".."
+        return '/'.join([assay_path, RAW_DATA_COLL])
 
     def update_row(
         self, row: list[dict], table: dict, assay: Assay, index: int
@@ -121,7 +120,9 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             ):
                 row[i]['value'] = SIMPLE_LINK_TEMPLATE.format(
                     label=row[i]['value'],
-                    url=os.path.join(base_url, RESULTS_COLL, row[i]['value']),
+                    url=base_url
+                    + '/'
+                    + '/'.join([RESULTS_COLL, row[i]['value']]),
                 )
         return row
 
@@ -137,6 +138,6 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             {
                 'id': 'raw_data',
                 'label': 'Raw Data',
-                'path': assay_path + '/' + RAW_DATA_COLL,
+                'path': '/'.join([assay_path, RAW_DATA_COLL]),
             }
         ]

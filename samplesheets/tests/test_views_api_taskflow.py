@@ -3,13 +3,13 @@ Tests for REST API views in the samplesheets app with SODAR Taskflow enabled
 """
 
 import json
-import os
 import pytz
 
 from datetime import timedelta, datetime
 from typing import Optional
 
 from irods.models import TicketQuery
+from irods.path import iRODSPath
 
 from django.forms.models import model_to_dict
 from django.test import override_settings
@@ -180,7 +180,7 @@ class IrodsAccessTicketAPIViewTestBase(
         # Create collection under assay
         self.assay_path = self.irods_backend.get_path(self.assay)
         self.coll = self.irods.collections.create(
-            os.path.join(self.assay_path, 'coll')
+            iRODSPath(self.assay_path, 'coll')
         )
         # Get appalerts API and model
         self.app_alerts = plugin_api.get_backend_api('appalerts_backend')
@@ -253,7 +253,7 @@ class IrodsDataRequestAPIViewTestBase(
         # Set up iRODS data
         self.make_irods_colls(self.investigation)
         self.assay_path = self.irods_backend.get_path(self.assay)
-        self.obj_path = os.path.join(self.assay_path, IRODS_FILE_NAME)
+        self.obj_path = iRODSPath(self.assay_path, IRODS_FILE_NAME)
         self.file_obj = self.irods.data_objects.create(self.obj_path)
 
         # Setup for tests
@@ -1040,7 +1040,7 @@ class TestIrodsDataRequestCreateAPIView(IrodsDataRequestAPIViewTestBase):
 
     def test_post_multiple(self):
         """Test creating multiple requests for same path"""
-        path2 = os.path.join(self.assay_path, IRODS_FILE_NAME2)
+        path2 = iRODSPath(self.assay_path, IRODS_FILE_NAME2)
         self.irods.data_objects.create(path2)
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         self.assert_alert_count(CREATE_ALERT, self.user, 0)
@@ -1425,7 +1425,7 @@ class TestSampleDataFileExistsAPIView(SampleSheetAPITaskflowTestBase):
 
     def test_get_file_sub_coll(self):
         """Test GET with file in sub collection"""
-        sub_coll_path = os.path.join(self.coll_path, 'sub')
+        sub_coll_path = iRODSPath(self.coll_path, 'sub')
         sub_coll = self.irods.collections.create(sub_coll_path)
         self.make_irods_object(sub_coll, IRODS_FILE_NAME)
         response = self.request_knox(self.url, data={'checksum': CHECKSUM_MD5})

@@ -1,9 +1,9 @@
 """Tests for plugins in the samplesheets app with Taskflow enabled"""
 
-import os
-
-from irods.ticket import Ticket
 from typing import Optional
+
+from irods.path import iRODSPath
+from irods.ticket import Ticket
 
 from django.forms.models import model_to_dict
 from django.test import RequestFactory, override_settings
@@ -482,7 +482,7 @@ class TestUpdateIrodsStatsCache(SamplesheetsPluginTaskflowTestBase):
     def test_update_irods_stats_cache_file(self):
         """Test update_irods_stats_cache() with file in project"""
         misc_coll = self.irods.collections.create(
-            os.path.join(self.sample_path, MISC_FILES_COLL)
+            iRODSPath(self.sample_path, MISC_FILES_COLL)
         )
         irods_obj = self.make_irods_object(misc_coll, TEST_OBJ_NAME)
         self.make_checksum_object(irods_obj)
@@ -505,7 +505,7 @@ class TestUpdateIrodsStatsCache(SamplesheetsPluginTaskflowTestBase):
             user=self.user,
         )
         misc_coll = self.irods.collections.create(
-            os.path.join(self.sample_path, MISC_FILES_COLL)
+            iRODSPath(self.sample_path, MISC_FILES_COLL)
         )
         irods_obj = self.make_irods_object(misc_coll, TEST_OBJ_NAME)
         self.make_checksum_object(irods_obj)
@@ -542,7 +542,7 @@ class TestGetCategoryStats(SamplesheetsPluginTaskflowTestBase):
     def test_get_category_stats_file(self):
         """Test get_category_stats() with file in project"""
         misc_coll = self.irods.collections.create(
-            os.path.join(self.sample_path, MISC_FILES_COLL)
+            iRODSPath(self.sample_path, MISC_FILES_COLL)
         )
         irods_obj = self.make_irods_object(misc_coll, TEST_OBJ_NAME)
         self.make_checksum_object(irods_obj)

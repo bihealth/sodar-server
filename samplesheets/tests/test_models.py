@@ -4,11 +4,12 @@
 # TODO: Test validation rules and uniqueness constraints
 
 import altamisa
-import os
 import re
 
 from datetime import datetime, timedelta
 from typing import Optional
+
+from irods.path import iRODSPath
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -1622,7 +1623,7 @@ class TestIrodsDataRequest(IrodsDataRequestMixin, SamplesheetsModelTestBase):
     def setUp(self):
         super().setUp()
         self.irods_backend = plugin_api.get_backend_api('omics_irods')
-        self.request_path = os.path.join(
+        self.request_path = iRODSPath(
             self.irods_backend.get_path(self.assay), 'file.txt'
         )
         self.request = self.make_irods_request(
@@ -1720,7 +1721,7 @@ class TestIrodsDataRequest(IrodsDataRequestMixin, SamplesheetsModelTestBase):
 
     def test_get_assay_no_assay(self):
         """Test get_assay() with no assay in path"""
-        self.request.path = os.path.join(
+        self.request.path = iRODSPath(
             self.irods_backend.get_path(self.study), 'file.txt'
         )
         self.request.save()

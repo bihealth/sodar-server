@@ -30,6 +30,7 @@ from irods.models import (
     DataAccess,
     User,
 )
+from irods.path import iRODSPath
 
 from django.conf import settings
 
@@ -256,17 +257,11 @@ class RemoveCollectionTask(IrodsBaseTask):
     #       (if collections with the same path are removed, they are collected
     #       in trash versioned with a timestamp, which we can't know for sure)
     def execute(self, path: str, *args, **kwargs):
-        trash_path = (
-            '/'
-            + path.split('/')[1]
-            + '/trash/'
-            + ''.join(
-                random.SystemRandom().choice(
-                    string.ascii_lowercase + string.digits
-                )
-                for _ in range(16)
-            )
+        random_str = ''.join(
+            random.SystemRandom().choice(string.ascii_lowercase + string.digits)
+            for _ in range(16)
         )
+        trash_path = iRODSPath(self.irods.zone, 'trash', random_str)
 
         if self.irods.collections.exists(path):
             self.irods.collections.create(trash_path)  # Must create this 1st
@@ -277,7 +272,7 @@ class RemoveCollectionTask(IrodsBaseTask):
             except Exception:
                 pass
             # ..so let's test success manually just to be sure
-            new_path = trash_path + '/' + path.split('/')[-1]
+            new_path = iRODSPath(trash_path, path.split('/')[-1])
 
             if self.irods.collections.exists(new_path):
                 self.data_modified = True
@@ -288,10 +283,10 @@ class RemoveCollectionTask(IrodsBaseTask):
 
     def revert(self, path: str, *args, **kwargs):
         if self.data_modified:
-            src_path = (
-                self.execute_data['trash_path'] + '/' + path.split('/')[-1]
+            src_path = iRODSPath(
+                self.execute_data['trash_path'], path.split('/')[-1]
             )
-            dest_path = '/'.join(path.split('/')[:-1])
+            dest_path = iRODSPath(*path.split('/')[:-1])
             self.irods.collections.move(src_path=src_path, dest_path=dest_path)
             # Delete temp trash collection
             self.irods.collections.remove(self.execute_data['trash_path'])
@@ -302,17 +297,11 @@ class RemoveDataObjectTask(IrodsBaseTask):
     """Remove a data object if it exists (irm)"""
 
     def execute(self, path: str, *args, **kwargs):
-        trash_path = (
-            '/'
-            + path.split('/')[1]
-            + '/trash/'
-            + ''.join(
-                random.SystemRandom().choice(
-                    string.ascii_lowercase + string.digits
-                )
-                for _ in range(16)
-            )
+        random_str = ''.join(
+            random.SystemRandom().choice(string.ascii_lowercase + string.digits)
+            for _ in range(16)
         )
+        trash_path = iRODSPath(self.irods.zone, 'trash', random_str)
 
         if self.irods.data_objects.exists(path):
             self.irods.collections.create(trash_path)  # Must create this 1st
@@ -324,7 +313,7 @@ class RemoveDataObjectTask(IrodsBaseTask):
             except Exception:
                 pass
             # ..so let's test success manually just to be sure
-            new_path = trash_path + '/' + path.split('/')[-1]
+            new_path = iRODSPath(trash_path, path.split('/')[-1])
 
             if self.irods.data_objects.exists(new_path):
                 self.data_modified = True
@@ -335,8 +324,8 @@ class RemoveDataObjectTask(IrodsBaseTask):
 
     def revert(self, path: str, *args, **kwargs):
         if self.data_modified:
-            src_path = (
-                self.execute_data['trash_path'] + '/' + path.split('/')[-1]
+            src_path = iRODSPath(
+                self.execute_data['trash_path'], path.split('/')[-1]
             )
             self.irods.data_objects.move(src_path=src_path, dest_path=path)
             # Delete temp trash collection
@@ -538,9 +527,7 @@ class CleanupAccessTask(IrodsBaseTask):
         for res in query:
             if res[DataAccess.user_id] not in user_ids:
                 # NOTE: Can't use DataObject.path as it refers to physical path
-                obj_path = os.path.join(
-                    res[Collection.name], res[DataObject.name]
-                )
+                obj_path = iRODSPath(res[Collection.name], res[DataObject.name])
                 acl = iRODSAccess(
                     access_name='null',
                     path=obj_path,
@@ -748,8 +735,8 @@ class MoveDataObjectTask(IrodsBaseTask):
     def revert(self, src_path: str, dest_path: str, *args, **kwargs):
         if self.data_modified:
             # TODO: First check if final item in path is obj or coll
-            new_src = dest_path + '/' + src_path.split('/')[-1]
-            new_dest = '/'.join(src_path.split('/')[:-1])
+            new_src = iRODSPath(dest_path, src_path.split('/')[-1])
+            new_dest = iRODSPath(*src_path.split('/')[:-1])
             self.irods.data_objects.move(src_path=new_src, dest_path=new_dest)
 
 
@@ -1065,7 +1052,7 @@ class BatchMoveDataObjectsTask(ProgressCounterMixin, IrodsBaseTask):
     @staticmethod
     def get_dest_coll_path(src_path: str, src_root: str, dest_root: str) -> str:
         src_depth = len(src_root.split('/'))
-        return dest_root + '/' + '/'.join(src_path.split('/')[src_depth:-1])
+        return iRODSPath(dest_root, *src_path.split('/')[src_depth:-1])
 
     @staticmethod
     def get_dest_obj_path(src_path: str, dest_path: str) -> str:
@@ -1194,7 +1181,7 @@ class BatchMoveDataObjectsTask(ProgressCounterMixin, IrodsBaseTask):
                 + src_path.split('/')[-1]
             )
             new_dest = '/'.join(src_path.split('/')[:-1])
-            new_dest_obj = new_dest + '/' + src_path.split('/')[-1]
+            new_dest_obj = iRODSPath(new_dest, src_path.split('/')[-1])
             self.irods.data_objects.move(src_path=new_src, dest_path=new_dest)
 
             acl = iRODSAccess(

@@ -1,9 +1,10 @@
 """Celery tasks for the landingzones app"""
 
 import logging
-import os
 
 from typing import Any
+
+from irods.path import iRODSPath
 
 from django.conf import settings
 from django.db.models import Count
@@ -63,7 +64,7 @@ class TriggerZoneMoveTask(ZoneMoveMixin):
         for zone in project.landing_zones.filter(
             status__in=STATUS_ALLOW_UPDATE
         ):
-            path = os.path.join(
+            path = iRODSPath(
                 irods_backend.get_path(zone), settings.LANDINGZONES_TRIGGER_FILE
             )
             s = (

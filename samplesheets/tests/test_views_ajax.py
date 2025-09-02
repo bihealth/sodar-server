@@ -7,6 +7,8 @@ import os
 from altamisa.constants import table_headers as th
 from typing import Any, Optional
 
+from irods.path import iRODSPath
+
 from django.conf import settings
 from django.http import HttpResponse
 from django.urls import reverse
@@ -81,10 +83,10 @@ EDIT_DIR = os.path.dirname(__file__) + '/edit/'
 STUDY_INSERT_PATH = EDIT_DIR + 'i_small_study_insert.json'
 ASSAY_INSERT_PATH = EDIT_DIR + 'i_small_assay_insert.json'
 ASSAY_INSERT_SPLIT_PATH = EDIT_DIR + 'i_small_assay_insert_split.json'
-ASSAY_INSERT_POOL_MATERIAL_PATH = os.path.join(
+ASSAY_INSERT_POOL_MATERIAL_PATH = iRODSPath(
     EDIT_DIR, 'i_small_assay_insert_pool_material.json'
 )
-ASSAY_INSERT_POOL_PROCESS_PATH = os.path.join(
+ASSAY_INSERT_POOL_PROCESS_PATH = iRODSPath(
     EDIT_DIR, 'i_small_assay_insert_pool_process.json'
 )
 STUDY_DELETE_PATH = EDIT_DIR + 'i_small_study_delete.json'
@@ -362,7 +364,9 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
         # TODO: Use model helper instead (see #1088)
         IrodsDataRequest.objects.create(
             project=self.project,
-            path=self.irods_backend.get_path(self.assay) + '/test/xxx.bam',
+            path=iRODSPath(
+                self.irods_backend.get_path(self.assay), 'test', 'xxx.bam'
+            ),
             user=self.user,
         )
 
@@ -389,7 +393,9 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
         # TODO: Use model helper instead (see #1088)
         IrodsDataRequest.objects.create(
             project=self.project,
-            path=self.irods_backend.get_path(self.assay) + '/test/xxx.bam',
+            path=iRODSPath(
+                self.irods_backend.get_path(self.assay), 'test', 'xxx.bam'
+            ),
             user=self.user,
         )
         with self.login(self.user_contributor):

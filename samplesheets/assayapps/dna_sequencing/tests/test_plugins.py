@@ -1,8 +1,8 @@
 """Plugin tests for the the dna_sequencing assay plugin"""
 
-import os
-
 from copy import deepcopy
+
+from irods.path import iRODSPath
 
 from samplesheets.assayapps.tests.base import AssayPluginTestBase
 
@@ -26,7 +26,7 @@ class TestDNASequencingAssayPlugin(AssayPluginTestBase):
             self.assay,
             self.assay_path,
         )
-        expected = os.path.join(self.assay_path, MATERIAL_NAME)
+        expected = iRODSPath(self.assay_path, MATERIAL_NAME)
         self.assertEqual(row_path, expected)
 
     def test_get_row_path_rename(self):
@@ -38,7 +38,7 @@ class TestDNASequencingAssayPlugin(AssayPluginTestBase):
             self.assay,
             self.assay_path,
         )
-        expected = os.path.join(self.assay_path, MATERIAL_NAME_UPDATE)
+        expected = iRODSPath(self.assay_path, MATERIAL_NAME_UPDATE)
         self.assertEqual(row_path, expected)
 
     def test_update_row(self):

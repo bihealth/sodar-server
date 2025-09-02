@@ -6,6 +6,7 @@ import sys
 import uuid
 
 from irods.access import iRODSAccess
+from irods.path import iRODSPath
 
 from django.conf import settings
 from django.core.management import call_command
@@ -83,7 +84,7 @@ class TestCheckSampleAccess(
         self.make_irods_colls(self.investigation)
         self.sample_path = self.irods_backend.get_sample_path(self.project)
         self.assay_path = self.irods_backend.get_path(self.assay)
-        self.misc_path = os.path.join(self.assay_path, MISC_FILES_COLL)
+        self.misc_path = iRODSPath(self.assay_path, MISC_FILES_COLL)
         self.misc_coll = self.irods.collections.create(self.misc_path)
         self.project_group = self.irods_backend.get_group_name(self.project)
         # User with no project roles
@@ -326,11 +327,11 @@ class TestIrodsOrphans(
         self.assertListEqual(
             self.irodsorphans._get_assay_subcollections([self.study]),
             [
-                assay_path + '/0815-N1-DNA1',
-                assay_path + '/0815-T1-DNA1',
-                assay_path + '/TrackHubs',
-                assay_path + '/ResultsReports',
-                assay_path + '/MiscFiles',
+                iRODSPath(assay_path, '0815-N1-DNA1'),
+                iRODSPath(assay_path, '0815-T1-DNA1'),
+                iRODSPath(assay_path, 'TrackHubs'),
+                iRODSPath(assay_path, 'ResultsReports'),
+                iRODSPath(assay_path, 'MiscFiles'),
             ],
         )
 
@@ -479,7 +480,7 @@ class TestIrodsOrphans(
     def test_get_output_project(self):
         """Test get_orphans() with orphan project"""
         collection = 'aa/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
-        orphan_path = os.path.join(
+        orphan_path = iRODSPath(
             self.irods_backend.get_projects_path(), collection
         )
         self.irods.collections.create(orphan_path)
@@ -502,7 +503,7 @@ class TestIrodsOrphans(
     def test_get_output_assay_subs(self):
         """Test get_orphans() with orphan assay subcollections"""
         collection = 'UnexpectedCollection'
-        orphan_path = os.path.join(
+        orphan_path = iRODSPath(
             self.irods_backend.get_path(self.assay), collection
         )
         self.irods.collections.create(orphan_path)
@@ -613,7 +614,7 @@ class TestIrodsOrphans(
         """Test command with orphan project"""
         project_uuid = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
         collection = 'aa/' + project_uuid
-        orphan_path = os.path.join(
+        orphan_path = iRODSPath(
             self.irods_backend.get_projects_path(), collection
         )
         self.irods.collections.create(orphan_path)

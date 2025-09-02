@@ -1,4 +1,4 @@
-import os
+from irods.path import iRODSPath
 
 from django.conf import settings
 
@@ -60,7 +60,7 @@ class Flow(BaseLinearFlow):
             )
         )
         for c in self.flow_data['colls']:
-            coll_path = os.path.join(sample_path, c)
+            coll_path = iRODSPath(sample_path, c)
             self.add_task(
                 irods_tasks.CreateCollectionTask(
                     name=f'Create collection {coll_path}',

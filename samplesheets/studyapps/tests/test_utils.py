@@ -1,6 +1,6 @@
 """Tests for general samplesheets study app utils"""
 
-import os
+from irods.path import iRODSPath
 
 from django.test import RequestFactory
 from django.urls import reverse
@@ -218,15 +218,11 @@ class TestGetIGVXML(StudyAppUtilsTestBase):
         self.irods_backend = plugin_api.get_backend_api('omics_irods')
         self.project_path = self.irods_backend.get_path(self.project)
         self.bam_urls = {
-            'P1001-N1-DNA1-WGS1': os.path.join(
-                self.project_path, 'P1001-N1.bam'
-            ),
-            'P1002-N1-DNA1-WGS1': os.path.join(
-                self.project_path, 'P1002-N1.bam'
-            ),
+            'P1001-N1-DNA1-WGS1': iRODSPath(self.project_path, 'P1001-N1.bam'),
+            'P1002-N1-DNA1-WGS1': iRODSPath(self.project_path, 'P1002-N1.bam'),
         }
         self.vcf_urls = {
-            'P1001-N1-DNA1-WGS1': os.path.join(
+            'P1001-N1-DNA1-WGS1': iRODSPath(
                 self.project_path, 'P1001-N1.vcf.gz'
             ),
         }

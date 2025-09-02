@@ -1,10 +1,10 @@
 """Tests for samplesheets REST API view permissions with taskflow"""
 
-import os
 import uuid
 
 from datetime import timedelta
 
+from irods.path import iRODSPath
 from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -95,7 +95,7 @@ class IrodsAccessTicketAPIViewTestBase(
         self.make_irods_colls(self.investigation)
         self.assay_path = self.irods_backend.get_path(self.assay)
         self.coll = self.irods.collections.create(
-            os.path.join(self.assay_path, 'coll')
+            iRODSPath(self.assay_path, 'coll')
         )
 
 
@@ -111,8 +111,8 @@ class IrodsDataRequestAPIViewTestBase(SheetTaskflowAPIPermissionTestBase):
         # Set up iRODS data
         self.make_irods_colls(self.investigation)
         self.assay_path = self.irods_backend.get_path(self.assay)
-        self.obj_path = os.path.join(self.assay_path, IRODS_FILE_NAME)
-        self.md5_path = os.path.join(self.assay_path, IRODS_FILE_NAME + '.md5')
+        self.obj_path = iRODSPath(self.assay_path, IRODS_FILE_NAME)
+        self.md5_path = iRODSPath(self.assay_path, IRODS_FILE_NAME + '.md5')
         # Create objects
         self.file_obj = self.irods.data_objects.create(self.obj_path)
         self.md5_obj = self.irods.data_objects.create(self.md5_path)
@@ -358,7 +358,7 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
         self.ticket = self.make_irods_ticket(
             study=self.study,
             assay=self.assay,
-            path=self.coll.path + '/ticket1',
+            path=iRODSPath(self.coll.path, 'ticket1'),
             user=self.user_owner,
             ticket='ticket',
             label=LABEL_CREATE,

@@ -1,10 +1,10 @@
 """View tests in the landingzones app with taskflow"""
 
-import os
 import time
 
 from irods.access import iRODSAccess
 from irods.exception import GroupDoesNotExist
+from irods.path import iRODSPath
 from irods.test.helpers import make_object
 from typing import Optional
 
@@ -349,10 +349,10 @@ class TestZoneCreateView(
         )
         for c in ZONE_BASE_COLLS:
             self.assert_irods_access(
-                self.user.username, os.path.join(zone_path, c), IRODS_ACCESS_OWN
+                self.user.username, iRODSPath(zone_path, c), IRODS_ACCESS_OWN
             )
             self.assert_irods_access(
-                self.owner_group, os.path.join(zone_path, c), IRODS_ACCESS_OWN
+                self.owner_group, iRODSPath(zone_path, c), IRODS_ACCESS_OWN
             )
 
     def test_post_colls_plugin(self):
@@ -385,10 +385,10 @@ class TestZoneCreateView(
         )
         for c in ZONE_ALL_COLLS:
             self.assert_irods_access(
-                self.user.username, os.path.join(zone_path, c), IRODS_ACCESS_OWN
+                self.user.username, iRODSPath(zone_path, c), IRODS_ACCESS_OWN
             )
             self.assert_irods_access(
-                self.owner_group, os.path.join(zone_path, c), IRODS_ACCESS_OWN
+                self.owner_group, iRODSPath(zone_path, c), IRODS_ACCESS_OWN
             )
         # These should not be created for this plugin
         for c in [MAX_QUANT_COLL, RAW_DATA_COLL]:
@@ -451,10 +451,10 @@ class TestZoneCreateView(
         )
         for c in ZONE_ALL_COLLS:
             self.assert_irods_access(
-                self.user.username, os.path.join(zone_path, c), IRODS_ACCESS_OWN
+                self.user.username, iRODSPath(zone_path, c), IRODS_ACCESS_OWN
             )
             self.assert_irods_access(
-                self.owner_group, os.path.join(zone_path, c), IRODS_ACCESS_OWN
+                self.owner_group, iRODSPath(zone_path, c), IRODS_ACCESS_OWN
             )
 
     @override_settings(LANDINGZONES_ZONE_CREATE_LIMIT=1)
@@ -590,7 +590,7 @@ class TestZoneMoveView(
         self.assert_zone_status(self.zone, ZONE_STATUS_MOVED)
         self.assertEqual(len(self.zone_coll.data_objects), 0)
         self.assertEqual(len(self.assay_coll.data_objects), 2)
-        obj_path = os.path.join(self.assay_path, TEST_OBJ_NAME)
+        obj_path = iRODSPath(self.assay_path, TEST_OBJ_NAME)
         self.assert_irods_access(self.owner_group, obj_path, None)
         self.assert_irods_access(self.user.username, obj_path, None)
         self.assert_irods_access(
@@ -819,7 +819,7 @@ class TestZoneMoveView(
         )
         new_zone_path = self.irods_backend.get_path(zone)
         zone_results_coll = self.irods.collections.get(
-            os.path.join(new_zone_path, RESULTS_COLL)
+            iRODSPath(new_zone_path, RESULTS_COLL)
         )
         irods_obj = self.make_irods_object(zone_results_coll, TEST_OBJ_NAME)
         self.make_checksum_object(irods_obj)
@@ -840,7 +840,7 @@ class TestZoneMoveView(
 
         self.assert_zone_status(zone, ZONE_STATUS_MOVED)
         self.assertEqual(len(zone_results_coll.data_objects), 0)
-        assay_results_path = os.path.join(self.sample_path, RESULTS_COLL)
+        assay_results_path = iRODSPath(self.sample_path, RESULTS_COLL)
         assay_results_coll = self.irods.collections.get(assay_results_path)
         self.assertEqual(len(assay_results_coll.data_objects), 2)
         # Mails to owner & category owner
@@ -848,7 +848,7 @@ class TestZoneMoveView(
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_move').count(), 1
         )
-        sample_obj_path = os.path.join(assay_results_path, TEST_OBJ_NAME)
+        sample_obj_path = iRODSPath(assay_results_path, TEST_OBJ_NAME)
         self.assert_irods_access(
             self.project_group,
             sample_obj_path,
@@ -967,7 +967,7 @@ class TestZoneMoveView(
             self.assertRedirects(response, self.url_redirect)
 
         self.assert_zone_status(self.zone, ZONE_STATUS_MOVED)
-        obj_path = os.path.join(self.assay_path, TEST_OBJ_NAME)
+        obj_path = iRODSPath(self.assay_path, TEST_OBJ_NAME)
         self.assert_irods_access(self.owner_group, obj_path, None)
         self.assert_irods_access(self.user.username, obj_path, None)
         self.assert_irods_access(
@@ -1010,7 +1010,7 @@ class TestZoneMoveView(
             self.assertRedirects(response, self.url_redirect)
 
         self.assert_zone_status(self.zone, ZONE_STATUS_MOVED)
-        obj_path = os.path.join(self.assay_path, TEST_OBJ_NAME)
+        obj_path = iRODSPath(self.assay_path, TEST_OBJ_NAME)
         self.assert_irods_access(self.owner_group, obj_path, None)
         self.assert_irods_access(self.user.username, obj_path, None)
         self.assert_irods_access(

@@ -1,12 +1,14 @@
 """Ajax API views for the samplesheets app"""
 
 import json
-import os
 
-from altamisa.constants import table_headers as th
 from datetime import datetime as dt
 from packaging import version
 from typing import Optional, Union
+
+from altamisa.constants import table_headers as th
+
+from irods.path import iRODSPath
 
 from django.conf import settings
 from django.db import transaction
@@ -834,7 +836,7 @@ class SheetCellEditAjaxView(BaseSheetEditAjaxView):
         irods_backend = plugin_api.get_backend_api('omics_irods')
         # NOTE: Can we assume all assay apps ever will follow this convention?
         #       (At the time of implementation they do)
-        obj_path = os.path.join(irods_backend.get_path(assay), node_obj.name)
+        obj_path = iRODSPath(irods_backend.get_path(assay), node_obj.name)
         cache_paths = cache_item.data.get('paths')
         if not cache_paths:  # Not sure if this can happen but just in case..
             return None

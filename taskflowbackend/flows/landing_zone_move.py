@@ -1,4 +1,5 @@
 from irods.exception import GroupDoesNotExist
+from irods.path import iRODSPath
 
 from django.conf import settings
 
@@ -110,7 +111,7 @@ class Flow(BaseLinearFlow):
         # Convert paths to collections inside sample collection
         zone_path_len = len(zone_path.split('/'))
         sample_colls = [
-            sample_path + '/' + '/'.join(p.split('/')[zone_path_len:])
+            iRODSPath(sample_path, *p.split('/')[zone_path_len:])
             for p in zone_object_colls
             if len(p.split('/')) > zone_path_len
         ]

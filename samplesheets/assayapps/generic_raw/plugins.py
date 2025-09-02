@@ -55,7 +55,8 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         :return: String with full iRODS path or None
 
         """
-        return assay_path + '/' + RAW_DATA_COLL
+        # NOTE: Not using iRODSPath here because it supports ".."
+        return '/'.join([assay_path, RAW_DATA_COLL])
 
     def update_row(
         self, row: list[dict], table: dict, assay: Assay, index: int
@@ -93,7 +94,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                 and isinstance(row[i]['value'], str)
             ):
                 row[i]['link'] = (
-                    base_url + '/' + RAW_DATA_COLL + '/' + row[i]['value']
+                    base_url + '/' + '/'.join([RAW_DATA_COLL, row[i]['value']])
                 )
         return row
 
@@ -109,6 +110,6 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             {
                 'id': 'raw_data',
                 'label': 'Raw Data',
-                'path': assay_path + '/' + RAW_DATA_COLL,
+                'path': '/'.join([assay_path, RAW_DATA_COLL]),
             }
         ]

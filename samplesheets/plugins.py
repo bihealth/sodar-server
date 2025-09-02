@@ -7,11 +7,13 @@ import time
 
 from copy import deepcopy
 from math import modf
-from irods.exception import CollectionDoesNotExist, NetworkException
-from irods.session import iRODSSession
 from typing import Any, Optional, Union
 from urllib.parse import urlparse
 from uuid import UUID
+
+from irods.exception import CollectionDoesNotExist, NetworkException
+from irods.path import iRODSPath
+from irods.session import iRODSSession
 
 from django.conf import settings
 from django.http import HttpRequest
@@ -887,10 +889,10 @@ class ProjectAppPlugin(
         cache_data = {
             'shortcuts': {
                 'results_reports': irods.collections.exists(
-                    assay_path + '/' + RESULTS_COLL
+                    iRODSPath(assay_path, RESULTS_COLL)
                 ),
                 'misc_files': irods.collections.exists(
-                    assay_path + '/' + MISC_FILES_COLL
+                    iRODSPath(assay_path, MISC_FILES_COLL)
                 ),
             }
         }
@@ -904,7 +906,7 @@ class ProjectAppPlugin(
         cache_data['shortcuts']['track_hubs'] = [
             c.path
             for c in irods_backend.get_child_colls(
-                irods, os.path.join(assay_path, TRACK_HUBS_COLL)
+                irods, iRODSPath(assay_path, TRACK_HUBS_COLL)
             )
         ]
         cache_backend.set_cache_item(
@@ -1415,13 +1417,13 @@ def get_irods_content(
             {
                 'id': RESULTS_COLL_ID,
                 'label': 'Results and Reports',
-                'path': assay_path + '/' + RESULTS_COLL,
+                'path': iRODSPath(assay_path, RESULTS_COLL),
                 'assay_plugin': False,
             },
             {
                 'id': MISC_FILES_COLL_ID,
                 'label': 'Misc Files',
-                'path': assay_path + '/' + MISC_FILES_COLL,
+                'path': iRODSPath(assay_path, MISC_FILES_COLL),
                 'assay_plugin': False,
             },
         ]

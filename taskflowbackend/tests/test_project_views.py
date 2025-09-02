@@ -1,9 +1,8 @@
 """Tests for projectroles views with taskflow"""
 
-import os
-
 from irods.collection import iRODSCollection
 from irods.exception import GroupDoesNotExist
+from irods.path import iRODSPath
 
 from django.conf import settings
 from django.contrib import auth
@@ -1357,9 +1356,9 @@ class TestProjectDeleteView(TaskflowViewTestBase):
 
     def test_post_file(self):
         """Test POST with uploaded file"""
-        obj_coll_path = os.path.join(self.project_path, 'subcoll')
+        obj_coll_path = iRODSPath(self.project_path, 'subcoll')
         self.irods.collections.create(obj_coll_path)
-        obj_path = os.path.join(obj_coll_path, OBJ_NAME)
+        obj_path = iRODSPath(obj_coll_path, OBJ_NAME)
         self.irods.data_objects.create(obj_path)
 
         self.assertTrue(self.irods.collections.exists(self.project_path))

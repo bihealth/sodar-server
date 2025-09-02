@@ -1,5 +1,7 @@
 """Tests for permissions in the irodsbackend app"""
 
+from irods.path import iRODSPath
+
 from django.test import override_settings
 
 # Projectroles dependency
@@ -126,7 +128,7 @@ class TestIrodsStatisticsAjaxView(
 
     def test_get_no_perms(self):
         """Test GET without collection perms"""
-        test_path = self.project_path + '/' + TEST_COLL_NAME
+        test_path = iRODSPath(self.project_path, TEST_COLL_NAME)
         self.irods.collections.create(test_path)  # NOTE: No perms given
         url = self.irods_backend.get_url(
             view='stats', project=self.project, path=test_path

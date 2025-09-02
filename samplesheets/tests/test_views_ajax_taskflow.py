@@ -6,6 +6,8 @@ import os
 from django.conf import settings
 from django.urls import reverse
 
+from irods.path import iRODSPath
+
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
@@ -53,8 +55,8 @@ LIBRARY_ID_EDIT = 'p1-N1-DNA1-WES1-EDITED'
 LIBRARY_FIELD = 'p1'
 LIBRARY_FIELD_EDIT = 'p1-EDITED'
 DATA_OBJ_NAME = 'p1-N1.bam'
-IRODS_NON_PROJECT_PATH = (
-    '/' + settings.IRODS_ZONE + '/home/' + settings.IRODS_USER
+IRODS_NON_PROJECT_PATH = iRODSPath(
+    settings.IRODS_ZONE, 'home', settings.IRODS_USER
 )
 IRODS_FAIL_COLL = 'xeiJ1Vie'
 
@@ -83,7 +85,7 @@ class TestStudyLinksAjaxView(
         self.make_irods_colls(self.investigation)
         # Set up other variables
         self.assay_path = self.irods_backend.get_path(self.assay)
-        self.source_path = os.path.join(self.assay_path, LIBRARY_ID)
+        self.source_path = iRODSPath(self.assay_path, LIBRARY_ID)
         self.url = (
             reverse(
                 'samplesheets:ajax_study_links',
@@ -114,8 +116,8 @@ class TestStudyLinksAjaxView(
     def test_get_files(self):
         """Test GET with files in iRODS"""
         self.irods.collections.create(self.source_path)
-        bam_path = os.path.join(self.source_path, f'{SAMPLE_ID}_test.bam')
-        vcf_path = os.path.join(self.source_path, f'{FAMILY_ID}_test.vcf.gz')
+        bam_path = iRODSPath(self.source_path, f'{SAMPLE_ID}_test.bam')
+        vcf_path = iRODSPath(self.source_path, f'{FAMILY_ID}_test.vcf.gz')
         self.irods.data_objects.create(bam_path)
         self.irods.data_objects.create(vcf_path)
         with self.login(self.user):
@@ -167,7 +169,7 @@ class TestSheetCellEditAjaxView(
         self.library = GenericMaterial.objects.get(
             assay=self.assay, name=LIBRARY_ID
         )
-        self.library_path = os.path.join(
+        self.library_path = iRODSPath(
             self.irods_backend.get_path(self.assay), self.library.name
         )
         # Create iRODS collections
@@ -230,7 +232,7 @@ class TestSheetCellEditAjaxView(
             irods.collections.create(self.library_path)
             self.assertEqual(irods.collections.exists(self.library_path), True)
             irods.data_objects.create(
-                os.path.join(self.library_path, DATA_OBJ_NAME)
+                iRODSPath(self.library_path, DATA_OBJ_NAME)
             )
         self.assay_plugin.update_cache(project=self.project, user=self.user)
         with self.login(self.user):
@@ -255,7 +257,7 @@ class TestSheetCellEditAjaxView(
             irods.collections.create(self.library_path)
             self.assertEqual(irods.collections.exists(self.library_path), True)
             irods.data_objects.create(
-                os.path.join(self.library_path, DATA_OBJ_NAME)
+                iRODSPath(self.library_path, DATA_OBJ_NAME)
             )
         self.assay_plugin.update_cache(project=self.project, user=self.user)
         with self.login(self.user):
@@ -286,7 +288,7 @@ class TestSheetCellEditAjaxView(
             irods.collections.create(self.library_path)
             self.assertEqual(irods.collections.exists(self.library_path), True)
             irods.data_objects.create(
-                os.path.join(self.library_path, DATA_OBJ_NAME)
+                iRODSPath(self.library_path, DATA_OBJ_NAME)
             )
         self.assay_plugin.update_cache(project=self.project, user=self.user)
         with self.login(self.user):
@@ -376,7 +378,7 @@ class TestIrodsDataRequestCreateAjaxView(IrodsDataRequestViewTestBase):
 
     def test_post_multiple(self):
         """Test POST to create multiple delete requests"""
-        obj_path2 = os.path.join(self.assay_path, IRODS_FILE_NAME2)
+        obj_path2 = iRODSPath(self.assay_path, IRODS_FILE_NAME2)
         self.irods.data_objects.create(obj_path2)
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         self._assert_alert_count(CREATE_ALERT, self.user, 0)
@@ -454,7 +456,7 @@ class TestIrodsDataRequestDeleteAjaxView(IrodsDataRequestViewTestBase):
 
     def test_post_non_existent(self):
         """Test POST on non-existent request"""
-        obj_path2 = os.path.join(self.assay_path, IRODS_FILE_NAME2)
+        obj_path2 = iRODSPath(self.assay_path, IRODS_FILE_NAME2)
         self.irods.data_objects.create(obj_path2)
         with self.login(self.user):
             response = self.client.post(self.url, {'path': obj_path2})
@@ -500,7 +502,7 @@ class TestIrodsObjectListAjaxView(
 
     def test_get_coll_obj(self):
         """Test GET with data objects in collection"""
-        obj_path = os.path.join(self.assay_path, IRODS_FILE_NAME)
+        obj_path = iRODSPath(self.assay_path, IRODS_FILE_NAME)
         file_obj = self.irods.data_objects.create(obj_path)
         self.make_checksum_object(file_obj, HASH_SCHEME_MD5)
         self.make_checksum_object(file_obj, HASH_SCHEME_SHA256)
@@ -520,6 +522,7 @@ class TestIrodsObjectListAjaxView(
 
     def test_get_invalid_path(self):
         """Test GET with invalid path"""
+        # NOTE: Not using iRODSPath here because it supports ".."
         data = {'path': self.assay_path + '/..'}
         with self.login(self.user):
             response = self.client.get(self.url, data)
@@ -527,7 +530,7 @@ class TestIrodsObjectListAjaxView(
 
     def test_get_coll_not_found(self):
         """Test GET with non-existent collection"""
-        fail_path = self.assay_path + '/' + IRODS_FAIL_COLL
+        fail_path = iRODSPath(self.assay_path, IRODS_FAIL_COLL)
         self.assertEqual(self.irods.collections.exists(fail_path), False)
         data = {'path': fail_path}
         with self.login(self.user):
@@ -561,7 +564,7 @@ class TestIrodsObjectListAjaxView(
         self.make_assignment_taskflow(
             self.project, user_contributor, self.role_contributor
         )
-        obj_path = os.path.join(self.assay_path, IRODS_FILE_NAME)
+        obj_path = iRODSPath(self.assay_path, IRODS_FILE_NAME)
         self.irods.data_objects.create(obj_path)
         self.request = self.make_irods_request(
             project=self.project,

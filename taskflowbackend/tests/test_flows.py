@@ -1,12 +1,11 @@
 """Tests for Taskflow flows in the taskflowbackend app"""
 
-import os
-
 from irods.access import iRODSAccess
 from irods.exception import (
     UserDoesNotExist,
     GroupDoesNotExist,
 )
+from irods.path import iRODSPath
 from irods.test.helpers import make_object
 from irods.ticket import Ticket
 from irods.user import iRODSUser, iRODSUserGroup
@@ -129,9 +128,9 @@ class TestDataDelete(TaskflowbackendFlowTestBase):
             'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
         )
         self.project_path = self.irods_backend.get_path(self.project)
-        self.coll_path = os.path.join(self.project_path, COLL_NAME)
+        self.coll_path = iRODSPath(self.project_path, COLL_NAME)
         self.coll = self.irods.collections.create(self.coll_path)
-        self.obj_path = os.path.join(self.project_path, OBJ_NAME)
+        self.obj_path = iRODSPath(self.project_path, OBJ_NAME)
         self.obj = self.irods.data_objects.create(self.obj_path)
         self.set_flow_kw()
 
@@ -164,9 +163,9 @@ class TestDataDelete(TaskflowbackendFlowTestBase):
 
     def test_delete_nested(self):
         """Test data_delete for deleting a nested object"""
-        sub_coll_path = os.path.join(self.coll_path, SUB_COLL_NAME)
+        sub_coll_path = iRODSPath(self.coll_path, SUB_COLL_NAME)
         self.irods.collections.create(sub_coll_path)
-        new_obj_path = os.path.join(sub_coll_path, OBJ_NAME)
+        new_obj_path = iRODSPath(sub_coll_path, OBJ_NAME)
         self.irods.data_objects.create(new_obj_path)
         self.assertEqual(self.irods.collections.exists(self.coll_path), True)
         self.assertEqual(self.irods.data_objects.exists(new_obj_path), True)
@@ -291,8 +290,8 @@ class TestLandingZoneCreate(
 
     def test_create_colls(self):
         """Test landing_zone_create with collections"""
-        results_path = os.path.join(self.zone_path, RESULTS_COLL)
-        misc_path = os.path.join(self.zone_path, MISC_FILES_COLL)
+        results_path = iRODSPath(self.zone_path, RESULTS_COLL)
+        misc_path = iRODSPath(self.zone_path, MISC_FILES_COLL)
         self.assertEqual(self.irods.collections.exists(results_path), False)
         self.assertEqual(self.irods.collections.exists(misc_path), False)
 
@@ -322,8 +321,8 @@ class TestLandingZoneCreate(
 
     def test_create_colls_restrict(self):
         """Test landing_zone_create with restricted collections"""
-        results_path = os.path.join(self.zone_path, RESULTS_COLL)
-        misc_path = os.path.join(self.zone_path, MISC_FILES_COLL)
+        results_path = iRODSPath(self.zone_path, RESULTS_COLL)
+        misc_path = iRODSPath(self.zone_path, MISC_FILES_COLL)
         self.assertEqual(self.irods.collections.exists(results_path), False)
         self.assertEqual(self.irods.collections.exists(misc_path), False)
 
@@ -350,12 +349,12 @@ class TestLandingZoneCreate(
             self.user.username, results_path, IRODS_ACCESS_OWN
         )
         self.assert_irods_access(self.project_group, results_path, None)
-        new_root_path = os.path.join(self.zone_path, 'new_root_path')
+        new_root_path = iRODSPath(self.zone_path, 'new_root_path')
         self.irods.collections.create(new_root_path)
         self.assert_irods_access(
             self.user.username, new_root_path, self.irods_access_read
         )
-        new_sub_path = os.path.join(results_path, 'new_sub_path')
+        new_sub_path = iRODSPath(results_path, 'new_sub_path')
         self.irods.collections.create(new_sub_path)
         self.assert_irods_access(
             self.user.username, new_sub_path, IRODS_ACCESS_OWN
@@ -546,9 +545,9 @@ class TestLandingZoneDelete(
         zone_path = self.irods_backend.get_path(zone)
         self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(self.irods.collections.exists(zone_path), True)
-        coll_path = os.path.join(zone_path, COLL_NAME)
+        coll_path = iRODSPath(zone_path, COLL_NAME)
         self.irods.collections.create(coll_path)
-        obj_path = os.path.join(zone_path, OBJ_NAME)
+        obj_path = iRODSPath(zone_path, OBJ_NAME)
         self.irods.data_objects.create(obj_path)
         self.assertEqual(self.irods.collections.exists(coll_path), True)
         self.assertEqual(self.irods.data_objects.exists(obj_path), True)
@@ -583,12 +582,12 @@ class TestLandingZoneDelete(
         zone_path = self.irods_backend.get_path(zone)
         self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(self.irods.collections.exists(zone_path), True)
-        results_path = os.path.join(zone_path, RESULTS_COLL)
+        results_path = iRODSPath(zone_path, RESULTS_COLL)
         self.assertEqual(self.irods.collections.exists(results_path), True)
 
-        coll_path = os.path.join(results_path, COLL_NAME)
+        coll_path = iRODSPath(results_path, COLL_NAME)
         self.irods.collections.create(coll_path)
-        obj_path = os.path.join(results_path, OBJ_NAME)
+        obj_path = iRODSPath(results_path, OBJ_NAME)
         self.irods.data_objects.create(obj_path)
         self.assertEqual(self.irods.collections.exists(coll_path), True)
         self.assertEqual(self.irods.data_objects.exists(obj_path), True)
@@ -693,20 +692,18 @@ class TestLandingZoneMove(
         """Test landing_zone_move"""
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(self.irods.collections.exists(self.zone_path), True)
-        empty_coll_path = os.path.join(self.zone_path, COLL_NAME)
+        empty_coll_path = iRODSPath(self.zone_path, COLL_NAME)
         self.irods.collections.create(empty_coll_path)
-        obj_coll_path = os.path.join(self.zone_path, OBJ_COLL_NAME)
+        obj_coll_path = iRODSPath(self.zone_path, OBJ_COLL_NAME)
         obj_coll = self.irods.collections.create(obj_coll_path)
         obj = self.make_irods_object(obj_coll, OBJ_NAME)
         self.make_checksum_object(obj)
-        obj_path = os.path.join(obj_coll_path, OBJ_NAME)
+        obj_path = iRODSPath(obj_coll_path, OBJ_NAME)
         self.assert_irods_access(self.owner_group, obj_path, IRODS_ACCESS_OWN)
         self.assert_irods_access(self.user.username, obj_path, IRODS_ACCESS_OWN)
         self.assert_irods_access(self.project_group, obj_path, None)
 
-        sample_obj_path = os.path.join(
-            self.sample_path, OBJ_COLL_NAME, OBJ_NAME
-        )
+        sample_obj_path = iRODSPath(self.sample_path, OBJ_COLL_NAME, OBJ_NAME)
         tl_event = self.make_event(
             project=self.project,
             app='taskflowbackend',
@@ -739,7 +736,7 @@ class TestLandingZoneMove(
         self.zone.refresh_from_db()
         self.assertEqual(self.zone.status, ZONE_STATUS_MOVED)
         self.assertEqual(self.irods.collections.exists(self.zone_path), False)
-        sample_empty_path = os.path.join(self.sample_path, COLL_NAME)
+        sample_empty_path = iRODSPath(self.sample_path, COLL_NAME)
         # An empty collection should not be created by moving
         self.assertEqual(
             self.irods.collections.exists(sample_empty_path), False
@@ -762,7 +759,7 @@ class TestLandingZoneMove(
         )
         tl_event.refresh_from_db()
         expected = {
-            'files': [os.path.join(OBJ_COLL_NAME, OBJ_NAME)],
+            'files': [iRODSPath(OBJ_COLL_NAME, OBJ_NAME, absolute=False)],
             'total_size': 1024,
         }
         self.assertEqual(tl_event.extra_data, expected)
@@ -773,11 +770,11 @@ class TestLandingZoneMove(
         user_new = self.make_user('user_new')
         self.irods.users.create('user_new', 'rodsuser')
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
-        obj_coll_path = os.path.join(self.zone_path, OBJ_COLL_NAME)
+        obj_coll_path = iRODSPath(self.zone_path, OBJ_COLL_NAME)
         obj_coll = self.irods.collections.create(obj_coll_path)
         obj = self.make_irods_object(obj_coll, OBJ_NAME)
         self.make_checksum_object(obj)
-        obj_path = os.path.join(obj_coll_path, OBJ_NAME)
+        obj_path = iRODSPath(obj_coll_path, OBJ_NAME)
         self.assert_irods_access(self.owner_group, obj_path, IRODS_ACCESS_OWN)
         self.assert_irods_access(self.user.username, obj_path, IRODS_ACCESS_OWN)
         self.assert_irods_access(self.project_group, obj_path, None)
@@ -792,9 +789,7 @@ class TestLandingZoneMove(
         self.irods.acls.set(acl, recursive=False)
         self.assert_irods_access(user_new.username, obj_path, IRODS_ACCESS_OWN)
 
-        sample_obj_path = os.path.join(
-            self.sample_path, OBJ_COLL_NAME, OBJ_NAME
-        )
+        sample_obj_path = iRODSPath(self.sample_path, OBJ_COLL_NAME, OBJ_NAME)
         self.assertEqual(self.irods.data_objects.exists(sample_obj_path), False)
         self.assertEqual(
             self.irods.data_objects.exists(sample_obj_path + MD5_SUFFIX), False
@@ -838,12 +833,12 @@ class TestLandingZoneMove(
         user_new = self.make_user('user_new')
         self.irods.users.create('user_new', 'rodsuser')
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
-        obj_coll_path = os.path.join(self.zone_path, OBJ_COLL_NAME)
+        obj_coll_path = iRODSPath(self.zone_path, OBJ_COLL_NAME)
         obj_coll = self.irods.collections.create(obj_coll_path)
         obj = self.make_irods_object(obj_coll, OBJ_NAME)
         self.assertEqual(self.irods.data_objects.exists(obj.path), True)
         self.make_checksum_object(obj)
-        obj_path = os.path.join(obj_coll_path, OBJ_NAME)
+        obj_path = iRODSPath(obj_coll_path, OBJ_NAME)
         self.assert_irods_access(self.owner_group, obj_path, IRODS_ACCESS_OWN)
         self.assert_irods_access(self.user.username, obj_path, IRODS_ACCESS_OWN)
         self.assert_irods_access(self.project_group, obj_path, None)
@@ -859,9 +854,7 @@ class TestLandingZoneMove(
             user_new.username, obj_coll_path, IRODS_ACCESS_OWN
         )
 
-        sample_obj_path = os.path.join(
-            self.sample_path, OBJ_COLL_NAME, OBJ_NAME
-        )
+        sample_obj_path = iRODSPath(self.sample_path, OBJ_COLL_NAME, OBJ_NAME)
         self.assertEqual(self.irods.data_objects.exists(sample_obj_path), False)
         self.assertEqual(
             self.irods.data_objects.exists(sample_obj_path + MD5_SUFFIX), False
@@ -903,11 +896,11 @@ class TestLandingZoneMove(
         # Create new user
         user_new = self.make_user('user_new')
         self.irods.users.create('user_new', 'rodsuser')
-        obj_coll_path = os.path.join(self.zone_path, OBJ_COLL_NAME)
+        obj_coll_path = iRODSPath(self.zone_path, OBJ_COLL_NAME)
         obj_coll = self.irods.collections.create(obj_coll_path)
         obj = self.make_irods_object(obj_coll, OBJ_NAME)
         self.make_checksum_object(obj)
-        obj_path = os.path.join(obj_coll_path, OBJ_NAME)
+        obj_path = iRODSPath(obj_coll_path, OBJ_NAME)
         self.assert_irods_access(self.owner_group, obj_path, IRODS_ACCESS_OWN)
         self.assert_irods_access(self.user.username, obj_path, IRODS_ACCESS_OWN)
         self.assert_irods_access(self.project_group, obj_path, None)
@@ -923,9 +916,7 @@ class TestLandingZoneMove(
             user_new.username, obj_coll_path, IRODS_ACCESS_OWN
         )
 
-        sample_obj_path = os.path.join(
-            self.sample_path, OBJ_COLL_NAME, OBJ_NAME
-        )
+        sample_obj_path = iRODSPath(self.sample_path, OBJ_COLL_NAME, OBJ_NAME)
         self.assertEqual(self.irods.data_objects.exists(sample_obj_path), False)
         self.assertEqual(
             self.irods.data_objects.exists(sample_obj_path + MD5_SUFFIX), False
@@ -966,7 +957,7 @@ class TestLandingZoneMove(
     def test_move_locked(self):
         """Test landing_zone_move with locked project (should fail)"""
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
-        obj_coll_path = os.path.join(self.zone_path, OBJ_COLL_NAME)
+        obj_coll_path = iRODSPath(self.zone_path, OBJ_COLL_NAME)
         obj_coll = self.irods.collections.create(obj_coll_path)
         obj = self.make_irods_object(obj_coll, OBJ_NAME)
         self.make_checksum_object(obj)
@@ -984,14 +975,12 @@ class TestLandingZoneMove(
         """Test landing_zone_move with no checksum in iRODS"""
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(self.irods.collections.exists(self.zone_path), True)
-        obj_coll_path = os.path.join(self.zone_path, OBJ_COLL_NAME)
+        obj_coll_path = iRODSPath(self.zone_path, OBJ_COLL_NAME)
         obj_coll = self.irods.collections.create(obj_coll_path)
         obj = self.make_irods_object(obj_coll, OBJ_NAME, checksum=False)
         self.make_checksum_object(obj)
-        obj_path = os.path.join(obj_coll_path, OBJ_NAME)
-        sample_obj_path = os.path.join(
-            self.sample_path, OBJ_COLL_NAME, OBJ_NAME
-        )
+        obj_path = iRODSPath(obj_coll_path, OBJ_NAME)
+        sample_obj_path = iRODSPath(self.sample_path, OBJ_COLL_NAME, OBJ_NAME)
 
         self.assertEqual(self.irods.collections.exists(obj_coll_path), True)
         self.assertEqual(self.irods.data_objects.exists(obj_path), True)
@@ -1024,7 +1013,7 @@ class TestLandingZoneMove(
 
     def test_move_no_checksum_file(self):
         """Test landing_zone_move without an checksum file (should fail)"""
-        coll_path = os.path.join(self.zone_path, COLL_NAME)
+        coll_path = iRODSPath(self.zone_path, COLL_NAME)
         zone_coll = self.irods.collections.create(coll_path)
         obj = self.make_irods_object(zone_coll, OBJ_NAME)
         obj_path = obj.path
@@ -1047,7 +1036,7 @@ class TestLandingZoneMove(
         self.zone.refresh_from_db()
         self.assertEqual(self.zone.status, ZONE_STATUS_FAILED)
         self.assertEqual(self.irods.collections.exists(self.zone_path), True)
-        sample_obj_path = os.path.join(self.sample_path, COLL_NAME, OBJ_NAME)
+        sample_obj_path = iRODSPath(self.sample_path, COLL_NAME, OBJ_NAME)
         self.assertEqual(self.irods.data_objects.exists(sample_obj_path), False)
         # Assert access after revert
         self.assert_irods_access(self.owner_group, obj_path, IRODS_ACCESS_OWN)
@@ -1059,12 +1048,12 @@ class TestLandingZoneMove(
 
     def test_move_coll_exists(self):
         """Test landing_zone_move with existing collection"""
-        coll_path = os.path.join(self.zone_path, COLL_NAME)
+        coll_path = iRODSPath(self.zone_path, COLL_NAME)
         zone_coll = self.irods.collections.create(coll_path)
         obj = self.make_irods_object(zone_coll, OBJ_NAME)
         obj_path = obj.path
         self.make_checksum_object(obj)
-        sample_coll_path = os.path.join(self.sample_path, COLL_NAME)
+        sample_coll_path = iRODSPath(self.sample_path, COLL_NAME)
         self.irods.collections.create(sample_coll_path)
 
         self.assertEqual(self.irods.collections.exists(coll_path), True)
@@ -1084,7 +1073,7 @@ class TestLandingZoneMove(
         self.zone.refresh_from_db()
         self.assertEqual(self.zone.status, ZONE_STATUS_MOVED)
         self.assertEqual(self.irods.collections.exists(self.zone_path), False)
-        sample_obj_path = os.path.join(self.sample_path, COLL_NAME, OBJ_NAME)
+        sample_obj_path = iRODSPath(self.sample_path, COLL_NAME, OBJ_NAME)
         self.assertEqual(self.irods.data_objects.exists(sample_obj_path), True)
         self.assertEqual(
             self.irods.data_objects.exists(sample_obj_path + MD5_SUFFIX), True
@@ -1092,12 +1081,12 @@ class TestLandingZoneMove(
 
     def test_move_obj_exists(self):
         """Test landing_zone_move with existing object (should fail)"""
-        coll_path = os.path.join(self.zone_path, COLL_NAME)
+        coll_path = iRODSPath(self.zone_path, COLL_NAME)
         zone_coll = self.irods.collections.create(coll_path)
         obj = self.make_irods_object(zone_coll, OBJ_NAME)
         obj_path = obj.path
         self.make_checksum_object(obj)
-        sample_coll_path = os.path.join(self.sample_path, COLL_NAME)
+        sample_coll_path = iRODSPath(self.sample_path, COLL_NAME)
         sample_coll = self.irods.collections.create(sample_coll_path)
         sample_obj = self.make_irods_object(sample_coll, OBJ_NAME)
 
@@ -1129,12 +1118,12 @@ class TestLandingZoneMove(
 
     def test_move_obj_with_coll_name_exists(self):
         """Test landing_zone_move with existing object sharing name with zone collection"""
-        coll_path = os.path.join(self.zone_path, COLL_NAME)
+        coll_path = iRODSPath(self.zone_path, COLL_NAME)
         zone_coll = self.irods.collections.create(coll_path)
         obj = self.make_irods_object(zone_coll, OBJ_NAME)
         obj_path = obj.path
         self.make_checksum_object(obj)
-        sample_coll_path = os.path.join(self.sample_path)
+        sample_coll_path = iRODSPath(self.sample_path)
         sample_coll = self.irods.collections.create(sample_coll_path)
         # NOTE: Using collection name for the data object
         sample_obj = self.make_irods_object(sample_coll, COLL_NAME)
@@ -1160,19 +1149,17 @@ class TestLandingZoneMove(
         self.irods.users.remove(self.owner_group)
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(self.irods.collections.exists(self.zone_path), True)
-        empty_coll_path = os.path.join(self.zone_path, COLL_NAME)
+        empty_coll_path = iRODSPath(self.zone_path, COLL_NAME)
         self.irods.collections.create(empty_coll_path)
-        obj_coll_path = os.path.join(self.zone_path, OBJ_COLL_NAME)
+        obj_coll_path = iRODSPath(self.zone_path, OBJ_COLL_NAME)
         obj_coll = self.irods.collections.create(obj_coll_path)
         obj = self.make_irods_object(obj_coll, OBJ_NAME)
         self.make_checksum_object(obj)
-        obj_path = os.path.join(obj_coll_path, OBJ_NAME)
+        obj_path = iRODSPath(obj_coll_path, OBJ_NAME)
         self.assert_irods_access(self.user.username, obj_path, IRODS_ACCESS_OWN)
         self.assert_irods_access(self.project_group, obj_path, None)
 
-        sample_obj_path = os.path.join(
-            self.sample_path, OBJ_COLL_NAME, OBJ_NAME
-        )
+        sample_obj_path = iRODSPath(self.sample_path, OBJ_COLL_NAME, OBJ_NAME)
         self.assertEqual(self.irods.collections.exists(empty_coll_path), True)
         self.assertEqual(self.irods.collections.exists(obj_coll_path), True)
         self.assertEqual(self.irods.data_objects.exists(obj_path), True)
@@ -1216,7 +1203,7 @@ class TestLandingZoneMove(
 
     def test_validate(self):
         """Test landing_zone_move with validate_only=True"""
-        coll_path = os.path.join(self.zone_path, COLL_NAME)
+        coll_path = iRODSPath(self.zone_path, COLL_NAME)
         zone_coll = self.irods.collections.create(coll_path)
         obj = self.make_irods_object(zone_coll, OBJ_NAME)
         obj_path = obj.path
@@ -1251,14 +1238,14 @@ class TestLandingZoneMove(
         self.assertEqual(
             self.irods.data_objects.exists(obj_path + MD5_SUFFIX), True
         )
-        sample_coll_path = os.path.join(self.sample_path, COLL_NAME)
+        sample_coll_path = iRODSPath(self.sample_path, COLL_NAME)
         self.assertEqual(self.irods.collections.exists(sample_coll_path), False)
         self.assert_irods_access(self.owner_group, obj_path, IRODS_ACCESS_OWN)
         self.assert_irods_access(self.user.username, obj_path, IRODS_ACCESS_OWN)
         self.assert_irods_access(self.project_group, obj_path, None)
         tl_event.refresh_from_db()
         expected = {
-            'files': [os.path.join(COLL_NAME, OBJ_NAME)],
+            'files': [iRODSPath(COLL_NAME, OBJ_NAME, absolute=False)],
             'total_size': 1024,
         }
         self.assertEqual(tl_event.extra_data, expected)
@@ -1267,7 +1254,7 @@ class TestLandingZoneMove(
 
     def test_validate_upper_case(self):
         """Test landing_zone_move validation with upper case checksum in file"""
-        coll_path = os.path.join(self.zone_path, COLL_NAME)
+        coll_path = iRODSPath(self.zone_path, COLL_NAME)
         zone_coll = self.irods.collections.create(coll_path)
         obj = self.make_irods_object(zone_coll, OBJ_NAME)
         chk_path = obj.path + MD5_SUFFIX
@@ -1286,7 +1273,7 @@ class TestLandingZoneMove(
 
     def test_validate_bom_header(self):
         """Test landing_zone_move validation with BOM header in MD5 file"""
-        coll_path = os.path.join(self.zone_path, COLL_NAME)
+        coll_path = iRODSPath(self.zone_path, COLL_NAME)
         zone_coll = self.irods.collections.create(coll_path)
         obj = self.make_irods_object(zone_coll, OBJ_NAME)
         obj_path = obj.path
@@ -1314,14 +1301,14 @@ class TestLandingZoneMove(
         self.assertEqual(
             self.irods.data_objects.exists(obj_path + MD5_SUFFIX), True
         )
-        sample_coll_path = os.path.join(self.sample_path, COLL_NAME)
+        sample_coll_path = iRODSPath(self.sample_path, COLL_NAME)
         self.assertEqual(self.irods.collections.exists(sample_coll_path), False)
 
     # TODO: Test validation with BOM header and SHA256 checksum (see #2170)
 
     def test_validate_no_checksum_file_md5(self):
         """Test landing_zone_move validation with missing MD5 checksum file"""
-        coll_path = os.path.join(self.zone_path, COLL_NAME)
+        coll_path = iRODSPath(self.zone_path, COLL_NAME)
         zone_coll = self.irods.collections.create(coll_path)
         obj = self.make_irods_object(zone_coll, OBJ_NAME, checksum=False)
         self.assertIsNone(obj.replicas[0].checksum)
@@ -1347,7 +1334,7 @@ class TestLandingZoneMove(
 
     def test_validate_prohibit(self):
         """Test landing_zone_move validation with prohibited file name"""
-        coll_path = os.path.join(self.zone_path, COLL_NAME)
+        coll_path = iRODSPath(self.zone_path, COLL_NAME)
         zone_coll = self.irods.collections.create(coll_path)
         obj = self.make_irods_object(zone_coll, OBJ_NAME)
         obj_path = obj.path
@@ -1372,7 +1359,7 @@ class TestLandingZoneMove(
     def test_validate_locked(self):
         """Test landing_zone_move validation with locked project"""
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
-        obj_coll_path = os.path.join(self.zone_path, OBJ_COLL_NAME)
+        obj_coll_path = iRODSPath(self.zone_path, OBJ_COLL_NAME)
         obj_coll = self.irods.collections.create(obj_coll_path)
         obj = self.make_irods_object(obj_coll, OBJ_NAME)
         self.make_checksum_object(obj)
@@ -1390,7 +1377,7 @@ class TestLandingZoneMove(
 
     def test_revert(self):
         """Test reverting landing_zone_move"""
-        coll_path = os.path.join(self.zone_path, COLL_NAME)
+        coll_path = iRODSPath(self.zone_path, COLL_NAME)
         zone_coll = self.irods.collections.create(coll_path)
         obj = self.make_irods_object(zone_coll, OBJ_NAME)
         obj_path = obj.path
@@ -1415,7 +1402,7 @@ class TestLandingZoneMove(
         self.assertEqual(
             self.irods.data_objects.exists(obj_path + MD5_SUFFIX), True
         )
-        sample_obj_path = os.path.join(self.sample_path, COLL_NAME, OBJ_NAME)
+        sample_obj_path = iRODSPath(self.sample_path, COLL_NAME, OBJ_NAME)
         self.assertEqual(self.irods.data_objects.exists(sample_obj_path), False)
         self.assertEqual(
             self.irods.data_objects.exists(sample_obj_path + MD5_SUFFIX), False
@@ -1445,17 +1432,17 @@ class TestLandingZoneMove(
         new_zone_path = self.irods_backend.get_path(new_zone)
         self.assertEqual(new_zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(self.irods.collections.exists(new_zone_path), True)
-        results_path = os.path.join(new_zone_path, RESULTS_COLL)
+        results_path = iRODSPath(new_zone_path, RESULTS_COLL)
         self.assertEqual(self.irods.collections.exists(results_path), True)
 
-        empty_coll_path = os.path.join(results_path, COLL_NAME)
+        empty_coll_path = iRODSPath(results_path, COLL_NAME)
         self.irods.collections.create(empty_coll_path)
-        obj_coll_path = os.path.join(results_path, OBJ_COLL_NAME)
+        obj_coll_path = iRODSPath(results_path, OBJ_COLL_NAME)
         obj_coll = self.irods.collections.create(obj_coll_path)
         obj = self.make_irods_object(obj_coll, OBJ_NAME)
         self.make_checksum_object(obj)
-        obj_path = os.path.join(obj_coll_path, OBJ_NAME)
-        sample_obj_path = os.path.join(
+        obj_path = iRODSPath(obj_coll_path, OBJ_NAME)
+        sample_obj_path = iRODSPath(
             self.sample_path, RESULTS_COLL, OBJ_COLL_NAME, OBJ_NAME
         )
 
@@ -1479,9 +1466,7 @@ class TestLandingZoneMove(
         new_zone.refresh_from_db()
         self.assertEqual(new_zone.status, ZONE_STATUS_MOVED)
         self.assertEqual(self.irods.collections.exists(new_zone_path), False)
-        sample_empty_path = os.path.join(
-            self.sample_path, RESULTS_COLL, COLL_NAME
-        )
+        sample_empty_path = iRODSPath(self.sample_path, RESULTS_COLL, COLL_NAME)
         # An empty collection should not be created by moving
         self.assertEqual(
             self.irods.collections.exists(sample_empty_path), False
@@ -1551,16 +1536,14 @@ class TestLandingZoneMoveAltRootPath(
         self.assertEqual(self.irods.collections.exists(self.zone_path), True)
 
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
-        empty_coll_path = os.path.join(self.zone_path, COLL_NAME)
+        empty_coll_path = iRODSPath(self.zone_path, COLL_NAME)
         self.irods.collections.create(empty_coll_path)
-        obj_coll_path = os.path.join(self.zone_path, OBJ_COLL_NAME)
+        obj_coll_path = iRODSPath(self.zone_path, OBJ_COLL_NAME)
         obj_coll = self.irods.collections.create(obj_coll_path)
         obj = self.make_irods_object(obj_coll, OBJ_NAME)
         self.make_checksum_object(obj)
-        obj_path = os.path.join(obj_coll_path, OBJ_NAME)
-        sample_obj_path = os.path.join(
-            self.sample_path, OBJ_COLL_NAME, OBJ_NAME
-        )
+        obj_path = iRODSPath(obj_coll_path, OBJ_NAME)
+        sample_obj_path = iRODSPath(self.sample_path, OBJ_COLL_NAME, OBJ_NAME)
 
         self.assertEqual(self.irods.collections.exists(empty_coll_path), True)
         self.assertEqual(self.irods.collections.exists(obj_coll_path), True)
@@ -1582,7 +1565,7 @@ class TestLandingZoneMoveAltRootPath(
         self.zone.refresh_from_db()
         self.assertEqual(self.zone.status, ZONE_STATUS_MOVED)
         self.assertEqual(self.irods.collections.exists(self.zone_path), False)
-        sample_empty_path = os.path.join(self.sample_path, COLL_NAME)
+        sample_empty_path = iRODSPath(self.sample_path, COLL_NAME)
         # An empty collection should not be created by moving
         self.assertEqual(
             self.irods.collections.exists(sample_empty_path), False
@@ -2384,12 +2367,12 @@ class TestSheetCollsCreate(
             self.project_group, self.sample_path, self.irods_access_read
         )
         self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
-        results_path = os.path.join(self.sample_path, RESULTS_COLL)
+        results_path = iRODSPath(self.sample_path, RESULTS_COLL)
         self.assertEqual(self.irods.collections.exists(results_path), True)
         self.assert_irods_access(
             self.project_group, results_path, self.irods_access_read
         )
-        misc_path = os.path.join(self.sample_path, MISC_FILES_COLL)
+        misc_path = iRODSPath(self.sample_path, MISC_FILES_COLL)
         self.assertEqual(self.irods.collections.exists(misc_path), True)
         self.assert_irods_access(
             self.project_group, misc_path, self.irods_access_read

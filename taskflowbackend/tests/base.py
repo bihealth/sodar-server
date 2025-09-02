@@ -13,7 +13,6 @@ done manually using make_project_taskflow() and make_assignment_taskflow().
 
 import hashlib
 import logging
-import os
 
 from typing import Any, Optional, Union
 
@@ -22,6 +21,7 @@ from irods.data_object import iRODSDataObject
 from irods.exception import CollectionDoesNotExist
 from irods.keywords import REG_CHKSUM_KW
 from irods.models import TicketQuery, UserGroup
+from irods.path import iRODSPath
 from irods.test.helpers import make_object
 
 from django.conf import settings
@@ -129,7 +129,7 @@ class TaskflowTestMixin(
         """
         if not content:
             content = ''.join('x' for _ in range(content_length))
-        obj_path = os.path.join(coll.path, obj_name)
+        obj_path = iRODSPath(coll.path, obj_name)
         obj_kwargs = {REG_CHKSUM_KW: ''} if checksum else {}
         return make_object(self.irods, obj_path, content, **obj_kwargs)
 
@@ -302,7 +302,7 @@ class TaskflowTestMixin(
             trash_path = irods_backend.get_trash_path()
             trash_coll = irods.collections.get(trash_path)
             # NOTE: We can't delete the home trash collection
-            trash_home_path = os.path.join(trash_path, 'home')
+            trash_home_path = iRODSPath(trash_path, 'home')
             for coll in irods_backend.get_colls_recursively(trash_coll):
                 if irods.collections.exists(
                     coll.path

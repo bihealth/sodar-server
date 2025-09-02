@@ -5,6 +5,8 @@ import os
 from copy import deepcopy
 from typing import Optional
 
+from irods.path import iRODSPath
+
 from samplesheets.assayapps.generic.plugins import (
     DATA_COMMENT_PREFIX,
     DATA_LINK_COMMENT,
@@ -68,7 +70,7 @@ class TestGenericAssayPlugin(AssayPluginTestBase):
             self.assay_table['table_data'][0][47]['value'], FOLDER_VAL
         )
         row_path = self._get_row_path()
-        self.assertEqual(row_path, os.path.join(self.assay_path, FOLDER_VAL))
+        self.assertEqual(row_path, iRODSPath(self.assay_path, FOLDER_VAL))
 
     def test_get_row_path_empty_value(self):
         """Test get_row_path() with empty column value"""
@@ -95,7 +97,7 @@ class TestGenericAssayPlugin(AssayPluginTestBase):
         )
         row_path = self._get_row_path()
         self.assertEqual(
-            row_path, os.path.join(self.assay_path, STRAT_VAL, FOLDER_VAL)
+            row_path, iRODSPath(self.assay_path, STRAT_VAL, FOLDER_VAL)
         )
 
     def test_get_row_path_set_multiple_nonexistent(self):
@@ -103,7 +105,7 @@ class TestGenericAssayPlugin(AssayPluginTestBase):
         self.assay.comments[DATA_COMMENT_PREFIX + '1'] = FOLDER_COL
         self.assay.comments[DATA_COMMENT_PREFIX + '2'] = NONEXISTENT_COL
         row_path = self._get_row_path()
-        self.assertEqual(row_path, os.path.join(self.assay_path, FOLDER_VAL))
+        self.assertEqual(row_path, iRODSPath(self.assay_path, FOLDER_VAL))
 
     def test_get_row_path_set_multiple_empty_value(self):
         """Test get_row_path() with multiple columns and empty value"""
@@ -111,7 +113,7 @@ class TestGenericAssayPlugin(AssayPluginTestBase):
         self.assay.comments[DATA_COMMENT_PREFIX + '2'] = STRAT_COL
         self.assay_table['table_data'][0][47]['value'] = ''
         row_path = self._get_row_path()
-        self.assertEqual(row_path, os.path.join(self.assay_path, STRAT_VAL))
+        self.assertEqual(row_path, iRODSPath(self.assay_path, STRAT_VAL))
 
     def test_get_row_path_duplicate_column_names(self):
         """Test get_row_path() with duplicate column names"""
@@ -121,7 +123,7 @@ class TestGenericAssayPlugin(AssayPluginTestBase):
         self.assay_table['table_data'][0][56]['value'] = '2024-10-03'
         row_path = self._get_row_path()
         # NOTE: The last one gets returned, is this correct?
-        self.assertEqual(row_path, os.path.join(self.assay_path, '2024-10-03'))
+        self.assertEqual(row_path, iRODSPath(self.assay_path, '2024-10-03'))
 
     def test_update_row(self):
         """Test update_row() with no comments set"""
@@ -200,7 +202,7 @@ class TestGenericAssayPlugin(AssayPluginTestBase):
         # NOTE: We'll still set the row data column to ensure it is not picked
         self.assay.comments[DATA_COMMENT_PREFIX] = FOLDER_COL
         self.assay.comments[DATA_LINK_COMMENT] = STRAT_COL
-        coll_path = os.path.join(self.assay_path, CUSTOM_COLL)
+        coll_path = iRODSPath(self.assay_path, CUSTOM_COLL)
         self.assay_table['irods_paths'] = [{'path': coll_path}]
         row_ex = deepcopy(self.assay_table['table_data'][0])
         row_ex[34]['value'] = SIMPLE_LINK_TEMPLATE.format(

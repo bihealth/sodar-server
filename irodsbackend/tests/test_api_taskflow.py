@@ -1,6 +1,5 @@
 """Tests for the API in the irodsbackend app with Taskflow and iRODS"""
 
-import os
 import pytz
 import random
 import string
@@ -8,6 +7,7 @@ import string
 from datetime import timedelta
 
 from irods.models import TicketQuery
+from irods.path import iRODSPath
 from irods.ticket import Ticket
 
 from django.conf import settings
@@ -127,7 +127,7 @@ class TestIrodsAPIGetStats(IrodsAPITaskflowTestBase):
         self.make_irods_colls(self.investigation)
         # Create subcollection
         self.assay_path = self.irods_backend.get_path(self.assay)
-        self.subcoll_path = os.path.join(self.assay_path, SUBCOLL_NAME)
+        self.subcoll_path = iRODSPath(self.assay_path, SUBCOLL_NAME)
         self.coll = self.irods.collections.create(self.subcoll_path)
 
     def test_get_stats_empty(self):
@@ -190,7 +190,7 @@ class TestIrodsAPIGetStats(IrodsAPITaskflowTestBase):
 
     def test_get_stats_invalid_path(self):
         """Test get_stats() with invalid path"""
-        path = os.path.join(self.assay_path, INVALID_COLL)
+        path = iRODSPath(self.assay_path, INVALID_COLL)
         with self.assertRaises(FileNotFoundError):
             self.irods_backend.get_stats(self.irods, path)
 
@@ -212,7 +212,7 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
         obj_list = self.irods_backend.get_objects(self.irods, self.assay_path)
         self.assertEqual(len(obj_list), 1)
         data_obj = self.irods.data_objects.get(
-            os.path.join(self.assay_path, TEST_FILE_NAME)
+            iRODSPath(self.assay_path, TEST_FILE_NAME)
         )
         modify_time = (
             data_obj.modify_time.replace(tzinfo=pytz.timezone('GMT'))
@@ -222,7 +222,7 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
         expected = {
             'name': TEST_FILE_NAME,
             'type': 'obj',
-            'path': os.path.join(self.assay_path, TEST_FILE_NAME),
+            'path': iRODSPath(self.assay_path, TEST_FILE_NAME),
             'size': 1024,
             'modify_time': modify_time,
         }
@@ -237,7 +237,7 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
         )
         self.assertEqual(len(obj_list), 2)
         data_obj = self.irods.data_objects.get(
-            os.path.join(self.assay_path, TEST_FILE_NAME)
+            iRODSPath(self.assay_path, TEST_FILE_NAME)
         )
         modify_time = (
             data_obj.modify_time.replace(tzinfo=pytz.timezone('GMT'))
@@ -248,14 +248,14 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
             {
                 'name': TEST_FILE_NAME,
                 'type': 'obj',
-                'path': os.path.join(self.assay_path, TEST_FILE_NAME),
+                'path': iRODSPath(self.assay_path, TEST_FILE_NAME),
                 'size': 1024,
                 'modify_time': modify_time,
             },
             {
                 'name': TEST_FILE_NAME + '.md5',
                 'type': 'obj',
-                'path': os.path.join(self.assay_path, TEST_FILE_NAME + '.md5'),
+                'path': iRODSPath(self.assay_path, TEST_FILE_NAME + '.md5'),
                 'size': 32,
                 'modify_time': obj_list[1]['modify_time'],
             },
@@ -266,9 +266,7 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
         """Test get_objects() with include_colls"""
         data_obj = self.make_irods_object(self.coll, TEST_FILE_NAME)
         self.make_checksum_object(data_obj)
-        self.irods.collections.create(
-            os.path.join(self.assay_path, SUBCOLL_NAME)
-        )
+        self.irods.collections.create(iRODSPath(self.assay_path, SUBCOLL_NAME))
         obj_list = self.irods_backend.get_objects(
             self.irods,
             self.assay_path,
@@ -280,12 +278,12 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
             {
                 'name': 'subcoll',
                 'type': 'coll',
-                'path': os.path.join(self.assay_path, SUBCOLL_NAME),
+                'path': iRODSPath(self.assay_path, SUBCOLL_NAME),
             },
             {
                 'name': TEST_FILE_NAME,
                 'type': 'obj',
-                'path': os.path.join(self.assay_path, TEST_FILE_NAME),
+                'path': iRODSPath(self.assay_path, TEST_FILE_NAME),
                 'size': 1024,
                 'modify_time': obj_list[1]['modify_time'],
             },
@@ -296,9 +294,7 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
         """Test get_objects() with include_checksum and include_colls"""
         data_obj = self.make_irods_object(self.coll, TEST_FILE_NAME)
         self.make_checksum_object(data_obj)
-        self.irods.collections.create(
-            os.path.join(self.assay_path, SUBCOLL_NAME)
-        )
+        self.irods.collections.create(iRODSPath(self.assay_path, SUBCOLL_NAME))
         obj_list = self.irods_backend.get_objects(
             self.irods,
             self.assay_path,
@@ -311,19 +307,19 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
             {
                 'name': 'subcoll',
                 'type': 'coll',
-                'path': os.path.join(self.assay_path, SUBCOLL_NAME),
+                'path': iRODSPath(self.assay_path, SUBCOLL_NAME),
             },
             {
                 'name': TEST_FILE_NAME,
                 'type': 'obj',
-                'path': os.path.join(self.assay_path, TEST_FILE_NAME),
+                'path': iRODSPath(self.assay_path, TEST_FILE_NAME),
                 'size': 1024,
                 'modify_time': obj_list[1]['modify_time'],
             },
             {
                 'name': TEST_FILE_NAME + '.md5',
                 'type': 'obj',
-                'path': os.path.join(self.assay_path, TEST_FILE_NAME + '.md5'),
+                'path': iRODSPath(self.assay_path, TEST_FILE_NAME + '.md5'),
                 'size': 32,
                 'modify_time': obj_list[2]['modify_time'],
             },
@@ -408,15 +404,13 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
 
     def test_get_objects_empty_coll(self):
         """Test get_objects() with an empty sample collection"""
-        path = os.path.join(
-            self.irods_backend.get_path(self.project), SAMPLE_COLL
-        )
+        path = iRODSPath(self.irods_backend.get_path(self.project), SAMPLE_COLL)
         obj_list = self.irods_backend.get_objects(self.irods, path)
         self.assertEqual(len(obj_list), 0)
 
     def test_get_objects_non_existent_coll(self):
         """Test get_objects() with non-existing collection"""
-        path = os.path.join(
+        path = iRODSPath(
             self.irods_backend.get_path(self.project),
             SAMPLE_COLL,
             INVALID_COLL,
@@ -465,9 +459,7 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
 
     def test_get_objects_limit_include_colls(self):
         """Test get_objects() with limit and include_colls"""
-        self.irods.collections.create(
-            os.path.join(self.coll.path, SUBCOLL_NAME)
-        )
+        self.irods.collections.create(iRODSPath(self.coll.path, SUBCOLL_NAME))
         self.make_irods_object(self.coll, TEST_FILE_NAME)
         self.make_irods_object(self.coll, TEST_FILE_NAME2)
         obj_list = self.irods_backend.get_objects(
@@ -492,9 +484,7 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
 
     def test_get_objects_offset_include_colls(self):
         """Test get_objects() with offset and include_colls"""
-        self.irods.collections.create(
-            os.path.join(self.coll.path, SUBCOLL_NAME)
-        )
+        self.irods.collections.create(iRODSPath(self.coll.path, SUBCOLL_NAME))
         self.make_irods_object(self.coll, TEST_FILE_NAME)
         self.make_irods_object(self.coll, TEST_FILE_NAME2)
         obj_list = self.irods_backend.get_objects(
@@ -525,9 +515,7 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
 
     def test_get_objects_limit_offset_include_colls(self):
         """Test get_objects() with limit, offset and include_colls"""
-        self.irods.collections.create(
-            os.path.join(self.coll.path, SUBCOLL_NAME)
-        )
+        self.irods.collections.create(iRODSPath(self.coll.path, SUBCOLL_NAME))
         self.make_irods_object(self.coll, TEST_FILE_NAME)
         self.make_irods_object(self.coll, TEST_FILE_NAME2)
         self.make_irods_object(self.coll, TEST_FILE_NAME3)
@@ -551,7 +539,7 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
         )
         self.assertEqual(len(obj_list), 1)
         data_obj = self.irods.data_objects.get(
-            os.path.join(self.assay_path, TEST_FILE_NAME)
+            iRODSPath(self.assay_path, TEST_FILE_NAME)
         )
         modify_time = (
             data_obj.modify_time.replace(tzinfo=pytz.timezone('GMT'))
@@ -561,7 +549,7 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
         expected = {
             'name': TEST_FILE_NAME,
             'type': 'obj',
-            'path': os.path.join(self.assay_path, TEST_FILE_NAME),
+            'path': iRODSPath(self.assay_path, TEST_FILE_NAME),
             'size': 1024,
             'modify_time': modify_time,
         }
@@ -577,7 +565,7 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
         )
         self.assertEqual(len(obj_list), 1)
         data_obj = self.irods.data_objects.get(
-            os.path.join(self.assay_path, TEST_FILE_NAME)
+            iRODSPath(self.assay_path, TEST_FILE_NAME)
         )
         modify_time = (
             data_obj.modify_time.replace(tzinfo=pytz.timezone('GMT'))
@@ -587,7 +575,7 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
         expected = {
             'name': TEST_FILE_NAME,
             'type': 'obj',
-            'path': os.path.join(self.assay_path, TEST_FILE_NAME),
+            'path': iRODSPath(self.assay_path, TEST_FILE_NAME),
             'size': 1024,
             'modify_time': modify_time,
             'checksum': data_obj.checksum,
