@@ -91,8 +91,8 @@ PROJECT_ROLE_GUEST = SODAR_CONSTANTS['PROJECT_ROLE_GUEST']
 APP_NAME = 'samplesheets'
 APP_NAME_PR = 'projectroles'
 SAMPLESHEETS_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar.samplesheets+json'
-SAMPLESHEETS_API_ALLOWED_VERSIONS = ['1.0', '1.1']
-SAMPLESHEETS_API_DEFAULT_VERSION = '1.1'
+SAMPLESHEETS_API_ALLOWED_VERSIONS = ['1.0', '1.1', '1.2']
+SAMPLESHEETS_API_DEFAULT_VERSION = '1.2'
 HASH_SCHEME_MD5 = 'MD5'
 HASH_SCHEME_SHA256 = 'SHA256'
 CHECKSUM_RE = {
@@ -108,9 +108,14 @@ FILE_EXISTS_RESTRICT_MSG = (
     'above in any project (SHEETS_API_FILE_EXISTS_RESTRICT=True)'
 )
 FILE_LIST_PAGINATE_VERSION_MSG = 'Pagination not supported in API version 1.0'
+FILE_LIST_COLL_VERSION_MSG = (
+    'Collection listing not supported in API version <1.2'
+)
 HOST_VERSION_ERR_MSG = (
     'Field allowed_hosts requires samplesheets API version 1.1 or above'
 )
+VERSION_1_1 = parse_version('1.1')
+VERSION_1_2 = parse_version('1.2')
 
 
 # Base Classes and Mixins ------------------------------------------------------
@@ -421,8 +426,8 @@ class IrodsAccessTicketRetrieveAPIView(
     - ``ticket``: Ticket string for accessing the path (string)
     - ``assay``: Assay UUID (string)
     - ``study``: Study UUID (string)
-    - ``date_created``: Creation datetime (YYYY-MM-DDThh:mm:ssZ)
-    - ``date_expires``: Expiry datetime (YYYY-MM-DDThh:mm:ssZ or null)
+    - ``date_created``: Creation datetime (``YYYY-MM-DDThh:mm:ssZ``)
+    - ``date_expires``: Expiry datetime (``YYYY-MM-DDThh:mm:ssZ`` or ``null``)
     - ``allowed_hosts``: Allowed hosts for ticket access (list)
     - ``user``: UUID of user who created the request (string)
     - ``is_active``: Whether the request is currently active (boolean)
@@ -495,7 +500,7 @@ class IrodsAccessTicketCreateAPIView(
 
     - ``path``: Full iRODS path to collection or data object (string)
     - ``label``: Text label for ticket (string, optional)
-    - ``date_expires``: Expiration date (YYYY-MM-DDThh:mm:ssZ, optional)
+    - ``date_expires``: Expiration date (``YYYY-MM-DDThh:mm:ssZ``, optional)
     - ``allowed_hosts``: Allowed hosts for ticket access (list, optional)
 
     **Returns:** Ticket dict, see ``IrodsAccessTicketRetrieveAPIView``
@@ -519,7 +524,7 @@ class IrodsAccessTicketCreateAPIView(
     def create(self, request, *args, **kwargs):
         # If API v1.0, fail if attribute is present, set default if not
         version = parse_version(self.request.version)
-        if version < parse_version('1.1'):
+        if version < VERSION_1_1:
             if 'allowed_hosts' in request.data:
                 raise ValidationError(HOST_VERSION_ERR_MSG)
             default_hosts = app_settings.get(
@@ -572,7 +577,7 @@ class IrodsAccessTicketUpdateAPIView(
     **Parameters:**
 
     - ``label``: Label (string)
-    - ``date_expires``: Expiration date (YYYY-MM-DDThh:mm:ssZ, optional)
+    - ``date_expires``: Expiration date (``YYYY-MM-DDThh:mm:ssZ``, optional)
     - ``allowed_hosts``: Allowed hosts for ticket access (list, optional)
 
     **Returns:** Ticket dict, see ``IrodsAccessTicketRetrieveAPIView``
@@ -589,7 +594,7 @@ class IrodsAccessTicketUpdateAPIView(
 
     def update(self, request, *args, **kwargs):
         version = parse_version(self.request.version)
-        if version < parse_version('1.1'):
+        if version < VERSION_1_1:
             if 'allowed_hosts' in request.data:
                 raise ValidationError(HOST_VERSION_ERR_MSG)
             # Set current value for serializer
@@ -1074,7 +1079,8 @@ class ProjectIrodsFileListAPIView(
     SamplesheetsAPIVersioningMixin, SODARAPIBaseProjectMixin, APIView
 ):
     """
-    Return a list of files in the project sample data repository.
+    Return a list of files in the project sample data repository. Optionally
+    also returns collections.
 
     Supports optional pagination for listing by providing the ``page`` query
     string. This will return results in the Django Rest Framework
@@ -1086,23 +1092,25 @@ class ProjectIrodsFileListAPIView(
 
     **Parameters:**
 
+    - ``include_colls``: Include collections in list (boolean, optional)
     - ``page``: Page number for paginated results (int, optional)
 
     **Returns:**
 
-    List of iRODS data objects (list of dicts). Each object dict contains:
+    List of iRODS items (list of dicts). Each dict contains:
 
-    - ``name``: File name
-    - ``type``: iRODS item type type (``obj`` for file)
-    - ``path``: Full path to file
-    - ``size``: Size in bytes
-    - ``modify_time``: Datetime of last modification (YYYY-MM-DDThh:mm:ssZ)
-    - ``checksum``: Checksum of data object
+    - ``name``: Name of data object or collection
+    - ``type``: Item type (``obj`` for data object, ``coll`` for collection)
+    - ``path``: Full iRODS path for item
+    - ``size``: Size in bytes (only for data objects)
+    - ``modify_time``: Datetime of last modification (``YYYY-MM-DDThh:mm:ssZ``, only for data objects)
+    - ``checksum``: Checksum (only for data objects)
 
     **Version Changes**:
 
     - ``1.1``: Add ``checksum`` field to return data
     - ``1.1``: Add ``page`` parameter for optional pagination
+    - ``1.2``: Add ``include_colls`` parameter
     """
 
     http_method_names = ['get']
@@ -1111,7 +1119,7 @@ class ProjectIrodsFileListAPIView(
     def get(self, request, *args, **kwargs):
         version = parse_version(request.version)
         page = request.GET.get('page')
-        if page and version < parse_version('1.1'):
+        if page and version < VERSION_1_1:
             raise NotAcceptable(FILE_LIST_PAGINATE_VERSION_MSG)
         elif page:
             page = int(page)
@@ -1122,17 +1130,21 @@ class ProjectIrodsFileListAPIView(
         page_size = settings.SODAR_API_PAGE_SIZE
         limit = None
         offset = None
-        file_count = None
+        item_count = None
         if page:
             limit = page_size
             offset = 0 if page == 1 else (page - 1) * page_size
-        checksum = True if version >= parse_version('1.1') else False
+        checksum = True if version >= VERSION_1_1 else False
+        include_colls = request.GET.get('include_colls', False)
+        if include_colls and version < VERSION_1_2:
+            raise NotAcceptable(FILE_LIST_COLL_VERSION_MSG)
 
         try:
             with irods_backend.get_session() as irods:
                 obj_list = irods_backend.get_objects(
                     irods,
                     path,
+                    include_colls=include_colls,
                     limit=limit,
                     offset=offset,
                     api_format=True,
@@ -1140,8 +1152,10 @@ class ProjectIrodsFileListAPIView(
                 )
                 # Get total count for DRF compatible pagination response
                 if page:
-                    stats = irods_backend.get_stats(irods, path)
-                    file_count = stats['file_count']
+                    stats = irods_backend.get_stats(irods, path, include_colls)
+                    item_count = stats['file_count']
+                    if include_colls:
+                        item_count += stats['coll_count']
         except FileNotFoundError as ex:
             raise NotFound(f'{IRODS_QUERY_ERROR_MSG}: {ex}')
         except Exception as ex:
@@ -1156,10 +1170,10 @@ class ProjectIrodsFileListAPIView(
                 kwargs={'project': project.sodar_uuid},
             )
             ret = {
-                'count': file_count,
+                'count': item_count,
                 'next': (
                     (url + f'?page={page + 1}')
-                    if file_count > page * page_size
+                    if item_count > page * page_size
                     else None
                 ),
                 'previous': (url + f'?page={page - 1}') if page > 1 else None,

@@ -17,7 +17,9 @@ Major feature update and SODAR Core 1.2 upgrade.
 - Add category statistics for sample count and iRODS data
 - Add user opt-out settings for app alert notifications
 - Add landing zone settings retrieval REST API view
-- Upgrade landingzones REST API version to v1.1
+- Add collection support for project file list REST API view
+- Upgrade Landing Zones REST API version to v1.1
+- :ref:`Upgrade Sample Sheets REST API version to v1.2 <api_samplesheets_version_1_2>`
 - Upgrade supported development platform to Ubuntu 24.04
 - Upgrade to SODAR Core v1.2.1
 
@@ -31,6 +33,11 @@ REST API Updates
     * Allowed versions: ``1.0``, ``1.1``
     * ``ZoneSettingsRetrieveAPIView``
         + Add view
+- Sample Sheets API
+    * Current version: ``1.2`` (non-breaking changes)
+    * Allowed versions: ``1.0``, ``1.1``, ``1.2``
+    * ``ProjectIrodsFileListAPIView``
+        + Add ``include_colls`` parameter
 
 
 v1.1.4 (2025-08-12)

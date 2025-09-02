@@ -1480,8 +1480,10 @@ class TestProjectIrodsFileListAPIView(SampleSheetAPITaskflowTestBase):
             'samplesheets:api_file_list',
             kwargs={'project': self.project.sodar_uuid},
         )
+        self.study_path = self.irods_backend.get_path(self.study)
+        self.assay_path = self.irods_backend.get_path(self.assay)
 
-    def test_get_no_collection(self):
+    def test_get_no_coll(self):
         """Test ProjectIrodsFileListAPIView GET without collection"""
         response = self.request_knox(self.url)
         self.assertEqual(response.status_code, 404)
@@ -1490,13 +1492,32 @@ class TestProjectIrodsFileListAPIView(SampleSheetAPITaskflowTestBase):
             f'{IRODS_QUERY_ERROR_MSG}: iRODS collection not found',
         )
 
-    def test_get_empty_collection(self):
-        """Test GET with empty collection"""
+    def test_get_empty(self):
+        """Test GET with empty collections"""
         # Set up iRODS collections
         self.make_irods_colls(self.investigation)
         response = self.request_knox(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data, [])
+
+    def test_get_empty_include_colls(self):
+        """Test GET with empty collections and include_colls=True"""
+        self.make_irods_colls(self.investigation)
+        response = self.request_knox(self.url + '?include_colls=1')
+        self.assertEqual(response.status_code, 200)
+        expected = [
+            {
+                'name': f'study_{self.study.sodar_uuid}',
+                'type': 'coll',
+                'path': self.study_path,
+            },
+            {
+                'name': f'assay_{self.assay.sodar_uuid}',
+                'type': 'coll',
+                'path': self.assay_path,
+            },
+        ]
+        self.assertEqual(response.data, expected)
 
     def test_get_files(self):
         """Test GET with files"""
@@ -1518,23 +1539,35 @@ class TestProjectIrodsFileListAPIView(SampleSheetAPITaskflowTestBase):
         self.assertEqual(response.data[0], expected)
         self.assertIsNotNone(response.data[0]['checksum'])
 
-    def test_get_files_v1_0(self):
-        """Test GET with files and API version 1.0"""
+    def test_get_files_include_colls(self):
+        """Test GET with files and include_colls=True"""
         self.make_irods_colls(self.investigation)
         coll_path = self.irods_backend.get_sample_path(self.project)
         coll = self.irods.collections.get(coll_path)
         data_obj = self.make_irods_object(coll, IRODS_FILE_NAME)
-        response = self.request_knox(self.url, version='1.0')
+        response = self.request_knox(self.url + '?include_colls=1')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-        expected = {
-            'name': IRODS_FILE_NAME,
-            'path': data_obj.path,
-            'type': 'obj',
-            'size': 1024,
-            'modify_time': self.get_drf_datetime(data_obj.modify_time),
-        }  # Checksum should not be included
-        self.assertEqual(response.data[0], expected)
+        expected = [
+            {
+                'name': f'study_{self.study.sodar_uuid}',
+                'type': 'coll',
+                'path': self.study_path,
+            },
+            {
+                'name': f'assay_{self.assay.sodar_uuid}',
+                'type': 'coll',
+                'path': self.assay_path,
+            },
+            {
+                'name': IRODS_FILE_NAME,
+                'path': data_obj.path,
+                'type': 'obj',
+                'size': 1024,
+                'modify_time': self.get_drf_datetime(data_obj.modify_time),
+                'checksum': data_obj.checksum,
+            },
+        ]
+        self.assertEqual(response.data, expected)
 
     def test_get_paginate(self):
         """Test GET with files and pagination"""
@@ -1557,6 +1590,34 @@ class TestProjectIrodsFileListAPIView(SampleSheetAPITaskflowTestBase):
                     'modify_time': self.get_drf_datetime(data_obj.modify_time),
                     'checksum': data_obj.checksum,
                 }
+            ],
+        }
+        self.assertEqual(response.data, expected)
+
+    @override_settings(SODAR_API_PAGE_SIZE=2)
+    def test_get_paginate_include_colls(self):
+        """Test GET with files, pagination and include_colls=True"""
+        self.make_irods_colls(self.investigation)
+        coll_path = self.irods_backend.get_sample_path(self.project)
+        coll = self.irods.collections.get(coll_path)
+        self.make_irods_object(coll, IRODS_FILE_NAME)
+        response = self.request_knox(self.url + '?page=1&include_colls=1')
+        self.assertEqual(response.status_code, 200)
+        expected = {
+            'count': 3,
+            'next': self.url + '?page=2',
+            'previous': None,
+            'results': [
+                {
+                    'name': f'study_{self.study.sodar_uuid}',
+                    'type': 'coll',
+                    'path': self.study_path,
+                },
+                {
+                    'name': f'assay_{self.assay.sodar_uuid}',
+                    'type': 'coll',
+                    'path': self.assay_path,
+                },
             ],
         }
         self.assertEqual(response.data, expected)
@@ -1603,3 +1664,29 @@ class TestProjectIrodsFileListAPIView(SampleSheetAPITaskflowTestBase):
         self.assertEqual(response.data['previous'], self.url + '?page=2')
         self.assertEqual(len(response.data['results']), 1)
         self.assertEqual(response.data['results'][0]['name'], 'test10.txt')
+
+    def test_get_files_v1_0(self):
+        """Test GET with files and API version 1.0"""
+        self.make_irods_colls(self.investigation)
+        coll_path = self.irods_backend.get_sample_path(self.project)
+        coll = self.irods.collections.get(coll_path)
+        data_obj = self.make_irods_object(coll, IRODS_FILE_NAME)
+        response = self.request_knox(self.url, version='1.0')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        expected = {
+            'name': IRODS_FILE_NAME,
+            'path': data_obj.path,
+            'type': 'obj',
+            'size': 1024,
+            'modify_time': self.get_drf_datetime(data_obj.modify_time),
+        }  # Checksum should not be included
+        self.assertEqual(response.data[0], expected)
+
+    def test_get_include_colls_v1_1(self):
+        """Test GET with include_colls=True and API version 1.1"""
+        self.make_irods_colls(self.investigation)
+        response = self.request_knox(
+            self.url + '?include_colls=1', version='1.1'
+        )
+        self.assertEqual(response.status_code, 406)
