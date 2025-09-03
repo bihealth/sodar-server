@@ -41,13 +41,10 @@ from taskflowbackend.constants import (
     IRODS_ACCESS_MODIFY_OBJ,
     IRODS_ACCESS_READ_OBJ,
     IRODS_TICKET_MODE_READ,
+    IRODS_HASH_SCHEME_SHA256,
 )
 from taskflowbackend.flows.base_flow import BaseLinearFlow
-from taskflowbackend.tests.base import (
-    TaskflowViewTestBase,
-    HASH_SCHEME_SHA256,
-    TICKET_STR,
-)
+from taskflowbackend.tests.base import TaskflowViewTestBase, TICKET_STR
 from taskflowbackend.tasks.irods_tasks import *  # noqa
 from taskflowbackend.tasks.sodar_tasks import TimelineEventExtraDataUpdateTask
 
@@ -730,7 +727,7 @@ class TestSetCollectionMetadataTask(IRODSTaskTestBase):
         meta_item = test_coll.metadata.get_one(TEST_KEY)
         self.assertIsInstance(meta_item, iRODSMeta)
         self.assertEqual(meta_item.name, TEST_KEY)
-        self.assertEqual(meta_item.value, META_EMPTY_VALUE)
+        self.assertEqual(meta_item.value, IRODS_META_EMPTY_VALUE)
         self.assertEqual(meta_item.units, TEST_UNITS)
 
 
@@ -1869,7 +1866,7 @@ class TestBatchCheckFileExistTask(
             self.zone.status_info, DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE]
         )
 
-    @override_settings(IRODS_HASH_SCHEME=HASH_SCHEME_SHA256)
+    @override_settings(IRODS_HASH_SCHEME=IRODS_HASH_SCHEME_SHA256)
     def test_task_sha256(self):
         """Test task with SHA256 checksum file"""
         chk_suffix = self.irods_backend.get_checksum_file_suffix()
@@ -1908,7 +1905,7 @@ class TestBatchCheckFileExistTask(
         expected = f'{self.ex_prefix}\n1 expected file missing:\n{ex_path}'
         self.assertEqual(expected, str(cm.exception))
 
-    @override_settings(IRODS_HASH_SCHEME=HASH_SCHEME_SHA256)
+    @override_settings(IRODS_HASH_SCHEME=IRODS_HASH_SCHEME_SHA256)
     def test_task_sha256_no_file(self):
         """Test task with SHA256 checksum file and no data file"""
         chk_suffix = self.irods_backend.get_checksum_file_suffix()
@@ -1922,7 +1919,7 @@ class TestBatchCheckFileExistTask(
         expected = f'{self.ex_prefix}\n1 expected file missing:\n{ex_path}'
         self.assertEqual(expected, str(cm.exception))
 
-    @override_settings(IRODS_HASH_SCHEME=HASH_SCHEME_SHA256)
+    @override_settings(IRODS_HASH_SCHEME=IRODS_HASH_SCHEME_SHA256)
     def test_task_sha256_unexpected_md5(self):
         """Test task unexpected MD5 checksum file"""
         self.task_kw['inject'][

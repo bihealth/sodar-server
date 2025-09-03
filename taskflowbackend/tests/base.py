@@ -54,6 +54,7 @@ from projectroles.views_api import (
     PROJECTROLES_API_DEFAULT_VERSION,
 )
 
+from taskflowbackend.constants import IRODS_HASH_SCHEME_MD5
 from taskflowbackend.lock_api import ProjectLockAPI
 
 
@@ -80,8 +81,6 @@ TEST_MODE_ERR_MSG = (
     'TASKFLOW_TEST_MODE not True, testing with SODAR Taskflow disabled'
 )
 DEFAULT_PERMANENT_USERS = ['client_user', 'rods', 'rodsadmin', 'public']
-HASH_SCHEME_MD5 = 'MD5'
-HASH_SCHEME_SHA256 = 'SHA256'
 
 
 class ProjectLockMixin:
@@ -134,7 +133,7 @@ class TaskflowTestMixin(
     def make_checksum_object(
         self,
         obj: iRODSDataObject,
-        scheme: str = HASH_SCHEME_MD5,
+        scheme: str = IRODS_HASH_SCHEME_MD5,
         content: Optional[str] = None,
     ) -> iRODSDataObject:
         """
@@ -150,7 +149,9 @@ class TaskflowTestMixin(
         return make_object(self.irods, chk_path, chk_content)
 
     @classmethod
-    def get_checksum(cls, obj: iRODSDataObject, scheme: str = HASH_SCHEME_MD5):
+    def get_checksum(
+        cls, obj: iRODSDataObject, scheme: str = IRODS_HASH_SCHEME_MD5
+    ):
         """
         Return the checksum for an iRODS object.
 

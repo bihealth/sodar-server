@@ -63,7 +63,7 @@ Changed
 - **Taskflowbackend**
     - Update iRODS ACL handling for v4.3+ scheme (#2215)
     - Grant ``delete_object`` access instead of ``own`` for landing zone owner (#2215)
-    - Move iRODS constants to ``constants`` (#2215)
+    - Move iRODS constants to ``constants`` (#2215, #2258)
     - Refactor iRODS ACL constant use (#2225)
 
 Fixed

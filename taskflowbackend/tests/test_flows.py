@@ -42,6 +42,8 @@ from samplesheets.views import RESULTS_COLL, MISC_FILES_COLL
 from taskflowbackend.constants import (
     IRODS_ACCESS_DELETE_OBJ,
     IRODS_ACCESS_READ_OBJ,
+    IRODS_GROUP_PUBLIC,
+    IRODS_META_EMPTY_VALUE,
 )
 from taskflowbackend.flows.base_flow import BaseLinearFlow
 from taskflowbackend.flows.data_delete import Flow as DataDeleteFlow
@@ -64,10 +66,8 @@ from taskflowbackend.flows.role_update_irods_batch import (
 )
 from taskflowbackend.flows.sheet_colls_create import (
     Flow as SheetCollsCreateFlow,
-    PUBLIC_GROUP,
 )
 from taskflowbackend.flows.sheet_delete import Flow as SheetDeleteFlow
-from taskflowbackend.tasks.irods_tasks import META_EMPTY_VALUE
 from taskflowbackend.tests.base import TaskflowViewTestBase, TICKET_STR
 from taskflowbackend.irods_utils import get_flow_role
 
@@ -1681,7 +1681,8 @@ class TestProjectCreate(TaskflowbackendFlowTestBase):
             project_coll.metadata.get_one('title').value, self.project.title
         )
         self.assertEqual(
-            project_coll.metadata.get_one('description').value, META_EMPTY_VALUE
+            project_coll.metadata.get_one('description').value,
+            IRODS_META_EMPTY_VALUE,
         )
         self.assertEqual(
             project_coll.metadata.get_one('parent_uuid').value,
@@ -1750,7 +1751,8 @@ class TestProjectUpdate(TaskflowbackendFlowTestBase):
             project_coll.metadata.get_one('title').value, self.project.title
         )
         self.assertEqual(
-            project_coll.metadata.get_one('description').value, META_EMPTY_VALUE
+            project_coll.metadata.get_one('description').value,
+            IRODS_META_EMPTY_VALUE,
         )
 
         self.project.title = UPDATED_TITLE
@@ -1872,7 +1874,7 @@ class TestPublicAccessUpdate(
         self.assert_irods_access(
             self.project_group, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
-        self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
+        self.assert_irods_access(IRODS_GROUP_PUBLIC, self.sample_path, None)
 
         flow_data = {
             'path': self.sample_path,
@@ -1890,7 +1892,7 @@ class TestPublicAccessUpdate(
             self.project_group, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
         self.assert_irods_access(
-            PUBLIC_GROUP, self.sample_path, IRODS_ACCESS_READ_OBJ
+            IRODS_GROUP_PUBLIC, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
 
     def test_enable_access_locked(self):
@@ -1899,7 +1901,7 @@ class TestPublicAccessUpdate(
         self.assert_irods_access(
             self.project_group, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
-        self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
+        self.assert_irods_access(IRODS_GROUP_PUBLIC, self.sample_path, None)
         flow_data = {
             'path': self.sample_path,
             'access': True,
@@ -1915,7 +1917,7 @@ class TestPublicAccessUpdate(
             self.project_group, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
         self.assert_irods_access(
-            PUBLIC_GROUP, self.sample_path, IRODS_ACCESS_READ_OBJ
+            IRODS_GROUP_PUBLIC, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
 
     def test_disable_access(self):
@@ -1928,7 +1930,7 @@ class TestPublicAccessUpdate(
             self.project_group, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
         self.assert_irods_access(
-            PUBLIC_GROUP, self.sample_path, IRODS_ACCESS_READ_OBJ
+            IRODS_GROUP_PUBLIC, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
 
         flow_data = {
@@ -1945,7 +1947,7 @@ class TestPublicAccessUpdate(
         self.assert_irods_access(
             self.project_group, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
-        self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
+        self.assert_irods_access(IRODS_GROUP_PUBLIC, self.sample_path, None)
 
     def test_revert(self):
         """Test reverting public_access_update"""
@@ -1954,7 +1956,7 @@ class TestPublicAccessUpdate(
         self.assert_irods_access(
             self.project_group, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
-        self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
+        self.assert_irods_access(IRODS_GROUP_PUBLIC, self.sample_path, None)
 
         flow_data = {
             'path': self.sample_path,
@@ -1971,7 +1973,7 @@ class TestPublicAccessUpdate(
         self.assert_irods_access(
             self.project_group, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
-        self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
+        self.assert_irods_access(IRODS_GROUP_PUBLIC, self.sample_path, None)
 
     def test_enable_access_anon(self):
         """Test enabling public access with anonymous access enabled"""
@@ -1980,7 +1982,7 @@ class TestPublicAccessUpdate(
         self.assert_irods_access(
             self.project_group, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
-        self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
+        self.assert_irods_access(IRODS_GROUP_PUBLIC, self.sample_path, None)
         self.assertIsNone(self.irods_backend.get_ticket(self.irods, TICKET_STR))
 
         flow_data = {
@@ -2001,7 +2003,7 @@ class TestPublicAccessUpdate(
             self.project_group, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
         self.assert_irods_access(
-            PUBLIC_GROUP, self.sample_path, IRODS_ACCESS_READ_OBJ
+            IRODS_GROUP_PUBLIC, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
         self.assertIsInstance(
             self.irods_backend.get_ticket(self.irods, TICKET_STR), Ticket
@@ -2018,7 +2020,7 @@ class TestPublicAccessUpdate(
             self.project_group, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
         self.assert_irods_access(
-            PUBLIC_GROUP, self.sample_path, IRODS_ACCESS_READ_OBJ
+            IRODS_GROUP_PUBLIC, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
         self.assertIsInstance(
             self.irods_backend.get_ticket(self.irods, TICKET_STR), Ticket
@@ -2039,7 +2041,7 @@ class TestPublicAccessUpdate(
         self.assert_irods_access(
             self.project_group, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
-        self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
+        self.assert_irods_access(IRODS_GROUP_PUBLIC, self.sample_path, None)
         self.assertIsNone(self.irods_backend.get_ticket(self.irods, TICKET_STR))
 
 
@@ -2401,7 +2403,7 @@ class TestSheetCollsCreate(
         self.assert_irods_access(
             self.project_group, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
-        self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
+        self.assert_irods_access(IRODS_GROUP_PUBLIC, self.sample_path, None)
         results_path = iRODSPath(self.sample_path, RESULTS_COLL)
         self.assertEqual(self.irods.collections.exists(results_path), True)
         self.assert_irods_access(
@@ -2441,7 +2443,7 @@ class TestSheetCollsCreate(
             self.project_group, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
         self.assert_irods_access(
-            PUBLIC_GROUP, self.sample_path, IRODS_ACCESS_READ_OBJ
+            IRODS_GROUP_PUBLIC, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
@@ -2465,7 +2467,7 @@ class TestSheetCollsCreate(
             self.project_group, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
         self.assert_irods_access(
-            PUBLIC_GROUP, self.sample_path, IRODS_ACCESS_READ_OBJ
+            IRODS_GROUP_PUBLIC, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
         self.assertIsInstance(
             self.irods_backend.get_ticket(self.irods, TICKET_STR), Ticket

@@ -25,11 +25,11 @@ from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 
 # Taskflowbackend dependency
-from taskflowbackend.tests.base import (
-    TaskflowViewTestBase,
-    HASH_SCHEME_MD5,
-    HASH_SCHEME_SHA256,
+from taskflowbackend.constants import (
+    IRODS_HASH_SCHEME_MD5,
+    IRODS_HASH_SCHEME_SHA256,
 )
+from taskflowbackend.tests.base import TaskflowViewTestBase
 
 from irodsbackend.api import TICKET_MODE_READ, TICKET_MODE_WRITE
 
@@ -114,7 +114,7 @@ class TestIrodsAPIServerInfo(IrodsAPITaskflowTestBase):
 class TestIrodsAPIGetStats(IrodsAPITaskflowTestBase):
     """Tests for IrodsAPI.get_stats() with Taskflow"""
 
-    def _make_data_objects(self, hash_scheme=HASH_SCHEME_MD5):
+    def _make_data_objects(self, hash_scheme=IRODS_HASH_SCHEME_MD5):
         """Create data objects with checksum files in iRODS"""
         self.data_obj = self.make_irods_object(self.coll, TEST_FILE_NAME)
         self.make_checksum_object(self.data_obj, scheme=hash_scheme)
@@ -152,10 +152,10 @@ class TestIrodsAPIGetStats(IrodsAPITaskflowTestBase):
         stats = self.irods_backend.get_stats(self.irods, self.assay_path)
         self.assertEqual(stats, expected)
 
-    @override_settings(IRODS_HASH_SCHEME=HASH_SCHEME_SHA256)
+    @override_settings(IRODS_HASH_SCHEME=IRODS_HASH_SCHEME_SHA256)
     def test_get_stats_files_checksum_sha256(self):
         """Test get_stats() with files and SHA256 checksum files"""
-        self._make_data_objects(hash_scheme=HASH_SCHEME_SHA256)
+        self._make_data_objects(hash_scheme=IRODS_HASH_SCHEME_SHA256)
         # Checksum files should not be included
         expected = {'file_count': 2, 'total_size': 2048}
         stats = self.irods_backend.get_stats(self.irods, self.assay_path)
@@ -164,8 +164,12 @@ class TestIrodsAPIGetStats(IrodsAPITaskflowTestBase):
     def test_get_stats_files_checksum_multiple(self):
         """Test get_stats() with files and multiple checksum file types"""
         self._make_data_objects()
-        self.make_checksum_object(self.data_obj, scheme=HASH_SCHEME_SHA256)
-        self.make_checksum_object(self.data_obj2, scheme=HASH_SCHEME_SHA256)
+        self.make_checksum_object(
+            self.data_obj, scheme=IRODS_HASH_SCHEME_SHA256
+        )
+        self.make_checksum_object(
+            self.data_obj2, scheme=IRODS_HASH_SCHEME_SHA256
+        )
         # Checksum files should not be included
         expected = {'file_count': 2, 'total_size': 2048}
         stats = self.irods_backend.get_stats(self.irods, self.assay_path)
@@ -326,20 +330,20 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
         ]
         self.assertEqual(obj_list, expected)
 
-    @override_settings(IRODS_HASH_SCHEME=HASH_SCHEME_SHA256)
+    @override_settings(IRODS_HASH_SCHEME=IRODS_HASH_SCHEME_SHA256)
     def test_get_objects_sha256(self):
         """Test get_objects() with SHA256 checksum"""
         data_obj = self.make_irods_object(self.coll, TEST_FILE_NAME)
-        self.make_checksum_object(data_obj, scheme=HASH_SCHEME_SHA256)
+        self.make_checksum_object(data_obj, scheme=IRODS_HASH_SCHEME_SHA256)
         obj_list = self.irods_backend.get_objects(self.irods, self.assay_path)
         self.assertEqual(len(obj_list), 1)
         self.assertEqual(obj_list[0]['name'], TEST_FILE_NAME)
 
-    @override_settings(IRODS_HASH_SCHEME=HASH_SCHEME_SHA256)
+    @override_settings(IRODS_HASH_SCHEME=IRODS_HASH_SCHEME_SHA256)
     def test_get_objects_sha256_include_checksum(self):
         """Test get_objects() with SHA256 checksum and include_checksum"""
         data_obj = self.make_irods_object(self.coll, TEST_FILE_NAME)
-        self.make_checksum_object(data_obj, scheme=HASH_SCHEME_SHA256)
+        self.make_checksum_object(data_obj, scheme=IRODS_HASH_SCHEME_SHA256)
         obj_list = self.irods_backend.get_objects(
             self.irods, self.assay_path, include_checksum=True
         )
@@ -350,8 +354,8 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
     def test_get_objects_include_checksum_multiple(self):
         """Test get_objects() with include_checksum and multiple checksum types"""
         data_obj = self.make_irods_object(self.coll, TEST_FILE_NAME)
-        self.make_checksum_object(data_obj, scheme=HASH_SCHEME_MD5)
-        self.make_checksum_object(data_obj, scheme=HASH_SCHEME_SHA256)
+        self.make_checksum_object(data_obj, scheme=IRODS_HASH_SCHEME_MD5)
+        self.make_checksum_object(data_obj, scheme=IRODS_HASH_SCHEME_SHA256)
         obj_list = self.irods_backend.get_objects(
             self.irods, self.assay_path, include_checksum=True
         )
@@ -442,14 +446,14 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
         self.assertEqual(obj_list[0]['name'], TEST_FILE_NAME)
         self.assertEqual(obj_list[1]['name'], TEST_FILE_NAME + '.md5')
 
-    @override_settings(IRODS_HASH_SCHEME=HASH_SCHEME_SHA256)
+    @override_settings(IRODS_HASH_SCHEME=IRODS_HASH_SCHEME_SHA256)
     def test_get_objects_limit_checksum_sha256(self):
         """Test get_objects() with limit and sha256 checksum scheme"""
         coll = self.irods.collections.get(self.assay_path)
         data_obj = self.make_irods_object(coll, TEST_FILE_NAME)
-        self.make_checksum_object(data_obj, scheme=HASH_SCHEME_SHA256)
+        self.make_checksum_object(data_obj, scheme=IRODS_HASH_SCHEME_SHA256)
         data_obj2 = self.make_irods_object(coll, TEST_FILE_NAME2)
-        self.make_checksum_object(data_obj2, scheme=HASH_SCHEME_SHA256)
+        self.make_checksum_object(data_obj2, scheme=IRODS_HASH_SCHEME_SHA256)
         obj_list = self.irods_backend.get_objects(
             self.irods, self.assay_path, include_checksum=True, limit=2
         )

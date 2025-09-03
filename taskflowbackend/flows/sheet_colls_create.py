@@ -11,6 +11,7 @@ from samplesheets import tasks_taskflow as ss_tasks
 from taskflowbackend.constants import (
     IRODS_ACCESS_READ_OBJ,
     IRODS_TICKET_MODE_READ,
+    IRODS_GROUP_PUBLIC,
 )
 from taskflowbackend.flows.base_flow import BaseLinearFlow
 from taskflowbackend.tasks import irods_tasks
@@ -18,10 +19,6 @@ from taskflowbackend.tasks import irods_tasks
 
 # SODAR constants
 PROJECT_ROLE_GUEST = SODAR_CONSTANTS['PROJECT_ROLE_GUEST']
-
-
-# Local constants
-PUBLIC_GROUP = 'public'
 
 
 class Flow(BaseLinearFlow):
@@ -81,7 +78,7 @@ class Flow(BaseLinearFlow):
                     inject={
                         'access_name': IRODS_ACCESS_READ_OBJ,
                         'path': sample_path,
-                        'user_name': PUBLIC_GROUP,
+                        'user_name': IRODS_GROUP_PUBLIC,
                         'irods_backend': self.irods_backend,
                     },
                 )

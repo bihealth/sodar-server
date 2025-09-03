@@ -21,7 +21,8 @@ from samplesheets.tests.test_views_taskflow import (
 )
 
 # Taskflowbackend dependency
-from taskflowbackend.tests.base import TaskflowViewTestBase, HASH_SCHEME_SHA256
+from taskflowbackend.constants import IRODS_HASH_SCHEME_SHA256
+from taskflowbackend.tests.base import TaskflowViewTestBase
 
 from landingzones.tests.test_models import LandingZoneMixin
 from landingzones.tests.test_views_taskflow import LandingZoneTaskflowMixin
@@ -292,11 +293,11 @@ class TestZoneChecksumStatusRetrieveAjaxView(
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['checksum_status'], {obj.path: True})
 
-    @override_settings(IRODS_HASH_SCHEME=HASH_SCHEME_SHA256)
+    @override_settings(IRODS_HASH_SCHEME=IRODS_HASH_SCHEME_SHA256)
     def test_post_checksum_sha256(self):
         """Test POST with SHA256 checksum file"""
         obj = self.make_irods_object(self.misc_coll, TEST_OBJ_NAME)
-        self.make_checksum_object(obj, scheme=HASH_SCHEME_SHA256)
+        self.make_checksum_object(obj, scheme=IRODS_HASH_SCHEME_SHA256)
         post_data = {'paths': [obj.path]}
         with self.login(self.user_owner):
             response = self.client.post(

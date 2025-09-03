@@ -52,6 +52,12 @@ from projectroles.views_api import (
 )
 from projectroles.utils import build_secret
 
+# Taskflowbackend dependency
+from taskflowbackend.constants import (
+    IRODS_HASH_SCHEME_MD5,
+    IRODS_HASH_SCHEME_SHA256,
+)
+
 from samplesheets.io import SampleSheetIO
 from samplesheets.models import (
     Investigation,
@@ -93,11 +99,9 @@ APP_NAME_PR = 'projectroles'
 SAMPLESHEETS_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar.samplesheets+json'
 SAMPLESHEETS_API_ALLOWED_VERSIONS = ['1.0', '1.1', '1.2']
 SAMPLESHEETS_API_DEFAULT_VERSION = '1.2'
-HASH_SCHEME_MD5 = 'MD5'
-HASH_SCHEME_SHA256 = 'SHA256'
 CHECKSUM_RE = {
-    HASH_SCHEME_MD5: re.compile(r'^([a-fA-F\d]{32})$'),
-    HASH_SCHEME_SHA256: re.compile(r'^([a-fA-F\d]{64})$'),
+    IRODS_HASH_SCHEME_MD5: re.compile(r'^([a-fA-F\d]{32})$'),
+    IRODS_HASH_SCHEME_SHA256: re.compile(r'^([a-fA-F\d]{64})$'),
 }
 IRODS_QUERY_ERROR_MSG = 'Exception querying iRODS objects'
 IRODS_REQUEST_EX_MSG = 'iRODS data request failed'
@@ -1017,7 +1021,7 @@ class SampleDataFileExistsAPIView(SamplesheetsAPIVersioningMixin, APIView):
         if not c or not re.match(CHECKSUM_RE[hash_scheme], c):
             raise ParseError(f'Invalid {hash_scheme} checksum: "{c}"')
         # If SHA256, convert to base64 with prefix
-        if hash_scheme == HASH_SCHEME_SHA256:
+        if hash_scheme == IRODS_HASH_SCHEME_SHA256:
             c = irods_backend.get_sha256_base64(c, prefix=True)
 
         ret = {'detail': 'File does not exist', 'status': False}

@@ -28,10 +28,8 @@ from timeline.models import TimelineEvent
 from irodsbackend.api import TICKET_MODE_READ
 
 # Taskflowbackend dependency
-from taskflowbackend.tests.base import (
-    TaskflowAPIViewTestBase,
-    HASH_SCHEME_SHA256,
-)
+from taskflowbackend.constants import IRODS_HASH_SCHEME_SHA256
+from taskflowbackend.tests.base import TaskflowAPIViewTestBase
 
 from samplesheets.models import (
     IrodsAccessTicket,
@@ -1397,7 +1395,7 @@ class TestSampleDataFileExistsAPIView(SampleSheetAPITaskflowTestBase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(json.loads(response.content)['status'], False)
 
-    @override_settings(IRODS_HASH_SCHEME=HASH_SCHEME_SHA256)
+    @override_settings(IRODS_HASH_SCHEME=IRODS_HASH_SCHEME_SHA256)
     def test_get_no_file_sha256(self):
         """Test GET with no file uploaded and SHA256 scheme"""
         response = self.request_knox(

@@ -37,6 +37,10 @@ from django.conf import settings
 # Landingzones dependency
 from landingzones.utils import cleanup_file_prohibit
 
+from taskflowbackend.constants import (
+    IRODS_HASH_SCHEME_SHA256,
+    IRODS_META_EMPTY_VALUE,
+)
 from taskflowbackend.tasks.base_task import BaseTask
 
 
@@ -45,11 +49,9 @@ logger = logging.getLogger(__name__)
 
 # Local constants
 INHERIT_STRINGS = {True: 'inherit', False: 'noinherit'}
-META_EMPTY_VALUE = 'N/A'
 CHECKSUM_FILE_RE = re.compile(r'([^\w.])')
 CHECKSUM_RETRY = 5
 NO_FILE_CHECKSUM_LABEL = 'None'
-HASH_SCHEME_SHA256 = 'SHA256'
 
 
 # Mixins -----------------------------------------------------------------------
@@ -346,7 +348,7 @@ class SetCollectionMetadataTask(IrodsBaseTask):
             pass
 
         if not value:  # HACK: Can not set empty value in imeta
-            value = META_EMPTY_VALUE
+            value = IRODS_META_EMPTY_VALUE
         if meta_item and value != meta_item.value:
             self.execute_data['value'] = str(meta_item.value)
             self.execute_data['units'] = (
@@ -906,7 +908,7 @@ class BatchValidateChecksumsTask(ProgressCounterMixin, IrodsBaseTask):
         """
         for replica in data_obj.replicas:
             repl_checksum = replica.checksum
-            if hash_scheme == HASH_SCHEME_SHA256:
+            if hash_scheme == IRODS_HASH_SCHEME_SHA256:
                 # Convert SHA256 from base64
                 repl_checksum = irods_backend.get_sha256_hex(repl_checksum)
             if (

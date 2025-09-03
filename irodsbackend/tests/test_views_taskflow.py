@@ -10,7 +10,8 @@ from django.test import RequestFactory, override_settings
 from projectroles.models import SODAR_CONSTANTS
 
 # Taskflowbackend dependency
-from taskflowbackend.tests.base import TaskflowViewTestBase, HASH_SCHEME_SHA256
+from taskflowbackend.constants import IRODS_HASH_SCHEME_SHA256
+from taskflowbackend.tests.base import TaskflowViewTestBase
 
 
 # SODAR constants
@@ -101,11 +102,11 @@ class TestIrodsStatisticsAjaxView(IrodsbackendViewTestBase):
         self.assertEqual(response.data['file_count'], 1)
         self.assertEqual(response.data['total_size'], IRODS_OBJ_SIZE)
 
-    @override_settings(IRODS_HASH_SCHEME=HASH_SCHEME_SHA256)
+    @override_settings(IRODS_HASH_SCHEME=IRODS_HASH_SCHEME_SHA256)
     def test_get_checksum_sha256(self):
         """Test GET with SHA256 checksum file"""
         obj = self.make_irods_object(self.irods_coll, IRODS_OBJ_NAME)
-        self.make_checksum_object(obj, scheme=HASH_SCHEME_SHA256)
+        self.make_checksum_object(obj, scheme=IRODS_HASH_SCHEME_SHA256)
         with self.login(self.user):
             response = self.client.get(self.get_url)
         self.assertEqual(response.status_code, 200)
@@ -200,12 +201,12 @@ class TestIrodsStatisticsAjaxView(IrodsbackendViewTestBase):
         }
         self.assertEqual(response_data, expected)
 
-    @override_settings(IRODS_HASH_SCHEME=HASH_SCHEME_SHA256)
+    @override_settings(IRODS_HASH_SCHEME=IRODS_HASH_SCHEME_SHA256)
     def test_post_checksum_file_sha256(self):
         """Test POST with SHA256 checksum file"""
         obj_path = iRODSPath(self.irods_path, IRODS_OBJ_NAME)
         obj = make_object(self.irods, obj_path, IRODS_OBJ_CONTENT)
-        self.make_checksum_object(obj, scheme=HASH_SCHEME_SHA256)
+        self.make_checksum_object(obj, scheme=IRODS_HASH_SCHEME_SHA256)
         self.assert_irods_obj(
             iRODSPath(self.irods_path, IRODS_OBJ_NAME + '.sha256')
         )

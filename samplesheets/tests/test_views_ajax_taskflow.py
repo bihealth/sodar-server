@@ -13,11 +13,11 @@ from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
 
 # Taskflowbackend dependency
-from taskflowbackend.tests.base import (
-    TaskflowViewTestBase,
-    HASH_SCHEME_MD5,
-    HASH_SCHEME_SHA256,
+from taskflowbackend.constants import (
+    IRODS_HASH_SCHEME_MD5,
+    IRODS_HASH_SCHEME_SHA256,
 )
+from taskflowbackend.tests.base import TaskflowViewTestBase
 
 from samplesheets.models import (
     GenericMaterial,
@@ -504,8 +504,8 @@ class TestIrodsObjectListAjaxView(
         """Test GET with data objects in collection"""
         obj_path = iRODSPath(self.assay_path, IRODS_FILE_NAME)
         file_obj = self.irods.data_objects.create(obj_path)
-        self.make_checksum_object(file_obj, HASH_SCHEME_MD5)
-        self.make_checksum_object(file_obj, HASH_SCHEME_SHA256)
+        self.make_checksum_object(file_obj, IRODS_HASH_SCHEME_MD5)
+        self.make_checksum_object(file_obj, IRODS_HASH_SCHEME_SHA256)
         self.assertTrue(self.irods.data_objects.exists(obj_path))
         self.assertTrue(self.irods.data_objects.exists(obj_path + '.md5'))
         self.assertTrue(self.irods.data_objects.exists(obj_path + '.sha256'))

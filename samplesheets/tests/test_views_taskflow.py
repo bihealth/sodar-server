@@ -37,7 +37,8 @@ from timeline.models import TimelineEvent, TL_STATUS_OK
 from irodsbackend.api import TICKET_MODE_READ
 
 # Taskflowbackend dependency
-from taskflowbackend.tests.base import TaskflowViewTestBase, HASH_SCHEME_SHA256
+from taskflowbackend.constants import IRODS_HASH_SCHEME_SHA256
+from taskflowbackend.tests.base import TaskflowViewTestBase
 
 from samplesheets.forms import ERROR_MSG_INVALID_PATH
 from samplesheets.models import (
@@ -1774,11 +1775,13 @@ class TestIrodsDataRequestAcceptView(
         self.assert_irods_obj(self.obj_path, False)
         self.assert_irods_obj(self.obj_path + '.md5', False)
 
-    @override_settings(IRODS_HASH_SCHEME=HASH_SCHEME_SHA256)
+    @override_settings(IRODS_HASH_SCHEME=IRODS_HASH_SCHEME_SHA256)
     def test_post_checksum_sha256(self):
         """Test POST to accept delete request with SHA256 checksum"""
         self.assert_irods_obj(self.obj_path)
-        self.make_checksum_object(self.file_obj, scheme=HASH_SCHEME_SHA256)
+        self.make_checksum_object(
+            self.file_obj, scheme=IRODS_HASH_SCHEME_SHA256
+        )
         self.assert_irods_obj(self.obj_path + '.sha256')
         with self.login(self.user_contributor):
             self.client.post(self.url_create, self.post_data)
