@@ -67,6 +67,7 @@ Changed
     - Move iRODS constants to ``constants`` (#2215, #2258)
     - Refactor iRODS ACL constant use (#2225)
     - Remove redundant ``landing_zone_move`` admin access setting task (#2257)
+    - Remove ``landing_zone_move`` access cleanup (#2260)
 
 Fixed
 -----
@@ -87,8 +88,11 @@ Removed
     - ``local.txt`` dependencies from CI (#2250)
     - Legacy ``local_extra.txt`` dependency file (#2252)
     - Legacy ``ENABLE_IRODS`` Django setting (#2100)
+- **Landingzones**
+    - ``zone_access_cleanup`` site app setting (#2260)
 - **Taskflowbackend**
     - Legacy iRODS ACL value support (#2225)
+    - ``CleanupAccessTask`` iRODS task (#2260)
 
 
 v1.1.4 (2025-08-12)

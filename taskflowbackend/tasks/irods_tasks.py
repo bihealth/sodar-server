@@ -14,7 +14,6 @@ from typing import Any, Optional
 
 from irods import keywords as kw
 from irods.access import iRODSAccess
-from irods.column import Like
 from irods.data_object import iRODSDataObject, iRODSReplica
 from irods.exception import (
     GroupDoesNotExist,
@@ -22,14 +21,7 @@ from irods.exception import (
     UserDoesNotExist,
     CAT_SUCCESS_BUT_WITH_NO_INFO,
 )
-from irods.models import (
-    Collection,
-    CollectionAccess,
-    CollectionUser,
-    DataObject,
-    DataAccess,
-    User,
-)
+from irods.models import Collection
 from irods.path import iRODSPath
 
 from django.conf import settings
@@ -481,82 +473,6 @@ class SetAccessTask(IrodsAccessMixin, IrodsBaseTask):
             self.revert_set_access(path, user_name, obj_target, recursive)
         except Exception:
             pass  # TODO: Log revert() exceptions?
-
-
-class CleanupAccessTask(IrodsBaseTask):
-    """Cleanup access under collection to exclude all but provided users"""
-
-    def _cleanup_coll_access(self, path: str, user_ids: list[int]):
-        """Cleanup collection access"""
-        query = self.irods.query(
-            Collection, CollectionAccess, CollectionUser
-        ).filter(Like(Collection.name, path + '%'))
-        for res in query:
-            if res[CollectionAccess.user_id] not in user_ids:
-                acl = iRODSAccess(
-                    access_name='null',
-                    path=res[Collection.name],
-                    user_name=res[CollectionUser.name],
-                    user_zone=self.irods.zone,
-                )
-                self.irods.acls.set(acl, recursive=True)
-                logger.debug(
-                    f'Removed collection ACL from user '
-                    f'"{res[CollectionUser.name]}": {res[Collection.name]}'
-                )
-        query.close()
-
-    def _cleanup_obj_access(self, path: str, user_ids: list[int]):
-        """Cleanup data object access"""
-        query = self.irods.query(
-            DataObject, DataAccess, Collection, User
-        ).filter(Like(Collection.name, path + '%'))
-        for res in query:
-            if res[DataAccess.user_id] not in user_ids:
-                # NOTE: Can't use DataObject.path as it refers to physical path
-                obj_path = iRODSPath(res[Collection.name], res[DataObject.name])
-                acl = iRODSAccess(
-                    access_name='null',
-                    path=obj_path,
-                    user_name=res[User.name],
-                    user_zone=self.irods.zone,
-                )
-                self.irods.acls.set(acl, recursive=False)
-                logger.debug(
-                    f'Removed data object ACL from user "{res[User.name]}": '
-                    f'{obj_path}'
-                )
-        query.close()
-
-    def execute(
-        self,
-        path: str,
-        user_names: list[str],
-        *args,
-        **kwargs,
-    ):
-        user_ids = []  # Get IDs of allowed users
-        for u in user_names:
-            try:
-                user = self.irods.users.get(u)
-                if user.id not in user_ids:
-                    user_ids.append(user.id)
-            except Exception:
-                pass  # Nothing to do if user doesn't exist
-        # Cleanup collection access
-        try:
-            self._cleanup_coll_access(path, user_ids)
-        except Exception as ex:
-            # NOTE: No raise, only log
-            logger.error(f'Exception in _cleanup_coll_access(): {ex}')
-        # Cleanup data object access
-        try:
-            self._cleanup_obj_access(path, user_ids)
-        except Exception as ex:
-            logger.error(f'Exception in _cleanup_obj_access(): {ex}')
-        super().execute(*args, **kwargs)
-
-    # NOTE: No revert as these are roles which should not exist
 
 
 class IssueTicketTask(IrodsBaseTask):
