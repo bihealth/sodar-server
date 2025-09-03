@@ -28,6 +28,7 @@ Added
     - ``notify_alert_irods_request`` user app setting (#2205)
     - ``UpdateProjectSheetCacheTask`` Taskflow task (#2254)
     - ``ProjectIrodsFileListAPIView`` ``include_colls`` parameter (#2256)
+    - ``checksampleaccess`` command debug logging (#2261)
 - **Taskflowbackend**
     - Project viewer role support (#2200)
     - ``user`` arg for ``TaskflowAPI.submit()`` (#2157)
