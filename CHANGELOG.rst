@@ -31,6 +31,7 @@ Added
 - **Taskflowbackend**
     - Project viewer role support (#2200)
     - ``user`` arg for ``TaskflowAPI.submit()`` (#2157)
+    - ``constants`` module for common constants (#2225)
 
 Changed
 -------
@@ -59,6 +60,11 @@ Changed
     - Update app for ``public_access`` support (#2202)
     - Refactor ``ProjectAppPlugin.update_cache()`` (#2213)
     - Upgrade critical Vue app dependencies (#2232)
+- **Taskflowbackend**
+    - Update iRODS ACL handling for v4.3+ scheme (#2215)
+    - Grant ``delete_object`` access instead of ``own`` for landing zone owner (#2215)
+    - Move iRODS constants to ``constants`` (#2215)
+    - Refactor iRODS ACL constant use (#2225)
 
 Fixed
 -----
@@ -79,6 +85,8 @@ Removed
     - ``local.txt`` dependencies from CI (#2250)
     - Legacy ``local_extra.txt`` dependency file (#2252)
     - Legacy ``ENABLE_IRODS`` Django setting (#2100)
+- **Taskflowbackend**
+    - Legacy iRODS ACL value support (#2225)
 
 
 v1.1.4 (2025-08-12)

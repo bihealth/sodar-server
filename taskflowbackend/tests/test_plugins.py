@@ -16,6 +16,7 @@ from irodsbackend.api import USER_GROUP_TEMPLATE, OWNER_GROUP_TEMPLATE
 # Timeline dependency
 from timeline.models import TimelineEvent
 
+from taskflowbackend.constants import IRODS_ACCESS_READ_OBJ
 from taskflowbackend.tests.base import TaskflowViewTestBase
 
 
@@ -88,7 +89,7 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
         self.assert_irods_access(
             project_group,
             self.irods_backend.get_path(project),
-            self.irods_access_read,
+            IRODS_ACCESS_READ_OBJ,
         )
         owner_group = self.irods.user_groups.get(owner_group)
         self.assertIsInstance(owner_group, iRODSUserGroup)
@@ -1882,7 +1883,7 @@ class TestPerformProjectSync(ModifyAPITaskflowTestBase):
         self.assert_irods_access(
             project_group,
             self.irods_backend.get_path(project),
-            self.irods_access_read,
+            IRODS_ACCESS_READ_OBJ,
         )
         # NOTE: Owner group does not need special access here
         self.assert_irods_access(
@@ -1932,7 +1933,7 @@ class TestPerformProjectSync(ModifyAPITaskflowTestBase):
         self.assert_irods_access(
             project_group,
             self.irods_backend.get_path(project),
-            self.irods_access_read,
+            IRODS_ACCESS_READ_OBJ,
         )
         owner_group = self.irods.user_groups.get(owner_group)
         self.assertIsInstance(owner_group, iRODSUserGroup)
@@ -1950,7 +1951,7 @@ class TestPerformProjectSync(ModifyAPITaskflowTestBase):
         self.assert_irods_access(
             project_group,
             self.irods_backend.get_path(project),
-            self.irods_access_read,
+            IRODS_ACCESS_READ_OBJ,
         )
         self.assert_group_member(project, self.user, True, True)
         self.assert_group_member(project, self.user_owner_cat, True, True)

@@ -44,16 +44,6 @@ logger = logging.getLogger(__name__)
 
 
 # Local constants
-# NOTE: This is only compabitle with iRODS 4.3.
-# Backwards compatibility with 4.2 has been removed in SODAR v1.0.
-ACCESS_LOOKUP = {
-    'read': 'read_object',
-    'read_object': 'read',
-    'write': 'modify_object',
-    'modify_object': 'write',
-    'null': 'null',
-    'own': 'own',
-}
 INHERIT_STRINGS = {True: 'inherit', False: 'noinherit'}
 META_EMPTY_VALUE = 'N/A'
 CHECKSUM_FILE_RE = re.compile(r'([^\w.])')
@@ -99,13 +89,8 @@ class IrodsAccessMixin:
             (x for x in target_access if x.user_name == user_name), None
         )
         modifying_data = False
-        if (
-            user_access
-            and user_access.access_name != ACCESS_LOOKUP[access_name]
-        ):
-            self.execute_data['access_names'][path] = ACCESS_LOOKUP[
-                user_access.access_name
-            ]
+        if user_access and user_access.access_name != access_name:
+            self.execute_data['access_names'][path] = user_access.access_name
             modifying_data = True
         elif not user_access:
             self.execute_data['access_names'][path] = 'null'
@@ -1122,11 +1107,8 @@ class BatchMoveDataObjectsTask(ProgressCounterMixin, IrodsBaseTask):
                 (x for x in target_access if x.user_name == user_name), None
             )
             prev_access = None
-            if (
-                user_access
-                and user_access.access_name != ACCESS_LOOKUP[access_name]
-            ):
-                prev_access = ACCESS_LOOKUP[user_access.access_name]
+            if user_access and user_access.access_name != access_name:
+                prev_access = user_access.access_name
                 modifying_access = True
             elif not user_access:
                 prev_access = 'null'

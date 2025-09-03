@@ -39,6 +39,10 @@ from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 from samplesheets.views import RESULTS_COLL, MISC_FILES_COLL
 
+from taskflowbackend.constants import (
+    IRODS_ACCESS_DELETE_OBJ,
+    IRODS_ACCESS_READ_OBJ,
+)
 from taskflowbackend.flows.base_flow import BaseLinearFlow
 from taskflowbackend.flows.data_delete import Flow as DataDeleteFlow
 from taskflowbackend.flows.landing_zone_create import (
@@ -64,11 +68,7 @@ from taskflowbackend.flows.sheet_colls_create import (
 )
 from taskflowbackend.flows.sheet_delete import Flow as SheetDeleteFlow
 from taskflowbackend.tasks.irods_tasks import META_EMPTY_VALUE
-from taskflowbackend.tests.base import (
-    TaskflowViewTestBase,
-    IRODS_ACCESS_OWN,
-    TICKET_STR,
-)
+from taskflowbackend.tests.base import TaskflowViewTestBase, TICKET_STR
 from taskflowbackend.irods_utils import get_flow_role
 
 
@@ -93,7 +93,6 @@ UPDATED_DESC = 'updated description'
 SCRIPT_USER_NAME = 'script_user'
 IRODS_ROOT_PATH = 'sodar/root'
 INVALID_REDIS_URL = 'redis://127.0.0.1:6666/0'
-IRODS_ACCESS_READ = 'read_object'
 MD5_SUFFIX = '.md5'
 
 
@@ -241,16 +240,20 @@ class TestLandingZoneCreate(
         self.assert_group_member(self.project, self.user, True, True)
         self.assert_group_member(self.project, self.user_owner_cat, True, True)
         root_coll = self.irods.collections.get(self.zone_root_path)
-        self.assert_irods_access(self.owner_group, root_coll, IRODS_ACCESS_READ)
+        self.assert_irods_access(
+            self.owner_group, root_coll, IRODS_ACCESS_READ_OBJ
+        )
         zone_coll = self.irods.collections.get(self.zone_path)
         self.assertEqual(
             zone_coll.metadata.get_one('description').value,
             self.zone.description,
         )
         self.assert_irods_access(
-            self.user.username, zone_coll, IRODS_ACCESS_OWN
+            self.user.username, zone_coll, IRODS_ACCESS_DELETE_OBJ
         )
-        self.assert_irods_access(self.owner_group, zone_coll, IRODS_ACCESS_OWN)
+        self.assert_irods_access(
+            self.owner_group, zone_coll, IRODS_ACCESS_DELETE_OBJ
+        )
         self.assert_irods_access(self.project_group, zone_coll, None)
 
     def test_create_locked(self):
@@ -312,10 +315,10 @@ class TestLandingZoneCreate(
         self.assertEqual(self.irods.collections.exists(results_path), True)
         self.assertEqual(self.irods.collections.exists(misc_path), True)
         self.assert_irods_access(
-            self.user.username, self.zone_path, IRODS_ACCESS_OWN
+            self.user.username, self.zone_path, IRODS_ACCESS_DELETE_OBJ
         )
         self.assert_irods_access(
-            self.user.username, results_path, IRODS_ACCESS_OWN
+            self.user.username, results_path, IRODS_ACCESS_DELETE_OBJ
         )
         self.assert_irods_access(self.project_group, results_path, None)
 
@@ -343,21 +346,21 @@ class TestLandingZoneCreate(
         self.assertEqual(self.irods.collections.exists(results_path), True)
         self.assertEqual(self.irods.collections.exists(misc_path), True)
         self.assert_irods_access(
-            self.user.username, self.zone_path, self.irods_access_read
+            self.user.username, self.zone_path, IRODS_ACCESS_READ_OBJ
         )
         self.assert_irods_access(
-            self.user.username, results_path, IRODS_ACCESS_OWN
+            self.user.username, results_path, IRODS_ACCESS_DELETE_OBJ
         )
         self.assert_irods_access(self.project_group, results_path, None)
         new_root_path = iRODSPath(self.zone_path, 'new_root_path')
         self.irods.collections.create(new_root_path)
         self.assert_irods_access(
-            self.user.username, new_root_path, self.irods_access_read
+            self.user.username, new_root_path, IRODS_ACCESS_READ_OBJ
         )
         new_sub_path = iRODSPath(results_path, 'new_sub_path')
         self.irods.collections.create(new_sub_path)
         self.assert_irods_access(
-            self.user.username, new_sub_path, IRODS_ACCESS_OWN
+            self.user.username, new_sub_path, IRODS_ACCESS_DELETE_OBJ
         )
 
     def test_create_colls_restrict_revert(self):
@@ -405,10 +408,10 @@ class TestLandingZoneCreate(
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         zone_coll = self.irods.collections.get(self.zone_path)
         self.assert_irods_access(
-            self.user.username, zone_coll, IRODS_ACCESS_OWN
+            self.user.username, zone_coll, IRODS_ACCESS_DELETE_OBJ
         )
         self.assert_irods_access(
-            SCRIPT_USER_NAME, zone_coll, self.irods_access_write
+            SCRIPT_USER_NAME, zone_coll, IRODS_ACCESS_DELETE_OBJ
         )
         self.assert_irods_access(self.project_group, zone_coll, None)
 
@@ -699,8 +702,12 @@ class TestLandingZoneMove(
         obj = self.make_irods_object(obj_coll, OBJ_NAME)
         self.make_checksum_object(obj)
         obj_path = iRODSPath(obj_coll_path, OBJ_NAME)
-        self.assert_irods_access(self.owner_group, obj_path, IRODS_ACCESS_OWN)
-        self.assert_irods_access(self.user.username, obj_path, IRODS_ACCESS_OWN)
+        self.assert_irods_access(
+            self.owner_group, obj_path, IRODS_ACCESS_DELETE_OBJ
+        )
+        self.assert_irods_access(
+            self.user.username, obj_path, IRODS_ACCESS_DELETE_OBJ
+        )
         self.assert_irods_access(self.project_group, obj_path, None)
 
         sample_obj_path = iRODSPath(self.sample_path, OBJ_COLL_NAME, OBJ_NAME)
@@ -746,13 +753,13 @@ class TestLandingZoneMove(
             self.irods.data_objects.exists(sample_obj_path + MD5_SUFFIX), True
         )
         self.assert_irods_access(
-            self.project_group, sample_obj_path, self.irods_access_read
+            self.project_group, sample_obj_path, IRODS_ACCESS_READ_OBJ
         )
         self.assert_irods_access(self.owner_group, sample_obj_path, None)
         self.assert_irods_access(
             self.project_group,
             sample_obj_path + MD5_SUFFIX,
-            self.irods_access_read,
+            IRODS_ACCESS_READ_OBJ,
         )
         self.assert_irods_access(
             self.owner_group, sample_obj_path + MD5_SUFFIX, None
@@ -775,19 +782,25 @@ class TestLandingZoneMove(
         obj = self.make_irods_object(obj_coll, OBJ_NAME)
         self.make_checksum_object(obj)
         obj_path = iRODSPath(obj_coll_path, OBJ_NAME)
-        self.assert_irods_access(self.owner_group, obj_path, IRODS_ACCESS_OWN)
-        self.assert_irods_access(self.user.username, obj_path, IRODS_ACCESS_OWN)
+        self.assert_irods_access(
+            self.owner_group, obj_path, IRODS_ACCESS_DELETE_OBJ
+        )
+        self.assert_irods_access(
+            self.user.username, obj_path, IRODS_ACCESS_DELETE_OBJ
+        )
         self.assert_irods_access(self.project_group, obj_path, None)
 
         # Manually set access to new user
         acl = iRODSAccess(
-            access_name='own',
+            access_name=IRODS_ACCESS_DELETE_OBJ,
             path=obj_path,
             user_name=user_new.username,
             user_zone=self.irods.zone,
         )
         self.irods.acls.set(acl, recursive=False)
-        self.assert_irods_access(user_new.username, obj_path, IRODS_ACCESS_OWN)
+        self.assert_irods_access(
+            user_new.username, obj_path, IRODS_ACCESS_DELETE_OBJ
+        )
 
         sample_obj_path = iRODSPath(self.sample_path, OBJ_COLL_NAME, OBJ_NAME)
         self.assertEqual(self.irods.data_objects.exists(sample_obj_path), False)
@@ -813,13 +826,13 @@ class TestLandingZoneMove(
             self.irods.data_objects.exists(sample_obj_path + MD5_SUFFIX), True
         )
         self.assert_irods_access(
-            self.project_group, sample_obj_path, self.irods_access_read
+            self.project_group, sample_obj_path, IRODS_ACCESS_READ_OBJ
         )
         self.assert_irods_access(self.owner_group, sample_obj_path, None)
         self.assert_irods_access(
             self.project_group,
             sample_obj_path + MD5_SUFFIX,
-            self.irods_access_read,
+            IRODS_ACCESS_READ_OBJ,
         )
         self.assert_irods_access(
             self.owner_group, sample_obj_path + MD5_SUFFIX, None
@@ -839,19 +852,23 @@ class TestLandingZoneMove(
         self.assertEqual(self.irods.data_objects.exists(obj.path), True)
         self.make_checksum_object(obj)
         obj_path = iRODSPath(obj_coll_path, OBJ_NAME)
-        self.assert_irods_access(self.owner_group, obj_path, IRODS_ACCESS_OWN)
-        self.assert_irods_access(self.user.username, obj_path, IRODS_ACCESS_OWN)
+        self.assert_irods_access(
+            self.owner_group, obj_path, IRODS_ACCESS_DELETE_OBJ
+        )
+        self.assert_irods_access(
+            self.user.username, obj_path, IRODS_ACCESS_DELETE_OBJ
+        )
         self.assert_irods_access(self.project_group, obj_path, None)
 
         acl = iRODSAccess(
-            access_name='own',
+            access_name=IRODS_ACCESS_DELETE_OBJ,
             path=obj_coll_path,
             user_name=user_new.username,
             user_zone=self.irods.zone,
         )
         self.irods.acls.set(acl, recursive=True)
         self.assert_irods_access(
-            user_new.username, obj_coll_path, IRODS_ACCESS_OWN
+            user_new.username, obj_coll_path, IRODS_ACCESS_DELETE_OBJ
         )
 
         sample_obj_path = iRODSPath(self.sample_path, OBJ_COLL_NAME, OBJ_NAME)
@@ -877,13 +894,13 @@ class TestLandingZoneMove(
             self.irods.data_objects.exists(sample_obj_path + MD5_SUFFIX), True
         )
         self.assert_irods_access(
-            self.project_group, sample_obj_path, self.irods_access_read
+            self.project_group, sample_obj_path, IRODS_ACCESS_READ_OBJ
         )
         self.assert_irods_access(self.owner_group, sample_obj_path, None)
         self.assert_irods_access(
             self.project_group,
             sample_obj_path + MD5_SUFFIX,
-            self.irods_access_read,
+            IRODS_ACCESS_READ_OBJ,
         )
         self.assert_irods_access(
             self.owner_group, sample_obj_path + MD5_SUFFIX, None
@@ -901,19 +918,23 @@ class TestLandingZoneMove(
         obj = self.make_irods_object(obj_coll, OBJ_NAME)
         self.make_checksum_object(obj)
         obj_path = iRODSPath(obj_coll_path, OBJ_NAME)
-        self.assert_irods_access(self.owner_group, obj_path, IRODS_ACCESS_OWN)
-        self.assert_irods_access(self.user.username, obj_path, IRODS_ACCESS_OWN)
+        self.assert_irods_access(
+            self.owner_group, obj_path, IRODS_ACCESS_DELETE_OBJ
+        )
+        self.assert_irods_access(
+            self.user.username, obj_path, IRODS_ACCESS_DELETE_OBJ
+        )
         self.assert_irods_access(self.project_group, obj_path, None)
 
         acl = iRODSAccess(
-            access_name='own',
+            access_name=IRODS_ACCESS_DELETE_OBJ,
             path=obj_coll_path,
             user_name=user_new.username,
             user_zone=self.irods.zone,
         )
         self.irods.acls.set(acl, recursive=True)
         self.assert_irods_access(
-            user_new.username, obj_coll_path, IRODS_ACCESS_OWN
+            user_new.username, obj_coll_path, IRODS_ACCESS_DELETE_OBJ
         )
 
         sample_obj_path = iRODSPath(self.sample_path, OBJ_COLL_NAME, OBJ_NAME)
@@ -940,19 +961,21 @@ class TestLandingZoneMove(
             self.irods.data_objects.exists(sample_obj_path + MD5_SUFFIX), True
         )
         self.assert_irods_access(
-            self.project_group, sample_obj_path, self.irods_access_read
+            self.project_group, sample_obj_path, IRODS_ACCESS_READ_OBJ
         )
         self.assert_irods_access(self.owner_group, sample_obj_path, None)
         self.assert_irods_access(
             self.project_group,
             sample_obj_path + MD5_SUFFIX,
-            self.irods_access_read,
+            IRODS_ACCESS_READ_OBJ,
         )
         self.assert_irods_access(
             self.owner_group, sample_obj_path + MD5_SUFFIX, None
         )
         # New user should have access
-        self.assert_irods_access(user_new.username, sample_obj_path, 'own')
+        self.assert_irods_access(
+            user_new.username, sample_obj_path, IRODS_ACCESS_DELETE_OBJ
+        )
 
     def test_move_locked(self):
         """Test landing_zone_move with locked project (should fail)"""
@@ -1039,8 +1062,12 @@ class TestLandingZoneMove(
         sample_obj_path = iRODSPath(self.sample_path, COLL_NAME, OBJ_NAME)
         self.assertEqual(self.irods.data_objects.exists(sample_obj_path), False)
         # Assert access after revert
-        self.assert_irods_access(self.owner_group, obj_path, IRODS_ACCESS_OWN)
-        self.assert_irods_access(self.user.username, obj_path, IRODS_ACCESS_OWN)
+        self.assert_irods_access(
+            self.owner_group, obj_path, IRODS_ACCESS_DELETE_OBJ
+        )
+        self.assert_irods_access(
+            self.user.username, obj_path, IRODS_ACCESS_DELETE_OBJ
+        )
         self.assert_irods_access(self.project_group, obj_path, None)
 
     # TODO: Test with invalid MD5 file
@@ -1156,7 +1183,9 @@ class TestLandingZoneMove(
         obj = self.make_irods_object(obj_coll, OBJ_NAME)
         self.make_checksum_object(obj)
         obj_path = iRODSPath(obj_coll_path, OBJ_NAME)
-        self.assert_irods_access(self.user.username, obj_path, IRODS_ACCESS_OWN)
+        self.assert_irods_access(
+            self.user.username, obj_path, IRODS_ACCESS_DELETE_OBJ
+        )
         self.assert_irods_access(self.project_group, obj_path, None)
 
         sample_obj_path = iRODSPath(self.sample_path, OBJ_COLL_NAME, OBJ_NAME)
@@ -1189,13 +1218,13 @@ class TestLandingZoneMove(
             self.irods.data_objects.exists(sample_obj_path + MD5_SUFFIX), True
         )
         self.assert_irods_access(
-            self.project_group, sample_obj_path, self.irods_access_read
+            self.project_group, sample_obj_path, IRODS_ACCESS_READ_OBJ
         )
         self.assert_irods_access(self.owner_group, sample_obj_path, None)
         self.assert_irods_access(
             self.project_group,
             sample_obj_path + MD5_SUFFIX,
-            self.irods_access_read,
+            IRODS_ACCESS_READ_OBJ,
         )
         self.assert_irods_access(
             self.owner_group, sample_obj_path + MD5_SUFFIX, None
@@ -1240,8 +1269,12 @@ class TestLandingZoneMove(
         )
         sample_coll_path = iRODSPath(self.sample_path, COLL_NAME)
         self.assertEqual(self.irods.collections.exists(sample_coll_path), False)
-        self.assert_irods_access(self.owner_group, obj_path, IRODS_ACCESS_OWN)
-        self.assert_irods_access(self.user.username, obj_path, IRODS_ACCESS_OWN)
+        self.assert_irods_access(
+            self.owner_group, obj_path, IRODS_ACCESS_DELETE_OBJ
+        )
+        self.assert_irods_access(
+            self.user.username, obj_path, IRODS_ACCESS_DELETE_OBJ
+        )
         self.assert_irods_access(self.project_group, obj_path, None)
         tl_event.refresh_from_db()
         expected = {
@@ -1407,9 +1440,11 @@ class TestLandingZoneMove(
         self.assertEqual(
             self.irods.data_objects.exists(sample_obj_path + MD5_SUFFIX), False
         )
-        self.assert_irods_access(self.owner_group, zone_coll, IRODS_ACCESS_OWN)
         self.assert_irods_access(
-            self.user.username, zone_coll, IRODS_ACCESS_OWN
+            self.owner_group, zone_coll, IRODS_ACCESS_DELETE_OBJ
+        )
+        self.assert_irods_access(
+            self.user.username, zone_coll, IRODS_ACCESS_DELETE_OBJ
         )
         self.assert_irods_access(self.project_group, zone_coll, None)
 
@@ -1476,12 +1511,12 @@ class TestLandingZoneMove(
             self.irods.data_objects.exists(sample_obj_path + MD5_SUFFIX), True
         )
         self.assert_irods_access(
-            self.project_group, sample_obj_path, self.irods_access_read
+            self.project_group, sample_obj_path, IRODS_ACCESS_READ_OBJ
         )
         self.assert_irods_access(
             self.project_group,
             sample_obj_path + MD5_SUFFIX,
-            self.irods_access_read,
+            IRODS_ACCESS_READ_OBJ,
         )
 
 
@@ -1575,12 +1610,12 @@ class TestLandingZoneMoveAltRootPath(
             self.irods.data_objects.exists(sample_obj_path + MD5_SUFFIX), True
         )
         self.assert_irods_access(
-            self.project_group, sample_obj_path, self.irods_access_read
+            self.project_group, sample_obj_path, IRODS_ACCESS_READ_OBJ
         )
         self.assert_irods_access(
             self.project_group,
             sample_obj_path + MD5_SUFFIX,
-            self.irods_access_read,
+            IRODS_ACCESS_READ_OBJ,
         )
 
 
@@ -1631,7 +1666,7 @@ class TestProjectCreate(TaskflowbackendFlowTestBase):
         self.assert_irods_access(
             self.project_group,
             self.irods_backend.get_path(self.project),
-            self.irods_access_read,
+            IRODS_ACCESS_READ_OBJ,
         )
         # NOTE: Owner group does not need special access here, as owners and
         #       delegates are also in the user group and everything is read-only
@@ -1835,7 +1870,7 @@ class TestPublicAccessUpdate(
         self.make_irods_colls(self.investigation)
         self.assertEqual(self.irods.collections.exists(self.sample_path), True)
         self.assert_irods_access(
-            self.project_group, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
         self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
 
@@ -1852,17 +1887,17 @@ class TestPublicAccessUpdate(
         self.build_and_run(flow)
 
         self.assert_irods_access(
-            self.project_group, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
         self.assert_irods_access(
-            PUBLIC_GROUP, self.sample_path, self.irods_access_read
+            PUBLIC_GROUP, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
 
     def test_enable_access_locked(self):
         """Test public_access_update with locked project"""
         self.make_irods_colls(self.investigation)
         self.assert_irods_access(
-            self.project_group, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
         self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
         flow_data = {
@@ -1877,10 +1912,10 @@ class TestPublicAccessUpdate(
         self.lock_project(self.project)
         self.taskflow.run_flow(flow, self.project)  # Lock not required
         self.assert_irods_access(
-            self.project_group, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
         self.assert_irods_access(
-            PUBLIC_GROUP, self.sample_path, self.irods_access_read
+            PUBLIC_GROUP, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
 
     def test_disable_access(self):
@@ -1890,10 +1925,10 @@ class TestPublicAccessUpdate(
         self.make_irods_colls(self.investigation)
         self.assertEqual(self.irods.collections.exists(self.sample_path), True)
         self.assert_irods_access(
-            self.project_group, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
         self.assert_irods_access(
-            PUBLIC_GROUP, self.sample_path, self.irods_access_read
+            PUBLIC_GROUP, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
 
         flow_data = {
@@ -1908,7 +1943,7 @@ class TestPublicAccessUpdate(
         self.build_and_run(flow)
 
         self.assert_irods_access(
-            self.project_group, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
         self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
 
@@ -1917,7 +1952,7 @@ class TestPublicAccessUpdate(
         self.make_irods_colls(self.investigation)
         self.assertEqual(self.irods.collections.exists(self.sample_path), True)
         self.assert_irods_access(
-            self.project_group, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
         self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
 
@@ -1934,7 +1969,7 @@ class TestPublicAccessUpdate(
         self.build_and_run(flow, force_fail=True)
 
         self.assert_irods_access(
-            self.project_group, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
         self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
 
@@ -1943,7 +1978,7 @@ class TestPublicAccessUpdate(
         self.make_irods_colls(self.investigation)
         self.assertEqual(self.irods.collections.exists(self.sample_path), True)
         self.assert_irods_access(
-            self.project_group, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
         self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
         self.assertIsNone(self.irods_backend.get_ticket(self.irods, TICKET_STR))
@@ -1963,10 +1998,10 @@ class TestPublicAccessUpdate(
             self.build_and_run(flow)
 
         self.assert_irods_access(
-            self.project_group, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
         self.assert_irods_access(
-            PUBLIC_GROUP, self.sample_path, self.irods_access_read
+            PUBLIC_GROUP, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
         self.assertIsInstance(
             self.irods_backend.get_ticket(self.irods, TICKET_STR), Ticket
@@ -1980,10 +2015,10 @@ class TestPublicAccessUpdate(
         self.make_irods_colls(self.investigation, ticket_str=TICKET_STR)
         self.assertEqual(self.irods.collections.exists(self.sample_path), True)
         self.assert_irods_access(
-            self.project_group, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
         self.assert_irods_access(
-            PUBLIC_GROUP, self.sample_path, self.irods_access_read
+            PUBLIC_GROUP, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
         self.assertIsInstance(
             self.irods_backend.get_ticket(self.irods, TICKET_STR), Ticket
@@ -2002,7 +2037,7 @@ class TestPublicAccessUpdate(
         self.build_and_run(flow)
 
         self.assert_irods_access(
-            self.project_group, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
         self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
         self.assertIsNone(self.irods_backend.get_ticket(self.irods, TICKET_STR))
@@ -2364,18 +2399,18 @@ class TestSheetCollsCreate(
         self.assertEqual(self.investigation.irods_status, True)
         self.assertEqual(self.irods.collections.exists(self.sample_path), True)
         self.assert_irods_access(
-            self.project_group, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
         self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
         results_path = iRODSPath(self.sample_path, RESULTS_COLL)
         self.assertEqual(self.irods.collections.exists(results_path), True)
         self.assert_irods_access(
-            self.project_group, results_path, self.irods_access_read
+            self.project_group, results_path, IRODS_ACCESS_READ_OBJ
         )
         misc_path = iRODSPath(self.sample_path, MISC_FILES_COLL)
         self.assertEqual(self.irods.collections.exists(misc_path), True)
         self.assert_irods_access(
-            self.project_group, misc_path, self.irods_access_read
+            self.project_group, misc_path, IRODS_ACCESS_READ_OBJ
         )
 
     def test_create_locked(self):
@@ -2403,10 +2438,10 @@ class TestSheetCollsCreate(
 
         self.assertEqual(self.irods.collections.exists(self.sample_path), True)
         self.assert_irods_access(
-            self.project_group, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
         self.assert_irods_access(
-            PUBLIC_GROUP, self.sample_path, self.irods_access_read
+            PUBLIC_GROUP, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
@@ -2427,10 +2462,10 @@ class TestSheetCollsCreate(
 
         self.assertEqual(self.irods.collections.exists(self.sample_path), True)
         self.assert_irods_access(
-            self.project_group, self.sample_path, self.irods_access_read
+            self.project_group, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
         self.assert_irods_access(
-            PUBLIC_GROUP, self.sample_path, self.irods_access_read
+            PUBLIC_GROUP, self.sample_path, IRODS_ACCESS_READ_OBJ
         )
         self.assertIsInstance(
             self.irods_backend.get_ticket(self.irods, TICKET_STR), Ticket

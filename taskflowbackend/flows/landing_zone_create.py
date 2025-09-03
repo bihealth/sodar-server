@@ -8,6 +8,11 @@ from landingzones.constants import ZONE_STATUS_NOT_CREATED, ZONE_STATUS_ACTIVE
 from landingzones.models import LandingZone
 import landingzones.tasks_taskflow as lz_tasks
 
+from taskflowbackend.constants import (
+    IRODS_ACCESS_DELETE_OBJ,
+    IRODS_ACCESS_READ_OBJ,
+)
+
 
 class Flow(BaseLinearFlow):
     """Flow for creating a landing zone for an assay and a user in iRODS"""
@@ -25,7 +30,11 @@ class Flow(BaseLinearFlow):
         zone = LandingZone.objects.get(sodar_uuid=self.flow_data['zone_uuid'])
         user_path = iRODSPath(zone_root, zone.user.username)
         zone_path = self.irods_backend.get_path(zone)
-        root_access = 'read' if self.flow_data['restrict_colls'] else 'own'
+        root_access = (
+            IRODS_ACCESS_READ_OBJ
+            if self.flow_data['restrict_colls']
+            else IRODS_ACCESS_DELETE_OBJ
+        )
 
         self.add_task(
             lz_tasks.RevertLandingZoneFailTask(
@@ -48,11 +57,11 @@ class Flow(BaseLinearFlow):
         )
         self.add_task(
             irods_tasks.SetAccessTask(
-                name='Set project group read access for project landing zones '
-                'root collection',
+                name='Set project group read_object access for project landing '
+                'zones root collection',
                 irods=self.irods,
                 inject={
-                    'access_name': 'read',
+                    'access_name': IRODS_ACCESS_READ_OBJ,
                     'path': zone_root,
                     'user_name': project_group,
                     'irods_backend': self.irods_backend,
@@ -62,11 +71,11 @@ class Flow(BaseLinearFlow):
         )
         self.add_task(
             irods_tasks.SetAccessTask(
-                name='Set project owner group read access for project landing '
-                'zones root collection recursively',
+                name='Set project owner group read_object access for project '
+                'landing zones root collection recursively',
                 irods=self.irods,
                 inject={
-                    'access_name': 'read',
+                    'access_name': IRODS_ACCESS_READ_OBJ,
                     'path': zone_root,
                     'user_name': owner_group,
                     'irods_backend': self.irods_backend,
@@ -93,11 +102,11 @@ class Flow(BaseLinearFlow):
         )
         self.add_task(
             irods_tasks.SetAccessTask(
-                name='Set user read access to user collection inside project '
-                'landing zones',
+                name='Set user read_object access to user collection inside '
+                'project landing zones',
                 irods=self.irods,
                 inject={
-                    'access_name': 'read',
+                    'access_name': IRODS_ACCESS_READ_OBJ,
                     'path': user_path,
                     'user_name': zone.user.username,
                     'irods_backend': self.irods_backend,
@@ -151,11 +160,11 @@ class Flow(BaseLinearFlow):
         if self.flow_data.get('script_user'):
             self.add_task(
                 irods_tasks.SetAccessTask(
-                    name='Set script user "{}" write access to landing '
+                    name='Set script user "{}" delete_object access to landing '
                     'zone'.format(self.flow_data['script_user']),
                     irods=self.irods,
                     inject={
-                        'access_name': 'write',
+                        'access_name': IRODS_ACCESS_DELETE_OBJ,
                         'path': zone_path,
                         'user_name': self.flow_data['script_user'],
                         'irods_backend': self.irods_backend,
@@ -193,11 +202,11 @@ class Flow(BaseLinearFlow):
             if self.flow_data['restrict_colls']:
                 self.add_task(
                     irods_tasks.BatchSetAccessTask(
-                        name='Batch set user own access to created '
+                        name='Batch set user delete_object access to created '
                         'collections',
                         irods=self.irods,
                         inject={
-                            'access_name': 'own',
+                            'access_name': IRODS_ACCESS_DELETE_OBJ,
                             'paths': colls_full_path,
                             'user_name': zone.user.username,
                             'irods_backend': self.irods_backend,
@@ -206,11 +215,11 @@ class Flow(BaseLinearFlow):
                 )
                 self.add_task(
                     irods_tasks.BatchSetAccessTask(
-                        name='Batch set owner group own access to created '
-                        'collections',
+                        name='Batch set owner group delete_object access to '
+                        'created collections',
                         irods=self.irods,
                         inject={
-                            'access_name': 'own',
+                            'access_name': IRODS_ACCESS_DELETE_OBJ,
                             'paths': colls_full_path,
                             'user_name': owner_group,
                             'irods_backend': self.irods_backend,

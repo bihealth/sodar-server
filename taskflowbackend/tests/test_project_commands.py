@@ -26,6 +26,7 @@ from projectroles.models import (
 from projectroles.tests.test_commands import BatchUpdateRolesMixin
 
 # Taskflowbackend dependency
+from taskflowbackend.constants import IRODS_ACCESS_READ_OBJ
 from taskflowbackend.tests.base import TaskflowViewTestBase
 
 
@@ -130,7 +131,7 @@ class TestSyncModifyAPI(TaskflowViewTestBase):
             self.irods.user_groups.get(self.project_group), iRODSUserGroup
         )
         self.assert_irods_access(
-            self.project_group, self.project_path, self.irods_access_read
+            self.project_group, self.project_path, IRODS_ACCESS_READ_OBJ
         )
         self.assert_group_member(self.project, self.user)
         self.assert_group_member(self.project, self.user_owner_cat)

@@ -1,5 +1,10 @@
 from django.conf import settings
 
+from taskflowbackend.constants import (
+    IRODS_ACCESS_READ_OBJ,
+    IRODS_ACCESS_NULL,
+    IRODS_TICKET_MODE_READ,
+)
 from taskflowbackend.flows.base_flow import BaseLinearFlow
 from taskflowbackend.tasks import irods_tasks
 
@@ -16,7 +21,16 @@ class Flow(BaseLinearFlow):
         return super().validate()
 
     def build(self, force_fail: bool = False):
-        access_name = 'read' if self.flow_data['access'] else 'null'
+        access_name = (
+            IRODS_ACCESS_READ_OBJ
+            if self.flow_data['access']
+            else IRODS_ACCESS_NULL
+        )
+        ticket_access = (
+            IRODS_TICKET_MODE_READ
+            if self.flow_data['access']
+            else IRODS_ACCESS_NULL
+        )
         ticket_str = self.flow_data.get('ticket_str')
 
         self.add_task(
@@ -43,7 +57,7 @@ class Flow(BaseLinearFlow):
                     name=f'Issue access ticket "{ticket_str}" for collection',
                     irods=self.irods,
                     inject={
-                        'access_name': access_name,
+                        'access_name': ticket_access,
                         'path': self.flow_data['path'],
                         'ticket_str': ticket_str,
                         'irods_backend': self.irods_backend,
@@ -57,7 +71,7 @@ class Flow(BaseLinearFlow):
                     name=f'Delete access ticket "{ticket_str}" from collection',
                     irods=self.irods,
                     inject={
-                        'access_name': access_name,
+                        'access_name': ticket_access,
                         'path': self.flow_data['path'],
                         'ticket_str': ticket_str,
                         'irods_backend': self.irods_backend,

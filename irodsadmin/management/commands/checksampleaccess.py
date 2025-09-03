@@ -23,14 +23,15 @@ from projectroles.plugins import PluginAPI
 # Samplesheets dependency
 from samplesheets.models import Investigation
 
+# Taskflowbackend dependency
+from taskflowbackend.constants import IRODS_ACCESS_OWN, IRODS_ACCESS_READ_OBJ
+
 
 logger = ManagementCommandLogger(__name__)
 plugin_api = PluginAPI()
 
 
 # Local constants
-ACCESS_OWN = 'own'
-ACCESS_READ = 'read_object'
 CHECK_ACCESS_ADMIN_MSG = 'Invalid admin user access'
 CHECK_ACCESS_GROUP_MSG = 'Invalid project group access'
 CHECK_ACCESS_USER_MSG = 'Access granted for invalid user'
@@ -70,14 +71,14 @@ class Command(BaseCommand):
         :param admin_id: Admin user ID (int)
         :param group_id: Project user group ID (int)
         """
-        if user_id == admin_id and access_name != ACCESS_OWN:
+        if user_id == admin_id and access_name != IRODS_ACCESS_OWN:
             logger.info(f'{CHECK_ACCESS_ADMIN_MSG}: {access_name};{path}')
             return 1
         # HACK: Ignore PRC query reporting all group users for each group
         elif (
             user_id == group_id
             and user_name.startswith('omics_project_')
-            and access_name != ACCESS_READ
+            and access_name != IRODS_ACCESS_READ_OBJ
         ):
             logger.info(f'{CHECK_ACCESS_GROUP_MSG}: {access_name};{path}')
             return 1

@@ -1,6 +1,7 @@
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS, ROLE_RANKING
 
+from taskflowbackend.constants import IRODS_ACCESS_READ_OBJ
 from taskflowbackend.flows.base_flow import BaseLinearFlow
 from taskflowbackend.tasks import irods_tasks
 
@@ -88,7 +89,7 @@ class Flow(BaseLinearFlow):
                 name='Set project user group access',
                 irods=self.irods,
                 inject={
-                    'access_name': 'read',
+                    'access_name': IRODS_ACCESS_READ_OBJ,
                     'path': project_path,
                     'user_name': project_group,
                     'irods_backend': self.irods_backend,

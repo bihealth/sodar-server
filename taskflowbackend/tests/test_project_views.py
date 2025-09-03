@@ -24,6 +24,7 @@ from projectroles.tests.test_models import ProjectInviteMixin
 # Timeline dependency
 from timeline.models import TimelineEvent
 
+from taskflowbackend.constants import IRODS_ACCESS_READ_OBJ
 from taskflowbackend.tests.base import TaskflowViewTestBase
 
 
@@ -132,7 +133,7 @@ class TestProjectCreateView(TaskflowViewTestBase):
         # Assert user group and owner access
         project_group = self.irods_backend.get_group_name(project)
         self.assert_irods_access(
-            project_group, project_coll, self.irods_access_read
+            project_group, project_coll, IRODS_ACCESS_READ_OBJ
         )
         self.assert_group_member(project, self.user, True, True)
         # Assert inherited role updating for category owner

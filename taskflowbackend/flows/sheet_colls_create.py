@@ -8,6 +8,10 @@ from projectroles.models import SODAR_CONSTANTS
 # Samplesheets dependency
 from samplesheets import tasks_taskflow as ss_tasks
 
+from taskflowbackend.constants import (
+    IRODS_ACCESS_READ_OBJ,
+    IRODS_TICKET_MODE_READ,
+)
 from taskflowbackend.flows.base_flow import BaseLinearFlow
 from taskflowbackend.tasks import irods_tasks
 
@@ -48,11 +52,11 @@ class Flow(BaseLinearFlow):
         )
         self.add_task(
             irods_tasks.SetAccessTask(
-                name=f'Set project user group read access for sample sheet '
-                f'collection {sample_path}',
+                name=f'Set project user group read_object access for sample '
+                f'sheet collection {sample_path}',
                 irods=self.irods,
                 inject={
-                    'access_name': 'read',
+                    'access_name': IRODS_ACCESS_READ_OBJ,
                     'path': sample_path,
                     'user_name': project_group,
                     'irods_backend': self.irods_backend,
@@ -72,10 +76,10 @@ class Flow(BaseLinearFlow):
         if self.project.get_public_access_name() == PROJECT_ROLE_GUEST:
             self.add_task(
                 irods_tasks.SetAccessTask(
-                    name='Set public access to sample collection',
+                    name='Set public read_object access to sample collection',
                     irods=self.irods,
                     inject={
-                        'access_name': 'read',
+                        'access_name': IRODS_ACCESS_READ_OBJ,
                         'path': sample_path,
                         'user_name': PUBLIC_GROUP,
                         'irods_backend': self.irods_backend,
@@ -95,7 +99,7 @@ class Flow(BaseLinearFlow):
                     ),
                     irods=self.irods,
                     inject={
-                        'access_name': 'read',
+                        'access_name': IRODS_TICKET_MODE_READ,
                         'path': sample_path,
                         'ticket_str': self.flow_data['ticket_str'],
                         'irods_backend': self.irods_backend,

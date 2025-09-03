@@ -73,8 +73,6 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 APP_SETTING_SCOPE_PROJECT = SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT']
 
 # Local constants
-IRODS_ACCESS_OWN = 'own'
-IRODS_ACCESS_NULL = 'null'
 IRODS_GROUP_PUBLIC = 'public'
 IRODS_RODS_USER_TYPE = 'rodsuser'
 TICKET_STR = 'ei8iomuDoazeiD2z'
@@ -341,9 +339,6 @@ class TaskflowTestMixin(
         self.owner_as_cat = self.make_assignment(
             self.category, self.user_owner_cat, self.role_owner
         )
-        self.irods_access_read = 'read_object'
-        self.irods_access_write = 'modify_object'
-        self.irods_access_own = 'own'
 
     def tearDown(self):
         self.clear_irods_test_data()

@@ -29,8 +29,12 @@ from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 from samplesheets.views import RESULTS_COLL, MISC_FILES_COLL, TRACK_HUBS_COLL
 
 # Taskflowbackend dependency
+from taskflowbackend.constants import (
+    IRODS_ACCESS_DELETE_OBJ,
+    IRODS_ACCESS_READ_OBJ,
+)
 from taskflowbackend.tasks.irods_tasks import NO_FILE_CHECKSUM_LABEL
-from taskflowbackend.tests.base import TaskflowViewTestBase, IRODS_ACCESS_OWN
+from taskflowbackend.tests.base import TaskflowViewTestBase
 
 # Timeline dependency
 from timeline.models import TimelineEvent, TL_STATUS_OK
@@ -81,7 +85,6 @@ ZONE_PLUGIN_COLLS = ['0815-N1-DNA1', '0815-T1-DNA1']
 ZONE_ALL_COLLS = ZONE_BASE_COLLS + ZONE_PLUGIN_COLLS
 RAW_DATA_COLL = 'RawData'
 MAX_QUANT_COLL = 'MaxQuantResults'
-IRODS_ACCESS_READ = 'read_object'
 
 
 class LandingZoneTaskflowMixin:
@@ -284,11 +287,13 @@ class TestZoneCreateView(
         self.assert_group_member(self.project, self.user, True, True)
         self.assert_group_member(self.project, self.user_owner_cat, True, True)
         root_coll = self.irods.collections.get(self.zone_root_path)
-        self.assert_irods_access(self.owner_group, root_coll, IRODS_ACCESS_READ)
+        self.assert_irods_access(
+            self.owner_group, root_coll, IRODS_ACCESS_READ_OBJ
+        )
         zone_path = self.irods_backend.get_path(zone)
         zone_coll = self.irods.collections.get(zone_path)
         self.assert_irods_access(
-            self.user.username, zone_coll, IRODS_ACCESS_OWN
+            self.user.username, zone_coll, IRODS_ACCESS_DELETE_OBJ
         )
 
     def test_post_no_owner_group(self):
@@ -316,11 +321,13 @@ class TestZoneCreateView(
         self.assertIsNotNone(self.irods.user_groups.get(self.owner_group))
         self.assert_group_member(self.project, self.user, True, True)
         self.assert_group_member(self.project, self.user_owner_cat, True, True)
-        self.assert_irods_access(self.owner_group, root_coll, IRODS_ACCESS_READ)
+        self.assert_irods_access(
+            self.owner_group, root_coll, IRODS_ACCESS_READ_OBJ
+        )
         zone_path = self.irods_backend.get_path(zone)
         zone_coll = self.irods.collections.get(zone_path)
         self.assert_irods_access(
-            self.user.username, zone_coll, IRODS_ACCESS_OWN
+            self.user.username, zone_coll, IRODS_ACCESS_DELETE_OBJ
         )
 
     def test_post_colls(self):
@@ -345,14 +352,18 @@ class TestZoneCreateView(
             self.assert_irods_coll(zone, c, False)
         zone_path = self.irods_backend.get_path(zone)
         self.assert_irods_access(
-            self.user.username, zone_path, IRODS_ACCESS_OWN
+            self.user.username, zone_path, IRODS_ACCESS_DELETE_OBJ
         )
         for c in ZONE_BASE_COLLS:
             self.assert_irods_access(
-                self.user.username, iRODSPath(zone_path, c), IRODS_ACCESS_OWN
+                self.user.username,
+                iRODSPath(zone_path, c),
+                IRODS_ACCESS_DELETE_OBJ,
             )
             self.assert_irods_access(
-                self.owner_group, iRODSPath(zone_path, c), IRODS_ACCESS_OWN
+                self.owner_group,
+                iRODSPath(zone_path, c),
+                IRODS_ACCESS_DELETE_OBJ,
             )
 
     def test_post_colls_plugin(self):
@@ -381,14 +392,18 @@ class TestZoneCreateView(
             self.assert_irods_coll(zone, c, True)
         zone_path = self.irods_backend.get_path(zone)
         self.assert_irods_access(
-            self.user.username, zone_path, IRODS_ACCESS_OWN
+            self.user.username, zone_path, IRODS_ACCESS_DELETE_OBJ
         )
         for c in ZONE_ALL_COLLS:
             self.assert_irods_access(
-                self.user.username, iRODSPath(zone_path, c), IRODS_ACCESS_OWN
+                self.user.username,
+                iRODSPath(zone_path, c),
+                IRODS_ACCESS_DELETE_OBJ,
             )
             self.assert_irods_access(
-                self.owner_group, iRODSPath(zone_path, c), IRODS_ACCESS_OWN
+                self.owner_group,
+                iRODSPath(zone_path, c),
+                IRODS_ACCESS_DELETE_OBJ,
             )
         # These should not be created for this plugin
         for c in [MAX_QUANT_COLL, RAW_DATA_COLL]:
@@ -444,17 +459,21 @@ class TestZoneCreateView(
         zone_path = self.irods_backend.get_path(zone)
         # Read access to root path
         self.assert_irods_access(
-            self.user.username, zone_path, self.irods_access_read
+            self.user.username, zone_path, IRODS_ACCESS_READ_OBJ
         )
         self.assert_irods_access(
-            self.owner_group, zone_path, self.irods_access_read
+            self.owner_group, zone_path, IRODS_ACCESS_READ_OBJ
         )
         for c in ZONE_ALL_COLLS:
             self.assert_irods_access(
-                self.user.username, iRODSPath(zone_path, c), IRODS_ACCESS_OWN
+                self.user.username,
+                iRODSPath(zone_path, c),
+                IRODS_ACCESS_DELETE_OBJ,
             )
             self.assert_irods_access(
-                self.owner_group, iRODSPath(zone_path, c), IRODS_ACCESS_OWN
+                self.owner_group,
+                iRODSPath(zone_path, c),
+                IRODS_ACCESS_DELETE_OBJ,
             )
 
     @override_settings(LANDINGZONES_ZONE_CREATE_LIMIT=1)
@@ -569,10 +588,10 @@ class TestZoneMoveView(
         self.make_checksum_object(irods_obj)
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         self.assert_irods_access(
-            self.owner_group, self.zone_path, IRODS_ACCESS_OWN
+            self.owner_group, self.zone_path, IRODS_ACCESS_DELETE_OBJ
         )
         self.assert_irods_access(
-            self.user_owner.username, self.zone_path, IRODS_ACCESS_OWN
+            self.user_owner.username, self.zone_path, IRODS_ACCESS_DELETE_OBJ
         )
         self.assert_irods_access(self.user.username, self.zone_path, None)
         self.assert_irods_access(self.project_group, self.zone_path, None)
@@ -594,7 +613,7 @@ class TestZoneMoveView(
         self.assert_irods_access(self.owner_group, obj_path, None)
         self.assert_irods_access(self.user.username, obj_path, None)
         self.assert_irods_access(
-            self.project_group, obj_path, IRODS_ACCESS_READ
+            self.project_group, obj_path, IRODS_ACCESS_READ_OBJ
         )
         # Mails to owner and category owner
         self.assertEqual(len(mail.outbox), mail_count + 2)
@@ -666,10 +685,10 @@ class TestZoneMoveView(
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assert_irods_access(
-            self.owner_group, self.zone_path, IRODS_ACCESS_OWN
+            self.owner_group, self.zone_path, IRODS_ACCESS_DELETE_OBJ
         )
         self.assert_irods_access(
-            self.user_owner.username, self.zone_path, IRODS_ACCESS_OWN
+            self.user_owner.username, self.zone_path, IRODS_ACCESS_DELETE_OBJ
         )
         self.assert_irods_access(self.user.username, self.zone_path, None)
         self.assert_irods_access(self.project_group, self.zone_path, None)
@@ -852,12 +871,12 @@ class TestZoneMoveView(
         self.assert_irods_access(
             self.project_group,
             sample_obj_path,
-            self.irods_access_read,
+            IRODS_ACCESS_READ_OBJ,
         )
         self.assert_irods_access(
             self.project_group,
             sample_obj_path + '.md5',
-            self.irods_access_read,
+            IRODS_ACCESS_READ_OBJ,
         )
 
     @override_settings(LANDINGZONES_ZONE_VALIDATE_LIMIT=1)
@@ -943,23 +962,23 @@ class TestZoneMoveView(
         self.make_checksum_object(irods_obj)
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         self.assert_irods_access(
-            self.owner_group, self.zone_path, IRODS_ACCESS_OWN
+            self.owner_group, self.zone_path, IRODS_ACCESS_DELETE_OBJ
         )
         self.assert_irods_access(
-            self.user_owner.username, self.zone_path, IRODS_ACCESS_OWN
+            self.user_owner.username, self.zone_path, IRODS_ACCESS_DELETE_OBJ
         )
         self.assert_irods_access(self.user.username, self.zone_path, None)
         self.assert_irods_access(self.project_group, self.zone_path, None)
 
         acl = iRODSAccess(
-            access_name='own',
+            access_name=IRODS_ACCESS_DELETE_OBJ,
             path=irods_obj.path,
             user_name=user_new.username,
             user_zone=self.irods.zone,
         )
         self.irods.acls.set(acl)
         self.assert_irods_access(
-            user_new.username, irods_obj.path, IRODS_ACCESS_OWN
+            user_new.username, irods_obj.path, IRODS_ACCESS_DELETE_OBJ
         )
 
         with self.login(self.user):
@@ -971,7 +990,7 @@ class TestZoneMoveView(
         self.assert_irods_access(self.owner_group, obj_path, None)
         self.assert_irods_access(self.user.username, obj_path, None)
         self.assert_irods_access(
-            self.project_group, obj_path, IRODS_ACCESS_READ
+            self.project_group, obj_path, IRODS_ACCESS_READ_OBJ
         )
         # New user should not have access
         self.assert_irods_access(user_new.username, obj_path, None)
@@ -986,23 +1005,23 @@ class TestZoneMoveView(
         self.make_checksum_object(irods_obj)
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         self.assert_irods_access(
-            self.owner_group, self.zone_path, IRODS_ACCESS_OWN
+            self.owner_group, self.zone_path, IRODS_ACCESS_DELETE_OBJ
         )
         self.assert_irods_access(
-            self.user_owner.username, self.zone_path, IRODS_ACCESS_OWN
+            self.user_owner.username, self.zone_path, IRODS_ACCESS_DELETE_OBJ
         )
         self.assert_irods_access(self.user.username, self.zone_path, None)
         self.assert_irods_access(self.project_group, self.zone_path, None)
 
         acl = iRODSAccess(
-            access_name='own',
+            access_name=IRODS_ACCESS_DELETE_OBJ,
             path=irods_obj.path,
             user_name=user_new.username,
             user_zone=self.irods.zone,
         )
         self.irods.acls.set(acl)
         self.assert_irods_access(
-            user_new.username, irods_obj.path, IRODS_ACCESS_OWN
+            user_new.username, irods_obj.path, IRODS_ACCESS_DELETE_OBJ
         )
 
         with self.login(self.user):
@@ -1014,10 +1033,12 @@ class TestZoneMoveView(
         self.assert_irods_access(self.owner_group, obj_path, None)
         self.assert_irods_access(self.user.username, obj_path, None)
         self.assert_irods_access(
-            self.project_group, obj_path, IRODS_ACCESS_READ
+            self.project_group, obj_path, IRODS_ACCESS_READ_OBJ
         )
         # New user should have access
-        self.assert_irods_access(user_new.username, obj_path, IRODS_ACCESS_OWN)
+        self.assert_irods_access(
+            user_new.username, obj_path, IRODS_ACCESS_DELETE_OBJ
+        )
 
     def test_post_validate(self):
         """Test POST to validate landing zone with objects without moving"""
@@ -1039,10 +1060,10 @@ class TestZoneMoveView(
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assert_irods_access(
-            self.owner_group, self.zone_path, IRODS_ACCESS_OWN
+            self.owner_group, self.zone_path, IRODS_ACCESS_DELETE_OBJ
         )
         self.assert_irods_access(
-            self.user_owner.username, self.zone_path, IRODS_ACCESS_OWN
+            self.user_owner.username, self.zone_path, IRODS_ACCESS_DELETE_OBJ
         )
         self.assert_irods_access(self.user.username, self.zone_path, None)
         self.assert_irods_access(self.project_group, self.zone_path, None)

@@ -24,7 +24,11 @@ from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 from samplesheets.views import RESULTS_COLL, MISC_FILES_COLL
 
 # Taskflowbackend dependency
-from taskflowbackend.tests.base import TaskflowAPIViewTestBase, IRODS_ACCESS_OWN
+from taskflowbackend.constants import (
+    IRODS_ACCESS_DELETE_OBJ,
+    IRODS_ACCESS_READ_OBJ,
+)
+from taskflowbackend.tests.base import TaskflowAPIViewTestBase
 
 # Timeline dependency
 from timeline.models import TimelineEvent, TL_STATUS_OK
@@ -73,7 +77,6 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 # Local constants
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 ZONE_STATUS_INFO = 'Testing'
-IRODS_ACCESS_READ = 'read_object'
 
 
 class ZoneAPIViewTaskflowTestBase(
@@ -175,9 +178,11 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
         self.assert_group_member(self.project, self.user, True, True)
         self.assert_group_member(self.project, self.user_owner_cat, True, True)
         self.assert_irods_access(
-            self.user.username, zone_coll, IRODS_ACCESS_OWN
+            self.user.username, zone_coll, IRODS_ACCESS_DELETE_OBJ
         )
-        self.assert_irods_access(self.owner_group, zone_coll, IRODS_ACCESS_OWN)
+        self.assert_irods_access(
+            self.owner_group, zone_coll, IRODS_ACCESS_DELETE_OBJ
+        )
         self.assert_irods_access(self.project_group, zone_coll, None)
 
     def test_post_no_owner_group(self):
@@ -204,9 +209,11 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
             self.irods_backend.get_path(zone)
         )
         self.assert_irods_access(
-            self.user.username, zone_coll, IRODS_ACCESS_OWN
+            self.user.username, zone_coll, IRODS_ACCESS_DELETE_OBJ
         )
-        self.assert_irods_access(self.owner_group, zone_coll, IRODS_ACCESS_OWN)
+        self.assert_irods_access(
+            self.owner_group, zone_coll, IRODS_ACCESS_DELETE_OBJ
+        )
         self.assert_irods_access(self.project_group, zone_coll, None)
         self.assertIsNotNone(self.irods.user_groups.get(owner_group))
         self.assert_group_member(self.project, self.user, True, True)
@@ -231,14 +238,18 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
             self.assert_irods_coll(zone, c, False)
         zone_path = self.irods_backend.get_path(zone)
         self.assert_irods_access(
-            self.user.username, zone_path, IRODS_ACCESS_OWN
+            self.user.username, zone_path, IRODS_ACCESS_DELETE_OBJ
         )
         for c in ZONE_BASE_COLLS:
             self.assert_irods_access(
-                self.user.username, iRODSPath(zone_path, c), IRODS_ACCESS_OWN
+                self.user.username,
+                iRODSPath(zone_path, c),
+                IRODS_ACCESS_DELETE_OBJ,
             )
             self.assert_irods_access(
-                self.owner_group, iRODSPath(zone_path, c), IRODS_ACCESS_OWN
+                self.owner_group,
+                iRODSPath(zone_path, c),
+                IRODS_ACCESS_DELETE_OBJ,
             )
 
     def test_post_colls_plugin(self):
@@ -269,14 +280,18 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
             self.assert_irods_coll(zone, c, True)
         zone_path = self.irods_backend.get_path(zone)
         self.assert_irods_access(
-            self.user.username, zone_path, IRODS_ACCESS_OWN
+            self.user.username, zone_path, IRODS_ACCESS_DELETE_OBJ
         )
         for c in ZONE_ALL_COLLS:
             self.assert_irods_access(
-                self.user.username, iRODSPath(zone_path, c), IRODS_ACCESS_OWN
+                self.user.username,
+                iRODSPath(zone_path, c),
+                IRODS_ACCESS_DELETE_OBJ,
             )
             self.assert_irods_access(
-                self.owner_group, iRODSPath(zone_path, c), IRODS_ACCESS_OWN
+                self.owner_group,
+                iRODSPath(zone_path, c),
+                IRODS_ACCESS_DELETE_OBJ,
             )
 
     def test_post_colls_plugin_restrict(self):
@@ -309,14 +324,18 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
         zone_path = self.irods_backend.get_path(zone)
         # Read access to root path
         self.assert_irods_access(
-            self.user.username, zone_path, self.irods_access_read
+            self.user.username, zone_path, IRODS_ACCESS_READ_OBJ
         )
         for c in ZONE_ALL_COLLS:
             self.assert_irods_access(
-                self.user.username, iRODSPath(zone_path, c), IRODS_ACCESS_OWN
+                self.user.username,
+                iRODSPath(zone_path, c),
+                IRODS_ACCESS_DELETE_OBJ,
             )
             self.assert_irods_access(
-                self.owner_group, iRODSPath(zone_path, c), IRODS_ACCESS_OWN
+                self.owner_group,
+                iRODSPath(zone_path, c),
+                IRODS_ACCESS_DELETE_OBJ,
             )
 
     # TODO: Test without sodarcache (see issue #1157)
@@ -541,7 +560,7 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
         self.assert_irods_access(self.owner_group, obj_path, None)
         self.assert_irods_access(self.user.username, obj_path, None)
         self.assert_irods_access(
-            self.project_group, obj_path, IRODS_ACCESS_READ
+            self.project_group, obj_path, IRODS_ACCESS_READ_OBJ
         )
 
     def test_post_move_invalid_status(self):
@@ -615,12 +634,12 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
         self.assert_irods_access(
             self.project_group,
             sample_obj_path,
-            self.irods_access_read,
+            IRODS_ACCESS_READ_OBJ,
         )
         self.assert_irods_access(
             self.project_group,
             sample_obj_path + '.md5',
-            self.irods_access_read,
+            IRODS_ACCESS_READ_OBJ,
         )
 
     @override_settings(LANDINGZONES_ZONE_VALIDATE_LIMIT=1)
@@ -705,10 +724,10 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
             'Successfully validated 0 files',
         )
         self.assert_irods_access(
-            self.owner_group, self.zone_path, IRODS_ACCESS_OWN
+            self.owner_group, self.zone_path, IRODS_ACCESS_DELETE_OBJ
         )
         self.assert_irods_access(
-            self.user.username, self.zone_path, IRODS_ACCESS_OWN
+            self.user.username, self.zone_path, IRODS_ACCESS_DELETE_OBJ
         )
         self.assert_irods_access(self.project_group, self.zone_path, None)
 

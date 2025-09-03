@@ -17,6 +17,11 @@ from landingzones.constants import (
 import landingzones.tasks_taskflow as lz_tasks
 from landingzones.models import LandingZone
 
+from taskflowbackend.constants import (
+    IRODS_ACCESS_OWN,
+    IRODS_ACCESS_READ_OBJ,
+    IRODS_ACCESS_NULL,
+)
 from taskflowbackend.flows.base_flow import BaseLinearFlow
 from taskflowbackend.tasks import irods_tasks, sodar_tasks
 
@@ -162,13 +167,14 @@ class Flow(BaseLinearFlow):
                     inject={'path': zone_path, 'inherit': True},
                 )
             )
+            # TODO: Remove? (see #2257)
             self.add_task(
                 irods_tasks.SetAccessTask(
-                    name=f'Set admin "{admin_name}" owner access for zone coll '
+                    name=f'Set admin "{admin_name}" own access for zone coll '
                     f'{zone_path}',
                     irods=self.irods,
                     inject={
-                        'access_name': 'own',
+                        'access_name': IRODS_ACCESS_OWN,
                         'path': zone_path,
                         'user_name': admin_name,
                         'irods_backend': self.irods_backend,
@@ -177,11 +183,11 @@ class Flow(BaseLinearFlow):
             )
             self.add_task(
                 irods_tasks.SetAccessTask(
-                    name=f'Set user "{zone.user.username}" read access for '
-                    f'zone collection {zone_path}',
+                    name=f'Set user "{zone.user.username}" read_object access '
+                    f'for zone collection {zone_path}',
                     irods=self.irods,
                     inject={
-                        'access_name': 'read',
+                        'access_name': IRODS_ACCESS_READ_OBJ,
                         'path': zone_path,
                         'user_name': zone.user.username,
                         'irods_backend': self.irods_backend,
@@ -191,11 +197,11 @@ class Flow(BaseLinearFlow):
             if owner_group_exists:  # Support for legacy zones
                 self.add_task(
                     irods_tasks.SetAccessTask(
-                        name=f'Set project owner group read access for zone '
-                        f'collection {zone_path}',
+                        name=f'Set project owner group read_object access for '
+                        f'zone collection {zone_path}',
                         irods=self.irods,
                         inject={
-                            'access_name': 'read',
+                            'access_name': IRODS_ACCESS_READ_OBJ,
                             'path': zone_path,
                             'user_name': owner_group,
                             'irods_backend': self.irods_backend,
@@ -207,11 +213,11 @@ class Flow(BaseLinearFlow):
             if script_user:
                 self.add_task(
                     irods_tasks.SetAccessTask(
-                        name=f'Set script user "{script_user}" read access to '
-                        f'landing zone',
+                        name=f'Set script user "{script_user}" read_object '
+                        f'access to landing zone',
                         irods=self.irods,
                         inject={
-                            'access_name': 'read',
+                            'access_name': IRODS_ACCESS_READ_OBJ,
                             'path': zone_path,
                             'user_name': script_user,
                             'irods_backend': self.irods_backend,
@@ -361,14 +367,14 @@ class Flow(BaseLinearFlow):
         self.add_task(
             irods_tasks.BatchMoveDataObjectsTask(
                 name=f'Move {len(zone_objects)} files and set project group '
-                f'read access',
+                f'read_object access',
                 irods=self.irods,
                 inject={
                     'landing_zone': zone,
                     'src_root': zone_path,
                     'dest_root': sample_path,
                     'src_paths': zone_objects,
-                    'access_name': 'read',
+                    'access_name': IRODS_ACCESS_READ_OBJ,
                     'user_name': project_group,
                     'irods_backend': self.irods_backend,
                 },
@@ -380,7 +386,7 @@ class Flow(BaseLinearFlow):
                 f'collection {sample_path}',
                 irods=self.irods,
                 inject={
-                    'access_name': 'null',
+                    'access_name': IRODS_ACCESS_NULL,
                     'path': sample_path,
                     'user_name': zone.user.username,
                     'irods_backend': self.irods_backend,
@@ -394,7 +400,7 @@ class Flow(BaseLinearFlow):
                     f'collection {sample_path}',
                     irods=self.irods,
                     inject={
-                        'access_name': 'null',
+                        'access_name': IRODS_ACCESS_NULL,
                         'path': sample_path,
                         'user_name': owner_group,
                         'irods_backend': self.irods_backend,
@@ -409,7 +415,7 @@ class Flow(BaseLinearFlow):
                     f'path zone',
                     irods=self.irods,
                     inject={
-                        'access_name': 'null',
+                        'access_name': IRODS_ACCESS_NULL,
                         'path': sample_path,
                         'user_name': script_user,
                         'irods_backend': self.irods_backend,

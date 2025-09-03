@@ -13,6 +13,7 @@ from samplesheets.tests.test_views_taskflow import (
 )
 
 # Taskflowbackend dependency
+from taskflowbackend.constants import IRODS_ACCESS_DELETE_OBJ
 from taskflowbackend.tests.base import TaskflowViewTestBase
 
 from landingzones.constants import ZONE_STATUS_ACTIVE, ZONE_STATUS_MOVED
@@ -78,7 +79,9 @@ class TestPerformProjectSync(
         self.assertEqual(self.irods.collections.exists(zone_path), False)
         self.plugin.perform_project_sync(self.project)
         self.assertEqual(self.irods.collections.exists(zone_path), True)
-        self.assert_irods_access(self.user.username, zone_path, 'own')
+        self.assert_irods_access(
+            self.user.username, zone_path, IRODS_ACCESS_DELETE_OBJ
+        )
 
     def test_create_zone_moved(self):
         """Test creating a MOVED zone (should not be created)"""
@@ -105,7 +108,11 @@ class TestPerformProjectSync(
         zone = self.make_zone_taskflow(zone)
         zone_path = self.irods_backend.get_path(zone)
         self.assertEqual(self.irods.collections.exists(zone_path), True)
-        self.assert_irods_access(self.user.username, zone_path, 'own')
+        self.assert_irods_access(
+            self.user.username, zone_path, IRODS_ACCESS_DELETE_OBJ
+        )
         self.plugin.perform_project_sync(self.project)
         self.assertEqual(self.irods.collections.exists(zone_path), True)
-        self.assert_irods_access(self.user.username, zone_path, 'own')
+        self.assert_irods_access(
+            self.user.username, zone_path, IRODS_ACCESS_DELETE_OBJ
+        )

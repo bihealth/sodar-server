@@ -31,6 +31,11 @@ from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 from samplesheets.views import MISC_FILES_COLL
 
 # Taskflowbackend dependency
+from taskflowbackend.constants import (
+    IRODS_ACCESS_OWN,
+    IRODS_ACCESS_MODIFY_OBJ,
+    IRODS_ACCESS_READ_OBJ,
+)
 from taskflowbackend.tests.base import (
     TaskflowViewTestBase,
     IRODS_RODS_USER_TYPE,
@@ -100,9 +105,9 @@ class TestCheckSampleAccess(
         # Assert inherited access
         paths = [self.sample_path, self.assay_path, self.misc_path]
         for p in paths:
-            self.assert_irods_access(USER_ADMIN, p, self.irods_access_own)
+            self.assert_irods_access(USER_ADMIN, p, IRODS_ACCESS_OWN)
             self.assert_irods_access(
-                self.project_group, p, self.irods_access_read
+                self.project_group, p, IRODS_ACCESS_READ_OBJ
             )
         with self.assertLogs(self.logger_name) as cm:
             call_command(self.cmd_name)
@@ -115,21 +120,19 @@ class TestCheckSampleAccess(
     def test_command_extra_user_coll(self):
         """Test command with extra user collection access"""
         acl = iRODSAccess(
-            access_name=self.irods_access_own,
+            access_name=IRODS_ACCESS_OWN,
             path=self.misc_path,
             user_name=USER_NEW,
             user_zone=self.irods.zone,
         )
         self.irods.acls.set(acl, recursive=True)
-        self.assert_irods_access(
-            USER_NEW, self.misc_path, self.irods_access_own
-        )
+        self.assert_irods_access(USER_NEW, self.misc_path, IRODS_ACCESS_OWN)
         with self.assertLogs(self.logger_name) as cm:
             call_command(self.cmd_name)
         self.assertEqual(len(cm.output), 3)
         self.assertIn(
             f'{CHECK_ACCESS_USER_MSG}: '
-            f'{USER_NEW};{self.irods_access_own};{self.misc_path}',
+            f'{USER_NEW};{IRODS_ACCESS_OWN};{self.misc_path}',
             cm.output[1],
         )
         self.assertIn(
@@ -140,19 +143,19 @@ class TestCheckSampleAccess(
         """Test command with extra user data object access"""
         obj = self.make_irods_object(self.misc_coll, TEST_OBJ)
         acl = iRODSAccess(
-            access_name=self.irods_access_own,
+            access_name=IRODS_ACCESS_OWN,
             path=obj.path,
             user_name=USER_NEW,
             user_zone=self.irods.zone,
         )
         self.irods.acls.set(acl, recursive=False)
-        self.assert_irods_access(USER_NEW, obj.path, self.irods_access_own)
+        self.assert_irods_access(USER_NEW, obj.path, IRODS_ACCESS_OWN)
         with self.assertLogs(self.logger_name) as cm:
             call_command(self.cmd_name)
         self.assertEqual(len(cm.output), 3)
         self.assertIn(
             f'{CHECK_ACCESS_USER_MSG}: '
-            f'{USER_NEW};{self.irods_access_own};{obj.path}',
+            f'{USER_NEW};{IRODS_ACCESS_OWN};{obj.path}',
             cm.output[1],
         )
         self.assertIn(
@@ -162,21 +165,21 @@ class TestCheckSampleAccess(
     def test_command_invalid_group_coll_access(self):
         """Test command with invalid project group collection access"""
         acl = iRODSAccess(
-            access_name=self.irods_access_write,
+            access_name=IRODS_ACCESS_MODIFY_OBJ,
             path=self.misc_path,
             user_name=self.project_group,
             user_zone=self.irods.zone,
         )
         self.irods.acls.set(acl, recursive=True)
         self.assert_irods_access(
-            self.project_group, self.misc_path, self.irods_access_write
+            self.project_group, self.misc_path, IRODS_ACCESS_MODIFY_OBJ
         )
         with self.assertLogs(self.logger_name) as cm:
             call_command(self.cmd_name)
         self.assertEqual(len(cm.output), 3)
         self.assertIn(
             f'{CHECK_ACCESS_GROUP_MSG}: '
-            f'{self.irods_access_write};{self.misc_path}',
+            f'{IRODS_ACCESS_MODIFY_OBJ};{self.misc_path}',
             cm.output[1],
         )
         self.assertIn(
@@ -187,21 +190,21 @@ class TestCheckSampleAccess(
         """Test command with invalid project group data object access"""
         obj = self.make_irods_object(self.misc_coll, TEST_OBJ)
         acl = iRODSAccess(
-            access_name=self.irods_access_write,
+            access_name=IRODS_ACCESS_MODIFY_OBJ,
             path=obj.path,
             user_name=self.project_group,
             user_zone=self.irods.zone,
         )
         self.irods.acls.set(acl, recursive=False)
         self.assert_irods_access(
-            self.project_group, obj.path, self.irods_access_write
+            self.project_group, obj.path, IRODS_ACCESS_MODIFY_OBJ
         )
         with self.assertLogs(self.logger_name) as cm:
             call_command(self.cmd_name)
         self.assertEqual(len(cm.output), 3)
         self.assertIn(
             f'{CHECK_ACCESS_GROUP_MSG}: '
-            f'{self.irods_access_write};{obj.path}',
+            f'{IRODS_ACCESS_MODIFY_OBJ};{obj.path}',
             cm.output[1],
         )
         self.assertIn(
