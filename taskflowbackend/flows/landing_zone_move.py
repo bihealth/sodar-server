@@ -17,11 +17,7 @@ from landingzones.constants import (
 import landingzones.tasks_taskflow as lz_tasks
 from landingzones.models import LandingZone
 
-from taskflowbackend.constants import (
-    IRODS_ACCESS_OWN,
-    IRODS_ACCESS_READ_OBJ,
-    IRODS_ACCESS_NULL,
-)
+from taskflowbackend.constants import IRODS_ACCESS_READ_OBJ, IRODS_ACCESS_NULL
 from taskflowbackend.flows.base_flow import BaseLinearFlow
 from taskflowbackend.tasks import irods_tasks, sodar_tasks
 
@@ -165,20 +161,6 @@ class Flow(BaseLinearFlow):
                     f'{zone_path}',
                     irods=self.irods,
                     inject={'path': zone_path, 'inherit': True},
-                )
-            )
-            # TODO: Remove? (see #2257)
-            self.add_task(
-                irods_tasks.SetAccessTask(
-                    name=f'Set admin "{admin_name}" own access for zone coll '
-                    f'{zone_path}',
-                    irods=self.irods,
-                    inject={
-                        'access_name': IRODS_ACCESS_OWN,
-                        'path': zone_path,
-                        'user_name': admin_name,
-                        'irods_backend': self.irods_backend,
-                    },
                 )
             )
             self.add_task(

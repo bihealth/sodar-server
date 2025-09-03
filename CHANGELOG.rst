@@ -65,6 +65,7 @@ Changed
     - Grant ``delete_object`` access instead of ``own`` for landing zone owner (#2215)
     - Move iRODS constants to ``constants`` (#2215, #2258)
     - Refactor iRODS ACL constant use (#2225)
+    - Remove redundant ``landing_zone_move`` admin access setting task (#2257)
 
 Fixed
 -----
