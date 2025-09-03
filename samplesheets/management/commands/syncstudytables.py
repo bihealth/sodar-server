@@ -37,6 +37,15 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
+            '-c',
+            '--check',
+            dest='check',
+            required=False,
+            default=False,
+            action='store_true',
+            help='Check table rendering, do not store anything in cache',
+        )
+        parser.add_argument(
             '-p',
             '--project',
             metavar='UUID',
@@ -45,10 +54,16 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        cache_backend = plugin_api.get_backend_api('sodar_cache')
-        if not cache_backend:
-            logger.error('Sodarcache not enabled, exiting')
-            sys.exit(1)
+        check = options.get('check', False)
+        if check:
+            cache_backend = None
+            log_action = 'build check'
+        else:
+            cache_backend = plugin_api.get_backend_api('sodar_cache')
+            if not cache_backend:
+                logger.error('Sodarcache not enabled, exiting')
+                sys.exit(1)
+            log_action = 'sync'
 
         q_kwargs = {'type': PROJECT_TYPE_PROJECT}
         if options.get('project'):
@@ -63,7 +78,9 @@ class Command(BaseCommand):
             return
         if options.get('project'):
             project = projects.first()
-            logger.info(f'Limiting sync to project {project.get_log_title()}')
+            logger.info(
+                f'Limiting {log_action} to project {project.get_log_title()}'
+            )
 
         for project in projects:
             study_count = 0
@@ -86,6 +103,7 @@ class Command(BaseCommand):
                     study_tables = table_builder.build_study_tables(
                         study, use_config=True
                     )
+                    study_count += 1
                 except Exception as ex:
                     logger.error(
                         f'Error building tables for study '
@@ -95,19 +113,19 @@ class Command(BaseCommand):
                 item_name = STUDY_TABLE_CACHE_ITEM.format(
                     study=study.sodar_uuid
                 )
-                try:
-                    cache_backend.set_cache_item(
-                        app_name=APP_NAME,
-                        name=item_name,
-                        data=study_tables,
-                        project=project,
-                    )
-                    logger.info(f'Set cache item "{item_name}"')
-                    study_count += 1
-                except Exception as ex:
-                    logger.error(
-                        f'Failed to set cache item "{item_name}": {ex}'
-                    )
+                if not check:
+                    try:
+                        cache_backend.set_cache_item(
+                            app_name=APP_NAME,
+                            name=item_name,
+                            data=study_tables,
+                            project=project,
+                        )
+                        logger.info(f'Set cache item "{item_name}"')
+                    except Exception as ex:
+                        logger.error(
+                            f'Failed to set cache item "{item_name}": {ex}'
+                        )
             logger.info(
                 'Built {} study table{} for project {}'.format(
                     study_count,
@@ -115,4 +133,4 @@ class Command(BaseCommand):
                     project.get_log_title(),
                 )
             )
-        logger.info('Study table cache sync done')
+        logger.info(f'Study table {log_action} done')

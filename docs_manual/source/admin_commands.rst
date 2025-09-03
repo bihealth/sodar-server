@@ -77,6 +77,8 @@ operations regarding sample sheets, landing zones, iRODS data and ontologies.
     Synchronize alternative names for sample sheet material search.
 ``syncstudytables``
     Build study render tables in cache for all study tables. These will be
-    automatically built when accessing sample sheets if existing  cache is not
+    automatically built when accessing sample sheets if existing cache is not
     up-to-date, but this can be used to e.g. regenerate the cache if something
-    has been changed in study table rendering.
+    has been changed in study table rendering. Given the argument ``-c`` or
+    ``--check``, study table rendering can be tested without storing any changes
+    in the cache.
