@@ -36,7 +36,7 @@ from samplesheets.tests.test_views_taskflow import (
     SHEET_PATH,
 )
 from samplesheets.views import IRODS_REQUEST_EVENT_CREATE as CREATE_ALERT
-from samplesheets.views_ajax import ALERT_LIB_FILES_EXIST
+from samplesheets.views_ajax import LIB_FILES_EXIST_ALERT
 
 
 app_settings = AppSettingAPI()
@@ -245,7 +245,7 @@ class TestSheetCellEditAjaxView(
         self.assertEqual(response.data['detail'], 'alert')
         self.assertEqual(
             response.data['alert_msg'],
-            ALERT_LIB_FILES_EXIST.format(name=self.library.name),
+            LIB_FILES_EXIST_ALERT.format(name=self.library.name),
         )
         self.library.refresh_from_db()
         self.assertEqual(self.library.name, LIBRARY_ID)

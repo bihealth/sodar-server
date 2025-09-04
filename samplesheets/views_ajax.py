@@ -20,7 +20,7 @@ from rest_framework.response import Response
 
 # Projectroles dependency
 from projectroles.constants import SODAR_CONSTANTS
-from projectroles.models import SODARUser
+from projectroles.models import Project, SODARUser
 from projectroles.plugins import PluginAPI
 from projectroles.views_ajax import SODARBaseProjectAjaxView
 
@@ -80,17 +80,33 @@ RENDER_HEIGHT_HEADERS = 79
 RENDER_HEIGHT_ROW = 39
 RENDER_HEIGHT_SCROLLBAR = 12
 
-ALERT_ACTIVE_REQS = (
+CONTEXT_PERMS = [
+    'create_colls',
+    'delete_sheet',
+    'edit_sheet',
+    'export_sheet',
+    'manage_sheet',
+    'update_cache',
+    'view_files',
+    'view_tickets',
+    'view_versions',
+]
+PARSER_VERSION_ALERT = (
+    'This sample sheet has been imported with an old altamISA version (< '
+    '{target_version}). Please replace the ISA-Tab to enable all features and '
+    'ensure full functionality.'
+)
+ACTIVE_REQ_ALERT = (
     'Active iRODS delete requests in this project require your attention. '
     '<a href="{url}">See request list for details</a>.'
 )
-ALERT_LIB_FILES_EXIST = (
+LIB_FILES_EXIST_ALERT = (
     'iRODS collection exists for "{name}". Renaming may result in orphaned '
     'files. Do you want to proceed?'
 )
-ERROR_NOT_IN_PROJECT = 'Collection does not belong to project'
-ERROR_NOT_FOUND = 'Collection not found'
-ERROR_NO_AUTH = 'User not authorized for iRODS collection'
+NOT_IN_PROJECT_ERROR = 'Collection does not belong to project'
+NOT_FOUND_ERROR = 'Collection not found'
+NO_AUTH_ERROR = 'User not authorized for iRODS collection'
 STUDY_PLUGIN_NOT_FOUND_MSG = 'Plugin not found for study'
 ROW_LINK_DISPLAY_COMMENT = 'SODAR Assay Row Link Display'
 
@@ -286,18 +302,217 @@ class SheetContextAjaxView(SODARBaseProjectAjaxView):
 
     permission_required = 'samplesheets.view_sheet'
 
+    def _get_investigation_info(self, inv: Investigation) -> dict:
+        project = inv.project
+        # TODO: Validate SHEETS_ONTOLOGY_URL_TEMPLATE
+        return {
+            'external_link_labels': get_ext_link_labels(),
+            'ontology_url_template': settings.SHEETS_ONTOLOGY_URL_TEMPLATE,
+            'ontology_url_skip': settings.SHEETS_ONTOLOGY_URL_SKIP,
+            'configuration': inv.get_configuration(),
+            'inv_file_name': inv.file_name.split('/')[-1],
+            'irods_status': inv.irods_status,
+            'irods_path': (
+                self.irods_backend.get_path(project)
+                if self.irods_backend and inv.irods_status
+                else None
+            ),
+            'parser_version': inv.parser_version or 'LEGACY',
+            'parser_warnings': (
+                True
+                if inv.parser_warnings
+                and 'use_file_names' in inv.parser_warnings
+                else False
+            ),
+            'investigation': {
+                'identifier': inv.identifier,
+                'title': inv.title,
+                'description': (
+                    inv.description
+                    if inv.description != project.description
+                    else None
+                ),
+                'comments': get_comments(inv),
+            },
+        }
+
+    def _get_study_info(self, study: Study, request: HttpRequest) -> dict:
+        """
+        Return study information
+
+        :param study: Study object
+        :param request: HttpRequest object
+        :return: dict
+        """
+        plugin = study.get_plugin()
+        return {
+            'display_name': study.get_display_name(),
+            'identifier': study.identifier,
+            'description': study.description,
+            'comments': get_comments(study),
+            'irods_path': (
+                self.irods_backend.get_path(study)
+                if self.irods_backend
+                else None
+            ),
+            'table_url': request.build_absolute_uri(
+                reverse(
+                    'samplesheets:ajax_study_tables',
+                    kwargs={'study': str(study.sodar_uuid)},
+                )
+            ),
+            'plugin': plugin.title if plugin else None,
+            'assays': {},
+        }
+
+    def _get_assay_info(self, assay: Assay) -> dict:
+        """
+        Return assay information.
+
+        :param assay: Assay object
+        :return: dict
+        """
+        project = assay.get_project()
+        plugin = assay.get_plugin()
+        row_links = True
+        # Skip row links if no view_files perm
+        if not self.request.user.has_perm('samplesheets.view_files', project):
+            row_links = False
+        elif ROW_LINK_DISPLAY_COMMENT in assay.comments:
+            try:
+                row_links = get_bool(assay.comments[ROW_LINK_DISPLAY_COMMENT])
+            except Exception as ex:
+                logger.error(
+                    f'Exception in retrieving row display comment '
+                    f'"{ROW_LINK_DISPLAY_COMMENT}" for assay '
+                    f'"{assay.get_display_name()} ({assay.sodar_uuid})": {ex}'
+                )
+        elif plugin:
+            row_links = plugin.display_row_links
+        return {
+            'name': assay.get_name(),
+            'display_name': assay.get_display_name(),
+            'irods_path': (
+                self.irods_backend.get_path(assay)
+                if self.irods_backend
+                else None
+            ),
+            'display_row_links': row_links,
+            'plugin': plugin.title if plugin else None,
+        }
+
+    @classmethod
+    def _get_perms(cls, project: Project, request: HttpRequest) -> dict:
+        """
+        Return user permissions for project.
+
+        :param project: Project object
+        :param request: HttpRequest object
+        :return: dict
+        """
+        ret = {}
+        for p in CONTEXT_PERMS:
+            ret[p] = request.user.has_perm(f'samplesheets.{p}', project)
+        ret['is_superuser'] = request.user.is_superuser
+        return ret
+
+    @classmethod
+    def _get_alerts(
+        cls,
+        project: Project,
+        inv: Optional[Investigation],
+        request: HttpRequest,
+    ) -> list:
+        """
+        Return a list of alerts.
+
+        :param project: Project object
+        :param inv: Investigation object or None
+        :param request: HttpRequest object
+        :return: list
+        """
+        ret = []
+        # Parser alert
+        if inv and (
+            not inv.parser_version
+            or version.parse(inv.parser_version)
+            < version.parse(TARGET_ALTAMISA_VERSION)
+        ):
+            ret.append(
+                {
+                    'level': 'danger',
+                    'html': PARSER_VERSION_ALERT.format(
+                        version=TARGET_ALTAMISA_VERSION
+                    ),
+                }
+            )
+        # iRODS data request alert
+        if (
+            inv
+            and inv.irods_status
+            and (
+                request.user.is_superuser
+                or project.is_owner_or_delegate(request.user)
+            )
+        ):
+            irods_req_count = IrodsDataRequest.objects.filter(
+                project=project, status__in=['ACTIVE', 'FAILED']
+            ).count()
+            if irods_req_count > 0:
+                req_url = reverse(
+                    'samplesheets:irods_requests',
+                    kwargs={'project': project.sodar_uuid},
+                )
+                ret.append(
+                    {
+                        'level': 'info',
+                        'html': ACTIVE_REQ_ALERT.format(url=req_url),
+                    }
+                )
+        return ret
+
+    @classmethod
+    def _get_stats(cls, inv: Optional[Investigation]) -> dict:
+        """
+        Return investigation statistics.
+
+        :param inv: Investigation object or None
+        :return dict:
+        """
+        if not inv:
+            return {}
+        return {
+            'study_count': Study.objects.filter(investigation=inv).count(),
+            'assay_count': Assay.objects.filter(
+                study__investigation=inv
+            ).count(),
+            'protocol_count': Protocol.objects.filter(
+                study__investigation=inv
+            ).count(),
+            'process_count': Process.objects.filter(
+                protocol__study__investigation=inv
+            ).count(),
+            'source_count': inv.get_material_count('SOURCE'),
+            'material_count': inv.get_material_count('MATERIAL'),
+            'sample_count': inv.get_material_count('SAMPLE'),
+            'data_count': inv.get_material_count('DATA'),
+        }
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.irods_backend = plugin_api.get_backend_api('omics_irods')
+
     def get(self, request, *args, **kwargs):
         project = self.get_project()
         inv = Investigation.objects.filter(project=project, active=True).first()
         studies = Study.objects.filter(investigation=inv).order_by('pk')
-        irods_backend = plugin_api.get_backend_api('omics_irods')
 
         # General context data for Vue app
         ret_data = {
             'configuration': None,
             'inv_file_name': None,
             'irods_status': None,
-            'irods_backend_enabled': True if irods_backend else False,
+            'irods_backend_enabled': True if self.irods_backend else False,
             'parser_version': None,
             'parser_warnings': False,
             'irods_webdav_enabled': settings.IRODS_WEBDAV_ENABLED,
@@ -323,197 +538,29 @@ class SheetContextAjaxView(SODARBaseProjectAjaxView):
                 'projectroles', 'site_read_only'
             ),
             'investigation': {},
+            'studies': {},
         }
 
+        # Investigation info
         if inv:
-            # TODO: Validate SHEETS_ONTOLOGY_URL_TEMPLATE
-            update_data = {
-                'external_link_labels': get_ext_link_labels(),
-                'ontology_url_template': settings.SHEETS_ONTOLOGY_URL_TEMPLATE,
-                'ontology_url_skip': settings.SHEETS_ONTOLOGY_URL_SKIP,
-            }
-            ret_data.update(update_data)
-            inv_data = {
-                'configuration': inv.get_configuration(),
-                'inv_file_name': inv.file_name.split('/')[-1],
-                'irods_status': inv.irods_status,
-                'irods_path': (
-                    irods_backend.get_path(project)
-                    if irods_backend and inv.irods_status
-                    else None
-                ),
-                'parser_version': inv.parser_version or 'LEGACY',
-                'parser_warnings': (
-                    True
-                    if inv.parser_warnings
-                    and 'use_file_names' in inv.parser_warnings
-                    else False
-                ),
-                'investigation': {
-                    'identifier': inv.identifier,
-                    'title': inv.title,
-                    'description': (
-                        inv.description
-                        if inv.description != project.description
-                        else None
-                    ),
-                    'comments': get_comments(inv),
-                },
-            }
-            ret_data.update(inv_data)
-
-        # Parser alert
-        if inv and (
-            not inv.parser_version
-            or version.parse(inv.parser_version)
-            < version.parse(TARGET_ALTAMISA_VERSION)
-        ):
-            ret_data['alerts'].append(
-                {
-                    'level': 'danger',
-                    'html': f'This sample sheet has been imported with an old '
-                    f'altamISA version (< {TARGET_ALTAMISA_VERSION}). Please '
-                    f'replace the ISA-Tab to enable all features and ensure '
-                    f'full functionality.',
-                }
-            )
-
-        # iRODS data request alert
-        if (
-            inv
-            and inv.irods_status
-            and (
-                self.request.user.is_superuser
-                or project.is_owner_or_delegate(self.request.user)
-            )
-        ):
-            irods_req_count = IrodsDataRequest.objects.filter(
-                project=project, status__in=['ACTIVE', 'FAILED']
-            ).count()
-            if irods_req_count > 0:
-                ret_data['alerts'].append(
-                    {
-                        'level': 'info',
-                        'html': ALERT_ACTIVE_REQS.format(
-                            url=reverse(
-                                'samplesheets:irods_requests',
-                                kwargs={'project': project.sodar_uuid},
-                            )
-                        ),
-                    }
-                )
-
+            ret_data.update(self._get_investigation_info(inv))
         # Study info
-        ret_data['studies'] = {}
-
-        for s in studies:
-            study_plugin = s.get_plugin()
-            ret_data['studies'][str(s.sodar_uuid)] = {
-                'display_name': s.get_display_name(),
-                'identifier': s.identifier,
-                'description': s.description,
-                'comments': get_comments(s),
-                'irods_path': (
-                    irods_backend.get_path(s) if irods_backend else None
-                ),
-                'table_url': request.build_absolute_uri(
-                    reverse(
-                        'samplesheets:ajax_study_tables',
-                        kwargs={'study': str(s.sodar_uuid)},
-                    )
-                ),
-                'plugin': study_plugin.title if study_plugin else None,
-                'assays': {},
-            }
-
-            # Set up assay data
-            for a in s.assays.all().order_by('pk'):
-                assay_plugin = a.get_plugin()
-                row_links = True
-                # Skip row links if no view_files perm
-                if not self.request.user.has_perm(
-                    'samplesheets.view_files', project
-                ):
-                    row_links = False
-                elif ROW_LINK_DISPLAY_COMMENT in a.comments:
-                    try:
-                        row_links = get_bool(
-                            a.comments[ROW_LINK_DISPLAY_COMMENT]
-                        )
-                    except Exception as ex:
-                        logger.error(
-                            f'Exception in retrieving row display comment '
-                            f'"{ROW_LINK_DISPLAY_COMMENT}" for assay '
-                            f'"{a.get_display_name()} ({a.sodar_uuid})": {ex}'
-                        )
-                elif assay_plugin:
-                    row_links = assay_plugin.display_row_links
-                ret_data['studies'][str(s.sodar_uuid)]['assays'][
-                    str(a.sodar_uuid)
-                ] = {
-                    'name': a.get_name(),
-                    'display_name': a.get_display_name(),
-                    'irods_path': (
-                        irods_backend.get_path(a) if irods_backend else None
-                    ),
-                    'display_row_links': row_links,
-                    'plugin': assay_plugin.title if assay_plugin else None,
-                }
-
+        for study in studies:
+            ret_data['studies'][str(study.sodar_uuid)] = self._get_study_info(
+                study, request
+            )
+            # Assay info
+            for assay in study.assays.all().order_by('pk'):
+                ret_data['studies'][str(study.sodar_uuid)]['assays'][
+                    str(assay.sodar_uuid)
+                ] = self._get_assay_info(assay)
         # Permissions for UI elements (will be checked on request)
-        ret_data['perms'] = {
-            'edit_sheet': request.user.has_perm(
-                'samplesheets.edit_sheet', project
-            ),
-            'manage_sheet': request.user.has_perm(
-                'samplesheets.manage_sheet', project
-            ),
-            'create_colls': request.user.has_perm(
-                'samplesheets.create_colls', project
-            ),
-            'export_sheet': request.user.has_perm(
-                'samplesheets.export_sheet', project
-            ),
-            'delete_sheet': request.user.has_perm(
-                'samplesheets.delete_sheet', project
-            ),
-            'view_versions': request.user.has_perm(
-                'samplesheets.view_versions', project
-            ),
-            'update_cache': request.user.has_perm(
-                'samplesheets.update_cache', project
-            ),
-            'view_tickets': request.user.has_perm(
-                'samplesheets.view_tickets', project
-            ),
-            'view_files': request.user.has_perm(
-                'samplesheets.view_files', project
-            ),
-            'is_superuser': request.user.is_superuser,
-        }
-
+        ret_data['perms'] = self._get_perms(project, request)
+        # Alerts
+        ret_data['alerts'] = self._get_alerts(project, inv, request)
         # Statistics
-        ret_data['sheet_stats'] = (
-            {
-                'study_count': Study.objects.filter(investigation=inv).count(),
-                'assay_count': Assay.objects.filter(
-                    study__investigation=inv
-                ).count(),
-                'protocol_count': Protocol.objects.filter(
-                    study__investigation=inv
-                ).count(),
-                'process_count': Process.objects.filter(
-                    protocol__study__investigation=inv
-                ).count(),
-                'source_count': inv.get_material_count('SOURCE'),
-                'material_count': inv.get_material_count('MATERIAL'),
-                'sample_count': inv.get_material_count('SAMPLE'),
-                'data_count': inv.get_material_count('DATA'),
-            }
-            if inv
-            else {}
-        )
-
+        ret_data['sheet_stats'] = self._get_stats(inv)
+        # Return context
         ret_data = json.dumps(ret_data)
         return Response(ret_data, status=200)
 
@@ -843,7 +890,7 @@ class SheetCellEditAjaxView(BaseSheetEditAjaxView):
         path = cache_paths.get(obj_path)
         if path and path.get('file_count') > 0:
             # Files for material exist -> alert
-            return ALERT_LIB_FILES_EXIST.format(name=node_obj.name)
+            return LIB_FILES_EXIST_ALERT.format(name=node_obj.name)
         logger.debug('Verify OK')
         return None
 

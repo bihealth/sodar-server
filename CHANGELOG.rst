@@ -62,6 +62,7 @@ Changed
     - Update app for ``public_access`` support (#2202)
     - Refactor ``ProjectAppPlugin.update_cache()`` (#2213)
     - Upgrade critical Vue app dependencies (#2232)
+    - Refactor ``SheetContextAjaxView`` (#2262)
 - **Taskflowbackend**
     - Update iRODS ACL handling for v4.3+ scheme (#2215)
     - Grant ``delete_object`` access instead of ``own`` for landing zone owner (#2215)

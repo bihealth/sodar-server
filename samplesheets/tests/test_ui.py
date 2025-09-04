@@ -44,7 +44,7 @@ from samplesheets.tests.test_sheet_config import (
 from samplesheets.tests.test_views import (
     SHEET_PATH_SMALL2,
 )
-from samplesheets.views_ajax import ALERT_ACTIVE_REQS
+from samplesheets.views_ajax import ACTIVE_REQ_ALERT
 
 
 app_settings = AppSettingAPI()
@@ -299,7 +299,7 @@ class TestProjectSheetsView(IrodsDataRequestMixin, SamplesheetsUITestBase):
                     self.selenium.find_element(
                         By.CLASS_NAME, 'sodar-ss-alert'
                     ).get_attribute('innerHTML'),
-                    ALERT_ACTIVE_REQS.format(
+                    ACTIVE_REQ_ALERT.format(
                         url=reverse(
                             'samplesheets:irods_requests',
                             kwargs={'project': self.project.sodar_uuid},

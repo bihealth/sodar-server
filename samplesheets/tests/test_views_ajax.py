@@ -60,7 +60,7 @@ from samplesheets.tests.test_views import (
 from samplesheets.utils import get_node_obj, get_ext_link_labels
 from samplesheets.views import SheetImportMixin
 from samplesheets.views_ajax import (
-    ALERT_ACTIVE_REQS,
+    ACTIVE_REQ_ALERT,
     RENDER_HEIGHT_HEADERS,
     RENDER_HEIGHT_ROW,
     RENDER_HEIGHT_SCROLLBAR,
@@ -378,7 +378,7 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
         self.assertEqual(len(rd['alerts']), 1)
         self.assertEqual(
             rd['alerts'][0]['html'],
-            ALERT_ACTIVE_REQS.format(
+            ACTIVE_REQ_ALERT.format(
                 url=reverse(
                     'samplesheets:irods_requests',
                     kwargs={'project': self.project.sodar_uuid},
