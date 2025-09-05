@@ -30,6 +30,8 @@ Added
     - ``ProjectIrodsFileListAPIView`` ``include_colls`` parameter (#2256)
     - ``checksampleaccess`` command debug logging (#2261)
     - ``syncstudytables`` ``check`` arg (#1794)
+    - ``SheetContextAjaxView`` assay details and comments (#1827)
+    - ``TableDetailModal`` for displaying sheet table details (#1827)
 - **Taskflowbackend**
     - Project viewer role support (#2200)
     - ``user`` arg for ``TaskflowAPI.submit()`` (#2157)

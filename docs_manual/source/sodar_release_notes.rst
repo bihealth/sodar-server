@@ -15,6 +15,7 @@ Major feature update and SODAR Core 1.2 upgrade.
 
 - Add project viewer role support
 - Add category statistics for sample count and iRODS data
+- Add sample sheets assay details modal
 - Add user opt-out settings for app alert notifications
 - Add landing zone settings retrieval REST API view
 - Add collection support for project file list REST API view

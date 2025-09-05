@@ -188,14 +188,20 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
 
     # TODO: Test with realistic ISA-Tab examples using BIH configs (see #434)
 
+    def _import_investigation(self, path: str = SHEET_PATH):
+        """Set up investigation by importing from path"""
+        self.investigation = self.import_isa_from_file(path, self.project)
+        # NOTE: This assumes one study and assay
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+        self.study_uuid = str(self.study.sodar_uuid)
+        self.assay_uuid = str(self.assay.sodar_uuid)
+        self.assay_path = self.irods_backend.get_path(self.assay)
+
     def setUp(self):
         super().setUp()
         self.maxDiff = None
         self.irods_backend = plugin_api.get_backend_api('omics_irods')
-        # Import investigation
-        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
-        self.study = self.investigation.studies.first()
-        self.assay = self.study.assays.first()
         self.url = reverse(
             'samplesheets:ajax_context',
             kwargs={'project': self.project.sodar_uuid},
@@ -203,6 +209,7 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
 
     def test_get(self):
         """Test SheetContextAjaxView GET"""
+        self._import_investigation()
         with self.login(self.user):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
@@ -243,28 +250,37 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
                 'comments': None,
             },
             'studies': {
-                str(self.study.sodar_uuid): {
+                self.study_uuid: {
                     'display_name': self.study.get_display_name(),
                     'identifier': self.study.identifier,
                     'description': self.study.description,
-                    'comments': self.study.comments,
+                    'comments': {
+                        'Study Funding Agency': '',
+                        'Study Grant Number': '',
+                    },
                     'irods_path': self.irods_backend.get_path(self.study),
                     'table_url': response.wsgi_request.build_absolute_uri(
                         reverse(
                             'samplesheets:ajax_study_tables',
-                            kwargs={'study': str(self.study.sodar_uuid)},
+                            kwargs={'study': self.study_uuid},
                         )
                     ),
                     'plugin': None,
                     'assays': {
-                        str(self.assay.sodar_uuid): {
+                        self.assay_uuid: {
                             'name': self.assay.get_name(),
                             'display_name': self.assay.get_display_name(),
+                            'file_name': 'a_small.txt',
+                            'measurement_type': 'exome sequencing assay',
+                            'technology_type': 'nucleotide sequencing',
+                            'technology_platform': '',
+                            'comments': None,
                             'irods_path': self.irods_backend.get_path(
                                 self.assay
                             ),
+                            'plugin_name': None,
+                            'plugin_title': None,
                             'display_row_links': True,
-                            'plugin': None,
                         }
                     },
                 }
@@ -304,11 +320,55 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
         }
         self.assertEqual(rd, expected)
 
+    def test_get_assay_plugin(self):
+        """Test GET with assay plugin"""
+        self._import_investigation(SHEET_PATH_SMALL2)
+        with self.login(self.user):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        rd = json.loads(response.data)
+        expected = {
+            'name': self.assay.get_name(),
+            'display_name': self.assay.get_display_name(),
+            'file_name': 'a_small2.txt',
+            'measurement_type': 'protein expression profiling',
+            'technology_type': 'mass spectrometry',
+            'technology_platform': 'LC-MS/MS',
+            'comments': None,
+            'irods_path': self.assay_path,
+            'plugin_name': 'samplesheets_assay_pep_ms',
+            'plugin_title': 'Sample Sheets Protein Expression '
+            'Profiling / Mass Spectrometry Assay Plugin',
+            'display_row_links': False,  # This plugin disables row links
+        }
+        self.assertEqual(
+            rd['studies'][self.study_uuid]['assays'][self.assay_uuid],
+            expected,
+        )
+
+    def test_get_assay_comments(self):
+        """Test GET with assay comments"""
+        self._import_investigation()
+        comments = {
+            'SODAR Assay Plugin': 'samplesheets_assay_generic_raw',
+            'SODAR Assay Row Link Display': False,
+        }
+        self.assay.comments = comments
+        self.assay.save()
+        with self.login(self.user):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        rd = json.loads(response.data)
+        self.assertEqual(
+            rd['studies'][self.study_uuid]['assays'][self.assay_uuid][
+                'comments'
+            ],
+            comments,
+        )
+
     def test_get_no_sheets(self):
         """Test GET without sample sheets"""
-        self.investigation.active = False
-        self.investigation.save()
-
+        # No importing of investigation
         with self.login(self.user):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
@@ -359,6 +419,7 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
 
     def test_get_irods_request_alert_owner(self):
         """Test GET with active iRODS request alert as owner"""
+        self._import_investigation()
         self.investigation.irods_status = True
         self.investigation.save()
         # TODO: Use model helper instead (see #1088)
@@ -388,6 +449,7 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
 
     def test_get_irods_request_alert_contributor(self):
         """Test GET with active iRODS request alert as contributor"""
+        self._import_investigation()
         self.investigation.irods_status = True
         self.investigation.save()
         # TODO: Use model helper instead (see #1088)
@@ -406,6 +468,7 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
 
     def test_get_inherited_owner(self):
         """Test GET as inherited owner"""
+        self._import_investigation()
         # Set up category owner
         user_cat = self.make_user('user_cat')
         self.make_assignment(self.category, user_cat, self.role_owner)
@@ -417,6 +480,7 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
 
     def test_get_display_row_links_override(self):
         """Test GET with assay row link display override"""
+        self._import_investigation()
         self.assay.comments[ROW_LINK_DISPLAY_COMMENT] = 'false'
         self.assay.save()
         with self.login(self.user):
@@ -425,13 +489,14 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
         rd = json.loads(response.data)
         # Initial value was True
         self.assertFalse(
-            rd['studies'][str(self.study.sodar_uuid)]['assays'][
-                str(self.assay.sodar_uuid)
-            ]['display_row_links']
+            rd['studies'][self.study_uuid]['assays'][self.assay_uuid][
+                'display_row_links'
+            ]
         )
 
     def test_get_guest(self):
         """Test GET as guest"""
+        self._import_investigation()
         with self.login(self.user_guest):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
@@ -450,14 +515,15 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
         }
         self.assertEqual(rd['perms'], expected)
         self.assertEqual(
-            rd['studies'][str(self.study.sodar_uuid)]['assays'][
-                str(self.assay.sodar_uuid)
-            ]['display_row_links'],
+            rd['studies'][self.study_uuid]['assays'][self.assay_uuid][
+                'display_row_links'
+            ],
             True,
         )
 
     def test_get_viewer(self):
         """Test GET as viewer"""
+        self._import_investigation()
         with self.login(self.user_viewer):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
@@ -476,14 +542,15 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
         }
         self.assertEqual(rd['perms'], expected)
         self.assertEqual(
-            rd['studies'][str(self.study.sodar_uuid)]['assays'][
-                str(self.assay.sodar_uuid)
-            ]['display_row_links'],
+            rd['studies'][self.study_uuid]['assays'][self.assay_uuid][
+                'display_row_links'
+            ],
             False,
         )
 
     def test_get_read_only_owner(self):
         """Test GET with site read-only mode as owner"""
+        self._import_investigation()
         app_settings.set('projectroles', 'site_read_only', True)
         with self.login(self.user_owner):
             response = self.client.get(self.url)
@@ -506,6 +573,7 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
 
     def test_get_read_only_superuser(self):
         """Test GET with site read-only mode as superuser"""
+        self._import_investigation()
         app_settings.set('projectroles', 'site_read_only', True)
         with self.login(self.user):
             response = self.client.get(self.url)

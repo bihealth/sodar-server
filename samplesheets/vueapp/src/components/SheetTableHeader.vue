@@ -9,11 +9,11 @@
         <i v-else class="iconify" data-icon="mdi:table-large"></i>
         {{ gridName }}: {{ tableContext.display_name }}
         <span v-if="params.sodarContext.perms.edit_sheet &&
-                    tableContext.plugin"
+                    tableContext.plugin_title"
               class="sodar-ss-table-plugin">
           <i :class="'iconify ml-1 ' + getTitleTextClass()"
              data-icon="mdi:puzzle"
-             :title="tableContext.plugin"
+             :title="tableContext.plugin_title"
              v-b-tooltip.hover>
           </i>
         </span>
@@ -31,7 +31,7 @@
     </div>
     <div :class="'col-' + rightColWidth + ' text-right pr-0'">
       <span v-if="!params.assayMode" class="mr-2 sodar-ss-study-title-badge">
-        <!-- iRODS collection status / stats badge -->
+        <!-- Study iRODS collection status / stats badge -->
         <span v-if="!params.assayMode &&
                     !params.editMode &&
                     params.sodarContext.perms.view_files"
@@ -50,6 +50,18 @@
           </span>
         </span>
       </span>
+      <!-- Assay detail modal button -->
+      <b-button
+          v-if="params.assayMode"
+          @click="onAssayDetailToggle()"
+          class="sodar-list-btn btn-info sodar-ss-btn-assay-detail"
+          title="Assay details"
+          vb-tooltip.hover>
+        <i class="iconify mt-1"
+           data-icon="mdi:information-slab-circle">
+        </i>
+      </b-button>
+      <!-- iRODS buttons -->
       <span v-if="params.sodarContext.perms.view_files">
         <irods-buttons
             :irods-status="params.sodarContext.irods_status"
@@ -89,6 +101,10 @@ export default {
     getTitleTextClass () {
       if (!this.params.assayMode) return 'text-info'
       return 'text-danger'
+    },
+    onAssayDetailToggle () {
+      this.params.tableDetailModal.showModal(
+        this.params.studyUuid, this.params.gridUuid)
     }
   },
   beforeMount () {

@@ -49,6 +49,7 @@ from samplesheets.utils import (
     get_node_obj,
     get_webdav_url,
     get_ext_link_labels,
+    get_isa_field_name,
     get_bool,
 )
 from samplesheets.views import (
@@ -392,13 +393,19 @@ class SheetContextAjaxView(SODARBaseProjectAjaxView):
         return {
             'name': assay.get_name(),
             'display_name': assay.get_display_name(),
+            'file_name': assay.file_name,
+            'measurement_type': get_isa_field_name(assay.measurement_type),
+            'technology_type': get_isa_field_name(assay.technology_type),
+            'technology_platform': assay.technology_platform,
+            'comments': get_comments(assay),
             'irods_path': (
                 self.irods_backend.get_path(assay)
                 if self.irods_backend
                 else None
             ),
+            'plugin_name': plugin.name if plugin else None,
+            'plugin_title': plugin.title if plugin else None,
             'display_row_links': row_links,
-            'plugin': plugin.title if plugin else None,
         }
 
     @classmethod
