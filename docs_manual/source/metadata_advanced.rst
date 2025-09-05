@@ -9,6 +9,11 @@ Advanced metadata topics are detailed in this document. These are intended for
 e.g. advanced users who manually prepare their own sample sheets for specific
 study types.
 
+.. hint::
+
+    If you are not certain which plugin is used with a study or an assay in your
+    project and which metadata may be affecting this, see
+    :ref:`app_samplesheets_browse_table_detail`.
 
 Study iRODS Data Linking
 ========================

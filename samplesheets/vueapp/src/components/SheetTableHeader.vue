@@ -18,7 +18,7 @@
           </i>
         </span>
         <span v-else-if="params.sodarContext.perms.edit_sheet &&
-                         !tableContext.plugin &&
+                         !tableContext.plugin_name &&
                          params.assayMode"
               class="sodar-ss-table-plugin">
           <i class="iconify text-muted ml-1"
@@ -50,13 +50,11 @@
           </span>
         </span>
       </span>
-      <!-- Assay detail modal button -->
+      <!-- Table detail modal button -->
       <b-button
-          v-if="params.assayMode"
-          @click="onAssayDetailToggle()"
-          class="sodar-list-btn btn-info sodar-ss-btn-assay-detail"
-          title="Assay details"
-          vb-tooltip.hover>
+          @click="onTableDetailToggle()"
+          class="sodar-list-btn btn-info sodar-ss-btn-table-detail"
+          :title="gridName + ' details'">
         <i class="iconify mt-1"
            data-icon="mdi:information-slab-circle">
         </i>
@@ -102,7 +100,7 @@ export default {
       if (!this.params.assayMode) return 'text-info'
       return 'text-danger'
     },
-    onAssayDetailToggle () {
+    onTableDetailToggle () {
       this.params.tableDetailModal.showModal(
         this.params.studyUuid, this.params.gridUuid)
     }

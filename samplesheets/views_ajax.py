@@ -346,9 +346,14 @@ class SheetContextAjaxView(SODARBaseProjectAjaxView):
         :return: dict
         """
         plugin = study.get_plugin()
+        # NOTE: More metadata can be added if needed. Certain fields such as
+        #       factors, contacs and study design need some extra formatting to
+        #       be nicely human readable.
         return {
             'display_name': study.get_display_name(),
+            'file_name': study.file_name,
             'identifier': study.identifier,
+            'title': study.title,
             'description': study.description,
             'comments': get_comments(study),
             'irods_path': (
@@ -362,7 +367,8 @@ class SheetContextAjaxView(SODARBaseProjectAjaxView):
                     kwargs={'study': str(study.sodar_uuid)},
                 )
             ),
-            'plugin': plugin.title if plugin else None,
+            'plugin_name': plugin.name if plugin else None,
+            'plugin_title': plugin.title if plugin else None,
             'assays': {},
         }
 

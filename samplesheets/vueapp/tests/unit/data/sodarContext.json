@@ -38,7 +38,9 @@
   "studies": {
     "11111111-1111-1111-1111-111111111111": {
       "display_name": "Small Germline Study",
+      "file_name": "s_small.txt",
       "identifier": "s_small",
+      "title": "Small Germline Study",
       "description": "",
       "comments": {
         "Study Grant Number": "",
@@ -46,7 +48,8 @@
       },
       "irods_path": "/sodarZone/projects/00/00000000-0000-0000-0000-000000000000/sample_data/study_11111111-1111-1111-1111-111111111111",
       "table_url": "http://0.0.0.0:8000/samplesheets/ajax/study/tables/11111111-1111-1111-1111-111111111111",
-      "plugin": null,
+      "plugin_name": null,
+      "plugin_title": null,
       "assays": {
         "22222222-2222-2222-2222-222222222222": {
           "name": "small",

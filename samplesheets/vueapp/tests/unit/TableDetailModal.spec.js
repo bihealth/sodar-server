@@ -39,6 +39,26 @@ describe('TableDetailModal.vue', () => {
     expect(wrapper.findAll('.sodar-ss-table-detail-value-comment').length).toBe(0)
   })
 
+  it('renders modal with study details', async () => {
+    const wrapper = mount(
+      TableDetailModal, { localVue, propsData: { app: getAppStub() } })
+    wrapper.vm.showModal(studyUuid, studyUuid) // NOTE: Same UUID for both
+    await waitNT(wrapper.vm)
+    await waitRAF()
+
+    expect(wrapper.find('#sodar-ss-table-detail-modal-container').exists()).toBe(true)
+    expect(wrapper.findAll('.sodar-ss-table-detail-row').length).toBe(7)
+    expect(wrapper.findAll('.sodar-ss-table-detail-legend').length).toBe(7)
+    expect(wrapper.findAll('.sodar-ss-table-detail-value').length).toBe(7)
+    expect(wrapper.findAll('.sodar-ss-table-detail-value').length).toBe(7)
+    // 3 empty values
+    expect(wrapper.findAll('.sodar-ss-table-detail-value-empty').length).toBe(3)
+    // Comments
+    expect(wrapper.findAll('.sodar-ss-table-detail-row-comment').length).toBe(2)
+    expect(wrapper.findAll('.sodar-ss-table-detail-legend-comment').length).toBe(2)
+    expect(wrapper.findAll('.sodar-ss-table-detail-value-comment').length).toBe(2)
+  })
+
   it('renders modal with assay comments', async () => {
     const app = getAppStub()
     app.sodarContext.studies[studyUuid].assays[assayUuid].comments = {

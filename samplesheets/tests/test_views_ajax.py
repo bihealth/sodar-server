@@ -42,6 +42,7 @@ from samplesheets.rendering import (
     STUDY_TABLE_CACHE_ITEM,
 )
 from samplesheets.sheet_config import SheetConfigAPI
+from samplesheets.tests.test_io import SHEET_DIR
 from samplesheets.tests.test_models import IrodsAccessTicketMixin
 from samplesheets.tests.test_sheet_config import (
     SheetConfigMixin,
@@ -101,9 +102,17 @@ EMPTY_ONTOLOGY_VAL = {
     'value': {'name': None, 'accession': None, 'ontology_name': None},
 }
 SHEET_PATH_INSERTED = SHEET_DIR_SPECIAL + 'i_small_insert.zip'
+SHEET_PATH_GERMLINE = os.path.join(SHEET_DIR, 'bih_germline.zip')
 TEST_FILE_NAME = 'test1'
 IRODS_TICKET_STR = 'ooChaa1t'
 VERSION_DESC = 'description'
+PLUGIN_NAME_GERMLINE = 'samplesheets_study_germline'
+PLUGIN_TITLE_GERMLINE = 'Sample Sheets Germline Study Plugin'
+PLUGIN_NAME_PEP_MS = 'samplesheets_assay_pep_ms'
+PLUGIN_TITLE_PEP_MS = (
+    'Sample Sheets Protein Expression Profiling / Mass Spectrometry Assay '
+    'Plugin'
+)
 
 
 class RowEditMixin:
@@ -252,8 +261,10 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
             'studies': {
                 self.study_uuid: {
                     'display_name': self.study.get_display_name(),
-                    'identifier': self.study.identifier,
-                    'description': self.study.description,
+                    'file_name': 's_small.txt',
+                    'identifier': 's_small',
+                    'title': 'Small Germline Study',
+                    'description': '',
                     'comments': {
                         'Study Funding Agency': '',
                         'Study Grant Number': '',
@@ -265,7 +276,8 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
                             kwargs={'study': self.study_uuid},
                         )
                     ),
-                    'plugin': None,
+                    'plugin_name': None,
+                    'plugin_title': None,
                     'assays': {
                         self.assay_uuid: {
                             'name': self.assay.get_name(),
@@ -320,6 +332,36 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
         }
         self.assertEqual(rd, expected)
 
+    def test_get_study_plugin(self):
+        """Test GET with study plugin"""
+        self._import_investigation(SHEET_PATH_GERMLINE)
+        with self.login(self.user):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        rd = json.loads(response.data)
+        expected = {
+            'display_name': self.study.get_display_name(),
+            'file_name': 's_Template_Test.txt',
+            'identifier': 'Template_Test',
+            'title': 'Investigation Title',
+            'description': '',
+            'comments': {
+                'Study Funding Agency': '',
+                'Study Grant Number': '',
+            },
+            'irods_path': self.irods_backend.get_path(self.study),
+            'table_url': response.wsgi_request.build_absolute_uri(
+                reverse(
+                    'samplesheets:ajax_study_tables',
+                    kwargs={'study': self.study_uuid},
+                )
+            ),
+            'plugin_name': PLUGIN_NAME_GERMLINE,
+            'plugin_title': PLUGIN_TITLE_GERMLINE,
+        }
+        rd['studies'][self.study_uuid].pop('assays')  # We only care about study
+        self.assertEqual(rd['studies'][self.study_uuid], expected)
+
     def test_get_assay_plugin(self):
         """Test GET with assay plugin"""
         self._import_investigation(SHEET_PATH_SMALL2)
@@ -336,9 +378,8 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
             'technology_platform': 'LC-MS/MS',
             'comments': None,
             'irods_path': self.assay_path,
-            'plugin_name': 'samplesheets_assay_pep_ms',
-            'plugin_title': 'Sample Sheets Protein Expression '
-            'Profiling / Mass Spectrometry Assay Plugin',
+            'plugin_name': PLUGIN_NAME_PEP_MS,
+            'plugin_title': PLUGIN_TITLE_PEP_MS,
             'display_row_links': False,  # This plugin disables row links
         }
         self.assertEqual(

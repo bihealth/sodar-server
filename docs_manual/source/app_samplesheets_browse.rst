@@ -37,8 +37,9 @@ Navigation and Operations
     Temporary status messages for e.g. editing are also displayed here.
 Study Title
     The study title is displayed here. To the right hand side you will find
-    a badge listing iRODS file statistics for the study. The rightmost buttons
-    link out to iRODS storage on the study level.
+    a badge listing iRODS file statistics for the study. The
+    :guilabel:`Study Details` button opens a modal with study metadata. The
+    rightmost buttons link out to iRODS storage on the study level.
 Study Table
     The study table lists the study sources (e.g. patients or donors), sample
     collection processes and samples derived from the sources. The table header
@@ -47,13 +48,40 @@ Study Table
     for the study table together with additional iRODS and IGV links.
 Assay Title
     For each assay, the assay title is displayed. Similar to the study title,
-    iRODS links on the assay level are included.
+    an :guilabel:`Assay Details` button for opening a modal with assay metadata
+    is included, along with buttons linking out to assay-specifc iRODS data.
 Assay Shortcuts
     The assay shortcuts card provides iRODS links to specific collections on the
     assay level.
 Assay Table
     The assay table is similar to the study table, presenting processes and
     materials derived from the sample onwards.
+
+.. _app_samplesheets_browse_table_detail:
+
+Study and Assay Detail Modal
+============================
+
+The study and assay title bar buttons include a button to open a details modal
+for the related study or assay table. This button is located to the left of the
+study or assay specific iRODS buttons. Example of the button on an assay title
+row:
+
+.. figure:: _static/app_samplesheets/table_detail_buttons.png
+    :align: center
+    :scale: 70%
+
+    Assay title row with table detail modal button highlighted
+
+Once opened, the modal displays study or assay metadata not visible in the
+table itself. This includes e.g. table file information, ISA-Tab comments and
+SODAR plugin information. Example for a demo project assay table:
+
+.. figure:: _static/app_samplesheets/table_detail_assay.png
+    :align: center
+    :scale: 65%
+
+    Assay table details modal
 
 
 Sheet Operations Dropdown

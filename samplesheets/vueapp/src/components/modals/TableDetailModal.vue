@@ -3,19 +3,19 @@
       id="sodar-ss-table-detail-modal" ref="tableDetailModal"
       centered no-fade hide-footer
       size="xl"
-      title="Assay Details"
+      :title="title + ' Details'"
       :static="true">
     <div id="sodar-ss-table-detail-modal-content">
-      <div v-if="tableInfo" id="sodar-ss-table-detail-modal-container">
+      <div v-if="tableContext" id="sodar-ss-table-detail-modal-container">
         <dl v-for="(val, idx) in tableFields"
             :key="idx"
             class="row pb-0 sodar-ss-table-detail-row">
           <dt class="col-md-3 sodar-ss-table-detail-legend">
             {{ val[0] }}
           </dt>
-          <dd v-if="!(['', null].includes(tableInfo[val[1]]))"
+          <dd v-if="!(['', null].includes(tableContext[val[1]]))"
               class="col-md-9 sodar-ss-table-detail-value">
-            {{ tableInfo[val[1]] }}
+            {{ tableContext[val[1]] }}
           </dd>
           <dd v-else
               class="col-md-9 sodar-ss-table-detail-value
@@ -23,7 +23,7 @@
             N/A
           </dd>
         </dl>
-        <dl v-for="(val, key, idx) in tableInfo.comments"
+        <dl v-for="(val, key, idx) in tableContext.comments"
             :key="'C' + idx"
             class="row pb-0 sodar-ss-table-detail-row-comment">
           <dt class="col-md-3 sodar-ss-table-detail-legend-comment">
@@ -50,6 +50,15 @@
 
 <script>
 
+const studyFields = [
+  ['Display Name', 'display_name'],
+  ['File Name', 'file_name'],
+  ['Identifier', 'identifier'],
+  ['Title', 'title'],
+  ['Description', 'description'],
+  ['Plugin Name', 'plugin_name'],
+  ['Plugin Title', 'plugin_title']
+]
 const assayFields = [
   ['Display Name', 'display_name'],
   ['File Name', 'file_name'],
@@ -68,18 +77,25 @@ export default {
     return {
       studyUuid: null,
       assayUuid: null,
-      tableInfo: null,
-      tableFields: null
+      tableContext: null,
+      tableFields: null,
+      title: null
     }
   },
   methods: {
-    showModal (studyUuid, assayUuid) {
-      // TODO: Add support for displaying study details (see #2265)
+    showModal (studyUuid, gridUuid) {
       this.studyUuid = studyUuid
-      this.assayUuid = assayUuid
-      this.tableFields = assayFields // TODO: Add study support
-      this.tableInfo = this.app.sodarContext.studies[
-        this.studyUuid].assays[this.assayUuid]
+      if (gridUuid !== studyUuid) {
+        this.title = 'Assay'
+        this.assayUuid = gridUuid
+        this.tableFields = assayFields
+        this.tableContext = this.app.sodarContext.studies[
+          this.studyUuid].assays[this.assayUuid]
+      } else {
+        this.title = 'Study'
+        this.tableFields = studyFields
+        this.tableContext = this.app.sodarContext.studies[this.studyUuid]
+      }
       this.$refs.tableDetailModal.show()
     },
     hideModal () {
