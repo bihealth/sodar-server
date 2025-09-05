@@ -1,7 +1,7 @@
 <template>
   <div class="row mb-4 sodar-ss-table-header-row"
        :id="'sodar-ss-section-' + gridIdSuffix">
-    <div :class="'col-' + leftColWidth + ' pl-0'">
+    <div class="col-8 pl-0">
       <h4 :class="'font-weight-bold mb-0 ' + getTitleTextClass()">
         <i v-if="!params.assayMode"
            class="iconify"
@@ -29,7 +29,7 @@
         </span>
       </h4>
     </div>
-    <div :class="'col-' + rightColWidth + ' text-right pr-0'">
+    <div class="col-4 text-right pr-0">
       <span v-if="!params.assayMode" class="mr-2 sodar-ss-study-title-badge">
         <!-- Study iRODS collection status / stats badge -->
         <span v-if="!params.assayMode &&
@@ -50,26 +50,28 @@
           </span>
         </span>
       </span>
-      <!-- Table detail modal button -->
-      <b-button
-          @click="onTableDetailToggle()"
-          class="sodar-list-btn btn-info sodar-ss-btn-table-detail"
-          :title="gridName + ' details'">
-        <i class="iconify mt-1"
-           data-icon="mdi:information-slab-circle">
-        </i>
-      </b-button>
-      <!-- iRODS buttons -->
-      <span v-if="params.sodarContext.perms.view_files">
-        <irods-buttons
-            :irods-status="params.sodarContext.irods_status"
-            :irods-backend-enabled="params.sodarContext.irods_backend_enabled"
-            :irods-webdav-url="params.sodarContext.irods_webdav_url"
-            :irods-path="tableContext.irods_path"
-            :show-file-list="false"
-            :edit-mode="params.editMode"
-            :notify-callback="params.showNotificationCb">
-        </irods-buttons>
+      <span class="text-nowrap">
+        <!-- Table detail modal button -->
+        <b-button
+            @click="onTableDetailToggle()"
+            class="sodar-list-btn btn-info sodar-ss-btn-table-detail"
+            :title="gridName + ' details'">
+          <i class="iconify mt-1"
+             data-icon="mdi:information-slab-circle">
+          </i>
+        </b-button>
+        <!-- iRODS buttons -->
+        <span v-if="params.sodarContext.perms.view_files">
+          <irods-buttons
+              :irods-status="params.sodarContext.irods_status"
+              :irods-backend-enabled="params.sodarContext.irods_backend_enabled"
+              :irods-webdav-url="params.sodarContext.irods_webdav_url"
+              :irods-path="tableContext.irods_path"
+              :show-file-list="false"
+              :edit-mode="params.editMode"
+              :notify-callback="params.showNotificationCb">
+          </irods-buttons>
+        </span>
       </span>
     </div>
   </div>
@@ -90,9 +92,7 @@ export default {
     return {
       gridName: null,
       gridIdSuffix: null,
-      tableContext: null,
-      leftColWidth: 8,
-      rightColWidth: 4
+      tableContext: null
     }
   },
   methods: {
@@ -115,8 +115,6 @@ export default {
       this.gridName = 'Assay'
       this.tableContext = this.params.sodarContext.studies[
         this.params.studyUuid].assays[this.params.gridUuid]
-      this.leftColWidth = 10
-      this.rightColWidth = 2
     }
   },
   mounted () {

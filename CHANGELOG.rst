@@ -82,6 +82,7 @@ Fixed
 - **Samplesheets**
     - Details card iRODS stats badge fails with guest role (#2243)
     - Sheet Operations dropdown disabled for guest user (#2244)
+    - Assay table title row content wrapping (#2267)
 - **Taskflowbackend**
     - Incorrect user in landing zone move sheet cache update timeline event (#2152)
 
