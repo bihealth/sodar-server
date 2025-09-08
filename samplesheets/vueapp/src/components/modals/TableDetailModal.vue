@@ -6,94 +6,61 @@
       :title="title + ' Details'"
       :static="true">
     <div id="sodar-ss-table-detail-modal-content">
-      <div v-if="tableContext" id="sodar-ss-table-detail-modal-container">
-        <dl v-for="(val, idx) in tableFields"
-            :key="idx"
-            class="row pb-0 sodar-ss-table-detail-row">
-          <dt class="col-md-3 sodar-ss-table-detail-legend">
-            {{ val[0] }}
-          </dt>
-          <dd v-if="!(['', null].includes(tableContext[val[1]]))"
-              class="col-md-9 sodar-ss-table-detail-value">
-            {{ tableContext[val[1]] }}
-          </dd>
-          <dd v-else
-              class="col-md-9 sodar-ss-table-detail-value
-                     sodar-ss-table-detail-value-empty text-muted">
-            N/A
-          </dd>
-        </dl>
-        <dl v-for="(val, key, idx) in tableContext.comments"
-            :key="'C' + idx"
-            class="row pb-0 sodar-ss-table-detail-row-comment">
-          <dt class="col-md-3 sodar-ss-table-detail-legend-comment">
-            {{ key }}
-            <i class="iconify text-info"
-               data-icon="mdi:comment"
-               title="Comment">
-            </i>
-          </dt>
-          <dd v-if="!(['', null].includes(val))"
-              class="col-md-9 sodar-ss-table-detail-value-comment">
-            {{ val }}
-          </dd>
-          <dd v-else
-              class="col-md-9 text-muted sodar-ss-table-detail-value-comment
-                     sodar-ss-table-detail-value-comment-empty">
-            N/A
-          </dd>
-        </dl>
-      </div>
+      <table-detail-list
+          v-if="tableContext"
+          :assay-mode="assayMode"
+          :table-context="tableContext"
+          :table-meta-fields="tableMetaFields"
+          :table-sodar-fields="tableSODARFields"
+          :key="'detail-list-' + gridUuid">
+      </table-detail-list>
     </div>
   </b-modal>
 </template>
 
 <script>
 
-const studyFields = [
-  ['Display Name', 'display_name'],
-  ['File Name', 'file_name'],
-  ['Identifier', 'identifier'],
-  ['Title', 'title'],
-  ['Description', 'description'],
-  ['Plugin Name', 'plugin_name'],
-  ['Plugin Title', 'plugin_title']
-]
-const assayFields = [
-  ['Display Name', 'display_name'],
-  ['File Name', 'file_name'],
-  ['Measurement Type', 'measurement_type'],
-  ['Technology Type', 'technology_type'],
-  ['Technology Platform', 'technology_platform'],
-  ['Plugin Name', 'plugin_name'],
-  ['Plugin Title', 'plugin_title'],
-  ['Display Row Links', 'display_row_links']
-]
+import TableDetailList from '../TableDetailList.vue'
+import {
+  studyMetaFields,
+  studySODARFields,
+  assayMetaFields,
+  assaySODARFields
+} from '@/constants'
 
 export default {
   name: 'TableDetailModal',
+  components: { TableDetailList },
   props: ['app'],
   data () {
     return {
+      assayMode: null,
+      gridUuid: null,
       studyUuid: null,
       assayUuid: null,
       tableContext: null,
-      tableFields: null,
+      tableMetaFields: null,
+      tableSODARFields: null,
       title: null
     }
   },
   methods: {
     showModal (studyUuid, gridUuid) {
+      this.gridUuid = gridUuid
       this.studyUuid = studyUuid
       if (gridUuid !== studyUuid) {
         this.title = 'Assay'
         this.assayUuid = gridUuid
-        this.tableFields = assayFields
+        this.assayMode = true
+        this.tableMetaFields = assayMetaFields
+        this.tableSODARFields = assaySODARFields
         this.tableContext = this.app.sodarContext.studies[
           this.studyUuid].assays[this.assayUuid]
       } else {
         this.title = 'Study'
-        this.tableFields = studyFields
+        this.assayMode = false
+        this.tableMetaFields = studyMetaFields
+        this.tableSODARFields = studySODARFields
         this.tableContext = this.app.sodarContext.studies[this.studyUuid]
       }
       this.$refs.tableDetailModal.show()

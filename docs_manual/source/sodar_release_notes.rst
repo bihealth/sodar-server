@@ -16,10 +16,12 @@ Major feature update and SODAR Core 1.2 upgrade.
 - Add project viewer role support
 - Add category statistics for sample count and iRODS data
 - :ref:`Add sample sheets study and assay details modal <app_samplesheets_browse_table_detail>`
+- Add assay details in sheet overview
 - Add user opt-out settings for app alert notifications
 - Add landing zone settings retrieval REST API view
 - Add collection support for project file list REST API view
 - Add syncstudytables management command check mode
+- Update sheet overview layout
 - Upgrade Landing Zones REST API version to v1.1
 - :ref:`Upgrade Sample Sheets REST API version to v1.2 <api_samplesheets_version_1_2>`
 - Upgrade supported development platform to Ubuntu 24.04

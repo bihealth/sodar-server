@@ -334,8 +334,10 @@ for folder style browsing.
 Overview Tab
 ============
 
-The overview tab displays additional information on the investigation, studies
-and assays, as well as statistics about the study contents.
+The overview tab displays investigation, study and assay metadata including
+ISA-Tab comments. SODAR-specific metadata such as enabled assay plugins are
+also displayed. Icons denote the type of information presented in each card.
+In addition to sheet metadata, statistics on study contents are listed.
 
 .. figure:: _static/app_samplesheets/sheet_overview.png
     :align: center

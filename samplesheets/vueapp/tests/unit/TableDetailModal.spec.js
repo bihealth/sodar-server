@@ -26,17 +26,14 @@ describe('TableDetailModal.vue', () => {
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    expect(wrapper.find('#sodar-ss-table-detail-modal-container').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-table-detail-container').exists()).toBe(true)
     expect(wrapper.findAll('.sodar-ss-table-detail-row').length).toBe(8)
     expect(wrapper.findAll('.sodar-ss-table-detail-legend').length).toBe(8)
     expect(wrapper.findAll('.sodar-ss-table-detail-value').length).toBe(8)
-    expect(wrapper.findAll('.sodar-ss-table-detail-value').length).toBe(8)
-    // 3 empty values
     expect(wrapper.findAll('.sodar-ss-table-detail-value-empty').length).toBe(3)
-    // No comments
+    expect(wrapper.findAll('.sodar-ss-table-detail-row-meta').length).toBe(4)
     expect(wrapper.findAll('.sodar-ss-table-detail-row-comment').length).toBe(0)
-    expect(wrapper.findAll('.sodar-ss-table-detail-legend-comment').length).toBe(0)
-    expect(wrapper.findAll('.sodar-ss-table-detail-value-comment').length).toBe(0)
+    expect(wrapper.findAll('.sodar-ss-table-detail-row-sodar').length).toBe(4)
   })
 
   it('renders modal with study details', async () => {
@@ -46,17 +43,12 @@ describe('TableDetailModal.vue', () => {
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    expect(wrapper.find('#sodar-ss-table-detail-modal-container').exists()).toBe(true)
-    expect(wrapper.findAll('.sodar-ss-table-detail-row').length).toBe(7)
-    expect(wrapper.findAll('.sodar-ss-table-detail-legend').length).toBe(7)
-    expect(wrapper.findAll('.sodar-ss-table-detail-value').length).toBe(7)
-    expect(wrapper.findAll('.sodar-ss-table-detail-value').length).toBe(7)
-    // 3 empty values
-    expect(wrapper.findAll('.sodar-ss-table-detail-value-empty').length).toBe(3)
-    // Comments
+    expect(wrapper.find('#sodar-ss-table-detail-container').exists()).toBe(true)
+    expect(wrapper.findAll('.sodar-ss-table-detail-row').length).toBe(9)
+    expect(wrapper.findAll('.sodar-ss-table-detail-value-empty').length).toBe(5)
+    expect(wrapper.findAll('.sodar-ss-table-detail-row-meta').length).toBe(4)
     expect(wrapper.findAll('.sodar-ss-table-detail-row-comment').length).toBe(2)
-    expect(wrapper.findAll('.sodar-ss-table-detail-legend-comment').length).toBe(2)
-    expect(wrapper.findAll('.sodar-ss-table-detail-value-comment').length).toBe(2)
+    expect(wrapper.findAll('.sodar-ss-table-detail-row-sodar').length).toBe(3)
   })
 
   it('renders modal with assay comments', async () => {
@@ -70,12 +62,9 @@ describe('TableDetailModal.vue', () => {
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    expect(wrapper.find('#sodar-ss-table-detail-modal-container').exists()).toBe(true)
-    expect(wrapper.findAll('.sodar-ss-table-detail-row').length).toBe(8)
-    // Comments
+    expect(wrapper.find('#sodar-ss-table-detail-container').exists()).toBe(true)
+    expect(wrapper.findAll('.sodar-ss-table-detail-row').length).toBe(10)
     expect(wrapper.findAll('.sodar-ss-table-detail-row-comment').length).toBe(2)
-    expect(wrapper.findAll('.sodar-ss-table-detail-legend-comment').length).toBe(2)
-    expect(wrapper.findAll('.sodar-ss-table-detail-value-comment').length).toBe(2)
-    expect(wrapper.findAll('.sodar-ss-table-detail-value-comment-empty').length).toBe(1)
+    expect(wrapper.findAll('.sodar-ss-table-detail-value-empty').length).toBe(4)
   })
 })

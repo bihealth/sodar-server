@@ -31,8 +31,10 @@ Added
     - ``checksampleaccess`` command debug logging (#2261)
     - ``syncstudytables`` ``check`` arg (#1794)
     - ``SheetContextAjaxView`` assay details and comments (#1827)
-    - ``TableDetailModal`` for displaying study and assay details (#1827, #2265)
+    - ``TableDetailModal`` Vue app component for displaying study and assay details (#1827, #2265)
     - ``SheetContextAjaxView`` additional study details (#2265)
+    - ``TableDetailList`` and ``TableDetailListRow`` Vue app components (#2011, #2268)
+    - Assay details in sheet overview (#2011)
 - **Taskflowbackend**
     - Project viewer role support (#2200)
     - ``user`` arg for ``TaskflowAPI.submit()`` (#2157)
@@ -66,6 +68,9 @@ Changed
     - Refactor ``ProjectAppPlugin.update_cache()`` (#2213)
     - Upgrade critical Vue app dependencies (#2232)
     - Refactor ``SheetContextAjaxView`` (#2262)
+    - Update overview study detail displaying to reuse ``TableDetailList`` (#2268)
+    - Improve table details metadata displaying (#2012)
+    - Improve sheet overview layout (#2012, #2013)
 - **Taskflowbackend**
     - Update iRODS ACL handling for v4.3+ scheme (#2215)
     - Grant ``delete_object`` access instead of ``own`` for landing zone owner (#2215)

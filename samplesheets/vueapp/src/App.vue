@@ -91,7 +91,9 @@
 
       <!-- Overview subpage -->
       <div v-else-if="activeSubPage === 'overview'" :id="contentId">
-        <Overview :sodar-context="sodarContext">
+        <Overview
+            :sodar-context="sodarContext"
+            :handle-nav-callback="handleStudyNavigation">
         </Overview>
       </div>
 
