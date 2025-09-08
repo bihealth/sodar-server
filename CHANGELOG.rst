@@ -101,6 +101,8 @@ Removed
     - Legacy ``ENABLE_IRODS`` Django setting (#2100)
 - **Landingzones**
     - ``zone_access_cleanup`` site app setting (#2260)
+- **Samplesheets**
+    - ``ListRow`` Vue app component (#2273)
 - **Taskflowbackend**
     - Legacy iRODS ACL value support (#2225)
     - ``CleanupAccessTask`` iRODS task (#2260)
