@@ -1,11 +1,13 @@
 <template>
   <dl :class="'row pb-0 sodar-ss-table-detail-row ' + rowClass">
       <dt class="col-md-3 sodar-ss-table-detail-legend">
-        <i :class="'iconify ' + iconClass"
-           :data-icon="icon"
-           :title="title">
-        </i>
-        {{ legend }}
+        <div class="sodar-ss-table-detail-legend-content">
+          <i :class="'iconify ' + iconClass"
+             :data-icon="icon"
+             :title="title">
+          </i>
+          {{ legend }}
+        </div>
       </dt>
       <dd v-if="!(['', null].includes(value))"
           class="col-md-9 sodar-ss-table-detail-value">
@@ -34,8 +36,11 @@ export default {
 </script>
 
 <style scoped>
-dl {
+.sodar-ss-table-detail-legend-content {
   margin-left: 20px;
   text-indent: -20px;
+}
+dd {
+  word-break: break-word;
 }
 </style>

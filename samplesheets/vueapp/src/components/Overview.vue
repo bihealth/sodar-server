@@ -218,4 +218,9 @@ export default {
 a.sodar-ss-overview-header-link {
   color: #000;
 }
+h4 {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 </style>
