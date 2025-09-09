@@ -296,12 +296,14 @@ For each collection, four buttons for iRODS access are presented:
     Opens a new browser tab with the Davrods web interface for browsing the
     collection through WebDAV.
 
-Assay Table Links
------------------
+Assay Table Row Links
+---------------------
 
 Inside the assay table, row-specific iRODS links are shown on the pinned right
-hand side column, if enabled for the assay type. The buttons shown are the same
-ones as in the assay shortcuts.
+hand side column, if enabled for the assay type by the assay plugin. The buttons
+shown are the same ones as in the assay shortcuts. If no assay plugin is used,
+row links will not be displayed. Also, some assay plugins may disable
+row-specific links. For more information, see :ref:`metadata_advanced`.
 
 In addition to this, file names of materials representing file types in the
 ISA-Tab cells link directly to the corresponding file in WebDAV and iRODS, if

@@ -21,6 +21,7 @@ Major feature update and SODAR Core 1.2 upgrade.
 - Add landing zone settings retrieval REST API view
 - Add collection support for project file list REST API view
 - Add syncstudytables management command check mode
+- Update assay tables to hide row links with no plugin enabled
 - Update sheet overview layout
 - Upgrade Landing Zones REST API version to v1.1
 - :ref:`Upgrade Sample Sheets REST API version to v1.2 <api_samplesheets_version_1_2>`

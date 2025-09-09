@@ -381,7 +381,7 @@ class SheetContextAjaxView(SODARBaseProjectAjaxView):
         """
         project = assay.get_project()
         plugin = assay.get_plugin()
-        row_links = True
+        row_links = False  # Hide row links by default with no plugin
         # Skip row links if no view_files perm
         if not self.request.user.has_perm('samplesheets.view_files', project):
             row_links = False

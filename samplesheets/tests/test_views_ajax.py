@@ -292,7 +292,7 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
                             ),
                             'plugin_name': None,
                             'plugin_title': None,
-                            'display_row_links': True,
+                            'display_row_links': False,  # No links w/o plugin
                         }
                     },
                 }
@@ -537,7 +537,10 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
 
     def test_get_guest(self):
         """Test GET as guest"""
-        self._import_investigation()
+        # Import sheet with assay plugin and enabled row links
+        self._import_investigation(SHEET_PATH_GERMLINE)
+        self.investigation.irods_status = True
+        self.investigation.save()
         with self.login(self.user_guest):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
@@ -564,7 +567,9 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
 
     def test_get_viewer(self):
         """Test GET as viewer"""
-        self._import_investigation()
+        self._import_investigation(SHEET_PATH_GERMLINE)
+        self.investigation.irods_status = True
+        self.investigation.save()
         with self.login(self.user_viewer):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)

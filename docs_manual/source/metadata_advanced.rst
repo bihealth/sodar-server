@@ -1,6 +1,6 @@
-.. _metadata_advanced:
-
 .. include::  <isonum.txt>
+
+.. _metadata_advanced:
 
 Advanced Metadata Topics
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -95,8 +95,8 @@ The assay plugin to be used is determined based on a combination of the
 *measurement type* and *technology type* attributes of each assay.
 
 If SODAR doesn't recognize the measurement type and technology combination, no
-plugin will be applied. In this case the row-specific links will point to the
-root collection of the assay.
+plugin will be applied. In this case the row-specific links will not be
+displayed.
 
 Alternatively, it is possible to explicitly declare what plugin should be used
 by adding a ``SODAR Assay Plugin`` comment within the ``STUDY ASSAYS`` section

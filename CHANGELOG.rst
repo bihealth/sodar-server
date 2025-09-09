@@ -71,6 +71,7 @@ Changed
     - Update overview study detail displaying to reuse ``TableDetailList`` (#2268)
     - Improve table details metadata displaying (#2012)
     - Improve sheet overview layout (#2012, #2013)
+    - Hide assay row links if no plugin enabled (#1454)
 - **Taskflowbackend**
     - Update iRODS ACL handling for v4.3+ scheme (#2215)
     - Grant ``delete_object`` access instead of ``own`` for landing zone owner (#2215)
@@ -84,6 +85,7 @@ Fixed
 
 - **General**
     - Local settings used for ``geticons`` and ``collectstatic`` in CI (#2251)
+    - ``metadata_advanced.rst`` references broken in docs (#2274)
 - **Samplesheets**
     - Details card iRODS stats badge fails with guest role (#2243, #2271)
     - Sheet Operations dropdown disabled for guest user (#2244)
