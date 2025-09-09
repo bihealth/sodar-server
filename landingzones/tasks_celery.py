@@ -32,10 +32,19 @@ APP_NAME = 'landingzones'
 
 @app.on_after_finalize.connect
 def setup_periodic_tasks(sender, **kwargs):
+    logger.info('Setting up periodic tasks..')
     if settings.LANDINGZONES_TRIGGER_ENABLE:
         sender.add_periodic_task(
             settings.LANDINGZONES_TRIGGER_MOVE_INTERVAL, trigger_zone_move
         )
+        logger.info('Added trigger_zone_move')
+        logger.info(
+            f'LANDINGZONES_TRIGGER_MOVE_INTERVAL='
+            f'{settings.LANDINGZONES_TRIGGER_MOVE_INTERVAL}'
+        )
+    else:
+        logger.info('Skip trigger_zone_move: LANDINGZONES_TRIGGER_ENABLE=False')
+    logger.info('Setup done')
 
 
 @app.task

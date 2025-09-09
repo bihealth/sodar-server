@@ -20,6 +20,7 @@ Added
     - Project viewer role support (#2200)
     - ``notify_alert_zone_status`` user app setting (#2205)
     - ``ZoneSettingsRetrieveAPIView`` REST API view (#2174)
+    - Periodic celery task setup logging (#2275)
 - **Samplesheets**
     - Project viewer role support (#2200)
     - Category statistics for sample count and iRODS statistics (#2213)
@@ -36,6 +37,7 @@ Added
     - ``TableDetailList`` and ``TableDetailListRow`` Vue app components (#2011, #2268)
     - Assay details in sheet overview (#2011)
     - ``SHEETS_SYNC_ENABLE`` Django setting (#2247)
+    - Periodic celery task setup logging (#2247)
 - **Taskflowbackend**
     - Project viewer role support (#2200)
     - ``user`` arg for ``TaskflowAPI.submit()`` (#2157)
