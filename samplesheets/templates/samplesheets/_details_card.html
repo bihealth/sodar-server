@@ -34,6 +34,9 @@
   }
 </style>
 
+{% get_backend_include 'omics_irods' 'js' as irodsbackend_js %}
+{{ irodsbackend_js|safe }}
+
 {% if not investigation %}
   <div class="card-body bg-faded font-italic text-center"
        id="sodar-ss-details-card-no-sheets">
@@ -47,8 +50,6 @@
 {% elif investigation and can_view_sheet %}
   <!-- Irodsbackend -->
   {% if can_view_files %}
-    {% get_backend_include 'omics_irods' 'js' as irodsbackend_js %}
-    {{ irodsbackend_js|safe }}
     {# If no landingzones access, trigger update here (see #2243) #}
     {% if role and role.name == 'project guest' %}
       <script type="text/javascript">
