@@ -772,6 +772,8 @@ SHEETS_EXTERNAL_LINK_PATH = env.str(
     'SHEETS_EXTERNAL_LINK_PATH',
     os.path.join(ROOT_DIR, 'samplesheets/config/ext_links.json'),
 )
+# Enable remote sample sheet sync
+SHEETS_SYNC_ENABLE = env.bool('SHEETS_SYNC_ENABLE', False)
 # Remote sample sheet sync interval in minutes
 SHEETS_SYNC_INTERVAL = env.int('SHEETS_SYNC_INTERVAL', 5)
 # BAM/CRAM file path glob patterns to omit from study shortcuts and IGV sessions

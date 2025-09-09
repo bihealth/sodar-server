@@ -35,6 +35,7 @@ Added
     - ``SheetContextAjaxView`` additional study details (#2265)
     - ``TableDetailList`` and ``TableDetailListRow`` Vue app components (#2011, #2268)
     - Assay details in sheet overview (#2011)
+    - ``SHEETS_SYNC_ENABLE`` Django setting (#2247)
 - **Taskflowbackend**
     - Project viewer role support (#2200)
     - ``user`` arg for ``TaskflowAPI.submit()`` (#2157)
@@ -72,6 +73,7 @@ Changed
     - Improve table details metadata displaying (#2012)
     - Improve sheet overview layout (#2012, #2013)
     - Hide assay row links if no plugin enabled (#1454)
+    - Hide project form sheet sync settings with ``SHEETS_SYNC_ENABLE`` unset (#2247)
 - **Taskflowbackend**
     - Update iRODS ACL handling for v4.3+ scheme (#2215)
     - Grant ``delete_object`` access instead of ``own`` for landing zone owner (#2215)

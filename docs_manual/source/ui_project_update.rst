@@ -62,7 +62,9 @@ Allow sample sheet editing
     Enable or disable editability of sample sheets in the project.
 Enable sheet synchronization
     Enable sample sheet synchronization. For more information, see
-    :ref:`app_samplesheets_sync`.
+    :ref:`app_samplesheets_sync`. Note that sheet sync settings are only visible
+    if an administrator has enabled the sync functionality on the site via
+    :ref:`admin_settings`.
 URL for sheet synchronization
     REST API URL of remote project for sample sheet synchronization.
 Token for sheet synchronization

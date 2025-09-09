@@ -204,8 +204,10 @@ Sample Sheets Settings
     parameter containing a display-friendly description of the ID. If linking
     out to an external resource is needed, add a ``url`` parameter containing a
     URL pattern in form of ``https://example.com/{id}``.
+``SHEETS_SYNC_ENABLE``
+    Enable remote sample sheet synchronisation (boolean).
 ``SHEETS_SYNC_INTERVAL``
-    Interval for remote sheet synchronization in minutes (integer).
+    Interval for remote sample sheet synchronization in minutes (integer).
 ``SHEETS_IGV_OMIT_BAM``
     BAM and CRAM file name suffixes to omit from study shortcuts and IGV session
     generation.

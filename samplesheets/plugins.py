@@ -133,34 +133,6 @@ SHEETS_APP_SETTINGS = [
         user_modifiable=False,
     ),
     PluginAppSettingDef(
-        name='sheet_sync_enable',
-        scope=APP_SETTING_SCOPE_PROJECT,
-        type=APP_SETTING_TYPE_BOOLEAN,
-        default=False,
-        label='Enable sheet synchronization',
-        description='Enable sheet synchronization from a source project',
-        user_modifiable=True,
-    ),
-    PluginAppSettingDef(
-        name='sheet_sync_url',
-        scope=APP_SETTING_SCOPE_PROJECT,
-        type=APP_SETTING_TYPE_STRING,
-        default='',
-        label='URL for sheet synchronization',
-        description='REST API URL for sheet synchronization',
-        user_modifiable=True,
-    ),
-    PluginAppSettingDef(
-        name='sheet_sync_token',
-        scope=APP_SETTING_SCOPE_PROJECT,
-        type=APP_SETTING_TYPE_STRING,
-        default='',
-        label='Token for sheet synchronization',
-        description='Access token for sheet synchronization in the source '
-        'project',
-        user_modifiable=True,
-    ),
-    PluginAppSettingDef(
         name='sheet_table_height',
         scope=APP_SETTING_SCOPE_USER,
         type=APP_SETTING_TYPE_INTEGER,
@@ -257,6 +229,38 @@ SHEETS_APP_SETTINGS = [
         user_modifiable=True,
     ),
 ]
+# Add remote sample sheet sync settings only if sync is enabled
+if settings.SHEETS_SYNC_ENABLE:
+    SHEETS_APP_SETTINGS += [
+        PluginAppSettingDef(
+            name='sheet_sync_enable',
+            scope=APP_SETTING_SCOPE_PROJECT,
+            type=APP_SETTING_TYPE_BOOLEAN,
+            default=False,
+            label='Enable sheet synchronization',
+            description='Enable sheet synchronization from a source project',
+            user_modifiable=True,
+        ),
+        PluginAppSettingDef(
+            name='sheet_sync_url',
+            scope=APP_SETTING_SCOPE_PROJECT,
+            type=APP_SETTING_TYPE_STRING,
+            default='',
+            label='URL for sheet synchronization',
+            description='REST API URL for sheet synchronization',
+            user_modifiable=True,
+        ),
+        PluginAppSettingDef(
+            name='sheet_sync_token',
+            scope=APP_SETTING_SCOPE_PROJECT,
+            type=APP_SETTING_TYPE_STRING,
+            default='',
+            label='Token for sheet synchronization',
+            description='Access token for sheet synchronization in the source '
+            'project',
+            user_modifiable=True,
+        ),
+    ]
 
 SHEETS_INFO_SETTINGS = [
     'SHEETS_ALLOW_CRITICAL',
@@ -273,6 +277,7 @@ SHEETS_INFO_SETTINGS = [
     'SHEETS_MIN_COLUMN_WIDTH',
     'SHEETS_ONTOLOGY_URL_SKIP',
     'SHEETS_PARSER_WARNING_SAVE_LIMIT',
+    'SHEETS_SYNC_ENABLE',
     'SHEETS_SYNC_INTERVAL',
     'SHEETS_VERSION_PAGINATION',
     'SHEETS_IGV_OMIT_BAM',

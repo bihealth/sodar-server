@@ -163,8 +163,15 @@ def sheet_sync_task(_self):
 
 @app.on_after_finalize.connect
 def setup_periodic_tasks(sender, **kwargs):
-    sender.add_periodic_task(
-        settings.SHEETS_SYNC_INTERVAL * 60,
-        sheet_sync_task.s(),
-        name='sheet_sync_task',
-    )
+    logger.info('Setting up periodic tasks..')
+    if settings.SHEETS_SYNC_ENABLE:
+        sender.add_periodic_task(
+            settings.SHEETS_SYNC_INTERVAL * 60,
+            sheet_sync_task.s(),
+            name='sheet_sync_task',
+        )
+        logger.info('Added sheet_sync_task')
+        logger.info(f'SHEETS_SYNC_INTERVAL={settings.SHEETS_SYNC_INTERVAL}')
+    else:
+        logger.info('Skip sheet_sync_task: SHEETS_SYNC_ENABLE=False')
+    logger.info('Setup done')
