@@ -34,7 +34,7 @@ jobs:
         ports:
           - 6379:6379
       irods:
-        image: ghcr.io/bihealth/irods-docker:4.3.3-2
+        image: ghcr.io/bihealth/irods-docker:4.3.4-1
         env:
           IRODS_DEFAULT_HASH_SCHEME: MD5
           IRODS_ICAT_DBSERVER: postgres

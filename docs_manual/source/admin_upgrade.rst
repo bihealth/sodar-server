@@ -37,6 +37,12 @@ before performing the upgrade.
 v1.2
 ====
 
+This release requires at least the following versions of SODAR
+environment components:
+
+- `sodar-docker-compose <https://github.com/bihealth/sodar-docker-compose>`_ ``1.2-1``
+- `irods-docker <https://github.com/bihealth/irods-docker>`_ ``4.3.4-1``
+
 The following changes have been made to environment variables:
 
 - ``ENABLE_IRODS`` setting removed. If you need to set up a SODAR instance

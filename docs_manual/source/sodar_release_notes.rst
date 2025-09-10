@@ -26,6 +26,7 @@ Major feature update and SODAR Core 1.2 upgrade.
 - Update sheet overview layout
 - Upgrade Landing Zones REST API version to v1.1
 - :ref:`Upgrade Sample Sheets REST API version to v1.2 <api_samplesheets_version_1_2>`
+- Upgrade minimum supported iRODS version to v4.3.4
 - Upgrade supported development platform to Ubuntu 24.04
 - Upgrade to SODAR Core v1.2.1
 - Remove landing zone access cleanup site app setting

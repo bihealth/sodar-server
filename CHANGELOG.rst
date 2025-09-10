@@ -51,6 +51,8 @@ Changed
     - Upgrade to Nodejs v22 (#2229)
     - Upgrade supported develoment and CI platform to Ubuntu v24.04 (#2067)
     - Upgrade general Python depedencies (#2187, #2232)
+    - Upgrade to irods-docker v4.3.4-1 in CI (#2276)
+    - Upgrade minimum supported iRODS version to v4.3.4 (#2276)
     - Refactor plugin helpers to use ``PluginAPI`` (#2187)
     - Move black configuration to ``pyproject.toml`` (#2187)
     - Reformat migrations (#2187)
