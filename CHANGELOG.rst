@@ -60,6 +60,9 @@ Changed
     - Reformat JQuery (#2187)
     - Update format strings (#2197)
     - Refactor iRODS path handling (#2218)
+- **Irodsadmin**
+    - Refactor ``irodsorphans`` command (#2246)
+    - Refactor ``irodsorphans`` tests (#2279)
 - **Irodsbackend**
     - Update app for ``public_access`` support (#2202)
 - **Landingzones**
@@ -93,6 +96,8 @@ Fixed
 - **General**
     - Local settings used for ``geticons`` and ``collectstatic`` in CI (#2251)
     - ``metadata_advanced.rst`` references broken in docs (#2274)
+- **Irodsadmin**
+    - Redundant queries for category iRODS paths in ``irodsorphans`` (#2280)
 - **Samplesheets**
     - Details card iRODS stats badge fails with guest role (#2243, #2271)
     - Sheet Operations dropdown disabled for guest user (#2244)
