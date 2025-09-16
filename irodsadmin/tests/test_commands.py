@@ -5,6 +5,9 @@ import sys
 import uuid
 
 from io import StringIO
+from typing import Optional
+
+from cubi_isa_templates import IsaTabTemplate, _TEMPLATES as CUBI_TEMPLATES
 
 from irods.access import iRODSAccess
 from irods.path import iRODSPath
@@ -23,6 +26,7 @@ from landingzones.tests.test_views_taskflow import LandingZoneTaskflowMixin
 
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
+from samplesheets.tests.test_views import SheetTemplateCreateMixin
 from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 from samplesheets.views import MISC_FILES_COLL
 
@@ -43,7 +47,11 @@ from irodsadmin.management.commands.checksampleaccess import (
     CHECK_ACCESS_START_MSG,
     CHECK_ACCESS_USER_MSG,
 )
-from irodsadmin.management.commands.irodsorphans import Command, DELETED
+from irodsadmin.management.commands.irodsorphans import (
+    Command,
+    OUT_PROJECT_DELETED,
+    OUT_NONE,
+)
 
 
 plugin_api = PluginAPI()
@@ -65,6 +73,10 @@ USER_NEW = 'user_new'
 LOGGER_PREFIX = 'irodsadmin.management.commands.'
 TEST_OBJ = 'test1.txt'
 OUT_SUFFIX = '0;0 bytes\n'
+CUBI_TPL_DICT = {t.name: t for t in CUBI_TEMPLATES}
+RAW_DATA_COLL = 'RawData'
+MICROARRAY_COLL = 'alpha-S1-E1-H1'
+USER_COLL = 'UserDefinedCollection'
 
 
 class TestCheckSampleAccess(
@@ -215,19 +227,31 @@ class TestIrodsOrphans(
     SampleSheetTaskflowMixin,
     LandingZoneMixin,
     LandingZoneTaskflowMixin,
+    SheetTemplateCreateMixin,
     TaskflowViewTestBase,
 ):
     """Tests for the irodsorphans management command"""
 
-    def _setup_investigation(self, path: str = SHEET_PATH_GERMLINE):
+    def _setup_investigation(
+        self,
+        path: str = SHEET_PATH_GERMLINE,
+        template: Optional[IsaTabTemplate] = None,
+    ):
         """
         Set up investigation with taskflow.
 
-        NOTE: This assumes a single study and a single assay
+        NOTE: This assumes a single study and a single assay.
+
+        :param path: File path for sheet import (string)
+        :param template: IsaTabTemplate object or None. Overrides path if set.
         """
-        self.investigation = self.import_isa_from_file(path, self.project)
+        if template:
+            self.investigation = self.make_sheets_from_cubi_tpl(template)
+        else:
+            self.investigation = self.import_isa_from_file(path, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
+        self.assay_path = self.irods_backend.get_path(self.assay)
         self.make_irods_colls(self.investigation)
 
     def _get_zone(self) -> LandingZone:
@@ -243,16 +267,6 @@ class TestIrodsOrphans(
         )
         self.make_zone_taskflow(zone)
         return zone
-
-    def _get_expected_colls(self) -> list:
-        """Return expected collections"""
-        return [
-            *self.command._get_assay_colls([self.assay]),
-            *self.command._get_study_colls([self.study]),
-            *self.command._get_zone_colls(),
-            *self.command._get_project_colls(),
-            *self.command._get_assay_subcolls([self.study]),
-        ]
 
     @staticmethod
     def _call_output() -> str:
@@ -270,343 +284,224 @@ class TestIrodsOrphans(
             owner=self.user,
         )
         self.command = Command()
+        self.project_path = self.irods_backend.get_path(self.project)
+        self.sample_path = self.irods_backend.get_sample_path(self.project)
 
-    def test_get_assay_colls(self):
-        """Test _get_assay_colls()"""
-        self._setup_investigation()
-        self.assertListEqual(
-            self.command._get_assay_colls([self.assay]),
-            [self.irods_backend.get_path(self.assay)],
-        )
-
-    def test_get_study_colls(self):
-        """Test _get_study_colls()"""
-        self._setup_investigation()
-        self.assertListEqual(
-            self.command._get_study_colls([self.study]),
-            [self.irods_backend.get_path(self.study)],
-        )
-
-    def test_get_zone_colls(self):
-        """Test _get_zone_colls()"""
-        self._setup_investigation()
-        zone = self._get_zone()
-        self.assertListEqual(
-            self.command._get_zone_colls(),
-            [self.irods_backend.get_path(zone)],
-        )
-
-    def test_get_project_colls(self):
-        """Test _get_project_colls()"""
-        self._setup_investigation()
-        self.assertListEqual(
-            self.command._get_project_colls(),
-            [self.irods_backend.get_path(self.project)],
-        )
-
-    def test_get_assay_subcolls(self):
-        """Test _get_assay_subcolls()"""
-        self._setup_investigation()
-        assay_path = self.irods_backend.get_path(self.assay)
-        expected = []
-        for prefix in ['p1', 'p2']:
-            for suffix in ['', '_mother', '_father']:
-                expected.append(
-                    iRODSPath(assay_path, f'{prefix}{suffix}-N1-DNA1-WES1')
-                )
-        expected.append(iRODSPath(assay_path, 'TrackHubs'))
-        expected.append(iRODSPath(assay_path, 'ResultsReports'))
-        expected.append(iRODSPath(assay_path, 'MiscFiles'))
-        self.assertListEqual(
-            self.command._get_assay_subcolls([self.study]),
-            expected,
-        )
-
-    def test_is_zone(self):
-        """Test _is_zone()"""
-        self._setup_investigation()
-        zone = self._get_zone()
-        coll = self.irods.collections.get(self.irods_backend.get_path(zone))
-        self.assertTrue(self.command._is_zone(coll))
-
-    def test_is_assay_or_study_with_assay(self):
-        """Test _is_assay_or_study() with assay"""
-        self._setup_investigation()
-        coll = self.irods.collections.get(
-            self.irods_backend.get_path(self.assay)
-        )
-        self.assertTrue(self.command._is_assay_or_study(coll))
-
-    def test_is_assay_or_study_with_study(self):
-        """Test _is_assay_or_study() with study"""
-        self._setup_investigation()
-        coll = self.irods.collections.get(
-            self.irods_backend.get_path(self.study)
-        )
-        self.assertTrue(self.command._is_assay_or_study(coll))
-
-    def test_is_project(self):
-        """Test _is_project()"""
-        coll = self.irods.collections.get(
-            self.irods_backend.get_path(self.project)
-        )
-        projects_path = self.irods_backend.get_projects_path()
-        self.assertTrue(self.command._is_project(projects_path, coll))
-
-    def test_is_zone_invalid(self):
-        """Test _is_zone() with a non-landingzone collection"""
-        coll = self.irods.collections.get(
-            self.irods_backend.get_path(self.project)
-        )
-        self.assertFalse(self.command._is_zone(coll))
-
-    def test_is_assay_or_study_invalid(self):
-        """Test _is_assay_or_study() with non-assay/study collection"""
-        coll = self.irods.collections.get(
-            self.irods_backend.get_path(self.project)
-        )
-        self.assertFalse(self.command._is_assay_or_study(coll))
-
-    def test_get_orphans_none(self):
-        """Test _get_orphans() with no orphans available"""
-        self._setup_investigation()
-        expected_colls = self._get_expected_colls()
-        # Capture stdout
-        sys.stdout = StringIO()
-        self.command._get_orphans(self.irods, expected_colls, [self.assay])
-        self.assertEqual(sys.stdout.getvalue(), '')
-
-    def test_get_orphans_assay(self):
-        """Test _get_orphans() with orphan assay"""
-        self._setup_investigation()
-        expected_colls = self._get_expected_colls()
-        orphan_path = iRODSPath(
-            self.irods_backend.get_path(self.study), f'assay_{uuid.uuid4()}'
-        )
-        self.irods.collections.create(orphan_path)
-        sys.stdout = StringIO()
-        self.command._get_orphans(self.irods, expected_colls, [self.assay])
-        expected = (
-            f'{self.project.sodar_uuid};{self.project.full_title};'
-            f'{orphan_path};{OUT_SUFFIX}'
-        )
-        self.assertEqual(sys.stdout.getvalue(), expected)
-
-    def test_get_orphans_study(self):
-        """Test _get_orphans() with orphan study"""
-        self._setup_investigation()
-        expected_colls = self._get_expected_colls()
-        orphan_path = iRODSPath(
-            self.irods_backend.get_path(self.project),
-            settings.IRODS_SAMPLE_COLL,
-            f'study_{uuid.uuid4()}',
-        )
-        self.irods.collections.create(orphan_path)
-        sys.stdout = StringIO()
-        self.command._get_orphans(self.irods, expected_colls, [self.assay])
-        expected = (
-            f'{self.project.sodar_uuid};{self.project.full_title};'
-            f'{orphan_path};{OUT_SUFFIX}'
-        )
-        self.assertEqual(sys.stdout.getvalue(), expected)
-
-    def test_get_orphans_zone(self):
-        """Test _get_orphans() with orphan landing zone collection"""
-        self._setup_investigation()
-        # Set up real zone to ensure only orphan is returned
-        self._get_zone()
-        expected_colls = self._get_expected_colls()
-        orphan_path = iRODSPath(
-            self.irods_backend.get_path(self.project),
-            settings.IRODS_LANDING_ZONE_COLL,
-            self.user.username,
-            self.study.get_display_name().replace(' ', '_').lower(),
-            '20201031_123456',
-        )
-        self.irods.collections.create(orphan_path)
-        sys.stdout = StringIO()
-        self.command._get_orphans(self.irods, expected_colls, [self.assay])
-        expected = (
-            f'{self.project.sodar_uuid};{self.project.full_title};'
-            f'{orphan_path};{OUT_SUFFIX}'
-        )
-        self.assertEqual(sys.stdout.getvalue(), expected)
-
-    def test_get_output_project(self):
-        """Test _get_orphans() with orphan project"""
-        self._setup_investigation()
-        expected_colls = self._get_expected_colls()
-        orphan_path = iRODSPath(
+    def test_command_orphan_project(self):
+        """Test command with orphan project"""
+        path = iRODSPath(
             self.irods_backend.get_projects_path(), '11', DUMMY_UUID
         )
-        self.irods.collections.create(orphan_path)
-        sys.stdout = StringIO()
-        self.command._get_orphans(self.irods, expected_colls, [self.assay])
-        expected = f'{DUMMY_UUID};{DELETED};{orphan_path};{OUT_SUFFIX}'
-        self.assertEqual(sys.stdout.getvalue(), expected)
+        self.irods.collections.create(path)
+        output = self._call_output()
+        expected = f'{OUT_NONE};{OUT_PROJECT_DELETED};{path};{OUT_SUFFIX}'
+        self.assertEqual(output, expected)
 
-    def test_get_output_assay_subs(self):
-        """Test _get_orphans() with orphan assay subcollections"""
+    def test_command_no_inv(self):
+        """Test command with no investigation"""
+        self.assertEqual(self._call_output(), '')
+
+    def test_command_inv(self):
+        """Test command with investigation and no orphans"""
         self._setup_investigation()
-        expected_colls = self._get_expected_colls()
-        orphan_path = iRODSPath(
-            self.irods_backend.get_path(self.assay), 'UnexpectedCollection'
-        )
-        self.irods.collections.create(orphan_path)
-        sys.stdout = StringIO()
-        self.command._get_orphans(self.irods, expected_colls, [self.assay])
-        expected = (
-            f'{self.project.sodar_uuid};{self.project.full_title};'
-            f'{orphan_path};0;0 bytes\n'
-        )
-        self.assertEqual(sys.stdout.getvalue(), expected)
-
-    def test_get_orphans_deleted_project(self):
-        """Test _get_orphans() with a deleted project"""
-        self._setup_investigation()
-        expected_colls = self._get_expected_colls()
-        orphan_path = iRODSPath(
-            self.irods_backend.get_projects_path(), '11', DUMMY_UUID
-        )
-        self.irods.collections.create(orphan_path)
-        sys.stdout = StringIO()
-        self.command._get_orphans(self.irods, expected_colls, [self.assay])
-        expected = f'{DUMMY_UUID};{DELETED};{orphan_path};{OUT_SUFFIX}'
-        self.assertEqual(sys.stdout.getvalue(), expected)
-
-    def test_command_no_orphans(self):
-        """Test command with no orphans"""
         self.assertEqual(self._call_output(), '')
 
     def test_command_orphan_assay(self):
         """Test command with orphan assay"""
         self._setup_investigation()
-        orphan_path = iRODSPath(
+        path = iRODSPath(
             self.irods_backend.get_path(self.study), f'assay_{uuid.uuid4()}'
         )
-        self.irods.collections.create(orphan_path)
+        self.irods.collections.create(path)
         output = self._call_output()
         expected = (
             f'{self.project.sodar_uuid};{self.project.full_title};'
-            f'{orphan_path};{OUT_SUFFIX}'
+            f'{path};{OUT_SUFFIX}'
         )
         self.assertEqual(output, expected)
 
     def test_command_orphan_study(self):
         """Test command with orphan study"""
-        orphan_path = iRODSPath(
-            self.irods_backend.get_path(self.project),
-            settings.IRODS_SAMPLE_COLL,
-            f'study_{uuid.uuid4()}',
-        )
-        self.irods.collections.create(orphan_path)
+        self._setup_investigation()
+        path = iRODSPath(self.sample_path, f'study_{uuid.uuid4()}')
+        self.irods.collections.create(path)
         output = self._call_output()
+        expected = (
+            f'{self.project.sodar_uuid};{self.project.full_title};'
+            f'{path};{OUT_SUFFIX}'
+        )
+        self.assertEqual(output, expected)
+
+    def test_command_assay_top(self):
+        """Test command with accepted assay top collection"""
+        self._setup_investigation()
+        self.irods.collections.create(self.assay_path, MISC_FILES_COLL)
+        self.assertEqual(self._call_output(), '')
+
+    def test_command_assay_top_orphan(self):
+        """Test command with orphan assay top collection"""
+        self._setup_investigation()
+        path = iRODSPath(self.assay_path, USER_COLL)
+        self.irods.collections.create(path)
+        output = self._call_output()
+        expected = (
+            f'{self.project.sodar_uuid};{self.project.full_title};'
+            f'{path};{OUT_SUFFIX}'
+        )
+        self.assertEqual(output, expected)
+
+    def test_command_assay_sub(self):
+        """Test command with accepted assay subcollection"""
+        self._setup_investigation()
+        path = iRODSPath(self.assay_path, MISC_FILES_COLL, USER_COLL)
+        self.irods.collections.create(path)
+        output = self._call_output()
+        self.assertEqual(output, '')
+
+    def test_command_assay_sub_multi_level(self):
+        """Test command with multi-level accepted assay subcollection"""
+        self._setup_investigation()
+        path = iRODSPath(
+            self.assay_path, MISC_FILES_COLL, USER_COLL, f'{USER_COLL}2'
+        )
+        self.irods.collections.create(path)
+        output = self._call_output()
+        self.assertEqual(output, '')
+
+    def test_command_assay_nested(self):
+        """Test command with nested assay plugin paths and no orphans"""
+        template = CUBI_TPL_DICT['microarray']
+        self._setup_investigation(template=template)
+        # NOTE: Yes, the template expects two levels of the same collection name
+        path = iRODSPath(
+            self.assay_path, RAW_DATA_COLL, MICROARRAY_COLL, MICROARRAY_COLL
+        )
+        self.irods.collections.create(path)
+        output = self._call_output()
+        self.assertEqual(output, '')
+
+    def test_command_assay_nested_add(self):
+        """Test command with added collection under nested assay plugin path"""
+        template = CUBI_TPL_DICT['microarray']
+        self._setup_investigation(template=template)
+        path = iRODSPath(
+            self.assay_path,
+            RAW_DATA_COLL,
+            MICROARRAY_COLL,
+            MICROARRAY_COLL,
+            USER_COLL,
+        )  # This should be OK
+        self.irods.collections.create(path)
+        output = self._call_output()
+        self.assertEqual(output, '')
+
+    def test_command_assay_nested_orphan_middle(self):
+        """Test command with nested assay paths and orphan in middle of path"""
+        template = CUBI_TPL_DICT['microarray']
+        self._setup_investigation(template=template)
+        orphan_path = iRODSPath(self.assay_path, RAW_DATA_COLL, USER_COLL)
+        # The last collection name is expected, but the parent one is not
+        child_path = iRODSPath(orphan_path, MICROARRAY_COLL)
+        self.irods.collections.create(child_path)
+        output = self._call_output()
+        # Parent collection should be reported
         expected = (
             f'{self.project.sodar_uuid};{self.project.full_title};'
             f'{orphan_path};{OUT_SUFFIX}'
         )
         self.assertEqual(output, expected)
 
-    def test_command_orphan_zone(self):
+    def test_command_assay_nested_orphan_end(self):
+        """Test command with nested assay paths and orphan in end of path"""
+        template = CUBI_TPL_DICT['microarray']
+        self._setup_investigation(template=template)
+        path = iRODSPath(
+            self.assay_path, RAW_DATA_COLL, MICROARRAY_COLL, USER_COLL
+        )
+        self.irods.collections.create(path)
+        output = self._call_output()
+        expected = (
+            f'{self.project.sodar_uuid};{self.project.full_title};'
+            f'{path};{OUT_SUFFIX}'
+        )
+        self.assertEqual(output, expected)
+
+    def test_command_zone(self):
+        """Test command with accepted landing zone collection"""
+        self._setup_investigation()
+        zone = self._get_zone()
+        self.assertTrue(
+            self.irods.collections.exists(self.irods_backend.get_path(zone))
+        )
+        output = self._call_output()
+        self.assertEqual(output, '')
+
+    def test_command_zone_orphan(self):
         """Test command with orphan landing zone collection"""
         self._setup_investigation()
-        self._get_zone()
-        orphan_path = iRODSPath(
-            self.irods_backend.get_path(self.project),
+        path = iRODSPath(
+            self.project_path,
             settings.IRODS_LANDING_ZONE_COLL,
             self.user.username,
             self.study.get_display_name().replace(' ', '_').lower(),
+            self.assay.get_display_name().replace(' ', '_').lower(),
             '20201031_123456',
         )
-        self.irods.collections.create(orphan_path)
+        self.irods.collections.create(path)
         output = self._call_output()
         expected = (
             f'{self.project.sodar_uuid};{self.project.full_title};'
-            f'{orphan_path};{OUT_SUFFIX}'
-        )
-        self.assertEqual(output, expected)
-
-    def test_command_orphan_project(self):
-        """Test command with orphan project"""
-        orphan_path = iRODSPath(
-            self.irods_backend.get_projects_path(), '11', DUMMY_UUID
-        )
-        self.irods.collections.create(orphan_path)
-        output = self._call_output()
-        expected = f'{DUMMY_UUID};{DELETED};{orphan_path};{OUT_SUFFIX}'
-        self.assertEqual(output, expected)
-
-    def test_command_orphan_assay_sub(self):
-        """Test command with orphan assay subcollection"""
-        self._setup_investigation()
-        orphan_path = iRODSPath(
-            self.irods_backend.get_path(self.assay), 'UnexpectedCollection'
-        )
-        self.irods.collections.create(orphan_path)
-        output = self._call_output()
-        expected = (
-            f'{self.project.sodar_uuid};{self.project.full_title};'
-            f'{orphan_path};{OUT_SUFFIX}'
+            f'{path};{OUT_SUFFIX}'
         )
         self.assertEqual(output, expected)
 
     def test_command_multiple(self):
         """Test command with multiple orphans"""
         self._setup_investigation()
-        orphan_path = iRODSPath(
-            self.irods_backend.get_path(self.project),
-            settings.IRODS_SAMPLE_COLL,
-            f'study_{uuid.uuid4()}',
-        )
-        self.irods.collections.create(orphan_path)
-        orphan_path2 = iRODSPath(
-            self.irods_backend.get_path(self.project),
+        path = iRODSPath(self.sample_path, f'study_{uuid.uuid4() }')
+        self.irods.collections.create(path)
+
+        path2 = iRODSPath(
+            self.project_path,
             settings.IRODS_LANDING_ZONE_COLL,
             self.user.username,
             self.study.get_display_name().replace(' ', '_').lower(),
+            self.assay.get_display_name().replace(' ', '_').lower(),
             '20201031_123456',
         )
-        self.irods.collections.create(orphan_path2)
+        self.irods.collections.create(path2)
+
         output = self._call_output()
         expected = (
             f'{self.project.sodar_uuid};{self.project.full_title};'
-            f'{orphan_path2};{OUT_SUFFIX}'
-        )
-        expected += (
+            f'{path};{OUT_SUFFIX}'
             f'{self.project.sodar_uuid};{self.project.full_title};'
-            f'{orphan_path};{OUT_SUFFIX}'
+            f'{path2};{OUT_SUFFIX}'
         )
         self.assertEqual(output, expected)
 
-    def test_command_output_order(self):
-        """Test command output order"""
-        self.maxDiff = None
-        self._setup_investigation()
-        orphan_path = iRODSPath(
-            self.irods_backend.get_path(self.project),
-            settings.IRODS_SAMPLE_COLL,
-            f'study_{uuid.uuid4()}',
-        )
-        self.irods.collections.create(orphan_path)
+    def test_command_multi_project(self):
+        """Test command with orphans in multiple projects"""
+        # self._setup_investigation()
+        path = iRODSPath(self.sample_path, f'study_{uuid.uuid4()}')
+        self.irods.collections.create(path)
 
         project2 = self.make_project(
             'TestProject2', PROJECT_TYPE_PROJECT, self.category
         )
         self.make_assignment(project2, self.user, self.role_owner)
-        orphan_path2 = iRODSPath(
+        path2 = iRODSPath(
             self.irods_backend.get_path(project2),
             settings.IRODS_SAMPLE_COLL,
             f'study_{uuid.uuid4()}',
         )
-        self.irods.collections.create(orphan_path2)
+        self.irods.collections.create(path2)
 
         output = self._call_output()
         expected = (
             f'{self.project.sodar_uuid};{self.project.full_title};'
-            f'{orphan_path};{OUT_SUFFIX}'
-        )
-        expected += (
+            f'{path};{OUT_SUFFIX}'
             f'{project2.sodar_uuid};{project2.full_title};'
-            f'{orphan_path2};{OUT_SUFFIX}'
+            f'{path2};{OUT_SUFFIX}'
         )
         self.assertEqual(output, expected)

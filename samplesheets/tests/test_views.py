@@ -179,12 +179,15 @@ class SheetTemplateCreateMixin:
                 ret[k] = json.dumps(v)
         return ret
 
-    def make_sheets_from_cubi_tpl(self, sheet_tpl: IsaTabTemplate):
+    def make_sheets_from_cubi_tpl(
+        self, sheet_tpl: IsaTabTemplate
+    ) -> Investigation:
         """
         Create investigation from CUBI templates by posting to the template
         create view.
 
         :param sheet_tpl: IsaTabTemplate object
+        :return: Investigation object
         """
         url = reverse(
             'samplesheets:template_create',
@@ -196,6 +199,7 @@ class SheetTemplateCreateMixin:
                 data=self.get_tpl_post_data(sheet_tpl),
             )
         self.assertEqual(response.status_code, 302, msg=sheet_tpl.name)
+        return Investigation.objects.get(project=self.project, active=True)
 
 
 class SamplesheetsViewTestBase(

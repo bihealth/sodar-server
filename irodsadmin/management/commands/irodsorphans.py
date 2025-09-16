@@ -1,17 +1,14 @@
 """Irodsorphans management command"""
 
-import re
 import sys
 
-from itertools import chain
-from typing import Optional, Union
+from typing import Optional
 
-from irods.collection import iRODSCollection
 from irods.path import iRODSPath
 from irods.session import iRODSSession
 
+from django.conf import settings
 from django.core.management.base import BaseCommand
-from django.db.models import QuerySet
 from django.template.defaultfilters import filesizeformat
 
 # Projectroles dependency
@@ -35,8 +32,8 @@ table_builder = SampleSheetTableBuilder()
 
 
 # Local constants
-DELETED = '<DELETED>'
-ERROR = '<ERROR>'
+OUT_PROJECT_DELETED = '<DELETED>'
+OUT_NONE = '<N/A>'
 
 
 class Command(BaseCommand):
@@ -48,30 +45,24 @@ class Command(BaseCommand):
         super().__init__()
         self.irods_backend = plugin_api.get_backend_api('omics_irods')
 
-    def _get_assay_colls(self, assays: Union[QuerySet, list]) -> list[str]:
-        """
-        Return a list of all assay collection names.
+    # Helpers ------------------------------------------------------------------
 
-        :param assays: QuerySet or list of Assay objects
-        :return: List of strings
+    def _get_expected_sample_paths(self, project: Project) -> list[str]:
         """
-        return [self.irods_backend.get_path(a) for a in assays]
+        Return expexted sample data collection paths for a project.
 
-    def _get_assay_subcolls(self, studies: Union[QuerySet, list]) -> list[str]:
-        """
-        Return a list of all assay row collection names.
-
-        :param studies: QuerySet or list of Study objects
+        :param project: Project object
         :return: List of strings
         """
         ret = []
+        studies = Study.objects.filter(investigation__project=project)
         for study in studies:
             try:
                 study_tables = table_builder.get_study_tables(
                     study, save_cache=False
                 )
             except Exception as ex:
-                logger.error(
+                raise Exception(
                     'Study table building exception for "{}" '
                     'in project "{}" ({}): {}'.format(
                         study.get_display_name(),
@@ -80,287 +71,184 @@ class Command(BaseCommand):
                         ex,
                     )
                 )
-                continue
 
-            for assay in study.assays.all():
-                assay_table = study_tables['assays'][str(assay.sodar_uuid)]
-                assay_plugin = assay.get_plugin()
+            study_path = self.irods_backend.get_path(study)
+            ret.append(study_path)
+            for assay in Assay.objects.filter(study=study):
                 assay_path = self.irods_backend.get_path(assay)
+                ret.append(assay_path)
+                assay_plugin = assay.get_plugin()
+                if not assay_plugin:
+                    continue
+                assay_table = study_tables['assays'][str(assay.sodar_uuid)]
+                for row in assay_table['table_data']:
+                    row_path = assay_plugin.get_row_path(
+                        row, assay_table, assay, assay_path
+                    )
+                    if row_path not in ret:
+                        ret.append(row_path)
+                shortcuts = assay_plugin.get_shortcuts(assay) or []
+                for shortcut in shortcuts:
+                    if shortcut['path'] not in ret:
+                        ret.append(shortcut['path'])
+                # Add default expected subcollections of assay collection
+                assay_path = self.irods_backend.get_path(assay)
+                ret.append(iRODSPath(assay_path, TRACK_HUBS_COLL))
+                ret.append(iRODSPath(assay_path, RESULTS_COLL))
+                ret.append(iRODSPath(assay_path, MISC_FILES_COLL))
+        return sorted(ret)
 
-                if assay_plugin:
-                    for row in assay_table['table_data']:
-                        row_path = assay_plugin.get_row_path(
-                            row, assay_table, assay, assay_path
-                        )
-                        if row_path not in ret:
-                            ret.append(row_path)
-                    shortcuts = assay_plugin.get_shortcuts(assay)
-                    if shortcuts:
-                        for shortcut in shortcuts:
-                            ret.append(shortcut['path'])
-
-                    # Add default expected subcollections of assay collection
-                    ret.append(iRODSPath(assay_path, TRACK_HUBS_COLL))
-                    ret.append(iRODSPath(assay_path, RESULTS_COLL))
-                    ret.append(iRODSPath(assay_path, MISC_FILES_COLL))
-        return ret
-
-    def _get_study_colls(self, studies: Union[QuerySet, list]) -> list[str]:
+    def _write_output(
+        self, irods: iRODSSession, path: str, project: Optional[Project]
+    ):
         """
-        Return a list of all study collection names.
+        Write output for orphaned iRODS collection.
 
-        :param studies: QuerySet or list of Study objects
-        :return: List of strings
+        :param irods: iRODSSession object
+        :param path: Full iRODS path (string)
+        :param project: Project object or None
         """
-        return [self.irods_backend.get_path(s) for s in studies]
+        stats = self.irods_backend.get_stats(irods, path)
+        ret = [
+            str(project.sodar_uuid) if project else OUT_NONE,
+            project.full_title if project else OUT_PROJECT_DELETED,
+            path,
+            str(stats['file_count']),
+            filesizeformat(stats['total_size']).replace(u'\xa0', ' '),
+        ]
+        sys.stdout.write(';'.join(ret) + '\n')
 
-    def _get_zone_colls(self) -> list[str]:
-        """
-        Return a list of all landing zone collection names that are not MOVED or
-        DELETED.
+    # Checking Methods ---------------------------------------------------------
 
-        :return: List of strings
+    def _check_orphan_projects(self, irods: iRODSSession):
         """
-        return [
-            self.irods_backend.get_path(lz)
-            for lz in LandingZone.objects.exclude(
+        Check for collections for orphaned projects, write output if found.
+
+        :param irods: iRODSSession object
+        """
+        project_uuids = [
+            str(u)
+            for u in Project.objects.filter(
+                type=PROJECT_TYPE_PROJECT
+            ).values_list('sodar_uuid', flat=True)
+        ]
+        projects_root = irods.collections.get(
+            self.irods_backend.get_projects_path()
+        )
+        for rc in projects_root.subcollections:
+            for pc in rc.subcollections:
+                if pc.path.split('/')[-1] not in project_uuids:
+                    self._write_output(irods, pc.path, None)
+
+    def _check_sample_data(self, irods: iRODSSession, project: Project):
+        """
+        Check for orphaned sample data in given project, write output if found.
+
+        :param irods: iRODSSession object
+        :param project: Project object
+        """
+        sample_path = self.irods_backend.get_sample_path(project)
+        if not irods.collections.exists(sample_path):
+            return  # Nothing to check
+        sample_coll = irods.collections.get(sample_path)
+        # Get expected study and assay colls
+        expected = self._get_expected_sample_paths(project)
+        # Precalculate path depths
+        ex_max_depth = (
+            max([len(e.split('/')) for e in expected])
+            if expected
+            else len(sample_path.split('/'))
+        )
+        # Get actual paths
+        colls = self.irods_backend.get_colls_recursively(sample_coll)
+        paths = [c.path for c in colls]
+        assay_depth = len(sample_path.split('/')) + 2
+
+        for p in paths:
+            # print(f'DEBUG: path={p}')
+            if p in expected:  # Exact path found = ok
+                continue
+            path_depth = len(p.split('/'))
+            ex_parent = '/'.join(p.split('/')[:ex_max_depth])
+            # Single-level max depth under assay and expected parent at max = ok
+            # (This catches most cases of self-declared colls under assays)
+            if (
+                ex_max_depth == assay_depth + 1
+                and path_depth > ex_max_depth
+                and ex_parent in expected
+            ):
+                continue
+            # Any child collections for this path are expected = ok
+            if any([e.startswith(p + '/') for e in expected]):
+                continue
+            # No expected neighbouring paths = ok
+            if path_depth > assay_depth + 1 and any(
+                [p.startswith(e + '/') for e in expected]
+            ):
+                parent = '/'.join(p.split('/')[:-1])
+                if not [
+                    e for e in expected if e.startswith(parent + '/') and e != p
+                ]:
+                    continue
+            # If we get this far, path is orphaned
+            self._write_output(irods, p, project)
+
+    def _check_landing_zones(self, irods: iRODSSession, project: Project):
+        """
+        Check for orphaned landing zone collections in given project, write
+        output if found.
+
+        :param irods: iRODSSession object
+        :param project: Project object
+        """
+        root_path = self.irods_backend.get_zone_path(project)
+        if not irods.collections.exists(root_path):
+            return  # Nothing to check
+        root_coll = irods.collections.get(root_path)
+        # Get expected paths
+        # NOTE: We don't exclude NOT_CREATED status here, as it's possible
+        #       creation failed after the zone collection was created
+        expected = [
+            self.irods_backend.get_path(z)
+            for z in LandingZone.objects.filter(project=project).exclude(
                 status__in=[ZONE_STATUS_MOVED, ZONE_STATUS_DELETED]
             )
         ]
+        # Get actual paths
+        # NOTE: We only care about the top level collections of zones here
+        zone_depth = len(root_path.split('/')) + 4
+        colls = self.irods_backend.get_colls_recursively(root_coll)
+        paths = [c.path for c in colls if len(c.path.split('/')) == zone_depth]
+        for p in paths:
+            if p not in expected:
+                self._write_output(irods, p, project)
 
-    def _get_project_colls(self) -> list[str]:
-        """
-        Return a list of all study collection names.
-
-        :return: List of strings
-        """
-        return [
-            self.irods_backend.get_path(p)
-            for p in Project.objects.filter(type=PROJECT_TYPE_PROJECT).order_by(
-                'full_title'
-            )
-        ]
-
-    def _is_zone(self, coll: iRODSCollection) -> Optional[re.Match[str]]:
-        """
-        Check if a given collection matches the format of path to a landing zone
-        collection.
-
-        :param coll: iRODSCollection object
-        :return: Match or None
-        """
-        projects_path = self.irods_backend.get_projects_path()
-        pattern = (
-            r'^'
-            + projects_path
-            + r'/([a-f0-9]{2})/\1[a-f0-9]{6}-([a-f0-9]{4}-){3}[a-f0-9]{12}/'
-            r'landing_zones'
-        )
-        return re.search(r'{}'.format(pattern), coll.path) and re.search(
-            r'^\d{8}_\d{6}', coll.name
-        )
-
-    def _is_assay_or_study(
-        self, coll: iRODSCollection
-    ) -> Optional[re.Match[str]]:
-        """
-        Check if a given collection matches the format of path to a study or
-        assay collection.
-
-        :param coll: iRODSCollection object
-        :return: Match or None
-        """
-        projects_path = self.irods_backend.get_projects_path()
-        pattern = (
-            r'^'
-            + projects_path
-            + r'/([a-f0-9]{2})/\1[a-f0-9]{6}-([a-f0-9]{4}-){3}[a-f0-9]{12}/.*/'
-            r'(assay|study)_[a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12}$'
-        )
-        return re.search(pattern, coll.path)
-
-    def _is_assay_orphan(
-        self, coll: iRODSCollection
-    ) -> Optional[re.Match[str]]:
-        """
-        Check if a given collection matches the format of path to a study or
-        assay orphan.
-
-        :param coll: iRODSCollection object
-        :return: Match or None
-        """
-        projects_path = self.irods_backend.get_projects_path()
-        pattern = (
-            r'^'
-            + projects_path
-            + r'/([a-f0-9]{2})/\1[a-f0-9]{6}-([a-f0-9]{4}-){3}[a-f0-9]{12}/.*/'
-            r'(assay|study)_[a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12}'
-        )
-        return re.search(pattern, coll.path)
-
-    @classmethod
-    def _is_project(
-        cls, projects_path: str, coll: iRODSCollection
-    ) -> Optional[re.Match[str]]:
-        """
-        Check if a given collection matches the format of path to a project
-        collection under the projects path.
-
-        :param projects_path: String
-        :param coll: iRODSCollection object
-        :return: Match or None
-        """
-        pattern = (
-            r'^'
-            + projects_path
-            + r'/([a-f0-9]{2})/\1[a-f0-9]{6}-([a-f0-9]{4}-){3}[a-f0-9]{12}$'
-        )
-        return re.search(r'{}'.format(pattern), coll.path)
-
-    def _sort_colls_on_projects(
-        self, colls: list[iRODSCollection]
-    ) -> list[iRODSCollection]:
-        """
-        Return list of sorted collections based on project list.
-
-        :param colls: List of Collection objects
-        :return: List of Collection objects
-        """
-        colls_with_project = []
-        colls_no_project = []
-        temp_paths = []
-
-        # Create a set of valid project paths based on project UUIDs
-        valid_project_paths = [
-            self.irods_backend.get_path(p)
-            for p in Project.objects.filter(type=PROJECT_TYPE_PROJECT).order_by(
-                'full_title'
-            )
-        ]
-
-        # Get the actual path to the projects collection
-        project_path = self.irods_backend.get_projects_path()
-        depth = len(project_path.split('/')) + 1
-        for coll in colls:
-            pattern = (
-                r'^'
-                + project_path
-                + r'/([a-f0-9]{2})/\1[a-f0-9]{6}-([a-f0-9]{4}-){3}[a-f0-9]{12}'
-            )
-            match = re.search(r'{}'.format(pattern), coll.path)
-            uuid = match.string.split('/')[depth] if match else ''
-            if (
-                uuid
-                and any(uuid in path for path in valid_project_paths)
-                and coll.path not in temp_paths
-            ):
-                colls_with_project.append(coll)
-                temp_paths.append(coll.path)
-            elif coll.path not in temp_paths:
-                colls_no_project.append(coll)
-                temp_paths.append(coll.path)
-
-        # Sort collections with project path based on project list
-        sorted_colls = sorted(
-            colls_with_project,
-            key=lambda coll: next(
-                (
-                    i
-                    for i, path in enumerate(valid_project_paths)
-                    if (
-                        coll.path.split('/')[depth]
-                        if len(coll.path.split('/')) > depth
-                        else ''
-                    )
-                    in path
-                ),
-                float('inf'),
-            ),
-        )
-        return sorted_colls + colls_no_project
-
-    def _get_orphans(
-        self,
-        irods: iRODSSession,
-        expected: list[str],
-        assays: Union[QuerySet, list],
-    ):
-        """
-        Return a list of orphans in a given irods session that are not in given
-        list of expected collections.
-
-        :param irods: iRODSSession object
-        :param expected: List of strings
-        :param assays: QuerySet or list of Assay objects
-        """
-        # Get a sorted list of all project collections
-        project_colls = sorted(
-            self.irods_backend.get_colls_recursively(
-                irods.collections.get(f'/{irods.zone}/projects')
-            ),
-            key=lambda coll: coll.path,
-        )
-        assay_colls = list(
-            chain.from_iterable(
-                self.irods_backend.get_child_colls(
-                    irods, self.irods_backend.get_path(a)
-                )
-                for a in assays
-                if a.get_plugin()
-            )
-        )
-        assay_coll_paths = [coll.path for coll in assay_colls]
-
-        # Sort collections by project full_title
-        sorted_colls = self._sort_colls_on_projects(project_colls + assay_colls)
-
-        projects_path = self.irods_backend.get_projects_path()
-        for collection in sorted_colls:
-            if (
-                self._is_zone(collection)
-                or self._is_assay_or_study(collection)
-                or self._is_project(projects_path, collection)
-                or collection.path in assay_coll_paths
-            ) and collection.path not in expected:
-                self._write_orphan(collection.path, irods)
-
-    def _write_orphan(self, path, irods):
-        stats = self.irods_backend.get_stats(irods, path)
-        projects_path = self.irods_backend.get_projects_path()
-        pattern = projects_path + r'/([^/]{2})/(\1[^/]+)'
-        m = re.search(pattern, path)
-        if m:
-            uuid = m.group(2)
-            try:
-                project = Project.objects.get(sodar_uuid=uuid)
-                title = project.full_title
-            except Project.DoesNotExist:
-                title = DELETED
-        else:
-            uuid = ERROR
-            title = ERROR
-        sys.stdout.write(
-            ';'.join(
-                [
-                    uuid,
-                    title,
-                    path,
-                    str(stats['file_count']),
-                    filesizeformat(stats['total_size']).replace(u'\xa0', ' '),
-                ]
-            )
-            + '\n'
-        )
+    # Command Handling ---------------------------------------------------------
 
     def handle(self, *args, **options):
-        studies = Study.objects.all()
-        assays = Assay.objects.all()
-        expected = [
-            *self._get_assay_colls(assays),
-            *self._get_study_colls(studies),
-            *self._get_zone_colls(),
-            *self._get_project_colls(),
-            *self._get_assay_subcolls(studies),
-        ]
         with self.irods_backend.get_session() as irods:
-            self._get_orphans(irods, expected, assays)
+            # Check for orphaned projects
+            self._check_orphan_projects(irods)
+            for project in Project.objects.filter(
+                type=PROJECT_TYPE_PROJECT
+            ).order_by('full_title'):
+                # Check for orphaned sample data collections
+                try:
+                    self._check_sample_data(irods, project)
+                except Exception as ex:
+                    logger.error(
+                        f'Exception in checking sample data for '
+                        f'{project.get_log_title()}: {ex}'
+                    )
+                    if settings.DEBUG:
+                        raise ex
+                # Check for orphaned landing zone collections
+                try:
+                    self._check_landing_zones(irods, project)
+                except Exception as ex:
+                    logger.error(
+                        f'Exception in checking landing zones for '
+                        f'{project.get_log_title()}: {ex}'
+                    )
+                    if settings.DEBUG:
+                        raise ex
