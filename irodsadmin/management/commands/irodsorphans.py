@@ -225,13 +225,33 @@ class Command(BaseCommand):
 
     # Command Handling ---------------------------------------------------------
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '-p',
+            '--project',
+            metavar='UUID',
+            type=str,
+            help='Limit check to a project',
+        )
+
     def handle(self, *args, **options):
         with self.irods_backend.get_session() as irods:
-            # Check for orphaned projects
-            self._check_orphan_projects(irods)
-            for project in Project.objects.filter(
-                type=PROJECT_TYPE_PROJECT
-            ).order_by('full_title'):
+            project_uuid = options.get('project')
+            if project_uuid:
+                projects = Project.objects.filter(
+                    type=PROJECT_TYPE_PROJECT, sodar_uuid=project_uuid
+                )
+                if not projects:
+                    logger.error(f'Project not found with UUID: {project_uuid}')
+                    sys.exit(1)
+            else:
+                # Check for orphaned projects
+                self._check_orphan_projects(irods)
+                projects = Project.objects.filter(
+                    type=PROJECT_TYPE_PROJECT
+                ).order_by('full_title')
+
+            for project in projects:
                 # Check for orphaned sample data collections
                 try:
                     self._check_sample_data(irods, project)

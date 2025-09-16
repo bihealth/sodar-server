@@ -20,6 +20,7 @@ Major feature update and SODAR Core 1.2 upgrade.
 - Add user opt-out settings for app alert notifications
 - Add landing zone settings retrieval REST API view
 - Add collection support for project file list REST API view
+- Add irodsorphans management command project limiting
 - Add syncstudytables management command check mode
 - Add Django setting to enable/disable remote sample sheet sync
 - Update assay tables to hide row links with no plugin enabled

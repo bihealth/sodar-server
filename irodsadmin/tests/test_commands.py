@@ -17,6 +17,7 @@ from django.core.management import call_command
 
 # Projectroles dependency
 from projectroles.constants import SODAR_CONSTANTS
+from projectroles.models import Project
 from projectroles.plugins import PluginAPI
 
 # Landingzones dependency
@@ -269,10 +270,13 @@ class TestIrodsOrphans(
         return zone
 
     @staticmethod
-    def _call_output() -> str:
+    def _call_output(project: Optional[Project] = None) -> str:
         """Call irodsorphans management command and return output"""
         sys.stdout = StringIO()
-        call_command('irodsorphans', stdout=sys.stdout)
+        options = {}
+        if project:
+            options['project'] = str(project.sodar_uuid)
+        call_command('irodsorphans', stdout=sys.stdout, **options)
         return sys.stdout.getvalue()
 
     def setUp(self):
@@ -482,7 +486,42 @@ class TestIrodsOrphans(
 
     def test_command_multi_project(self):
         """Test command with orphans in multiple projects"""
-        # self._setup_investigation()
+        path = iRODSPath(
+            self.irods_backend.get_projects_path(), '11', DUMMY_UUID
+        )
+        self.irods.collections.create(path)
+
+        path2 = iRODSPath(self.sample_path, f'study_{uuid.uuid4()}')
+        self.irods.collections.create(path2)
+
+        project2 = self.make_project(
+            'TestProject2', PROJECT_TYPE_PROJECT, self.category
+        )
+        self.make_assignment(project2, self.user, self.role_owner)
+        path3 = iRODSPath(
+            self.irods_backend.get_path(project2),
+            settings.IRODS_SAMPLE_COLL,
+            f'study_{uuid.uuid4()}',
+        )
+        self.irods.collections.create(path3)
+
+        output = self._call_output()
+        expected = (
+            f'{OUT_NONE};{OUT_PROJECT_DELETED};{path};{OUT_SUFFIX}'
+            f'{self.project.sodar_uuid};{self.project.full_title};'
+            f'{path2};{OUT_SUFFIX}'
+            f'{project2.sodar_uuid};{project2.full_title};'
+            f'{path3};{OUT_SUFFIX}'
+        )
+        self.assertEqual(output, expected)
+
+    def test_command_multi_project_limit(self):
+        """Test command with multiple projects and project limit"""
+        path = iRODSPath(
+            self.irods_backend.get_projects_path(), '11', DUMMY_UUID
+        )
+        self.irods.collections.create(path)
+
         path = iRODSPath(self.sample_path, f'study_{uuid.uuid4()}')
         self.irods.collections.create(path)
 
@@ -497,10 +536,9 @@ class TestIrodsOrphans(
         )
         self.irods.collections.create(path2)
 
-        output = self._call_output()
+        # Output for orphan project and self.project should be missing
+        output = self._call_output(project=project2)
         expected = (
-            f'{self.project.sodar_uuid};{self.project.full_title};'
-            f'{path};{OUT_SUFFIX}'
             f'{project2.sodar_uuid};{project2.full_title};'
             f'{path2};{OUT_SUFFIX}'
         )

@@ -14,6 +14,8 @@ Added
 - **General**
     - ``pyproject.toml`` configuration file (#2187)
     - Type hints (#2196)
+- **Irodsadmin**
+    - ``irodsorphans`` command optional project limiting (#2283)
 - **Irodsbackend**
     - Add ``setPeriodicStatsUpdate()`` in JQuery (#2243)
 - **Landingzones**
