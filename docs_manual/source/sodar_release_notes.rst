@@ -29,7 +29,7 @@ Major feature update and SODAR Core 1.2 upgrade.
 - :ref:`Upgrade Sample Sheets REST API version to v1.2 <api_samplesheets_version_1_2>`
 - Upgrade minimum supported iRODS version to v4.3.4
 - Upgrade supported development platform to Ubuntu 24.04
-- Upgrade to SODAR Core v1.2.1
+- Upgrade to SODAR Core v1.2.2
 - Remove landing zone access cleanup site app setting
 
 :ref:`Administrator upgrade guide for v1.2 <admin_upgrade_v1.2>`
