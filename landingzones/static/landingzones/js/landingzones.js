@@ -260,6 +260,11 @@ function updateFileList(
   if (!listUrl) {
     listUrl = $('#' + pageElemId).attr('data-url')
   }
+  // Add colls param to URL
+  if (listUrl.includes('?')) listUrl += '&'
+  else listUrl += '?'
+  listUrl += 'colls=' + $('#sodar-lz-zone-list').attr('data-file-list-colls')
+
   // Disable pagination buttons
   $('#sodar-lz-modal-page-item-prev').addClass('disabled')
   $('#sodar-lz-modal-page-item-next').addClass('disabled')
@@ -488,7 +493,8 @@ $(document).ready(function () {
 
   // iRODS dir list modal
   $('.sodar-lz-list-modal-btn').click(function () {
-    let hashScheme = $('#sodar-lz-zone-list').attr('data-hash-scheme')
+    let listElem = $('#sodar-lz-zone-list')
+    let hashScheme = listElem.attr('data-hash-scheme')
     let listUrl = $(this).attr('data-list-url')
     let checksumUrl = $(this).attr('data-checksum-url')
     let irodsPath = $(this).attr('data-irods-path')
@@ -504,6 +510,33 @@ $(document).ready(function () {
         .attr('id', 'sodar-lz-obj-list-title-page')
         .attr('class', 'ml-1')
       )
+
+    let fileListColls = parseInt(listElem.attr('data-file-list-colls'))
+    let collToggleTitles = ['Show collections', 'Hide collections']
+    let collToggleIcons = ['mdi:folder', 'mdi:folder-off']
+
+    let collToggleBtn = $('<button>')
+      .attr('id', 'sodar-lz-obj-list-coll-toggle-btn')
+      .attr('class', 'btn btn-secondary sodar-list-btn')
+      .attr('title', collToggleTitles[fileListColls])
+      .append($('<i>')
+        .attr('class', 'iconify')
+        .attr('data-icon', collToggleIcons[fileListColls])
+      ).click(function () {
+        fileListColls = 1 - fileListColls // Invert binary
+        listElem.attr('data-file-list-colls', fileListColls
+          .toString()
+        )
+        updateFileList(listUrl, webDavUrl, irodsPathLength,
+          checksumUrl)
+        $(this).attr('title', collToggleTitles[fileListColls])
+        $(this).html(
+          $('<i>').attr('class', 'iconify').attr(
+            'data-icon', collToggleIcons[fileListColls]
+          )
+        )
+      })
+    $('.modal-header-extra').html(collToggleBtn)
 
     let modalContainer = $('<div>').attr('id',
       'sodar-lz-obj-list-container')
@@ -521,8 +554,8 @@ $(document).ready(function () {
     let pageContainer = $('<div>')
       .attr('id', 'sodar-lz-obj-pagination')
     $('.modal-body').html(
-      modalContainer.append(table).append(pageContainer))
-
+      modalContainer.append(table).append(pageContainer)
+    )
     $('#sodar-modal').modal('show')
     updateFileList(listUrl, webDavUrl, irodsPathLength, checksumUrl)
   })

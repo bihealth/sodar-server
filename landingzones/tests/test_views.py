@@ -143,6 +143,7 @@ class TestProjectZoneView(ProjectLockMixin, ViewTestBase):
         self.assertEqual(rc['zone_validate_count'], 0)
         self.assertEqual(rc['zone_validate_limit'], 4)
         self.assertEqual(rc['zone_validate_limit_reached'], False)
+        self.assertEqual(rc['zone_file_list_colls'], True)
 
     def test_get_contrib(self):
         """Test GET as contributor"""
@@ -181,6 +182,16 @@ class TestProjectZoneView(ProjectLockMixin, ViewTestBase):
         self.assertEqual(response.context['zones'].count(), 2)
         self.assertEqual(response.context['zones'][0], self.zone)
         self.assertEqual(response.context['zones'][1], self.zone_contrib)
+
+    def test_get_zone_file_list_colls_false(self):
+        """Test GET with zone_file_list_colls=False"""
+        app_settings.set(
+            APP_NAME, 'zone_file_list_colls', False, user=self.user_owner
+        )
+        with self.login(self.user_owner):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['zone_file_list_colls'], False)
 
     @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
     def test_get_disable(self):

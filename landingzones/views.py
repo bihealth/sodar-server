@@ -571,11 +571,9 @@ class ProjectZoneView(
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
         project = context['project']
-        # iRODS backend
         context['irods_backend_enabled'] = (
             True if plugin_api.get_backend_api('omics_irods') else False
         )
-        # Landing zones
         zones = (
             LandingZone.objects.filter(project=project)
             .exclude(status__in=STATUS_FINISHED)
@@ -587,12 +585,13 @@ class ProjectZoneView(
         ):
             zones = zones.filter(user=self.request.user)
         context['zones'] = zones
-        # Status query interval
         context['zone_status_interval'] = settings.LANDINGZONES_STATUS_INTERVAL
-        # Disable status
         context['zone_access_disabled'] = (
             settings.LANDINGZONES_DISABLE_FOR_USERS
             and not self.request.user.is_superuser
+        )
+        context['zone_file_list_colls'] = app_settings.get(
+            APP_NAME, 'zone_file_list_colls', user=self.request.user
         )
         context.update(self.get_project_zone_info(project))
         return context

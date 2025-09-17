@@ -132,7 +132,8 @@
     {% endif %}
     <div class="card"
          id="sodar-lz-zone-list"
-         data-hash-scheme="{{ irods_hash_scheme }}">
+         data-hash-scheme="{{ irods_hash_scheme }}"
+         data-file-list-colls="{{ zone_file_list_colls|yesno:'1, 0' }}">
       <div class="card-body p-0">
         <table class="table table-striped sodar-card-table sodar-lz-table">
           <thead>
@@ -168,11 +169,12 @@
   {{ block.super }}
 
   <!-- Settings for Javascript -->
+  <!-- TODO: Refactor variables (see #2286) -->
   <script type="text/javascript">
     window.zoneStatusUpdated = false;
     window.statusInterval = {{ zone_status_interval }} * 1000;
-    var zoneStatusURL = "{% url 'landingzones:ajax_status' project=project.sodar_uuid %}";
-    var currentUserURL = "{% url 'projectroles:ajax_user_current' %}";
+    let zoneStatusURL = "{% url 'landingzones:ajax_status' project=project.sodar_uuid %}";
+    let currentUserURL = "{% url 'projectroles:ajax_user_current' %}";
   </script>
 
   <!-- Landingzones Javascript -->

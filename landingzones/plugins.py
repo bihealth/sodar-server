@@ -94,6 +94,13 @@ LANDINGZONES_APP_SETTINGS = [
         placeholder='xyz.gz,abc',
         user_modifiable=True,
     ),
+    PluginAppSettingDef(
+        name='zone_file_list_colls',
+        scope=APP_SETTING_SCOPE_USER,
+        type=APP_SETTING_TYPE_BOOLEAN,
+        default=True,
+        user_modifiable=False,  # Modification via zone file list modal UI
+    ),
 ]
 
 LANDINGZONES_INFO_SETTINGS = [
