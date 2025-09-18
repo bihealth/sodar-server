@@ -223,111 +223,108 @@
 
   {# Tour content #}
   <script type="text/javascript">
-    tourEnabled = true;
+    tourEnabled = true
     tour.addStep('sheet_version', {
-        title: 'Sample Sheet Versions',
-        text: 'In this view you can manage saved backup versions of the ' +
-              'project sample sheets. These versions are saved as ISA-Tab ' +
-              'files. They can be exported, compared, deleted or restored to ' +
-              'replace the currently active sheet version.',
-        advanceOn: '.docs-link click',
-        showCancelLink: true
-    });
+      title: 'Sample Sheet Versions',
+      text: 'In this view you can manage saved backup versions of the ' +
+            'project sample sheets. These versions are saved as ISA-Tab ' +
+            'files. They can be exported, compared, deleted or restored to ' +
+            'replace the currently active sheet version.',
+      advanceOn: '.docs-link click',
+      showCancelLink: true
+    })
     tour.addStep('sheet_version_list', {
-        title: 'Sheet Version List',
-        text: 'The saved sample sheet versions are displayed in this list. ' +
-              'They appear in the reverse chronological order, with the most ' +
-              'recently saved or restored version on top.',
-        attachTo: '#sodar-ss-version-table top',
+      title: 'Sheet Version List',
+      text: 'The saved sample sheet versions are displayed in this list. ' +
+            'They appear in the reverse chronological order, with the most ' +
+            'recently saved or restored version on top.',
+      attachTo: '#sodar-ss-version-table top',
+      advanceOn: '.docs-link click',
+      showCancelLink: true
+    })
+    if ($('.sodar-ss-version-item-title').length) {
+      tour.addStep('sheet_version_title', {
+        title: 'Sheet Version Title',
+        text: 'The sheet version title appears as a timestamp of its ' +
+              'creation. The title links to exporting the sheets as an ' +
+              'ISA-Tab Zip archive.',
+        attachTo: '.sodar-ss-version-item-title top',
         advanceOn: '.docs-link click',
         showCancelLink: true
-    });
-    if ($('.sodar-ss-version-item-title').length) {
-        tour.addStep('sheet_version_title', {
-            title: 'Sheet Version Title',
-            text: 'The sheet version title appears as a timestamp of its ' +
-                  'creation. The title links to exporting the sheets as an ' +
-                  'ISA-Tab Zip archive.',
-            attachTo: '.sodar-ss-version-item-title top',
-            advanceOn: '.docs-link click',
-            showCancelLink: true
-        });
+      })
     }
     if ($('.sodar-ss-version-item-desc').length) {
-        tour.addStep('sheet_version_desc', {
-            title: 'Sheet Version Description',
-            text: 'The optional description for a version is displayed here. ' +
-                  'This may be set by a user or automatically by SODAR.',
-            attachTo: '.sodar-ss-version-item-desc top',
-            advanceOn: '.docs-link click',
-            showCancelLink: true
-        });
+      tour.addStep('sheet_version_desc', {
+        title: 'Sheet Version Description',
+        text: 'The optional description for a version is displayed here. ' +
+              'This may be set by a user or automatically by SODAR.',
+        attachTo: '.sodar-ss-version-item-desc top',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+      })
     }
     if ($('.sodar-ss-version-item-tags').length) {
-        tour.addStep('sheet_version_tags', {
-            title: 'Sheet Version Tags',
-            text: 'Tags for the sheet version are displayed here. They ' +
-                  'inform of the origin of the version (importing, creating ' +
-                  'for template, using the sheet editor) as well as which ' +
-                  'one is the most recently saved version.',
-            attachTo: '.sodar-ss-version-item-tags top',
-            advanceOn: '.docs-link click',
-            showCancelLink: true
-        });
+      tour.addStep('sheet_version_tags', {
+        title: 'Sheet Version Tags',
+        text: 'Tags for the sheet version are displayed here. They ' +
+              'inform of the origin of the version (importing, creating ' +
+              'for template, using the sheet editor) as well as which ' +
+              'one is the most recently saved version.',
+        attachTo: '.sodar-ss-version-item-tags top',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+      })
     }
     if ($('.sodar-ss-version-item-parser').length) {
-        tour.addStep('sheet_version_parser', {
-            title: 'Parser Version',
-            text: 'The version of the AltamISA parser used to parse and ' +
-                  'validate the sample sheet version ISA-Tab is displayed ' +
-                  'here. Most of the time this is not significant, but in ' +
-                  'some cases upgrades in the parser may make SODAR reject ' +
-                  'restoring sheet versions parsed with an older version.',
-            attachTo: '.sodar-ss-version-item-parser top',
-            advanceOn: '.docs-link click',
-            showCancelLink: true
-        });
+      tour.addStep('sheet_version_parser', {
+        title: 'Parser Version',
+        text: 'The version of the AltamISA parser used to parse and ' +
+              'validate the sample sheet version ISA-Tab is displayed here. ' +
+              'Most of the time this is not significant, but in some cases ' +
+              'upgrades in the parser may make SODAR reject restoring sheet ' +
+              'versions parsed with an older version.',
+        attachTo: '.sodar-ss-version-item-parser top',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+      })
     }
     if ($('.sodar-ss-version-dropdown').length) {
-        tour.addStep('sheet_version_dropdown', {
-            title: 'Sheet Version Dropdown',
-            text: 'From the sheet version dropdown, you can export the ' +
-                  'version, update its description, replace the currently ' +
-                  'active sample sheets with the version or delete the ' +
-                  'version from SODAR.',
-            attachTo: '.sodar-ss-version-dropdown left',
-            advanceOn: '.docs-link click',
-            showCancelLink: true
-        });
+      tour.addStep('sheet_version_dropdown', {
+        title: 'Sheet Version Dropdown',
+        text: 'From the sheet version dropdown, you can export the version, ' +
+              'update its description, replace the currently active sample ' +
+              'sheets with the version or delete the version from SODAR.',
+        attachTo: '.sodar-ss-version-dropdown left',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+      })
     }
     if ($('#sodar-ss-version-check-all').length) {
-        tour.addStep('sheet_version_check', {
-            title: 'Sheet Version Checkboxes',
-            text: 'From these checkboxes you can select and unselect ' +
-                  'multiple sheet versions for comparison or deletion. To ' +
-                  'enable version comparison, exactly two versions must be ' +
-                  'selected.',
-            attachTo: '#sodar-ss-version-check-all left',
-            advanceOn: '.docs-link click',
-            showCancelLink: true
-        });
+      tour.addStep('sheet_version_check', {
+        title: 'Sheet Version Checkboxes',
+        text: 'From these checkboxes you can select and unselect multiple ' +
+              'sheet versions for comparison or deletion. To enable version ' +
+              'comparison, exactly two versions must be selected.',
+        attachTo: '#sodar-ss-version-check-all left',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+      })
     }
     tour.addStep('sheet_version_ops', {
-        title: 'Version Operations',
-        text: 'The version operations dropdown allows you to delete multiple ' +
-              'sample sheet versions at once, or compare two versions if ' +
-              'they have been selected using the checkboxes in the version ' +
-              'list.',
-        attachTo: '#sodar-ss-version-ops-dropdown-btn left',
-        advanceOn: '.docs-link click',
-        showCancelLink: true
-    });
+      title: 'Version Operations',
+      text: 'The version operations dropdown allows you to delete multiple ' +
+            'sample sheet versions at once, or compare two versions if they ' +
+            'have been selected using the checkboxes in the version list.',
+      attachTo: '#sodar-ss-version-ops-dropdown-btn left',
+      advanceOn: '.docs-link click',
+      showCancelLink: true
+    })
     tour.addStep('sheets_btn_back', {
-        title: 'Back to Project Sample Sheets',
-        text: 'Click on this button to return to the project sample sheets.',
-        attachTo: '#sodar-ss-btn-back left',
-        advanceOn: '.docs-link click',
-        showCancelLink: true
-    });
+      title: 'Back to Project Sample Sheets',
+      text: 'Click on this button to return to the project sample sheets.',
+      attachTo: '#sodar-ss-btn-back left',
+      advanceOn: '.docs-link click',
+      showCancelLink: true
+    })
   </script>
 {% endblock javascript %}

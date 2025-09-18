@@ -61,7 +61,7 @@ Changed
     - Refactor plugin helpers to use ``PluginAPI`` (#2187)
     - Move black configuration to ``pyproject.toml`` (#2187)
     - Reformat migrations (#2187)
-    - Reformat JQuery (#2187)
+    - Reformat JQuery (#2187, #2287)
     - Update format strings (#2197)
     - Refactor iRODS path handling (#2218)
     - Update ``test.py`` settings hardcoding (#2281)

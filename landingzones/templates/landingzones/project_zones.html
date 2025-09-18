@@ -181,183 +181,179 @@
 
   {# Tour content #}
   <script type="text/javascript">
-    tourEnabled = true;
+    tourEnabled = true
     tour.addStep('zone_info', {
-        title: 'Landing Zones',
-        text: 'In this view you can create and manage personal landing zones ' +
-              'for uploading data to the project sample data repository in ' +
-              'iRODS.',
-        advanceOn: '.docs-link click',
-        showCancelLink: true
-    });
+      title: 'Landing Zones',
+      text: 'In this view you can create and manage personal landing zones ' +
+            'for uploading data to the project sample data repository in ' +
+            'iRODS.',
+      advanceOn: '.docs-link click',
+      showCancelLink: true
+    })
     // No zones
     if ($('#sodar-lz-alert-no-zones').length) {
-        tour.addStep('no_zones', {
-            title: 'No Landing Zones Available',
-            text: 'No landing zones are currently available. See the alert ' +
-                  'box for instruction on how to proceed.',
-            attachTo: '#sodar-lz-alert-no-zones top',
-            advanceOn: '.docs-link click',
-            showCancelLink: true
-        });
+      tour.addStep('no_zones', {
+        title: 'No Landing Zones Available',
+        text: 'No landing zones are currently available. See the alert box ' +
+              'for instruction on how to proceed.',
+        attachTo: '#sodar-lz-alert-no-zones top',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+      })
     }
     if ($('#sodar-lz-zone-list').length) {
-        tour.addStep('own_zones', {
-            title: 'Project Zones',
-            text: 'The project landing zones you have access to are listed ' +
-                  'in this table.',
-            attachTo: '#sodar-lz-zone-list top',
-            advanceOn: '.docs-link click',
-            showCancelLink: true
-        });
+      tour.addStep('own_zones', {
+        title: 'Project Zones',
+        text: 'The project landing zones you have access to are listed in ' +
+              'this table.',
+        attachTo: '#sodar-lz-zone-list top',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+      })
     }
     if ($('#sodar-lz-buttons-list').length) {
-        tour.addStep('zone_operations', {
-            title: 'Zone Operations',
-            text: 'Create new zones or clear existing moved zones from this ' +
-                  'menu.',
-            attachTo: '#sodar-lz-buttons-list left',
-            advanceOn: '.docs-link click',
-            showCancelLink: true
-        });
+      tour.addStep('zone_operations', {
+        title: 'Zone Operations',
+        text: 'Create new zones or clear existing moved zones from this menu.',
+        attachTo: '#sodar-lz-buttons-list left',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+      })
     }
     // Table data
     if ($('.sodar-lz-table').length) {
-        tour.addStep('zone_title', {
-            title: 'Zone Title',
-            text: 'The title of each zone is shown in the leftmost column. ' +
-                  'The title is presented in the form of a time stamp of the ' +
-                  'creation date and an optional text idenfitier.',
-            attachTo: '.sodar-lz-list-header-title top',
-            advanceOn: '.docs-link click',
-            showCancelLink: true
-        });
-        tour.addStep('zone_assay', {
-            title: 'Zone Assay',
-            text: 'Each landing zone is specific to an assay within the ' +
-                  'project studies. This assay badge links to the assay in ' +
-                  'the Sample Sheets app.',
-            attachTo: '.sodar-lz-zone-badge-assay right',
-            advanceOn: '.docs-link click',
-            showCancelLink: true
-        });
-        if ($('.sodar-lz-zone-description-link').length) {
-            tour.addStep('zone_description', {
-                title: 'Zone Description',
-                text: 'Clicking on this icon will display an optional ' +
-                      'description for the landing zone.',
-                attachTo: '.sodar-lz-zone-description-link right',
-                advanceOn: '.docs-link click',
-                showCancelLink: true
-            });
-        }
-        if ($('.sodar-user-badge').length) {
-            tour.addStep('zone_user', {
-                title: 'Zone User',
-                text: 'For zones of other users, the user who created the ' +
-                      'zone is displayed as a badge.',
-                attachTo: '.sodar-user-badge right',
-                advanceOn: '.docs-link click',
-                showCancelLink: true
-            });
-        }
-        if ($('.sodar-lz-zone-badge-config').length) {
-            tour.addStep('zone_config', {
-                title: 'Zone Configuration',
-                text: 'For zones with a special configuration, the used ' +
-                      'configuration is displayed as a badge.',
-                attachTo: '.sodar-lz-zone-badge-config right',
-                advanceOn: '.docs-link click',
-                showCancelLink: true
-            });
-        }
-        if ($('.sodar-lz-zone-badge-warn-perms').length) {
-            tour.addStep('zone_perm_warning', {
-                title: 'Zone User Permission Warning',
-                text: 'For zones created by users who no longer have project ' +
-                      'permissions, a warning badge is displayed.',
-                attachTo: '.sodar-lz-zone-badge-warn-perms right',
-                advanceOn: '.docs-link click',
-                showCancelLink: true
-            });
-        }
-        tour.addStep('zone_status', {
-            title: 'Zone Status',
-            text: 'The status of each landing zone can be seen in this ' +
-                  'column. Available actions depend on the current status. ' +
-                  '"ACTIVE" zones are ones in which you can freely upload ' +
-                  'and modify files. "FAILED" zones have experienced ' +
-                  'problems in validation or transfer, which you can now ' +
-                  'correct.',
-            attachTo: '.sodar-lz-list-header-status top',
-            advanceOn: '.docs-link click',
-            showCancelLink: true
-        });
-        tour.addStep('zone_status_info', {
-            title: 'Zone Status Information',
-            text: 'Detailed information about the landing zone status can be ' +
-                  'found here along with current zone file size and file ' +
-                  'count.',
-            attachTo: '.sodar-lz-list-header-info top',
-            advanceOn: '.docs-link click',
-            showCancelLink: true
-        });
-        tour.addStep('zone_file_list', {
-            title: 'iRODS File List Modal',
-            text: 'You can see a flat list of landing zone collections and ' +
-                  'data objects by clicking this button.',
-            attachTo: '.sodar-lz-list-modal-btn left',
-            advanceOn: '.docs-link click',
-            showCancelLink: true
-        });
-        tour.addStep('zone_links', {
-            title: 'iRODS Links for Zone',
-            text: 'Links for iRODS access for available zone are presented ' +
-                  'in this column.',
-            attachTo: '.sodar-irods-btn-container left',
-            advanceOn: '.docs-link click',
-            showCancelLink: true
-        });
-        tour.addStep('zone_dropdown', {
-            title: 'Zone Dropdown',
-            text: 'From the zone dropdown, you can trigger the data ' +
-                  'validation and moving operation for moving your landing ' +
-                  'zone content into the project sample repository. Here you ' +
-                  'can also delete unwanted landing zones.',
-            attachTo: '.sodar-lz-zone-dropdown left',
-            advanceOn: '.docs-link click',
-            showCancelLink: true
-        });
+      tour.addStep('zone_title', {
+        title: 'Zone Title',
+        text: 'The title of each zone is shown in the leftmost column. The ' +
+              'title is presented in the form of a time stamp of the ' +
+              'creation date and an optional text idenfitier.',
+        attachTo: '.sodar-lz-list-header-title top',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+      })
+      tour.addStep('zone_assay', {
+        title: 'Zone Assay',
+        text: 'Each landing zone is specific to an assay within the project ' +
+              'studies. This assay badge links to the assay in the Sample ' +
+              'Sheets app.',
+        attachTo: '.sodar-lz-zone-badge-assay right',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+      })
+      if ($('.sodar-lz-zone-description-link').length) {
+        tour.addStep('zone_description', {
+          title: 'Zone Description',
+          text: 'Clicking on this icon will display an optional description ' +
+                'for the landing zone.',
+          attachTo: '.sodar-lz-zone-description-link right',
+          advanceOn: '.docs-link click',
+          showCancelLink: true
+        })
+      }
+      if ($('.sodar-user-badge').length) {
+        tour.addStep('zone_user', {
+          title: 'Zone User',
+          text: 'For zones of other users, the user who created the zone is ' +
+                'displayed as a badge.',
+          attachTo: '.sodar-user-badge right',
+          advanceOn: '.docs-link click',
+          showCancelLink: true
+        })
+      }
+      if ($('.sodar-lz-zone-badge-config').length) {
+        tour.addStep('zone_config', {
+          title: 'Zone Configuration',
+          text: 'For zones with a special configuration, the used ' +
+                'configuration is displayed as a badge.',
+          attachTo: '.sodar-lz-zone-badge-config right',
+          advanceOn: '.docs-link click',
+          showCancelLink: true
+        })
+      }
+      if ($('.sodar-lz-zone-badge-warn-perms').length) {
+        tour.addStep('zone_perm_warning', {
+          title: 'Zone User Permission Warning',
+          text: 'For zones created by users who no longer have project ' +
+                'permissions, a warning badge is displayed.',
+          attachTo: '.sodar-lz-zone-badge-warn-perms right',
+          advanceOn: '.docs-link click',
+          showCancelLink: true
+        })
+      }
+      tour.addStep('zone_status', {
+        title: 'Zone Status',
+        text: 'The status of each landing zone can be seen in this column. ' +
+              'Available actions depend on the current status. "ACTIVE" ' +
+              'zones are ones in which you can freely upload and modify ' +
+              'files. "FAILED" zones have experienced problems in validation ' +
+              'or transfer, which you can now correct.',
+        attachTo: '.sodar-lz-list-header-status top',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+      })
+      tour.addStep('zone_status_info', {
+        title: 'Zone Status Information',
+        text: 'Detailed information about the landing zone status can be ' +
+              'found here along with current zone file size and file count.',
+        attachTo: '.sodar-lz-list-header-info top',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+      })
+      tour.addStep('zone_file_list', {
+        title: 'iRODS File List Modal',
+        text: 'You can see a flat list of landing zone collections and data ' +
+              'objects by clicking this button.',
+        attachTo: '.sodar-lz-list-modal-btn left',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+      })
+      tour.addStep('zone_links', {
+        title: 'iRODS Links for Zone',
+        text: 'Links for iRODS access for available zone are presented in ' +
+              'this column.',
+        attachTo: '.sodar-irods-btn-container left',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+      })
+      tour.addStep('zone_dropdown', {
+        title: 'Zone Dropdown',
+        text: 'From the zone dropdown, you can trigger the data validation ' +
+              'and moving operation for moving your landing zone content ' +
+              'into the project sample repository. Here you can also delete ' +
+              'unwanted landing zones.',
+        attachTo: '.sodar-lz-zone-dropdown left',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+      })
     }
     // App Title Bar
     tour.addStep('create_limit_badge', {
-        title: 'Active Zones Badge',
-        text: 'This badge displays the current amount of zones in this ' +
-              'project and the per-project creation limit of new zones. ' +
-              'If no creation limit is set, the badge will display as ' +
-              '"unlimited".',
-        attachTo: '#sodar-lz-badge-create-limit bottom',
-        advanceOn: '.docs-link click',
-        showCancelLink: true
-    });
+      title: 'Active Zones Badge',
+      text: 'This badge displays the current amount of zones in this project ' +
+            'and the per-project creation limit of new zones. If no creation ' +
+            'limit is set, the badge will display as "unlimited".',
+      attachTo: '#sodar-lz-badge-create-limit bottom',
+      advanceOn: '.docs-link click',
+      showCancelLink: true
+    })
     tour.addStep('validate_limit_badge', {
-        title: 'Zone Validation Badge',
-        text: 'This badge displays the current amount of zones under ' +
-              'validation in this project, along with the per-project limit ' +
-              'for concurrent zone validation processes.',
-        attachTo: '#sodar-lz-badge-validate-limit bottom',
+      title: 'Zone Validation Badge',
+      text: 'This badge displays the current amount of zones under ' +
+            'validation in this project, along with the per-project limit ' +
+            'for concurrent zone validation processes.',
+      attachTo: '#sodar-lz-badge-validate-limit bottom',
+      advanceOn: '.docs-link click',
+      showCancelLink: true
+    })
+    if ($('#sodar-lz-btn-create-zone').length) {
+      tour.addStep('zone_create', {
+        title: 'Create Zone',
+        text: 'This button takes you to the landing zone creation form in ' +
+              'which you can set up a new zone.',
+        attachTo: '#sodar-lz-btn-create-zone left',
         advanceOn: '.docs-link click',
         showCancelLink: true
-    });
-    if ($('#sodar-lz-btn-create-zone').length) {
-        tour.addStep('zone_create', {
-            title: 'Create Zone',
-            text: 'This button takes you to the landing zone creation form ' +
-                  'in which you can set up a new zone.',
-            attachTo: '#sodar-lz-btn-create-zone left',
-            advanceOn: '.docs-link click',
-            showCancelLink: true
-        });
+      })
     }
   </script>
 {% endblock javascript %}
