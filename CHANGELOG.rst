@@ -76,6 +76,7 @@ Changed
     - Update app for ``public_access`` support (#2202)
     - Upgrade landingzones REST API version to v1.1 (#2174)
     - Move project sheet cache update to ``UpdateProjectSheetCacheTask`` (#2254)
+    - Refactor server side variables for JQuery (#2286)
 - **Samplesheets**
     - Update views for project access blocking support (#2233)
     - Update app for ``public_access`` support (#2202)

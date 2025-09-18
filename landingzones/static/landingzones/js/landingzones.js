@@ -5,7 +5,10 @@ let isSuperuser = false
  Zone status updating
  *********************/
 let updateZoneStatus = function () {
-  window.zoneStatusUpdated = false
+  let listElem = $('#sodar-lz-zone-list')
+  listElem.attr('data-status-updated', '0')
+  let listTable = $('#sodar-lz-table')
+  let zoneStatusUrl = listTable.attr('data-status-url')
   let zoneData = {}
   let createLimitBadge = $('#sodar-lz-badge-create-limit')
   let validateLimitBadge = $('#sodar-lz-badge-validate-limit')
@@ -27,7 +30,7 @@ let updateZoneStatus = function () {
   })
   // Make the POST request to retrieve zone statuses
   $.ajax({
-    url: zoneStatusURL,
+    url: zoneStatusUrl,
     method: 'POST',
     dataType: 'JSON',
     contentType: 'application/json',
@@ -209,7 +212,7 @@ let updateZoneStatus = function () {
         moveLink.removeClass('disabled')
       }
     })
-    window.zoneStatusUpdated = true
+    listElem.attr('data-status-updated', '1')
   })
 }
 
@@ -275,7 +278,7 @@ function updateFileList(
       dataType: 'json'
     })
     .done(function (data) {
-      // console.log(data); // DEBUG
+      // console.log(data) // DEBUG
       let rows = []
       let objPaths = []
 
@@ -447,15 +450,17 @@ $(document).ready(function () {
   /*********************
    Get superuser status
    *********************/
+  let listTable = $('#sodar-lz-table')
+  let currentUserUrl = listTable.attr('data-user-url')
   $.when(
     $.ajax({
-      url: currentUserURL,
+      url: currentUserUrl,
       method: 'GET',
       success: function (response) {
-        isSuperuser = response.is_superuser;
+        isSuperuser = response.is_superuser
       },
       error: function (response) {
-        isSuperuser = false;
+        isSuperuser = false
       }
     })
   ).then(function () {
@@ -463,11 +468,14 @@ $(document).ready(function () {
      Update zone status
      ******************/
     updateZoneStatus()
-    let statusInterval = window.statusInterval
+    let statusInterval = parseInt(listTable.attr(
+      'data-status-interval')) * 1000
     // Poll and update active zones
-    setInterval(function () {
-      updateZoneStatus();
-    }, statusInterval)
+    if (statusInterval) {
+      setInterval(function () {
+        updateZoneStatus()
+      }, statusInterval)
+    }
   })
   // Set up zone UUID copy button
   new ClipboardJS('.sodar-lz-zone-btn-copy')

@@ -15,17 +15,14 @@
 
 <link rel="stylesheet" type="text/css" href="{% static 'landingzones/css/landingzones.css' %}" />
 
-<!-- Settings for Javascript -->
-<script type="text/javascript">
-  window.statusInterval = {{ zone_status_interval }} * 5000;
-  var zoneStatusURL = "{% url 'landingzones:ajax_status' project=project.sodar_uuid %}";
-  var currentUserURL = "{% url 'projectroles:ajax_user_current' %}";
-</script>
-
 <!-- Landingzones Javascript -->
 <script type="text/javascript" src="{% static 'landingzones/js/landingzones.js' %}"></script>
 
-<table class="table table-striped sodar-card-table sodar-lz-table">
+<table class="table table-striped sodar-card-table sodar-lz-table"
+       id="sodar-lz-table"
+       data-status-interval="{{ zone_status_interval }}"
+       data-status-url="{% url 'landingzones:ajax_status' project=project.sodar_uuid %}"
+       data-user-url="{% url 'projectroles:ajax_user_current' %}">
   <thead>
     <tr>
       <th>Zone</th>

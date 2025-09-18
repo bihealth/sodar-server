@@ -88,7 +88,8 @@ class LandingZoneUITestBase(
     def wait_for_status_update(self):
         """Wait for JQuery landing zone status updates to finish"""
         for i in range(0, 20):
-            if self.selenium.execute_script('return window.zoneStatusUpdated'):
+            elem = self.selenium.find_element(By.ID, 'sodar-lz-zone-list')
+            if elem.get_attribute('data-status-updated') == '1':
                 return
             time.sleep(0.5)
 
