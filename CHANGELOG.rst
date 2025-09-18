@@ -88,6 +88,7 @@ Changed
     - Improve sheet overview layout (#2012, #2013)
     - Hide assay row links if no plugin enabled (#1454)
     - Hide project form sheet sync settings with ``SHEETS_SYNC_ENABLE`` unset (#2247)
+    - Set ``IRODS_WEBDAV_IGV_PROXY`` default to ``False`` (#2289)
 - **Taskflowbackend**
     - Update iRODS ACL handling for v4.3+ scheme (#2215)
     - Grant ``delete_object`` access instead of ``own`` for landing zone owner (#2215)

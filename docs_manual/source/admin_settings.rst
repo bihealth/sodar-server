@@ -162,7 +162,7 @@ iRODS WebDAV Settings
     ``True`` if the WebDAV is deployed on a different host than SODAR itself.
     This will avoid having to log in twice when opening a session file in IGV.
     If SODAR and the WebDAV are deployed on the same host, this should be set
-    ``False`` (boolean, default: ``True``).
+    ``False`` (boolean, default: ``False``).
 
 iRODS Backend Settings
 ----------------------
