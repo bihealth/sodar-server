@@ -705,16 +705,6 @@ IRODS_ENV_CLIENT = env.dict('IRODS_ENV_CLIENT', default={})
 # Optional iRODS certificate path on server
 IRODS_CERT_PATH = env.str('IRODS_CERT_PATH', None)
 
-# Taskflow backend settings
-# Connection timeout for taskflowbackend flows (other sessions not affected)
-TASKFLOW_IRODS_CONN_TIMEOUT = env.int('TASKFLOW_IRODS_CONN_TIMEOUT', 3600)
-TASKFLOW_LOCK_RETRY_COUNT = env.int('TASKFLOW_LOCK_RETRY_COUNT', 2)
-TASKFLOW_LOCK_RETRY_INTERVAL = env.int('TASKFLOW_LOCK_RETRY_INTERVAL', 3)
-# Interval in seconds for zone progress counters (0 for update on every file)
-TASKFLOW_ZONE_PROGRESS_INTERVAL = env.int('TASKFLOW_ZONE_PROGRESS_INTERVAL', 10)
-TASKFLOW_LOCK_ENABLED = True
-TASKFLOW_TEST_MODE = False  # Important to protect iRODS data
-
 # Samplesheets and Landingzones link settings
 IRODS_WEBDAV_ENABLED = env.bool('IRODS_WEBDAV_ENABLED', True)
 IRODS_WEBDAV_URL = env.str('IRODS_WEBDAV_URL', 'https://127.0.0.1')
@@ -732,6 +722,12 @@ IRODSBACKEND_STATUS_INTERVAL = env.int('IRODSBACKEND_STATUS_INTERVAL', 15)
 # Set batch query size for improving sequential iRODS query performance (#432)
 IRODS_QUERY_BATCH_SIZE = env.int('IRODS_QUERY_BATCH_SIZE', 24)
 
+
+# Isatemplates settings
+# Enable templates from cubi-isa-templates
+ISATEMPLATES_ENABLE_CUBI_TEMPLATES = env.bool(
+    'ISATEMPLATES_ENABLE_CUBI_TEMPLATES', True
+)
 
 # Samplesheets settings
 # Allow critical altamISA warnings on import
@@ -834,15 +830,21 @@ LZ_BIH_PROTEOMICS_SMB_USER = env.str(
 )
 LZ_BIH_PROTEOMICS_SMB_PASS = env.str('LZ_BIH_PROTEOMICS_SMB_PASS', 'CHANGE ME!')
 
+
 # Ontologyaccess settings
 ONTOLOGYACCESS_BULK_CREATE = env.int('ONTOLOGYACCESS_BULK_CREATE', 5000)
 ONTOLOGYACCESS_QUERY_LIMIT = env.int('ONTOLOGYACCESS_QUERY_LIMIT', 250)
 
-# Isatemplates settings
-# Enable templates from cubi-isa-templates
-ISATEMPLATES_ENABLE_CUBI_TEMPLATES = env.bool(
-    'ISATEMPLATES_ENABLE_CUBI_TEMPLATES', True
-)
+
+# Taskflowbackend settings
+# Connection timeout for taskflowbackend flows (other sessions not affected)
+TASKFLOW_IRODS_CONN_TIMEOUT = env.int('TASKFLOW_IRODS_CONN_TIMEOUT', 3600)
+TASKFLOW_LOCK_RETRY_COUNT = env.int('TASKFLOW_LOCK_RETRY_COUNT', 2)
+TASKFLOW_LOCK_RETRY_INTERVAL = env.int('TASKFLOW_LOCK_RETRY_INTERVAL', 3)
+# Interval in seconds for zone progress counters (0 for update on every file)
+TASKFLOW_ZONE_PROGRESS_INTERVAL = env.int('TASKFLOW_ZONE_PROGRESS_INTERVAL', 10)
+TASKFLOW_LOCK_ENABLED = True
+TASKFLOW_TEST_MODE = False  # Important to protect iRODS data
 
 
 # Settings for HTTP AuthBasic
