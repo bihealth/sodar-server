@@ -15,6 +15,7 @@ from landingzones.tests.test_models import (
     ZONE_TITLE,
     ZONE_DESC,
 )
+from landingzones.tests.test_views import LandingzonesViewTestMixin
 from landingzones.views_api import (
     LANDINGZONES_API_MEDIA_TYPE,
     LANDINGZONES_API_DEFAULT_VERSION,
@@ -36,6 +37,7 @@ SHEET_PATH = SHEET_DIR + 'i_small.zip'
 class ZoneAPIPermissionTestBase(
     LandingZoneMixin,
     SampleSheetIOMixin,
+    LandingzonesViewTestMixin,
     ProjectAPIPermissionTestBase,
 ):
     """Base class for landingzones REST API view permission tests"""
@@ -132,6 +134,19 @@ class TestZoneListAPIView(ZoneAPIPermissionTestBase):
         self.assert_response(self.url, self.bad_users, 403)
         self.assert_response(self.url, self.anonymous, 401)
 
+    def test_get_restrict(self):
+        """Test GET with zone_access_restrict"""
+        user_contrib2 = self.make_extra_contributor()
+        self.restrict_zone_access(self.user_contributor)
+        # NOTE: We allow listing of zones in case e.g. prior zones exist
+        self.assert_response(self.url, self.good_users + [user_contrib2], 200)
+        self.assert_response(self.url, self.bad_users, 403)
+        self.assert_response(self.url, self.anonymous, 401)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.user_no_roles, 403)
+            self.assert_response(self.url, self.anonymous, 401)
+
 
 class TestZoneRetrieveAPIView(ZoneAPIPermissionTestBase):
     """Tests for ZoneRetrieveAPIView permissions"""
@@ -143,23 +158,41 @@ class TestZoneRetrieveAPIView(ZoneAPIPermissionTestBase):
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
         # Create zone for project owner
-        zone = self.make_landing_zone(
+        self.zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
-            user=self.user_owner,
+            user=self.user_contributor,
             assay=self.assay,
             description=ZONE_DESC,
             configuration=None,
             config_data={},
         )
         self.url = reverse(
-            'landingzones:api_retrieve', kwargs={'landingzone': zone.sodar_uuid}
+            'landingzones:api_retrieve',
+            kwargs={'landingzone': self.zone.sodar_uuid},
         )
+        self.good_users = [
+            self.superuser,
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+        ]
+        self.bad_users = [
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_viewer_cat,
+            self.user_finder_cat,
+            self.user_guest,
+            self.user_viewer,
+            self.user_no_roles,
+        ]
 
     def test_get(self):
         """Test ZoneRetrieveAPIView GET"""
-        self.assert_response(self.url, self.good_users_owner, 200)
-        self.assert_response(self.url, self.bad_users_owner, 403)
+        self.assert_response(self.url, self.good_users, 200)
+        self.assert_response(self.url, self.bad_users, 403)
         self.assert_response(self.url, self.anonymous, 401)
         for role in self.guest_roles:
             self.project.set_public_access(role)
@@ -176,8 +209,8 @@ class TestZoneRetrieveAPIView(ZoneAPIPermissionTestBase):
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
-        self.assert_response(self.url, self.good_users_owner, 200)
-        self.assert_response(self.url, self.bad_users_owner, 403)
+        self.assert_response(self.url, self.good_users, 200)
+        self.assert_response(self.url, self.bad_users, 403)
         self.assert_response(self.url, self.anonymous, 401)
         for role in self.guest_roles:
             self.project.set_public_access(role)
@@ -194,8 +227,24 @@ class TestZoneRetrieveAPIView(ZoneAPIPermissionTestBase):
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
         self.set_site_read_only()
-        self.assert_response(self.url, self.good_users_owner, 200)
-        self.assert_response(self.url, self.bad_users_owner, 403)
+        self.assert_response(self.url, self.good_users, 200)
+        self.assert_response(self.url, self.bad_users, 403)
+        self.assert_response(self.url, self.anonymous, 401)
+
+    def test_get_restrict(self):
+        """Test GET with zone_access_restrict"""
+        user_contrib2 = self.make_extra_contributor()
+        self.restrict_zone_access(user_contrib2)
+        self.assert_response(self.url, self.good_users, 200)
+        self.assert_response(self.url, self.bad_users + [user_contrib2], 403)
+        self.assert_response(self.url, self.anonymous, 401)
+
+    def test_get_restrict_own_zone(self):
+        """Test GET with zone_access_restrict and own zone"""
+        user_contrib2 = self.make_extra_contributor()
+        self.restrict_zone_access(self.user_contributor)
+        self.assert_response(self.url, self.good_users, 200)
+        self.assert_response(self.url, self.bad_users + [user_contrib2], 403)
         self.assert_response(self.url, self.anonymous, 401)
 
 
@@ -210,7 +259,7 @@ class TestZoneUpdateAPIView(ZoneAPIPermissionTestBase):
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-        zone = self.make_landing_zone(
+        self.zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
             user=self.user_owner,
@@ -220,7 +269,8 @@ class TestZoneUpdateAPIView(ZoneAPIPermissionTestBase):
             config_data={},
         )
         self.url = reverse(
-            'landingzones:api_update', kwargs={'landingzone': zone.sodar_uuid}
+            'landingzones:api_update',
+            kwargs={'landingzone': self.zone.sodar_uuid},
         )
         self.post_data = {'description': 'Test description updated'}
 
@@ -377,6 +427,62 @@ class TestZoneUpdateAPIView(ZoneAPIPermissionTestBase):
             data=self.post_data,
         )
 
+    def test_patch_restrict(self):
+        """Test PATCH with zone_access_restrict"""
+        user_contrib2 = self.make_extra_contributor()
+        self.restrict_zone_access(user_contrib2)
+        self.assert_response_api(
+            self.url,
+            self.good_users_owner,
+            200,
+            method='PATCH',
+            data=self.post_data,
+            knox=True,
+        )
+        self.assert_response_api(
+            self.url,
+            self.bad_users_owner + [user_contrib2],
+            403,
+            method='PATCH',
+            data=self.post_data,
+            knox=True,
+        )
+        self.assert_response_api(
+            self.url,
+            self.anonymous,
+            401,
+            method='PATCH',
+            data=self.post_data,
+        )
+
+    def test_patch_restrict_own_zone(self):
+        """Test PATCH with zone_access_restrict and own zone"""
+        user_contrib2 = self.make_extra_contributor()
+        self.restrict_zone_access(self.user_contributor)
+        self.assert_response_api(
+            self.url,
+            self.good_users_owner,
+            200,
+            method='PATCH',
+            data=self.post_data,
+            knox=True,
+        )
+        self.assert_response_api(
+            self.url,
+            self.bad_users_owner + [user_contrib2],
+            403,
+            method='PATCH',
+            data=self.post_data,
+            knox=True,
+        )
+        self.assert_response_api(
+            self.url,
+            self.anonymous,
+            401,
+            method='PATCH',
+            data=self.post_data,
+        )
+
 
 class TestZoneSettingsRetrieveAPIView(ZoneAPIPermissionTestBase):
     """Tests for ZoneSettingsRetrieveAPIView permissions"""
@@ -427,6 +533,15 @@ class TestZoneSettingsRetrieveAPIView(ZoneAPIPermissionTestBase):
         """Test GET with site read-only mode"""
         self.set_site_read_only()
         self.assert_response(self.url, self.good_users, 200)
+        self.assert_response(self.url, self.bad_users, 403)
+        self.assert_response(self.url, self.anonymous, 401)
+
+    def test_get_restrict(self):
+        """Test GET with zone_access_restrict"""
+        user_contrib2 = self.make_extra_contributor()
+        self.restrict_zone_access(self.user_contributor)
+        # NOTE: This view is allowed despite restriction
+        self.assert_response(self.url, self.good_users + [user_contrib2], 200)
         self.assert_response(self.url, self.bad_users, 403)
         self.assert_response(self.url, self.anonymous, 401)
 

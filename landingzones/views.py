@@ -56,6 +56,7 @@ User = auth.get_user_model()
 
 # SODAR constants
 PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
+PROJECT_ROLE_CONTRIBUTOR = SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR']
 
 # Local constants
 APP_NAME = 'landingzones'
@@ -571,6 +572,7 @@ class ProjectZoneView(
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
         project = context['project']
+        user = self.request.user
         context['irods_backend_enabled'] = (
             True if plugin_api.get_backend_api('omics_irods') else False
         )
@@ -580,18 +582,28 @@ class ProjectZoneView(
             .order_by('title')
         )
         # Only show own zones to users without view_zone_all perm
-        if not self.request.user.has_perm(
-            'landingzones.view_zone_all', project
-        ):
-            zones = zones.filter(user=self.request.user)
+        if not user.has_perm('landingzones.view_zone_all', project):
+            zones = zones.filter(user=user)
         context['zones'] = zones
         context['zone_status_interval'] = settings.LANDINGZONES_STATUS_INTERVAL
         context['zone_access_disabled'] = (
-            settings.LANDINGZONES_DISABLE_FOR_USERS
-            and not self.request.user.is_superuser
+            settings.LANDINGZONES_DISABLE_FOR_USERS and not user.is_superuser
         )
         context['zone_file_list_colls'] = app_settings.get(
-            APP_NAME, 'zone_file_list_colls', user=self.request.user
+            APP_NAME, 'zone_file_list_colls', user=user
+        )
+        r_val = app_settings.get(
+            APP_NAME, 'zone_access_restrict', project=project
+        )
+        role_as = project.get_role(user)
+        context['zone_access_restricted'] = (
+            not user.is_superuser
+            and r_val not in ['', None]
+            and r_val != user.username
+            and role_as.role.rank >= ROLE_RANKING[PROJECT_ROLE_CONTRIBUTOR]
+        )
+        context['zone_access_restrict_user'] = (
+            User.objects.filter(username=r_val).first() if r_val else None
         )
         context.update(self.get_project_zone_info(project))
         return context

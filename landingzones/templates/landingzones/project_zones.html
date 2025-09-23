@@ -101,6 +101,14 @@
       <i class="iconify" data-icon="mdi:briefcase-variant-off"></i>
       Landing zone operations are disabled for non-superusers on this site.
     </div>
+  {% elif zone_access_restricted %}
+    {% get_user_html zone_access_restrict_user as restrict_user %}
+    <div class="alert alert-info" role="alert" id="sodar-lz-alert-restrict">
+      <i class="iconify" data-icon="mdi:account-lock"></i>
+      Contributor landing zone operations in this project have been restricted
+      to the user {{ restrict_user | safe }}. Contact a project owner or
+      delegate for more information.
+    </div>
   {% elif not investigation %}
     <div class="alert alert-warning" role="alert" id="sodar-lz-alert-no-sheets">
       <i class="iconify" data-icon="mdi:flask-empty-off"></i>

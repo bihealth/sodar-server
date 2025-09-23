@@ -1,5 +1,8 @@
 """Tests for UI views in the landingzones app"""
 
+from typing import Optional
+
+from django.contrib.auth import get_user_model
 from django.contrib.messages import get_messages
 from django.forms import HiddenInput
 from django.test import override_settings
@@ -38,6 +41,7 @@ from landingzones.views import ZONE_CREATE_LIMIT_MSG
 
 
 app_settings = AppSettingAPI()
+User = get_user_model()
 
 
 # SODAR constants
@@ -56,12 +60,41 @@ PROHIBIT_NAME = 'file_name_prohibit'
 PROHIBIT_VAL = 'bam,vcf.gz'
 
 
+class LandingzonesViewTestMixin:
+    """Helpers for landingzones view tests"""
+
+    def restrict_zone_access(self, user: Optional[User] = None):
+        """
+        Restrict landing zone access in project. If user is not given, restrict
+        access to self.user_contributor.
+
+        :param user: Restict access to user if set (User object, optional)
+        """
+        app_settings.set(
+            APP_NAME,
+            'zone_access_restrict',
+            user.username if user else self.user_contributor.username,
+            project=self.project,
+        )
+
+    def make_extra_contributor(self) -> User:
+        """
+        Make second contributor and set project access to test zone restricting.
+        """
+        user_contributor2 = self.make_user('user_contributor2')
+        self.make_assignment(
+            self.project, user_contributor2, self.role_contributor
+        )
+        return user_contributor2
+
+
 class ViewTestBase(
     ProjectMixin,
     RoleMixin,
     RoleAssignmentMixin,
     SampleSheetIOMixin,
     LandingZoneMixin,
+    LandingzonesViewTestMixin,
     TestCase,
 ):
     """Base class for landingzones view testing"""
@@ -144,6 +177,8 @@ class TestProjectZoneView(ProjectLockMixin, ViewTestBase):
         self.assertEqual(rc['zone_validate_limit'], 4)
         self.assertEqual(rc['zone_validate_limit_reached'], False)
         self.assertEqual(rc['zone_file_list_colls'], True)
+        self.assertEqual(rc['zone_access_restricted'], False)
+        self.assertEqual(rc['zone_access_restrict_user'], None)
 
     def test_get_contrib(self):
         """Test GET as contributor"""
@@ -206,6 +241,51 @@ class TestProjectZoneView(ProjectLockMixin, ViewTestBase):
         with self.login(self.user):
             response = self.client.get(self.url)
         self.assertEqual(response.context['zone_access_disabled'], False)
+
+    def test_get_restrict_contributor_same(self):
+        """Test GET with zone_access_restrict as same contributor"""
+        self.restrict_zone_access(self.user_contributor)
+        with self.login(self.user_contributor):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['zone_access_restricted'], False)
+        self.assertEqual(
+            response.context['zone_access_restrict_user'], self.user_contributor
+        )
+
+    def test_get_restrict_contributor_different(self):
+        """Test GET with zone_access_restrict as different contributor"""
+        self.restrict_zone_access(self.user_contributor)
+        user_contrib2 = self.make_extra_contributor()
+        with self.login(user_contrib2):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['zone_access_restricted'], True)
+        self.assertEqual(
+            response.context['zone_access_restrict_user'], self.user_contributor
+        )
+
+    def test_get_restrict_owner(self):
+        """Test GET with zone_access_restrict as owner"""
+        self.restrict_zone_access(self.user_contributor)
+        with self.login(self.user_owner):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['zone_access_restricted'], False)
+        self.assertEqual(
+            response.context['zone_access_restrict_user'], self.user_contributor
+        )
+
+    def test_get_restrict_superuser(self):
+        """Test GET with zone_access_restrict as superuser"""
+        self.restrict_zone_access(self.user_contributor)
+        with self.login(self.user):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['zone_access_restricted'], False)
+        self.assertEqual(
+            response.context['zone_access_restrict_user'], self.user_contributor
+        )
 
     def test_get_prohibit(self):
         """Test GET with file_name_prohibit enabled"""

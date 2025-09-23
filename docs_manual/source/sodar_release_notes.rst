@@ -18,6 +18,7 @@ Major feature update and SODAR Core 1.2 upgrade.
 - :ref:`Add sample sheets study and assay details modal <app_samplesheets_browse_table_detail>`
 - Add assay details in sheet overview
 - Add user opt-out settings for app alert notifications
+- :ref:`Add landing zone contributor access restricting <app_landingzones_create_restrict>`
 - Add landing zone file list modal collection display toggling
 - Add landing zone settings retrieval REST API view
 - Add collection support for project file list REST API view

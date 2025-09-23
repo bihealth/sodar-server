@@ -5,6 +5,7 @@ import logging
 from typing import Optional, Union
 from uuid import UUID
 
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from djangoplugins.point import PluginPoint
@@ -39,9 +40,11 @@ from landingzones.views import ZoneModifyMixin
 
 logger = logging.getLogger(__name__)
 plugin_api = PluginAPI()
+User = get_user_model()
 
 
 # SODAR constants
+PROJECT_ROLE_CONTRIBUTOR = SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR']
 PROJECT_ROLE_GUEST = SODAR_CONSTANTS['PROJECT_ROLE_GUEST']
 APP_SETTING_SCOPE_PROJECT = SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT']
 APP_SETTING_SCOPE_USER = SODAR_CONSTANTS['APP_SETTING_SCOPE_USER']
@@ -101,6 +104,18 @@ LANDINGZONES_APP_SETTINGS = [
         default=True,
         user_modifiable=False,  # Modification via zone file list modal UI
     ),
+    PluginAppSettingDef(
+        name='zone_access_restrict',
+        scope=APP_SETTING_SCOPE_PROJECT,
+        type=APP_SETTING_TYPE_STRING,
+        default='',
+        label='Restrict zone contributor access',
+        description='Restrict landing zone contributor access to a specific '
+        'user. The user must have a contributor role in project. Owners and '
+        'delegates can still access landing zones if set.',
+        placeholder='username or username@DOMAIN',
+        user_modifiable=True,
+    ),
 ]
 
 LANDINGZONES_INFO_SETTINGS = [
@@ -130,6 +145,9 @@ LZ_PROJECT_COL_NO_ZONES = (
     'class="sodar-lz-project-list-none" '
     'title="No available landing zones"></i></span>'
 )
+
+ACCESS_RESTRICT_NO_USER_MSG = 'User not found'
+ACCESS_RESTRICT_NO_ROLE_MSG = 'User does not have contributor role in project'
 
 
 # Landingzones project app plugin ----------------------------------------------
@@ -351,6 +369,38 @@ class ProjectAppPlugin(
                     continue  # Skip if already there
                 logger.info(f'Syncing landing zone "{zone.title}"..')
                 self.submit_create(zone, create_colls=True, sync=True)
+
+    def validate_form_app_settings(
+        self,
+        app_settings: dict,
+        project: Optional[Project] = None,
+        user: Optional[SODARUser] = None,
+    ) -> Optional[dict]:
+        """
+        Validate app settings form data and return a dict of errors.
+
+        :param app_settings: Dict of app settings
+        :param project: Project object or None
+        :param user: User object or None
+        :return: dict in format of {setting_name: 'Error string'}
+        """
+        s_name = 'zone_access_restrict'
+        access_restrict = app_settings.get(s_name)
+        if not access_restrict:
+            return None
+        user = User.objects.filter(username=access_restrict).first()
+        if not user:
+            return {s_name: ACCESS_RESTRICT_NO_USER_MSG}
+        # NOTE: We can't evaluate inherited role on project creation because
+        #       we lack parent info (see bihealth/sodar-core#1771)
+        if project.pk:  # Updating an existing project
+            role_as = project.get_role(user)
+            if (
+                not role_as
+                or role_as.role.rank != ROLE_RANKING[PROJECT_ROLE_CONTRIBUTOR]
+            ):
+                return {s_name: ACCESS_RESTRICT_NO_ROLE_MSG}
+        return None
 
 
 # Landingzones configuration sub-app plugin ------------------------------------

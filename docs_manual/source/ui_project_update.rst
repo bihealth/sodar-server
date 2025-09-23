@@ -58,6 +58,11 @@ Prohibited file types
     add related file suffixes here as a comma-separated list. The file suffixes
     will be checked during landing zone validation. For more information, see
     :ref:`app_landingzones_transfer_prohibit`.
+Restrict zone contributor access
+    Restrict landing zone contributor access to a specific user. The user must
+    have a contributor role in project. Owners and delegates can still access
+    landing zones if set. For more information, see
+    :ref:`app_landingzones_create_restrict`.
 Allow sample sheet editing
     Enable or disable editability of sample sheets in the project.
 Enable sheet synchronization

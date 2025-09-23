@@ -1,5 +1,6 @@
 """Tests for plugins in the landingzones app"""
 
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.urls import reverse
 
@@ -23,12 +24,17 @@ from landingzones.plugins import (
     LZ_PROJECT_COL_ACTIVE,
     LZ_PROJECT_COL_CREATE,
     LZ_PROJECT_COL_NO_ZONES,
+    ACCESS_RESTRICT_NO_ROLE_MSG,
+    ACCESS_RESTRICT_NO_USER_MSG,
 )
 from landingzones.tests.test_models import (
     LandingZoneMixin,
     ZONE_TITLE,
     ZONE_DESC,
 )
+
+
+User = get_user_model()
 
 
 # SODAR constants
@@ -40,6 +46,8 @@ PROJECT_TYPE_CATEGORY = SODAR_CONSTANTS['PROJECT_TYPE_CATEGORY']
 SHEET_PATH_SMALL2 = SHEET_DIR + 'i_small2.zip'
 MODEL_STR = 'LandingZone'
 ZONE_COL_ID = 'zones'
+ZONE_ACCESS_RESTRICT = 'zone_access_restrict'
+INVALID_USER = 'INVALID_USER_NAME'
 
 
 class LandingzonesPluginTestBase(
@@ -473,3 +481,80 @@ class TestGetProjectListValue(LandingzonesPluginTestBase):
             'INVALID_COLUMN', self.project, self.user_owner
         )
         self.assertEqual(res, '')
+
+
+class TestValidateFormAppSettings(LandingzonesPluginTestBase):
+    """Tests for validate_form_app_settings()"""
+
+    def setUp(self):
+        super().setUp()
+        self.user_assign = self.make_user('user_assign')
+        self.app_set = {ZONE_ACCESS_RESTRICT: self.user_assign.username}
+
+    def test_validate_restrict_contributor(self):
+        """Test zone_access_restrict validation with contributor role"""
+        self.make_assignment(
+            self.project, self.user_assign, self.role_contributor
+        )
+        self.assertIsNone(
+            self.plugin.validate_form_app_settings(self.app_set, self.project)
+        )
+
+    def test_validate_restrict_contributor_inherit(self):
+        """Test zone_access_restrict validation with inherited contributor role"""
+        self.make_assignment(
+            self.category, self.user_assign, self.role_contributor
+        )
+        self.assertIsNone(
+            self.plugin.validate_form_app_settings(self.app_set, self.project)
+        )
+
+    def test_validate_restrict_delegate(self):
+        """Test zone_access_restrict validation with delegate role (should fail)"""
+        self.make_assignment(self.project, self.user_assign, self.role_delegate)
+        self.assertEqual(
+            self.plugin.validate_form_app_settings(self.app_set, self.project),
+            {ZONE_ACCESS_RESTRICT: ACCESS_RESTRICT_NO_ROLE_MSG},
+        )
+
+    def test_validate_restrict_guest(self):
+        """Test zone_access_restrict validation with guest role (should fail)"""
+        self.make_assignment(self.project, self.user_assign, self.role_guest)
+        self.assertEqual(
+            self.plugin.validate_form_app_settings(self.app_set, self.project),
+            {ZONE_ACCESS_RESTRICT: ACCESS_RESTRICT_NO_ROLE_MSG},
+        )
+
+    def test_validate_restrict_no_role(self):
+        """Test zone_access_restrict validation with no role"""
+        self.assertIsNone(self.project.get_role(self.user_assign))
+        self.assertEqual(
+            self.plugin.validate_form_app_settings(self.app_set, self.project),
+            {ZONE_ACCESS_RESTRICT: ACCESS_RESTRICT_NO_ROLE_MSG},
+        )
+
+    def test_validate_restrict_no_role_new_project(self):
+        """Test zone_access_restrict validation with no role and new project"""
+        # NOTE: This should not work but can't be validated yet, see
+        #       bihealth/sodar-core#1771
+        self.project.pk = None  # Mock project under creation
+        self.assertIsNone(self.project.get_role(self.user_assign))
+        self.assertIsNone(
+            self.plugin.validate_form_app_settings(self.app_set, self.project)
+        )
+
+    def test_validate_restrict_no_user(self):
+        """Test zone_access_restrict validation with no user"""
+        self.assertIsNone(User.objects.filter(username=INVALID_USER).first())
+        self.app_set[ZONE_ACCESS_RESTRICT] = INVALID_USER
+        self.assertEqual(
+            self.plugin.validate_form_app_settings(self.app_set, self.project),
+            {ZONE_ACCESS_RESTRICT: ACCESS_RESTRICT_NO_USER_MSG},
+        )
+
+    def test_validate_restrict_empty_value(self):
+        """Test zone_access_restrict validation with empty value"""
+        self.app_set[ZONE_ACCESS_RESTRICT] = ''
+        self.assertIsNone(
+            self.plugin.validate_form_app_settings(self.app_set, self.project)
+        )

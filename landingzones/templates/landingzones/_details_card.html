@@ -6,6 +6,7 @@
 
 {% check_backend 'omics_irods' as irods_backend_enabled %}
 {% get_django_setting 'LANDINGZONES_STATUS_INTERVAL' as zone_status_interval %}
+{% get_app_setting 'landingzones' 'zone_access_restrict' project=project as access_restrict %}
 
 {% if irods_backend_enabled %}
   {% load irodsbackend_tags %}
@@ -18,6 +19,12 @@
 <!-- Landingzones Javascript -->
 <script type="text/javascript" src="{% static 'landingzones/js/landingzones.js' %}"></script>
 
+{% if access_restrict and role.name == 'project contributor' and access_restrict != request.user.username %}
+  <p class="w-100 mt-3 text-center" id="sodar-lz-detail-info-restrict">
+    Contributor access to landing zones in this project has been restricted.
+    Contact a project owner or delegate for more information.
+  </p>
+{% else %}
 <table class="table table-striped sodar-card-table sodar-lz-table"
        id="sodar-lz-table"
        data-status-interval="{{ zone_status_interval }}"
@@ -45,3 +52,4 @@
     {% endif %}
   </tbody>
 </table>
+{% endif %}

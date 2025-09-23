@@ -17,6 +17,7 @@ from landingzones.tests.test_models import (
     ZONE_TITLE,
     ZONE_DESC,
 )
+from landingzones.tests.test_views import LandingzonesViewTestMixin
 from landingzones.tests.test_views_taskflow import LandingZoneTaskflowMixin
 
 
@@ -37,6 +38,7 @@ class ZonePermissionTaskflowTestBase(
     LandingZoneMixin,
     LandingZoneTaskflowMixin,
     SampleSheetIOMixin,
+    LandingzonesViewTestMixin,
     TaskflowPermissionTestBase,
 ):
     """Base view for landingzones permissions tests with taskflow"""
@@ -135,3 +137,71 @@ class TestZoneMoveView(ZonePermissionTaskflowTestBase):
         """Test GET with disabled non-superuser access"""
         self.assert_response(self.url, self.superuser, 200)
         self.assert_response(self.url, self.non_superusers, 302)
+
+    def test_get_restrict(self):
+        """Test GET with zone_access_restrict"""
+        user_contrib2 = self.make_extra_contributor()
+        self.restrict_zone_access(user_contrib2)
+        good_users = [
+            self.superuser,
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_owner,
+            self.user_delegate,
+        ]
+        bad_users = [
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_viewer_cat,
+            self.user_finder_cat,
+            self.user_contributor,
+            user_contrib2,
+            self.user_guest,
+            self.user_viewer,
+            self.user_no_roles,
+            self.anonymous,
+        ]
+        self.assert_response(self.url, good_users, 200)
+        self.assert_response(self.url, bad_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_restrict_own_zone(self):
+        """Test GET with zone_access_restrict and own zone"""
+        user_contrib2 = self.make_extra_contributor()
+        self.restrict_zone_access(self.user_contributor)
+        good_users = [
+            self.superuser,
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+        ]
+        bad_users = [
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_viewer_cat,
+            self.user_finder_cat,
+            user_contrib2,
+            self.user_guest,
+            self.user_viewer,
+            self.user_no_roles,
+            self.anonymous,
+        ]
+        self.assert_response(self.url, good_users, 200)
+        self.assert_response(self.url, bad_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
+
+    @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
+    def test_get_restrict_own_zone_disable(self):
+        """Test GET with zone_access_restrict, own zone and disabled non-superuser access"""
+        user_contrib2 = self.make_extra_contributor()
+        self.restrict_zone_access(self.user_contributor)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(
+            self.url, self.non_superusers + [user_contrib2], 302
+        )

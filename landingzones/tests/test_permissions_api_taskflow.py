@@ -22,6 +22,7 @@ from landingzones.constants import (
     ZONE_STATUS_PREPARING,
 )
 from landingzones.tests.test_models import LandingZoneMixin
+from landingzones.tests.test_views import LandingzonesViewTestMixin
 from landingzones.tests.test_views_taskflow import (
     LandingZoneTaskflowMixin,
     ZONE_TITLE,
@@ -43,6 +44,7 @@ class ZoneAPIPermissionTaskflowTestBase(
     LandingZoneMixin,
     LandingZoneTaskflowMixin,
     PermissionTestMixin,
+    LandingzonesViewTestMixin,
     TaskflowAPIPermissionTestBase,
 ):
     """Base class for landing zone permission tests with Taskflow"""
@@ -59,7 +61,7 @@ class ZoneAPIPermissionTaskflowTestBase(
         self.make_irods_colls(self.investigation)
 
 
-class TestZoneCreateAPIViewPermissions(ZoneAPIPermissionTaskflowTestBase):
+class TestZoneCreateAPIView(ZoneAPIPermissionTaskflowTestBase):
     """Tests for ZoneCreateAPIView permissions with Taskflow"""
 
     def _get_post_data(self) -> dict:
@@ -276,17 +278,89 @@ class TestZoneCreateAPIViewPermissions(ZoneAPIPermissionTaskflowTestBase):
                 data=self._get_post_data(),
             )
 
+    def test_post_restrict(self):
+        """Test POST with zone_access_restrict"""
+        user_contrib2 = self.make_extra_contributor()
+        self.restrict_zone_access(self.user_contributor)
+        good_users = [
+            self.superuser,
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+        ]
+        bad_users = [
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_viewer_cat,
+            self.user_finder_cat,
+            user_contrib2,
+            self.user_guest,
+            self.user_viewer,
+            self.user_no_roles,
+        ]
+        self.assert_response_api(
+            self.url, good_users, 201, method='POST', data=self._get_post_data()
+        )
+        self.assert_response_api(
+            self.url, bad_users, 403, method='POST', data=self._get_post_data()
+        )
+        self.assert_response_api(
+            self.url,
+            self.anonymous,
+            401,
+            method='POST',
+            data=self._get_post_data(),
+        )
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response_api(
+                self.url,
+                self.user_no_roles,
+                403,
+                method='POST',
+                data=self._get_post_data(),
+            )
 
-class TestZoneSubmitDeleteAPIViewPermissions(ZoneAPIPermissionTaskflowTestBase):
+    @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
+    def test_post_restrict_disable(self):
+        """Test POST with zone_access_restrict and disabled non-superuser access"""
+        user_contrib2 = self.make_extra_contributor()
+        self.restrict_zone_access(self.user_contributor)
+        self.assert_response_api(
+            self.url,
+            self.superuser,
+            201,
+            method='POST',
+            data=self._get_post_data(),
+        )
+        self.assert_response_api(
+            self.url,
+            self.auth_non_superusers + [user_contrib2],
+            403,
+            method='POST',
+            data=self._get_post_data(),
+        )
+        self.assert_response_api(
+            self.url,
+            self.anonymous,
+            401,
+            method='POST',
+            data=self._get_post_data(),
+        )
+
+
+class TestZoneSubmitDeleteAPIView(ZoneAPIPermissionTaskflowTestBase):
     """Tests for ZoneSubmitDeleteAPIView permissions with Taskflow"""
 
     def _cleanup(self):
-        self.landing_zone.status = ZONE_STATUS_ACTIVE
-        self.landing_zone.save()
+        self.zone.status = ZONE_STATUS_ACTIVE
+        self.zone.save()
 
     def setUp(self):
         super().setUp()
-        self.landing_zone = self.make_landing_zone(
+        self.zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
             user=self.user_contributor,  # NOTE: Contributor is owner
@@ -295,10 +369,10 @@ class TestZoneSubmitDeleteAPIViewPermissions(ZoneAPIPermissionTaskflowTestBase):
             configuration=None,
             config_data={},
         )
-        self.make_zone_taskflow(self.landing_zone)
+        self.make_zone_taskflow(self.zone)
         self.url = reverse(
             'landingzones:api_submit_delete',
-            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+            kwargs={'landingzone': self.zone.sodar_uuid},
         )
         self.good_users = [
             self.superuser,
@@ -327,18 +401,8 @@ class TestZoneSubmitDeleteAPIViewPermissions(ZoneAPIPermissionTaskflowTestBase):
             method='POST',
             cleanup_method=self._cleanup,
         )
-        self.assert_response_api(
-            self.url,
-            self.bad_users,
-            403,
-            method='POST',
-        )
-        self.assert_response_api(
-            self.url,
-            self.anonymous,
-            401,
-            method='POST',
-        )
+        self.assert_response_api(self.url, self.bad_users, 403, method='POST')
+        self.assert_response_api(self.url, self.anonymous, 401, method='POST')
         self.assert_response_api(
             self.url,
             self.good_users,
@@ -376,18 +440,8 @@ class TestZoneSubmitDeleteAPIViewPermissions(ZoneAPIPermissionTaskflowTestBase):
             method='POST',
             cleanup_method=self._cleanup,
         )
-        self.assert_response_api(
-            self.url,
-            self.bad_users,
-            403,
-            method='POST',
-        )
-        self.assert_response_api(
-            self.url,
-            self.anonymous,
-            401,
-            method='POST',
-        )
+        self.assert_response_api(self.url, self.bad_users, 403, method='POST')
+        self.assert_response_api(self.url, self.anonymous, 401, method='POST')
         self.assert_response_api(
             self.url,
             self.good_users,
@@ -416,17 +470,9 @@ class TestZoneSubmitDeleteAPIViewPermissions(ZoneAPIPermissionTaskflowTestBase):
             cleanup_method=self._cleanup,
         )
         self.assert_response_api(
-            self.url,
-            self.auth_non_superusers,
-            403,
-            method='POST',
+            self.url, self.auth_non_superusers, 403, method='POST'
         )
-        self.assert_response_api(
-            self.url,
-            self.anonymous,
-            401,
-            method='POST',
-        )
+        self.assert_response_api(self.url, self.anonymous, 401, method='POST')
 
     def test_post_read_only(self):
         """Test POST with site read-only mode"""
@@ -440,17 +486,9 @@ class TestZoneSubmitDeleteAPIViewPermissions(ZoneAPIPermissionTaskflowTestBase):
             cleanup_method=self._cleanup,
         )
         self.assert_response_api(
-            self.url,
-            self.auth_non_superusers,
-            403,
-            method='POST',
+            self.url, self.auth_non_superusers, 403, method='POST'
         )
-        self.assert_response_api(
-            self.url,
-            self.anonymous,
-            401,
-            method='POST',
-        )
+        self.assert_response_api(self.url, self.anonymous, 401, method='POST')
 
     @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
     def test_post_disable(self):
@@ -463,17 +501,9 @@ class TestZoneSubmitDeleteAPIViewPermissions(ZoneAPIPermissionTaskflowTestBase):
             cleanup_method=self._cleanup,
         )
         self.assert_response_api(
-            self.url,
-            self.auth_non_superusers,
-            403,
-            method='POST',
+            self.url, self.auth_non_superusers, 403, method='POST'
         )
-        self.assert_response_api(
-            self.url,
-            self.anonymous,
-            401,
-            method='POST',
-        )
+        self.assert_response_api(self.url, self.anonymous, 401, method='POST')
         self.assert_response_api(
             self.url,
             self.superuser,
@@ -485,37 +515,107 @@ class TestZoneSubmitDeleteAPIViewPermissions(ZoneAPIPermissionTaskflowTestBase):
         for role in self.guest_roles:
             self.project.set_public_access(role)
             self.assert_response_api(
-                self.url,
-                self.user_no_roles,
-                403,
-                method='POST',
+                self.url, self.user_no_roles, 403, method='POST'
+            )
+
+    def test_post_restrict(self):
+        """Test POST with zone_access_restrict"""
+        user_contrib2 = self.make_extra_contributor()
+        self.restrict_zone_access(user_contrib2)
+        good_users = [
+            self.superuser,
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_owner,
+            self.user_delegate,
+        ]
+        bad_users = [
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_viewer_cat,
+            self.user_finder_cat,
+            self.user_contributor,
+            user_contrib2,
+            self.user_guest,
+            self.user_viewer,
+            self.user_no_roles,
+        ]
+        self.assert_response_api(
+            self.url,
+            good_users,
+            200,
+            method='POST',
+            cleanup_method=self._cleanup,
+        )
+        self.assert_response_api(self.url, bad_users, 403, method='POST')
+        self.assert_response_api(self.url, self.anonymous, 401, method='POST')
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response_api(
+                self.url, self.user_no_roles, 403, method='POST'
+            )
+
+    def test_post_restrict_own_zone(self):
+        """Test POST with zone_access_restrict and own zone"""
+        user_contrib2 = self.make_extra_contributor()
+        self.restrict_zone_access(self.user_contributor)
+        good_users = [
+            self.superuser,
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+        ]
+        bad_users = [
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_viewer_cat,
+            self.user_finder_cat,
+            user_contrib2,
+            self.user_guest,
+            self.user_viewer,
+            self.user_no_roles,
+        ]
+        self.assert_response_api(
+            self.url,
+            good_users,
+            200,
+            method='POST',
+            cleanup_method=self._cleanup,
+        )
+        self.assert_response_api(self.url, bad_users, 403, method='POST')
+        self.assert_response_api(self.url, self.anonymous, 401, method='POST')
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response_api(
+                self.url, self.user_no_roles, 403, method='POST'
             )
 
 
-class TestZoneSubmitMoveAPIViewPermissions(ZoneAPIPermissionTaskflowTestBase):
+class TestZoneSubmitMoveAPIView(ZoneAPIPermissionTaskflowTestBase):
     """Tests for ZoneSubmitMoveAPIView permissions with Taskflow"""
 
     # NOTE: Using validate_only in tests, perms are identical to move
 
     def _cleanup(self):
-        self.landing_zone.refresh_from_db()
+        self.zone.refresh_from_db()
         retry_count = 0
         # Wait for async activity to finish
         while (
-            self.landing_zone.status
-            in [ZONE_STATUS_PREPARING, ZONE_STATUS_VALIDATING]
+            self.zone.status in [ZONE_STATUS_PREPARING, ZONE_STATUS_VALIDATING]
             and retry_count < 5
         ):
             time.sleep(1)
-            self.landing_zone.refrsh_from_db()
+            self.zone.refrsh_from_db()
             retry_count += 1
-        if self.landing_zone.status != ZONE_STATUS_ACTIVE:
-            self.landing_zone.status = ZONE_STATUS_ACTIVE
-            self.landing_zone.save()
+        if self.zone.status != ZONE_STATUS_ACTIVE:
+            self.zone.status = ZONE_STATUS_ACTIVE
+            self.zone.save()
 
     def setUp(self):
         super().setUp()
-        self.landing_zone = self.make_landing_zone(
+        self.zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
             user=self.user_contributor,  # NOTE: Contributor is owner
@@ -524,10 +624,10 @@ class TestZoneSubmitMoveAPIViewPermissions(ZoneAPIPermissionTaskflowTestBase):
             configuration=None,
             config_data={},
         )
-        self.make_zone_taskflow(self.landing_zone)
+        self.make_zone_taskflow(self.zone)
         self.url = reverse(
             'landingzones:api_submit_validate',
-            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+            kwargs={'landingzone': self.zone.sodar_uuid},
         )
 
     def test_post(self):
@@ -717,4 +817,103 @@ class TestZoneSubmitMoveAPIViewPermissions(ZoneAPIPermissionTaskflowTestBase):
                 self.user_no_roles,
                 403,
                 method='POST',
+            )
+
+    def test_post_restrict(self):
+        """Test POST with zone_access_restrict"""
+        user_contrib2 = self.make_extra_contributor()
+        self.restrict_zone_access(user_contrib2)
+        good_users = [
+            self.superuser,
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_owner,
+            self.user_delegate,
+        ]
+        bad_users = [
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_viewer_cat,
+            self.user_finder_cat,
+            self.user_contributor,
+            user_contrib2,
+            self.user_guest,
+            self.user_viewer,
+            self.user_no_roles,
+        ]
+        self.assert_response_api(
+            self.url,
+            good_users,
+            200,
+            method='POST',
+            cleanup_method=self._cleanup,
+        )
+        self.assert_response_api(self.url, bad_users, 403, method='POST')
+        self.assert_response_api(self.url, self.anonymous, 401, method='POST')
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response_api(
+                self.url, self.user_no_roles, 403, method='POST'
+            )
+
+    def test_post_restrict_own_zone(self):
+        """Test POST with zone_access_restrict and own zone"""
+        user_contrib2 = self.make_extra_contributor()
+        self.restrict_zone_access(self.user_contributor)
+        good_users = [
+            self.superuser,
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+        ]
+        bad_users = [
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_viewer_cat,
+            self.user_finder_cat,
+            user_contrib2,
+            self.user_guest,
+            self.user_viewer,
+            self.user_no_roles,
+        ]
+        self.assert_response_api(
+            self.url,
+            good_users,
+            200,
+            method='POST',
+            cleanup_method=self._cleanup,
+        )
+        self.assert_response_api(self.url, bad_users, 403, method='POST')
+        self.assert_response_api(self.url, self.anonymous, 401, method='POST')
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response_api(
+                self.url, self.user_no_roles, 403, method='POST'
+            )
+
+    @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
+    def test_post_restrict_own_zone_disable(self):
+        """Test POST with zone_access_restrict, own zone and disabled non-superuser access"""
+        user_contrib2 = self.make_extra_contributor()
+        self.restrict_zone_access(self.user_contributor)
+        self.assert_response_api(
+            self.url,
+            self.superuser,
+            200,
+            method='POST',
+            cleanup_method=self._cleanup,
+        )
+        self.assert_response_api(
+            self.url,
+            self.auth_non_superusers + [user_contrib2],
+            403,
+            method='POST',
+        )
+        self.assert_response_api(self.url, self.anonymous, 401, method='POST')
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response_api(
+                self.url, self.user_no_roles, 403, method='POST'
             )

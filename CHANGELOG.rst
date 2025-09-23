@@ -25,6 +25,8 @@ Added
     - Periodic celery task setup logging (#2275)
     - ``zone_file_list_colls`` user app setting (#2284)
     - File list modal collection display toggling (#2284)
+    - ``zone_access_restrict`` project app setting (#2199)
+    - Landing zone contributor access restricting (#2199)
 - **Samplesheets**
     - Project viewer role support (#2200)
     - Category statistics for sample count and iRODS statistics (#2213)
@@ -77,6 +79,7 @@ Changed
     - Upgrade landingzones REST API version to v1.1 (#2174)
     - Move project sheet cache update to ``UpdateProjectSheetCacheTask`` (#2254)
     - Refactor server side variables for JQuery (#2286)
+    - Refactor rules (#2199)
 - **Samplesheets**
     - Update views for project access blocking support (#2233)
     - Update app for ``public_access`` support (#2202)
@@ -106,6 +109,8 @@ Fixed
 - **Irodsadmin**
     - Redundant queries for category iRODS paths in ``irodsorphans`` (#2280)
     - Nested paths set by assay plugin reported as orphaned (#2207)
+- **Landingzones**
+    - Missing investigation setup in certain ``TestProjectZoneView`` tests (#2290)
 - **Samplesheets**
     - Details card iRODS stats badge fails with guest role (#2243, #2271)
     - Sheet Operations dropdown disabled for guest user (#2244)

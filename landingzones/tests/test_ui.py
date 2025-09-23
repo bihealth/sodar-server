@@ -32,6 +32,7 @@ from landingzones.constants import (
     ZONE_STATUS_DELETED,
 )
 from landingzones.tests.test_models import LandingZoneMixin
+from landingzones.tests.test_views import LandingzonesViewTestMixin
 from landingzones.views_ajax import STATUS_TRUNCATE_LEN
 
 
@@ -48,7 +49,11 @@ ZONE_CONFIG_DISPLAY_NAME = 'BIH Proteomics SMB Server'
 
 
 class LandingZoneUITestBase(
-    SampleSheetIOMixin, SheetConfigMixin, LandingZoneMixin, UITestBase
+    SampleSheetIOMixin,
+    SheetConfigMixin,
+    LandingZoneMixin,
+    LandingzonesViewTestMixin,
+    UITestBase,
 ):
     """Base class for landingzones UI tests"""
 
@@ -56,10 +61,18 @@ class LandingZoneUITestBase(
     study = None
     assay = None
 
-    def setup_investigation(self):
+    def setup_investigation(self, irods_status: bool = False):
+        """
+        Set up investigation for UI tests.
+
+        :param irods_status: Set investigation irods_status if True (bool)
+        """
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
+        if irods_status:
+            self.investigation.irods_status = True
+            self.investigation.save()
 
     def assert_element(self, by: str, element: str, expected: bool = True):
         """Assert element existence for an already logged in user"""
@@ -152,6 +165,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
         self.assertEqual(valid_badge.text, '0 / 4')
         self.assert_element(By.ID, 'sodar-lz-alert-archive', False)
         self.assert_element(By.ID, 'sodar-lz-alert-disable', False)
+        self.assert_element(By.ID, 'sodar-lz-alert-restrict', False)
         self.assert_element(By.ID, 'sodar-lz-alert-no-sheets', True)
         self.assert_element(By.ID, 'sodar-lz-alert-no-colls', False)
         self.assert_element(By.ID, 'sodar-lz-alert-no-zones', False)
@@ -165,6 +179,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
         self.assertIsNotNone(self.investigation)
         self.login_and_redirect(self.user_owner, self.url)
         self.assert_element(By.ID, 'sodar-lz-alert-disable', False)
+        self.assert_element(By.ID, 'sodar-lz-alert-restrict', False)
         self.assert_element(By.ID, 'sodar-lz-alert-no-sheets', False)
         self.assert_element(By.ID, 'sodar-lz-alert-no-colls', True)
         self.assert_element(By.ID, 'sodar-lz-alert-no-zones', False)
@@ -174,11 +189,10 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
 
     def test_render_no_zones(self):
         """Test ProjectZoneView with iRODS enabled but no zones"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         self.login_and_redirect(self.user_owner, self.url)
         self.assert_element(By.ID, 'sodar-lz-alert-disable', False)
+        self.assert_element(By.ID, 'sodar-lz-alert-restrict', False)
         self.assert_element(By.ID, 'sodar-lz-alert-no-sheets', False)
         self.assert_element(By.ID, 'sodar-lz-alert-no-colls', False)
         self.assert_element(By.ID, 'sodar-lz-alert-no-zones', True)
@@ -191,9 +205,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
         app_settings.set(
             APP_NAME, PROHIBIT_NAME, PROHIBIT_VAL, project=self.project
         )
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         self.login_and_redirect(self.user_owner, self.url)
         # This should still not be visible because there are no zones
         self.assert_element(By.ID, 'sodar-lz-alert-prohibit', False)
@@ -201,11 +213,10 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
     @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
     def test_render_disable(self):
         """Test ProjectZoneView with LANDINGZONES_DISABLE_FOR_USERS"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         self.login_and_redirect(self.user_owner, self.url)
         self.assert_element(By.ID, 'sodar-lz-alert-disable', True)
+        self.assert_element(By.ID, 'sodar-lz-alert-restrict', False)
         self.assert_element(By.ID, 'sodar-lz-alert-no-sheets', False)
         self.assert_element(By.ID, 'sodar-lz-alert-no-colls', False)
         self.assert_element(By.ID, 'sodar-lz-alert-no-zones', False)
@@ -216,14 +227,13 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
     @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
     def test_render_disable_superuser(self):
         """Test ProjectZoneView with LANDINGZONES_DISABLE_FOR_USERS as superuser"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         self.make_landing_zone(
             'superuser_zone', self.project, self.superuser, self.assay
         )
         self.login_and_redirect(self.superuser, self.url)
         self.assert_element(By.ID, 'sodar-lz-alert-disable', False)
+        self.assert_element(By.ID, 'sodar-lz-alert-restrict', False)
         self.assert_element(By.ID, 'sodar-lz-alert-no-sheets', False)
         self.assert_element(By.ID, 'sodar-lz-alert-no-colls', False)
         self.assert_element(By.ID, 'sodar-lz-alert-no-zones', False)
@@ -233,9 +243,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
 
     def test_render_own_zone(self):
         """Test ProjectZoneView as contributor with own zone"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         contrib_zone = self.make_landing_zone(
             'contrib_zone', self.project, self.user_contributor, self.assay
         )
@@ -256,6 +264,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
         self.assertNotIn('badge-warning', badge_class)
         self.assertEqual(valid_badge.text, '0 / 4')
         self.assert_element(By.ID, 'sodar-lz-alert-disable', False)
+        self.assert_element(By.ID, 'sodar-lz-alert-restrict', False)
         self.assert_element(By.ID, 'sodar-lz-alert-no-sheets', False)
         self.assert_element(By.ID, 'sodar-lz-alert-no-colls', False)
         self.assert_element(By.ID, 'sodar-lz-alert-no-zones', False)
@@ -285,9 +294,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
         app_settings.set(
             APP_NAME, PROHIBIT_NAME, PROHIBIT_VAL, project=self.project
         )
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         self.make_landing_zone(
             'contrib_zone', self.project, self.user_contributor, self.assay
         )
@@ -297,9 +304,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
 
     def test_render_other_zone(self):
         """Test ProjectZoneView as owner with other zone"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         contrib_zone = self.make_landing_zone(
             'contrib_zone', self.project, self.user_contributor, self.assay
         )
@@ -324,9 +329,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
 
     def test_render_both_zones_contrib(self):
         """Test ProjectZoneView as contributor with own and other zones"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         self.make_landing_zone(
             'owner_zone', self.project, self.user_owner, self.assay
         )
@@ -347,9 +350,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
 
     def test_render_both_zones_owner(self):
         """Test ProjectZoneView as owner with own and other zones"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         owner_zone = self.make_landing_zone(
             'owner_zone', self.project, self.user_owner, self.assay
         )
@@ -377,9 +378,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
 
     def test_render_other_user_guest_access(self):
         """Test ProjectZoneView with guest access for other user"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         self.make_landing_zone(
             'owner_zone', self.project, self.user_owner, self.assay
         )
@@ -400,9 +399,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
 
     def test_render_other_user_no_access(self):
         """Test ProjectZoneView with no project access for other user"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         self.make_landing_zone(
             'owner_zone', self.project, self.user_owner, self.assay
         )
@@ -422,9 +419,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
 
     def test_render_read_only_contrib(self):
         """Test ProjectZoneView with site read-only mode as contributor"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         self.make_landing_zone(
             'contrib_zone', self.project, self.user_contributor, self.assay
         )
@@ -453,9 +448,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
 
     def test_render_read_only_superuser(self):
         """Test ProjectZoneView with site read-only mode as superuser"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         self.make_landing_zone(
             'contrib_zone', self.project, self.user_contributor, self.assay
         )
@@ -488,9 +481,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
 
     def test_render_locked(self):
         """Test ProjectZoneView with locked project"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         self.make_landing_zone(
             'owner_zone', self.project, self.user_owner, self.assay
         )
@@ -514,9 +505,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
 
     def test_render_lock_update(self):
         """Test ProjectZoneView with updated lock status"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         self.make_landing_zone(
             'contrib_zone', self.project, self.user_contributor, self.assay
         )
@@ -551,12 +540,63 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
         ):
             self.assert_enabled(elem, False)
 
+    def test_render_restrict_contributor_same(self):
+        """Test ProjectZoneView with zone_access_restrict as same contributor"""
+        self.setup_investigation(irods_status=True)
+        self.restrict_zone_access(self.user_contributor)
+        self.login_and_redirect(self.user_contributor, self.url)
+        self.assert_element(By.ID, 'sodar-lz-alert-disable', False)
+        self.assert_element(By.ID, 'sodar-lz-alert-restrict', False)
+        self.assert_element(By.ID, 'sodar-lz-alert-no-sheets', False)
+        self.assert_element(By.ID, 'sodar-lz-alert-no-colls', False)
+        self.assert_element(By.ID, 'sodar-lz-alert-no-zones', True)
+        self.assert_element(By.ID, 'sodar-lz-alert-prohibit', False)
+        self.assert_element(By.ID, 'sodar-lz-btn-create-zone', True)
+
+    def test_render_restrict_contributor_different(self):
+        """Test ProjectZoneView with zone_access_restrict as different contributor"""
+        self.setup_investigation(irods_status=True)
+        self.restrict_zone_access(self.user_contributor)
+        user_contrib2 = self.make_extra_contributor()
+        self.login_and_redirect(user_contrib2, self.url)
+        self.assert_element(By.ID, 'sodar-lz-alert-disable', False)
+        self.assert_element(By.ID, 'sodar-lz-alert-restrict', True)
+        self.assert_element(By.ID, 'sodar-lz-alert-no-sheets', False)
+        self.assert_element(By.ID, 'sodar-lz-alert-no-colls', False)
+        self.assert_element(By.ID, 'sodar-lz-alert-no-zones', False)
+        self.assert_element(By.ID, 'sodar-lz-alert-prohibit', False)
+        self.assert_element(By.ID, 'sodar-lz-btn-create-zone', False)
+
+    def test_render_restrict_owner(self):
+        """Test ProjectZoneView with zone_access_restrict as owner"""
+        self.setup_investigation(irods_status=True)
+        self.restrict_zone_access(self.user_contributor)
+        self.login_and_redirect(self.user_owner, self.url)
+        self.assert_element(By.ID, 'sodar-lz-alert-disable', False)
+        self.assert_element(By.ID, 'sodar-lz-alert-restrict', False)
+        self.assert_element(By.ID, 'sodar-lz-alert-no-sheets', False)
+        self.assert_element(By.ID, 'sodar-lz-alert-no-colls', False)
+        self.assert_element(By.ID, 'sodar-lz-alert-no-zones', True)
+        self.assert_element(By.ID, 'sodar-lz-alert-prohibit', False)
+        self.assert_element(By.ID, 'sodar-lz-btn-create-zone', True)
+
+    def test_render_restrict_superuser(self):
+        """Test ProjectZoneView with zone_access_restrict as superuser"""
+        self.setup_investigation(irods_status=True)
+        self.restrict_zone_access(self.superuser)
+        self.login_and_redirect(self.user_owner, self.url)
+        self.assert_element(By.ID, 'sodar-lz-alert-disable', False)
+        self.assert_element(By.ID, 'sodar-lz-alert-restrict', False)
+        self.assert_element(By.ID, 'sodar-lz-alert-no-sheets', False)
+        self.assert_element(By.ID, 'sodar-lz-alert-no-colls', False)
+        self.assert_element(By.ID, 'sodar-lz-alert-no-zones', True)
+        self.assert_element(By.ID, 'sodar-lz-alert-prohibit', False)
+        self.assert_element(By.ID, 'sodar-lz-btn-create-zone', True)
+
     @override_settings(LANDINGZONES_ZONE_CREATE_LIMIT=1)
     def test_render_create_limit(self):
         """Test ProjectZoneView with zone creation limit reached"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         self.make_landing_zone(
             'owner_zone',
             self.project,
@@ -585,9 +625,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
     @override_settings(LANDINGZONES_ZONE_CREATE_LIMIT=1)
     def test_render_create_limit_existing_finished(self):
         """Test ProjectZoneView with zone creation limit and finished zone"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         self.make_landing_zone(
             'owner_zone',
             self.project,
@@ -616,9 +654,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
     @override_settings(LANDINGZONES_ZONE_CREATE_LIMIT=1)
     def test_render_create_limit_update(self):
         """Test ProjectZoneView with zone creation limit update"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         zone = self.make_landing_zone(
             'owner_zone',
             self.project,
@@ -673,9 +709,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
     @override_settings(LANDINGZONES_ZONE_VALIDATE_LIMIT=1)
     def test_render_validate_limit(self):
         """Test ProjectZoneView with zone validation limit reached"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         self.make_landing_zone(
             'owner_zone',
             self.project,
@@ -714,9 +748,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
     @override_settings(LANDINGZONES_ZONE_VALIDATE_LIMIT=1)
     def test_render_validate_limit_other_zone_finished(self):
         """Test ProjectZoneView with zone validation limit and other zone finished"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         self.make_landing_zone(
             'owner_zone',
             self.project,
@@ -755,9 +787,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
     @override_settings(LANDINGZONES_ZONE_VALIDATE_LIMIT=1)
     def test_render_validate_limit_update(self):
         """Test ProjectZoneView with zone validation limit update"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         zone = self.make_landing_zone(
             'owner_zone',
             self.project,
@@ -819,9 +849,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
 
     def test_render_zone_config(self):
         """Test ProjectZoneView with zone using special configuration"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         contrib_zone = self.make_landing_zone(
             'contrib_zone',
             self.project,
@@ -851,9 +879,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
 
     def test_status_truncated(self):
         """Test rendering truncated status"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         zone = self.make_landing_zone(
             'contrib_zone', self.project, self.user_contributor, self.assay
         )
@@ -877,9 +903,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
 
     def test_status_truncated_expand(self):
         """Test rendering expanded truncated status"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         zone = self.make_landing_zone(
             'contrib_zone', self.project, self.user_contributor, self.assay
         )
@@ -911,9 +935,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
 
     def test_status_update(self):
         """Test ProjectZoneView with zone status update"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         contrib_zone = self.make_landing_zone(
             'contrib_zone',
             self.project,
@@ -942,9 +964,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
 
     def test_status_update_moved(self):
         """Test ProjectZoneView with zone status update to MOVED"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         contrib_zone = self.make_landing_zone(
             'contrib_zone',
             self.project,
@@ -977,9 +997,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
 
     def test_stats_deleted_owner(self):
         """Test ProjectZoneView stats badge on DELETED zone as owner"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         zone = self.make_landing_zone(
             'contrib_zone',
             self.project,
@@ -1012,9 +1030,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
 
     def test_stats_deleted_superuser(self):
         """Test ProjectZoneView stats badge on DELETED zone as superuser"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         zone = self.make_landing_zone(
             'contrib_zone',
             self.project,
@@ -1046,9 +1062,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
 
     def test_zone_buttons(self):
         """Test ProjectZoneView zone buttons"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         self.make_landing_zone(
             'contrib_zone', self.project, self.user_contributor, self.assay
         )
@@ -1076,9 +1090,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
 
     def test_zone_buttons_archive(self):
         """Test ProjectZoneView zone buttons with archived project"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         self.make_landing_zone(
             'contrib_zone', self.project, self.user_contributor, self.assay
         )
@@ -1107,9 +1119,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
 
     def test_zone_locked_superuser(self):
         """Test ProjectZoneView zone rendering for locked zone as superuser"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         zone = self.make_landing_zone(
             'contrib_zone', self.project, self.user_contributor, self.assay
         )
@@ -1148,9 +1158,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
 
     def test_zone_locked_contributor(self):
         """Test ProjectZoneView zone rendering for locked zone as contributor"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         self.make_landing_zone(
             'contrib_zone', self.project, self.user_contributor, self.assay
         )
@@ -1187,9 +1195,7 @@ class TestZoneCreateView(LandingZoneUITestBase):
 
     def setUp(self):
         super().setUp()
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         self.url = reverse(
             'landingzones:create', kwargs={'project': self.project.sodar_uuid}
         )
@@ -1213,9 +1219,7 @@ class TestZoneUpdateView(LandingZoneUITestBase):
 
     def setUp(self):
         super().setUp()
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         self.zone = self.make_landing_zone(
             'owner_zone',
             self.project,
@@ -1247,6 +1251,7 @@ class TestProjectDetailView(LandingZoneUITestBase):
 
     def setUp(self):
         super().setUp()
+        self.setup_investigation(irods_status=True)
         self.url = reverse(
             'projectroles:detail',
             kwargs={'project': self.project.sodar_uuid},
@@ -1254,22 +1259,18 @@ class TestProjectDetailView(LandingZoneUITestBase):
 
     def test_render_no_zones(self):
         """Test ProjectDetailView with no zones"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
         self.login_and_redirect(self.user_owner, self.url)
+        self.assert_element(By.ID, 'sodar-lz-detail-info-restrict', False)
         self.assert_element(By.ID, 'sodar-lz-detail-table-no-zones', True)
         self.assert_element(By.CLASS_NAME, 'sodar-lz-zone-tr-existing', False)
 
     def test_render_own_zone(self):
         """Test ProjectDetailView as contributor with own zone"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
         contrib_zone = self.make_landing_zone(
             'contrib_zone', self.project, self.user_contributor, self.assay
         )
         self.login_and_redirect(self.user_contributor, self.url)
+        self.assert_element(By.ID, 'sodar-lz-detail-info-restrict', False)
         self.assert_element(By.ID, 'sodar-lz-detail-table-no-zones', False)
         zones = self.selenium.find_elements(
             By.CLASS_NAME, 'sodar-lz-zone-tr-existing'
@@ -1282,9 +1283,6 @@ class TestProjectDetailView(LandingZoneUITestBase):
 
     def test_render_multiple_zones(self):
         """Test ProjectDetailView as contributor with multiple own zones"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
         self.make_landing_zone(
             'contrib_zone', self.project, self.user_contributor, self.assay
         )
@@ -1299,21 +1297,16 @@ class TestProjectDetailView(LandingZoneUITestBase):
 
     def test_render_other_zone(self):
         """Test ProjectDetailView as contributor with other user's zone"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
         self.make_landing_zone(
             'owner_zone', self.project, self.user_owner, self.assay
         )
         self.login_and_redirect(self.user_contributor, self.url)
+        self.assert_element(By.ID, 'sodar-lz-detail-info-restrict', False)
         self.assert_element(By.ID, 'sodar-lz-detail-table-no-zones', True)
         self.assert_element(By.CLASS_NAME, 'sodar-lz-zone-tr-existing', False)
 
     def test_render_as_owner(self):
         """Test ProjectDetailView as owner with own and other zones"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
         owner_zone = self.make_landing_zone(
             'owner_zone', self.project, self.user_owner, self.assay
         )
@@ -1332,9 +1325,6 @@ class TestProjectDetailView(LandingZoneUITestBase):
 
     def test_update_status(self):
         """Test ProjectDetailView with zone status update"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
         contrib_zone = self.make_landing_zone(
             'contrib_zone',
             self.project,
@@ -1350,6 +1340,35 @@ class TestProjectDetailView(LandingZoneUITestBase):
         contrib_zone.set_status(ZONE_STATUS_VALIDATING)
         self.wait_for_status(zone_status, ZONE_STATUS_VALIDATING)
         self.assertEqual(zone_status.text, ZONE_STATUS_VALIDATING)
+
+    def test_render_restrict_contributor_same(self):
+        """Test ProjectDetailView with zone_access_restrict as same contributor"""
+        self.restrict_zone_access(self.user_contributor)
+        self.login_and_redirect(self.user_contributor, self.url)
+        self.assert_element(By.ID, 'sodar-lz-detail-info-restrict', False)
+        self.assert_element(By.ID, 'sodar-lz-table', True)
+
+    def test_render_restrict_contributor_different(self):
+        """Test ProjectDetailView with zone_access_restrict as different contributor"""
+        self.restrict_zone_access(self.user_contributor)
+        user_contrib2 = self.make_extra_contributor()
+        self.login_and_redirect(user_contrib2, self.url)
+        self.assert_element(By.ID, 'sodar-lz-detail-info-restrict', True)
+        self.assert_element(By.ID, 'sodar-lz-table', False)
+
+    def test_render_restrict_owner(self):
+        """Test ProjectDetailView with zone_access_restrict as owner"""
+        self.restrict_zone_access(self.user_contributor)
+        self.login_and_redirect(self.user_owner, self.url)
+        self.assert_element(By.ID, 'sodar-lz-detail-info-restrict', False)
+        self.assert_element(By.ID, 'sodar-lz-table', True)
+
+    def test_render_restrict_superuser(self):
+        """Test ProjectDetailView with zone_access_restrict as superuser"""
+        self.restrict_zone_access(self.superuser)
+        self.login_and_redirect(self.user_owner, self.url)
+        self.assert_element(By.ID, 'sodar-lz-detail-info-restrict', False)
+        self.assert_element(By.ID, 'sodar-lz-table', True)
 
 
 class TestHomeView(LandingZoneUITestBase):
@@ -1390,9 +1409,7 @@ class TestHomeView(LandingZoneUITestBase):
 
     def test_render_no_zones(self):
         """Test project list rendering with iRODS enabled and no zones"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         self.login_and_redirect(self.user_owner, self.url)
         self._wait_for_elem('create')
         self._assert_list_elem('active', False)
@@ -1401,9 +1418,7 @@ class TestHomeView(LandingZoneUITestBase):
 
     def test_render_no_zones_guest(self):
         """Test project list rendering with no zones as guest"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         self.login_and_redirect(self.user_guest, self.url)
         WebDriverWait(self.selenium, self.wait_time).until(
             ec.invisibility_of_element_located(
@@ -1417,9 +1432,7 @@ class TestHomeView(LandingZoneUITestBase):
 
     def test_render_zone_own_active(self):
         """Test project list rendering with own active zone"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         self.make_landing_zone(
             'contrib_zone',
             self.project,
@@ -1435,9 +1448,7 @@ class TestHomeView(LandingZoneUITestBase):
 
     def test_render_zone_own_finished(self):
         """Test project list rendering with own finished zone"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         self.make_landing_zone(
             'contrib_zone',
             self.project,
@@ -1453,9 +1464,7 @@ class TestHomeView(LandingZoneUITestBase):
 
     def test_render_zone_other_as_contributor(self):
         """Test project list rendering with other user's zone as contributor"""
-        self.setup_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.setup_investigation(irods_status=True)
         self.make_landing_zone(
             'owner_zone',
             self.project,
