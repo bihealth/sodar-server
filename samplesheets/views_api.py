@@ -1156,7 +1156,9 @@ class ProjectIrodsFileListAPIView(
                 )
                 # Get total count for DRF compatible pagination response
                 if page:
-                    stats = irods_backend.get_stats(irods, path, include_colls)
+                    stats = irods_backend.get_stats(
+                        irods, path, include_colls=include_colls
+                    )
                     item_count = stats['file_count']
                     if include_colls:
                         item_count += stats['coll_count']

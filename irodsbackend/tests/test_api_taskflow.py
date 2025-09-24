@@ -175,6 +175,16 @@ class TestIrodsAPIGetStats(IrodsAPITaskflowTestBase):
         stats = self.irods_backend.get_stats(self.irods, self.assay_path)
         self.assertEqual(stats, expected)
 
+    def test_get_stats_files_include_checksum(self):
+        """Test get_stats() with files and include_checksum"""
+        self._make_data_objects()
+        # Checksum files should be included
+        expected = {'file_count': 4, 'total_size': 2112}
+        stats = self.irods_backend.get_stats(
+            self.irods, self.assay_path, include_checksum=True
+        )
+        self.assertEqual(stats, expected)
+
     def test_get_stats_files_include_colls(self):
         """Test get_stats() with files and include_colls"""
         self._make_data_objects()
@@ -189,6 +199,19 @@ class TestIrodsAPIGetStats(IrodsAPITaskflowTestBase):
         expected = {'file_count': 0, 'total_size': 0, 'coll_count': 0}
         stats = self.irods_backend.get_stats(
             self.irods, self.subcoll_path, include_colls=True
+        )
+        self.assertEqual(stats, expected)
+
+    def test_get_stats_include_checksum_include_colls(self):
+        """Test get_stats() with include_checksum and include_colls"""
+        self._make_data_objects()
+        # Checksum files should be included
+        expected = {'file_count': 4, 'total_size': 2112, 'coll_count': 1}
+        stats = self.irods_backend.get_stats(
+            self.irods,
+            self.assay_path,
+            include_checksum=True,
+            include_colls=True,
         )
         self.assertEqual(stats, expected)
 

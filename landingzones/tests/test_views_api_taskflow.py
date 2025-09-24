@@ -53,7 +53,6 @@ from landingzones.tests.test_views_taskflow import (
     ZONE_BASE_COLLS,
     ZONE_PLUGIN_COLLS,
     ZONE_ALL_COLLS,
-    TEST_OBJ_NAME,
 )
 from landingzones.views import ZONE_CREATE_LIMIT_MSG, ZONE_VALIDATE_LIMIT_MSG
 from landingzones.views_api import (
@@ -77,6 +76,8 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 # Local constants
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 ZONE_STATUS_INFO = 'Testing'
+TEST_OBJ_NAME = 'test1.txt'
+TEST_OBJ_NAME2 = 'test2.txt'
 
 
 class ZoneAPIViewTaskflowTestBase(
@@ -764,3 +765,299 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
         self.assertEqual(response.status_code, 503)
         self.assertEqual(response.data['detail'], ZONE_VALIDATE_LIMIT_MSG)
         self.assert_zone_status(self.zone, ZONE_STATUS_ACTIVE)
+
+
+class TestZoneIrodsFileListAPIView(ZoneAPIViewTaskflowTestBase):
+    """Tests for ZoneIrodsFileListAPIView"""
+
+    def setUp(self):
+        super().setUp()
+        self.zone = self.make_landing_zone(
+            title=ZONE_TITLE,
+            project=self.project,
+            user=self.user,
+            assay=self.assay,
+            description=ZONE_DESC,
+            configuration=None,
+            config_data={},
+        )
+        # Create zone with one default collection
+        self.make_zone_taskflow(self.zone, colls=[MISC_FILES_COLL])
+        self.zone_path = self.irods_backend.get_path(self.zone)
+        self.url = reverse(
+            'landingzones:api_file_list',
+            kwargs={'landingzone': self.zone.sodar_uuid},
+        )
+
+    def test_get(self):
+        """Test ZoneIrodsFileListAPIView GET"""
+        response = self.request_knox(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, [])
+
+    def test_get_include_colls(self):
+        """Test GET with include_colls=True"""
+        response = self.request_knox(self.url + '?include_colls=1')
+        self.assertEqual(response.status_code, 200)
+        expected = [
+            {
+                'name': MISC_FILES_COLL,
+                'path': iRODSPath(self.zone_path, MISC_FILES_COLL),
+                'type': 'coll',
+            }
+        ]
+        self.assertEqual(response.data, expected)
+
+    def test_get_file(self):
+        """Test GET with file in zone"""
+        misc_coll = self.irods.collections.get(
+            iRODSPath(self.zone_path, MISC_FILES_COLL)
+        )
+        data_obj = self.make_irods_object(misc_coll, TEST_OBJ_NAME)
+        self.make_checksum_object(data_obj)
+        response = self.request_knox(self.url)
+        self.assertEqual(response.status_code, 200)
+        expected = [
+            {
+                'name': TEST_OBJ_NAME,
+                'path': iRODSPath(
+                    self.zone_path, MISC_FILES_COLL, TEST_OBJ_NAME
+                ),
+                'type': 'obj',
+                'size': 1024,
+                'modify_time': self.get_drf_datetime(data_obj.modify_time),
+                'checksum': data_obj.checksum,
+            }
+        ]
+        self.assertEqual(response.data, expected)
+
+    def test_get_file_include_checksum(self):
+        """Test GET with file and include_checksum"""
+        misc_coll = self.irods.collections.get(
+            iRODSPath(self.zone_path, MISC_FILES_COLL)
+        )
+        data_obj = self.make_irods_object(misc_coll, TEST_OBJ_NAME)
+        chk_obj = self.make_checksum_object(data_obj)
+        response = self.request_knox(self.url + '?include_checksum=1')
+        self.assertEqual(response.status_code, 200)
+        expected = [
+            {
+                'name': TEST_OBJ_NAME,
+                'path': iRODSPath(
+                    self.zone_path, MISC_FILES_COLL, TEST_OBJ_NAME
+                ),
+                'type': 'obj',
+                'size': 1024,
+                'modify_time': self.get_drf_datetime(data_obj.modify_time),
+                'checksum': data_obj.checksum,
+            },
+            {
+                'name': TEST_OBJ_NAME + '.md5',
+                'path': iRODSPath(
+                    self.zone_path, MISC_FILES_COLL, TEST_OBJ_NAME + '.md5'
+                ),
+                'type': 'obj',
+                'size': 32,
+                'modify_time': self.get_drf_datetime(chk_obj.modify_time),
+                'checksum': chk_obj.checksum,
+            },
+        ]
+        self.assertEqual(response.data, expected)
+
+    def test_get_file_include_colls(self):
+        """Test GET with file in zone and include_colls"""
+        misc_coll = self.irods.collections.get(
+            iRODSPath(self.zone_path, MISC_FILES_COLL)
+        )
+        data_obj = self.make_irods_object(misc_coll, TEST_OBJ_NAME)
+        self.make_checksum_object(data_obj)  # Should not be included in results
+        response = self.request_knox(self.url + '?include_colls=1')
+        self.assertEqual(response.status_code, 200)
+        expected = [
+            {
+                'name': MISC_FILES_COLL,
+                'path': iRODSPath(self.zone_path, MISC_FILES_COLL),
+                'type': 'coll',
+            },
+            {
+                'name': TEST_OBJ_NAME,
+                'path': iRODSPath(
+                    self.zone_path, MISC_FILES_COLL, TEST_OBJ_NAME
+                ),
+                'type': 'obj',
+                'size': 1024,
+                'modify_time': self.get_drf_datetime(data_obj.modify_time),
+                'checksum': data_obj.checksum,
+            },
+        ]
+        self.assertEqual(response.data, expected)
+
+    def test_get_include_checksum_include_colls(self):
+        """Test GET with include_checksum and include_colls"""
+        misc_coll = self.irods.collections.get(
+            iRODSPath(self.zone_path, MISC_FILES_COLL)
+        )
+        data_obj = self.make_irods_object(misc_coll, TEST_OBJ_NAME)
+        chk_obj = self.make_checksum_object(data_obj)
+        response = self.request_knox(
+            self.url + '?include_checksum=1&include_colls=1'
+        )
+        self.assertEqual(response.status_code, 200)
+        expected = [
+            {
+                'name': MISC_FILES_COLL,
+                'path': iRODSPath(self.zone_path, MISC_FILES_COLL),
+                'type': 'coll',
+            },
+            {
+                'name': TEST_OBJ_NAME,
+                'path': iRODSPath(
+                    self.zone_path, MISC_FILES_COLL, TEST_OBJ_NAME
+                ),
+                'type': 'obj',
+                'size': 1024,
+                'modify_time': self.get_drf_datetime(data_obj.modify_time),
+                'checksum': data_obj.checksum,
+            },
+            {
+                'name': TEST_OBJ_NAME + '.md5',
+                'path': iRODSPath(
+                    self.zone_path, MISC_FILES_COLL, TEST_OBJ_NAME + '.md5'
+                ),
+                'type': 'obj',
+                'size': 32,
+                'modify_time': self.get_drf_datetime(chk_obj.modify_time),
+                'checksum': chk_obj.checksum,
+            },
+        ]
+        self.assertEqual(response.data, expected)
+
+    @override_settings(SODAR_API_PAGE_SIZE=1)
+    def test_get_pagination(self):
+        """Test GET with pagination"""
+        misc_coll = self.irods.collections.get(
+            iRODSPath(self.zone_path, MISC_FILES_COLL)
+        )
+        data_obj = self.make_irods_object(misc_coll, TEST_OBJ_NAME)
+        self.make_irods_object(misc_coll, TEST_OBJ_NAME2)
+        response = self.request_knox(self.url + '?page=1')
+        self.assertEqual(response.status_code, 200)
+        obj_res = {
+            'name': TEST_OBJ_NAME,
+            'path': data_obj.path,
+            'type': 'obj',
+            'size': 1024,
+            'modify_time': self.get_drf_datetime(data_obj.modify_time),
+            'checksum': data_obj.checksum,
+        }
+        expected = {
+            'count': 2,
+            'next': self.url + '?page=2&include_checksum=0&include_colls=0',
+            'previous': None,
+            'results': [obj_res],
+        }
+        self.assertEqual(response.data, expected)
+
+    @override_settings(SODAR_API_PAGE_SIZE=1)
+    def test_get_pagination_include_checksum(self):
+        """Test GET with pagination and include_checksum"""
+        misc_coll = self.irods.collections.get(
+            iRODSPath(self.zone_path, MISC_FILES_COLL)
+        )
+        data_obj = self.make_irods_object(misc_coll, TEST_OBJ_NAME)
+        chk_obj = self.make_checksum_object(data_obj)
+        response = self.request_knox(self.url + '?page=2&include_checksum=1')
+        self.assertEqual(response.status_code, 200)
+        obj_res = {
+            'name': TEST_OBJ_NAME + '.md5',
+            'path': iRODSPath(
+                self.zone_path, MISC_FILES_COLL, TEST_OBJ_NAME + '.md5'
+            ),
+            'type': 'obj',
+            'size': 32,
+            'modify_time': self.get_drf_datetime(chk_obj.modify_time),
+            'checksum': chk_obj.checksum,
+        }
+        expected = {
+            'count': 2,
+            'next': None,
+            'previous': self.url + '?page=1&include_checksum=1&include_colls=0',
+            'results': [obj_res],
+        }
+        self.assertEqual(response.data, expected)
+
+    @override_settings(SODAR_API_PAGE_SIZE=1)
+    def test_get_pagination_include_colls(self):
+        """Test GET with pagination and include_colls"""
+        self.irods.collections.create(iRODSPath(self.zone_path, RESULTS_COLL))
+        response = self.request_knox(self.url + '?page=1&include_colls=1')
+        self.assertEqual(response.status_code, 200)
+        coll_res = {
+            'name': MISC_FILES_COLL,
+            'path': iRODSPath(self.zone_path, MISC_FILES_COLL),
+            'type': 'coll',
+        }
+        expected = {
+            'count': 2,
+            'next': self.url + '?page=2&include_checksum=0&include_colls=1',
+            'previous': None,
+            'results': [coll_res],
+        }
+        self.assertEqual(response.data, expected)
+
+    @override_settings(SODAR_API_PAGE_SIZE=1)
+    def test_get_pagination_include_colls_second_page(self):
+        """Test GET with pagination and include_colls on second page"""
+        self.irods.collections.create(iRODSPath(self.zone_path, RESULTS_COLL))
+        response = self.request_knox(self.url + '?page=2&include_colls=1')
+        self.assertEqual(response.status_code, 200)
+        coll_res = {
+            'name': RESULTS_COLL,
+            'path': iRODSPath(self.zone_path, RESULTS_COLL),
+            'type': 'coll',
+        }
+        expected = {
+            'count': 2,
+            'next': None,
+            'previous': self.url + '?page=1&include_checksum=0&include_colls=1',
+            'results': [coll_res],
+        }
+        self.assertEqual(response.data, expected)
+
+    @override_settings(SODAR_API_PAGE_SIZE=2)
+    def test_get_pagination_include_checksum_include_colls(self):
+        """Test GET with pagination, include_checksum and include_colls"""
+        misc_coll = self.irods.collections.get(
+            iRODSPath(self.zone_path, MISC_FILES_COLL)
+        )
+        data_obj = self.make_irods_object(misc_coll, TEST_OBJ_NAME)
+        self.make_checksum_object(data_obj)
+        response = self.request_knox(
+            self.url + '?page=1&include_checksum=1&include_colls=1'
+        )
+        self.assertEqual(response.status_code, 200)
+        coll_res = {
+            'name': MISC_FILES_COLL,
+            'path': iRODSPath(self.zone_path, MISC_FILES_COLL),
+            'type': 'coll',
+        }
+        obj_res = {
+            'name': TEST_OBJ_NAME,
+            'path': iRODSPath(self.zone_path, MISC_FILES_COLL, TEST_OBJ_NAME),
+            'type': 'obj',
+            'size': 1024,
+            'modify_time': self.get_drf_datetime(data_obj.modify_time),
+            'checksum': data_obj.checksum,
+        }
+        expected = {
+            'count': 3,
+            'next': self.url + '?page=2&include_checksum=1&include_colls=1',
+            'previous': None,
+            'results': [coll_res, obj_res],
+        }
+        self.assertEqual(response.data, expected)
+
+    def test_get_v1_0(self):
+        """Test with API version 1.0 (should fail)"""
+        response = self.request_knox(self.url, version='1.0')
+        self.assertEqual(response.status_code, 406)

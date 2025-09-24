@@ -82,6 +82,11 @@ urls_api = [
         view=views_api.ZoneSettingsRetrieveAPIView.as_view(),
         name='api_settings_retrieve',
     ),
+    path(
+        route='api/file/list/<uuid:landingzone>',
+        view=views_api.ZoneIrodsFileListAPIView.as_view(),
+        name='api_file_list',
+    ),
 ]
 
 # Ajax API views

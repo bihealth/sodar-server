@@ -37,3 +37,19 @@ API Views
 .. autoclass:: ZoneSubmitMoveAPIView
 
 .. autoclass:: ZoneSettingsRetrieveAPIView
+
+.. autoclass:: ZoneIrodsFileListAPIView
+
+
+Version Changes
+===============
+
+.. _api_landingzones_version_1_1:
+
+v1.1
+----
+
+- ``ZoneIrodsFileListAPIView``
+    * Add view
+- ``ZoneSettingsRetrieveAPIView``
+    * Add view

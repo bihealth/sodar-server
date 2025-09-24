@@ -79,6 +79,7 @@ ZONE_SETTINGS = [
     'LANDINGZONES_ZONE_CREATE_LIMIT',
     'LANDINGZONES_ZONE_VALIDATE_LIMIT',
 ]
+IRODS_QUERY_ERROR_MSG = 'Exception querying iRODS objects'
 VERSION_1_1 = parse_version('1.1')
 
 
@@ -554,3 +555,146 @@ class ZoneSettingsRetrieveAPIView(
         )
         ret['file_name_prohibit'] = cleanup_file_prohibit(prohibit_val)
         return Response({'settings': ret}, status=200)
+
+
+@extend_schema(
+    responses={
+        '200': inline_serializer(
+            'ZoneIrodsFileListResponse',
+            fields={
+                'name': serializers.CharField(),
+                'type': serializers.CharField(),
+                'path': serializers.CharField(),
+                'size': serializers.IntegerField(),
+                'modify_time': serializers.DateTimeField(),
+                'checksum': serializers.CharField(),
+            },
+        ),
+    }
+)
+class ZoneIrodsFileListAPIView(
+    LandingzonesAPIVersioningMixin, SODARAPIGenericProjectMixin, APIView
+):
+    """
+    Return a list of files in a landing zone. Optionally also returns
+    collections and MD5/SHA256 checksum files.
+
+    Supports optional pagination for listing by providing the ``page`` query
+    string. This will return results in the Django Rest Framework
+    ``PageNumberPagination`` format.
+
+    **URL:** ``/landingzones/api/file/list/{LandingZone.sodar_uuid}``
+
+    **Methods:** ``GET``
+
+    **Parameters:**
+
+    - ``include_colls``: Include collections in list (boolean, optional, default=False)
+    - ``include_checksum``: Include checksum files in list (boolean, optional, default=False)
+    - ``page``: Page number for paginated results (int, optional)
+
+    **Returns:**
+
+    List of iRODS items (list of dicts). Each dict contains:
+
+    - ``name``: Name of data object or collection
+    - ``type``: Item type (``obj`` for data object, ``coll`` for collection)
+    - ``path``: Full iRODS path for item
+    - ``size``: Size in bytes (only for data objects)
+    - ``modify_time``: Datetime of last modification (``YYYY-MM-DDThh:mm:ssZ``, only for data objects)
+    - ``checksum``: Checksum (only for data objects)
+
+    **Version Changes**:
+
+    - ``1.1``: Add view
+    """
+
+    http_method_names = ['get']
+    lookup_field = 'sodar_uuid'
+    lookup_url_kwarg = 'landingzone'
+    permission_required = 'landingzones.view_zone_own'
+
+    def get(self, request, *args, **kwargs):
+        if parse_version(self.request.version) < VERSION_1_1:
+            raise NotAcceptable(VIEW_NOT_ACCEPTABLE_VERSION_MSG)
+        zone = LandingZone.objects.filter(
+            sodar_uuid=self.kwargs['landingzone']
+        ).first()
+        project = zone.project
+        req_user = request.user
+        # Check for extra zone permission if not requested by zone user
+        if zone.user != req_user and not req_user.has_perm(
+            'landingzones.view_zone_all', project
+        ):
+            raise PermissionDenied()
+
+        irods_backend = plugin_api.get_backend_api('omics_irods')
+        path = irods_backend.get_path(zone)
+        include_colls = request.GET.get('include_colls', False)
+        include_checksum = request.GET.get('include_checksum', False)
+
+        page_size = settings.SODAR_API_PAGE_SIZE
+        page = request.GET.get('page')
+        limit = None
+        offset = None
+        item_count = None
+        if page:
+            page = int(page)
+            limit = page_size
+            offset = 0 if page == 1 else (page - 1) * page_size
+
+        try:
+            with irods_backend.get_session() as irods:
+                obj_list = irods_backend.get_objects(
+                    irods,
+                    path,
+                    include_checksum=include_checksum,
+                    include_colls=include_colls,
+                    limit=limit,
+                    offset=offset,
+                    api_format=True,
+                    checksum=True,
+                )
+                # Get total count for DRF compatible pagination response
+                if page:
+                    stats = irods_backend.get_stats(
+                        irods,
+                        path,
+                        include_checksum=include_checksum,
+                        include_colls=include_colls,
+                    )
+                    item_count = stats['file_count']
+                    if include_colls:
+                        item_count += stats['coll_count']
+        except FileNotFoundError as ex:
+            raise NotFound(f'{IRODS_QUERY_ERROR_MSG}: {ex}')
+        except Exception as ex:
+            return Response(
+                {'detail': f'{IRODS_QUERY_ERROR_MSG}: {ex}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        if page:
+            url = reverse(
+                'landingzones:api_file_list',
+                kwargs={'landingzone': zone.sodar_uuid},
+            )
+            url_suffix = (
+                f'&include_checksum={int(include_checksum)}'
+                f'&include_colls={int(include_colls)}'
+            )
+            next_url = None
+            prev_url = None
+            if item_count > page * page_size:
+                next_url = url + f'?page={page + 1}{url_suffix}'
+            if page > 1:
+                prev_url = url + f'?page={page - 1}{url_suffix}'
+            ret = {
+                'count': item_count,
+                'next': next_url,
+                'previous': prev_url,
+                'results': obj_list,
+            }
+        else:
+            ret = obj_list
+        return Response(ret, status=status.HTTP_200_OK)

@@ -21,13 +21,14 @@ Major feature update and SODAR Core 1.2 upgrade.
 - :ref:`Add landing zone contributor access restricting <app_landingzones_create_restrict>`
 - Add landing zone file list modal collection display toggling
 - Add landing zone settings retrieval REST API view
+- Add landing zone iRODS file list REST API view
 - Add collection support for project file list REST API view
 - Add irodsorphans management command project limiting
 - Add syncstudytables management command check mode
 - Add Django setting to enable/disable remote sample sheet sync
 - Update assay tables to hide row links with no plugin enabled
 - Update sheet overview layout
-- Upgrade Landing Zones REST API version to v1.1
+- :ref:`Upgrade Landing Zones REST API version to v1.1 <api_landingzones_version_1_1>`
 - :ref:`Upgrade Sample Sheets REST API version to v1.2 <api_samplesheets_version_1_2>`
 - Upgrade minimum supported iRODS version to v4.3.4
 - Upgrade supported development platform to Ubuntu 24.04
@@ -42,6 +43,8 @@ REST API Updates
 - Landing Zones API
     * Current version: ``1.1`` (non-breaking changes)
     * Allowed versions: ``1.0``, ``1.1``
+    * ``ZoneIrodsFileListAPIView``
+        + Add view
     * ``ZoneSettingsRetrieveAPIView``
         + Add view
 - Sample Sheets API

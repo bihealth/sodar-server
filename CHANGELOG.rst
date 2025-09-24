@@ -17,7 +17,8 @@ Added
 - **Irodsadmin**
     - ``irodsorphans`` command optional project limiting (#2283)
 - **Irodsbackend**
-    - Add ``setPeriodicStatsUpdate()`` in JQuery (#2243)
+    - ``setPeriodicStatsUpdate()`` in JQuery (#2243)
+    - ``get_stats()`` ``include_checksum`` arg (#2293)
 - **Landingzones**
     - Project viewer role support (#2200)
     - ``notify_alert_zone_status`` user app setting (#2205)
@@ -27,6 +28,7 @@ Added
     - File list modal collection display toggling (#2284)
     - ``zone_access_restrict`` project app setting (#2199)
     - Landing zone contributor access restricting (#2199)
+    - ``ZoneIrodsFileListAPIView`` REST API view (#2291)
 - **Samplesheets**
     - Project viewer role support (#2200)
     - Category statistics for sample count and iRODS statistics (#2213)

@@ -540,6 +540,7 @@ class IrodsAPI:
         self,
         irods: iRODSSession,
         path: Union[str, iRODSPath],
+        include_checksum: bool = False,
         include_colls: bool = False,
     ) -> dict:
         """
@@ -548,6 +549,8 @@ class IrodsAPI:
 
         :param irods: iRODSSession object
         :param path: Full path to iRODS collection (string or iRODSPath)
+        :param include_checksum: if True, include .md5/.sha256 files (bool,
+                                 default=False)
         :param include_colls: Include subcollection count (bool, default=False)
         :return: Dict
         """
@@ -557,17 +560,20 @@ class IrodsAPI:
             raise FileNotFoundError('iRODS collection not found')
 
         ret = {}
+        chk_exclude = (
+            'AND data_name NOT LIKE \'%.md5\' '
+            'AND data_name NOT LIKE \'%.sha256\' '
+        )
         sql = (
             'SELECT COUNT(data_id) as file_count, '
             'SUM(data_size) as total_size '
             'FROM (SELECT data_id, data_size FROM r_data_main '
             'JOIN r_coll_main USING (coll_id) '
             'WHERE (coll_name = \'{coll_path}\' '
-            'OR coll_name LIKE \'{coll_path}/%\') '
-            'AND data_name NOT LIKE \'%.md5\' '
-            'AND data_name NOT LIKE \'%.sha256\' '
+            'OR coll_name LIKE \'{coll_path}/%\') {chk_exclude}'
             'GROUP BY data_id, data_size) AS sub_query'.format(
-                coll_path=coll.path
+                coll_path=coll.path,
+                chk_exclude=chk_exclude if not include_checksum else '',
             )
         )
         # logger.debug(f'Object stats query = "{sql}"')
@@ -632,7 +638,8 @@ class IrodsAPI:
 
         :param irods: iRODSSession object
         :param coll: iRODSCollection object
-        :param include_checksum: if True, include .md5/.sha256 files
+        :param include_checksum: if True, include .md5/.sha256 files (bool,
+                                 default=False)
         :param name_like: Filtering of file names (string or list of strings)
         :param limit: Limit retrieval to N rows (int or None)
         :param offset: Offset retrieval by N rows (int or None)

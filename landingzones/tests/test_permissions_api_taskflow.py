@@ -917,3 +917,95 @@ class TestZoneSubmitMoveAPIView(ZoneAPIPermissionTaskflowTestBase):
             self.assert_response_api(
                 self.url, self.user_no_roles, 403, method='POST'
             )
+
+
+class TestZoneIrodsFileListAPIView(ZoneAPIPermissionTaskflowTestBase):
+    """Tests for ZoneIrodsFileListAPIView permissions with Taskflow"""
+
+    def setUp(self):
+        super().setUp()
+        self.zone = self.make_landing_zone(
+            title=ZONE_TITLE,
+            project=self.project,
+            user=self.user_contributor,  # NOTE: Contributor is owner
+            assay=self.assay,
+            description=ZONE_DESC,
+            configuration=None,
+            config_data={},
+        )
+        self.make_zone_taskflow(self.zone)
+        self.url = reverse(
+            'landingzones:api_file_list',
+            kwargs={'landingzone': self.zone.sodar_uuid},
+        )
+        self.good_users = [
+            self.superuser,
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+        ]
+        self.bad_users = [
+            self.user_contributor_cat,
+            self.user_guest_cat,
+            self.user_viewer_cat,
+            self.user_finder_cat,
+            self.user_guest,
+            self.user_viewer,
+            self.user_no_roles,
+        ]
+
+    def test_get(self):
+        """Test ZoneIrodsFileListAPIView GET"""
+        self.assert_response(self.url, self.good_users, 200)
+        self.assert_response(self.url, self.bad_users, 403)
+        self.assert_response(self.url, self.anonymous, 401)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.user_no_roles, 403)
+            self.assert_response(self.url, self.anonymous, 401)
+
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_get_anon(self):
+        """Test GET with anonymous access"""
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 401)
+
+    def test_get_archive(self):
+        """Test GET with archived project"""
+        self.project.set_archive()
+        self.assert_response(self.url, self.good_users, 200)
+        self.assert_response(self.url, self.bad_users, 403)
+        self.assert_response(self.url, self.anonymous, 401)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.user_no_roles, 403)
+            self.assert_response(self.url, self.anonymous, 401)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response_api(self.url, self.superuser, 200)
+        self.assert_response_api(self.url, self.auth_non_superusers, 403)
+        self.assert_response_api(self.url, self.anonymous, 401)
+
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.good_users, 200)
+        self.assert_response(self.url, self.bad_users, 403)
+        self.assert_response(self.url, self.anonymous, 401)
+
+    def test_get_restrict(self):
+        """Test GET with zone_access_restrict"""
+        user_contrib2 = self.make_extra_contributor()
+        self.restrict_zone_access(self.user_contributor)
+        self.assert_response(self.url, self.good_users, 200)
+        self.assert_response(self.url, self.bad_users + [user_contrib2], 403)
+        self.assert_response(self.url, self.anonymous, 401)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.user_no_roles, 403)
+            self.assert_response(self.url, self.anonymous, 401)
