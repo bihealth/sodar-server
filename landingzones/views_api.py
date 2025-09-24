@@ -508,6 +508,21 @@ class ZoneSubmitMoveAPIView(ZoneMoveMixin, ZoneSubmitBaseAPIView):
         )
 
 
+@extend_schema(
+    responses={
+        '200': inline_serializer(
+            'ZoneSettingsRetrieveResponse',
+            fields={
+                'LANDINGZONES_DISABLE_FOR_USERS': serializers.BooleanField(),
+                'LANDINGZONES_TRIGGER_ENABLE': serializers.BooleanField(),
+                'LANDINGZONES_TRIGGER_FILE': serializers.CharField(),
+                'LANDINGZONES_ZONE_CREATE_LIMIT': serializers.IntegerField(),
+                'LANDINGZONES_ZONE_VALIDATE_LIMIT': serializers.IntegerField(),
+                'file_name_prohibit': serializers.ListField(),
+            },
+        ),
+    }
+)
 class ZoneSettingsRetrieveAPIView(
     LandingzonesAPIVersioningMixin, SODARAPIGenericProjectMixin, APIView
 ):
