@@ -1175,14 +1175,19 @@ class ProjectIrodsFileListAPIView(
                 'samplesheets:api_file_list',
                 kwargs={'project': project.sodar_uuid},
             )
+            url_suffix = f'&include_colls={int(include_colls)}'
             ret = {
                 'count': item_count,
                 'next': (
-                    (url + f'?page={page + 1}')
+                    (url + f'?page={page + 1}{url_suffix}')
                     if item_count > page * page_size
                     else None
                 ),
-                'previous': (url + f'?page={page - 1}') if page > 1 else None,
+                'previous': (
+                    (url + f'?page={page - 1}{url_suffix}')
+                    if page > 1
+                    else None
+                ),
                 'results': obj_list,
             }
         else:

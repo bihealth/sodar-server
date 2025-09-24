@@ -36,7 +36,7 @@ Added
     - ``ProjectAppPlugin.update_irods_stats_cache()`` helper (#2213)
     - ``notify_alert_irods_request`` user app setting (#2205)
     - ``UpdateProjectSheetCacheTask`` Taskflow task (#2254)
-    - ``ProjectIrodsFileListAPIView`` ``include_colls`` parameter (#2256)
+    - ``ProjectIrodsFileListAPIView`` ``include_colls`` parameter (#2256, #2292)
     - ``checksampleaccess`` command debug logging (#2261)
     - ``syncstudytables`` ``check`` arg (#1794)
     - ``SheetContextAjaxView`` assay details and comments (#1827)

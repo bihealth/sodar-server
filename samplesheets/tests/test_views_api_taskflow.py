@@ -1603,7 +1603,7 @@ class TestProjectIrodsFileListAPIView(SampleSheetAPITaskflowTestBase):
         self.assertEqual(response.status_code, 200)
         expected = {
             'count': 3,
-            'next': self.url + '?page=2',
+            'next': self.url + '?page=2&include_colls=1',
             'previous': None,
             'results': [
                 {
@@ -1637,7 +1637,9 @@ class TestProjectIrodsFileListAPIView(SampleSheetAPITaskflowTestBase):
         response = self.request_knox(self.url + '?page=1')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['count'], 11)
-        self.assertEqual(response.data['next'], self.url + '?page=2')
+        self.assertEqual(
+            response.data['next'], self.url + '?page=2&include_colls=0'
+        )
         self.assertEqual(response.data['previous'], None)
         self.assertEqual(len(response.data['results']), 5)
         file_names = [r['name'] for r in response.data['results']]
@@ -1646,8 +1648,12 @@ class TestProjectIrodsFileListAPIView(SampleSheetAPITaskflowTestBase):
 
         response = self.request_knox(self.url + '?page=2')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['next'], self.url + '?page=3')
-        self.assertEqual(response.data['previous'], self.url + '?page=1')
+        self.assertEqual(
+            response.data['next'], self.url + '?page=3&include_colls=0'
+        )
+        self.assertEqual(
+            response.data['previous'], self.url + '?page=1&include_colls=0'
+        )
         self.assertEqual(len(response.data['results']), 5)
         file_names = [r['name'] for r in response.data['results']]
         expected = [
@@ -1659,7 +1665,9 @@ class TestProjectIrodsFileListAPIView(SampleSheetAPITaskflowTestBase):
         response = self.request_knox(self.url + '?page=3')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['next'], None)
-        self.assertEqual(response.data['previous'], self.url + '?page=2')
+        self.assertEqual(
+            response.data['previous'], self.url + '?page=2&include_colls=0'
+        )
         self.assertEqual(len(response.data['results']), 1)
         self.assertEqual(response.data['results'][0]['name'], 'test10.txt')
 
