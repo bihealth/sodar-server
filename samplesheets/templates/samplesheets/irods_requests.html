@@ -200,7 +200,12 @@
                   <input class="sodar-checkbox sodar-ss-checkbox-item sodar-ss-request-item-check" type="checkbox"
                          id="sodar-ss-checkbox-item-{{ irods_request.sodar_uuid }}"
                          name="batch_item_{{ irods_request.sodar_uuid }}" value="{{ irods_request.sodar_uuid }}"
-                         {% if irods_request.is_collection %}disabled{% endif %} />
+                         {% if irods_request.is_collection %}
+                           disabled
+                           title="Batch operations not allowed for requests targeting collections"
+                           data-toggle="tooltip"
+                           data-placement="left"
+                         {% endif %}/>
                 {% endif %}
               </td>
             </tr>

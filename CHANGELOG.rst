@@ -46,6 +46,7 @@ Added
     - Assay details in sheet overview (#2011)
     - ``SHEETS_SYNC_ENABLE`` Django setting (#2247)
     - Periodic celery task setup logging (#2247)
+    - Disabled iRODS data request batch selection checkbox tooltips (#2295)
 - **Taskflowbackend**
     - Project viewer role support (#2200)
     - ``user`` arg for ``TaskflowAPI.submit()`` (#2157)
