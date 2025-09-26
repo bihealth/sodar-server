@@ -57,7 +57,7 @@ Changed
 
 - **General**
     - Upgrade to Django v4.2.24 (#2232)
-    - Upgrade to django-sodar-core v1.2.2 (#2187, #2232, #2245)
+    - Upgrade to django-sodar-core v1.2.3 (#2187, #2232, #2245)
     - Upgrade to Nodejs v22 (#2229)
     - Upgrade supported develoment and CI platform to Ubuntu v24.04 (#2067)
     - Upgrade general Python depedencies (#2187, #2232)
