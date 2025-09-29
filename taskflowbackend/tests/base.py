@@ -26,6 +26,7 @@ from irods.test.helpers import make_object
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
+from django.test import RequestFactory
 from django.urls import reverse
 
 from rest_framework.test import APILiveServerTestCase
@@ -49,6 +50,7 @@ from projectroles.tests.test_models import (
 from projectroles.tests.test_permissions import PermissionTestMixin
 from projectroles.tests.test_permissions_api import SODARAPIPermissionTestMixin
 from projectroles.tests.test_views_api import SODARAPIViewTestMixin
+from projectroles.views import ProjectModifyMixin, RoleAssignmentModifyMixin
 from projectroles.views_api import (
     PROJECTROLES_API_MEDIA_TYPE,
     PROJECTROLES_API_DEFAULT_VERSION,
@@ -62,6 +64,7 @@ app_settings = AppSettingAPI()
 lock_api = ProjectLockAPI()
 logger = logging.getLogger(__name__)
 plugin_api = PluginAPI()
+req_factory = RequestFactory()
 
 
 # SODAR constants
@@ -439,7 +442,7 @@ class TaskflowPermissionTestMixin(
         self.no_role_users = [self.user_no_roles, self.anonymous]
 
 
-class TaskflowProjectTestMixin:
+class TaskflowProjectTestMixin(ProjectModifyMixin, RoleAssignmentModifyMixin):
     """Helpers for UI/Ajax view project management with Taskflow"""
 
     def make_project_taskflow(
@@ -452,7 +455,9 @@ class TaskflowProjectTestMixin:
         public_access: Optional[Role] = None,
     ) -> tuple[Project, RoleAssignment]:
         """
-        Make Project with taskflow for UI view tests.
+        Make Project with taskflow. Calls the project_create flow to initialize
+        project in iRODS. Timeline event creation, app alerts and email sending
+        are also triggered.
 
         :param title: Project title (string)
         :param type: Project type (string, PROJECT_TYPE_PROJECT or
@@ -463,58 +468,48 @@ class TaskflowProjectTestMixin:
         :param public_access: Public access level (Role, optional)
         :return: Project, RoleAssignment
         """
+        # Mock request
+        r_kw = {'project': parent.sodar_uuid} if parent else {}
+        request = req_factory.post(reverse('projectroles:create', kwargs=r_kw))
+        request.user = self.user  # TODO: Replace with owner
+        # Set up data and call modify_project() which does taskflow update
         post_data = {
             'title': title,
             'type': type,
-            'parent': parent.sodar_uuid if parent else None,
-            'owner': owner.sodar_uuid,
+            'parent': parent,
+            'owner': owner,
             'description': description,
-            'public_access': public_access.pk if public_access else '',
+            'public_access': public_access,
         }
         post_data.update(
-            app_settings.get_defaults(APP_SETTING_SCOPE_PROJECT, post_safe=True)
+            app_settings.get_defaults(APP_SETTING_SCOPE_PROJECT)
         )  # Add default settings
-        post_kwargs = {'project': parent.sodar_uuid} if parent else {}
-        with self.login(self.user):  # TODO: Replace with owner
-            response = self.client.post(
-                reverse('projectroles:create', kwargs=post_kwargs), post_data
-            )
-            self.assertEqual(response.status_code, 302)
-            project = Project.objects.get(title=title)
-            self.assertRedirects(
-                response,
-                reverse(
-                    'projectroles:detail',
-                    kwargs={'project': project.sodar_uuid},
-                ),
-            )
+        project = self.modify_project(post_data, request)
+        project_path = self.irods_backend.get_path(project)
+        self.assertEqual(self.irods.collections.exists(project_path), True)
         owner_as = project.get_owner()
         return project, owner_as
 
     def make_assignment_taskflow(
         self, project: Project, user: SODARUser, role: Role
     ) -> RoleAssignment:
-        """Make RoleAssignment with taskflow for UI view tests"""
-        post_data = {
-            'project': project.sodar_uuid,
-            'user': user.sodar_uuid,
-            'role': role.pk,
-        }
-        with self.login(self.user):  # TODO: Use project owner instead
-            response = self.client.post(
-                reverse(
-                    'projectroles:role_create',
-                    kwargs={'project': project.sodar_uuid},
-                ),
-                post_data,
-            )
-            role_as = RoleAssignment.objects.get(project=project, user=user)
-            self.assertRedirects(
-                response,
-                reverse(
-                    'projectroles:roles', kwargs={'project': project.sodar_uuid}
-                ),
-            )
+        """
+        Make RoleAssignment with taskflow. Calls the role_update_irods_batch
+        flow to set up user role in iRODS. Timeline event creation, app alerts
+        and email sending are also triggered.
+
+        :param project: Project object
+        :param user: User object for role assignment
+        :param role: Role object for role assignment
+        :return: RoleAssignment
+        """
+        url = reverse(
+            'projectroles:role_create', kwargs={'project': project.sodar_uuid}
+        )
+        request = req_factory.post(url)
+        request.user = self.user  # TODO: Replace with owner
+        post_data = {'project': project, 'user': user, 'role': role}
+        role_as = self.modify_assignment(post_data, request, project)
         return role_as
 
 
