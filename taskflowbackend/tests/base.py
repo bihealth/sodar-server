@@ -26,7 +26,7 @@ from irods.test.helpers import make_object
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
-from django.test import RequestFactory
+from django.test import LiveServerTestCase, RequestFactory
 from django.urls import reverse
 
 from rest_framework.test import APILiveServerTestCase
@@ -49,6 +49,11 @@ from projectroles.tests.test_models import (
 )
 from projectroles.tests.test_permissions import PermissionTestMixin
 from projectroles.tests.test_permissions_api import SODARAPIPermissionTestMixin
+from projectroles.tests.test_ui import (
+    LiveUserMixin,
+    SeleniumSetupMixin,
+    UITestMixin,
+)
 from projectroles.tests.test_views_api import SODARAPIViewTestMixin
 from projectroles.views import ProjectModifyMixin, RoleAssignmentModifyMixin
 from projectroles.views_api import (
@@ -609,10 +614,58 @@ class TaskflowAPIPermissionTestBase(
         """
         Helper to set site read only mode to the desired value.
 
-        :param value: BooAPP_NAMElean
+        :param value: Boolean
         """
         app_settings.set('projectroles', 'site_read_only', value)
 
     def setUp(self):
         super().setUp()
         self.knox_token = self.get_token(self.superuser)
+
+
+class TaskflowUITestBase(
+    TaskflowTestMixin,
+    TaskflowProjectTestMixin,
+    SeleniumSetupMixin,
+    LiveUserMixin,
+    UITestMixin,
+    LiveServerTestCase,
+):
+    """Base class for UI testing with taskflow"""
+
+    def setUp(self):
+        # Ensure TASKFLOW_TEST_MODE is True to avoid data loss
+        if not settings.TASKFLOW_TEST_MODE:
+            raise ImproperlyConfigured(TEST_MODE_ERR_MSG)
+        self.taskflow = plugin_api.get_backend_api('taskflow', force=True)
+        self.irods_backend = plugin_api.get_backend_api('omics_irods')
+        self.irods = self.irods_backend.get_session_obj()
+        # Set up Selenium
+        self.set_up_selenium()
+        # Init roles
+        self.init_roles()
+        # Init users
+        self.superuser = self.make_user('superuser', True)
+        self.user = self.superuser  # HACK for TaskflowProjectTestMixin
+        self.user_owner_cat = self.make_user('user_owner_cat')
+        self.user_owner = self.make_user('user_owner')
+
+        # Init category and project
+        self.category = self.make_project(
+            title='TestCategory', type=PROJECT_TYPE_CATEGORY, parent=None
+        )
+        self.make_assignment(
+            self.category, self.user_owner_cat, self.role_owner
+        )
+        self.project, self.owner_as = self.make_project_taskflow(
+            title='TestProject',
+            type=PROJECT_TYPE_PROJECT,
+            parent=self.category,
+            owner=self.user_owner,
+        )
+        # NOTE: Add other role assignments and users as needed
+
+    def tearDown(self):
+        # Shut down Selenium
+        self.selenium.quit()
+        super().tearDown()

@@ -229,6 +229,7 @@ function copyModalPath(path, id) {
  File list updating
  ******************/
 function updateChecksumStatus(checksumUrl, paths) {
+  let chkIconClass = 'sodar-lz-obj-list-checksum-icon'
   $.ajax({
     url: checksumUrl,
     method: 'POST',
@@ -244,11 +245,11 @@ function updateChecksumStatus(checksumUrl, paths) {
         let cell = $(this).find('.sodar-lz-obj-list-item-checksum')
         if (data['checksum_status'][path]) {
           cell.html($('<i>')
-            .attr('class', 'iconify text-muted')
+            .attr('class', 'iconify text-muted ' + chkIconClass)
             .attr('data-icon', 'mdi:check-bold'))
         } else {
           cell.html($('<i>')
-            .attr('class', 'iconify text-danger')
+            .attr('class', 'iconify text-danger ' + chkIconClass)
             .attr('data-icon', 'mdi:close-thick'))
         }
       }
@@ -306,7 +307,8 @@ function updateFileList(
             .attr('class', 'iconify')
             .attr('data-icon', 'mdi:console-line'))
         let iconHtml = $('<i>')
-          .attr('class', 'iconify mr-1')
+          .attr('class', 'iconify mr-1 sodar-lz-obj-list-icon-' + obj[
+            'type'])
           .attr('data-icon', icon)
           .attr('title', toolTip)
         let objLink = $('<a>')
@@ -367,6 +369,7 @@ function updateFileList(
           .append($('<td>')
             .attr('colspan', '5')
             .attr('class', 'text-muted font-italic text-center')
+            .attr('id', 'sodar-lz-obj-list-empty')
             .text('No collections or files in this landing zone.'))
         tableBody.html(row)
       }

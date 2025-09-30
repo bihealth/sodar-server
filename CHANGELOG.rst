@@ -29,6 +29,7 @@ Added
     - ``zone_access_restrict`` project app setting (#2199)
     - Landing zone contributor access restricting (#2199)
     - ``ZoneIrodsFileListAPIView`` REST API view (#2291)
+    - Zone file list modal UI tests (#2169)
 - **Samplesheets**
     - Project viewer role support (#2200)
     - Category statistics for sample count and iRODS statistics (#2213)
@@ -51,6 +52,7 @@ Added
     - Project viewer role support (#2200)
     - ``user`` arg for ``TaskflowAPI.submit()`` (#2157)
     - ``constants`` module for common constants (#2225)
+    - ``TaskflowUITestBase`` base test class (#2168)
 
 Changed
 -------
