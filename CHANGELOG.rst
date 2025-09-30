@@ -85,6 +85,7 @@ Changed
     - Move project sheet cache update to ``UpdateProjectSheetCacheTask`` (#2254)
     - Refactor server side variables for JQuery (#2286)
     - Refactor rules (#2199)
+    - Disable vertical centering for zone file list modal (#2298)
 - **Samplesheets**
     - Update views for project access blocking support (#2233)
     - Update app for ``public_access`` support (#2202)

@@ -452,6 +452,10 @@ function updatePageConrols(listData, webDavUrl, irodsPathLength, checksumUrl) {
 }
 
 $(document).ready(function () {
+  /******************************
+   HACK: Disable model centering
+   ******************************/
+  $('.modal-dialog').removeClass('modal-dialog-centered')
   /*********************
    Get superuser status
    *********************/
