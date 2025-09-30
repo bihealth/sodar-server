@@ -714,7 +714,7 @@ class TestIrodsDataRequestUpdateAPIView(
 
     def setUp(self):
         super().setUp()
-        self.request = self.make_irods_request(
+        self.irods_req = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
             path=self.file_obj.path,
@@ -723,7 +723,7 @@ class TestIrodsDataRequestUpdateAPIView(
         )
         self.url = reverse(
             'samplesheets:api_irods_request_update',
-            kwargs={'irodsdatarequest': self.request.sodar_uuid},
+            kwargs={'irodsdatarequest': self.irods_req.sodar_uuid},
         )
         self.update_data = {'path': self.obj_path, 'description': 'Updated'}
 
@@ -840,12 +840,12 @@ class TestIrodsDataRequestAcceptAPIView(
     """Test permissions for TestIrodsDataRequestAcceptAPIView"""
 
     def _cleanup(self):
-        self.request.status = IRODS_REQUEST_STATUS_ACTIVE
-        self.request.save()
+        self.irods_req.status = IRODS_REQUEST_STATUS_ACTIVE
+        self.irods_req.save()
 
     def setUp(self):
         super().setUp()
-        self.request = self.make_irods_request(
+        self.irods_req = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
             path=self.file_obj.path,
@@ -854,7 +854,7 @@ class TestIrodsDataRequestAcceptAPIView(
         )
         self.url = reverse(
             'samplesheets:api_irods_request_accept',
-            kwargs={'irodsdatarequest': self.request.sodar_uuid},
+            kwargs={'irodsdatarequest': self.irods_req.sodar_uuid},
         )
 
     def test_post(self):

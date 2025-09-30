@@ -1273,7 +1273,7 @@ class TestIrodsDataRequestUpdateView(
 
     def setUp(self):
         super().setUp()
-        self.request = self.make_irods_request(
+        self.irods_req = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
             path=IRODS_FILE_PATH,
@@ -1282,7 +1282,7 @@ class TestIrodsDataRequestUpdateView(
         )
         self.url = reverse(
             'samplesheets:irods_request_update',
-            kwargs={'irodsdatarequest': self.request.sodar_uuid},
+            kwargs={'irodsdatarequest': self.irods_req.sodar_uuid},
         )
 
     def test_get(self):
@@ -1347,7 +1347,7 @@ class TestIrodsDataRequestAcceptView(
 
     def setUp(self):
         super().setUp()
-        self.request = self.make_irods_request(
+        self.irods_req = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
             path=IRODS_FILE_PATH,
@@ -1356,7 +1356,7 @@ class TestIrodsDataRequestAcceptView(
         )
         self.url = reverse(
             'samplesheets:irods_request_accept',
-            kwargs={'irodsdatarequest': self.request.sodar_uuid},
+            kwargs={'irodsdatarequest': self.irods_req.sodar_uuid},
         )
 
     def test_get(self):
@@ -1407,7 +1407,7 @@ class TestIrodsDataRequestDeleteView(
 
     def setUp(self):
         super().setUp()
-        self.request = self.make_irods_request(
+        self.irods_req = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
             path=IRODS_FILE_PATH,
@@ -1416,7 +1416,7 @@ class TestIrodsDataRequestDeleteView(
         )
         self.url = reverse(
             'samplesheets:irods_request_delete',
-            kwargs={'irodsdatarequest': self.request.sodar_uuid},
+            kwargs={'irodsdatarequest': self.irods_req.sodar_uuid},
         )
 
     def test_get(self):

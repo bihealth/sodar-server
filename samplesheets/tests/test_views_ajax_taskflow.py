@@ -399,7 +399,6 @@ class TestIrodsDataRequestDeleteAjaxView(IrodsDataRequestViewTestBase):
         super().setUp()
         self.post_data = {'path': self.obj_path}
         # Create request
-        # TODO: Why use POST for request creation?
         # TODO: Couldn't this be in test_views_ajax without Taskflow needed?
         with self.login(self.user_contributor):
             self.client.post(
@@ -474,14 +473,12 @@ class TestIrodsObjectListAjaxView(
 
     def setUp(self):
         super().setUp()
-        # Make project with owner in Taskflow and Django
         self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
         )
-        # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
@@ -566,7 +563,7 @@ class TestIrodsObjectListAjaxView(
         )
         obj_path = iRODSPath(self.assay_path, IRODS_FILE_NAME)
         self.irods.data_objects.create(obj_path)
-        self.request = self.make_irods_request(
+        self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
             path=obj_path,

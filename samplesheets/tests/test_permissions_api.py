@@ -589,7 +589,7 @@ class TestIrodsDataRequestRetrieveAPIView(
 
     def setUp(self):
         super().setUp()
-        self.request = self.make_irods_request(
+        self.irods_req = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
             path=IRODS_FILE_PATH,
@@ -598,7 +598,7 @@ class TestIrodsDataRequestRetrieveAPIView(
         )
         self.url = reverse(
             'samplesheets:api_irods_request_retrieve',
-            kwargs={'irodsdatarequest': self.request.sodar_uuid},
+            kwargs={'irodsdatarequest': self.irods_req.sodar_uuid},
         )
 
     def test_get(self):
@@ -646,12 +646,12 @@ class TestIrodsDataRequestRejectAPIView(
     """Test permissions for TestIrodsDataRequestRejectAPIView"""
 
     def _cleanup(self):
-        self.request.status = IRODS_REQUEST_STATUS_ACTIVE
-        self.request.save()
+        self.irods_req.status = IRODS_REQUEST_STATUS_ACTIVE
+        self.irods_req.save()
 
     def setUp(self):
         super().setUp()
-        self.request = self.make_irods_request(
+        self.irods_req = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
             path=IRODS_FILE_PATH,
@@ -660,7 +660,7 @@ class TestIrodsDataRequestRejectAPIView(
         )
         self.url = reverse(
             'samplesheets:api_irods_request_reject',
-            kwargs={'irodsdatarequest': self.request.sodar_uuid},
+            kwargs={'irodsdatarequest': self.irods_req.sodar_uuid},
         )
 
     def test_post(self):
@@ -755,18 +755,18 @@ class TestIrodsDataRequestDestroyAPIView(
     """Test permissions for IrodsDataRequestDestroyAPIView"""
 
     def _make_request(self):
-        self.request = self.make_irods_request(
+        self.irods_req = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
             path=IRODS_FILE_PATH,
             status=IRODS_REQUEST_STATUS_ACTIVE,
             user=self.user_contributor,
         )
-        self.request.sodar_uuid = self.request_uuid
-        self.request.save()
+        self.irods_req.sodar_uuid = self.request_uuid
+        self.irods_req.save()
         self.url = reverse(
             'samplesheets:api_irods_request_delete',
-            kwargs={'irodsdatarequest': self.request.sodar_uuid},
+            kwargs={'irodsdatarequest': self.irods_req.sodar_uuid},
         )
 
     def setUp(self):

@@ -1073,7 +1073,7 @@ class TestIrodsDataRequestUpdateAPIView(
 
     def setUp(self):
         super().setUp()
-        self.request = self.make_irods_request(
+        self.irods_req = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
             path=self.obj_path,
@@ -1083,7 +1083,7 @@ class TestIrodsDataRequestUpdateAPIView(
         )
         self.url = reverse(
             'samplesheets:api_irods_request_update',
-            kwargs={'irodsdatarequest': self.request.sodar_uuid},
+            kwargs={'irodsdatarequest': self.irods_req.sodar_uuid},
         )
         self.update_data = {
             'path': self.obj_path,
@@ -1099,9 +1099,9 @@ class TestIrodsDataRequestUpdateAPIView(
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
-        self.request.refresh_from_db()
+        self.irods_req.refresh_from_db()
         expected = {
-            'id': self.request.pk,
+            'id': self.irods_req.pk,
             'project': self.project.pk,
             'action': IRODS_REQUEST_ACTION_DELETE,
             'target_path': '',
@@ -1110,9 +1110,9 @@ class TestIrodsDataRequestUpdateAPIView(
             'status': IRODS_REQUEST_STATUS_ACTIVE,
             'status_info': '',
             'description': IRODS_REQUEST_DESC_UPDATED,
-            'sodar_uuid': self.request.sodar_uuid,
+            'sodar_uuid': self.irods_req.sodar_uuid,
         }
-        self.assertEqual(model_to_dict(self.request), expected)
+        self.assertEqual(model_to_dict(self.irods_req), expected)
         self._assert_tl_count(1)
 
     def test_put_empty_description(self):
@@ -1122,8 +1122,8 @@ class TestIrodsDataRequestUpdateAPIView(
             self.url, 'PUT', data=self.update_data, token=self.token_contrib
         )
         self.assertEqual(response.status_code, 200)
-        self.request.refresh_from_db()
-        self.assertEqual(self.request.description, '')
+        self.irods_req.refresh_from_db()
+        self.assertEqual(self.irods_req.description, '')
 
     def test_put_invalid_path(self):
         """Test PUT to update request with invalid path"""
@@ -1133,9 +1133,9 @@ class TestIrodsDataRequestUpdateAPIView(
             self.url, 'PUT', data=self.update_data, token=self.token_contrib
         )
         self.assertEqual(response.status_code, 400)
-        self.request.refresh_from_db()
-        self.assertEqual(self.request.description, '')
-        self.assertEqual(self.request.path, self.obj_path)
+        self.irods_req.refresh_from_db()
+        self.assertEqual(self.irods_req.description, '')
+        self.assertEqual(self.irods_req.path, self.obj_path)
         self._assert_tl_count(0)
 
     def test_put_assay_path(self):
@@ -1145,8 +1145,8 @@ class TestIrodsDataRequestUpdateAPIView(
             self.url, 'PUT', data=self.update_data, token=self.token_contrib
         )
         self.assertEqual(response.status_code, 400)
-        self.request.refresh_from_db()
-        self.assertEqual(self.request.path, self.obj_path)
+        self.irods_req.refresh_from_db()
+        self.assertEqual(self.irods_req.path, self.obj_path)
 
     def test_patch(self):
         """Test PATCH to update request"""
@@ -1156,9 +1156,9 @@ class TestIrodsDataRequestUpdateAPIView(
             self.url, 'PATCH', data=update_data, token=self.token_contrib
         )
         self.assertEqual(response.status_code, 200)
-        self.request.refresh_from_db()
-        self.assertEqual(self.request.description, IRODS_REQUEST_DESC_UPDATED)
-        self.assertEqual(self.request.path, self.obj_path)
+        self.irods_req.refresh_from_db()
+        self.assertEqual(self.irods_req.description, IRODS_REQUEST_DESC_UPDATED)
+        self.assertEqual(self.irods_req.path, self.obj_path)
         self._assert_tl_count(1)
 
     def test_patch_superuser(self):
@@ -1169,10 +1169,10 @@ class TestIrodsDataRequestUpdateAPIView(
             self.url, 'PATCH', data=update_data, token=self.get_token(self.user)
         )
         self.assertEqual(response.status_code, 200)
-        self.request.refresh_from_db()
-        self.assertEqual(self.request.description, IRODS_REQUEST_DESC_UPDATED)
-        self.assertEqual(self.request.path, self.obj_path)
-        self.assertEqual(self.request.user, self.user_contributor)
+        self.irods_req.refresh_from_db()
+        self.assertEqual(self.irods_req.description, IRODS_REQUEST_DESC_UPDATED)
+        self.assertEqual(self.irods_req.path, self.obj_path)
+        self.assertEqual(self.irods_req.user, self.user_contributor)
         self._assert_tl_count(1)
 
 
@@ -1186,7 +1186,7 @@ class TestIrodsDataRequestAcceptAPIView(
 
     def setUp(self):
         super().setUp()
-        self.request = self.make_irods_request(
+        self.irods_req = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
             path=self.obj_path,
@@ -1196,7 +1196,7 @@ class TestIrodsDataRequestAcceptAPIView(
         )
         self.url = reverse(
             'samplesheets:api_irods_request_accept',
-            kwargs={'irodsdatarequest': self.request.sodar_uuid},
+            kwargs={'irodsdatarequest': self.irods_req.sodar_uuid},
         )
 
     def test_post(self):
@@ -1207,8 +1207,8 @@ class TestIrodsDataRequestAcceptAPIView(
         self.assert_alert_count(ACCEPT_ALERT, self.user_contributor, 0)
         response = self.request_knox(self.url, 'POST')
         self.assertEqual(response.status_code, 200)
-        self.request.refresh_from_db()
-        self.assertEqual(self.request.status, IRODS_REQUEST_STATUS_ACCEPTED)
+        self.irods_req.refresh_from_db()
+        self.assertEqual(self.irods_req.status, IRODS_REQUEST_STATUS_ACCEPTED)
         self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
         self.assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
         self.assert_alert_count(ACCEPT_ALERT, self.user_contributor, 1)
@@ -1233,8 +1233,8 @@ class TestIrodsDataRequestAcceptAPIView(
             self.url, 'POST', token=self.get_token(self.user_delegate)
         )
         self.assertEqual(response.status_code, 200)
-        self.request.refresh_from_db()
-        self.assertEqual(self.request.status, IRODS_REQUEST_STATUS_ACCEPTED)
+        self.irods_req.refresh_from_db()
+        self.assertEqual(self.irods_req.status, IRODS_REQUEST_STATUS_ACCEPTED)
         self.assert_irods_obj(self.obj_path, False)
         self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
         self.assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
@@ -1250,8 +1250,8 @@ class TestIrodsDataRequestAcceptAPIView(
             self.url, 'POST', token=self.get_token(self.user_contributor)
         )
         self.assertEqual(response.status_code, 403)
-        self.request.refresh_from_db()
-        self.assertEqual(self.request.status, IRODS_REQUEST_STATUS_ACTIVE)
+        self.irods_req.refresh_from_db()
+        self.assertEqual(self.irods_req.status, IRODS_REQUEST_STATUS_ACTIVE)
         self.assert_irods_obj(self.obj_path)
         self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
         self.assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
@@ -1263,8 +1263,8 @@ class TestIrodsDataRequestAcceptAPIView(
         self.assert_irods_obj(self.obj_path)
         response = self.request_knox(self.url, 'POST')
         self.assertEqual(response.status_code, 503)
-        self.request.refresh_from_db()
-        self.assertEqual(self.request.status, IRODS_REQUEST_STATUS_FAILED)
+        self.irods_req.refresh_from_db()
+        self.assertEqual(self.irods_req.status, IRODS_REQUEST_STATUS_FAILED)
         self.assert_irods_obj(self.obj_path)
         self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
         self.assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
@@ -1276,8 +1276,8 @@ class TestIrodsDataRequestAcceptAPIView(
         self.assert_irods_obj(self.obj_path)
         response = self.request_knox(self.url, 'POST')
         self.assertEqual(response.status_code, 400)
-        self.request.refresh_from_db()
-        self.assertEqual(self.request.status, IRODS_REQUEST_STATUS_FAILED)
+        self.irods_req.refresh_from_db()
+        self.assertEqual(self.irods_req.status, IRODS_REQUEST_STATUS_FAILED)
         self.assert_irods_obj(self.obj_path)
         self.assert_alert_count(ACCEPT_ALERT, self.user, 0)
         self.assert_alert_count(ACCEPT_ALERT, self.user_delegate, 0)
@@ -1285,24 +1285,24 @@ class TestIrodsDataRequestAcceptAPIView(
 
     def test_post_accepted(self):
         """Test acceptining previously accepted request (should fail)"""
-        self.assertEqual(self.request.status, IRODS_REQUEST_STATUS_ACTIVE)
+        self.assertEqual(self.irods_req.status, IRODS_REQUEST_STATUS_ACTIVE)
         response = self.request_knox(self.url, 'POST')
         self.assertEqual(response.status_code, 200)
-        self.request.refresh_from_db()
-        self.assertEqual(self.request.status, IRODS_REQUEST_STATUS_ACCEPTED)
+        self.irods_req.refresh_from_db()
+        self.assertEqual(self.irods_req.status, IRODS_REQUEST_STATUS_ACCEPTED)
         response = self.request_knox(self.url, 'POST')
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(self.request.status, IRODS_REQUEST_STATUS_ACCEPTED)
+        self.assertEqual(self.irods_req.status, IRODS_REQUEST_STATUS_ACCEPTED)
 
     def test_post_rejected(self):
         """Test accepting previously rejected request (should fail)"""
         self.assert_irods_obj(self.obj_path, True)
-        self.request.status = IRODS_REQUEST_STATUS_REJECTED
-        self.request.save()
+        self.irods_req.status = IRODS_REQUEST_STATUS_REJECTED
+        self.irods_req.save()
         response = self.request_knox(self.url, 'POST')
         self.assertEqual(response.status_code, 400)
-        self.request.refresh_from_db()
-        self.assertEqual(self.request.status, IRODS_REQUEST_STATUS_REJECTED)
+        self.irods_req.refresh_from_db()
+        self.assertEqual(self.irods_req.status, IRODS_REQUEST_STATUS_REJECTED)
         self.assert_irods_obj(self.obj_path, True)
 
 
@@ -1313,7 +1313,7 @@ class TestIrodsDataRequestRejectAPIView(
 
     def setUp(self):
         super().setUp()
-        self.request = self.make_irods_request(
+        self.irods_req = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
             path=self.obj_path,
@@ -1323,7 +1323,7 @@ class TestIrodsDataRequestRejectAPIView(
         )
         self.url = reverse(
             'samplesheets:api_irods_request_reject',
-            kwargs={'irodsdatarequest': self.request.sodar_uuid},
+            kwargs={'irodsdatarequest': self.irods_req.sodar_uuid},
         )
 
     def test_post(self):
@@ -1333,8 +1333,8 @@ class TestIrodsDataRequestRejectAPIView(
         self.assert_alert_count(REJECT_ALERT, self.user_contributor, 0)
         response = self.request_knox(self.url, 'POST')
         self.assertEqual(response.status_code, 200)
-        self.request.refresh_from_db()
-        self.assertEqual(self.request.status, IRODS_REQUEST_STATUS_REJECTED)
+        self.irods_req.refresh_from_db()
+        self.assertEqual(self.irods_req.status, IRODS_REQUEST_STATUS_REJECTED)
         self.assert_irods_obj(self.obj_path)
         self.assert_alert_count(REJECT_ALERT, self.user, 0)
         self.assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
@@ -1349,8 +1349,8 @@ class TestIrodsDataRequestRejectAPIView(
             self.url, 'POST', token=self.get_token(self.user_delegate)
         )
         self.assertEqual(response.status_code, 200)
-        self.request.refresh_from_db()
-        self.assertEqual(self.request.status, IRODS_REQUEST_STATUS_REJECTED)
+        self.irods_req.refresh_from_db()
+        self.assertEqual(self.irods_req.status, IRODS_REQUEST_STATUS_REJECTED)
         self.assert_alert_count(REJECT_ALERT, self.user, 0)
         self.assert_alert_count(REJECT_ALERT, self.user_delegate, 0)
         self.assert_alert_count(REJECT_ALERT, self.user_contributor, 1)
@@ -1362,8 +1362,8 @@ class TestIrodsDataRequestRejectAPIView(
         self.assert_alert_count(REJECT_ALERT, self.user_contributor, 0)
         response = self.request_knox(self.url, 'POST', token=self.token_contrib)
         self.assertEqual(response.status_code, 403)
-        self.request.refresh_from_db()
-        self.assertEqual(self.request.status, IRODS_REQUEST_STATUS_ACTIVE)
+        self.irods_req.refresh_from_db()
+        self.assertEqual(self.irods_req.status, IRODS_REQUEST_STATUS_ACTIVE)
         self.assert_irods_obj(self.obj_path)
         self.assert_alert_count(REJECT_ALERT, self.user, 0)
         self.assert_alert_count(REJECT_ALERT, self.user_delegate, 0)

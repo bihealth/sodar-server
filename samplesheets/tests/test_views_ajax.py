@@ -35,7 +35,8 @@ from samplesheets.models import (
     Process,
     GenericMaterial,
     ISATab,
-    IrodsDataRequest,
+    IRODS_REQUEST_STATUS_ACTIVE,
+    IRODS_REQUEST_ACTION_DELETE,
 )
 from samplesheets.rendering import (
     SampleSheetTableBuilder,
@@ -43,7 +44,10 @@ from samplesheets.rendering import (
 )
 from samplesheets.sheet_config import SheetConfigAPI
 from samplesheets.tests.test_io import SHEET_DIR
-from samplesheets.tests.test_models import IrodsAccessTicketMixin
+from samplesheets.tests.test_models import (
+    IrodsAccessTicketMixin,
+    IrodsDataRequestMixin,
+)
 from samplesheets.tests.test_sheet_config import (
     SheetConfigMixin,
     CONFIG_STUDY_UUID,
@@ -192,7 +196,7 @@ class RowEditMixin:
                 n_uuid = self.row_uuids[i]
 
 
-class TestSheetContextAjaxView(SamplesheetsViewTestBase):
+class TestSheetContextAjaxView(IrodsDataRequestMixin, SamplesheetsViewTestBase):
     """Tests for SheetContextAjaxView"""
 
     # TODO: Test with realistic ISA-Tab examples using BIH configs (see #434)
@@ -463,13 +467,14 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
         self._import_investigation()
         self.investigation.irods_status = True
         self.investigation.save()
-        # TODO: Use model helper instead (see #1088)
-        IrodsDataRequest.objects.create(
+        self.make_irods_request(
             project=self.project,
+            action=IRODS_REQUEST_ACTION_DELETE,
             path=iRODSPath(
                 self.irods_backend.get_path(self.assay), 'test', 'xxx.bam'
             ),
             user=self.user,
+            status=IRODS_REQUEST_STATUS_ACTIVE,
         )
 
         with self.login(self.user):
@@ -493,13 +498,14 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
         self._import_investigation()
         self.investigation.irods_status = True
         self.investigation.save()
-        # TODO: Use model helper instead (see #1088)
-        IrodsDataRequest.objects.create(
+        self.make_irods_request(
             project=self.project,
+            action=IRODS_REQUEST_ACTION_DELETE,
             path=iRODSPath(
                 self.irods_backend.get_path(self.assay), 'test', 'xxx.bam'
             ),
             user=self.user,
+            status=IRODS_REQUEST_STATUS_ACTIVE,
         )
         with self.login(self.user_contributor):
             response = self.client.get(self.url)

@@ -1590,7 +1590,7 @@ class TestIrodsDataRequestListView(
     def test_get(self):
         """Test IrodsDataRequestListView GET"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
-        irods_request = self.make_irods_request(
+        irods_req = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
             path=IRODS_FILE_PATH,
@@ -1602,7 +1602,7 @@ class TestIrodsDataRequestListView(
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['object_list']), 1)
         context_obj = response.context['object_list'][0]
-        self.assertEqual(context_obj, irods_request)
+        self.assertEqual(context_obj, irods_req)
         self.assertEqual(
             context_obj.webdav_url, 'https://127.0.0.1' + IRODS_FILE_PATH
         )  # Ensure no extra slash is between host and iRODS path
@@ -1641,7 +1641,7 @@ class TestIrodsDataRequestListView(
         self.assertEqual(len(response.context['object_list']), 0)
 
     def test_list_empty(self):
-        """Test GET request for empty list of delete requests"""
+        """Test GET for empty list of delete requests"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         with self.login(self.user):
             response = self.client.get(self.url)

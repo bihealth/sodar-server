@@ -1459,7 +1459,7 @@ class TestIrodsDataRequestUpdateView(
 
     def setUp(self):
         super().setUp()
-        self.request = self.make_irods_request(
+        self.irods_req = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
             path=self.obj_path,
@@ -1469,7 +1469,7 @@ class TestIrodsDataRequestUpdateView(
         )
         self.url = reverse(
             'samplesheets:irods_request_update',
-            kwargs={'irodsdatarequest': self.request.sodar_uuid},
+            kwargs={'irodsdatarequest': self.irods_req.sodar_uuid},
         )
 
     def test_post(self):
@@ -1493,19 +1493,19 @@ class TestIrodsDataRequestUpdateView(
 
         self.assertEqual(
             list(get_messages(response.wsgi_request))[-1].message,
-            f'iRODS data request "{self.request.get_display_name()}" updated.',
+            f'iRODS data request "{self.irods_req.get_display_name()}" updated.',
         )
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
-        self.request.refresh_from_db()
-        self.assertEqual(self.request.path, self.obj_path)
-        self.assertEqual(self.request.description, IRODS_REQUEST_DESC_UPDATE)
+        self.irods_req.refresh_from_db()
+        self.assertEqual(self.irods_req.path, self.obj_path)
+        self.assertEqual(self.irods_req.description, IRODS_REQUEST_DESC_UPDATE)
         self._assert_tl_count(EVENT_UPDATE, 1)
         self.assertEqual(
             TimelineEvent.objects.get(event_name=EVENT_UPDATE).extra_data,
             {
                 'action': IRODS_REQUEST_ACTION_DELETE,
-                'path': self.request.path,
-                'description': self.request.description,
+                'path': self.irods_req.path,
+                'description': self.irods_req.description,
             },
         )
 
@@ -1522,11 +1522,11 @@ class TestIrodsDataRequestUpdateView(
             self.client.post(self.url, post_data)
 
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
-        self.request.refresh_from_db()
-        self.assertEqual(self.request.path, self.obj_path)
-        self.assertEqual(self.request.description, IRODS_REQUEST_DESC_UPDATE)
+        self.irods_req.refresh_from_db()
+        self.assertEqual(self.irods_req.path, self.obj_path)
+        self.assertEqual(self.irods_req.description, IRODS_REQUEST_DESC_UPDATE)
         # Assert user is not updated when superuser updates the request
-        self.assertEqual(self.request.user, self.user_contributor)
+        self.assertEqual(self.irods_req.user, self.user_contributor)
         self._assert_tl_count(EVENT_UPDATE, 1)
 
     def test_post_invalid_form_data(self):
@@ -1546,9 +1546,9 @@ class TestIrodsDataRequestUpdateView(
             ERROR_MSG_INVALID_PATH,
         )
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
-        self.request.refresh_from_db()
-        self.assertEqual(self.request.path, self.obj_path)
-        self.assertEqual(self.request.description, IRODS_REQUEST_DESC)
+        self.irods_req.refresh_from_db()
+        self.assertEqual(self.irods_req.path, self.obj_path)
+        self.assertEqual(self.irods_req.description, IRODS_REQUEST_DESC)
         self._assert_tl_count(EVENT_UPDATE, 0)
 
 
@@ -2389,8 +2389,7 @@ class TestIrodsDataRequestAcceptBatchView(
             response = self.client.post(
                 self.url_accept,
                 {
-                    'irods_requests': self._get_request_uuids()
-                    + ',',  # Add trailing comma to test for correct splitting
+                    'irods_requests': self._get_request_uuids() + ',',
                     'confirm': False,
                 },
             )
@@ -2427,8 +2426,7 @@ class TestIrodsDataRequestAcceptBatchView(
             response = self.client.post(
                 self.url_accept,
                 {
-                    'irods_requests': self._get_request_uuids()
-                    + ',',  # Add trailing comma to test for correct splitting
+                    'irods_requests': self._get_request_uuids() + ',',
                     'confirm': True,
                 },
             )

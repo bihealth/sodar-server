@@ -853,7 +853,7 @@ class TestIrodsDataRequestRetrieveAPIView(
         self.irods_backend = plugin_api.get_backend_api('omics_irods')
         self.assay_path = self.irods_backend.get_path(self.assay)
         # Make request
-        self.request = self.make_irods_request(
+        self.irods_req = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
             path=iRODSPath(self.assay_path, IRODS_FILE_NAME),
@@ -862,7 +862,7 @@ class TestIrodsDataRequestRetrieveAPIView(
         )
         self.url = reverse(
             'samplesheets:api_irods_request_retrieve',
-            kwargs={'irodsdatarequest': self.request.sodar_uuid},
+            kwargs={'irodsdatarequest': self.irods_req.sodar_uuid},
         )
 
     def test_get(self):
@@ -873,14 +873,14 @@ class TestIrodsDataRequestRetrieveAPIView(
         expected = {
             'project': str(self.project.sodar_uuid),
             'action': IRODS_REQUEST_ACTION_DELETE,
-            'path': self.request.path,
+            'path': self.irods_req.path,
             'target_path': '',
             'user': str(self.user_contributor.sodar_uuid),
             'status': IRODS_REQUEST_STATUS_ACTIVE,
             'status_info': '',
-            'description': self.request.description,
-            'date_created': self.get_drf_datetime(self.request.date_created),
-            'sodar_uuid': str(self.request.sodar_uuid),
+            'description': self.irods_req.description,
+            'date_created': self.get_drf_datetime(self.irods_req.date_created),
+            'sodar_uuid': str(self.irods_req.sodar_uuid),
         }
         self.assertEqual(response_data, expected)
 
@@ -901,7 +901,7 @@ class TestIrodsDataRequestListAPIView(
         self.assay = self.study.assays.first()
         self.irods_backend = plugin_api.get_backend_api('omics_irods')
         self.assay_path = self.irods_backend.get_path(self.assay)
-        self.request = self.make_irods_request(
+        self.irods_req = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
             path=iRODSPath(self.assay_path, IRODS_FILE_NAME),
@@ -922,14 +922,14 @@ class TestIrodsDataRequestListAPIView(
         expected = {
             'project': str(self.project.sodar_uuid),
             'action': IRODS_REQUEST_ACTION_DELETE,
-            'path': self.request.path,
+            'path': self.irods_req.path,
             'target_path': '',
             'user': str(self.user_contributor.sodar_uuid),
             'status': IRODS_REQUEST_STATUS_ACTIVE,
             'status_info': '',
-            'description': self.request.description,
-            'date_created': self.get_drf_datetime(self.request.date_created),
-            'sodar_uuid': str(self.request.sodar_uuid),
+            'description': self.irods_req.description,
+            'date_created': self.get_drf_datetime(self.irods_req.date_created),
+            'sodar_uuid': str(self.irods_req.sodar_uuid),
         }
         self.assertEqual(response_data[0], expected)
 
@@ -947,16 +947,16 @@ class TestIrodsDataRequestListAPIView(
                 {
                     'project': str(self.project.sodar_uuid),
                     'action': IRODS_REQUEST_ACTION_DELETE,
-                    'path': self.request.path,
+                    'path': self.irods_req.path,
                     'target_path': '',
                     'user': str(self.user_contributor.sodar_uuid),
                     'status': IRODS_REQUEST_STATUS_ACTIVE,
                     'status_info': '',
-                    'description': self.request.description,
+                    'description': self.irods_req.description,
                     'date_created': self.get_drf_datetime(
-                        self.request.date_created
+                        self.irods_req.date_created
                     ),
-                    'sodar_uuid': str(self.request.sodar_uuid),
+                    'sodar_uuid': str(self.irods_req.sodar_uuid),
                 }
             ],
         }
@@ -964,24 +964,24 @@ class TestIrodsDataRequestListAPIView(
 
     def test_get_failed_as_superuser(self):
         """Test GET as superuser with failed request"""
-        self.request.status = IRODS_REQUEST_STATUS_FAILED
-        self.request.save()
+        self.irods_req.status = IRODS_REQUEST_STATUS_FAILED
+        self.irods_req.save()
         response = self.request_knox(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
 
     def test_get_accepted_as_superuser(self):
         """Test GET as superuser with accepted request"""
-        self.request.status = IRODS_REQUEST_STATUS_ACCEPTED
-        self.request.save()
+        self.irods_req.status = IRODS_REQUEST_STATUS_ACCEPTED
+        self.irods_req.save()
         response = self.request_knox(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 0)
 
     def test_get_accepted_as_owner(self):
         """Test GET as owner with accepted request"""
-        self.request.status = IRODS_REQUEST_STATUS_ACCEPTED
-        self.request.save()
+        self.irods_req.status = IRODS_REQUEST_STATUS_ACCEPTED
+        self.irods_req.save()
         response = self.request_knox(
             self.url, token=self.get_token(self.user_owner)
         )
@@ -990,8 +990,8 @@ class TestIrodsDataRequestListAPIView(
 
     def test_get_accepted_as_request_creator(self):
         """Test GET as request creator with accepted request"""
-        self.request.status = IRODS_REQUEST_STATUS_ACCEPTED
-        self.request.save()
+        self.irods_req.status = IRODS_REQUEST_STATUS_ACCEPTED
+        self.irods_req.save()
         response = self.request_knox(
             self.url, token=self.get_token(self.user_contributor)
         )

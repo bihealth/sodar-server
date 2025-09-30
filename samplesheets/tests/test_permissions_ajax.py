@@ -935,7 +935,7 @@ class TestIrodsDataRequestDeleteAjaxView(
         self._make_request()
 
     def _make_request(self):
-        self.request = self.make_irods_request(
+        self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
             path=IRODS_FILE_PATH,
