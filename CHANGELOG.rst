@@ -25,7 +25,7 @@ Added
     - ``ZoneSettingsRetrieveAPIView`` REST API view (#2174, #2294)
     - Periodic celery task setup logging (#2275)
     - ``zone_file_list_colls`` user app setting (#2284)
-    - File list modal collection display toggling (#2284)
+    - File list modal collection display toggling (#2284, #2300)
     - ``zone_access_restrict`` project app setting (#2199)
     - Landing zone contributor access restricting (#2199)
     - ``ZoneIrodsFileListAPIView`` REST API view (#2291)

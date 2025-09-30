@@ -354,6 +354,8 @@ function updateFileList(
           let titleSuffix = '(' + data['page'] + '/' +
             data['page_count'] + ')'
           titlePageSpan.text(titleSuffix)
+        } else if (titlePageSpan.text !== '') {
+          titlePageSpan.text('') // Clear page info if no pagination
         }
 
         // Display results

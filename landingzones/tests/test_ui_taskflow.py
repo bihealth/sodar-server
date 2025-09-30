@@ -444,16 +444,9 @@ class TestZoneFileListModal(
         toggle_elem = modal_elem.find_element(By.ID, MODAL_HEADER_TOGGLE_BTN_ID)
         toggle_elem.click()
 
-        WebDriverWait(self.selenium, self.wait_time).until(
-            ec.presence_of_element_located(
-                (By.CLASS_NAME, MODAL_OBJ_ITEM_CLASS)
-            )
-        )
-        # TODO: Fix #2300 and enable
-        '''
+        self._wait_for_header_page(modal_elem, '')
         h_page_elem = modal_elem.find_element(By.ID, MODAL_HEADER_PAGE_ID)
         self.assertEqual(h_page_elem.text, '')
-        '''
         # Only object should be visible
         colls = modal_elem.find_elements(By.CLASS_NAME, MODAL_COLL_ITEM_CLASS)
         self.assertEqual(len(colls), 0)
