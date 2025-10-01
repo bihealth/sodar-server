@@ -122,6 +122,7 @@ Fixed
     - Details card iRODS stats badge fails with guest role (#2243, #2271)
     - Sheet Operations dropdown disabled for guest user (#2244)
     - Assay table title row content wrapping (#2267)
+    - Vue app modal close button alignment (#2304)
 - **Taskflowbackend**
     - Incorrect user in landing zone move sheet cache update timeline event (#2152)
 

@@ -1559,6 +1559,9 @@ select.sodar-ss-popup-input {
   border-radius: .25rem;
 }
 
+button.close {
+  line-height: 30px;
+}
 /* Fix forced outline on modal close buttons in Chrome */
 button.close:focus {
   outline: none !important;
