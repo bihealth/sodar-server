@@ -186,8 +186,10 @@ class SampleSheetTableBuilder:
         :param header_type: Header type
         :param obj: Original Django model object
         """
+        # NOTE: Header value is currently redundant, but it may see use in the
+        #       future or alternatively be removed (see #576, #1776).
         header = {
-            'value': name.strip().title(),  # TODO: Better titling (#576)
+            'value': name.strip(),
             'name': name,  # Store original field name
             'type': header_type,
             'obj_cls': obj.__class__.__name__,

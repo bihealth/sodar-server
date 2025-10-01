@@ -80,7 +80,7 @@ class SheetConfigMixin:
         assay_names = {}
 
         for study in investigation.studies.all():
-            study_names[study.get_display_name()] = str(study.sodar_uuid)
+            study_names[study.get_name()] = str(study.sodar_uuid)
             for assay in study.assays.all():
                 assay_names[assay.get_display_name()] = str(assay.sodar_uuid)
 

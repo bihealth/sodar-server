@@ -469,7 +469,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 ):
                     continue
                 logger.debug(
-                    f'Updating cache for study "{study.get_display_name()}" '
+                    f'Updating cache for study "{study.get_name()}" '
                     f'({study.sodar_uuid})..'
                 )
                 self._update_study_cache(

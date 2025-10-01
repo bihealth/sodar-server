@@ -275,7 +275,7 @@ class TestSampleSheetTableBuilder(
         """Test get_study_tables() with SHEETS_ENABLE_STUDY_TABLE_CACHE=False"""
         tables = self.tb.get_study_tables(self.study)
         t_field = tables['study']['field_header'][2]
-        self.assertEqual(t_field['value'], 'Age')
+        self.assertEqual(t_field['value'], 'age')
         self.sheet_config = self.build_sheet_config(self.investigation)
 
         # Change name in a model
@@ -298,7 +298,7 @@ class TestSampleSheetTableBuilder(
         """Test get_study_tables() with SHEETS_ENABLE_STUDY_TABLE_CACHE=True"""
         tables = self.tb.get_study_tables(self.study)
         t_field = tables['study']['field_header'][2]
-        self.assertEqual(t_field['value'], 'Age')
+        self.assertEqual(t_field['value'], 'age')
         self.build_sheet_config(self.investigation)
 
         # Change name in a model

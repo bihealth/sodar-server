@@ -447,7 +447,7 @@ class TestIrodsOrphans(
             self.project_path,
             settings.IRODS_LANDING_ZONE_COLL,
             self.user.username,
-            self.study.get_display_name().replace(' ', '_').lower(),
+            self.study.get_name().replace(' ', '_').lower(),
             self.assay.get_display_name().replace(' ', '_').lower(),
             '20201031_123456',
         )
@@ -469,7 +469,7 @@ class TestIrodsOrphans(
             self.project_path,
             settings.IRODS_LANDING_ZONE_COLL,
             self.user.username,
-            self.study.get_display_name().replace(' ', '_').lower(),
+            self.study.get_name().replace(' ', '_').lower(),
             self.assay.get_display_name().replace(' ', '_').lower(),
             '20201031_123456',
         )

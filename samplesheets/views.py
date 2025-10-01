@@ -1701,7 +1701,7 @@ class SheetExcelExportView(
         else:  # Study
             table = tables['study']
             input_name = study.file_name
-            display_name = study.get_display_name()
+            display_name = study.get_name()
 
         # Set up response
         response = HttpResponse(content_type='text/tab-separated-values')

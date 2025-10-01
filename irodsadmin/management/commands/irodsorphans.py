@@ -65,7 +65,7 @@ class Command(BaseCommand):
                 raise Exception(
                     'Study table building exception for "{}" '
                     'in project "{}" ({}): {}'.format(
-                        study.get_display_name(),
+                        study.get_name(),
                         study.investigation.project.title,
                         study.investigation.project.sodar_uuid,
                         ex,

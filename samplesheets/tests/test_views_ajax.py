@@ -264,7 +264,7 @@ class TestSheetContextAjaxView(IrodsDataRequestMixin, SamplesheetsViewTestBase):
             },
             'studies': {
                 self.study_uuid: {
-                    'display_name': self.study.get_display_name(),
+                    'display_name': self.study.get_name(),
                     'file_name': 's_small.txt',
                     'identifier': 's_small',
                     'title': 'Small Germline Study',
@@ -344,7 +344,7 @@ class TestSheetContextAjaxView(IrodsDataRequestMixin, SamplesheetsViewTestBase):
         self.assertEqual(response.status_code, 200)
         rd = json.loads(response.data)
         expected = {
-            'display_name': self.study.get_display_name(),
+            'display_name': self.study.get_name(),
             'file_name': 's_Template_Test.txt',
             'identifier': 'Template_Test',
             'title': 'Investigation Title',

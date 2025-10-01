@@ -199,7 +199,7 @@ class SheetConfigAPI:
         for study, study_tables in inv_tables.items():
             # Build tables (disable use_config in case we are replacing sheets)
             study_data = {
-                'display_name': study.get_display_name(),
+                'display_name': study.get_name(),
                 # For human readability
                 'nodes': _build_nodes(study_tables, None),
                 'assays': {},

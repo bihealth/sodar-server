@@ -388,8 +388,14 @@ class Study(BaseSampleSheet):
         return self.title if self.title else self.identifier
 
     def get_display_name(self) -> str:
-        """Return display name for study"""
-        return self.title.strip('.').title() if self.title else self.identifier
+        """
+        Return display name for study.
+
+        NOTE: This is a wrapper for get_name() as this may be called for
+        multiple object types. If accessing a Study object directly, use
+        get_name() for brevity.
+        """
+        return self.get_name()
 
     def get_nodes(self) -> list:
         """Return list of all nodes (materials and processes) for study"""

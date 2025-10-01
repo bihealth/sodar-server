@@ -167,15 +167,13 @@ class TestIrodsAPI(
     def test_get_sub_path_study_zone(self):
         """Test get_sub_path() with study and landing zone notation"""
         res = self.irods_backend.get_sub_path(self.study, landing_zone=True)
-        self.assertEqual(
-            res, slugify(self.study.get_display_name()).replace('-', '_')
-        )
+        self.assertEqual(res, slugify(self.study.get_name()).replace('-', '_'))
 
     def test_get_sub_path_assay_zone(self):
         """Test get_sub_path() with assay and landing zone notation"""
         res = self.irods_backend.get_sub_path(self.assay, landing_zone=True)
         expected = '{}/{}'.format(
-            slugify(self.study.get_display_name()).replace('-', '_'),
+            slugify(self.study.get_name()).replace('-', '_'),
             slugify(self.assay.get_display_name()).replace('-', '_'),
         )
         self.assertEqual(res, expected)

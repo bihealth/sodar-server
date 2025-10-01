@@ -97,7 +97,7 @@
         <tr>
           <td class="pl-4">
             {% autoescape off %}{% get_icon study %}{% endautoescape %}
-             <a href="{{ study.get_url }}">{{ study.get_display_name }}</a>
+             <a href="{{ study.get_url }}">{{ study.get_name }}</a>
           </td>
           {% if can_view_files %}
             <td>

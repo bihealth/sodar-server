@@ -28,6 +28,7 @@ Major feature update and SODAR Core 1.2 upgrade.
 - Add Django setting to enable/disable remote sample sheet sync
 - Update assay tables to hide row links with no plugin enabled
 - Update sheet overview layout
+- Update sheet rendering to disable study title and header name autoformatting
 - :ref:`Upgrade Landing Zones REST API version to v1.1 <api_landingzones_version_1_1>`
 - :ref:`Upgrade Sample Sheets REST API version to v1.2 <api_samplesheets_version_1_2>`
 - Upgrade minimum supported iRODS version to v4.3.4

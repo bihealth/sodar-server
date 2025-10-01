@@ -49,6 +49,16 @@ The following changes have been made to environment variables:
   without iRODS and file access, disable the ``omics_irods`` and
   ``taskflowbackend`` backends along with other iRODS using apps.
 
+This release contains changes to sample sheet table header formatting in the UI.
+These changes are stored in the SODAR cache. If your instance has
+``SHEETS_ENABLE_STUDY_TABLE_CACHE`` set ``True``, you should run the
+:ref:`syncstudytables management command <admin_commands>` to update existing
+sample sheets to the new formatting. Example:
+
+.. code-block:: bash
+
+    $ ./manage.py syncstudytables
+
 
 .. _admin_upgrade_v1.1:
 

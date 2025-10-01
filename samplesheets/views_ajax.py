@@ -350,7 +350,7 @@ class SheetContextAjaxView(SODARBaseProjectAjaxView):
         #       factors, contacs and study design need some extra formatting to
         #       be nicely human readable.
         return {
-            'display_name': study.get_display_name(),
+            'display_name': study.get_name(),
             'file_name': study.file_name,
             'identifier': study.identifier,
             'title': study.title,
@@ -713,7 +713,7 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
                 status=403,
             )
 
-        ret_data = {'study': {'display_name': study.get_display_name()}}
+        ret_data = {'study': {'display_name': study.get_name()}}
         try:
             ret_data['tables'] = table_builder.get_study_tables(study)
         except Exception as ex:
@@ -1931,7 +1931,7 @@ class StudyDisplayConfigAjaxView(SODARBaseProjectAjaxView):
                     status_type=timeline.TL_STATUS_OK,
                 )
                 tl_event.add_object(
-                    obj=study, label='study', name=study.get_display_name()
+                    obj=study, label='study', name=study.get_name()
                 )
 
         # Get user display config

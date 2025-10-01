@@ -591,17 +591,17 @@ class TestStudy(SamplesheetsModelTestBase):
         self.assertEqual(model_to_dict(self.study), expected)
 
     def test__str__(self):
-        """Test Study __str__() function"""
+        """Test Study __str__()"""
         expected = f'{self.project.title}: {STUDY_TITLE}'
         self.assertEqual(str(self.study), expected)
 
     def test__repr__(self):
-        """Test Study __repr__() function"""
+        """Test Study __repr__()"""
         expected = "Study('{}', '{}')".format(self.project.title, STUDY_TITLE)
         self.assertEqual(repr(self.study), expected)
 
     def test_get_study(self):
-        """Test Study get_study() function"""
+        """Test get_study()"""
         self.assertEqual(self.study.get_study(), self.study)
 
     def test_get_project(self):
@@ -609,14 +609,24 @@ class TestStudy(SamplesheetsModelTestBase):
         self.assertEqual(self.study.get_project(), self.project)
 
     def test_get_name(self):
-        """Test get_name() when title is set"""
+        """Test get_name() with title"""
         self.assertEqual(self.study.get_name(), self.study.title)
 
     def test_get_name_no_title(self):
-        """Test get_name() when no title is set"""
+        """Test get_name() without title"""
         self.study.title = ''
         self.study.save()
         self.assertEqual(self.study.get_name(), self.study.identifier)
+
+    def test_get_display_name(self):
+        """Test get_display_name() with title"""
+        self.assertEqual(self.study.get_display_name(), self.study.get_name())
+
+    def test_get_display_name_no_title(self):
+        """Test get_display_name() without title"""
+        self.study.title = ''
+        self.study.save()
+        self.assertEqual(self.study.get_display_name(), self.study.get_name())
 
     def test_get_url(self):
         """Test get_url()"""
@@ -630,7 +640,7 @@ class TestStudy(SamplesheetsModelTestBase):
         self.assertEqual(self.study.get_url(), expected)
 
     def test_get_plugin_unset(self):
-        """Test get_plugin() with no config set"""
+        """Test get_plugin() with no config"""
         self.assertIsNone(self.study.get_plugin())
 
     def test_get_plugin_investigation(self):

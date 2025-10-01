@@ -96,7 +96,7 @@ class LandingZoneForm(forms.ModelForm):
                         self.fields['assay'].choices.append(
                             (
                                 assay.sodar_uuid,
-                                f'{assay.study.get_display_name()} / '
+                                f'{assay.study.get_name()} / '
                                 f'{assay.get_display_name()}',
                             )
                         )

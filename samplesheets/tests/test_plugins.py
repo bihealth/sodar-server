@@ -92,9 +92,7 @@ class SamplesheetsPluginTestBase(
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
         self.tb = SampleSheetTableBuilder()
-        self.ret_data = dict(
-            study={'display_name': self.study.get_display_name()}
-        )
+        self.ret_data = dict(study={'display_name': self.study.get_name()})
         self.irods_backend = plugin_api.get_backend_api('omics_irods')
 
 

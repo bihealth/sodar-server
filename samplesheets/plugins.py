@@ -1405,7 +1405,7 @@ def get_irods_content(
     if study_plugin:
         logger.debug(
             f'Retrieving study shortcuts for study '
-            f'"{study.get_display_name()}" (plugin={study_plugin.name})..'
+            f'"{study.get_name()}" (plugin={study_plugin.name})..'
         )
         shortcuts = study_plugin.get_shortcut_column(study, ret_data['tables'])
         ret_data['tables']['study']['shortcuts'] = shortcuts
