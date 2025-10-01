@@ -1,11 +1,13 @@
 import { createLocalVue, mount } from '@vue/test-utils'
 import BootstrapVue from 'bootstrap-vue'
+import VueClipboard from 'vue-clipboard2'
 import Overview from '@/components/Overview.vue'
 import sodarContext from './data/sodarContext.json'
 
 // Set up extended Vue constructor
 const localVue = createLocalVue()
 localVue.use(BootstrapVue)
+localVue.use(VueClipboard)
 
 // Init data
 let propsData

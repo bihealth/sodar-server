@@ -31,6 +31,15 @@
         title="SODAR metadata"
         row-class="sodar-ss-table-detail-row-sodar">
     </table-detail-list-row>
+    <table-detail-list-row
+        legend="SODAR UUID"
+        :value="tableUuid"
+        icon="mdi:code-braces"
+        icon-class="text-secondary"
+        :copy-button="true"
+        title="SODAR metadata"
+        row-class="sodar-ss-table-detail-row-sodar">
+    </table-detail-list-row>
   </div>
 </template>
 
@@ -42,6 +51,7 @@ export default {
   components: { TableDetailListRow },
   props: [
     'assayMode',
+    'tableUuid',
     'tableContext',
     'tableMetaFields',
     'tableSodarFields' // NOTE: This has to be in incorrect case to work

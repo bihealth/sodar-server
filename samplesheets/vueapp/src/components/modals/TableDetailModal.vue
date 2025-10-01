@@ -9,6 +9,7 @@
       <table-detail-list
           v-if="tableContext"
           :assay-mode="assayMode"
+          :table-uuid="gridUuid"
           :table-context="tableContext"
           :table-meta-fields="tableMetaFields"
           :table-sodar-fields="tableSODARFields"
