@@ -55,7 +55,7 @@ EMPTY_VALUE = '-'
 STUDY_HIDEABLE_CLASS = 'sodar-ss-hideable-study'
 SOURCE_SEARCH_STR = '-source-'
 NARROW_CHARS = 'fIijlt;:.,/"!\'!()[]{}'
-WIDE_CHARS = 'ABCDEFHKLMNOPQRSTUVXYZ<>%$_'
+# WIDE_CHARS = 'ABCDEFHKLMNOPQRSTUVXYZ<>%$_'
 IGNORED_HEADERS = ['Unit', 'Term Source REF', 'Term Accession Number']
 # Name fields (NOTE: Missing labeled extract name by purpose)
 ALTAMISA_MATERIAL_NAMES = [
@@ -475,49 +475,65 @@ class SampleSheetTableBuilder:
         self._node_idx = 0
         self._field_idx = 0
 
+    @classmethod
+    def _get_text_len(
+        cls, value: Any, col_type: Optional[str] = None, header: bool = False
+    ) -> int:
+        """
+        Return estimated length for proportional text.
+
+        NOTE: Very unscientific and font-specific, don't try this at home. A
+        better way to do this most likely exists, pr:s welcome :)
+
+        :param value: Header or cell value
+        :param col_type: Column type for cell (string, optional)
+        :param header: True if this is a header (boolean, default=False)
+        :return: Integer
+        """
+        if not value:
+            return 0
+        # Convert perform date
+        if isinstance(value, date):
+            value = str(value)
+        # Lists (altamISA v0.1+)
+        elif isinstance(value, list) and col_type != 'EXTERNAL_LINKS':
+            if isinstance(value[0], dict):
+                value = '; '.join([x['name'] for x in value])
+            elif isinstance(value[0], list) and value[0]:
+                value = '; '.join([x[0] for x in value])
+            elif isinstance(value[0], str):
+                value = '; '.join(value)
+        # Simple link or contact
+        else:
+            link_groups = re.findall(LINK_RE, value)
+            if link_groups:
+                value = link_groups[0][0]
+        nc = sum([value.count(c) for c in NARROW_CHARS])
+        # NOTE: Wide chars count as 1 in this "algo" so we don't need them
+        ncf = 0.8 if header else 0.7
+        return round(len(value) - ncf * nc)
+
+    @classmethod
+    def _is_val_num(cls, value: Any) -> bool:
+        """
+        Return whether a value contains only integers/doubles.
+
+        :param value: Cell value
+        :return: Boolean
+        """
+        # Supports lists
+        values = value if isinstance(value, list) else [value]
+        for v in values:
+            if isinstance(v, str) and '_' in v:
+                return False  # HACK because float() accepts underscore
+            try:
+                float(v)
+            except (ValueError, TypeError):
+                return False
+        return True
+
     def _add_ui_table_data(self):
         """Add UI specific data to a table"""
-        # TODO: Un-hackify
-
-        def _get_length(value: Any, col_type: Optional[str] = None) -> int:
-            """Return estimated length for proportional text"""
-            if not value:
-                return 0
-            # Convert perform date
-            if isinstance(value, date):
-                value = str(value)
-            # Lists (altamISA v0.1+)
-            elif isinstance(value, list) and col_type != 'EXTERNAL_LINKS':
-                if isinstance(value[0], dict):
-                    value = '; '.join([x['name'] for x in value])
-                elif isinstance(value[0], list) and value[0]:
-                    value = '; '.join([x[0] for x in value])
-                elif isinstance(value[0], str):
-                    value = '; '.join(value)
-            # Simple link or contact
-            else:
-                link_groups = re.findall(LINK_RE, value)
-                if link_groups:
-                    value = link_groups[0][0]
-
-            # Very unscientific and font-specific, don't try this at home
-            nc = sum([value.count(c) for c in NARROW_CHARS])
-            wc = sum([value.count(c) for c in WIDE_CHARS])
-            return round(len(value) - nc - wc + 0.6 * nc + 1.3 * wc)
-
-        def _is_num(value: Any) -> bool:
-            """Return whether a value contains only integers/doubles"""
-            # Supports lists
-            values = value if isinstance(value, list) else [value]
-            for v in values:
-                if isinstance(v, str) and '_' in v:
-                    return False  # HACK because float() accepts underscore
-                try:
-                    float(v)
-                except (ValueError, TypeError):
-                    return False
-            return True
-
         top_idx = 0  # Top header index
         grp_idx = 0  # Index within current top header group
         for i in range(len(self._field_header)):
@@ -530,9 +546,11 @@ class SampleSheetTableBuilder:
                 and header_name not in th.PROCESS_NAME_HEADERS
                 and not self._field_configs[i]
                 and self._field_header[i]['col_type'] not in num_skip_cols
-                and any(_is_num(x[i]['value']) for x in self._table_data)
+                and any(
+                    self._is_val_num(x[i]['value']) for x in self._table_data
+                )
                 and all(
-                    (_is_num(x[i]['value']) or not x[i]['value'])
+                    (self._is_val_num(x[i]['value']) or not x[i]['value'])
                     for x in self._table_data
                 )
             ):
@@ -540,12 +558,14 @@ class SampleSheetTableBuilder:
 
             # Maximum column value length for column width estimate
             field_header_len = round(
-                _get_length(self._field_header[i]['value'])
+                self._get_text_len(self._field_header[i]['value'], header=True)
             )
             # If there is only one column in top header, use top header length
             if self._top_header[top_idx]['colspan'] == 1:
                 top_header_len = round(
-                    _get_length(self._top_header[top_idx]['value'])
+                    self._get_text_len(
+                        self._top_header[top_idx]['value'], header=True
+                    )
                 )
                 header_len = max(field_header_len, top_header_len)
             else:
@@ -563,7 +583,7 @@ class SampleSheetTableBuilder:
                         contact_vals.append(x[i]['value'])
                 cell_lengths = [
                     (
-                        _get_length(re.findall(LINK_RE, x)[0][0])
+                        self._get_text_len(re.findall(LINK_RE, x)[0][0])
                         if re.findall(LINK_RE, x)
                         else len(x or '')
                     )
@@ -584,8 +604,8 @@ class SampleSheetTableBuilder:
             else:  # Generic type
                 max_cell_len = max(
                     [
-                        _get_length(x[i]['value'], col_type)
-                        + _get_length(x[i].get('unit'), col_type)
+                        self._get_text_len(x[i]['value'], col_type)
+                        + self._get_text_len(x[i].get('unit'), col_type)
                         + 1
                         for x in self._table_data
                     ]
