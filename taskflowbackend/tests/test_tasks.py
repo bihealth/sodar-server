@@ -2,16 +2,14 @@
 
 import uuid
 
-from irods.access import iRODSAccess
+from typing import Any, Optional, Union
+
 from irods.collection import iRODSCollection
-from irods.data_object import iRODSDataObject
 from irods.exception import CollectionDoesNotExist, DataObjectDoesNotExist
 from irods.meta import iRODSMeta
-from irods.path import iRODSPath
 from irods.ticket import Ticket
 from irods.user import iRODSUser, iRODSUserGroup
 
-from django.conf import settings
 from django.test import override_settings
 
 from test_plus import TestCase
@@ -40,7 +38,6 @@ from taskflowbackend.constants import (
     IRODS_ACCESS_MODIFY_OBJ,
     IRODS_ACCESS_READ_OBJ,
     IRODS_TICKET_MODE_READ,
-    IRODS_HASH_SCHEME_SHA256,
 )
 from taskflowbackend.flows.base_flow import BaseLinearFlow
 from taskflowbackend.tests.base import TaskflowViewTestBase, TICKET_STR
@@ -138,7 +135,7 @@ class IRODSTaskTestBase(TaskTestMixin, TaskflowViewTestBase):
         return self.irods.collections.get(self.test_coll_path)
 
     def get_user_access(
-        self, target: iRODSCollection, user_name: str
+        self, target: Union[iRODSCollection, iRODSDataObject], user_name: str
     ) -> Optional[iRODSAccess]:
         target_access = self.irods.acls.get(target=target)
         return next(

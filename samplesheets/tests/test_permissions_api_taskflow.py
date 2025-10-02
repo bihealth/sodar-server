@@ -362,7 +362,7 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
             user=self.user_owner,
             ticket='ticket',
             label=LABEL_CREATE,
-            date_expires=(timezone.localtime() + timedelta(days=1)).isoformat(),
+            date_expires=timezone.localtime() + timedelta(days=1),
         )
         self.irods_backend.issue_ticket(
             irods=self.irods,

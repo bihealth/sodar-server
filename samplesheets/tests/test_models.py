@@ -400,7 +400,7 @@ class IrodsAccessTicketMixin:
         label: Optional[str] = None,
         ticket: Optional[str] = None,
         date_expires: Optional[datetime] = None,
-        allowed_hosts: Optional[str] = None,
+        allowed_hosts: Optional[list[str]] = None,
     ) -> IrodsAccessTicket:
         """Create IrodsAccessTicket object in database"""
         if not ticket:

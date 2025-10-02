@@ -13,7 +13,7 @@ Added
 
 - **General**
     - ``pyproject.toml`` configuration file (#2187)
-    - Type hints (#2196)
+    - Type hints (#2196, #2255)
 - **Irodsadmin**
     - ``irodsorphans`` command optional project limiting (#2283)
 - **Irodsbackend**

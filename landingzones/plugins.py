@@ -11,12 +11,7 @@ from django.urls import reverse
 from djangoplugins.point import PluginPoint
 
 # Projectroles dependency
-from projectroles.models import (
-    Project,
-    SODARUser,
-    SODAR_CONSTANTS,
-    ROLE_RANKING,
-)
+from projectroles.models import Project, SODAR_CONSTANTS, ROLE_RANKING
 from projectroles.plugins import (
     ProjectAppPluginPoint,
     ProjectModifyPluginMixin,
@@ -288,7 +283,7 @@ class ProjectAppPlugin(
         }
 
     def get_project_list_value(
-        self, column_id: str, project: Project, user: SODARUser
+        self, column_id: str, project: Project, user: User
     ) -> Union[str, int, None]:
         """
         Return a value for the optional additional project list column specific
@@ -374,7 +369,7 @@ class ProjectAppPlugin(
         self,
         app_settings: dict,
         project: Optional[Project] = None,
-        user: Optional[SODARUser] = None,
+        user: Optional[User] = None,
     ) -> Optional[dict]:
         """
         Validate app settings form data and return a dict of errors.

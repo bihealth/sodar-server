@@ -16,6 +16,7 @@ from irods.path import iRODSPath
 from irods.session import iRODSSession
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.http import HttpRequest
 from django.template.defaultfilters import filesizeformat
 from django.urls import reverse
@@ -26,7 +27,6 @@ from djangoplugins.point import PluginPoint
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import (
     Project,
-    SODARUser,
     SODAR_CONSTANTS,
     ROLE_RANKING,
     CAT_DELIMITER,
@@ -73,6 +73,7 @@ app_settings = AppSettingAPI()
 logger = logging.getLogger(__name__)
 plugin_api = PluginAPI()
 table_builder = SampleSheetTableBuilder()
+User = get_user_model()
 
 
 # SODAR constants
@@ -401,7 +402,7 @@ class ProjectAppPlugin(
     def _get_search_materials(
         cls,
         search_terms: list[str],
-        user: SODARUser,
+        user: User,
         keywords: list[str],
         item_types: list[str],
     ) -> list[dict]:
@@ -429,7 +430,7 @@ class ProjectAppPlugin(
 
     @classmethod
     def _get_search_files(
-        cls, search_terms: list[str], user: SODARUser, irods_backend: Any
+        cls, search_terms: list[str], user: User, irods_backend: Any
     ) -> list[dict]:
         """Return iRODS files for search results"""
         ret = []
@@ -547,7 +548,7 @@ class ProjectAppPlugin(
     def search(
         self,
         search_terms: list[str],
-        user: SODARUser,
+        user: User,
         search_type: Optional[str] = None,
         keywords: Optional[list[str]] = None,
     ) -> list[PluginSearchResult]:
@@ -590,7 +591,7 @@ class ProjectAppPlugin(
         return ret
 
     def get_project_list_value(
-        self, column_id: str, project: Project, user: SODARUser
+        self, column_id: str, project: Project, user: User
     ) -> Union[str, int, None]:
         """
         Return a value for the optional additional project list column specific
@@ -648,7 +649,7 @@ class ProjectAppPlugin(
         self,
         app_settings: dict,
         project: Optional[Project] = None,
-        user: Optional[SODARUser] = None,
+        user: Optional[User] = None,
     ) -> Optional[dict]:
         """
         Validate app settings form data and return a dict of errors.
@@ -831,7 +832,7 @@ class ProjectAppPlugin(
         irods_backend: Any,
         cache_backend: Any,
         irods: iRODSSession,
-        user: Optional[SODARUser] = None,
+        user: Optional[User] = None,
     ):
         """
         Update project iRODS stats cache in the database.
@@ -843,7 +844,7 @@ class ProjectAppPlugin(
         :param irods_backend: IrodsAPI object
         :param cache_backend: SODARCacheAPI object
         :param irods: IRODSSession object
-        :param user: User triggering the update (SODARUser or None)
+        :param user: User triggering the update (User or None)
         :return: JSONCacheItem object
         """
         path = irods_backend.get_sample_path(project)
@@ -873,7 +874,7 @@ class ProjectAppPlugin(
         irods_backend: Any,
         cache_backend: Any,
         irods: iRODSSession,
-        user: Optional[SODARUser] = None,
+        user: Optional[User] = None,
     ):
         """
         Update assay shortcut cache in the database.
@@ -885,7 +886,7 @@ class ProjectAppPlugin(
         :param irods_backend: IrodsAPI object
         :param cache_backend: SODARCacheAPI object
         :param irods: IRODSSession object
-        :param user: User triggering the update (SODARUser or None)
+        :param user: User triggering the update (User or None)
         :return: JSONCacheItem object
         """
         assay_path = irods_backend.get_path(assay)
@@ -926,7 +927,7 @@ class ProjectAppPlugin(
         self,
         name: Optional[str] = None,
         project: Optional[Project] = None,
-        user: Optional[SODARUser] = None,
+        user: Optional[User] = None,
     ):
         """
         Update cached data for this app, limitable to item ID and/or project.
@@ -1129,7 +1130,7 @@ class SampleSheetStudyPluginPoint(PluginPoint):
         self,
         name: Optional[str] = None,
         project: Optional[Project] = None,
-        user: Optional[SODARUser] = None,
+        user: Optional[User] = None,
     ):
         """
         Update cached data for this app, limitable to item ID and/or project.
@@ -1267,7 +1268,7 @@ class SampleSheetAssayPluginPoint(PluginPoint):
         self,
         name: Optional[str] = None,
         project: Optional[str] = None,
-        user: Optional[SODARUser] = None,
+        user: Optional[User] = None,
     ):
         """
         Update cached data for this app, limitable to item ID and/or project.
@@ -1286,7 +1287,7 @@ class SampleSheetAssayPluginPoint(PluginPoint):
         app_name: str,
         name: Optional[str] = None,
         project: Optional[Project] = None,
-        user: Optional[SODARUser] = None,
+        user: Optional[User] = None,
     ):
         """
         Update cache for row-based iRODS links using get_row_path().

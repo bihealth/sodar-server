@@ -15,7 +15,6 @@ from projectroles.models import (
     Project,
     Role,
     RoleAssignment,
-    SODARUser,
     SODAR_CONSTANTS,
     ROLE_RANKING,
 )
@@ -634,8 +633,8 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
     def perform_owner_transfer(
         self,
         project: Project,
-        new_owner: SODARUser,
-        old_owner: SODARUser,
+        new_owner: User,
+        old_owner: User,
         old_owner_role: Optional[Role] = None,
         request: Optional[HttpRequest] = None,
     ):
@@ -643,8 +642,8 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         Perform additional actions to finalize project ownership transfer.
 
         :param project: Project object
-        :param new_owner: SODARUser object for new owner
-        :param old_owner: SODARUser object for previous owner
+        :param new_owner: User object for new owner
+        :param old_owner: User object for previous owner
         :param old_owner_role: Role object for new role of old owner or None
         :param request: Request object or None
         """

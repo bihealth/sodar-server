@@ -430,7 +430,7 @@ class TestIrodsAccessTicketListAPIView(
             user=self.user_owner,
             ticket='ticket',
             label=LABEL_CREATE,
-            date_expires=(timezone.localtime() + timedelta(days=1)).isoformat(),
+            date_expires=timezone.localtime() + timedelta(days=1),
         )
 
     def test_get(self):
@@ -489,7 +489,7 @@ class TestIrodsAccessTicketRetrieveAPIView(
             user=self.user_owner,
             ticket='ticket',
             label=LABEL_CREATE,
-            date_expires=(timezone.localtime() + timedelta(days=1)).isoformat(),
+            date_expires=timezone.localtime() + timedelta(days=1),
         )
         self.url = reverse(
             'samplesheets:api_irods_ticket_retrieve',
