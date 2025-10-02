@@ -244,8 +244,8 @@ TASKFLOW_TEST_PERMANENT_USERS = [
 
 # UI test settings
 PROJECTROLES_TEST_UI_CHROME_OPTIONS = [
-    'headless',
-    'no-sandbox',  # For Gitlab-CI compatibility
+    'headless=new',
+    'no-sandbox',  # For CI compatibility
     'disable-dev-shm-usage',  # For testing stability
 ]
 PROJECTROLES_TEST_UI_WINDOW_SIZE = (1400, 1000)

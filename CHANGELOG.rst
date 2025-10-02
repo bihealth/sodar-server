@@ -72,6 +72,7 @@ Changed
     - Update format strings (#2197)
     - Refactor iRODS path handling (#2218)
     - Update ``test.py`` settings hardcoding (#2281)
+    - Use ``headless=new`` mode in UI tests (#2305)
 - **Irodsadmin**
     - Refactor ``irodsorphans`` command (#2207, #2246)
     - Refactor ``irodsorphans`` tests (#2279)
