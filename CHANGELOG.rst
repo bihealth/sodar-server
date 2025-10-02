@@ -101,6 +101,7 @@ Changed
     - Set ``IRODS_WEBDAV_IGV_PROXY`` default to ``False`` (#2289)
     - Disable study title and header name reformatting (#1776)
     - Optimize magic number generation for cell width estimation (#1284)
+    - Refactor ``IrodsDataRequest`` UI creation and update (#1865)
 - **Taskflowbackend**
     - Update iRODS ACL handling for v4.3+ scheme (#2215)
     - Grant ``delete_object`` access instead of ``own`` for landing zone owner (#2215)

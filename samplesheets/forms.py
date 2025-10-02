@@ -11,6 +11,7 @@ from typing import Any, Optional
 
 from django import forms
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 from django.utils import timezone
 
@@ -36,6 +37,7 @@ from samplesheets.models import (
 
 app_settings = AppSettingAPI()
 plugin_api = PluginAPI()
+User = get_user_model()
 
 
 # Local constants
@@ -528,10 +530,17 @@ class IrodsDataRequestForm(IrodsDataRequestValidateMixin, forms.ModelForm):
         model = IrodsDataRequest
         fields = ['path', 'description']
 
-    def __init__(self, project: Optional[Project] = None, *args, **kwargs):
+    def __init__(
+        self,
+        project: Optional[Project] = None,
+        current_user: Optional[User] = None,
+        *args,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
         if project:
             self.project = Project.objects.filter(sodar_uuid=project).first()
+        self.current_user = current_user
         self.fields['description'].required = False
 
     def clean(self):
@@ -545,6 +554,14 @@ class IrodsDataRequestForm(IrodsDataRequestValidateMixin, forms.ModelForm):
         except Exception as ex:
             self.add_error('path', str(ex))
         return cleaned_data
+
+    def save(self, *args):
+        obj = super().save(commit=False)
+        if not self.instance.pk:
+            obj.user = self.current_user
+        obj.project = self.project
+        obj.save()
+        return obj
 
 
 class IrodsDataRequestAcceptForm(forms.Form):

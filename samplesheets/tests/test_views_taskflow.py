@@ -1358,6 +1358,7 @@ class TestIrodsDataRequestCreateView(IrodsDataRequestViewTestBase):
         )
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         self.assertEqual(obj.path, self.obj_path)
+        self.assertEqual(obj.user, self.user_contributor)
         self.assertEqual(obj.description, IRODS_REQUEST_DESC)
         self._assert_tl_count(EVENT_CREATE, 1)
         self.assertEqual(

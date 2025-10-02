@@ -2577,6 +2577,7 @@ class IrodsDataRequestCreateView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
+    CurrentUserFormMixin,
     InvestigationContextMixin,
     IrodsDataRequestModifyMixin,
     HTTPRefererMixin,
@@ -2596,12 +2597,7 @@ class IrodsDataRequestCreateView(
 
     def form_valid(self, form):
         project = self.get_project()
-        # Create database object
-        obj = form.save(commit=False)
-        # TODO: These should happen in the form instead (see #1865)
-        obj.user = self.request.user
-        obj.project = project
-        obj.save()
+        obj = form.save()
         # Create timeline event
         self.add_tl_event(obj, 'create')
         # Add app alerts to owners/delegates
@@ -2622,6 +2618,7 @@ class IrodsDataRequestUpdateView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
+    CurrentUserFormMixin,
     InvestigationContextMixin,
     IrodsDataRequestModifyMixin,
     HTTPRefererMixin,
