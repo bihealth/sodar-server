@@ -24,6 +24,7 @@ from projectroles.views import (
     ProjectPermissionMixin,
     ProjectContextMixin,
     CurrentUserFormMixin,
+    HTTPRefererMixin,
     PROJECT_BLOCK_MSG,
 )
 
@@ -617,6 +618,7 @@ class ZoneCreateView(
     CurrentUserFormMixin,
     ZoneModifyMixin,
     ZoneContextMixin,
+    HTTPRefererMixin,
     CreateView,
 ):
     """LandingZone creation view"""
@@ -708,6 +710,7 @@ class ZoneUpdateView(
     LoginRequiredMixin,
     InvestigationContextMixin,
     ZoneModifyMixin,
+    HTTPRefererMixin,
     UpdateView,
 ):
     """LandingZone update view"""
@@ -815,6 +818,7 @@ class ZoneDeleteView(
     ProjectPermissionMixin,
     CurrentUserFormMixin,
     ZoneDeleteMixin,
+    HTTPRefererMixin,
     TemplateView,
 ):
     """LandingZone deletion view"""
@@ -880,6 +884,7 @@ class ZoneMoveView(
     ZoneModifyPermissionMixin,
     ProjectPermissionMixin,
     ZoneMoveMixin,
+    HTTPRefererMixin,
     TemplateView,
 ):
     """LandingZone validation and moving triggering view"""

@@ -59,6 +59,7 @@ from projectroles.views import (
     ProjectContextMixin,
     ProjectPermissionMixin,
     CurrentUserFormMixin,
+    HTTPRefererMixin,
 )
 
 # Landingzones dependency
@@ -2342,6 +2343,7 @@ class IrodsAccessTicketCreateView(
     InvestigationContextMixin,
     ProjectPermissionMixin,
     IrodsAccessTicketModifyMixin,
+    HTTPRefererMixin,
     FormView,
 ):
     """iRODS access ticket create view"""
@@ -2404,6 +2406,7 @@ class IrodsAccessTicketUpdateView(
     ProjectPermissionMixin,
     ProjectContextMixin,
     IrodsAccessTicketModifyMixin,
+    HTTPRefererMixin,
     UpdateView,
 ):
     """iRODS access ticket update view"""
@@ -2453,6 +2456,7 @@ class IrodsAccessTicketDeleteView(
     ProjectPermissionMixin,
     InvestigationContextMixin,
     IrodsAccessTicketModifyMixin,
+    HTTPRefererMixin,
     DeleteView,
 ):
     """iRODS access ticket deletion view"""
@@ -2575,6 +2579,7 @@ class IrodsDataRequestCreateView(
     ProjectPermissionMixin,
     InvestigationContextMixin,
     IrodsDataRequestModifyMixin,
+    HTTPRefererMixin,
     FormView,
 ):
     """View for creating an iRODS data request"""
@@ -2619,6 +2624,7 @@ class IrodsDataRequestUpdateView(
     ProjectPermissionMixin,
     InvestigationContextMixin,
     IrodsDataRequestModifyMixin,
+    HTTPRefererMixin,
     UpdateView,
 ):
     """View for updating an iRODS data request"""
@@ -2665,6 +2671,7 @@ class IrodsDataRequestDeleteView(
     ProjectPermissionMixin,
     InvestigationContextMixin,
     IrodsDataRequestModifyMixin,
+    HTTPRefererMixin,
     DeleteView,
 ):
     """View for deleting an iRODS data request"""
