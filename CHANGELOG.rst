@@ -109,6 +109,7 @@ Changed
     - Remove redundant ``landing_zone_move`` admin access setting task (#2257)
     - Remove ``landing_zone_move`` access cleanup (#2260)
     - Refactor ``TaskflowProjectTestMixin`` to not require ``login()`` (#2167)
+    - Refactor task tests (#2226)
 
 Fixed
 -----
