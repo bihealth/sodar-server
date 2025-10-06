@@ -466,12 +466,19 @@ class IrodsAccessTicketForm(IrodsAccessTicketValidateMixin, forms.ModelForm):
         model = IrodsAccessTicket
         fields = ('path', 'label', 'date_expires', 'allowed_hosts')
 
-    def __init__(self, project: Optional[Project] = None, *args, **kwargs):
+    def __init__(
+        self,
+        project: Optional[Project] = None,
+        current_user: Optional[User] = None,
+        *args,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
         if self.instance.pk:
             self.project = self.instance.get_project()
         else:
             self.project = project
+        self.current_user = current_user
         # Update path help and disable in update
         path_help = (
             'Full path to iRODS collection or data object within an assay '
@@ -521,6 +528,16 @@ class IrodsAccessTicketForm(IrodsAccessTicketValidateMixin, forms.ModelForm):
         if error:
             self.add_error(*error)
         return cleaned_data
+
+    def save(self, **kwargs):
+        obj = super().save(commit=False)
+        if not self.instance.pk:
+            obj.user = self.current_user
+            obj.project = self.project
+            obj.assay = self.cleaned_data['assay']
+            obj.study = obj.assay.study
+        obj.save()
+        return obj
 
 
 class IrodsDataRequestForm(IrodsDataRequestValidateMixin, forms.ModelForm):

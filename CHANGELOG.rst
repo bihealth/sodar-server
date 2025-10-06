@@ -102,6 +102,7 @@ Changed
     - Disable study title and header name reformatting (#1776)
     - Optimize magic number generation for cell width estimation (#1284)
     - Refactor ``IrodsDataRequest`` UI creation and update (#1865)
+    - Refactor ``IrodsAccessTicket`` UI creation and update (#2306)
 - **Taskflowbackend**
     - Update iRODS ACL handling for v4.3+ scheme (#2215)
     - Grant ``delete_object`` access instead of ``own`` for landing zone owner (#2215)

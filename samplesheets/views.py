@@ -2340,8 +2340,9 @@ class IrodsAccessTicketListView(
 class IrodsAccessTicketCreateView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
-    InvestigationContextMixin,
     ProjectPermissionMixin,
+    CurrentUserFormMixin,
+    InvestigationContextMixin,
     IrodsAccessTicketModifyMixin,
     HTTPRefererMixin,
     FormView,
@@ -2383,10 +2384,7 @@ class IrodsAccessTicketCreateView(
             return redirect(redirect_url)
 
         # Create database object
-        obj = form.save(commit=False)
-        obj.assay = form.cleaned_data['assay']
-        obj.study = obj.assay.study
-        obj.user = self.request.user
+        obj = form.save()
         obj.ticket = ticket.ticket
         obj.save()
 
@@ -2405,6 +2403,7 @@ class IrodsAccessTicketUpdateView(
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     ProjectContextMixin,
+    CurrentUserFormMixin,
     IrodsAccessTicketModifyMixin,
     HTTPRefererMixin,
     UpdateView,
