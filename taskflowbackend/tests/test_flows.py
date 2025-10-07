@@ -14,6 +14,7 @@ from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS, ROLE_RANKING
 
 # Timeline dependency
+from timeline.models import TimelineEvent
 from timeline.tests.test_models import TimelineEventMixin
 
 # Landingzones dependency
@@ -79,6 +80,7 @@ PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
 PROJECT_ROLE_CONTRIBUTOR = SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR']
 
 # Local constants
+APP_NAME = 'taskflowbackend'
 COLL_NAME = 'test_coll'
 SUB_COLL_NAME = 'sub'
 OBJ_COLL_NAME = 'obj'
@@ -467,9 +469,24 @@ class TestLandingZoneDelete(
     LandingZoneTaskflowMixin,
     SampleSheetIOMixin,
     SampleSheetTaskflowMixin,
+    TimelineEventMixin,
     TaskflowbackendFlowTestBase,
 ):
     """Tests for the landing_zone_delete flow"""
+
+    def _make_tl_event(self) -> TimelineEvent:
+        """
+        Create timeline event for zone deletion.
+
+        :return: TimelineEvent
+        """
+        return self.make_event(
+            project=self.project,
+            app=APP_NAME,
+            user=self.user,
+            event_name='landing_zone_delete',
+            extra_data={},
+        )
 
     def setUp(self):
         super().setUp()
@@ -483,19 +500,21 @@ class TestLandingZoneDelete(
         self.assay = self.study.assays.first()
         self.make_irods_colls(self.investigation)
         self.set_flow_kw()
+        self.zone_kw = {
+            'title': ZONE_TITLE,
+            'project': self.project,
+            'user': self.user,
+            'assay': self.assay,
+            'description': ZONE_DESC,
+            'status': ZONE_STATUS_CREATING,
+        }
 
     def test_delete(self):
         """Test landing_zone_delete with empty landing zone"""
-        zone = self.make_landing_zone(
-            title=ZONE_TITLE,
-            project=self.project,
-            user=self.user,
-            assay=self.assay,
-            description=ZONE_DESC,
-            status=ZONE_STATUS_CREATING,
-        )
+        zone = self.make_landing_zone(**self.zone_kw)
         self.make_zone_taskflow(zone)
         zone_path = self.irods_backend.get_path(zone)
+
         self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(self.irods.collections.exists(zone_path), True)
 
@@ -512,14 +531,7 @@ class TestLandingZoneDelete(
 
     def test_delete_locked(self):
         """Test landing_zone_delete with locked project"""
-        zone = self.make_landing_zone(
-            title=ZONE_TITLE,
-            project=self.project,
-            user=self.user,
-            assay=self.assay,
-            description=ZONE_DESC,
-            status=ZONE_STATUS_CREATING,
-        )
+        zone = self.make_landing_zone(**self.zone_kw)
         self.make_zone_taskflow(zone)
         flow_data = {'zone_uuid': str(zone.sodar_uuid)}
         flow = self.taskflow.get_flow(
@@ -532,14 +544,7 @@ class TestLandingZoneDelete(
 
     def test_delete_files(self):
         """Test landing_zone_delete with files"""
-        zone = self.make_landing_zone(
-            title=ZONE_TITLE,
-            project=self.project,
-            user=self.user,
-            assay=self.assay,
-            description=ZONE_DESC,
-            status=ZONE_STATUS_CREATING,
-        )
+        zone = self.make_landing_zone(**self.zone_kw)
         self.make_zone_taskflow(zone)
         zone_path = self.irods_backend.get_path(zone)
         self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
@@ -565,14 +570,7 @@ class TestLandingZoneDelete(
 
     def test_delete_files_restrict(self):
         """Test landing_zone_delete with files and restricted collections"""
-        zone = self.make_landing_zone(
-            title=ZONE_TITLE,
-            project=self.project,
-            user=self.user,
-            assay=self.assay,
-            description=ZONE_DESC,
-            status=ZONE_STATUS_CREATING,
-        )
+        zone = self.make_landing_zone(**self.zone_kw)
         self.make_zone_taskflow(
             zone=zone,
             colls=[MISC_FILES_COLL, RESULTS_COLL],
@@ -606,14 +604,8 @@ class TestLandingZoneDelete(
     def test_delete_finished(self):
         """Test landing_zone_delete with finished zone"""
         # NOTE: This may happen with concurrent requests. See #1909, #1910
-        zone = self.make_landing_zone(
-            title=ZONE_TITLE,
-            project=self.project,
-            user=self.user,
-            assay=self.assay,
-            description=ZONE_DESC,
-            status=ZONE_STATUS_DELETED,
-        )
+        self.zone_kw['status'] = ZONE_STATUS_DELETED
+        zone = self.make_landing_zone(**self.zone_kw)
         # Do not create in taskflow
         self.assertEqual(zone.status, ZONE_STATUS_DELETED)
         flow_data = {'zone_uuid': str(zone.sodar_uuid)}
@@ -628,14 +620,8 @@ class TestLandingZoneDelete(
     @override_settings(REDIS_URL=INVALID_REDIS_URL)
     def test_delete_finished_lock_failure(self):
         """Test landing_zone_delete with finished zone and lock failure"""
-        zone = self.make_landing_zone(
-            title=ZONE_TITLE,
-            project=self.project,
-            user=self.user,
-            assay=self.assay,
-            description=ZONE_DESC,
-            status=ZONE_STATUS_DELETED,
-        )
+        self.zone_kw['status'] = ZONE_STATUS_DELETED
+        zone = self.make_landing_zone(**self.zone_kw)
         self.assertEqual(zone.status, ZONE_STATUS_DELETED)
         flow_data = {'zone_uuid': str(zone.sodar_uuid)}
         flow = self.taskflow.get_flow(
@@ -644,6 +630,56 @@ class TestLandingZoneDelete(
         self.build_and_run(flow)
         zone.refresh_from_db()
         self.assertEqual(zone.status, ZONE_STATUS_DELETED)
+
+    def test_delete_extra_data(self):
+        """Test landing_zone_delete timeline event extra data"""
+        zone = self.make_landing_zone(**self.zone_kw)
+        self.make_zone_taskflow(zone)
+        tl_event = self._make_tl_event()
+
+        flow_data = {'zone_uuid': str(zone.sodar_uuid)}
+        flow = self.taskflow.get_flow(
+            flow_name='landing_zone_delete',
+            flow_data=flow_data,
+            tl_event=tl_event,
+            **self.flow_kw,
+        )
+        self.build_and_run(flow)
+
+        zone.refresh_from_db()
+        self.assertEqual(zone.status, ZONE_STATUS_DELETED)
+        tl_event.refresh_from_db()
+        expected = {'files': [], 'total_size': 0}
+        self.assertEqual(tl_event.extra_data, expected)
+
+    def test_delete_extra_data_files(self):
+        """Test landing_zone_delete timeline event extra data with files"""
+        zone = self.make_landing_zone(**self.zone_kw)
+        self.make_zone_taskflow(zone)
+        zone_path = self.irods_backend.get_path(zone)
+        coll_path = iRODSPath(zone_path, COLL_NAME)
+        coll = self.irods.collections.create(coll_path)
+        data_obj = self.make_irods_object(coll, OBJ_NAME)
+        self.make_checksum_object(data_obj)  # Should not be in stats
+        tl_event = self._make_tl_event()
+
+        flow_data = {'zone_uuid': str(zone.sodar_uuid)}
+        flow = self.taskflow.get_flow(
+            flow_name='landing_zone_delete',
+            flow_data=flow_data,
+            tl_event=tl_event,
+            **self.flow_kw,
+        )
+        self.build_and_run(flow)
+
+        zone.refresh_from_db()
+        self.assertEqual(zone.status, ZONE_STATUS_DELETED)
+        tl_event.refresh_from_db()
+        expected = {
+            'files': [iRODSPath(COLL_NAME, OBJ_NAME, absolute=False)],
+            'total_size': 1024,
+        }
+        self.assertEqual(tl_event.extra_data, expected)
 
 
 class TestLandingZoneMove(
@@ -709,7 +745,7 @@ class TestLandingZoneMove(
         sample_obj_path = iRODSPath(self.sample_path, OBJ_COLL_NAME, OBJ_NAME)
         tl_event = self.make_event(
             project=self.project,
-            app='taskflowbackend',
+            app=APP_NAME,
             user=self.user,
             event_name='landing_zone_move',
             extra_data={},
@@ -1038,7 +1074,7 @@ class TestLandingZoneMove(
         }
         tl_event = self.make_event(
             project=self.project,
-            app='taskflowbackend',
+            app=APP_NAME,
             user=self.user,
             event_name='landing_zone_move',
             extra_data={},

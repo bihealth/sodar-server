@@ -266,3 +266,10 @@ along with all associated files in iRODS will be deleted.
 .. warning::
 
     Deleting a landing zone can **not** be undone!
+
+.. hint::
+
+    As with landing zone moving, the list of files deleted along with the
+    landing zone can be seen in the "extra data" modal for the related timeline
+    event. This information is currently available for project owners and
+    delegates.

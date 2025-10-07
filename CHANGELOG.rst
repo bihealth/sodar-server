@@ -54,6 +54,7 @@ Added
     - ``user`` arg for ``TaskflowAPI.submit()`` (#2157)
     - ``constants`` module for common constants (#2225)
     - ``TaskflowUITestBase`` base test class (#2168)
+    - ``landing_zone_delete`` timeline event extra data file list (#2307)
 
 Changed
 -------
