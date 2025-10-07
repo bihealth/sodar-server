@@ -727,21 +727,17 @@ class ProjectAppPlugin(
             if settings.DEBUG:
                 raise ex
 
-        # Update/delete ticket in project settings
+        # Update ticket in project app settings
         if (
             project.get_public_access_name() == PROJECT_ROLE_GUEST
             and settings.PROJECTROLES_ALLOW_ANONYMOUS
         ):
-            app_settings.set(
-                APP_NAME,
-                'public_access_ticket',
-                ticket_str,
-                project=project,
-            )
+            s_val = ticket_str
         else:
-            app_settings.delete(
-                APP_NAME, 'public_access_ticket', project=project
-            )
+            s_val = ''
+        app_settings.set(
+            APP_NAME, 'public_access_ticket', s_val, project=project
+        )
 
     @classmethod
     def _update_irods_tickets(cls, project: Project, irods_backend: Any):

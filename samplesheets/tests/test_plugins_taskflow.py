@@ -13,7 +13,7 @@ from django.utils import timezone
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.models import Project, SODAR_CONSTANTS
+from projectroles.models import Project, AppSetting, SODAR_CONSTANTS
 from projectroles.plugins import ProjectAppPluginPoint, PluginAPI
 
 # Taskflowbackend dependency
@@ -258,6 +258,7 @@ class TestPerformProjectModify(SamplesheetsPluginTaskflowTestBase):
         ticket_str = app_settings.get(
             APP_NAME, 'public_access_ticket', project=self.project
         )
+        self.assertNotEqual(ticket_str, '')
 
         self.project.set_public_access(None)
         self.plugin.perform_project_modify(
@@ -277,6 +278,11 @@ class TestPerformProjectModify(SamplesheetsPluginTaskflowTestBase):
         )
         self.assert_irods_access(IRODS_GROUP_PUBLIC, self.sample_path, None)
         self.assert_ticket_access(self.project, False, ticket_str)
+        # AppSetting object should still exist but with an empty value
+        s_ticket = AppSetting.objects.get(
+            name='public_access_ticket', project=self.project
+        )
+        self.assertEqual(s_ticket.value, '')
 
     def test_revoke_public_access_viewer(self):
         """Test revoking public viewer access with no anon access"""

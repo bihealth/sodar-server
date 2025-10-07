@@ -132,6 +132,7 @@ Fixed
     - Assay table title row content wrapping (#2267)
     - Vue app modal close button alignment (#2304)
     - Missing ``HTTPRefererMixin`` inheritance in views (#206)
+    - Redundant ``AppSetting`` object deletion in ``_update_public_access()`` (#2308)
 - **Taskflowbackend**
     - Incorrect user in landing zone move sheet cache update timeline event (#2152)
 
