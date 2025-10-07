@@ -11,7 +11,9 @@ from typing import Any, Optional, Union
 from urllib.parse import urlparse
 from uuid import UUID
 
+from irods.column import Criterion
 from irods.exception import CollectionDoesNotExist, NetworkException
+from irods.models import TicketQuery
 from irods.path import iRODSPath
 from irods.session import iRODSSession
 
@@ -319,6 +321,7 @@ IRODS_STATS_CACHE_PREFIX = 'irods/stats/project/'
 IRODS_STATS_CACHE_NAME = IRODS_STATS_CACHE_PREFIX + '{uuid}'
 ASSAY_SHORTCUT_CACHE_NAME = 'irods/shortcuts/assay/{uuid}'
 EMPTY_IRODS_STATS = {'file_count': 0, 'total_size': 0}
+TICKET_MODE_READ = 'read'
 
 
 # Samplesheets project app plugin ----------------------------------------------
@@ -740,6 +743,88 @@ class ProjectAppPlugin(
                 APP_NAME, 'public_access_ticket', project=project
             )
 
+    @classmethod
+    def _update_irods_tickets(cls, project: Project, irods_backend: Any):
+        """
+        Update iRODS access tickets set to the projects to match the SODAR
+        database. Done for tickets other than those set for project public
+        access.
+
+        :param project: Project object
+        :param irods_backend: Irodsbackend API object
+        :raise: Exception if DEBUG==True and an iRODS error is encountered
+        """
+        db_tickets = IrodsAccessTicket.objects.filter(
+            study__investigation__project=project
+        ).order_by('path')
+        sample_path = irods_backend.get_sample_path(project)
+        # Get project tickets from iRODS
+        irods_tickets = []
+        with irods_backend.get_session() as irods:
+            c_args = ['like', TicketQuery.Collection.name, f'{sample_path}/%']
+            try:
+                # Collection and data object tickets must be queried separately
+                res = irods.query(
+                    TicketQuery.Ticket, TicketQuery.Collection
+                ).filter(Criterion(*c_args))
+                for r in res:
+                    irods_tickets.append(r[TicketQuery.Ticket.string])
+                c_args[1] = TicketQuery.DataObject.coll
+                res = irods.query(
+                    TicketQuery.Ticket, TicketQuery.DataObject
+                ).filter(Criterion(*c_args))
+                for r in res:
+                    irods_tickets.append(r[TicketQuery.Ticket.string])
+            except Exception as ex:
+                logger.error(f'Exception in querying iRODS tickets: {ex}')
+                if settings.DEBUG:
+                    raise ex
+
+        # Issue tickets missing from iRODS
+        for dt in db_tickets:
+            t_kw = {
+                'irods': irods,
+                'ticket_str': dt.ticket,
+                'date_expires': dt.date_expires,
+                'allowed_hosts': dt.allowed_hosts,
+            }
+            try:
+                if dt.ticket not in irods_tickets:
+                    irods_backend.issue_ticket(
+                        mode=TICKET_MODE_READ, path=dt.path, **t_kw
+                    )
+                    log_mode = 'Issued'
+                else:
+                    irods_backend.update_ticket(**t_kw)
+                    log_mode = 'Updated'
+                logger.debug(
+                    f'{log_mode} ticket "{dt.ticket}" for path {dt.path}'
+                )
+            except Exception as ex:
+                ex_mode = (
+                    'issuing' if dt.ticket not in irods_tickets else 'updating'
+                )
+                logger.error(
+                    f'Exception in {ex_mode} iRODS ticket "{dt.ticket}" '
+                    f'({dt.sodar_uuid}): {ex}'
+                )
+                if settings.DEBUG:
+                    raise ex
+
+        # Delete tickets missing from SODAR
+        d_tickets = [t.ticket for t in db_tickets]
+        for it in irods_tickets:
+            if it not in d_tickets:
+                try:
+                    irods_backend.delete_ticket(irods, it)
+                    logger.debug(f'Deleted ticket "{it}"')
+                except Exception as ex:
+                    logger.error(
+                        f'Exception in deleting iRODS ticket "{it}": {ex}'
+                    )
+                    if settings.DEBUG:
+                        raise ex
+
     def perform_project_modify(
         self,
         project: Project,
@@ -823,7 +908,11 @@ class ProjectAppPlugin(
         if not investigation.irods_status:
             logger.debug(f'Skipping: {SKIP_MSG_NO_COLLS}')
             return
+        logger.info('Syncing public access in iRODS..')
         self._update_public_access(project, taskflow, irods_backend)
+        # Update tickets
+        logger.info('Syncing iRODS access tickets..')
+        self._update_irods_tickets(project, irods_backend)
 
     @classmethod
     def update_irods_stats_cache(

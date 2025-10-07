@@ -40,8 +40,9 @@ These commands originate in SODAR Core. More information can be found in the
 ``syncgroups``
     Synchronize user groups.
 ``syncmodifyapi``
-    Synchronize project metadata and user access in iRODS. Generally should only
-    be used in development.
+    Create project metadata, project collections, user access and access tickets
+    in iRODS. Generally should only be used in development or in exceptional
+    situations where the iRODS iCAT database needs to be recreated.
 ``syncremote``
     Synchronize project and user data from a remote site if remote project sync
     is enabled.

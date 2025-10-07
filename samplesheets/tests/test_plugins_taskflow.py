@@ -1,12 +1,15 @@
 """Tests for plugins in the samplesheets app with Taskflow enabled"""
 
+from datetime import timedelta
 from typing import Optional
 
+from irods.models import TicketQuery
 from irods.path import iRODSPath
 from irods.ticket import Ticket
 
 from django.forms.models import model_to_dict
 from django.test import RequestFactory, override_settings
+from django.utils import timezone
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
@@ -17,8 +20,10 @@ from projectroles.plugins import ProjectAppPluginPoint, PluginAPI
 from taskflowbackend.constants import IRODS_ACCESS_READ_OBJ
 from taskflowbackend.tests.base import TaskflowViewTestBase, IRODS_GROUP_PUBLIC
 
+from samplesheets.models import IrodsAccessTicket
 from samplesheets.plugins import IRODS_STATS_CACHE_NAME, EMPTY_IRODS_STATS
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
+from samplesheets.tests.test_models import IrodsAccessTicketMixin
 from samplesheets.tests.test_views_taskflow import (
     SampleSheetPublicAccessMixin,
     SampleSheetTaskflowMixin,
@@ -41,6 +46,7 @@ APP_SETTING_SCOPE_PROJECT = SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT']
 APP_NAME = 'samplesheets'
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 TEST_OBJ_NAME = 'test1.txt'
+TICKET_MODE_READ = 'read'
 
 
 class SamplesheetsModifyAPITestMixin:
@@ -337,8 +343,47 @@ class TestPerformProjectModify(SamplesheetsPluginTaskflowTestBase):
         self.assert_ticket_access(self.project, False)
 
 
-class TestPerformProjectSync(SamplesheetsPluginTaskflowTestBase):
+class TestPerformProjectSync(
+    IrodsAccessTicketMixin, SamplesheetsPluginTaskflowTestBase
+):
     """Tests for ProjectAppPlugin.perform_project_sync()"""
+
+    def _get_ticket_res(
+        self, ticket_str: str, include_obj: bool = False
+    ) -> dict:
+        """Return iRODS database ticket query result"""
+        q_args = [TicketQuery.Ticket]
+        if include_obj:
+            q_args.append(TicketQuery.DataObject)
+        query = self.irods.query(*q_args).filter(
+            TicketQuery.Ticket.string == ticket_str
+        )
+        return list(query)[0]
+
+    def _get_host_res(self, ticket_id) -> list:
+        """Return iRODS database ticket allowed hosts query result"""
+        query = self.irods.query(TicketQuery.AllowedHosts).filter(
+            TicketQuery.AllowedHosts.ticket_id == ticket_id
+        )
+        return list(query)
+
+    def _setup_investigation_irods(self, project: Optional[Project] = None):
+        """
+        Setup investigation with iRODS collections and an additional MiscFiles
+        collection.
+
+        :param project: Project object (optional, default=self.project)
+        """
+        if not project:
+            project = self.project
+        self.investigation = self.import_isa_from_file(SHEET_PATH, project)
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+        self.make_irods_colls(self.investigation)
+        self.misc_path = iRODSPath(
+            self.irods_backend.get_path(self.assay), MISC_FILES_COLL
+        )
+        self.misc_coll = self.irods.collections.create(self.misc_path)
 
     def setUp(self):
         super().setUp()
@@ -448,6 +493,202 @@ class TestPerformProjectSync(SamplesheetsPluginTaskflowTestBase):
             '',
         )
         self.assert_ticket_access(self.project, False, ticket_str)
+
+    def test_sync_ticket_sodar(self):
+        """Test sync with iRODS access ticket in SODAR"""
+        self._setup_investigation_irods()
+        # Make ticket in SODAR only
+        db_ticket = self.make_irods_ticket(
+            self.study, self.assay, self.misc_path
+        )
+        self.assertIsNone(
+            self.irods_backend.get_ticket(self.irods, db_ticket.ticket)
+        )
+        self.plugin.perform_project_sync(self.project)
+
+        self.assertIsNotNone(
+            self.irods_backend.get_ticket(self.irods, db_ticket.ticket)
+        )
+        ticket_res = self._get_ticket_res(db_ticket.ticket)
+        self.assertEqual(ticket_res[TicketQuery.Ticket.type], TICKET_MODE_READ)
+        self.assertEqual(ticket_res[TicketQuery.Ticket.expiry_ts], None)
+        host_res = self._get_host_res(ticket_res[TicketQuery.Ticket.id])
+        self.assertEqual(len(host_res), 0)
+
+    def test_sync_ticket_sodar_expiry_date(self):
+        """Test sync with iRODS access ticket in SODAR and expiry date"""
+        self._setup_investigation_irods()
+        expiry_date = timezone.now() + timedelta(days=1)
+        db_ticket = self.make_irods_ticket(
+            self.study, self.assay, self.misc_path, date_expires=expiry_date
+        )
+        self.assertIsNone(
+            self.irods_backend.get_ticket(self.irods, db_ticket.ticket)
+        )
+        self.plugin.perform_project_sync(self.project)
+        ticket_res = self._get_ticket_res(db_ticket.ticket)
+        self.assertEqual(
+            int(ticket_res[TicketQuery.Ticket.expiry_ts]),
+            int(expiry_date.timestamp()),
+        )
+
+    def test_sync_ticket_sodar_hosts(self):
+        """Test sync with iRODS access ticket in SODAR and allowed hosts"""
+        self._setup_investigation_irods()
+        db_ticket = self.make_irods_ticket(
+            self.study, self.assay, self.misc_path, allowed_hosts=['127.0.0.1']
+        )
+        self.assertIsNone(
+            self.irods_backend.get_ticket(self.irods, db_ticket.ticket)
+        )
+        self.plugin.perform_project_sync(self.project)
+        self.assertIsNotNone(
+            self.irods_backend.get_ticket(self.irods, db_ticket.ticket)
+        )
+        ticket_res = self._get_ticket_res(db_ticket.ticket)
+        host_res = self._get_host_res(ticket_res[TicketQuery.Ticket.id])
+        self.assertEqual(len(host_res), 1)
+        self.assertEqual(
+            host_res[0][TicketQuery.AllowedHosts.host], '127.0.0.1'
+        )
+
+    def test_sync_ticket_sodar_obj(self):
+        """Test sync with iRODS access ticket in SODAR for data object"""
+        self._setup_investigation_irods()
+        data_obj = self.make_irods_object(self.misc_coll, TEST_OBJ_NAME)
+        # Make ticket in SODAR only
+        db_ticket = self.make_irods_ticket(
+            self.study, self.assay, data_obj.path
+        )
+        self.assertIsNone(
+            self.irods_backend.get_ticket(self.irods, db_ticket.ticket)
+        )
+        self.plugin.perform_project_sync(self.project)
+
+        self.assertIsNotNone(
+            self.irods_backend.get_ticket(self.irods, db_ticket.ticket)
+        )
+        ticket_res = self._get_ticket_res(db_ticket.ticket, include_obj=True)
+        self.assertEqual(
+            ticket_res[TicketQuery.DataObject.coll], self.misc_path
+        )
+        self.assertEqual(ticket_res[TicketQuery.DataObject.name], TEST_OBJ_NAME)
+
+    def test_sync_ticket_irods(self):
+        """Test sync with iRODS access ticket in iRODS"""
+        self._setup_investigation_irods()
+        # Make ticket in iRODS only
+        i_ticket = self.irods_backend.issue_ticket(
+            self.irods, TICKET_MODE_READ, self.misc_path
+        )
+        ts = i_ticket.string
+        self.assertIsNone(IrodsAccessTicket.objects.filter(ticket=ts).first())
+        self.assertIsNotNone(self.irods_backend.get_ticket(self.irods, ts))
+        self.plugin.perform_project_sync(self.project)
+        # Neither SODAR ticket nor iRODS ticket should exist
+        self.assertIsNone(IrodsAccessTicket.objects.filter(ticket=ts).first())
+        self.assertIsNone(self.irods_backend.get_ticket(self.irods, ts))
+
+    def test_sync_ticket_irods_other_project(self):
+        """Test sync with iRODS access ticket in iRODS in other project"""
+        project2, _ = self.make_project_taskflow(
+            'TestProject2', PROJECT_TYPE_PROJECT, self.category, self.user
+        )
+        self._setup_investigation_irods()  # self.project
+        self._setup_investigation_irods(project2)
+        # Make ticket in iRODS only for project2
+        i_ticket = self.irods_backend.issue_ticket(
+            self.irods, TICKET_MODE_READ, self.misc_path
+        )
+        ts = i_ticket.string
+        self.assertIsNone(IrodsAccessTicket.objects.filter(ticket=ts).first())
+        self.assertIsNotNone(self.irods_backend.get_ticket(self.irods, ts))
+        # Sync self.project
+        self.plugin.perform_project_sync(self.project)
+        # iRODS ticket should still exist
+        self.assertIsNotNone(self.irods_backend.get_ticket(self.irods, ts))
+
+    def test_sync_ticket_irods_obj(self):
+        """Test sync with iRODS access ticket in iRODS for data object"""
+        self._setup_investigation_irods()
+        data_obj = self.make_irods_object(self.misc_coll, TEST_OBJ_NAME)
+        i_ticket = self.irods_backend.issue_ticket(
+            self.irods, TICKET_MODE_READ, data_obj.path
+        )
+        ts = i_ticket.string
+        self.assertIsNone(IrodsAccessTicket.objects.filter(ticket=ts).first())
+        self.assertIsNotNone(self.irods_backend.get_ticket(self.irods, ts))
+        self.plugin.perform_project_sync(self.project)
+        self.assertIsNone(IrodsAccessTicket.objects.filter(ticket=ts).first())
+        self.assertIsNone(self.irods_backend.get_ticket(self.irods, ts))
+
+    def test_sync_ticket_both(self):
+        """Test sync with ticket in SODAR and iRODS with no changes"""
+        self._setup_investigation_irods()
+        db_ticket = self.make_irods_ticket(
+            self.study, self.assay, self.misc_path
+        )
+        ts = db_ticket.ticket
+        self.irods_backend.issue_ticket(
+            self.irods, TICKET_MODE_READ, self.misc_path, ticket_str=ts
+        )
+        self.assertIsNotNone(
+            IrodsAccessTicket.objects.filter(ticket=ts).first()
+        )
+        self.assertIsNotNone(self.irods_backend.get_ticket(self.irods, ts))
+        self.plugin.perform_project_sync(self.project)
+        # Both SODAR and iRODS tickets should be unchanged
+        self.assertIsNotNone(
+            IrodsAccessTicket.objects.filter(ticket=ts).first()
+        )
+        self.assertIsNotNone(self.irods_backend.get_ticket(self.irods, ts))
+        ticket_res = self._get_ticket_res(ts)
+        self.assertEqual(ticket_res[TicketQuery.Ticket.type], TICKET_MODE_READ)
+        self.assertEqual(ticket_res[TicketQuery.Ticket.expiry_ts], None)
+        host_res = self._get_host_res(ticket_res[TicketQuery.Ticket.id])
+        self.assertEqual(len(host_res), 0)
+
+    def test_sync_ticket_both_expiry_date(self):
+        """Test sync with ticket in SODAR and iRODS with changed expiry date"""
+        self._setup_investigation_irods()
+        expiry_date = timezone.now() + timedelta(days=1)
+        db_ticket = self.make_irods_ticket(
+            self.study, self.assay, self.misc_path, date_expires=expiry_date
+        )
+        ts = db_ticket.ticket
+        # Create without expiry date
+        self.irods_backend.issue_ticket(
+            self.irods, TICKET_MODE_READ, self.misc_path, ticket_str=ts
+        )
+        ticket_res = self._get_ticket_res(ts)
+        self.assertEqual(ticket_res[TicketQuery.Ticket.expiry_ts], None)
+        self.plugin.perform_project_sync(self.project)
+        ticket_res = self._get_ticket_res(ts)
+        self.assertEqual(
+            int(ticket_res[TicketQuery.Ticket.expiry_ts]),
+            int(expiry_date.timestamp()),
+        )
+
+    def test_sync_ticket_both_hosts(self):
+        """Test sync with ticket in SODAR and iRODS with changed allowed hosts"""
+        self._setup_investigation_irods()
+        db_ticket = self.make_irods_ticket(
+            self.study, self.assay, self.misc_path, allowed_hosts=['127.0.0.1']
+        )
+        ts = db_ticket.ticket
+        # Create without allowed hosts
+        self.irods_backend.issue_ticket(
+            self.irods, TICKET_MODE_READ, self.misc_path, ticket_str=ts
+        )
+        ticket_res = self._get_ticket_res(ts)
+        host_res = self._get_host_res(ticket_res[TicketQuery.Ticket.id])
+        self.assertEqual(len(host_res), 0)
+        self.plugin.perform_project_sync(self.project)
+        host_res = self._get_host_res(ticket_res[TicketQuery.Ticket.id])
+        self.assertEqual(len(host_res), 1)
+        self.assertEqual(
+            host_res[0][TicketQuery.AllowedHosts.host], '127.0.0.1'
+        )
 
 
 class TestUpdateIrodsStatsCache(SamplesheetsPluginTaskflowTestBase):
