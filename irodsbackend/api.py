@@ -140,10 +140,12 @@ class IrodsAPI:
     @classmethod
     def _get_query_alias(cls) -> str:
         """Return a random iCAT SQL query alias"""
-        choice = random.SystemRandom().choice(
-            string.ascii_lowercase + string.ascii_uppercase
+        random_id = ''.join(
+            random.SystemRandom().choice(
+                string.ascii_lowercase + string.ascii_uppercase
+            )
+            for _ in range(16)
         )
-        random_id = ''.join(choice for _ in range(16))
         return f'sodar_query_{random_id}'
 
     @classmethod

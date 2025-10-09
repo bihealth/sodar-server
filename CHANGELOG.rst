@@ -124,6 +124,8 @@ Fixed
 - **Irodsadmin**
     - Redundant queries for category iRODS paths in ``irodsorphans`` (#2280)
     - Nested paths set by assay plugin reported as orphaned (#2207)
+- **Irodsbackend**
+    - ``_get_query_alias()`` invalid random ID generation (#2315)
 - **Landingzones**
     - Missing investigation setup in certain ``TestProjectZoneView`` tests (#2290)
     - Missing ``HTTPRefererMixin`` inheritance in views (#206)
