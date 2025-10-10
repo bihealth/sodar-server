@@ -255,6 +255,10 @@ Landing Zones Settings
     this value to ``0`` or ``None`` will be considered as ``1`` (integer).
 ``LANDINGZONES_FILE_LIST_PAGINATION``
     Page size for landing zone iRODS file list modal pagination.
+``LANDINGZONES_ZONE_MOVE_VERIFY``
+    Enable verification of file integrity after landing zone move. Recomputes
+    and validates checksums of recently moved landing zone files in the sample
+    data repository, reports to the zone owner if problems were encountered.
 ``LZ_BIH_PROTEOMICS_SMB_EXPIRY_DAYS``
     BIH proteomics configuration SMB expiry days (integer).
 ``LZ_BIH_PROTEOMICS_SMB_USER``

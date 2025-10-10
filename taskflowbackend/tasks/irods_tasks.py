@@ -10,7 +10,7 @@ import string
 import time
 
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from irods import keywords as kw
 from irods.access import iRODSAccess
@@ -25,6 +25,13 @@ from irods.models import Collection
 from irods.path import iRODSPath
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.urls import reverse
+
+# Projectroles dependency
+from projectroles.app_settings import AppSettingAPI
+from projectroles.email import send_generic_mail
+from projectroles.plugins import PluginAPI
 
 # Landingzones dependency
 from landingzones.utils import cleanup_file_prohibit
@@ -36,14 +43,36 @@ from taskflowbackend.constants import (
 from taskflowbackend.tasks.base_task import BaseTask
 
 
+app_settings = AppSettingAPI()
 logger = logging.getLogger(__name__)
+plugin_api = PluginAPI()
+User = get_user_model()
 
 
 # Local constants
+APP_NAME = 'taskflow'
+APP_NAME_LZ = 'landingzones'
 INHERIT_STRINGS = {True: 'inherit', False: 'noinherit'}
 CHECKSUM_FILE_RE = re.compile(r'([^\w.])')
 CHECKSUM_RETRY = 5
 NO_FILE_CHECKSUM_LABEL = 'None'
+VERIFY_ERR_MSG = 'iRODS sample data verification failed'
+
+EMAIL_MSG_VERIFY_FAILED = r'''
+Verifying file integrity in sample data for the project
+"{project_title}"
+has failed. Please contact an administrator or the site
+contact address for assistance.
+
+Assay: {assay_name}
+
+Reported errors:
+{ex_msg}
+
+See the project files in the following URL:
+{url}
+
+'''.lstrip()
 
 
 # Mixins -----------------------------------------------------------------------
@@ -777,12 +806,12 @@ class BatchCheckFileExistTask(IrodsBaseTask):
         pass  # Nothing is modified so no need for revert
 
 
-class BatchValidateChecksumsTask(ProgressCounterMixin, IrodsBaseTask):
-    """Batch validate checksums of a given list of data object paths"""
+class BatchValidateChecksumsBase(IrodsBaseTask):
+    """Base class for batch checksum validation"""
 
-    def _read_checksum(
+    def read_checksum(
         self, chk_path: str, zone_path_len: int, read_errors: list
-    ) -> bool:
+    ) -> Union[str, bool]:
         """
         Read checksum file. Appends error and returns False if error is
         reached.
@@ -803,11 +832,11 @@ class BatchValidateChecksumsTask(ProgressCounterMixin, IrodsBaseTask):
             return False
 
     @classmethod
-    def _compare_checksums(
+    def compare_checksums(
         cls,
         data_obj: iRODSDataObject,
         checksum: str,
-        zone_path_len: int,
+        root_path_len: int,
         hash_scheme: str,
         irods_backend: Any,
     ):
@@ -817,7 +846,7 @@ class BatchValidateChecksumsTask(ProgressCounterMixin, IrodsBaseTask):
 
         :param data_obj: Data object
         :param checksum: Expected checksum (string)
-        :param zone_path_len: Landing zone iRODS path length (int)
+        :param root_path_len: File list root path collection depth (int)
         :param hash_scheme: Checksum hashing scheme (string)
         :param irods_backend: IrodsAPI object
         :raises: Exception if checksums do not match
@@ -840,7 +869,7 @@ class BatchValidateChecksumsTask(ProgressCounterMixin, IrodsBaseTask):
                     f'iRODS: {repl_checksum})'
                 )
                 logger.error(log_msg)
-                ex_path = '/'.join(data_obj.path.split('/')[zone_path_len:])
+                ex_path = '/'.join(data_obj.path.split('/')[root_path_len:])
                 ex_msg = (
                     f'Path: {ex_path}\n'
                     f'Resource: {replica.resource_name}\n'
@@ -848,6 +877,42 @@ class BatchValidateChecksumsTask(ProgressCounterMixin, IrodsBaseTask):
                     f'iRODS: {repl_checksum}'
                 )
                 raise Exception(ex_msg)
+
+    @classmethod
+    def get_error_msg(
+        cls, read_errors: list[str], cmp_errors: list[str]
+    ) -> str:
+        """
+        Return output message in case of validation errors.
+
+        :param read_errors: Errors in reading checksum files (list of strings)
+        :param cmp_errors: Errors in comparing checksums (list of strings)
+        :return: string
+        """
+        ret = ''
+        if read_errors:
+            err_len = len(read_errors)
+            ret += 'Unable to read {} checksum file{}:\n'.format(
+                err_len, 's' if err_len != 1 else ''
+            )
+            ret += '\n'.join(read_errors)
+        if cmp_errors:
+            err_len = len(cmp_errors)
+            ret += '{}Checksums do not match for {} file{}:\n'.format(
+                '\n' if read_errors else '',
+                err_len,
+                's' if err_len != 1 else '',
+            )
+            ret += '\n'.join(cmp_errors)
+        return ret
+
+
+class BatchValidateZoneChecksumsTask(
+    ProgressCounterMixin, BatchValidateChecksumsBase
+):
+    """
+    Batch validate checksums of a given list of landing zone data object paths.
+    """
 
     def execute(
         self,
@@ -871,10 +936,10 @@ class BatchValidateChecksumsTask(ProgressCounterMixin, IrodsBaseTask):
 
         for f_path in file_paths:
             chk_path = f_path + chk_suffix
-            file_sum = self._read_checksum(chk_path, zone_path_len, read_errors)
+            file_sum = self.read_checksum(chk_path, zone_path_len, read_errors)
             if file_sum is not False:
                 try:
-                    self._compare_checksums(
+                    self.compare_checksums(
                         self.irods.data_objects.get(f_path),
                         file_sum,
                         zone_path_len,
@@ -891,34 +956,123 @@ class BatchValidateChecksumsTask(ProgressCounterMixin, IrodsBaseTask):
         self.set_zone_final_status(landing_zone, status_base, file_count)
 
         if read_errors or cmp_errors:
-            ex_msg = ''
-            if read_errors:
-                err_len = len(read_errors)
-                ex_msg += 'Unable to read {} checksum file{}:\n'.format(
-                    err_len, 's' if err_len != 1 else ''
-                )
-                ex_msg += '\n'.join(read_errors)
-            if cmp_errors:
-                err_len = len(cmp_errors)
-                ex_msg += '{}Checksums do not match for {} file{}:\n'.format(
-                    '\n' if read_errors else '',
-                    err_len,
-                    's' if err_len != 1 else '',
-                )
-                ex_msg += '\n'.join(cmp_errors)
+            ex_msg = self.get_error_msg(read_errors, cmp_errors)
             self.raise_irods_exception(Exception(), ex_msg)
         super().execute(*args, **kwargs)
 
-    def revert(
+
+class BatchVerifySampleChecksumsTask(
+    ProgressCounterMixin, BatchValidateChecksumsBase
+):
+    """
+    Batch verify checksums of a given list of sample data repository data
+    object paths.
+    """
+
+    @classmethod
+    def _add_alert(cls, assay: Any, user: User, ex_msg: str):
+        """
+        Add app alert for user if AppAlerts app is enabled and the user has
+        landing zone alerts enabled.
+
+        :param assay: Assay object
+        :param user: User object
+        :param ex_msg: String
+        """
+        app_alerts = plugin_api.get_backend_api('appalerts_backend')
+        if not app_alerts or not app_settings.get(
+            APP_NAME_LZ, 'notify_alert_zone_status', user=user
+        ):
+            logger.debug(f'{cls.__name__}: Alert not created, alerts disabled')
+            return
+        project = assay.get_project()
+        alert_msg = (
+            VERIFY_ERR_MSG + f':\nAssay: {assay.get_display_name()}\n' + ex_msg
+        )
+        app_alerts.add_alert(
+            app_name=APP_NAME,
+            alert_name='sample_data_verify',
+            user=user,
+            message=alert_msg,
+            level='DANGER',
+            url=reverse(
+                'samplesheets:project_sheets',
+                kwargs={'project': project.sodar_uuid},
+            ),
+            project=project,
+        )
+        logger.info(f'{cls.__name__}: Alert sent to {user.username}')
+
+    @classmethod
+    def _send_email(cls, assay: Any, user: User, ex_msg: str):
+        """
+        Send email to user if email sending is enabled and the user has email
+        alerting enabled.
+
+        :param assay: Assay object
+        :param user: User object
+        :param ex_msg: String
+        """
+        if not settings.PROJECTROLES_SEND_EMAIL or not app_settings.get(
+            APP_NAME_LZ, 'notify_email_zone_status', user=user
+        ):
+            logger.debug(f'{cls.__name__}: Email not sent, email disabled')
+            return
+        project = assay.get_project()
+        subject = VERIFY_ERR_MSG
+        body = EMAIL_MSG_VERIFY_FAILED.format(
+            project_title=project.title,
+            assay_name=assay.get_display_name(),
+            ex_msg=ex_msg,
+            url=settings.SODAR_API_DEFAULT_HOST.geturl()
+            + reverse(
+                'samplesheets:project_sheets',
+                kwargs={'project': project.sodar_uuid},
+            ),
+        )
+        mail_sent = send_generic_mail(subject, body, [user])
+        if mail_sent > 0:
+            logger.info(f'{cls.__name__}: Email sent to {user.username}')
+
+    def execute(
         self,
-        landing_zone: Any,
         file_paths: list[str],
-        zone_path: str,
+        assay: Any,
+        user: Optional[User],
         irods_backend: Any,
         *args,
         **kwargs,
     ):
-        pass  # Nothing is modified so no need for revert
+        root_path = irods_backend.get_path(assay)
+        root_path_len = len(root_path.split('/'))
+        hash_scheme = settings.IRODS_HASH_SCHEME
+        chk_suffix = irods_backend.get_checksum_file_suffix()
+        read_errors = []
+        cmp_errors = []
+
+        for f_path in file_paths:
+            chk_path = f_path + chk_suffix
+            file_sum = self.read_checksum(chk_path, root_path_len, read_errors)
+            if file_sum is not False:
+                try:
+                    self.compare_checksums(
+                        self.irods.data_objects.get(f_path),
+                        file_sum,
+                        root_path_len,
+                        hash_scheme,
+                        irods_backend,
+                    )
+                except Exception as ex:
+                    cmp_errors.append(str(ex))
+
+        if read_errors or cmp_errors:
+            ex_msg = self.get_error_msg(read_errors, cmp_errors)
+            if user:  # Add alert and send email for user
+                self._add_alert(assay, user, ex_msg)
+                self._send_email(assay, user, ex_msg)
+            # NOTE: Timeline event gets updated on exception
+            self.raise_irods_exception(Exception(), ex_msg)
+        super().execute(*args, **kwargs)
 
 
 class BatchCreateCollectionsTask(IrodsBaseTask):
@@ -1119,7 +1273,10 @@ class BatchCalculateChecksumTask(ProgressCounterMixin, IrodsBaseTask):
             if j > 0:  # Retry if iRODS times out (see #1941)
                 logger.info(f'Retrying ({j + 1})..')
             try:
-                data_obj.chksum(**{kw.RESC_HIER_STR_KW: replica.resc_hier})
+                c_kw = {kw.RESC_HIER_STR_KW: replica.resc_hier}
+                if force:
+                    c_kw[kw.FORCE_CHKSUM_KW] = ''
+                data_obj.chksum(**c_kw)
                 return
             # Retry for network exceptions
             except NetworkException as ex:
@@ -1148,12 +1305,13 @@ class BatchCalculateChecksumTask(ProgressCounterMixin, IrodsBaseTask):
         if file_count == 0:  # Nothing to do
             super().execute(*args, **kwargs)
             return
-        status_base = landing_zone.status_info
+        status_base = landing_zone.status_info if landing_zone else None
         i = 0
         i_prev = 0
-        landing_zone.set_status(
-            landing_zone.status, f'{status_base} (0/{file_count}: 0%)'
-        )  # Set initial status in case first file is a time consuming one
+        if landing_zone:
+            landing_zone.set_status(
+                landing_zone.status, f'{status_base} (0/{file_count}: 0%)'
+            )  # Set initial status in case first file is a time consuming one
         time_start = time.time()
         for path in file_paths:
             if not self.irods.data_objects.exists(path):
@@ -1161,10 +1319,12 @@ class BatchCalculateChecksumTask(ProgressCounterMixin, IrodsBaseTask):
             data_obj = self.irods.data_objects.get(path)
             for replica in data_obj.replicas:
                 self._compute_checksum(data_obj, replica, force)
-            i_prev, time_start = self.update_zone_progress(
-                landing_zone, status_base, i, i_prev, file_count, time_start
-            )
-            i += 1
-        self.set_zone_final_status(landing_zone, status_base, file_count)
+            if landing_zone:
+                i_prev, time_start = self.update_zone_progress(
+                    landing_zone, status_base, i, i_prev, file_count, time_start
+                )
+                i += 1
+        if landing_zone:
+            self.set_zone_final_status(landing_zone, status_base, file_count)
         super().execute(*args, **kwargs)
         # NOTE: We don't need revert for this

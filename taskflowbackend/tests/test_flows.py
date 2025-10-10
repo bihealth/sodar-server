@@ -1,5 +1,7 @@
 """Tests for Taskflow flows in the taskflowbackend app"""
 
+import time
+
 from irods.exception import UserDoesNotExist, GroupDoesNotExist
 from irods.path import iRODSPath
 from irods.test.helpers import make_object
@@ -7,11 +9,15 @@ from irods.ticket import Ticket
 from irods.user import iRODSUser, iRODSUserGroup
 
 from django.conf import settings
+from django.core import mail
 from django.test import override_settings
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS, ROLE_RANKING
+
+# Appalerts dependency
+from appalerts.models import AppAlert
 
 # Timeline dependency
 from timeline.models import TimelineEvent
@@ -53,6 +59,9 @@ from taskflowbackend.flows.landing_zone_delete import (
 from taskflowbackend.flows.landing_zone_move import (
     Flow as LandingZoneMoveFlow,
 )
+from taskflowbackend.flows.landing_zone_verify import (
+    Flow as LandingZoneVerifyFlow,
+)
 from taskflowbackend.flows.project_create import Flow as ProjectCreateFlow
 from taskflowbackend.flows.project_update import Flow as ProjectUpdateFlow
 from taskflowbackend.flows.public_access_update import (
@@ -92,11 +101,13 @@ SCRIPT_USER_NAME = 'script_user'
 IRODS_ROOT_PATH = 'sodar/root'
 INVALID_REDIS_URL = 'redis://127.0.0.1:6666/0'
 MD5_SUFFIX = '.md5'
+DUMMY_MD5 = '66666666666666666666666666666666'
 
 
 class TaskflowbackendFlowTestBase(TaskflowViewTestBase):
     """Base class for flow tests"""
 
+    # TODO: Enable providing overriding/additional kwargs
     def set_flow_kw(self):
         """
         Set default flow kwargs in self.flow_kw.
@@ -1056,6 +1067,120 @@ class TestLandingZoneMove(
             self.owner_group, sample_obj_path + MD5_SUFFIX, None
         )
 
+    def test_move_restrict(self):
+        """Test landing_zone_move with created and restricted collections"""
+        # Create new zone with restricted collections
+        new_zone = self.make_landing_zone(
+            title=ZONE_TITLE + '_new',
+            project=self.project,
+            user=self.user,
+            assay=self.assay,
+            description=ZONE_DESC,
+            status=ZONE_STATUS_CREATING,
+        )
+        self.make_zone_taskflow(
+            zone=new_zone,
+            colls=[MISC_FILES_COLL, RESULTS_COLL],
+            restrict_colls=True,
+        )
+        new_zone_path = self.irods_backend.get_path(new_zone)
+        self.assertEqual(new_zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(self.irods.collections.exists(new_zone_path), True)
+        results_path = iRODSPath(new_zone_path, RESULTS_COLL)
+        self.assertEqual(self.irods.collections.exists(results_path), True)
+
+        empty_coll_path = iRODSPath(results_path, COLL_NAME)
+        self.irods.collections.create(empty_coll_path)
+        obj_coll_path = iRODSPath(results_path, OBJ_COLL_NAME)
+        obj_coll = self.irods.collections.create(obj_coll_path)
+        obj = self.make_irods_object(obj_coll, OBJ_NAME)
+        self.make_checksum_object(obj)
+        obj_path = iRODSPath(obj_coll_path, OBJ_NAME)
+        sample_obj_path = iRODSPath(
+            self.sample_path, RESULTS_COLL, OBJ_COLL_NAME, OBJ_NAME
+        )
+
+        self.assertEqual(self.irods.collections.exists(empty_coll_path), True)
+        self.assertEqual(self.irods.collections.exists(obj_coll_path), True)
+        self.assertEqual(self.irods.data_objects.exists(obj_path), True)
+        self.assertEqual(
+            self.irods.data_objects.exists(obj_path + MD5_SUFFIX), True
+        )
+        self.assertEqual(self.irods.data_objects.exists(sample_obj_path), False)
+        self.assertEqual(
+            self.irods.data_objects.exists(sample_obj_path + MD5_SUFFIX), False
+        )
+
+        flow_data = {'zone_uuid': str(new_zone.sodar_uuid)}
+        flow = self.taskflow.get_flow(
+            flow_name='landing_zone_move', flow_data=flow_data, **self.flow_kw
+        )
+        self.build_and_run(flow)
+
+        new_zone.refresh_from_db()
+        self.assertEqual(new_zone.status, ZONE_STATUS_MOVED)
+        self.assertEqual(self.irods.collections.exists(new_zone_path), False)
+        sample_empty_path = iRODSPath(self.sample_path, RESULTS_COLL, COLL_NAME)
+        # An empty collection should not be created by moving
+        self.assertEqual(
+            self.irods.collections.exists(sample_empty_path), False
+        )
+        self.assertEqual(self.irods.data_objects.exists(sample_obj_path), True)
+        self.assertEqual(
+            self.irods.data_objects.exists(sample_obj_path + MD5_SUFFIX), True
+        )
+        self.assert_irods_access(
+            self.project_group, sample_obj_path, IRODS_ACCESS_READ_OBJ
+        )
+        self.assert_irods_access(
+            self.project_group,
+            sample_obj_path + MD5_SUFFIX,
+            IRODS_ACCESS_READ_OBJ,
+        )
+
+    def test_move_verify(self):
+        """Test landing_zone_move with move_verify=True"""
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(self.irods.collections.exists(self.zone_path), True)
+        empty_coll_path = iRODSPath(self.zone_path, COLL_NAME)
+        self.irods.collections.create(empty_coll_path)
+        obj_coll_path = iRODSPath(self.zone_path, OBJ_COLL_NAME)
+        obj_coll = self.irods.collections.create(obj_coll_path)
+        obj = self.make_irods_object(obj_coll, OBJ_NAME)
+        self.make_checksum_object(obj)
+        sample_obj_path = iRODSPath(self.sample_path, OBJ_COLL_NAME, OBJ_NAME)
+        self.assertIsNone(
+            TimelineEvent.objects.filter(event_name='zone_verify').first()
+        )
+
+        flow_data = {
+            'zone_uuid': str(self.zone.sodar_uuid),
+            'move_verify': True,
+        }
+        flow = self.taskflow.get_flow(
+            flow_name='landing_zone_move', flow_data=flow_data, **self.flow_kw
+        )
+        self.build_and_run(flow)
+
+        self.zone.refresh_from_db()
+        self.assertEqual(self.zone.status, ZONE_STATUS_MOVED)
+        self.assertEqual(self.irods.data_objects.exists(sample_obj_path), True)
+        self.assertEqual(
+            self.irods.data_objects.exists(sample_obj_path + MD5_SUFFIX), True
+        )
+        # Verify second async flow has run by checking timeline event
+        tl_event = None
+        for i in range(0, 10):
+            tl_event = TimelineEvent.objects.filter(
+                event_name='zone_verify'
+            ).first()
+            if tl_event:
+                break
+            elif i == 9:
+                self.fail('Timeline event not found')
+            time.sleep(3)
+        self.assertEqual(tl_event.get_status().status_type, 'OK')
+
     def test_validate(self):
         """Test landing_zone_move with validate_only=True"""
         coll_path = iRODSPath(self.zone_path, COLL_NAME)
@@ -1274,77 +1399,6 @@ class TestLandingZoneMove(
         )
         self.assert_irods_access(self.project_group, zone_coll, None)
 
-    def test_move_restrict(self):
-        """Test landing_zone_move with created and restricted collections"""
-        # Create new zone with restricted collections
-        new_zone = self.make_landing_zone(
-            title=ZONE_TITLE + '_new',
-            project=self.project,
-            user=self.user,
-            assay=self.assay,
-            description=ZONE_DESC,
-            status=ZONE_STATUS_CREATING,
-        )
-        self.make_zone_taskflow(
-            zone=new_zone,
-            colls=[MISC_FILES_COLL, RESULTS_COLL],
-            restrict_colls=True,
-        )
-        new_zone_path = self.irods_backend.get_path(new_zone)
-        self.assertEqual(new_zone.status, ZONE_STATUS_ACTIVE)
-        self.assertEqual(self.irods.collections.exists(new_zone_path), True)
-        results_path = iRODSPath(new_zone_path, RESULTS_COLL)
-        self.assertEqual(self.irods.collections.exists(results_path), True)
-
-        empty_coll_path = iRODSPath(results_path, COLL_NAME)
-        self.irods.collections.create(empty_coll_path)
-        obj_coll_path = iRODSPath(results_path, OBJ_COLL_NAME)
-        obj_coll = self.irods.collections.create(obj_coll_path)
-        obj = self.make_irods_object(obj_coll, OBJ_NAME)
-        self.make_checksum_object(obj)
-        obj_path = iRODSPath(obj_coll_path, OBJ_NAME)
-        sample_obj_path = iRODSPath(
-            self.sample_path, RESULTS_COLL, OBJ_COLL_NAME, OBJ_NAME
-        )
-
-        self.assertEqual(self.irods.collections.exists(empty_coll_path), True)
-        self.assertEqual(self.irods.collections.exists(obj_coll_path), True)
-        self.assertEqual(self.irods.data_objects.exists(obj_path), True)
-        self.assertEqual(
-            self.irods.data_objects.exists(obj_path + MD5_SUFFIX), True
-        )
-        self.assertEqual(self.irods.data_objects.exists(sample_obj_path), False)
-        self.assertEqual(
-            self.irods.data_objects.exists(sample_obj_path + MD5_SUFFIX), False
-        )
-
-        flow_data = {'zone_uuid': str(new_zone.sodar_uuid)}
-        flow = self.taskflow.get_flow(
-            flow_name='landing_zone_move', flow_data=flow_data, **self.flow_kw
-        )
-        self.build_and_run(flow)
-
-        new_zone.refresh_from_db()
-        self.assertEqual(new_zone.status, ZONE_STATUS_MOVED)
-        self.assertEqual(self.irods.collections.exists(new_zone_path), False)
-        sample_empty_path = iRODSPath(self.sample_path, RESULTS_COLL, COLL_NAME)
-        # An empty collection should not be created by moving
-        self.assertEqual(
-            self.irods.collections.exists(sample_empty_path), False
-        )
-        self.assertEqual(self.irods.data_objects.exists(sample_obj_path), True)
-        self.assertEqual(
-            self.irods.data_objects.exists(sample_obj_path + MD5_SUFFIX), True
-        )
-        self.assert_irods_access(
-            self.project_group, sample_obj_path, IRODS_ACCESS_READ_OBJ
-        )
-        self.assert_irods_access(
-            self.project_group,
-            sample_obj_path + MD5_SUFFIX,
-            IRODS_ACCESS_READ_OBJ,
-        )
-
 
 @override_settings(IRODS_ROOT_PATH=IRODS_ROOT_PATH)
 class TestLandingZoneMoveAltRootPath(
@@ -1443,6 +1497,117 @@ class TestLandingZoneMoveAltRootPath(
             sample_obj_path + MD5_SUFFIX,
             IRODS_ACCESS_READ_OBJ,
         )
+
+
+class TestLandingZoneVerify(
+    LandingZoneMixin,
+    LandingZoneTaskflowMixin,
+    SampleSheetIOMixin,
+    SampleSheetTaskflowMixin,
+    TimelineEventMixin,
+    TaskflowbackendFlowTestBase,
+):
+    """Tests for the landing_zone_verify flow"""
+
+    @classmethod
+    def _get_app_alert(cls) -> AppAlert:
+        """Get AppAlert from task execution"""
+        return AppAlert.objects.filter(alert_name='sample_data_verify').first()
+
+    def setUp(self):
+        super().setUp()
+        self.project, self.owner_as = self.make_project_taskflow(
+            'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
+        )
+        self.project_group = self.irods_backend.get_group_name(self.project)
+        self.project_path = self.irods_backend.get_path(self.project)
+        # Import investigation
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+        # Create iRODS collections
+        self.make_irods_colls(self.investigation)
+        # Create zone
+        self.zone = self.make_landing_zone(
+            title=ZONE_TITLE,
+            project=self.project,
+            user=self.user,
+            assay=self.assay,
+            description=ZONE_DESC,
+            status=ZONE_STATUS_MOVED,
+        )  # Taskflow not needed as this was moved
+        self.assay_path = self.irods_backend.get_path(self.assay)
+        self.misc_path = iRODSPath(self.assay_path, MISC_FILES_COLL)
+        self.misc_coll = self.irods.collections.create(self.misc_path)
+        self.data_obj = self.make_irods_object(self.misc_coll, OBJ_NAME)
+        self.set_flow_kw()
+        obj_zone_path = iRODSPath(
+            self.irods_backend.get_path(self.zone), MISC_FILES_COLL, OBJ_NAME
+        )
+        # Set up flow data
+        self.flow_data = {
+            'zone_uuid': self.zone.sodar_uuid,
+            'file_paths': [obj_zone_path],
+        }
+        self.tl_event = self.make_event(
+            project=self.project,
+            app=APP_NAME,
+            user=self.user,
+            event_name='zone_verify',
+        )
+        self.flow_kw['flow_name'] = 'landing_zone_verify'
+        self.flow_kw['flow_data'] = self.flow_data
+        self.flow_kw['tl_event'] = self.tl_event
+        mail.outbox = []  # Clear mail outbox to simplify testing
+
+    def test_verify(self):
+        """Test landing_zone_verify"""
+        self.make_checksum_object(self.data_obj)
+        self.assertIsNone(self._get_app_alert())
+        self.assertEqual(len(mail.outbox), 0)
+        flow = self.taskflow.get_flow(**self.flow_kw)
+        self.assertEqual(type(flow), LandingZoneVerifyFlow)
+        self.build_and_run(flow)
+        self.assertIsNone(self._get_app_alert())
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_verify_invalid_in_file(self):
+        """Test landing_zone_verify with invalid checksum in file (should fail)"""
+        self.make_checksum_object(self.data_obj, content='xxx')
+        self.assertIsNone(self._get_app_alert())
+        self.assertEqual(len(mail.outbox), 0)
+        flow = self.taskflow.get_flow(**self.flow_kw)
+        with self.assertRaises(Exception):
+            self.build_and_run(flow)
+        self.assertIsInstance(self._get_app_alert(), AppAlert)
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_verify_invalid_in_irods(self):
+        """Test landing_zone_verify with invalid checksum in iRODS iCAT database"""
+        self.make_checksum_object(self.data_obj)
+        real_md5 = self.data_obj.replicas[0].checksum
+        self.assertNotEqual(real_md5, DUMMY_MD5)
+        self.data_obj = self.set_icat_checksum(self.data_obj, DUMMY_MD5)
+        self.assertIsNone(self._get_app_alert())
+        self.assertEqual(len(mail.outbox), 0)
+        flow = self.taskflow.get_flow(**self.flow_kw)
+        # No exception should be raised as the checksum is recomputed
+        self.build_and_run(flow)
+        self.data_obj = self.irods.data_objects.get(self.data_obj.path)
+        self.assertEqual(self.data_obj.replicas[0].checksum, real_md5)
+        self.assertIsNone(self._get_app_alert())
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_verify_invalid_no_checksum_file(self):
+        """Test landing_zone_verify with no checksum file (should fail)"""
+        # No checksum file created
+        self.assertIsNone(self._get_app_alert())
+        self.assertEqual(len(mail.outbox), 0)
+        flow = self.taskflow.get_flow(**self.flow_kw)
+        with self.assertRaises(Exception):
+            self.build_and_run(flow)
+        self.assertIsInstance(self._get_app_alert(), AppAlert)
+        self.assertEqual(len(mail.outbox), 1)
 
 
 class TestProjectCreate(TaskflowbackendFlowTestBase):
@@ -2448,5 +2613,4 @@ class TestSheetDelete(
         )
         self.assertEqual(self.irods.collections.exists(self.sample_path), False)
         self.assertEqual(self.irods.collections.exists(zone_path), False)
-
-    # NOTE: Can't be reverted
+        # NOTE: Can't be reverted

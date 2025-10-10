@@ -14,6 +14,7 @@ v1.2.0 (WIP)
 Major feature update and SODAR Core 1.2 upgrade.
 
 - Add project viewer role support
+- Add landing zone post-move file integrity verification
 - Add category statistics for sample count and iRODS data
 - :ref:`Add sample sheets study and assay details modal <app_samplesheets_browse_table_detail>`
 - Add assay details in sheet overview

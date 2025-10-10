@@ -10,14 +10,20 @@ from irods.meta import iRODSMeta
 from irods.ticket import Ticket
 from irods.user import iRODSUser, iRODSUserGroup
 
+from django.core import mail
+from django.forms.models import model_to_dict
 from django.test import override_settings
+
+from djangoplugins.models import Plugin
 
 from test_plus import TestCase
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import PluginAPI
 from projectroles.tests.test_models import ProjectMixin
+
+# Appalerts dependency
+from appalerts.models import AppAlert
 
 # Timeline dependency
 from timeline.tests.test_models import TimelineEventMixin
@@ -33,6 +39,7 @@ from landingzones.tests.test_views_taskflow import LandingZoneTaskflowMixin
 
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
+from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 
 from taskflowbackend.constants import (
     IRODS_ACCESS_MODIFY_OBJ,
@@ -67,6 +74,7 @@ TEST_OBJ_NAME = 'test1.txt'
 SUB_COLL_NAME = 'sub'
 SUB_COLL_NAME2 = 'sub2'
 MOVE_COLL_NAME = 'move_coll'
+MISC_FILES_COLL = 'MiscFiles'
 
 TEST_USER = USER_PREFIX + 'user3'
 TEST_KEY = 'test_key'
@@ -87,6 +95,8 @@ SUFFIX_OBJ_NAME_TXT = 'test.txt'
 EXTRA_DATA = {'test': 1}
 MD5_SUFFIX = '.md5'
 SHA256_SUFFIX = '.sha256'
+DUMMY_MD5 = '66666666666666666666666666666666'
+VERIFY_ALERT_NAME = 'sample_data_verify'
 
 
 class TaskTestMixin:
@@ -1389,10 +1399,10 @@ class TestBatchCheckFileExistTask(
         self.assertEqual(expected, str(cm.exception))
 
 
-class TestBatchValidateChecksumsTask(
+class TestBatchValidateZoneChecksumsTask(
     SampleSheetIOMixin, LandingZoneMixin, IRODSTaskTestBase
 ):
-    """Tests for BatchValidateChecksumsTask"""
+    """Tests for BatchValidateZoneChecksumsTask"""
 
     def setUp(self):
         super().setUp()
@@ -1412,10 +1422,10 @@ class TestBatchValidateChecksumsTask(
         self.zone_path = self.irods_backend.get_path(self.zone)
         self.obj_name = 'test1.txt'  # TODO: Replace with TEST_OBJ_NAME
         self.zone_coll = self.irods.collections.create(self.zone_path)
-        self.obj = self.make_irods_object(self.zone_coll, self.obj_name)
-        self.obj_path = self.obj.path
+        self.data_obj = self.make_irods_object(self.zone_coll, self.obj_name)
+        self.obj_path = self.data_obj.path
         self.task_kw = {
-            'cls': BatchValidateChecksumsTask,
+            'cls': BatchValidateZoneChecksumsTask,
             'name': 'Validate checksums',
             'inject': {
                 'landing_zone': self.zone,
@@ -1425,10 +1435,10 @@ class TestBatchValidateChecksumsTask(
             },
         }
 
-    def test_validate(self):
-        """Test validating checksums"""
-        self.make_checksum_object(self.obj)
-        self.assertIsNotNone(self.obj.replicas[0].checksum)
+    def test_execute(self):
+        """Test BatchValidateZoneChecksumsTask execute()"""
+        self.make_checksum_object(self.data_obj)
+        self.assertIsNotNone(self.data_obj.replicas[0].checksum)
         self.assertEqual(
             self.zone.status_info, DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE]
         )
@@ -1443,9 +1453,9 @@ class TestBatchValidateChecksumsTask(
 
     # TODO: Test with SHA256 checksum (see #2170)
 
-    def test_validate_invalid_in_file(self):
-        """Test validating checksums with invalid checksum in file"""
-        self.make_checksum_object(self.obj, content='xxx')
+    def test_exceute_invalid_in_file(self):
+        """Test execute with invalid checksum in file"""
+        self.make_checksum_object(self.data_obj, content='xxx')
         self.assertEqual(
             self.zone.status_info, DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE]
         )
@@ -1457,11 +1467,185 @@ class TestBatchValidateChecksumsTask(
             f'Path: {ex_path}\n'
             f'Resource: demoResc\n'
             f'File: xxx\n'
-            f'iRODS: {self.obj.replicas[0].checksum}'
+            f'iRODS: {self.data_obj.replicas[0].checksum}'
         )
         with self.assertRaises(Exception) as cm:
             self.run_flow()
         self.assertIn(expected, str(cm.exception))
+
+    def test_execute_invalid_in_irods(self):
+        """Test execute with invalid checksum in iRODS iCAT database"""
+        self.make_checksum_object(self.data_obj)
+        real_md5 = self.data_obj.replicas[0].checksum
+        self.assertNotEqual(real_md5, DUMMY_MD5)
+        self.data_obj = self.set_icat_checksum(self.data_obj, DUMMY_MD5)
+        self.assertEqual(self.data_obj.replicas[0].checksum, DUMMY_MD5)
+        self.add_task(**self.task_kw)
+        zone_path_len = len(self.zone_path.split('/'))
+        ex_path = '/'.join(self.obj_path.split('/')[zone_path_len:])
+        expected = (
+            f'Checksums do not match for 1 file:\n'
+            f'Path: {ex_path}\n'
+            f'Resource: demoResc\n'
+            f'File: {real_md5}\n'
+            f'iRODS: {DUMMY_MD5}'
+        )
+        with self.assertRaises(Exception) as cm:
+            self.run_flow()
+        self.assertIn(expected, str(cm.exception))
+
+
+class TestBatchVerifySampleChecksumsTask(
+    SampleSheetIOMixin, SampleSheetTaskflowMixin, IRODSTaskTestBase
+):
+    """Tests for BatchVerifySampleChecksumsTask"""
+
+    @classmethod
+    def _get_app_alert(cls) -> AppAlert:
+        """Get AppAlert from task execution"""
+        return AppAlert.objects.filter(alert_name='sample_data_verify').first()
+
+    def setUp(self):
+        super().setUp()
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+        self.make_irods_colls(self.investigation)
+        self.assay_path = self.irods_backend.get_path(self.assay)
+        self.misc_path = iRODSPath(self.assay_path, MISC_FILES_COLL)
+        self.misc_coll = self.irods.collections.create(self.misc_path)
+        self.data_obj = self.make_irods_object(self.misc_coll, TEST_OBJ_NAME)
+        self.obj_path = self.data_obj.path
+        self.ex_path = self.data_obj.path.split(self.assay_path + '/')[1]
+        self.task_kw = {
+            'cls': BatchVerifySampleChecksumsTask,
+            'name': 'Validate checksums',
+            'inject': {
+                'file_paths': [self.obj_path],
+                'assay': self.assay,
+                'user': self.user,
+                'irods_backend': self.irods_backend,
+            },
+        }
+        mail.outbox = []  # Clear mail outbox to simplify testing
+
+    def test_execute(self):
+        """Test BatchValidateSampleChecksumsTask execute()"""
+        self.make_checksum_object(self.data_obj)
+        self.assertIsNone(self._get_app_alert())
+        self.assertEqual(len(mail.outbox), 0)
+        self.add_task(**self.task_kw)
+        self.run_flow()
+        # No alert or email should be created
+        self.assertIsNone(self._get_app_alert())
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_execute_invalid_in_file(self):
+        """Test execute with invalid checksum in file"""
+        self.make_checksum_object(self.data_obj, content='xxx')
+        self.assertIsNone(self._get_app_alert())
+        self.assertEqual(len(mail.outbox), 0)
+        self.add_task(**self.task_kw)
+        with self.assertRaises(Exception) as cm:
+            self.run_flow()
+
+        # Assert exception
+        ex_msg = (
+            f'Checksums do not match for 1 file:\n'
+            f'Path: {self.ex_path}\n'
+            f'Resource: demoResc\n'
+            f'File: xxx\n'
+            f'iRODS: {self.data_obj.replicas[0].checksum}'
+        )
+        self.assertIn(ex_msg, str(cm.exception))
+
+        # Assert alert
+        alert = self._get_app_alert()
+        self.assertIsInstance(alert, AppAlert)
+        alert_msg = (
+            f'{VERIFY_ERR_MSG}:\n' f'Assay: {self.assay.get_display_name()}\n'
+        ) + ex_msg
+        expected = {
+            'id': alert.pk,
+            'app_plugin': Plugin.objects.get(name=APP_NAME).pk,
+            'alert_name': VERIFY_ALERT_NAME,
+            'user': self.user.pk,
+            'message': alert_msg,
+            'level': 'DANGER',
+            'active': True,
+            'url': reverse(
+                'samplesheets:project_sheets',
+                kwargs={'project': self.project.sodar_uuid},
+            ),
+            'project': self.project.pk,
+            'sodar_uuid': alert.sodar_uuid,
+        }
+        self.assertEqual(model_to_dict(alert), expected)
+
+        # Assert email
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].recipients(), [self.user.email])
+        self.assertIn(VERIFY_ERR_MSG, mail.outbox[0].subject)
+
+    def test_execute_invalid_in_irods(self):
+        """Test execute with invalid checksum in iRODS iCAT database"""
+        self.make_checksum_object(self.data_obj)
+        real_md5 = self.data_obj.replicas[0].checksum
+        self.assertNotEqual(real_md5, DUMMY_MD5)
+        self.data_obj = self.set_icat_checksum(self.data_obj, DUMMY_MD5)
+        self.add_task(**self.task_kw)
+        with self.assertRaises(Exception) as cm:
+            self.run_flow()
+        ex_msg = (
+            f'Checksums do not match for 1 file:\n'
+            f'Path: {self.ex_path}\n'
+            f'Resource: demoResc\n'
+            f'File: {real_md5}\n'
+            f'iRODS: {DUMMY_MD5}'
+        )
+        self.assertIn(ex_msg, str(cm.exception))
+        self.assertIsInstance(self._get_app_alert(), AppAlert)
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_execute_disable_alerts(self):
+        """Test execute with disabled user alert notifications"""
+        app_settings.set(
+            APP_NAME_LZ, 'notify_alert_zone_status', False, user=self.user
+        )
+        self.make_checksum_object(self.data_obj, content='xxx')
+        self.assertIsNone(self._get_app_alert())
+        self.assertEqual(len(mail.outbox), 0)
+        self.add_task(**self.task_kw)
+        with self.assertRaises(Exception):
+            self.run_flow()
+        self.assertIsNone(self._get_app_alert())  # No alert
+        self.assertEqual(len(mail.outbox), 1)  # Email should still be sent
+
+    def test_execute_disable_email(self):
+        """Test execute with disabled user email notifications"""
+        app_settings.set(
+            APP_NAME_LZ, 'notify_email_zone_status', False, user=self.user
+        )
+        self.make_checksum_object(self.data_obj, content='xxx')
+        self.assertIsNone(self._get_app_alert())
+        self.assertEqual(len(mail.outbox), 0)
+        self.add_task(**self.task_kw)
+        with self.assertRaises(Exception):
+            self.run_flow()
+        self.assertIsInstance(self._get_app_alert(), AppAlert)
+        self.assertEqual(len(mail.outbox), 0)  # No email
+
+    @override_settings(PROJECTROLES_SEND_EMAIL=False)
+    def test_execute_disable_email_site(self):
+        """Test execute with disabled email sending on site"""
+        self.make_checksum_object(self.data_obj, content='xxx')
+        self.assertIsNone(self._get_app_alert())
+        self.assertEqual(len(mail.outbox), 0)
+        self.add_task(**self.task_kw)
+        with self.assertRaises(Exception):
+            self.run_flow()
+        self.assertIsInstance(self._get_app_alert(), AppAlert)
+        self.assertEqual(len(mail.outbox), 0)
 
 
 class TestBatchSetAccessTask(IRODSTaskTestBase):
@@ -2113,7 +2297,10 @@ class TestBatchMoveDataObjectsTask(
 
 
 class TestBatchCalculateChecksumTask(
-    SampleSheetIOMixin, LandingZoneMixin, IRODSTaskTestBase
+    SampleSheetIOMixin,
+    SampleSheetTaskflowMixin,
+    LandingZoneMixin,
+    IRODSTaskTestBase,
 ):
     """Tests for BatchCalculateChecksumTask"""
 
@@ -2172,6 +2359,35 @@ class TestBatchCalculateChecksumTask(
         self.assertIsNotNone(obj.replicas[0].checksum)
         self.assertEqual(obj.replicas[0].checksum, self.get_checksum(obj))
 
+    def test_calculate_existing_different(self):
+        """Test calculating with existing different checksum"""
+        obj = self.make_irods_object(
+            self.test_coll, self.obj_name, checksum=False
+        )
+        self.assertIsNone(obj.replicas[0].checksum)
+        obj = self.set_icat_checksum(obj, DUMMY_MD5)
+        self.assertEqual(obj.replicas[0].checksum, DUMMY_MD5)
+        self.add_task(**self.task_kw)
+        self.run_flow()
+        obj = self.irods.data_objects.get(self.obj_path)
+        # Even though the sum is invalid, it is not updated without force=True
+        self.assertEqual(obj.replicas[0].checksum, DUMMY_MD5)
+
+    def test_calculate_force(self):
+        """Test calculating with existing checksum and force=True"""
+        obj = self.make_irods_object(
+            self.test_coll, self.obj_name, checksum=False
+        )
+        self.assertIsNone(obj.replicas[0].checksum)
+        obj = self.set_icat_checksum(obj, DUMMY_MD5)
+        self.assertEqual(obj.replicas[0].checksum, DUMMY_MD5)
+        self.task_kw['inject']['force'] = True
+        self.add_task(**self.task_kw)
+        self.run_flow()
+        obj = self.irods.data_objects.get(self.obj_path)
+        self.assertEqual(obj.replicas[0].checksum, self.get_checksum(obj))
+        self.assertNotEqual(obj.replicas[0].checksum, DUMMY_MD5)
+
     @override_settings(TASKFLOW_ZONE_PROGRESS_INTERVAL=0)
     def test_calculate_progress(self):
         """Test calculating checksum with progress indicator"""
@@ -2192,6 +2408,21 @@ class TestBatchCalculateChecksumTask(
             self.zone.status_info,
             DEFAULT_STATUS_INFO[ZONE_STATUS_ACTIVE] + ' (1/1: 100%)',
         )
+
+    def test_calculate_sample_data(self):
+        """Test calculating in sample data collection without zone"""
+        self.make_irods_colls(self.investigation)
+        assay_coll = self.irods.collections.get(
+            self.irods_backend.get_path(self.assay)
+        )
+        obj = self.make_irods_object(assay_coll, self.obj_name, checksum=False)
+        self.assertIsNone(obj.replicas[0].checksum)
+        self.task_kw['inject']['landing_zone'] = None
+        self.task_kw['inject']['file_paths'] = [obj.path]
+        self.add_task(**self.task_kw)
+        self.run_flow()
+        obj = self.irods.data_objects.get(obj.path)
+        self.assertEqual(obj.replicas[0].checksum, self.get_checksum(obj))
 
 
 class TestTimelineEventExtraDataUpdateTask(

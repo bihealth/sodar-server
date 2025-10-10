@@ -30,6 +30,8 @@ Added
     - Landing zone contributor access restricting (#2199)
     - ``ZoneIrodsFileListAPIView`` REST API view (#2291)
     - Zone file list modal UI tests (#2169)
+    - ``LANDINGZONES_ZONE_MOVE_VERIFY`` Django setting (#2309)
+    - ``SubmitZoneVerifyFlowTask`` taskflow task (#2309)
 - **Samplesheets**
     - Project viewer role support (#2200)
     - Category statistics for sample count and iRODS statistics (#2213)
@@ -55,6 +57,9 @@ Added
     - ``constants`` module for common constants (#2225)
     - ``TaskflowUITestBase`` base test class (#2168)
     - ``landing_zone_delete`` timeline event extra data file list (#2307)
+    - ``landing_zone_verify`` flow (#2309)
+    - ``set_icat_checksum()`` test helper (#2309)
+    - ``BatchVerifySampleChecksumsTask`` iRODS task (#2309)
 
 Changed
 -------
@@ -114,6 +119,7 @@ Changed
     - Remove ``landing_zone_move`` access cleanup (#2260)
     - Refactor ``TaskflowProjectTestMixin`` to not require ``login()`` (#2167)
     - Refactor task tests (#2226)
+    - Update batch checksum tasks to support sample data verification (#2309)
 
 Fixed
 -----
@@ -138,6 +144,7 @@ Fixed
     - Redundant ``AppSetting`` object deletion in ``_update_public_access()`` (#2308)
 - **Taskflowbackend**
     - Incorrect user in landing zone move sheet cache update timeline event (#2152)
+    - ``BatchCalculateChecksumTask`` ``force`` kwarg not working (#2311)
 
 Removed
 -------

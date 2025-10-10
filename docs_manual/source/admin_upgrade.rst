@@ -48,6 +48,16 @@ The following changes have been made to environment variables:
 - ``ENABLE_IRODS`` setting removed. If you need to set up a SODAR instance
   without iRODS and file access, disable the ``omics_irods`` and
   ``taskflowbackend`` backends along with other iRODS using apps.
+- ``LANDINGZONES_ZONE_MOVE_VERIFY`` added. Enabling this will result in
+  asynchronous file integrity verification being triggered in the sample data
+  after a successful landing zone move. This is ``True`` by default and can be
+  disabled for e.g. performance reasons, or if no issues with move operations
+  are to be expected with the file system used.
+- ``PROJECTROLES_ROLE_PAGINATION`` added. You can set this to control project
+  member list pagination page size.
+- ``SHEETS_SYNC_ENABLED`` added. It is recommended to set this to ``False`` if
+  the sample sheet synchronization feature between multiple SODAR instances is
+  not to be used.
 
 This release contains changes to sample sheet table header formatting in the UI.
 These changes are stored in the SODAR cache. If your instance has

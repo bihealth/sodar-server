@@ -63,6 +63,7 @@ class Flow(BaseLinearFlow):
 
     def build(self, force_fail: bool = False):
         validate_only = self.flow_data.get('validate_only', False)
+        move_verify = self.flow_data.get('move_verify', False)
         zone = LandingZone.objects.get(sodar_uuid=self.flow_data['zone_uuid'])
         project_group = self.irods_backend.get_group_name(self.project)
         owner_group = self.irods_backend.get_group_name(self.project, True)
@@ -272,7 +273,7 @@ class Flow(BaseLinearFlow):
             )
         )
         self.add_task(
-            irods_tasks.BatchValidateChecksumsTask(
+            irods_tasks.BatchValidateZoneChecksumsTask(
                 name=f'Batch validate checksums of {file_count} data objects',
                 irods=self.irods,
                 inject={
@@ -427,3 +428,16 @@ class Flow(BaseLinearFlow):
                 force_fail=force_fail,
             )
         )
+        # Verify files after move if enabled
+        if move_verify:
+            self.add_task(
+                lz_tasks.SubmitZoneVerifyFlowTask(
+                    name='Submit landing_zone_verify flow for zone files',
+                    project=self.project,
+                    inject={
+                        'landing_zone': zone,
+                        'file_paths': zone_objects_no_chk,  # NOTE: OG zone paths
+                        'user': self.user,
+                    },
+                )
+            )

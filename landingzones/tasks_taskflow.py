@@ -458,3 +458,80 @@ class RevertLandingZoneFailTask(BaseLandingZoneStatusTask):
         self.set_status(
             landing_zone, flow_name, status, status_info, extra_data
         )
+
+
+class SubmitZoneVerifyFlowTask(SODARBaseTask):
+    """Submit landing_zone_verify flow asynchronously"""
+
+    def execute(
+        self,
+        landing_zone: LandingZone,
+        file_paths: list[str],
+        user: Optional[User],
+        *args,
+        **kwargs,
+    ):
+        tl_event = None
+        try:  # This task should not trigger revertion so try-except everything
+            taskflow = PluginAPI.get_backend_api('taskflow')
+            timeline = PluginAPI.get_backend_api('timeline_backend')
+        except Exception as ex:
+            logger.error(
+                f'{self.__class__.__name__}: Exception in retrieving backends: '
+                f'{ex}'
+            )
+            return
+        if timeline:
+            try:
+                tl_event = timeline.add_event(
+                    project=landing_zone.project,
+                    app_name=APP_NAME,
+                    user=user,
+                    event_name='zone_verify',
+                    description='Verify files moved from landing zone {zone} '
+                    'for {user} in {assay}',
+                    status_type=timeline.TL_STATUS_SUBMIT,
+                )
+                tl_event.add_object(
+                    obj=landing_zone, label='zone', name=landing_zone.title
+                )
+                tl_event.add_object(obj=user, label='user', name=user.username)
+                tl_event.add_object(
+                    obj=landing_zone.assay,
+                    label='assay',
+                    name=landing_zone.assay.get_name(),
+                )
+            except Exception as ex:
+                logger.error(
+                    f'{self.__class__.__name__}: Exception in initializing '
+                    f'timeline event: {ex}'
+                )
+                return
+        if not user and not tl_event:
+            logger.warning(
+                'Skipping landing_zone_verify submitting: no user or timeline '
+                'event available'
+            )
+            return
+        # Submit flow asynchronously
+        try:
+            flow_data = {
+                'zone_uuid': str(landing_zone.sodar_uuid),
+                'file_paths': file_paths,
+            }
+            taskflow.submit(
+                project=landing_zone.project,
+                user=user,
+                flow_name='landing_zone_verify',
+                flow_data=flow_data,
+                async_mode=True,
+                tl_event=tl_event,
+            )
+        except Exception as ex:
+            logger.error(
+                f'{self.__class__.__name__}: Exception in initializing flow: '
+                f'{ex}'
+            )
+            return
+
+    # NOTE: No revert from this

@@ -952,6 +952,31 @@ class TestZoneMoveView(
         self.assertEqual(len(self.zone_coll.data_objects), 0)
         self.assertEqual(len(self.assay_coll.data_objects), 2)
 
+    @override_settings(LANDINGZONES_ZONE_MOVE_VERIFY=True)
+    def test_post_move_verify(self):
+        """Test POST with verification enabled"""
+        irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
+        self.make_checksum_object(irods_obj)
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assertIsNone(
+            TimelineEvent.objects.filter(event_name='zone_verify').first()
+        )
+        with self.login(self.user):
+            self.client.post(self.url_move)
+        self.assert_zone_status(self.zone, ZONE_STATUS_MOVED)
+        # Verify second async flow has run by checking timeline event
+        tl_event = None
+        for i in range(0, 10):
+            tl_event = TimelineEvent.objects.filter(
+                event_name='zone_verify'
+            ).first()
+            if tl_event:
+                break
+            elif i == 9:
+                self.fail('Timeline event not found')
+            time.sleep(3)
+        self.assertEqual(tl_event.get_status().status_type, 'OK')
+
     def test_post_validate(self):
         """Test POST to validate landing zone with objects without moving"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
@@ -1016,7 +1041,9 @@ class TestZoneMoveView(
         with self.login(self.user):
             self.client.post(self.url_validate)
         self.assert_zone_status(self.zone, ZONE_STATUS_FAILED)
-        self.assertTrue('BatchValidateChecksumsTask' in self.zone.status_info)
+        self.assertTrue(
+            'BatchValidateZoneChecksumsTask' in self.zone.status_info
+        )
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(len(mail.outbox), mail_count)
@@ -1039,7 +1066,9 @@ class TestZoneMoveView(
         with self.login(self.user):
             self.client.post(self.url_validate)
         self.assert_zone_status(self.zone, ZONE_STATUS_FAILED)
-        self.assertTrue('BatchValidateChecksumsTask' in self.zone.status_info)
+        self.assertTrue(
+            'BatchValidateZoneChecksumsTask' in self.zone.status_info
+        )
         self.assertTrue(f'File: {NO_FILE_CHECKSUM_LABEL};')
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)

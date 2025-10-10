@@ -18,7 +18,7 @@ from typing import Any, Optional, Union
 
 from irods.collection import iRODSCollection
 from irods.data_object import iRODSDataObject
-from irods.exception import CollectionDoesNotExist
+from irods.exception import CollectionDoesNotExist, CAT_NO_ROWS_FOUND
 from irods.keywords import REG_CHKSUM_KW
 from irods.models import TicketQuery, UserGroup
 from irods.path import iRODSPath
@@ -159,7 +159,7 @@ class TaskflowTestMixin(
     @classmethod
     def get_checksum(
         cls, obj: iRODSDataObject, scheme: str = IRODS_HASH_SCHEME_MD5
-    ):
+    ) -> str:
         """
         Return the checksum for an iRODS object.
 
@@ -170,6 +170,32 @@ class TaskflowTestMixin(
         with obj.open() as obj_fp:
             method = getattr(hashlib, scheme.lower())
             return method(obj_fp.read()).hexdigest()
+
+    def set_icat_checksum(
+        self, obj: iRODSDataObject, checksum: str
+    ) -> iRODSDataObject:
+        """
+        Update object checksum in the iCAT database into the desired value.
+        Useful for e.g. testing invalid checksums.
+
+        :param obj: iRODSDataObject
+        :param checksum: String
+        :return: Updated iRODSDataObject
+        """
+        sql = (
+            f'UPDATE r_data_main SET data_checksum = \'{checksum}\' WHERE '
+            f'data_id = {obj.id}'
+        )
+        query = self.irods_backend.get_query(self.irods, sql)
+        try:
+            query.execute()
+        except CAT_NO_ROWS_FOUND:
+            pass
+        finally:
+            query.remove()
+        obj = self.irods.data_objects.get(obj.path)
+        self.assertEqual(obj.checksum, checksum)
+        return obj
 
     def assert_irods_access(
         self,

@@ -820,6 +820,8 @@ LANDINGZONES_ZONE_VALIDATE_LIMIT = env.int(
 LANDINGZONES_FILE_LIST_PAGINATION = env.int(
     'LANDINGZONES_FILE_LIST_PAGINATION', 15
 )
+# Enable verification of landing zone files after zone move
+LANDINGZONES_ZONE_MOVE_VERIFY = env.bool('LANDINGZONES_ZONE_MOVE_VERIFY', True)
 
 # Landingzones configapp plugin settings
 LZ_BIH_PROTEOMICS_SMB_EXPIRY_DAYS = env.int(

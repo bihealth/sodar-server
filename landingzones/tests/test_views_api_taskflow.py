@@ -3,6 +3,7 @@ Tests for REST API views in the landingzones app with SODAR Taskflow enabled
 """
 
 import json
+import time
 
 from irods.exception import GroupDoesNotExist
 from irods.path import iRODSPath
@@ -708,6 +709,31 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
         self.assert_zone_status(self.zone, ZONE_STATUS_MOVED)
         self.assertEqual(len(self.zone_coll.data_objects), 0)
         self.assertEqual(len(self.assay_coll.data_objects), 2)
+
+    @override_settings(LANDINGZONES_ZONE_MOVE_VERIFY=True)
+    def test_post_move_verify(self):
+        """Test POST for moving with verification enabled"""
+        irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
+        self.make_checksum_object(irods_obj)
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assertIsNone(
+            TimelineEvent.objects.filter(event_name='zone_verify').first()
+        )
+        response = self.request_knox(self.url_move, method='POST')
+        self.assertEqual(response.status_code, 200)
+        self.assert_zone_status(self.zone, ZONE_STATUS_MOVED)
+        # Verify second async flow has run by checking timeline event
+        tl_event = None
+        for i in range(0, 10):
+            tl_event = TimelineEvent.objects.filter(
+                event_name='zone_verify'
+            ).first()
+            if tl_event:
+                break
+            elif i == 9:
+                self.fail('Timeline event not found')
+            time.sleep(3)
+        self.assertEqual(tl_event.get_status().status_type, 'OK')
 
     def test_post_validate(self):
         """Test POST for validation"""
