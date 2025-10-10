@@ -1108,7 +1108,7 @@ class IrodsDataRequestModifyMixin:
                 user=irods_request.user,
                 message=f'iRODS delete request accepted by '
                 f'{request.user.username}: "{irods_request.get_short_path()}"',
-                level='SUCCESS',
+                level=app_alerts.ALERT_LEVEL_SUCCESS,
                 url=reverse(
                     'samplesheets:project_sheets',
                     kwargs={'project': project.sodar_uuid},
@@ -1197,7 +1197,7 @@ class IrodsDataRequestModifyMixin:
                 user=irods_request.user,
                 message=f'iRODS delete request rejected by '
                 f'{request.user.username}: "{irods_request.get_short_path()}"',
-                level='WARNING',
+                level=app_alerts.ALERT_LEVEL_WARNING,
                 url=reverse(
                     'samplesheets:project_sheets',
                     kwargs={'project': project.sodar_uuid},

@@ -109,9 +109,9 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
         :param validate_only: Boolean
         """
         alert_level = (
-            'DANGER'
+            app_alerts.ALERT_LEVEL_DANGER
             if zone.status in [ZONE_STATUS_FAILED, ZONE_STATUS_NOT_CREATED]
-            else 'SUCCESS'
+            else app_alerts.ALERT_LEVEL_SUCCESS
         )
         alert_url = reverse(
             'landingzones:list',
@@ -193,7 +193,7 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
             app_name=APP_NAME,
             alert_name='zone_move_member',
             user=user,
-            level='INFO',
+            level=app_alerts.ALERT_LEVEL_INFO,
             url=reverse(
                 'samplesheets:project_sheets',
                 kwargs={'project': zone.project.sodar_uuid},

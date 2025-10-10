@@ -994,7 +994,7 @@ class BatchVerifySampleChecksumsTask(
             alert_name='sample_data_verify',
             user=user,
             message=alert_msg,
-            level='DANGER',
+            level=app_alerts.ALERT_LEVEL_DANGER,
             url=reverse(
                 'samplesheets:project_sheets',
                 kwargs={'project': project.sodar_uuid},
