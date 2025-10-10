@@ -38,6 +38,7 @@ Major feature update and SODAR Core 1.2 upgrade.
 - Upgrade supported development platform to Ubuntu 24.04
 - Upgrade to SODAR Core v1.2.3
 - Remove landing zone access cleanup site app setting
+- Remove Redis <v8 support
 
 :ref:`Administrator upgrade guide for v1.2 <admin_upgrade_v1.2>`
 

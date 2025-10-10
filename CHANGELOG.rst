@@ -69,7 +69,7 @@ Changed
     - Upgrade to django-sodar-core v1.2.3 (#2187, #2232, #2245)
     - Upgrade to Nodejs v22 (#2229)
     - Upgrade supported develoment and CI platform to Ubuntu v24.04 (#2067)
-    - Upgrade general Python depedencies (#2187, #2232)
+    - Upgrade general Python depedencies (#2187, #2232, #2310)
     - Upgrade to irods-docker v4.3.4-1 in CI (#2276)
     - Upgrade minimum supported iRODS version to v4.3.4 (#2276)
     - Refactor plugin helpers to use ``PluginAPI`` (#2187)
@@ -80,6 +80,7 @@ Changed
     - Refactor iRODS path handling (#2218)
     - Update ``test.py`` settings hardcoding (#2281)
     - Use ``headless=new`` mode in UI tests (#2305)
+    - Pin redis CI dependency to v8.x (#2310)
 - **Irodsadmin**
     - Refactor ``irodsorphans`` command (#2207, #2246)
     - Refactor ``irodsorphans`` tests (#2279)

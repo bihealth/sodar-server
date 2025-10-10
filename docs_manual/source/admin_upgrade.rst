@@ -42,6 +42,7 @@ environment components:
 
 - `sodar-docker-compose <https://github.com/bihealth/sodar-docker-compose>`_ ``1.2-1``
 - `irods-docker <https://github.com/bihealth/irods-docker>`_ ``4.3.4-1``
+- Redis v8.x
 
 The following changes have been made to environment variables:
 
