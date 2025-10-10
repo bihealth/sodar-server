@@ -97,8 +97,9 @@ class BaseLinearFlow:
             )
             if verbose:
                 logger.info(
-                    'Flow finished: {} ({} completed, {} incomplete, '
+                    'Flow "{}" finished: {} ({} completed, {} incomplete, '
                     '{} discarded)'.format(
+                        self.flow.name,
                         'OK' if result is True else 'ROLLBACK',
                         engine.statistics['completed'],
                         engine.statistics['incomplete'],

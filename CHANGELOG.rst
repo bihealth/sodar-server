@@ -120,6 +120,7 @@ Changed
     - Refactor ``TaskflowProjectTestMixin`` to not require ``login()`` (#2167)
     - Refactor task tests (#2226)
     - Update batch checksum tasks to support sample data verification (#2309)
+    - Update "flow finished" log message to include flow name (#2314)
 
 Fixed
 -----
