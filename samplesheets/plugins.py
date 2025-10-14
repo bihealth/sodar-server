@@ -1045,7 +1045,7 @@ class ProjectAppPlugin(
             project=assay.get_project(),
             user=user,
         )
-        logger.debug('Shortcut cache update done for assay "{}"')
+        logger.debug('Shortcut cache update done')
 
     def update_cache(
         self,
@@ -1571,11 +1571,13 @@ def get_irods_content(
                 f'Retrieving assay shortcuts for assay '
                 f'"{assay.get_display_name()}" (plugin={assay_plugin.name})..'
             )
+            cache_name = f'irods/rows/{a_uuid}'
             cache_item = cache_backend.get_cache_item(
-                name=f'irods/rows/{a_uuid}',
+                name=cache_name,
                 app_name=assay_plugin.app_name,
                 project=assay.get_project(),
             )
+            logger.debug(f'Cache item {cache_name}: {cache_item is not None}')
 
             for idx, row in enumerate(a_data['table_data']):
                 # Update assay links column
@@ -1589,7 +1591,8 @@ def get_irods_content(
                     and path in cache_item.data['paths']
                     and (
                         not cache_item.data['paths'][path]
-                        or cache_item.data['paths'][path] == 0
+                        or cache_item.data['paths'][path].get('file_count', 0)
+                        == 0
                     )
                 ):
                     enabled = False

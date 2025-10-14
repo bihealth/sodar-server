@@ -4,6 +4,8 @@
 # tests for common plugin methods and helpers. Study/assay plugin specific tests
 # should go in their own modules
 
+from irods.path import iRODSPath
+
 from django.conf import settings
 from django.test import override_settings
 from django.urls import reverse
@@ -311,6 +313,12 @@ class TestGetCategoryStats(SamplesheetsPluginTestBase):
 class TestGetIrodsContent(SamplesheetsPluginTestBase):
     """Tests for the get_irods_content() helper"""
 
+    def setUp(self):
+        super().setUp()
+        self.cache_backend = plugin_api.get_backend_api('sodar_cache')
+        self.assay_path = self.irods_backend.get_path(self.assay)
+        self.row_path = iRODSPath(self.assay_path, MATERIAL_NAME)
+
     def test_get_irods_content(self):
         """Test get_irods_content()"""
         self.ret_data['tables'] = self.tb.build_study_tables(self.study)
@@ -319,10 +327,47 @@ class TestGetIrodsContent(SamplesheetsPluginTestBase):
         )
         assay_data = ret_data['tables']['assays'][str(self.assay.sodar_uuid)]
         self.assertEqual(len(assay_data['irods_paths']), 1)
+        print(assay_data['irods_paths'][0]['path'])
         self.assertTrue(
             assay_data['irods_paths'][0]['path'].endswith(MATERIAL_NAME)
         )
+        # No cache item = enabled is true
+        self.assertEqual(assay_data['irods_paths'][0]['enabled'], True)
         self.assertEqual(len(assay_data['shortcuts']), 2)
+
+    def test_get_row_cache_item_no_files(self):
+        """Test get_irods_content() with row cache item and no files"""
+        cache_data = {'paths': {self.row_path: {'file_count': 0}}}
+        self.cache_backend.set_cache_item(
+            app_name=ASSAY_PLUGIN_NAME,
+            name=f'irods/rows/{self.assay.sodar_uuid}',
+            data=cache_data,
+            project=self.project,
+        )
+        self.ret_data['tables'] = self.tb.build_study_tables(self.study)
+        ret_data = get_irods_content(
+            self.investigation, self.study, self.irods_backend, self.ret_data
+        )
+        assay_data = ret_data['tables']['assays'][str(self.assay.sodar_uuid)]
+        # Cache item with file_count==0: should not be enabled
+        self.assertEqual(assay_data['irods_paths'][0]['enabled'], False)
+
+    def test_get_row_cache_item_files(self):
+        """Test get_irods_content() with row cache item and files"""
+        cache_data = {'paths': {self.row_path: {'file_count': 1}}}
+        self.cache_backend.set_cache_item(
+            app_name=ASSAY_PLUGIN_NAME,
+            name=f'irods/rows/{self.assay.sodar_uuid}',
+            data=cache_data,
+            project=self.project,
+        )
+        self.ret_data['tables'] = self.tb.build_study_tables(self.study)
+        ret_data = get_irods_content(
+            self.investigation, self.study, self.irods_backend, self.ret_data
+        )
+        assay_data = ret_data['tables']['assays'][str(self.assay.sodar_uuid)]
+        # Cache item with file_count>0: should be enabled
+        self.assertEqual(assay_data['irods_paths'][0]['enabled'], True)
 
     def test_get_invalid_path(self):
         """Test get_irods_content() with invalid iRODS path"""

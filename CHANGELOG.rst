@@ -147,6 +147,7 @@ Fixed
     - Missing ``HTTPRefererMixin`` inheritance in views (#206)
     - Redundant ``AppSetting`` object deletion in ``_update_public_access()`` (#2308)
     - ``update_assay_shortcut_cache()`` returns ``True`` for empty collections (#1501)
+    - ``get_irods_content()`` enables iRODS link with ``file_count==0`` (#2321)
 - **Taskflowbackend**
     - Incorrect user in landing zone move sheet cache update timeline event (#2152)
     - ``BatchCalculateChecksumTask`` ``force`` kwarg not working (#2311)
