@@ -952,6 +952,33 @@ class ProjectAppPlugin(
             user=user,
         )
 
+    # TODO: Make this into a common helper?
+    @classmethod
+    def _get_coll_status(
+        cls, path: str, irods_backend: Any, irods: iRODSSession
+    ) -> bool:
+        """
+        Return collection status: True if collection exists and contains data
+        objects, otherwise False.
+
+        :param path: Full iRODS collection path (string)
+        :param irods_backend: IrodsAPI object
+        :param irods: IRODSSession object
+        :return: bool
+        """
+        coll_exists = irods.collections.exists(path)
+        if not coll_exists:
+            logger.debug(f'Collection does not exist: {path}')
+            return False
+        try:
+            sc_stats = irods_backend.get_stats(irods, path)
+            ret = sc_stats.get('file_count', 0) > 0
+            logger.debug(f'Data objects found: {ret}')
+            return sc_stats.get('file_count', 0) > 0
+        except Exception as ex:
+            logger.error(f'Exception in _get_coll_status(): {ex}')
+            return False
+
     @classmethod
     def update_assay_shortcut_cache(
         cls,
@@ -974,39 +1001,51 @@ class ProjectAppPlugin(
         :param user: User triggering the update (User or None)
         :return: JSONCacheItem object
         """
+        logger.debug(
+            f'Updating assay shortcut cache for assay '
+            f'"{assay.get_display_name()}" ({assay.sodar_uuid})..'
+        )
         assay_path = irods_backend.get_path(assay)
         assay_plugin = assay.get_plugin()
+        s_args = [irods_backend, irods]
         # Default assay shortcuts
         cache_data = {
             'shortcuts': {
-                'results_reports': irods.collections.exists(
-                    iRODSPath(assay_path, RESULTS_COLL)
+                'results_reports': cls._get_coll_status(
+                    iRODSPath(assay_path, RESULTS_COLL), *s_args
                 ),
-                'misc_files': irods.collections.exists(
-                    iRODSPath(assay_path, MISC_FILES_COLL)
+                'misc_files': cls._get_coll_status(
+                    iRODSPath(assay_path, MISC_FILES_COLL), *s_args
                 ),
             }
         }
         # Plugin assay shortcuts
         if assay_plugin:
+            logger.debug(f'Using assay plugin "{assay_plugin.name}"')
             plugin_shortcuts = assay_plugin.get_shortcuts(assay) or []
+            if not plugin_shortcuts:
+                logger.debug('No shortcuts returned by plugin')
             for sc in plugin_shortcuts:
-                cache_data['shortcuts'][sc['id']] = irods.collections.exists(
-                    sc['path']
+                cache_data['shortcuts'][sc['id']] = cls._get_coll_status(
+                    sc['path'], *s_args
                 )
+        else:
+            logger.debug('Assay plugin not found')
         cache_data['shortcuts']['track_hubs'] = [
             c.path
             for c in irods_backend.get_child_colls(
                 irods, iRODSPath(assay_path, TRACK_HUBS_COLL)
             )
+            if cls._get_coll_status(c.path, *s_args)
         ]
         cache_backend.set_cache_item(
-            name=ASSAY_SHORTCUT_CACHE_NAME.format(uuid=assay.sodar_uuid),
             app_name='samplesheets',
-            user=user,
+            name=ASSAY_SHORTCUT_CACHE_NAME.format(uuid=assay.sodar_uuid),
             data=cache_data,
             project=assay.get_project(),
+            user=user,
         )
+        logger.debug('Shortcut cache update done for assay "{}"')
 
     def update_cache(
         self,
@@ -1056,19 +1095,26 @@ class ProjectAppPlugin(
 
         with irods_backend.get_session() as irods:
             # iRODS stats
+            logger.debug('Updating iRODS stats cache..')
             for project in projects:
                 self.update_irods_stats_cache(
                     project, irods_backend, cache_backend, irods, user
                 )
+            logger.debug('iRODS stats cache update done')
             # Assay shortcuts
+            logger.debug('Updating assay shortcut cache..')
             for assay in assays:
                 self.update_assay_shortcut_cache(
                     assay, irods_backend, cache_backend, irods, user
                 )
+            logger.debug('Assay shortcut cache update done')
 
         # Assay sub-app plugins
+        logger.debug('Updating assay plugin cache..')
         for assay_plugin in SampleSheetAssayPluginPoint.get_plugins():
             assay_plugin.update_cache(name, project, user)
+        logger.debug('Assay plugin cache update done')
+        logger.debug('Cache update done')
 
     def get_category_stats(
         self, category: Project

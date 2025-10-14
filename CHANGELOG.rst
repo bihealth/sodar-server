@@ -111,6 +111,7 @@ Changed
     - Optimize magic number generation for cell width estimation (#1284)
     - Refactor ``IrodsDataRequest`` UI creation and update (#1865)
     - Refactor ``IrodsAccessTicket`` UI creation and update (#2306)
+    - Improve cache update debug logging (#1501)
 - **Taskflowbackend**
     - Update iRODS ACL handling for v4.3+ scheme (#2215)
     - Grant ``delete_object`` access instead of ``own`` for landing zone owner (#2215)
@@ -144,6 +145,7 @@ Fixed
     - Vue app modal close button alignment (#2304)
     - Missing ``HTTPRefererMixin`` inheritance in views (#206)
     - Redundant ``AppSetting`` object deletion in ``_update_public_access()`` (#2308)
+    - ``update_assay_shortcut_cache()`` returns ``True`` for empty collections (#1501)
 - **Taskflowbackend**
     - Incorrect user in landing zone move sheet cache update timeline event (#2152)
     - ``BatchCalculateChecksumTask`` ``force`` kwarg not working (#2311)

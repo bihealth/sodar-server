@@ -21,15 +21,18 @@ from taskflowbackend.constants import IRODS_ACCESS_READ_OBJ
 from taskflowbackend.tests.base import TaskflowViewTestBase, IRODS_GROUP_PUBLIC
 
 from samplesheets.models import IrodsAccessTicket
-from samplesheets.plugins import IRODS_STATS_CACHE_NAME, EMPTY_IRODS_STATS
+from samplesheets.plugins import (
+    IRODS_STATS_CACHE_NAME,
+    EMPTY_IRODS_STATS,
+    ASSAY_SHORTCUT_CACHE_NAME,
+)
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_models import IrodsAccessTicketMixin
 from samplesheets.tests.test_views_taskflow import (
     SampleSheetPublicAccessMixin,
     SampleSheetTaskflowMixin,
 )
-from samplesheets.views import MISC_FILES_COLL
-
+from samplesheets.views import MISC_FILES_COLL, RESULTS_COLL, TRACK_HUBS_COLL
 
 app_settings = AppSettingAPI()
 plugin_api = PluginAPI()
@@ -47,6 +50,8 @@ APP_NAME = 'samplesheets'
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 TEST_OBJ_NAME = 'test1.txt'
 TICKET_MODE_READ = 'read'
+SUB_COLL = 'sub_coll'
+HUB_COLL = 'hub1'
 
 
 class SamplesheetsModifyAPITestMixin:
@@ -106,6 +111,7 @@ class SamplesheetsPluginTaskflowTestBase(
             owner=self.user,
         )
         self.sample_path = self.irods_backend.get_sample_path(self.project)
+        self.plugin = ProjectAppPluginPoint.get_plugin('samplesheets')
 
 
 class TestPerformProjectModify(SamplesheetsPluginTaskflowTestBase):
@@ -114,7 +120,6 @@ class TestPerformProjectModify(SamplesheetsPluginTaskflowTestBase):
     def setUp(self):
         super().setUp()
         self._set_up_investigation()
-        self.plugin = ProjectAppPluginPoint.get_plugin('samplesheets')
         # Create dummy request
         self.req_factory = RequestFactory()
         self.request = self.req_factory.get('/')
@@ -390,10 +395,6 @@ class TestPerformProjectSync(
             self.irods_backend.get_path(self.assay), MISC_FILES_COLL
         )
         self.misc_coll = self.irods.collections.create(self.misc_path)
-
-    def setUp(self):
-        super().setUp()
-        self.plugin = ProjectAppPluginPoint.get_plugin('samplesheets')
 
     def test_sync(self):
         """Test perform_project_sync()"""
@@ -703,7 +704,6 @@ class TestUpdateIrodsStatsCache(SamplesheetsPluginTaskflowTestBase):
     def setUp(self):
         super().setUp()
         self._set_up_investigation()
-        self.plugin = ProjectAppPluginPoint.get_plugin('samplesheets')
         self.cache_backend = plugin_api.get_backend_api('sodar_cache')
         self.cache_args = [
             self.project,
@@ -761,7 +761,143 @@ class TestUpdateIrodsStatsCache(SamplesheetsPluginTaskflowTestBase):
         self.assertEqual(res.data, {'file_count': 1, 'total_size': 1024})
 
 
-# TODO: Add tests for ProjectAppPlugin.update_assay_shortcut_cache()
+class TestUpdateAssayShortcutCache(SamplesheetsPluginTaskflowTestBase):
+    """Tests for ProjectAppPlugin.update_assay_shortcut_cache()"""
+
+    def _get_cache_item(self):
+        """Return cache item for self.assay or None if not found"""
+        return self.cache_backend.get_cache_item(
+            app_name=APP_NAME,
+            name=ASSAY_SHORTCUT_CACHE_NAME.format(uuid=self.assay.sodar_uuid),
+            project=self.project,
+        )
+
+    def _update_shortcut_cache(self):
+        """Call update_assay_shortcut_cache() on self.assay"""
+        self.plugin.update_assay_shortcut_cache(
+            self.assay,
+            self.irods_backend,
+            self.cache_backend,
+            self.irods,
+            self.user,
+        )
+
+    def setUp(self):
+        super().setUp()
+        self.cache_backend = plugin_api.get_backend_api('sodar_cache')
+        self._set_up_investigation()
+        self.assay_path = self.irods_backend.get_path(self.assay)
+        self.misc_path = iRODSPath(self.assay_path, MISC_FILES_COLL)
+        self.res_path = iRODSPath(self.assay_path, RESULTS_COLL)
+        self.track_hub_root_path = iRODSPath(self.assay_path, TRACK_HUBS_COLL)
+        self.track_hub_path = iRODSPath(self.track_hub_root_path, HUB_COLL)
+
+    def test_update_no_colls(self):
+        """Test update_assay_shortcut_cache() with no shortcut colls"""
+        self.assertEqual(self.irods.collections.exists(self.assay_path), True)
+        self.assertEqual(self.irods.collections.exists(self.misc_path), False)
+        self.assertEqual(self.irods.collections.exists(self.res_path), False)
+        self.assertEqual(self._get_cache_item(), None)
+        self._update_shortcut_cache()
+        cache_item = self._get_cache_item()
+        self.assertIsNotNone(cache_item)
+        expected = {
+            'results_reports': False,
+            'misc_files': False,
+            'track_hubs': [],
+        }
+        self.assertEqual(cache_item.data['shortcuts'], expected)
+
+    def test_update_empty_coll(self):
+        """Test update_assay_shortcut_cache() with empty shortcut coll"""
+        self.irods.collections.create(self.misc_path)
+        self._update_shortcut_cache()
+        cache_item = self._get_cache_item()
+        expected = {
+            'results_reports': False,
+            'misc_files': False,  # Empty coll, should still be false
+            'track_hubs': [],
+        }
+        self.assertEqual(cache_item.data['shortcuts'], expected)
+
+    def test_update_empty_sub_coll(self):
+        """Test update_assay_shortcut_cache() with empty subcoll"""
+        self.irods.collections.create(iRODSPath(self.misc_path, SUB_COLL))
+        self._update_shortcut_cache()
+        cache_item = self._get_cache_item()
+        expected = {
+            'results_reports': False,
+            'misc_files': False,  # Empty subcoll, should still be false
+            'track_hubs': [],
+        }
+        self.assertEqual(cache_item.data['shortcuts'], expected)
+
+    def test_update_file(self):
+        """Test update_assay_shortcut_cache() with file in shortcut coll"""
+        misc_coll = self.irods.collections.create(self.misc_path)
+        self.make_irods_object(misc_coll, TEST_OBJ_NAME)
+        self._update_shortcut_cache()
+        cache_item = self._get_cache_item()
+        expected = {
+            'results_reports': False,
+            'misc_files': True,  # Data object in coll, should be True
+            'track_hubs': [],
+        }
+        self.assertEqual(cache_item.data['shortcuts'], expected)
+
+    def test_update_file_subcoll(self):
+        """Test update_assay_shortcut_cache() with file in subcoll"""
+        sub_coll = self.irods.collections.create(
+            iRODSPath(self.misc_path, SUB_COLL)
+        )
+        self.make_irods_object(sub_coll, TEST_OBJ_NAME)
+        self._update_shortcut_cache()
+        cache_item = self._get_cache_item()
+        expected = {
+            'results_reports': False,
+            'misc_files': True,  # Data object in subcoll, should be True
+            'track_hubs': [],
+        }
+        self.assertEqual(cache_item.data['shortcuts'], expected)
+
+    def test_update_track_hub_empty_root(self):
+        """Test update_assay_shortcut_cache() with empty track hub root coll"""
+        self.irods.collections.create(self.track_hub_root_path)
+        self._update_shortcut_cache()
+        cache_item = self._get_cache_item()
+        expected = {
+            'results_reports': False,
+            'misc_files': False,
+            'track_hubs': [],  # Should be empty
+        }
+        self.assertEqual(cache_item.data['shortcuts'], expected)
+
+    def test_update_track_hub_empty(self):
+        """Test update_assay_shortcut_cache() with empty track hub coll"""
+        self.irods.collections.create(self.track_hub_path)
+        self._update_shortcut_cache()
+        cache_item = self._get_cache_item()
+        expected = {
+            'results_reports': False,
+            'misc_files': False,
+            'track_hubs': [],  # Should be empty
+        }
+        self.assertEqual(cache_item.data['shortcuts'], expected)
+
+    def test_update_track_hub_file(self):
+        """Test update_assay_shortcut_cache() with file in track hub coll"""
+        hub_coll = self.irods.collections.create(self.track_hub_path)
+        self.make_irods_object(hub_coll, TEST_OBJ_NAME)
+        self._update_shortcut_cache()
+        cache_item = self._get_cache_item()
+        expected = {
+            'results_reports': False,
+            'misc_files': False,
+            'track_hubs': [self.track_hub_path],  # Track hub should show up
+        }
+        self.assertEqual(cache_item.data['shortcuts'], expected)
+
+
 # TODO: Add tests for ProjectAppPlugin.update_cache()
 
 
@@ -771,7 +907,6 @@ class TestGetCategoryStats(SamplesheetsPluginTaskflowTestBase):
     def setUp(self):
         super().setUp()
         self._set_up_investigation()
-        self.plugin = ProjectAppPluginPoint.get_plugin('samplesheets')
 
     # NOTE: For sample count tests, see test_plugins
 
