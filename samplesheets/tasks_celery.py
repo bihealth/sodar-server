@@ -82,7 +82,7 @@ def update_project_cache_task(
                 status_type=tl_status_type, status_desc=tl_status_desc
             )
         app_level = 'INFO'
-        app_msg = 'Sample sheet iRODS cache updated'
+        app_msg = 'Sample sheet iRODS cache updated.'
         if alert_msg:
             app_msg += f': {alert_msg}'
         logger.info(f'Cache update OK for project {project.get_log_title()}')
@@ -94,7 +94,7 @@ def update_project_cache_task(
                 status_type=tl_status_type, status_desc=tl_status_desc
             )
         app_level = 'DANGER'
-        app_msg = f'Sample sheet iRODS cache update failed: {ex}'
+        app_msg = f'Sample sheet iRODS cache update failed: {ex}.'
         logger.error(
             f'Cache update failed for project {project.get_log_title()}: {ex}'
         )

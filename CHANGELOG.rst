@@ -81,6 +81,7 @@ Changed
     - Update ``test.py`` settings hardcoding (#2281)
     - Use ``headless=new`` mode in UI tests (#2305)
     - Pin redis CI dependency to v8.x (#2310)
+    - Unify app alert message formatting (#2318)
 - **Irodsadmin**
     - Refactor ``irodsorphans`` command (#2207, #2246)
     - Refactor ``irodsorphans`` tests (#2279)

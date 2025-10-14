@@ -149,7 +149,7 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
             )
             return
 
-        alert_msg += f': {zone.title}'
+        alert_msg += f': {zone.title}.'
         if validate_only:
             alert_name = 'validate'
         elif flow_name == 'landing_zone_delete':

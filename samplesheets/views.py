@@ -936,7 +936,7 @@ class IrodsDataRequestModifyMixin:
                 alert_name=IRODS_REQUEST_EVENT_CREATE,
                 user=u,
                 message=f'iRODS delete requests require attention in '
-                f'project "{project.title}"',
+                f'project "{project.title}".',
                 url=reverse(
                     'samplesheets:irods_requests',
                     kwargs={'project': project.sodar_uuid},
@@ -1107,7 +1107,7 @@ class IrodsDataRequestModifyMixin:
                 alert_name=IRODS_REQUEST_EVENT_ACCEPT,
                 user=irods_request.user,
                 message=f'iRODS delete request accepted by '
-                f'{request.user.username}: "{irods_request.get_short_path()}"',
+                f'{request.user.username}: "{irods_request.get_short_path()}".',
                 level=app_alerts.ALERT_LEVEL_SUCCESS,
                 url=reverse(
                     'samplesheets:project_sheets',
@@ -1196,7 +1196,7 @@ class IrodsDataRequestModifyMixin:
                 alert_name=IRODS_REQUEST_EVENT_REJECT,
                 user=irods_request.user,
                 message=f'iRODS delete request rejected by '
-                f'{request.user.username}: "{irods_request.get_short_path()}"',
+                f'{request.user.username}: "{irods_request.get_short_path()}".',
                 level=app_alerts.ALERT_LEVEL_WARNING,
                 url=reverse(
                     'samplesheets:project_sheets',
