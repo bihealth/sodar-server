@@ -265,9 +265,10 @@ function updateFileList(
     listUrl = $('#' + pageElemId).attr('data-url')
   }
   // Add colls param to URL
+  let colls = $('#sodar-lz-zone-list').attr('data-file-list-colls')
   if (listUrl.includes('?')) listUrl += '&'
   else listUrl += '?'
-  listUrl += 'colls=' + $('#sodar-lz-zone-list').attr('data-file-list-colls')
+  listUrl += 'colls=' + colls
 
   // Disable pagination buttons
   $('#sodar-lz-modal-page-item-prev').addClass('disabled')
@@ -367,12 +368,16 @@ function updateFileList(
           updateChecksumStatus(checksumUrl, objPaths)
         }
       } else {
+        let msg = 'No '
+        if (colls === '1')
+          msg += 'collections or '
+        msg += 'files in this landing zone.'
         let row = $('<tr>')
           .append($('<td>')
             .attr('colspan', '5')
             .attr('class', 'text-muted font-italic text-center')
             .attr('id', 'sodar-lz-obj-list-empty')
-            .text('No collections or files in this landing zone.'))
+            .text(msg))
         tableBody.html(row)
       }
     })

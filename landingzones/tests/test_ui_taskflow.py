@@ -147,6 +147,10 @@ class TestZoneFileListModal(
         with self.assertRaises(NoSuchElementException):
             table_elem.find_element(By.CLASS_NAME, MODAL_OBJ_ITEM_CLASS)
         self.assertIsNotNone(table_elem.find_element(By.ID, MODAL_EMPTY_ID))
+        empty_elem = table_elem.find_element(By.ID, MODAL_EMPTY_ID)
+        self.assertEqual(
+            empty_elem.text, 'No collections or files in this landing zone.'
+        )
 
         # Assert pagination (should not be visible)
         page_elem = modal_elem.find_element(By.ID, MODAL_PAGINATE_ID)
@@ -302,8 +306,20 @@ class TestZoneFileListModal(
             iRODSPath(MISC_FILES_COLL, TEST_OBJ_NAME, absolute=False),
         )
 
-    def test_render_disable_colls(self):
-        """Test rendering modal with disabled collection display"""
+    def test_render_disable_colls_empty(self):
+        """Test rendering modal with disabled collection display and empty zone"""
+        app_settings.set(
+            APP_NAME, 'zone_file_list_colls', False, user=self.user_owner
+        )
+        self.make_zone_taskflow(self.zone)
+        self.login_and_redirect(self.user_owner, self.url)
+        modal_elem = self._open_modal(By.ID, MODAL_EMPTY_ID)
+        self.assertIsNotNone(modal_elem.find_element(By.ID, MODAL_EMPTY_ID))
+        empty_elem = modal_elem.find_element(By.ID, MODAL_EMPTY_ID)
+        self.assertEqual(empty_elem.text, 'No files in this landing zone.')
+
+    def test_render_disable_colls_obj(self):
+        """Test rendering  modal with disabled collection display and data object"""
         app_settings.set(
             APP_NAME, 'zone_file_list_colls', False, user=self.user_owner
         )
