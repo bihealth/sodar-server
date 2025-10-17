@@ -36,6 +36,7 @@ Added
     - Administrator landing zone state resetting (#1534)
     - ``resetzone`` management command (#1534, #2328)
     - ``verifyzone`` management command (#2326)
+    - ``sodar_uuid`` field in zone creation timeline event extra data (#2329)
 - **Samplesheets**
     - Project viewer role support (#2200)
     - Category statistics for sample count and iRODS statistics (#2213)

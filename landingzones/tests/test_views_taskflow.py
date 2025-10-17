@@ -271,6 +271,7 @@ class TestZoneCreateView(
             'user_message': '',
             'configuration': None,
             'config_data': {},
+            'sodar_uuid': str(zone.sodar_uuid),
         }
         self.assertEqual(tl_event.extra_data, expected_extra)
         self.assertEqual(len(mail.outbox), 1)

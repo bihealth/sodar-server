@@ -270,6 +270,7 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
                 'user_message': zone.user_message,
                 'configuration': zone.configuration,
                 'config_data': zone.config_data,
+                'sodar_uuid': str(zone.sodar_uuid),
             }
             tl_event = timeline.add_event(
                 project=project,
