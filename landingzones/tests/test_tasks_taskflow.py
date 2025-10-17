@@ -84,12 +84,13 @@ class TestSetLandingZoneStatusTask(ViewTestBase):
             lc.DEFAULT_STATUS_INFO[lc.ZONE_STATUS_MOVED],
         )
         self._assert_owner_alert(1)
-        self._assert_member_alerts(0)
-        self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_move').first().level,
             'SUCCESS',
         )
+        self._assert_member_alerts(0)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn('Landing zone moved', mail.outbox[0].subject)
 
     @override_settings(PROJECTROLES_SEND_EMAIL=False)
     def test_execute_disable_email(self):
@@ -214,12 +215,12 @@ class TestSetLandingZoneStatusTask(ViewTestBase):
             lc.DEFAULT_STATUS_INFO[lc.ZONE_STATUS_FAILED],
         )
         self._assert_owner_alert(1)
-        self._assert_member_alerts(0)
-        self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_move').first().level,
             'DANGER',
         )
+        self._assert_member_alerts(0)
+        self.assertEqual(len(mail.outbox), 1)
 
     def test_execute_validate(self):
         """Test execute() in validate mode"""
@@ -242,3 +243,63 @@ class TestSetLandingZoneStatusTask(ViewTestBase):
         self._assert_owner_alert(1, name='zone_validate')
         self._assert_member_alerts(0)
         self.assertEqual(len(mail.outbox), 0)  # No email sent on validate
+
+    def test_execute_reset(self):
+        """Test execute() for zone reset"""
+        self.zone.set_status('VALIDATING')
+        self.assertEqual(self.zone.status, lc.ZONE_STATUS_VALIDATING)
+        self._assert_owner_alert(0)
+        self._assert_member_alerts(0)
+        self.assertEqual(len(mail.outbox), 0)
+        self.task_kw['flow_name'] = 'landing_zone_reset'
+        self.task_kw['status'] = lc.ZONE_STATUS_ACTIVE
+        self.task_kw['status_info'] = [lc.STATUS_INFO_ADMIN_RESET]
+        self._get_task().execute(**self.task_kw)
+        self.zone.refresh_from_db()
+        self.task_kw['status'] = lc.ZONE_STATUS_ACTIVE
+        self.task_kw['status_info'] = [lc.STATUS_INFO_ADMIN_RESET]
+        self._assert_owner_alert(0)
+        self._assert_owner_alert(1, name='zone_reset')
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_reset').first().level,
+            'INFO',
+        )
+        self._assert_member_alerts(0)
+        self.assertEqual(len(mail.outbox), 1)  # Reset sents email to owner
+        self.assertIn('Landing zone reset', mail.outbox[0].subject)
+
+    def test_execute_reset_disable_owner_alert_notify(self):
+        """Test execute() for reset with owner email notify disabled"""
+        app_settings.set(
+            APP_NAME,
+            'notify_alert_zone_status',
+            False,
+            user=self.zone.user,
+        )
+        self.zone.set_status('VALIDATING')
+        self.task_kw['flow_name'] = 'landing_zone_reset'
+        self.task_kw['status'] = lc.ZONE_STATUS_ACTIVE
+        self._get_task().execute(**self.task_kw)
+        self.zone.refresh_from_db()
+        self.task_kw['status'] = lc.ZONE_STATUS_ACTIVE
+        self._assert_owner_alert(0, name='zone_reset')  # No owner alert
+        self._assert_member_alerts(0)
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_execute_reset_disable_owner_email_notify(self):
+        """Test execute() for reset with owner email notify disabled"""
+        app_settings.set(
+            APP_NAME,
+            'notify_email_zone_status',
+            False,
+            user=self.zone.user,
+        )
+        self.zone.set_status('VALIDATING')
+        self.task_kw['flow_name'] = 'landing_zone_reset'
+        self.task_kw['status'] = lc.ZONE_STATUS_ACTIVE
+        self._get_task().execute(**self.task_kw)
+        self.zone.refresh_from_db()
+        self.task_kw['status'] = lc.ZONE_STATUS_ACTIVE
+        self._assert_owner_alert(1, name='zone_reset')  # Alert should be sent
+        self._assert_member_alerts(0)
+        self.assertEqual(len(mail.outbox), 0)  # No email

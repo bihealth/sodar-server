@@ -204,11 +204,11 @@ class ZoneRetrieveAPIView(
     **Returns:**
 
     - ``assay``: Assay UUID (string)
+    - ``coll_creation``: Collection creation mode (string)
     - ``config_data``: Data for special configuration (dict)
     - ``configuration``: Special configuration name (string)
     - ``date_modified``: Last modification date of the zone (string)
     - ``description``: Landing zone description (string)
-    - ``user_message``: Message displayed to users on successful moving of zone (string)
     - ``irods_path``: Full iRODS path to the landing zone (string)
     - ``project``: Project UUID (string)
     - ``sodar_uuid``: Landing zone UUID (string)
@@ -217,6 +217,11 @@ class ZoneRetrieveAPIView(
     - ``status_locked``: Whether write access to the zone is currently locked (boolean)
     - ``title``: Full title of the created landing zone (string)
     - ``user``: UUID of user who owns the zone (string)
+    - ``user_message``: Message displayed to users on successful moving of zone (string)
+
+    **Version Changes**:
+
+    - ``1.1``: Add ``coll_creation`` field
     """
 
     lookup_field = 'sodar_uuid'
@@ -303,16 +308,9 @@ class ZoneCreateAPIView(
             self._raise_503(f'{ex_prefix}{ZONE_NO_COLLS_MSG}')
 
         # If all is OK, go forward with object creation and taskflow submission
-        create_colls = serializer.validated_data.pop('create_colls')
-        restrict_colls = serializer.validated_data.pop('restrict_colls')
         super().perform_create(serializer)
         try:
-            self.submit_create(
-                zone=serializer.instance,
-                create_colls=create_colls,
-                restrict_colls=restrict_colls,
-                request=self.request,
-            )
+            self.submit_create(zone=serializer.instance, request=self.request)
         except Exception as ex:
             raise APIException(f'{ex_prefix}{ex}')
 

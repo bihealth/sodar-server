@@ -49,6 +49,8 @@ Version Changes
 v1.1
 ----
 
+- ``ZoneRetrieveAPIView``
+    * Add ``coll_creation`` field
 - ``ZoneIrodsFileListAPIView``
     * Add view
 - ``ZoneSettingsRetrieveAPIView``

@@ -25,6 +25,9 @@ from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import ProjectLockMixin
 
+import landingzones.constants as lc
+
+# TODO: Refactor these away
 from landingzones.constants import (
     ZONE_STATUS_ACTIVE,
     ZONE_STATUS_VALIDATING,
@@ -458,8 +461,7 @@ class TestZoneUpdateView(ViewTestBase):
         # HiddenInput widget
         self.assertIsInstance(form.fields['title_suffix'].widget, HiddenInput)
         self.assertIsInstance(form.fields['configuration'].widget, HiddenInput)
-        self.assertIsInstance(form.fields['create_colls'].widget, HiddenInput)
-        self.assertIsInstance(form.fields['restrict_colls'].widget, HiddenInput)
+        self.assertIsInstance(form.fields['coll_creation'].widget, HiddenInput)
         self.assertIsInstance(form.fields['assay'].widget, HiddenInput)
         self.assertNotIn('prohibit_files', response.context)
 
@@ -491,6 +493,7 @@ class TestZoneUpdateView(ViewTestBase):
                     'assay': self.assay.sodar_uuid,
                     'description': 'test description updated',
                     'user_message': 'test user message',
+                    'coll_creation': lc.ZONE_COLLS_NONE,
                 },
             )
             self.assertRedirects(
@@ -514,12 +517,28 @@ class TestZoneUpdateView(ViewTestBase):
                     'assay': self.assay.sodar_uuid,
                     'description': 'test description updated',
                     'title_suffix': 'test suffix',
+                    'coll_creation': lc.ZONE_COLLS_NONE,
                 },
             )
         self.assertEqual(response.status_code, 302)
         zone = LandingZone.objects.get(sodar_uuid=self.zone.sodar_uuid)
         self.assertEqual(zone.assay, self.assay)
         self.assertEqual(zone.description, 'description')
+
+    def test_post_update_coll_creation(self):
+        """Test POST with updated coll_creation value (should fail)"""
+        self.assertEqual(self.zone.coll_creation, lc.ZONE_COLLS_NONE)
+        with self.login(self.user_owner):
+            response = self.client.post(
+                self.url,
+                data={
+                    'assay': self.assay.sodar_uuid,
+                    'description': 'test description updated',
+                    'title_suffix': 'test suffix',
+                    'coll_creation': lc.ZONE_COLLS_CREATE,
+                },
+            )
+        self.assertEqual(response.status_code, 200)
 
 
 class TestZoneMoveView(ViewTestBase):

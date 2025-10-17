@@ -444,6 +444,8 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
         with self.assertRaises(NoSuchElementException):
             zone.find_element(By.CLASS_NAME, 'sodar-lz-zone-btn-update')
         with self.assertRaises(NoSuchElementException):
+            zone.find_element(By.CLASS_NAME, 'sodar-lz-zone-btn-reset')
+        with self.assertRaises(NoSuchElementException):
             zone.find_element(By.CLASS_NAME, 'sodar-lz-zone-btn-delete')
 
     def test_render_read_only_superuser(self):
@@ -472,6 +474,10 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
         )
         self.assert_enabled(
             zone.find_element(By.CLASS_NAME, 'sodar-lz-zone-btn-update'),
+            True,
+        )
+        self.assert_enabled(
+            zone.find_element(By.CLASS_NAME, 'sodar-lz-zone-btn-reset'),
             True,
         )
         self.assert_enabled(
@@ -1083,6 +1089,8 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
             zone.find_element(By.CLASS_NAME, 'sodar-lz-zone-btn-copy'),
             True,
         )
+        with self.assertRaises(NoSuchElementException):
+            zone.find_element(By.CLASS_NAME, 'sodar-lz-zone-btn-reset')
         self.assert_enabled(
             zone.find_element(By.CLASS_NAME, 'sodar-lz-zone-btn-delete'),
             True,
@@ -1112,6 +1120,8 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
             zone.find_element(By.CLASS_NAME, 'sodar-lz-zone-btn-copy'),
             True,
         )
+        with self.assertRaises(NoSuchElementException):
+            zone.find_element(By.CLASS_NAME, 'sodar-lz-zone-btn-reset')
         self.assert_enabled(
             zone.find_element(By.CLASS_NAME, 'sodar-lz-zone-btn-delete'),
             True,
@@ -1151,6 +1161,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
             'sodar-lz-zone-btn-validate',
             'sodar-lz-zone-btn-move',
             'sodar-lz-zone-btn-copy',
+            'sodar-lz-zone-btn-reset',
             'sodar-lz-zone-btn-delete',
         ]
         for c in class_names:

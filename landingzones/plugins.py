@@ -364,7 +364,7 @@ class ProjectAppPlugin(
                 if irods.collections.exists(zone_path):
                     continue  # Skip if already there
                 logger.info(f'Syncing landing zone "{zone.title}"..')
-                self.submit_create(zone, create_colls=True, sync=True)
+                self.submit_create(zone, sync=True)
 
     def validate_form_app_settings(
         self,

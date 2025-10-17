@@ -13,6 +13,9 @@ from projectroles.tests.test_views_api import APIViewTestBase
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
+import landingzones.constants as lc
+
+# TODO: Refactor these away
 from landingzones.constants import (
     ZONE_STATUS_ACTIVE,
     ZONE_STATUS_MOVED,
@@ -77,8 +80,8 @@ class LandingZoneAPIViewTestBase(
         )
 
 
-class TestLandingZoneListAPIView(LandingZoneAPIViewTestBase):
-    """Tests for LandingZoneListAPIView"""
+class TestZoneListAPIView(LandingZoneAPIViewTestBase):
+    """Tests for ZoneListAPIView"""
 
     def setUp(self):
         super().setUp()
@@ -104,6 +107,7 @@ class TestLandingZoneListAPIView(LandingZoneAPIViewTestBase):
             'date_modified': self.get_drf_datetime(self.zone.date_modified),
             'description': self.zone.description,
             'user_message': self.zone.user_message,
+            'coll_creation': lc.ZONE_COLLS_NONE,
             'configuration': self.zone.configuration,
             'config_data': self.zone.config_data,
             'irods_path': self.irods_backend.get_path(self.zone),
@@ -134,6 +138,7 @@ class TestLandingZoneListAPIView(LandingZoneAPIViewTestBase):
                     ),
                     'description': self.zone.description,
                     'user_message': self.zone.user_message,
+                    'coll_creation': lc.ZONE_COLLS_NONE,
                     'configuration': self.zone.configuration,
                     'config_data': self.zone.config_data,
                     'irods_path': self.irods_backend.get_path(self.zone),
@@ -203,18 +208,27 @@ class TestLandingZoneListAPIView(LandingZoneAPIViewTestBase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
 
+    def test_get_v1_0(self):
+        """Test GET with API version 1.0"""
+        response = self.request_knox(self.url, version='1.0')
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn('coll_creation', response.data[0])
 
-class TestLandingZoneRetrieveAPIView(LandingZoneAPIViewTestBase):
-    """Tests for LandingZoneRetrieveAPIView"""
+
+class TestZoneRetrieveAPIView(LandingZoneAPIViewTestBase):
+    """Tests for ZoneRetrieveAPIView"""
+
+    def setUp(self):
+        super().setUp()
+        self.url = reverse(
+            'landingzones:api_retrieve',
+            kwargs={'landingzone': self.zone.sodar_uuid},
+        )
 
     def test_get(self):
         """Test LandingZoneRetrieveAPIView GET as zone owner"""
         irods_backend = plugin_api.get_backend_api('omics_irods')
-        url = reverse(
-            'landingzones:api_retrieve',
-            kwargs={'landingzone': self.zone.sodar_uuid},
-        )
-        response = self.request_knox(url)
+        response = self.request_knox(self.url)
         self.assertEqual(response.status_code, 200)
 
         expected = {
@@ -228,6 +242,7 @@ class TestLandingZoneRetrieveAPIView(LandingZoneAPIViewTestBase):
             'date_modified': self.get_drf_datetime(self.zone.date_modified),
             'description': self.zone.description,
             'user_message': self.zone.user_message,
+            'coll_creation': lc.ZONE_COLLS_NONE,
             'configuration': self.zone.configuration,
             'config_data': self.zone.config_data,
             'irods_path': irods_backend.get_path(self.zone),
@@ -239,17 +254,19 @@ class TestLandingZoneRetrieveAPIView(LandingZoneAPIViewTestBase):
         """Test GET with locked landing zone status"""
         self.zone.status = ZONE_STATUS_MOVING
         self.zone.save()
-        url = reverse(
-            'landingzones:api_retrieve',
-            kwargs={'landingzone': self.zone.sodar_uuid},
-        )
-        response = self.request_knox(url)
+        response = self.request_knox(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(json.loads(response.content)['status_locked'], True)
 
+    def test_get_v1_0(self):
+        """Test GET with API version 1.0"""
+        response = self.request_knox(self.url, version='1.0')
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn('coll_creation', json.loads(response.content))
 
-class TestLandingZoneUpdateAPIView(LandingZoneAPIViewTestBase):
-    """Tests for LandingZoneUpdateAPIView"""
+
+class TestZoneUpdateAPIView(LandingZoneAPIViewTestBase):
+    """Tests for ZoneUpdateAPIView"""
 
     def setUp(self):
         super().setUp()
@@ -297,6 +314,18 @@ class TestLandingZoneUpdateAPIView(LandingZoneAPIViewTestBase):
     def test_put_title(self):
         """Test PUT to update title (should fail)"""
         data = {'title': 'New title'}
+        response = self.request_knox(self.url, method='PUT', data=data)
+        self.assertEqual(response.status_code, 400)
+
+    def test_put_create_colls(self):
+        """Test PUT to update create_colls (should fail)"""
+        data = {'create_colls': True}
+        response = self.request_knox(self.url, method='PUT', data=data)
+        self.assertEqual(response.status_code, 400)
+
+    def test_put_restrict_colls(self):
+        """Test PUT to update create_colls (should fail)"""
+        data = {'restrict_colls': True}
         response = self.request_knox(self.url, method='PUT', data=data)
         self.assertEqual(response.status_code, 400)
 

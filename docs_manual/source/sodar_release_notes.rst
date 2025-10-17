@@ -23,6 +23,7 @@ Major feature update and SODAR Core 1.2 upgrade.
 - Add landing zone file list modal collection display toggling
 - Add landing zone settings retrieval REST API view
 - Add landing zone iRODS file list REST API view
+- Add landing zone state reset tools for administrators
 - Add collection support for project file list REST API view
 - Add irodsorphans management command project limiting
 - Add syncstudytables management command check mode
@@ -32,6 +33,7 @@ Major feature update and SODAR Core 1.2 upgrade.
 - Update assay tables to hide row links with no plugin enabled
 - Update sheet overview layout
 - Update sheet rendering to disable study title and header name autoformatting
+- Update landing zone create form collection creation settings
 - :ref:`Upgrade Landing Zones REST API version to v1.1 <api_landingzones_version_1_1>`
 - :ref:`Upgrade Sample Sheets REST API version to v1.2 <api_samplesheets_version_1_2>`
 - Upgrade minimum supported iRODS version to v4.3.4
@@ -48,6 +50,8 @@ REST API Updates
 - Landing Zones API
     * Current version: ``1.1`` (non-breaking changes)
     * Allowed versions: ``1.0``, ``1.1``
+    * ``ZoneRetrieveAPIView``
+        + Add ``coll_creation`` field
     * ``ZoneIrodsFileListAPIView``
         + Add view
     * ``ZoneSettingsRetrieveAPIView``

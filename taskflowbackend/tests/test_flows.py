@@ -2,6 +2,7 @@
 
 import time
 
+from irods.access import iRODSAccess
 from irods.exception import UserDoesNotExist, GroupDoesNotExist
 from irods.path import iRODSPath
 from irods.test.helpers import make_object
@@ -29,8 +30,10 @@ from landingzones.constants import (
     ZONE_STATUS_CREATING,
     ZONE_STATUS_NOT_CREATED,
     ZONE_STATUS_ACTIVE,
+    ZONE_STATUS_VALIDATING,
     ZONE_STATUS_FAILED,
     ZONE_STATUS_DELETED,
+    STATUS_INFO_ADMIN_RESET,
 )
 from landingzones.tests.test_models import ZONE_TITLE, ZONE_DESC
 from landingzones.tests.test_views import LandingZoneMixin
@@ -58,6 +61,9 @@ from taskflowbackend.flows.landing_zone_delete import (
 )
 from taskflowbackend.flows.landing_zone_move import (
     Flow as LandingZoneMoveFlow,
+)
+from taskflowbackend.flows.landing_zone_reset import (
+    Flow as LandingZoneResetFlow,
 )
 from taskflowbackend.flows.landing_zone_verify import (
     Flow as LandingZoneVerifyFlow,
@@ -1499,6 +1505,190 @@ class TestLandingZoneMoveAltRootPath(
         )
 
 
+class TestLandingZoneReset(
+    LandingZoneMixin,
+    LandingZoneTaskflowMixin,
+    SampleSheetIOMixin,
+    SampleSheetTaskflowMixin,
+    TimelineEventMixin,
+    TaskflowbackendFlowTestBase,
+):
+    """Tests for the landing_zone_reset flow"""
+
+    # TODO: Make this into a generic helper?
+    def _set_access(
+        self,
+        user_name: str,
+        path: str,
+        access_name: str,
+        recursive: bool = False,
+    ):
+        """
+        Set iRODS access for user and path.
+
+        :param user_name: String
+        :param path: String
+        :param access_name: String
+        :param recursive: Boolean, default=False
+        """
+        acl = iRODSAccess(
+            access_name=access_name,
+            path=path,
+            user_name=user_name,
+            user_zone=self.irods.zone,
+        )
+        self.irods.acls.set(acl, recursive=recursive)
+
+    def _assert_alert_count(self, count: int):
+        """
+        Assert zone reset alert count.
+
+        :param count: Integer
+        """
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_reset').count(), count
+        )
+
+    def setUp(self):
+        super().setUp()
+        self.project, self.owner_as = self.make_project_taskflow(
+            'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
+        )
+        self.project_group = self.irods_backend.get_group_name(self.project)
+        self.project_path = self.irods_backend.get_path(self.project)
+        # Import investigation
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+        # Create iRODS collections
+        self.make_irods_colls(self.investigation)
+        # Create zone
+        self.zone = self.make_landing_zone(
+            title=ZONE_TITLE,
+            project=self.project,
+            user=self.user,
+            assay=self.assay,
+            description=ZONE_DESC,
+        )  # NOTE: make_zone_taskflow() called in tests
+        self.zone_path = self.irods_backend.get_path(self.zone)
+        self.misc_path = iRODSPath(self.zone_path, MISC_FILES_COLL)
+        self.owner_group = self.irods_backend.get_group_name(self.project, True)
+        # Set up flow data
+        self.set_flow_kw()
+        self.flow_data = {
+            'zone_uuid': self.zone.sodar_uuid,
+            'restrict_colls': False,
+        }
+        self.tl_event = self.make_event(
+            project=self.project,
+            app=APP_NAME,
+            user=self.user,
+            event_name='zone_reset',
+        )
+        self.flow_kw['flow_name'] = 'landing_zone_reset'
+        self.flow_kw['flow_data'] = self.flow_data
+        self.flow_kw['tl_event'] = self.tl_event
+        mail.outbox = []  # Clear mail outbox to simplify testing
+
+    def test_reset(self):
+        """Test landing_zone_reset"""
+        self.make_zone_taskflow(self.zone)
+        self.zone.set_status(ZONE_STATUS_VALIDATING)
+        self.assertEqual(self.zone.status, ZONE_STATUS_VALIDATING)
+        self._assert_alert_count(0)
+        self.assertEqual(len(mail.outbox), 0)
+        flow = self.taskflow.get_flow(**self.flow_kw)
+        self.assertEqual(type(flow), LandingZoneResetFlow)
+        self.build_and_run(flow)
+        self.zone.refresh_from_db()
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(self.zone.status_info, STATUS_INFO_ADMIN_RESET)
+        self._assert_alert_count(1)
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_reset_coll(self):
+        """Test landing_zone_reset with created collection"""
+        self.make_zone_taskflow(self.zone, colls=[MISC_FILES_COLL])
+        self.zone.set_status(ZONE_STATUS_VALIDATING)
+        u = self.user.username
+        o = self.owner_group
+        self.assert_irods_access(u, self.zone_path, IRODS_ACCESS_DELETE_OBJ)
+        self.assert_irods_access(o, self.zone_path, IRODS_ACCESS_DELETE_OBJ)
+        self.assert_irods_access(u, self.misc_path, IRODS_ACCESS_DELETE_OBJ)
+        self.assert_irods_access(o, self.misc_path, IRODS_ACCESS_DELETE_OBJ)
+        self.build_and_run(self.taskflow.get_flow(**self.flow_kw))
+        self.zone.refresh_from_db()
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assert_irods_access(u, self.zone_path, IRODS_ACCESS_DELETE_OBJ)
+        self.assert_irods_access(o, self.zone_path, IRODS_ACCESS_DELETE_OBJ)
+        self.assert_irods_access(u, self.misc_path, IRODS_ACCESS_DELETE_OBJ)
+        self.assert_irods_access(o, self.misc_path, IRODS_ACCESS_DELETE_OBJ)
+
+    def test_reset_coll_modified(self):
+        """Test landing_zone_reset with collection and modified access"""
+        self.make_zone_taskflow(self.zone, colls=[MISC_FILES_COLL])
+        self.zone.set_status(ZONE_STATUS_VALIDATING)
+        u = self.user.username
+        o = self.owner_group
+        self._set_access(u, self.zone_path, IRODS_ACCESS_READ_OBJ)
+        self._set_access(u, self.misc_path, IRODS_ACCESS_READ_OBJ)
+        self._set_access(o, self.zone_path, IRODS_ACCESS_READ_OBJ)
+        self._set_access(o, self.misc_path, IRODS_ACCESS_READ_OBJ)
+        self.assert_irods_access(u, self.zone_path, IRODS_ACCESS_READ_OBJ)
+        self.assert_irods_access(o, self.zone_path, IRODS_ACCESS_READ_OBJ)
+        self.assert_irods_access(u, self.misc_path, IRODS_ACCESS_READ_OBJ)
+        self.assert_irods_access(o, self.misc_path, IRODS_ACCESS_READ_OBJ)
+        self.build_and_run(self.taskflow.get_flow(**self.flow_kw))
+        self.zone.refresh_from_db()
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assert_irods_access(u, self.zone_path, IRODS_ACCESS_DELETE_OBJ)
+        self.assert_irods_access(o, self.zone_path, IRODS_ACCESS_DELETE_OBJ)
+        self.assert_irods_access(u, self.misc_path, IRODS_ACCESS_DELETE_OBJ)
+        self.assert_irods_access(o, self.misc_path, IRODS_ACCESS_DELETE_OBJ)
+
+    def test_reset_coll_restrict(self):
+        """Test landing_zone_reset with restrict_colls"""
+        self.make_zone_taskflow(
+            self.zone, colls=[MISC_FILES_COLL], restrict_colls=True
+        )
+        self.zone.set_status(ZONE_STATUS_VALIDATING)
+        u = self.user.username
+        o = self.owner_group
+        self.assert_irods_access(u, self.zone_path, IRODS_ACCESS_READ_OBJ)
+        self.assert_irods_access(o, self.zone_path, IRODS_ACCESS_READ_OBJ)
+        self.assert_irods_access(u, self.misc_path, IRODS_ACCESS_DELETE_OBJ)
+        self.assert_irods_access(o, self.misc_path, IRODS_ACCESS_DELETE_OBJ)
+        self.flow_kw['flow_data']['restrict_colls'] = True
+        self.build_and_run(self.taskflow.get_flow(**self.flow_kw))
+        self.zone.refresh_from_db()
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assert_irods_access(u, self.zone_path, IRODS_ACCESS_READ_OBJ)
+        self.assert_irods_access(o, self.zone_path, IRODS_ACCESS_READ_OBJ)
+        self.assert_irods_access(u, self.misc_path, IRODS_ACCESS_DELETE_OBJ)
+        self.assert_irods_access(o, self.misc_path, IRODS_ACCESS_DELETE_OBJ)
+
+    def test_reset_coll_restrict_modified(self):
+        """Test landing_zone_reset with restrict_colls and modified access"""
+        self.make_zone_taskflow(
+            self.zone, colls=[MISC_FILES_COLL], restrict_colls=True
+        )
+        self.zone.set_status(ZONE_STATUS_VALIDATING)
+        u = self.user.username
+        o = self.owner_group
+        self._set_access(u, self.zone_path, IRODS_ACCESS_DELETE_OBJ)
+        self._set_access(u, self.misc_path, IRODS_ACCESS_DELETE_OBJ)
+        self._set_access(o, self.zone_path, IRODS_ACCESS_READ_OBJ)
+        self._set_access(o, self.misc_path, IRODS_ACCESS_READ_OBJ)
+        self.flow_kw['flow_data']['restrict_colls'] = True
+        self.build_and_run(self.taskflow.get_flow(**self.flow_kw))
+        self.zone.refresh_from_db()
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assert_irods_access(u, self.zone_path, IRODS_ACCESS_READ_OBJ)
+        self.assert_irods_access(o, self.zone_path, IRODS_ACCESS_READ_OBJ)
+        self.assert_irods_access(u, self.misc_path, IRODS_ACCESS_DELETE_OBJ)
+        self.assert_irods_access(o, self.misc_path, IRODS_ACCESS_DELETE_OBJ)
+
+
 class TestLandingZoneVerify(
     LandingZoneMixin,
     LandingZoneTaskflowMixin,
@@ -1540,11 +1730,11 @@ class TestLandingZoneVerify(
         self.misc_path = iRODSPath(self.assay_path, MISC_FILES_COLL)
         self.misc_coll = self.irods.collections.create(self.misc_path)
         self.data_obj = self.make_irods_object(self.misc_coll, OBJ_NAME)
+        # Set up flow data
         self.set_flow_kw()
         obj_zone_path = iRODSPath(
             self.irods_backend.get_path(self.zone), MISC_FILES_COLL, OBJ_NAME
         )
-        # Set up flow data
         self.flow_data = {
             'zone_uuid': self.zone.sodar_uuid,
             'file_paths': [obj_zone_path],

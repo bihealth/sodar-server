@@ -105,6 +105,14 @@ class LandingZone(models.Model):
         help_text='Configuration data (for storing plugin-specific settings)',
     )
 
+    #: Zone subcollection creation
+    coll_creation = models.CharField(
+        default=lc.ZONE_COLLS_NONE,
+        blank=False,
+        null=False,
+        help_text='Create landing zone subcollections',
+    )
+
     #: Landing zone SODAR UUID
     sodar_uuid = models.UUIDField(
         default=uuid.uuid4, unique=True, help_text='Landing zone SODAR UUID'
@@ -121,6 +129,20 @@ class LandingZone(models.Model):
     def __repr__(self):
         values = (self.project.title, self.user.username, self.title)
         return 'LandingZone({})'.format(', '.join(repr(v) for v in values))
+
+    def _validate_coll_creation(self):
+        """Validate coll_creation field"""
+        if self.coll_creation not in lc.ZONE_COLLS_CREATION_MODES:
+            modes = ', '.join(lc.ZONE_COLLS_CREATION_MODES)
+            raise ValueError(
+                f'Invalid coll_creation value: {self.coll_creation} '
+                f'(allowed values: {modes})'
+            )
+
+    def save(self, *args, **kwargs):
+        """Override save() for custom validtation"""
+        self._validate_coll_creation()
+        super().save(*args, **kwargs)
 
     # Custom row-level functions
 

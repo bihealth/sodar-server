@@ -44,30 +44,29 @@ The form contains the following fields:
 
 Assay
     The assay under which the files in this landing zone will be uploaded.
-Title Suffix
+Title suffix
     Optional suffix for the landing zone title, mostly usable for
     differentiating between multiple zones.
 Description
     Optional description for e.g. notes regarding the landing zone.
-User Message
+User message
     Optional message displayed to project users upon successful validation and
     upload of this zone. This can contain e.g. a description of the files
     uploaded.
-Create Collections
-    If set true, this will automatically create the expected root level
-    collections under the zone. This helps to e.g. assure the expected
-    collection names for libraries and avoid errors such as typos. Creation is
-    enabled by default. When moving files from the landing zone, empty
-    collections will not be created in the sample repository.
-Restrict Collections
-    If set true and "create collections" is enabled, user write access is
-    restricted to the automatically created collections. Subcollections can be
-    freely created under existing collections, but the user has no permission
-    to create new collections in the landing zone root. This will prevent
-    accidental uploads to collections with names not corresponding to paths
-    expected in the related sample sheets. If there is need to e.g. upload data
-    corresponding to libraries not yet in the sample sheets, this option can be
-    set false.
+Collection creation
+    Select the method of automatic creation of iRODS collections. If enabled,
+    this will create expected root level collections under the zone. This helps
+    to e.g. assure the expected collection names corresponding to the sample
+    sheets, avoiding errors such as typos. When moving files from the landing
+    zone, empty collections will not be created in the sample repository.
+
+    By default this is set to ``RESTRICT``, where user write access is
+    restricted to created collections. Subcollections can be freely created, but
+    the user can not create new root collections in the landing zone. This
+    default mode is recommended. If there is need to e.g. upload data
+    corresponding to samples not yet in the sampl sheets, you can select
+    ``CREATE`` to create expected collections and enable creation of new ones,
+    or ``NONE`` for manual collection creation.
 Configuration
     Selection for special configurations of landing zones with extra features.
     In most use cases this should be left blank.

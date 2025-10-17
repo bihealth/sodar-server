@@ -32,6 +32,9 @@ Added
     - Zone file list modal UI tests (#2169)
     - ``LANDINGZONES_ZONE_MOVE_VERIFY`` Django setting (#2309)
     - ``SubmitZoneVerifyFlowTask`` taskflow task (#2309)
+    - ``LandingZone.coll_creation`` field (#1534, #2325)
+    - Administrator landing zone state resetting (#1534)
+    - ``resetzone`` management command (#1534)
 - **Samplesheets**
     - Project viewer role support (#2200)
     - Category statistics for sample count and iRODS statistics (#2213)
@@ -60,6 +63,7 @@ Added
     - ``landing_zone_verify`` flow (#2309)
     - ``set_icat_checksum()`` test helper (#2309)
     - ``BatchVerifySampleChecksumsTask`` iRODS task (#2309)
+    - ``landing_zone_reset`` flow (#1534)
 
 Changed
 -------
@@ -96,6 +100,7 @@ Changed
     - Refactor server side variables for JQuery (#2286)
     - Refactor rules (#2199)
     - Disable vertical centering for zone file list modal (#2298)
+    - Update zone creation form collection creation UI (#2325)
 - **Samplesheets**
     - Update views for project access blocking support (#2233)
     - Update app for ``public_access`` support (#2202)

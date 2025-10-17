@@ -9,11 +9,28 @@ from projectroles.plugins import PluginAPI
 # Samplesheets dependency
 from samplesheets.models import Assay
 
+import landingzones.constants as lc
 from landingzones.models import LandingZone
 from landingzones.utils import get_zone_title
 
 
 plugin_api = PluginAPI()
+
+
+# Local constants
+ZONE_COLLS_CREATION_CHOICES = [
+    (lc.ZONE_COLLS_NONE, 'NONE: Do not create collections'),
+    (
+        lc.ZONE_COLLS_CREATE,
+        'CREATE: Create collections, allow creation of additional root '
+        'collections',
+    ),
+    (
+        lc.ZONE_COLLS_RESTRICT,
+        'RESTRICT: Create collections, restrict write access to created '
+        'collections (recommended)',
+    ),
+]
 
 
 class LandingZoneForm(forms.ModelForm):
@@ -22,22 +39,6 @@ class LandingZoneForm(forms.ModelForm):
     #: Title suffix field
     title_suffix = forms.CharField(max_length=64, required=False)
 
-    #: Automated creation of collections
-    create_colls = forms.BooleanField(
-        initial=True,
-        required=False,
-        label='Create collections',
-        help_text='Create empty collections as defined by assay plugin',
-    )
-
-    #: Limit write access to created collectionss
-    restrict_colls = forms.BooleanField(
-        initial=True,
-        required=False,
-        label='Restrict collections',
-        help_text='Restrict write access to created collections (recommended)',
-    )
-
     class Meta:
         model = LandingZone
         fields = [
@@ -45,8 +46,7 @@ class LandingZoneForm(forms.ModelForm):
             'title_suffix',
             'description',
             'user_message',
-            'create_colls',
-            'restrict_colls',
+            'coll_creation',
             'configuration',
         ]
 
@@ -74,6 +74,11 @@ class LandingZoneForm(forms.ModelForm):
             'Zone title suffix (optional, maximum 64 characters)'
         )
         self.fields['description'].widget.attrs['rows'] = 4
+        self.fields['coll_creation'].label = 'Collection creation'
+        self.fields['coll_creation'].help_text = (
+            'Automatically create landing zone subcollections in iRODS, '
+            'optionally restrict write access to created collections'
+        )
 
         # Get options for configuration
         self.fields['configuration'].widget = forms.Select()
@@ -100,17 +105,22 @@ class LandingZoneForm(forms.ModelForm):
                                 f'{assay.get_display_name()}',
                             )
                         )
+            # Set options and initial value for coll_creation
+            self.fields['coll_creation'].widget = forms.Select()
+            self.fields['coll_creation'].widget.choices = (
+                ZONE_COLLS_CREATION_CHOICES
+            )
+            self.initial['coll_creation'] = lc.ZONE_COLLS_RESTRICT
         # Updating
         else:
-            # Set initial assay value
+            # Set initial values
             self.initial['assay'] = self.instance.assay.sodar_uuid
-
+            self.initial['coll_creation'] = self.instance.coll_creation
             # Don't allow modifying certain fields
             self.fields['title_suffix'].widget = forms.HiddenInput()
-            self.fields['create_colls'].widget = forms.HiddenInput()
-            self.fields['restrict_colls'].widget = forms.HiddenInput()
             self.fields['assay'].widget = forms.HiddenInput()
             self.fields['configuration'].widget = forms.HiddenInput()
+            self.fields['coll_creation'].widget = forms.HiddenInput()
 
     def clean(self):
         # Creation
@@ -121,6 +131,11 @@ class LandingZoneForm(forms.ModelForm):
             )
         # Updating
         else:
+            if (
+                self.cleaned_data['coll_creation']
+                != self.instance.coll_creation
+            ):
+                self.add_error(None, 'Updating coll_creation is not allowed')
             self.cleaned_data['title'] = self.instance.title
         return self.cleaned_data
 
@@ -128,13 +143,14 @@ class LandingZoneForm(forms.ModelForm):
         """Override of form saving function"""
         obj = super().save(commit=False)
         obj.title = self.cleaned_data['title']
-        # Updating
-        if self.instance.pk:
-            obj.user = self.instance.user
-            obj.project = self.instance.project
         # Creation
-        else:
+        if not self.instance.pk:
             obj.user = self.current_user
             obj.project = self.project
+        # Updating
+        else:
+            obj.user = self.instance.user
+            obj.project = self.instance.project
+            obj.coll_creation = self.instance.coll_creation
         obj.save()
         return obj

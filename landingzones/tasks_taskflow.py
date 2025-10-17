@@ -55,7 +55,7 @@ Zone UUID: {zone_uuid}
 Status message:
 "{status_info}"'''.lstrip()
 
-EMAIL_MSG_FAILED = r'''
+EMAIL_MSG_MOVE_FAILED = r'''
 Validating and moving data from your landing zone into the
 project sample data repository has failed. Please verify your
 data and request for support if the problem persists.
@@ -73,7 +73,7 @@ Status message:
 "{status_info}"
 '''.lstrip()
 
-EMAIL_MSG_MEMBER = r'''
+EMAIL_MSG_MOVE_MEMBER = r'''
 {user} has uploaded {file_count} file{file_count_suffix}
 into assay "{assay}"
 under the project "{project}".
@@ -83,6 +83,14 @@ Message from zone owner:
 
 You can browse the assay metadata and related files at
 the following URL:
+{url}
+'''.lstrip()
+
+EMAIL_MSG_RESET = r'''
+The state of your landing zone was reset by an administrator.
+
+You are now able to access this landing zone for further
+operations at the following URL:
 {url}
 '''.lstrip()
 
@@ -98,6 +106,7 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
         flow_name: str,
         file_count: int,
         validate_only: bool,
+        reset: bool = False,
     ):
         """
         Add app alert for zone owner for finished actions.
@@ -107,18 +116,22 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
         :param flow_name: String
         :param file_count: Integer
         :param validate_only: Boolean
+        :param reset: Boolean
         """
-        alert_level = (
-            app_alerts.ALERT_LEVEL_DANGER
-            if zone.status in [ZONE_STATUS_FAILED, ZONE_STATUS_NOT_CREATED]
-            else app_alerts.ALERT_LEVEL_SUCCESS
-        )
+        if reset:
+            alert_level = app_alerts.ALERT_LEVEL_INFO
+        elif zone.status in [ZONE_STATUS_FAILED, ZONE_STATUS_NOT_CREATED]:
+            alert_level = app_alerts.ALERT_LEVEL_DANGER
+        else:
+            alert_level = app_alerts.ALERT_LEVEL_SUCCESS
         alert_url = reverse(
             'landingzones:list',
             kwargs={'project': zone.project.sodar_uuid},
         )
 
-        if zone.status == ZONE_STATUS_MOVED:
+        if reset:
+            alert_msg = 'Landing zone reset by administrator'
+        elif zone.status == ZONE_STATUS_MOVED:
             alert_msg = 'Successfully moved {} file{} from landing zone'.format(
                 file_count, 's' if file_count != 1 else ''
             )
@@ -150,7 +163,9 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
             return
 
         alert_msg += f': {zone.title}.'
-        if validate_only:
+        if reset:
+            alert_name = 'reset'
+        elif validate_only:
             alert_name = 'validate'
         elif flow_name == 'landing_zone_delete':
             alert_name = 'delete'
@@ -218,7 +233,7 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
             message_body = EMAIL_MSG_MOVED
             email_url = server_host + zone.assay.get_url()
         else:  # FAILED
-            message_body = EMAIL_MSG_FAILED
+            message_body = EMAIL_MSG_MOVE_FAILED
             email_url = (
                 server_host
                 + reverse(
@@ -240,6 +255,29 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
         send_generic_mail(subject_body, message_body, [zone.user])
 
     @classmethod
+    def _send_owner_reset_email(cls, zone: LandingZone):
+        """
+        Send email to zone owner on zone state reset by an administrator.
+
+        :param zone: LandingZone object
+        """
+        server_host = settings.SODAR_API_DEFAULT_HOST.geturl()
+        subject_body = (
+            f'Landing zone reset: {zone.project.title} / {zone.title}'
+        )
+        email_url = (
+            server_host
+            + reverse(
+                'landingzones:list',
+                kwargs={'project': zone.project.sodar_uuid},
+            )
+            + '#'
+            + str(zone.sodar_uuid)
+        )
+        message_body = EMAIL_MSG_RESET.format(url=email_url)
+        send_generic_mail(subject_body, message_body, [zone.user])
+
+    @classmethod
     def _send_member_move_email(
         cls, member: SODARUser, zone: LandingZone, file_count: int
     ):
@@ -255,7 +293,7 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
             f'Files uploaded in project "{zone.project.title}" by '
             f'{zone.user.get_full_name()}'
         )
-        message_body = EMAIL_MSG_MEMBER
+        message_body = EMAIL_MSG_MOVE_MEMBER
         email_url = server_host + zone.assay.get_url()
         message_body = message_body.format(
             project=zone.project.title,
@@ -294,11 +332,11 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
             status=status,
             status_info=status_info if status_info else None,
         )
-
         if not extra_data:
             extra_data = {}
         file_count = extra_data.get('file_count', 0)
         validate_only = extra_data.get('validate_only', False)
+        reset = flow_name == 'landing_zone_reset'
 
         # Create alert and send email for zone owner for finished actions
         # NOTE: Create is excluded as this should be virtually instantaneous
@@ -321,13 +359,14 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
                         flow_name,
                         file_count,
                         validate_only,
+                        reset,
                     )
                 except Exception as ex:  # NOTE: We won't fail/revert here
                     logger.error(f'Exception in _add_owner_alert(): {ex}')
-            # NOTE: We only send email on move
+            # NOTE: We only send email on move and reset
             if (
                 settings.PROJECTROLES_SEND_EMAIL
-                and flow_name == 'landing_zone_move'
+                and flow_name in ['landing_zone_move', 'landing_zone_reset']
                 and not validate_only
                 and zone.user.is_active
                 and app_settings.get(
@@ -335,9 +374,12 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
                 )
             ):
                 try:
-                    cls._send_owner_move_email(zone)
+                    if flow_name == 'landing_zone_move':
+                        cls._send_owner_move_email(zone)
+                    elif flow_name == 'landing_zone_reset':
+                        cls._send_owner_reset_email(zone)
                 except Exception as ex:  # NOTE: We won't fail/revert here
-                    logger.error(f'Exception in _send_owner_move_email(): {ex}')
+                    logger.error(f'Exception in email sending: {ex}')
 
         # Create alerts and send emails to other project members on move
         member_notify = app_settings.get(

@@ -205,3 +205,61 @@ class TestZoneMoveView(ZonePermissionTaskflowTestBase):
         self.assert_response(
             self.url, self.non_superusers + [user_contrib2], 302
         )
+
+
+class TestZoneResetView(ZonePermissionTaskflowTestBase):
+    """Tests for ZoneResetrView permissions with taskflow"""
+
+    def setUp(self):
+        super().setUp()
+        self.url = reverse(
+            'landingzones:reset',
+            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+        )
+        self.redirect_url = reverse(
+            'landingzones:list',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+
+    def test_get(self):
+        """Test ZoneResetView GET"""
+        self.assert_response(
+            self.url, self.superuser, 302, redirect_user=self.redirect_url
+        )
+        self.assert_response(self.url, self.non_superusers, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_archive(self):
+        """Test GET with archived project"""
+        self.project.set_archive()
+        self.assert_response(
+            self.url, self.superuser, 302, redirect_user=self.redirect_url
+        )
+        self.assert_response(self.url, self.non_superusers, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(
+            self.url, self.superuser, 302, redirect_user=self.redirect_url
+        )
+        self.assert_response(self.url, self.non_superusers, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(
+            self.url, self.superuser, 302, redirect_user=self.redirect_url
+        )
+        self.assert_response(self.url, self.non_superusers, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)

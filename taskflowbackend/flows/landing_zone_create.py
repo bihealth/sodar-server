@@ -129,7 +129,7 @@ class Flow(BaseLinearFlow):
             )
         )
         # Set user access to zone collection
-        # Only set own access to root level zone coll if not enforcing colls
+        # Only set delete access to root level zone coll if not enforcing colls
         self.add_task(
             irods_tasks.SetAccessTask(
                 name=f'Set user {root_access} access to landing zone root',

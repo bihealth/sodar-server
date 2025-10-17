@@ -2,18 +2,20 @@
 
 import logging
 
+from celery import Celery
 from irods.exception import GroupDoesNotExist
-from typing import Optional
+
+from typing import Any, Optional
 
 from django.conf import settings
 from django.contrib import auth
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ImproperlyConfigured
-from django.http import HttpRequest
+from django.http import HttpRequest, Http404
 from django.shortcuts import redirect
 from django.urls import reverse
-from django.views.generic import TemplateView, CreateView, UpdateView
+from django.views.generic import TemplateView, CreateView, UpdateView, View
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
@@ -36,13 +38,16 @@ from samplesheets.views import (
     TRACK_HUBS_COLL,
 )
 
+import landingzones.constants as lc
+
+# TODO: Refactor these away
 from landingzones.constants import (
     STATUS_ALLOW_UPDATE,
     ZONE_STATUS_PREPARING,
     ZONE_STATUS_VALIDATING,
+    ZONE_STATUS_DELETED,
     STATUS_FINISHED,
     STATUS_INFO_DELETE_NO_COLL,
-    ZONE_STATUS_DELETED,
 )
 from landingzones.forms import LandingZoneForm
 from landingzones.models import LandingZone
@@ -74,6 +79,9 @@ ZONE_VALIDATE_LIMIT_MSG = (
     'Landing zone validation limit per project reached, please wait for '
     'ongoing validation jobs to finish before initiating new ones'
 )
+ZONE_RESET_SKIP_PREFIX = 'Skip landing zone reset'
+ZONE_RESET_STATUS_SKIP_MSG = 'Landing zone status is {status}, nothing to do'
+ZONE_RESET_TASK_SKIP_MSG = 'Active Celery tasks exist for zone, reset cancelled'
 
 
 # Mixins -----------------------------------------------------------------------
@@ -227,8 +235,6 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
     def submit_create(
         self,
         zone: LandingZone,
-        create_colls: bool = False,
-        restrict_colls: bool = False,
         request: HttpRequest = None,
         sync: bool = False,
     ):
@@ -237,8 +243,6 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
         object has been created.
 
         :param zone: LandingZone object
-        :param create_colls: Auto-create expected collections (boolean)
-        :param restrict_colls: Restrict access to created collections (boolean)
         :param request: HttpRequest object or None
         :param sync: Whether method is called from syncmodifyapi (boolean)
         :raise: taskflow.FlowSubmitException if taskflow submit fails
@@ -262,8 +266,7 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
                 'title': zone.title,
                 'assay': str(zone.assay.sodar_uuid),
                 'description': zone.description,
-                'create_colls': create_colls,
-                'restrict_colls': restrict_colls,
+                'coll_creation': zone.coll_creation,
                 'user_message': zone.user_message,
                 'configuration': zone.configuration,
                 'config_data': zone.config_data,
@@ -289,7 +292,7 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
         # Gather collections to generate automatically
         # NOTE: Currently requires sodar_cache to be enabled!
         colls = []
-        if create_colls:
+        if zone.coll_creation in [lc.ZONE_COLLS_CREATE, lc.ZONE_COLLS_RESTRICT]:
             logger.debug('Creating default landing zone collections..')
             assay_path = irods_backend.get_path(zone.assay)
             colls = [RESULTS_COLL, MISC_FILES_COLL, TRACK_HUBS_COLL]
@@ -360,7 +363,7 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
             {
                 'zone_uuid': str(zone.sodar_uuid),
                 'colls': list(set(colls)),
-                'restrict_colls': restrict_colls,
+                'restrict_colls': zone.coll_creation == lc.ZONE_COLLS_RESTRICT,
             },
         )
         try:
@@ -555,6 +558,140 @@ class ZoneMoveMixin(ZoneConfigPluginMixin):
         )
 
 
+class ZoneResetMixin(ZoneConfigPluginMixin):
+    """Mixin for zone reset helpers"""
+
+    @classmethod
+    def _check_celery_tasks(cls, zone: LandingZone) -> bool:
+        """
+        Return True if active celery tasks for landing zone exist.
+
+        :param zone: LandingZone object
+        :return: Boolean
+        """
+        celery_app = Celery('sodar_zone_reset_status')
+        celery_app.config_from_object(
+            'django.conf:settings', namespace='CELERY'
+        )
+        celery_tasks = celery_app.control.inspect().active()
+        for v in celery_tasks.values():
+            task_found = any(
+                t.get('name').endswith('.submit_flow_task')
+                and 'args' in t
+                and t['args'][2].get('zone_uuid') == str(zone.sodar_uuid)
+                for t in v
+            )
+            if task_found:
+                return True
+        return False
+
+    @classmethod
+    def _add_tl_event(
+        cls, zone: LandingZone, user: Optional[User], timeline: Any
+    ) -> Any:
+        """
+        Add timeline event for zone reset if timeline backend if enabled.
+
+        :param zone: LandingZone object
+        :param user: User triggering zone reset or None
+        :param timeline: TimelineAPI object or None
+        :return: TimelineEvent object or None
+        """
+        if not timeline:
+            return None
+        tl_event = timeline.add_event(
+            project=zone.project,
+            app_name=APP_NAME,
+            user=user,
+            event_name='zone_reset',
+            description='reset landing zone {zone} for {user} in {assay}',
+        )
+        tl_event.add_object(obj=zone, label='zone', name=zone.title)
+        tl_event.add_object(
+            obj=zone.user, label='user', name=zone.user.username
+        )
+        tl_event.add_object(
+            obj=zone.assay, label='assay', name=zone.assay.get_name()
+        )
+        return tl_event
+
+    def reset_zone(
+        self, zone: LandingZone, request: Optional[HttpRequest] = None
+    ):
+        """
+        Reset landing zone state if stuck in status other than ACTIVE or a
+        status in STATUS_FINISHED. Runs landing_zone_reset taskflow to reset
+        zone status and to ensure correct user access is set in zone iRODS
+        collections.
+
+        Does nothing if the zone is already in a finished state, or if active
+        asynchronous Celery jobs for the zone exist.
+
+        :param zone: LandingZone object
+        :param request: HttpRequest object (optional)
+        """
+        taskflow = plugin_api.get_backend_api('taskflow')
+        timeline = plugin_api.get_backend_api('timeline_backend')
+
+        # Skip if zone is active or finished
+        if zone.status in STATUS_FINISHED + [lc.ZONE_STATUS_ACTIVE]:
+            msg = ZONE_RESET_STATUS_SKIP_MSG.format(status=zone.status)
+            logger.info(f'{ZONE_RESET_SKIP_PREFIX}: {msg}')
+            if request:
+                messages.info(request, msg + '.')
+            return
+
+        # Check for active landing zone job(s) for zone in celery
+        try:
+            task_found = self._check_celery_tasks(zone)
+            if task_found:
+                logger.info(
+                    f'{ZONE_RESET_SKIP_PREFIX}: {ZONE_RESET_TASK_SKIP_MSG}'
+                )
+                if request:
+                    messages.info(request, ZONE_RESET_TASK_SKIP_MSG + '.')
+                return
+        except Exception as ex:
+            msg = f'Exception querying for celery tasks: {ex}'
+            logger.error(msg)
+            if request:
+                messages.warning(request, msg)
+            # NOTE: If we can't query celery, we can still continue with reset
+
+        req_user = request.user if request else None
+        # Create a timeline event
+        tl_event = self._add_tl_event(zone, req_user, timeline)
+        # Set up and submit flow
+        flow_data = self.get_flow_data(
+            zone=zone,
+            flow_name='landing_zone_reset',
+            data={
+                'zone_uuid': str(zone.sodar_uuid),
+                'restrict_colls': zone.coll_creation == lc.ZONE_COLLS_RESTRICT,
+            },
+        )
+        try:
+            taskflow.submit(
+                project=zone.project,
+                user=req_user,
+                flow_name='landing_zone_reset',
+                flow_data=flow_data,
+                async_mode=False,
+                tl_event=tl_event,
+            )
+            if tl_event:
+                tl_event.set_status(timeline.TL_STATUS_OK)
+            if request:
+                messages.success(request, f'Zone "{zone.title}" reset.')
+        except taskflow.FlowSubmitException as ex:
+            msg = f'Exception submitting taskflow: {ex}'
+            logger.error(msg)
+            if tl_event:
+                tl_event.set_status(timeline.TL_STATUS_FAILED, msg)
+            if request:
+                messages.error(request, msg)
+
+
 # UI Views ---------------------------------------------------------------------
 
 
@@ -680,12 +817,7 @@ class ZoneCreateView(
 
         try:
             # Create timeline event and initialize taskflow
-            self.submit_create(
-                zone=zone,
-                create_colls=form.cleaned_data.get('create_colls'),
-                restrict_colls=form.cleaned_data.get('restrict_colls'),
-                request=self.request,
-            )
+            self.submit_create(zone=zone, request=self.request)
             config_str = (
                 f' with configuration "{zone.configuration}"'
                 if zone.configuration
@@ -995,3 +1127,33 @@ class ZoneMoveView(
         except Exception as ex:
             messages.error(self.request, str(ex))
         return redirect(redirect_url)
+
+
+class ZoneResetView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectContextMixin,
+    ProjectPermissionMixin,
+    ZoneResetMixin,
+    View,
+):
+    """LandingZone validation and moving triggering view"""
+
+    http_method_names = ['get']
+    permission_required = 'landingzones.reset_zone'
+
+    def get(self, request, *args, **kwargs):
+        zone = LandingZone.objects.filter(
+            sodar_uuid=self.kwargs['landingzone']
+        ).first()
+        if not zone:
+            raise Http404
+        try:
+            self.reset_zone(zone, request)
+        except Exception:
+            pass  # Exceptions reported in reset_zone()
+        return redirect(
+            reverse(
+                'landingzones:list', kwargs={'project': zone.project.sodar_uuid}
+            )
+        )

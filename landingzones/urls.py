@@ -38,6 +38,11 @@ urls_ui = [
         view=views.ZoneDeleteView.as_view(),
         name='delete',
     ),
+    path(
+        route='reset/<uuid:landingzone>',
+        view=views.ZoneResetView.as_view(),
+        name='reset',
+    ),
 ]
 
 # REST API views

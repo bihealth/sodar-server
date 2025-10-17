@@ -147,3 +147,6 @@ rules.add_perm(
     & pr_rules.is_site_writable
     & can_modify_zone,
 )
+
+# Allow resetting zone state
+rules.add_perm('landingzones.reset_zone', rules.is_superuser)

@@ -34,6 +34,9 @@ from taskflowbackend.tests.base import TaskflowAPIViewTestBase
 # Timeline dependency
 from timeline.models import TimelineEvent, TL_STATUS_OK
 
+import landingzones.constants as lc
+
+# TODO: Refactor these away
 from landingzones.constants import (
     DEFAULT_STATUS_INFO,
     ZONE_STATUS_ACTIVE,
@@ -163,6 +166,7 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
             'date_modified': response_data['date_modified'],
             'description': zone.description,
             'user_message': zone.user_message,
+            'coll_creation': lc.ZONE_COLLS_NONE,
             'configuration': zone.configuration,
             'config_data': zone.config_data,
             'irods_path': self.irods_backend.get_path(zone),
@@ -232,6 +236,7 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(LandingZone.objects.count(), 1)
         zone = LandingZone.objects.first()
+        self.assertEqual(zone.coll_creation, lc.ZONE_COLLS_CREATE)
         self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
         self.assert_irods_coll(zone)
         for c in ZONE_BASE_COLLS:
@@ -276,6 +281,7 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(LandingZone.objects.count(), 1)
         zone = LandingZone.objects.first()
+        self.assertEqual(zone.coll_creation, lc.ZONE_COLLS_CREATE)
         self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
         self.assert_irods_coll(zone)
         for c in ZONE_ALL_COLLS:
@@ -319,6 +325,7 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(LandingZone.objects.count(), 1)
         zone = LandingZone.objects.first()
+        self.assertEqual(zone.coll_creation, lc.ZONE_COLLS_RESTRICT)
         self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
         self.assert_irods_coll(zone)
         for c in ZONE_ALL_COLLS:
@@ -339,6 +346,17 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
                 iRODSPath(zone_path, c),
                 IRODS_ACCESS_DELETE_OBJ,
             )
+
+    def test_post_colls_restrict_no_create(self):
+        """Test POST with restrict but without creation (should fail)"""
+        self.assertEqual(LandingZone.objects.count(), 0)
+        self.post_data['create_colls'] = False
+        self.post_data['restrict_colls'] = True
+        response = self.request_knox(
+            self.url, method='POST', data=self.post_data
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(LandingZone.objects.count(), 0)
 
     # TODO: Test without sodarcache (see issue #1157)
 
@@ -401,6 +419,16 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
         )
         self.assertEqual(response.status_code, 201)
         self.assertEqual(LandingZone.objects.count(), 2)
+
+    def test_post_v1_0(self):
+        """Test with API version 1.0"""
+        self.assertEqual(LandingZone.objects.count(), 0)
+        response = self.request_knox(
+            self.url, method='POST', data=self.post_data, version='1.0'
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(LandingZone.objects.count(), 1)
+        self.assertNotIn('coll_creation', json.loads(response.content))
 
 
 class TestZoneSubmitDeleteAPIView(ZoneAPIViewTaskflowTestBase):
