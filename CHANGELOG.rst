@@ -35,6 +35,7 @@ Added
     - ``LandingZone.coll_creation`` field (#1534, #2325)
     - Administrator landing zone state resetting (#1534)
     - ``resetzone`` management command (#1534)
+    - ``verifyzone`` management command (#2326)
 - **Samplesheets**
     - Project viewer role support (#2200)
     - Category statistics for sample count and iRODS statistics (#2213)

@@ -74,6 +74,13 @@ operations regarding sample sheets, landing zones, iRODS data and ontologies.
     Clean up and normalize previously imported sample sheets for
     non-standard data or other issues. Also updates render tables and creates a
     backup ISA-Tab version of the normalized sheets.
+``resetzone``
+    Reset landing zone state. Usable for cases where a zone has entered a frozen
+    state due to e.g. server or network issues. Sets user iRODS access to the
+    zone corresponding to settings after zone initialization and sets the zone
+    status to ``ACTIVE``, allowing for further user activity. Reset will not be
+    performed if active Celery jobs for validation or moving of the same zone
+    exist. Provide the landing zone UUID with the ``-z`` or ``--zone`` argument.
 ``syncnames``
     Synchronize alternative names for sample sheet material search.
 ``syncstudytables``
@@ -83,3 +90,9 @@ operations regarding sample sheets, landing zones, iRODS data and ontologies.
     has been changed in study table rendering. Given the argument ``-c`` or
     ``--check``, study table rendering can be tested without storing any changes
     in the cache.
+``verifyzone``
+    Manually trigger verification of files moved from a landing zone, in case
+    e.g. the automated verify after zone moving failed due to server issues.
+    Provide the landing zone UUID with the ``-z`` or ``--zone`` argument. Run
+    in synchronous mode with ``-s`` or ``--sync`` (only recommended for testing
+    or development).
