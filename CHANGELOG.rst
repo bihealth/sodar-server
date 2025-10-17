@@ -34,7 +34,7 @@ Added
     - ``SubmitZoneVerifyFlowTask`` taskflow task (#2309)
     - ``LandingZone.coll_creation`` field (#1534, #2325)
     - Administrator landing zone state resetting (#1534)
-    - ``resetzone`` management command (#1534)
+    - ``resetzone`` management command (#1534, #2328)
     - ``verifyzone`` management command (#2326)
 - **Samplesheets**
     - Project viewer role support (#2200)

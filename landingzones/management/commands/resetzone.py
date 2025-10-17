@@ -34,6 +34,7 @@ class Command(ZoneResetMixin, BaseCommand):
         zone = LandingZone.objects.filter(sodar_uuid=zone_uuid).first()
         if not zone:
             logger.error(f'Zone not found with UUID: {zone_uuid}')
+            sys.exit(1)
         try:
             self.reset_zone(zone)
         except Exception as ex:
