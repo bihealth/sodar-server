@@ -131,6 +131,7 @@ Changed
     - Refactor task tests (#2226)
     - Update batch checksum tasks to support sample data verification (#2309)
     - Update "flow finished" log message to include flow name (#2314)
+    - Skip ``TriggerZoneMoveTask`` execution if active jobs for task exist (#2323)
 
 Fixed
 -----

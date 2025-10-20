@@ -4,6 +4,7 @@ import logging
 
 from typing import Any
 
+from celery import Celery
 from irods.path import iRODSPath
 
 from django.conf import settings
@@ -28,6 +29,7 @@ plugin_api = PluginAPI()
 
 # Local constants
 APP_NAME = 'landingzones'
+TASK_NAME = 'landingzones.tasks_celery.trigger_zone_move'
 
 
 @app.on_after_finalize.connect
@@ -59,7 +61,7 @@ def trigger_zone_move():
 class TriggerZoneMoveTask(ZoneMoveMixin):
     """Task for triggering landing zone validation and moving"""
 
-    def handle_project(
+    def _handle_project(
         self, project: Project, request: HttpRequest, irods_backend: Any
     ):
         """
@@ -113,6 +115,23 @@ class TriggerZoneMoveTask(ZoneMoveMixin):
             return
         if not irods_backend:
             return
+
+        # Skip if ongoing celery jobs for this task are active
+        try:
+            celery_app = Celery('sodar_zone_trigger_move')
+            celery_app.config_from_object(
+                'django.conf:settings', namespace='CELERY'
+            )
+            celery_tasks = celery_app.control.inspect().active()
+            for v in celery_tasks.values():
+                for t in v:
+                    if t.get('name') == TASK_NAME:
+                        logger.info('Previous task still active, skipping')
+                        return
+        except Exception as ex:
+            logger.error(f'Exception in querying Celery tasks: {ex}')
+            return
+
         # Get projects, omit those which should currently be locked by Taskflow
         # TODO: Check for lock status directly, see #2048
         projects = (
@@ -122,4 +141,4 @@ class TriggerZoneMoveTask(ZoneMoveMixin):
             .exclude(landing_zones__status__in=STATUS_LOCKING)
         )
         for project in projects:
-            self.handle_project(project, request, irods_backend)
+            self._handle_project(project, request, irods_backend)
