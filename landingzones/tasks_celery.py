@@ -123,11 +123,12 @@ class TriggerZoneMoveTask(ZoneMoveMixin):
                 'django.conf:settings', namespace='CELERY'
             )
             celery_tasks = celery_app.control.inspect().active()
-            for v in celery_tasks.values():
-                for t in v:
-                    if t.get('name') == TASK_NAME:
-                        logger.info('Previous task still active, skipping')
-                        return
+            if celery_tasks:
+                for v in celery_tasks.values():
+                    for t in v:
+                        if t.get('name') == TASK_NAME:
+                            logger.info('Previous task still active, skipping')
+                            return
         except Exception as ex:
             logger.error(f'Exception in querying Celery tasks: {ex}')
             return
