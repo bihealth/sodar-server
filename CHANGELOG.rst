@@ -32,7 +32,7 @@ Added
     - Zone file list modal UI tests (#2169)
     - ``LANDINGZONES_ZONE_MOVE_VERIFY`` Django setting (#2309)
     - ``SubmitZoneVerifyFlowTask`` taskflow task (#2309)
-    - ``LandingZone.coll_creation`` field (#1534, #2325)
+    - ``LandingZone.coll_creation`` field (#1534, #2325, #2330)
     - Administrator landing zone state resetting (#1534)
     - ``resetzone`` management command (#1534, #2328)
     - ``verifyzone`` management command (#2326)
