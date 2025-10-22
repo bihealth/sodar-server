@@ -1636,7 +1636,7 @@ class TestIrodsDataRequest(IrodsDataRequestMixin, SamplesheetsModelTestBase):
         self.request_path = iRODSPath(
             self.irods_backend.get_path(self.assay), 'file.txt'
         )
-        self.request = self.make_irods_request(
+        self.irods_req = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
             path=self.request_path,
@@ -1648,7 +1648,7 @@ class TestIrodsDataRequest(IrodsDataRequestMixin, SamplesheetsModelTestBase):
     def test_initialization(self):
         """Test IrodsDataRequest initialization"""
         expected = {
-            'id': self.request.pk,
+            'id': self.irods_req.pk,
             'project': self.project.pk,
             'action': IRODS_REQUEST_ACTION_DELETE,
             'path': self.request_path,
@@ -1657,18 +1657,18 @@ class TestIrodsDataRequest(IrodsDataRequestMixin, SamplesheetsModelTestBase):
             'status_info': '',
             'description': IRODS_REQUEST_DESC,
             'user': self.user_owner.pk,
-            'sodar_uuid': self.request.sodar_uuid,
+            'sodar_uuid': self.irods_req.sodar_uuid,
         }
-        self.assertEqual(model_to_dict(self.request), expected)
+        self.assertEqual(model_to_dict(self.irods_req), expected)
 
     def test__str__(self):
         """Test IrodsDataRequest __str__()"""
         expected = '{}: {} {}'.format(
-            self.request.project.title,
-            self.request.action,
-            self.request.get_short_path(),
+            self.irods_req.project.title,
+            self.irods_req.action,
+            self.irods_req.get_short_path(),
         )
-        self.assertEqual(str(self.request), expected)
+        self.assertEqual(str(self.irods_req), expected)
 
     def test__repr__(self):
         """Test IrodsDataRequest __repr__()"""
@@ -1676,46 +1676,46 @@ class TestIrodsDataRequest(IrodsDataRequestMixin, SamplesheetsModelTestBase):
             ', '.join(
                 repr(v)
                 for v in [
-                    self.request.project.title,
+                    self.irods_req.project.title,
                     self.assay.get_display_name(),
-                    self.request.action,
+                    self.irods_req.action,
                     self.request_path,
                     self.user_owner.username,
                 ]
             )
         )
-        self.assertEqual(repr(self.request), expected)
+        self.assertEqual(repr(self.irods_req), expected)
 
     def test_validate_action_move(self):
         """Test _validate_action() with MOVE status"""
         with self.assertRaises(ValidationError):
-            self.request.action = 'MOVE'
-            self.request.save()
+            self.irods_req.action = 'MOVE'
+            self.irods_req.save()
 
     def test_validate_action_legacy(self):
         """Test _validate_action() with legacy lowercase status"""
-        self.request.action = 'delete'
-        self.request.save()  # No exception
+        self.irods_req.action = 'delete'
+        self.irods_req.save()  # No exception
 
     def test_validate_status(self):
         """Test _validate_status()"""
         with self.assertRaises(ValidationError):
-            self.request.status = 'NOT A VALID STATUS'
-            self.request.save()
+            self.irods_req.status = 'NOT A VALID STATUS'
+            self.irods_req.save()
 
     def test_get_display_name(self):
         """Test get_display_name()"""
         expected = (
             f'{IRODS_REQUEST_ACTION_DELETE.capitalize()} '
-            f'{self.request.get_short_path()}'
+            f'{self.irods_req.get_short_path()}'
         )
-        self.assertEqual(self.request.get_display_name(), expected)
+        self.assertEqual(self.irods_req.get_display_name(), expected)
 
     def test_get_date_created(self):
         """Test get_date_created()"""
         self.assertEqual(
-            self.request.get_date_created(),
-            timezone.localtime(self.request.date_created).strftime(
+            self.irods_req.get_date_created(),
+            timezone.localtime(self.irods_req.date_created).strftime(
                 '%Y-%m-%d %H:%M'
             ),
         )
@@ -1723,24 +1723,24 @@ class TestIrodsDataRequest(IrodsDataRequestMixin, SamplesheetsModelTestBase):
     def test_get_short_path(self):
         """Test get_short_path()"""
         expected = self.request_path.split('/')[-1]
-        self.assertEqual(self.request.get_short_path(), expected)
+        self.assertEqual(self.irods_req.get_short_path(), expected)
 
     def test_get_assay(self):
         """Test get_assay()"""
-        self.assertEqual(self.request.get_assay(), self.assay)
+        self.assertEqual(self.irods_req.get_assay(), self.assay)
 
     def test_get_assay_no_assay(self):
         """Test get_assay() with no assay in path"""
-        self.request.path = iRODSPath(
+        self.irods_req.path = iRODSPath(
             self.irods_backend.get_path(self.study), 'file.txt'
         )
-        self.request.save()
-        self.assertEqual(self.request.get_assay(), None)
+        self.irods_req.save()
+        self.assertEqual(self.irods_req.get_assay(), None)
 
     def test_get_assay_name(self):
         """Test get_assay_name()"""
         self.assertEqual(
-            self.request.get_assay_name(), self.assay.get_display_name()
+            self.irods_req.get_assay_name(), self.assay.get_display_name()
         )
 
     # NOTE: For is_data_object() and is_collection(), see test_models_taskflow

@@ -15,6 +15,7 @@ study types.
     project and which metadata may be affecting this, see
     :ref:`app_samplesheets_browse_table_detail`.
 
+
 Study iRODS Data Linking
 ========================
 

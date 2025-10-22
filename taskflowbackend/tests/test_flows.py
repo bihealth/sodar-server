@@ -501,7 +501,7 @@ class TestLandingZoneDelete(
             project=self.project,
             app=APP_NAME,
             user=self.user,
-            event_name='landing_zone_delete',
+            event_name='zone_delete',
             extra_data={},
         )
 
@@ -764,7 +764,7 @@ class TestLandingZoneMove(
             project=self.project,
             app=APP_NAME,
             user=self.user,
-            event_name='landing_zone_move',
+            event_name='zone_move',
             extra_data={},
         )
 
@@ -1207,7 +1207,7 @@ class TestLandingZoneMove(
             project=self.project,
             app=APP_NAME,
             user=self.user,
-            event_name='landing_zone_move',
+            event_name='zone_move',
             extra_data={},
         )
         flow = self.taskflow.get_flow(

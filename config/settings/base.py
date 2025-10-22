@@ -8,7 +8,6 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
-import itertools
 import os
 import re
 
@@ -424,12 +423,9 @@ if ENABLE_LDAP:
     AUTH_LDAP_DOMAIN_PRINTABLE = env.str(
         'AUTH_LDAP_DOMAIN_PRINTABLE', AUTH_LDAP_USERNAME_DOMAIN
     )
-    AUTHENTICATION_BACKENDS = tuple(
-        itertools.chain(
-            ('projectroles.auth_backends.PrimaryLDAPBackend',),
-            AUTHENTICATION_BACKENDS,
-        )
-    )
+    AUTHENTICATION_BACKENDS = [
+        'projectroles.auth_backends.PrimaryLDAPBackend'
+    ] + AUTHENTICATION_BACKENDS
 
     # Secondary LDAP server (optional)
     if ENABLE_LDAP_SECONDARY:
@@ -460,12 +456,9 @@ if ENABLE_LDAP:
         AUTH_LDAP2_DOMAIN_PRINTABLE = env.str(
             'AUTH_LDAP2_DOMAIN_PRINTABLE', AUTH_LDAP2_USERNAME_DOMAIN
         )
-        AUTHENTICATION_BACKENDS = tuple(
-            itertools.chain(
-                ('projectroles.auth_backends.SecondaryLDAPBackend',),
-                AUTHENTICATION_BACKENDS,
-            )
-        )
+        AUTHENTICATION_BACKENDS = [
+            'projectroles.auth_backends.SecondaryLDAPBackend'
+        ] + AUTHENTICATION_BACKENDS
 
 
 # OpenID Connect (OIDC) configuration
@@ -474,12 +467,9 @@ if ENABLE_LDAP:
 ENABLE_OIDC = env.bool('ENABLE_OIDC', False)
 
 if ENABLE_OIDC:
-    AUTHENTICATION_BACKENDS = tuple(
-        itertools.chain(
-            ('social_core.backends.open_id_connect.OpenIdConnectAuth',),
-            AUTHENTICATION_BACKENDS,
-        )
-    )
+    AUTHENTICATION_BACKENDS = [
+        'social_core.backends.open_id_connect.OpenIdConnectAuth'
+    ] + AUTHENTICATION_BACKENDS
     TEMPLATES[0]['OPTIONS']['context_processors'] += [
         'social_django.context_processors.backends',
         'social_django.context_processors.login_redirect',
@@ -622,7 +612,7 @@ PROJECTROLES_HELP_HIGHLIGHT_DAYS = env.int(
 )
 PROJECTROLES_ENABLE_SEARCH = env.bool('PROJECTROLES_ENABLE_SEARCH', True)
 PROJECTROLES_SEARCH_PAGINATION = env.int('PROJECTROLES_SEARCH_PAGINATION', 5)
-PROJECTROLES_ROLE_PAGINATION = 15
+PROJECTROLES_ROLE_PAGINATION = env.int('PROJECTROLES_ROLE_PAGINATION', 15)
 PROJECTROLES_DELEGATE_LIMIT = env.int('PROJECTROLES_DELEGATE_LIMIT', 1)
 PROJECTROLES_DEFAULT_ADMIN = env.str('PROJECTROLES_DEFAULT_ADMIN', 'admin')
 PROJECTROLES_ALLOW_LOCAL_USERS = env.bool(

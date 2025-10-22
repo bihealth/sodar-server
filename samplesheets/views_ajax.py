@@ -125,6 +125,12 @@ class BaseSheetEditAjaxView(SODARBaseProjectAjaxView):
         pass
 
     def _raise_ex(self, msg: Union[Exception, str]):
+        """
+        Raise SheetEditException and log the error.
+
+        :param msg: Exception or string
+        :raise: SheetEditException
+        """
         logger.error(msg)
         raise self.SheetEditException(msg)
 
@@ -304,6 +310,12 @@ class SheetContextAjaxView(SODARBaseProjectAjaxView):
     permission_required = 'samplesheets.view_sheet'
 
     def _get_investigation_info(self, inv: Investigation) -> dict:
+        """
+        Return investigation information as a dictionary.
+
+        :param inv: Investigation object
+        :return: dict
+        """
         project = inv.project
         # TODO: Validate SHEETS_ONTOLOGY_URL_TEMPLATE
         return {
@@ -339,7 +351,7 @@ class SheetContextAjaxView(SODARBaseProjectAjaxView):
 
     def _get_study_info(self, study: Study, request: HttpRequest) -> dict:
         """
-        Return study information
+        Return study information as a dictionary.
 
         :param study: Study object
         :param request: HttpRequest object
@@ -374,7 +386,7 @@ class SheetContextAjaxView(SODARBaseProjectAjaxView):
 
     def _get_assay_info(self, assay: Assay) -> dict:
         """
-        Return assay information.
+        Return assay information as a dictionary.
 
         :param assay: Assay object
         :return: dict
@@ -611,7 +623,14 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
         user: SODARUser,
         sheet_config: Optional[dict] = None,
     ) -> dict:
-        """Get or create display configuration for an investigation"""
+        """
+        Get or create display configuration for an investigation.
+
+        :param investigation: Investigation object
+        :param user: SODARUser object
+        :param sheet_config: Dict or None
+        :return: Dict
+        """
         project = investigation.project
         user_config_found = True
 
@@ -1495,7 +1514,7 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
                     return Response({'detail': str(ex)}, status=500)
             except Exception as ex:
                 if settings.DEBUG:
-                    raise (ex)
+                    raise ex
                 return Response({'detail': str(ex)}, status=500)
         return Response(self.ok_data, status=200)
 

@@ -42,12 +42,7 @@ from projectroles.views_api import (
 # Samplesheets dependency
 from samplesheets.models import Investigation
 
-from landingzones.constants import (
-    STATUS_ALLOW_UPDATE,
-    STATUS_FINISHED,
-    ZONE_STATUS_PREPARING,
-    ZONE_STATUS_VALIDATING,
-)
+import landingzones.constants as lc
 from landingzones.models import LandingZone
 from landingzones.serializers import LandingZoneSerializer
 from landingzones.utils import cleanup_file_prohibit
@@ -183,7 +178,7 @@ class ZoneListAPIView(
         include_finished = int(self.request.query_params.get('finished', 0))
         ret = LandingZone.objects.filter(project=project)
         if include_finished != 1:
-            ret = ret.exclude(status__in=STATUS_FINISHED)
+            ret = ret.exclude(status__in=lc.STATUS_FINISHED)
         if not self.request.user.has_perm(
             'landingzones.view_zone_all', project
         ):
@@ -411,7 +406,7 @@ class ZoneSubmitDeleteAPIView(ZoneDeleteMixin, ZoneSubmitBaseAPIView):
         zone = LandingZone.objects.filter(
             sodar_uuid=self.kwargs['landingzone']
         ).first()
-        self._validate_zone_obj(zone, STATUS_ALLOW_UPDATE, 'delete')
+        self._validate_zone_obj(zone, lc.STATUS_ALLOW_UPDATE, 'delete')
         try:
             self.submit_delete(zone)
         except Exception as ex:
@@ -468,7 +463,7 @@ class ZoneSubmitMoveAPIView(ZoneMoveMixin, ZoneSubmitBaseAPIView):
         # Check limit
         valid_count = LandingZone.objects.filter(
             project=zone.project,
-            status__in=[ZONE_STATUS_PREPARING, ZONE_STATUS_VALIDATING],
+            status__in=[lc.ZONE_STATUS_PREPARING, lc.ZONE_STATUS_VALIDATING],
         ).count()
         valid_limit = settings.LANDINGZONES_ZONE_VALIDATE_LIMIT or 1
         if valid_count >= valid_limit:
@@ -488,7 +483,7 @@ class ZoneSubmitMoveAPIView(ZoneMoveMixin, ZoneSubmitBaseAPIView):
             validate_only = False
             action_obj = 'move'
             action_msg = 'moving'
-        self._validate_zone_obj(zone, STATUS_ALLOW_UPDATE, action_obj)
+        self._validate_zone_obj(zone, lc.STATUS_ALLOW_UPDATE, action_obj)
 
         try:
             self.submit_validate_move(zone, validate_only)

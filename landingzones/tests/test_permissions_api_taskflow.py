@@ -16,11 +16,7 @@ from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import TaskflowAPIPermissionTestBase
 
-from landingzones.constants import (
-    ZONE_STATUS_ACTIVE,
-    ZONE_STATUS_VALIDATING,
-    ZONE_STATUS_PREPARING,
-)
+import landingzones.constants as lc
 from landingzones.tests.test_models import LandingZoneMixin
 from landingzones.tests.test_views import LandingzonesViewTestMixin
 from landingzones.tests.test_views_taskflow import (
@@ -355,7 +351,7 @@ class TestZoneSubmitDeleteAPIView(ZoneAPIPermissionTaskflowTestBase):
     """Tests for ZoneSubmitDeleteAPIView permissions with Taskflow"""
 
     def _cleanup(self):
-        self.zone.status = ZONE_STATUS_ACTIVE
+        self.zone.status = lc.ZONE_STATUS_ACTIVE
         self.zone.save()
 
     def setUp(self):
@@ -603,14 +599,15 @@ class TestZoneSubmitMoveAPIView(ZoneAPIPermissionTaskflowTestBase):
         retry_count = 0
         # Wait for async activity to finish
         while (
-            self.zone.status in [ZONE_STATUS_PREPARING, ZONE_STATUS_VALIDATING]
+            self.zone.status
+            in [lc.ZONE_STATUS_PREPARING, lc.ZONE_STATUS_VALIDATING]
             and retry_count < 5
         ):
             time.sleep(1)
-            self.zone.refrsh_from_db()
+            self.zone.refresh_from_db()
             retry_count += 1
-        if self.zone.status != ZONE_STATUS_ACTIVE:
-            self.zone.status = ZONE_STATUS_ACTIVE
+        if self.zone.status != lc.ZONE_STATUS_ACTIVE:
+            self.zone.status = lc.ZONE_STATUS_ACTIVE
             self.zone.save()
 
     def setUp(self):
@@ -656,18 +653,8 @@ class TestZoneSubmitMoveAPIView(ZoneAPIPermissionTaskflowTestBase):
             method='POST',
             cleanup_method=self._cleanup,
         )
-        self.assert_response_api(
-            self.url,
-            bad_users,
-            403,
-            method='POST',
-        )
-        self.assert_response_api(
-            self.url,
-            self.anonymous,
-            401,
-            method='POST',
-        )
+        self.assert_response_api(self.url, bad_users, 403, method='POST')
+        self.assert_response_api(self.url, self.anonymous, 401, method='POST')
         self.assert_response_api(
             self.url,
             good_users,
@@ -706,17 +693,9 @@ class TestZoneSubmitMoveAPIView(ZoneAPIPermissionTaskflowTestBase):
             cleanup_method=self._cleanup,
         )
         self.assert_response_api(
-            self.url,
-            self.auth_non_superusers,
-            403,
-            method='POST',
+            self.url, self.auth_non_superusers, 403, method='POST'
         )
-        self.assert_response_api(
-            self.url,
-            self.anonymous,
-            401,
-            method='POST',
-        )
+        self.assert_response_api(self.url, self.anonymous, 401, method='POST')
         self.assert_response_api(
             self.url,
             self.superuser,
@@ -745,17 +724,9 @@ class TestZoneSubmitMoveAPIView(ZoneAPIPermissionTaskflowTestBase):
             cleanup_method=self._cleanup,
         )
         self.assert_response_api(
-            self.url,
-            self.auth_non_superusers,
-            403,
-            method='POST',
+            self.url, self.auth_non_superusers, 403, method='POST'
         )
-        self.assert_response_api(
-            self.url,
-            self.anonymous,
-            401,
-            method='POST',
-        )
+        self.assert_response_api(self.url, self.anonymous, 401, method='POST')
 
     def test_post_read_only(self):
         """Test POST with site read-only mode"""
@@ -768,17 +739,9 @@ class TestZoneSubmitMoveAPIView(ZoneAPIPermissionTaskflowTestBase):
             cleanup_method=self._cleanup,
         )
         self.assert_response_api(
-            self.url,
-            self.auth_non_superusers,
-            403,
-            method='POST',
+            self.url, self.auth_non_superusers, 403, method='POST'
         )
-        self.assert_response_api(
-            self.url,
-            self.anonymous,
-            401,
-            method='POST',
-        )
+        self.assert_response_api(self.url, self.anonymous, 401, method='POST')
 
     @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
     def test_post_disable(self):
@@ -791,17 +754,9 @@ class TestZoneSubmitMoveAPIView(ZoneAPIPermissionTaskflowTestBase):
             cleanup_method=self._cleanup,
         )
         self.assert_response_api(
-            self.url,
-            self.auth_non_superusers,
-            403,
-            method='POST',
+            self.url, self.auth_non_superusers, 403, method='POST'
         )
-        self.assert_response_api(
-            self.url,
-            self.anonymous,
-            401,
-            method='POST',
-        )
+        self.assert_response_api(self.url, self.anonymous, 401, method='POST')
         self.assert_response_api(
             self.url,
             self.superuser,

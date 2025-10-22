@@ -99,10 +99,12 @@ Changed
     - Update app for ``public_access`` support (#2202)
     - Upgrade landingzones REST API version to v1.1 (#2174)
     - Move project sheet cache update to ``UpdateProjectSheetCacheTask`` (#2254)
+    - Upgrade Sample Sheets REST API version to v1.2 (#2256)
     - Refactor server side variables for JQuery (#2286)
     - Refactor rules (#2199)
     - Disable vertical centering for zone file list modal (#2298)
     - Update zone creation form collection creation UI (#2325)
+    - Skip ``TriggerZoneMoveTask`` execution if active jobs for task exist (#2323)
 - **Samplesheets**
     - Update views for project access blocking support (#2233)
     - Update app for ``public_access`` support (#2202)
@@ -131,7 +133,6 @@ Changed
     - Refactor task tests (#2226)
     - Update batch checksum tasks to support sample data verification (#2309)
     - Update "flow finished" log message to include flow name (#2314)
-    - Skip ``TriggerZoneMoveTask`` execution if active jobs for task exist (#2323)
 
 Fixed
 -----
@@ -142,8 +143,6 @@ Fixed
 - **Irodsadmin**
     - Redundant queries for category iRODS paths in ``irodsorphans`` (#2280)
     - Nested paths set by assay plugin reported as orphaned (#2207)
-- **Irodsbackend**
-    - ``_get_query_alias()`` invalid random ID generation (#2315)
 - **Landingzones**
     - Missing investigation setup in certain ``TestProjectZoneView`` tests (#2290)
     - Missing ``HTTPRefererMixin`` inheritance in views (#206)

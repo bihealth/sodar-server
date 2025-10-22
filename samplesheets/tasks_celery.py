@@ -82,9 +82,11 @@ def update_project_cache_task(
                 status_type=tl_status_type, status_desc=tl_status_desc
             )
         app_level = 'INFO'
-        app_msg = 'Sample sheet iRODS cache updated.'
+        app_msg = 'Sample sheet iRODS cache updated'
         if alert_msg:
             app_msg += f': {alert_msg}'
+        else:
+            app_msg += '.'
         logger.info(f'Cache update OK for project {project.get_log_title()}')
     except Exception as ex:
         if tl_event:

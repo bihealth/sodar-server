@@ -329,7 +329,7 @@ class TaskflowTestMixin(
             for ticket in ticket_query:
                 ticket_str = ticket[TicketQuery.Ticket.string]
                 irods_backend.delete_ticket(irods, ticket_str)
-                logger.debug(f'Deleted ticket: {ticket_str}')
+                logger.debug(f'Removed ticket: {ticket_str}')
 
             # Remove data objects and unneeded collections from trash
             trash_path = irods_backend.get_trash_path()

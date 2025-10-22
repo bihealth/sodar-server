@@ -23,14 +23,7 @@ from samplesheets.tests.test_sheet_config import SheetConfigMixin
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import ProjectLockMixin
 
-from landingzones.constants import (
-    ZONE_STATUS_CREATING,
-    ZONE_STATUS_NOT_CREATED,
-    ZONE_STATUS_ACTIVE,
-    ZONE_STATUS_VALIDATING,
-    ZONE_STATUS_MOVED,
-    ZONE_STATUS_DELETED,
-)
+import landingzones.constants as lc
 from landingzones.tests.test_models import LandingZoneMixin
 from landingzones.tests.test_views import LandingzonesViewTestMixin
 from landingzones.views_ajax import STATUS_TRUNCATE_LEN
@@ -608,7 +601,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
             self.project,
             self.user_owner,
             self.assay,
-            status=ZONE_STATUS_ACTIVE,
+            status=lc.ZONE_STATUS_ACTIVE,
         )
         self.login_and_redirect(self.user_owner, self.url)
         create_badge = self.selenium.find_element(
@@ -637,7 +630,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
             self.project,
             self.user_owner,
             self.assay,
-            status=ZONE_STATUS_MOVED,
+            status=lc.ZONE_STATUS_MOVED,
         )
         self.login_and_redirect(self.user_owner, self.url)
         create_badge = self.selenium.find_element(
@@ -666,7 +659,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
             self.project,
             self.user_owner,
             self.assay,
-            status=ZONE_STATUS_ACTIVE,
+            status=lc.ZONE_STATUS_ACTIVE,
         )
 
         self.login_and_redirect(self.user_owner, self.url)
@@ -687,11 +680,11 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
         self.assertNotIn('d-none', elem.get_attribute('class'))
         self.assertIn('d-block', elem.get_attribute('class'))
 
-        zone.set_status(ZONE_STATUS_MOVED)
+        zone.set_status(lc.ZONE_STATUS_MOVED)
         zone_status = self.selenium.find_element(
             By.CLASS_NAME, 'sodar-lz-zone-status'
         )
-        self.wait_for_status(zone_status, ZONE_STATUS_MOVED)
+        self.wait_for_status(zone_status, lc.ZONE_STATUS_MOVED)
         # HACK: Wait for badge to be updated
         WebDriverWait(self.selenium, self.wait_time).until(
             ec.presence_of_element_located(
@@ -721,14 +714,14 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
             self.project,
             self.user_owner,
             self.assay,
-            status=ZONE_STATUS_VALIDATING,
+            status=lc.ZONE_STATUS_VALIDATING,
         )
         zone2 = self.make_landing_zone(
             'owner_zone2',
             self.project,
             self.user_owner,
             self.assay,
-            status=ZONE_STATUS_ACTIVE,
+            status=lc.ZONE_STATUS_ACTIVE,
         )
         self.login_and_redirect(self.user_owner, self.url)
         valid_badge = self.selenium.find_element(
@@ -760,14 +753,14 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
             self.project,
             self.user_owner,
             self.assay,
-            status=ZONE_STATUS_MOVED,
+            status=lc.ZONE_STATUS_MOVED,
         )
         zone2 = self.make_landing_zone(
             'owner_zone2',
             self.project,
             self.user_owner,
             self.assay,
-            status=ZONE_STATUS_ACTIVE,
+            status=lc.ZONE_STATUS_ACTIVE,
         )
         self.login_and_redirect(self.user_owner, self.url)
         valid_badge = self.selenium.find_element(
@@ -799,14 +792,14 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
             self.project,
             self.user_owner,
             self.assay,
-            status=ZONE_STATUS_VALIDATING,
+            status=lc.ZONE_STATUS_VALIDATING,
         )
         zone2 = self.make_landing_zone(
             'owner_zone2',
             self.project,
             self.user_owner,
             self.assay,
-            status=ZONE_STATUS_ACTIVE,
+            status=lc.ZONE_STATUS_ACTIVE,
         )
 
         self.login_and_redirect(self.user_owner, self.url)
@@ -830,11 +823,11 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
         link = zone_tr.find_element(By.CLASS_NAME, 'sodar-lz-zone-btn-move')
         self.assertIn('disabled', link.get_attribute('class'))
 
-        zone.set_status(ZONE_STATUS_MOVED)
+        zone.set_status(lc.ZONE_STATUS_MOVED)
         zone_status = self.selenium.find_element(
             By.ID, f'sodar-lz-zone-status-{zone.sodar_uuid}'
         )
-        self.wait_for_status(zone_status, ZONE_STATUS_MOVED)
+        self.wait_for_status(zone_status, lc.ZONE_STATUS_MOVED)
 
         badge_class = valid_badge.get_attribute('class')
         self.assertIn('badge-success', badge_class)
@@ -890,7 +883,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
             'contrib_zone', self.project, self.user_contributor, self.assay
         )
         zone.set_status(
-            ZONE_STATUS_ACTIVE,
+            lc.ZONE_STATUS_ACTIVE,
             ''.join(
                 random.choice(string.ascii_letters)
                 for _ in range(STATUS_TRUNCATE_LEN * 2)
@@ -917,7 +910,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
             random.choice(string.ascii_letters)
             for _ in range(STATUS_TRUNCATE_LEN * 2)
         )
-        zone.set_status(ZONE_STATUS_ACTIVE, status_info)
+        zone.set_status(lc.ZONE_STATUS_ACTIVE, status_info)
         self.login_and_redirect(self.user_contributor, self.url)
         WebDriverWait(self.selenium, self.wait_time).until(
             ec.presence_of_element_located(
@@ -956,14 +949,14 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
         zone_status = self.selenium.find_element(
             By.CLASS_NAME, 'sodar-lz-zone-status'
         )
-        self.assertEqual(zone_status.text, ZONE_STATUS_ACTIVE)
+        self.assertEqual(zone_status.text, lc.ZONE_STATUS_ACTIVE)
         elem = self.selenium.find_element(By.CLASS_NAME, 'sodar-lz-zone-tr')
         mod_old_dom = elem.get_attribute('data-zone-modified')
-        contrib_zone.set_status(ZONE_STATUS_VALIDATING)
+        contrib_zone.set_status(lc.ZONE_STATUS_VALIDATING)
         mod_new_db = contrib_zone.date_modified.timestamp()
         self.assertNotEqual(mod_old_db, mod_new_db)
-        self.wait_for_status(zone_status, ZONE_STATUS_VALIDATING)
-        self.assertEqual(zone_status.text, ZONE_STATUS_VALIDATING)
+        self.wait_for_status(zone_status, lc.ZONE_STATUS_VALIDATING)
+        self.assertEqual(zone_status.text, lc.ZONE_STATUS_VALIDATING)
         mod_new_dom = elem.get_attribute('data-zone-modified')
         self.assertNotEqual(mod_old_dom, mod_new_dom)
         self.assertEqual(float(mod_new_dom), mod_new_db)
@@ -982,14 +975,14 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
         zone_status = self.selenium.find_element(
             By.CLASS_NAME, 'sodar-lz-zone-status'
         )
-        self.assertEqual(zone_status.text, ZONE_STATUS_ACTIVE)
+        self.assertEqual(zone_status.text, lc.ZONE_STATUS_ACTIVE)
         with self.assertRaises(NoSuchElementException):
             self.selenium.find_element(
                 By.CLASS_NAME, 'sodar-lz-zone-sample-link'
             )
-        contrib_zone.set_status(ZONE_STATUS_MOVED)
-        self.wait_for_status(zone_status, ZONE_STATUS_MOVED)
-        self.assertEqual(zone_status.text, ZONE_STATUS_MOVED)
+        contrib_zone.set_status(lc.ZONE_STATUS_MOVED)
+        self.wait_for_status(zone_status, lc.ZONE_STATUS_MOVED)
+        self.assertEqual(zone_status.text, lc.ZONE_STATUS_MOVED)
         WebDriverWait(self.selenium, self.wait_time).until(
             ec.presence_of_element_located(
                 (By.CLASS_NAME, 'sodar-lz-zone-sample-link')
@@ -1009,7 +1002,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
             self.project,
             self.user_contributor,
             self.assay,
-            status=ZONE_STATUS_ACTIVE,
+            status=lc.ZONE_STATUS_ACTIVE,
         )
         self.login_and_redirect(self.user_contributor, self.url)
 
@@ -1019,15 +1012,15 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
         zone_status_info = self.selenium.find_element(
             By.CLASS_NAME, 'sodar-lz-zone-status-info'
         )
-        self.wait_for_status(zone_status, ZONE_STATUS_ACTIVE)
+        self.wait_for_status(zone_status, lc.ZONE_STATUS_ACTIVE)
         self.assertTrue(
             zone_status_info.find_element(
                 By.CLASS_NAME, 'sodar-irods-stats'
             ).is_displayed()
         )
         # Update status to deleted, stats badge should no longer be rendered
-        zone.set_status(ZONE_STATUS_DELETED)
-        self.wait_for_status(zone_status, ZONE_STATUS_DELETED)
+        zone.set_status(lc.ZONE_STATUS_DELETED)
+        self.wait_for_status(zone_status, lc.ZONE_STATUS_DELETED)
         self.assertFalse(
             zone_status_info.find_element(
                 By.CLASS_NAME, 'sodar-irods-stats'
@@ -1042,7 +1035,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
             self.project,
             self.user_contributor,
             self.assay,
-            status=ZONE_STATUS_ACTIVE,
+            status=lc.ZONE_STATUS_ACTIVE,
         )
         self.login_and_redirect(self.superuser, self.url)
 
@@ -1052,14 +1045,14 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
         zone_status_info = self.selenium.find_element(
             By.CLASS_NAME, 'sodar-lz-zone-status-info'
         )
-        self.wait_for_status(zone_status, ZONE_STATUS_ACTIVE)
+        self.wait_for_status(zone_status, lc.ZONE_STATUS_ACTIVE)
         self.assertTrue(
             zone_status_info.find_element(
                 By.CLASS_NAME, 'sodar-irods-stats'
             ).is_displayed()
         )
-        zone.set_status(ZONE_STATUS_DELETED)
-        self.wait_for_status(zone_status, ZONE_STATUS_DELETED)
+        zone.set_status(lc.ZONE_STATUS_DELETED)
+        self.wait_for_status(zone_status, lc.ZONE_STATUS_DELETED)
         self.assertFalse(
             zone_status_info.find_element(
                 By.CLASS_NAME, 'sodar-irods-stats'
@@ -1133,7 +1126,7 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
         zone = self.make_landing_zone(
             'contrib_zone', self.project, self.user_contributor, self.assay
         )
-        self.assertEqual(zone.status, ZONE_STATUS_CREATING)
+        self.assertEqual(zone.status, lc.ZONE_STATUS_CREATING)
         self.login_and_redirect(self.superuser, self.url)
         self.wait_for_status_update()
         zone_elem = self.selenium.find_elements(
@@ -1236,7 +1229,7 @@ class TestZoneUpdateView(LandingZoneUITestBase):
             self.project,
             self.user_owner,
             self.assay,
-            status=ZONE_STATUS_ACTIVE,
+            status=lc.ZONE_STATUS_ACTIVE,
         )
         self.url = reverse(
             'landingzones:update', kwargs={'landingzone': self.zone.sodar_uuid}
@@ -1347,10 +1340,10 @@ class TestProjectDetailView(LandingZoneUITestBase):
         zone_status = self.selenium.find_element(
             By.CLASS_NAME, 'sodar-lz-zone-status'
         )
-        self.assertEqual(zone_status.text, ZONE_STATUS_ACTIVE)
-        contrib_zone.set_status(ZONE_STATUS_VALIDATING)
-        self.wait_for_status(zone_status, ZONE_STATUS_VALIDATING)
-        self.assertEqual(zone_status.text, ZONE_STATUS_VALIDATING)
+        self.assertEqual(zone_status.text, lc.ZONE_STATUS_ACTIVE)
+        contrib_zone.set_status(lc.ZONE_STATUS_VALIDATING)
+        self.wait_for_status(zone_status, lc.ZONE_STATUS_VALIDATING)
+        self.assertEqual(zone_status.text, lc.ZONE_STATUS_VALIDATING)
 
     def test_render_restrict_contributor_same(self):
         """Test ProjectDetailView with zone_access_restrict as same contributor"""
@@ -1449,7 +1442,7 @@ class TestHomeView(LandingZoneUITestBase):
             self.project,
             self.user_contributor,
             self.assay,
-            status=ZONE_STATUS_ACTIVE,
+            status=lc.ZONE_STATUS_ACTIVE,
         )
         self.login_and_redirect(self.user_contributor, self.url)
         self._wait_for_elem('active')
@@ -1465,7 +1458,7 @@ class TestHomeView(LandingZoneUITestBase):
             self.project,
             self.user_contributor,
             self.assay,
-            status=ZONE_STATUS_NOT_CREATED,
+            status=lc.ZONE_STATUS_NOT_CREATED,
         )
         self.login_and_redirect(self.user_contributor, self.url)
         self._wait_for_elem('create')
@@ -1481,7 +1474,7 @@ class TestHomeView(LandingZoneUITestBase):
             self.project,
             self.user_owner,
             self.assay,
-            status=ZONE_STATUS_ACTIVE,
+            status=lc.ZONE_STATUS_ACTIVE,
         )
         self.login_and_redirect(self.user_contributor, self.url)
         self._wait_for_elem('create')

@@ -35,17 +35,6 @@ from taskflowbackend.tests.base import TaskflowAPIViewTestBase
 from timeline.models import TimelineEvent, TL_STATUS_OK
 
 import landingzones.constants as lc
-
-# TODO: Refactor these away
-from landingzones.constants import (
-    DEFAULT_STATUS_INFO,
-    ZONE_STATUS_ACTIVE,
-    ZONE_STATUS_CREATING,
-    ZONE_STATUS_DELETED,
-    ZONE_STATUS_MOVED,
-    ZONE_STATUS_FAILED,
-    ZONE_STATUS_VALIDATING,
-)
 from landingzones.models import LandingZone
 from landingzones.serializers import ZONE_NO_INV_MSG
 from landingzones.tests.test_models import LandingZoneMixin
@@ -151,7 +140,7 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
         self.assertEqual(LandingZone.objects.count(), 1)
         # Assert status after taskflow has finished
         zone = LandingZone.objects.first()
-        self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
+        self.assert_zone_status(zone, lc.ZONE_STATUS_ACTIVE)
 
         # NOTE: date_modified will be changend async, can't test
         response_data = json.loads(response.content)
@@ -160,8 +149,8 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
             'project': str(self.project.sodar_uuid),
             'user': str(self.user.sodar_uuid),
             'assay': str(self.assay.sodar_uuid),
-            'status': ZONE_STATUS_CREATING,
-            'status_info': DEFAULT_STATUS_INFO[ZONE_STATUS_CREATING],
+            'status': lc.ZONE_STATUS_CREATING,
+            'status_info': lc.DEFAULT_STATUS_INFO[lc.ZONE_STATUS_CREATING],
             'status_locked': False,
             'date_modified': response_data['date_modified'],
             'description': zone.description,
@@ -206,7 +195,7 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(LandingZone.objects.count(), 1)
         zone = LandingZone.objects.first()
-        self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
+        self.assert_zone_status(zone, lc.ZONE_STATUS_ACTIVE)
 
         self.assert_irods_coll(zone)
         for c in ZONE_BASE_COLLS:
@@ -237,7 +226,7 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
         self.assertEqual(LandingZone.objects.count(), 1)
         zone = LandingZone.objects.first()
         self.assertEqual(zone.coll_creation, lc.ZONE_COLLS_CREATE)
-        self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
+        self.assert_zone_status(zone, lc.ZONE_STATUS_ACTIVE)
         self.assert_irods_coll(zone)
         for c in ZONE_BASE_COLLS:
             self.assert_irods_coll(zone, c, True)
@@ -282,7 +271,7 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
         self.assertEqual(LandingZone.objects.count(), 1)
         zone = LandingZone.objects.first()
         self.assertEqual(zone.coll_creation, lc.ZONE_COLLS_CREATE)
-        self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
+        self.assert_zone_status(zone, lc.ZONE_STATUS_ACTIVE)
         self.assert_irods_coll(zone)
         for c in ZONE_ALL_COLLS:
             self.assert_irods_coll(zone, c, True)
@@ -326,7 +315,7 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
         self.assertEqual(LandingZone.objects.count(), 1)
         zone = LandingZone.objects.first()
         self.assertEqual(zone.coll_creation, lc.ZONE_COLLS_RESTRICT)
-        self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
+        self.assert_zone_status(zone, lc.ZONE_STATUS_ACTIVE)
         self.assert_irods_coll(zone)
         for c in ZONE_ALL_COLLS:
             self.assert_irods_coll(zone, c, True)
@@ -391,7 +380,7 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
             project=self.project,
             user=self.user,
             assay=self.assay,
-            status=ZONE_STATUS_ACTIVE,
+            status=lc.ZONE_STATUS_ACTIVE,
         )
         self.assertEqual(LandingZone.objects.count(), 1)
         response = self.request_knox(
@@ -411,7 +400,7 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
             project=self.project,
             user=self.user,
             assay=self.assay,
-            status=ZONE_STATUS_MOVED,
+            status=lc.ZONE_STATUS_MOVED,
         )
         self.assertEqual(LandingZone.objects.count(), 1)
         response = self.request_knox(
@@ -467,7 +456,7 @@ class TestZoneSubmitDeleteAPIView(ZoneAPIViewTaskflowTestBase):
         )
         self.assertEqual(LandingZone.objects.count(), 1)
         zone = LandingZone.objects.first()
-        self.assert_zone_status(zone, ZONE_STATUS_DELETED)
+        self.assert_zone_status(zone, lc.ZONE_STATUS_DELETED)
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_delete').count(), 1
         )
@@ -480,12 +469,14 @@ class TestZoneSubmitDeleteAPIView(ZoneAPIViewTaskflowTestBase):
     def test_post_invalid_status(self):
         """Test POST with invalid zone status (should fail)"""
         self.make_zone_taskflow(self.landing_zone)
-        self.landing_zone.status = ZONE_STATUS_MOVED
+        self.landing_zone.status = lc.ZONE_STATUS_MOVED
         self.landing_zone.save()
         response = self.request_knox(self.url, method='POST')
         self.assertEqual(response.status_code, 400)
         self.assertEqual(LandingZone.objects.count(), 1)
-        self.assertEqual(LandingZone.objects.first().status, ZONE_STATUS_MOVED)
+        self.assertEqual(
+            LandingZone.objects.first().status, lc.ZONE_STATUS_MOVED
+        )
 
     def test_post_invalid_uuid(self):
         """Test POST with invalid zone UUID (should fail)"""
@@ -512,7 +503,7 @@ class TestZoneSubmitDeleteAPIView(ZoneAPIViewTaskflowTestBase):
         )
         self.assertEqual(LandingZone.objects.count(), 1)
         zone = LandingZone.objects.first()
-        self.assert_zone_status(zone, ZONE_STATUS_DELETED)
+        self.assert_zone_status(zone, lc.ZONE_STATUS_DELETED)
 
     def test_post_no_coll(self):
         """Test POST with no zone root collection in iRODS"""
@@ -532,7 +523,7 @@ class TestZoneSubmitDeleteAPIView(ZoneAPIViewTaskflowTestBase):
         )
         self.assertEqual(LandingZone.objects.count(), 1)
         zone = LandingZone.objects.first()
-        self.assert_zone_status(zone, ZONE_STATUS_DELETED)
+        self.assert_zone_status(zone, lc.ZONE_STATUS_DELETED)
         tl_events = TimelineEvent.objects.filter(event_name='zone_delete')
         self.assertEqual(tl_events.count(), 1)
         self.assertEqual(
@@ -575,7 +566,7 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
         """Test POST for moving"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         self.make_checksum_object(irods_obj)
-        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(self.zone.status, lc.ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         response = self.request_knox(self.url_move, method='POST')
@@ -583,7 +574,7 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['sodar_uuid'], str(self.zone.sodar_uuid))
         self.assertEqual(LandingZone.objects.count(), 1)
-        self.assert_zone_status(self.zone, ZONE_STATUS_MOVED)
+        self.assert_zone_status(self.zone, lc.ZONE_STATUS_MOVED)
         self.assertEqual(len(self.zone_coll.data_objects), 0)
         self.assertEqual(len(self.assay_coll.data_objects), 2)
         obj_path = iRODSPath(self.assay_path, TEST_OBJ_NAME)
@@ -595,13 +586,13 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
 
     def test_post_move_invalid_status(self):
         """Test POST for moving with invalid zone status (should fail)"""
-        self.zone.status = ZONE_STATUS_DELETED
+        self.zone.status = lc.ZONE_STATUS_DELETED
         self.zone.save()
         response = self.request_knox(self.url_move, method='POST')
         self.assertEqual(response.status_code, 400)
         self.assertEqual(LandingZone.objects.count(), 1)
         self.assertEqual(
-            LandingZone.objects.first().status, ZONE_STATUS_DELETED
+            LandingZone.objects.first().status, lc.ZONE_STATUS_DELETED
         )
 
     def test_post_move_locked(self):
@@ -611,7 +602,7 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
         self.assertEqual(response.status_code, 503)
         self.assertEqual(LandingZone.objects.count(), 1)
         zone = LandingZone.objects.first()
-        self.assert_zone_status(zone, ZONE_STATUS_FAILED)
+        self.assert_zone_status(zone, lc.ZONE_STATUS_FAILED)
 
     @override_settings(REDIS_URL=INVALID_REDIS_URL)
     def test_post_move_lock_failure(self):
@@ -620,7 +611,7 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
         self.assertEqual(response.status_code, 500)
         self.assertEqual(LandingZone.objects.count(), 1)
         zone = LandingZone.objects.first()
-        self.assert_zone_status(zone, ZONE_STATUS_FAILED)
+        self.assert_zone_status(zone, lc.ZONE_STATUS_FAILED)
 
     def test_post_move_restricted(self):
         """Test POST for moving with restricted collections"""
@@ -630,7 +621,7 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
             user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
-            status=ZONE_STATUS_CREATING,
+            status=lc.ZONE_STATUS_CREATING,
         )
         self.make_zone_taskflow(
             zone=zone,
@@ -643,7 +634,7 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
         )
         irods_obj = self.make_irods_object(zone_results_coll, TEST_OBJ_NAME)
         self.make_checksum_object(irods_obj)
-        self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(zone.status, lc.ZONE_STATUS_ACTIVE)
         self.assertEqual(len(zone_results_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
 
@@ -655,7 +646,7 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['sodar_uuid'], str(zone.sodar_uuid))
-        self.assert_zone_status(zone, ZONE_STATUS_MOVED)
+        self.assert_zone_status(zone, lc.ZONE_STATUS_MOVED)
         self.assertEqual(len(zone_results_coll.data_objects), 0)
         assay_results_path = iRODSPath(self.sample_path, RESULTS_COLL)
         assay_results_coll = self.irods.collections.get(assay_results_path)
@@ -680,16 +671,16 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
             project=self.project,
             user=self.user,
             assay=self.assay,
-            status=ZONE_STATUS_VALIDATING,
+            status=lc.ZONE_STATUS_VALIDATING,
         )
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         self.make_checksum_object(irods_obj)
-        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(self.zone.status, lc.ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         response = self.request_knox(self.url_move, method='POST')
         self.assertEqual(response.status_code, 503)
-        self.assert_zone_status(self.zone, ZONE_STATUS_ACTIVE)
+        self.assert_zone_status(self.zone, lc.ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
 
@@ -704,16 +695,16 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
             project=new_project,
             user=self.user,
             assay=self.assay,
-            status=ZONE_STATUS_VALIDATING,
+            status=lc.ZONE_STATUS_VALIDATING,
         )
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         self.make_checksum_object(irods_obj)
-        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(self.zone.status, lc.ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         response = self.request_knox(self.url_move, method='POST')
         self.assertEqual(response.status_code, 200)
-        self.assert_zone_status(self.zone, ZONE_STATUS_MOVED)
+        self.assert_zone_status(self.zone, lc.ZONE_STATUS_MOVED)
         self.assertEqual(len(self.zone_coll.data_objects), 0)
         self.assertEqual(len(self.assay_coll.data_objects), 2)
 
@@ -725,16 +716,16 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
             project=self.project,
             user=self.user,
             assay=self.assay,
-            status=ZONE_STATUS_MOVED,
+            status=lc.ZONE_STATUS_MOVED,
         )
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         self.make_checksum_object(irods_obj)
-        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(self.zone.status, lc.ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         response = self.request_knox(self.url_move, method='POST')
         self.assertEqual(response.status_code, 200)
-        self.assert_zone_status(self.zone, ZONE_STATUS_MOVED)
+        self.assert_zone_status(self.zone, lc.ZONE_STATUS_MOVED)
         self.assertEqual(len(self.zone_coll.data_objects), 0)
         self.assertEqual(len(self.assay_coll.data_objects), 2)
 
@@ -743,13 +734,13 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
         """Test POST for moving with verification enabled"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         self.make_checksum_object(irods_obj)
-        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(self.zone.status, lc.ZONE_STATUS_ACTIVE)
         self.assertIsNone(
             TimelineEvent.objects.filter(event_name='zone_verify').first()
         )
         response = self.request_knox(self.url_move, method='POST')
         self.assertEqual(response.status_code, 200)
-        self.assert_zone_status(self.zone, ZONE_STATUS_MOVED)
+        self.assert_zone_status(self.zone, lc.ZONE_STATUS_MOVED)
         # Verify second async flow has run by checking timeline event
         tl_event = None
         for i in range(0, 10):
@@ -766,14 +757,14 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
     def test_post_validate(self):
         """Test POST for validation"""
         # Update to check status change
-        self.zone.status = ZONE_STATUS_FAILED
+        self.zone.status = lc.ZONE_STATUS_FAILED
         self.zone.save()
         response = self.request_knox(self.url_validate, method='POST')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['sodar_uuid'], str(self.zone.sodar_uuid))
         self.assertEqual(LandingZone.objects.count(), 1)
         zone = LandingZone.objects.first()
-        self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
+        self.assert_zone_status(zone, lc.ZONE_STATUS_ACTIVE)
         self.assertEqual(
             LandingZone.objects.first().status_info,
             'Successfully validated 0 files',
@@ -789,20 +780,20 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
     def test_post_validate_locked(self):
         """Test POST for validation with locked project"""
         self.lock_project(self.project)
-        self.zone.status = ZONE_STATUS_FAILED
+        self.zone.status = lc.ZONE_STATUS_FAILED
         self.zone.save()
         response = self.request_knox(self.url_validate, method='POST')
         self.assertEqual(response.status_code, 200)
 
     def test_post_validate_invalid_status(self):
         """Test POST for validation with invalid zone status (should fail)"""
-        self.zone.status = ZONE_STATUS_VALIDATING
+        self.zone.status = lc.ZONE_STATUS_VALIDATING
         self.zone.save()
         response = self.request_knox(self.url_validate, method='POST')
         self.assertEqual(response.status_code, 400)
         self.assertEqual(LandingZone.objects.count(), 1)
         self.assertEqual(
-            LandingZone.objects.first().status, ZONE_STATUS_VALIDATING
+            LandingZone.objects.first().status, lc.ZONE_STATUS_VALIDATING
         )
 
     @override_settings(LANDINGZONES_ZONE_VALIDATE_LIMIT=1)
@@ -813,12 +804,12 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
             project=self.project,
             user=self.user,
             assay=self.assay,
-            status=ZONE_STATUS_VALIDATING,
+            status=lc.ZONE_STATUS_VALIDATING,
         )
         response = self.request_knox(self.url_validate, method='POST')
         self.assertEqual(response.status_code, 503)
         self.assertEqual(response.data['detail'], ZONE_VALIDATE_LIMIT_MSG)
-        self.assert_zone_status(self.zone, ZONE_STATUS_ACTIVE)
+        self.assert_zone_status(self.zone, lc.ZONE_STATUS_ACTIVE)
 
 
 class TestZoneIrodsFileListAPIView(ZoneAPIViewTaskflowTestBase):

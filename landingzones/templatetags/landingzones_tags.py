@@ -9,11 +9,7 @@ from django.urls import reverse
 # Projectroles dependency
 from projectroles.models import Project, SODARUser
 
-from landingzones.constants import (
-    STATUS_STYLES,
-    STATUS_FINISHED,
-    STATUS_ALLOW_UPDATE,
-)
+import landingzones.constants as lc
 from landingzones.models import LandingZone
 from landingzones.plugins import (
     LandingZoneConfigPluginPoint,
@@ -27,8 +23,8 @@ register = template.Library()
 @register.simple_tag
 def get_status_style(zone: LandingZone) -> str:
     return (
-        STATUS_STYLES[zone.status]
-        if zone.status in STATUS_STYLES
+        lc.STATUS_STYLES[zone.status]
+        if zone.status in lc.STATUS_STYLES
         else 'bg_faded'
     )
 
@@ -37,7 +33,7 @@ def get_status_style(zone: LandingZone) -> str:
 def get_zone_row_class(zone: LandingZone) -> str:
     return (
         'sodar-lz-zone-tr-moved text-muted'
-        if zone.status in STATUS_FINISHED
+        if zone.status in lc.STATUS_FINISHED
         else 'sodar-lz-zone-tr-existing'
     )
 
@@ -49,7 +45,7 @@ def get_details_zones(
     """Return active user zones for the project details page"""
     return (
         LandingZone.objects.filter(project=project, user=user)
-        .exclude(status__in=STATUS_FINISHED)
+        .exclude(status__in=lc.STATUS_FINISHED)
         .order_by('-pk')
     )
 
@@ -64,15 +60,15 @@ def get_zone_desc_html(zone: LandingZone) -> str:
 @register.simple_tag
 def is_zone_enabled(zone: LandingZone) -> bool:
     """Return True/False if the zone can be enabled in the UI"""
-    return True if zone.status not in STATUS_FINISHED else False
+    return True if zone.status not in lc.STATUS_FINISHED else False
 
 
 @register.simple_tag
 def disable_zone_ui(zone: LandingZone, user: SODARUser) -> bool:
     """Return True/False if the zone controls can be enabled in the UI"""
-    if user.is_superuser and zone.status not in STATUS_FINISHED:
+    if user.is_superuser and zone.status not in lc.STATUS_FINISHED:
         return False
-    elif not user.is_superuser and zone.status in STATUS_ALLOW_UPDATE:
+    elif not user.is_superuser and zone.status in lc.STATUS_ALLOW_UPDATE:
         return False
     return True
 

@@ -23,11 +23,7 @@ from projectroles.plugins import (
 # Samplesheets dependency
 from samplesheets.models import Investigation, Assay
 
-from landingzones.constants import (
-    STATUS_ALLOW_UPDATE,
-    STATUS_BUSY,
-    STATUS_FINISHED,
-)
+import landingzones.constants as lc
 from landingzones.models import LandingZone
 from landingzones.urls import urlpatterns
 from landingzones.views import ZoneModifyMixin
@@ -231,7 +227,10 @@ class ProjectAppPlugin(
         obj = self.get_object(eval(model_str), uuid)
         if not obj:
             return None
-        if obj.__class__ == LandingZone and obj.status not in STATUS_FINISHED:
+        if (
+            obj.__class__ == LandingZone
+            and obj.status not in lc.STATUS_FINISHED
+        ):
             return PluginObjectLink(
                 url=reverse(
                     'landingzones:list',
@@ -261,7 +260,7 @@ class ProjectAppPlugin(
             'zones_active': {
                 'label': 'Active Zones',
                 'value': LandingZone.objects.filter(
-                    status__in=STATUS_ALLOW_UPDATE
+                    status__in=lc.STATUS_ALLOW_UPDATE
                 ).count(),
                 'description': 'Landing zones available for use (active or '
                 'failed)',
@@ -269,7 +268,7 @@ class ProjectAppPlugin(
             'zones_finished': {
                 'label': 'Finished Zones',
                 'value': LandingZone.objects.filter(
-                    status__in=STATUS_FINISHED
+                    status__in=lc.STATUS_FINISHED
                 ).count(),
                 'description': 'Landing zones finished successfully, deleted '
                 'or not created',
@@ -277,7 +276,7 @@ class ProjectAppPlugin(
             'zones_busy': {
                 'label': 'Busy Zones',
                 'value': LandingZone.objects.filter(
-                    status__in=STATUS_BUSY
+                    status__in=lc.STATUS_BUSY
                 ).count(),
                 'description': 'Landing zones with an ongoing transaction',
             },
@@ -311,7 +310,7 @@ class ProjectAppPlugin(
             kw['user'] = user
         active_count = (
             LandingZone.objects.filter(**kw)
-            .exclude(status__in=STATUS_FINISHED)
+            .exclude(status__in=lc.STATUS_FINISHED)
             .count()
         )
 
@@ -346,7 +345,7 @@ class ProjectAppPlugin(
         :param project: Current project object (Project)
         """
         zones = LandingZone.objects.filter(
-            project=project, status__in=STATUS_ALLOW_UPDATE
+            project=project, status__in=lc.STATUS_ALLOW_UPDATE
         )
         if zones.count() == 0:
             logger.debug('Skipping: No active zones found')

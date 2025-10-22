@@ -62,10 +62,7 @@ class TestZoneStatusRetrieveAjaxView(LandingzonesPermissionTestBase):
         for role in self.guest_roles:
             self.project.set_public_access(role)
             self.assert_response(
-                self.url,
-                self.no_role_users,
-                403,
-                method='POST',
+                self.url, self.no_role_users, 403, method='POST'
             )
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
@@ -223,7 +220,7 @@ class TestZoneChecksumStatusRetrieveAjaxView(LandingzonesPermissionTestBase):
         ]
 
     def test_post(self):
-        """Test ZoneStatusInfoRetrieveAjaxView POST"""
+        """Test ZoneChecksumStatusRetrieveAjaxView POST"""
         self.assert_response(self.url, self.good_users, 200, method='POST')
         self.assert_response(self.url, self.bad_users, 403, method='POST')
         for role in self.guest_roles:

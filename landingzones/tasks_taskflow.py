@@ -17,15 +17,7 @@ from projectroles.plugins import PluginAPI
 # Taskflowbackend dependency
 from taskflowbackend.tasks.sodar_tasks import SODARBaseTask
 
-from landingzones.constants import (
-    STATUS_BUSY,
-    STATUS_FINISHED,
-    ZONE_STATUS_FAILED,
-    ZONE_STATUS_NOT_CREATED,
-    ZONE_STATUS_MOVED,
-    ZONE_STATUS_ACTIVE,
-    ZONE_STATUS_DELETED,
-)
+import landingzones.constants as lc
 from landingzones.models import LandingZone
 
 
@@ -120,7 +112,7 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
         """
         if reset:
             alert_level = app_alerts.ALERT_LEVEL_INFO
-        elif zone.status in [ZONE_STATUS_FAILED, ZONE_STATUS_NOT_CREATED]:
+        elif zone.status in [lc.ZONE_STATUS_FAILED, lc.ZONE_STATUS_NOT_CREATED]:
             alert_level = app_alerts.ALERT_LEVEL_DANGER
         else:
             alert_level = app_alerts.ALERT_LEVEL_SUCCESS
@@ -131,7 +123,7 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
 
         if reset:
             alert_msg = 'Landing zone reset by administrator'
-        elif zone.status == ZONE_STATUS_MOVED:
+        elif zone.status == lc.ZONE_STATUS_MOVED:
             alert_msg = 'Successfully moved {} file{} from landing zone'.format(
                 file_count, 's' if file_count != 1 else ''
             )
@@ -139,20 +131,20 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
                 'samplesheets:project_sheets',
                 kwargs={'project': zone.project.sodar_uuid},
             )
-        elif validate_only and zone.status == ZONE_STATUS_ACTIVE:
+        elif validate_only and zone.status == lc.ZONE_STATUS_ACTIVE:
             alert_msg = 'Successfully validated files in landing zone'
-        elif validate_only and zone.status == ZONE_STATUS_FAILED:
+        elif validate_only and zone.status == lc.ZONE_STATUS_FAILED:
             alert_msg = 'Validation failed for landing zone'
         elif (
             flow_name == 'landing_zone_move'
-            and zone.status == ZONE_STATUS_FAILED
+            and zone.status == lc.ZONE_STATUS_FAILED
         ):
             alert_msg = 'Failed to move files from landing zone'
-        elif zone.status == ZONE_STATUS_DELETED:
+        elif zone.status == lc.ZONE_STATUS_DELETED:
             alert_msg = 'Deleted landing zone'
         elif (
             flow_name == 'landing_zone_delete'
-            and zone.status == ZONE_STATUS_FAILED
+            and zone.status == lc.ZONE_STATUS_FAILED
         ):
             alert_msg = 'Failed to delete landing zone'
         else:
@@ -229,7 +221,7 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
             f'Landing zone {zone.status.lower()}: {zone.project.title} / '
             f'{zone.title}'
         )
-        if zone.status == ZONE_STATUS_MOVED:
+        if zone.status == lc.ZONE_STATUS_MOVED:
             message_body = EMAIL_MSG_MOVED
             email_url = server_host + zone.assay.get_url()
         else:  # FAILED
@@ -341,9 +333,9 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
         # Create alert and send email for zone owner for finished actions
         # NOTE: Create is excluded as this should be virtually instantaneous
         if (
-            zone.status not in STATUS_BUSY
+            zone.status not in lc.STATUS_BUSY
             and flow_name != 'landing_zone_create'
-            and (file_count > 0 or zone.status != ZONE_STATUS_MOVED)
+            and (file_count > 0 or zone.status != lc.ZONE_STATUS_MOVED)
         ):
             if (
                 app_alerts
@@ -387,7 +379,7 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
         )
         if (
             member_notify
-            and zone.status == ZONE_STATUS_MOVED
+            and zone.status == lc.ZONE_STATUS_MOVED
             and file_count > 0
         ):
             members = [
@@ -418,7 +410,7 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
 
         # If zone is removed by moving or deletion, call plugin function
         # TODO: TBD: Move into separate task?
-        if status in [ZONE_STATUS_MOVED, ZONE_STATUS_DELETED]:
+        if status in [lc.ZONE_STATUS_MOVED, lc.ZONE_STATUS_DELETED]:
             from .plugins import get_zone_config_plugin  # See issue #269
 
             config_plugin = get_zone_config_plugin(zone)
@@ -448,7 +440,7 @@ class SetLandingZoneStatusTask(BaseLandingZoneStatusTask):
     ):
         # Prevent setting status if already finished (see #1909)
         landing_zone.refresh_from_db()
-        if landing_zone.status not in STATUS_FINISHED:
+        if landing_zone.status not in lc.STATUS_FINISHED:
             self.set_status(
                 landing_zone, flow_name, status, status_info, extra_data
             )
@@ -476,7 +468,7 @@ class RevertLandingZoneFailTask(BaseLandingZoneStatusTask):
         landing_zone: LandingZone,
         flow_name: str,
         info_prefix: str,
-        status: str = ZONE_STATUS_FAILED,
+        status: str = lc.ZONE_STATUS_FAILED,
         extra_data: Optional[dict] = None,
         *args,
         **kwargs,
@@ -488,7 +480,7 @@ class RevertLandingZoneFailTask(BaseLandingZoneStatusTask):
         landing_zone: LandingZone,
         flow_name: str,
         info_prefix: str,
-        status: str = ZONE_STATUS_FAILED,
+        status: str = lc.ZONE_STATUS_FAILED,
         extra_data: Optional[dict] = None,
         *args,
         **kwargs,

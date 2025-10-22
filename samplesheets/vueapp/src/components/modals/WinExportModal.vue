@@ -5,7 +5,7 @@
       size="m"
       title="Windows ISA-Tab Export Note"
       :static="true">
-    <div id="sodar-ss-irods-modal-content">
+    <div id="sodar-ss-export-modal-content">
       <p>
         Please note that built-in zip archive handling in Windows may
         <strong>not</strong> unarchive all files in this export correctly.

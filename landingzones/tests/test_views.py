@@ -26,14 +26,6 @@ from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from taskflowbackend.tests.base import ProjectLockMixin
 
 import landingzones.constants as lc
-
-# TODO: Refactor these away
-from landingzones.constants import (
-    ZONE_STATUS_ACTIVE,
-    ZONE_STATUS_VALIDATING,
-    ZONE_STATUS_MOVED,
-    ZONE_STATUS_DELETED,
-)
 from landingzones.models import LandingZone
 from landingzones.tests.test_models import (
     LandingZoneMixin,
@@ -129,7 +121,7 @@ class ViewTestBase(
             user=self.user_owner,
             assay=self.assay,
             description=ZONE_DESC,
-            status=ZONE_STATUS_ACTIVE,
+            status=lc.ZONE_STATUS_ACTIVE,
         )
 
 
@@ -154,7 +146,7 @@ class TestProjectZoneView(ProjectLockMixin, ViewTestBase):
             user=self.user_contributor,
             assay=self.assay,
             description=ZONE_DESC,
-            status=ZONE_STATUS_ACTIVE,
+            status=lc.ZONE_STATUS_ACTIVE,
         )
         self.url = reverse(
             'landingzones:list', kwargs={'project': self.project.sodar_uuid}
@@ -329,7 +321,7 @@ class TestProjectZoneView(ProjectLockMixin, ViewTestBase):
     @override_settings(LANDINGZONES_ZONE_CREATE_LIMIT=2)
     def test_get_create_limit_existing_finished(self):
         """Test GET with zone creation limit and finished zone"""
-        self.zone.set_status(ZONE_STATUS_MOVED)
+        self.zone.set_status(lc.ZONE_STATUS_MOVED)
         with self.login(self.user_owner):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
@@ -342,7 +334,7 @@ class TestProjectZoneView(ProjectLockMixin, ViewTestBase):
     @override_settings(LANDINGZONES_ZONE_VALIDATE_LIMIT=1)
     def test_get_validate_limit(self):
         """Test GET with zone validation limit reached"""
-        self.zone.set_status(ZONE_STATUS_VALIDATING)
+        self.zone.set_status(lc.ZONE_STATUS_VALIDATING)
         with self.login(self.user_owner):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
@@ -354,7 +346,7 @@ class TestProjectZoneView(ProjectLockMixin, ViewTestBase):
     @override_settings(LANDINGZONES_ZONE_VALIDATE_LIMIT=None)
     def test_get_validate_limit_none(self):
         """Test GET with zone validation limit set to None (counts as 1)"""
-        self.zone.set_status(ZONE_STATUS_VALIDATING)
+        self.zone.set_status(lc.ZONE_STATUS_VALIDATING)
         with self.login(self.user_owner):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
@@ -366,7 +358,7 @@ class TestProjectZoneView(ProjectLockMixin, ViewTestBase):
     @override_settings(LANDINGZONES_ZONE_VALIDATE_LIMIT=1)
     def test_get_validate_limit_other_zone_moved(self):
         """Test GET with zone validation limit reached and other zone moved"""
-        self.zone.set_status(ZONE_STATUS_MOVED)
+        self.zone.set_status(lc.ZONE_STATUS_MOVED)
         with self.login(self.user_owner):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
@@ -432,7 +424,7 @@ class TestZoneCreateView(ViewTestBase):
     @override_settings(LANDINGZONES_ZONE_CREATE_LIMIT=1)
     def test_get_limit_existing_finished(self):
         """Test GET with zone creation limit and finished zone"""
-        self.zone.set_status(ZONE_STATUS_MOVED)
+        self.zone.set_status(lc.ZONE_STATUS_MOVED)
         with self.login(self.user):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
@@ -478,7 +470,7 @@ class TestZoneUpdateView(ViewTestBase):
 
     def test_get_invalid_status(self):
         """Test GET with invalid zone status"""
-        self.zone.status = ZONE_STATUS_DELETED
+        self.zone.status = lc.ZONE_STATUS_DELETED
         self.zone.save()
         with self.login(self.user_owner):
             response = self.client.get(self.url)
@@ -546,7 +538,7 @@ class TestZoneMoveView(ViewTestBase):
 
     def test_get_invalid_status(self):
         """Test ZoneMoveView GET with invalid zone status"""
-        self.zone.status = ZONE_STATUS_DELETED
+        self.zone.status = lc.ZONE_STATUS_DELETED
         self.zone.save()
         with self.login(self.user_owner):
             response = self.client.get(
@@ -576,7 +568,7 @@ class TestZoneDeleteView(ViewTestBase):
 
     def test_get_invalid_status(self):
         """Test GET with invalid zone status"""
-        self.zone.status = ZONE_STATUS_DELETED
+        self.zone.status = lc.ZONE_STATUS_DELETED
         self.zone.save()
         with self.login(self.user_owner):
             response = self.client.get(self.url)

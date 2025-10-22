@@ -30,7 +30,7 @@ TEST_FILE_NAME = 'test1'
 NON_PROJECT_PATH = '/sodarZone/projects'
 
 
-class IrodsbackendPermissionsTestBase(
+class IrodsbackendPermissionTestBase(
     SampleSheetIOMixin,
     SampleSheetTaskflowMixin,
     TaskflowPermissionTestBase,
@@ -51,7 +51,7 @@ class IrodsbackendPermissionsTestBase(
 
 
 class TestIrodsStatisticsAjaxView(
-    LandingZoneMixin, LandingZoneTaskflowMixin, IrodsbackendPermissionsTestBase
+    LandingZoneMixin, LandingZoneTaskflowMixin, IrodsbackendPermissionTestBase
 ):
     """Tests for IrodsStatisticsAjaxView permissions"""
 

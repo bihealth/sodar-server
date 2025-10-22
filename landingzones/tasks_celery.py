@@ -18,7 +18,7 @@ from projectroles.app_settings import AppSettingAPI
 from projectroles.models import Project
 from projectroles.plugins import PluginAPI
 
-from landingzones.constants import STATUS_ALLOW_UPDATE, STATUS_LOCKING
+import landingzones.constants as lc
 from landingzones.views import ZoneMoveMixin
 
 
@@ -73,7 +73,7 @@ class TriggerZoneMoveTask(ZoneMoveMixin):
         """
         irods = irods_backend.get_session_obj()
         for zone in project.landing_zones.filter(
-            status__in=STATUS_ALLOW_UPDATE
+            status__in=lc.STATUS_ALLOW_UPDATE
         ):
             path = iRODSPath(
                 irods_backend.get_path(zone), settings.LANDINGZONES_TRIGGER_FILE
@@ -139,7 +139,7 @@ class TriggerZoneMoveTask(ZoneMoveMixin):
             Project.objects.filter(type='PROJECT')
             .annotate(zone_count=Count('landing_zones'))
             .exclude(zone_count=0)
-            .exclude(landing_zones__status__in=STATUS_LOCKING)
+            .exclude(landing_zones__status__in=lc.STATUS_LOCKING)
         )
         for project in projects:
             self._handle_project(project, request, irods_backend)

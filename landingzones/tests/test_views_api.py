@@ -14,14 +14,6 @@ from projectroles.tests.test_views_api import APIViewTestBase
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
 import landingzones.constants as lc
-
-# TODO: Refactor these away
-from landingzones.constants import (
-    ZONE_STATUS_ACTIVE,
-    ZONE_STATUS_MOVED,
-    ZONE_STATUS_MOVING,
-    ZONE_STATUS_VALIDATING,
-)
 from landingzones.tests.test_models import LandingZoneMixin
 from landingzones.tests.test_views_taskflow import ZONE_TITLE, ZONE_DESC
 from landingzones.views_api import (
@@ -45,7 +37,7 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 # Local constants
 APP_NAME = 'landingzones'
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
-ZONE_STATUS = ZONE_STATUS_VALIDATING
+ZONE_STATUS = lc.ZONE_STATUS_VALIDATING
 ZONE_STATUS_INFO = 'Testing'
 INVALID_UUID = '11111111-1111-1111-1111-111111111111'
 
@@ -76,7 +68,7 @@ class LandingZoneAPIViewTestBase(
             user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
-            status=ZONE_STATUS_ACTIVE,
+            status=lc.ZONE_STATUS_ACTIVE,
         )
 
 
@@ -164,7 +156,7 @@ class TestZoneListAPIView(LandingZoneAPIViewTestBase):
             user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
-            status=ZONE_STATUS_MOVED,
+            status=lc.ZONE_STATUS_MOVED,
         )
         response = self.request_knox(self.url)
         self.assertEqual(response.status_code, 200)
@@ -182,7 +174,7 @@ class TestZoneListAPIView(LandingZoneAPIViewTestBase):
             user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
-            status=ZONE_STATUS_MOVED,
+            status=lc.ZONE_STATUS_MOVED,
         )
         url = self.url + '?finished=0'
         response = self.request_knox(url)
@@ -201,7 +193,7 @@ class TestZoneListAPIView(LandingZoneAPIViewTestBase):
             user=self.user,
             assay=self.assay,
             description=ZONE_DESC,
-            status=ZONE_STATUS_MOVED,
+            status=lc.ZONE_STATUS_MOVED,
         )
         url = self.url + '?finished=1'
         response = self.request_knox(url)
@@ -252,7 +244,7 @@ class TestZoneRetrieveAPIView(LandingZoneAPIViewTestBase):
 
     def test_get_locked(self):
         """Test GET with locked landing zone status"""
-        self.zone.status = ZONE_STATUS_MOVING
+        self.zone.status = lc.ZONE_STATUS_MOVING
         self.zone.save()
         response = self.request_knox(self.url)
         self.assertEqual(response.status_code, 200)

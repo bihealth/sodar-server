@@ -180,7 +180,7 @@ class SampleSheetIOTestBase(
         )
 
     @classmethod
-    def _get_flat_export_data(cls, export_data):
+    def get_flat_export_data(cls, export_data):
         """Return export ISA data as a flat list"""
         ret = {
             export_data['investigation']['path'].split('/')[-1]: export_data[
@@ -226,7 +226,7 @@ class TestSampleSheetIOBatch(SampleSheetIOTestBase):
                 zip_file.path, self.project
             )
             try:
-                export_data = self._get_flat_export_data(
+                export_data = self.get_flat_export_data(
                     sheet_io.export_isa(investigation)
                 )
             except Exception as ex:

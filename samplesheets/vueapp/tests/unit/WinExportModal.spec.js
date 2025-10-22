@@ -25,7 +25,7 @@ describe('WinExportModal.vue', () => {
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    expect(wrapper.find('#sodar-ss-irods-modal-content').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-export-modal-content').exists()).toBe(true)
   })
 
   it('redirects to export on button click', async () => {
@@ -44,7 +44,7 @@ describe('WinExportModal.vue', () => {
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    expect(wrapper.find('#sodar-ss-irods-modal-content').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-export-modal-content').exists()).toBe(true)
     await wrapper.find('#sodar-ss-win-export-btn').trigger('click')
     await waitNT(wrapper.vm)
     await waitRAF()

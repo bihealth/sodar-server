@@ -39,16 +39,6 @@ from samplesheets.views import (
 )
 
 import landingzones.constants as lc
-
-# TODO: Refactor these away
-from landingzones.constants import (
-    STATUS_ALLOW_UPDATE,
-    ZONE_STATUS_PREPARING,
-    ZONE_STATUS_VALIDATING,
-    ZONE_STATUS_DELETED,
-    STATUS_FINISHED,
-    STATUS_INFO_DELETE_NO_COLL,
-)
 from landingzones.forms import LandingZoneForm
 from landingzones.models import LandingZone
 from landingzones.utils import cleanup_file_prohibit
@@ -141,7 +131,7 @@ class ProjectZoneInfoMixin:
         # Active zone count and zone creation limit
         active_count = (
             LandingZone.objects.filter(project=project)
-            .exclude(status__in=STATUS_FINISHED)
+            .exclude(status__in=lc.STATUS_FINISHED)
             .count()
         )
         create_limit = settings.LANDINGZONES_ZONE_CREATE_LIMIT
@@ -153,7 +143,7 @@ class ProjectZoneInfoMixin:
         # Validating zone count and validation limit
         valid_count = LandingZone.objects.filter(
             project=project,
-            status__in=[ZONE_STATUS_PREPARING, ZONE_STATUS_VALIDATING],
+            status__in=[lc.ZONE_STATUS_PREPARING, lc.ZONE_STATUS_VALIDATING],
         ).count()
         valid_limit = settings.LANDINGZONES_ZONE_VALIDATE_LIMIT or 1
         ret['zone_validate_count'] = valid_count
@@ -227,7 +217,7 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
         limit = settings.LANDINGZONES_ZONE_CREATE_LIMIT
         if limit and limit > 0:
             zones = LandingZone.objects.filter(project=project).exclude(
-                status__in=STATUS_FINISHED
+                status__in=lc.STATUS_FINISHED
             )
             if zones.count() >= limit:
                 raise Exception(ZONE_CREATE_LIMIT_MSG.format(limit=limit))
@@ -478,7 +468,9 @@ class ZoneDeleteMixin(ZoneConfigPluginMixin):
                 tl_event=tl_event if tl_event else None,
             )
         else:  # Delete locally
-            zone.set_status(ZONE_STATUS_DELETED, STATUS_INFO_DELETE_NO_COLL)
+            zone.set_status(
+                lc.ZONE_STATUS_DELETED, lc.STATUS_INFO_DELETE_NO_COLL
+            )
             if tl_event:
                 tl_event.set_status(timeline.TL_STATUS_OK)
         self.object = None
@@ -635,7 +627,7 @@ class ZoneResetMixin(ZoneConfigPluginMixin):
         timeline = plugin_api.get_backend_api('timeline_backend')
 
         # Skip if zone is active or finished
-        if zone.status in STATUS_FINISHED + [lc.ZONE_STATUS_ACTIVE]:
+        if zone.status in lc.STATUS_FINISHED + [lc.ZONE_STATUS_ACTIVE]:
             msg = ZONE_RESET_STATUS_SKIP_MSG.format(status=zone.status)
             logger.info(f'{ZONE_RESET_SKIP_PREFIX}: {msg}')
             if request:
@@ -719,7 +711,7 @@ class ProjectZoneView(
         )
         zones = (
             LandingZone.objects.filter(project=project)
-            .exclude(status__in=STATUS_FINISHED)
+            .exclude(status__in=lc.STATUS_FINISHED)
             .order_by('title')
         )
         # Only show own zones to users without view_zone_all perm
@@ -781,8 +773,7 @@ class ZoneCreateView(
             messages.error(request, str(ex) + '.')
             return redirect(
                 reverse(
-                    'landingzones:list',
-                    kwargs={'project': project.sodar_uuid},
+                    'landingzones:list', kwargs={'project': project.sodar_uuid}
                 )
             )
         return super().dispatch(request, *args, **kwargs)
@@ -887,7 +878,7 @@ class ZoneUpdateView(
             return redirect(redirect_url)
 
         # Check status
-        if zone.status not in STATUS_ALLOW_UPDATE:
+        if zone.status not in lc.STATUS_ALLOW_UPDATE:
             messages.error(
                 request,
                 f'Unable to update a landing zone with the status of '
@@ -974,7 +965,7 @@ class ZoneDeleteView(
     def get(self, request, *args, **kwargs):
         """Override get() to ensure the zone status"""
         zone = LandingZone.objects.get(sodar_uuid=self.kwargs['landingzone'])
-        if zone.status not in STATUS_ALLOW_UPDATE:
+        if zone.status not in lc.STATUS_ALLOW_UPDATE:
             messages.error(
                 request,
                 f'Unable to delete a landing zone with the status of '
@@ -1046,6 +1037,9 @@ class ZoneMoveView(
     def get(self, request, *args, **kwargs):
         """Override get() to ensure the zone status"""
         zone = LandingZone.objects.get(sodar_uuid=self.kwargs['landingzone'])
+        redirect_url = reverse(
+            'landingzones:list', kwargs={'project': zone.project.sodar_uuid}
+        )
         try:
             irods_backend = plugin_api.get_backend_api('omics_irods')
             path = irods_backend.get_path(zone)
@@ -1053,33 +1047,17 @@ class ZoneMoveView(
                 stats = irods_backend.get_stats(irods, path)
                 if stats['file_count'] == 0:
                     messages.info(request, ZONE_MOVE_NO_FILES)
-                    return redirect(
-                        reverse(
-                            'landingzones:list',
-                            kwargs={'project': zone.project.sodar_uuid},
-                        )
-                    )
+                    return redirect(redirect_url)
         except Exception as ex:
             messages.error(request, str(ex))
-            return redirect(
-                reverse(
-                    'landingzones:list',
-                    kwargs={'project': zone.project.sodar_uuid},
-                )
-            )
-
-        if zone.status not in STATUS_ALLOW_UPDATE:
+            return redirect(redirect_url)
+        if zone.status not in lc.STATUS_ALLOW_UPDATE:
             messages.error(
                 request,
                 f'Unable to validate or move a landing zone with the status of '
                 f'"{zone.status}".',
             )
-            return redirect(
-                reverse(
-                    'landingzones:list',
-                    kwargs={'project': zone.project.sodar_uuid},
-                )
-            )
+            return redirect(redirect_url)
         return super().get(request, *args, **kwargs)
 
     def post(self, request, **kwargs):
@@ -1098,14 +1076,14 @@ class ZoneMoveView(
                 'unable to modify zone.',
             )
             return redirect(redirect_url)
-        if zone.status not in STATUS_ALLOW_UPDATE:
+        if zone.status not in lc.STATUS_ALLOW_UPDATE:
             messages.error(self.request, ZONE_MOVE_INVALID_STATUS)
             return redirect(redirect_url)
 
         # Check limit
         valid_count = LandingZone.objects.filter(
             project=project,
-            status__in=[ZONE_STATUS_PREPARING, ZONE_STATUS_VALIDATING],
+            status__in=[lc.ZONE_STATUS_PREPARING, lc.ZONE_STATUS_VALIDATING],
         ).count()
         valid_limit = settings.LANDINGZONES_ZONE_VALIDATE_LIMIT or 1
         if valid_count >= valid_limit:

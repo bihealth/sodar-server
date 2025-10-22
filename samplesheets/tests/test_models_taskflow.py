@@ -36,7 +36,7 @@ class TestIrodsDataRequest(
     IrodsDataRequestMixin,
     TaskflowViewTestBase,
 ):
-    """Tests for the IrodsAccessTicket model"""
+    """Tests for the IrodsDataRequest model with taskflow"""
 
     def setUp(self):
         super().setUp()
