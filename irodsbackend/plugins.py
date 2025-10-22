@@ -1,3 +1,7 @@
+"""Plugins for the irodsbackend app"""
+
+from typing import Optional
+
 from django.conf import settings
 
 from django.template.defaultfilters import filesizeformat
@@ -10,7 +14,6 @@ from irodsbackend.api import IrodsAPI
 
 # Local constants
 IRODS_INFO_SETTINGS = [
-    'ENABLE_IRODS',
     'IRODS_CERT_PATH',
     'IRODS_ENV_BACKEND',
     'IRODS_ENV_DEFAULT',
@@ -57,22 +60,16 @@ class BackendPlugin(BackendPluginPoint):
     #: Names of plugin specific Django settings to display in siteinfo
     info_settings = IRODS_INFO_SETTINGS
 
-    def get_api(self, **kwargs):
+    def get_api(self, **kwargs) -> Optional[IrodsAPI]:
         """Return API entry point object."""
-        # Only init API if iRODS is enabled or in no connection mode
-        if settings.ENABLE_IRODS:
-            try:
-                return IrodsAPI(**kwargs)
-            except Exception:
-                pass  # Exception logged in constructor, return None
+        try:
+            return IrodsAPI(**kwargs)
+        except Exception:
+            return None  # Exception logged in constructor
 
-    def get_statistics(self):
-        if (
-            not settings.ENABLE_IRODS
-            or 'omics_irods' not in settings.ENABLED_BACKEND_PLUGINS
-        ):
+    def get_statistics(self) -> dict:
+        if 'omics_irods' not in settings.ENABLED_BACKEND_PLUGINS:
             return {}
-
         irods_backend = IrodsAPI()
         try:
             with irods_backend.get_session() as irods:

@@ -130,7 +130,14 @@ iRODS File List Modal
 =====================
 
 The landing zone file list modal displays collections and files within a
-specific landing zone. The following information is displayed:
+specific landing zone.
+
+By default, the list displays iRODS collections within the landing zone in
+addition to files. You can toggle the display of collections by clicking on the
+button in the top right corner of the modal. Your choice will be remembered the
+first time you open a landing zone modal.
+
+For each item in the landing zone, the following information is displayed:
 
 Path to Collection or File
     The path below the landing zone for each collection and file is displayed.

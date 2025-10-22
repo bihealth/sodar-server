@@ -38,18 +38,25 @@ from drf_spectacular.utils import extend_schema, inline_serializer
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import (
+    Project,
     RoleAssignment,
     RemoteSite,
     SODAR_CONSTANTS,
     ROLE_RANKING,
 )
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.views_api import (
     SODARAPIBaseProjectMixin,
     SODARAPIGenericProjectMixin,
     SODARPageNumberPagination,
 )
 from projectroles.utils import build_secret
+
+# Taskflowbackend dependency
+from taskflowbackend.constants import (
+    IRODS_HASH_SCHEME_MD5,
+    IRODS_HASH_SCHEME_SHA256,
+)
 
 from samplesheets.io import SampleSheetIO
 from samplesheets.models import (
@@ -79,6 +86,7 @@ from samplesheets.views import (
 
 app_settings = AppSettingAPI()
 logger = logging.getLogger(__name__)
+plugin_api = PluginAPI()
 table_builder = SampleSheetTableBuilder()
 
 
@@ -87,14 +95,13 @@ PROJECT_ROLE_GUEST = SODAR_CONSTANTS['PROJECT_ROLE_GUEST']
 
 # Local constants
 APP_NAME = 'samplesheets'
+APP_NAME_PR = 'projectroles'
 SAMPLESHEETS_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar.samplesheets+json'
-SAMPLESHEETS_API_ALLOWED_VERSIONS = ['1.0', '1.1']
-SAMPLESHEETS_API_DEFAULT_VERSION = '1.1'
-HASH_SCHEME_MD5 = 'MD5'
-HASH_SCHEME_SHA256 = 'SHA256'
+SAMPLESHEETS_API_ALLOWED_VERSIONS = ['1.0', '1.1', '1.2']
+SAMPLESHEETS_API_DEFAULT_VERSION = '1.2'
 CHECKSUM_RE = {
-    HASH_SCHEME_MD5: re.compile(r'^([a-fA-F\d]{32})$'),
-    HASH_SCHEME_SHA256: re.compile(r'^([a-fA-F\d]{64})$'),
+    IRODS_HASH_SCHEME_MD5: re.compile(r'^([a-fA-F\d]{32})$'),
+    IRODS_HASH_SCHEME_SHA256: re.compile(r'^([a-fA-F\d]{64})$'),
 }
 IRODS_QUERY_ERROR_MSG = 'Exception querying iRODS objects'
 IRODS_REQUEST_EX_MSG = 'iRODS data request failed'
@@ -105,9 +112,14 @@ FILE_EXISTS_RESTRICT_MSG = (
     'above in any project (SHEETS_API_FILE_EXISTS_RESTRICT=True)'
 )
 FILE_LIST_PAGINATE_VERSION_MSG = 'Pagination not supported in API version 1.0'
+FILE_LIST_COLL_VERSION_MSG = (
+    'Collection listing not supported in API version <1.2'
+)
 HOST_VERSION_ERR_MSG = (
     'Field allowed_hosts requires samplesheets API version 1.1 or above'
 )
+VERSION_1_1 = parse_version('1.1')
+VERSION_1_2 = parse_version('1.2')
 
 
 # Base Classes and Mixins ------------------------------------------------------
@@ -201,26 +213,24 @@ class IrodsCollsCreateAPIView(
 
     def post(self, request, *args, **kwargs):
         """POST request for creating iRODS collections"""
-        irods_backend = get_backend_api('omics_irods')
-        taskflow = get_backend_api('taskflow')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
+        taskflow = plugin_api.get_backend_api('taskflow')
         ex_msg = 'Creating iRODS collections failed: '
         investigation = Investigation.objects.filter(
             project__sodar_uuid=self.kwargs.get('project'), active=True
         ).first()
         if not investigation:
-            raise ValidationError('{}Investigation not found'.format(ex_msg))
+            raise ValidationError(f'{ex_msg}Investigation not found')
         # TODO: TBD: Also allow updating?
         if investigation.irods_status:
-            raise ValidationError(
-                '{}iRODS collections already created'.format(ex_msg)
-            )
+            raise ValidationError(f'{ex_msg}iRODS collections already created')
 
         try:
             self.create_colls(investigation, request)
         except Exception as ex:
             if taskflow:
                 taskflow.raise_submit_api_exception(ex_msg, ex)
-            raise APIException('{}{}'.format(ex_msg, ex))
+            raise APIException(f'{ex_msg}{ex}')
         return Response(
             {
                 'detail': 'iRODS collections created',
@@ -267,7 +277,7 @@ class SheetISAExportAPIView(
         try:
             return self.get_isa_export(project, request, export_format)
         except Exception as ex:
-            raise APIException('Unable to export ISA-Tab: {}'.format(ex))
+            raise APIException(f'Unable to export ISA-Tab: {ex}')
 
 
 @extend_schema(
@@ -329,14 +339,14 @@ class SheetImportAPIView(
             try:
                 zip_file = sheet_io.get_zip_file(file)
             except OSError as ex:
-                raise ParseError('Failed to parse zip archive: {}'.format(ex))
+                raise ParseError(f'Failed to parse zip archive: {ex}')
             isa_data = sheet_io.get_isa_from_zip(zip_file)
         # Multi-file handling
         else:
             try:
                 isa_data = sheet_io.get_isa_from_files(request.FILES.values())
             except Exception as ex:
-                raise ParseError('Failed to parse TSV files: {}'.format(ex))
+                raise ParseError(f'Failed to parse TSV files: {ex}')
 
         # Handle import
         action = 'replace' if old_inv else 'create'
@@ -392,9 +402,8 @@ class SheetImportAPIView(
             isa_version=isa_version,
         )
         ret_data = {
-            'detail': 'Sample sheets {}d for project {}'.format(
-                action, project.get_log_title()
-            )
+            'detail': f'Sample sheets {action}d for project '
+            f'{project.get_log_title()}'
         }
         no_plugin_assays = self.get_assays_without_plugins(investigation)
         if no_plugin_assays:
@@ -421,8 +430,8 @@ class IrodsAccessTicketRetrieveAPIView(
     - ``ticket``: Ticket string for accessing the path (string)
     - ``assay``: Assay UUID (string)
     - ``study``: Study UUID (string)
-    - ``date_created``: Creation datetime (YYYY-MM-DDThh:mm:ssZ)
-    - ``date_expires``: Expiry datetime (YYYY-MM-DDThh:mm:ssZ or null)
+    - ``date_created``: Creation datetime (``YYYY-MM-DDThh:mm:ssZ``)
+    - ``date_expires``: Expiry datetime (``YYYY-MM-DDThh:mm:ssZ`` or ``null``)
     - ``allowed_hosts``: Allowed hosts for ticket access (list)
     - ``user``: UUID of user who created the request (string)
     - ``is_active``: Whether the request is currently active (boolean)
@@ -495,7 +504,7 @@ class IrodsAccessTicketCreateAPIView(
 
     - ``path``: Full iRODS path to collection or data object (string)
     - ``label``: Text label for ticket (string, optional)
-    - ``date_expires``: Expiration date (YYYY-MM-DDThh:mm:ssZ, optional)
+    - ``date_expires``: Expiration date (``YYYY-MM-DDThh:mm:ssZ``, optional)
     - ``allowed_hosts``: Allowed hosts for ticket access (list, optional)
 
     **Returns:** Ticket dict, see ``IrodsAccessTicketRetrieveAPIView``
@@ -519,7 +528,7 @@ class IrodsAccessTicketCreateAPIView(
     def create(self, request, *args, **kwargs):
         # If API v1.0, fail if attribute is present, set default if not
         version = parse_version(self.request.version)
-        if version < parse_version('1.1'):
+        if version < VERSION_1_1:
             if 'allowed_hosts' in request.data:
                 raise ValidationError(HOST_VERSION_ERR_MSG)
             default_hosts = app_settings.get(
@@ -532,7 +541,7 @@ class IrodsAccessTicketCreateAPIView(
 
     def perform_create(self, serializer):
         """Override perform_create() to create IrodsAccessTicket"""
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         try:
             with irods_backend.get_session() as irods:
                 ticket = irods_backend.issue_ticket(
@@ -546,9 +555,7 @@ class IrodsAccessTicketCreateAPIView(
                     ),
                 )
         except Exception as ex:
-            raise ValidationError(
-                '{} {}'.format('Creating ' + IRODS_TICKET_EX_MSG + ':', ex)
-            )
+            raise ValidationError(f'Creating {IRODS_TICKET_EX_MSG}: {ex}')
 
         serializer.validated_data['ticket'] = ticket.ticket
         serializer.save()
@@ -574,7 +581,7 @@ class IrodsAccessTicketUpdateAPIView(
     **Parameters:**
 
     - ``label``: Label (string)
-    - ``date_expires``: Expiration date (YYYY-MM-DDThh:mm:ssZ, optional)
+    - ``date_expires``: Expiration date (``YYYY-MM-DDThh:mm:ssZ``, optional)
     - ``allowed_hosts``: Allowed hosts for ticket access (list, optional)
 
     **Returns:** Ticket dict, see ``IrodsAccessTicketRetrieveAPIView``
@@ -591,7 +598,7 @@ class IrodsAccessTicketUpdateAPIView(
 
     def update(self, request, *args, **kwargs):
         version = parse_version(self.request.version)
-        if version < parse_version('1.1'):
+        if version < VERSION_1_1:
             if 'allowed_hosts' in request.data:
                 raise ValidationError(HOST_VERSION_ERR_MSG)
             # Set current value for serializer
@@ -603,7 +610,7 @@ class IrodsAccessTicketUpdateAPIView(
 
     def perform_update(self, serializer):
         """Override perform_update() to update IrodsAccessTicket"""
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         if not set(serializer.initial_data) & {
             'label',
             'date_expires',
@@ -624,7 +631,7 @@ class IrodsAccessTicketUpdateAPIView(
                 )
         except Exception as ex:
             raise APIException(
-                'Exception updating iRODS access ticket: {}'.format(ex),
+                f'Exception updating iRODS access ticket: {ex}',
             )
         # Add timeline event
         self.add_tl_event(serializer.instance, 'update')
@@ -654,14 +661,12 @@ class IrodsAccessTicketDestroyAPIView(
 
     def perform_destroy(self, instance):
         """Override perform_destroy() to delete IrodsAccessTicket"""
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         try:
             with irods_backend.get_session() as irods:
                 irods_backend.delete_ticket(irods, instance.ticket)
         except Exception as ex:
-            raise ValidationError(
-                '{} {}'.format('Deleting ' + IRODS_TICKET_EX_MSG + ':', ex)
-            )
+            raise ValidationError(f'Deleting {IRODS_TICKET_EX_MSG}: {ex}')
         instance.delete()
         # Create timeline event
         self.add_tl_event(instance, 'delete')
@@ -876,9 +881,9 @@ class IrodsDataRequestAcceptAPIView(
 
     def post(self, request, *args, **kwargs):
         """POST request for accepting an iRODS data request"""
-        timeline = get_backend_api('timeline_backend')
-        taskflow = get_backend_api('taskflow')
-        app_alerts = get_backend_api('appalerts_backend')
+        timeline = plugin_api.get_backend_api('timeline_backend')
+        taskflow = plugin_api.get_backend_api('taskflow')
+        app_alerts = plugin_api.get_backend_api('appalerts_backend')
         project = self.get_project()
         irods_request = IrodsDataRequest.objects.filter(
             sodar_uuid=self.kwargs.get('irodsdatarequest')
@@ -897,7 +902,7 @@ class IrodsDataRequestAcceptAPIView(
             ex_msg = 'Accepting ' + IRODS_REQUEST_EX_MSG + ': '
             if taskflow:
                 taskflow.raise_submit_api_exception(ex_msg, ex, ValidationError)
-            raise ValidationError('{}{}'.format(ex_msg, ex))
+            raise ValidationError(f'{ex_msg}{ex}')
         return Response(
             {'detail': 'iRODS data request accepted'}, status=status.HTTP_200_OK
         )
@@ -934,8 +939,8 @@ class IrodsDataRequestRejectAPIView(
 
     def post(self, request, *args, **kwargs):
         """POST request for rejecting an iRODS data request"""
-        timeline = get_backend_api('timeline_backend')
-        app_alerts = get_backend_api('appalerts_backend')
+        timeline = plugin_api.get_backend_api('timeline_backend')
+        app_alerts = plugin_api.get_backend_api('appalerts_backend')
         project = self.get_project()
         irods_request = IrodsDataRequest.objects.filter(
             sodar_uuid=self.kwargs.get('irodsdatarequest')
@@ -950,9 +955,7 @@ class IrodsDataRequestRejectAPIView(
                 app_alerts=app_alerts,
             )
         except Exception as ex:
-            raise APIException(
-                '{} {}'.format('Rejecting ' + IRODS_REQUEST_EX_MSG + ':', ex)
-            )
+            raise APIException(f'Rejecting {IRODS_REQUEST_EX_MSG}: {ex}')
         return Response(
             {'detail': 'iRODS data request rejected'}, status=status.HTTP_200_OK
         )
@@ -1009,9 +1012,7 @@ class SampleDataFileExistsAPIView(SamplesheetsAPIVersioningMixin, APIView):
             )
             if roles.count() == 0:
                 raise PermissionDenied(FILE_EXISTS_RESTRICT_MSG)
-        if not settings.ENABLE_IRODS:
-            raise APIException('iRODS not enabled')
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         if not irods_backend:
             raise APIException('iRODS backend not enabled')
 
@@ -1020,7 +1021,7 @@ class SampleDataFileExistsAPIView(SamplesheetsAPIVersioningMixin, APIView):
         if not c or not re.match(CHECKSUM_RE[hash_scheme], c):
             raise ParseError(f'Invalid {hash_scheme} checksum: "{c}"')
         # If SHA256, convert to base64 with prefix
-        if hash_scheme == HASH_SCHEME_SHA256:
+        if hash_scheme == IRODS_HASH_SCHEME_SHA256:
             c = irods_backend.get_sha256_base64(c, prefix=True)
 
         ret = {'detail': 'File does not exist', 'status': False}
@@ -1047,9 +1048,7 @@ class SampleDataFileExistsAPIView(SamplesheetsAPIVersioningMixin, APIView):
                     pass  # No results, this is OK
                 except Exception as ex:
                     logger.error(
-                        '{} iRODS query exception: {}'.format(
-                            self.__class__.__name__, ex
-                        )
+                        f'{self.__class__.__name__} iRODS query exception: {ex}'
                     )
                     raise APIException(
                         'iRODS query exception, please contact an admin if '
@@ -1059,7 +1058,7 @@ class SampleDataFileExistsAPIView(SamplesheetsAPIVersioningMixin, APIView):
                     query.remove()
         except Exception as ex:
             return Response(
-                {'detail': 'Unable to connect to iRODS: {}'.format(ex)},
+                {'detail': f'Unable to connect to iRODS: {ex}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         return Response(ret, status=status.HTTP_200_OK)
@@ -1084,7 +1083,8 @@ class ProjectIrodsFileListAPIView(
     SamplesheetsAPIVersioningMixin, SODARAPIBaseProjectMixin, APIView
 ):
     """
-    Return a list of files in the project sample data repository.
+    Return a list of files in the project sample data repository. Optionally
+    also returns collections.
 
     Supports optional pagination for listing by providing the ``page`` query
     string. This will return results in the Django Rest Framework
@@ -1096,55 +1096,59 @@ class ProjectIrodsFileListAPIView(
 
     **Parameters:**
 
+    - ``include_colls``: Include collections in list (boolean, optional)
     - ``page``: Page number for paginated results (int, optional)
 
     **Returns:**
 
-    List of iRODS data objects (list of dicts). Each object dict contains:
+    List of iRODS items (list of dicts). Each dict contains:
 
-    - ``name``: File name
-    - ``type``: iRODS item type type (``obj`` for file)
-    - ``path``: Full path to file
-    - ``size``: Size in bytes
-    - ``modify_time``: Datetime of last modification (YYYY-MM-DDThh:mm:ssZ)
-    - ``checksum``: Checksum of data object
+    - ``name``: Name of data object or collection
+    - ``type``: Item type (``obj`` for data object, ``coll`` for collection)
+    - ``path``: Full iRODS path for item
+    - ``size``: Size in bytes (only for data objects)
+    - ``modify_time``: Datetime of last modification (``YYYY-MM-DDThh:mm:ssZ``, only for data objects)
+    - ``checksum``: Checksum (only for data objects)
 
     **Version Changes**:
 
     - ``1.1``: Add ``checksum`` field to return data
     - ``1.1``: Add ``page`` parameter for optional pagination
+    - ``1.2``: Add ``include_colls`` parameter
     """
 
     http_method_names = ['get']
-    permission_required = 'samplesheets.view_sheet'
+    permission_required = 'samplesheets.view_files'
 
     def get(self, request, *args, **kwargs):
-        if not settings.ENABLE_IRODS:
-            raise APIException('iRODS not enabled')
         version = parse_version(request.version)
         page = request.GET.get('page')
-        if page and version < parse_version('1.1'):
+        if page and version < VERSION_1_1:
             raise NotAcceptable(FILE_LIST_PAGINATE_VERSION_MSG)
         elif page:
             page = int(page)
 
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         project = self.get_project()
         path = irods_backend.get_sample_path(project)
         page_size = settings.SODAR_API_PAGE_SIZE
         limit = None
         offset = None
-        file_count = None
+        item_count = None
         if page:
             limit = page_size
             offset = 0 if page == 1 else (page - 1) * page_size
-        checksum = True if version >= parse_version('1.1') else False
+        checksum = True if version >= VERSION_1_1 else False
+        include_colls = request.GET.get('include_colls', False)
+        if include_colls and version < VERSION_1_2:
+            raise NotAcceptable(FILE_LIST_COLL_VERSION_MSG)
 
         try:
             with irods_backend.get_session() as irods:
                 obj_list = irods_backend.get_objects(
                     irods,
                     path,
+                    include_colls=include_colls,
                     limit=limit,
                     offset=offset,
                     api_format=True,
@@ -1152,13 +1156,17 @@ class ProjectIrodsFileListAPIView(
                 )
                 # Get total count for DRF compatible pagination response
                 if page:
-                    stats = irods_backend.get_stats(irods, path)
-                    file_count = stats['file_count']
+                    stats = irods_backend.get_stats(
+                        irods, path, include_colls=include_colls
+                    )
+                    item_count = stats['file_count']
+                    if include_colls:
+                        item_count += stats['coll_count']
         except FileNotFoundError as ex:
-            raise NotFound('{}: {}'.format(IRODS_QUERY_ERROR_MSG, ex))
+            raise NotFound(f'{IRODS_QUERY_ERROR_MSG}: {ex}')
         except Exception as ex:
             return Response(
-                {'detail': '{}: {}'.format(IRODS_QUERY_ERROR_MSG, ex)},
+                {'detail': f'{IRODS_QUERY_ERROR_MSG}: {ex}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
@@ -1167,14 +1175,19 @@ class ProjectIrodsFileListAPIView(
                 'samplesheets:api_file_list',
                 kwargs={'project': project.sodar_uuid},
             )
+            url_suffix = f'&include_colls={int(include_colls)}'
             ret = {
-                'count': file_count,
+                'count': item_count,
                 'next': (
-                    (url + f'?page={page + 1}')
-                    if file_count > page * page_size
+                    (url + f'?page={page + 1}{url_suffix}')
+                    if item_count > page * page_size
                     else None
                 ),
-                'previous': (url + f'?page={page - 1}') if page > 1 else None,
+                'previous': (
+                    (url + f'?page={page - 1}{url_suffix}')
+                    if page > 1
+                    else None
+                ),
                 'results': obj_list,
             }
         else:
@@ -1217,6 +1230,15 @@ class RemoteSheetGetAPIView(APIView):
             return Response(
                 'No project access for remote site, unauthorized', status=401
             )
+        if not request.user.is_superuser:
+            source_project = Project.objects.get(sodar_uuid=kwargs['project'])
+            if app_settings.get(
+                APP_NAME_PR, 'project_access_block', project=source_project
+            ):
+                return Response(
+                    'Project access temporarily blocked by superuser',
+                    status=403,
+                )
         try:
             investigation = Investigation.objects.get(
                 project=target_project.get_project(), active=True

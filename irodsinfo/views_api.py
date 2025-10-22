@@ -12,12 +12,13 @@ from rest_framework.views import APIView
 from drf_spectacular.utils import extend_schema, inline_serializer
 
 # Projectroles dependency
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 from irodsinfo.views import IrodsConfigMixin
 
 
 logger = logging.getLogger(__name__)
+plugin_api = PluginAPI()
 
 
 # Local constants
@@ -71,7 +72,7 @@ class IrodsEnvRetrieveAPIView(
     def get(self, request, *args, **kwargs):
         """Get iRODS environment file"""
         try:
-            irods_backend = get_backend_api('omics_irods')
+            irods_backend = plugin_api.get_backend_api('omics_irods')
             if not irods_backend:
                 return Response(
                     {'detail': 'iRODS backend not enabled'}, status=404
@@ -79,7 +80,7 @@ class IrodsEnvRetrieveAPIView(
             env = self.get_irods_client_env(request.user, irods_backend)
             return Response({'irods_environment': env})
         except Exception as ex:
-            logger.error('iRODS config retrieval failed: {}'.format(ex))
+            logger.error(f'iRODS config retrieval failed: {ex}')
             return Response(
                 {'detail': 'iRODS config retrieval failed'}, status=400
             )

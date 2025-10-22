@@ -6,33 +6,38 @@ import logging
 import re
 import time
 
-from datetime import date
-from packaging import version
-
 from altamisa.constants import table_headers as th
 from altamisa.isatab.write_assay_study import RefTableBuilder
+from datetime import date
+from packaging import version
+from typing import Any, Optional, Union
 
 from django.conf import settings
+from django.db.models import Model, QuerySet
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 # Sodarcache dependency (see bihealth/sodar-core#1068)
 from sodarcache.models import JSONCacheItem
 
-from samplesheets.models import Process, GenericMaterial
+from samplesheets.models import (
+    Study,
+    Assay,
+    Process,
+    GenericMaterial,
+    Investigation,
+)
 from samplesheets.utils import get_node_obj
 
 
-# Regex for headers
-header_re = re.compile(r'^([a-zA-Z\s]+)[\[](.+)[\]]$')
-# Rexex for simple links and contacts
-link_re = re.compile(r'(.+?)\s?(?:[<|[])(.+?)(?:[>\]])')
-logger = logging.getLogger(__name__)
 app_settings = AppSettingAPI()
+logger = logging.getLogger(__name__)
+plugin_api = PluginAPI()
 
 
+# Local constants
 APP_NAME = 'samplesheets'
 TOP_HEADER_MATERIAL_COLOURS = {
     'SOURCE': 'info',
@@ -50,7 +55,7 @@ EMPTY_VALUE = '-'
 STUDY_HIDEABLE_CLASS = 'sodar-ss-hideable-study'
 SOURCE_SEARCH_STR = '-source-'
 NARROW_CHARS = 'fIijlt;:.,/"!\'!()[]{}'
-WIDE_CHARS = 'ABCDEFHKLMNOPQRSTUVXYZ<>%$_'
+# WIDE_CHARS = 'ABCDEFHKLMNOPQRSTUVXYZ<>%$_'
 IGNORED_HEADERS = ['Unit', 'Term Source REF', 'Term Accession Number']
 # Name fields (NOTE: Missing labeled extract name by purpose)
 ALTAMISA_MATERIAL_NAMES = [
@@ -84,6 +89,10 @@ MODEL_JSON_ATTRS = [
 ]
 STUDY_TABLE_CACHE_ITEM = 'sheet/tables/study/{study}'
 SIMPLE_LINK_TEMPLATE = '{label} <{url}>'
+# Regex for headers
+HEADER_RE = re.compile(r'^([a-zA-Z\s]+)[\[](.+)[\]]$')
+# Rexex for simple links and contacts
+LINK_RE = re.compile(r'(.+?)\s?(?:[<|[])(.+?)(?:[>\]])')
 
 
 # Table building ---------------------------------------------------------------
@@ -119,7 +128,7 @@ class SampleSheetTableBuilder:
     # General Data and Cell Functions ------------------------------------------
 
     @classmethod
-    def _get_value(cls, field):
+    def _get_value(cls, field: Union[dict, str]) -> str:
         """
         Return value of a field which can be either free text or term reference.
 
@@ -134,7 +143,9 @@ class SampleSheetTableBuilder:
             return field['value']
         return ''
 
-    def _add_top_header(self, obj, colspan):
+    def _add_top_header(
+        self, obj: Union[GenericMaterial, Process], colspan: int
+    ):
         """
         Append columns to top header.
 
@@ -162,7 +173,12 @@ class SampleSheetTableBuilder:
         self._node_idx += 1
         self._field_idx = 0
 
-    def _add_header(self, name, header_type=None, obj=None):
+    def _add_header(
+        self,
+        name: str,
+        header_type: Optional[str] = None,
+        obj: Optional[Model] = None,
+    ):
         """
         Add column field header value.
 
@@ -170,8 +186,10 @@ class SampleSheetTableBuilder:
         :param header_type: Header type
         :param obj: Original Django model object
         """
+        # NOTE: Header value is currently redundant, but it may see use in the
+        #       future or alternatively be removed (see #576, #1776).
         header = {
-            'value': name.strip().title(),  # TODO: Better titling (#576)
+            'value': name.strip(),
             'name': name,  # Store original field name
             'type': header_type,
             'obj_cls': obj.__class__.__name__,
@@ -238,13 +256,13 @@ class SampleSheetTableBuilder:
 
     def _add_cell(
         self,
-        value,
-        header_name,
-        unit=None,
-        link=None,
-        header_type=None,
-        obj=None,
-        tooltip=None,
+        value: Union[date, dict, list, str, None],
+        header_name: str,
+        unit: Union[dict, str, None] = None,
+        link: Optional[str] = None,
+        header_type: Optional[str] = None,
+        obj: Optional[Model] = None,
+        tooltip: Optional[str] = None,
     ):
         """
         Add cell data. Also maintain column value list and insert header if on
@@ -252,9 +270,9 @@ class SampleSheetTableBuilder:
 
         :param value: Value to be displayed in the cell
         :param header_name: Name of the column header
-        :param unit: Unit to be displayed in the cell
-        :param link: Link from the value (URL string)
-        :param header_type: Header type (string)
+        :param unit: Unit to be displayed in the cell (dict, string or None)
+        :param link: Link from the value (URL string or None)
+        :param header_type: Header type (string or None)
         :param obj: Original Django model object
         :param tooltip: Tooltip to be shown on mouse hover (string)
         """
@@ -293,7 +311,7 @@ class SampleSheetTableBuilder:
             self._col_values[self._col_idx] = 1
         self._col_idx += 1
 
-    def _add_ordered_element(self, obj):
+    def _add_ordered_element(self, obj: Union[GenericMaterial, Process]):
         """
         Append GenericMaterial or Process element to row along with its
         attributes. To be used with altamISA v0.1+, requires the "headers"
@@ -305,7 +323,7 @@ class SampleSheetTableBuilder:
         headers = [h for h in obj.headers if h not in IGNORED_HEADERS]
 
         for h in headers:
-            list_ref = re.findall(header_re, h)
+            list_ref = re.findall(HEADER_RE, h)
             # Value lists with possible ontology annotation
             if list_ref:
                 h_type = list_ref[0][0]
@@ -382,7 +400,13 @@ class SampleSheetTableBuilder:
         if self._first_row:
             self._add_top_header(obj, len(self._field_header) - old_header_len)
 
-    def _add_annotation(self, ann, header, header_type, obj):
+    def _add_annotation(
+        self,
+        ann: Union[dict, str],
+        header: str,
+        header_type: Optional[str],
+        obj: Union[GenericMaterial, Process],
+    ):
         """
         Append an ontology annotation or list of values to a row as a single
         cell.
@@ -451,49 +475,65 @@ class SampleSheetTableBuilder:
         self._node_idx = 0
         self._field_idx = 0
 
+    @classmethod
+    def _get_text_len(
+        cls, value: Any, col_type: Optional[str] = None, header: bool = False
+    ) -> int:
+        """
+        Return estimated length for proportional text.
+
+        NOTE: Very unscientific and font-specific, don't try this at home. A
+        better way to do this most likely exists, pr:s welcome :)
+
+        :param value: Header or cell value
+        :param col_type: Column type for cell (string, optional)
+        :param header: True if this is a header (boolean, default=False)
+        :return: Integer
+        """
+        if not value:
+            return 0
+        # Convert perform date
+        if isinstance(value, date):
+            value = str(value)
+        # Lists (altamISA v0.1+)
+        elif isinstance(value, list) and col_type != 'EXTERNAL_LINKS':
+            if isinstance(value[0], dict):
+                value = '; '.join([x['name'] for x in value])
+            elif isinstance(value[0], list) and value[0]:
+                value = '; '.join([x[0] for x in value])
+            elif isinstance(value[0], str):
+                value = '; '.join(value)
+        # Simple link or contact
+        else:
+            link_groups = re.findall(LINK_RE, value)
+            if link_groups:
+                value = link_groups[0][0]
+        nc = sum([value.count(c) for c in NARROW_CHARS])
+        # NOTE: Wide chars count as 1 in this "algo" so we don't need them
+        ncf = 0.8 if header else 0.7
+        return round(len(value) - ncf * nc)
+
+    @classmethod
+    def _is_val_num(cls, value: Any) -> bool:
+        """
+        Return whether a value contains only integers/doubles.
+
+        :param value: Cell value
+        :return: Boolean
+        """
+        # Supports lists
+        values = value if isinstance(value, list) else [value]
+        for v in values:
+            if isinstance(v, str) and '_' in v:
+                return False  # HACK because float() accepts underscore
+            try:
+                float(v)
+            except (ValueError, TypeError):
+                return False
+        return True
+
     def _add_ui_table_data(self):
         """Add UI specific data to a table"""
-        # TODO: Un-hackify
-
-        def _get_length(value, col_type=None):
-            """Return estimated length for proportional text"""
-            if not value:
-                return 0
-            # Convert perform date
-            if isinstance(value, date):
-                value = str(value)
-            # Lists (altamISA v0.1+)
-            elif isinstance(value, list) and col_type != 'EXTERNAL_LINKS':
-                if isinstance(value[0], dict):
-                    value = '; '.join([x['name'] for x in value])
-                elif isinstance(value[0], list) and value[0]:
-                    value = '; '.join([x[0] for x in value])
-                elif isinstance(value[0], str):
-                    value = '; '.join(value)
-            # Simple link or contact
-            else:
-                link_groups = re.findall(link_re, value)
-                if link_groups:
-                    value = link_groups[0][0]
-
-            # Very unscientific and font-specific, don't try this at home
-            nc = sum([value.count(c) for c in NARROW_CHARS])
-            wc = sum([value.count(c) for c in WIDE_CHARS])
-            return round(len(value) - nc - wc + 0.6 * nc + 1.3 * wc)
-
-        def _is_num(value):
-            """Return whether a value contains only integers/doubles"""
-            # Supports lists
-            values = value if isinstance(value, list) else [value]
-            for v in values:
-                if isinstance(v, str) and '_' in v:
-                    return False  # HACK because float() accepts underscore
-                try:
-                    float(v)
-                except (ValueError, TypeError):
-                    return False
-            return True
-
         top_idx = 0  # Top header index
         grp_idx = 0  # Index within current top header group
         for i in range(len(self._field_header)):
@@ -506,9 +546,11 @@ class SampleSheetTableBuilder:
                 and header_name not in th.PROCESS_NAME_HEADERS
                 and not self._field_configs[i]
                 and self._field_header[i]['col_type'] not in num_skip_cols
-                and any(_is_num(x[i]['value']) for x in self._table_data)
+                and any(
+                    self._is_val_num(x[i]['value']) for x in self._table_data
+                )
                 and all(
-                    (_is_num(x[i]['value']) or not x[i]['value'])
+                    (self._is_val_num(x[i]['value']) or not x[i]['value'])
                     for x in self._table_data
                 )
             ):
@@ -516,12 +558,14 @@ class SampleSheetTableBuilder:
 
             # Maximum column value length for column width estimate
             field_header_len = round(
-                _get_length(self._field_header[i]['value'])
+                self._get_text_len(self._field_header[i]['value'], header=True)
             )
             # If there is only one column in top header, use top header length
             if self._top_header[top_idx]['colspan'] == 1:
                 top_header_len = round(
-                    _get_length(self._top_header[top_idx]['value'])
+                    self._get_text_len(
+                        self._top_header[top_idx]['value'], header=True
+                    )
                 )
                 header_len = max(field_header_len, top_header_len)
             else:
@@ -539,8 +583,8 @@ class SampleSheetTableBuilder:
                         contact_vals.append(x[i]['value'])
                 cell_lengths = [
                     (
-                        _get_length(re.findall(link_re, x)[0][0])
-                        if re.findall(link_re, x)
+                        self._get_text_len(re.findall(LINK_RE, x)[0][0])
+                        if re.findall(LINK_RE, x)
                         else len(x or '')
                     )
                     for x in contact_vals
@@ -560,8 +604,8 @@ class SampleSheetTableBuilder:
             else:  # Generic type
                 max_cell_len = max(
                     [
-                        _get_length(x[i]['value'], col_type)
-                        + _get_length(x[i].get('unit'), col_type)
+                        self._get_text_len(x[i]['value'], col_type)
+                        + self._get_text_len(x[i].get('unit'), col_type)
                         + 1
                         for x in self._table_data
                     ]
@@ -576,7 +620,13 @@ class SampleSheetTableBuilder:
             else:
                 grp_idx += 1
 
-    def _build_table(self, table_refs, node_map=None, study=None, assay=None):
+    def _build_table(
+        self,
+        table_refs: list[list],
+        node_map: Optional[dict] = None,
+        study: Optional[Study] = None,
+        assay: Optional[Assay] = None,
+    ) -> dict:
         """
         Build a table from the node graph reference.
 
@@ -626,7 +676,9 @@ class SampleSheetTableBuilder:
         }
 
     @classmethod
-    def build_study_reference(cls, study, nodes=None):
+    def build_study_reference(
+        cls, study: Study, nodes: Optional[list] = None
+    ) -> tuple[list, list]:
         """
         Get study reference table for building final table data.
 
@@ -659,7 +711,7 @@ class SampleSheetTableBuilder:
         return all_refs
 
     @classmethod
-    def get_sample_idx(cls, all_refs):
+    def get_sample_idx(cls, all_refs: list) -> int:
         """
         Get sample index for a reference table.
 
@@ -669,7 +721,7 @@ class SampleSheetTableBuilder:
         return [i for i, col in enumerate(all_refs[0]) if '-sample-' in col][0]
 
     @classmethod
-    def get_node_map(cls, nodes):
+    def get_node_map(cls, nodes: Union[list, QuerySet]) -> dict:
         """
         Get dict mapped by unique name for a QuerySet or list of node objects.
 
@@ -679,11 +731,13 @@ class SampleSheetTableBuilder:
         return {n.unique_name: n for n in nodes}
 
     @classmethod
-    def get_study_refs(cls, all_refs, sample_idx=None):
+    def get_study_refs(
+        cls, all_refs: list, sample_idx: Optional[int] = None
+    ) -> list:
         """
         Get study table references without duplicates.
 
-        :param all_refs: All references for a study.
+        :param all_refs: All references for a study (list)
         :param sample_idx: Integer for sample column index (optional)
         :return: List
         """
@@ -693,17 +747,23 @@ class SampleSheetTableBuilder:
         return list(sr for sr, _ in itertools.groupby(sr))
 
     @classmethod
-    def get_assay_refs(cls, all_refs, assay_id, sample_idx, study_cols=True):
+    def get_assay_refs(
+        cls,
+        all_refs: list,
+        assay_id: int,
+        sample_idx: int,
+        study_cols: bool = True,
+    ) -> list:
         """
         Return assay table references based on assay ID.
 
-        :param all_refs:
+        :param all_refs: List of assay references
         :param assay_id: Integer for assay ID
         :param sample_idx: Integer for sample column index
         :param study_cols: Include study columns if True (bool)
         :return: List
         """
-        assay_search_str = '-a{}-'.format(assay_id)
+        assay_search_str = f'-a{assay_id}-'
         assay_refs = []
         start_idx = 0 if study_cols else sample_idx
         for row in all_refs:
@@ -714,7 +774,7 @@ class SampleSheetTableBuilder:
                 assay_refs.append(row[start_idx:])
         return assay_refs
 
-    def get_headers(self, investigation):
+    def get_headers(self, investigation: Investigation) -> dict:
         """
         Return lists of headers for the studies and assays in an investigation.
 
@@ -747,7 +807,7 @@ class SampleSheetTableBuilder:
             ret['studies'].append(study_data)
         return ret
 
-    def build_study_tables(self, study, use_config=True):
+    def build_study_tables(self, study: Study, use_config: bool = True) -> dict:
         """
         Build study table and associated assay tables for rendering.
 
@@ -757,9 +817,7 @@ class SampleSheetTableBuilder:
         """
         s_start = time.time()
         logger.debug(
-            'Building study "{}" ({})..'.format(
-                study.get_name(), study.sodar_uuid
-            )
+            f'Building study "{study.get_name()}" ({study.sodar_uuid})..'
         )
         # Get study config for column type detection
         if use_config:
@@ -804,30 +862,26 @@ class SampleSheetTableBuilder:
         # Study ref table without duplicates
         study_refs = self.get_study_refs(all_refs, sample_idx)
         ret['study'] = self._build_table(study_refs, node_map, study=study)
-        logger.debug(
-            'Building study OK ({:.1f}s)'.format(time.time() - s_start)
-        )
+        logger.debug(f'Building study OK ({time.time() - s_start:.1f}s)')
 
         # Assay tables
         assay_id = 0
         for assay in study.assays.all().order_by('pk'):
             a_start = time.time()
             logger.debug(
-                'Building assay "{}" ({})..'.format(
-                    assay.get_name(), assay.sodar_uuid
-                )
+                f'Building assay "{assay.get_name()}" ({assay.sodar_uuid})..'
             )
             assay_refs = self.get_assay_refs(all_refs, assay_id, sample_idx)
             ret['assays'][str(assay.sodar_uuid)] = self._build_table(
                 assay_refs, node_map, assay=assay
             )
             assay_id += 1
-            logger.debug(
-                'Building assay OK ({:.1f}s)'.format(time.time() - a_start)
-            )
+            logger.debug(f'Building assay OK ({time.time() - a_start:.1f}s)')
         return ret
 
-    def build_inv_tables(self, investigation, use_config=True):
+    def build_inv_tables(
+        self, investigation: Investigation, use_config: bool = True
+    ) -> dict:
         """
         Build all study and assay tables of an investigation for rendering.
 
@@ -840,7 +894,7 @@ class SampleSheetTableBuilder:
             ret[study] = self.build_study_tables(study, use_config=use_config)
         return ret
 
-    def get_study_tables(self, study, save_cache=True):
+    def get_study_tables(self, study: Study, save_cache: bool = True) -> dict:
         """
         Get study and assay tables for rendering. Retrieve from sodarcache or
         build and save to cache if not found.
@@ -850,11 +904,10 @@ class SampleSheetTableBuilder:
         :return: Dict
         """
         logger.info(
-            'Retrieving cached render tables for study "{}" ({})'.format(
-                study.get_name(), study.sodar_uuid
-            )
+            f'Retrieving cached render tables for study "{study.get_name()}" '
+            f'({study.sodar_uuid})'
         )
-        cache_backend = get_backend_api('sodar_cache')
+        cache_backend = plugin_api.get_backend_api('sodar_cache')
         item_name = STUDY_TABLE_CACHE_ITEM.format(study=study.sodar_uuid)
         project = study.get_project()
         if settings.SHEETS_ENABLE_STUDY_TABLE_CACHE:
@@ -868,7 +921,7 @@ class SampleSheetTableBuilder:
                 if item and item.data:
                     logger.debug('Returning cached study tables')
                     return item.data
-                logger.debug('Cache item "{}" not set'.format(item_name))
+                logger.debug(f'Cache item "{item_name}" not set')
         else:
             logger.debug(
                 'Study table cache disabled in settings, building new tables'
@@ -884,15 +937,13 @@ class SampleSheetTableBuilder:
                     data=study_tables,
                     project=project,
                 )
-                logger.debug('Set cache item "{}"'.format(item_name))
+                logger.debug(f'Set cache item "{item_name}"')
             except Exception as ex:
-                logger.error(
-                    'Failed to set cache item "{}": {}'.format(item_name, ex)
-                )
+                logger.error(f'Failed to set cache item "{item_name}": {ex}')
         return study_tables
 
     @classmethod
-    def clear_study_cache(cls, study, delete=False):
+    def clear_study_cache(cls, study: Study, delete: bool = False):
         """
         Clear study render table data from sodarcache, if cache is enabled and
         cached tables exist.
@@ -900,7 +951,7 @@ class SampleSheetTableBuilder:
         :param study: Study object
         :param delete: Delete item instead of clearing value if true (bool)
         """
-        cache_backend = get_backend_api('sodar_cache')
+        cache_backend = plugin_api.get_backend_api('sodar_cache')
         if cache_backend:
             item_name = STUDY_TABLE_CACHE_ITEM.format(study=study.sodar_uuid)
             project = study.get_project()
@@ -910,7 +961,7 @@ class SampleSheetTableBuilder:
                 'project': project,
             }
             try:
-                msg = 'Cleared cache item "{}"'.format(item_name)
+                msg = f'Cleared cache item "{item_name}"'
                 if delete:
                     # TODO: Use delete method (see bihealth/sodar-core#1068)
                     item = JSONCacheItem.objects.filter(**item_kwargs).first()
@@ -928,6 +979,4 @@ class SampleSheetTableBuilder:
                         )
                         logger.debug(msg + ' (clear value)')
             except Exception as ex:
-                logger.error(
-                    'Failed to clear cache item "{}": {}'.format(item_name, ex)
-                )
+                logger.error(f'Failed to clear cache item "{item_name}": {ex}')

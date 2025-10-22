@@ -9,15 +9,21 @@ import pytz
 import requests
 import zipfile
 
-from cubi_isa_templates import _TEMPLATES as CUBI_TEMPLATES
-from irods.exception import CollectionDoesNotExist
 from packaging import version
+from typing import Any, Optional, Union
 from urllib.parse import urljoin
+
+from cubi_isa_templates import IsaTabTemplate, _TEMPLATES as CUBI_TEMPLATES
+from irods.collection import iRODSCollection
+from irods.data_object import iRODSDataObject
+from irods.exception import CollectionDoesNotExist
+from irods.session import iRODSSession
 
 from django.conf import settings
 from django.contrib import messages
+from django.db.models import QuerySet
 from django.db.models.functions import Now
-from django.http import HttpResponse
+from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.safestring import mark_safe
@@ -40,10 +46,11 @@ from projectroles.email import send_generic_mail
 from projectroles.models import (
     Project,
     RoleAssignment,
+    SODARUser,
     SODAR_CONSTANTS,
     ROLE_RANKING,
 )
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.rules import can_modify_project_data
 from projectroles.utils import build_secret
 from projectroles.views import (
@@ -52,6 +59,7 @@ from projectroles.views import (
     ProjectContextMixin,
     ProjectPermissionMixin,
     CurrentUserFormMixin,
+    HTTPRefererMixin,
 )
 
 # Landingzones dependency
@@ -95,9 +103,10 @@ from samplesheets.utils import (
 )
 
 
-logger = logging.getLogger(__name__)
 app_settings = AppSettingAPI()
 conf_api = SheetConfigAPI()
+logger = logging.getLogger(__name__)
+plugin_api = PluginAPI()
 table_builder = SampleSheetTableBuilder()
 
 
@@ -108,6 +117,7 @@ REMOTE_LEVEL_READ_ROLES = SODAR_CONSTANTS['REMOTE_LEVEL_READ_ROLES']
 
 # Local constants
 APP_NAME = 'samplesheets'
+APP_NAME_PR = 'projectroles'
 WARNING_STATUS_MSG = 'OK with warnings, see extra data'
 TARGET_ALTAMISA_VERSION = '0.2.4'  # For warnings etc.
 MISC_FILES_COLL_ID = 'misc_files'
@@ -181,7 +191,9 @@ class SheetImportMixin:
     #: TimelineAPI
     timeline = None
 
-    def add_tl_event(self, project, action, tpl_name=None):
+    def add_tl_event(
+        self, project: Project, action: str, tpl_name: Optional[str] = None
+    ) -> Any:
         """
         Add timeline event for sample sheet import, replace or create.
 
@@ -191,9 +203,9 @@ class SheetImportMixin:
         :return: TimelineEvent object
         """
         if action not in ['create', 'import', 'replace']:
-            raise ValueError('Invalid action "{}"'.format(action))
+            raise ValueError(f'Invalid action "{action}"')
         if not self.timeline:
-            self.timeline = get_backend_api('timeline_backend')
+            self.timeline = plugin_api.get_backend_api('timeline_backend')
         if not self.timeline:
             return None
 
@@ -204,17 +216,30 @@ class SheetImportMixin:
         else:
             tl_desc = 'create investigation {investigation}'
             if tpl_name:
-                tl_desc += ' from template "{}"'.format(tpl_name)
+                tl_desc += f' from template "{tpl_name}"'
 
         return self.timeline.add_event(
             project=project,
             app_name=APP_NAME,
             user=self.request.user,
-            event_name='sheet_{}'.format(action),
+            event_name=f'sheet_{action}',
             description=tl_desc,
         )
 
-    def handle_replace(self, investigation, old_inv, tl_event=None):
+    def handle_replace(
+        self,
+        investigation: Investigation,
+        old_inv: Investigation,
+        tl_event: Any = None,
+    ) -> Optional[Investigation]:
+        """
+        Handle sheet replacing.
+
+        :param investigation: Investigation object for new investigation
+        :param old_inv: Investigation object for old investigation
+        :param tl_event: TimelineEvent or None
+        :return: Investigation or None
+        """
         project = investigation.project
         old_study_uuids = {}
         old_assay_uuids = {}
@@ -307,7 +332,16 @@ class SheetImportMixin:
                         assay.save()
         return investigation
 
-    def handle_import_exception(self, ex, tl_event=None, ui_mode=True):
+    def handle_import_exception(
+        self, ex: Exception, tl_event: Any = None, ui_mode: bool = True
+    ):
+        """
+        Handle exception encountered during import.
+
+        :param ex: Exception
+        :param tl_event: TimelineEvent or None
+        :param ui_mode: Boolean, default=True
+        """
         if isinstance(ex, SampleSheetImportException):
             ex_msg = str(ex.args[0])
             extra_data = {'warnings': ex.args[1]} if len(ex.args) > 1 else None
@@ -336,7 +370,7 @@ class SheetImportMixin:
                 messages.error(self.request, mark_safe(ex_msg))
 
         else:
-            ex_msg = 'ISA-Tab import failed: {}'.format(ex)
+            ex_msg = f'ISA-Tab import failed: {ex}'
             extra_data = None
             logger.error(ex_msg)
             if ui_mode:
@@ -353,12 +387,21 @@ class SheetImportMixin:
 
     def finalize_import(
         self,
-        investigation,
-        action,
-        tl_event=None,
-        isa_version=None,
-        ui_mode=True,
+        investigation: Investigation,
+        action: str,
+        tl_event: Any = None,
+        isa_version: Optional[str] = None,
+        ui_mode: bool = True,
     ):
+        """
+        Handle finalization of sheet import.
+
+        :param investigation: Investigation object
+        :param action: Import action, "import" or "replace" (string)
+        :param tl_event: TimelineEvent or None
+        :param isa_version: String or None
+        :param ui_mode: Boolean, default=True
+        """
         project = investigation.project
         success_msg = ''
         # Set current import active status to True
@@ -499,18 +542,20 @@ class SheetImportMixin:
                 project_uuid=str(project.sodar_uuid),
                 user_uuid=str(self.request.user.sodar_uuid),
                 add_alert=ui_mode,
-                alert_msg='Sample sheet {}d'.format(action),
+                alert_msg=f'Sample sheet {action}d',
             )
             if ui_mode:
                 success_msg += ', initiated iRODS cache update.'
 
         if ui_mode:
             messages.success(self.request, mark_safe(success_msg + '.'))
-        logger.info('Sample sheet {} OK'.format(action))
+        logger.info(f'Sample sheet {action} OK')
         return investigation
 
     @classmethod
-    def get_assays_without_plugins(cls, investigation):
+    def get_assays_without_plugins(
+        cls, investigation: Investigation
+    ) -> list[Assay]:
         """Return list of assays with no associated plugins"""
         ret = []
         for s in investigation.studies.all():
@@ -520,31 +565,34 @@ class SheetImportMixin:
         return ret
 
     @classmethod
-    def get_assay_plugin_warning(cls, assay):
+    def get_assay_plugin_warning(cls, assay: Assay) -> str:
         """Return warning message for missing assay plugin"""
         return (
-            'No plugin found for assay "{}": measurement_type="{}", '
-            'technology_type="{}".'.format(
-                assay.get_display_name(),
-                get_isa_field_name(assay.measurement_type),
-                get_isa_field_name(assay.technology_type),
-            )
+            f'No plugin found for assay "{assay.get_display_name()}": '
+            f'measurement_type="{get_isa_field_name(assay.measurement_type)}", '
+            f'technology_type="{get_isa_field_name(assay.technology_type)}".'
         )
 
 
 class SheetISAExportMixin:
     """Mixin for exporting sample sheets in ISA-Tab format"""
 
-    def get_isa_export(self, project, request, format='zip', version_uuid=None):
+    def get_isa_export(
+        self,
+        project: Project,
+        request: HttpRequest,
+        format='zip',
+        version_uuid=None,
+    ) -> HttpResponse:
         """
         Export sample sheets as a HTTP response as ISA-Tab, either in a zipped
         archive or wrapped in a JSON structure.
 
         :param project: Project object
-        :param request: Request object
+        :param request: HttpRequest object
         :param format: Export format ("zip" or "json")
         :param version_uuid: Version UUID (optional)
-        :return: Response object
+        :return: HttpResponse object
         :raise: ISATab.DoesNotExist if version is requested but not found
         :raise Investigation.DosNotExist if investigation is not found
         """
@@ -570,10 +618,9 @@ class SheetISAExportMixin:
             < version.parse(TARGET_ALTAMISA_VERSION)
         ):
             raise SampleSheetExportException(
-                'Exporting ISA-Tabs imported using altamISA < {} is not '
-                'supported. Please replace the sheets to enable export.'.format(
-                    TARGET_ALTAMISA_VERSION
-                ),
+                f'Exporting ISA-Tabs imported using altamISA < '
+                f'{TARGET_ALTAMISA_VERSION} is not supported. Please replace '
+                f'the sheets to enable export.'
             )
 
         # Set up archive file name
@@ -615,10 +662,10 @@ class SheetISAExportMixin:
                 export_data['investigation']['path'].split('/')[:-1]
             )
             for k, v in export_data['studies'].items():
-                zf.writestr('{}/{}'.format(inv_dir, k), v['tsv'])
+                zf.writestr(f'{inv_dir}/{k}', v['tsv'])
 
             for k, v in export_data['assays'].items():
-                zf.writestr('{}/{}'.format(inv_dir, k), v['tsv'])
+                zf.writestr(f'{inv_dir}/{k}', v['tsv'])
             zf.close()
 
         # Set up response
@@ -627,7 +674,7 @@ class SheetISAExportMixin:
                 zip_io.getvalue(), content_type='application/zip'
             )
             response['Content-Disposition'] = (
-                'attachment; filename="{}"'.format(file_name)
+                f'attachment; filename="{file_name}"'
             )
             return response
         elif format == 'json':
@@ -653,7 +700,12 @@ class SheetCreateImportAccessMixin:
 class IrodsCollsCreateViewMixin:
     """Mixin to be used in iRODS collections creation UI / API views"""
 
-    def create_colls(self, investigation, request=None, sync=False):
+    def create_colls(
+        self,
+        investigation: Investigation,
+        request: Optional[HttpRequest] = None,
+        sync: bool = False,
+    ):
         """
         Handle iRODS collection creation via Taskflow.
 
@@ -664,9 +716,10 @@ class IrodsCollsCreateViewMixin:
         :param sync: Whether method is called from syncmodifyapi (boolean)
         :raise: taskflow.FlowSubmitException if taskflow submit fails
         """
-        timeline = get_backend_api('timeline_backend')
-        taskflow = get_backend_api('taskflow')
+        timeline = plugin_api.get_backend_api('timeline_backend')
+        taskflow = plugin_api.get_backend_api('taskflow')
         project = investigation.project
+        req_user = request.user if request else None
         tl_event = None
         action = 'update' if investigation.irods_status else 'create'
 
@@ -676,7 +729,7 @@ class IrodsCollsCreateViewMixin:
             tl_event = timeline.add_event(
                 project=project,
                 app_name=APP_NAME,
-                user=request.user if request else None,
+                user=req_user,
                 event_name='sheet_colls_' + tl_action,
                 description=tl_action + ' iRODS collection structure for '
                 '{investigation}',
@@ -690,9 +743,10 @@ class IrodsCollsCreateViewMixin:
 
         # NOTE: Getting ticket setting in case of perform_project_sync()
         ticket_str = app_settings.get(APP_NAME, 'public_access_ticket', project)
+        # TODO: Update for viewer role
         if (
             not ticket_str
-            and project.public_guest_access
+            and project.public_access
             and settings.PROJECTROLES_ALLOW_ANONYMOUS
         ):
             ticket_str = build_secret(16)
@@ -702,7 +756,10 @@ class IrodsCollsCreateViewMixin:
             'ticket_str': ticket_str,
         }
         taskflow.submit(
-            project=project, flow_name='sheet_colls_create', flow_data=flow_data
+            project=project,
+            user=req_user,
+            flow_name='sheet_colls_create',
+            flow_data=flow_data,
         )
         app_settings.set(
             APP_NAME, 'public_access_ticket', ticket_str, project=project
@@ -717,7 +774,7 @@ class IrodsCollsCreateViewMixin:
                 project_uuid=str(project.sodar_uuid),
                 user_uuid=str(request.user.sodar_uuid) if request else None,
                 add_alert=True,
-                alert_msg='iRODS collection {}'.format(action),
+                alert_msg=f'iRODS collection {action}',
             )
 
 
@@ -725,14 +782,14 @@ class IrodsAccessTicketModifyMixin:
     """iRODS access ticket modification helpers and overrides"""
 
     @classmethod
-    def add_tl_event(cls, ticket, action):
+    def add_tl_event(cls, ticket: IrodsAccessTicket, action: str):
         """
         Add timeline event for ticket modification.
 
         :param ticket: IrodsAccessTicket object
         :param action: "create", "delete" or "update" (string)
         """
-        timeline = get_backend_api('timeline_backend')
+        timeline = plugin_api.get_backend_api('timeline_backend')
         if not timeline:
             return
         tl_desc = action + ' iRODS access ticket {ticket} '
@@ -751,7 +808,7 @@ class IrodsAccessTicketModifyMixin:
             project=ticket.get_project(),
             app_name=APP_NAME,
             user=ticket.user,
-            event_name='irods_ticket_{}'.format(action),
+            event_name=f'irods_ticket_{action}',
             description=tl_desc,
             extra_data=extra_data,
             status_type=timeline.TL_STATUS_OK,
@@ -762,7 +819,9 @@ class IrodsAccessTicketModifyMixin:
         )
 
     @classmethod
-    def create_app_alerts(cls, ticket, action, user):
+    def create_app_alerts(
+        cls, ticket: IrodsAccessTicket, action: str, user: SODARUser
+    ):
         """
         Create app alerts for project owners and delegates on ticket
         modification.
@@ -771,7 +830,7 @@ class IrodsAccessTicketModifyMixin:
         :param action: "create", "delete" or "update" (string)
         :param user: SODARUser object for user performing the modification
         """
-        app_alerts = get_backend_api('appalerts_backend')
+        app_alerts = plugin_api.get_backend_api('appalerts_backend')
         if not app_alerts:
             return
         project = ticket.get_project()
@@ -787,8 +846,9 @@ class IrodsAccessTicketModifyMixin:
             app_name=APP_NAME,
             alert_name='irods_ticket_' + action,
             users=users,
-            message='iRODS access ticket {} {}d by {}.'.format(
-                ticket.get_display_name(), action, ticket.user.username
+            message=(
+                f'iRODS access ticket {ticket.get_display_name()} {action}d by '
+                f'{ticket.user.username}.'
             ),
             url=reverse(
                 'samplesheets:irods_tickets',
@@ -802,11 +862,11 @@ class IrodsDataRequestModifyMixin:
     """iRODS data request modification helpers"""
 
     def __init__(self):
-        self.timeline = get_backend_api('timeline_backend')
+        self.timeline = plugin_api.get_backend_api('timeline_backend')
 
     # Timeline helpers ---------------------------------------------------------
 
-    def add_tl_event(self, irods_request, action):
+    def add_tl_event(self, irods_request: IrodsDataRequest, action: str):
         """
         Create timeline event for iRODS data request modification.
 
@@ -826,7 +886,7 @@ class IrodsDataRequestModifyMixin:
             project=irods_request.project,
             app_name=APP_NAME,
             user=irods_request.user,
-            event_name='irods_request_{}'.format(action),
+            event_name=f'irods_request_{action}',
             description=action + ' iRODS data request {irods_request}',
             status_type=self.timeline.TL_STATUS_OK,
             extra_data=extra_data,
@@ -839,7 +899,7 @@ class IrodsDataRequestModifyMixin:
 
     # App Alert Helpers --------------------------------------------------------
 
-    def add_alerts_create(self, project, app_alerts=None):
+    def add_alerts_create(self, project: Project, app_alerts: Any = None):
         """
         Add app alerts for project owners/delegates on request creation. Will
         not create new alerts if the user already has a similar active alert
@@ -849,7 +909,7 @@ class IrodsDataRequestModifyMixin:
         :param app_alerts: Appalerts API or None
         """
         if not app_alerts:
-            app_alerts = get_backend_api('appalerts_backend')
+            app_alerts = plugin_api.get_backend_api('appalerts_backend')
         if not app_alerts:
             return
 
@@ -861,7 +921,6 @@ class IrodsDataRequestModifyMixin:
             )
             if a.user != self.request.user and a.user.is_active
         ]
-        # logger.debug('od_users={}'.format(od_users))  # DEBUG
         for u in od_users:
             alert_count = AppAlert.objects.filter(
                 project=project,
@@ -870,26 +929,26 @@ class IrodsDataRequestModifyMixin:
                 active=True,
             ).count()
             if alert_count > 0:
-                logger.debug('Alert exists for user: {}'.format(u.username))
+                logger.debug(f'Alert exists for user: {u.username}')
                 continue  # Only have one active alert per user/project
             app_alerts.add_alert(
                 app_name=APP_NAME,
                 alert_name=IRODS_REQUEST_EVENT_CREATE,
                 user=u,
-                message='iRODS delete requests require attention in '
-                'project "{}"'.format(project.title),
+                message=f'iRODS delete requests require attention in '
+                f'project "{project.title}".',
                 url=reverse(
                     'samplesheets:irods_requests',
                     kwargs={'project': project.sodar_uuid},
                 ),
                 project=project,
             )
-            logger.debug(
-                'Added iRODS request alert for user: {}'.format(u.username)
-            )
+            logger.debug(f'Added iRODS request alert for user: {u.username}')
 
     @classmethod
-    def handle_alerts_deactivate(cls, irods_request, app_alerts=None):
+    def handle_alerts_deactivate(
+        cls, irods_request: IrodsDataRequest, app_alerts: Any = None
+    ):
         """
         Handle existing iRODS delete request project alerts on alert
         acceptance, rejection or deletion.
@@ -898,7 +957,7 @@ class IrodsDataRequestModifyMixin:
         :param app_alerts: Appalerts API or None
         """
         if not app_alerts:
-            app_alerts = get_backend_api('appalerts_backend')
+            app_alerts = plugin_api.get_backend_api('appalerts_backend')
         if not app_alerts:
             return
         AppAlert = app_alerts.get_model()
@@ -930,19 +989,19 @@ class IrodsDataRequestModifyMixin:
     @classmethod
     def accept_request(
         cls,
-        irods_request,
-        project,
-        request,
-        timeline=None,
-        taskflow=None,
-        app_alerts=None,
+        irods_request: IrodsDataRequest,
+        project: Project,
+        request: HttpRequest,
+        timeline: Any = None,
+        taskflow: Any = None,
+        app_alerts: Any = None,
     ):
         """
         Accept an iRODS data request.
 
         :param irods_request: IrodsDataRequest object
         :param project: Project object
-        :param request: Request object
+        :param request: HttpRequest object
         :param timeline: TimelineAPI instance or None
         :param taskflow: TaskflowAPI instance or None
         :param app_alerts: AppalertsAPI instance or None
@@ -990,6 +1049,7 @@ class IrodsDataRequestModifyMixin:
         try:
             taskflow.submit(
                 project=project,
+                user=request.user,
                 flow_name=flow_name,
                 flow_data=flow_data,
                 tl_event=tl_event,
@@ -1038,34 +1098,41 @@ class IrodsDataRequestModifyMixin:
             app_alerts
             and irods_request.user != request.user
             and irods_request.user.is_active
+            and app_settings.get(
+                APP_NAME, 'notify_alert_irods_request', user=irods_request.user
+            )
         ):
             app_alerts.add_alert(
                 app_name=APP_NAME,
                 alert_name=IRODS_REQUEST_EVENT_ACCEPT,
                 user=irods_request.user,
-                message='iRODS delete request accepted by {}: "{}"'.format(
-                    request.user.username, irods_request.get_short_path()
-                ),
-                level='SUCCESS',
+                message=f'iRODS delete request accepted by '
+                f'{request.user.username}: "{irods_request.get_short_path()}".',
+                level=app_alerts.ALERT_LEVEL_SUCCESS,
                 url=reverse(
                     'samplesheets:project_sheets',
                     kwargs={'project': project.sodar_uuid},
                 ),
                 project=project,
             )
-            # Handle project alerts
+        if app_alerts:  # Handle project alerts
             cls.handle_alerts_deactivate(irods_request, app_alerts)
 
     @classmethod
     def reject_request(
-        cls, irods_request, project, request, timeline=None, app_alerts=None
+        cls,
+        irods_request: IrodsDataRequest,
+        project: Project,
+        request: HttpRequest,
+        timeline: Any = None,
+        app_alerts: Any = None,
     ):
         """
         Reject an iRODS delete request.
 
         :param irods_request: IrodsDataRequest object
         :param project: Project object
-        :param request: Request object
+        :param request: HttpRequest object
         :param timeline: Timeline API or None
         :param app_alerts: Appalerts API or None
         """
@@ -1120,40 +1187,55 @@ class IrodsDataRequestModifyMixin:
             app_alerts
             and irods_request.user != request.user
             and irods_request.user.is_active
+            and app_settings.get(
+                APP_NAME, 'notify_alert_irods_request', user=irods_request.user
+            )
         ):
             app_alerts.add_alert(
                 app_name=APP_NAME,
                 alert_name=IRODS_REQUEST_EVENT_REJECT,
                 user=irods_request.user,
-                message='iRODS delete request rejected by {}: "{}"'.format(
-                    request.user.username, irods_request.get_short_path()
-                ),
-                level='WARNING',
+                message=f'iRODS delete request rejected by '
+                f'{request.user.username}: "{irods_request.get_short_path()}".',
+                level=app_alerts.ALERT_LEVEL_WARNING,
                 url=reverse(
                     'samplesheets:project_sheets',
                     kwargs={'project': project.sodar_uuid},
                 ),
                 project=project,
             )
-            # Handle project alerts
+        if app_alerts:  # Handle project alerts
             cls.handle_alerts_deactivate(irods_request, app_alerts)
 
-    def has_irods_request_update_perms(self, request, irods_request):
-        """Check permissions for iRODS data request updating"""
+    def has_irods_request_update_perms(
+        self, request: HttpRequest, irods_request: IrodsDataRequest
+    ) -> bool:
+        """
+        Check permissions for iRODS data request updating.
+
+        :param request: HttpRequest object
+        :param irods_request: IrodsDataRequest object
+        :return: bool
+        """
+        project = irods_request.project
+        # TODO: Use is_project_accessible() once fixed
+        #       (see bihealth/sodar-core#1744)
+        if not request.user.is_superuser and app_settings.get(
+            APP_NAME_PR, 'project_access_block', project=project
+        ):
+            return False
         if (
             request.user.is_superuser
-            or request.user.has_perm(
-                'samplesheets.manage_sheet', irods_request.project
-            )
+            or request.user.has_perm('samplesheets.manage_sheet', project)
             or (
                 request.user == irods_request.user
-                and can_modify_project_data(request.user, irods_request.project)
+                and can_modify_project_data(request.user, project)
             )
         ):
             return True
         return False
 
-    def get_irods_request_objects(self):
+    def get_irods_request_objects(self) -> QuerySet[IrodsDataRequest]:
         # Get uuids from POST data
         request_ids = self.request.POST.get('irods_requests').split(',')
         # Drop '' from the list
@@ -1162,7 +1244,7 @@ class IrodsDataRequestModifyMixin:
             return IrodsDataRequest.objects.none()
         return IrodsDataRequest.objects.filter(sodar_uuid__in=request_ids)
 
-    def add_error_message(self, obj, ex):
+    def add_error_message(self, obj: IrodsDataRequest, ex: Exception):
         """
         Add Django error message for iRODS data request exception.
 
@@ -1172,9 +1254,8 @@ class IrodsDataRequestModifyMixin:
         ex_msg = '; '.join(ex) if isinstance(ex, list) else str(ex)
         messages.error(
             self.request,
-            'Accepting iRODS data request "{}" failed: {}'.format(
-                obj.get_display_name(), ex_msg
-            ),
+            f'Accepting iRODS data request "{obj.get_display_name()}" '
+            f'failed: {ex_msg}',
         )
 
 
@@ -1184,15 +1265,16 @@ class SheetRemoteSyncAPI(SheetImportMixin):
     NOTE: Not used as a mixin because it is also called from the periodic task
     """
 
-    def sync_sheets(self, project, user):
+    def sync_sheets(self, project: Project, user: SODARUser) -> bool:
         """
         Synchronize sample sheets from another project or site.
 
-        :project: Project object of target project
-        :user: User performing the action
+        :param project: Project object of target project
+        :param user: User performing the action
+        :return: Bool
         """
         logger.debug(
-            'Sync sample sheets for project {}'.format(project.get_log_title())
+            f'Sync sample sheets for project {project.get_log_title()}'
         )
         # Check input
         url = app_settings.get(APP_NAME, 'sheet_sync_url', project=project)
@@ -1206,31 +1288,29 @@ class SheetRemoteSyncAPI(SheetImportMixin):
             ).split('/')[:-1]
         )
         if url_prefix not in url:
-            raise ValueError('{}: {}'.format(SYNC_FAIL_INVALID_URL, url))
+            raise ValueError(f'{SYNC_FAIL_INVALID_URL}: {url}')
         if not token:
             raise ValueError(SYNC_FAIL_UNSET_TOKEN)
 
         # Get remote sheet data (source)
         try:
             response = requests.get(
-                url, headers={'Authorization': 'token {}'.format(token)}
+                url, headers={'Authorization': f'token {token}'}
             )
         except Exception:
             raise requests.exceptions.ConnectionError(
-                '{}: {}'.format(SYNC_FAIL_CONNECT, url)
+                f'{SYNC_FAIL_CONNECT}: {url}'
             )
         if not response.status_code == 200:
             raise requests.exceptions.ConnectionError(
-                'Source API responded with status code: {}'.format(
-                    response.status_code
-                )
+                f'Source API responded with status code: {response.status_code}'
             )
         try:
             source_data = response.json()
         except json.JSONDecodeError as ex:
             raise ValueError(
-                'Error decoding JSON data: {}. Please check "sheet_sync_url" '
-                'setting.'.format(ex)
+                f'Error decoding JSON data: {ex}. Please check "sheet_sync_url" '
+                f'setting.'
             )
 
         source_date = datetime.datetime.strptime(
@@ -1281,9 +1361,7 @@ class SheetRemoteSyncAPI(SheetImportMixin):
             )
 
         logger.info(
-            'Sample sheet sync OK for project {}'.format(
-                project.get_log_title()
-            )
+            f'Sample sheet sync OK for project {project.get_log_title()}'
         )
         return True
 
@@ -1447,7 +1525,7 @@ class SheetTemplateSelectView(
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        tpl_backend = get_backend_api('isatemplates_backend')
+        tpl_backend = plugin_api.get_backend_api('isatemplates_backend')
         if tpl_backend:
             context['sheet_templates'] = tpl_backend.get_list()
         else:
@@ -1498,9 +1576,9 @@ class SheetTemplateCreateView(
     form_class = SheetTemplateCreateForm
     template_name = 'samplesheets/sheet_template_form.html'
 
-    def _get_sheet_template(self):
+    def _get_sheet_template(self) -> Optional[IsaTabTemplate]:
         t_name = self.request.GET.get('sheet_tpl')
-        tpl_backend = get_backend_api('isatemplates_backend')
+        tpl_backend = plugin_api.get_backend_api('isatemplates_backend')
         if tpl_backend:
             return tpl_backend.get_template(t_name)
         return CUBI_TPL_DICT[t_name] if t_name in CUBI_TPL_DICT else None
@@ -1559,7 +1637,7 @@ class SheetTemplateCreateView(
         return redirect(redirect_url)
 
     def get(self, request, *args, **kwargs):
-        tpl_backend = get_backend_api('isatemplates_backend')
+        tpl_backend = plugin_api.get_backend_api('isatemplates_backend')
         redirect_url = reverse(
             'samplesheets:template_select',
             kwargs={'project': self.get_project().sodar_uuid},
@@ -1613,7 +1691,7 @@ class SheetExcelExportView(
             tables = table_builder.get_study_tables(study)
         except Exception as ex:
             messages.error(
-                self.request, 'Unable to render table for export: {}'.format(ex)
+                self.request, f'Unable to render table for export: {ex}'
             )
             return redirect(redirect_url)
 
@@ -1624,7 +1702,7 @@ class SheetExcelExportView(
         else:  # Study
             table = tables['study']
             input_name = study.file_name
-            display_name = study.get_display_name()
+            display_name = study.get_name()
 
         # Set up response
         response = HttpResponse(content_type='text/tab-separated-values')
@@ -1686,7 +1764,7 @@ class SheetDeleteView(
     def get_context_data(self, *args, **kwargs):
         """Override get_context_data() to check for data objects in iRODS"""
         context = super().get_context_data(*args, **kwargs)
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         if not irods_backend:
             return context
         project = self.get_project()
@@ -1722,10 +1800,11 @@ class SheetDeleteView(
             )
 
     def post(self, request, *args, **kwargs):
-        timeline = get_backend_api('timeline_backend')
-        taskflow = get_backend_api('taskflow')
+        timeline = plugin_api.get_backend_api('timeline_backend')
+        taskflow = plugin_api.get_backend_api('taskflow')
         tl_event = None
         project = Project.objects.get(sodar_uuid=kwargs['project'])
+        req_user = self.request.user
         investigation = Investigation.objects.get(project=project, active=True)
         redirect_url = get_sheets_url(project)
 
@@ -1752,7 +1831,7 @@ class SheetDeleteView(
             tl_event = timeline.add_event(
                 project=project,
                 app_name=APP_NAME,
-                user=self.request.user,
+                user=req_user,
                 event_name='sheet_delete',
                 description='delete investigation {investigation}',
             )
@@ -1768,12 +1847,12 @@ class SheetDeleteView(
 
         if not host_confirm or host_confirm != actual_host:
             msg = (
-                'Incorrect host name for confirming sheet '
-                'deletion: "{}"'.format(host_confirm)
+                f'Incorrect host name for confirming sheet deletion: '
+                f'"{host_confirm}"'
             )
             if tl_event:
                 tl_event.set_status(timeline.TL_STATUS_FAILED, msg)
-            logger.error(msg + ' (correct={})'.format(actual_host))
+            logger.error(msg + f' (correct={actual_host})')
             messages.error(
                 request, 'Host name input incorrect, deletion cancelled.'
             )
@@ -1785,15 +1864,17 @@ class SheetDeleteView(
                 tl_event.set_status(timeline.TL_STATUS_SUBMIT)
             try:
                 taskflow.submit(
-                    project=project, flow_name='sheet_delete', flow_data={}
+                    project=project,
+                    user=req_user,
+                    flow_name='sheet_delete',
+                    flow_data={},
                 )
                 if tl_event:
                     tl_event.set_status(timeline.TL_STATUS_OK)
             except taskflow.FlowSubmitException as ex:
                 delete_success = False
                 messages.error(
-                    self.request,
-                    'Failed to delete sample sheets: {}'.format(ex),
+                    self.request, f'Failed to delete sample sheets: {ex}'
                 )
                 if tl_event:
                     tl_event.set_status(
@@ -1882,7 +1963,7 @@ class IrodsCollsCreateView(
         return context
 
     def post(self, request, **kwargs):
-        taskflow = get_backend_api('taskflow')
+        taskflow = plugin_api.get_backend_api('taskflow')
         context = self.get_context_data(**kwargs)
         project = context['project']
         investigation = context['investigation']
@@ -1893,17 +1974,14 @@ class IrodsCollsCreateView(
         if not taskflow:
             messages.error(
                 self.request,
-                'Unable to {} collections: taskflow not enabled.'.format(
-                    action
-                ),
+                f'Unable to {action} collections: taskflow not enabled.',
             )
             return redirect(redirect_url)
         # Else go on with the creation
         try:
             self.create_colls(investigation, request)
             success_msg = (
-                'Collection structure for sample data '
-                '{}d in iRODS'.format(action)
+                f'Collection structure for sample data {action}d in iRODS'
             )
             if settings.SHEETS_ENABLE_CACHE:
                 success_msg += ', initiated iRODS cache update.'
@@ -2023,7 +2101,7 @@ class SheetVersionRestoreView(
 
     def post(self, request, **kwargs):
         if not self.timeline:
-            self.timeline = get_backend_api('timeline_backend')
+            self.timeline = plugin_api.get_backend_api('timeline_backend')
         tl_event = None
         project = self.get_project()
         sheet_io = SampleSheetIO(allow_critical=settings.SHEETS_ALLOW_CRITICAL)
@@ -2123,9 +2201,7 @@ class SheetVersionUpdateView(
         obj = form.save()
         messages.success(
             self.request,
-            'Description updated for sheet version "{}".'.format(
-                obj.get_full_name()
-            ),
+            f'Description updated for sheet version "{obj.get_full_name()}".',
         )
         return redirect(
             reverse(
@@ -2161,7 +2237,7 @@ class SheetVersionDeleteView(
         return context
 
     def get_success_url(self):
-        timeline = get_backend_api('timeline_backend')
+        timeline = plugin_api.get_backend_api('timeline_backend')
         project = self.get_project()
         if timeline:
             tl_event = timeline.add_event(
@@ -2179,9 +2255,7 @@ class SheetVersionDeleteView(
             )
         messages.success(
             self.request,
-            'Deleted sample sheet version: {}'.format(
-                self.object.get_full_name()
-            ),
+            f'Deleted sample sheet version: {self.object.get_full_name()}',
         )
         return reverse(
             'samplesheets:versions', kwargs={'project': project.sodar_uuid}
@@ -2219,7 +2293,7 @@ class SheetVersionDeleteBatchView(
         project = context['project']
         version_count = context['sheet_versions'].count()
 
-        timeline = get_backend_api('timeline_backend')
+        timeline = plugin_api.get_backend_api('timeline_backend')
         if timeline:
             for sv in context['sheet_versions']:
                 tl_event = timeline.add_event(
@@ -2266,9 +2340,11 @@ class IrodsAccessTicketListView(
 class IrodsAccessTicketCreateView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
-    InvestigationContextMixin,
     ProjectPermissionMixin,
+    CurrentUserFormMixin,
+    InvestigationContextMixin,
     IrodsAccessTicketModifyMixin,
+    HTTPRefererMixin,
     FormView,
 ):
     """iRODS access ticket create view"""
@@ -2284,7 +2360,7 @@ class IrodsAccessTicketCreateView(
         return kwargs
 
     def form_valid(self, form):
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         project = self.get_project()
         redirect_url = reverse(
             'samplesheets:irods_tickets',
@@ -2303,16 +2379,12 @@ class IrodsAccessTicketCreateView(
                 )
         except Exception as ex:
             messages.error(
-                self.request,
-                'Exception issuing iRODS access ticket: {}'.format(ex),
+                self.request, f'Exception issuing iRODS access ticket: {ex}'
             )
             return redirect(redirect_url)
 
         # Create database object
-        obj = form.save(commit=False)
-        obj.assay = form.cleaned_data['assay']
-        obj.study = obj.assay.study
-        obj.user = self.request.user
+        obj = form.save()
         obj.ticket = ticket.ticket
         obj.save()
 
@@ -2321,7 +2393,7 @@ class IrodsAccessTicketCreateView(
         self.create_app_alerts(obj, 'create', self.request.user)
         messages.success(
             self.request,
-            'iRODS access ticket "{}" created.'.format(obj.get_display_name()),
+            f'iRODS access ticket "{obj.get_display_name()}" created.',
         )
         return redirect(redirect_url)
 
@@ -2331,7 +2403,9 @@ class IrodsAccessTicketUpdateView(
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     ProjectContextMixin,
+    CurrentUserFormMixin,
     IrodsAccessTicketModifyMixin,
+    HTTPRefererMixin,
     UpdateView,
 ):
     """iRODS access ticket update view"""
@@ -2344,7 +2418,7 @@ class IrodsAccessTicketUpdateView(
     slug_field = 'sodar_uuid'
 
     def form_valid(self, form):
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         project = self.get_project()
         obj = form.save()
         redirect_url = reverse(
@@ -2362,7 +2436,7 @@ class IrodsAccessTicketUpdateView(
         except Exception as ex:
             messages.error(
                 self.request,
-                'Exception updating iRODS access ticket: {}'.format(ex),
+                f'Exception updating iRODS access ticket: {ex}',
             )
             return redirect(redirect_url)
 
@@ -2370,7 +2444,7 @@ class IrodsAccessTicketUpdateView(
         self.create_app_alerts(obj, 'update', self.request.user)
         messages.success(
             self.request,
-            'iRODS access ticket "{}" updated.'.format(obj.get_display_name()),
+            f'iRODS access ticket "{obj.get_display_name()}" updated.',
         )
         return redirect(redirect_url)
 
@@ -2381,6 +2455,7 @@ class IrodsAccessTicketDeleteView(
     ProjectPermissionMixin,
     InvestigationContextMixin,
     IrodsAccessTicketModifyMixin,
+    HTTPRefererMixin,
     DeleteView,
 ):
     """iRODS access ticket deletion view"""
@@ -2393,14 +2468,14 @@ class IrodsAccessTicketDeleteView(
 
     def form_valid(self, form):
         obj = self.get_object()
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         try:
             with irods_backend.get_session() as irods:
                 irods_backend.delete_ticket(irods, obj.ticket)
         except Exception as ex:
             messages.error(
                 self.request,
-                'Error deleting iRODS access ticket: {}'.format(ex),
+                f'Error deleting iRODS access ticket: {ex}',
             )
             return redirect(
                 reverse(
@@ -2413,7 +2488,7 @@ class IrodsAccessTicketDeleteView(
         obj.delete()
         messages.success(
             self.request,
-            'iRODS access ticket "{}" deleted.'.format(obj.get_display_name()),
+            f'iRODS access ticket "{obj.get_display_name()}" deleted.',
         )
         return redirect(
             reverse(
@@ -2438,7 +2513,11 @@ class IrodsDataRequestListView(
     paginate_by = settings.SHEETS_IRODS_REQUEST_PAGINATION
 
     @classmethod
-    def get_item_extra_data(cls, irods_session, item):
+    def get_item_extra_data(
+        cls,
+        irods_session: iRODSSession,
+        item: Union[iRODSCollection, iRODSDataObject],
+    ):
         if settings.IRODS_WEBDAV_ENABLED:
             item.webdav_url = urljoin(settings.IRODS_WEBDAV_URL, item.path)
         else:
@@ -2447,7 +2526,7 @@ class IrodsDataRequestListView(
 
     def get_context_data(self, *args, **kwargs):
         context_data = super().get_context_data(*args, **kwargs)
-        irods = get_backend_api('omics_irods')
+        irods = plugin_api.get_backend_api('omics_irods')
         with irods.get_session() as irods_session:
             if settings.IRODS_WEBDAV_ENABLED:
                 for item in context_data['object_list']:
@@ -2481,7 +2560,7 @@ class IrodsDataRequestListView(
         return queryset.filter(user=self.request.user)
 
     def get(self, request, *args, **kwargs):
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         if not irods_backend:
             messages.error(request, 'iRODS backend not enabled.')
             return redirect(
@@ -2497,8 +2576,10 @@ class IrodsDataRequestCreateView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
+    CurrentUserFormMixin,
     InvestigationContextMixin,
     IrodsDataRequestModifyMixin,
+    HTTPRefererMixin,
     FormView,
 ):
     """View for creating an iRODS data request"""
@@ -2515,19 +2596,14 @@ class IrodsDataRequestCreateView(
 
     def form_valid(self, form):
         project = self.get_project()
-        # Create database object
-        obj = form.save(commit=False)
-        # TODO: These should happen in the form instead (see #1865)
-        obj.user = self.request.user
-        obj.project = project
-        obj.save()
+        obj = form.save()
         # Create timeline event
         self.add_tl_event(obj, 'create')
         # Add app alerts to owners/delegates
         self.add_alerts_create(project)
         messages.success(
             self.request,
-            'iRODS data request "{}" created.'.format(obj.get_display_name()),
+            f'iRODS data request "{obj.get_display_name()}" created.',
         )
         return redirect(
             reverse(
@@ -2541,8 +2617,10 @@ class IrodsDataRequestUpdateView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
+    CurrentUserFormMixin,
     InvestigationContextMixin,
     IrodsDataRequestModifyMixin,
+    HTTPRefererMixin,
     UpdateView,
 ):
     """View for updating an iRODS data request"""
@@ -2573,7 +2651,7 @@ class IrodsDataRequestUpdateView(
         self.add_tl_event(obj, 'update')
         messages.success(
             self.request,
-            'iRODS data request "{}" updated.'.format(obj.get_display_name()),
+            f'iRODS data request "{obj.get_display_name()}" updated.',
         )
         return redirect(
             reverse(
@@ -2589,6 +2667,7 @@ class IrodsDataRequestDeleteView(
     ProjectPermissionMixin,
     InvestigationContextMixin,
     IrodsDataRequestModifyMixin,
+    HTTPRefererMixin,
     DeleteView,
 ):
     """View for deleting an iRODS data request"""
@@ -2646,7 +2725,7 @@ class IrodsDataRequestAcceptView(
         ).first()
         context_data['request_objects'] = []
         affected_object_paths = [obj.path]
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         is_collection = obj.is_collection()
         if is_collection:
             affected_object_paths = []
@@ -2681,9 +2760,9 @@ class IrodsDataRequestAcceptView(
             )
 
     def post(self, request, *args, **kwargs):
-        timeline = get_backend_api('timeline_backend')
-        taskflow = get_backend_api('taskflow')
-        app_alerts = get_backend_api('appalerts_backend')
+        timeline = plugin_api.get_backend_api('timeline_backend')
+        taskflow = plugin_api.get_backend_api('taskflow')
+        app_alerts = plugin_api.get_backend_api('appalerts_backend')
         project = self.get_project()
 
         obj = IrodsDataRequest.objects.filter(
@@ -2704,9 +2783,7 @@ class IrodsDataRequestAcceptView(
             )
             messages.success(
                 self.request,
-                'iRODS data request "{}" accepted.'.format(
-                    obj.get_display_name()
-                ),
+                f'iRODS data request "{obj.get_display_name()}" accepted.',
             )
         except Exception as ex:
             self.add_error_message(obj, ex)
@@ -2740,7 +2817,7 @@ class IrodsDataRequestAcceptBatchView(
         context_data = super().get_context_data(*args, **kwargs)
         context_data['request_objects'] = []
         context_data['irods_request_uuids'] = ''
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         batch = self.get_irods_request_objects()
         affected_object_paths = []
         context_data['irods_requests'] = batch
@@ -2776,9 +2853,9 @@ class IrodsDataRequestAcceptBatchView(
             kwargs={'project': self.get_project().sodar_uuid},
         )
         if form.is_valid():
-            timeline = get_backend_api('timeline_backend')
-            taskflow = get_backend_api('taskflow')
-            app_alerts = get_backend_api('appalerts_backend')
+            timeline = plugin_api.get_backend_api('timeline_backend')
+            taskflow = plugin_api.get_backend_api('taskflow')
+            app_alerts = plugin_api.get_backend_api('appalerts_backend')
             project = self.get_project()
             batch = self.get_irods_request_objects()
             if not batch:
@@ -2797,9 +2874,8 @@ class IrodsDataRequestAcceptBatchView(
                     )
                     messages.success(
                         self.request,
-                        'iRODS data request "{}" accepted.'.format(
-                            obj.get_display_name()
-                        ),
+                        f'iRODS data request "{obj.get_display_name()}" '
+                        f'accepted.',
                     )
                 except Exception as ex:
                     self.add_error_message(obj, ex)
@@ -2825,8 +2901,8 @@ class IrodsDataRequestRejectView(
     permission_required = 'samplesheets.manage_sheet'
 
     def get(self, request, *args, **kwargs):
-        timeline = get_backend_api('timeline_backend')
-        app_alerts = get_backend_api('appalerts_backend')
+        timeline = plugin_api.get_backend_api('timeline_backend')
+        app_alerts = plugin_api.get_backend_api('appalerts_backend')
         project = self.get_project()
         redirect_url = reverse(
             'samplesheets:irods_requests',
@@ -2847,16 +2923,13 @@ class IrodsDataRequestRejectView(
                 )
                 messages.success(
                     self.request,
-                    'iRODS data request "{}" rejected.'.format(
-                        obj.get_display_name()
-                    ),
+                    f'iRODS data request "{obj.get_display_name()}" rejected.',
                 )
             except Exception as ex:
                 messages.error(
                     self.request,
-                    'Rejecting iRODS data request "{}" failed: {}'.format(
-                        obj.get_display_name(), ex
-                    ),
+                    f'Rejecting iRODS data request "{obj.get_display_name()}" '
+                    f'failed: {ex}',
                 )
             return redirect(redirect_url)
         except Exception as ex:
@@ -2876,8 +2949,8 @@ class IrodsDataRequestRejectBatchView(
     permission_required = 'samplesheets.manage_sheet'
 
     def post(self, request, *args, **kwargs):
-        timeline = get_backend_api('timeline_backend')
-        app_alerts = get_backend_api('appalerts_backend')
+        timeline = plugin_api.get_backend_api('timeline_backend')
+        app_alerts = plugin_api.get_backend_api('appalerts_backend')
         project = self.get_project()
         redirect_url = reverse(
             'samplesheets:irods_requests',
@@ -2900,16 +2973,14 @@ class IrodsDataRequestRejectBatchView(
                     )
                     messages.success(
                         self.request,
-                        'iRODS data request "{}" rejected.'.format(
-                            obj.get_display_name()
-                        ),
+                        f'iRODS data request "{obj.get_display_name()}" '
+                        f'rejected.',
                     )
                 except Exception as ex:
                     messages.error(
                         self.request,
-                        'Rejecting iRODS data request "{}" failed: {}'.format(
-                            obj.get_display_name(), ex
-                        ),
+                        f'Rejecting iRODS data request '
+                        f'"{obj.get_display_name()}" failed: {ex}',
                     )
             return redirect(redirect_url)
         except Exception as ex:
@@ -2928,7 +2999,7 @@ class SheetRemoteSyncView(
 
     permission_required = 'samplesheets.edit_sheet'
 
-    def _redirect(self):
+    def _redirect(self) -> HttpResponse:
         return redirect(
             reverse(
                 'samplesheets:project_sheets',
@@ -2938,7 +3009,7 @@ class SheetRemoteSyncView(
 
     def get(self, request, *args, **kwargs):
         project = self.get_project()
-        timeline = get_backend_api('timeline_backend')
+        timeline = plugin_api.get_backend_api('timeline_backend')
         tl_add = False
         tl_status_type = timeline.TL_STATUS_OK if timeline else 'OK'
         tl_status_desc = 'Sync OK'
@@ -2963,8 +3034,8 @@ class SheetRemoteSyncView(
                 )
         except Exception as ex:
             tl_status_type = timeline.TL_STATUS_FAILED if timeline else 'FAILED'
-            tl_status_desc = 'Sync failed: {}'.format(ex)
-            messages.error(request, '{}: {}'.format(SYNC_FAIL_PREFIX, ex))
+            tl_status_desc = f'Sync failed: {ex}'
+            messages.error(request, f'{SYNC_FAIL_PREFIX}: {ex}')
             tl_add = True  # Add timeline event
 
         if timeline and tl_add:

@@ -118,7 +118,7 @@ class OBOFormatOntology(models.Model):
         ordering = ['name']
 
     def __str__(self):
-        return '{}: {} ({})'.format(self.name, self.title, self.ontology_id)
+        return f'{self.name}: {self.title} ({self.ontology_id})'
 
     def __repr__(self):
         values = [self.name, self.title, self.ontology_id]
@@ -135,12 +135,12 @@ class OBOFormatOntology(models.Model):
         """Validate name_case"""
         if not self.name.isupper():
             raise ValidationError(
-                'Ontology name "{}" is not in upper case'.format(self.name)
+                f'Ontology name "{self.name}" is not in upper case'
             )
 
     # Custom row-level functions
 
-    def get_term_by_id(self, term_id):
+    def get_term_by_id(self, term_id: str) -> 'OBOFormatOntologyTerm':
         """
         Retrun ontology term by id or None if not found
 
@@ -241,15 +241,15 @@ class OBOFormatOntologyTerm(models.Model):
 
     # Custom row-level functions
 
-    def get_id_space(self):
+    def get_id_space(self) -> str:
         """Return ID space for term name"""
         return self.term_id.split(':')[0]
 
-    def get_local_id(self):
+    def get_local_id(self) -> str:
         """Return local ID for term name"""
         return self.term_id.split(':')[1]
 
-    def get_url(self):
+    def get_url(self) -> str:
         """Return URL for this specific term"""
         return self.ontology.term_url.format(
             id_space=self.get_id_space(), local_id=self.get_local_id()
@@ -259,7 +259,7 @@ class OBOFormatOntologyTerm(models.Model):
         pass
 
     def __str__(self):
-        return '{} ({})'.format(self.term_id, self.name)
+        return f'{self.term_id} ({self.name})'
 
     def __repr__(self):
         values = [self.ontology.name, self.term_id, self.name]

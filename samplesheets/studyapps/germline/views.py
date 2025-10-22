@@ -8,7 +8,7 @@ from django.shortcuts import redirect
 from django.views.generic import View
 
 # Projectroles dependency
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.views import (
     LoggedInPermissionMixin,
     ProjectContextMixin,
@@ -26,6 +26,7 @@ from samplesheets.utils import get_sheets_url
 from sodar.users.auth import fallback_to_auth_basic
 
 
+plugin_api = PluginAPI()
 table_builder = SampleSheetTableBuilder()
 
 
@@ -49,7 +50,7 @@ class BaseGermlineConfigView(
         Override get() to set up stuff and return with failure if something is
         missing.
         """
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         self.redirect_url = get_sheets_url(self.get_project())
 
         try:
@@ -75,7 +76,7 @@ class BaseGermlineConfigView(
 class IGVSessionFileRenderView(BaseGermlineConfigView):
     """IGV session file rendering view"""
 
-    permission_required = 'samplesheets.view_sheet'
+    permission_required = 'samplesheets.view_files'
 
     def get(self, request, *args, **kwargs):
         """Override get() to return IGV session file"""
@@ -137,7 +138,5 @@ class IGVSessionFileRenderView(BaseGermlineConfigView):
         # Serve XML
         file_name = fam_id + '.pedigree.igv.xml'
         response = HttpResponse(xml_str, content_type='text/xml')
-        response['Content-Disposition'] = 'attachment; filename="{}"'.format(
-            file_name
-        )
+        response['Content-Disposition'] = f'attachment; filename="{file_name}"'
         return response

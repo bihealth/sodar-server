@@ -1,13 +1,16 @@
 """Tests for UI views in the samplesheets app with taskflow"""
 
-import os
 import pytz
 import uuid
 
 from datetime import timedelta
+from typing import Optional
+from urllib.parse import urlencode
+
 from irods.exception import CollectionDoesNotExist, NoResultFound
 from irods.models import TicketQuery
-from urllib.parse import urlencode
+from irods.path import iRODSPath
+from irods.session import iRODSSession
 
 from django.conf import settings
 from django.contrib import auth
@@ -20,8 +23,8 @@ from django.utils import timezone
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.models import Role, SODAR_CONSTANTS
+from projectroles.plugins import PluginAPI
 from projectroles.views import NO_AUTH_MSG
 
 # Appalerts dependency
@@ -34,7 +37,8 @@ from timeline.models import TimelineEvent, TL_STATUS_OK
 from irodsbackend.api import TICKET_MODE_READ
 
 # Taskflowbackend dependency
-from taskflowbackend.tests.base import TaskflowViewTestBase, HASH_SCHEME_SHA256
+from taskflowbackend.constants import IRODS_HASH_SCHEME_SHA256
+from taskflowbackend.tests.base import TaskflowViewTestBase
 
 from samplesheets.forms import ERROR_MSG_INVALID_PATH
 from samplesheets.models import (
@@ -65,6 +69,7 @@ from samplesheets.views import (
 
 
 app_settings = AppSettingAPI()
+plugin_api = PluginAPI()
 User = auth.get_user_model()
 
 
@@ -103,7 +108,9 @@ SHEET_SYNC_TOKEN = 'dohdai4EZie0xooF'
 class SampleSheetTaskflowMixin:
     """Taskflow helpers for samplesheets tests"""
 
-    def make_irods_colls(self, investigation, ticket_str=None):
+    def make_irods_colls(
+        self, investigation: Investigation, ticket_str: Optional[str] = None
+    ):
         """
         Create iRODS collection structure for investigation.
 
@@ -115,6 +122,7 @@ class SampleSheetTaskflowMixin:
         project = investigation.project
         values = {
             'project': project,
+            'user': None,
             'flow_name': 'sheet_colls_create',
             'flow_data': {
                 'colls': get_sample_colls(investigation),
@@ -125,7 +133,9 @@ class SampleSheetTaskflowMixin:
         investigation.refresh_from_db()
         self.assertEqual(investigation.irods_status, True)
 
-    def make_track_hub_coll(self, session, assay_path, name):
+    def make_track_hub_coll(
+        self, session: iRODSSession, assay_path: str, name: str
+    ) -> str:
         """
         Create iRODS collection for a track hub under assay collection.
 
@@ -134,23 +144,23 @@ class SampleSheetTaskflowMixin:
         :param name: Track hub collection name (string)
         :return: Path to track hub (string)
         """
-        track_hubs_path = assay_path + '/TrackHubs'
+        track_hubs_path = iRODSPath(assay_path, 'TrackHubs')
         try:
             session.collections.get(track_hubs_path)
         except CollectionDoesNotExist:
             session.collections.create(track_hubs_path)
-        track_hub = session.collections.create(track_hubs_path + '/' + name)
+        track_hub = session.collections.create(iRODSPath(track_hubs_path, name))
         return track_hub.path
 
 
 class SampleSheetPublicAccessMixin:
     """Helpers for sample sheet public access modification with taskflow"""
 
-    def set_public_access(self, access):
+    def set_public_access(self, access: Role):
         """
         Set project public access by issuing a project update POST request.
 
-        :param access: Bool
+        :param access: Role object or None
         """
         with self.login(self.user):
             response = self.client.patch(
@@ -159,18 +169,20 @@ class SampleSheetPublicAccessMixin:
                     kwargs={'project': self.project.sodar_uuid},
                 ),
                 format='json',
-                data={'public_guest_access': access},
+                data={'public_access': access.name if access else None},
                 content_type='application/json',
             )
         self.assertEqual(response.status_code, 200)
         self.project.refresh_from_db()
-        self.assertEqual(self.project.public_guest_access, access)
+        self.assertEqual(self.project.public_access, access)
 
 
 class IrodsAccessTicketViewTestMixin:
     """Helpers for iRODS access ticket view tests"""
 
-    def get_irods_ticket(self, sodar_ticket):
+    def get_irods_ticket(
+        self, sodar_ticket: IrodsAccessTicket
+    ) -> Optional[dict]:
         """
         Query for iRODS access ticket.
 
@@ -186,7 +198,7 @@ class IrodsAccessTicketViewTestMixin:
         except NoResultFound:
             return None
 
-    def get_ticket_hosts(self, ticket_id):
+    def get_ticket_hosts(self, ticket_id: str) -> list:
         """
         Query for iRODS access ticket allowed hosts.
 
@@ -199,7 +211,7 @@ class IrodsAccessTicketViewTestMixin:
         return [h[TicketQuery.AllowedHosts.host] for h in list(query)]
 
     @classmethod
-    def get_tl_event_count(cls, action):
+    def get_tl_event_count(cls, action: str) -> int:
         """
         Return iRODS ticket timeline event count.
 
@@ -211,7 +223,7 @@ class IrodsAccessTicketViewTestMixin:
         ).count()
 
     @classmethod
-    def get_app_alert_count(cls, action):
+    def get_app_alert_count(cls, action: str) -> int:
         """
         Return iRODS ticket app alert count.
 
@@ -254,7 +266,7 @@ class IrodsDataRequestViewTestBase(
         )
 
     # TODO: Move this into SODAR Core (see bihealth/sodar-core#1243)
-    def _assert_tl_count(self, event_name, count, **kwargs):
+    def _assert_tl_count(self, event_name: str, count: int, **kwargs):
         """
         Assert expected timeline event count.
 
@@ -263,7 +275,7 @@ class IrodsDataRequestViewTestBase(
         :param count: Integer
         :param kwargs: Extra kwargs for query (dict, optional)
         """
-        timeline = get_backend_api('timeline_backend')
+        timeline = plugin_api.get_backend_api('timeline_backend')
         TimelineEvent, _ = timeline.get_models()
         self.assertEqual(
             TimelineEvent.objects.filter(
@@ -279,7 +291,6 @@ class IrodsDataRequestViewTestBase(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
@@ -288,8 +299,8 @@ class IrodsDataRequestViewTestBase(
         # Set up iRODS data
         self.make_irods_colls(self.investigation)
         self.assay_path = self.irods_backend.get_path(self.assay)
-        self.obj_path = os.path.join(self.assay_path, IRODS_FILE_NAME)
-        self.obj_path2 = os.path.join(self.assay_path, IRODS_FILE_NAME2)
+        self.obj_path = iRODSPath(self.assay_path, IRODS_FILE_NAME)
+        self.obj_path2 = iRODSPath(self.assay_path, IRODS_FILE_NAME2)
         self.file_obj = self.irods.data_objects.create(self.obj_path)
         self.file_obj2 = self.irods.data_objects.create(self.obj_path2)
         # Init users (owner = user_cat, superuser = user)
@@ -306,7 +317,7 @@ class IrodsDataRequestViewTestBase(
             self.project, self.user_guest, self.role_guest
         )
         # Get appalerts API and model
-        self.app_alerts = get_backend_api('appalerts_backend')
+        self.app_alerts = plugin_api.get_backend_api('appalerts_backend')
         self.app_alert_model = self.app_alerts.get_model()
         # Set default POST data
         self.post_data = {
@@ -335,7 +346,6 @@ class TestIrodsCollsCreateView(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
@@ -375,7 +385,7 @@ class TestIrodsCollsCreateView(
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_post_anon(self):
         """Test POST with anonymous access enabled"""
-        self.set_public_access(True)
+        self.set_public_access(self.role_guest)
         self.assertEqual(self.investigation.irods_status, False)
         self.assertEqual(
             app_settings.get(
@@ -412,11 +422,11 @@ class TestSheetDeleteView(
         self.assert_irods_coll(self.study)
         self.assert_irods_coll(self.assay)
         self.assay_path = self.irods_backend.get_path(self.assay)
-        self.file_path = self.assay_path + '/' + IRODS_FILE_NAME
+        self.file_path = iRODSPath(self.assay_path, IRODS_FILE_NAME)
         self.irods.data_objects.create(self.file_path)
         self.assertEqual(self.irods.data_objects.exists(self.file_path), True)
 
-    def _assert_tl_event_count(self, count):
+    def _assert_tl_event_count(self, count: int):
         self.assertEqual(
             TimelineEvent.objects.filter(event_name='sheet_delete').count(),
             count,
@@ -424,18 +434,17 @@ class TestSheetDeleteView(
 
     def setUp(self):
         super().setUp()
-        self.irods_backend = get_backend_api('omics_irods')
+        self.irods_backend = plugin_api.get_backend_api('omics_irods')
         self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-        self.timeline = get_backend_api('timeline_backend')
+        self.timeline = plugin_api.get_backend_api('timeline_backend')
         self.url = reverse(
             'samplesheets:delete',
             kwargs={'project': self.project.sodar_uuid},
@@ -627,7 +636,6 @@ class TestIrodsAccessTicketListView(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
@@ -635,9 +643,7 @@ class TestIrodsAccessTicketListView(
         self.make_irods_colls(self.investigation)
         # Create collection under assay
         assay_path = self.irods_backend.get_path(self.assay)
-        self.coll = self.irods.collections.create(
-            os.path.join(assay_path, 'coll')
-        )
+        self.coll = self.irods.collections.create(iRODSPath(assay_path, 'coll'))
         self.url = reverse(
             'samplesheets:irods_tickets',
             kwargs={'project': self.project.sodar_uuid},
@@ -684,7 +690,6 @@ class TestIrodsAccessTicketCreateView(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
@@ -692,7 +697,7 @@ class TestIrodsAccessTicketCreateView(
         self.make_irods_colls(self.investigation)
         self.assay_path = self.irods_backend.get_path(self.assay)
         self.coll = self.irods.collections.create(
-            os.path.join(self.assay_path, 'coll')
+            iRODSPath(self.assay_path, 'coll')
         )
         self.date_expires = (timezone.localtime() + timedelta(days=1)).strftime(
             '%Y-%m-%d'
@@ -928,7 +933,7 @@ class TestIrodsAccessTicketCreateView(
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
         self.assertEqual(self.get_tl_event_count('create'), 0)
         self.assertEqual(self.get_app_alert_count('create'), 0)
-        self.post_data['path'] = self.coll.path + '/..'
+        self.post_data['path'] = iRODSPath(self.coll.path, '/..')
         with self.login(self.user):
             response = self.client.post(self.url, self.post_data)
         self.assertEqual(response.status_code, 200)
@@ -968,7 +973,7 @@ class TestIrodsAccessTicketCreateView(
     def test_post_non_existing_path(self):
         """Test POST with non-existing path (should fail)"""
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
-        self.post_data['path'] = os.path.join(
+        self.post_data['path'] = iRODSPath(
             self.assay_path, 'NOT-A-REAL-COLLECTION'
         )
         with self.login(self.user):
@@ -1038,7 +1043,6 @@ class TestIrodsAccessTicketUpdateView(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
@@ -1046,7 +1050,7 @@ class TestIrodsAccessTicketUpdateView(
         self.make_irods_colls(self.investigation)
         self.assay_path = self.irods_backend.get_path(self.assay)
         self.coll = self.irods.collections.create(
-            os.path.join(self.assay_path, 'coll')
+            iRODSPath(self.assay_path, 'coll')
         )
         # Create ticket
         self.date_expires = timezone.localtime() + timedelta(days=1)
@@ -1246,7 +1250,6 @@ class TestIrodsAccessTicketDeleteView(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
@@ -1254,7 +1257,7 @@ class TestIrodsAccessTicketDeleteView(
         self.make_irods_colls(self.investigation)
         self.assay_path = self.irods_backend.get_path(self.assay)
         self.coll = self.irods.collections.create(
-            os.path.join(self.assay_path, 'coll')
+            iRODSPath(self.assay_path, 'coll')
         )
         # Create ticket in database and iRODS
         self.ticket = self.make_irods_ticket(
@@ -1351,10 +1354,11 @@ class TestIrodsDataRequestCreateView(IrodsDataRequestViewTestBase):
         obj = IrodsDataRequest.objects.first()
         self.assertEqual(
             list(get_messages(response.wsgi_request))[0].message,
-            'iRODS data request "{}" created.'.format(obj.get_display_name()),
+            f'iRODS data request "{obj.get_display_name()}" created.',
         )
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         self.assertEqual(obj.path, self.obj_path)
+        self.assertEqual(obj.user, self.user_contributor)
         self.assertEqual(obj.description, IRODS_REQUEST_DESC)
         self._assert_tl_count(EVENT_CREATE, 1)
         self.assertEqual(
@@ -1433,7 +1437,7 @@ class TestIrodsDataRequestCreateView(IrodsDataRequestViewTestBase):
 
     def test_post_multiple(self):
         """Test POST with multiple requests for same path"""
-        path2 = os.path.join(self.assay_path, IRODS_FILE_NAME2)
+        path2 = iRODSPath(self.assay_path, IRODS_FILE_NAME2)
         self.irods.data_objects.create(path2)
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         self._assert_tl_count(EVENT_CREATE, 0)
@@ -1456,7 +1460,7 @@ class TestIrodsDataRequestUpdateView(
 
     def setUp(self):
         super().setUp()
-        self.request = self.make_irods_request(
+        self.irods_req = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
             path=self.obj_path,
@@ -1466,7 +1470,7 @@ class TestIrodsDataRequestUpdateView(
         )
         self.url = reverse(
             'samplesheets:irods_request_update',
-            kwargs={'irodsdatarequest': self.request.sodar_uuid},
+            kwargs={'irodsdatarequest': self.irods_req.sodar_uuid},
         )
 
     def test_post(self):
@@ -1490,21 +1494,19 @@ class TestIrodsDataRequestUpdateView(
 
         self.assertEqual(
             list(get_messages(response.wsgi_request))[-1].message,
-            'iRODS data request "{}" updated.'.format(
-                self.request.get_display_name()
-            ),
+            f'iRODS data request "{self.irods_req.get_display_name()}" updated.',
         )
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
-        self.request.refresh_from_db()
-        self.assertEqual(self.request.path, self.obj_path)
-        self.assertEqual(self.request.description, IRODS_REQUEST_DESC_UPDATE)
+        self.irods_req.refresh_from_db()
+        self.assertEqual(self.irods_req.path, self.obj_path)
+        self.assertEqual(self.irods_req.description, IRODS_REQUEST_DESC_UPDATE)
         self._assert_tl_count(EVENT_UPDATE, 1)
         self.assertEqual(
             TimelineEvent.objects.get(event_name=EVENT_UPDATE).extra_data,
             {
                 'action': IRODS_REQUEST_ACTION_DELETE,
-                'path': self.request.path,
-                'description': self.request.description,
+                'path': self.irods_req.path,
+                'description': self.irods_req.description,
             },
         )
 
@@ -1521,11 +1523,11 @@ class TestIrodsDataRequestUpdateView(
             self.client.post(self.url, post_data)
 
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
-        self.request.refresh_from_db()
-        self.assertEqual(self.request.path, self.obj_path)
-        self.assertEqual(self.request.description, IRODS_REQUEST_DESC_UPDATE)
+        self.irods_req.refresh_from_db()
+        self.assertEqual(self.irods_req.path, self.obj_path)
+        self.assertEqual(self.irods_req.description, IRODS_REQUEST_DESC_UPDATE)
         # Assert user is not updated when superuser updates the request
-        self.assertEqual(self.request.user, self.user_contributor)
+        self.assertEqual(self.irods_req.user, self.user_contributor)
         self._assert_tl_count(EVENT_UPDATE, 1)
 
     def test_post_invalid_form_data(self):
@@ -1545,9 +1547,9 @@ class TestIrodsDataRequestUpdateView(
             ERROR_MSG_INVALID_PATH,
         )
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
-        self.request.refresh_from_db()
-        self.assertEqual(self.request.path, self.obj_path)
-        self.assertEqual(self.request.description, IRODS_REQUEST_DESC)
+        self.irods_req.refresh_from_db()
+        self.assertEqual(self.irods_req.path, self.obj_path)
+        self.assertEqual(self.irods_req.description, IRODS_REQUEST_DESC)
         self._assert_tl_count(EVENT_UPDATE, 0)
 
 
@@ -1607,7 +1609,7 @@ class TestIrodsDataRequestDeleteView(
     def test_post_one_of_multiple(self):
         """Test POST for one of multiple requests"""
         self._assert_tl_count(EVENT_DELETE, 0)
-        obj_path2 = os.path.join(self.assay_path, IRODS_FILE_NAME2)
+        obj_path2 = iRODSPath(self.assay_path, IRODS_FILE_NAME2)
         self.irods.data_objects.create(obj_path2)
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
 
@@ -1646,7 +1648,7 @@ class TestIrodsDataRequestAcceptView(
 
     def setUp(self):
         super().setUp()
-        self.timeline = get_backend_api('timeline_backend')
+        self.timeline = plugin_api.get_backend_api('timeline_backend')
         self.url_create = reverse(
             'samplesheets:irods_request_create',
             kwargs={'project': self.project.sodar_uuid},
@@ -1675,7 +1677,7 @@ class TestIrodsDataRequestAcceptView(
 
     def test_get_coll(self):
         """Test GET with collection request"""
-        coll_path = os.path.join(self.assay_path, 'request_coll')
+        coll_path = iRODSPath(self.assay_path, 'request_coll')
         self.irods.collections.create(coll_path)
         self.assertEqual(self.irods.collections.exists(coll_path), True)
         obj = self.make_irods_request(
@@ -1731,7 +1733,7 @@ class TestIrodsDataRequestAcceptView(
 
         self.assertEqual(
             list(get_messages(response.wsgi_request))[-1].message,
-            'iRODS data request "{}" accepted.'.format(obj.get_display_name()),
+            f'iRODS data request "{obj.get_display_name()}" accepted.',
         )
         obj.refresh_from_db()
         self.assertEqual(obj.status, IRODS_REQUEST_STATUS_ACCEPTED)
@@ -1774,11 +1776,13 @@ class TestIrodsDataRequestAcceptView(
         self.assert_irods_obj(self.obj_path, False)
         self.assert_irods_obj(self.obj_path + '.md5', False)
 
-    @override_settings(IRODS_HASH_SCHEME=HASH_SCHEME_SHA256)
+    @override_settings(IRODS_HASH_SCHEME=IRODS_HASH_SCHEME_SHA256)
     def test_post_checksum_sha256(self):
         """Test POST to accept delete request with SHA256 checksum"""
         self.assert_irods_obj(self.obj_path)
-        self.make_checksum_object(self.file_obj, scheme=HASH_SCHEME_SHA256)
+        self.make_checksum_object(
+            self.file_obj, scheme=IRODS_HASH_SCHEME_SHA256
+        )
         self.assert_irods_obj(self.obj_path + '.sha256')
         with self.login(self.user_contributor):
             self.client.post(self.url_create, self.post_data)
@@ -1965,7 +1969,7 @@ class TestIrodsDataRequestAcceptView(
 
     def test_post_one_of_multiple(self):
         """Test POST for one of multiple requests"""
-        obj_path2 = os.path.join(self.assay_path, IRODS_FILE_NAME2)
+        obj_path2 = iRODSPath(self.assay_path, IRODS_FILE_NAME2)
         self.irods.data_objects.create(obj_path2)
         self.assert_irods_obj(self.obj_path)
         self.assert_irods_obj(obj_path2)
@@ -2047,8 +2051,8 @@ class TestIrodsDataRequestAcceptView(
 
     def test_post_collection(self):
         """Test POST with multiple objects in collection"""
-        coll_path = os.path.join(self.assay_path, 'request_coll')
-        obj_path2 = os.path.join(coll_path, IRODS_FILE_NAME)
+        coll_path = iRODSPath(self.assay_path, 'request_coll')
+        obj_path2 = iRODSPath(coll_path, IRODS_FILE_NAME)
         self.irods.collections.create(coll_path)
         self.irods.data_objects.create(obj_path2)
         self.assertEqual(self.irods.collections.exists(coll_path), True)
@@ -2081,6 +2085,36 @@ class TestIrodsDataRequestAcceptView(
         self._assert_alert_count(EVENT_ACCEPT, self.user_contributor, 1)
         self.assertEqual(self.irods.collections.exists(coll_path), False)
         self.assert_irods_obj(obj_path2, False)
+
+    def test_post_disable_alert_notify(self):
+        """Test POST wth disabled alert notifications"""
+        app_settings.set(
+            APP_NAME,
+            'notify_alert_irods_request',
+            False,
+            user=self.user_contributor,
+        )
+        self.assert_irods_obj(self.obj_path)
+        obj = self.make_irods_request(
+            project=self.project,
+            action=IRODS_REQUEST_ACTION_DELETE,
+            path=self.obj_path,
+            status=IRODS_REQUEST_STATUS_ACTIVE,
+            user=self.user_contributor,
+        )
+        with self.login(self.user):
+            self.client.post(
+                reverse(
+                    'samplesheets:irods_request_accept',
+                    kwargs={'irodsdatarequest': obj.sodar_uuid},
+                ),
+                {'confirm': True},
+            )
+        obj.refresh_from_db()
+        self.assertEqual(obj.status, IRODS_REQUEST_STATUS_ACCEPTED)
+        self.assert_irods_obj(self.obj_path, False)
+        # No alert for contributor
+        self._assert_alert_count(EVENT_ACCEPT, self.user_contributor, 0)
 
     def test_post_disable_email_notify(self):
         """Test POST wth disabled email notifications"""
@@ -2179,7 +2213,7 @@ class TestIrodsDataRequestAcceptBatchView(
     """Tests for IrodsDataRequestAcceptBatchView with taskflow"""
 
     @classmethod
-    def _get_request_uuids(cls):
+    def _get_request_uuids(cls) -> str:
         return ','.join(
             [str(r.sodar_uuid) for r in IrodsDataRequest.objects.all()]
         )
@@ -2239,7 +2273,7 @@ class TestIrodsDataRequestAcceptBatchView(
 
     def test_get_coll(self):
         """Test GET with collection"""
-        coll_path = os.path.join(self.assay_path, 'request_coll')
+        coll_path = iRODSPath(self.assay_path, 'request_coll')
         self.irods.collections.create(coll_path)
         self.assertEqual(self.irods.collections.exists(coll_path), True)
         self.make_irods_request(
@@ -2356,8 +2390,7 @@ class TestIrodsDataRequestAcceptBatchView(
             response = self.client.post(
                 self.url_accept,
                 {
-                    'irods_requests': self._get_request_uuids()
-                    + ',',  # Add trailing comma to test for correct splitting
+                    'irods_requests': self._get_request_uuids() + ',',
                     'confirm': False,
                 },
             )
@@ -2394,8 +2427,7 @@ class TestIrodsDataRequestAcceptBatchView(
             response = self.client.post(
                 self.url_accept,
                 {
-                    'irods_requests': self._get_request_uuids()
-                    + ',',  # Add trailing comma to test for correct splitting
+                    'irods_requests': self._get_request_uuids() + ',',
                     'confirm': True,
                 },
             )
@@ -2457,7 +2489,7 @@ class TestIrodsDataRequestRejectView(
 
         self.assertEqual(
             list(get_messages(response.wsgi_request))[-1].message,
-            'iRODS data request "{}" rejected.'.format(obj.get_display_name()),
+            f'iRODS data request "{obj.get_display_name()}" rejected.',
         )
         obj.refresh_from_db()
         self.assertEqual(obj.status, IRODS_REQUEST_STATUS_REJECTED)
@@ -2576,7 +2608,7 @@ class TestIrodsDataRequestRejectView(
 
     def test_get_one_of_multiple(self):
         """Test GET with one of multiple requests"""
-        obj_path2 = os.path.join(self.assay_path, IRODS_FILE_NAME2)
+        obj_path2 = iRODSPath(self.assay_path, IRODS_FILE_NAME2)
         self.irods.data_objects.create(obj_path2)
         self.assert_irods_obj(self.obj_path)
         self.assert_irods_obj(obj_path2)
@@ -2626,6 +2658,35 @@ class TestIrodsDataRequestRejectView(
                 ),
             )
         self.assertEqual(response.status_code, 404)
+
+    def test_get_disable_alert_notify(self):
+        """Test GET with disabled alert notifications"""
+        app_settings.set(
+            APP_NAME,
+            'notify_alert_irods_request',
+            False,
+            user=self.user_contributor,
+        )
+        self.assert_irods_obj(self.obj_path)
+        obj = self.make_irods_request(
+            project=self.project,
+            action=IRODS_REQUEST_ACTION_DELETE,
+            path=self.obj_path,
+            status=IRODS_REQUEST_STATUS_ACTIVE,
+            user=self.user_contributor,
+        )
+        with self.login(self.user):
+            self.client.get(
+                reverse(
+                    'samplesheets:irods_request_reject',
+                    kwargs={'irodsdatarequest': obj.sodar_uuid},
+                ),
+            )
+        obj.refresh_from_db()
+        self.assertEqual(obj.status, IRODS_REQUEST_STATUS_REJECTED)
+        self.assert_irods_obj(self.obj_path)
+        # No alert for contributor
+        self._assert_alert_count(EVENT_REJECT, self.user_contributor, 0)
 
     def test_get_disable_email_notify(self):
         """Test GET with disabled email notifications"""
@@ -2746,6 +2807,8 @@ class TestSampleDataPublicAccess(
 ):
     """Tests for granting/revoking public guest access for projects"""
 
+    # TODO: Add tests for viewer role once supported
+
     def setUp(self):
         super().setUp()
         # Create user in iRODS
@@ -2756,11 +2819,9 @@ class TestSampleDataPublicAccess(
             user_zone=self.irods.zone,
         )
         self.irods.users.modify(PUBLIC_USER_NAME, 'password', PUBLIC_USER_PASS)
-        self.user_home_path = '/{}/home/{}'.format(
-            settings.IRODS_ZONE, PUBLIC_USER_NAME
-        )
+        self.user_home_path = f'/{settings.IRODS_ZONE}/home/{PUBLIC_USER_NAME}'
         self.assertTrue(self.irods.collections.exists(self.user_home_path))
-        self.user_session = get_backend_api(
+        self.user_session = plugin_api.get_backend_api(
             'omics_irods',
             user_name=PUBLIC_USER_NAME,
             user_pass=PUBLIC_USER_PASS,
@@ -2772,8 +2833,7 @@ class TestSampleDataPublicAccess(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
-            public_guest_access=True,
+            public_access=self.role_guest,
         )
 
         # Import investigation and create collections
@@ -2783,7 +2843,7 @@ class TestSampleDataPublicAccess(
         self.sample_path = self.irods_backend.get_sample_path(self.project)
 
         # Create test file
-        self.file_path = self.sample_path + '/' + IRODS_FILE_NAME
+        self.file_path = iRODSPath(self.sample_path, IRODS_FILE_NAME)
         self.irods.data_objects.create(self.file_path)
 
     def tearDown(self):
@@ -2802,7 +2862,7 @@ class TestSampleDataPublicAccess(
 
     def test_public_access_disable(self):
         """Test public access with disabled access"""
-        self.set_public_access(False)
+        self.set_public_access(None)
         obj = self.irods.data_objects.get(self.file_path)  # Test with owner
         self.assertIsNotNone(obj)
         with self.assertRaises(CollectionDoesNotExist):
@@ -2810,8 +2870,8 @@ class TestSampleDataPublicAccess(
 
     def test_public_access_reenable(self):
         """Test public access with disabled and re-enabled access"""
-        self.set_public_access(False)
-        self.set_public_access(True)
+        self.set_public_access(None)
+        self.set_public_access(self.role_guest)
         obj = self.irods.data_objects.get(self.file_path)  # Test with owner
         self.assertIsNotNone(obj)
         obj = self.user_session.data_objects.get(self.file_path)
@@ -2822,7 +2882,7 @@ class TestSampleDataPublicAccess(
 
     def test_public_access_nested(self):
         """Test public access for nested collection"""
-        new_coll_path = self.sample_path + '/new_coll'
+        new_coll_path = iRODSPath(self.sample_path, 'new_coll')
         coll = self.irods.collections.create(new_coll_path)  # Test with owner
         self.assertIsNotNone(coll)
         coll = self.user_session.collections.get(new_coll_path)
@@ -2830,8 +2890,8 @@ class TestSampleDataPublicAccess(
 
     def test_public_access_nested_disable(self):
         """Test public access for nested collection with disabled access"""
-        self.set_public_access(False)
-        new_coll_path = self.sample_path + '/new_coll'
+        self.set_public_access(None)
+        new_coll_path = iRODSPath(self.sample_path, 'new_coll')
         coll = self.irods.collections.create(new_coll_path)  # Test with owner
         self.assertIsNotNone(coll)
         with self.assertRaises(CollectionDoesNotExist):
@@ -2850,7 +2910,6 @@ class TestProjectSearchView(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
@@ -2858,8 +2917,8 @@ class TestProjectSearchView(
         self.make_irods_colls(self.investigation)
         self.assay_path = self.irods_backend.get_path(self.assay)
         # Create test file
-        self.file_name = '{}_test.txt'.format(SAMPLE_ID)
-        self.file_path = self.assay_path + '/' + self.file_name
+        self.file_name = f'{SAMPLE_ID}_test.txt'
+        self.file_path = iRODSPath(self.assay_path, self.file_name)
         self.irods.data_objects.create(self.file_path)
 
     def test_get(self):
@@ -2888,7 +2947,7 @@ class TestProjectSearchView(
             response = self.client.get(
                 reverse('projectroles:search')
                 + '?'
-                + urlencode({'s': '{} type:source'.format(SOURCE_ID)})
+                + urlencode({'s': f'{SOURCE_ID} type:source'})
             )
         self.assertEqual(response.status_code, 200)
         data = response.context['app_results'][0]
@@ -2904,7 +2963,7 @@ class TestProjectSearchView(
             response = self.client.get(
                 reverse('projectroles:search')
                 + '?'
-                + urlencode({'s': '{} type:sample'.format(SAMPLE_ID)})
+                + urlencode({'s': f'{SAMPLE_ID} type:sample'})
             )
         self.assertEqual(response.status_code, 200)
         data = response.context['app_results'][0]
@@ -2920,7 +2979,7 @@ class TestProjectSearchView(
             response = self.client.get(
                 reverse('projectroles:search')
                 + '?'
-                + urlencode({'s': '{} type:file'.format(SAMPLE_ID)})
+                + urlencode({'s': f'{SAMPLE_ID} type:file'})
             )
         self.assertEqual(response.status_code, 200)
         data = response.context['app_results'][0]
@@ -2943,10 +3002,11 @@ class TestProjectUpdateView(TaskflowViewTestBase):
             owner=self.user,
             description='description',
         )
-        self.values = model_to_dict(self.project)
-        self.values['parent'] = self.category.sodar_uuid
-        self.values['owner'] = self.user.sodar_uuid
-        self.values.update(
+        self.post_data = model_to_dict(self.project)
+        self.post_data['public_access'] = ''
+        self.post_data['parent'] = self.category.sodar_uuid
+        self.post_data['owner'] = self.user.sodar_uuid
+        self.post_data.update(
             app_settings.get_all_by_scope(
                 APP_SETTING_SCOPE_PROJECT, project=self.project, post_safe=True
             )
@@ -2958,9 +3018,9 @@ class TestProjectUpdateView(TaskflowViewTestBase):
 
     def test_post_sync_default(self):
         """Test POST with default sheet sync values"""
-        self.values['description'] = 'updated description'
+        self.post_data['description'] = 'updated description'
         with self.login(self.user):
-            response = self.client.post(self.url, self.values)
+            response = self.client.post(self.url, self.post_data)
         self.assertEqual(response.status_code, 302)
         self.assertFalse(
             app_settings.get(
@@ -2980,7 +3040,7 @@ class TestProjectUpdateView(TaskflowViewTestBase):
 
     def test_post_sync_enable(self):
         """Test POST with enabled sync and correct url/token"""
-        self.values['description'] = 'updated description'
+        self.post_data['description'] = 'updated description'
         self.assertFalse(
             app_settings.get(
                 APP_NAME, 'sheet_sync_enable', project=self.project
@@ -2997,11 +3057,13 @@ class TestProjectUpdateView(TaskflowViewTestBase):
             '',
         )
 
-        self.values['settings.samplesheets.sheet_sync_enable'] = True
-        self.values['settings.samplesheets.sheet_sync_url'] = SHEET_SYNC_URL
-        self.values['settings.samplesheets.sheet_sync_token'] = SHEET_SYNC_TOKEN
+        self.post_data['settings.samplesheets.sheet_sync_enable'] = True
+        self.post_data['settings.samplesheets.sheet_sync_url'] = SHEET_SYNC_URL
+        self.post_data['settings.samplesheets.sheet_sync_token'] = (
+            SHEET_SYNC_TOKEN
+        )
         with self.login(self.user):
-            response = self.client.post(self.url, self.values)
+            response = self.client.post(self.url, self.post_data)
             self.assertRedirects(
                 response,
                 reverse(
@@ -3031,52 +3093,56 @@ class TestProjectUpdateView(TaskflowViewTestBase):
 
     def test_post_sync_no_url_or_token(self):
         """Test POST with enabled sync and no URL or token"""
-        self.values['settings.samplesheets.sheet_sync_enable'] = True
+        self.post_data['settings.samplesheets.sheet_sync_enable'] = True
         with self.login(self.user):
-            response = self.client.post(self.url, self.values)
+            response = self.client.post(self.url, self.post_data)
         self.assertEqual(response.status_code, 200)
 
     def test_post_sync_no_token(self):
         """Test POST with enabled sync and no token"""
-        self.values['settings.samplesheets.sheet_sync_enable'] = True
-        self.values['settings.samplesheets.sheet_sync_url'] = SHEET_SYNC_URL
+        self.post_data['settings.samplesheets.sheet_sync_enable'] = True
+        self.post_data['settings.samplesheets.sheet_sync_url'] = SHEET_SYNC_URL
         with self.login(self.user):
-            response = self.client.post(self.url, self.values)
+            response = self.client.post(self.url, self.post_data)
         self.assertEqual(response.status_code, 200)
 
     def test_post_sync_no_url(self):
         """Test POST with enabled sync and no URL or token"""
-        self.values['settings.samplesheets.sheet_sync_enable'] = True
-        self.values['settings.samplesheets.sheet_sync_token'] = SHEET_SYNC_TOKEN
+        self.post_data['settings.samplesheets.sheet_sync_enable'] = True
+        self.post_data['settings.samplesheets.sheet_sync_token'] = (
+            SHEET_SYNC_TOKEN
+        )
         with self.login(self.user):
-            response = self.client.post(self.url, self.values)
+            response = self.client.post(self.url, self.post_data)
         self.assertEqual(response.status_code, 200)
 
     def test_post_sync_invalid_url(self):
         """Test POST with enabled sync and no token"""
-        self.values['settings.samplesheets.sheet_sync_enable'] = True
-        self.values['settings.samplesheets.sheet_sync_url'] = (
+        self.post_data['settings.samplesheets.sheet_sync_enable'] = True
+        self.post_data['settings.samplesheets.sheet_sync_url'] = (
             SHEET_SYNC_URL_INVALID
         )
         with self.login(self.user):
-            response = self.client.post(self.url, self.values)
+            response = self.client.post(self.url, self.post_data)
         self.assertEqual(response.status_code, 200)
 
     def test_post_sync_disabled(self):
         """Test POST with disabled sync and valid input"""
-        self.values['settings.samplesheets.sheet_sync_enable'] = False
-        self.values['settings.samplesheets.sheet_sync_url'] = SHEET_SYNC_URL
-        self.values['settings.samplesheets.sheet_sync_token'] = SHEET_SYNC_TOKEN
+        self.post_data['settings.samplesheets.sheet_sync_enable'] = False
+        self.post_data['settings.samplesheets.sheet_sync_url'] = SHEET_SYNC_URL
+        self.post_data['settings.samplesheets.sheet_sync_token'] = (
+            SHEET_SYNC_TOKEN
+        )
         with self.login(self.user):
-            response = self.client.post(self.url, self.values)
+            response = self.client.post(self.url, self.post_data)
         self.assertEqual(response.status_code, 302)
 
     def test_post_sync_disabled_invalid_url(self):
         """Test POST with disabled sync and invalid input"""
-        self.values['settings.samplesheets.sheet_sync_enable'] = False
-        self.values['settings.samplesheets.sheet_sync_url'] = (
+        self.post_data['settings.samplesheets.sheet_sync_enable'] = False
+        self.post_data['settings.samplesheets.sheet_sync_url'] = (
             SHEET_SYNC_URL_INVALID
         )
         with self.login(self.user):
-            response = self.client.post(self.url, self.values)
+            response = self.client.post(self.url, self.post_data)
         self.assertEqual(response.status_code, 200)

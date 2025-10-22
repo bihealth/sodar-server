@@ -1,10 +1,12 @@
 """UI tests for the samplesheets app"""
 
 import json
-import os
 
 from cubi_isa_templates import _TEMPLATES as ISA_TEMPLATES
 from datetime import timedelta
+from typing import Optional
+
+from irods.path import iRODSPath
 
 from django.urls import reverse
 from django.utils import timezone
@@ -17,7 +19,8 @@ from selenium.webdriver.support import expected_conditions as ec
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.plugins import get_backend_api
+from projectroles.models import SODARUser
+from projectroles.plugins import PluginAPI
 from projectroles.tests.test_ui import UITestBase
 
 from samplesheets.forms import TPL_DIR_FIELD, TPL_DIR_LABEL
@@ -41,10 +44,11 @@ from samplesheets.tests.test_sheet_config import (
 from samplesheets.tests.test_views import (
     SHEET_PATH_SMALL2,
 )
-from samplesheets.views_ajax import ALERT_ACTIVE_REQS
+from samplesheets.views_ajax import ACTIVE_REQ_ALERT
 
 
 app_settings = AppSettingAPI()
+plugin_api = PluginAPI()
 
 
 # Local constants
@@ -62,7 +66,7 @@ with open(CONFIG_PATH_UPDATED) as fp:
 class SamplesheetsUITestBase(SampleSheetIOMixin, SheetConfigMixin, UITestBase):
     """Base view samplesheets view UI tests"""
 
-    def setup_investigation(self, config_data=None):
+    def setup_investigation(self, config_data: Optional[dict] = None):
         """Setup Investigation, Study and Assay"""
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         if config_data:
@@ -78,10 +82,114 @@ class SamplesheetsUITestBase(SampleSheetIOMixin, SheetConfigMixin, UITestBase):
         self.assay = self.study.assays.first()
 
 
+class TestProjectDetailView(IrodsDataRequestMixin, SamplesheetsUITestBase):
+    """Tests for samplesheets details card in ProjectDetailView"""
+
+    def setUp(self):
+        super().setUp()
+        self.setup_investigation()
+        self.url = reverse(
+            'projectroles:detail', kwargs={'project': self.project.sodar_uuid}
+        )
+
+    def test_render_contributor(self):
+        """Test rendering samplesheets detail card as contributor"""
+        self.investigation.irods_status = True
+        self.investigation.save()
+        self.login_and_redirect(self.user_contributor, self.url)
+        with self.assertRaises(NoSuchElementException):
+            self.selenium.find_element(By.ID, 'sodar-ss-details-card-no-sheets')
+        with self.assertRaises(NoSuchElementException):
+            self.selenium.find_element(By.ID, 'sodar-ss-details-card-no-irods')
+        self.assertIsNotNone(
+            self.selenium.find_element(By.ID, 'sodar-ss-details-table')
+        )
+        self.assertIsNotNone(
+            self.selenium.find_element(By.ID, 'sodar-ss-details-table-th-inv')
+        )
+        self.assertIsNotNone(
+            self.selenium.find_element(By.ID, 'sodar-ss-details-table-th-stats')
+        )
+        self.assertIsNotNone(
+            self.selenium.find_element(By.ID, 'sodar-ss-details-table-th-links')
+        )
+
+    def test_render_guest(self):
+        """Test rendering samplesheets detail card as guest"""
+        self.investigation.irods_status = True
+        self.investigation.save()
+        self.login_and_redirect(self.user_guest, self.url)
+        with self.assertRaises(NoSuchElementException):
+            self.selenium.find_element(By.ID, 'sodar-ss-details-card-no-sheets')
+        with self.assertRaises(NoSuchElementException):
+            self.selenium.find_element(By.ID, 'sodar-ss-details-card-no-irods')
+        self.assertIsNotNone(
+            self.selenium.find_element(By.ID, 'sodar-ss-details-table')
+        )
+        self.assertIsNotNone(
+            self.selenium.find_element(By.ID, 'sodar-ss-details-table-th-inv')
+        )
+        self.assertIsNotNone(
+            self.selenium.find_element(By.ID, 'sodar-ss-details-table-th-stats')
+        )
+        self.assertIsNotNone(
+            self.selenium.find_element(By.ID, 'sodar-ss-details-table-th-links')
+        )
+
+    def test_render_viewer(self):
+        """Test rendering samplesheets detail card as viewer"""
+        self.investigation.irods_status = True
+        self.investigation.save()
+        self.login_and_redirect(self.user_viewer, self.url)
+        with self.assertRaises(NoSuchElementException):
+            self.selenium.find_element(By.ID, 'sodar-ss-details-card-no-sheets')
+        with self.assertRaises(NoSuchElementException):
+            self.selenium.find_element(By.ID, 'sodar-ss-details-card-no-irods')
+        self.assertIsNotNone(
+            self.selenium.find_element(By.ID, 'sodar-ss-details-table')
+        )
+        self.assertIsNotNone(
+            self.selenium.find_element(By.ID, 'sodar-ss-details-table-th-inv')
+        )
+        with self.assertRaises(NoSuchElementException):
+            self.selenium.find_element(By.ID, 'sodar-ss-details-table-th-stats')
+        with self.assertRaises(NoSuchElementException):
+            self.selenium.find_element(By.ID, 'sodar-ss-details-table-th-links')
+
+    def test_render_irods_status_false(self):
+        """Test rendering samplesheets detail card with irods_status=False"""
+        self.assertEqual(self.investigation.irods_status, False)
+        self.login_and_redirect(self.user_contributor, self.url)
+        with self.assertRaises(NoSuchElementException):
+            self.selenium.find_element(By.ID, 'sodar-ss-details-card-no-sheets')
+        self.assertIsNotNone(
+            self.selenium.find_element(By.ID, 'sodar-ss-details-card-no-irods')
+        )
+        with self.assertRaises(NoSuchElementException):
+            self.selenium.find_element(By.ID, 'sodar-ss-details-table')
+
+    def test_render_no_investigation(self):
+        """Test rendering samplesheets detail card with no investigation"""
+        self.investigation.delete()
+        self.login_and_redirect(self.user_contributor, self.url)
+        self.assertIsNotNone(
+            self.selenium.find_element(By.ID, 'sodar-ss-details-card-no-sheets')
+        )
+        with self.assertRaises(NoSuchElementException):
+            self.selenium.find_element(By.ID, 'sodar-ss-details-card-no-irods')
+        with self.assertRaises(NoSuchElementException):
+            self.selenium.find_element(By.ID, 'sodar-ss-details-table')
+
+
 class TestProjectSheetsView(IrodsDataRequestMixin, SamplesheetsUITestBase):
     """Tests for the project sheets view UI"""
 
-    def _login_and_render(self, user, wait_elem=DEFAULT_WAIT_ID, url_suffix=''):
+    def _login_and_render(
+        self,
+        user: SODARUser,
+        wait_elem: str = DEFAULT_WAIT_ID,
+        url_suffix: str = '',
+    ):
         """Login into the sheets view and wait for it to render"""
         url = (
             reverse(
@@ -115,7 +223,7 @@ class TestProjectSheetsView(IrodsDataRequestMixin, SamplesheetsUITestBase):
             self.assertIsNotNone(
                 self.selenium.find_element(
                     By.ID,
-                    'sodar-ss-grid-assay-{}'.format(self.assay.sodar_uuid),
+                    f'sodar-ss-grid-assay-{self.assay.sodar_uuid}',
                 )
             )
             # Ensure error alert is not generated
@@ -146,19 +254,19 @@ class TestProjectSheetsView(IrodsDataRequestMixin, SamplesheetsUITestBase):
             with self.assertRaises(NoSuchElementException):
                 self.selenium.find_element(
                     By.ID,
-                    'sodar-ss-grid-assay-{}'.format(self.assay.sodar_uuid),
+                    f'sodar-ss-grid-assay-{self.assay.sodar_uuid}',
                 )
 
     def test_render_alert(self):
         """Test rendering alert retrieved from SODAR context"""
         # NOTE: Testing here as we don't (yet) have vue tests for entire app
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         self.investigation.irods_status = True
         self.investigation.save()
         self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
-            path=os.path.join(
+            path=iRODSPath(
                 irods_backend.get_path(self.assay), 'test', 'xxx.bam'
             ),
             status=IRODS_REQUEST_STATUS_ACTIVE,
@@ -191,7 +299,7 @@ class TestProjectSheetsView(IrodsDataRequestMixin, SamplesheetsUITestBase):
                     self.selenium.find_element(
                         By.CLASS_NAME, 'sodar-ss-alert'
                     ).get_attribute('innerHTML'),
-                    ALERT_ACTIVE_REQS.format(
+                    ACTIVE_REQ_ALERT.format(
                         url=reverse(
                             'samplesheets:irods_requests',
                             kwargs={'project': self.project.sodar_uuid},
@@ -226,7 +334,7 @@ class TestSheetTemplateCreateView(SamplesheetsUITestBase):
             )
             for e in form_elems:
                 e_name = e.get_attribute('name')
-                msg = '{}/{}'.format(t.name, e_name)
+                msg = f'{t.name}/{e_name}'
                 if e_name.startswith('_'):
                     self.assertEqual(e.get_attribute('type'), 'hidden', msg=msg)
                 else:
@@ -244,7 +352,7 @@ class TestSheetTemplateCreateView(SamplesheetsUITestBase):
             for e in label_elems:
                 e_name = e.get_attribute('for')[3:]  # Strip "id_"
                 label_text = e.text
-                msg = '{}/{}'.format(t.name, e_name)
+                msg = f'{t.name}/{e_name}'
                 if e_name == TPL_DIR_FIELD:
                     self.assertEqual(label_text, TPL_DIR_LABEL + '*')
                 # Need to use assertIn() because of extra label characters
@@ -278,7 +386,7 @@ class TestSheetTemplateCreateView(SamplesheetsUITestBase):
         # Assert other internal fields remain hidden
         for e in form_elems:
             e_name = e.get_attribute('name')
-            msg = '{}/{}'.format(t.name, e_name)
+            msg = f'{t.name}/{e_name}'
             if e_name.startswith('_') and e_name != TPL_DIR_FIELD:
                 self.assertEqual(e.get_attribute('type'), 'hidden', msg=msg)
         elem = self.selenium.find_element(By.NAME, TPL_DIR_FIELD)

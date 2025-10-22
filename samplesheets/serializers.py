@@ -8,7 +8,7 @@ from django.utils import timezone
 from rest_framework import serializers
 
 # Projectroles dependency
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.serializers import (
     SODARProjectModelSerializer,
     SODARNestedListSerializer,
@@ -25,6 +25,9 @@ from samplesheets.models import (
     IrodsDataRequest,
     IrodsAccessTicket,
 )
+
+
+plugin_api = PluginAPI()
 
 
 class AssaySerializer(SODARNestedListSerializer):
@@ -46,7 +49,7 @@ class AssaySerializer(SODARNestedListSerializer):
         read_only_fields = fields
 
     def get_irods_path(self, obj: Assay) -> Optional[str]:
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         if irods_backend and obj.study.investigation.irods_status:
             return irods_backend.get_path(obj)
 
@@ -74,7 +77,7 @@ class StudySerializer(SODARNestedListSerializer):
         read_only_fields = fields
 
     def get_irods_path(self, obj: Study) -> Optional[str]:
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         if irods_backend and obj.investigation.irods_status:
             return irods_backend.get_path(obj)
 
@@ -129,7 +132,7 @@ class IrodsDataRequestSerializer(
         ]
 
     def validate_path(self, value):
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         path = irods_backend.sanitize_path(value)
         try:
             self.validate_request_path(
@@ -179,7 +182,7 @@ class IrodsAccessTicketSerializer(
         return obj.date_expires > timezone.now()
 
     def validate(self, attrs):
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         if not self.instance:
             try:
                 attrs['path'] = irods_backend.sanitize_path(attrs['path'])

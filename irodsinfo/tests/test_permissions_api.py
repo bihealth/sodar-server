@@ -15,7 +15,7 @@ from irodsinfo.views_api import (
 class TestIrodsConfigRetrieveAPIView(
     SODARAPIPermissionTestMixin, SiteAppPermissionTestBase
 ):
-    """Tests for irodsinfo API"""
+    """Tests for IrodsConfigRetrieveAPIView permissions"""
 
     media_type = IRODSINFO_API_MEDIA_TYPE
     api_version = IRODSINFO_API_DEFAULT_VERSION

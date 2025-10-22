@@ -14,7 +14,8 @@ class Migration(migrations.Migration):
             model_name="irodsaccessticket",
             name="path",
             field=models.CharField(
-                help_text="Path to iRODS collection or data object", max_length=255
+                help_text="Path to iRODS collection or data object",
+                max_length=255,
             ),
         ),
     ]

@@ -7,17 +7,19 @@ import tempfile
 
 from cookiecutter.main import cookiecutter
 from cubi_isa_templates import IsaTabTemplate
+from typing import Any, Optional
 
 from django import forms
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 from django.utils import timezone
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.forms import MultipleFileField
-from projectroles.models import Project
-from projectroles.plugins import get_backend_api
+from projectroles.models import Project, SODARUser
+from projectroles.plugins import PluginAPI
 
 from samplesheets.io import SampleSheetIO, ARCHIVE_TYPES
 from samplesheets.utils import clean_sheet_dir_name
@@ -34,6 +36,8 @@ from samplesheets.models import (
 
 
 app_settings = AppSettingAPI()
+plugin_api = PluginAPI()
+User = get_user_model()
 
 
 # Local constants
@@ -48,7 +52,13 @@ TPL_DIR_LABEL = 'Output directory'
 class IrodsAccessTicketValidateMixin:
     """Validation helpers for iRODS access tickets"""
 
-    def validate_data(self, irods_backend, project, instance, data):
+    def validate_data(
+        self,
+        irods_backend: Any,
+        project: Project,
+        instance: Optional[IrodsAccessTicket],
+        data: dict,
+    ):
         """
         Validate iRODS access ticket data.
 
@@ -63,7 +73,7 @@ class IrodsAccessTicketValidateMixin:
             try:
                 data['path'] = irods_backend.sanitize_path(data['path'])
             except Exception as ex:
-                return 'path', 'Invalid iRODS path: {}'.format(ex)
+                return 'path', f'Invalid iRODS path: {ex}'
             # Ensure path is within project
             if not data['path'].startswith(irods_backend.get_path(project)):
                 return 'path', 'Path is not within the project'
@@ -118,7 +128,13 @@ class IrodsAccessTicketValidateMixin:
 class IrodsDataRequestValidateMixin:
     """Validation helpers for iRODS data requests"""
 
-    def validate_request_path(self, irods_backend, project, instance, path):
+    def validate_request_path(
+        self,
+        irods_backend: Any,
+        project: Project,
+        instance: Optional[IrodsDataRequest],
+        path: str,
+    ):
         """
         Validate path for IrodsAccessRequest.
 
@@ -196,7 +212,12 @@ class SheetImportForm(forms.Form):
         fields = ['file_upload']
 
     def __init__(
-        self, project=None, replace=False, current_user=None, *args, **kwargs
+        self,
+        project: Optional[Project] = None,
+        replace: bool = False,
+        current_user: Optional[SODARUser] = None,
+        *args,
+        **kwargs,
     ):
         """Override form initialization"""
         super().__init__(*args, **kwargs)
@@ -285,7 +306,7 @@ class SheetTemplateCreateForm(forms.Form):
     """Form for creating sample sheets from an ISA-Tab template"""
 
     @classmethod
-    def _get_tsv_data(cls, path, file_names):
+    def _get_tsv_data(cls, path: str, file_names: list[str]) -> list[dict]:
         ret = {}
         for n in file_names:
             with open(os.path.join(path, n)) as f:
@@ -293,7 +314,12 @@ class SheetTemplateCreateForm(forms.Form):
         return ret
 
     def __init__(
-        self, project=None, sheet_tpl=None, current_user=None, *args, **kwargs
+        self,
+        project: Optional[Project] = None,
+        sheet_tpl: Any = None,
+        current_user: Optional[SODARUser] = None,
+        *args,
+        **kwargs,
     ):
         """Override form initialization"""
         super().__init__(*args, **kwargs)
@@ -376,11 +402,11 @@ class SheetTemplateCreateForm(forms.Form):
                 try:
                     json.loads(self.cleaned_data[k])
                 except Exception as ex:
-                    self.add_error(k, 'Invalid JSON: {}'.format(ex))
+                    self.add_error(k, f'Invalid JSON: {ex}')
         return self.cleaned_data
 
     def save(self):
-        tpl_backend = get_backend_api('isatemplates_backend')
+        tpl_backend = plugin_api.get_backend_api('isatemplates_backend')
         extra_context = {k: v for k, v in self.cleaned_data.items()}
         for k in self.json_fields:
             if not isinstance(extra_context[k], dict):
@@ -415,7 +441,7 @@ class SheetTemplateCreateForm(forms.Form):
 
             with open(i_path) as f:
                 isa_data['investigation'] = {
-                    'path': '{}/{}'.format(tpl_dir_name, i_name),
+                    'path': f'{tpl_dir_name}/{i_name}',
                     'tsv': f.read(),
                 }
             isa_data['studies'] = self._get_tsv_data(
@@ -440,12 +466,19 @@ class IrodsAccessTicketForm(IrodsAccessTicketValidateMixin, forms.ModelForm):
         model = IrodsAccessTicket
         fields = ('path', 'label', 'date_expires', 'allowed_hosts')
 
-    def __init__(self, project=None, *args, **kwargs):
+    def __init__(
+        self,
+        project: Optional[Project] = None,
+        current_user: Optional[User] = None,
+        *args,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
         if self.instance.pk:
             self.project = self.instance.get_project()
         else:
             self.project = project
+        self.current_user = current_user
         # Update path help and disable in update
         path_help = (
             'Full path to iRODS collection or data object within an assay '
@@ -478,7 +511,7 @@ class IrodsAccessTicketForm(IrodsAccessTicketValidateMixin, forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         if self.instance.pk:
             cleaned_data['path'] = self.instance.path
         if cleaned_data['allowed_hosts']:
@@ -496,6 +529,16 @@ class IrodsAccessTicketForm(IrodsAccessTicketValidateMixin, forms.ModelForm):
             self.add_error(*error)
         return cleaned_data
 
+    def save(self, **kwargs):
+        obj = super().save(commit=False)
+        if not self.instance.pk:
+            obj.user = self.current_user
+            obj.project = self.project
+            obj.assay = self.cleaned_data['assay']
+            obj.study = obj.assay.study
+        obj.save()
+        return obj
+
 
 class IrodsDataRequestForm(IrodsDataRequestValidateMixin, forms.ModelForm):
     """Form for iRODS data request creation and editing"""
@@ -504,15 +547,22 @@ class IrodsDataRequestForm(IrodsDataRequestValidateMixin, forms.ModelForm):
         model = IrodsDataRequest
         fields = ['path', 'description']
 
-    def __init__(self, project=None, *args, **kwargs):
+    def __init__(
+        self,
+        project: Optional[Project] = None,
+        current_user: Optional[User] = None,
+        *args,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
         if project:
             self.project = Project.objects.filter(sodar_uuid=project).first()
+        self.current_user = current_user
         self.fields['description'].required = False
 
     def clean(self):
         cleaned_data = super().clean()
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         cleaned_data['path'] = irods_backend.sanitize_path(cleaned_data['path'])
         try:
             self.validate_request_path(
@@ -521,6 +571,14 @@ class IrodsDataRequestForm(IrodsDataRequestValidateMixin, forms.ModelForm):
         except Exception as ex:
             self.add_error('path', str(ex))
         return cleaned_data
+
+    def save(self, *args):
+        obj = super().save(commit=False)
+        if not self.instance.pk:
+            obj.user = self.current_user
+        obj.project = self.project
+        obj.save()
+        return obj
 
 
 class IrodsDataRequestAcceptForm(forms.Form):

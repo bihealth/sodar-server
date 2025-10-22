@@ -22,7 +22,7 @@ from django.views.generic import (
 )
 
 # Projectroles dependency
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.views import CurrentUserFormMixin, LoggedInPermissionMixin
 
 from isatemplates.forms import ISATemplateForm
@@ -31,6 +31,9 @@ from isatemplates.models import (
     CookiecutterISAFile,
     ISA_FILE_PREFIXES,
 )
+
+
+plugin_api = PluginAPI()
 
 
 # Local constants
@@ -45,8 +48,15 @@ CUBI_TPL_DICT = {t.name: t for t in CUBI_TEMPLATES}
 class ISATemplateModifyMixin:
     """Modification helpers for ISA-Tab template views"""
 
-    def handle_modify(self, obj, action):
-        timeline = get_backend_api('timeline_backend')
+    def handle_modify(self, obj: CookiecutterISATemplate, action: str) -> str:
+        """
+        Handle template modification after parsing the template form.
+
+        :param obj: CookiecutterISATemplate object
+        :param action: String
+        :return: URL for redirecting (string)
+        """
+        timeline = plugin_api.get_backend_api('timeline_backend')
         if timeline:
             tl_extra = {}
             if action in ['create', 'update']:
@@ -73,7 +83,7 @@ class ISATemplateModifyMixin:
             tl_event.add_object(obj, 'template', obj.description)
         messages.success(
             self.request,
-            'ISA-Tab template "{}" {}d.'.format(obj.description, action),
+            f'ISA-Tab template "{obj.description}" {action}d.',
         )
         return reverse('isatemplates:list')
 
@@ -82,7 +92,7 @@ class ISATemplateModifyMixin:
             obj = form.save()
         except Exception as ex:
             messages.error(
-                self.request, 'Exception in modifying template: {}'.format(ex)
+                self.request, f'Exception in modifying template: {ex}'
             )
             return redirect('isatemplates:list')
         return redirect(self.handle_modify(obj, self.form_action))
@@ -108,7 +118,7 @@ class ISATemplateListView(LoggedInPermissionMixin, TemplateView):
                 CUBI_TEMPLATES, key=lambda x: x.description.lower()
             )
         context['backend_enabled'] = (
-            get_backend_api('isatemplates_backend') is not None
+            plugin_api.get_backend_api('isatemplates_backend') is not None
         )
         return context
 
@@ -229,7 +239,5 @@ class ISATemplateExportView(LoggedInPermissionMixin, View):
         response = HttpResponse(
             zip_io.getvalue(), content_type='application/zip'
         )
-        response['Content-Disposition'] = 'attachment; filename="{}"'.format(
-            zip_name
-        )
+        response['Content-Disposition'] = f'attachment; filename="{zip_name}"'
         return response

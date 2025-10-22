@@ -6,7 +6,7 @@ from django.urls import reverse
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 # Appalerts dependency
 from appalerts.models import AppAlert
@@ -21,6 +21,11 @@ from taskflowbackend.tests.base import TaskflowViewTestBase
 from timeline.models import TimelineEvent
 
 from samplesheets.models import ISATab
+from samplesheets.plugins import (
+    ASSAY_SHORTCUT_CACHE_NAME,
+    EMPTY_IRODS_STATS,
+    IRODS_STATS_CACHE_NAME,
+)
 from samplesheets.tasks_celery import (
     update_project_cache_task,
     sheet_sync_task,
@@ -34,6 +39,7 @@ from samplesheets.tests.test_views_taskflow import (
 
 
 app_settings = AppSettingAPI()
+plugin_api = PluginAPI()
 User = auth.get_user_model()
 
 
@@ -63,12 +69,11 @@ class TestUpdateProjectCacheTask(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-        self.app_alerts = get_backend_api('appalerts_backend')
+        self.app_alerts = plugin_api.get_backend_api('appalerts_backend')
         self.make_irods_colls(self.investigation)
 
     def test_update_cache(self):
@@ -89,12 +94,17 @@ class TestUpdateProjectCacheTask(
         )
 
         self.assertEqual(
-            JSONCacheItem.objects.filter(project=self.project).count(), 1
+            JSONCacheItem.objects.filter(project=self.project).count(), 2
         )
-        cache_item = JSONCacheItem.objects.first()
+        cache_items = list(JSONCacheItem.objects.all())
         self.assertEqual(
-            cache_item.name,
-            'irods/shortcuts/assay/{}'.format(self.assay.sodar_uuid),
+            cache_items[0].name,
+            IRODS_STATS_CACHE_NAME.format(uuid=self.project.sodar_uuid),
+        )
+        self.assertEqual(cache_items[0].data, EMPTY_IRODS_STATS)
+        self.assertEqual(
+            cache_items[1].name,
+            ASSAY_SHORTCUT_CACHE_NAME.format(uuid=self.assay.sodar_uuid),
         )
         expected_data = {
             'shortcuts': {
@@ -103,7 +113,7 @@ class TestUpdateProjectCacheTask(
                 'results_reports': False,
             }
         }
-        self.assertEqual(cache_item.data, expected_data)
+        self.assertEqual(cache_items[1].data, expected_data)
         self.assertEqual(
             AppAlert.objects.filter(alert_name=CACHE_UPDATE_EVENT).count(), 1
         )
@@ -126,7 +136,7 @@ class TestUpdateProjectCacheTask(
         )
 
         self.assertEqual(
-            JSONCacheItem.objects.filter(project=self.project).count(), 1
+            JSONCacheItem.objects.filter(project=self.project).count(), 2
         )
         self.assertEqual(
             AppAlert.objects.filter(alert_name=CACHE_UPDATE_EVENT).count(), 0
@@ -146,7 +156,7 @@ class TestUpdateProjectCacheTask(
         update_project_cache_task(self.project.sodar_uuid, None, add_alert=True)
 
         self.assertEqual(
-            JSONCacheItem.objects.filter(project=self.project).count(), 1
+            JSONCacheItem.objects.filter(project=self.project).count(), 2
         )
         self.assertEqual(
             AppAlert.objects.filter(alert_name=CACHE_UPDATE_EVENT).count(), 0
@@ -159,8 +169,8 @@ class TestSheetRemoteSyncTask(SheetRemoteSyncTestBase):
 
     def setUp(self):
         super().setUp()
-        self.p_id_source = 'p{}'.format(self.project_source.pk)
-        self.p_id_target = 'p{}'.format(self.project_target.pk)
+        self.p_id_source = f'p{self.project_source.pk}'
+        self.p_id_target = f'p{self.project_target.pk}'
 
     def test_sync_task(self):
         """Test sync"""

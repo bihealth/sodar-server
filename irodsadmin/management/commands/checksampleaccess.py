@@ -1,7 +1,5 @@
 """Checkaccess management command"""
 
-import os
-
 from irods.column import Like
 from irods.models import (
     Collection,
@@ -11,24 +9,29 @@ from irods.models import (
     DataAccess,
     User,
 )
+from irods.path import iRODSPath
+from irods.session import iRODSSession
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
 # Projectroles dependency
 from projectroles.management.logging import ManagementCommandLogger
-from projectroles.plugins import get_backend_api
+from projectroles.models import Project
+from projectroles.plugins import PluginAPI
 
 # Samplesheets dependency
 from samplesheets.models import Investigation
 
+# Taskflowbackend dependency
+from taskflowbackend.constants import IRODS_ACCESS_OWN, IRODS_ACCESS_READ_OBJ
+
 
 logger = ManagementCommandLogger(__name__)
+plugin_api = PluginAPI()
 
 
 # Local constants
-ACCESS_OWN = 'own'
-ACCESS_READ = 'read_object'
 CHECK_ACCESS_ADMIN_MSG = 'Invalid admin user access'
 CHECK_ACCESS_GROUP_MSG = 'Invalid project group access'
 CHECK_ACCESS_USER_MSG = 'Access granted for invalid user'
@@ -46,11 +49,27 @@ class Command(BaseCommand):
 
     def __init__(self):
         super().__init__()
-        self.irods_backend = get_backend_api('omics_irods')
+        self.irods_backend = plugin_api.get_backend_api('omics_irods')
+        self.log_level = getattr(settings, 'LOGGING_LEVEL')
 
-    @classmethod
+    def _log_debug(self, msg: str):
+        """
+        Helper to only log/print debug messages with appropriate LOGGING_LEVEL
+        (prevents unwanted stdout printing of debug messages)
+
+        :param msg: Log message (string)
+        """
+        if self.log_level == 'DEBUG':
+            logger.debug(msg)
+
     def _check_access(
-        cls, user_id, user_name, access_name, path, admin_id, group_id
+        self,
+        user_id: int,
+        user_name: str,
+        access_name: str,
+        path: str,
+        admin_id: int,
+        group_id: int,
     ):
         """
         Check a single ACL to see if it corresponds to expected access types.
@@ -62,14 +81,18 @@ class Command(BaseCommand):
         :param admin_id: Admin user ID (int)
         :param group_id: Project user group ID (int)
         """
-        if user_id == admin_id and access_name != ACCESS_OWN:
+        self._log_debug(
+            f'Checking ACL: user_id={user_id}; user_name={user_name}; '
+            f'access_name={access_name}; path={path}'
+        )
+        if user_id == admin_id and access_name != IRODS_ACCESS_OWN:
             logger.info(f'{CHECK_ACCESS_ADMIN_MSG}: {access_name};{path}')
             return 1
         # HACK: Ignore PRC query reporting all group users for each group
         elif (
             user_id == group_id
             and user_name.startswith('omics_project_')
-            and access_name != ACCESS_READ
+            and access_name != IRODS_ACCESS_READ_OBJ
         ):
             logger.info(f'{CHECK_ACCESS_GROUP_MSG}: {access_name};{path}')
             return 1
@@ -80,8 +103,13 @@ class Command(BaseCommand):
             return 1
         return 0
 
-    @classmethod
-    def _check_coll_access(cls, sample_path, admin_id, group_id, irods):
+    def _check_coll_access(
+        self,
+        sample_path: str,
+        admin_id: int,
+        group_id: int,
+        irods: iRODSSession,
+    ) -> int:
         """
         Check collection ACLs under a project sample path.
 
@@ -91,12 +119,13 @@ class Command(BaseCommand):
         :param irods: iRODSSession object
         :return: Invalid access count (int)
         """
+        self._log_debug('Checking collection access..')
         ret = 0
         query = irods.query(
             Collection, CollectionAccess, CollectionUser
         ).filter(Like(Collection.name, sample_path + '%'))
         for r in query:
-            ret += cls._check_access(
+            ret += self._check_access(
                 r[CollectionAccess.user_id],
                 r[CollectionUser.name],
                 r[CollectionAccess.name],
@@ -105,10 +134,16 @@ class Command(BaseCommand):
                 group_id,
             )
         query.close()
+        self._log_debug(f'Collection check done, count={ret}')
         return ret
 
-    @classmethod
-    def _check_obj_access(cls, sample_path, admin_id, group_id, irods):
+    def _check_obj_access(
+        self,
+        sample_path: str,
+        admin_id: int,
+        group_id: int,
+        irods: iRODSSession,
+    ) -> int:
         """
         Check data object ACLs under a project sample path.
 
@@ -118,13 +153,14 @@ class Command(BaseCommand):
         :param irods: iRODSSession object
         :return: Invalid access count (int)
         """
+        self._log_debug('Checking data object access..')
         ret = 0
         query = irods.query(DataObject, DataAccess, Collection, User).filter(
             Like(Collection.name, sample_path + '%')
         )
         for r in query:
-            path = os.path.join(r[Collection.name], r[DataObject.name])
-            ret += cls._check_access(
+            path = iRODSPath(r[Collection.name], r[DataObject.name])
+            ret += self._check_access(
                 r[DataAccess.user_id],
                 r[User.name],
                 r[DataAccess.name],
@@ -133,9 +169,12 @@ class Command(BaseCommand):
                 group_id,
             )
         query.close()
+        self._log_debug(f'Data object check done, count={ret}')
         return ret
 
-    def _check_project(self, project, admin_id, irods):
+    def _check_project(
+        self, project: Project, admin_id: int, irods: iRODSSession
+    ) -> int:
         """
         Check ACLs for a single project.
 
@@ -144,6 +183,7 @@ class Command(BaseCommand):
         :param irods: iRODSSession object
         :returns: Invalid access count (int)
         """
+        self._log_debug(f'Checking project {project.get_log_title()}..')
         sample_path = self.irods_backend.get_sample_path(project)
         project_group = self.irods_backend.get_group_name(project)
         group_id = irods.users.get(project_group).id
@@ -151,6 +191,7 @@ class Command(BaseCommand):
         ret = 0
         ret += self._check_coll_access(*check_args)
         ret += self._check_obj_access(*check_args)
+        self._log_debug(f'Project check done, count={ret}')
         return ret
 
     def handle(self, *args, **options):

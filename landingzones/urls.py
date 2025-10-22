@@ -38,6 +38,11 @@ urls_ui = [
         view=views.ZoneDeleteView.as_view(),
         name='delete',
     ),
+    path(
+        route='reset/<uuid:landingzone>',
+        view=views.ZoneResetView.as_view(),
+        name='reset',
+    ),
 ]
 
 # REST API views
@@ -76,6 +81,16 @@ urls_api = [
         route='api/submit/move/<uuid:landingzone>',
         view=views_api.ZoneSubmitMoveAPIView.as_view(),
         name='api_submit_move',
+    ),
+    path(
+        route='api/settings/retrieve/<uuid:project>',
+        view=views_api.ZoneSettingsRetrieveAPIView.as_view(),
+        name='api_settings_retrieve',
+    ),
+    path(
+        route='api/file/list/<uuid:landingzone>',
+        view=views_api.ZoneIrodsFileListAPIView.as_view(),
+        name='api_file_list',
     ),
 ]
 

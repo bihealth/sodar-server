@@ -7,6 +7,7 @@ import zipfile
 
 from irods.exception import NetworkException, CAT_INVALID_AUTHENTICATION
 from packaging import version
+from typing import Any
 
 from django.conf import settings
 from django.contrib import messages
@@ -16,20 +17,26 @@ from django.urls import reverse
 from django.views.generic import TemplateView, View
 
 # Projectroles dependency
-from projectroles.plugins import get_backend_api
+from projectroles.models import SODARUser
+from projectroles.plugins import PluginAPI
 from projectroles.views import LoggedInPermissionMixin, HTTPRefererMixin
 
 
 logger = logging.getLogger(__name__)
+plugin_api = PluginAPI()
 
 
 class IrodsConfigMixin:
     """Mixin for iRODS configuration views"""
 
     @staticmethod
-    def get_irods_client_env(user, irods_backend):
+    def get_irods_client_env(user: SODARUser, irods_backend: Any) -> dict:
         """
         Create iRODS configuration file for the current user.
+
+        :param user: SODARUser object
+        :param irods_backend: IrodsAPI object
+        :return: dict
         """
         user_name = user.username
         # Just in case Django mangles the user name case, as it might
@@ -37,7 +44,7 @@ class IrodsConfigMixin:
             user_name = (
                 user_name.split('@')[0] + '@' + user_name.split('@')[1].upper()
             )
-        home_path = '/{}/home/{}'.format(settings.IRODS_ZONE, user_name)
+        home_path = f'/{settings.IRODS_ZONE}/home/{user_name}'
         cert_file_name = settings.IRODS_HOST + '.crt'
 
         # Set up irods_environment.json
@@ -65,7 +72,7 @@ class IrodsConfigMixin:
                 auth_scheme = 'PAM'
             irods_env['irods_authentication_scheme'] = auth_scheme
         irods_env = irods_backend.format_env(irods_env)
-        logger.debug('iRODS environment: {}'.format(irods_env))
+        logger.debug(f'iRODS environment: {irods_env}')
         return irods_env
 
 
@@ -79,8 +86,10 @@ class IrodsInfoView(LoggedInPermissionMixin, HTTPRefererMixin, TemplateView):
         context = super().get_context_data(*args, **kwargs)
 
         # HACK for #909
-        ib_enabled = True if get_backend_api('omics_irods') else False
-        irods_backend = get_backend_api('omics_irods')
+        ib_enabled = (
+            True if plugin_api.get_backend_api('omics_irods') else False
+        )
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         unavail_info = {
             'server_ok': False,
             'server_host': settings.IRODS_HOST_FQDN,
@@ -104,9 +113,7 @@ class IrodsInfoView(LoggedInPermissionMixin, HTTPRefererMixin, TemplateView):
                 unavail_status = 'Invalid iRODS Query'
         if not context.get('server_info'):
             if unavail_status:
-                unavail_info['server_status'] = 'Unavailable: {}'.format(
-                    unavail_status
-                )
+                unavail_info['server_status'] = f'Unavailable: {unavail_status}'
                 context['server_info'] = unavail_info
 
         context['irods_backend_enabled'] = ib_enabled
@@ -121,7 +128,7 @@ class IrodsConfigView(
     permission_required = 'irodsinfo.get_config'
 
     def get(self, request, *args, **kwargs):
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         if not irods_backend:
             messages.error(request, 'iRODS Backend not enabled.')
             return redirect(reverse('irodsinfo:info'))
@@ -147,17 +154,13 @@ class IrodsConfigView(
                     zip_file.writestr(cert_file_name, cert_file.read())
             except FileNotFoundError:
                 logger.warning(
-                    'iRODS server cert file not found, '
-                    'not adding to archive (path={})'.format(
-                        settings.IRODS_CERT_PATH
-                    )
+                    f'iRODS server cert file not found, '
+                    f'not adding to archive (path={settings.IRODS_CERT_PATH})'
                 )
             zip_file.close()
             response = HttpResponse(
                 io_buf.getvalue(), content_type='application/zip'
             )
             attach_name = 'irods_config.zip'
-        response['Content-Disposition'] = 'attachment; filename={}'.format(
-            attach_name
-        )
+        response['Content-Disposition'] = f'attachment; filename={attach_name}'
         return response

@@ -7,6 +7,16 @@ Additional functionality available to the administrators is detailed in this
 section.
 
 
+Project Access Blocking
+=======================
+
+Superusers can temporarily block user access to a project in SODAR. This can be
+done in the :ref:`project update view <ui_project_update>` by selecting
+:guilabel:`Block project access`. This will prevent access to all UI and REST
+API views of the given project for non-superusers. Project collections and files
+in iRODS will remain accessible.
+
+
 User Account Deactivation
 =========================
 

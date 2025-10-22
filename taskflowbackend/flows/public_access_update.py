@@ -1,23 +1,34 @@
 from django.conf import settings
 
+from taskflowbackend.constants import (
+    IRODS_ACCESS_READ_OBJ,
+    IRODS_ACCESS_NULL,
+    IRODS_TICKET_MODE_READ,
+    IRODS_GROUP_PUBLIC,
+)
 from taskflowbackend.flows.base_flow import BaseLinearFlow
 from taskflowbackend.tasks import irods_tasks
-
-
-PUBLIC_GROUP = 'public'
 
 
 class Flow(BaseLinearFlow):
     """Flow for granting or revoking public access in a collection"""
 
-    def validate(self):
+    def validate(self) -> bool:
         self.required_fields = ['path', 'access']
         self.require_lock = False  # Project lock not required for this flow
         return super().validate()
 
-    def build(self, force_fail=False):
-        # TODO: Use project.public_guest_access instead of flow_data['access']?
-        access_name = 'read' if self.flow_data['access'] else 'null'
+    def build(self, force_fail: bool = False):
+        access_name = (
+            IRODS_ACCESS_READ_OBJ
+            if self.flow_data['access']
+            else IRODS_ACCESS_NULL
+        )
+        ticket_access = (
+            IRODS_TICKET_MODE_READ
+            if self.flow_data['access']
+            else IRODS_ACCESS_NULL
+        )
         ticket_str = self.flow_data.get('ticket_str')
 
         self.add_task(
@@ -27,7 +38,7 @@ class Flow(BaseLinearFlow):
                 inject={
                     'access_name': access_name,
                     'path': self.flow_data['path'],
-                    'user_name': PUBLIC_GROUP,
+                    'user_name': IRODS_GROUP_PUBLIC,
                     'irods_backend': self.irods_backend,
                 },
                 force_fail=force_fail if not ticket_str else False,
@@ -41,12 +52,10 @@ class Flow(BaseLinearFlow):
         ):
             self.add_task(
                 irods_tasks.IssueTicketTask(
-                    name='Issue access ticket "{}" for collection'.format(
-                        ticket_str
-                    ),
+                    name=f'Issue access ticket "{ticket_str}" for collection',
                     irods=self.irods,
                     inject={
-                        'access_name': access_name,
+                        'access_name': ticket_access,
                         'path': self.flow_data['path'],
                         'ticket_str': ticket_str,
                         'irods_backend': self.irods_backend,
@@ -57,12 +66,10 @@ class Flow(BaseLinearFlow):
         elif ticket_str:
             self.add_task(
                 irods_tasks.DeleteTicketTask(
-                    name='Delete access ticket "{}" from collection'.format(
-                        ticket_str
-                    ),
+                    name=f'Delete access ticket "{ticket_str}" from collection',
                     irods=self.irods,
                     inject={
-                        'access_name': access_name,
+                        'access_name': ticket_access,
                         'path': self.flow_data['path'],
                         'ticket_str': ticket_str,
                         'irods_backend': self.irods_backend,

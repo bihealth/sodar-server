@@ -1,5 +1,8 @@
 """Tests for UI views in the landingzones app"""
 
+from typing import Optional
+
+from django.contrib.auth import get_user_model
 from django.contrib.messages import get_messages
 from django.forms import HiddenInput
 from django.test import override_settings
@@ -22,12 +25,7 @@ from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import ProjectLockMixin
 
-from landingzones.constants import (
-    ZONE_STATUS_ACTIVE,
-    ZONE_STATUS_VALIDATING,
-    ZONE_STATUS_MOVED,
-    ZONE_STATUS_DELETED,
-)
+import landingzones.constants as lc
 from landingzones.models import LandingZone
 from landingzones.tests.test_models import (
     LandingZoneMixin,
@@ -38,6 +36,7 @@ from landingzones.views import ZONE_CREATE_LIMIT_MSG
 
 
 app_settings = AppSettingAPI()
+User = get_user_model()
 
 
 # SODAR constants
@@ -56,12 +55,41 @@ PROHIBIT_NAME = 'file_name_prohibit'
 PROHIBIT_VAL = 'bam,vcf.gz'
 
 
+class LandingzonesViewTestMixin:
+    """Helpers for landingzones view tests"""
+
+    def restrict_zone_access(self, user: Optional[User] = None):
+        """
+        Restrict landing zone access in project. If user is not given, restrict
+        access to self.user_contributor.
+
+        :param user: Restict access to user if set (User object, optional)
+        """
+        app_settings.set(
+            APP_NAME,
+            'zone_access_restrict',
+            user.username if user else self.user_contributor.username,
+            project=self.project,
+        )
+
+    def make_extra_contributor(self) -> User:
+        """
+        Make second contributor and set project access to test zone restricting.
+        """
+        user_contributor2 = self.make_user('user_contributor2')
+        self.make_assignment(
+            self.project, user_contributor2, self.role_contributor
+        )
+        return user_contributor2
+
+
 class ViewTestBase(
     ProjectMixin,
     RoleMixin,
     RoleAssignmentMixin,
     SampleSheetIOMixin,
     LandingZoneMixin,
+    LandingzonesViewTestMixin,
     TestCase,
 ):
     """Base class for landingzones view testing"""
@@ -93,7 +121,7 @@ class ViewTestBase(
             user=self.user_owner,
             assay=self.assay,
             description=ZONE_DESC,
-            status=ZONE_STATUS_ACTIVE,
+            status=lc.ZONE_STATUS_ACTIVE,
         )
 
 
@@ -118,7 +146,7 @@ class TestProjectZoneView(ProjectLockMixin, ViewTestBase):
             user=self.user_contributor,
             assay=self.assay,
             description=ZONE_DESC,
-            status=ZONE_STATUS_ACTIVE,
+            status=lc.ZONE_STATUS_ACTIVE,
         )
         self.url = reverse(
             'landingzones:list', kwargs={'project': self.project.sodar_uuid}
@@ -143,6 +171,9 @@ class TestProjectZoneView(ProjectLockMixin, ViewTestBase):
         self.assertEqual(rc['zone_validate_count'], 0)
         self.assertEqual(rc['zone_validate_limit'], 4)
         self.assertEqual(rc['zone_validate_limit_reached'], False)
+        self.assertEqual(rc['zone_file_list_colls'], True)
+        self.assertEqual(rc['zone_access_restricted'], False)
+        self.assertEqual(rc['zone_access_restrict_user'], None)
 
     def test_get_contrib(self):
         """Test GET as contributor"""
@@ -182,6 +213,16 @@ class TestProjectZoneView(ProjectLockMixin, ViewTestBase):
         self.assertEqual(response.context['zones'][0], self.zone)
         self.assertEqual(response.context['zones'][1], self.zone_contrib)
 
+    def test_get_zone_file_list_colls_false(self):
+        """Test GET with zone_file_list_colls=False"""
+        app_settings.set(
+            APP_NAME, 'zone_file_list_colls', False, user=self.user_owner
+        )
+        with self.login(self.user_owner):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['zone_file_list_colls'], False)
+
     @override_settings(LANDINGZONES_DISABLE_FOR_USERS=True)
     def test_get_disable(self):
         """Test GET with user access disabled"""
@@ -195,6 +236,51 @@ class TestProjectZoneView(ProjectLockMixin, ViewTestBase):
         with self.login(self.user):
             response = self.client.get(self.url)
         self.assertEqual(response.context['zone_access_disabled'], False)
+
+    def test_get_restrict_contributor_same(self):
+        """Test GET with zone_access_restrict as same contributor"""
+        self.restrict_zone_access(self.user_contributor)
+        with self.login(self.user_contributor):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['zone_access_restricted'], False)
+        self.assertEqual(
+            response.context['zone_access_restrict_user'], self.user_contributor
+        )
+
+    def test_get_restrict_contributor_different(self):
+        """Test GET with zone_access_restrict as different contributor"""
+        self.restrict_zone_access(self.user_contributor)
+        user_contrib2 = self.make_extra_contributor()
+        with self.login(user_contrib2):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['zone_access_restricted'], True)
+        self.assertEqual(
+            response.context['zone_access_restrict_user'], self.user_contributor
+        )
+
+    def test_get_restrict_owner(self):
+        """Test GET with zone_access_restrict as owner"""
+        self.restrict_zone_access(self.user_contributor)
+        with self.login(self.user_owner):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['zone_access_restricted'], False)
+        self.assertEqual(
+            response.context['zone_access_restrict_user'], self.user_contributor
+        )
+
+    def test_get_restrict_superuser(self):
+        """Test GET with zone_access_restrict as superuser"""
+        self.restrict_zone_access(self.user_contributor)
+        with self.login(self.user):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['zone_access_restricted'], False)
+        self.assertEqual(
+            response.context['zone_access_restrict_user'], self.user_contributor
+        )
 
     def test_get_prohibit(self):
         """Test GET with file_name_prohibit enabled"""
@@ -235,7 +321,7 @@ class TestProjectZoneView(ProjectLockMixin, ViewTestBase):
     @override_settings(LANDINGZONES_ZONE_CREATE_LIMIT=2)
     def test_get_create_limit_existing_finished(self):
         """Test GET with zone creation limit and finished zone"""
-        self.zone.set_status(ZONE_STATUS_MOVED)
+        self.zone.set_status(lc.ZONE_STATUS_MOVED)
         with self.login(self.user_owner):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
@@ -248,7 +334,7 @@ class TestProjectZoneView(ProjectLockMixin, ViewTestBase):
     @override_settings(LANDINGZONES_ZONE_VALIDATE_LIMIT=1)
     def test_get_validate_limit(self):
         """Test GET with zone validation limit reached"""
-        self.zone.set_status(ZONE_STATUS_VALIDATING)
+        self.zone.set_status(lc.ZONE_STATUS_VALIDATING)
         with self.login(self.user_owner):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
@@ -260,7 +346,7 @@ class TestProjectZoneView(ProjectLockMixin, ViewTestBase):
     @override_settings(LANDINGZONES_ZONE_VALIDATE_LIMIT=None)
     def test_get_validate_limit_none(self):
         """Test GET with zone validation limit set to None (counts as 1)"""
-        self.zone.set_status(ZONE_STATUS_VALIDATING)
+        self.zone.set_status(lc.ZONE_STATUS_VALIDATING)
         with self.login(self.user_owner):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
@@ -272,7 +358,7 @@ class TestProjectZoneView(ProjectLockMixin, ViewTestBase):
     @override_settings(LANDINGZONES_ZONE_VALIDATE_LIMIT=1)
     def test_get_validate_limit_other_zone_moved(self):
         """Test GET with zone validation limit reached and other zone moved"""
-        self.zone.set_status(ZONE_STATUS_MOVED)
+        self.zone.set_status(lc.ZONE_STATUS_MOVED)
         with self.login(self.user_owner):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
@@ -338,7 +424,7 @@ class TestZoneCreateView(ViewTestBase):
     @override_settings(LANDINGZONES_ZONE_CREATE_LIMIT=1)
     def test_get_limit_existing_finished(self):
         """Test GET with zone creation limit and finished zone"""
-        self.zone.set_status(ZONE_STATUS_MOVED)
+        self.zone.set_status(lc.ZONE_STATUS_MOVED)
         with self.login(self.user):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
@@ -367,8 +453,7 @@ class TestZoneUpdateView(ViewTestBase):
         # HiddenInput widget
         self.assertIsInstance(form.fields['title_suffix'].widget, HiddenInput)
         self.assertIsInstance(form.fields['configuration'].widget, HiddenInput)
-        self.assertIsInstance(form.fields['create_colls'].widget, HiddenInput)
-        self.assertIsInstance(form.fields['restrict_colls'].widget, HiddenInput)
+        self.assertIsInstance(form.fields['coll_creation'].widget, HiddenInput)
         self.assertIsInstance(form.fields['assay'].widget, HiddenInput)
         self.assertNotIn('prohibit_files', response.context)
 
@@ -385,7 +470,7 @@ class TestZoneUpdateView(ViewTestBase):
 
     def test_get_invalid_status(self):
         """Test GET with invalid zone status"""
-        self.zone.status = ZONE_STATUS_DELETED
+        self.zone.status = lc.ZONE_STATUS_DELETED
         self.zone.save()
         with self.login(self.user_owner):
             response = self.client.get(self.url)
@@ -400,6 +485,7 @@ class TestZoneUpdateView(ViewTestBase):
                     'assay': self.assay.sodar_uuid,
                     'description': 'test description updated',
                     'user_message': 'test user message',
+                    'coll_creation': lc.ZONE_COLLS_NONE,
                 },
             )
             self.assertRedirects(
@@ -423,6 +509,7 @@ class TestZoneUpdateView(ViewTestBase):
                     'assay': self.assay.sodar_uuid,
                     'description': 'test description updated',
                     'title_suffix': 'test suffix',
+                    'coll_creation': lc.ZONE_COLLS_NONE,
                 },
             )
         self.assertEqual(response.status_code, 302)
@@ -430,13 +517,28 @@ class TestZoneUpdateView(ViewTestBase):
         self.assertEqual(zone.assay, self.assay)
         self.assertEqual(zone.description, 'description')
 
+    def test_post_update_coll_creation(self):
+        """Test POST with updated coll_creation value (should fail)"""
+        self.assertEqual(self.zone.coll_creation, lc.ZONE_COLLS_NONE)
+        with self.login(self.user_owner):
+            response = self.client.post(
+                self.url,
+                data={
+                    'assay': self.assay.sodar_uuid,
+                    'description': 'test description updated',
+                    'title_suffix': 'test suffix',
+                    'coll_creation': lc.ZONE_COLLS_CREATE,
+                },
+            )
+        self.assertEqual(response.status_code, 200)
+
 
 class TestZoneMoveView(ViewTestBase):
     """Tests for ZoneMoveView"""
 
     def test_get_invalid_status(self):
         """Test ZoneMoveView GET with invalid zone status"""
-        self.zone.status = ZONE_STATUS_DELETED
+        self.zone.status = lc.ZONE_STATUS_DELETED
         self.zone.save()
         with self.login(self.user_owner):
             response = self.client.get(
@@ -466,7 +568,7 @@ class TestZoneDeleteView(ViewTestBase):
 
     def test_get_invalid_status(self):
         """Test GET with invalid zone status"""
-        self.zone.status = ZONE_STATUS_DELETED
+        self.zone.status = lc.ZONE_STATUS_DELETED
         self.zone.save()
         with self.login(self.user_owner):
             response = self.client.get(self.url)

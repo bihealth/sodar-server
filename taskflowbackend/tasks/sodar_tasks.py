@@ -3,6 +3,10 @@
 import logging
 
 from copy import deepcopy
+from typing import Any, Optional
+
+# Projectroles dependency
+from projectroles.models import Project
 
 from taskflowbackend.tasks.base_task import BaseTask
 
@@ -14,12 +18,18 @@ class SODARBaseTask(BaseTask):
     """Base taskflow SODAR task"""
 
     def __init__(
-        self, name, project, force_fail=False, inject=None, *args, **kwargs
+        self,
+        name: str,
+        project: Project,
+        force_fail: bool = False,
+        inject: Optional[dict] = None,
+        *args,
+        **kwargs,
     ):
         super().__init__(
             name, force_fail=force_fail, inject=inject, *args, **kwargs
         )
-        self.name = '<SODAR> {} ({})'.format(name, self.__class__.__name__)
+        self.name = f'<SODAR> {name} ({self.__class__.__name__})'
         self.project = project
 
 
@@ -31,7 +41,7 @@ class TimelineEventExtraDataUpdateTask(SODARBaseTask):
 
     og_data = {}
 
-    def execute(self, tl_event, extra_data, *args, **kwargs):
+    def execute(self, tl_event: Any, extra_data: dict, *args, **kwargs):
         # Store original data for revert
         self.og_data = deepcopy(tl_event.extra_data)
         data = tl_event.extra_data.copy()
@@ -41,7 +51,7 @@ class TimelineEventExtraDataUpdateTask(SODARBaseTask):
         self.data_modified = True
         super().execute(*args, **kwargs)
 
-    def revert(self, tl_event, extra_data, *args, **kwargs):
+    def revert(self, tl_event: Any, extra_data: dict, *args, **kwargs):
         if self.data_modified:
             tl_event.extra_data = self.og_data
             tl_event.save()

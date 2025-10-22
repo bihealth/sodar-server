@@ -10,24 +10,36 @@ from django.urls import reverse
 from rest_framework.response import Response
 
 # Projectroles dependency
-from projectroles.plugins import get_backend_api
+from projectroles.app_settings import AppSettingAPI
+from projectroles.models import SODARUser
+from projectroles.plugins import PluginAPI
 from projectroles.views_ajax import SODARBaseProjectAjaxView
 
 from landingzones.models import LandingZone
 from landingzones.views import ProjectZoneInfoMixin
 
 
+app_settings = AppSettingAPI()
 logger = logging.getLogger(__name__)
+plugin_api = PluginAPI()
 
 
 # Local constants
+APP_NAME = 'landingzones'
 STATUS_TRUNCATE_LEN = 320
 
 
 class ZoneBaseAjaxView(SODARBaseProjectAjaxView):
     """Base view for landingzones Ajax Views"""
 
-    def check_zone_permission(self, zone, user):
+    def check_zone_permission(self, zone: LandingZone, user: SODARUser) -> bool:
+        """
+        Check user viewing permission for landing zone.
+
+        :param zone: LandingZone object
+        :param user: SODARUser object
+        :return: bool
+        """
         permission = (
             'landingzones.view_zone_own'
             if zone.user == self.request.user
@@ -98,7 +110,7 @@ class ZoneIrodsListRetrieveAjaxView(ZoneBaseAjaxView):
     permission_required = 'landingzones.view_zone_own'
 
     def get(self, request, *args, **kwargs):
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         if not irods_backend:
             return Response({'detail': 'iRODS backend not enabled'}, status=503)
         # TODO: Remove repetition
@@ -110,6 +122,12 @@ class ZoneIrodsListRetrieveAjaxView(ZoneBaseAjaxView):
         if not self.check_zone_permission(zone, self.request.user):
             return HttpResponseForbidden()
 
+        # Get colls arg and set current value as user setting
+        include_colls = bool(int(request.GET.get('colls', '1')))
+        app_settings.set(
+            APP_NAME, 'zone_file_list_colls', include_colls, user=request.user
+        )
+        # Get pagination
         page = int(request.GET.get('page', '1'))
         limit = settings.LANDINGZONES_FILE_LIST_PAGINATION
         offset = 0 if page == 1 else (page - 1) * limit
@@ -118,22 +136,24 @@ class ZoneIrodsListRetrieveAjaxView(ZoneBaseAjaxView):
             'landingzones:ajax_irods_list',
             kwargs={'landingzone': zone.sodar_uuid},
         )
+
         try:
             with irods_backend.get_session() as irods:
                 objs = irods_backend.get_objects(
                     irods,
                     zone_path,
                     include_checksum=False,  # Info retrieved in separate query
-                    include_colls=True,
+                    include_colls=include_colls,
                     limit=limit,
                     offset=offset,
                 )
                 stats = irods_backend.get_stats(
-                    irods, zone_path, include_colls=True
+                    irods, zone_path, include_colls=include_colls
                 )
-            count = stats['file_count'] + stats['coll_count']
+            count = stats['file_count'] + stats.get('coll_count', 0)
             ret = {
                 'results': objs,
+                'include_colls': include_colls,
                 'count': count,
                 'page': page,
                 'page_count': math.ceil(count / limit),
@@ -156,7 +176,7 @@ class ZoneChecksumStatusRetrieveAjaxView(ZoneBaseAjaxView):
     permission_required = 'landingzones.view_zone_own'
 
     def post(self, request, *args, **kwargs):
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         if not irods_backend:
             return Response({'detail': 'iRODS backend not enabled'}, status=503)
 

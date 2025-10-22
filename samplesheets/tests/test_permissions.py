@@ -53,10 +53,12 @@ class SamplesheetsPermissionTestBase(
             self.user_delegate_cat,  # Inherited
             self.user_contributor_cat,  # Inherited
             self.user_guest_cat,  # Inherited
+            self.user_viewer_cat,  # Inherited
             self.user_owner,
             self.user_delegate,
             self.user_contributor,
             self.user_guest,
+            self.user_viewer,
         ]
         self.bad_users_read = [
             self.user_finder_cat,
@@ -75,8 +77,10 @@ class SamplesheetsPermissionTestBase(
         ]
         self.bad_users_write = [
             self.user_guest_cat,
+            self.user_viewer_cat,
             self.user_finder_cat,
             self.user_guest,
+            self.user_viewer,
             self.user_no_roles,
             self.anonymous,
         ]
@@ -91,11 +95,20 @@ class SamplesheetsPermissionTestBase(
         self.bad_users_owner = [
             self.user_contributor_cat,
             self.user_guest_cat,
+            self.user_viewer_cat,
             self.user_finder_cat,
             self.user_contributor,
             self.user_guest,
+            self.user_viewer,
             self.user_no_roles,
             self.anonymous,
+        ]
+        # Users for public access
+        self.good_users_public_read = [
+            self.user_viewer_cat,
+            self.user_finder_cat,
+            self.user_viewer,
+            self.user_no_roles,
         ]
 
 
@@ -114,29 +127,33 @@ class TestProjectSheetsView(SamplesheetsPermissionTestBase):
         self.assert_response(self.url, self.good_users_read, 200)
         self.assert_response(self.url, self.bad_users_read, 302)
         # Test public project
-        self.project.set_public()
-        self.assert_response(
-            self.url, [self.user_finder_cat, self.user_no_roles], 200
-        )
-        self.assert_response(self.url, self.anonymous, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.good_users_public_read, 200)
+            self.assert_response(self.url, self.anonymous, 302)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous guest access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 200)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 200)
 
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
         self.assert_response(self.url, self.good_users_read, 200)
         self.assert_response(self.url, self.bad_users_read, 302)
-        # Test public project
-        self.project.set_public()
-        self.assert_response(
-            self.url, [self.user_finder_cat, self.user_no_roles], 200
-        )
-        self.assert_response(self.url, self.anonymous, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.good_users_public_read, 200)
+            self.assert_response(self.url, self.anonymous, 302)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
@@ -158,22 +175,37 @@ class TestSheetImportView(SamplesheetsPermissionTestBase):
         """Test SheetImportView GET"""
         self.assert_response(self.url, self.good_users_write, 200)
         self.assert_response(self.url, self.bad_users_write, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous guest access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 302)
 
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
         self.assert_response(self.url, self.superuser, 200)
         self.assert_response(self.url, self.non_superusers, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
+
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
     def test_get_sync(self):
         """Test GET with sync enabled"""
@@ -181,8 +213,9 @@ class TestSheetImportView(SamplesheetsPermissionTestBase):
             APP_NAME, 'sheet_sync_enable', True, project=self.project
         )
         self.assert_response(self.url, self.all_users, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
 
     def test_get_sync_archive(self):
         """Test GET with sync enabled and archived project"""
@@ -191,14 +224,9 @@ class TestSheetImportView(SamplesheetsPermissionTestBase):
             APP_NAME, 'sheet_sync_enable', True, project=self.project
         )
         self.assert_response(self.url, self.all_users, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
-
-    def test_get_read_only(self):
-        """Test GET with site read-only mode"""
-        self.set_site_read_only()
-        self.assert_response(self.url, self.superuser, 200)
-        self.assert_response(self.url, self.non_superusers, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
 
 
 class TestSheetTemplateSelectView(SamplesheetsPermissionTestBase):
@@ -216,14 +244,16 @@ class TestSheetTemplateSelectView(SamplesheetsPermissionTestBase):
         self.investigation.delete()
         self.assert_response(self.url, self.good_users_write, 200)
         self.assert_response(self.url, self.bad_users_write, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous guest access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 302)
 
     def test_get_archive(self):
         """Test GET with archived project"""
@@ -231,17 +261,16 @@ class TestSheetTemplateSelectView(SamplesheetsPermissionTestBase):
         self.investigation.delete()
         self.assert_response(self.url, self.superuser, 200)
         self.assert_response(self.url, self.non_superusers, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
 
-    def test_get_sync(self):
-        """Test GET with sync enabled"""
-        app_settings.set(
-            APP_NAME, 'sheet_sync_enable', True, project=self.project
-        )
-        self.assert_response(self.url, self.all_users, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.investigation.delete()
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
@@ -249,6 +278,16 @@ class TestSheetTemplateSelectView(SamplesheetsPermissionTestBase):
         self.set_site_read_only()
         self.assert_response(self.url, self.superuser, 200)
         self.assert_response(self.url, self.non_superusers, 302)
+
+    def test_get_sync(self):
+        """Test GET with sync enabled"""
+        app_settings.set(
+            APP_NAME, 'sheet_sync_enable', True, project=self.project
+        )
+        self.assert_response(self.url, self.all_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
 
 
 class TestSheetTemplateCreateView(ProjectPermissionTestBase):
@@ -280,29 +319,46 @@ class TestSheetTemplateCreateView(ProjectPermissionTestBase):
         ]
         bad_users = [
             self.user_guest_cat,
+            self.user_viewer_cat,
             self.user_finder_cat,
             self.user_guest,
+            self.user_viewer,
             self.user_no_roles,
             self.anonymous,
         ]
         self.assert_response(self.url, good_users, 200)
         self.assert_response(self.url, bad_users, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous guest access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 302)
 
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
         self.assert_response(self.url, self.superuser, 200)
         self.assert_response(self.url, self.non_superusers, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
+
+    def test_get_read_only(self):
+        """Test GET with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
     def test_get_sync(self):
         """Test GET with sync enabled"""
@@ -310,14 +366,9 @@ class TestSheetTemplateCreateView(ProjectPermissionTestBase):
             APP_NAME, 'sheet_sync_enable', True, project=self.project
         )
         self.assert_response(self.url, self.all_users, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
-
-    def test_get_read_only(self):
-        """Test GET with site read-only mode"""
-        self.set_site_read_only()
-        self.assert_response(self.url, self.superuser, 200)
-        self.assert_response(self.url, self.non_superusers, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
 
 
 class TestSheetExcelExportView(SamplesheetsPermissionTestBase):
@@ -336,61 +387,73 @@ class TestSheetExcelExportView(SamplesheetsPermissionTestBase):
         """Test SheetExcelExportView GET for study table"""
         self.assert_response(self.study_url, self.good_users_read, 200)
         self.assert_response(self.study_url, self.bad_users_read, 302)
-        self.project.set_public()
-        self.assert_response(
-            self.study_url, [self.user_finder_cat, self.user_no_roles], 200
-        )
-        self.assert_response(self.study_url, self.anonymous, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.study_url, self.good_users_public_read, 200
+            )
+            self.assert_response(self.study_url, self.anonymous, 302)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_study_anon(self):
         """Test GET for study table with anonymous guest access"""
-        self.project.set_public()
-        self.assert_response(self.study_url, self.anonymous, 200)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.study_url, self.anonymous, 200)
 
     def test_get_study_archive(self):
         """Test GET for study table with archived project"""
         self.project.set_archive()
         self.assert_response(self.study_url, self.good_users_read, 200)
         self.assert_response(self.study_url, self.bad_users_read, 302)
-        self.project.set_public()
-        self.assert_response(
-            self.study_url, [self.user_finder_cat, self.user_no_roles], 200
-        )
-        self.assert_response(self.study_url, self.anonymous, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.study_url, self.good_users_public_read, 200
+            )
+            self.assert_response(self.study_url, self.anonymous, 302)
 
-    def test_get_assay(self):
-        """Test GET for assay table"""
-        self.assert_response(self.assay_url, self.good_users_read, 200)
-        self.assert_response(self.assay_url, self.bad_users_read, 302)
-        self.project.set_public()
-        self.assert_response(
-            self.assay_url, [self.user_finder_cat, self.user_no_roles], 200
-        )
-        self.assert_response(self.assay_url, self.anonymous, 302)
-
-    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
-    def test_get_assay_anon(self):
-        """Test GET with anonymous guest access"""
-        self.project.set_public()
-        self.assert_response(self.assay_url, self.anonymous, 200)
-
-    def test_get_assay_archive(self):
-        """Test GET for assay table with archived project"""
-        self.project.set_archive()
-        self.assert_response(self.assay_url, self.good_users_read, 200)
-        self.assert_response(self.assay_url, self.bad_users_read, 302)
-        self.project.set_public()
-        self.assert_response(
-            self.assay_url, [self.user_finder_cat, self.user_no_roles], 200
-        )
-        self.assert_response(self.assay_url, self.anonymous, 302)
+    def test_get_study_block(self):
+        """Test GET for study table with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.study_url, self.superuser, 200)
+        self.assert_response(self.study_url, self.non_superusers, 302)
 
     def test_get_study_read_only(self):
         """Test GET for study table with site read-only mode"""
         self.set_site_read_only()
         self.assert_response(self.study_url, self.good_users_read, 200)
         self.assert_response(self.study_url, self.bad_users_read, 302)
+
+    def test_get_assay(self):
+        """Test GET for assay table"""
+        self.assert_response(self.assay_url, self.good_users_read, 200)
+        self.assert_response(self.assay_url, self.bad_users_read, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.study_url, self.good_users_public_read, 200
+            )
+            self.assert_response(self.study_url, self.anonymous, 302)
+
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_get_assay_anon(self):
+        """Test GET with anonymous guest access"""
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.assay_url, self.anonymous, 200)
+
+    def test_get_assay_archive(self):
+        """Test GET for assay table with archived project"""
+        self.project.set_archive()
+        self.assert_response(self.assay_url, self.good_users_read, 200)
+        self.assert_response(self.assay_url, self.bad_users_read, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.study_url, self.good_users_public_read, 200
+            )
+            self.assert_response(self.study_url, self.anonymous, 302)
 
 
 class TestSheetISAExportView(SamplesheetsPermissionTestBase):
@@ -407,28 +470,33 @@ class TestSheetISAExportView(SamplesheetsPermissionTestBase):
         """Test SheetISAExportView GET"""
         self.assert_response(self.url, self.good_users_read, 200)
         self.assert_response(self.url, self.bad_users_read, 302)
-        self.project.set_public()
-        self.assert_response(
-            self.url, [self.user_finder_cat, self.user_no_roles], 200
-        )
-        self.assert_response(self.url, self.anonymous, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.good_users_public_read, 200)
+            self.assert_response(self.url, self.anonymous, 302)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous guest access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 200)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 200)
 
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
         self.assert_response(self.url, self.good_users_read, 200)
         self.assert_response(self.url, self.bad_users_read, 302)
-        self.project.set_public()
-        self.assert_response(
-            self.url, [self.user_finder_cat, self.user_no_roles], 200
-        )
-        self.assert_response(self.url, self.anonymous, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.good_users_public_read, 200)
+            self.assert_response(self.url, self.anonymous, 302)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
@@ -450,22 +518,31 @@ class TestSheetDeleteView(SamplesheetsPermissionTestBase):
         """Test SheetDeleteView GET"""
         self.assert_response(self.url, self.good_users_write, 200)
         self.assert_response(self.url, self.bad_users_write, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous guest access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 302)
 
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
         self.assert_response(self.url, self.superuser, 200)
         self.assert_response(self.url, self.non_superusers, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
@@ -487,28 +564,33 @@ class TestSheetVersionListView(SamplesheetsPermissionTestBase):
         """Test SheetVersionListView GET"""
         self.assert_response(self.url, self.good_users_read, 200)
         self.assert_response(self.url, self.bad_users_read, 302)
-        self.project.set_public()
-        self.assert_response(
-            self.url, [self.user_finder_cat, self.user_no_roles], 200
-        )
-        self.assert_response(self.url, self.anonymous, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.good_users_public_read, 200)
+            self.assert_response(self.url, self.anonymous, 302)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous guest access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 200)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 200)
 
     def test_get_archive(self):
         """Test GET permissions with archived project"""
         self.project.set_archive()
         self.assert_response(self.url, self.good_users_read, 200)
         self.assert_response(self.url, self.bad_users_read, 302)
-        self.project.set_public()
-        self.assert_response(
-            self.url, [self.user_finder_cat, self.user_no_roles], 200
-        )
-        self.assert_response(self.url, self.anonymous, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.good_users_public_read, 200)
+            self.assert_response(self.url, self.anonymous, 302)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
@@ -536,28 +618,33 @@ class TestSheetVersionCompareView(SamplesheetsPermissionTestBase):
         """Test SheetVersionCompareView GET"""
         self.assert_response(self.url, self.good_users_read, 200)
         self.assert_response(self.url, self.bad_users_read, 302)
-        self.project.set_public()
-        self.assert_response(
-            self.url, [self.user_finder_cat, self.user_no_roles], 200
-        )
-        self.assert_response(self.url, self.anonymous, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.good_users_public_read, 200)
+            self.assert_response(self.url, self.anonymous, 302)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous guest access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 200)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 200)
 
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
         self.assert_response(self.url, self.good_users_read, 200)
         self.assert_response(self.url, self.bad_users_read, 302)
-        self.project.set_public()
-        self.assert_response(
-            self.url, [self.user_finder_cat, self.user_no_roles], 200
-        )
-        self.assert_response(self.url, self.anonymous, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.good_users_public_read, 200)
+            self.assert_response(self.url, self.anonymous, 302)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
@@ -587,28 +674,33 @@ class TestSheetVersionCompareFileView(SamplesheetsPermissionTestBase):
         """Test SheetVersionCompareFileView GET"""
         self.assert_response(self.url, self.good_users_read, 200)
         self.assert_response(self.url, self.bad_users_read, 302)
-        self.project.set_public()
-        self.assert_response(
-            self.url, [self.user_finder_cat, self.user_no_roles], 200
-        )
-        self.assert_response(self.url, self.anonymous, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.good_users_public_read, 200)
+            self.assert_response(self.url, self.anonymous, 302)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous guest access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 200)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 200)
 
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
         self.assert_response(self.url, self.good_users_read, 200)
         self.assert_response(self.url, self.bad_users_read, 302)
-        self.project.set_public()
-        self.assert_response(
-            self.url, [self.user_finder_cat, self.user_no_roles], 200
-        )
-        self.assert_response(self.url, self.anonymous, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.good_users_public_read, 200)
+            self.assert_response(self.url, self.anonymous, 302)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
@@ -634,22 +726,31 @@ class TestSheetVersionRestoreView(SamplesheetsPermissionTestBase):
         """Test SheetVersionRestoreView GET"""
         self.assert_response(self.url, self.good_users_owner, 200)
         self.assert_response(self.url, self.bad_users_owner, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous guest access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 302)
 
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
         self.assert_response(self.url, self.superuser, 200)
         self.assert_response(self.url, self.non_superusers, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
@@ -675,22 +776,31 @@ class TestSheetVersionUpdateView(SamplesheetsPermissionTestBase):
         """Test SheetVersionUpdateView GET"""
         self.assert_response(self.url, self.good_users_owner, 200)
         self.assert_response(self.url, self.bad_users_owner, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous guest access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 302)
 
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
         self.assert_response(self.url, self.superuser, 200)
         self.assert_response(self.url, self.non_superusers, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
@@ -716,22 +826,31 @@ class TestSheetVersionDeleteView(SamplesheetsPermissionTestBase):
         """Test SheetVersionDeleteView GET"""
         self.assert_response(self.url, self.good_users_owner, 200)
         self.assert_response(self.url, self.bad_users_owner, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous guest access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 302)
 
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
         self.assert_response(self.url, self.superuser, 200)
         self.assert_response(self.url, self.non_superusers, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
@@ -773,22 +892,28 @@ class TestSheetVersionDeleteBatchView(SamplesheetsPermissionTestBase):
             method='POST',
             data=self.post_data,
         )
-        self.project.set_public()
-        self.assert_response(
-            self.url,
-            self.no_role_users,
-            302,
-            method='POST',
-            data=self.post_data,
-        )
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.url,
+                self.no_role_users,
+                302,
+                method='POST',
+                data=self.post_data,
+            )
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_post_anon(self):
         """Test POST with anonymous guest access"""
-        self.project.set_public()
-        self.assert_response(
-            self.url, self.anonymous, 302, method='POST', data=self.post_data
-        )
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.url,
+                self.anonymous,
+                302,
+                method='POST',
+                data=self.post_data,
+            )
 
     def test_post_archive(self):
         """Test POST with archived project"""
@@ -803,10 +928,25 @@ class TestSheetVersionDeleteBatchView(SamplesheetsPermissionTestBase):
             method='POST',
             data=self.post_data,
         )
-        self.project.set_public()
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.url,
+                self.no_role_users,
+                302,
+                method='POST',
+                data=self.post_data,
+            )
+
+    def test_post_block(self):
+        """Test POST with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(
+            self.url, self.superuser, 200, method='POST', data=self.post_data
+        )
         self.assert_response(
             self.url,
-            self.no_role_users,
+            self.non_superusers,
             302,
             method='POST',
             data=self.post_data,
@@ -841,22 +981,31 @@ class TestIrodsAccessTicketListView(SamplesheetsPermissionTestBase):
         """Test IrodsAccessTicketListView GET"""
         self.assert_response(self.url, self.good_users_write, 200)
         self.assert_response(self.url, self.bad_users_write, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous guest access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 302)
 
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
         self.assert_response(self.url, self.good_users_write, 200)
         self.assert_response(self.url, self.bad_users_write, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.user_no_roles, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.user_no_roles, 302)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
@@ -879,14 +1028,16 @@ class TestIrodsAccessTicketCreateView(SamplesheetsPermissionTestBase):
         """Test IrodsAccessTicketCreateView GET"""
         self.assert_response(self.url, self.good_users_write, 200)
         self.assert_response(self.url, self.bad_users_write, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous guest access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 302)
 
     def test_get_archive(self):
         """Test GET with archived project"""
@@ -894,8 +1045,15 @@ class TestIrodsAccessTicketCreateView(SamplesheetsPermissionTestBase):
         self.project.set_archive()
         self.assert_response(self.url, self.good_users_write, 200)
         self.assert_response(self.url, self.bad_users_write, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
@@ -926,22 +1084,31 @@ class TestIrodsAccessTicketUpdateView(
         """Test IrodsAccessTicketUpdateView GET"""
         self.assert_response(self.url, self.good_users_write, 200)
         self.assert_response(self.url, self.bad_users_write, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous guest access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 302)
 
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
         self.assert_response(self.url, self.good_users_write, 200)
         self.assert_response(self.url, self.bad_users_write, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
@@ -972,22 +1139,31 @@ class TestIrodsAccessTicketDeleteView(
         """Test IrodsAccessTicketDeleteView GET"""
         self.assert_response(self.url, self.good_users_write, 200)
         self.assert_response(self.url, self.bad_users_write, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous guest access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 302)
 
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
         self.assert_response(self.url, self.good_users_write, 200)
         self.assert_response(self.url, self.bad_users_write, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
@@ -1010,22 +1186,31 @@ class TestIrodsDataRequestListView(SamplesheetsPermissionTestBase):
         """Test IrodsDataRequestListView GET"""
         self.assert_response(self.url, self.good_users_write, 200)
         self.assert_response(self.url, self.bad_users_write, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous guest access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 302)
 
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
         self.assert_response(self.url, self.superuser, 200)
         self.assert_response(self.url, self.non_superusers, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
@@ -1048,22 +1233,31 @@ class TestIrodsDataRequestCreateView(SamplesheetsPermissionTestBase):
         """Test IrodsDataRequestCreateView GET"""
         self.assert_response(self.url, self.good_users_write, 200)
         self.assert_response(self.url, self.bad_users_write, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous guest access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 302)
 
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
         self.assert_response(self.url, self.superuser, 200)
         self.assert_response(self.url, self.non_superusers, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
@@ -1079,7 +1273,7 @@ class TestIrodsDataRequestUpdateView(
 
     def setUp(self):
         super().setUp()
-        self.request = self.make_irods_request(
+        self.irods_req = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
             path=IRODS_FILE_PATH,
@@ -1088,7 +1282,7 @@ class TestIrodsDataRequestUpdateView(
         )
         self.url = reverse(
             'samplesheets:irods_request_update',
-            kwargs={'irodsdatarequest': self.request.sodar_uuid},
+            kwargs={'irodsdatarequest': self.irods_req.sodar_uuid},
         )
 
     def test_get(self):
@@ -1104,29 +1298,40 @@ class TestIrodsDataRequestUpdateView(
         bad_users = [
             self.user_contributor_cat,
             self.user_guest_cat,
+            self.user_viewer_cat,
             self.user_finder_cat,
             self.user_guest,
+            self.user_viewer,
             self.user_no_roles,
             self.anonymous,
         ]
         self.assert_response(self.url, good_users, 200)
         self.assert_response(self.url, bad_users, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous guest access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 302)
 
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
         self.assert_response(self.url, self.superuser, 200)
         self.assert_response(self.url, self.non_superusers, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
@@ -1142,7 +1347,7 @@ class TestIrodsDataRequestAcceptView(
 
     def setUp(self):
         super().setUp()
-        self.request = self.make_irods_request(
+        self.irods_req = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
             path=IRODS_FILE_PATH,
@@ -1151,29 +1356,38 @@ class TestIrodsDataRequestAcceptView(
         )
         self.url = reverse(
             'samplesheets:irods_request_accept',
-            kwargs={'irodsdatarequest': self.request.sodar_uuid},
+            kwargs={'irodsdatarequest': self.irods_req.sodar_uuid},
         )
 
     def test_get(self):
         """Test IrodsDataRequestAcceptView GET"""
         self.assert_response(self.url, self.good_users_owner, 200)
         self.assert_response(self.url, self.bad_users_owner, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous guest access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 302)
 
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
         self.assert_response(self.url, self.superuser, 200)
         self.assert_response(self.url, self.non_superusers, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
@@ -1193,7 +1407,7 @@ class TestIrodsDataRequestDeleteView(
 
     def setUp(self):
         super().setUp()
-        self.request = self.make_irods_request(
+        self.irods_req = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
             path=IRODS_FILE_PATH,
@@ -1202,7 +1416,7 @@ class TestIrodsDataRequestDeleteView(
         )
         self.url = reverse(
             'samplesheets:irods_request_delete',
-            kwargs={'irodsdatarequest': self.request.sodar_uuid},
+            kwargs={'irodsdatarequest': self.irods_req.sodar_uuid},
         )
 
     def test_get(self):
@@ -1218,28 +1432,39 @@ class TestIrodsDataRequestDeleteView(
         bad_users = [
             self.user_contributor_cat,
             self.user_guest_cat,
+            self.user_viewer_cat,
             self.user_finder_cat,
             self.user_guest,
+            self.user_viewer,
             self.user_no_roles,
         ]
         self.assert_response(self.url, good_users, 200)
         self.assert_response(self.url, bad_users, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous guest access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 302)
 
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
         self.assert_response(self.url, self.superuser, 200)
         self.assert_response(self.url, self.non_superusers, 302)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 302)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 302)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 302)
 
     def test_get_read_only(self):
         """Test GET with site read-only mode"""

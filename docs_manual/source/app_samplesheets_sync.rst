@@ -14,6 +14,12 @@ project without access to sensitive data.
     whether it should be use, contact the project owner or the administrators of
     your SODAR instance.
 
+.. note::
+
+    This functionality needs to be explicitly enabled on your SODAR instance by
+    an administrator for it to be available for any project. For more
+    information, see :ref:`admin_settings`.
+
 To set up sheet synchronization, you need the following things:
 
 - Owner or delegate access to a project with sample sheets you want to

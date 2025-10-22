@@ -2,6 +2,10 @@
 
 import logging
 
+from typing import Union
+
+from irods.session import iRODSSession
+
 from django.conf import settings
 from django.http import HttpResponse, JsonResponse
 from django.views.generic import View
@@ -11,17 +15,19 @@ from rest_framework.response import Response
 from sodar.users.auth import fallback_to_auth_basic
 
 # Projectroles dependency
-from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.models import SODARUser, SODAR_CONSTANTS
+from projectroles.plugins import PluginAPI
 from projectroles.views_ajax import SODARBaseProjectAjaxView
 
 
 logger = logging.getLogger(__name__)
+plugin_api = PluginAPI()
 
 
 # SODAR constants
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
+PROJECT_ROLE_GUEST = SODAR_CONSTANTS['PROJECT_ROLE_GUEST']
 
 # Local constants
 ERROR_NOT_IN_PROJECT = 'Collection does not belong to project'
@@ -51,7 +57,7 @@ class BaseIrodsAjaxView(SODARBaseProjectAjaxView):
         self.path = None
 
     @staticmethod
-    def _get_detail(msg):
+    def _get_detail(msg: Union[Exception, str]) -> dict:
         """
         Return detail message as a dict to be returned as JSON.
 
@@ -60,7 +66,9 @@ class BaseIrodsAjaxView(SODARBaseProjectAjaxView):
         """
         return {'detail': str(msg)}
 
-    def _check_collection_perm(self, path, user, irods):
+    def _check_collection_perm(
+        self, path: str, user: SODARUser, irods: iRODSSession
+    ) -> bool:
         """
         Check if request user has any perms for iRODS collection by path.
 
@@ -72,7 +80,7 @@ class BaseIrodsAjaxView(SODARBaseProjectAjaxView):
         # Public guest access
         if (
             path.startswith(self.irods_backend.get_sample_path(self.project))
-            and self.project.public_guest_access
+            and self.project.get_public_access_name() == PROJECT_ROLE_GUEST
             and (user.is_authenticated or settings.PROJECTROLES_ALLOW_ANONYMOUS)
         ):
             return True
@@ -108,7 +116,7 @@ class BaseIrodsAjaxView(SODARBaseProjectAjaxView):
         """Perform required checks before processing a request"""
         self.project = self.get_project()
         try:
-            self.irods_backend = get_backend_api('omics_irods')
+            self.irods_backend = plugin_api.get_backend_api('omics_irods')
         except Exception as ex:
             return JsonResponse(self._get_detail(ex), status=500)
         if not self.irods_backend:
@@ -211,9 +219,7 @@ class BasicAuthView(View):
     def dispatch(self, request, *args, **kwargs):
         if not settings.IRODS_SODAR_AUTH:
             logger.error(
-                '{} failed: {}'.format(
-                    BASIC_AUTH_LOG_PREFIX, BASIC_AUTH_NOT_ENABLED_MSG
-                )
+                f'{BASIC_AUTH_LOG_PREFIX} failed: {BASIC_AUTH_NOT_ENABLED_MSG}'
             )
             return HttpResponse(BASIC_AUTH_NOT_ENABLED_MSG, status=500)
         return super().dispatch(request, *args, **kwargs)
@@ -221,12 +227,8 @@ class BasicAuthView(View):
     def get(self, request, *args, **kwargs):
         if request.user.is_authenticated:
             logger.info(
-                '{} successful: {}'.format(
-                    BASIC_AUTH_LOG_PREFIX, request.user.username
-                )
+                f'{BASIC_AUTH_LOG_PREFIX} successful: {request.user.username}'
             )
             return HttpResponse('Authenticated', status=200)
-        logger.error(
-            '{} failed: User not authenticated'.format(BASIC_AUTH_LOG_PREFIX)
-        )
+        logger.error(f'{BASIC_AUTH_LOG_PREFIX} failed: User not authenticated')
         return HttpResponse('Unauthorized', status=401)

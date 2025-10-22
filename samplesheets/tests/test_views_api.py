@@ -1,10 +1,12 @@
 """Tests for REST API views in the samplesheets app"""
 
 import json
-import os
 
 from datetime import timedelta
 
+from irods.path import iRODSPath
+
+from django.conf import settings
 from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -12,7 +14,7 @@ from django.utils import timezone
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.tests.test_models import RemoteSiteMixin, RemoteProjectMixin
 from projectroles.tests.test_views_api import APIViewTestBase
 
@@ -75,6 +77,7 @@ from samplesheets.views_api import (
 
 app_settings = AppSettingAPI()
 conf_api = SheetConfigAPI()
+plugin_api = PluginAPI()
 table_builder = SampleSheetTableBuilder()
 
 
@@ -92,6 +95,8 @@ SHEET_PATH_NO_PLUGIN_ASSAY = SHEET_DIR_SPECIAL + 'i_small_assay_no_plugin.zip'
 IRODS_FILE_NAME = 'test1.txt'
 IRODS_FILE_MD5 = '0b26e313ed4a7ca6904b0e9369e5b957'
 TICKET_PATH = '/test/path'
+BACKEND_PLUGINS_NO_IRODS = settings.ENABLED_BACKEND_PLUGINS.copy()
+BACKEND_PLUGINS_NO_IRODS.remove('omics_irods')
 
 
 # TODO: Add testing for study table cache updates
@@ -123,7 +128,7 @@ class IrodsAccessTicketAPITestBase(
         )
         self.token_contrib = self.get_token(self.user_contributor)
         # Get appalerts API and model
-        self.app_alerts = get_backend_api('appalerts_backend')
+        self.app_alerts = plugin_api.get_backend_api('appalerts_backend')
         self.app_alert_model = self.app_alerts.get_model()
 
 
@@ -193,7 +198,7 @@ class TestSheetImportAPIView(
 
     def setUp(self):
         super().setUp()
-        self.cache_backend = get_backend_api('sodar_cache')
+        self.cache_backend = plugin_api.get_backend_api('sodar_cache')
         self.url = reverse(
             'samplesheets:api_import',
             kwargs={'project': self.project.sodar_uuid},
@@ -845,19 +850,19 @@ class TestIrodsDataRequestRetrieveAPIView(
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
         # Set up iRODS backend and paths
-        self.irods_backend = get_backend_api('omics_irods')
+        self.irods_backend = plugin_api.get_backend_api('omics_irods')
         self.assay_path = self.irods_backend.get_path(self.assay)
         # Make request
-        self.request = self.make_irods_request(
+        self.irods_req = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
-            path=os.path.join(self.assay_path, IRODS_FILE_NAME),
+            path=iRODSPath(self.assay_path, IRODS_FILE_NAME),
             status=IRODS_REQUEST_STATUS_ACTIVE,
             user=self.user_contributor,
         )
         self.url = reverse(
             'samplesheets:api_irods_request_retrieve',
-            kwargs={'irodsdatarequest': self.request.sodar_uuid},
+            kwargs={'irodsdatarequest': self.irods_req.sodar_uuid},
         )
 
     def test_get(self):
@@ -868,14 +873,14 @@ class TestIrodsDataRequestRetrieveAPIView(
         expected = {
             'project': str(self.project.sodar_uuid),
             'action': IRODS_REQUEST_ACTION_DELETE,
-            'path': self.request.path,
+            'path': self.irods_req.path,
             'target_path': '',
             'user': str(self.user_contributor.sodar_uuid),
             'status': IRODS_REQUEST_STATUS_ACTIVE,
             'status_info': '',
-            'description': self.request.description,
-            'date_created': self.get_drf_datetime(self.request.date_created),
-            'sodar_uuid': str(self.request.sodar_uuid),
+            'description': self.irods_req.description,
+            'date_created': self.get_drf_datetime(self.irods_req.date_created),
+            'sodar_uuid': str(self.irods_req.sodar_uuid),
         }
         self.assertEqual(response_data, expected)
 
@@ -894,12 +899,12 @@ class TestIrodsDataRequestListAPIView(
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-        self.irods_backend = get_backend_api('omics_irods')
+        self.irods_backend = plugin_api.get_backend_api('omics_irods')
         self.assay_path = self.irods_backend.get_path(self.assay)
-        self.request = self.make_irods_request(
+        self.irods_req = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
-            path=os.path.join(self.assay_path, IRODS_FILE_NAME),
+            path=iRODSPath(self.assay_path, IRODS_FILE_NAME),
             status=IRODS_REQUEST_STATUS_ACTIVE,
             user=self.user_contributor,
         )
@@ -917,14 +922,14 @@ class TestIrodsDataRequestListAPIView(
         expected = {
             'project': str(self.project.sodar_uuid),
             'action': IRODS_REQUEST_ACTION_DELETE,
-            'path': self.request.path,
+            'path': self.irods_req.path,
             'target_path': '',
             'user': str(self.user_contributor.sodar_uuid),
             'status': IRODS_REQUEST_STATUS_ACTIVE,
             'status_info': '',
-            'description': self.request.description,
-            'date_created': self.get_drf_datetime(self.request.date_created),
-            'sodar_uuid': str(self.request.sodar_uuid),
+            'description': self.irods_req.description,
+            'date_created': self.get_drf_datetime(self.irods_req.date_created),
+            'sodar_uuid': str(self.irods_req.sodar_uuid),
         }
         self.assertEqual(response_data[0], expected)
 
@@ -942,16 +947,16 @@ class TestIrodsDataRequestListAPIView(
                 {
                     'project': str(self.project.sodar_uuid),
                     'action': IRODS_REQUEST_ACTION_DELETE,
-                    'path': self.request.path,
+                    'path': self.irods_req.path,
                     'target_path': '',
                     'user': str(self.user_contributor.sodar_uuid),
                     'status': IRODS_REQUEST_STATUS_ACTIVE,
                     'status_info': '',
-                    'description': self.request.description,
+                    'description': self.irods_req.description,
                     'date_created': self.get_drf_datetime(
-                        self.request.date_created
+                        self.irods_req.date_created
                     ),
-                    'sodar_uuid': str(self.request.sodar_uuid),
+                    'sodar_uuid': str(self.irods_req.sodar_uuid),
                 }
             ],
         }
@@ -959,24 +964,24 @@ class TestIrodsDataRequestListAPIView(
 
     def test_get_failed_as_superuser(self):
         """Test GET as superuser with failed request"""
-        self.request.status = IRODS_REQUEST_STATUS_FAILED
-        self.request.save()
+        self.irods_req.status = IRODS_REQUEST_STATUS_FAILED
+        self.irods_req.save()
         response = self.request_knox(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
 
     def test_get_accepted_as_superuser(self):
         """Test GET as superuser with accepted request"""
-        self.request.status = IRODS_REQUEST_STATUS_ACCEPTED
-        self.request.save()
+        self.irods_req.status = IRODS_REQUEST_STATUS_ACCEPTED
+        self.irods_req.save()
         response = self.request_knox(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 0)
 
     def test_get_accepted_as_owner(self):
         """Test GET as owner with accepted request"""
-        self.request.status = IRODS_REQUEST_STATUS_ACCEPTED
-        self.request.save()
+        self.irods_req.status = IRODS_REQUEST_STATUS_ACCEPTED
+        self.irods_req.save()
         response = self.request_knox(
             self.url, token=self.get_token(self.user_owner)
         )
@@ -985,8 +990,8 @@ class TestIrodsDataRequestListAPIView(
 
     def test_get_accepted_as_request_creator(self):
         """Test GET as request creator with accepted request"""
-        self.request.status = IRODS_REQUEST_STATUS_ACCEPTED
-        self.request.save()
+        self.irods_req.status = IRODS_REQUEST_STATUS_ACCEPTED
+        self.irods_req.save()
         response = self.request_knox(
             self.url, token=self.get_token(self.user_contributor)
         )
@@ -999,7 +1004,7 @@ class TestIrodsDataRequestDestroyAPIView(
 ):
     """Tests for IrodsDataRequestDestroyAPIView"""
 
-    def _assert_tl_count(self, count):
+    def _assert_tl_count(self, count: int):
         """Assert timeline TimelineEvent count"""
         self.assertEqual(
             TimelineEvent.objects.filter(
@@ -1015,9 +1020,9 @@ class TestIrodsDataRequestDestroyAPIView(
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
         # Set up iRODS backend and paths
-        self.irods_backend = get_backend_api('omics_irods')
+        self.irods_backend = plugin_api.get_backend_api('omics_irods')
         self.assay_path = self.irods_backend.get_path(self.assay)
-        self.obj_path = os.path.join(self.assay_path, IRODS_FILE_NAME)
+        self.obj_path = iRODSPath(self.assay_path, IRODS_FILE_NAME)
 
     def test_delete(self):
         """Test IrodsDataRequestDestroyAPIView DELETE"""
@@ -1045,9 +1050,9 @@ class TestIrodsDataRequestDestroyAPIView(
 class TestSampleDataFileExistsAPIView(SampleSheetAPIViewTestBase):
     """Tests for SampleDataFileExistsAPIView"""
 
-    @override_settings(ENABLE_IRODS=False)
-    def test_get_no_irods(self):
-        """Test SampleDataFileExistsAPIView GET without iRODS (should fail)"""
+    @override_settings(ENABLED_BACKEND_PLUGINS=BACKEND_PLUGINS_NO_IRODS)
+    def test_get_no_irods_backend(self):
+        """Test SampleDataFileExistsAPIView GET without iRODS backend (should fail)"""
         url = reverse('samplesheets:api_file_exists')
         response = self.request_knox(url, data={'checksum': IRODS_FILE_MD5})
         self.assertEqual(response.status_code, 500)

@@ -13,15 +13,20 @@ done manually using make_project_taskflow() and make_assignment_taskflow().
 
 import hashlib
 import logging
-import os
 
-from irods.exception import CollectionDoesNotExist
+from typing import Any, Optional, Union
+
+from irods.collection import iRODSCollection
+from irods.data_object import iRODSDataObject
+from irods.exception import CollectionDoesNotExist, CAT_NO_ROWS_FOUND
 from irods.keywords import REG_CHKSUM_KW
 from irods.models import TicketQuery, UserGroup
+from irods.path import iRODSPath
 from irods.test.helpers import make_object
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
+from django.test import LiveServerTestCase, RequestFactory
 from django.urls import reverse
 
 from rest_framework.test import APILiveServerTestCase
@@ -29,8 +34,14 @@ from test_plus import TestCase, APITestCase
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.models import Project, RoleAssignment, SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.models import (
+    Project,
+    Role,
+    RoleAssignment,
+    SODARUser,
+    SODAR_CONSTANTS,
+)
+from projectroles.plugins import PluginAPI
 from projectroles.tests.test_models import (
     ProjectMixin,
     RoleMixin,
@@ -38,18 +49,27 @@ from projectroles.tests.test_models import (
 )
 from projectroles.tests.test_permissions import PermissionTestMixin
 from projectroles.tests.test_permissions_api import SODARAPIPermissionTestMixin
+from projectroles.tests.test_ui import (
+    LiveUserMixin,
+    SeleniumSetupMixin,
+    UITestMixin,
+)
 from projectroles.tests.test_views_api import SODARAPIViewTestMixin
+from projectroles.views import ProjectModifyMixin, RoleAssignmentModifyMixin
 from projectroles.views_api import (
     PROJECTROLES_API_MEDIA_TYPE,
     PROJECTROLES_API_DEFAULT_VERSION,
 )
 
+from taskflowbackend.constants import IRODS_HASH_SCHEME_MD5
 from taskflowbackend.lock_api import ProjectLockAPI
 
 
 app_settings = AppSettingAPI()
 lock_api = ProjectLockAPI()
 logger = logging.getLogger(__name__)
+plugin_api = PluginAPI()
+req_factory = RequestFactory()
 
 
 # SODAR constants
@@ -62,8 +82,6 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 APP_SETTING_SCOPE_PROJECT = SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT']
 
 # Local constants
-IRODS_ACCESS_OWN = 'own'
-IRODS_ACCESS_NULL = 'null'
 IRODS_GROUP_PUBLIC = 'public'
 IRODS_RODS_USER_TYPE = 'rodsuser'
 TICKET_STR = 'ei8iomuDoazeiD2z'
@@ -71,8 +89,6 @@ TEST_MODE_ERR_MSG = (
     'TASKFLOW_TEST_MODE not True, testing with SODAR Taskflow disabled'
 )
 DEFAULT_PERMANENT_USERS = ['client_user', 'rods', 'rodsadmin', 'public']
-HASH_SCHEME_MD5 = 'MD5'
-HASH_SCHEME_SHA256 = 'SHA256'
 
 
 class ProjectLockMixin:
@@ -81,7 +97,7 @@ class ProjectLockMixin:
     #: Project lock coordinator
     coordinator = None
 
-    def lock_project(self, project):
+    def lock_project(self, project: Project):
         self.coordinator = lock_api.get_coordinator()
         lock_id = str(project.sodar_uuid)
         lock = self.coordinator.get_lock(lock_id)
@@ -99,8 +115,13 @@ class TaskflowTestMixin(
     irods = None
 
     def make_irods_object(
-        self, coll, obj_name, content=None, content_length=1024, checksum=True
-    ):
+        self,
+        coll: iRODSCollection,
+        obj_name: str,
+        content: Optional[str] = None,
+        content_length: int = 1024,
+        checksum: bool = True,
+    ) -> iRODSDataObject:
         """
         Create and put a data object into iRODS.
 
@@ -113,11 +134,16 @@ class TaskflowTestMixin(
         """
         if not content:
             content = ''.join('x' for _ in range(content_length))
-        obj_path = os.path.join(coll.path, obj_name)
+        obj_path = iRODSPath(coll.path, obj_name)
         obj_kwargs = {REG_CHKSUM_KW: ''} if checksum else {}
         return make_object(self.irods, obj_path, content, **obj_kwargs)
 
-    def make_checksum_object(self, obj, scheme=HASH_SCHEME_MD5, content=None):
+    def make_checksum_object(
+        self,
+        obj: iRODSDataObject,
+        scheme: str = IRODS_HASH_SCHEME_MD5,
+        content: Optional[str] = None,
+    ) -> iRODSDataObject:
         """
         Create and put a checksum object for an existing object in iRODS.
 
@@ -131,7 +157,9 @@ class TaskflowTestMixin(
         return make_object(self.irods, chk_path, chk_content)
 
     @classmethod
-    def get_checksum(cls, obj, scheme=HASH_SCHEME_MD5):
+    def get_checksum(
+        cls, obj: iRODSDataObject, scheme: str = IRODS_HASH_SCHEME_MD5
+    ) -> str:
         """
         Return the checksum for an iRODS object.
 
@@ -143,7 +171,38 @@ class TaskflowTestMixin(
             method = getattr(hashlib, scheme.lower())
             return method(obj_fp.read()).hexdigest()
 
-    def assert_irods_access(self, user_name, target, expected):
+    def set_icat_checksum(
+        self, obj: iRODSDataObject, checksum: str
+    ) -> iRODSDataObject:
+        """
+        Update object checksum in the iCAT database into the desired value.
+        Useful for e.g. testing invalid checksums.
+
+        :param obj: iRODSDataObject
+        :param checksum: String
+        :return: Updated iRODSDataObject
+        """
+        sql = (
+            f'UPDATE r_data_main SET data_checksum = \'{checksum}\' WHERE '
+            f'data_id = {obj.id}'
+        )
+        query = self.irods_backend.get_query(self.irods, sql)
+        try:
+            query.execute()
+        except CAT_NO_ROWS_FOUND:
+            pass
+        finally:
+            query.remove()
+        obj = self.irods.data_objects.get(obj.path)
+        self.assertEqual(obj.checksum, checksum)
+        return obj
+
+    def assert_irods_access(
+        self,
+        user_name: str,
+        target: Union[iRODSCollection, iRODSDataObject, str],
+        expected: Optional[str],
+    ):
         """
         Assert access for a specific user for a target object or collection.
 
@@ -165,7 +224,11 @@ class TaskflowTestMixin(
         self.assertEqual(access, expected)
 
     def assert_group_member(
-        self, project, user, status=True, status_owner=None
+        self,
+        project: Project,
+        user: SODARUser,
+        status: bool = True,
+        status_owner: Optional[bool] = None,
     ):
         """
         Assert user membership in iRODS project user group and, optionally,
@@ -188,7 +251,9 @@ class TaskflowTestMixin(
             )
             self.assertEqual(owner_group.hasmember(user.username), status_owner)
 
-    def assert_irods_coll(self, target, sub_path=None, expected=True):
+    def assert_irods_coll(
+        self, target: Any, sub_path: Optional[str] = None, expected: bool = True
+    ):
         """
         Assert the existence of iRODS collection by object or path. Requires
         irods_backend and irods to be present in the class.
@@ -205,7 +270,7 @@ class TaskflowTestMixin(
             path += '/' + sub_path
         self.assertEqual(self.irods.collections.exists(path), expected)
 
-    def assert_irods_obj(self, path, expected=True):
+    def assert_irods_obj(self, path: str, expected: bool = True):
         """
         Assert the existence of an iRODS data object. Requires irods to be
         present in the class.
@@ -229,7 +294,7 @@ class TaskflowTestMixin(
             raise ImproperlyConfigured(
                 'TASKFLOW_TEST_MODE not True, cleanup command not allowed'
             )
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         permanent_users = getattr(
             settings, 'TASKFLOW_TEST_PERMANENT_USERS', DEFAULT_PERMANENT_USERS
         )
@@ -245,15 +310,11 @@ class TaskflowTestMixin(
                         settings.IRODS_ROOT_PATH.split('/')[0],
                     )
                     irods.collections.remove(sodar_root, **rm_kwargs)
-                    logger.debug(
-                        'Removed root collection: {}'.format(sodar_root)
-                    )
+                    logger.debug(f'Removed root collection: {sodar_root}')
                 else:
                     projects_root = irods_backend.get_projects_path()
                     irods.collections.remove(projects_root, **rm_kwargs)
-                    logger.debug(
-                        'Removed projects root: {}'.format(projects_root)
-                    )
+                    logger.debug(f'Removed projects root: {projects_root}')
             except Exception:
                 pass  # This is OK, the root just wasn't there
 
@@ -261,20 +322,20 @@ class TaskflowTestMixin(
             for g in irods.query(UserGroup).all():
                 if g[UserGroup.name] not in permanent_users:
                     irods.users.remove(user_name=g[UserGroup.name])
-                    logger.debug('Removed user: {}'.format(g[UserGroup.name]))
+                    logger.debug(f'Removed user: {g[UserGroup.name]}')
 
             # Remove all tickets
             ticket_query = irods.query(TicketQuery.Ticket).all()
             for ticket in ticket_query:
                 ticket_str = ticket[TicketQuery.Ticket.string]
                 irods_backend.delete_ticket(irods, ticket_str)
-                logger.debug('Deleted ticket: {}'.format(ticket_str))
+                logger.debug(f'Removed ticket: {ticket_str}')
 
             # Remove data objects and unneeded collections from trash
             trash_path = irods_backend.get_trash_path()
             trash_coll = irods.collections.get(trash_path)
             # NOTE: We can't delete the home trash collection
-            trash_home_path = os.path.join(trash_path, 'home')
+            trash_home_path = iRODSPath(trash_path, 'home')
             for coll in irods_backend.get_colls_recursively(trash_coll):
                 if irods.collections.exists(
                     coll.path
@@ -295,8 +356,8 @@ class TaskflowTestMixin(
         # Ensure TASKFLOW_TEST_MODE is True to avoid data loss
         if not settings.TASKFLOW_TEST_MODE:
             raise ImproperlyConfigured(TEST_MODE_ERR_MSG)
-        self.taskflow = get_backend_api('taskflow', force=True)
-        self.irods_backend = get_backend_api('omics_irods')
+        self.taskflow = plugin_api.get_backend_api('taskflow', force=True)
+        self.irods_backend = plugin_api.get_backend_api('omics_irods')
         self.irods = self.irods_backend.get_session_obj()
         # Init roles
         self.init_roles()
@@ -313,9 +374,6 @@ class TaskflowTestMixin(
         self.owner_as_cat = self.make_assignment(
             self.category, self.user_owner_cat, self.role_owner
         )
-        self.irods_access_read = 'read_object'
-        self.irods_access_write = 'modify_object'
-        self.irods_access_own = 'own'
 
     def tearDown(self):
         self.clear_irods_test_data()
@@ -341,11 +399,13 @@ class TaskflowPermissionTestMixin(
         self.user_delegate_cat = self.make_user('user_delegate_cat')
         self.user_contributor_cat = self.make_user('user_contributor_cat')
         self.user_guest_cat = self.make_user('user_guest_cat')
+        self.user_viewer_cat = self.make_user('user_viewer_cat')
         self.user_finder_cat = self.make_user('user_finder_cat')
         self.user_owner = self.make_user('user_owner')
         self.user_delegate = self.make_user('user_delegate')
         self.user_contributor = self.make_user('user_contributor')
         self.user_guest = self.make_user('user_guest')
+        self.user_viewer = self.make_user('user_viewer')
         # User without role assignments
         self.user_no_roles = self.make_user('user_no_roles')
 
@@ -360,6 +420,9 @@ class TaskflowPermissionTestMixin(
         self.guest_as_cat = self.make_assignment(
             self.category, self.user_guest_cat, self.role_guest
         )
+        self.viewer_as_cat = self.make_assignment(
+            self.category, self.user_viewer_cat, self.role_viewer
+        )
         self.finder_as_cat = self.make_assignment(
             self.category, self.user_finder_cat, self.role_finder
         )
@@ -369,7 +432,6 @@ class TaskflowPermissionTestMixin(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user_owner,
-            description='description',
         )
         self.delegate_as = self.make_assignment_taskflow(
             self.project, self.user_delegate, self.role_delegate
@@ -379,6 +441,9 @@ class TaskflowPermissionTestMixin(
         )
         self.guest_as = self.make_assignment_taskflow(
             self.project, self.user_guest, self.role_guest
+        )
+        self.viewer_as = self.make_assignment(
+            self.project, self.user_viewer, self.role_viewer
         )
 
         # Permission test user group helpers
@@ -408,69 +473,74 @@ class TaskflowPermissionTestMixin(
         self.no_role_users = [self.user_no_roles, self.anonymous]
 
 
-class TaskflowProjectTestMixin:
+class TaskflowProjectTestMixin(ProjectModifyMixin, RoleAssignmentModifyMixin):
     """Helpers for UI/Ajax view project management with Taskflow"""
 
     def make_project_taskflow(
         self,
-        title,
-        type,
-        parent,
-        owner,
-        description='',
-        public_guest_access=False,
-    ):
-        """Make Project with taskflow for UI view tests"""
+        title: str,
+        type: str,
+        parent: Optional[Project],
+        owner: SODARUser,
+        description: str = '',
+        public_access: Optional[Role] = None,
+    ) -> tuple[Project, RoleAssignment]:
+        """
+        Make Project with taskflow. Calls the project_create flow to initialize
+        project in iRODS. Timeline event creation, app alerts and email sending
+        are also triggered.
+
+        :param title: Project title (string)
+        :param type: Project type (string, PROJECT_TYPE_PROJECT or
+                     PROJECT_TYPE_CATEGORY)
+        :param parent: Parent category (Project or None)
+        :param owner: Owner user (SODARUser)
+        :param description: Project description (string, optional)
+        :param public_access: Public access level (Role, optional)
+        :return: Project, RoleAssignment
+        """
+        # Mock request
+        r_kw = {'project': parent.sodar_uuid} if parent else {}
+        request = req_factory.post(reverse('projectroles:create', kwargs=r_kw))
+        request.user = self.user  # TODO: Replace with owner
+        # Set up data and call modify_project() which does taskflow update
         post_data = {
             'title': title,
             'type': type,
-            'parent': parent.sodar_uuid if parent else None,
-            'owner': owner.sodar_uuid,
+            'parent': parent,
+            'owner': owner,
             'description': description,
-            'public_guest_access': public_guest_access,
+            'public_access': public_access,
         }
         post_data.update(
-            app_settings.get_defaults(APP_SETTING_SCOPE_PROJECT, post_safe=True)
+            app_settings.get_defaults(APP_SETTING_SCOPE_PROJECT)
         )  # Add default settings
-        post_kwargs = {'project': parent.sodar_uuid} if parent else {}
-        with self.login(self.user):  # TODO: Replace with owner
-            response = self.client.post(
-                reverse('projectroles:create', kwargs=post_kwargs), post_data
-            )
-            self.assertEqual(response.status_code, 302)
-            project = Project.objects.get(title=title)
-            self.assertRedirects(
-                response,
-                reverse(
-                    'projectroles:detail',
-                    kwargs={'project': project.sodar_uuid},
-                ),
-            )
+        project = self.modify_project(post_data, request)
+        project_path = self.irods_backend.get_path(project)
+        self.assertEqual(self.irods.collections.exists(project_path), True)
         owner_as = project.get_owner()
         return project, owner_as
 
-    def make_assignment_taskflow(self, project, user, role):
-        """Make RoleAssignment with taskflow for UI view tests"""
-        post_data = {
-            'project': project.sodar_uuid,
-            'user': user.sodar_uuid,
-            'role': role.pk,
-        }
-        with self.login(self.user):  # TODO: Use project owner instead
-            response = self.client.post(
-                reverse(
-                    'projectroles:role_create',
-                    kwargs={'project': project.sodar_uuid},
-                ),
-                post_data,
-            )
-            role_as = RoleAssignment.objects.get(project=project, user=user)
-            self.assertRedirects(
-                response,
-                reverse(
-                    'projectroles:roles', kwargs={'project': project.sodar_uuid}
-                ),
-            )
+    def make_assignment_taskflow(
+        self, project: Project, user: SODARUser, role: Role
+    ) -> RoleAssignment:
+        """
+        Make RoleAssignment with taskflow. Calls the role_update_irods_batch
+        flow to set up user role in iRODS. Timeline event creation, app alerts
+        and email sending are also triggered.
+
+        :param project: Project object
+        :param user: User object for role assignment
+        :param role: Role object for role assignment
+        :return: RoleAssignment
+        """
+        url = reverse(
+            'projectroles:role_create', kwargs={'project': project.sodar_uuid}
+        )
+        request = req_factory.post(url)
+        request.user = self.user  # TODO: Replace with owner
+        post_data = {'project': project, 'user': user, 'role': role}
+        role_as = self.modify_assignment(post_data, request, project)
         return role_as
 
 
@@ -478,7 +548,13 @@ class TaskflowAPIProjectTestMixin:
     """Helpers for API view project management with Taskflow"""
 
     def make_project_taskflow(
-        self, title, type, parent, owner, description='', readme=''
+        self,
+        title: str,
+        type: str,
+        parent: Optional[Project],
+        owner: SODARUser,
+        description: str = '',
+        readme: str = '',
     ):
         """Make Project with taskflow for API view tests"""
         post_data = {
@@ -488,6 +564,7 @@ class TaskflowAPIProjectTestMixin:
             'owner': owner.sodar_uuid,
             'description': description,
             'readme': readme,
+            'public_access': '',
         }
         response = self.request_knox(
             reverse('projectroles:api_project_create'),
@@ -501,7 +578,9 @@ class TaskflowAPIProjectTestMixin:
         project = Project.objects.get(title=title)
         return project, project.get_owner()
 
-    def make_assignment_taskflow(self, project, user, role):
+    def make_assignment_taskflow(
+        self, project: Project, user: SODARUser, role: Role
+    ) -> RoleAssignment:
         """Make RoleAssignment with taskflow for API view tests"""
         url = reverse(
             'projectroles:api_role_create',
@@ -557,14 +636,62 @@ class TaskflowAPIPermissionTestBase(
     """Base class for testing API view permissions with taskflow"""
 
     # TODO: Get this from SODAR Core
-    def set_site_read_only(self, value=True):
+    def set_site_read_only(self, value: bool = True):
         """
         Helper to set site read only mode to the desired value.
 
-        :param value: BooAPP_NAMElean
+        :param value: Boolean
         """
         app_settings.set('projectroles', 'site_read_only', value)
 
     def setUp(self):
         super().setUp()
         self.knox_token = self.get_token(self.superuser)
+
+
+class TaskflowUITestBase(
+    TaskflowTestMixin,
+    TaskflowProjectTestMixin,
+    SeleniumSetupMixin,
+    LiveUserMixin,
+    UITestMixin,
+    LiveServerTestCase,
+):
+    """Base class for UI testing with taskflow"""
+
+    def setUp(self):
+        # Ensure TASKFLOW_TEST_MODE is True to avoid data loss
+        if not settings.TASKFLOW_TEST_MODE:
+            raise ImproperlyConfigured(TEST_MODE_ERR_MSG)
+        self.taskflow = plugin_api.get_backend_api('taskflow', force=True)
+        self.irods_backend = plugin_api.get_backend_api('omics_irods')
+        self.irods = self.irods_backend.get_session_obj()
+        # Set up Selenium
+        self.set_up_selenium()
+        # Init roles
+        self.init_roles()
+        # Init users
+        self.superuser = self.make_user('superuser', True)
+        self.user = self.superuser  # HACK for TaskflowProjectTestMixin
+        self.user_owner_cat = self.make_user('user_owner_cat')
+        self.user_owner = self.make_user('user_owner')
+
+        # Init category and project
+        self.category = self.make_project(
+            title='TestCategory', type=PROJECT_TYPE_CATEGORY, parent=None
+        )
+        self.make_assignment(
+            self.category, self.user_owner_cat, self.role_owner
+        )
+        self.project, self.owner_as = self.make_project_taskflow(
+            title='TestProject',
+            type=PROJECT_TYPE_PROJECT,
+            parent=self.category,
+            owner=self.user_owner,
+        )
+        # NOTE: Add other role assignments and users as needed
+
+    def tearDown(self):
+        # Shut down Selenium
+        self.selenium.quit()
+        super().tearDown()

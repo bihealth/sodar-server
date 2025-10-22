@@ -5,13 +5,17 @@ import json
 import os
 
 from altamisa.constants import table_headers as th
+from typing import Any, Optional
+
+from irods.path import iRODSPath
 
 from django.conf import settings
+from django.http import HttpResponse
 from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 # Sodarcache dependency
 from sodarcache.models import JSONCacheItem
@@ -31,14 +35,19 @@ from samplesheets.models import (
     Process,
     GenericMaterial,
     ISATab,
-    IrodsDataRequest,
+    IRODS_REQUEST_STATUS_ACTIVE,
+    IRODS_REQUEST_ACTION_DELETE,
 )
 from samplesheets.rendering import (
     SampleSheetTableBuilder,
     STUDY_TABLE_CACHE_ITEM,
 )
 from samplesheets.sheet_config import SheetConfigAPI
-from samplesheets.tests.test_models import IrodsAccessTicketMixin
+from samplesheets.tests.test_io import SHEET_DIR
+from samplesheets.tests.test_models import (
+    IrodsAccessTicketMixin,
+    IrodsDataRequestMixin,
+)
 from samplesheets.tests.test_sheet_config import (
     SheetConfigMixin,
     CONFIG_STUDY_UUID,
@@ -56,7 +65,7 @@ from samplesheets.tests.test_views import (
 from samplesheets.utils import get_node_obj, get_ext_link_labels
 from samplesheets.views import SheetImportMixin
 from samplesheets.views_ajax import (
-    ALERT_ACTIVE_REQS,
+    ACTIVE_REQ_ALERT,
     RENDER_HEIGHT_HEADERS,
     RENDER_HEIGHT_ROW,
     RENDER_HEIGHT_SCROLLBAR,
@@ -66,6 +75,7 @@ from samplesheets.views_ajax import (
 
 
 conf_api = SheetConfigAPI()
+plugin_api = PluginAPI()
 table_builder = SampleSheetTableBuilder()
 
 
@@ -78,10 +88,10 @@ EDIT_DIR = os.path.dirname(__file__) + '/edit/'
 STUDY_INSERT_PATH = EDIT_DIR + 'i_small_study_insert.json'
 ASSAY_INSERT_PATH = EDIT_DIR + 'i_small_assay_insert.json'
 ASSAY_INSERT_SPLIT_PATH = EDIT_DIR + 'i_small_assay_insert_split.json'
-ASSAY_INSERT_POOL_MATERIAL_PATH = os.path.join(
+ASSAY_INSERT_POOL_MATERIAL_PATH = iRODSPath(
     EDIT_DIR, 'i_small_assay_insert_pool_material.json'
 )
-ASSAY_INSERT_POOL_PROCESS_PATH = os.path.join(
+ASSAY_INSERT_POOL_PROCESS_PATH = iRODSPath(
     EDIT_DIR, 'i_small_assay_insert_pool_process.json'
 )
 STUDY_DELETE_PATH = EDIT_DIR + 'i_small_study_delete.json'
@@ -96,21 +106,31 @@ EMPTY_ONTOLOGY_VAL = {
     'value': {'name': None, 'accession': None, 'ontology_name': None},
 }
 SHEET_PATH_INSERTED = SHEET_DIR_SPECIAL + 'i_small_insert.zip'
+SHEET_PATH_GERMLINE = os.path.join(SHEET_DIR, 'bih_germline.zip')
 TEST_FILE_NAME = 'test1'
 IRODS_TICKET_STR = 'ooChaa1t'
 VERSION_DESC = 'description'
+PLUGIN_NAME_GERMLINE = 'samplesheets_study_germline'
+PLUGIN_TITLE_GERMLINE = 'Sample Sheets Germline Study Plugin'
+PLUGIN_NAME_PEP_MS = 'samplesheets_assay_pep_ms'
+PLUGIN_TITLE_PEP_MS = (
+    'Sample Sheets Protein Expression Profiling / Mass Spectrometry Assay '
+    'Plugin'
+)
 
 
 class RowEditMixin:
     """Helpers for row insert/deletion"""
 
-    def insert_row(self, path=None, data=None):
+    def insert_row(
+        self, path: Optional[str] = None, data: Optional[dict] = None
+    ) -> HttpResponse:
         """
         Insert row into database, based on file path or dictionary.
 
         :param path: String
         :param data: Dict
-        :return: Response
+        :return: HttpResponse
         """
         if not path and not data:
             raise ValueError('Either path or data required')
@@ -146,7 +166,7 @@ class RowEditMixin:
                 content_type='application/json',
             )
 
-    def update_assay_row_uuids(self, update_sample=True):
+    def update_assay_row_uuids(self, update_sample: bool = True):
         """
         Update UUIDs for freshly added assay row, set self.row_uuids and
         self.row_names.
@@ -176,19 +196,25 @@ class RowEditMixin:
                 n_uuid = self.row_uuids[i]
 
 
-class TestSheetContextAjaxView(SamplesheetsViewTestBase):
+class TestSheetContextAjaxView(IrodsDataRequestMixin, SamplesheetsViewTestBase):
     """Tests for SheetContextAjaxView"""
 
     # TODO: Test with realistic ISA-Tab examples using BIH configs (see #434)
 
+    def _import_investigation(self, path: str = SHEET_PATH):
+        """Set up investigation by importing from path"""
+        self.investigation = self.import_isa_from_file(path, self.project)
+        # NOTE: This assumes one study and assay
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+        self.study_uuid = str(self.study.sodar_uuid)
+        self.assay_uuid = str(self.assay.sodar_uuid)
+        self.assay_path = self.irods_backend.get_path(self.assay)
+
     def setUp(self):
         super().setUp()
         self.maxDiff = None
-        self.irods_backend = get_backend_api('omics_irods')
-        # Import investigation
-        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
-        self.study = self.investigation.studies.first()
-        self.assay = self.study.assays.first()
+        self.irods_backend = plugin_api.get_backend_api('omics_irods')
         self.url = reverse(
             'samplesheets:ajax_context',
             kwargs={'project': self.project.sodar_uuid},
@@ -196,6 +222,7 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
 
     def test_get(self):
         """Test SheetContextAjaxView GET"""
+        self._import_investigation()
         with self.login(self.user):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
@@ -236,28 +263,40 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
                 'comments': None,
             },
             'studies': {
-                str(self.study.sodar_uuid): {
-                    'display_name': self.study.get_display_name(),
-                    'identifier': self.study.identifier,
-                    'description': self.study.description,
-                    'comments': self.study.comments,
+                self.study_uuid: {
+                    'display_name': self.study.get_name(),
+                    'file_name': 's_small.txt',
+                    'identifier': 's_small',
+                    'title': 'Small Germline Study',
+                    'description': '',
+                    'comments': {
+                        'Study Funding Agency': '',
+                        'Study Grant Number': '',
+                    },
                     'irods_path': self.irods_backend.get_path(self.study),
                     'table_url': response.wsgi_request.build_absolute_uri(
                         reverse(
                             'samplesheets:ajax_study_tables',
-                            kwargs={'study': str(self.study.sodar_uuid)},
+                            kwargs={'study': self.study_uuid},
                         )
                     ),
-                    'plugin': None,
+                    'plugin_name': None,
+                    'plugin_title': None,
                     'assays': {
-                        str(self.assay.sodar_uuid): {
+                        self.assay_uuid: {
                             'name': self.assay.get_name(),
                             'display_name': self.assay.get_display_name(),
+                            'file_name': 'a_small.txt',
+                            'measurement_type': 'exome sequencing assay',
+                            'technology_type': 'nucleotide sequencing',
+                            'technology_platform': '',
+                            'comments': None,
                             'irods_path': self.irods_backend.get_path(
                                 self.assay
                             ),
-                            'display_row_links': True,
-                            'plugin': None,
+                            'plugin_name': None,
+                            'plugin_title': None,
+                            'display_row_links': False,  # No links w/o plugin
                         }
                     },
                 }
@@ -271,6 +310,7 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
                 'view_versions': True,
                 'update_cache': True,
                 'view_tickets': True,
+                'view_files': True,
                 'is_superuser': True,
             },
             'sheet_stats': {
@@ -296,11 +336,84 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
         }
         self.assertEqual(rd, expected)
 
+    def test_get_study_plugin(self):
+        """Test GET with study plugin"""
+        self._import_investigation(SHEET_PATH_GERMLINE)
+        with self.login(self.user):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        rd = json.loads(response.data)
+        expected = {
+            'display_name': self.study.get_name(),
+            'file_name': 's_Template_Test.txt',
+            'identifier': 'Template_Test',
+            'title': 'Investigation Title',
+            'description': '',
+            'comments': {
+                'Study Funding Agency': '',
+                'Study Grant Number': '',
+            },
+            'irods_path': self.irods_backend.get_path(self.study),
+            'table_url': response.wsgi_request.build_absolute_uri(
+                reverse(
+                    'samplesheets:ajax_study_tables',
+                    kwargs={'study': self.study_uuid},
+                )
+            ),
+            'plugin_name': PLUGIN_NAME_GERMLINE,
+            'plugin_title': PLUGIN_TITLE_GERMLINE,
+        }
+        rd['studies'][self.study_uuid].pop('assays')  # We only care about study
+        self.assertEqual(rd['studies'][self.study_uuid], expected)
+
+    def test_get_assay_plugin(self):
+        """Test GET with assay plugin"""
+        self._import_investigation(SHEET_PATH_SMALL2)
+        with self.login(self.user):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        rd = json.loads(response.data)
+        expected = {
+            'name': self.assay.get_name(),
+            'display_name': self.assay.get_display_name(),
+            'file_name': 'a_small2.txt',
+            'measurement_type': 'protein expression profiling',
+            'technology_type': 'mass spectrometry',
+            'technology_platform': 'LC-MS/MS',
+            'comments': None,
+            'irods_path': self.assay_path,
+            'plugin_name': PLUGIN_NAME_PEP_MS,
+            'plugin_title': PLUGIN_TITLE_PEP_MS,
+            'display_row_links': False,  # This plugin disables row links
+        }
+        self.assertEqual(
+            rd['studies'][self.study_uuid]['assays'][self.assay_uuid],
+            expected,
+        )
+
+    def test_get_assay_comments(self):
+        """Test GET with assay comments"""
+        self._import_investigation()
+        comments = {
+            'SODAR Assay Plugin': 'samplesheets_assay_generic_raw',
+            'SODAR Assay Row Link Display': False,
+        }
+        self.assay.comments = comments
+        self.assay.save()
+        with self.login(self.user):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        rd = json.loads(response.data)
+        self.assertEqual(
+            rd['studies'][self.study_uuid]['assays'][self.assay_uuid][
+                'comments'
+            ],
+            comments,
+        )
+
     def test_get_no_sheets(self):
         """Test GET without sample sheets"""
-        self.investigation.active = False
-        self.investigation.save()
-
+        # No importing of investigation
         with self.login(self.user):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
@@ -340,6 +453,7 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
                 'view_versions': True,
                 'update_cache': True,
                 'view_tickets': True,
+                'view_files': True,
                 'is_superuser': True,
             },
             'sheet_stats': {},
@@ -350,13 +464,17 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
 
     def test_get_irods_request_alert_owner(self):
         """Test GET with active iRODS request alert as owner"""
+        self._import_investigation()
         self.investigation.irods_status = True
         self.investigation.save()
-        # TODO: Use model helper instead (see #1088)
-        IrodsDataRequest.objects.create(
+        self.make_irods_request(
             project=self.project,
-            path=self.irods_backend.get_path(self.assay) + '/test/xxx.bam',
+            action=IRODS_REQUEST_ACTION_DELETE,
+            path=iRODSPath(
+                self.irods_backend.get_path(self.assay), 'test', 'xxx.bam'
+            ),
             user=self.user,
+            status=IRODS_REQUEST_STATUS_ACTIVE,
         )
 
         with self.login(self.user):
@@ -367,7 +485,7 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
         self.assertEqual(len(rd['alerts']), 1)
         self.assertEqual(
             rd['alerts'][0]['html'],
-            ALERT_ACTIVE_REQS.format(
+            ACTIVE_REQ_ALERT.format(
                 url=reverse(
                     'samplesheets:irods_requests',
                     kwargs={'project': self.project.sodar_uuid},
@@ -377,28 +495,27 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
 
     def test_get_irods_request_alert_contributor(self):
         """Test GET with active iRODS request alert as contributor"""
+        self._import_investigation()
         self.investigation.irods_status = True
         self.investigation.save()
-        # TODO: Use model helper instead (see #1088)
-        IrodsDataRequest.objects.create(
+        self.make_irods_request(
             project=self.project,
-            path=self.irods_backend.get_path(self.assay) + '/test/xxx.bam',
+            action=IRODS_REQUEST_ACTION_DELETE,
+            path=iRODSPath(
+                self.irods_backend.get_path(self.assay), 'test', 'xxx.bam'
+            ),
             user=self.user,
+            status=IRODS_REQUEST_STATUS_ACTIVE,
         )
-        user_contributor = self.make_user('user_contributor')
-        self.make_assignment(
-            self.project, user_contributor, self.role_contributor
-        )
-
-        with self.login(user_contributor):
+        with self.login(self.user_contributor):
             response = self.client.get(self.url)
-
         self.assertEqual(response.status_code, 200)
         rd = json.loads(response.data)
         self.assertEqual(len(rd['alerts']), 0)
 
     def test_get_inherited_owner(self):
         """Test GET as inherited owner"""
+        self._import_investigation()
         # Set up category owner
         user_cat = self.make_user('user_cat')
         self.make_assignment(self.category, user_cat, self.role_owner)
@@ -410,6 +527,7 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
 
     def test_get_display_row_links_override(self):
         """Test GET with assay row link display override"""
+        self._import_investigation()
         self.assay.comments[ROW_LINK_DISPLAY_COMMENT] = 'false'
         self.assay.save()
         with self.login(self.user):
@@ -418,13 +536,73 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
         rd = json.loads(response.data)
         # Initial value was True
         self.assertFalse(
-            rd['studies'][str(self.study.sodar_uuid)]['assays'][
-                str(self.assay.sodar_uuid)
-            ]['display_row_links']
+            rd['studies'][self.study_uuid]['assays'][self.assay_uuid][
+                'display_row_links'
+            ]
+        )
+
+    def test_get_guest(self):
+        """Test GET as guest"""
+        # Import sheet with assay plugin and enabled row links
+        self._import_investigation(SHEET_PATH_GERMLINE)
+        self.investigation.irods_status = True
+        self.investigation.save()
+        with self.login(self.user_guest):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        rd = json.loads(response.data)
+        expected = {
+            'edit_sheet': False,
+            'manage_sheet': False,
+            'create_colls': False,
+            'export_sheet': True,
+            'delete_sheet': False,
+            'view_versions': True,
+            'update_cache': False,
+            'view_tickets': False,
+            'view_files': True,
+            'is_superuser': False,
+        }
+        self.assertEqual(rd['perms'], expected)
+        self.assertEqual(
+            rd['studies'][self.study_uuid]['assays'][self.assay_uuid][
+                'display_row_links'
+            ],
+            True,
+        )
+
+    def test_get_viewer(self):
+        """Test GET as viewer"""
+        self._import_investigation(SHEET_PATH_GERMLINE)
+        self.investigation.irods_status = True
+        self.investigation.save()
+        with self.login(self.user_viewer):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        rd = json.loads(response.data)
+        expected = {
+            'edit_sheet': False,
+            'manage_sheet': False,
+            'create_colls': False,
+            'export_sheet': True,
+            'delete_sheet': False,
+            'view_versions': True,
+            'update_cache': False,
+            'view_tickets': False,
+            'view_files': False,  # No access to files for viewer
+            'is_superuser': False,
+        }
+        self.assertEqual(rd['perms'], expected)
+        self.assertEqual(
+            rd['studies'][self.study_uuid]['assays'][self.assay_uuid][
+                'display_row_links'
+            ],
+            False,
         )
 
     def test_get_read_only_owner(self):
         """Test GET with site read-only mode as owner"""
+        self._import_investigation()
         app_settings.set('projectroles', 'site_read_only', True)
         with self.login(self.user_owner):
             response = self.client.get(self.url)
@@ -440,12 +618,14 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
             'view_versions': True,
             'update_cache': False,
             'view_tickets': True,
+            'view_files': True,
             'is_superuser': False,
         }
         self.assertEqual(rd['perms'], expected)
 
     def test_get_read_only_superuser(self):
         """Test GET with site read-only mode as superuser"""
+        self._import_investigation()
         app_settings.set('projectroles', 'site_read_only', True)
         with self.login(self.user):
             response = self.client.get(self.url)
@@ -461,6 +641,7 @@ class TestSheetContextAjaxView(SamplesheetsViewTestBase):
             'view_versions': True,
             'update_cache': True,
             'view_tickets': True,
+            'view_files': True,
             'is_superuser': True,
         }
         self.assertEqual(rd['perms'], expected)
@@ -479,23 +660,21 @@ class TestStudyTablesAjaxView(IrodsAccessTicketMixin, SamplesheetsViewTestBase):
         # Allow sample sheet editing in project
         app_settings.set(APP_NAME, 'allow_editing', True, project=self.project)
         # Set up helpers
-        self.cache_backend = get_backend_api('sodar_cache')
+        self.cache_backend = plugin_api.get_backend_api('sodar_cache')
         self.cache_name = STUDY_TABLE_CACHE_ITEM.format(
             study=self.study.sodar_uuid
         )
         self.cache_args = [APP_NAME, self.cache_name, self.project]
+        self.url = reverse(
+            'samplesheets:ajax_study_tables',
+            kwargs={'study': self.study.sodar_uuid},
+        )
 
     def test_get(self):
         """Test StudyTablesAjaxView GET"""
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:ajax_study_tables',
-                    kwargs={'study': self.study.sodar_uuid},
-                )
-            )
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-
         ret_data = response.data
         self.assertIn('study', ret_data)
         self.assertIn('tables', ret_data)
@@ -524,15 +703,8 @@ class TestStudyTablesAjaxView(IrodsAccessTicketMixin, SamplesheetsViewTestBase):
     def test_get_edit(self):
         """Test GET with edit mode enabled"""
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:ajax_study_tables',
-                    kwargs={'study': self.study.sodar_uuid},
-                ),
-                {'edit': 1},
-            )
+            response = self.client.get(self.url, {'edit': 1})
         self.assertEqual(response.status_code, 200)
-
         # Assert return data correctness
         ret_data = response.data
         self.assertIn('study', ret_data)
@@ -557,17 +729,26 @@ class TestStudyTablesAjaxView(IrodsAccessTicketMixin, SamplesheetsViewTestBase):
         self.assertIsNotNone(ret_data['edit_context']['samples'])
         self.assertIsNotNone(ret_data['edit_context']['protocols'])
 
+    def test_get_viewer(self):
+        """Test GET as viewer"""
+        with self.login(self.user_viewer):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        ret_data = response.data
+        # Study iRODS data should not be included
+        self.assertNotIn('shortcuts', ret_data['tables']['study'])
+        a_uuid = str(self.assay.sodar_uuid)
+        self.assertIn('table_data', ret_data['tables']['assays'][a_uuid])
+        # Assay iRODS data should not be included
+        self.assertNotIn('irods_paths', ret_data['tables']['assays'][a_uuid])
+        self.assertNotIn('shortcuts', ret_data['tables']['assays'][a_uuid])
+
     def test_get_study_cache(self):
         """Test GET for cached study table creation on retrieval"""
         self.assertIsNone(self.cache_backend.get_cache_item(*self.cache_args))
         self.assertEqual(JSONCacheItem.objects.count(), 0)
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:ajax_study_tables',
-                    kwargs={'study': self.study.sodar_uuid},
-                )
-            )
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertIsNotNone(
             self.cache_backend.get_cache_item(*self.cache_args)
@@ -586,12 +767,7 @@ class TestStudyTablesAjaxView(IrodsAccessTicketMixin, SamplesheetsViewTestBase):
         )
         self.assertEqual(JSONCacheItem.objects.count(), 1)
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:ajax_study_tables',
-                    kwargs={'study': self.study.sodar_uuid},
-                )
-            )
+            response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertIsNotNone(
             self.cache_backend.get_cache_item(*self.cache_args)
@@ -652,7 +828,7 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
     """Tests for SheetCellEditAjaxView"""
 
     @classmethod
-    def _convert_ontology_value(cls, value):
+    def _convert_ontology_value(cls, value: Any) -> dict:
         """
         Convert ontology value data sent in an edit request into a format
         expected in the database.
@@ -673,7 +849,7 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
         # Set up POST data
         self.values = {'updated_cells': []}
         # Set up helpers
-        self.cache_backend = get_backend_api('sodar_cache')
+        self.cache_backend = plugin_api.get_backend_api('sodar_cache')
         self.cache_name = STUDY_TABLE_CACHE_ITEM.format(
             study=self.study.sodar_uuid
         )
@@ -1405,7 +1581,7 @@ class TestSheetRowInsertAjaxView(
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
         # Set up helpers
-        self.cache_backend = get_backend_api('sodar_cache')
+        self.cache_backend = plugin_api.get_backend_api('sodar_cache')
         self.cache_name = STUDY_TABLE_CACHE_ITEM.format(
             study=self.study.sodar_uuid
         )
@@ -1668,7 +1844,7 @@ class TestSheetRowDeleteAjaxView(
         self.update_assay_row_uuids()
 
         # Set up helpers
-        self.cache_backend = get_backend_api('sodar_cache')
+        self.cache_backend = plugin_api.get_backend_api('sodar_cache')
         self.cache_name = STUDY_TABLE_CACHE_ITEM.format(
             study=self.study.sodar_uuid
         )
@@ -1881,7 +2057,7 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, SamplesheetsViewTestBase):
                 }
             ]
         }
-        self.cache_backend = get_backend_api('sodar_cache')
+        self.cache_backend = plugin_api.get_backend_api('sodar_cache')
         self.cache_name = STUDY_TABLE_CACHE_ITEM.format(
             study=self.study.sodar_uuid
         )

@@ -2,7 +2,6 @@
 
 import logging
 import math
-import os
 import pytz
 import random
 import re
@@ -11,25 +10,30 @@ import uuid
 
 from base64 import b64decode, b64encode
 from contextlib import contextmanager
+from datetime import datetime
+from typing import Any, Generator, Optional, Union
 
 from irods.api_number import api_number
 from irods.collection import iRODSCollection
 from irods.column import Criterion
 from irods.exception import CollectionDoesNotExist, CAT_NO_ROWS_FOUND
+from django.http import HttpRequest
 from irods.message import TicketAdminRequest, iRODSMessage
 from irods.models import Collection, DataObject, TicketQuery
+from irods.path import iRODSPath
 from irods.query import SpecificQuery
 from irods.session import iRODSSession
 from irods.ticket import Ticket
 
 from django.conf import settings
+from django.db.models import Model
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.http import urlencode
 from django.utils.text import slugify
 
 # Projectroles dependency
-from projectroles.models import SODAR_CONSTANTS
+from projectroles.models import Project, SODAR_CONSTANTS
 
 
 logger = logging.getLogger(__name__)
@@ -39,6 +43,7 @@ logger = logging.getLogger(__name__)
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 # Local constants
+PROJECTS_COLL = 'projects'
 ACCEPTED_PATH_TYPES = [
     'Assay',
     'LandingZone',
@@ -71,13 +76,15 @@ class IrodsAPI:
     class IrodsQueryException(Exception):
         """iRODS query exception"""
 
-    def __init__(self, user_name=None, user_pass=None):
+    def __init__(
+        self, user_name: Optional[str] = None, user_pass: Optional[str] = None
+    ):
         self.user_name = user_name if user_name else settings.IRODS_USER
         self.user_pass = user_pass if user_pass else settings.IRODS_PASS
 
     # Internal functions -------------------------------------------------------
 
-    def _init_irods(self):
+    def _init_irods(self) -> iRODSSession:
         """
         Initialize an iRODS connection.
 
@@ -92,7 +99,7 @@ class IrodsAPI:
         irods_env.update(dict(settings.IRODS_ENV_BACKEND))
         # HACK: Clean up environment to avoid python-irodsclient crash
         irods_env = self.format_env(irods_env)
-        # logger.debug('iRODS environment: {}'.format(irods_env))
+        # logger.debug(f'iRODS environment: {irods_env}')
         try:
             irods = iRODSSession(
                 host=settings.IRODS_HOST,
@@ -104,28 +111,25 @@ class IrodsAPI:
             )
             # Ensure we have a connection
             irods.collections.exists(
-                '/{}/home/{}'.format(settings.IRODS_ZONE, self.user_name)
+                f'/{settings.IRODS_ZONE}/home/{self.user_name}'
             )
             return irods
         except Exception as ex:
             logger.error(
-                'Unable to connect to iRODS (host={}, port={}): {} ({})'.format(
-                    settings.IRODS_HOST,
-                    settings.IRODS_PORT,
-                    type(ex).__name__,
-                    ex,
-                )
+                f'Unable to connect to iRODS (host={settings.IRODS_HOST}, '
+                f'port={settings.IRODS_PORT}): {type(ex).__name__} ({ex})'
             )
             raise ex
 
     @classmethod
-    def _get_datetime(cls, naive_dt, api_format=False):
+    def _get_datetime(cls, naive_dt: datetime, api_format: bool = False) -> str:
         """
         Return a printable datetime in the system timezone from a naive
         datetime object.
 
-        :param naive_dt: Naive DateTime object
+        :param naive_dt: Naive datetime object
         :param api_format: Return in REST API format (bool, default=False)
+        :return: String
         """
         dt = naive_dt.replace(tzinfo=pytz.timezone('GMT'))
         dt = dt.astimezone(timezone.get_default_timezone())
@@ -134,19 +138,20 @@ class IrodsAPI:
         return dt.strftime('%Y-%m-%d %H:%M')
 
     @classmethod
-    def _get_query_alias(cls):
+    def _get_query_alias(cls) -> str:
         """Return a random iCAT SQL query alias"""
-        return 'sodar_query_{}'.format(
-            ''.join(
-                random.SystemRandom().choice(
-                    string.ascii_lowercase + string.ascii_uppercase
-                )
-                for _ in range(16)
+        random_id = ''.join(
+            random.SystemRandom().choice(
+                string.ascii_lowercase + string.ascii_uppercase
             )
+            for _ in range(16)
         )
+        return f'sodar_query_{random_id}'
 
     @classmethod
-    def _send_request(cls, irods, api_id, *args):
+    def _send_request(
+        cls, irods: iRODSSession, api_id: str, *args
+    ) -> iRODSMessage:
         """
         Temporary function for sending a raw API request using
         python-irodsclient.
@@ -154,7 +159,7 @@ class IrodsAPI:
         :param irods: iRODS connection object
         :param api_id: iRODS API ID
         :param *args: Arguments for the request body
-        :return: Response
+        :return: iRODSMessage
         :raise: Exception if iRODS is not initialized
         """
         msg_body = TicketAdminRequest(*args)
@@ -167,7 +172,7 @@ class IrodsAPI:
         return response
 
     @classmethod
-    def _validate_project(cls, project):
+    def _validate_project(cls, project: Project):
         """
         Validate the project parameter for retrieving a project iRODS path.
 
@@ -177,15 +182,13 @@ class IrodsAPI:
         """
         if project.__class__.__name__ != 'Project':
             raise ValueError('Argument "project" is not a Project object')
-        if project.type != PROJECT_TYPE_PROJECT:
-            raise ValueError(
-                'Project type is not {}'.format(PROJECT_TYPE_PROJECT)
-            )
+        if project.is_category():
+            raise ValueError(f'Project type is not {PROJECT_TYPE_PROJECT}')
 
     # Helpers ------------------------------------------------------------------
 
     @classmethod
-    def format_env(cls, env):
+    def format_env(cls, env: dict) -> dict:
         """
         Format an iRODS environment dict to ensure values are in a format
         accepted by iRODS.
@@ -199,12 +202,12 @@ class IrodsAPI:
         return env
 
     @classmethod
-    def sanitize_path(cls, path):
+    def sanitize_path(cls, path: Union[str, iRODSPath]) -> str:
         """
         Validate and sanitize iRODS path.
 
         :param path: Full or partial iRODS path to collection or data object
-                     (string)
+                     (string or iRODSPath)
         :raise: ValueError if iRODS path is invalid or unacceptable
         :return: Sanitized iRODS path (string)
         """
@@ -219,14 +222,16 @@ class IrodsAPI:
         return path
 
     @classmethod
-    def get_sub_path(cls, obj, landing_zone=False, include_parent=True):
+    def get_sub_path(
+        cls, obj: Any, landing_zone: bool = False, include_parent: bool = True
+    ) -> str:
         """
         Get the collection path for a study or assay under the sample data
         collection.
 
         :param obj: Study or Assay object
-        :param landing_zone: Return dir for landing zone if True (bool)
-        :param include_parent: Include parent dir if True (bool)
+        :param landing_zone: Return landing zone notation if True (bool)
+        :param include_parent: Include assay parent collection if True (bool)
         :return: String
         :raise: TypeError if obj type is not correct
         :raise: NotImplementedError if get_display_name() is not found in obj
@@ -242,11 +247,8 @@ class IrodsAPI:
 
         def _get_path(obj):
             if not landing_zone:
-                return '{}_{}'.format(
-                    obj.__class__.__name__.lower(), obj.sodar_uuid
-                )
-            else:
-                return slugify(obj.get_display_name()).replace('-', '_')
+                return f'{obj.__class__.__name__.lower()}_{obj.sodar_uuid}'
+            return slugify(obj.get_display_name()).replace('-', '_')
 
         # If assay, add study first
         if obj_class == 'Assay' and include_parent:
@@ -255,7 +257,7 @@ class IrodsAPI:
         return ret
 
     @classmethod
-    def get_path(cls, obj):
+    def get_path(cls, obj: Model) -> str:
         """
         Return the iRODS path for for a SODAR database object.
 
@@ -279,49 +281,37 @@ class IrodsAPI:
             raise ValueError('Project not found for given object')
 
         # Base path (project)
-        path = '{root_path}/projects/{uuid_prefix}/{uuid}'.format(
-            root_path=cls.get_root_path(),
-            uuid_prefix=str(project.sodar_uuid)[:2],
-            uuid=project.sodar_uuid,
+        path = iRODSPath(
+            cls.get_root_path(),
+            PROJECTS_COLL,
+            str(project.sodar_uuid)[:2],
+            str(project.sodar_uuid),
         )
         # Project
         if obj_class == 'Project':
             return path
         # Investigation (sample data root)
         elif obj_class == 'Investigation':
-            path += '/{sample_dir}'.format(
-                sample_dir=settings.IRODS_SAMPLE_COLL
-            )
+            path += iRODSPath(settings.IRODS_SAMPLE_COLL)
         # Study (in sample data)
         elif obj_class == 'Study':
-            path += '/{sample_dir}/{study}'.format(
-                sample_dir=settings.IRODS_SAMPLE_COLL,
-                study=cls.get_sub_path(obj),
-            )
+            path += iRODSPath(settings.IRODS_SAMPLE_COLL, cls.get_sub_path(obj))
         # Assay (in sample data)
         elif obj_class == 'Assay':
-            path += '/{sample_dir}/{study_assay}'.format(
-                sample_dir=settings.IRODS_SAMPLE_COLL,
-                study_assay=cls.get_sub_path(obj),
-            )
+            path += iRODSPath(settings.IRODS_SAMPLE_COLL, cls.get_sub_path(obj))
         # LandingZone
         elif obj_class == 'LandingZone':
-            path += (
-                '/{zone_coll}/{user}/{study_assay}/{zone_title}'
-                '{zone_config}'.format(
-                    zone_coll=settings.IRODS_LANDING_ZONE_COLL,
-                    user=obj.user.username,
-                    study_assay=cls.get_sub_path(obj.assay, landing_zone=True),
-                    zone_title=obj.title,
-                    zone_config=(
-                        '_' + obj.configuration if obj.configuration else ''
-                    ),
-                )
+            path += iRODSPath(
+                settings.IRODS_LANDING_ZONE_COLL,
+                obj.user.username,
+                cls.get_sub_path(obj.assay, landing_zone=True),
+                obj.title
+                + ('_' + obj.configuration if obj.configuration else ''),
             )
         return path
 
     @classmethod
-    def get_sample_path(cls, project):
+    def get_sample_path(cls, project: Project) -> str:
         """
         Return the iRODS path for project sample data.
 
@@ -331,10 +321,10 @@ class IrodsAPI:
                 object is of type CATEGORY
         """
         cls._validate_project(project)
-        return cls.get_path(project) + '/' + settings.IRODS_SAMPLE_COLL
+        return iRODSPath(cls.get_path(project), settings.IRODS_SAMPLE_COLL)
 
     @classmethod
-    def get_zone_path(cls, project):
+    def get_zone_path(cls, project: Project) -> str:
         """
         Return the iRODS path for project landing zones.
 
@@ -344,10 +334,12 @@ class IrodsAPI:
                 object is of type CATEGORY
         """
         cls._validate_project(project)
-        return cls.get_path(project) + '/' + settings.IRODS_LANDING_ZONE_COLL
+        return iRODSPath(
+            cls.get_path(project), settings.IRODS_LANDING_ZONE_COLL
+        )
 
     @classmethod
-    def get_root_path(cls):
+    def get_root_path(cls) -> str:
         """Return the SODAR root path in iRODS"""
         irods_zone = settings.IRODS_ZONE
         root_path = ''
@@ -357,25 +349,27 @@ class IrodsAPI:
                 raise ValueError(
                     'iRODS zone must not be included in IRODS_ROOT_PATH'
                 )
-        return '/{}{}'.format(irods_zone, root_path)
+        return iRODSPath(irods_zone, root_path)
 
     @classmethod
-    def get_projects_path(cls):
+    def get_projects_path(cls) -> str:
         """Return the SODAR projects collection path"""
-        return cls.get_root_path() + '/projects'
+        return iRODSPath(cls.get_root_path(), PROJECTS_COLL)
 
     @classmethod
-    def get_trash_path(cls):
+    def get_trash_path(cls) -> str:
         """Return the trash path in the current zone"""
-        return '/' + os.path.join(settings.IRODS_ZONE, TRASH_COLL_NAME)
+        return iRODSPath(settings.IRODS_ZONE, TRASH_COLL_NAME)
 
     @classmethod
-    def get_uuid_from_path(cls, path, obj_type):
+    def get_uuid_from_path(
+        cls, path: Union[str, iRODSPath], obj_type: str
+    ) -> Optional[str]:
         """
         Return project, study or assay UUID from iRODS path or None if not
         found.
 
-        :param path: Full iRODS path (string)
+        :param path: Full iRODS path (string or iRODSPath)
         :param obj_type: Type of object ("project", "study" or "assay")
         :return: String or None
         :raise: ValueError if obj_type is not accepted
@@ -388,15 +382,13 @@ class IrodsAPI:
         }
         obj_type = obj_type.lower()
         if obj_type not in path_regex.keys():
-            raise ValueError(
-                'Invalid argument for obj_type "{}"'.format(obj_type)
-            )
+            raise ValueError(f'Invalid argument for obj_type "{obj_type}"')
         s = re.search(path_regex[obj_type], cls.sanitize_path(path))
         if s:
             return s.group(1)
 
     @classmethod
-    def get_group_name(cls, project, owner=False):
+    def get_group_name(cls, project: Project, owner: bool = False) -> str:
         """
         Return iRODS user group name for project.
 
@@ -417,19 +409,19 @@ class IrodsAPI:
     @classmethod
     def get_url(
         cls,
-        view,
-        project=None,
-        path='',
-        colls=False,
-        method='GET',
-        absolute=False,
-        request=None,
-    ):
+        view: str,
+        project: Optional[Project] = None,
+        path: Union[str, iRODSPath] = '',
+        colls: bool = False,
+        method: str = 'GET',
+        absolute: bool = False,
+        request: HttpRequest = None,
+    ) -> str:
         """
         Get the list or stats URL for an iRODS path.
 
         :param view: View of the URL ("stats" or "list")
-        :param path: Full iRODS path (string)
+        :param path: Full iRODS path (string or iRODSPath)
         :param project: Project object or None
         :param colls: Include collections in list (boolean, default=False)
         :param method: Method for the function (string)
@@ -439,12 +431,12 @@ class IrodsAPI:
         :raise: ValueError if the view or method param is invalid
         """
         if view not in ['list', 'stats']:
-            raise ValueError('Invalid type "{}" for view'.format(view))
+            raise ValueError(f'Invalid type "{view}" for view')
         if method not in ['GET', 'POST']:
-            raise ValueError('Invalid method "{}"'.format(method))
+            raise ValueError(f'Invalid method "{method}"')
 
         url_kwargs = {'project': str(project.sodar_uuid)} if project else None
-        rev_url = reverse('irodsbackend:{}'.format(view), kwargs=url_kwargs)
+        rev_url = reverse(f'irodsbackend:{view}', kwargs=url_kwargs)
 
         if method == 'GET':
             query_string = {'path': cls.sanitize_path(path)}
@@ -456,7 +448,7 @@ class IrodsAPI:
         return rev_url
 
     @classmethod
-    def get_checksum_file_suffix(cls):
+    def get_checksum_file_suffix(cls) -> str:
         """
         Return checksum file suffix according to site settings.
 
@@ -466,7 +458,7 @@ class IrodsAPI:
         return '.' + settings.IRODS_HASH_SCHEME.lower()
 
     @classmethod
-    def get_sha256_base64(cls, hex_str, prefix=True):
+    def get_sha256_base64(cls, hex_str: str, prefix: bool = True) -> str:
         """
         Convert SHA256 checksum from hex into base64 as stored in iRODS.
 
@@ -478,7 +470,7 @@ class IrodsAPI:
         return (IRODS_SHA256_PREFIX + ret) if prefix else ret
 
     @classmethod
-    def get_sha256_hex(cls, base64_str):
+    def get_sha256_hex(cls, base64_str: str) -> str:
         """
         Convert SHA256 checksum base64 from into hex. Strips "sha2:" prefix if
         present.
@@ -493,7 +485,7 @@ class IrodsAPI:
     # iRODS Operations ---------------------------------------------------------
 
     @contextmanager
-    def get_session(self):
+    def get_session(self) -> Generator[iRODSSession, Any, None]:
         """
         Return the iRODS session object for direct API access as a generator.
         Use with the "with" keyword to ensure connection cleanup.
@@ -506,7 +498,7 @@ class IrodsAPI:
         finally:
             irods.cleanup()
 
-    def get_session_obj(self):
+    def get_session_obj(self) -> iRODSSession:
         """
         Return the iRODS session object for direct API access.
         NOTE: Connection needs to be manually closed with cleanup()! If
@@ -517,7 +509,7 @@ class IrodsAPI:
         return self._init_irods()
 
     @classmethod
-    def get_info(cls, irods):
+    def get_info(cls, irods: iRODSSession) -> dict:
         """
         Return iRODS server info.
 
@@ -537,7 +529,7 @@ class IrodsAPI:
         }
 
     @classmethod
-    def get_version(cls, irods):
+    def get_version(cls, irods: iRODSSession) -> str:
         """
         Return the version of the iRODS server SODAR is connected to.
 
@@ -546,13 +538,21 @@ class IrodsAPI:
         """
         return '.'.join(str(x) for x in irods.server_version)
 
-    def get_stats(self, irods, path, include_colls=False):
+    def get_stats(
+        self,
+        irods: iRODSSession,
+        path: Union[str, iRODSPath],
+        include_checksum: bool = False,
+        include_colls: bool = False,
+    ) -> dict:
         """
         Return file count, total file size and optional subcollection count
         within an iRODS path.
 
         :param irods: iRODSSession object
-        :param path: Full path to iRODS collection
+        :param path: Full path to iRODS collection (string or iRODSPath)
+        :param include_checksum: if True, include .md5/.sha256 files (bool,
+                                 default=False)
         :param include_colls: Include subcollection count (bool, default=False)
         :return: Dict
         """
@@ -562,20 +562,23 @@ class IrodsAPI:
             raise FileNotFoundError('iRODS collection not found')
 
         ret = {}
+        chk_exclude = (
+            'AND data_name NOT LIKE \'%.md5\' '
+            'AND data_name NOT LIKE \'%.sha256\' '
+        )
         sql = (
             'SELECT COUNT(data_id) as file_count, '
             'SUM(data_size) as total_size '
             'FROM (SELECT data_id, data_size FROM r_data_main '
             'JOIN r_coll_main USING (coll_id) '
             'WHERE (coll_name = \'{coll_path}\' '
-            'OR coll_name LIKE \'{coll_path}/%\') '
-            'AND data_name NOT LIKE \'%.md5\' '
-            'AND data_name NOT LIKE \'%.sha256\' '
+            'OR coll_name LIKE \'{coll_path}/%\') {chk_exclude}'
             'GROUP BY data_id, data_size) AS sub_query'.format(
-                coll_path=coll.path
+                coll_path=coll.path,
+                chk_exclude=chk_exclude if not include_checksum else '',
             )
         )
-        # logger.debug('Object stats query = "{}"'.format(sql))
+        # logger.debug(f'Object stats query = "{sql}"')
         query = self.get_query(irods, sql)
 
         try:
@@ -604,13 +607,15 @@ class IrodsAPI:
         return ret
 
     @classmethod
-    def get_colls_recursively(cls, coll):
+    def get_colls_recursively(
+        cls, coll: iRODSCollection
+    ) -> list[iRODSCollection]:
         """
         Return all subcollections for a coll efficiently (without multiple
         queries).
 
         :param coll: Collection object
-        :return: List
+        :return: List of Collection objects
         """
         query = coll.manager.sess.query(Collection).filter(
             Criterion('like', Collection.parent_name, coll.path + '%')
@@ -619,23 +624,24 @@ class IrodsAPI:
 
     def get_objs_recursively(
         self,
-        irods,
-        coll,
-        include_checksum=False,
-        name_like=None,
-        limit=None,
-        offset=None,
-        api_format=False,
-        checksum=False,
-    ):
+        irods: iRODSSession,
+        coll: iRODSCollection,
+        include_checksum: bool = False,
+        name_like: Union[list[str], str, None] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+        api_format: bool = False,
+        checksum: bool = False,
+    ) -> list[dict]:
         """
         Return objects below a coll recursively. Replacement for the
         non-scalable walk() function in the API. Also gets around the query
         length limitation in iRODS.
 
         :param irods: iRODSSession object
-        :param coll: Collection object
-        :param include_checksum: if True, include .md5/.sha256 files
+        :param coll: iRODSCollection object
+        :param include_checksum: if True, include .md5/.sha256 files (bool,
+                                 default=False)
         :param name_like: Filtering of file names (string or list of strings)
         :param limit: Limit retrieval to N rows (int or None)
         :param offset: Offset retrieval by N rows (int or None)
@@ -672,14 +678,14 @@ class IrodsAPI:
                 for i, n in enumerate(nl):
                     if i > 0:
                         sql += ' OR '
-                    sql += 'data_name LIKE \'%{}%\''.format(n)
+                    sql += f'data_name LIKE \'%{n}%\''
                 sql += ')'
             if limit:
-                sql += ' LIMIT {}'.format(limit)
+                sql += f' LIMIT {limit}'
             if offset:
-                sql += ' OFFSET {}'.format(offset)
+                sql += f' OFFSET {offset}'
 
-            # logger.debug('Object list query = "{}"'.format(sql))
+            # logger.debug(f'Object list query = "{sql}"')
             columns = [
                 DataObject.name,
                 DataObject.size,
@@ -693,7 +699,9 @@ class IrodsAPI:
             try:
                 results = query.get_results()
                 for row in results:
-                    obj_path = row[Collection.name] + '/' + row[DataObject.name]
+                    obj_path = iRODSPath(
+                        row[Collection.name], row[DataObject.name]
+                    )
                     if q_count > 1 and obj_path in path_lookup:
                         continue  # Skip possible dupes in case of split query
                     d = {
@@ -714,9 +722,8 @@ class IrodsAPI:
                 pass
             except Exception as ex:
                 logger.error(
-                    'iRODS exception in get_objs_recursively(): {}'.format(
-                        ex.__class__.__name__
-                    )
+                    f'iRODS exception in get_objs_recursively(): '
+                    f'{ex.__class__.__name__}'
                 )
             finally:
                 query.remove()
@@ -736,21 +743,21 @@ class IrodsAPI:
 
     def get_objects(
         self,
-        irods,
-        path,
-        include_checksum=False,
-        include_colls=False,
-        name_like=None,
-        limit=None,
-        offset=None,
-        api_format=False,
-        checksum=False,
-    ):
+        irods: iRODSSession,
+        path: Union[str, iRODSPath],
+        include_checksum: bool = False,
+        include_colls: bool = False,
+        name_like: Union[list[str], str, None] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+        api_format: bool = False,
+        checksum: bool = False,
+    ) -> list[dict]:
         """
         Return a flat iRODS object list recursively under a given path.
 
         :param irods: iRODSSession object
-        :param path: Full path to iRODS collection
+        :param path: Full path to iRODS collection (string or iRODSPath)
         :param include_checksum: Include .md5/.sha256 files (bool)
         :param include_colls: Include collections (bool)
         :param name_like: Filtering of file names (string or list of strings)
@@ -795,14 +802,16 @@ class IrodsAPI:
         return ret
 
     @classmethod
-    def get_child_colls(cls, irods, path):
+    def get_child_colls(
+        cls, irods: iRODSSession, path: Union[str, iRODSPath]
+    ) -> list[iRODSCollection]:
         """
         Return child collections for a collection by path. Does not return
         children recursively.
 
         :param irods: iRODSSession object
-        :param path: Full path to iRODS collection
-        :return: List
+        :param path: Full path to iRODS collection (string or iRODSPath)
+        :return: List of iRODSCollection objects
         """
         try:
             coll = irods.collections.get(cls.sanitize_path(path))
@@ -810,7 +819,13 @@ class IrodsAPI:
         except CollectionDoesNotExist:
             return []
 
-    def get_query(self, irods, sql, columns=None, register=True):
+    def get_query(
+        self,
+        irods: iRODSSession,
+        sql: str,
+        columns: Optional[list] = None,
+        register: bool = True,
+    ) -> SpecificQuery:
         """
         Return a SpecificQuery object with a standard query alias. If
         registered, should be removed with remove() after use.
@@ -828,19 +843,19 @@ class IrodsAPI:
 
     def issue_ticket(
         self,
-        irods,
-        mode,
-        path,
-        ticket_str=None,
-        date_expires=None,
-        allowed_hosts=None,
-    ):
+        irods: iRODSSession,
+        mode: str,
+        path: Union[str, iRODSPath],
+        ticket_str: Optional[str] = None,
+        date_expires: Optional[datetime] = None,
+        allowed_hosts: Union[list, str, None] = None,
+    ) -> Ticket:
         """
         Issue ticket for a specific iRODS collection or data object.
 
         :param irods: iRODSSession object
         :param mode: "read" or "write"
-        :param path: iRODS path for creating the ticket
+        :param path: iRODS path for creating the ticket (string or iRODSPath)
         :param ticket_str: String to use as the ticket
         :param date_expires: Expiry date (DateTime object, optional)
         :param allowed_hosts: Restrict access to given hosts (string or list,
@@ -892,7 +907,11 @@ class IrodsAPI:
         return ticket
 
     def update_ticket(
-        self, irods, ticket_str, date_expires=None, allowed_hosts=None
+        self,
+        irods: iRODSSession,
+        ticket_str: str,
+        date_expires: Optional[datetime] = None,
+        allowed_hosts: Union[list, str, None] = None,
     ):
         """
         Update ticket in iRODS. Allows updating the expiry date and allowed
@@ -954,7 +973,9 @@ class IrodsAPI:
                     host,
                 )
 
-    def get_ticket(self, irods, ticket_str):
+    def get_ticket(
+        self, irods: iRODSSession, ticket_str: str
+    ) -> Optional[Ticket]:
         """
         Get ticket from iRODS.
 
@@ -970,7 +991,7 @@ class IrodsAPI:
             return Ticket(ticket_res[0])
         return None
 
-    def delete_ticket(self, irods, ticket_str):
+    def delete_ticket(self, irods: iRODSSession, ticket_str: str):
         """
         Delete ticket.
 
@@ -980,6 +1001,4 @@ class IrodsAPI:
         try:
             self._send_request(irods, 'TICKET_ADMIN_AN', 'delete', ticket_str)
         except Exception:
-            raise Exception(
-                'Failed to delete iRODS ticket {}'.format(ticket_str)
-            )
+            raise Exception(f'Failed to delete iRODS ticket {ticket_str}')

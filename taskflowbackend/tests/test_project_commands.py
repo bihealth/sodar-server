@@ -26,6 +26,7 @@ from projectroles.models import (
 from projectroles.tests.test_commands import BatchUpdateRolesMixin
 
 # Taskflowbackend dependency
+from taskflowbackend.constants import IRODS_ACCESS_READ_OBJ
 from taskflowbackend.tests.base import TaskflowViewTestBase
 
 
@@ -49,7 +50,6 @@ class TestBatchUpdateRoles(BatchUpdateRolesMixin, TaskflowViewTestBase):
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         # Init command class
         self.command = BatchUpdateRolesCommand()
@@ -131,7 +131,7 @@ class TestSyncModifyAPI(TaskflowViewTestBase):
             self.irods.user_groups.get(self.project_group), iRODSUserGroup
         )
         self.assert_irods_access(
-            self.project_group, self.project_path, self.irods_access_read
+            self.project_group, self.project_path, IRODS_ACCESS_READ_OBJ
         )
         self.assert_group_member(self.project, self.user)
         self.assert_group_member(self.project, self.user_owner_cat)
@@ -160,6 +160,29 @@ class TestSyncModifyAPI(TaskflowViewTestBase):
         self.assert_group_member(self.project, self.user_owner_cat)
         self.assert_group_member(self.project, self.user_new)
 
+    def test_sync_viewer(self):
+        """Test sync with project viewer role"""
+        self.make_assignment(self.project, self.user_new, self.role_viewer)
+
+        with self.assertRaises(CollectionDoesNotExist):
+            self.irods.collections.get(self.project_path)
+        with self.assertRaises(GroupDoesNotExist):
+            self.irods.user_groups.get(self.project_group)
+        with self.assertRaises(UserDoesNotExist):
+            self.irods.users.get(self.user.username)
+        with self.assertRaises(UserDoesNotExist):
+            self.irods.users.get(self.user_owner_cat.username)
+        with self.assertRaises(UserDoesNotExist):
+            self.irods.users.get(self.user_new.username)
+
+        self.command.handle()
+
+        self.assertEqual(self.irods.collections.exists(self.project_path), True)
+        self.assert_group_member(self.project, self.user)
+        self.assert_group_member(self.project, self.user_owner_cat)
+        # Access should not be granted to viewer
+        self.assert_group_member(self.project, self.user_new, False)
+
     def test_sync_inherited_member(self):
         """Test sync with inherited member role"""
         self.make_assignment(self.category, self.user_new, self.role_guest)
@@ -181,6 +204,29 @@ class TestSyncModifyAPI(TaskflowViewTestBase):
         self.assert_group_member(self.project, self.user)
         self.assert_group_member(self.project, self.user_owner_cat)
         self.assert_group_member(self.project, self.user_new)
+
+    def test_sync_inherited_viewer(self):
+        """Test sync with inherited viewer role"""
+        self.make_assignment(self.category, self.user_new, self.role_viewer)
+
+        with self.assertRaises(CollectionDoesNotExist):
+            self.irods.collections.get(self.project_path)
+        with self.assertRaises(GroupDoesNotExist):
+            self.irods.user_groups.get(self.project_group)
+        with self.assertRaises(UserDoesNotExist):
+            self.irods.users.get(self.user.username)
+        with self.assertRaises(UserDoesNotExist):
+            self.irods.users.get(self.user_owner_cat.username)
+        with self.assertRaises(UserDoesNotExist):
+            self.irods.users.get(self.user_new.username)
+
+        self.command.handle()
+
+        self.assertEqual(self.irods.collections.exists(self.project_path), True)
+        self.assert_group_member(self.project, self.user)
+        self.assert_group_member(self.project, self.user_owner_cat)
+        # Access should not be granted to viewer
+        self.assert_group_member(self.project, self.user_new, False)
 
     def test_sync_inherited_finder(self):
         """Test sync with inherited finder role"""

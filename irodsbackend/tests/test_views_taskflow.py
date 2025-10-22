@@ -1,7 +1,6 @@
 """Tests for views in the irodsbackend app with taskflow enabled"""
 
-import os
-
+from irods.path import iRODSPath
 from irods.test.helpers import make_object
 
 from django.conf import settings
@@ -11,7 +10,8 @@ from django.test import RequestFactory, override_settings
 from projectroles.models import SODAR_CONSTANTS
 
 # Taskflowbackend dependency
-from taskflowbackend.tests.base import TaskflowViewTestBase, HASH_SCHEME_SHA256
+from taskflowbackend.constants import IRODS_HASH_SCHEME_SHA256
+from taskflowbackend.tests.base import TaskflowViewTestBase
 
 
 # SODAR constants
@@ -29,8 +29,8 @@ IRODS_OBJ_SIZE = 1024
 IRODS_OBJ_CONTENT = ''.join('x' for _ in range(IRODS_OBJ_SIZE))
 IRODS_OBJ_NAME = 'test1.txt'
 IRODS_MD5_NAME = 'test1.txt.md5'
-IRODS_NON_PROJECT_PATH = (
-    '/' + settings.IRODS_ZONE + '/home/' + settings.IRODS_USER
+IRODS_NON_PROJECT_PATH = iRODSPath(
+    settings.IRODS_ZONE, 'home', settings.IRODS_USER
 )
 IRODS_FAIL_COLL = 'xeiJ1Vie'
 
@@ -48,7 +48,7 @@ class IrodsbackendViewTestBase(TaskflowViewTestBase):
         # Create test collection in iRODS
         # NOTE: Not fully valid sample paths, needs make_irods_colls() for that
         self.project_path = self.irods_backend.get_path(self.project)
-        self.irods_path = os.path.join(self.project_path, IRODS_TEMP_COLL)
+        self.irods_path = iRODSPath(self.project_path, IRODS_TEMP_COLL)
         self.irods_coll = self.irods.collections.create(self.irods_path)
 
 
@@ -102,11 +102,11 @@ class TestIrodsStatisticsAjaxView(IrodsbackendViewTestBase):
         self.assertEqual(response.data['file_count'], 1)
         self.assertEqual(response.data['total_size'], IRODS_OBJ_SIZE)
 
-    @override_settings(IRODS_HASH_SCHEME=HASH_SCHEME_SHA256)
+    @override_settings(IRODS_HASH_SCHEME=IRODS_HASH_SCHEME_SHA256)
     def test_get_checksum_sha256(self):
         """Test GET with SHA256 checksum file"""
         obj = self.make_irods_object(self.irods_coll, IRODS_OBJ_NAME)
-        self.make_checksum_object(obj, scheme=HASH_SCHEME_SHA256)
+        self.make_checksum_object(obj, scheme=IRODS_HASH_SCHEME_SHA256)
         with self.login(self.user):
             response = self.client.get(self.get_url)
         self.assertEqual(response.status_code, 200)
@@ -115,7 +115,7 @@ class TestIrodsStatisticsAjaxView(IrodsbackendViewTestBase):
 
     def test_get_coll_not_found(self):
         """Test GET with non-existing collection"""
-        fail_path = self.irods_path + '/' + IRODS_FAIL_COLL
+        fail_path = iRODSPath(self.irods_path, IRODS_FAIL_COLL)
         self.assertEqual(self.irods.collections.exists(fail_path), False)
         with self.login(self.user):
             response = self.client.get(
@@ -165,7 +165,7 @@ class TestIrodsStatisticsAjaxView(IrodsbackendViewTestBase):
 
     def test_post_obj(self):
         """Test POST with data object in collection"""
-        obj_path = os.path.join(self.irods_path, IRODS_OBJ_NAME)
+        obj_path = iRODSPath(self.irods_path, IRODS_OBJ_NAME)
         make_object(self.irods, obj_path, IRODS_OBJ_CONTENT)
         post_data = {'paths': [self.irods_path]}
         with self.login(self.user):
@@ -181,11 +181,11 @@ class TestIrodsStatisticsAjaxView(IrodsbackendViewTestBase):
 
     def test_post_checksum_file_md5(self):
         """Test POST with MD5 checksum file"""
-        obj_path = os.path.join(self.irods_path, IRODS_OBJ_NAME)
+        obj_path = iRODSPath(self.irods_path, IRODS_OBJ_NAME)
         obj = make_object(self.irods, obj_path, IRODS_OBJ_CONTENT)
         self.make_checksum_object(obj)
         self.assert_irods_obj(
-            os.path.join(self.irods_path, IRODS_OBJ_NAME + '.md5')
+            iRODSPath(self.irods_path, IRODS_OBJ_NAME + '.md5')
         )
         post_data = {'paths': [self.irods_path]}
         with self.login(self.user):
@@ -201,14 +201,14 @@ class TestIrodsStatisticsAjaxView(IrodsbackendViewTestBase):
         }
         self.assertEqual(response_data, expected)
 
-    @override_settings(IRODS_HASH_SCHEME=HASH_SCHEME_SHA256)
+    @override_settings(IRODS_HASH_SCHEME=IRODS_HASH_SCHEME_SHA256)
     def test_post_checksum_file_sha256(self):
         """Test POST with SHA256 checksum file"""
-        obj_path = os.path.join(self.irods_path, IRODS_OBJ_NAME)
+        obj_path = iRODSPath(self.irods_path, IRODS_OBJ_NAME)
         obj = make_object(self.irods, obj_path, IRODS_OBJ_CONTENT)
-        self.make_checksum_object(obj, scheme=HASH_SCHEME_SHA256)
+        self.make_checksum_object(obj, scheme=IRODS_HASH_SCHEME_SHA256)
         self.assert_irods_obj(
-            os.path.join(self.irods_path, IRODS_OBJ_NAME + '.sha256')
+            iRODSPath(self.irods_path, IRODS_OBJ_NAME + '.sha256')
         )
         post_data = {'paths': [self.irods_path]}
         with self.login(self.user):
@@ -226,9 +226,9 @@ class TestIrodsStatisticsAjaxView(IrodsbackendViewTestBase):
 
     def test_post_multiple_paths(self):
         """Test POST with multiple paths"""
-        irods_path_new = os.path.join(self.project_path, IRODS_TEMP_COLL2)
+        irods_path_new = iRODSPath(self.project_path, IRODS_TEMP_COLL2)
         self.irods.collections.create(irods_path_new)
-        obj_path = os.path.join(self.irods_path, IRODS_OBJ_NAME)
+        obj_path = iRODSPath(self.irods_path, IRODS_OBJ_NAME)
         make_object(self.irods, obj_path, IRODS_OBJ_CONTENT)
         post_data = {'paths': [self.irods_path, irods_path_new]}
         with self.login(self.user):
@@ -254,7 +254,7 @@ class TestIrodsStatisticsAjaxView(IrodsbackendViewTestBase):
 
     def test_post_coll_not_found(self):
         """Test POST with non-existing collections"""
-        fail_path = os.path.join(self.irods_path, IRODS_FAIL_COLL)
+        fail_path = iRODSPath(self.irods_path, IRODS_FAIL_COLL)
         self.assertEqual(self.irods.collections.exists(fail_path), False)
         post_data = {'paths': [fail_path]}
         with self.login(self.user):

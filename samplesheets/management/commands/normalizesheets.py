@@ -11,7 +11,7 @@ from django.db import transaction
 from projectroles.app_settings import AppSettingAPI
 from projectroles.management.logging import ManagementCommandLogger
 from projectroles.models import Project, SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 from samplesheets.models import Investigation
 from samplesheets.rendering import STUDY_TABLE_CACHE_ITEM
@@ -22,6 +22,7 @@ from samplesheets.views_ajax import SheetVersionMixin
 
 app_settings = AppSettingAPI()
 logger = ManagementCommandLogger(__name__)
+plugin_api = PluginAPI()
 
 
 # SODAR constants
@@ -41,8 +42,15 @@ class Command(SheetVersionMixin, BaseCommand):
         'creates a backup ISA-Tab version of the normalized sheets.'
     )
 
-    def _update_database(self, investigation, check):
-        """Update the sample sheets database model"""
+    @classmethod
+    def _update_database(cls, investigation: Investigation, check: bool) -> int:
+        """
+        Update the samplesheets database model.
+
+        :param investigation: Investigation object
+        :param check: Do not alter databse if True (bool)
+        :return: Updated materials count (int)
+        """
 
         def _update_materials(materials, check):
             """Update materials and return update count"""
@@ -69,13 +77,20 @@ class Command(SheetVersionMixin, BaseCommand):
         )
         return m_count
 
-    def _update_study_tables(self, project, check):
-        """Update cached study render tables"""
+    @classmethod
+    def _update_study_tables(cls, project: Project, check: bool):
+        """
+        Update cached study render tables.
+
+        :param project: Project object
+        :param check: Do not alter databse if True (bool)
+        :return: Affected top header count (int)
+        """
         inv = Investigation.objects.filter(project=project, active=True).first()
         if not inv:
             return
         th_count = 0
-        cache_backend = get_backend_api('sodar_cache')
+        cache_backend = plugin_api.get_backend_api('sodar_cache')
         for study in inv.studies.all():
             item_name = STUDY_TABLE_CACHE_ITEM.format(study=study.sodar_uuid)
             item = cache_backend.get_cache_item(
@@ -121,8 +136,8 @@ class Command(SheetVersionMixin, BaseCommand):
         )
 
     def handle(self, *args, **options):
-        timeline = get_backend_api('timeline_backend')
-        cache_backend = get_backend_api('sodar_cache')
+        timeline = plugin_api.get_backend_api('timeline_backend')
+        cache_backend = plugin_api.get_backend_api('sodar_cache')
         if not cache_backend:
             logger.error('Sodarcache not enabled, exiting')
             sys.exit(1)
@@ -130,9 +145,7 @@ class Command(SheetVersionMixin, BaseCommand):
         if project_uuid:
             project = Project.objects.filter(sodar_uuid=project_uuid).first()
             if not project:
-                logger.error(
-                    'Project not found with UUID "{}"'.format(project_uuid)
-                )
+                logger.error(f'Project not found with UUID "{project_uuid}"')
                 sys.exit(1)
             projects = [project]
         else:
@@ -148,9 +161,8 @@ class Command(SheetVersionMixin, BaseCommand):
             ).first()
             if not investigation:
                 logger.info(
-                    'No investigation found, skipping project {}'.format(
-                        project.get_log_title()
-                    )
+                    f'No investigation found, skipping project '
+                    f'{project.get_log_title()}'
                 )
                 skip_count += 1
                 continue
@@ -176,9 +188,8 @@ class Command(SheetVersionMixin, BaseCommand):
                     tl_desc = None
             except Exception as ex:
                 logger.error(
-                    'Error normalizing sheets in project {}: {}'.format(
-                        project.get_log_title(), ex
-                    )
+                    f'Error normalizing sheets in project '
+                    f'{project.get_log_title()}: {ex}'
                 )
                 err_count += 1
                 if timeline:

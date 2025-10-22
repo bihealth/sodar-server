@@ -2,10 +2,12 @@
 
 import logging
 
-# Projectroles dependency
-from projectroles.plugins import get_backend_api
+from django.db.models import QuerySet
 
-from samplesheets.models import GenericMaterial
+# Projectroles dependency
+from projectroles.plugins import PluginAPI
+
+from samplesheets.models import Study, GenericMaterial
 from samplesheets.studyapps.utils import (
     get_igv_omit_list,
     check_igv_file_path,
@@ -15,9 +17,12 @@ from samplesheets.utils import get_index_by_header
 
 
 logger = logging.getLogger(__name__)
+plugin_api = PluginAPI()
 
 
-def get_pedigree_file_path(file_type, source, study_tables):
+def get_pedigree_file_path(
+    file_type: str, source: GenericMaterial, study_tables: dict
+) -> str:
     """
     Return iRODS path for the most recent file of type "bam" or "vcf"
     linked to the source.
@@ -27,7 +32,7 @@ def get_pedigree_file_path(file_type, source, study_tables):
     :param study_tables: Render study tables
     :return: String
     """
-    irods_backend = get_backend_api('omics_irods')
+    irods_backend = plugin_api.get_backend_api('omics_irods')
     if not irods_backend:
         raise Exception('iRODS Backend not available')
 
@@ -41,8 +46,8 @@ def get_pedigree_file_path(file_type, source, study_tables):
         assay_plugin = assay.get_plugin()
         if not assay_plugin:
             logger.warning(
-                'No plugin for assay, skipping pedigree file path search: '
-                '"{}" ({})'.format(assay.get_display_name(), assay.sodar_uuid)
+                f'No plugin for assay, skipping pedigree file path search: '
+                f'"{assay.get_display_name()}" ({assay.sodar_uuid})'
             )
             continue
         assay_table = study_tables['assays'][str(assay.sodar_uuid)]
@@ -95,7 +100,7 @@ def get_pedigree_file_path(file_type, source, study_tables):
     return sorted(file_paths, key=lambda x: x.split('/')[-1])[-1]
 
 
-def get_families(study):
+def get_families(study: Study) -> list[str]:
     """
     Return list of families.
 
@@ -127,7 +132,9 @@ def get_families(study):
     return ret
 
 
-def get_family_sources(study, family_id):
+def get_family_sources(
+    study: Study, family_id: str
+) -> QuerySet[GenericMaterial]:
     """
     Return sources for a family in a study.
 

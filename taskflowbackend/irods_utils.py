@@ -1,12 +1,24 @@
 """iRODS utilities for the taskflowbackend app"""
 
+from typing import Optional, Union
 
-def get_flow_role(project, user, role_rank=None):
+from django.contrib.auth import get_user_model
+
+# Projectroles dependency
+from projectroles.models import Project
+
+
+User = get_user_model()
+
+
+def get_flow_role(
+    project: Project, user: Union[str, User], role_rank: Optional[int] = None
+) -> dict:
     """
     Return role dict for taskflows performing role modification.
 
     :param project: Project object
-    :param user: SODARUser object or username string
+    :param user: User object or username string
     :param role_rank: String or None
     :return: Dict
     """

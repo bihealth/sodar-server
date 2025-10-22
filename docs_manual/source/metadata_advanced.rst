@@ -1,6 +1,6 @@
-.. _metadata_advanced:
-
 .. include::  <isonum.txt>
+
+.. _metadata_advanced:
 
 Advanced Metadata Topics
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -8,6 +8,12 @@ Advanced Metadata Topics
 Advanced metadata topics are detailed in this document. These are intended for
 e.g. advanced users who manually prepare their own sample sheets for specific
 study types.
+
+.. hint::
+
+    If you are not certain which plugin is used with a study or an assay in your
+    project and which metadata may be affecting this, see
+    :ref:`app_samplesheets_browse_table_detail`.
 
 
 Study iRODS Data Linking
@@ -90,8 +96,8 @@ The assay plugin to be used is determined based on a combination of the
 *measurement type* and *technology type* attributes of each assay.
 
 If SODAR doesn't recognize the measurement type and technology combination, no
-plugin will be applied. In this case the row-specific links will point to the
-root collection of the assay.
+plugin will be applied. In this case the row-specific links will not be
+displayed.
 
 Alternatively, it is possible to explicitly declare what plugin should be used
 by adding a ``SODAR Assay Plugin`` comment within the ``STUDY ASSAYS`` section

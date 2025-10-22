@@ -1,8 +1,8 @@
 """Plugin tests for the the microarray assay plugin"""
 
-import os
-
 from copy import deepcopy
+
+from irods.path import iRODSPath
 
 from django.conf import settings
 
@@ -32,7 +32,7 @@ class TestMicroarrayAssayPlugin(AssayPluginTestBase):
             self.assay,
             self.assay_path,
         )
-        expected = os.path.join(
+        expected = iRODSPath(
             self.assay_path, RAW_DATA_COLL, HYBRID_SCAN_NAME, HYBRID_SCAN_NAME
         )
         self.assertEqual(row_path, expected)
@@ -46,7 +46,7 @@ class TestMicroarrayAssayPlugin(AssayPluginTestBase):
             self.assay,
             self.assay_path,
         )
-        expected = os.path.join(
+        expected = iRODSPath(
             self.assay_path, RAW_DATA_COLL, HYBRID_SCAN_NAME, SCAN_NAME_UPDATE
         )
         self.assertEqual(row_path, expected)
@@ -71,13 +71,13 @@ class TestMicroarrayAssayPlugin(AssayPluginTestBase):
         self.assay_table['table_data'][0][26]['value'] = ARRAY_DATA_FILE
         self.assay_table['table_data'][0][27]['value'] = MATRIX_FILE
         row_ex = deepcopy(self.assay_table['table_data'][0])
-        row_ex[25]['link'] = settings.IRODS_WEBDAV_URL + os.path.join(
+        row_ex[25]['link'] = settings.IRODS_WEBDAV_URL + iRODSPath(
             row_path, IMAGE_FILE
         )
-        row_ex[26]['link'] = settings.IRODS_WEBDAV_URL + os.path.join(
+        row_ex[26]['link'] = settings.IRODS_WEBDAV_URL + iRODSPath(
             row_path, ARRAY_DATA_FILE
         )
-        row_ex[27]['link'] = settings.IRODS_WEBDAV_URL + os.path.join(
+        row_ex[27]['link'] = settings.IRODS_WEBDAV_URL + iRODSPath(
             row_path, MATRIX_FILE
         )
         row = self.plugin.update_row(

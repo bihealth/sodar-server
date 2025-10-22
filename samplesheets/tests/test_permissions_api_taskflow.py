@@ -1,13 +1,16 @@
 """Tests for samplesheets REST API view permissions with taskflow"""
 
-import os
 import uuid
 
 from datetime import timedelta
 
+from irods.path import iRODSPath
 from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
+
+# Projectroles dependency
+from projectroles.tests.test_permissions import PermissionTestMixin
 
 # Irodsbackend dependency
 from irodsbackend.api import TICKET_MODE_READ
@@ -46,6 +49,7 @@ IRODS_FILE_MD5 = '7265f4d211b56873a381d321f586e4a9'
 class SheetTaskflowAPIPermissionTestBase(
     SampleSheetIOMixin,
     SampleSheetTaskflowMixin,
+    PermissionTestMixin,
     TaskflowAPIPermissionTestBase,
 ):
     """Base class for samplesheets REST API view permission tests"""
@@ -67,8 +71,10 @@ class SheetTaskflowAPIPermissionTestBase(
         ]
         self.bad_users = [
             self.user_guest_cat,
+            self.user_viewer_cat,
             self.user_finder_cat,
             self.user_guest,
+            self.user_viewer,
             self.user_no_roles,
         ]
 
@@ -89,7 +95,7 @@ class IrodsAccessTicketAPIViewTestBase(
         self.make_irods_colls(self.investigation)
         self.assay_path = self.irods_backend.get_path(self.assay)
         self.coll = self.irods.collections.create(
-            os.path.join(self.assay_path, 'coll')
+            iRODSPath(self.assay_path, 'coll')
         )
 
 
@@ -105,8 +111,8 @@ class IrodsDataRequestAPIViewTestBase(SheetTaskflowAPIPermissionTestBase):
         # Set up iRODS data
         self.make_irods_colls(self.investigation)
         self.assay_path = self.irods_backend.get_path(self.assay)
-        self.obj_path = os.path.join(self.assay_path, IRODS_FILE_NAME)
-        self.md5_path = os.path.join(self.assay_path, IRODS_FILE_NAME + '.md5')
+        self.obj_path = iRODSPath(self.assay_path, IRODS_FILE_NAME)
+        self.md5_path = iRODSPath(self.assay_path, IRODS_FILE_NAME + '.md5')
         # Create objects
         self.file_obj = self.irods.data_objects.create(self.obj_path)
         self.md5_obj = self.irods.data_objects.create(self.md5_path)
@@ -157,6 +163,16 @@ class TestSampleDataFileExistsAPIView(SheetTaskflowAPIPermissionTestBase):
             self.url, self.anonymous, 401, data=self.get_data
         )
 
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response_api(
+            self.url, self.auth_users, 200, data=self.get_data
+        )
+        self.assert_response_api(
+            self.url, self.anonymous, 401, data=self.get_data
+        )
+
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
         self.set_site_read_only()
@@ -182,7 +198,9 @@ class TestSampleDataFileExistsAPIView(SheetTaskflowAPIPermissionTestBase):
             self.user_guest,
         ]
         bad_users = [
+            self.user_viewer_cat,
             self.user_finder_cat,
+            self.user_viewer,
             self.user_no_roles,
         ]
         self.assert_response_api(self.url, good_users, 200, data=self.get_data)
@@ -231,22 +249,38 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
             self.url,
             self.good_users,
             201,
-            method='post',
+            method='POST',
             data=self.post_data,
             cleanup_method=self._delete_ticket,
         )
         self.assert_response_api(
-            self.url, self.bad_users, 403, method='post', data=self.post_data
+            self.url, self.bad_users, 403, method='POST', data=self.post_data
         )
         self.assert_response_api(
-            self.url, self.anonymous, 401, method='post', data=self.post_data
+            self.url, self.anonymous, 401, method='POST', data=self.post_data
         )
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response_api(
+                self.url,
+                self.bad_users,
+                403,
+                method='POST',
+                data=self.post_data,
+            )
+            self.assert_response_api(
+                self.url,
+                self.anonymous,
+                401,
+                method='POST',
+                data=self.post_data,
+            )
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_post_anon(self):
         """Test POST with anonymous access"""
         self.assert_response_api(
-            self.url, self.anonymous, 401, method='post', data=self.post_data
+            self.url, self.anonymous, 401, method='POST', data=self.post_data
         )
 
     def test_post_archive(self):
@@ -256,7 +290,7 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
             self.url,
             self.superuser,
             201,
-            method='post',
+            method='POST',
             data=self.post_data,
             cleanup_method=self._delete_ticket,
         )
@@ -264,11 +298,33 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
             self.url,
             self.auth_non_superusers,
             403,
-            method='post',
+            method='POST',
             data=self.post_data,
         )
         self.assert_response_api(
-            self.url, self.anonymous, 401, method='post', data=self.post_data
+            self.url, self.anonymous, 401, method='POST', data=self.post_data
+        )
+
+    def test_post_block(self):
+        """Test POST with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response_api(
+            self.url,
+            self.superuser,
+            201,
+            method='POST',
+            data=self.post_data,
+            cleanup_method=self._delete_ticket,
+        )
+        self.assert_response_api(
+            self.url,
+            self.auth_non_superusers,
+            403,
+            method='POST',
+            data=self.post_data,
+        )
+        self.assert_response_api(
+            self.url, self.anonymous, 401, method='POST', data=self.post_data
         )
 
     def test_post_read_only(self):
@@ -278,7 +334,7 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
             self.url,
             self.superuser,
             201,
-            method='post',
+            method='POST',
             data=self.post_data,
             cleanup_method=self._delete_ticket,
         )
@@ -286,11 +342,11 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
             self.url,
             self.auth_non_superusers,
             403,
-            method='post',
+            method='POST',
             data=self.post_data,
         )
         self.assert_response_api(
-            self.url, self.anonymous, 401, method='post', data=self.post_data
+            self.url, self.anonymous, 401, method='POST', data=self.post_data
         )
 
 
@@ -302,11 +358,11 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
         self.ticket = self.make_irods_ticket(
             study=self.study,
             assay=self.assay,
-            path=self.coll.path + '/ticket1',
+            path=iRODSPath(self.coll.path, 'ticket1'),
             user=self.user_owner,
             ticket='ticket',
             label=LABEL_CREATE,
-            date_expires=(timezone.localtime() + timedelta(days=1)).isoformat(),
+            date_expires=timezone.localtime() + timedelta(days=1),
         )
         self.irods_backend.issue_ticket(
             irods=self.irods,
@@ -324,54 +380,87 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
     def test_patch(self):
         """Test IrodsAccessTicketUpdateAPIView PATCH"""
         self.assert_response_api(
-            self.url, self.good_users, 200, method='patch', data=self.post_data
+            self.url, self.good_users, 200, method='PATCH', data=self.post_data
         )
         self.assert_response_api(
-            self.url, self.bad_users, 403, method='patch', data=self.post_data
+            self.url, self.bad_users, 403, method='PATCH', data=self.post_data
         )
         self.assert_response_api(
-            self.url, self.anonymous, 401, method='patch', data=self.post_data
+            self.url, self.anonymous, 401, method='PATCH', data=self.post_data
         )
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response_api(
+                self.url,
+                self.bad_users,
+                403,
+                method='PATCH',
+                data=self.post_data,
+            )
+            self.assert_response_api(
+                self.url,
+                self.anonymous,
+                401,
+                method='PATCH',
+                data=self.post_data,
+            )
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_patch_anon(self):
         """Test PATCH with anonymous access"""
         self.assert_response_api(
-            self.url, self.anonymous, 401, method='patch', data=self.post_data
+            self.url, self.anonymous, 401, method='PATCH', data=self.post_data
         )
 
     def test_patch_archive(self):
         """Test PATCH with archived project"""
         self.project.set_archive()
         self.assert_response_api(
-            self.url, self.superuser, 200, method='patch', data=self.post_data
+            self.url, self.superuser, 200, method='PATCH', data=self.post_data
         )
         self.assert_response_api(
             self.url,
             self.auth_non_superusers,
             403,
-            method='patch',
+            method='PATCH',
             data=self.post_data,
         )
         self.assert_response_api(
-            self.url, self.anonymous, 401, method='patch', data=self.post_data
+            self.url, self.anonymous, 401, method='PATCH', data=self.post_data
+        )
+
+    def test_patch_block(self):
+        """Test PATCH with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response_api(
+            self.url, self.superuser, 200, method='PATCH', data=self.post_data
+        )
+        self.assert_response_api(
+            self.url,
+            self.auth_non_superusers,
+            403,
+            method='PATCH',
+            data=self.post_data,
+        )
+        self.assert_response_api(
+            self.url, self.anonymous, 401, method='PATCH', data=self.post_data
         )
 
     def test_patch_read_only(self):
         """Test PATCH with site read-only mode"""
         self.set_site_read_only()
         self.assert_response_api(
-            self.url, self.superuser, 200, method='patch', data=self.post_data
+            self.url, self.superuser, 200, method='PATCH', data=self.post_data
         )
         self.assert_response_api(
             self.url,
             self.auth_non_superusers,
             403,
-            method='patch',
+            method='PATCH',
             data=self.post_data,
         )
         self.assert_response_api(
-            self.url, self.anonymous, 401, method='patch', data=self.post_data
+            self.url, self.anonymous, 401, method='PATCH', data=self.post_data
         )
 
 
@@ -419,6 +508,14 @@ class TestIrodsAccessTicketDestroyAPIView(IrodsAccessTicketAPIViewTestBase):
         )
         self.assert_response_api(self.url, self.bad_users, 403, method='DELETE')
         self.assert_response_api(self.url, self.anonymous, 401, method='DELETE')
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response_api(
+                self.url, self.bad_users, 403, method='DELETE'
+            )
+            self.assert_response_api(
+                self.url, self.anonymous, 401, method='DELETE'
+            )
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_delete_anon(self):
@@ -428,6 +525,21 @@ class TestIrodsAccessTicketDestroyAPIView(IrodsAccessTicketAPIViewTestBase):
     def test_delete_archive(self):
         """Test DELETE with archived project"""
         self.project.set_archive()
+        self.assert_response_api(
+            self.url,
+            self.superuser,
+            204,
+            method='DELETE',
+            cleanup_method=self._create_irods_ticket,
+        )
+        self.assert_response_api(
+            self.url, self.auth_non_superusers, 403, method='DELETE'
+        )
+        self.assert_response_api(self.url, self.anonymous, 401, method='DELETE')
+
+    def test_delete_block(self):
+        """Test DELETE with project access block"""
+        self.set_access_block(self.project)
         self.assert_response_api(
             self.url,
             self.superuser,
@@ -475,6 +587,10 @@ class TestIrodsDataRequestListAPIView(SheetTaskflowAPIPermissionTestBase):
         self.assert_response_api(self.url, self.good_users, 200)
         self.assert_response_api(self.url, self.bad_users, 403)
         self.assert_response_api(self.url, self.anonymous, 401)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response_api(self.url, self.bad_users, 403)
+            self.assert_response_api(self.url, self.anonymous, 401)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
@@ -484,6 +600,13 @@ class TestIrodsDataRequestListAPIView(SheetTaskflowAPIPermissionTestBase):
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
+        self.assert_response_api(self.url, self.superuser, 200)
+        self.assert_response_api(self.url, self.auth_non_superusers, 403)
+        self.assert_response_api(self.url, self.anonymous, 401)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
         self.assert_response_api(self.url, self.superuser, 200)
         self.assert_response_api(self.url, self.auth_non_superusers, 403)
         self.assert_response_api(self.url, self.anonymous, 401)
@@ -522,18 +645,36 @@ class TestIrodsDataRequestCreateAPIView(IrodsDataRequestAPIViewTestBase):
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_post_anon(self):
         """Test POST with anonymous access"""
-        self.project.set_public()
-        self.assert_response_api(
-            self.url,
-            self.anonymous,
-            401,
-            method='POST',
-            data=self.post_data,
-        )
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response_api(
+                self.url,
+                self.anonymous,
+                401,
+                method='POST',
+                data=self.post_data,
+            )
 
     def test_post_archive(self):
         """Test POST with archived project"""
         self.project.set_archive()
+        self.assert_response_api(
+            self.url, self.superuser, 201, method='POST', data=self.post_data
+        )
+        self.assert_response_api(
+            self.url,
+            self.auth_non_superusers,
+            403,
+            method='POST',
+            data=self.post_data,
+        )
+        self.assert_response_api(
+            self.url, self.anonymous, 401, method='POST', data=self.post_data
+        )
+
+    def test_post_block(self):
+        """Test POST with project access block"""
+        self.set_access_block(self.project)
         self.assert_response_api(
             self.url, self.superuser, 201, method='POST', data=self.post_data
         )
@@ -573,7 +714,7 @@ class TestIrodsDataRequestUpdateAPIView(
 
     def setUp(self):
         super().setUp()
-        self.request = self.make_irods_request(
+        self.irods_req = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
             path=self.file_obj.path,
@@ -582,7 +723,7 @@ class TestIrodsDataRequestUpdateAPIView(
         )
         self.url = reverse(
             'samplesheets:api_irods_request_update',
-            kwargs={'irodsdatarequest': self.request.sodar_uuid},
+            kwargs={'irodsdatarequest': self.irods_req.sodar_uuid},
         )
         self.update_data = {'path': self.obj_path, 'description': 'Updated'}
 
@@ -612,18 +753,52 @@ class TestIrodsDataRequestUpdateAPIView(
         self.assert_response_api(
             self.url, self.anonymous, 401, method='PUT', data=self.update_data
         )
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response_api(
+                self.url, bad_users, 403, method='PUT', data=self.update_data
+            )
+            self.assert_response_api(
+                self.url,
+                self.anonymous,
+                401,
+                method='PUT',
+                data=self.update_data,
+            )
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_post_anon(self):
         """Test POST with anonymous access"""
-        self.project.set_public()
-        self.assert_response_api(
-            self.url, self.anonymous, 401, method='PUT', data=self.update_data
-        )
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response_api(
+                self.url,
+                self.anonymous,
+                401,
+                method='PUT',
+                data=self.update_data,
+            )
 
     def test_post_archive(self):
         """Test POST with archived project"""
         self.project.set_archive()
+        self.assert_response_api(
+            self.url, self.superuser, 200, method='PUT', data=self.update_data
+        )
+        self.assert_response_api(
+            self.url,
+            self.auth_non_superusers,
+            403,
+            method='PUT',
+            data=self.update_data,
+        )
+        self.assert_response_api(
+            self.url, self.anonymous, 401, method='PUT', data=self.update_data
+        )
+
+    def test_post_block(self):
+        """Test POST with project access block"""
+        self.set_access_block(self.project)
         self.assert_response_api(
             self.url, self.superuser, 200, method='PUT', data=self.update_data
         )
@@ -665,12 +840,12 @@ class TestIrodsDataRequestAcceptAPIView(
     """Test permissions for TestIrodsDataRequestAcceptAPIView"""
 
     def _cleanup(self):
-        self.request.status = IRODS_REQUEST_STATUS_ACTIVE
-        self.request.save()
+        self.irods_req.status = IRODS_REQUEST_STATUS_ACTIVE
+        self.irods_req.save()
 
     def setUp(self):
         super().setUp()
-        self.request = self.make_irods_request(
+        self.irods_req = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
             path=self.file_obj.path,
@@ -679,7 +854,7 @@ class TestIrodsDataRequestAcceptAPIView(
         )
         self.url = reverse(
             'samplesheets:api_irods_request_accept',
-            kwargs={'irodsdatarequest': self.request.sodar_uuid},
+            kwargs={'irodsdatarequest': self.irods_req.sodar_uuid},
         )
 
     def test_post(self):
@@ -694,9 +869,11 @@ class TestIrodsDataRequestAcceptAPIView(
         bad_users = [
             self.user_contributor_cat,
             self.user_guest_cat,
+            self.user_viewer_cat,
             self.user_finder_cat,
             self.user_contributor,
             self.user_guest,
+            self.user_viewer,
             self.user_no_roles,
         ]
         self.assert_response_api(
@@ -708,15 +885,40 @@ class TestIrodsDataRequestAcceptAPIView(
         )
         self.assert_response_api(self.url, bad_users, 403, method='POST')
         self.assert_response_api(self.url, self.anonymous, 401, method='POST')
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response_api(self.url, bad_users, 403, method='POST')
+            self.assert_response_api(
+                self.url, self.anonymous, 401, method='POST'
+            )
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_post_anon(self):
         """Test POST with anonymous access"""
-        self.assert_response_api(self.url, self.anonymous, 401, method='POST')
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response_api(
+                self.url, self.anonymous, 401, method='POST'
+            )
 
     def test_post_archive(self):
         """Test POST with archived project"""
         self.project.set_archive()
+        self.assert_response_api(
+            self.url,
+            self.superuser,
+            200,
+            method='POST',
+            cleanup_method=self._cleanup,
+        )
+        self.assert_response_api(
+            self.url, self.auth_non_superusers, 403, method='POST'
+        )
+        self.assert_response_api(self.url, self.anonymous, 401, method='POST')
+
+    def test_post_block(self):
+        """Test POST with project access block"""
+        self.set_access_block(self.project)
         self.assert_response_api(
             self.url,
             self.superuser,
@@ -776,7 +978,9 @@ class TestProjectIrodsFileListAPIView(SheetTaskflowAPIPermissionTestBase):
             self.user_guest,
         ]
         self.bad_users = [
+            self.user_viewer_cat,
             self.user_finder_cat,
+            self.user_viewer,
             self.user_no_roles,
         ]
 
@@ -785,15 +989,20 @@ class TestProjectIrodsFileListAPIView(SheetTaskflowAPIPermissionTestBase):
         self.assert_response_api(self.url, self.good_users, 200)
         self.assert_response_api(self.url, self.bad_users, 403)
         self.assert_response_api(self.url, self.anonymous, 401)
-        self.project.set_public()
+        self.project.set_public_access(self.role_guest)
         self.assert_response_api(self.url, self.bad_users, 200)
+        self.assert_response_api(self.url, self.anonymous, 401)
+        self.project.set_public_access(self.role_viewer)
+        self.assert_response_api(self.url, self.bad_users, 403)
         self.assert_response_api(self.url, self.anonymous, 401)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous access"""
-        self.project.set_public()
+        self.project.set_public_access(self.role_guest)
         self.assert_response_api(self.url, self.anonymous, 200)
+        self.project.set_public_access(self.role_viewer)
+        self.assert_response_api(self.url, self.anonymous, 401)
 
     def test_get_archive(self):
         """Test GET with archived project"""
@@ -801,8 +1010,12 @@ class TestProjectIrodsFileListAPIView(SheetTaskflowAPIPermissionTestBase):
         self.assert_response_api(self.url, self.good_users, 200)
         self.assert_response_api(self.url, self.bad_users, 403)
         self.assert_response_api(self.url, self.anonymous, 401)
-        self.project.set_public()
-        self.assert_response_api(self.url, self.bad_users, 200)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response_api(self.url, self.superuser, 200)
+        self.assert_response_api(self.url, self.auth_non_superusers, 403)
         self.assert_response_api(self.url, self.anonymous, 401)
 
     def test_get_read_only(self):
@@ -810,7 +1023,4 @@ class TestProjectIrodsFileListAPIView(SheetTaskflowAPIPermissionTestBase):
         self.set_site_read_only()
         self.assert_response_api(self.url, self.good_users, 200)
         self.assert_response_api(self.url, self.bad_users, 403)
-        self.assert_response_api(self.url, self.anonymous, 401)
-        self.project.set_public()
-        self.assert_response_api(self.url, self.bad_users, 200)
         self.assert_response_api(self.url, self.anonymous, 401)

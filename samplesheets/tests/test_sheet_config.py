@@ -4,6 +4,8 @@ import json
 import os
 import uuid
 
+from typing import Optional
+
 from django.conf import settings
 
 from test_plus.test import TestCase
@@ -17,7 +19,7 @@ from projectroles.tests.test_models import (
     RoleAssignmentMixin,
 )
 
-from samplesheets.models import Study, Assay, Protocol
+from samplesheets.models import Investigation, Study, Assay, Protocol
 from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.sheet_config import SheetConfigAPI
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
@@ -47,7 +49,10 @@ with open(CONFIG_PATH_DEFAULT) as fp:
 class SheetConfigMixin:
     """Mixin for sheet config testing helpers"""
 
-    def build_sheet_config(self, investigation, inv_tables=None):
+    @classmethod
+    def build_sheet_config(
+        cls, investigation: Investigation, inv_tables: Optional[dict] = None
+    ) -> dict:
         """
         Helper for building sheet configuration.
 
@@ -61,7 +66,9 @@ class SheetConfigMixin:
         return conf_api.build_sheet_config(investigation, inv_tables)
 
     @classmethod
-    def update_uuids(cls, investigation, sheet_config):
+    def update_uuids(
+        cls, investigation: Investigation, sheet_config: dict
+    ) -> dict:
         """
         Update study, assay and protocol UUIDs in the database to match a test
         sheet config file.
@@ -73,7 +80,7 @@ class SheetConfigMixin:
         assay_names = {}
 
         for study in investigation.studies.all():
-            study_names[study.get_display_name()] = str(study.sodar_uuid)
+            study_names[study.get_name()] = str(study.sodar_uuid)
             for assay in study.assays.all():
                 assay_names[assay.get_display_name()] = str(assay.sodar_uuid)
 
@@ -97,7 +104,7 @@ class SheetConfigMixin:
                 protocols[i].save()
 
     @classmethod
-    def randomize_protocol_uuids(cls, sheet_config):
+    def randomize_protocol_uuids(cls, sheet_config: dict):
         """
         Randomize protocol UUIDs to simulate configuration restore from an
         older version.
@@ -105,7 +112,7 @@ class SheetConfigMixin:
         :param sheet_config: Dict
         """
 
-        def _randomize_table(t):
+        def _randomize_table(t: dict):
             for n in t['nodes']:
                 for f in n['fields']:
                     if f['type'] == 'protocol':
@@ -116,16 +123,15 @@ class SheetConfigMixin:
             for a in s['assays'].values():
                 _randomize_table(a)
 
-    def assert_protocol_uuids(self, sheet_config, expected=True):
+    def assert_protocol_uuids(self, sheet_config: dict, expected: bool = True):
         """
         Assert validity of protocol references in sheet config.
 
         :param sheet_config: Dict
         :param expected: Whether reference should be correct (bool)
-        :return:
         """
 
-        def _assert_table(t):
+        def _assert_table(t: dict):
             for n in t['nodes']:
                 for f in n['fields']:
                     if f['type'] == 'protocol':
@@ -182,7 +188,7 @@ class TestSheetConfig(
     def test_build_sheet_config_batch(self):
         """Test build_sheet_config() in batch"""
         for zip_name, zip_file in self.get_isatab_files().items():
-            msg = 'file={}'.format(zip_name)
+            msg = f'file={zip_name}'
             try:
                 investigation = self.import_isa_from_file(
                     zip_file.path, self.project
@@ -313,7 +319,7 @@ class TestDisplayConfig(
     def test_build_config_batch(self):
         """Test building default display configs for example ISA-Tabs"""
         for zip_name, zip_file in self.get_isatab_files().items():
-            msg = 'file={}'.format(zip_name)
+            msg = f'file={zip_name}'
             try:
                 investigation = self.import_isa_from_file(
                     zip_file.path, self.project

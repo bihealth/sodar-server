@@ -4,7 +4,7 @@ from django.conf import settings
 
 from samplesheets.models import Investigation
 from samplesheets.rendering import SampleSheetTableBuilder
-from samplesheets.plugins import SampleSheetAssayPluginPoint, get_backend_api
+from samplesheets.plugins import SampleSheetAssayPluginPoint, PluginAPI
 from samplesheets.tests.test_views import (
     SheetTemplateCreateMixin,
     SamplesheetsViewTestBase,
@@ -12,6 +12,7 @@ from samplesheets.tests.test_views import (
 from samplesheets.views import CUBI_TPL_DICT
 
 
+plugin_api = PluginAPI()
 table_builder = SampleSheetTableBuilder()
 
 
@@ -32,7 +33,7 @@ class AssayPluginTestBase(SheetTemplateCreateMixin, SamplesheetsViewTestBase):
         self.assay_table = self.study_tables['assays'][
             str(self.assay.sodar_uuid)
         ]
-        self.irods_backend = get_backend_api('omics_irods')
+        self.irods_backend = plugin_api.get_backend_api('omics_irods')
         self.assay_path = self.irods_backend.get_path(self.assay)
         self.base_url = settings.IRODS_WEBDAV_URL + self.assay_path
         self.plugin = SampleSheetAssayPluginPoint.get_plugin(self.plugin_name)

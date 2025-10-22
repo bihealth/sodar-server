@@ -106,6 +106,7 @@ describe('PageHeader.vue', () => {
 
     // Operations dropdown
     expect(wrapper.find('#sodar-ss-op-dropdown').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-op-dropdown').find('button').classes()).not.toContain('disabled')
     expect(wrapper.find('#sodar-ss-op-item-import').exists()).toBe(false)
     expect(wrapper.find('#sodar-ss-op-item-edit').exists()).toBe(false)
     expect(wrapper.find('#sodar-ss-op-item-warnings').exists()).toBe(false)
@@ -114,6 +115,7 @@ describe('PageHeader.vue', () => {
     expect(wrapper.find('#sodar-ss-op-item-export').exists()).toBe(true)
     expect(wrapper.find('#sodar-ss-op-item-irods').exists()).toBe(false)
     expect(wrapper.find('#sodar-ss-op-item-versions').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-op-item-tickets').exists()).toBe(false)
     expect(wrapper.find('#sodar-ss-op-item-delete').exists()).toBe(false)
   })
 
@@ -331,14 +333,6 @@ describe('PageHeader.vue', () => {
     expect(wrapper.find('#sodar-ss-op-item-tickets').exists()).toBe(true)
     expect(wrapper.find('#sodar-ss-op-item-requests').exists()).toBe(false)
     expect(wrapper.find('#sodar-ss-op-item-delete').exists()).toBe(false)
-  })
-
-  it('renders operations dropdown with no view_tickets perm', () => {
-    propsData.app.sodarContext.perms.view_tickets = false
-    const wrapper = mount(PageHeader, { localVue, propsData: propsData })
-
-    expect(wrapper.find('#sodar-ss-op-dropdown').exists()).toBe(true)
-    expect(wrapper.find('#sodar-ss-op-dropdown').find('button').classes()).toContain('disabled')
   })
 
   it('renders operations dropdown with sheet render error', () => {

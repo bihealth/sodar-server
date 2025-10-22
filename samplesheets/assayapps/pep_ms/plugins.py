@@ -1,8 +1,10 @@
 """Assay app plugin for samplesheets"""
 
+from typing import Optional
+
 from django.conf import settings
 
-# from samplesheets.models import GenericMaterial, Process
+from samplesheets.models import Assay
 from samplesheets.plugins import SampleSheetAssayPluginPoint
 
 
@@ -54,7 +56,9 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
     #: Toggle displaying of row-based iRODS links in the assay table
     display_row_links = False
 
-    def get_row_path(self, row, table, assay, assay_path):
+    def get_row_path(
+        self, row: list[dict], table: dict, assay: Assay, assay_path: str
+    ) -> Optional[str]:
         """
         Return iRODS path for an assay row in a sample sheet. If None,
         display default path.
@@ -67,9 +71,12 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         :return: String with full iRODS path or None
         """
         # TODO: Alternatives for RawData?
-        return assay_path + '/' + RAW_DATA_COLL
+        # NOTE: Not using iRODSPath here because it supports ".."
+        return '/'.join([assay_path, RAW_DATA_COLL])
 
-    def update_row(self, row, table, assay, index):
+    def update_row(
+        self, row: list[dict], table: dict, assay: Assay, index: int
+    ) -> list[dict]:
         """
         Update render table row with e.g. links. Return the modified row.
 
@@ -98,11 +105,11 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             ):
                 # We assume all files to be in RawData
                 row[i]['link'] = (
-                    base_url + '/' + RAW_DATA_COLL + '/' + row[i]['value']
+                    base_url + '/' + '/'.join([RAW_DATA_COLL, row[i]['value']])
                 )
         return row
 
-    def get_shortcuts(self, assay):
+    def get_shortcuts(self, assay: Assay) -> Optional[list]:
         """
         Return assay iRODS shortcuts.
 
@@ -114,11 +121,11 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             {
                 'id': 'raw_data',
                 'label': 'Raw Data',
-                'path': assay_path + '/' + RAW_DATA_COLL,
+                'path': '/'.join([assay_path, RAW_DATA_COLL]),
             },
             {
                 'id': 'maxquant_results',
                 'label': 'MaxQuant Results',
-                'path': assay_path + '/' + MAX_QUANT_COLL,
+                'path': '/'.join([assay_path, MAX_QUANT_COLL]),
             },
         ]

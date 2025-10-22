@@ -4,6 +4,8 @@ import json
 import logging
 import redis
 
+from typing import Any, Optional
+
 from django.conf import settings
 
 from rest_framework.exceptions import APIException
@@ -19,10 +21,11 @@ from landingzones.models import LandingZone
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.models import Project, SODARUser, SODAR_CONSTANTS
+from projectroles.plugins import PluginAPI
 
 from taskflowbackend import flows
+from taskflowbackend.flows.base_flow import BaseLinearFlow
 from taskflowbackend.irods_utils import get_flow_role as _get_flow_role
 from taskflowbackend.lock_api import ProjectLockAPI, PROJECT_LOCKED_MSG
 from taskflowbackend.tasks_celery import submit_flow_task
@@ -31,6 +34,7 @@ from taskflowbackend.tasks_celery import submit_flow_task
 app_settings = AppSettingAPI()
 lock_api = ProjectLockAPI()
 logger = logging.getLogger(__name__)
+plugin_api = PluginAPI()
 
 
 # SODAR constants
@@ -53,7 +57,12 @@ class TaskflowAPI:
     project_locked_msg = PROJECT_LOCKED_MSG
 
     @classmethod
-    def _raise_flow_exception(cls, ex_msg, tl_event=None, zone=None):
+    def _raise_flow_exception(
+        cls,
+        ex_msg: str,
+        tl_event: Any = None,
+        zone: Optional[LandingZone] = None,
+    ):
         """
         Handle and raise exception with flow building or execution. Updates the
         status of timeline event and/or landing zone if provided.
@@ -78,7 +87,12 @@ class TaskflowAPI:
         raise cls.FlowSubmitException(ex_msg)
 
     @classmethod
-    def _raise_run_flow_exception(cls, ex_msg, tl_event=None, zone=None):
+    def _raise_run_flow_exception(
+        cls,
+        ex_msg: str,
+        tl_event: Any = None,
+        zone: Optional[LandingZone] = None,
+    ):
         """
         Wrapper for _raise_flow_exception() to be called from run_flow().
 
@@ -101,7 +115,12 @@ class TaskflowAPI:
         cls._raise_flow_exception(ex_msg, tl_event, ex_zone)
 
     @classmethod
-    def _raise_lock_exception(cls, ex_msg, tl_event=None, zone=None):
+    def _raise_lock_exception(
+        cls,
+        ex_msg: str,
+        tl_event: Any = None,
+        zone: Optional[LandingZone] = None,
+    ):
         """
         Raise exception specifically for project lock errors. Updates the status
         of the landing zone only if zone has not yet been finished by a
@@ -126,7 +145,7 @@ class TaskflowAPI:
     # HACK for returning 503 if project is locked (see #1505, #1847)
     @classmethod
     def raise_submit_api_exception(
-        cls, msg_prefix, ex, default_class=APIException
+        cls, msg_prefix: str, ex: Exception, default_class: Any = APIException
     ):
         """
         Raise zone submit API exception. Selects appropriate API response based
@@ -137,7 +156,7 @@ class TaskflowAPI:
         :param default_class: Default API exception class to be returned
         :raises: Exception of varying type
         """
-        msg = '{}{}'.format(msg_prefix, ex)
+        msg = f'{msg_prefix}{ex}'
         if PROJECT_LOCKED_MSG in msg:
             ex = APIException(msg)
             ex.status_code = 503
@@ -145,7 +164,9 @@ class TaskflowAPI:
         raise default_class(msg)
 
     @classmethod
-    def get_flow_role(cls, project, user, role_rank=None):
+    def get_flow_role(
+        cls, project: Project, user: SODARUser, role_rank: Optional[int] = None
+    ) -> dict:
         """
         Return role dict for taskflows performing role modification.
 
@@ -159,29 +180,33 @@ class TaskflowAPI:
     @classmethod
     def get_flow(
         cls,
-        irods_backend,
-        project,
-        flow_name,
-        flow_data,
-        async_mode=False,
-        tl_event=None,
-    ):
+        irods_backend: Any,
+        project: Project,
+        user: Optional[SODARUser],
+        flow_name: str,
+        flow_data: dict,
+        async_mode: bool = False,
+        tl_event: Any = None,
+    ) -> BaseLinearFlow:
         """
         Get and create a taskflow.
 
         :param irods_backend: IrodsbackendAPI instance
         :param project: Project object
+        :param user: User submitting the flow (SODARUser or None)
         :param flow_name: Name of flow (string)
         :param flow_data: Flow parameters (dict)
         :param async_mode: Set up flow asynchronously if True (boolean)
         :param tl_event: TimelineEvent object for timeline updating or None
+        :return: Flow object inheriting BaseLinearFlow
         """
         flow_cls = flows.get_flow(flow_name)
         if not flow_cls:
-            raise ValueError('Flow "{}" not supported'.format(flow_name))
+            raise ValueError(f'Flow "{flow_name}" not supported')
         flow = flow_cls(
             irods_backend=irods_backend,
             project=project,
+            user=user,
             flow_name=flow_name,
             flow_data=flow_data,
             async_mode=async_mode,
@@ -190,7 +215,7 @@ class TaskflowAPI:
         try:
             flow.validate()
         except TypeError as ex:
-            msg = 'Error validating flow: {}'.format(ex)
+            msg = f'Error validating flow: {ex}'
             logger.error(msg)
             raise ex
         return flow
@@ -198,12 +223,12 @@ class TaskflowAPI:
     @classmethod
     def run_flow(
         cls,
-        flow,
-        project,
-        force_fail=False,
-        async_mode=False,
-        tl_event=None,
-    ):
+        flow: BaseLinearFlow,
+        project: Project,
+        force_fail: bool = False,
+        async_mode: bool = False,
+        tl_event: Any = None,
+    ) -> dict:
         """
         Run a flow, either synchronously or asynchronously.
 
@@ -255,11 +280,11 @@ class TaskflowAPI:
             logger.info('Lock not required (flow.require_lock=False)')
 
         # Build flow
-        logger.info('Building flow "{}"..'.format(flow.flow_name))
+        logger.info(f'Building flow "{flow.flow_name}"..')
         try:
             flow.build(force_fail)
         except Exception as ex:
-            ex_msg = 'Error building flow: {}'.format(ex)
+            ex_msg = f'Error building flow: {ex}'
 
         # Run flow
         if not ex_msg:
@@ -267,7 +292,7 @@ class TaskflowAPI:
             try:
                 flow_result = flow.run()
             except Exception as ex:
-                ex_msg = 'Error running flow: {}'.format(ex)
+                ex_msg = f'Error running flow: {ex}'
 
         # Flow completion
         if flow_result and tl_event and async_mode:
@@ -288,43 +313,43 @@ class TaskflowAPI:
 
     def submit(
         self,
-        project,
-        flow_name,
-        flow_data,
-        async_mode=False,
-        tl_event=None,
-        force_fail=False,
-    ):
+        project: Project,
+        user: Optional[SODARUser],
+        flow_name: str,
+        flow_data: dict,
+        async_mode: bool = False,
+        tl_event: Any = None,
+        force_fail: bool = False,
+    ) -> Optional[dict]:
         """
         Submit taskflow for SODAR project data modification.
 
         :param project: Project object
+        :param user: User submitting the flow (SODARUser or None)
         :param flow_name: Name of flow to be executed (string)
         :param flow_data: Input data for flow execution (dict, must be JSON
                           serializable)
         :param async_mode: Run flow asynchronously (boolean, default False)
         :param tl_event: Corresponding TimelineEvent (optional)
         :param force_fail: Make flow fail on purpose (boolean, default False)
-        :return: Boolean
+        :return: Dict or None
         :raise: FlowSubmitException if submission fails
         """
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         if not irods_backend:
             raise Exception('Irodsbackend not enabled')
         try:
             json.dumps(flow_data)
         except (TypeError, OverflowError) as ex:
-            logger.error(
-                'Argument flow_data is not JSON serializable: {}'.format(ex)
-            )
+            logger.error(f'Argument flow_data is not JSON serializable: {ex}')
             raise ex
 
         # Launch async submit task if async mode is set
         if async_mode:
-            project_uuid = project.sodar_uuid
             tl_uuid = tl_event.sodar_uuid if tl_event else None
             submit_flow_task.delay(
-                project_uuid,
+                project.sodar_uuid,
+                user.sodar_uuid if user else None,
                 flow_name,
                 flow_data,
                 tl_uuid,
@@ -335,6 +360,7 @@ class TaskflowAPI:
         flow = self.get_flow(
             irods_backend,
             project,
+            user,
             flow_name,
             flow_data,
             async_mode,
@@ -349,7 +375,7 @@ class TaskflowAPI:
         )
 
     @classmethod
-    def get_error_msg(cls, flow_name, submit_info):
+    def get_error_msg(cls, flow_name: str, submit_info: str) -> str:
         """
         Return a printable version of a SODAR Taskflow error message.
 
@@ -357,12 +383,10 @@ class TaskflowAPI:
         :param submit_info: Returned information from SODAR Taskflow
         :return: String
         """
-        return 'Taskflow "{}" failed! Reason: "{}"'.format(
-            flow_name, submit_info[:256]
-        )
+        return f'Taskflow "{flow_name}" failed! Reason: "{submit_info[:256]}"'
 
     @classmethod
-    def is_locked(cls, project):
+    def is_locked(cls, project: Project) -> bool:
         """
         Return lock status for project, True meaning locked.
 

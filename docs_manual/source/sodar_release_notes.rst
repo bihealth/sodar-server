@@ -8,6 +8,62 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v1.2.0 (2025-10-22)
+===================
+
+Major feature update and SODAR Core 1.2 upgrade.
+
+- :ref:`Add project viewer role support <ui_project_members_roles>`
+- :ref:`Add landing zone post-move file integrity verification <app_landingzones_transfer_verify>`
+- :ref:`Add category statistics for sample count and iRODS data <ui_project_overview_stats>`
+- :ref:`Add sample sheets study and assay details modal <app_samplesheets_browse_table_detail>`
+- :ref:`Add assay details in sheet overview <app_samplesheets_browse_overview>`
+- :ref:`Add user opt-out settings for app alert notifications <ui_user_profile>`
+- :ref:`Add landing zone contributor access restricting <app_landingzones_create_restrict>`
+- :ref:`Add landing zone file list modal collection display toggling <app_landingzones_browse_file_list>`
+- :ref:`Add landing zone settings retrieval REST API view <api_landingzones>`
+- :ref:`Add landing zone iRODS file list REST API view <api_landingzones>`
+- :ref:`Add landing zone state reset tools for administrators <app_landingzones_transfer_reset>`
+- :ref:`Add collection support for samplesheets project file list REST API view <api_samplesheets>`
+- Add irodsorphans management command project limiting
+- Add syncstudytables management command check mode
+- Add syncmodifyapi iRODS ticket updating
+- Add file list in landing zone deletion timeline event extra data
+- Add Django setting to enable/disable remote sample sheet sync
+- Update assay tables to hide row links with no plugin enabled
+- Update sheet overview layout
+- Update sheet rendering to disable study title and header name autoformatting
+- Update landing zone create form collection creation settings
+- :ref:`Upgrade Landing Zones REST API version to v1.1 <api_landingzones_version_1_1>`
+- :ref:`Upgrade Sample Sheets REST API version to v1.2 <api_samplesheets_version_1_2>`
+- Upgrade minimum supported iRODS version to v4.3.4
+- Upgrade supported development platform to Ubuntu 24.04
+- Upgrade to SODAR Core v1.2.4
+- Remove landing zone access cleanup site app setting
+- Remove Redis <v8 support
+- `SODAR Core v1.2 updates <https://sodar-core.readthedocs.io/en/latest/major_changes.html#v1-2-4-2025-10-10>`_
+
+:ref:`Administrator upgrade guide for v1.2 <admin_upgrade_v1.2>`
+
+REST API Updates
+----------------
+
+- Landing Zones API
+    * Current version: ``1.1`` (non-breaking changes)
+    * Allowed versions: ``1.0``, ``1.1``
+    * ``ZoneRetrieveAPIView``
+        + Add ``coll_creation`` field
+    * ``ZoneIrodsFileListAPIView``
+        + Add view
+    * ``ZoneSettingsRetrieveAPIView``
+        + Add view
+- Sample Sheets API
+    * Current version: ``1.2`` (non-breaking changes)
+    * Allowed versions: ``1.0``, ``1.1``, ``1.2``
+    * ``ProjectIrodsFileListAPIView``
+        + Add ``include_colls`` parameter
+
+
 v1.1.4 (2025-08-12)
 ===================
 

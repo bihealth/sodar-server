@@ -7,7 +7,7 @@ from django.core.management.base import BaseCommand
 # Projectroles dependency
 from projectroles.management.logging import ManagementCommandLogger
 from projectroles.models import Project, SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 from samplesheets.models import Investigation
 from samplesheets.rendering import (
@@ -17,6 +17,7 @@ from samplesheets.rendering import (
 
 
 logger = ManagementCommandLogger(__name__)
+plugin_api = PluginAPI()
 table_builder = SampleSheetTableBuilder()
 
 
@@ -32,9 +33,18 @@ class Command(BaseCommand):
     @classmethod
     def _get_log_study(cls, study):
         """Return logging-friendly study title"""
-        return '"{}" ({})'.format(study.get_title(), study.sodar_uuid)
+        return f'"{study.get_name()}" ({study.sodar_uuid})'
 
     def add_arguments(self, parser):
+        parser.add_argument(
+            '-c',
+            '--check',
+            dest='check',
+            required=False,
+            default=False,
+            action='store_true',
+            help='Check table rendering, do not store anything in cache',
+        )
         parser.add_argument(
             '-p',
             '--project',
@@ -44,10 +54,16 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        cache_backend = get_backend_api('sodar_cache')
-        if not cache_backend:
-            logger.error('Sodarcache not enabled, exiting')
-            sys.exit(1)
+        check = options.get('check', False)
+        if check:
+            cache_backend = None
+            log_action = 'build check'
+        else:
+            cache_backend = plugin_api.get_backend_api('sodar_cache')
+            if not cache_backend:
+                logger.error('Sodarcache not enabled, exiting')
+                sys.exit(1)
+            log_action = 'sync'
 
         q_kwargs = {'type': PROJECT_TYPE_PROJECT}
         if options.get('project'):
@@ -63,7 +79,7 @@ class Command(BaseCommand):
         if options.get('project'):
             project = projects.first()
             logger.info(
-                'Limiting sync to project {}'.format(project.get_log_title())
+                f'Limiting {log_action} to project {project.get_log_title()}'
             )
 
         for project in projects:
@@ -74,46 +90,42 @@ class Command(BaseCommand):
                 )
             except Investigation.DoesNotExist:
                 logger.debug(
-                    'No investigation found, skipping for project {}'.format(
-                        project.get_log_title()
-                    )
+                    f'No investigation found, skipping for project '
+                    f'{project.get_log_title()}'
                 )
                 continue
             logger.debug(
-                'Building study render tables for project {}..'.format(
-                    project.get_log_title()
-                )
+                f'Building study render tables for project '
+                f'{project.get_log_title()}..'
             )
             for study in investigation.studies.all():
                 try:
                     study_tables = table_builder.build_study_tables(
                         study, use_config=True
                     )
+                    study_count += 1
                 except Exception as ex:
                     logger.error(
-                        'Error building tables for study {}: {}'.format(
-                            self._get_log_study(study), ex
-                        )
+                        f'Error building tables for study '
+                        f'{self._get_log_study(study)}: {ex}'
                     )
                     continue
                 item_name = STUDY_TABLE_CACHE_ITEM.format(
                     study=study.sodar_uuid
                 )
-                try:
-                    cache_backend.set_cache_item(
-                        app_name=APP_NAME,
-                        name=item_name,
-                        data=study_tables,
-                        project=project,
-                    )
-                    logger.info('Set cache item "{}"'.format(item_name))
-                    study_count += 1
-                except Exception as ex:
-                    logger.error(
-                        'Failed to set cache item "{}": {}'.format(
-                            item_name, ex
+                if not check:
+                    try:
+                        cache_backend.set_cache_item(
+                            app_name=APP_NAME,
+                            name=item_name,
+                            data=study_tables,
+                            project=project,
                         )
-                    )
+                        logger.info(f'Set cache item "{item_name}"')
+                    except Exception as ex:
+                        logger.error(
+                            f'Failed to set cache item "{item_name}": {ex}'
+                        )
             logger.info(
                 'Built {} study table{} for project {}'.format(
                     study_count,
@@ -121,4 +133,4 @@ class Command(BaseCommand):
                     project.get_log_title(),
                 )
             )
-        logger.info('Study table cache sync done')
+        logger.info(f'Study table {log_action} done')

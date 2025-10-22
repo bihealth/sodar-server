@@ -1,6 +1,6 @@
 """Tests for template tags in the samplesheets app"""
 
-import os
+from irods.path import iRODSPath
 
 from django.conf import settings
 from django.urls import reverse
@@ -8,7 +8,7 @@ from django.urls import reverse
 from test_plus.test import TestCase
 
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.tests.test_models import (
     ProjectMixin,
     RoleMixin,
@@ -36,6 +36,10 @@ from samplesheets.tests.test_models import (
     IRODS_REQUEST_ACTION_DELETE,
     IRODS_REQUEST_STATUS_ACTIVE,
 )
+
+
+plugin_api = PluginAPI()
+
 
 # Local constants
 IRODS_SAMPLE_COLL = settings.IRODS_SAMPLE_COLL
@@ -98,7 +102,7 @@ class TestSamplesheetsTemplateTags(
             comments=DEFAULT_COMMENTS,
         )
         # Setup iRODS backend for the test
-        self.irods_backend = get_backend_api('omics_irods')
+        self.irods_backend = plugin_api.get_backend_api('omics_irods')
 
     def test_get_investigation(self):
         """Test get_investigation()"""
@@ -145,7 +149,7 @@ class TestSamplesheetsTemplateTags(
             'samplesheets:project_sheets',
             kwargs={'project': self.project.sodar_uuid},
         )
-        expected += '#/study/{}/filter/Sample1'.format(self.study.sodar_uuid)
+        expected += f'#/study/{self.study.sodar_uuid}/filter/Sample1'
         self.assertEqual(url, expected)
 
     def test_get_irods_path_with_project(self):
@@ -162,7 +166,7 @@ class TestSamplesheetsTemplateTags(
         """Test get_irods_path() with project and sub_path"""
         project_path = self.irods_backend.get_path(self.project)
         sub_path = 'subfolder1/subfolder2'
-        expected = project_path + '/' + sub_path
+        expected = iRODSPath(project_path, sub_path)
         self.assertEqual(
             s_tags.get_irods_path(self.project, sub_path), expected
         )
@@ -171,7 +175,7 @@ class TestSamplesheetsTemplateTags(
         """Test get_irods_path() with assay and sub_path"""
         assay_path = self.irods_backend.get_path(self.assay)
         sub_path = 'subfolder1/subfolder2'
-        expected = assay_path + '/' + sub_path
+        expected = iRODSPath(assay_path, sub_path)
         self.assertEqual(s_tags.get_irods_path(self.assay, sub_path), expected)
 
     def test_get_icon_study(self):
@@ -201,7 +205,7 @@ class TestSamplesheetsTemplateTags(
 
     def test_get_request_path_html(self):
         """Test get_request_path_html()"""
-        req_path = os.path.join(
+        req_path = iRODSPath(
             self.irods_backend.get_path(self.assay), MISC_FILES_COLL
         )
         request = self.make_irods_request(
@@ -211,12 +215,12 @@ class TestSamplesheetsTemplateTags(
             path=req_path,
             user=self.user_owner,
         )
-        expected = '<span class="text-muted">/</span>{}'.format(MISC_FILES_COLL)
+        expected = f'<span class="text-muted">/</span>{MISC_FILES_COLL}'
         self.assertEqual(s_tags.get_request_path_html(request), expected)
 
     def test_get_request_path_html_nested(self):
         """Test get_request_path_html() with nested collections"""
-        req_path = os.path.join(
+        req_path = iRODSPath(
             self.irods_backend.get_path(self.assay), MISC_FILES_COLL, SUB_COLL
         )
         request = self.make_irods_request(
@@ -226,8 +230,8 @@ class TestSamplesheetsTemplateTags(
             path=req_path,
             user=self.user_owner,
         )
-        expected = '<span class="text-muted">{}/</span>{}'.format(
-            MISC_FILES_COLL, SUB_COLL
+        expected = (
+            f'<span class="text-muted">{MISC_FILES_COLL}/</span>{SUB_COLL}'
         )
         self.assertEqual(s_tags.get_request_path_html(request), expected)
 
@@ -251,6 +255,6 @@ class TestSamplesheetsTemplateTags(
     def test_trim_base_path(self):
         """Test trim_base_path() with a realistic iRODS path"""
         prefix = '/base_path'
-        path = prefix + '/project/subfolder1/subfolder2'
+        path = iRODSPath(prefix, '/project/subfolder1/subfolder2')
         expected = '/project/subfolder1/subfolder2'
         self.assertEqual(s_tags.trim_base_path(path, prefix), expected)

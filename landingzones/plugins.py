@@ -2,37 +2,41 @@
 
 import logging
 
+from typing import Optional, Union
+from uuid import UUID
+
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from djangoplugins.point import PluginPoint
 
 # Projectroles dependency
-from projectroles.models import SODAR_CONSTANTS
+from projectroles.models import Project, SODAR_CONSTANTS, ROLE_RANKING
 from projectroles.plugins import (
     ProjectAppPluginPoint,
     ProjectModifyPluginMixin,
     PluginAppSettingDef,
     PluginObjectLink,
-    get_backend_api,
+    PluginAPI,
 )
 
 # Samplesheets dependency
 from samplesheets.models import Investigation, Assay
 
-from landingzones.constants import (
-    STATUS_ALLOW_UPDATE,
-    STATUS_BUSY,
-    STATUS_FINISHED,
-)
+import landingzones.constants as lc
 from landingzones.models import LandingZone
 from landingzones.urls import urlpatterns
 from landingzones.views import ZoneModifyMixin
 
 
 logger = logging.getLogger(__name__)
+plugin_api = PluginAPI()
+User = get_user_model()
 
 
 # SODAR constants
+PROJECT_ROLE_CONTRIBUTOR = SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR']
+PROJECT_ROLE_GUEST = SODAR_CONSTANTS['PROJECT_ROLE_GUEST']
 APP_SETTING_SCOPE_PROJECT = SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT']
 APP_SETTING_SCOPE_USER = SODAR_CONSTANTS['APP_SETTING_SCOPE_USER']
 APP_SETTING_SCOPE_SITE = SODAR_CONSTANTS['APP_SETTING_SCOPE_SITE']
@@ -49,7 +53,17 @@ LANDINGZONES_APP_SETTINGS = [
         default=True,
         label='Notify members of landing zone uploads',
         description='Notify project members via alerts and email if new files '
-        'are uploaded from landing zones',
+        'are uploaded from landing zones.',
+        user_modifiable=True,
+    ),
+    PluginAppSettingDef(
+        name='notify_alert_zone_status',
+        scope=APP_SETTING_SCOPE_USER,
+        type=APP_SETTING_TYPE_BOOLEAN,
+        default=True,
+        label='Receive alerts for landing zone status updates',
+        description='Receive UI alerts for status changes in your landing '
+        'zones.',
         user_modifiable=True,
     ),
     PluginAppSettingDef(
@@ -59,7 +73,7 @@ LANDINGZONES_APP_SETTINGS = [
         default=True,
         label='Receive email for landing zone status updates',
         description='Receive email notifications for status changes in your '
-        'landing zones',
+        'landing zones.',
         user_modifiable=True,
     ),
     PluginAppSettingDef(
@@ -75,16 +89,24 @@ LANDINGZONES_APP_SETTINGS = [
         user_modifiable=True,
     ),
     PluginAppSettingDef(
-        name='zone_access_cleanup',
-        scope=APP_SETTING_SCOPE_SITE,
+        name='zone_file_list_colls',
+        scope=APP_SETTING_SCOPE_USER,
         type=APP_SETTING_TYPE_BOOLEAN,
         default=True,
-        label='Landing zone access cleanup',
-        description='Enable experimental cleanup feature for landing zone '
-        'access on zone move, in case of e.g admin ACL modifications. Disable '
-        'if encountering performance issues or other zone moving problems.',
+        user_modifiable=False,  # Modification via zone file list modal UI
+    ),
+    PluginAppSettingDef(
+        name='zone_access_restrict',
+        scope=APP_SETTING_SCOPE_PROJECT,
+        type=APP_SETTING_TYPE_STRING,
+        default='',
+        label='Restrict zone contributor access',
+        description='Restrict landing zone contributor access to a specific '
+        'user. The user must have a contributor role in project. Owners and '
+        'delegates can still access landing zones if set.',
+        placeholder='username or username@DOMAIN',
         user_modifiable=True,
-    ),  # TODO: Remove once implementing #2215
+    ),
 ]
 
 LANDINGZONES_INFO_SETTINGS = [
@@ -95,8 +117,29 @@ LANDINGZONES_INFO_SETTINGS = [
     'LANDINGZONES_TRIGGER_FILE',
     'LANDINGZONES_TRIGGER_MOVE_INTERVAL',
     'LANDINGZONES_ZONE_CREATE_LIMIT',
+    'LANDINGZONES_ZONE_MOVE_VERIFY',
     'LANDINGZONES_ZONE_VALIDATE_LIMIT',
 ]
+
+LZ_PROJECT_COL_ACTIVE = (
+    '<a href="{url}" title="{title}" class="sodar-lz-project-list-active">'
+    '<i class="iconify text-success" data-icon="mdi:briefcase">'
+    '</i></a>'
+)
+LZ_PROJECT_COL_CREATE = (
+    '<a href="{url}" title="Create landing zone in project" '
+    'class="sodar-lz-project-list-create">'
+    '<i class="iconify" data-icon="mdi:plus-thick"></i></a>'
+)
+LZ_PROJECT_COL_NO_ZONES = (
+    '<span class="sodar-lz-project-list-none">'
+    '<i class="iconify text-muted" data-icon="mdi:briefcase" '
+    'class="sodar-lz-project-list-none" '
+    'title="No available landing zones"></i></span>'
+)
+
+ACCESS_RESTRICT_NO_USER_MSG = 'User not found'
+ACCESS_RESTRICT_NO_ROLE_MSG = 'User does not have contributor role in project'
 
 
 # Landingzones project app plugin ----------------------------------------------
@@ -170,7 +213,9 @@ class ProjectAppPlugin(
     #: Names of plugin specific Django settings to display in siteinfo
     info_settings = LANDINGZONES_INFO_SETTINGS
 
-    def get_object_link(self, model_str, uuid):
+    def get_object_link(
+        self, model_str: str, uuid: Union[str, UUID]
+    ) -> Optional[PluginObjectLink]:
         """
         Return URL referring to an object used by the app, along with a name to
         be shown to the user for linking.
@@ -182,7 +227,10 @@ class ProjectAppPlugin(
         obj = self.get_object(eval(model_str), uuid)
         if not obj:
             return None
-        if obj.__class__ == LandingZone and obj.status not in STATUS_FINISHED:
+        if (
+            obj.__class__ == LandingZone
+            and obj.status not in lc.STATUS_FINISHED
+        ):
             return PluginObjectLink(
                 url=reverse(
                     'landingzones:list',
@@ -197,7 +245,7 @@ class ProjectAppPlugin(
                 url=obj.get_url(), name=obj.get_display_name()
             )
 
-    def get_statistics(self):
+    def get_statistics(self) -> dict:
         """
         Return app statistics as a dict. Should take the form of
         {id: {label, value, url (optional), description (optional)}}.
@@ -212,7 +260,7 @@ class ProjectAppPlugin(
             'zones_active': {
                 'label': 'Active Zones',
                 'value': LandingZone.objects.filter(
-                    status__in=STATUS_ALLOW_UPDATE
+                    status__in=lc.STATUS_ALLOW_UPDATE
                 ).count(),
                 'description': 'Landing zones available for use (active or '
                 'failed)',
@@ -220,7 +268,7 @@ class ProjectAppPlugin(
             'zones_finished': {
                 'label': 'Finished Zones',
                 'value': LandingZone.objects.filter(
-                    status__in=STATUS_FINISHED
+                    status__in=lc.STATUS_FINISHED
                 ).count(),
                 'description': 'Landing zones finished successfully, deleted '
                 'or not created',
@@ -228,13 +276,15 @@ class ProjectAppPlugin(
             'zones_busy': {
                 'label': 'Busy Zones',
                 'value': LandingZone.objects.filter(
-                    status__in=STATUS_BUSY
+                    status__in=lc.STATUS_BUSY
                 ).count(),
                 'description': 'Landing zones with an ongoing transaction',
             },
         }
 
-    def get_project_list_value(self, column_id, project, user):
+    def get_project_list_value(
+        self, column_id: str, project: Project, user: User
+    ) -> Union[str, int, None]:
         """
         Return a value for the optional additional project list column specific
         to a project.
@@ -246,6 +296,12 @@ class ProjectAppPlugin(
         """
         if not user or user.is_anonymous or column_id != 'zones':
             return ''
+        # Omit for guest role or below
+        role_as = project.get_role(user)
+        if not user.is_superuser and (
+            not role_as or role_as.role.rank >= ROLE_RANKING[PROJECT_ROLE_GUEST]
+        ):
+            return ''
         investigation = Investigation.objects.filter(
             project=project, active=True
         ).first()
@@ -254,53 +310,32 @@ class ProjectAppPlugin(
             kw['user'] = user
         active_count = (
             LandingZone.objects.filter(**kw)
-            .exclude(status__in=STATUS_FINISHED)
+            .exclude(status__in=lc.STATUS_FINISHED)
             .count()
         )
 
         if investigation and investigation.irods_status and active_count > 0:
-            return (
-                '<a href="{}" title="{}" class="sodar-lz-project-list-active">'
-                # 'data-toggle="tooltip" data-placement="top">'
-                '<i class="iconify text-success" data-icon="mdi:briefcase">'
-                '</i></a>'.format(
-                    reverse(
-                        'landingzones:list',
-                        kwargs={'project': project.sodar_uuid},
-                    ),
-                    '{} landing zone{} {}'.format(
-                        active_count,
-                        's' if active_count != 1 else '',
-                        'in total' if user.is_superuser else 'owned by you',
-                    ),
-                )
+            url = reverse(
+                'landingzones:list', kwargs={'project': project.sodar_uuid}
             )
+            title = '{} landing zone{} {}'.format(
+                active_count,
+                's' if active_count != 1 else '',
+                'in total' if user.is_superuser else 'owned by you',
+            )
+            return LZ_PROJECT_COL_ACTIVE.format(url=url, title=title)
         elif (
             investigation
             and investigation.irods_status
             and user.has_perm('landingzones.create_zone', project)
         ):
-            return (
-                '<a href="{}" title="Create landing zone in project" '
-                'class="sodar-lz-project-list-create">'
-                # 'data-toggle="tooltip" data-placement="top">'
-                '<i class="iconify" data-icon="mdi:plus-thick"></i>'
-                '</a>'.format(
-                    reverse(
-                        'landingzones:create',
-                        kwargs={'project': project.sodar_uuid},
-                    )
-                )
+            url = reverse(
+                'landingzones:create', kwargs={'project': project.sodar_uuid}
             )
-        return (
-            '<span class="sodar-lz-project-list-none">'
-            '<i class="iconify text-muted" data-icon="mdi:briefcase" '
-            'class="sodar-lz-project-list-none" '
-            'title="No available landing zones"></i></span>'
-            # 'data-toggle="tooltip" data-placement="top"></i>'
-        )
+            return LZ_PROJECT_COL_CREATE.format(url=url)
+        return LZ_PROJECT_COL_NO_ZONES
 
-    def perform_project_sync(self, project):
+    def perform_project_sync(self, project: Project):
         """
         Synchronize existing projects to ensure related data exists when the
         syncmodifyapi management comment is called. Should mostly be used in
@@ -310,14 +345,14 @@ class ProjectAppPlugin(
         :param project: Current project object (Project)
         """
         zones = LandingZone.objects.filter(
-            project=project, status__in=STATUS_ALLOW_UPDATE
+            project=project, status__in=lc.STATUS_ALLOW_UPDATE
         )
         if zones.count() == 0:
             logger.debug('Skipping: No active zones found')
             return
 
-        irods_backend = get_backend_api('omics_irods')
-        taskflow = get_backend_api('taskflow')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
+        taskflow = plugin_api.get_backend_api('taskflow')
         if not irods_backend or not taskflow:
             logger.debug('Skipping: Required backend plugins not active')
             return
@@ -327,8 +362,40 @@ class ProjectAppPlugin(
                 zone_path = irods_backend.get_path(zone)
                 if irods.collections.exists(zone_path):
                     continue  # Skip if already there
-                logger.info('Syncing landing zone "{}"..'.format(zone.title))
-                self.submit_create(zone, create_colls=True, sync=True)
+                logger.info(f'Syncing landing zone "{zone.title}"..')
+                self.submit_create(zone, sync=True)
+
+    def validate_form_app_settings(
+        self,
+        app_settings: dict,
+        project: Optional[Project] = None,
+        user: Optional[User] = None,
+    ) -> Optional[dict]:
+        """
+        Validate app settings form data and return a dict of errors.
+
+        :param app_settings: Dict of app settings
+        :param project: Project object or None
+        :param user: User object or None
+        :return: dict in format of {setting_name: 'Error string'}
+        """
+        s_name = 'zone_access_restrict'
+        access_restrict = app_settings.get(s_name)
+        if not access_restrict:
+            return None
+        user = User.objects.filter(username=access_restrict).first()
+        if not user:
+            return {s_name: ACCESS_RESTRICT_NO_USER_MSG}
+        # NOTE: We can't evaluate inherited role on project creation because
+        #       we lack parent info (see bihealth/sodar-core#1771)
+        if project.pk:  # Updating an existing project
+            role_as = project.get_role(user)
+            if (
+                not role_as
+                or role_as.role.rank != ROLE_RANKING[PROJECT_ROLE_CONTRIBUTOR]
+            ):
+                return {s_name: ACCESS_RESTRICT_NO_ROLE_MSG}
+        return None
 
 
 # Landingzones configuration sub-app plugin ------------------------------------
@@ -382,7 +449,7 @@ class LandingZoneConfigPluginPoint(PluginPoint):
     permission = None
 
     # TODO: Implement this in your config plugin if needed
-    def cleanup_zone(self, zone):
+    def cleanup_zone(self, zone: LandingZone):
         """
         Perform actions before landing zone deletion.
 
@@ -391,7 +458,9 @@ class LandingZoneConfigPluginPoint(PluginPoint):
         pass
 
     # TODO: Implement this in your config plugin if needed
-    def get_extra_flow_data(self, zone, flow_name):
+    def get_extra_flow_data(
+        self, zone: LandingZone, flow_name: str
+    ) -> Optional[dict]:
         """
         Return extra zone data parameters.
 
@@ -402,7 +471,9 @@ class LandingZoneConfigPluginPoint(PluginPoint):
         pass
 
 
-def get_zone_config_plugin(zone):
+def get_zone_config_plugin(
+    zone: LandingZone,
+) -> Optional[LandingZoneConfigPluginPoint]:
     """
     Return active landing zone configuration plugin.
 

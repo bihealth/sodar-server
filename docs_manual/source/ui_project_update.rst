@@ -31,13 +31,18 @@ Parent
 Description
     Set an optional longer description of the project.
 ReadMe
-    Set an optional ReadMe document with for the project. MarkDown notation can
-    be used.
-Public guest access
-    Enable public guest access to the project for anyone using SODAR. This
-    should be used with caution and is generally intended for demonstration
-    projects. If your SODAR server allows anonymous users, this will grant guest
-    access to anyone browsing the site.
+    Set an optional readme document for the project. Markdown notation can be
+    used. Note that project guests and viewers can see the readme:s of projects
+    and their parent categories. Providing confidential information here should
+    be done with care.
+Public access
+    Enable public access to the project for anyone using SODAR. Either grants
+    full read-only access as project guest, or a partial read-only access as
+    project viewer. For more information on the differences between these roles,
+    see :ref:`ui_project_members_roles`. This feature should be used with
+    caution and is generally intended for demonstration projects. If your SODAR
+    server allows anonymous users, this will grant specified access to anyone
+    browsing the site even if they have not logged in.
 Enable project on {target remote site}
     Enable access to project for project members on the selected target site.
     Target sites for which project owner/delegation modifying is enabled by an
@@ -53,11 +58,18 @@ Prohibited file types
     add related file suffixes here as a comma-separated list. The file suffixes
     will be checked during landing zone validation. For more information, see
     :ref:`app_landingzones_transfer_prohibit`.
+Restrict zone contributor access
+    Restrict landing zone contributor access to a specific user. The user must
+    have a contributor role in project. Owners and delegates can still access
+    landing zones if set. For more information, see
+    :ref:`app_landingzones_create_restrict`.
 Allow sample sheet editing
     Enable or disable editability of sample sheets in the project.
 Enable sheet synchronization
     Enable sample sheet synchronization. For more information, see
-    :ref:`app_samplesheets_sync`.
+    :ref:`app_samplesheets_sync`. Note that sheet sync settings are only visible
+    if an administrator has enabled the sync functionality on the site via
+    :ref:`admin_settings`.
 URL for sheet synchronization
     REST API URL of remote project for sample sheet synchronization.
 Token for sheet synchronization
@@ -91,8 +103,18 @@ IP restrict
     Restrict project access to specific IP addresses if this is set.
 IP allow list
     List of accepted IP addresses for the IP Restrict setting.
+Block project access
+    Temporarily block user access to project. Only available for superusers.
+    This will block all non-superuser access to the project's UI and REST API
+    views in SODAR. Project iRODS collections will remain accessible.
+Display public category statistics
+    Display top level category statistics to all users. Only available for
+    superusers in top level categories. Toggling this enables everyone
+    regardless of roles to see the readme and general statistics about projects
+    under the category. The users will not gain any other rights to the category
+    without having roles explicitly granted to them.
 
-When creating a new project, the following fields are included:
+When creating a new project, the following fields are also included:
 
 Type
     Project type. This can either be *Project* or *Category*. The type can not

@@ -6,12 +6,16 @@ import {
   waitRAF,
   waitAG,
   waitNT,
-  waitSelector
+  waitSelector,
+  copy,
+  studyUuid,
+  assayUuid
 } from '../testUtils.js'
 import { initGridOptions } from '@/utils/gridUtils.js'
 import BootstrapVue from 'bootstrap-vue'
 import VueClipboard from 'vue-clipboard2'
 import SheetTable from '@/components/SheetTable.vue'
+import sodarContext from './data/sodarContext.json'
 
 // Set up extended Vue constructor
 const localVue = createLocalVue()
@@ -51,7 +55,10 @@ describe('IrodsButtonsRenderer.vue', () => {
   })
 
   it('renders irods buttons for an assay table', async () => {
-    const wrapper = mountSheetTable()
+    const sc = copy(sodarContext)
+    sc.studies[
+      studyUuid].assays[assayUuid].display_row_links = true
+    const wrapper = mountSheetTable({ sodarContext: sc })
     await waitAG(wrapper)
     await waitNT(wrapper.vm)
     await waitRAF()

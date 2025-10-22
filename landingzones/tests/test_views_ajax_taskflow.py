@@ -1,8 +1,9 @@
 """Tests for Ajax API views in the landingzones app with Taskflow"""
 
 import json
-import os
 import pytz
+
+from irods.path import iRODSPath
 
 from django.conf import settings
 from django.test import override_settings
@@ -10,7 +11,7 @@ from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.models import SODAR_CONSTANTS
+from projectroles.models import SODARUser, SODAR_CONSTANTS
 
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin
@@ -20,7 +21,8 @@ from samplesheets.tests.test_views_taskflow import (
 )
 
 # Taskflowbackend dependency
-from taskflowbackend.tests.base import TaskflowViewTestBase, HASH_SCHEME_SHA256
+from taskflowbackend.constants import IRODS_HASH_SCHEME_SHA256
+from taskflowbackend.tests.base import TaskflowViewTestBase
 
 from landingzones.tests.test_models import LandingZoneMixin
 from landingzones.tests.test_views_taskflow import LandingZoneTaskflowMixin
@@ -54,6 +56,13 @@ class TestZoneIrodsListRetrieveAjaxView(
 ):
     """Tests for ZoneIrodsListRetrieveAjaxView with iRODS and taskflow"""
 
+    def _assert_coll_setting(self, user: SODARUser, expected: bool):
+        """Assert collection including setting value for user"""
+        self.assertEqual(
+            app_settings.get(APP_NAME, 'zone_file_list_colls', user=user),
+            expected,
+        )
+
     def setUp(self):
         super().setUp()
         # Make project with owner
@@ -63,7 +72,6 @@ class TestZoneIrodsListRetrieveAjaxView(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user_owner,
-            description='description',
         )
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
@@ -83,7 +91,7 @@ class TestZoneIrodsListRetrieveAjaxView(
         )  # NOTE: make_zone_taskflow() called in tests
         # Set up helpers
         self.zone_path = self.irods_backend.get_path(self.zone)
-        self.misc_path = os.path.join(self.zone_path, MISC_FILES_DIR)
+        self.misc_path = iRODSPath(self.zone_path, MISC_FILES_DIR)
         self.url = reverse(
             'landingzones:ajax_irods_list',
             kwargs={'landingzone': self.zone.sodar_uuid},
@@ -100,10 +108,11 @@ class TestZoneIrodsListRetrieveAjaxView(
                 {
                     'name': ZONE_COLLS[i],
                     'type': IRODS_TYPE_COLL,
-                    'path': os.path.join(self.zone_path, ZONE_COLLS[i]),
+                    'path': iRODSPath(self.zone_path, ZONE_COLLS[i]),
                 }
                 for i in range(len(ZONE_COLLS))
             ],
+            'include_colls': True,
             'count': 3,
             'page': 1,
             'page_count': 1,
@@ -111,6 +120,57 @@ class TestZoneIrodsListRetrieveAjaxView(
             'previous': '',
         }
         self.assertEqual(response.data, expected)
+
+    def test_get_colls_true(self):
+        """Test GET with colls explicitly set True"""
+        # Set user app setting to false (default=True)
+        app_settings.set(
+            APP_NAME, 'zone_file_list_colls', False, user=self.user_owner
+        )
+        self._assert_coll_setting(self.user_owner, False)
+        self.make_zone_taskflow(self.zone, colls=ZONE_COLLS)
+        with self.login(self.user_owner):
+            response = self.client.get(self.url + '?page=1&colls=1')
+        self.assertEqual(response.status_code, 200)
+        expected = {
+            'results': [
+                {
+                    'name': ZONE_COLLS[i],
+                    'type': IRODS_TYPE_COLL,
+                    'path': iRODSPath(self.zone_path, ZONE_COLLS[i]),
+                }
+                for i in range(len(ZONE_COLLS))
+            ],
+            'include_colls': True,
+            'count': 3,
+            'page': 1,
+            'page_count': 1,
+            'next': '',
+            'previous': '',
+        }
+        self.assertEqual(response.data, expected)
+        # User app setting should be updated
+        self._assert_coll_setting(self.user_owner, True)
+
+    def test_get_colls_false(self):
+        """Test GET with colls=False"""
+        self._assert_coll_setting(self.user_owner, True)
+        self.make_zone_taskflow(self.zone, colls=ZONE_COLLS)
+        with self.login(self.user_owner):
+            response = self.client.get(self.url + '?page=1&colls=0')
+        self.assertEqual(response.status_code, 200)
+        expected = {
+            'results': [],
+            'include_colls': False,
+            'count': 0,
+            'page': 1,
+            'page_count': 0,
+            'next': '',
+            'previous': '',
+        }
+        self.assertEqual(response.data, expected)
+        # Setting should be set False
+        self._assert_coll_setting(self.user_owner, False)
 
     def test_get_file(self):
         """Test GET with file in iRODS"""
@@ -134,6 +194,29 @@ class TestZoneIrodsListRetrieveAjaxView(
             ).strftime('%Y-%m-%d %H:%M'),
         }
         self.assertEqual(res[1], expected)
+
+    def test_get_file_colls_false(self):
+        """Test GET with file and colls=False"""
+        self.make_zone_taskflow(self.zone, colls=ZONE_COLLS)
+        coll = self.irods.collections.get(self.misc_path)
+        irods_obj = self.make_irods_object(coll, TEST_OBJ_NAME)
+        # NOTE: No .md5 file created here
+        with self.login(self.user_owner):
+            response = self.client.get(self.url + '?page=1&colls=0')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['count'], 1)
+        res = response.data['results']
+        self.assertEqual(len(res), 1)
+        expected = {
+            'name': TEST_OBJ_NAME,
+            'type': IRODS_TYPE_OBJ,
+            'path': irods_obj.path,
+            'size': 1024,
+            'modify_time': irods_obj.modify_time.astimezone(
+                pytz.timezone(settings.TIME_ZONE)
+            ).strftime('%Y-%m-%d %H:%M'),
+        }
+        self.assertEqual(res[0], expected)
 
     def test_get_file_md5(self):
         """Test GET with file and corresponding MD5 file"""
@@ -167,6 +250,7 @@ class TestZoneIrodsListRetrieveAjaxView(
         self.assertEqual(response.status_code, 200)
         expected = {
             'results': [],
+            'include_colls': True,
             'count': 0,
             'page': 1,
             'page_count': 0,
@@ -252,7 +336,6 @@ class TestZoneChecksumStatusRetrieveAjaxView(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user_owner,
-            description='description',
         )
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
@@ -273,7 +356,7 @@ class TestZoneChecksumStatusRetrieveAjaxView(
         self.zone_path = self.irods_backend.get_path(self.zone)
         self.make_zone_taskflow(self.zone, [MISC_FILES_DIR])
         # Set up helpers
-        self.misc_path = os.path.join(self.zone_path, MISC_FILES_DIR)
+        self.misc_path = iRODSPath(self.zone_path, MISC_FILES_DIR)
         self.misc_coll = self.irods.collections.get(self.misc_path)
         self.url = reverse(
             'landingzones:ajax_irods_checksum',
@@ -293,11 +376,11 @@ class TestZoneChecksumStatusRetrieveAjaxView(
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['checksum_status'], {obj.path: True})
 
-    @override_settings(IRODS_HASH_SCHEME=HASH_SCHEME_SHA256)
+    @override_settings(IRODS_HASH_SCHEME=IRODS_HASH_SCHEME_SHA256)
     def test_post_checksum_sha256(self):
         """Test POST with SHA256 checksum file"""
         obj = self.make_irods_object(self.misc_coll, TEST_OBJ_NAME)
-        self.make_checksum_object(obj, scheme=HASH_SCHEME_SHA256)
+        self.make_checksum_object(obj, scheme=IRODS_HASH_SCHEME_SHA256)
         post_data = {'paths': [obj.path]}
         with self.login(self.user_owner):
             response = self.client.post(
@@ -336,7 +419,7 @@ class TestZoneChecksumStatusRetrieveAjaxView(
 
     def test_post_path_outside_zone(self):
         """Test POST with path outside zone (should fail)"""
-        path = os.path.join(
+        path = iRODSPath(
             self.irods_backend.get_sample_path(self.project), TEST_OBJ_NAME
         )
         post_data = {'paths': [path]}
@@ -348,7 +431,7 @@ class TestZoneChecksumStatusRetrieveAjaxView(
 
     def test_post_invalid_path(self):
         """Test POST with invalid path (should fail)"""
-        path = os.path.join(self.zone_path, '..', TEST_OBJ_NAME)
+        path = iRODSPath(self.zone_path, '..', TEST_OBJ_NAME)
         post_data = {'paths': [path]}
         with self.login(self.user_owner):
             response = self.client.post(

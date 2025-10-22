@@ -2,13 +2,15 @@
 
 import logging
 
+from typing import Any, Optional
+
 from django.conf import settings
 from django.contrib import auth
 from django.urls import reverse
 
 # Projectroles dependency
-from projectroles.models import Project, SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.models import Project, SODARUser, SODAR_CONSTANTS
+from projectroles.plugins import PluginAPI
 
 from samplesheets.models import Investigation, Study, Assay, GenericMaterial
 from samplesheets.plugins import SampleSheetStudyPluginPoint
@@ -22,6 +24,7 @@ from samplesheets.utils import get_isa_field_name, get_last_material_index
 
 
 logger = logging.getLogger(__name__)
+plugin_api = PluginAPI()
 table_builder = SampleSheetTableBuilder()
 User = auth.get_user_model()
 
@@ -51,7 +54,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
     permission = None
 
     @classmethod
-    def _has_only_ms_assays(cls, study):
+    def _has_only_ms_assays(cls, study: Study) -> bool:
         """Return True if study only contains mass spectrometry assays"""
         # HACK: temporary workaround for issue #482
         for assay in study.assays.all():
@@ -59,7 +62,9 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 return False
         return True
 
-    def get_shortcut_column(self, study, study_tables):
+    def get_shortcut_column(
+        self, study: Study, study_tables: dict
+    ) -> Optional[dict]:
         """
         Return structure containing links for an extra study table links column.
 
@@ -97,12 +102,12 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
 
         logger.debug('Set shortcut column data..')
         # Get iRODS URLs from cache
-        cache_backend = get_backend_api('sodar_cache')
+        cache_backend = plugin_api.get_backend_api('sodar_cache')
         cache_item = None
         if cache_backend:
             cache_item = cache_backend.get_cache_item(
                 app_name=APP_NAME,
-                name='irods/{}'.format(study.sodar_uuid),
+                name=f'irods/{study.sodar_uuid}',
                 project=study.get_project(),
             )
         # Get source libraries
@@ -141,15 +146,17 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             )
         return ret
 
-    def get_shortcut_links(self, study, study_tables, **kwargs):
+    def get_shortcut_links(
+        self, study: Study, study_tables: dict, **kwargs
+    ) -> Optional[dict]:
         """
         Return links for shortcut modal.
 
         :param study: Study object
         :param study_tables: Rendered study tables (dict)
-        :return: Dict or None
+        :return: Dict or None if not found
         """
-        cache_backend = get_backend_api('sodar_cache')
+        cache_backend = plugin_api.get_backend_api('sodar_cache')
         case_id = kwargs['case'][0]
         source = GenericMaterial.objects.filter(
             study=study, name=case_id
@@ -161,12 +168,12 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         if cache_backend:
             cache_item = cache_backend.get_cache_item(
                 app_name=APP_NAME,
-                name='irods/{}'.format(study.sodar_uuid),
+                name=f'irods/{study.sodar_uuid}',
                 project=study.get_project(),
             )
         webdav_url = settings.IRODS_WEBDAV_URL
         ret = {
-            'title': 'Case-Wise Links for {}'.format(case_id),
+            'title': f'Case-Wise Links for {case_id}',
             'data': {
                 'session': {'title': 'IGV Session File', 'files': []},
                 'bam': {'title': 'BAM/CRAM Files', 'files': []},
@@ -183,7 +190,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                     {
                         'label': library_name,
                         'url': webdav_url + path,
-                        'title': 'Download {} file'.format(file_type.upper()),
+                        'title': f'Download {file_type.upper()} file',
                         'extra_links': [
                             {
                                 'label': 'Add {} file to IGV'.format(
@@ -242,7 +249,9 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         return ret
 
     @classmethod
-    def _update_study_cache(cls, study, user, cache_backend):
+    def _update_study_cache(
+        cls, study: Study, user: Optional[SODARUser], cache_backend: Any
+    ):
         """
         Update cancer study app cache for a single study.
 
@@ -250,8 +259,8 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         :param user: User object or None
         :param cache_backend: Sodarcache backend object
         """
-        irods_backend = get_backend_api('omics_irods')
-        item_name = 'irods/{}'.format(study.sodar_uuid)
+        irods_backend = plugin_api.get_backend_api('omics_irods')
+        item_name = f'irods/{study.sodar_uuid}'
         bam_paths = {}
         vcf_paths = {}
         # Get/build render tables
@@ -290,7 +299,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                         vcf_paths[lib] = vcf_path
 
         updated_data = {'bam': bam_paths, 'vcf': vcf_paths}
-        logger.debug('Set cache item "{}": {}'.format(item_name, updated_data))
+        logger.debug(f'Set cache item "{item_name}": {updated_data}')
         cache_backend.set_cache_item(
             name=item_name,
             app_name=APP_NAME,
@@ -299,7 +308,12 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             project=study.investigation.project,
         )
 
-    def update_cache(self, name=None, project=None, user=None):
+    def update_cache(
+        self,
+        name: Optional[str] = None,
+        project: Optional[str] = None,
+        user: Optional[SODARUser] = None,
+    ):
         """
         Update cached data for this app, limitable to item ID and/or project.
 
@@ -311,7 +325,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         # Omit for mass spectrometry studies (workaround for issue #482)
         if name and name.split('/')[0] != 'irods':
             return
-        cache_backend = get_backend_api('sodar_cache')
+        cache_backend = plugin_api.get_backend_api('sodar_cache')
         if not cache_backend:
             return
         projects = (

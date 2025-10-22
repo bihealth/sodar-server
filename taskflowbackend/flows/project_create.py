@@ -1,6 +1,7 @@
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS, ROLE_RANKING
 
+from taskflowbackend.constants import IRODS_ACCESS_READ_OBJ
 from taskflowbackend.flows.base_flow import BaseLinearFlow
 from taskflowbackend.tasks import irods_tasks
 
@@ -15,11 +16,11 @@ class Flow(BaseLinearFlow):
     groups for access, also assigning membership in owner group to owner.
     """
 
-    def validate(self):
+    def validate(self) -> bool:
         self.required_fields = ['owner']
         return super().validate()
 
-    def build(self, force_fail=False):
+    def build(self, force_fail: bool = False):
         project_path = self.irods_backend.get_path(self.project)
         project_group = self.irods_backend.get_group_name(self.project)
         owner_group = self.irods_backend.get_group_name(self.project, True)
@@ -88,7 +89,7 @@ class Flow(BaseLinearFlow):
                 name='Set project user group access',
                 irods=self.irods,
                 inject={
-                    'access_name': 'read',
+                    'access_name': IRODS_ACCESS_READ_OBJ,
                     'path': project_path,
                     'user_name': project_group,
                     'irods_backend': self.irods_backend,

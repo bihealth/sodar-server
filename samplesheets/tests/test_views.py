@@ -4,6 +4,7 @@ import json
 import os
 
 from cubi_isa_templates import IsaTabTemplate, _TEMPLATES as ISA_TEMPLATES
+from typing import Any
 from urllib.parse import urlencode
 from zipfile import ZipFile
 
@@ -18,7 +19,7 @@ from test_plus.test import TestCase
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import AppSetting, SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.tests.test_models import (
     ProjectMixin,
     RoleMixin,
@@ -94,6 +95,7 @@ from samplesheets.views import (
 
 app_settings = AppSettingAPI()
 conf_api = SheetConfigAPI()
+plugin_api = PluginAPI()
 table_builder = SampleSheetTableBuilder()
 
 
@@ -154,7 +156,7 @@ BACKEND_PLUGINS_NO_TPL.remove('isatemplates_backend')
 class SheetTemplateCreateMixin:
     """Sheet template creation helpers"""
 
-    def get_tpl_post_data(self, sheet_tpl):
+    def get_tpl_post_data(self, sheet_tpl: IsaTabTemplate) -> dict:
         """
         Return POST data for creating sheet from template.
 
@@ -177,12 +179,15 @@ class SheetTemplateCreateMixin:
                 ret[k] = json.dumps(v)
         return ret
 
-    def make_sheets_from_cubi_tpl(self, sheet_tpl):
+    def make_sheets_from_cubi_tpl(
+        self, sheet_tpl: IsaTabTemplate
+    ) -> Investigation:
         """
         Create investigation from CUBI templates by posting to the template
         create view.
 
         :param sheet_tpl: IsaTabTemplate object
+        :return: Investigation object
         """
         url = reverse(
             'samplesheets:template_create',
@@ -194,6 +199,7 @@ class SheetTemplateCreateMixin:
                 data=self.get_tpl_post_data(sheet_tpl),
             )
         self.assertEqual(response.status_code, 302, msg=sheet_tpl.name)
+        return Investigation.objects.get(project=self.project, active=True)
 
 
 class SamplesheetsViewTestBase(
@@ -209,10 +215,11 @@ class SamplesheetsViewTestBase(
         self.user.is_staff = True
         self.user.is_superuser = True
         self.user.save()
-        self.user_owner = self.make_user('owner')
-        self.user_delegate = self.make_user('delegate')
-        self.user_contributor = self.make_user('contributor')
-        self.user_guest = self.make_user('guest')
+        self.user_owner = self.make_user('user_owner')
+        self.user_delegate = self.make_user('user_delegate')
+        self.user_contributor = self.make_user('user_contributor')
+        self.user_guest = self.make_user('user_guest')
+        self.user_viewer = self.make_user('user_viewer')
         self.user_no_roles = self.make_user('user_no_roles')
         # Init projects
         self.category = self.make_project(
@@ -232,6 +239,9 @@ class SamplesheetsViewTestBase(
         )
         self.guest_as = self.make_assignment(
             self.project, self.user_guest, self.role_guest
+        )
+        self.viewer_as = self.make_assignment(
+            self.project, self.user_viewer, self.role_viewer
         )
 
 
@@ -271,8 +281,8 @@ class TestSheetImportView(
 
     def setUp(self):
         super().setUp()
-        self.timeline = get_backend_api('timeline_backend')
-        self.cache_backend = get_backend_api('sodar_cache')
+        self.timeline = plugin_api.get_backend_api('timeline_backend')
+        self.cache_backend = plugin_api.get_backend_api('sodar_cache')
         self.url = reverse(
             'samplesheets:import',
             kwargs={'project': self.project.sodar_uuid},
@@ -930,7 +940,7 @@ class TestSheetExcelExportView(SamplesheetsViewTestBase):
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-        self.timeline = get_backend_api('timeline_backend')
+        self.timeline = plugin_api.get_backend_api('timeline_backend')
 
     def test_getr_study(self):
         """Test SheetExcelExportView GET with study table"""
@@ -962,7 +972,7 @@ class TestSheetISAExportView(SamplesheetsViewTestBase):
         super().setUp()
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
-        self.timeline = get_backend_api('timeline_backend')
+        self.timeline = plugin_api.get_backend_api('timeline_backend')
         self.url = reverse(
             'samplesheets:export_isa',
             kwargs={'project': self.project.sodar_uuid},
@@ -975,7 +985,7 @@ class TestSheetISAExportView(SamplesheetsViewTestBase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.get('Content-Disposition'),
-            'attachment; filename="{}"'.format(self.investigation.archive_name),
+            f'attachment; filename="{self.investigation.archive_name}"',
         )
 
     def test_get_no_investigation(self):
@@ -1006,7 +1016,7 @@ class TestSheetISAExportView(SamplesheetsViewTestBase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.get('Content-Disposition'),
-            'attachment; filename="{}"'.format(filename),
+            f'attachment; filename="{filename}"',
         )
 
 
@@ -1019,7 +1029,7 @@ class TestSheetDeleteView(SamplesheetsViewTestBase):
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         # Set up helpers
-        self.cache_backend = get_backend_api('sodar_cache')
+        self.cache_backend = plugin_api.get_backend_api('sodar_cache')
         self.url = reverse(
             'samplesheets:delete',
             kwargs={'project': self.project.sodar_uuid},
@@ -1154,8 +1164,8 @@ class TestSheetVersionRestoreView(SamplesheetsViewTestBase):
             investigation_uuid=self.investigation.sodar_uuid
         )
         # Set up helpers
-        self.cache_backend = get_backend_api('sodar_cache')
-        self.timeline = get_backend_api('timeline_backend')
+        self.cache_backend = plugin_api.get_backend_api('sodar_cache')
+        self.timeline = plugin_api.get_backend_api('timeline_backend')
 
     def test_get(self):
         """Test SheetVersionRestoreView GET"""
@@ -1373,7 +1383,7 @@ class TestSheetVersionDeleteBatchView(
 class TestProjectSearchResultsView(SamplesheetsViewTestBase):
     """Tests for ProjectSearchResultsView view with sample sheet input"""
 
-    def _get_items(self, response):
+    def _get_items(self, response) -> Any:
         return response.context['app_results'][0]['results']['materials'].items
 
     def setUp(self):
@@ -1509,11 +1519,8 @@ class TestSheetVersionCompareView(SamplesheetsViewTestBase):
         """Test SheetVersionCompareView GET"""
         with self.login(self.user):
             response = self.client.get(
-                self.url
-                + '?source={}&target={}'.format(
-                    str(self.isa1.sodar_uuid),
-                    str(self.isa2.sodar_uuid),
-                )
+                self.url + f'?source={self.isa1.sodar_uuid}'
+                f'&target={self.isa2.sodar_uuid}'
             )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['source'], str(self.isa1.sodar_uuid))
@@ -1583,7 +1590,7 @@ class TestIrodsDataRequestListView(
     def test_get(self):
         """Test IrodsDataRequestListView GET"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
-        irods_request = self.make_irods_request(
+        irods_req = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
             path=IRODS_FILE_PATH,
@@ -1595,7 +1602,7 @@ class TestIrodsDataRequestListView(
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['object_list']), 1)
         context_obj = response.context['object_list'][0]
-        self.assertEqual(context_obj, irods_request)
+        self.assertEqual(context_obj, irods_req)
         self.assertEqual(
             context_obj.webdav_url, 'https://127.0.0.1' + IRODS_FILE_PATH
         )  # Ensure no extra slash is between host and iRODS path
@@ -1634,7 +1641,7 @@ class TestIrodsDataRequestListView(
         self.assertEqual(len(response.context['object_list']), 0)
 
     def test_list_empty(self):
-        """Test GET request for empty list of delete requests"""
+        """Test GET for empty list of delete requests"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         with self.login(self.user):
             response = self.client.get(self.url)
@@ -1770,7 +1777,7 @@ class TestSheetRemoteSyncView(SheetRemoteSyncTestBase):
             response = self.client.get(self.url)
         self.assertEqual(
             str(list(get_messages(response.wsgi_request))[0]),
-            '{}: {}: 401'.format(SYNC_FAIL_PREFIX, SYNC_FAIL_STATUS_CODE),
+            f'{SYNC_FAIL_PREFIX}: {SYNC_FAIL_STATUS_CODE}: 401',
         )
         self.assertEqual(self.project_target.investigations.count(), 0)
 
@@ -1786,7 +1793,7 @@ class TestSheetRemoteSyncView(SheetRemoteSyncTestBase):
             response = self.client.get(self.url)
         self.assertEqual(
             str(list(get_messages(response.wsgi_request))[0]),
-            '{}: {}'.format(SYNC_FAIL_PREFIX, SYNC_FAIL_UNSET_TOKEN),
+            f'{SYNC_FAIL_PREFIX}: {SYNC_FAIL_UNSET_TOKEN}',
         )
         self.assertEqual(self.project_target.investigations.count(), 0)
 
@@ -1802,7 +1809,7 @@ class TestSheetRemoteSyncView(SheetRemoteSyncTestBase):
             response = self.client.get(self.url)
         self.assertEqual(
             str(list(get_messages(response.wsgi_request))[0]),
-            '{}: {}'.format(SYNC_FAIL_PREFIX, SYNC_FAIL_UNSET_URL),
+            f'{SYNC_FAIL_PREFIX}: {SYNC_FAIL_UNSET_URL}',
         )
 
     def test_get_invalid_url(self):
@@ -1818,7 +1825,7 @@ class TestSheetRemoteSyncView(SheetRemoteSyncTestBase):
             response = self.client.get(self.url)
         self.assertEqual(
             str(list(get_messages(response.wsgi_request))[0]),
-            '{}: {}: {}'.format(SYNC_FAIL_PREFIX, SYNC_FAIL_INVALID_URL, url),
+            f'{SYNC_FAIL_PREFIX}: {SYNC_FAIL_INVALID_URL}: {url}',
         )
         self.assertEqual(self.project_target.investigations.count(), 0)
 
@@ -1838,7 +1845,7 @@ class TestSheetRemoteSyncView(SheetRemoteSyncTestBase):
             response = self.client.get(self.url)
         self.assertEqual(
             str(list(get_messages(response.wsgi_request))[0]),
-            '{}: {}: {}'.format(SYNC_FAIL_PREFIX, SYNC_FAIL_CONNECT, url),
+            f'{SYNC_FAIL_PREFIX}: {SYNC_FAIL_CONNECT}: {url}',
         )
 
     def test_get_no_sheet(self):
@@ -1857,5 +1864,5 @@ class TestSheetRemoteSyncView(SheetRemoteSyncTestBase):
             response = self.client.get(self.url)
         self.assertEqual(
             str(list(get_messages(response.wsgi_request))[0]),
-            '{}: {}: 404'.format(SYNC_FAIL_PREFIX, SYNC_FAIL_STATUS_CODE),
+            f'{SYNC_FAIL_PREFIX}: {SYNC_FAIL_STATUS_CODE}: 404',
         )

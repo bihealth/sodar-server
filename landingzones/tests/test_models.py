@@ -1,11 +1,13 @@
 """Tests for models in the landingzones app"""
 
+from typing import Optional
+
 from django.forms.models import model_to_dict
 
 from test_plus.test import TestCase
 
 # Projectroles dependency
-from projectroles.models import SODAR_CONSTANTS
+from projectroles.models import Project, SODARUser, SODAR_CONSTANTS
 from projectroles.tests.test_models import (
     ProjectMixin,
     RoleMixin,
@@ -13,14 +15,10 @@ from projectroles.tests.test_models import (
 )
 
 # Samplesheets dependency
+from samplesheets.models import Assay
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
-from landingzones.constants import (
-    DEFAULT_STATUS_INFO,
-    ZONE_STATUS_CREATING,
-    ZONE_STATUS_ACTIVE,
-    ZONE_STATUS_MOVING,
-)
+import landingzones.constants as lc
 from landingzones.models import LandingZone
 
 
@@ -37,7 +35,7 @@ SHEET_PATH = SHEET_DIR + 'i_small.zip'
 ZONE_TITLE = '20180503_1724_test_zone'
 ZONE_DESC = 'description'
 ZONE_MSG = 'user message'
-ZONE_STATUS_INFO_INIT = DEFAULT_STATUS_INFO[ZONE_STATUS_CREATING]
+ZONE_STATUS_INFO_INIT = lc.DEFAULT_STATUS_INFO[lc.ZONE_STATUS_CREATING]
 
 
 class LandingZoneMixin:
@@ -49,16 +47,17 @@ class LandingZoneMixin:
     @classmethod
     def make_landing_zone(
         cls,
-        title,
-        project,
-        user,
-        assay,
-        description='',
-        user_message='',
-        status=ZONE_STATUS_CREATING,
-        configuration=None,
-        config_data={},
-    ):
+        title: str,
+        project: Project,
+        user: SODARUser,
+        assay: Assay,
+        description: str = '',
+        user_message: str = '',
+        status: str = lc.ZONE_STATUS_CREATING,
+        configuration: Optional[str] = None,
+        config_data: dict = {},
+        coll_creation: str = lc.ZONE_COLLS_NONE,
+    ) -> LandingZone:
         values = {
             'title': title,
             'project': project,
@@ -67,13 +66,12 @@ class LandingZoneMixin:
             'description': description,
             'user_message': user_message,
             'status': status,
-            'status_info': DEFAULT_STATUS_INFO[status],
+            'status_info': lc.DEFAULT_STATUS_INFO[status],
             'configuration': configuration,
             'config_data': config_data,
+            'coll_creation': coll_creation,
         }
-        result = LandingZone(**values)
-        result.save()
-        return result
+        return LandingZone.objects.create(**values)
 
 
 class TestLandingZone(
@@ -112,6 +110,7 @@ class TestLandingZone(
             user_message=ZONE_MSG,
             configuration=None,
             config_data={},
+            coll_creation=lc.ZONE_COLLS_NONE,
         )
 
     def test_initialization(self):
@@ -126,7 +125,8 @@ class TestLandingZone(
             'user_message': ZONE_MSG,
             'configuration': None,
             'config_data': {},
-            'status': ZONE_STATUS_CREATING,
+            'coll_creation': lc.ZONE_COLLS_NONE,
+            'status': lc.ZONE_STATUS_CREATING,
             'status_info': ZONE_STATUS_INFO_INIT,
             'sodar_uuid': self.landing_zone.sodar_uuid,
         }
@@ -134,10 +134,9 @@ class TestLandingZone(
 
     def test__str__(self):
         """Test LandingZone __str__ rendering"""
-        expected = '{}: {}/{}'.format(
-            self.landing_zone.project.title,
-            self.landing_zone.user.username,
-            self.landing_zone.title,
+        expected = (
+            f'{self.landing_zone.project.title}: '
+            f'{self.landing_zone.user.username}/{self.landing_zone.title}'
         )
         self.assertEqual(str(self.landing_zone), expected)
 
@@ -149,9 +148,31 @@ class TestLandingZone(
         )
         self.assertEqual(repr(self.landing_zone), expected)
 
+    def test_init_coll_creation_restrict(self):
+        """Test initialization with coll_creation set to restrict"""
+        zone = self.make_landing_zone(
+            title=ZONE_TITLE + '_new',
+            project=self.project,
+            user=self.user_owner,
+            assay=self.assay,
+            coll_creation=lc.ZONE_COLLS_RESTRICT,
+        )
+        self.assertEqual(zone.coll_creation, lc.ZONE_COLLS_RESTRICT)
+
+    def test_init_coll_creation_invalid(self):
+        """Test initialization with invalid coll_creation value"""
+        with self.assertRaises(ValueError):
+            self.make_landing_zone(
+                title=ZONE_TITLE + '_new',
+                project=self.project,
+                user=self.user_owner,
+                assay=self.assay,
+                coll_creation='INVALID_STRING',
+            )
+
     def test_set_status(self):
         """Test set_status() with status and status_info"""
-        status = ZONE_STATUS_ACTIVE
+        status = lc.ZONE_STATUS_ACTIVE
         status_info = 'ok'
         self.assertNotEqual(self.landing_zone.status, status)
         self.assertNotEqual(self.landing_zone.status_info, status_info)
@@ -162,8 +183,8 @@ class TestLandingZone(
 
     def test_set_status_no_info(self):
         """Test set_status() without status_info"""
-        status = ZONE_STATUS_ACTIVE
-        status_info = DEFAULT_STATUS_INFO[status]
+        status = lc.ZONE_STATUS_ACTIVE
+        status_info = lc.DEFAULT_STATUS_INFO[status]
         self.assertNotEqual(self.landing_zone.status, status)
         self.assertNotEqual(self.landing_zone.status_info, status_info)
         self.landing_zone.set_status(status)
@@ -183,15 +204,15 @@ class TestLandingZone(
 
     def test_is_locked_true(self):
         """Test is_locked() with MOVING status"""
-        self.landing_zone.status = ZONE_STATUS_MOVING
+        self.landing_zone.status = lc.ZONE_STATUS_MOVING
         self.assertEqual(self.landing_zone.is_locked(), True)
 
     def test_can_display_files_true(self):
         """Test can_display_files() with a valid zone status"""
-        self.landing_zone.status = ZONE_STATUS_ACTIVE
+        self.landing_zone.status = lc.ZONE_STATUS_ACTIVE
         self.assertEqual(self.landing_zone.can_display_files(), True)
 
     def test_can_display_files_false(self):
         """Test display_files() with an invalid zone status"""
-        self.landing_zone.status = ZONE_STATUS_CREATING
+        self.landing_zone.status = lc.ZONE_STATUS_CREATING
         self.assertEqual(self.landing_zone.can_display_files(), False)

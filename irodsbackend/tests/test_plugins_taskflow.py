@@ -1,6 +1,6 @@
 """Tests for plugins in the irodsbackend app with Taskflow enabled"""
 
-import os
+from irods.path import iRODSPath
 
 from django.conf import settings
 
@@ -32,16 +32,14 @@ class TestGetStatistics(TaskflowViewTestBase):
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
-            public_guest_access=False,
         )
         # Set up test collection
-        self.test_path = os.path.join(
+        self.test_path = iRODSPath(
             self.irods_backend.get_path(self.project), TEST_COLL
         )
         self.test_coll = self.irods.collections.create(self.test_path)
         # Set up rods user trash collection if not there
-        self.trash_path = os.path.join(
+        self.trash_path = iRODSPath(
             self.irods_backend.get_trash_path(), 'home', settings.IRODS_USER
         )
         if not self.irods.collections.exists(self.trash_path):

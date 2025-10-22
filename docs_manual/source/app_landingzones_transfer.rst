@@ -256,6 +256,23 @@ operation.
     This information is currently available for project owners and delegates.
 
 
+.. _app_landingzones_transfer_verify:
+
+Zone Move Verification
+======================
+
+If enabled on your SODAR instance by administrators, the files may still be
+verified after a successful landing zone move. This is done to double check file
+integrity once the data has been moved to their permanent storage position. This
+happens silently in the background and the results can be seen in the project
+timeline as a :guilabel:`Zone Verify` event. You can access your files while
+verification is running.
+
+In the unlikely situation an issue is detected with the files, you will receive
+a UI alert and/or an email. This depends on how landing zone alerts have been
+have configured in your :ref:`user profile <ui_user_profile>`.
+
+
 Landing Zone Deletion
 =====================
 
@@ -266,3 +283,33 @@ along with all associated files in iRODS will be deleted.
 .. warning::
 
     Deleting a landing zone can **not** be undone!
+
+.. hint::
+
+    As with landing zone moving, the list of files deleted along with the
+    landing zone can be seen in the "extra data" modal for the related timeline
+    event. This information is currently available for project owners and
+    delegates.
+
+
+.. _app_landingzones_transfer_reset:
+
+Landing Zone Reset
+==================
+
+In some cases, issues in the server environment or network may cause the landing
+zone to get stuck in a busy state. In such a case, the zone state can be reset
+by an administrator. This will reset landing zone iRODS user access back to its
+owner and the project owner group, as well as set its status as ``ACTIVE``,
+making the zone available for further actions.
+
+This can be done from the zone dropdown in the SODAR UI under
+:guilabel:`Reset Zone`. Alternatively, the following management command can be
+used:
+
+.. code-block:: bash
+
+    $ ./manage.py resetzone -z {ZONE_UUID}
+
+As these actions require administrator access, you should contact the admins of
+your SODAR instance to request a reset.

@@ -3,12 +3,13 @@
 import uuid
 
 from django.core.management import call_command
+from django.db.models import QuerySet
 
 from test_plus.test import TestCase
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.tests.test_models import (
     ProjectMixin,
     RoleMixin,
@@ -25,7 +26,7 @@ from samplesheets.management.commands.normalizesheets import (
     LIB_NAME,
     LIB_NAME_REPLACE,
 )
-from samplesheets.models import GenericMaterial, ISATab
+from samplesheets.models import Assay, GenericMaterial, ISATab
 from samplesheets.rendering import (
     SampleSheetTableBuilder,
     STUDY_TABLE_CACHE_ITEM,
@@ -38,6 +39,9 @@ from samplesheets.tests.test_io import (
 from samplesheets.utils import get_alt_names
 
 
+plugin_api = PluginAPI()
+
+
 # Local constants
 APP_NAME = 'samplesheets'
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
@@ -46,19 +50,23 @@ SHEET_PATH_ALT = SHEET_DIR + 'i_small2.zip'
 ALT_NAMES_INVALID = ['XXX', 'YYY', 'ZZZ']
 
 
-class TestNormalizesheets(
+class TestNormalizeSheets(
     ProjectMixin, RoleMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase
 ):
     """Tests for the normalizesheets command"""
 
-    def _assert_material_header(self, materials, header, expected):
+    def _assert_material_header(
+        self, materials: QuerySet[GenericMaterial], header: str, expected: int
+    ):
         """Assert count of materials which contain a specific header name"""
         self.assertEqual(
             materials.filter(headers__icontains=header).count(),
             expected,
         )
 
-    def _assert_study_table_header(self, study_tables, assay, header, expected):
+    def _assert_study_table_header(
+        self, study_tables: dict, assay: Assay, header: str, expected: int
+    ):
         """
         Assert count of assay table headers which contain a specific header
         name.
@@ -78,7 +86,7 @@ class TestNormalizesheets(
             expected,
         )
 
-    def _assert_tl_event(self, expected):
+    def _assert_tl_event(self, expected: int):
         self.assertEqual(
             TimelineEvent.objects.filter(
                 event_name='sheet_normalize', project=self.project
@@ -104,7 +112,7 @@ class TestNormalizesheets(
         self.assay = self.study.assays.first()
         # Set up study tables in cache
         self.tb = SampleSheetTableBuilder()
-        self.cache_backend = get_backend_api('sodar_cache')
+        self.cache_backend = plugin_api.get_backend_api('sodar_cache')
         self.cache_name = STUDY_TABLE_CACHE_ITEM.format(
             study=self.study.sodar_uuid
         )
@@ -174,7 +182,7 @@ class TestNormalizesheets(
         self._assert_tl_event(0)
 
 
-class TestSyncnames(
+class TestSyncNames(
     ProjectMixin, RoleMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase
 ):
     """Tests for the syncnames command"""
@@ -208,7 +216,7 @@ class TestSyncnames(
             self.assertEqual(m.alt_names, get_alt_names(m.name))
 
 
-class TestSyncstudytables(
+class TestSyncStudyTables(
     ProjectMixin, RoleMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase
 ):
     """Tests for the syncstudytables command"""
@@ -249,7 +257,7 @@ class TestSyncstudytables(
         )
         self.cache_args = [APP_NAME, self.cache_name, self.project]
         self.cache_args2 = [APP_NAME, self.cache_name2, self.project2]
-        self.cache_backend = get_backend_api('sodar_cache')
+        self.cache_backend = plugin_api.get_backend_api('sodar_cache')
 
     def test_sync_all(self):
         """Test syncstudytables for all projects"""
@@ -281,9 +289,8 @@ class TestSyncstudytables(
         self.assertIsInstance(cache_item2, JSONCacheItem)
         self.assertNotEqual(cache_item2.data, {})
 
-    def test_sync_limit(self):
+    def test_sync_limit_project(self):
         """Test syncstudytables limiting for single project"""
-        self.assertEqual(JSONCacheItem.objects.count(), 0)
         call_command('syncstudytables', project=str(self.project.sodar_uuid))
         self.assertEqual(JSONCacheItem.objects.count(), 1)
         cache_item = self.cache_backend.get_cache_item(*self.cache_args)
@@ -294,7 +301,18 @@ class TestSyncstudytables(
 
     def test_sync_limit_invalid_project(self):
         """Test syncstudytables limiting for non-existent project"""
-        self.assertEqual(JSONCacheItem.objects.count(), 0)
         invalid_uuid = uuid.uuid4()
         call_command('syncstudytables', project=str(invalid_uuid))
+        self.assertEqual(JSONCacheItem.objects.count(), 0)
+
+    def test_sync_check(self):
+        """Test syncstudytables with check mode"""
+        call_command('syncstudytables', check=True)
+        self.assertEqual(JSONCacheItem.objects.count(), 0)
+
+    def test_sync_check_limit_project(self):
+        """Test syncstudytables with check mode and project limit"""
+        call_command(
+            'syncstudytables', check=True, project=str(self.project.sodar_uuid)
+        )
         self.assertEqual(JSONCacheItem.objects.count(), 0)

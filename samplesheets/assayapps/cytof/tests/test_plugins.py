@@ -4,6 +4,8 @@ import os
 
 from copy import deepcopy
 
+from irods.path import iRODSPath
+
 from samplesheets.assayapps.tests.base import AssayPluginTestBase
 from samplesheets.rendering import SIMPLE_LINK_TEMPLATE
 from samplesheets.views import MISC_FILES_COLL
@@ -33,7 +35,7 @@ class TestCytofAssayPlugin(AssayPluginTestBase):
             self.assay,
             self.assay_path,
         )
-        expected = os.path.join(self.assay_path, ASSAY_NAME)
+        expected = iRODSPath(self.assay_path, ASSAY_NAME)
         self.assertEqual(row_path, expected)
 
     def test_get_row_path_default(self):

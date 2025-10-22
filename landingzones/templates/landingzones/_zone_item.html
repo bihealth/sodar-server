@@ -46,7 +46,7 @@
       </span>
       {# User badge #}
       {% if zone.user != request.user %}
-        {% get_user_badge zone.user as user_badge %}
+        {% get_user_badge zone.user extra_class='mt-1' as user_badge %}
         {{ user_badge | safe }}
       {% endif %}
       {# Configuration badge #}

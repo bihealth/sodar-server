@@ -5,7 +5,10 @@ from django.core.checks import Error, Warning, register
 
 
 # Projectroles dependency
-from projectroles.plugins import get_app_plugin
+from projectroles.plugins import PluginAPI
+
+
+plugin_api = PluginAPI()
 
 
 W001_MSG = (
@@ -40,11 +43,7 @@ E001 = Error(E001_MSG, obj=settings, id='irodsbackend.E001')
 def check_sodar_auth_oidc(app_configs, **kwargs):
     """Check if SODAR auth for iRODS is enabled for OIDC users"""
     ret = []
-    if (
-        settings.ENABLE_IRODS
-        and not settings.IRODS_SODAR_AUTH
-        and settings.ENABLE_OIDC
-    ):
+    if not settings.IRODS_SODAR_AUTH and settings.ENABLE_OIDC:
         ret.append(W001)
     return ret
 
@@ -54,8 +53,7 @@ def check_sodar_auth_local(app_configs, **kwargs):
     """Check if SODAR auth for iRODS is enabled for local users"""
     ret = []
     if (
-        settings.ENABLE_IRODS
-        and not settings.IRODS_SODAR_AUTH
+        not settings.IRODS_SODAR_AUTH
         and not settings.ENABLE_OIDC
         and not settings.ENABLE_LDAP
     ):
@@ -67,11 +65,7 @@ def check_sodar_auth_local(app_configs, **kwargs):
 def check_token_app_oidc(app_configs, **kwargs):
     """Check if tokens app is enabled for OIDC users"""
     ret = []
-    if (
-        settings.ENABLE_IRODS
-        and settings.ENABLE_OIDC
-        and not get_app_plugin('tokens')
-    ):
+    if settings.ENABLE_OIDC and not plugin_api.get_app_plugin('tokens'):
         ret.append(W003)
     return ret
 

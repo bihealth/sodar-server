@@ -1,22 +1,23 @@
 """View tests in the landingzones app with taskflow"""
 
-import os
 import time
 
-from irods.access import iRODSAccess
 from irods.exception import GroupDoesNotExist
+from irods.path import iRODSPath
 from irods.test.helpers import make_object
+from typing import Optional
 
 from django.contrib import auth
 from django.contrib.messages import get_messages
 from django.core import mail
+from django.http import HttpRequest
 from django.test import override_settings
 from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 # Appalerts dependency
 from appalerts.models import AppAlert
@@ -27,20 +28,17 @@ from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 from samplesheets.views import RESULTS_COLL, MISC_FILES_COLL, TRACK_HUBS_COLL
 
 # Taskflowbackend dependency
+from taskflowbackend.constants import (
+    IRODS_ACCESS_DELETE_OBJ,
+    IRODS_ACCESS_READ_OBJ,
+)
 from taskflowbackend.tasks.irods_tasks import NO_FILE_CHECKSUM_LABEL
-from taskflowbackend.tests.base import TaskflowViewTestBase, IRODS_ACCESS_OWN
+from taskflowbackend.tests.base import TaskflowViewTestBase
 
 # Timeline dependency
 from timeline.models import TimelineEvent, TL_STATUS_OK
 
-from landingzones.constants import (
-    ZONE_STATUS_CREATING,
-    ZONE_STATUS_ACTIVE,
-    ZONE_STATUS_MOVED,
-    ZONE_STATUS_FAILED,
-    ZONE_STATUS_VALIDATING,
-    ZONE_STATUS_DELETED,
-)
+import landingzones.constants as lc
 from landingzones.models import LandingZone
 from landingzones.tests.test_models import LandingZoneMixin
 from landingzones.views import (
@@ -51,6 +49,7 @@ from landingzones.views import (
 
 
 app_settings = AppSettingAPI()
+plugin_api = PluginAPI()
 User = auth.get_user_model()
 
 
@@ -78,15 +77,18 @@ ZONE_PLUGIN_COLLS = ['0815-N1-DNA1', '0815-T1-DNA1']
 ZONE_ALL_COLLS = ZONE_BASE_COLLS + ZONE_PLUGIN_COLLS
 RAW_DATA_COLL = 'RawData'
 MAX_QUANT_COLL = 'MaxQuantResults'
-IRODS_ACCESS_READ = 'read_object'
 
 
 class LandingZoneTaskflowMixin:
     """Taskflow helpers for landingzones tests"""
 
     def make_zone_taskflow(
-        self, zone, colls=None, restrict_colls=False, request=None
-    ):
+        self,
+        zone: LandingZone,
+        colls: Optional[list[str]] = None,
+        restrict_colls: bool = False,
+        request: HttpRequest = None,
+    ) -> LandingZone:
         """
         Create landing zone in iRODS using taskflowbackend.
 
@@ -97,9 +99,9 @@ class LandingZoneTaskflowMixin:
         :return: Updated LandingZone object
         :raise taskflow.FlowSubmitException if submit fails
         """
-        timeline = get_backend_api('timeline_backend')
+        timeline = plugin_api.get_backend_api('timeline_backend')
         user = request.user if request else zone.user
-        self.assertEqual(zone.status, ZONE_STATUS_CREATING)
+        self.assertEqual(zone.status, lc.ZONE_STATUS_CREATING)
 
         # Create timeline event to prevent taskflow failure
         tl_event = timeline.add_event(
@@ -118,6 +120,7 @@ class LandingZoneTaskflowMixin:
         }
         values = {
             'project': zone.project,
+            'user': request.user if request else None,
             'flow_name': 'landing_zone_create',
             'flow_data': flow_data,
             'async_mode': True,
@@ -125,10 +128,12 @@ class LandingZoneTaskflowMixin:
         }
         self.taskflow.submit(**values)
 
-        self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
+        self.assert_zone_status(zone, lc.ZONE_STATUS_ACTIVE)
         return zone
 
-    def assert_zone_status(self, zone, status=ZONE_STATUS_ACTIVE):
+    def assert_zone_status(
+        self, zone: LandingZone, status: str = lc.ZONE_STATUS_ACTIVE
+    ):
         """
         Assert status of landing zone(s) after waiting for async taskflow
         operation to finish.
@@ -141,11 +146,9 @@ class LandingZoneTaskflowMixin:
             if zone.status == status:
                 return True
             time.sleep(ASYNC_WAIT_SECONDS)
-        raise AssertionError(
-            'Timed out waiting for zone status "{}"'.format(status)
-        )
+        raise AssertionError(f'Timed out waiting for zone status "{status}"')
 
-    def assert_zone_count(self, count):
+    def assert_zone_count(self, count: int):
         """
         Assert landing zone count after waiting for async taskflow
         operation to finish.
@@ -156,9 +159,7 @@ class LandingZoneTaskflowMixin:
             if LandingZone.objects.count() == count:
                 return True
             time.sleep(ASYNC_WAIT_SECONDS)
-        raise AssertionError(
-            'Timed out waiting for zone count of {}'.format(count)
-        )
+        raise AssertionError(f'Timed out waiting for zone count of {count}')
 
 
 class TestProjectZoneView(
@@ -178,7 +179,6 @@ class TestProjectZoneView(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
@@ -216,7 +216,6 @@ class TestZoneCreateView(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
@@ -239,8 +238,7 @@ class TestZoneCreateView(
             'title_suffix': ZONE_SUFFIX,
             'description': ZONE_DESC,
             'configuration': '',
-            'create_colls': False,
-            'restrict_colls': False,
+            'coll_creation': lc.ZONE_COLLS_NONE,
         }
 
     def test_post(self):
@@ -257,8 +255,9 @@ class TestZoneCreateView(
 
         self.assert_zone_count(1)
         zone = LandingZone.objects.first()
-        self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
+        self.assert_zone_status(zone, lc.ZONE_STATUS_ACTIVE)
         self.assert_irods_coll(zone)
+        self.assertEqual(zone.coll_creation, lc.ZONE_COLLS_NONE)
         for c in ZONE_BASE_COLLS:
             self.assert_irods_coll(zone, c, False)
         tl_event = TimelineEvent.objects.filter(
@@ -268,11 +267,11 @@ class TestZoneCreateView(
             'title': zone.title,
             'assay': str(zone.assay.sodar_uuid),
             'description': ZONE_DESC,
-            'create_colls': False,
-            'restrict_colls': False,
+            'coll_creation': lc.ZONE_COLLS_NONE,
             'user_message': '',
             'configuration': None,
             'config_data': {},
+            'sodar_uuid': str(zone.sodar_uuid),
         }
         self.assertEqual(tl_event.extra_data, expected_extra)
         self.assertEqual(len(mail.outbox), 1)
@@ -280,11 +279,13 @@ class TestZoneCreateView(
         self.assert_group_member(self.project, self.user, True, True)
         self.assert_group_member(self.project, self.user_owner_cat, True, True)
         root_coll = self.irods.collections.get(self.zone_root_path)
-        self.assert_irods_access(self.owner_group, root_coll, IRODS_ACCESS_READ)
+        self.assert_irods_access(
+            self.owner_group, root_coll, IRODS_ACCESS_READ_OBJ
+        )
         zone_path = self.irods_backend.get_path(zone)
         zone_coll = self.irods.collections.get(zone_path)
         self.assert_irods_access(
-            self.user.username, zone_coll, IRODS_ACCESS_OWN
+            self.user.username, zone_coll, IRODS_ACCESS_DELETE_OBJ
         )
 
     def test_post_no_owner_group(self):
@@ -304,7 +305,7 @@ class TestZoneCreateView(
 
         self.assert_zone_count(1)
         zone = LandingZone.objects.first()
-        self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
+        self.assert_zone_status(zone, lc.ZONE_STATUS_ACTIVE)
         self.assert_irods_coll(zone)
         for c in ZONE_BASE_COLLS:
             self.assert_irods_coll(zone, c, False)
@@ -312,28 +313,32 @@ class TestZoneCreateView(
         self.assertIsNotNone(self.irods.user_groups.get(self.owner_group))
         self.assert_group_member(self.project, self.user, True, True)
         self.assert_group_member(self.project, self.user_owner_cat, True, True)
-        self.assert_irods_access(self.owner_group, root_coll, IRODS_ACCESS_READ)
+        self.assert_irods_access(
+            self.owner_group, root_coll, IRODS_ACCESS_READ_OBJ
+        )
         zone_path = self.irods_backend.get_path(zone)
         zone_coll = self.irods.collections.get(zone_path)
         self.assert_irods_access(
-            self.user.username, zone_coll, IRODS_ACCESS_OWN
+            self.user.username, zone_coll, IRODS_ACCESS_DELETE_OBJ
         )
 
     def test_post_colls(self):
         """Test POST with default collections"""
         self.assertEqual(LandingZone.objects.count(), 0)
-        self.post_data['create_colls'] = True
+        self.post_data['coll_creation'] = lc.ZONE_COLLS_CREATE
         with self.login(self.user):
             self.client.post(self.url, self.post_data)
 
         self.assert_zone_count(1)
         zone = LandingZone.objects.first()
-        self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
+        self.assert_zone_status(zone, lc.ZONE_STATUS_ACTIVE)
+        self.assertEqual(zone.coll_creation, lc.ZONE_COLLS_CREATE)
         tl_event = TimelineEvent.objects.filter(
             event_name='zone_create'
         ).first()
-        self.assertEqual(tl_event.extra_data['create_colls'], True)
-        self.assertEqual(tl_event.extra_data['restrict_colls'], False)
+        self.assertEqual(
+            tl_event.extra_data['coll_creation'], lc.ZONE_COLLS_CREATE
+        )
         self.assert_irods_coll(zone)
         for c in ZONE_BASE_COLLS:
             self.assert_irods_coll(zone, c, True)
@@ -341,14 +346,18 @@ class TestZoneCreateView(
             self.assert_irods_coll(zone, c, False)
         zone_path = self.irods_backend.get_path(zone)
         self.assert_irods_access(
-            self.user.username, zone_path, IRODS_ACCESS_OWN
+            self.user.username, zone_path, IRODS_ACCESS_DELETE_OBJ
         )
         for c in ZONE_BASE_COLLS:
             self.assert_irods_access(
-                self.user.username, os.path.join(zone_path, c), IRODS_ACCESS_OWN
+                self.user.username,
+                iRODSPath(zone_path, c),
+                IRODS_ACCESS_DELETE_OBJ,
             )
             self.assert_irods_access(
-                self.owner_group, os.path.join(zone_path, c), IRODS_ACCESS_OWN
+                self.owner_group,
+                iRODSPath(zone_path, c),
+                IRODS_ACCESS_DELETE_OBJ,
             )
 
     def test_post_colls_plugin(self):
@@ -362,31 +371,33 @@ class TestZoneCreateView(
         plugin = self.assay.get_plugin()
         self.assertIsNotNone(plugin)
         plugin.update_cache(
-            'irods/rows/{}'.format(self.assay.sodar_uuid),
-            self.project,
-            self.user,
+            f'irods/rows/{self.assay.sodar_uuid}', self.project, self.user
         )
 
-        self.post_data['create_colls'] = True
+        self.post_data['coll_creation'] = lc.ZONE_COLLS_CREATE
         with self.login(self.user):
             self.client.post(self.url, self.post_data)
 
         self.assert_zone_count(1)
         zone = LandingZone.objects.first()
-        self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
+        self.assert_zone_status(zone, lc.ZONE_STATUS_ACTIVE)
         self.assert_irods_coll(zone)
         for c in ZONE_ALL_COLLS:
             self.assert_irods_coll(zone, c, True)
         zone_path = self.irods_backend.get_path(zone)
         self.assert_irods_access(
-            self.user.username, zone_path, IRODS_ACCESS_OWN
+            self.user.username, zone_path, IRODS_ACCESS_DELETE_OBJ
         )
         for c in ZONE_ALL_COLLS:
             self.assert_irods_access(
-                self.user.username, os.path.join(zone_path, c), IRODS_ACCESS_OWN
+                self.user.username,
+                iRODSPath(zone_path, c),
+                IRODS_ACCESS_DELETE_OBJ,
             )
             self.assert_irods_access(
-                self.owner_group, os.path.join(zone_path, c), IRODS_ACCESS_OWN
+                self.owner_group,
+                iRODSPath(zone_path, c),
+                IRODS_ACCESS_DELETE_OBJ,
             )
         # These should not be created for this plugin
         for c in [MAX_QUANT_COLL, RAW_DATA_COLL]:
@@ -401,13 +412,13 @@ class TestZoneCreateView(
         self.assay.save()
         # NOTE: update_cache() not implemented in this plugin
 
-        self.post_data['create_colls'] = True
+        self.post_data['coll_creation'] = lc.ZONE_COLLS_CREATE
         with self.login(self.user):
             self.client.post(self.url, self.post_data)
 
         self.assert_zone_count(1)
         zone = LandingZone.objects.first()
-        self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
+        self.assert_zone_status(zone, lc.ZONE_STATUS_ACTIVE)
         zone_colls = ZONE_BASE_COLLS + [RAW_DATA_COLL, MAX_QUANT_COLL]
         for c in zone_colls:
             self.assert_irods_coll(zone, c, True)
@@ -427,34 +438,36 @@ class TestZoneCreateView(
         plugin = self.assay.get_plugin()
         self.assertIsNotNone(plugin)
         plugin.update_cache(
-            'irods/rows/{}'.format(self.assay.sodar_uuid),
-            self.project,
-            self.user,
+            f'irods/rows/{self.assay.sodar_uuid}', self.project, self.user
         )
 
-        self.post_data['create_colls'] = True
-        self.post_data['restrict_colls'] = True
+        self.post_data['coll_creation'] = lc.ZONE_COLLS_RESTRICT
         with self.login(self.user):
             self.client.post(self.url, self.post_data)
 
         self.assert_zone_count(1)
         zone = LandingZone.objects.first()
-        self.assert_zone_status(zone, ZONE_STATUS_ACTIVE)
+        self.assert_zone_status(zone, lc.ZONE_STATUS_ACTIVE)
+        self.assertEqual(zone.coll_creation, lc.ZONE_COLLS_RESTRICT)
         self.assert_irods_coll(zone)
         zone_path = self.irods_backend.get_path(zone)
         # Read access to root path
         self.assert_irods_access(
-            self.user.username, zone_path, self.irods_access_read
+            self.user.username, zone_path, IRODS_ACCESS_READ_OBJ
         )
         self.assert_irods_access(
-            self.owner_group, zone_path, self.irods_access_read
+            self.owner_group, zone_path, IRODS_ACCESS_READ_OBJ
         )
         for c in ZONE_ALL_COLLS:
             self.assert_irods_access(
-                self.user.username, os.path.join(zone_path, c), IRODS_ACCESS_OWN
+                self.user.username,
+                iRODSPath(zone_path, c),
+                IRODS_ACCESS_DELETE_OBJ,
             )
             self.assert_irods_access(
-                self.owner_group, os.path.join(zone_path, c), IRODS_ACCESS_OWN
+                self.owner_group,
+                iRODSPath(zone_path, c),
+                IRODS_ACCESS_DELETE_OBJ,
             )
 
     @override_settings(LANDINGZONES_ZONE_CREATE_LIMIT=1)
@@ -465,7 +478,7 @@ class TestZoneCreateView(
             project=self.project,
             user=self.user,
             assay=self.assay,
-            status=ZONE_STATUS_ACTIVE,
+            status=lc.ZONE_STATUS_ACTIVE,
         )
         self.assertEqual(LandingZone.objects.count(), 1)
         with self.login(self.user):
@@ -485,7 +498,7 @@ class TestZoneCreateView(
             project=self.project,
             user=self.user,
             assay=self.assay,
-            status=ZONE_STATUS_MOVED,
+            status=lc.ZONE_STATUS_MOVED,
         )
         self.assertEqual(LandingZone.objects.count(), 1)
         with self.login(self.user):
@@ -505,7 +518,7 @@ class TestZoneMoveView(
 
     def setUp(self):
         super().setUp()
-        self.timeline = get_backend_api('timeline_backend')
+        self.timeline = plugin_api.get_backend_api('timeline_backend')
         self.user_owner = self.make_user('user_owner')
         # Make project with owner in Taskflow and Django
         self.project, self.owner_as = self.make_project_taskflow(
@@ -513,7 +526,6 @@ class TestZoneMoveView(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user_owner,
-            description='description',
         )
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
@@ -559,7 +571,7 @@ class TestZoneMoveView(
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         self.make_checksum_object(irods_obj)
         zone = LandingZone.objects.first()
-        self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(zone.status, lc.ZONE_STATUS_ACTIVE)
         with self.login(self.user):
             response = self.client.get(self.url_move)
         self.assertEqual(response.status_code, 200)
@@ -568,12 +580,12 @@ class TestZoneMoveView(
         """Test POST to move landing zone with objects"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         self.make_checksum_object(irods_obj)
-        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(self.zone.status, lc.ZONE_STATUS_ACTIVE)
         self.assert_irods_access(
-            self.owner_group, self.zone_path, IRODS_ACCESS_OWN
+            self.owner_group, self.zone_path, IRODS_ACCESS_DELETE_OBJ
         )
         self.assert_irods_access(
-            self.user_owner.username, self.zone_path, IRODS_ACCESS_OWN
+            self.user_owner.username, self.zone_path, IRODS_ACCESS_DELETE_OBJ
         )
         self.assert_irods_access(self.user.username, self.zone_path, None)
         self.assert_irods_access(self.project_group, self.zone_path, None)
@@ -588,14 +600,14 @@ class TestZoneMoveView(
             response = self.client.post(self.url_move)
             self.assertRedirects(response, self.url_redirect)
 
-        self.assert_zone_status(self.zone, ZONE_STATUS_MOVED)
+        self.assert_zone_status(self.zone, lc.ZONE_STATUS_MOVED)
         self.assertEqual(len(self.zone_coll.data_objects), 0)
         self.assertEqual(len(self.assay_coll.data_objects), 2)
-        obj_path = os.path.join(self.assay_path, TEST_OBJ_NAME)
+        obj_path = iRODSPath(self.assay_path, TEST_OBJ_NAME)
         self.assert_irods_access(self.owner_group, obj_path, None)
         self.assert_irods_access(self.user.username, obj_path, None)
         self.assert_irods_access(
-            self.project_group, obj_path, IRODS_ACCESS_READ
+            self.project_group, obj_path, IRODS_ACCESS_READ_OBJ
         )
         # Mails to owner and category owner
         self.assertEqual(len(mail.outbox), mail_count + 2)
@@ -615,7 +627,7 @@ class TestZoneMoveView(
         self.user_owner.save()
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         self.make_checksum_object(irods_obj)
-        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(self.zone.status, lc.ZONE_STATUS_ACTIVE)
         mail_count = len(mail.outbox)
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_move').count(), 0
@@ -623,7 +635,7 @@ class TestZoneMoveView(
         with self.login(self.user):
             response = self.client.post(self.url_move)
             self.assertRedirects(response, self.url_redirect)
-        self.assert_zone_status(self.zone, ZONE_STATUS_MOVED)
+        self.assert_zone_status(self.zone, lc.ZONE_STATUS_MOVED)
         # No mail to owner
         self.assertEqual(len(mail.outbox), mail_count + 1)
         self.assertEqual(
@@ -632,7 +644,7 @@ class TestZoneMoveView(
 
     def test_post_move_no_files(self):
         """Test POST to move landing zone without objects"""
-        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(self.zone.status, lc.ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 0)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(
@@ -651,7 +663,7 @@ class TestZoneMoveView(
         """Test POST with invalid checksum in file (should fail)"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         make_object(self.irods, irods_obj.path + '.md5', INVALID_MD5)
-        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(self.zone.status, lc.ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         mail_count = len(mail.outbox)
@@ -663,14 +675,14 @@ class TestZoneMoveView(
             response = self.client.post(self.url_move)
             self.assertRedirects(response, self.url_redirect)
 
-        self.assert_zone_status(self.zone, ZONE_STATUS_FAILED)
+        self.assert_zone_status(self.zone, lc.ZONE_STATUS_FAILED)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assert_irods_access(
-            self.owner_group, self.zone_path, IRODS_ACCESS_OWN
+            self.owner_group, self.zone_path, IRODS_ACCESS_DELETE_OBJ
         )
         self.assert_irods_access(
-            self.user_owner.username, self.zone_path, IRODS_ACCESS_OWN
+            self.user_owner.username, self.zone_path, IRODS_ACCESS_DELETE_OBJ
         )
         self.assert_irods_access(self.user.username, self.zone_path, None)
         self.assert_irods_access(self.project_group, self.zone_path, None)
@@ -685,7 +697,7 @@ class TestZoneMoveView(
         """Test POST without checksum file (should fail)"""
         self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         # No checksum file
-        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(self.zone.status, lc.ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 1)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(
@@ -694,7 +706,7 @@ class TestZoneMoveView(
         with self.login(self.user):
             response = self.client.post(self.url_move)
             self.assertRedirects(response, self.url_redirect)
-        self.assert_zone_status(self.zone, ZONE_STATUS_FAILED)
+        self.assert_zone_status(self.zone, lc.ZONE_STATUS_FAILED)
         self.assertEqual(len(self.zone_coll.data_objects), 1)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(
@@ -705,7 +717,7 @@ class TestZoneMoveView(
         """Test POST to move with invalid zone status (should fail)"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         self.make_checksum_object(irods_obj)
-        self.zone.status = ZONE_STATUS_VALIDATING
+        self.zone.status = lc.ZONE_STATUS_VALIDATING
         self.zone.save()
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
@@ -725,7 +737,7 @@ class TestZoneMoveView(
             str(list(get_messages(response.wsgi_request))[0]),
             ZONE_MOVE_INVALID_STATUS,
         )
-        self.assert_zone_status(self.zone, ZONE_STATUS_VALIDATING)
+        self.assert_zone_status(self.zone, lc.ZONE_STATUS_VALIDATING)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(len(mail.outbox), mail_count)
@@ -740,7 +752,7 @@ class TestZoneMoveView(
         self.lock_project(self.project)
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         self.make_checksum_object(irods_obj)
-        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(self.zone.status, lc.ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         mail_count = len(mail.outbox)
@@ -755,7 +767,7 @@ class TestZoneMoveView(
             response = self.client.post(self.url_move)
             self.assertRedirects(response, self.url_redirect)
 
-        self.assert_zone_status(self.zone, ZONE_STATUS_FAILED)
+        self.assert_zone_status(self.zone, lc.ZONE_STATUS_FAILED)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(len(mail.outbox), mail_count)
@@ -772,7 +784,7 @@ class TestZoneMoveView(
         """Test POST to move with project lock failure"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         self.make_checksum_object(irods_obj)
-        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(self.zone.status, lc.ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         mail_count = len(mail.outbox)
@@ -787,7 +799,7 @@ class TestZoneMoveView(
             response = self.client.post(self.url_move)
             self.assertRedirects(response, self.url_redirect)
 
-        self.assert_zone_status(self.zone, ZONE_STATUS_FAILED)
+        self.assert_zone_status(self.zone, lc.ZONE_STATUS_FAILED)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         # TODO: Should this send email?
@@ -811,7 +823,7 @@ class TestZoneMoveView(
             user=self.user_owner,
             assay=self.assay,
             description=ZONE_DESC,
-            status=ZONE_STATUS_CREATING,
+            status=lc.ZONE_STATUS_CREATING,
         )
         self.make_zone_taskflow(
             zone=zone,
@@ -820,11 +832,11 @@ class TestZoneMoveView(
         )
         new_zone_path = self.irods_backend.get_path(zone)
         zone_results_coll = self.irods.collections.get(
-            os.path.join(new_zone_path, RESULTS_COLL)
+            iRODSPath(new_zone_path, RESULTS_COLL)
         )
         irods_obj = self.make_irods_object(zone_results_coll, TEST_OBJ_NAME)
         self.make_checksum_object(irods_obj)
-        self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(zone.status, lc.ZONE_STATUS_ACTIVE)
         self.assertEqual(len(zone_results_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         mail_count = len(mail.outbox)
@@ -839,9 +851,9 @@ class TestZoneMoveView(
             response = self.client.post(url)
             self.assertRedirects(response, self.url_redirect)
 
-        self.assert_zone_status(zone, ZONE_STATUS_MOVED)
+        self.assert_zone_status(zone, lc.ZONE_STATUS_MOVED)
         self.assertEqual(len(zone_results_coll.data_objects), 0)
-        assay_results_path = os.path.join(self.sample_path, RESULTS_COLL)
+        assay_results_path = iRODSPath(self.sample_path, RESULTS_COLL)
         assay_results_coll = self.irods.collections.get(assay_results_path)
         self.assertEqual(len(assay_results_coll.data_objects), 2)
         # Mails to owner & category owner
@@ -849,16 +861,16 @@ class TestZoneMoveView(
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_move').count(), 1
         )
-        sample_obj_path = os.path.join(assay_results_path, TEST_OBJ_NAME)
+        sample_obj_path = iRODSPath(assay_results_path, TEST_OBJ_NAME)
         self.assert_irods_access(
             self.project_group,
             sample_obj_path,
-            self.irods_access_read,
+            IRODS_ACCESS_READ_OBJ,
         )
         self.assert_irods_access(
             self.project_group,
             sample_obj_path + '.md5',
-            self.irods_access_read,
+            IRODS_ACCESS_READ_OBJ,
         )
 
     @override_settings(LANDINGZONES_ZONE_VALIDATE_LIMIT=1)
@@ -869,11 +881,11 @@ class TestZoneMoveView(
             project=self.project,
             user=self.user_owner,
             assay=self.assay,
-            status=ZONE_STATUS_VALIDATING,
+            status=lc.ZONE_STATUS_VALIDATING,
         )
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         self.make_checksum_object(irods_obj)
-        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(self.zone.status, lc.ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         with self.login(self.user):
@@ -883,7 +895,7 @@ class TestZoneMoveView(
             list(get_messages(response.wsgi_request))[0].message,
             ZONE_VALIDATE_LIMIT_MSG + '.',
         )
-        self.assert_zone_status(self.zone, ZONE_STATUS_ACTIVE)  # No fail
+        self.assert_zone_status(self.zone, lc.ZONE_STATUS_ACTIVE)  # No fail
         # Nothing moved either
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
@@ -899,17 +911,17 @@ class TestZoneMoveView(
             project=new_project,
             user=self.user_owner,
             assay=self.assay,
-            status=ZONE_STATUS_VALIDATING,
+            status=lc.ZONE_STATUS_VALIDATING,
         )
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         self.make_checksum_object(irods_obj)
-        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(self.zone.status, lc.ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         with self.login(self.user):
             response = self.client.post(self.url_move)
             self.assertRedirects(response, self.url_redirect)
-        self.assert_zone_status(self.zone, ZONE_STATUS_MOVED)
+        self.assert_zone_status(self.zone, lc.ZONE_STATUS_MOVED)
         self.assertEqual(len(self.zone_coll.data_objects), 0)
         self.assertEqual(len(self.assay_coll.data_objects), 2)
 
@@ -921,110 +933,50 @@ class TestZoneMoveView(
             project=self.project,
             user=self.user_owner,
             assay=self.assay,
-            status=ZONE_STATUS_MOVED,
+            status=lc.ZONE_STATUS_MOVED,
         )
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         self.make_checksum_object(irods_obj)
-        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(self.zone.status, lc.ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         with self.login(self.user):
             response = self.client.post(self.url_move)
             self.assertRedirects(response, self.url_redirect)
-        self.assert_zone_status(self.zone, ZONE_STATUS_MOVED)
+        self.assert_zone_status(self.zone, lc.ZONE_STATUS_MOVED)
         self.assertEqual(len(self.zone_coll.data_objects), 0)
         self.assertEqual(len(self.assay_coll.data_objects), 2)
 
-    def test_post_move_extra_user_obj(self):
-        """Test POST to move with extra object access for user"""
-        user_new = self.make_user('user_new')
-        self.irods.users.create('user_new', 'rodsuser')
-
+    @override_settings(LANDINGZONES_ZONE_MOVE_VERIFY=True)
+    def test_post_move_verify(self):
+        """Test POST with verification enabled"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         self.make_checksum_object(irods_obj)
-        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
-        self.assert_irods_access(
-            self.owner_group, self.zone_path, IRODS_ACCESS_OWN
+        self.assertEqual(self.zone.status, lc.ZONE_STATUS_ACTIVE)
+        self.assertIsNone(
+            TimelineEvent.objects.filter(event_name='zone_verify').first()
         )
-        self.assert_irods_access(
-            self.user_owner.username, self.zone_path, IRODS_ACCESS_OWN
-        )
-        self.assert_irods_access(self.user.username, self.zone_path, None)
-        self.assert_irods_access(self.project_group, self.zone_path, None)
-
-        acl = iRODSAccess(
-            access_name='own',
-            path=irods_obj.path,
-            user_name=user_new.username,
-            user_zone=self.irods.zone,
-        )
-        self.irods.acls.set(acl)
-        self.assert_irods_access(
-            user_new.username, irods_obj.path, IRODS_ACCESS_OWN
-        )
-
         with self.login(self.user):
-            response = self.client.post(self.url_move)
-            self.assertRedirects(response, self.url_redirect)
-
-        self.assert_zone_status(self.zone, ZONE_STATUS_MOVED)
-        obj_path = os.path.join(self.assay_path, TEST_OBJ_NAME)
-        self.assert_irods_access(self.owner_group, obj_path, None)
-        self.assert_irods_access(self.user.username, obj_path, None)
-        self.assert_irods_access(
-            self.project_group, obj_path, IRODS_ACCESS_READ
-        )
-        # New user should not have access
-        self.assert_irods_access(user_new.username, obj_path, None)
-
-    def test_post_move_extra_user_obj_disable_cleanup(self):
-        """Test POST to move with extra object access and disabled cleanup"""
-        app_settings.set(APP_NAME, 'zone_access_cleanup', False)
-        user_new = self.make_user('user_new')
-        self.irods.users.create('user_new', 'rodsuser')
-
-        irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
-        self.make_checksum_object(irods_obj)
-        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
-        self.assert_irods_access(
-            self.owner_group, self.zone_path, IRODS_ACCESS_OWN
-        )
-        self.assert_irods_access(
-            self.user_owner.username, self.zone_path, IRODS_ACCESS_OWN
-        )
-        self.assert_irods_access(self.user.username, self.zone_path, None)
-        self.assert_irods_access(self.project_group, self.zone_path, None)
-
-        acl = iRODSAccess(
-            access_name='own',
-            path=irods_obj.path,
-            user_name=user_new.username,
-            user_zone=self.irods.zone,
-        )
-        self.irods.acls.set(acl)
-        self.assert_irods_access(
-            user_new.username, irods_obj.path, IRODS_ACCESS_OWN
-        )
-
-        with self.login(self.user):
-            response = self.client.post(self.url_move)
-            self.assertRedirects(response, self.url_redirect)
-
-        self.assert_zone_status(self.zone, ZONE_STATUS_MOVED)
-        obj_path = os.path.join(self.assay_path, TEST_OBJ_NAME)
-        self.assert_irods_access(self.owner_group, obj_path, None)
-        self.assert_irods_access(self.user.username, obj_path, None)
-        self.assert_irods_access(
-            self.project_group, obj_path, IRODS_ACCESS_READ
-        )
-        # New user should have access
-        self.assert_irods_access(user_new.username, obj_path, IRODS_ACCESS_OWN)
+            self.client.post(self.url_move)
+        self.assert_zone_status(self.zone, lc.ZONE_STATUS_MOVED)
+        # Verify second async flow has run by checking timeline event
+        tl_event = None
+        for i in range(0, 10):
+            tl_event = TimelineEvent.objects.filter(
+                event_name='zone_verify'
+            ).first()
+            if tl_event:
+                break
+            elif i == 9:
+                self.fail('Timeline event not found')
+            time.sleep(3)
+        self.assertEqual(tl_event.get_status().status_type, 'OK')
 
     def test_post_validate(self):
         """Test POST to validate landing zone with objects without moving"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         self.make_checksum_object(irods_obj)
-        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(self.zone.status, lc.ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         mail_count = len(mail.outbox)
@@ -1036,14 +988,14 @@ class TestZoneMoveView(
             response = self.client.post(self.url_validate)
             self.assertRedirects(response, self.url_redirect)
 
-        self.assert_zone_status(self.zone, ZONE_STATUS_ACTIVE)
+        self.assert_zone_status(self.zone, lc.ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assert_irods_access(
-            self.owner_group, self.zone_path, IRODS_ACCESS_OWN
+            self.owner_group, self.zone_path, IRODS_ACCESS_DELETE_OBJ
         )
         self.assert_irods_access(
-            self.user_owner.username, self.zone_path, IRODS_ACCESS_OWN
+            self.user_owner.username, self.zone_path, IRODS_ACCESS_DELETE_OBJ
         )
         self.assert_irods_access(self.user.username, self.zone_path, None)
         self.assert_irods_access(self.project_group, self.zone_path, None)
@@ -1054,7 +1006,7 @@ class TestZoneMoveView(
 
     def test_post_validate_no_files(self):
         """Test POST to validate landing zone without files"""
-        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(self.zone.status, lc.ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 0)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(
@@ -1063,7 +1015,7 @@ class TestZoneMoveView(
         with self.login(self.user):
             response = self.client.post(self.url_validate)
             self.assertRedirects(response, self.url_redirect)
-        self.assert_zone_status(self.zone, ZONE_STATUS_ACTIVE)
+        self.assert_zone_status(self.zone, lc.ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 0)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(
@@ -1074,7 +1026,7 @@ class TestZoneMoveView(
         """Test POST to validate with invalid MD5 checksum in file (should fail)"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         make_object(self.irods, irods_obj.path + '.md5', INVALID_MD5)
-        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(self.zone.status, lc.ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         mail_count = len(mail.outbox)
@@ -1083,8 +1035,10 @@ class TestZoneMoveView(
         )
         with self.login(self.user):
             self.client.post(self.url_validate)
-        self.assert_zone_status(self.zone, ZONE_STATUS_FAILED)
-        self.assertTrue('BatchValidateChecksumsTask' in self.zone.status_info)
+        self.assert_zone_status(self.zone, lc.ZONE_STATUS_FAILED)
+        self.assertTrue(
+            'BatchValidateZoneChecksumsTask' in self.zone.status_info
+        )
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(len(mail.outbox), mail_count)
@@ -1098,7 +1052,7 @@ class TestZoneMoveView(
         """Test POST to validate with empty MD5 checksum in file (should fail)"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         make_object(self.irods, irods_obj.path + '.md5', '')
-        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(self.zone.status, lc.ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(
@@ -1106,9 +1060,11 @@ class TestZoneMoveView(
         )
         with self.login(self.user):
             self.client.post(self.url_validate)
-        self.assert_zone_status(self.zone, ZONE_STATUS_FAILED)
-        self.assertTrue('BatchValidateChecksumsTask' in self.zone.status_info)
-        self.assertTrue('File: {};'.format(NO_FILE_CHECKSUM_LABEL))
+        self.assert_zone_status(self.zone, lc.ZONE_STATUS_FAILED)
+        self.assertTrue(
+            'BatchValidateZoneChecksumsTask' in self.zone.status_info
+        )
+        self.assertTrue(f'File: {NO_FILE_CHECKSUM_LABEL};')
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
 
@@ -1118,12 +1074,12 @@ class TestZoneMoveView(
         """Test POST to validate without MD5 checksum file (should fail)"""
         self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         # No md5
-        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(self.zone.status, lc.ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 1)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         with self.login(self.user):
             self.client.post(self.url_validate)
-        self.assert_zone_status(self.zone, ZONE_STATUS_FAILED)
+        self.assert_zone_status(self.zone, lc.ZONE_STATUS_FAILED)
         self.assertTrue('BatchCheckFileExistTask' in self.zone.status_info)
         self.assertEqual(len(self.zone_coll.data_objects), 1)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
@@ -1136,12 +1092,12 @@ class TestZoneMoveView(
         self.md5_obj = self.make_checksum_object(irods_obj)
         irods_obj.unlink(force=True)
         zone = LandingZone.objects.first()
-        self.assertEqual(zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(zone.status, lc.ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 1)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         with self.login(self.user):
             self.client.post(self.url_validate)
-        self.assert_zone_status(zone, ZONE_STATUS_FAILED)
+        self.assert_zone_status(zone, lc.ZONE_STATUS_FAILED)
         self.assertTrue('BatchCheckFileExistTask' in zone.status_info)
         self.assertEqual(len(self.zone_coll.data_objects), 1)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
@@ -1153,7 +1109,7 @@ class TestZoneMoveView(
         )
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         self.make_checksum_object(irods_obj)
-        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(self.zone.status, lc.ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         mail_count = len(mail.outbox)
@@ -1165,7 +1121,7 @@ class TestZoneMoveView(
             response = self.client.post(self.url_validate)
             self.assertRedirects(response, self.url_redirect)
 
-        self.assert_zone_status(self.zone, ZONE_STATUS_FAILED)
+        self.assert_zone_status(self.zone, lc.ZONE_STATUS_FAILED)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(len(mail.outbox), mail_count)
@@ -1184,7 +1140,7 @@ class TestZoneMoveView(
         """Test POST to validate with invalid zone status (should fail)"""
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         self.make_checksum_object(irods_obj)
-        self.zone.status = ZONE_STATUS_VALIDATING
+        self.zone.status = lc.ZONE_STATUS_VALIDATING
         self.zone.save()
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
@@ -1195,7 +1151,7 @@ class TestZoneMoveView(
             str(list(get_messages(response.wsgi_request))[0]),
             ZONE_MOVE_INVALID_STATUS,
         )
-        self.assert_zone_status(self.zone, ZONE_STATUS_VALIDATING)
+        self.assert_zone_status(self.zone, lc.ZONE_STATUS_VALIDATING)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
 
@@ -1204,13 +1160,13 @@ class TestZoneMoveView(
         self.lock_project(self.project)
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         self.make_checksum_object(irods_obj)
-        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(self.zone.status, lc.ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         with self.login(self.user):
             response = self.client.post(self.url_validate)
             self.assertRedirects(response, self.url_redirect)
-        self.assert_zone_status(self.zone, ZONE_STATUS_ACTIVE)
+        self.assert_zone_status(self.zone, lc.ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
 
@@ -1222,11 +1178,11 @@ class TestZoneMoveView(
             project=self.project,
             user=self.user_owner,
             assay=self.assay,
-            status=ZONE_STATUS_VALIDATING,
+            status=lc.ZONE_STATUS_VALIDATING,
         )
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         self.make_checksum_object(irods_obj)
-        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(self.zone.status, lc.ZONE_STATUS_ACTIVE)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         with self.login(self.user):
@@ -1236,7 +1192,7 @@ class TestZoneMoveView(
             list(get_messages(response.wsgi_request))[0].message,
             ZONE_VALIDATE_LIMIT_MSG + '.',
         )
-        self.assert_zone_status(self.zone, ZONE_STATUS_ACTIVE)  # No fail
+        self.assert_zone_status(self.zone, lc.ZONE_STATUS_ACTIVE)  # No fail
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
 
@@ -1257,7 +1213,6 @@ class TestZoneDeleteView(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
@@ -1297,7 +1252,7 @@ class TestZoneDeleteView(
 
         self.assert_zone_count(1)
         self.zone.refresh_from_db()
-        self.assert_zone_status(self.zone, ZONE_STATUS_DELETED)
+        self.assert_zone_status(self.zone, lc.ZONE_STATUS_DELETED)
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_delete').count(), 1
@@ -1326,7 +1281,7 @@ class TestZoneDeleteView(
 
         self.assert_zone_count(1)
         self.zone.refresh_from_db()
-        self.assert_zone_status(self.zone, ZONE_STATUS_DELETED)
+        self.assert_zone_status(self.zone, lc.ZONE_STATUS_DELETED)
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_delete').count(), 1
@@ -1350,9 +1305,83 @@ class TestZoneDeleteView(
 
         self.assert_zone_count(1)
         self.zone.refresh_from_db()
-        self.assert_zone_status(self.zone, ZONE_STATUS_DELETED)
+        self.assert_zone_status(self.zone, lc.ZONE_STATUS_DELETED)
         tl_events = TimelineEvent.objects.filter(event_name='zone_delete')
         self.assertEqual(tl_events.count(), 1)
         self.assertEqual(
             tl_events.first().get_status().status_type, TL_STATUS_OK
         )
+
+
+class TestZoneResetView(
+    SampleSheetIOMixin,
+    LandingZoneMixin,
+    LandingZoneTaskflowMixin,
+    SampleSheetTaskflowMixin,
+    TaskflowViewTestBase,
+):
+    """Tests for ZoneResetView with Taskflow and iRODS"""
+
+    def _get_tl_event(self):
+        """Return reset timeline event or None if not found"""
+        return TimelineEvent.objects.filter(event_name='zone_reset').first()
+
+    def setUp(self):
+        super().setUp()
+        self.project, self.owner_as = self.make_project_taskflow(
+            title='TestProject',
+            type=PROJECT_TYPE_PROJECT,
+            parent=self.category,
+            owner=self.user,
+        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+        self.make_irods_colls(self.investigation)
+        self.zone = self.make_landing_zone(
+            title=ZONE_TITLE,
+            project=self.project,
+            user=self.user,
+            assay=self.assay,
+            description=ZONE_DESC,
+            configuration=None,
+            config_data={},
+        )
+        self.make_zone_taskflow(self.zone)
+        self.url = reverse(
+            'landingzones:reset', kwargs={'landingzone': self.zone.sodar_uuid}
+        )
+        self.url_redirect = reverse(
+            'landingzones:list',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+
+    def test_get(self):
+        """Test ZoneResetView GET"""
+        self.zone.set_status(lc.ZONE_STATUS_VALIDATING)
+        self.assertEqual(self._get_tl_event(), None)
+        with self.login(self.user):
+            response = self.client.get(self.url)
+            self.assertRedirects(response, self.url_redirect)
+        # Assert zone status
+        self.zone.refresh_from_db()
+        self.assertEqual(self.zone.status, lc.ZONE_STATUS_ACTIVE)
+        # Assert timeline event
+        tl_event = self._get_tl_event()
+        self.assertIsNotNone(tl_event)
+        self.assertEqual(tl_event.get_status().status_type, TL_STATUS_OK)
+
+    def test_get_moved(self):
+        """Test GET with moved zone"""
+        self.zone.set_status(lc.ZONE_STATUS_MOVED)
+        self.assertEqual(self._get_tl_event(), None)
+        with self.login(self.user):
+            response = self.client.get(self.url)
+            self.assertEqual(response.status_code, 302)
+        self.zone.refresh_from_db()
+        # Status should not be changed
+        self.assertEqual(self.zone.status, lc.ZONE_STATUS_MOVED)
+        # Nothing done, no timeline view
+        self.assertEqual(self._get_tl_event(), None)
+
+    # TODO: Test with ongoing async job (how to mock Celery job?)

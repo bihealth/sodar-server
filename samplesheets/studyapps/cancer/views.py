@@ -11,7 +11,7 @@ from django.views.generic import View
 from sodar.users.auth import fallback_to_auth_basic
 
 # Projectroles dependency
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.views import (
     LoggedInPermissionMixin,
     ProjectContextMixin,
@@ -24,6 +24,7 @@ from samplesheets.utils import get_sheets_url, get_last_material_index
 from samplesheets.studyapps.utils import get_igv_xml
 
 
+plugin_api = PluginAPI()
 table_builder = SampleSheetTableBuilder()
 
 
@@ -70,12 +71,12 @@ class BaseCancerConfigView(
 class IGVSessionFileRenderView(BaseCancerConfigView):
     """IGV session file rendering view"""
 
-    permission_required = 'samplesheets.view_sheet'
+    permission_required = 'samplesheets.view_files'
 
     def get(self, request, *args, **kwargs):
         """Override get() to return IGV session file"""
         super(IGVSessionFileRenderView, self).get(request, *args, **kwargs)
-        cache_backend = get_backend_api('sodar_cache')
+        cache_backend = plugin_api.get_backend_api('sodar_cache')
         webdav_url = settings.IRODS_WEBDAV_URL
         study = self.material.study
         project = study.get_project()
@@ -84,7 +85,7 @@ class IGVSessionFileRenderView(BaseCancerConfigView):
         if cache_backend:
             cache_item = cache_backend.get_cache_item(
                 app_name=APP_NAME,
-                name='irods/{}'.format(study.sodar_uuid),
+                name=f'irods/{study.sodar_uuid}',
                 project=project,
             )
         bam_urls = {}
@@ -121,7 +122,5 @@ class IGVSessionFileRenderView(BaseCancerConfigView):
         file_name = self.material.name + '.case.igv.xml'
         # Set up response
         response = HttpResponse(xml_str, content_type='text/xml')
-        response['Content-Disposition'] = 'attachment; filename="{}"'.format(
-            file_name
-        )
+        response['Content-Disposition'] = f'attachment; filename="{file_name}"'
         return response

@@ -65,6 +65,7 @@
 
           <assay-shortcut-card
               v-if="!editMode &&
+                    sodarContext.perms.view_files &&
                     sodarContext.irods_status &&
                     assayShortcuts[assayUuid]"
               :sodar-context="sodarContext"
@@ -90,7 +91,9 @@
 
       <!-- Overview subpage -->
       <div v-else-if="activeSubPage === 'overview'" :id="contentId">
-        <Overview :sodar-context="sodarContext">
+        <Overview
+            :sodar-context="sodarContext"
+            :handle-nav-callback="handleStudyNavigation">
         </Overview>
       </div>
 
@@ -167,6 +170,12 @@
         ref="columnToggleModalRef">
     </column-toggle-modal>
 
+    <!-- Study/assay table detail modal -->
+    <table-detail-modal
+        :app="getApp()"
+        ref="tableDetailModal">
+    </table-detail-modal>
+
     <!-- Editing: Column configuration modal -->
     <column-config-modal
         v-if="editMode && sodarContext.perms.edit_sheet"
@@ -210,6 +219,7 @@ import IrodsDirModal from './components/modals/IrodsDirModal.vue'
 import StudyShortcutModal from './components/modals/StudyShortcutModal.vue'
 import ColumnToggleModal from './components/modals/ColumnToggleModal.vue'
 import ColumnConfigModal from './components/modals/ColumnConfigModal.vue'
+import TableDetailModal from './components/modals/TableDetailModal.vue'
 import EditorHelpModal from './components/modals/EditorHelpModal.vue'
 import WinExportModal from './components/modals/WinExportModal.vue'
 import OntologyEditModal from './components/modals/OntologyEditModal.vue'
@@ -294,6 +304,7 @@ export default {
     StudyShortcutModal,
     ColumnToggleModal,
     ColumnConfigModal,
+    TableDetailModal,
     EditorHelpModal,
     WinExportModal,
     OntologyEditModal,
@@ -342,7 +353,8 @@ export default {
         projectUuid: this.projectUuid,
         sodarContext: this.sodarContext,
         studyUuid: this.currentStudyUuid,
-        showNotificationCb: this.showNotification
+        showNotificationCb: this.showNotification,
+        tableDetailModal: this.$refs.tableDetailModal
       }
     },
 
@@ -1547,6 +1559,9 @@ select.sodar-ss-popup-input {
   border-radius: .25rem;
 }
 
+button.close {
+  line-height: 30px;
+}
 /* Fix forced outline on modal close buttons in Chrome */
 button.close:focus {
   outline: none !important;

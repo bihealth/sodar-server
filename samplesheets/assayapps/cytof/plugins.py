@@ -1,7 +1,15 @@
 """Assay app plugin for samplesheets"""
 
+from typing import Optional
+
+from irods.path import iRODSPath
+
 from django.conf import settings
 
+# Projectroles dependency
+from projectroles.models import SODARUser
+
+from samplesheets.models import Assay
 from samplesheets.plugins import SampleSheetAssayPluginPoint
 from samplesheets.utils import get_top_header
 from samplesheets.views import MISC_FILES_COLL
@@ -46,7 +54,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
     display_row_links = True
 
     @classmethod
-    def _get_mc_assay_name(cls, row, table):
+    def _get_mc_assay_name(cls, row: list[dict], table: dict) -> Optional[str]:
         """
         Return assay name of last mass cytometry process.
         Also works when there are consecutive processes of the same name.
@@ -54,6 +62,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         :param row: List of dicts (a row returned by SampleSheetTableBuilder)
         :param table: Full table with headers (dict returned by
                       SampleSheetTableBuilder)
+        :return: String or None
         """
         name = None
         span_end = len(row)
@@ -72,7 +81,9 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                 name = cell['value']
         return name
 
-    def get_row_path(self, row, table, assay, assay_path):
+    def get_row_path(
+        self, row: list[dict], table: dict, assay: Assay, assay_path: str
+    ) -> Optional[str]:
         """
         Return iRODS path for an assay row in a sample sheet. If None,
         display default path.
@@ -87,9 +98,13 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         # Get the value of Mass cytometry Assay Name column
         mc_assay_name = self._get_mc_assay_name(row, table)
         if mc_assay_name:
+            # NOTE: Not using iRODSPath here because it supports ".."
             return assay_path + '/' + mc_assay_name
+        return None
 
-    def update_row(self, row, table, assay, index):
+    def update_row(
+        self, row: list[dict], table: dict, assay: Assay, index: int
+    ) -> list[dict]:
         """
         Update render table row with e.g. links. Return the modified row.
 
@@ -126,11 +141,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             ):
                 row[i]['value'] = SIMPLE_LINK_TEMPLATE.format(
                     label=row[i]['value'],
-                    url=base_url
-                    + '/'
-                    + MISC_FILES_COLL
-                    + '/'
-                    + row[i]['value'],
+                    url=base_url + iRODSPath(MISC_FILES_COLL, row[i]['value']),
                 )
 
             # Create report file links in processes
@@ -141,7 +152,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             ):
                 row[i]['value'] = SIMPLE_LINK_TEMPLATE.format(
                     label=row[i]['value'],
-                    url=base_url + '/' + mc_assay_name + '/' + row[i]['value'],
+                    url=base_url + iRODSPath(mc_assay_name, row[i]['value']),
                 )
 
             # Create data file links
@@ -154,12 +165,17 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                 and row[i]['value']
                 and isinstance(row[i]['value'], str)
             ):
-                row[i]['link'] = (
-                    base_url + '/' + mc_assay_name + '/' + row[i]['value']
+                row[i]['link'] = base_url + iRODSPath(
+                    mc_assay_name, row[i]['value']
                 )
         return row
 
-    def update_cache(self, name=None, project=None, user=None):
+    def update_cache(
+        self,
+        name: Optional[str] = None,
+        project: Optional[str] = None,
+        user: Optional[SODARUser] = None,
+    ):
         """
         Update cached data for this app, limitable to item ID and/or project.
 

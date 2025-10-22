@@ -24,7 +24,6 @@ class TestTaskflowAPILocking(TaskflowViewTestBase):
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
 
     def test_is_locked_false(self):

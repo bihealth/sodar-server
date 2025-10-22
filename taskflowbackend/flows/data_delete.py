@@ -5,17 +5,17 @@ from taskflowbackend.tasks import irods_tasks
 class Flow(BaseLinearFlow):
     """Flow for deleting data objects in iRODS"""
 
-    def validate(self):
+    def validate(self) -> bool:
         self.required_fields = ['paths']
         self.supported_modes = ['async', 'sync']
         return super().validate()
 
-    def build(self, force_fail=False):
+    def build(self, force_fail: bool = False):
         for path in self.flow_data['paths']:
             if self.irods.data_objects.exists(path):
                 self.add_task(
                     irods_tasks.RemoveDataObjectTask(
-                        name='Remove data object: {}'.format(path),
+                        name=f'Remove data object: {path}',
                         irods=self.irods,
                         inject={'path': path},
                     )
@@ -23,7 +23,7 @@ class Flow(BaseLinearFlow):
             else:
                 self.add_task(
                     irods_tasks.RemoveCollectionTask(
-                        name='Remove collection: {}'.format(path),
+                        name=f'Remove collection: {path}',
                         irods=self.irods,
                         inject={'path': path},
                     )

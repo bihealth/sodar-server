@@ -4,6 +4,8 @@ import os
 
 from copy import deepcopy
 
+from irods.path import iRODSPath
+
 from samplesheets.assayapps.meta_ms.plugins import RAW_DATA_COLL
 from samplesheets.assayapps.tests.base import AssayPluginTestBase
 from samplesheets.rendering import SIMPLE_LINK_TEMPLATE
@@ -30,7 +32,7 @@ class TestMetaMSAssayPlugin(AssayPluginTestBase):
             self.assay,
             self.assay_path,
         )
-        expected = os.path.join(self.assay_path, RAW_DATA_COLL)
+        expected = iRODSPath(self.assay_path, RAW_DATA_COLL)
         self.assertEqual(row_path, expected)
 
     def test_update_row(self):
@@ -74,6 +76,6 @@ class TestMetaMSAssayPlugin(AssayPluginTestBase):
         expected = {
             'id': 'raw_data',
             'label': 'Raw Data',
-            'path': os.path.join(self.assay_path, RAW_DATA_COLL),
+            'path': iRODSPath(self.assay_path, RAW_DATA_COLL),
         }
         self.assertEqual(self.plugin.get_shortcuts(self.assay), [expected])

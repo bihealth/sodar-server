@@ -61,9 +61,11 @@ class TestZoneIrodsListRetrieveAjaxView(
         ]
         self.bad_users = [
             self.user_guest_cat,  # Inherited
+            self.user_viewer_cat,  # Inherited
             self.user_finder_cat,  # Inherited
             self.user_contributor_cat,  # Inherited, no access to zone
             self.user_guest,
+            self.user_viewer,
             self.user_no_roles,
             self.anonymous,
         ]
@@ -72,20 +74,28 @@ class TestZoneIrodsListRetrieveAjaxView(
         """Test ZoneIrodsListRetrieveAjaxView GET"""
         self.assert_response(self.url, self.good_users, 200)
         self.assert_response(self.url, self.bad_users, 403)
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 403)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.no_role_users, 403)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 403)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 403)
 
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
         self.assert_response(self.url, self.good_users, 200)
         self.assert_response(self.url, self.bad_users, 403)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 403)
 
     def test_get_read_only(self):
         """Test GET with site read-only mode"""

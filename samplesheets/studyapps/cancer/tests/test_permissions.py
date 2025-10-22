@@ -45,13 +45,19 @@ class TestIGVSessionFileRenderView(SamplesheetsPermissionTestBase):
             self.user_contributor,
             self.user_guest,
         ]
-        bad_users = [self.user_finder_cat, self.user_no_roles]
+        bad_users = [
+            self.user_viewer_cat,  # Inherited
+            self.user_finder_cat,  # Inherited
+            self.user_viewer,
+            self.user_no_roles,
+        ]
         self.assert_response(self.url, good_users, 200)
         self.assert_response(self.url, bad_users, 302)
         self.assert_response(self.url, self.anonymous, 401)
         # Test public project
-        self.project.set_public()
-        self.assert_response(
-            self.url, [self.user_finder_cat, self.user_no_roles], 200
-        )
+        self.project.set_public_access(self.role_guest)
+        self.assert_response(self.url, bad_users, 200)
+        self.assert_response(self.url, self.anonymous, 401)
+        self.project.set_public_access(self.role_viewer)
+        self.assert_response(self.url, bad_users, 302)
         self.assert_response(self.url, self.anonymous, 401)

@@ -1,14 +1,18 @@
 """Ajax API views for the samplesheets app"""
 
 import json
-import os
 
-from altamisa.constants import table_headers as th
 from datetime import datetime as dt
 from packaging import version
+from typing import Optional, Union
+
+from altamisa.constants import table_headers as th
+
+from irods.path import iRODSPath
 
 from django.conf import settings
 from django.db import transaction
+from django.http import HttpRequest
 from django.middleware.csrf import get_token
 from django.urls import reverse
 
@@ -16,7 +20,8 @@ from rest_framework.response import Response
 
 # Projectroles dependency
 from projectroles.constants import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.models import Project, SODARUser
+from projectroles.plugins import PluginAPI
 from projectroles.views_ajax import SODARBaseProjectAjaxView
 
 # Irodsbackend dependency
@@ -44,6 +49,7 @@ from samplesheets.utils import (
     get_node_obj,
     get_webdav_url,
     get_ext_link_labels,
+    get_isa_field_name,
     get_bool,
 )
 from samplesheets.views import (
@@ -56,6 +62,7 @@ from samplesheets.views import (
 
 
 conf_api = SheetConfigAPI()
+plugin_api = PluginAPI()
 table_builder = SampleSheetTableBuilder()
 
 
@@ -74,17 +81,33 @@ RENDER_HEIGHT_HEADERS = 79
 RENDER_HEIGHT_ROW = 39
 RENDER_HEIGHT_SCROLLBAR = 12
 
-ALERT_ACTIVE_REQS = (
+CONTEXT_PERMS = [
+    'create_colls',
+    'delete_sheet',
+    'edit_sheet',
+    'export_sheet',
+    'manage_sheet',
+    'update_cache',
+    'view_files',
+    'view_tickets',
+    'view_versions',
+]
+PARSER_VERSION_ALERT = (
+    'This sample sheet has been imported with an old altamISA version (< '
+    '{target_version}). Please replace the ISA-Tab to enable all features and '
+    'ensure full functionality.'
+)
+ACTIVE_REQ_ALERT = (
     'Active iRODS delete requests in this project require your attention. '
     '<a href="{url}">See request list for details</a>.'
 )
-ALERT_LIB_FILES_EXIST = (
+LIB_FILES_EXIST_ALERT = (
     'iRODS collection exists for "{name}". Renaming may result in orphaned '
     'files. Do you want to proceed?'
 )
-ERROR_NOT_IN_PROJECT = 'Collection does not belong to project'
-ERROR_NOT_FOUND = 'Collection not found'
-ERROR_NO_AUTH = 'User not authorized for iRODS collection'
+NOT_IN_PROJECT_ERROR = 'Collection does not belong to project'
+NOT_FOUND_ERROR = 'Collection not found'
+NO_AUTH_ERROR = 'User not authorized for iRODS collection'
 STUDY_PLUGIN_NOT_FOUND_MSG = 'Plugin not found for study'
 ROW_LINK_DISPLAY_COMMENT = 'SODAR Assay Row Link Display'
 
@@ -101,12 +124,24 @@ class BaseSheetEditAjaxView(SODARBaseProjectAjaxView):
     class SheetEditException(Exception):
         pass
 
-    def _raise_ex(self, msg):
+    def _raise_ex(self, msg: Union[Exception, str]):
+        """
+        Raise SheetEditException and log the error.
+
+        :param msg: Exception or string
+        :raise: SheetEditException
+        """
         logger.error(msg)
         raise self.SheetEditException(msg)
 
     @classmethod
-    def _get_attr_value(cls, node_obj, cell, header_name, header_type):
+    def _get_attr_value(
+        cls,
+        node_obj: Union[GenericMaterial, Process],
+        cell: dict,
+        header_name: str,
+        header_type: str,
+    ) -> Union[dict, list, str]:
         """
         Get node object attribute value in a format saveable into the database.
 
@@ -132,7 +167,9 @@ class BaseSheetEditAjaxView(SODARBaseProjectAjaxView):
         return val
 
     @classmethod
-    def _get_ontology_names(cls, cells=None, nodes=None):
+    def _get_ontology_names(
+        cls, cells: Optional[list] = None, nodes: Optional[list] = None
+    ) -> list:
         """
         Return unique ontology names from ontology field in a list of nodes.
 
@@ -163,7 +200,9 @@ class BaseSheetEditAjaxView(SODARBaseProjectAjaxView):
 
     @classmethod
     @transaction.atomic
-    def _update_ontology_refs(cls, investigation, edit_names):
+    def _update_ontology_refs(
+        cls, investigation: Investigation, edit_names: list[str]
+    ):
         """
         Update investigation ontology refs, adding references to ontologies
         currently missing.
@@ -173,7 +212,7 @@ class BaseSheetEditAjaxView(SODARBaseProjectAjaxView):
         """
         # TODO: Implement removal of unused ontologies (see issue #967)
         # TODO: Update existing refs for SODAR ontology data?
-        ontology_backend = get_backend_api('ontologyaccess_backend')
+        ontology_backend = plugin_api.get_backend_api('ontologyaccess_backend')
         if not ontology_backend:
             logger.error(
                 'Ontologyaccess backend not enabled, unable to update '
@@ -188,16 +227,15 @@ class BaseSheetEditAjaxView(SODARBaseProjectAjaxView):
         ]
         sodar_obos = ontology_backend.get_obo_dict(key='name')
         updated = False
+        inv_suffix = f'(investigation={investigation.sodar_uuid})'
 
         for o_name in edit_names:
             if o_name not in i_names and o_name:
-                logger.debug(
-                    'Inserting ontology reference for "{}"'.format(o_name)
-                )
+                logger.debug(f'Inserting ontology reference for "{o_name}"')
                 if o_name not in sodar_obos.keys():
                     logger.warning(
-                        'Ontology "{}" not imported to SODAR, unable to '
-                        'update ontology reference'.format(o_name)
+                        f'Ontology "{o_name}" not imported to SODAR, unable '
+                        f'to update ontology reference'
                     )
                     continue
                 investigation.ontology_source_refs.append(
@@ -216,37 +254,30 @@ class BaseSheetEditAjaxView(SODARBaseProjectAjaxView):
                     }
                 )
                 updated = True
-                logger.debug(
-                    'Inserted ontology reference for "{}" '
-                    '(investigation={})'.format(
-                        o_name, investigation.sodar_uuid
-                    )
-                )
+                logger.debug(f'Inserted ontology reference for "{o_name}" ')
 
         if updated:
             investigation.save()
-            logger.info(
-                'Ontology references updated (investigation={})'.format(
-                    investigation.sodar_uuid
-                )
-            )
+            logger.info(f'Ontology references updated {inv_suffix}')
         else:
-            logger.debug(
-                'No updates for ontology references '
-                '(investigation={})'.format(investigation.sodar_uuid)
-            )
+            logger.debug(f'No updates for ontology references {inv_suffix}')
 
 
 class SheetVersionMixin:
     """Mixin for sheet version saving"""
 
     @classmethod
-    def save_version(cls, investigation, request=None, description=None):
+    def save_version(
+        cls,
+        investigation: Investigation,
+        request: Optional[HttpRequest] = None,
+        description: Optional[str] = None,
+    ) -> ISATab:
         """
         Save current version of an investigation as ISA-Tab into the database.
 
         :param investigation: Investigation object
-        :param request: HTTP request or None
+        :param request: HttpRequest object or None
         :param description: Version description (string, optional)
         :return: ISATab object
         :raise: Exception if ISA-Tab saving fails
@@ -278,18 +309,235 @@ class SheetContextAjaxView(SODARBaseProjectAjaxView):
 
     permission_required = 'samplesheets.view_sheet'
 
+    def _get_investigation_info(self, inv: Investigation) -> dict:
+        """
+        Return investigation information as a dictionary.
+
+        :param inv: Investigation object
+        :return: dict
+        """
+        project = inv.project
+        # TODO: Validate SHEETS_ONTOLOGY_URL_TEMPLATE
+        return {
+            'external_link_labels': get_ext_link_labels(),
+            'ontology_url_template': settings.SHEETS_ONTOLOGY_URL_TEMPLATE,
+            'ontology_url_skip': settings.SHEETS_ONTOLOGY_URL_SKIP,
+            'configuration': inv.get_configuration(),
+            'inv_file_name': inv.file_name.split('/')[-1],
+            'irods_status': inv.irods_status,
+            'irods_path': (
+                self.irods_backend.get_path(project)
+                if self.irods_backend and inv.irods_status
+                else None
+            ),
+            'parser_version': inv.parser_version or 'LEGACY',
+            'parser_warnings': (
+                True
+                if inv.parser_warnings
+                and 'use_file_names' in inv.parser_warnings
+                else False
+            ),
+            'investigation': {
+                'identifier': inv.identifier,
+                'title': inv.title,
+                'description': (
+                    inv.description
+                    if inv.description != project.description
+                    else None
+                ),
+                'comments': get_comments(inv),
+            },
+        }
+
+    def _get_study_info(self, study: Study, request: HttpRequest) -> dict:
+        """
+        Return study information as a dictionary.
+
+        :param study: Study object
+        :param request: HttpRequest object
+        :return: dict
+        """
+        plugin = study.get_plugin()
+        # NOTE: More metadata can be added if needed. Certain fields such as
+        #       factors, contacs and study design need some extra formatting to
+        #       be nicely human readable.
+        return {
+            'display_name': study.get_name(),
+            'file_name': study.file_name,
+            'identifier': study.identifier,
+            'title': study.title,
+            'description': study.description,
+            'comments': get_comments(study),
+            'irods_path': (
+                self.irods_backend.get_path(study)
+                if self.irods_backend
+                else None
+            ),
+            'table_url': request.build_absolute_uri(
+                reverse(
+                    'samplesheets:ajax_study_tables',
+                    kwargs={'study': str(study.sodar_uuid)},
+                )
+            ),
+            'plugin_name': plugin.name if plugin else None,
+            'plugin_title': plugin.title if plugin else None,
+            'assays': {},
+        }
+
+    def _get_assay_info(self, assay: Assay) -> dict:
+        """
+        Return assay information as a dictionary.
+
+        :param assay: Assay object
+        :return: dict
+        """
+        project = assay.get_project()
+        plugin = assay.get_plugin()
+        row_links = False  # Hide row links by default with no plugin
+        # Skip row links if no view_files perm
+        if not self.request.user.has_perm('samplesheets.view_files', project):
+            row_links = False
+        elif ROW_LINK_DISPLAY_COMMENT in assay.comments:
+            try:
+                row_links = get_bool(assay.comments[ROW_LINK_DISPLAY_COMMENT])
+            except Exception as ex:
+                logger.error(
+                    f'Exception in retrieving row display comment '
+                    f'"{ROW_LINK_DISPLAY_COMMENT}" for assay '
+                    f'"{assay.get_display_name()} ({assay.sodar_uuid})": {ex}'
+                )
+        elif plugin:
+            row_links = plugin.display_row_links
+        return {
+            'name': assay.get_name(),
+            'display_name': assay.get_display_name(),
+            'file_name': assay.file_name,
+            'measurement_type': get_isa_field_name(assay.measurement_type),
+            'technology_type': get_isa_field_name(assay.technology_type),
+            'technology_platform': assay.technology_platform,
+            'comments': get_comments(assay),
+            'irods_path': (
+                self.irods_backend.get_path(assay)
+                if self.irods_backend
+                else None
+            ),
+            'plugin_name': plugin.name if plugin else None,
+            'plugin_title': plugin.title if plugin else None,
+            'display_row_links': row_links,
+        }
+
+    @classmethod
+    def _get_perms(cls, project: Project, request: HttpRequest) -> dict:
+        """
+        Return user permissions for project.
+
+        :param project: Project object
+        :param request: HttpRequest object
+        :return: dict
+        """
+        ret = {}
+        for p in CONTEXT_PERMS:
+            ret[p] = request.user.has_perm(f'samplesheets.{p}', project)
+        ret['is_superuser'] = request.user.is_superuser
+        return ret
+
+    @classmethod
+    def _get_alerts(
+        cls,
+        project: Project,
+        inv: Optional[Investigation],
+        request: HttpRequest,
+    ) -> list:
+        """
+        Return a list of alerts.
+
+        :param project: Project object
+        :param inv: Investigation object or None
+        :param request: HttpRequest object
+        :return: list
+        """
+        ret = []
+        # Parser alert
+        if inv and (
+            not inv.parser_version
+            or version.parse(inv.parser_version)
+            < version.parse(TARGET_ALTAMISA_VERSION)
+        ):
+            ret.append(
+                {
+                    'level': 'danger',
+                    'html': PARSER_VERSION_ALERT.format(
+                        version=TARGET_ALTAMISA_VERSION
+                    ),
+                }
+            )
+        # iRODS data request alert
+        if (
+            inv
+            and inv.irods_status
+            and (
+                request.user.is_superuser
+                or project.is_owner_or_delegate(request.user)
+            )
+        ):
+            irods_req_count = IrodsDataRequest.objects.filter(
+                project=project, status__in=['ACTIVE', 'FAILED']
+            ).count()
+            if irods_req_count > 0:
+                req_url = reverse(
+                    'samplesheets:irods_requests',
+                    kwargs={'project': project.sodar_uuid},
+                )
+                ret.append(
+                    {
+                        'level': 'info',
+                        'html': ACTIVE_REQ_ALERT.format(url=req_url),
+                    }
+                )
+        return ret
+
+    @classmethod
+    def _get_stats(cls, inv: Optional[Investigation]) -> dict:
+        """
+        Return investigation statistics.
+
+        :param inv: Investigation object or None
+        :return dict:
+        """
+        if not inv:
+            return {}
+        return {
+            'study_count': Study.objects.filter(investigation=inv).count(),
+            'assay_count': Assay.objects.filter(
+                study__investigation=inv
+            ).count(),
+            'protocol_count': Protocol.objects.filter(
+                study__investigation=inv
+            ).count(),
+            'process_count': Process.objects.filter(
+                protocol__study__investigation=inv
+            ).count(),
+            'source_count': inv.get_material_count('SOURCE'),
+            'material_count': inv.get_material_count('MATERIAL'),
+            'sample_count': inv.get_material_count('SAMPLE'),
+            'data_count': inv.get_material_count('DATA'),
+        }
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.irods_backend = plugin_api.get_backend_api('omics_irods')
+
     def get(self, request, *args, **kwargs):
         project = self.get_project()
         inv = Investigation.objects.filter(project=project, active=True).first()
         studies = Study.objects.filter(investigation=inv).order_by('pk')
-        irods_backend = get_backend_api('omics_irods')
 
         # General context data for Vue app
         ret_data = {
             'configuration': None,
             'inv_file_name': None,
             'irods_status': None,
-            'irods_backend_enabled': True if irods_backend else False,
+            'irods_backend_enabled': True if self.irods_backend else False,
             'parser_version': None,
             'parser_warnings': False,
             'irods_webdav_enabled': settings.IRODS_WEBDAV_ENABLED,
@@ -315,206 +563,42 @@ class SheetContextAjaxView(SODARBaseProjectAjaxView):
                 'projectroles', 'site_read_only'
             ),
             'investigation': {},
+            'studies': {},
         }
 
+        # Investigation info
         if inv:
-            # TODO: Validate SHEETS_ONTOLOGY_URL_TEMPLATE
-            update_data = {
-                'external_link_labels': get_ext_link_labels(),
-                'ontology_url_template': settings.SHEETS_ONTOLOGY_URL_TEMPLATE,
-                'ontology_url_skip': settings.SHEETS_ONTOLOGY_URL_SKIP,
-            }
-            ret_data.update(update_data)
-            inv_data = {
-                'configuration': inv.get_configuration(),
-                'inv_file_name': inv.file_name.split('/')[-1],
-                'irods_status': inv.irods_status,
-                'irods_path': (
-                    irods_backend.get_path(project)
-                    if irods_backend and inv.irods_status
-                    else None
-                ),
-                'parser_version': inv.parser_version or 'LEGACY',
-                'parser_warnings': (
-                    True
-                    if inv.parser_warnings
-                    and 'use_file_names' in inv.parser_warnings
-                    else False
-                ),
-                'investigation': {
-                    'identifier': inv.identifier,
-                    'title': inv.title,
-                    'description': (
-                        inv.description
-                        if inv.description != project.description
-                        else None
-                    ),
-                    'comments': get_comments(inv),
-                },
-            }
-            ret_data.update(inv_data)
-
-        # Parser alert
-        if inv and (
-            not inv.parser_version
-            or version.parse(inv.parser_version)
-            < version.parse(TARGET_ALTAMISA_VERSION)
-        ):
-            ret_data['alerts'].append(
-                {
-                    'level': 'danger',
-                    'html': 'This sample sheet has been imported with an '
-                    'old altamISA version (< {}). Please replace the ISA-Tab '
-                    'to enable all features and ensure full '
-                    'functionality.'.format(TARGET_ALTAMISA_VERSION),
-                }
-            )
-
-        # iRODS data request alert
-        if (
-            inv
-            and inv.irods_status
-            and (
-                self.request.user.is_superuser
-                or project.is_owner_or_delegate(self.request.user)
-            )
-        ):
-            irods_req_count = IrodsDataRequest.objects.filter(
-                project=project, status__in=['ACTIVE', 'FAILED']
-            ).count()
-            if irods_req_count > 0:
-                ret_data['alerts'].append(
-                    {
-                        'level': 'info',
-                        'html': ALERT_ACTIVE_REQS.format(
-                            url=reverse(
-                                'samplesheets:irods_requests',
-                                kwargs={'project': project.sodar_uuid},
-                            )
-                        ),
-                    }
-                )
-
+            ret_data.update(self._get_investigation_info(inv))
         # Study info
-        ret_data['studies'] = {}
-
-        for s in studies:
-            study_plugin = s.get_plugin()
-            ret_data['studies'][str(s.sodar_uuid)] = {
-                'display_name': s.get_display_name(),
-                'identifier': s.identifier,
-                'description': s.description,
-                'comments': get_comments(s),
-                'irods_path': (
-                    irods_backend.get_path(s) if irods_backend else None
-                ),
-                'table_url': request.build_absolute_uri(
-                    reverse(
-                        'samplesheets:ajax_study_tables',
-                        kwargs={'study': str(s.sodar_uuid)},
-                    )
-                ),
-                'plugin': study_plugin.title if study_plugin else None,
-                'assays': {},
-            }
-
-            # Set up assay data
-            for a in s.assays.all().order_by('pk'):
-                assay_plugin = a.get_plugin()
-                row_links = True
-                if ROW_LINK_DISPLAY_COMMENT in a.comments:
-                    try:
-                        row_links = get_bool(
-                            a.comments[ROW_LINK_DISPLAY_COMMENT]
-                        )
-                    except Exception as ex:
-                        logger.error(
-                            'Exception in retrieving row display comment "{}" '
-                            'for assay "{} ({})": {}'.format(
-                                ROW_LINK_DISPLAY_COMMENT,
-                                a.get_display_name(),
-                                a.sodar_uuid,
-                                ex,
-                            )
-                        )
-                elif assay_plugin:
-                    row_links = assay_plugin.display_row_links
-                ret_data['studies'][str(s.sodar_uuid)]['assays'][
-                    str(a.sodar_uuid)
-                ] = {
-                    'name': a.get_name(),
-                    'display_name': a.get_display_name(),
-                    'irods_path': (
-                        irods_backend.get_path(a) if irods_backend else None
-                    ),
-                    'display_row_links': row_links,
-                    'plugin': assay_plugin.title if assay_plugin else None,
-                }
-
+        for study in studies:
+            ret_data['studies'][str(study.sodar_uuid)] = self._get_study_info(
+                study, request
+            )
+            # Assay info
+            for assay in study.assays.all().order_by('pk'):
+                ret_data['studies'][str(study.sodar_uuid)]['assays'][
+                    str(assay.sodar_uuid)
+                ] = self._get_assay_info(assay)
         # Permissions for UI elements (will be checked on request)
-        ret_data['perms'] = {
-            'edit_sheet': request.user.has_perm(
-                'samplesheets.edit_sheet', project
-            ),
-            'manage_sheet': request.user.has_perm(
-                'samplesheets.manage_sheet', project
-            ),
-            'create_colls': request.user.has_perm(
-                'samplesheets.create_colls', project
-            ),
-            'export_sheet': request.user.has_perm(
-                'samplesheets.export_sheet', project
-            ),
-            'delete_sheet': request.user.has_perm(
-                'samplesheets.delete_sheet', project
-            ),
-            'view_versions': request.user.has_perm(
-                'samplesheets.view_versions', project
-            ),
-            'update_cache': request.user.has_perm(
-                'samplesheets.update_cache', project
-            ),
-            'view_tickets': request.user.has_perm(
-                'samplesheets.view_tickets', project
-            ),
-            'is_superuser': request.user.is_superuser,
-        }
-
+        ret_data['perms'] = self._get_perms(project, request)
+        # Alerts
+        ret_data['alerts'] = self._get_alerts(project, inv, request)
         # Statistics
-        ret_data['sheet_stats'] = (
-            {
-                'study_count': Study.objects.filter(investigation=inv).count(),
-                'assay_count': Assay.objects.filter(
-                    study__investigation=inv
-                ).count(),
-                'protocol_count': Protocol.objects.filter(
-                    study__investigation=inv
-                ).count(),
-                'process_count': Process.objects.filter(
-                    protocol__study__investigation=inv
-                ).count(),
-                'source_count': inv.get_material_count('SOURCE'),
-                'material_count': inv.get_material_count('MATERIAL'),
-                'sample_count': inv.get_material_count('SAMPLE'),
-                'data_count': inv.get_material_count('DATA'),
-            }
-            if inv
-            else {}
-        )
-
+        ret_data['sheet_stats'] = self._get_stats(inv)
+        # Return context
         ret_data = json.dumps(ret_data)
-        # logger.debug('SODAR Context: {}'.format(ret_data))
         return Response(ret_data, status=200)
 
 
 class StudyTablesAjaxView(SODARBaseProjectAjaxView):
     """View to retrieve study tables built from the sample sheet graph"""
 
-    def _get_table_height(self, table, user, edit):
+    @classmethod
+    def _get_table_height(cls, table: dict, user: SODARUser, edit: bool) -> int:
         """
         Return table height in pixels.
 
-        :param table: Study or assay render table
+        :param table: Study or assay render table (dict)
         :param user: User object making the request
         :param edit: Edit mode enabled (boolean)
         :return: Integer
@@ -532,8 +616,21 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
             default_height,
         )
 
-    def _get_display_config(self, investigation, user, sheet_config=None):
-        """Get or create display configuration for an investigation"""
+    @classmethod
+    def _get_display_config(
+        cls,
+        investigation: Investigation,
+        user: SODARUser,
+        sheet_config: Optional[dict] = None,
+    ) -> dict:
+        """
+        Get or create display configuration for an investigation.
+
+        :param investigation: Investigation object
+        :param user: SODARUser object
+        :param sheet_config: Dict or None
+        :return: Dict
+        """
         project = investigation.project
         user_config_found = True
 
@@ -545,8 +642,8 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
         if not display_config:
             user_config_found = False
             logger.debug(
-                'No display configuration found for user "{}", '
-                'using default..'.format(user.username)
+                f'No display configuration found for user "{user.username}", '
+                f'using default..'
             )
             display_config = app_settings.get(
                 APP_NAME, 'display_config_default', project=project
@@ -566,9 +663,8 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
                 inv_tables, sheet_config
             )
             logger.debug(
-                'Setting default display config for project {}'.format(
-                    project.get_log_title()
-                )
+                f'Setting default display config for project '
+                f'{project.get_log_title()}'
             )
             app_settings.set(
                 APP_NAME,
@@ -579,9 +675,8 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
 
         if not user_config_found:
             logger.debug(
-                'Setting display config for user "{}" in project {} '.format(
-                    user.username, project.get_log_title()
-                )
+                f'Setting display config for user "{user.username}" in '
+                f'project {project.get_log_title()} '
             )
             app_settings.set(
                 APP_NAME,
@@ -601,13 +696,13 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
     def get(self, request, *args, **kwargs):
         from samplesheets.plugins import get_irods_content
 
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         study = Study.objects.filter(sodar_uuid=self.kwargs['study']).first()
         if not study:
             return Response(
                 {
-                    'render_error': 'Study not found with UUID "{}", '
-                    'unable to render'.format(self.kwargs['study'])
+                    'render_error': f'Study not found with UUID '
+                    f'"{self.kwargs["study"]}", unable to render'
                 },
                 status=404,
             )
@@ -637,7 +732,7 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
                 status=403,
             )
 
-        ret_data = {'study': {'display_name': study.get_display_name()}}
+        ret_data = {'study': {'display_name': study.get_name()}}
         try:
             ret_data['tables'] = table_builder.get_study_tables(study)
         except Exception as ex:
@@ -661,7 +756,10 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
             )
 
         # Get iRODS content if NOT editing and collections have been created
-        if not edit:
+        # Skip if no view_files perm
+        if not edit and request.user.has_perm(
+            'samplesheets.view_files', project
+        ):
             logger.debug('Retrieving iRODS content for study..')
             ret_data = get_irods_content(inv, study, irods_backend, ret_data)
 
@@ -678,7 +776,9 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
 
         # Set up editing
         if edit:
-            ontology_backend = get_backend_api('ontologyaccess_backend')
+            ontology_backend = plugin_api.get_backend_api(
+                'ontologyaccess_backend'
+            )
             # Get study config
             ret_data['study_config'] = sheet_config['studies'][
                 str(study.sodar_uuid)
@@ -739,7 +839,7 @@ class StudyLinksAjaxView(SODARBaseProjectAjaxView):
         try:
             study_tables = table_builder.get_study_tables(study)
         except Exception as ex:
-            ret_data['error'] = 'Error retrieving study tables: {}'.format(ex)
+            ret_data['error'] = f'Error retrieving study tables: {ex}'
             return Response(ret_data, status=500)
         try:
             ret_data = study_plugin.get_shortcut_links(
@@ -754,7 +854,7 @@ class StudyLinksAjaxView(SODARBaseProjectAjaxView):
                 ret_data['data'][t]['omit_info'] = s
             return Response(ret_data, status=200)
         except Exception as ex:
-            ret_data['error'] = 'Error retrieving shortcut links: {}'.format(ex)
+            ret_data['error'] = f'Error retrieving shortcut links: {ex}'
             return Response(ret_data, status=500)
 
 
@@ -769,16 +869,17 @@ class SheetWarningsAjaxView(SODARBaseProjectAjaxView):
             return Response(
                 {'detail': 'Investigation not found for project'}, status=404
             )
-        logger.debug(
-            'Parser Warnings: {}'.format(json.dumps(inv.parser_warnings))
-        )
+        logger.debug(f'Parser Warnings: {json.dumps(inv.parser_warnings)}')
         return Response({'warnings': inv.parser_warnings}, status=200)
 
 
 class SheetCellEditAjaxView(BaseSheetEditAjaxView):
     """Ajax view to edit sample sheet cells"""
 
-    def _verify_update(self, node_obj, cell):
+    @classmethod
+    def _verify_update(
+        cls, node_obj: Union[GenericMaterial, Process], cell: dict
+    ) -> Optional[str]:
         """
         Verify cell update. Return None is all is OK, else return message to be
         displayed as alert to confirm the update.
@@ -800,50 +901,51 @@ class SheetCellEditAjaxView(BaseSheetEditAjaxView):
         if not assay or not assay_plugin:
             return None
         logger.debug(
-            'Verifying edit for node "{}" ({}): {}'.format(
-                node_obj.name, node_obj.sodar_uuid, cell
-            )
+            f'Verifying edit for node "{node_obj.name}" '
+            f'({node_obj.sodar_uuid}): {cell}'
         )
-        cache_backend = get_backend_api('sodar_cache')
+        cache_backend = plugin_api.get_backend_api('sodar_cache')
         cache_item = cache_backend.get_cache_item(
             app_name=assay_plugin.app_name,
-            name='irods/rows/{}'.format(assay.sodar_uuid),
+            name=f'irods/rows/{assay.sodar_uuid}',
             project=node_obj.get_project(),
         )
         if not cache_item:
             return None
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         # NOTE: Can we assume all assay apps ever will follow this convention?
         #       (At the time of implementation they do)
-        obj_path = os.path.join(irods_backend.get_path(assay), node_obj.name)
+        obj_path = iRODSPath(irods_backend.get_path(assay), node_obj.name)
         cache_paths = cache_item.data.get('paths')
         if not cache_paths:  # Not sure if this can happen but just in case..
             return None
         path = cache_paths.get(obj_path)
         if path and path.get('file_count') > 0:
             # Files for material exist -> alert
-            return ALERT_LIB_FILES_EXIST.format(name=node_obj.name)
+            return LIB_FILES_EXIST_ALERT.format(name=node_obj.name)
         logger.debug('Verify OK')
         return None
 
     @transaction.atomic
-    def _update_cell(self, node_obj, cell, save=False):
+    def _update_cell(
+        self,
+        node_obj: Union[GenericMaterial, Process],
+        cell: dict,
+        save: bool = False,
+    ) -> Optional[str]:
         """
         Update a single cell in an object.
 
         :param node_obj: GenericMaterial or Process object
         :param cell: Cell update data from the client (dict)
         :param save: If True, save object after successful call (boolean)
-        :return: String
+        :return: String or None
         :raise: SheetEditException if the operation fails.
         """
         ok_msg = None
         logger.debug(
-            'Editing {} "{}" ({})'.format(
-                node_obj.__class__.__name__,
-                node_obj.unique_name,
-                node_obj.sodar_uuid,
-            )
+            f'Editing {node_obj.__class__.__name__} "{node_obj.unique_name}" '
+            f'({node_obj.sodar_uuid})'
         )
         # TODO: Provide the original header as one string instead
         header_type = cell['header_type']
@@ -858,7 +960,7 @@ class SheetCellEditAjaxView(BaseSheetEditAjaxView):
             elif isinstance(attr, dict):
                 attr['name'] = cell['value']
                 # TODO: Set accession and ontology once editing is allowed
-            ok_msg = 'Edited field: {}'.format(attr_name)
+            ok_msg = f'Edited field: {attr_name}'
 
         # Name field (special case)
         elif header_type == 'name':
@@ -938,16 +1040,12 @@ class SheetCellEditAjaxView(BaseSheetEditAjaxView):
                     attr[header_name]['unit']['name'] = cell.get('unit')
                 elif node_obj.has_unit(header_name, header_type):
                     attr[header_name]['unit'] = cell.get('unit')
-            ok_msg = 'Edited JSON attribute: {}[{}]'.format(
-                header_type, header_name
-            )
+            ok_msg = f'Edited JSON attribute: {header_type}[{header_name}]'
 
         else:
             self._raise_ex(
-                'Editing not implemented '
-                '(header_type={}; header_name={})'.format(
-                    header_type, header_name
-                )
+                f'Editing not implemented (header_type={header_type}; '
+                f'header_name={header_name})'
             )
 
         if save:
@@ -965,12 +1063,12 @@ class SheetCellEditAjaxView(BaseSheetEditAjaxView):
         studies = []
 
         for cell in updated_cells:
-            logger.debug('Cell update: {}'.format(cell))
+            logger.debug(f'Cell update: {cell}')
             node_obj = get_node_obj(sodar_uuid=cell['uuid'])
             # TODO: Make sure given object actually belongs in project etc.
             if not node_obj:
-                err_msg = 'Object not found: {} ({})'.format(
-                    cell['uuid'], cell['obj_cls']
+                err_msg = (
+                    f'Object not found: {cell["uuid"]} ({cell["obj_cls"]})'
                 )
                 logger.error(err_msg)
                 # TODO: Return list of errors when processing in batch
@@ -980,10 +1078,8 @@ class SheetCellEditAjaxView(BaseSheetEditAjaxView):
             if verify:
                 alert = self._verify_update(node_obj, cell)
                 if alert:
-                    logger.info(
-                        'Verify returned alert for cell: {}'.format(cell)
-                    )
-                    logger.info('Alert: {}'.format(alert))
+                    logger.info(f'Verify returned alert for cell: {cell}')
+                    logger.info(f'Alert: {alert}')
                     return Response(
                         {'detail': 'alert', 'alert_msg': alert}, status=200
                     )
@@ -1017,7 +1113,7 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
     """Ajax view for inserting rows into sample sheets"""
 
     @classmethod
-    def _get_name(cls, node):
+    def _get_name(cls, node: dict) -> Optional[str]:
         """
         Return non-unique name for a node retrieved from the editor for a new
         row, or None if the name does not exist.
@@ -1034,7 +1130,9 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
         return None
 
     @classmethod
-    def _add_node_attr(cls, node_obj, cell):
+    def _add_node_attr(
+        cls, node_obj: Union[GenericMaterial, Process], cell: dict
+    ):
         """
         Add common node attribute from cell in a new row node.
 
@@ -1067,14 +1165,12 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
             else:
                 attr[header_name]['unit'] = None
             logger.debug(
-                'Set {}: {} = {}'.format(
-                    header_type, header_name, attr[header_name]
-                )
+                f'Set {header_type}: {header_name} = {attr[header_name]}'
             )
 
         elif header_type == 'performer' and cell['value']:
             node_obj.performer = cell['value']
-            logger.debug('Set performer: {}'.format(node_obj.performer))
+            logger.debug(f'Set performer: {node_obj.performer}')
 
         elif header_type == 'perform_date' and cell['value']:
             node_obj.perform_date = dt.strptime(cell['value'], '%Y-%m-%d')
@@ -1084,12 +1180,20 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
             node_obj.extract_label = cell['value']
 
     @classmethod
-    def _collapse_process(cls, row_nodes, node, node_idx, comp_table, node_obj):
+    def _collapse_process(
+        cls,
+        row_nodes: list[dict],
+        node: dict,
+        node_idx: int,
+        comp_table: dict,
+        node_obj: Process,
+    ) -> Optional[str]:
         """
         Collapse process into an existing one.
 
         :param row_nodes: List of dicts from editor UI
         :param node: Dict from editor UI
+        :param node_idx: Node index (integer)
         :param comp_table: Study/assay table generated by
                            SampleSheetTableBuilder (dict)
         :param node_obj: Unsaved Process object
@@ -1145,9 +1249,8 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
 
             if prev_old_uuid:
                 logger.debug(
-                    'Collapse: Found previous named node "{}" (UUID={})'.format(
-                        prev_old_name, prev_old_uuid
-                    )
+                    f'Collapse: Found previous named node "{prev_old_name}" '
+                    f'(UUID={prev_old_uuid})'
                 )
                 iter_idx = col_idx + 1
                 while not next_old_uuid and iter_idx < len(comp_row):
@@ -1192,7 +1295,7 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
             logger.debug('Collapse: Identical process not found')
 
     @transaction.atomic
-    def _insert_row(self, row):
+    def _insert_row(self, row: dict):
         """
         Insert row into a sample sheet.
 
@@ -1213,11 +1316,8 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
         collapse = False
         comp_table = None
         logger.debug(
-            'Inserting row in {} "{}" ({})'.format(
-                parent.__class__.__name__,
-                parent.get_display_name(),
-                parent.sodar_uuid,
-            )
+            f'Inserting row in {parent.__class__.__name__} '
+            f'"{parent.get_display_name()}" ({parent.sodar_uuid})'
         )
 
         # TODO: We create duplicate rows with named processes, fix!
@@ -1236,9 +1336,7 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
                     Study.objects.filter(sodar_uuid=row['study']).first()
                 )
             except Exception as ex:
-                self._raise_ex(
-                    'Error building tables for collapsing: {}'.format(ex)
-                )
+                self._raise_ex(f'Error building tables for collapsing: {ex}')
             if not assay:
                 comp_table = comp_study['study']
             else:
@@ -1258,9 +1356,7 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
                 # Could also use eval() but it's unsafe
                 node_obj = get_node_obj(sodar_uuid=uuid)
                 if not node_obj:
-                    self._raise_ex(
-                        '{} not found (UUID={})'.format(obj_cls, uuid)
-                    )
+                    self._raise_ex(f'{obj_cls} not found (UUID={uuid})')
             # Named process is a special case
             # TODO: Also check column!
             elif obj_cls == 'Process' and name:
@@ -1270,11 +1366,8 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
             if node_obj:
                 new_node = False
                 logger.debug(
-                    'Node {}: Existing {} {}'.format(
-                        node_count,
-                        node_obj.__class__.__name__,
-                        node_obj.sodar_uuid,
-                    )
+                    f'Node {node_count}: Existing '
+                    f'{node_obj.__class__.__name__} {node_obj.sodar_uuid}'
                 )
 
             # New Process
@@ -1366,21 +1459,15 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
                 if collapse_uuid:  # Collapse successful
                     node_obj = Process.objects.get(sodar_uuid=collapse_uuid)
                     logger.debug(
-                        'Node {}: Collapsed with existing {} {}'.format(
-                            node_count,
-                            node_obj.__class__.__name__,
-                            node_obj.sodar_uuid,
-                        )
+                        f'Node {node_count}: Collapsed with existing '
+                        f'{node_obj.__class__.__name__} {node_obj.sodar_uuid}'
                     )
                 else:
                     node_obj.save()
                     logger.debug(
-                        'Node {}: Created {} {}: {}'.format(
-                            node_count,
-                            node_obj.__class__.__name__,
-                            node_obj.sodar_uuid,
-                            obj_kwargs,
-                        )
+                        f'Node {node_count}: Created '
+                        f'{node_obj.__class__.__name__} {node_obj.sodar_uuid}: '
+                        f'{obj_kwargs}'
                     )
             node_objects.append(node_obj)
             node_count += 1
@@ -1390,7 +1477,7 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
             row_arcs.append(
                 [node_objects[i].unique_name, node_objects[i + 1].unique_name]
             )
-        logger.debug('Row Arcs: {}'.format(row_arcs))
+        logger.debug(f'Row Arcs: {row_arcs}')
         # Add new arcs to parent
         for a in row_arcs:
             if a not in parent.arcs:
@@ -1401,7 +1488,7 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
         try:
             sheet_io.export_isa(study.investigation)
         except Exception as ex:
-            self._raise_ex('altamISA Error: {}'.format(ex))
+            self._raise_ex(f'altamISA Error: {ex}')
         logger.debug('Inserting row OK')
         # Clear cached study tables
         table_builder.clear_study_cache(study)
@@ -1414,7 +1501,7 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
         ).first()
         new_row = request.data.get('new_row', None)
         if new_row:
-            logger.debug('Row insert: {}'.format(json.dumps(new_row)))
+            logger.debug(f'Row insert: {json.dumps(new_row)}')
             try:
                 self.ok_data['node_uuids'] = self._insert_row(new_row)
                 logger.debug('node_uuids={}'.format(self.ok_data['node_uuids']))
@@ -1427,7 +1514,7 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
                     return Response({'detail': str(ex)}, status=500)
             except Exception as ex:
                 if settings.DEBUG:
-                    raise (ex)
+                    raise ex
                 return Response({'detail': str(ex)}, status=500)
         return Response(self.ok_data, status=200)
 
@@ -1435,7 +1522,7 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
 class SheetRowDeleteAjaxView(BaseSheetEditAjaxView):
     """Ajax view for deleting rows from sample sheets"""
 
-    def _delete_node(self, node):
+    def _delete_node(self, node: dict):
         """
         Delete node object from the database.
 
@@ -1452,7 +1539,7 @@ class SheetRowDeleteAjaxView(BaseSheetEditAjaxView):
             node['obj'].delete()
 
     @transaction.atomic
-    def _delete_row(self, row):
+    def _delete_row(self, row: dict):
         """
         Delete row from a study/assay table. Also delete node objects from the
         database if unused after the row deletion.
@@ -1500,11 +1587,8 @@ class SheetRowDeleteAjaxView(BaseSheetEditAjaxView):
                         'Sample used in assay(s), can not delete row from study'
                     )
         logger.debug(
-            'Deleting row from {} "{}" ({})'.format(
-                parent.__class__.__name__,
-                parent.get_display_name(),
-                parent.sodar_uuid,
-            )
+            f'Deleting row from {parent.__class__.__name__} '
+            f'"{parent.get_display_name()}" ({parent.sodar_uuid})'
         )
 
         # Build reference table
@@ -1543,9 +1627,7 @@ class SheetRowDeleteAjaxView(BaseSheetEditAjaxView):
                     node2_count += 1
 
             if arc_count == 1:
-                logger.debug(
-                    'Deleting arc: {} / {}'.format(node1_name, node2_name)
-                )
+                logger.debug(f'Deleting arc: {node1_name} / {node2_name}')
                 parent.arcs.remove([node1_name, node2_name])
                 parent.save()
                 if node1_count == 1 and (
@@ -1566,7 +1648,7 @@ class SheetRowDeleteAjaxView(BaseSheetEditAjaxView):
         try:
             sheet_io.export_isa(study.investigation)
         except Exception as ex:
-            self._raise_ex('altamISA Error: {}'.format(ex))
+            self._raise_ex(f'altamISA Error: {ex}')
         # Clear cached study tables
         table_builder.clear_study_cache(study)
         logger.debug('Deleting row OK')
@@ -1574,7 +1656,7 @@ class SheetRowDeleteAjaxView(BaseSheetEditAjaxView):
     def post(self, request, *args, **kwargs):
         del_row = request.data.get('del_row', None)
         if del_row:
-            logger.debug('Row delete: {}'.format(json.dumps(del_row)))
+            logger.debug(f'Row delete: {json.dumps(del_row)}')
             try:
                 self._delete_row(del_row)
             except self.SheetEditException as ex:
@@ -1588,7 +1670,7 @@ class SheetVersionSaveAjaxView(SheetVersionMixin, SODARBaseProjectAjaxView):
     permission_required = 'samplesheets.edit_sheet'
 
     def post(self, request, *args, **kwargs):
-        timeline = get_backend_api('timeline_backend')
+        timeline = plugin_api.get_backend_api('timeline_backend')
         log_msg = 'Save sheet version: '
         isa_version = None
         project = self.get_project()
@@ -1600,9 +1682,7 @@ class SheetVersionSaveAjaxView(SheetVersionMixin, SODARBaseProjectAjaxView):
                 inv, request, request.data.get('description') or None
             )
         except Exception as ex:
-            logger.error(
-                log_msg + 'Unable to export sheet to ISA-Tab: {}'.format(ex)
-            )
+            logger.error(log_msg + f'Unable to export sheet to ISA-Tab: {ex}')
             export_ex = str(ex)
 
         if timeline:
@@ -1654,7 +1734,7 @@ class SheetEditFinishAjaxView(SheetVersionMixin, SODARBaseProjectAjaxView):
             logger.info(log_msg + 'nothing updated')
             return Response({'detail': 'ok'}, status=200)  # Nothing to do
 
-        timeline = get_backend_api('timeline_backend')
+        timeline = plugin_api.get_backend_api('timeline_backend')
         isa_version = None
         project = self.get_project()
         inv = Investigation.objects.filter(project=project, active=True).first()
@@ -1665,7 +1745,7 @@ class SheetEditFinishAjaxView(SheetVersionMixin, SODARBaseProjectAjaxView):
                 isa_version = self.save_version(inv, request)
             except Exception as ex:
                 logger.error(
-                    log_msg + 'Unable to export sheet to ISA-Tab: {}'.format(ex)
+                    log_msg + f'Unable to export sheet to ISA-Tab: {ex}'
                 )
                 export_ex = str(ex)
 
@@ -1701,8 +1781,7 @@ class SheetEditFinishAjaxView(SheetVersionMixin, SODARBaseProjectAjaxView):
         if not export_ex:
             if isa_version:
                 logger.info(
-                    log_msg
-                    + 'Saved ISA-Tab "{}"'.format(isa_version.get_full_name())
+                    log_msg + f'Saved ISA-Tab "{isa_version.get_full_name()}"'
                 )
             inv.save()  # Update date_modified
             return Response({'detail': 'ok'}, status=200)
@@ -1720,7 +1799,7 @@ class SheetEditConfigAjaxView(SODARBaseProjectAjaxView):
         fields = request.data.get('fields')
         if not fields:
             return Response({'detail': 'No fields provided'}, status=400)
-        timeline = get_backend_api('timeline_backend')
+        timeline = plugin_api.get_backend_api('timeline_backend')
         project = self.get_project()
         sheet_config = app_settings.get(
             APP_NAME, 'sheet_config', project=project
@@ -1728,14 +1807,14 @@ class SheetEditConfigAjaxView(SODARBaseProjectAjaxView):
         studies = []
 
         for field in fields:
-            logger.debug('Field config: {}'.format(field))
+            logger.debug(f'Field config: {field}')
             s_uuid = field['study']
             a_uuid = field['assay']
             n_idx = field['node_idx']
             f_idx = field['field_idx']
             is_name = True if field['config']['name'] == 'Name' else False
-            debug_info = 'study="{}"; assay="{}"; n={}; f={})'.format(
-                s_uuid, a_uuid, n_idx, f_idx
+            debug_info = (
+                f'study="{s_uuid}"; assay="{a_uuid}"; n={n_idx}; f={f_idx})'
             )
             study = Study.objects.filter(sodar_uuid=field['study']).first()
             if study not in studies:
@@ -1751,9 +1830,7 @@ class SheetEditConfigAjaxView(SODARBaseProjectAjaxView):
                         'fields'
                     ][f_idx]
             except Exception as ex:
-                msg = 'Unable to access config field ({}): {}'.format(
-                    debug_info, ex
-                )
+                msg = f'Unable to access config field ({debug_info}): {ex}'
                 logger.error(msg)
                 return Response({'detail': msg}, status=500)
 
@@ -1764,7 +1841,7 @@ class SheetEditConfigAjaxView(SODARBaseProjectAjaxView):
                     and field['config']['type'] != og_config['type']
                 )
             ):
-                msg = 'Fields do not match ({})'.format(debug_info)
+                msg = f'Fields do not match ({debug_info})'
                 logger.error(msg)
                 return Response({'detail': msg}, status=500)
 
@@ -1845,7 +1922,7 @@ class StudyDisplayConfigAjaxView(SODARBaseProjectAjaxView):
         if not study:
             return Response({'detail': 'Study not found'}, status=404)
 
-        timeline = get_backend_api('timeline_backend')
+        timeline = plugin_api.get_backend_api('timeline_backend')
         project = study.investigation.project
         # Set current configuration as default if selected
         set_default = request.data.get('set_default')
@@ -1873,7 +1950,7 @@ class StudyDisplayConfigAjaxView(SODARBaseProjectAjaxView):
                     status_type=timeline.TL_STATUS_OK,
                 )
                 tl_event.add_object(
-                    obj=study, label='study', name=study.get_display_name()
+                    obj=study, label='study', name=study.get_name()
                 )
 
         # Get user display config
@@ -1902,7 +1979,7 @@ class IrodsDataRequestCreateAjaxView(
     permission_required = 'samplesheets.edit_sheet'
 
     def post(self, request, *args, **kwargs):
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         path = irods_backend.sanitize_path(request.data.get('path'))
         project = self.get_project()
 
@@ -1943,7 +2020,7 @@ class IrodsDataRequestDeleteAjaxView(
     permission_required = 'samplesheets.edit_sheet'
 
     def post(self, request, *args, **kwargs):
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         path = irods_backend.sanitize_path(request.data.get('path'))
         # Delete database object
         irods_request = IrodsDataRequest.objects.filter(
@@ -1981,7 +2058,7 @@ class IrodsObjectListAjaxView(BaseIrodsAjaxView):
         self.path = None
 
     def get(self, request, *args, **kwargs):
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         if not irods_backend:
             return Response({'detail': 'iRODS backend not enabled'}, status=400)
         # Get files

@@ -1,11 +1,13 @@
 import { createLocalVue, mount } from '@vue/test-utils'
 import BootstrapVue from 'bootstrap-vue'
+import VueClipboard from 'vue-clipboard2'
 import Overview from '@/components/Overview.vue'
 import sodarContext from './data/sodarContext.json'
 
 // Set up extended Vue constructor
 const localVue = createLocalVue()
 localVue.use(BootstrapVue)
+localVue.use(VueClipboard)
 
 // Init data
 let propsData
@@ -47,8 +49,21 @@ describe('Overview.vue', () => {
     expect(wrapper.find('#sodar-ss-overview-investigation').exists()).toBe(true)
     expect(wrapper.findAll('.sodar-ss-overview-study').length).toBe(1)
     expect(wrapper.find('#sodar-ss-overview-stats').exists()).toBe(true)
-
-    // IrodsStatsBadge
+    expect(wrapper.find('#sodar-ss-overview-irods').exists()).toBe(true)
     expect(wrapper.find('.sodar-ss-irods-stats').exists()).toBe(true)
+  })
+  it('renders overview subpage with no view files perm', () => {
+    propsData.sodarContext.perms.view_files = false
+    const wrapper = mount(Overview, {
+      localVue,
+      propsData: propsData,
+      stubs: getStubs()
+    })
+
+    expect(wrapper.find('#sodar-ss-overview-investigation').exists()).toBe(true)
+    expect(wrapper.findAll('.sodar-ss-overview-study').length).toBe(1)
+    expect(wrapper.find('#sodar-ss-overview-stats').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-overview-irods').exists()).toBe(false)
+    expect(wrapper.find('.sodar-ss-irods-stats').exists()).toBe(false)
   })
 })

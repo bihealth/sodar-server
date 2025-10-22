@@ -38,7 +38,9 @@
   "studies": {
     "11111111-1111-1111-1111-111111111111": {
       "display_name": "Small Germline Study",
+      "file_name": "s_small.txt",
       "identifier": "s_small",
+      "title": "Small Germline Study",
       "description": "",
       "comments": {
         "Study Grant Number": "",
@@ -46,14 +48,21 @@
       },
       "irods_path": "/sodarZone/projects/00/00000000-0000-0000-0000-000000000000/sample_data/study_11111111-1111-1111-1111-111111111111",
       "table_url": "http://0.0.0.0:8000/samplesheets/ajax/study/tables/11111111-1111-1111-1111-111111111111",
-      "plugin": null,
+      "plugin_name": null,
+      "plugin_title": null,
       "assays": {
         "22222222-2222-2222-2222-222222222222": {
           "name": "small",
           "display_name": "Small",
+          "file_name": "a_small.txt",
+          "measurement_type": "exome sequencing assay",
+          "technology_type": "nucleotide sequencing",
+          "technology_platform": "",
+          "comments": null,
           "irods_path": "/sodarZone/projects/00/00000000-0000-0000-0000-000000000000/sample_data/study_11111111-1111-1111-1111-111111111111/assay_22222222-2222-2222-2222-222222222222",
-          "display_row_links": true,
-          "plugin": null
+          "plugin_name": null,
+          "plugin_title": null,
+          "display_row_links": false
         }
       }
     }
@@ -67,6 +76,7 @@
     "view_versions": true,
     "update_cache": true,
     "view_tickets": true,
+    "view_files": true,
     "is_superuser": true
   },
   "sheet_stats": {

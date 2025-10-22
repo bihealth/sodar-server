@@ -47,20 +47,20 @@
 
   {# Tour content #}
   <script type="text/javascript">
-    tourEnabled = false;
+    tourEnabled = false
     // TODO: Tour
   </script>
 
   <script type="text/javascript" src="{% static 'samplesheets/js/vendor/daff.js' %}"></script>
   <script type="text/javascript" src="{% static 'samplesheets/js/sheet_compare.js' %}"></script>
   <script type="text/javascript">
-    const ajaxUrl = '{% url "samplesheets:ajax_version_compare" project=project.sodar_uuid %}';
-    const fileUrl = '{% url "samplesheets:version_compare_file" project=project.sodar_uuid %}';
-    const source = '{{ source }}';
-    const target = '{{ target }}';
+    const ajaxUrl = '{% url "samplesheets:ajax_version_compare" project=project.sodar_uuid %}'
+    const fileUrl = '{% url "samplesheets:version_compare_file" project=project.sodar_uuid %}'
+    const source = '{{ source }}'
+    const target = '{{ target }}'
 
     $(document).ready(function() {
-      buildDiffPage(ajaxUrl, fileUrl, source, target);
+      buildDiffPage(ajaxUrl, fileUrl, source, target)
     })
   </script>
 

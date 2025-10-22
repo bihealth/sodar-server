@@ -1,8 +1,8 @@
 """Plugin tests for the the pep_ms assay plugin"""
 
-import os
-
 from copy import deepcopy
+
+from irods.path import iRODSPath
 
 from samplesheets.assayapps.pep_ms.plugins import RAW_DATA_COLL, MAX_QUANT_COLL
 from samplesheets.assayapps.tests.base import AssayPluginTestBase
@@ -35,7 +35,7 @@ class TestPEPMSAssayPlugin(AssayPluginTestBase):
             self.assay,
             self.assay_path,
         )
-        expected = os.path.join(self.assay_path, RAW_DATA_COLL)
+        expected = iRODSPath(self.assay_path, RAW_DATA_COLL)
         self.assertEqual(row_path, expected)
 
     def test_update_row(self):
@@ -43,11 +43,9 @@ class TestPEPMSAssayPlugin(AssayPluginTestBase):
         self.assay_table['table_data'][0][44]['value'] = FILE_NAME
         self.assay_table['table_data'][0][51]['value'] = FILE_NAME2
         row_ex = deepcopy(self.assay_table['table_data'][0])
-        row_ex[44]['link'] = os.path.join(
-            self.base_url, RAW_DATA_COLL, FILE_NAME
-        )
-        row_ex[51]['link'] = os.path.join(
-            self.base_url, RAW_DATA_COLL, FILE_NAME2
+        row_ex[44]['link'] = self.base_url + iRODSPath(RAW_DATA_COLL, FILE_NAME)
+        row_ex[51]['link'] = self.base_url + iRODSPath(
+            RAW_DATA_COLL, FILE_NAME2
         )
         row = self.plugin.update_row(
             self.assay_table['table_data'][0], self.assay_table, self.assay, 0
@@ -68,12 +66,12 @@ class TestPEPMSAssayPlugin(AssayPluginTestBase):
             {
                 'id': 'raw_data',
                 'label': 'Raw Data',
-                'path': os.path.join(self.assay_path, RAW_DATA_COLL),
+                'path': iRODSPath(self.assay_path, RAW_DATA_COLL),
             },
             {
                 'id': 'maxquant_results',
                 'label': 'MaxQuant Results',
-                'path': os.path.join(self.assay_path, MAX_QUANT_COLL),
+                'path': iRODSPath(self.assay_path, MAX_QUANT_COLL),
             },
         ]
         self.assertEqual(self.plugin.get_shortcuts(self.assay), expected)

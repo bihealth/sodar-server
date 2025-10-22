@@ -1,4 +1,8 @@
+"""Models for the landingzones app"""
+
 import uuid
+
+from typing import Optional
 
 from django.conf import settings
 from django.db import models
@@ -101,6 +105,14 @@ class LandingZone(models.Model):
         help_text='Configuration data (for storing plugin-specific settings)',
     )
 
+    #: Zone subcollection creation
+    coll_creation = models.CharField(
+        default=lc.ZONE_COLLS_NONE,
+        blank=False,
+        null=False,
+        help_text='Create landing zone subcollections',
+    )
+
     #: Landing zone SODAR UUID
     sodar_uuid = models.UUIDField(
         default=uuid.uuid4, unique=True, help_text='Landing zone SODAR UUID'
@@ -112,24 +124,36 @@ class LandingZone(models.Model):
         unique_together = ('title', 'project', 'user')
 
     def __str__(self):
-        return '{}: {}/{}'.format(
-            self.project.title, self.user.username, self.title
-        )
+        return f'{self.project.title}: {self.user.username}/{self.title}'
 
     def __repr__(self):
         values = (self.project.title, self.user.username, self.title)
         return 'LandingZone({})'.format(', '.join(repr(v) for v in values))
 
+    def _validate_coll_creation(self):
+        """Validate coll_creation field"""
+        if self.coll_creation not in lc.ZONE_COLLS_CREATION_MODES:
+            modes = ', '.join(lc.ZONE_COLLS_CREATION_MODES)
+            raise ValueError(
+                f'Invalid coll_creation value: {self.coll_creation} '
+                f'(allowed values: {modes})'
+            )
+
+    def save(self, *args, **kwargs):
+        """Override save() for custom validtation"""
+        self._validate_coll_creation()
+        super().save(*args, **kwargs)
+
     # Custom row-level functions
 
-    def get_project(self):
+    def get_project(self) -> Project:
         """Get project in cases where multiple object types may be included"""
         return self.project
 
-    def set_status(self, status, status_info=None):
+    def set_status(self, status: str, status_info: Optional[str] = None):
         """Set zone status"""
         if status not in lc.ZONE_STATUS_TYPES:
-            raise TypeError('Unknown status "{}"'.format(status))
+            raise TypeError(f'Unknown status "{status}"')
         # Refresh object in case foreign keys have changed (see #2175)
         self.refresh_from_db()
         self.status = status
@@ -139,14 +163,14 @@ class LandingZone(models.Model):
             self.status_info = lc.DEFAULT_STATUS_INFO[status][:1024]
         self.save()
 
-    def is_locked(self):
+    def is_locked(self) -> bool:
         """
         Return True/False depending whether write access to zone is currently
         locked.
         """
         return self.status in lc.STATUS_LOCKING
 
-    def can_display_files(self):
+    def can_display_files(self) -> bool:
         """
         Return True/False depending whether file info should be displayed.
         """

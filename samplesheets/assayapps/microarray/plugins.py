@@ -1,10 +1,13 @@
 """Assay app plugin for samplesheets"""
 
+from typing import Optional
+
 from django.conf import settings
 
 # Projectroles dependency
-from projectroles.models import SODAR_CONSTANTS
+from projectroles.models import SODARUser, SODAR_CONSTANTS
 
+from samplesheets.models import Assay
 from samplesheets.plugins import SampleSheetAssayPluginPoint
 from samplesheets.utils import get_top_header
 
@@ -68,7 +71,9 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
     #: Toggle displaying of row-based iRODS links in the assay table
     display_row_links = True
 
-    def get_row_path(self, row, table, assay, assay_path):
+    def get_row_path(
+        self, row: list[dict], table: dict, assay: Assay, assay_path: str
+    ) -> Optional[str]:
         """
         Return iRODS path for an assay row in a sample sheet. If None,
         display default path.
@@ -96,13 +101,14 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             elif header['value'].lower() == SCAN_NAME:
                 scan_name = cell['value']
             if hybrid_name and scan_name:
-                row_path = '/'.join(
+                return '/'.join(
                     [assay_path, RAW_DATA_COLL, hybrid_name, scan_name]
                 )
-                return row_path
         return None
 
-    def update_row(self, row, table, assay, index):
+    def update_row(
+        self, row: list[dict], table: dict, assay: Assay, index: int
+    ) -> list[dict]:
         """
         Update render table row with e.g. links. Return the modified row.
 
@@ -131,7 +137,12 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                     row[i]['link'] = base_url + '/' + row[i]['value']
         return row
 
-    def update_cache(self, name=None, project=None, user=None):
+    def update_cache(
+        self,
+        name: Optional[str] = None,
+        project: Optional[str] = None,
+        user: Optional[SODARUser] = None,
+    ):
         """
         Update cached data for this app, limitable to item ID and/or project.
 

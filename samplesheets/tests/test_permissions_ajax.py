@@ -47,10 +47,12 @@ class SampleSheetsAjaxPermissionTestBase(
             self.user_delegate_cat,  # Inherited
             self.user_contributor_cat,  # Inherited
             self.user_guest_cat,  # Inherited
+            self.user_viewer_cat,  # Inherited
             self.user_owner,
             self.user_delegate,
             self.user_contributor,
             self.user_guest,
+            self.user_viewer,
         ]
         self.bad_users_read = [
             self.user_finder_cat,
@@ -69,10 +71,19 @@ class SampleSheetsAjaxPermissionTestBase(
         ]
         self.bad_users_write = [
             self.user_guest_cat,
+            self.user_viewer_cat,
             self.user_finder_cat,
             self.user_guest,
+            self.user_viewer,
             self.user_no_roles,
             self.anonymous,
+        ]
+        # Users for public access
+        self.good_users_public_read = [
+            self.user_viewer_cat,
+            self.user_finder_cat,
+            self.user_viewer,
+            self.user_no_roles,
         ]
 
 
@@ -91,29 +102,33 @@ class TestSheetContextAjaxView(SampleSheetsAjaxPermissionTestBase):
         self.assert_response(self.url, self.good_users_read, 200)
         self.assert_response(self.url, self.bad_users_read, 403)
         # Test public project
-        self.project.set_public()
-        self.assert_response(
-            self.url, [self.user_finder_cat, self.user_no_roles], 200
-        )
-        self.assert_response(self.url, self.anonymous, 403)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.good_users_public_read, 200)
+            self.assert_response(self.url, self.anonymous, 403)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous guest access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 200)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 200)
 
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
         self.assert_response(self.url, self.good_users_read, 200)
         self.assert_response(self.url, self.bad_users_read, 403)
-        # Test public project
-        self.project.set_public()
-        self.assert_response(
-            self.url, [self.user_finder_cat, self.user_no_roles], 200
-        )
-        self.assert_response(self.url, self.anonymous, 403)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.good_users_public_read, 200)
+            self.assert_response(self.url, self.anonymous, 403)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 403)
 
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
@@ -137,28 +152,33 @@ class TestStudyTablesAjaxView(SampleSheetsAjaxPermissionTestBase):
         """Test StudyTablesAjaxView GET"""
         self.assert_response(self.url, self.good_users_read, 200)
         self.assert_response(self.url, self.bad_users_read, 403)
-        self.project.set_public()
-        self.assert_response(
-            self.url, [self.user_finder_cat, self.user_no_roles], 200
-        )
-        self.assert_response(self.url, self.anonymous, 403)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.good_users_public_read, 200)
+            self.assert_response(self.url, self.anonymous, 403)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous guest access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 200)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 200)
 
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
         self.assert_response(self.url, self.good_users_read, 200)
         self.assert_response(self.url, self.bad_users_read, 403)
-        self.project.set_public()
-        self.assert_response(
-            self.url, [self.user_finder_cat, self.user_no_roles], 200
-        )
-        self.assert_response(self.url, self.anonymous, 403)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.good_users_public_read, 200)
+            self.assert_response(self.url, self.anonymous, 403)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 403)
 
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
@@ -177,10 +197,11 @@ class TestStudyTablesAjaxView(SampleSheetsAjaxPermissionTestBase):
         self.assert_response(
             self.url, self.bad_users_write, 403, data=self.edit_data
         )
-        self.project.set_public()
-        self.assert_response(
-            self.url, self.no_role_users, 403, data=self.edit_data
-        )
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.url, self.no_role_users, 403, data=self.edit_data
+            )
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_edit_anon(self):
@@ -188,8 +209,11 @@ class TestStudyTablesAjaxView(SampleSheetsAjaxPermissionTestBase):
         app_settings.set(
             'samplesheets', 'allow_editing', True, project=self.project
         )
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 403, data=self.edit_data)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.url, self.anonymous, 403, data=self.edit_data
+            )
 
     def test_get_edit_archive(self):
         """Test GET with edit mode and archived project"""
@@ -201,13 +225,25 @@ class TestStudyTablesAjaxView(SampleSheetsAjaxPermissionTestBase):
         self.assert_response(
             self.url, self.non_superusers, 403, data=self.edit_data
         )
-        self.project.set_public()
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.url, self.no_role_users, 403, data=self.edit_data
+            )
+
+    def test_get_edit_block(self):
+        """Test GET with edit mode and project access block"""
+        app_settings.set(
+            'samplesheets', 'allow_editing', True, project=self.project
+        )
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200, data=self.edit_data)
         self.assert_response(
-            self.url, self.no_role_users, 403, data=self.edit_data
+            self.url, self.non_superusers, 403, data=self.edit_data
         )
 
     def test_get_edit_read_only(self):
-        """Test GET with site read-only mode"""
+        """Test GET with edit mode and site read-only mode"""
         app_settings.set(
             'samplesheets', 'allow_editing', True, project=self.project
         )
@@ -223,10 +259,11 @@ class TestStudyTablesAjaxView(SampleSheetsAjaxPermissionTestBase):
             'samplesheets', 'allow_editing', False, project=self.project
         )
         self.assert_response(self.url, self.all_users, 403, data=self.edit_data)
-        self.project.set_public()
-        self.assert_response(
-            self.url, self.no_role_users, 403, data=self.edit_data
-        )
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.url, self.no_role_users, 403, data=self.edit_data
+            )
 
     def test_get_not_allowed_archive(self):
         """Test GET with disallowed edit mode and archived project"""
@@ -235,10 +272,11 @@ class TestStudyTablesAjaxView(SampleSheetsAjaxPermissionTestBase):
             'samplesheets', 'allow_editing', False, project=self.project
         )
         self.assert_response(self.url, self.all_users, 403, data=self.edit_data)
-        self.project.set_public()
-        self.assert_response(
-            self.url, self.no_role_users, 403, data=self.edit_data
-        )
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.url, self.no_role_users, 403, data=self.edit_data
+            )
 
 
 class TestStudyLinksAjaxView(SampleSheetsAjaxPermissionTestBase):
@@ -262,6 +300,12 @@ class TestStudyLinksAjaxView(SampleSheetsAjaxPermissionTestBase):
         self.assert_response(self.url, self.good_users_read, 404)  # No plugin
         self.assert_response(self.url, self.bad_users_read, 403)
 
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 404)
+        self.assert_response(self.url, self.non_superusers, 403)
+
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
         self.set_site_read_only()
@@ -283,28 +327,33 @@ class TestSheetWarningsAjaxView(SampleSheetsAjaxPermissionTestBase):
         """Test SheetWarningsAjaxView GET"""
         self.assert_response(self.url, self.good_users_read, 200)
         self.assert_response(self.url, self.bad_users_read, 403)
-        self.project.set_public()
-        self.assert_response(
-            self.url, [self.user_finder_cat, self.user_no_roles], 200
-        )
-        self.assert_response(self.url, self.anonymous, 403)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.good_users_public_read, 200)
+            self.assert_response(self.url, self.anonymous, 403)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous guest access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 200)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 200)
 
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
         self.assert_response(self.url, self.good_users_read, 200)
         self.assert_response(self.url, self.bad_users_read, 403)
-        self.project.set_public()
-        self.assert_response(
-            self.url, [self.user_finder_cat, self.user_no_roles], 200
-        )
-        self.assert_response(self.url, self.anonymous, 403)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.good_users_public_read, 200)
+            self.assert_response(self.url, self.anonymous, 403)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 403)
 
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
@@ -329,22 +378,35 @@ class TestSheetCellEditAjaxView(SampleSheetsAjaxPermissionTestBase):
             self.url, self.good_users_write, 200, method='POST'
         )
         self.assert_response(self.url, self.bad_users_write, 403, method='POST')
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 403, method='POST')
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.url, self.no_role_users, 403, method='POST'
+            )
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_post_anon(self):
         """Test POST with anonymous guest access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 403, method='POST')
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 403, method='POST')
 
     def test_post_archive(self):
         """Test POST with archived project"""
         self.project.set_archive()
         self.assert_response(self.url, self.superuser, 200, method='POST')
         self.assert_response(self.url, self.non_superusers, 403, method='POST')
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 403, method='POST')
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.url, self.no_role_users, 403, method='POST'
+            )
+
+    def test_post_block(self):
+        """Test POST with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200, method='POST')
+        self.assert_response(self.url, self.non_superusers, 403, method='POST')
 
     def test_post_read_only(self):
         """Test POST with site read-only mode"""
@@ -369,22 +431,35 @@ class TestSheetRowInsertAjaxView(SampleSheetsAjaxPermissionTestBase):
             self.url, self.good_users_write, 200, method='POST'
         )
         self.assert_response(self.url, self.bad_users_write, 403, method='POST')
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 403, method='POST')
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.url, self.no_role_users, 403, method='POST'
+            )
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_post_anon(self):
         """Test POST with anonymous guest access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 403, method='POST')
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 403, method='POST')
 
     def test_post_archive(self):
         """Test POST with archived project"""
         self.project.set_archive()
         self.assert_response(self.url, self.superuser, 200, method='POST')
         self.assert_response(self.url, self.non_superusers, 403, method='POST')
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 403, method='POST')
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.url, self.no_role_users, 403, method='POST'
+            )
+
+    def test_post_block(self):
+        """Test POST with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200, method='POST')
+        self.assert_response(self.url, self.non_superusers, 403, method='POST')
 
     def test_post_read_only(self):
         """Test POST with site read-only mode"""
@@ -409,22 +484,35 @@ class TestSheetRowDeleteAjaxView(SampleSheetsAjaxPermissionTestBase):
             self.url, self.good_users_write, 200, method='POST'
         )
         self.assert_response(self.url, self.bad_users_write, 403, method='POST')
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 403, method='POST')
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.url, self.no_role_users, 403, method='POST'
+            )
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_post_anon(self):
         """Test POST with anonymous guest access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 403, method='POST')
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 403, method='POST')
 
     def test_post_archive(self):
         """Test POST with archived project"""
         self.project.set_archive()
         self.assert_response(self.url, self.superuser, 200, method='POST')
         self.assert_response(self.url, self.non_superusers, 403, method='POST')
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 403, method='POST')
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.url, self.no_role_users, 403, method='POST'
+            )
+
+    def test_post_block(self):
+        """Test POST with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200, method='POST')
+        self.assert_response(self.url, self.non_superusers, 403, method='POST')
 
     def test_post_read_only(self):
         """Test POST with site read-only mode"""
@@ -449,22 +537,35 @@ class TestSheetVersionSaveAjaxView(SampleSheetsAjaxPermissionTestBase):
             self.url, self.good_users_write, 200, method='POST'
         )
         self.assert_response(self.url, self.bad_users_write, 403, method='POST')
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 403, method='POST')
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.url, self.no_role_users, 403, method='POST'
+            )
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_post_anon(self):
         """Test POST with anonymous guest access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 403, method='POST')
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 403, method='POST')
 
     def test_post_archive(self):
         """Test POST with archived project"""
         self.project.set_archive()
         self.assert_response(self.url, self.superuser, 200, method='POST')
         self.assert_response(self.url, self.non_superusers, 403, method='POST')
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 403, method='POST')
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.url, self.no_role_users, 403, method='POST'
+            )
+
+    def test_post_block(self):
+        """Test POST with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200, method='POST')
+        self.assert_response(self.url, self.non_superusers, 403, method='POST')
 
     def test_post_read_only(self):
         """Test POST with site read-only mode"""
@@ -489,22 +590,35 @@ class TestSheetEditFinishAjaxView(SampleSheetsAjaxPermissionTestBase):
             self.url, self.good_users_write, 200, method='POST'
         )
         self.assert_response(self.url, self.bad_users_write, 403, method='POST')
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 403, method='POST')
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.url, self.no_role_users, 403, method='POST'
+            )
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_post_anon(self):
         """Test POST with anonymous guest access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 403, method='POST')
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 403, method='POST')
 
     def test_post_archive(self):
         """Test POST with archived project"""
         self.project.set_archive()
         self.assert_response(self.url, self.superuser, 200, method='POST')
         self.assert_response(self.url, self.non_superusers, 403, method='POST')
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 403, method='POST')
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.url, self.no_role_users, 403, method='POST'
+            )
+
+    def test_post_block(self):
+        """Test POST with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200, method='POST')
+        self.assert_response(self.url, self.non_superusers, 403, method='POST')
 
     def test_post_read_only(self):
         """Test POST with site read-only mode"""
@@ -531,22 +645,35 @@ class TestSheetEditConfigAjaxView(SampleSheetsAjaxPermissionTestBase):
             self.url, self.good_users_write, 400, method='POST'
         )
         self.assert_response(self.url, self.bad_users_write, 403, method='POST')
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 403, method='POST')
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.url, self.no_role_users, 403, method='POST'
+            )
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_post_anon(self):
         """Test POST with anonymous guest access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 403, method='POST')
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 403, method='POST')
 
     def test_post_archive(self):
         """Test POST with archived project"""
         self.project.set_archive()
         self.assert_response(self.url, self.superuser, 400, method='POST')
         self.assert_response(self.url, self.non_superusers, 403, method='POST')
-        self.project.set_public()
-        self.assert_response(self.url, self.no_role_users, 403, method='POST')
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.url, self.no_role_users, 403, method='POST'
+            )
+
+    def test_post_block(self):
+        """Test POST with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 400, method='POST')
+        self.assert_response(self.url, self.non_superusers, 403, method='POST')
 
     def test_post_read_only(self):
         """Test POST with site read-only mode"""
@@ -571,15 +698,17 @@ class TestStudyDisplayConfigAjaxView(SampleSheetsAjaxPermissionTestBase):
         # NOTE: We need post data for status 200
         self.assert_response(self.url, self.good_users_read, 400, method='POST')
         self.assert_response(self.url, self.bad_users_read, 403, method='POST')
-        self.project.set_public()
-        self.assert_response(self.url, self.user_guest, 400, method='POST')
-        self.assert_response(self.url, self.anonymous, 403, method='POST')
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.user_guest, 400, method='POST')
+            self.assert_response(self.url, self.anonymous, 403, method='POST')
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_post_anon(self):
         """Test POST with anonymous guest access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 400, method='POST')
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 400, method='POST')
 
     def test_post_archive(self):
         """Test POST with archived project"""
@@ -587,9 +716,16 @@ class TestStudyDisplayConfigAjaxView(SampleSheetsAjaxPermissionTestBase):
         self.project.set_archive()
         self.assert_response(self.url, self.good_users_read, 400, method='POST')
         self.assert_response(self.url, self.bad_users_read, 403, method='POST')
-        self.project.set_public()
-        self.assert_response(self.url, self.user_guest, 400, method='POST')
-        self.assert_response(self.url, self.anonymous, 403, method='POST')
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.user_guest, 400, method='POST')
+            self.assert_response(self.url, self.anonymous, 403, method='POST')
+
+    def test_post_block(self):
+        """Test POST with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 400, method='POST')
+        self.assert_response(self.url, self.non_superusers, 403, method='POST')
 
     def test_post_read_only(self):
         """Test POST with site read-only mode"""
@@ -617,26 +753,33 @@ class TestSheetVersionCompareAjaxView(SampleSheetsAjaxPermissionTestBase):
         """Test SheetVersionCompareAjaxView GET"""
         self.assert_response(self.url, self.good_users_read, 200)
         self.assert_response(self.url, self.bad_users_read, 403)
-        self.project.set_public()
-        self.assert_response(
-            self.url, [self.user_finder_cat, self.user_no_roles], 200
-        )
-        self.assert_response(self.url, self.anonymous, 403)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.good_users_public_read, 200)
+            self.assert_response(self.url, self.anonymous, 403)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_get_anon(self):
         """Test GET with anonymous guest access"""
-        self.project.set_public()
-        self.assert_response(self.url, self.anonymous, 200)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 200)
 
     def test_get_archive(self):
         """Test GET with archived project"""
         self.project.set_archive()
         self.assert_response(self.url, self.good_users_read, 200)
         self.assert_response(self.url, self.bad_users_read, 403)
-        self.project.set_public()
-        self.assert_response(self.url, [self.user_no_roles], 200)
-        self.assert_response(self.url, [self.anonymous], 403)
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, [self.user_no_roles], 200)
+            self.assert_response(self.url, [self.anonymous], 403)
+
+    def test_get_block(self):
+        """Test GET with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200)
+        self.assert_response(self.url, self.non_superusers, 403)
 
     def test_get_read_only(self):
         """Test GET with site read-only mode"""
@@ -677,26 +820,36 @@ class TestIrodsDataRequestCreateAjaxView(SampleSheetsAjaxPermissionTestBase):
             method='POST',
             data=self.post_data,
         )
-        self.project.set_public()
-        self.assert_response(
-            self.url,
-            self.user_guest,
-            403,
-            method='POST',
-            data=self.post_data,
-            cleanup_method=self._cleanup,
-        )
-        self.assert_response(
-            self.url, self.anonymous, 403, method='POST', data=self.post_data
-        )
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.url,
+                self.user_guest,
+                403,
+                method='POST',
+                data=self.post_data,
+                cleanup_method=self._cleanup,
+            )
+            self.assert_response(
+                self.url,
+                self.anonymous,
+                403,
+                method='POST',
+                data=self.post_data,
+            )
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_post_anon(self):
         """Test POST with anonymous guest access"""
-        self.project.set_public()
-        self.assert_response(
-            self.url, self.anonymous, 403, method='POST', data=self.post_data
-        )
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.url,
+                self.anonymous,
+                403,
+                method='POST',
+                data=self.post_data,
+            )
 
     def test_post_archive(self):
         """Test POST with archived project"""
@@ -716,17 +869,41 @@ class TestIrodsDataRequestCreateAjaxView(SampleSheetsAjaxPermissionTestBase):
             method='POST',
             data=self.post_data,
         )
-        self.project.set_public()
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.url,
+                self.user_guest,
+                403,
+                method='POST',
+                data=self.post_data,
+                cleanup_method=self._cleanup,
+            )
+            self.assert_response(
+                self.url,
+                self.anonymous,
+                403,
+                method='POST',
+                data=self.post_data,
+            )
+
+    def test_post_block(self):
+        """Test POST with project access block"""
+        self.set_access_block(self.project)
         self.assert_response(
             self.url,
-            self.user_guest,
-            403,
+            self.superuser,
+            200,
             method='POST',
             data=self.post_data,
             cleanup_method=self._cleanup,
         )
         self.assert_response(
-            self.url, self.anonymous, 403, method='POST', data=self.post_data
+            self.url,
+            self.non_superusers,
+            403,
+            method='POST',
+            data=self.post_data,
         )
 
     def test_post_read_only(self):
@@ -758,7 +935,7 @@ class TestIrodsDataRequestDeleteAjaxView(
         self._make_request()
 
     def _make_request(self):
-        self.request = self.make_irods_request(
+        self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
             path=IRODS_FILE_PATH,
@@ -788,8 +965,10 @@ class TestIrodsDataRequestDeleteAjaxView(
             self.user_owner,
             self.user_delegate,
             self.user_guest_cat,
+            self.user_viewer_cat,
             self.user_finder_cat,
             self.user_guest,
+            self.user_viewer,
             self.user_no_roles,
             self.anonymous,
         ]
@@ -804,26 +983,36 @@ class TestIrodsDataRequestDeleteAjaxView(
         self.assert_response(
             self.url, bad_users, 403, method='POST', data=self.post_data
         )
-        self.project.set_public()
-        self.assert_response(
-            self.url,
-            self.user_guest,
-            403,
-            method='POST',
-            data=self.post_data,
-            cleanup_method=self._cleanup,
-        )
-        self.assert_response(
-            self.url, self.anonymous, 403, method='POST', data=self.post_data
-        )
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.url,
+                self.user_guest,
+                403,
+                method='POST',
+                data=self.post_data,
+                cleanup_method=self._cleanup,
+            )
+            self.assert_response(
+                self.url,
+                self.anonymous,
+                403,
+                method='POST',
+                data=self.post_data,
+            )
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_post_anon(self):
         """Test POST with anonymous guest access"""
-        self.project.set_public()
-        self.assert_response(
-            self.url, self.anonymous, 403, method='POST', data=self.post_data
-        )
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.url,
+                self.anonymous,
+                403,
+                method='POST',
+                data=self.post_data,
+            )
 
     def test_post_archive(self):
         """Test POST with archived project"""
@@ -843,17 +1032,41 @@ class TestIrodsDataRequestDeleteAjaxView(
             method='POST',
             data=self.post_data,
         )
-        self.project.set_public()
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.url,
+                self.user_guest,
+                403,
+                method='POST',
+                data=self.post_data,
+                cleanup_method=self._cleanup,
+            )
+            self.assert_response(
+                self.url,
+                self.anonymous,
+                403,
+                method='POST',
+                data=self.post_data,
+            )
+
+    def test_post_block(self):
+        """Test POST with project access block"""
+        self.set_access_block(self.project)
         self.assert_response(
             self.url,
-            self.user_guest,
-            403,
+            self.superuser,
+            200,
             method='POST',
             data=self.post_data,
             cleanup_method=self._cleanup,
         )
         self.assert_response(
-            self.url, self.anonymous, 403, method='POST', data=self.post_data
+            self.url,
+            self.non_superusers,
+            403,
+            method='POST',
+            data=self.post_data,
         )
 
     def test_post_read_only(self):

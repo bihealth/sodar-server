@@ -2,13 +2,15 @@
 
 import os
 
+from irods.path import iRODSPath
+
 from django.conf import settings
 from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import TaskflowViewTestBase
@@ -24,6 +26,7 @@ from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 
 
 app_settings = AppSettingAPI()
+plugin_api = PluginAPI()
 
 
 # SODAR constants
@@ -63,7 +66,6 @@ class TestGermlinePlugin(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description',
         )
 
         # Import investigation
@@ -77,13 +79,12 @@ class TestGermlinePlugin(
             PLUGIN_NAME_GERMLINE
         )
         self.tb = SampleSheetTableBuilder()
-        self.cache_name = 'irods/{}'.format(self.study.sodar_uuid)
         self.assay_path = self.irods_backend.get_path(self.assay)
-        self.source_path = os.path.join(self.assay_path, LIBRARY_ID)
-        self.parent_path = os.path.join(self.assay_path, LIBRARY_ID_PARENT)
+        self.source_path = iRODSPath(self.assay_path, LIBRARY_ID)
+        self.parent_path = iRODSPath(self.assay_path, LIBRARY_ID_PARENT)
         self.source = self.study.get_sources().first()
-        self.cache_backend = get_backend_api('sodar_cache')
-        self.cache_name = 'irods/{}'.format(self.study.sodar_uuid)
+        self.cache_backend = plugin_api.get_backend_api('sodar_cache')
+        self.cache_name = f'irods/{self.study.sodar_uuid}'
 
     def test_plugin_retrieval(self):
         """Test retrieving SampleSheetStudyPlugin from the database"""
@@ -121,12 +122,8 @@ class TestGermlinePlugin(
     def test_get_shortcut_column_files(self):
         """Test get_shortcut_column() with cache item and files in iRODS"""
         self.irods.collections.create(self.source_path)
-        bam_path = os.path.join(
-            self.source_path, '{}_test.bam'.format(SAMPLE_ID)
-        )
-        vcf_path = os.path.join(
-            self.source_path, '{}_test.vcf.gz'.format(FAMILY_ID)
-        )
+        bam_path = iRODSPath(self.source_path, f'{SAMPLE_ID}_test.bam')
+        vcf_path = iRODSPath(self.source_path, f'{FAMILY_ID}_test.vcf.gz')
         self.irods.data_objects.create(bam_path)
         self.irods.data_objects.create(vcf_path)
 
@@ -144,12 +141,8 @@ class TestGermlinePlugin(
     def test_get_shortcut_column_cram_file(self):
         """Test get_shortcut_column() with cache item and CRAM file in iRODS"""
         self.irods.collections.create(self.source_path)
-        cram_path = os.path.join(
-            self.source_path, '{}_test.cram'.format(SAMPLE_ID)
-        )
-        vcf_path = os.path.join(
-            self.source_path, '{}_test.vcf.gz'.format(FAMILY_ID)
-        )
+        cram_path = iRODSPath(self.source_path, f'{SAMPLE_ID}_test.cram')
+        vcf_path = iRODSPath(self.source_path, f'{FAMILY_ID}_test.vcf.gz')
         self.irods.data_objects.create(cram_path)
         self.irods.data_objects.create(vcf_path)
 
@@ -167,9 +160,7 @@ class TestGermlinePlugin(
     def test_get_shortcut_column_parent_vcf(self):
         """Test get_shortcut_column() with VCF file in a parent's collection"""
         self.irods.collections.create(self.parent_path)
-        vcf_path = os.path.join(
-            self.parent_path, '{}_test.vcf.gz'.format(FAMILY_ID)
-        )
+        vcf_path = iRODSPath(self.parent_path, f'{FAMILY_ID}_test.vcf.gz')
         self.irods.data_objects.create(vcf_path)
 
         self.plugin.update_cache(self.cache_name, self.project)
@@ -189,9 +180,7 @@ class TestGermlinePlugin(
             s.characteristics['Family']['value'] = ''
             s.save()
         self.irods.collections.create(self.source_path)
-        vcf_path = os.path.join(
-            self.source_path, '{}_test.vcf.gz'.format(SAMPLE_ID)
-        )
+        vcf_path = iRODSPath(self.source_path, f'{SAMPLE_ID}_test.vcf.gz')
         self.irods.data_objects.create(vcf_path)
 
         self.plugin.update_cache(self.cache_name, self.project)
@@ -211,9 +200,7 @@ class TestGermlinePlugin(
             s.save()
 
         self.irods.collections.create(self.parent_path)
-        vcf_path = os.path.join(
-            self.parent_path, '{}_test.vcf.gz'.format(FAMILY_ID)
-        )
+        vcf_path = iRODSPath(self.parent_path, f'{FAMILY_ID}_test.vcf.gz')
         self.irods.data_objects.create(vcf_path)
 
         self.plugin.update_cache(self.cache_name, self.project)
@@ -254,12 +241,8 @@ class TestGermlinePlugin(
     def test_get_shortcut_links_files(self):
         """Test get_shortcut_links() with files in iRODS"""
         self.irods.collections.create(self.source_path)
-        bam_path = os.path.join(
-            self.source_path, '{}_test.bam'.format(SAMPLE_ID)
-        )
-        vcf_path = os.path.join(
-            self.source_path, '{}_test.vcf.gz'.format(FAMILY_ID)
-        )
+        bam_path = iRODSPath(self.source_path, f'{SAMPLE_ID}_test.bam')
+        vcf_path = iRODSPath(self.source_path, f'{FAMILY_ID}_test.vcf.gz')
         self.irods.data_objects.create(bam_path)
         self.irods.data_objects.create(vcf_path)
 
@@ -293,12 +276,8 @@ class TestGermlinePlugin(
     def test_get_shortcut_links_cram(self):
         """Test get_shortcut_links() with CRAM file in iRODS"""
         self.irods.collections.create(self.source_path)
-        cram_path = os.path.join(
-            self.source_path, '{}_test.cram'.format(SAMPLE_ID)
-        )
-        vcf_path = os.path.join(
-            self.source_path, '{}_test.vcf.gz'.format(FAMILY_ID)
-        )
+        cram_path = iRODSPath(self.source_path, f'{SAMPLE_ID}_test.cram')
+        vcf_path = iRODSPath(self.source_path, f'{FAMILY_ID}_test.vcf.gz')
         self.irods.data_objects.create(cram_path)
         self.irods.data_objects.create(vcf_path)
 
@@ -332,17 +311,17 @@ class TestGermlinePlugin(
     def test_get_shortcut_links_multiple(self):
         """Test get_shortcut_links() with multiple BAM/VCF files"""
         self.irods.collections.create(self.source_path)
-        bam_path = os.path.join(
-            self.source_path, '{}_test_2022-11-06.bam'.format(SAMPLE_ID)
+        bam_path = iRODSPath(
+            self.source_path, f'{SAMPLE_ID}_test_2022-11-06.bam'
         )
-        cram_path = os.path.join(
-            self.source_path, '{}_test_2022-11-07.cram'.format(SAMPLE_ID)
+        cram_path = iRODSPath(
+            self.source_path, f'{SAMPLE_ID}_test_2022-11-07.cram'
         )
-        vcf_path = os.path.join(
-            self.source_path, '{}_test.vcf_2022-11-06.vcf.gz'.format(FAMILY_ID)
+        vcf_path = iRODSPath(
+            self.source_path, f'{FAMILY_ID}_test.vcf_2022-11-06.vcf.gz'
         )
-        vcf_path2 = os.path.join(
-            self.source_path, '{}_test.vcf_2022-11-07.vcf.gz'.format(FAMILY_ID)
+        vcf_path2 = iRODSPath(
+            self.source_path, f'{FAMILY_ID}_test.vcf_2022-11-07.vcf.gz'
         )
         self.irods.data_objects.create(bam_path)
         self.irods.data_objects.create(cram_path)
@@ -369,9 +348,7 @@ class TestGermlinePlugin(
     def test_get_shortcut_links_bam_only(self):
         """Test get_shortcut_links() with BAM file only"""
         self.irods.collections.create(self.source_path)
-        bam_path = os.path.join(
-            self.source_path, '{}_test.bam'.format(SAMPLE_ID)
-        )
+        bam_path = iRODSPath(self.source_path, f'{SAMPLE_ID}_test.bam')
         self.irods.data_objects.create(bam_path)
         self.plugin.update_cache(self.cache_name, self.project)
         study_tables = self.tb.build_study_tables(self.study)
@@ -385,9 +362,7 @@ class TestGermlinePlugin(
     def test_get_shortcut_links_cram_only(self):
         """Test get_shortcut_links() with CRAM file only"""
         self.irods.collections.create(self.source_path)
-        cram_path = os.path.join(
-            self.source_path, '{}_test.cram'.format(SAMPLE_ID)
-        )
+        cram_path = iRODSPath(self.source_path, f'{SAMPLE_ID}_test.cram')
         self.irods.data_objects.create(cram_path)
         self.plugin.update_cache(self.cache_name, self.project)
         study_tables = self.tb.build_study_tables(self.study)
@@ -401,9 +376,7 @@ class TestGermlinePlugin(
     def test_get_shortcut_links_vcf_only(self):
         """Test get_shortcut_links() with VCF file only"""
         self.irods.collections.create(self.source_path)
-        vcf_path = os.path.join(
-            self.source_path, '{}_test.vcf.gz'.format(FAMILY_ID)
-        )
+        vcf_path = iRODSPath(self.source_path, f'{FAMILY_ID}_test.vcf.gz')
         self.irods.data_objects.create(vcf_path)
         self.plugin.update_cache(self.cache_name, self.project)
         study_tables = self.tb.build_study_tables(self.study)
@@ -417,9 +390,7 @@ class TestGermlinePlugin(
     def test_get_shortcut_links_invalid(self):
         """Test get_shortcut_links() with a non-BAM/VCF file"""
         self.irods.collections.create(self.source_path)
-        bam_path = os.path.join(
-            self.source_path, '{}_test.txt'.format(SAMPLE_ID)
-        )
+        bam_path = iRODSPath(self.source_path, f'{SAMPLE_ID}_test.txt')
         self.irods.data_objects.create(bam_path)
         self.plugin.update_cache(self.cache_name, self.project)
         study_tables = self.tb.build_study_tables(self.study)
@@ -433,18 +404,12 @@ class TestGermlinePlugin(
     def test_get_shortcut_links_omit(self):
         """Test get_shortcut_links() with omittable files in iRODS"""
         self.irods.collections.create(self.source_path)
-        bam_path = os.path.join(
-            self.source_path, '{}_test.bam'.format(SAMPLE_ID)
+        bam_path = iRODSPath(self.source_path, f'{SAMPLE_ID}_test.bam')
+        bam_path_omit = iRODSPath(
+            self.source_path, f'{SAMPLE_ID}_dragen_evidence.bam'
         )
-        bam_path_omit = os.path.join(
-            self.source_path, '{}_dragen_evidence.bam'.format(SAMPLE_ID)
-        )
-        vcf_path = os.path.join(
-            self.source_path, '{}_test.vcf.gz'.format(FAMILY_ID)
-        )
-        vcf_path_omit = os.path.join(
-            self.source_path, '{}_cnv.vcf.gz'.format(FAMILY_ID)
-        )
+        vcf_path = iRODSPath(self.source_path, f'{FAMILY_ID}_test.vcf.gz')
+        vcf_path_omit = iRODSPath(self.source_path, f'{FAMILY_ID}_cnv.vcf.gz')
         self.irods.data_objects.create(bam_path)
         self.irods.data_objects.create(bam_path_omit)
         self.irods.data_objects.create(vcf_path)
@@ -480,12 +445,10 @@ class TestGermlinePlugin(
     def test_get_shortcut_links_omit_only(self):
         """Test get_shortcut_links() with only omittable files in iRODS"""
         self.irods.collections.create(self.source_path)
-        bam_path_omit = os.path.join(
-            self.source_path, '{}_dragen_evidence.bam'.format(SAMPLE_ID)
+        bam_path_omit = iRODSPath(
+            self.source_path, f'{SAMPLE_ID}_dragen_evidence.bam'
         )
-        vcf_path_omit = os.path.join(
-            self.source_path, '{}_cnv.vcf.gz'.format(FAMILY_ID)
-        )
+        vcf_path_omit = iRODSPath(self.source_path, f'{FAMILY_ID}_cnv.vcf.gz')
         self.irods.data_objects.create(bam_path_omit)
         self.irods.data_objects.create(vcf_path_omit)
 
@@ -507,12 +470,10 @@ class TestGermlinePlugin(
             'samplesheets', 'igv_omit_vcf', '', project=self.project
         )
         self.irods.collections.create(self.source_path)
-        bam_path_omit = os.path.join(
-            self.source_path, '{}_dragen_evidence.bam'.format(SAMPLE_ID)
+        bam_path_omit = iRODSPath(
+            self.source_path, f'{SAMPLE_ID}_dragen_evidence.bam'
         )
-        vcf_path_omit = os.path.join(
-            self.source_path, '{}_cnv.vcf.gz'.format(FAMILY_ID)
-        )
+        vcf_path_omit = iRODSPath(self.source_path, f'{FAMILY_ID}_cnv.vcf.gz')
         self.irods.data_objects.create(bam_path_omit)
         self.irods.data_objects.create(vcf_path_omit)
 
@@ -531,12 +492,8 @@ class TestGermlinePlugin(
             'samplesheets', 'igv_omit_bam', '*omit.cram', project=self.project
         )
         self.irods.collections.create(self.source_path)
-        cram_path_omit = os.path.join(
-            self.source_path, '{}_omit.cram'.format(SAMPLE_ID)
-        )
-        vcf_path_omit = os.path.join(
-            self.source_path, '{}_cnv.vcf.gz'.format(FAMILY_ID)
-        )
+        cram_path_omit = iRODSPath(self.source_path, f'{SAMPLE_ID}_omit.cram')
+        vcf_path_omit = iRODSPath(self.source_path, f'{FAMILY_ID}_cnv.vcf.gz')
         self.irods.data_objects.create(cram_path_omit)
         self.irods.data_objects.create(vcf_path_omit)
 
@@ -564,12 +521,8 @@ class TestGermlinePlugin(
             project=self.project,
         )
         self.irods.collections.create(self.source_path)
-        bam_path = os.path.join(
-            self.source_path, '{}_test.bam'.format(SAMPLE_ID)
-        )
-        vcf_path = os.path.join(
-            self.source_path, '{}_test.vcf.gz'.format(FAMILY_ID)
-        )
+        bam_path = iRODSPath(self.source_path, f'{SAMPLE_ID}_test.bam')
+        vcf_path = iRODSPath(self.source_path, f'{FAMILY_ID}_test.vcf.gz')
         self.irods.data_objects.create(bam_path)
         self.irods.data_objects.create(vcf_path)
 
@@ -609,12 +562,8 @@ class TestGermlinePlugin(
     def test_update_cache_files(self):
         """Test update_cache() with files in iRODS"""
         self.irods.collections.create(self.source_path)
-        bam_path = os.path.join(
-            self.source_path, '{}_test.bam'.format(SAMPLE_ID)
-        )
-        vcf_path = os.path.join(
-            self.source_path, '{}_test.vcf.gz'.format(FAMILY_ID)
-        )
+        bam_path = iRODSPath(self.source_path, f'{SAMPLE_ID}_test.bam')
+        vcf_path = iRODSPath(self.source_path, f'{FAMILY_ID}_test.vcf.gz')
         self.irods.data_objects.create(bam_path)
         self.irods.data_objects.create(vcf_path)
         self.plugin.update_cache(self.cache_name, self.project)
@@ -635,12 +584,8 @@ class TestGermlinePlugin(
         }
         self.study.save()
         self.irods.collections.create(self.source_path)
-        bam_path = os.path.join(
-            self.source_path, '{}_test.bam'.format(SAMPLE_ID)
-        )
-        vcf_path = os.path.join(
-            self.source_path, '{}_test.vcf.gz'.format(FAMILY_ID)
-        )
+        bam_path = iRODSPath(self.source_path, f'{SAMPLE_ID}_test.bam')
+        vcf_path = iRODSPath(self.source_path, f'{FAMILY_ID}_test.vcf.gz')
         self.irods.data_objects.create(bam_path)
         self.irods.data_objects.create(vcf_path)
         self.plugin.update_cache(self.cache_name, self.project)
@@ -654,12 +599,8 @@ class TestGermlinePlugin(
     def test_update_cache_cram(self):
         """Test update_cache() with CRAM file in iRODS"""
         self.irods.collections.create(self.source_path)
-        cram_path = os.path.join(
-            self.source_path, '{}_test.cram'.format(SAMPLE_ID)
-        )
-        vcf_path = os.path.join(
-            self.source_path, '{}_test.vcf.gz'.format(FAMILY_ID)
-        )
+        cram_path = iRODSPath(self.source_path, f'{SAMPLE_ID}_test.cram')
+        vcf_path = iRODSPath(self.source_path, f'{FAMILY_ID}_test.vcf.gz')
         self.irods.data_objects.create(cram_path)
         self.irods.data_objects.create(vcf_path)
         self.plugin.update_cache(self.cache_name, self.project)
@@ -674,18 +615,12 @@ class TestGermlinePlugin(
         """Test update_cache() with omittable files in iRODS"""
         self.irods.collections.create(self.source_path)
         # Create omittable files which come before real ones alphabetically
-        bam_path = os.path.join(
-            self.source_path, '{}_test.bam'.format(SAMPLE_ID)
+        bam_path = iRODSPath(self.source_path, f'{SAMPLE_ID}_test.bam')
+        bam_path_omit = iRODSPath(
+            self.source_path, f'{SAMPLE_ID}_dragen_evidence.bam'
         )
-        bam_path_omit = os.path.join(
-            self.source_path, '{}_dragen_evidence.bam'.format(SAMPLE_ID)
-        )
-        vcf_path = os.path.join(
-            self.source_path, '{}_test.vcf.gz'.format(FAMILY_ID)
-        )
-        vcf_path_omit = os.path.join(
-            self.source_path, '{}_cnv.vcf.gz'.format(FAMILY_ID)
-        )
+        vcf_path = iRODSPath(self.source_path, f'{FAMILY_ID}_test.vcf.gz')
+        vcf_path_omit = iRODSPath(self.source_path, f'{FAMILY_ID}_cnv.vcf.gz')
         self.irods.data_objects.create(bam_path)
         self.irods.data_objects.create(bam_path_omit)
         self.irods.data_objects.create(vcf_path)
@@ -701,12 +636,10 @@ class TestGermlinePlugin(
     def test_update_cache_omit_only(self):
         """Test update_cache() with only omittable files in iRODS"""
         self.irods.collections.create(self.source_path)
-        bam_path_omit = os.path.join(
-            self.source_path, '{}_dragen_evidence.bam'.format(SAMPLE_ID)
+        bam_path_omit = iRODSPath(
+            self.source_path, f'{SAMPLE_ID}_dragen_evidence.bam'
         )
-        vcf_path_omit = os.path.join(
-            self.source_path, '{}_cnv.vcf.gz'.format(FAMILY_ID)
-        )
+        vcf_path_omit = iRODSPath(self.source_path, f'{FAMILY_ID}_cnv.vcf.gz')
         self.irods.data_objects.create(bam_path_omit)
         self.irods.data_objects.create(vcf_path_omit)
         self.plugin.update_cache(self.cache_name, self.project)
@@ -726,12 +659,10 @@ class TestGermlinePlugin(
             'samplesheets', 'igv_omit_vcf', '', project=self.project
         )
         self.irods.collections.create(self.source_path)
-        bam_path_omit = os.path.join(
-            self.source_path, '{}_dragen_evidence.bam'.format(SAMPLE_ID)
+        bam_path_omit = iRODSPath(
+            self.source_path, f'{SAMPLE_ID}_dragen_evidence.bam'
         )
-        vcf_path_omit = os.path.join(
-            self.source_path, '{}_cnv.vcf.gz'.format(FAMILY_ID)
-        )
+        vcf_path_omit = iRODSPath(self.source_path, f'{FAMILY_ID}_cnv.vcf.gz')
         self.irods.data_objects.create(bam_path_omit)
         self.irods.data_objects.create(vcf_path_omit)
         self.plugin.update_cache(self.cache_name, self.project)
@@ -748,12 +679,8 @@ class TestGermlinePlugin(
             'samplesheets', 'igv_omit_bam', '*omit.cram', project=self.project
         )
         self.irods.collections.create(self.source_path)
-        cram_path_omit = os.path.join(
-            self.source_path, '{}_omit.cram'.format(SAMPLE_ID)
-        )
-        vcf_path_omit = os.path.join(
-            self.source_path, '{}_cnv.vcf.gz'.format(FAMILY_ID)
-        )
+        cram_path_omit = iRODSPath(self.source_path, f'{SAMPLE_ID}_omit.cram')
+        vcf_path_omit = iRODSPath(self.source_path, f'{FAMILY_ID}_cnv.vcf.gz')
         self.irods.data_objects.create(cram_path_omit)
         self.irods.data_objects.create(vcf_path_omit)
         self.plugin.update_cache(self.cache_name, self.project)
@@ -779,18 +706,12 @@ class TestGermlinePlugin(
         )
         self.irods.collections.create(self.source_path)
         # Create omittable files which come before real ones alphabetically
-        bam_path = os.path.join(
-            self.source_path, '{}_test.bam'.format(SAMPLE_ID)
+        bam_path = iRODSPath(self.source_path, f'{SAMPLE_ID}_test.bam')
+        bam_path_omit = iRODSPath(
+            self.source_path, f'{SAMPLE_ID}_dragen_evidence.bam'
         )
-        bam_path_omit = os.path.join(
-            self.source_path, '{}_dragen_evidence.bam'.format(SAMPLE_ID)
-        )
-        vcf_path = os.path.join(
-            self.source_path, '{}_test.vcf.gz'.format(FAMILY_ID)
-        )
-        vcf_path_omit = os.path.join(
-            self.source_path, '{}_cnv.vcf.gz'.format(FAMILY_ID)
-        )
+        vcf_path = iRODSPath(self.source_path, f'{FAMILY_ID}_test.vcf.gz')
+        vcf_path_omit = iRODSPath(self.source_path, f'{FAMILY_ID}_cnv.vcf.gz')
         self.irods.data_objects.create(bam_path)
         self.irods.data_objects.create(bam_path_omit)
         self.irods.data_objects.create(vcf_path)
@@ -813,12 +734,8 @@ class TestGermlinePlugin(
             m.headers.remove('Characteristics[Family]')
             m.save()
         self.irods.collections.create(self.source_path)
-        bam_path = os.path.join(
-            self.source_path, '{}_test.bam'.format(SAMPLE_ID)
-        )
-        vcf_path = os.path.join(
-            self.source_path, '{}_test.vcf.gz'.format(SAMPLE_ID)
-        )
+        bam_path = iRODSPath(self.source_path, f'{SAMPLE_ID}_test.bam')
+        vcf_path = iRODSPath(self.source_path, f'{SAMPLE_ID}_test.vcf.gz')
         self.irods.data_objects.create(bam_path)
         self.irods.data_objects.create(vcf_path)
         self.plugin.update_cache(self.cache_name, self.project)

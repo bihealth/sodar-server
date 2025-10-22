@@ -2,7 +2,9 @@ import {
   // copy,
   getAppStub,
   getColDefParams,
-  getRowDataParams
+  getRowDataParams,
+  studyUuid,
+  assayUuid
 } from '../testUtils.js'
 // import sodarContext from './data/sodarContext.json'
 // import studyTables from './data/studyTables.json'
@@ -77,7 +79,7 @@ describe('buildColDef()', () => {
   it('returns assay colDef', () => {
     const colDef = buildColDef(getColDefParams({ assayMode: true }))
 
-    expect(colDef.length).toBe(13)
+    expect(colDef.length).toBe(12)
     expect(colDef[0].headerName).toBe('Row')
     expect(colDef[0].children.length).toBe(1)
     expect(colDef[0].children[0].pinned).toBe('left')
@@ -110,16 +112,25 @@ describe('buildColDef()', () => {
     expect(colDef[9].headerName).toBe('Raw Data File')
     expect(colDef[10].headerName).toBe('Process')
     expect(colDef[11].headerName).toBe('Derived Data File')
-    expect(colDef[12].headerName).toBe('iRODS')
-    expect(colDef[12].children[0].pinned).toBe('right')
-    expect(colDef[12].children[0].unselectable).toBe(true)
-    expect(colDef[12].children[0].sortable).toBe(false)
 
     for (let i = 0; i < colDef.length; i++) {
       for (let j = 0; j < colDef[i].children.length; j++) {
         expect([false, undefined]).toContain(colDef[i].children[j].editable)
       }
     }
+  })
+
+  it('returns assay colDef with row links enabled', () => {
+    const colDefParams = getColDefParams({ assayMode: true })
+    colDefParams.sodarContext.studies[
+      studyUuid].assays[assayUuid].display_row_links = true
+    const colDef = buildColDef(colDefParams)
+
+    expect(colDef.length).toBe(13)
+    expect(colDef[12].headerName).toBe('iRODS')
+    expect(colDef[12].children[0].pinned).toBe('right')
+    expect(colDef[12].children[0].unselectable).toBe(true)
+    expect(colDef[12].children[0].sortable).toBe(false)
   })
 
   it('hides study columns', () => {
@@ -180,7 +191,7 @@ describe('buildColDef()', () => {
     const colDef = buildColDef(
       getColDefParams({ assayMode: true, editMode: true }))
 
-    expect(colDef.length).toBe(13) // iRODS column replaced
+    expect(colDef.length).toBe(13) // Add edit column
     expect(colDef[12].headerName).toBe('Edit')
     expect(colDef[12].children[0].headerName).toBe('Row')
     for (let i = 0; i < colDef.length - 1; i++) {

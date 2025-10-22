@@ -104,6 +104,19 @@ describe('SheetTableHeader.vue', () => {
       .attributes().disabled).toBe('disabled')
   })
 
+  it('renders study table header without view files perm', async () => {
+    const propsData = getPropsData()
+    propsData.params.sodarContext.perms.view_files = false
+    const wrapper = mount(SheetTableHeader, {
+      localVue,
+      propsData: propsData,
+      stubs: getStubs()
+    })
+
+    expect(wrapper.find('.sodar-ss-irods-stats').exists()).toBe(false)
+    expect(wrapper.find('.sodar-ss-irods-links').exists()).toBe(false)
+  })
+
   it('renders assay table header in edit mode', async () => {
     const wrapper = mount(SheetTableHeader, {
       localVue,
@@ -115,6 +128,19 @@ describe('SheetTableHeader.vue', () => {
     expect(wrapper.find('.sodar-ss-irods-links').exists()).toBe(true)
     expect(wrapper.find('.sodar-irods-copy-path-btn')
       .attributes().disabled).toBe('disabled')
+  })
+
+  it('renders assay table header without view files perm', async () => {
+    const propsData = getPropsData({ assayMode: true })
+    propsData.params.sodarContext.perms.view_files = false
+    const wrapper = mount(SheetTableHeader, {
+      localVue,
+      propsData: propsData,
+      stubs: getStubs()
+    })
+
+    expect(wrapper.find('.sodar-ss-irods-stats').exists()).toBe(false)
+    expect(wrapper.find('.sodar-ss-irods-links').exists()).toBe(false)
   })
 
   it('renders study table header with no irods collections', async () => {

@@ -6,24 +6,41 @@ import re
 import time
 
 from copy import deepcopy
-from irods.exception import NetworkException
+from math import modf
+from typing import Any, Optional, Union
 from urllib.parse import urlparse
+from uuid import UUID
+
+from irods.column import Criterion
+from irods.exception import CollectionDoesNotExist, NetworkException
+from irods.models import TicketQuery
+from irods.path import iRODSPath
+from irods.session import iRODSSession
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.http import HttpRequest
+from django.template.defaultfilters import filesizeformat
 from django.urls import reverse
 
 from djangoplugins.point import PluginPoint
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.models import Project, SODAR_CONSTANTS
+from projectroles.models import (
+    Project,
+    SODAR_CONSTANTS,
+    ROLE_RANKING,
+    CAT_DELIMITER,
+)
 from projectroles.plugins import (
     ProjectAppPluginPoint,
     ProjectModifyPluginMixin,
     PluginAppSettingDef,
     PluginObjectLink,
     PluginSearchResult,
-    get_backend_api,
+    PluginCategoryStatistic,
+    PluginAPI,
 )
 from projectroles.utils import build_secret
 
@@ -36,6 +53,7 @@ from samplesheets.models import (
     IrodsAccessTicket,
     IrodsDataRequest,
     ISA_META_ASSAY_PLUGIN,
+    ITEM_TYPE_SAMPLE,
 )
 from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.urls import urlpatterns
@@ -50,10 +68,14 @@ from samplesheets.views import (
     APP_NAME,
 )
 
+# Sodarcache dependency
+
 
 app_settings = AppSettingAPI()
 logger = logging.getLogger(__name__)
+plugin_api = PluginAPI()
 table_builder = SampleSheetTableBuilder()
+User = get_user_model()
 
 
 # SODAR constants
@@ -63,6 +85,8 @@ PROJECT_ACTION_UPDATE = SODAR_CONSTANTS['PROJECT_ACTION_UPDATE']
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
 PROJECT_ROLE_CONTRIBUTOR = SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR']
+PROJECT_ROLE_GUEST = SODAR_CONSTANTS['PROJECT_ROLE_GUEST']
+PROJECT_ROLE_VIEWER = SODAR_CONSTANTS['PROJECT_ROLE_VIEWER']
 APP_SETTING_SCOPE_PROJECT = SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT']
 APP_SETTING_SCOPE_USER = SODAR_CONSTANTS['APP_SETTING_SCOPE_USER']
 APP_SETTING_SCOPE_PROJECT_USER = SODAR_CONSTANTS[
@@ -110,34 +134,6 @@ SHEETS_APP_SETTINGS = [
         label='Sample sheet editing configuration',
         description='JSON configuration for sample sheet editing',
         user_modifiable=False,
-    ),
-    PluginAppSettingDef(
-        name='sheet_sync_enable',
-        scope=APP_SETTING_SCOPE_PROJECT,
-        type=APP_SETTING_TYPE_BOOLEAN,
-        default=False,
-        label='Enable sheet synchronization',
-        description='Enable sheet synchronization from a source project',
-        user_modifiable=True,
-    ),
-    PluginAppSettingDef(
-        name='sheet_sync_url',
-        scope=APP_SETTING_SCOPE_PROJECT,
-        type=APP_SETTING_TYPE_STRING,
-        default='',
-        label='URL for sheet synchronization',
-        description='REST API URL for sheet synchronization',
-        user_modifiable=True,
-    ),
-    PluginAppSettingDef(
-        name='sheet_sync_token',
-        scope=APP_SETTING_SCOPE_PROJECT,
-        type=APP_SETTING_TYPE_STRING,
-        default='',
-        label='Token for sheet synchronization',
-        description='Access token for sheet synchronization in the source '
-        'project',
-        user_modifiable=True,
     ),
     PluginAppSettingDef(
         name='sheet_table_height',
@@ -206,13 +202,23 @@ SHEETS_APP_SETTINGS = [
         user_modifiable=True,
     ),
     PluginAppSettingDef(
+        name='notify_alert_irods_request',
+        scope=APP_SETTING_SCOPE_USER,
+        type=APP_SETTING_TYPE_BOOLEAN,
+        default=True,
+        label='Receive alerts for iRODS data requests',
+        description='Receive UI alerts for iRODS data request accepting and '
+        'rejecting.',
+        user_modifiable=True,
+    ),
+    PluginAppSettingDef(
         name='notify_email_irods_request',
         scope=APP_SETTING_SCOPE_USER,
         type=APP_SETTING_TYPE_BOOLEAN,
         default=True,
         label='Receive email for iRODS data requests',
         description='Receive email notifications for iRODS data request '
-        'accepting and rejecting',
+        'accepting and rejecting.',
         user_modifiable=True,
     ),
     PluginAppSettingDef(
@@ -226,6 +232,39 @@ SHEETS_APP_SETTINGS = [
         user_modifiable=True,
     ),
 ]
+# Add remote sample sheet sync settings only if sync is enabled
+if settings.SHEETS_SYNC_ENABLE:
+    SHEETS_APP_SETTINGS += [
+        PluginAppSettingDef(
+            name='sheet_sync_enable',
+            scope=APP_SETTING_SCOPE_PROJECT,
+            type=APP_SETTING_TYPE_BOOLEAN,
+            default=False,
+            label='Enable sheet synchronization',
+            description='Enable sheet synchronization from a source project',
+            user_modifiable=True,
+        ),
+        PluginAppSettingDef(
+            name='sheet_sync_url',
+            scope=APP_SETTING_SCOPE_PROJECT,
+            type=APP_SETTING_TYPE_STRING,
+            default='',
+            label='URL for sheet synchronization',
+            description='REST API URL for sheet synchronization',
+            user_modifiable=True,
+        ),
+        PluginAppSettingDef(
+            name='sheet_sync_token',
+            scope=APP_SETTING_SCOPE_PROJECT,
+            type=APP_SETTING_TYPE_STRING,
+            default='',
+            label='Token for sheet synchronization',
+            description='Access token for sheet synchronization in the source '
+            'project',
+            user_modifiable=True,
+        ),
+    ]
+
 SHEETS_INFO_SETTINGS = [
     'SHEETS_ALLOW_CRITICAL',
     'SHEETS_API_FILE_EXISTS_RESTRICT',
@@ -241,11 +280,13 @@ SHEETS_INFO_SETTINGS = [
     'SHEETS_MIN_COLUMN_WIDTH',
     'SHEETS_ONTOLOGY_URL_SKIP',
     'SHEETS_PARSER_WARNING_SAVE_LIMIT',
+    'SHEETS_SYNC_ENABLE',
     'SHEETS_SYNC_INTERVAL',
     'SHEETS_VERSION_PAGINATION',
     'SHEETS_IGV_OMIT_BAM',
     'SHEETS_IGV_OMIT_VCF',
 ]
+
 MATERIAL_SEARCH_TYPES = ['source', 'sample']
 SKIP_MSG_NO_INV = 'No investigation for project'
 SKIP_MSG_NO_COLLS = 'Investigation collections not created in iRODS'
@@ -253,6 +294,34 @@ SYNC_URL_RE = (
     r'/samplesheets/sync/[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]'
     r'{3}-?[a-f0-9]{12}'
 )
+SHEET_COL_VIEW = (
+    '<a href="{url}" title="View project sample sheets">'
+    '<i class="iconify text-primary" data-icon="mdi:flask"></i></a>'
+)
+SHEET_COL_IMPORT = (
+    '<a href="{url}" title="Import sample sheet into project">'
+    '<i class="iconify text-primary" data-icon="mdi:plus-thick"></i></a>'
+)
+SHEET_COL_NO_SHEETS = (
+    '<i class="iconify text-muted" data-icon="mdi:flask" '
+    'title="No sample sheets in project"></i>'
+)
+FILE_COL_BROWSE = (
+    '<a href="{url}" target="_blank" '
+    'title="View project sample files in iRODS">'
+    '<i class="iconify text-primary" data-icon="mdi:folder-open"></i></a>'
+)
+FILE_COL_UNAVAILABLE = (
+    '<i class="iconify text-muted" '
+    'data-icon="mdi:folder-open" title="{title}"></i>'
+)
+FILE_COL_TITLE_NO_FILES = 'No project sample files in iRODS'
+FILE_COL_TITLE_NO_DAV = 'iRODS WebDAV unavailable'
+IRODS_STATS_CACHE_PREFIX = 'irods/stats/project/'
+IRODS_STATS_CACHE_NAME = IRODS_STATS_CACHE_PREFIX + '{uuid}'
+ASSAY_SHORTCUT_CACHE_NAME = 'irods/shortcuts/assay/{uuid}'
+EMPTY_IRODS_STATS = {'file_count': 0, 'total_size': 0}
+TICKET_MODE_READ = 'read'
 
 
 # Samplesheets project app plugin ----------------------------------------------
@@ -332,7 +401,113 @@ class ProjectAppPlugin(
     #: Names of plugin specific Django settings to display in siteinfo
     info_settings = SHEETS_INFO_SETTINGS
 
-    def get_object_link(self, model_str, uuid):
+    @classmethod
+    def _get_search_materials(
+        cls,
+        search_terms: list[str],
+        user: User,
+        keywords: list[str],
+        item_types: list[str],
+    ) -> list[dict]:
+        """Return materials for search results"""
+        ret = []
+        materials = GenericMaterial.objects.find(
+            search_terms, keywords, item_types=item_types
+        )
+        for m in materials:
+            if user.has_perm('samplesheets.view_sheet', m.get_project()):
+                if m.item_type == 'SAMPLE':
+                    assays = m.get_sample_assays()
+                else:
+                    assays = [m.assay]
+                ret.append(
+                    {
+                        'name': m.name,
+                        'type': m.item_type,
+                        'project': m.get_project(),
+                        'study': m.study,
+                        'assays': assays,
+                    }
+                )
+        return ret
+
+    @classmethod
+    def _get_search_files(
+        cls, search_terms: list[str], user: User, irods_backend: Any
+    ) -> list[dict]:
+        """Return iRODS files for search results"""
+        ret = []
+        try:
+            with irods_backend.get_session() as irods:
+                obj_list = irods_backend.get_objects(
+                    irods=irods,
+                    path=irods_backend.get_projects_path(),
+                    name_like=search_terms,
+                    limit=settings.SHEETS_IRODS_LIMIT,
+                )
+        # Skip rest if no data objects were found or iRODS is unreachable
+        except (FileNotFoundError, NetworkException):
+            return ret
+
+        projects = {
+            str(p.sodar_uuid): p
+            for p in Project.objects.filter(type=PROJECT_TYPE_PROJECT)
+            if user.has_perm('samplesheets.view_sheet', p)
+        }
+        studies = {
+            str(s.sodar_uuid): s
+            for s in Study.objects.filter(
+                investigation__project__in=projects.values()
+            )
+        }
+        assays = {
+            str(a.sodar_uuid): a
+            for a in Assay.objects.filter(study__in=studies.values())
+        }
+
+        for o in obj_list:
+            project_uuid = irods_backend.get_uuid_from_path(
+                o['path'], obj_type='project'
+            )
+            sample_subpath = f'/{project_uuid}/{settings.IRODS_SAMPLE_COLL}/'
+            if sample_subpath not in o['path']:
+                continue  # Skip files not in sample data repository
+
+            try:
+                project = projects[project_uuid]
+                study = studies[
+                    irods_backend.get_uuid_from_path(
+                        o['path'], obj_type='study'
+                    )
+                ]
+                assay = assays[
+                    irods_backend.get_uuid_from_path(
+                        o['path'], obj_type='assay'
+                    )
+                ]
+            except KeyError:
+                continue  # Skip file if the project/etc is not found
+
+            ret.append(
+                {
+                    'name': o['name'],
+                    'type': 'file',
+                    'project': project,
+                    'study': study,
+                    'assays': [assay] if assay else None,
+                    'irods_path': o['path'],
+                }
+            )
+            if len(ret) == settings.SHEETS_IRODS_LIMIT:
+                break
+
+        if ret:
+            ret.sort(key=lambda x: x['name'].lower())
+        return ret
+
+    def get_object_link(
+        self, model_str: str, uuid: Union[str, UUID]
+    ) -> Optional[PluginObjectLink]:
         """
         Return URL referring to an object used by the app, along with a name to
         be shown to the user for linking.
@@ -373,105 +548,13 @@ class ProjectAppPlugin(
                 name=obj.get_display_name(),
             )
 
-    @classmethod
-    def _get_search_materials(cls, search_terms, user, keywords, item_types):
-        """Return materials for search results"""
-        ret = []
-        materials = GenericMaterial.objects.find(
-            search_terms, keywords, item_types=item_types
-        )
-        for m in materials:
-            if user.has_perm('samplesheets.view_sheet', m.get_project()):
-                if m.item_type == 'SAMPLE':
-                    assays = m.get_sample_assays()
-                else:
-                    assays = [m.assay]
-                ret.append(
-                    {
-                        'name': m.name,
-                        'type': m.item_type,
-                        'project': m.get_project(),
-                        'study': m.study,
-                        'assays': assays,
-                    }
-                )
-        return ret
-
-    @classmethod
-    def _get_search_files(cls, search_terms, user, irods_backend):
-        """Return iRODS files for search results"""
-        ret = []
-        try:
-            with irods_backend.get_session() as irods:
-                obj_list = irods_backend.get_objects(
-                    irods=irods,
-                    path=irods_backend.get_projects_path(),
-                    name_like=search_terms,
-                    limit=settings.SHEETS_IRODS_LIMIT,
-                )
-        # Skip rest if no data objects were found or iRODS is unreachable
-        except (FileNotFoundError, NetworkException):
-            return ret
-
-        projects = {
-            str(p.sodar_uuid): p
-            for p in Project.objects.filter(type=PROJECT_TYPE_PROJECT)
-            if user.has_perm('samplesheets.view_sheet', p)
-        }
-        studies = {
-            str(s.sodar_uuid): s
-            for s in Study.objects.filter(
-                investigation__project__in=projects.values()
-            )
-        }
-        assays = {
-            str(a.sodar_uuid): a
-            for a in Assay.objects.filter(study__in=studies.values())
-        }
-
-        for o in obj_list:
-            project_uuid = irods_backend.get_uuid_from_path(
-                o['path'], obj_type='project'
-            )
-            sample_subpath = '/{}/{}/'.format(
-                project_uuid, settings.IRODS_SAMPLE_COLL
-            )
-            if sample_subpath not in o['path']:
-                continue  # Skip files not in sample data repository
-
-            try:
-                project = projects[project_uuid]
-                study = studies[
-                    irods_backend.get_uuid_from_path(
-                        o['path'], obj_type='study'
-                    )
-                ]
-                assay = assays[
-                    irods_backend.get_uuid_from_path(
-                        o['path'], obj_type='assay'
-                    )
-                ]
-            except KeyError:
-                continue  # Skip file if the project/etc is not found
-
-            ret.append(
-                {
-                    'name': o['name'],
-                    'type': 'file',
-                    'project': project,
-                    'study': study,
-                    'assays': [assay] if assay else None,
-                    'irods_path': o['path'],
-                }
-            )
-            if len(ret) == settings.SHEETS_IRODS_LIMIT:
-                break
-
-        if ret:
-            ret.sort(key=lambda x: x['name'].lower())
-        return ret
-
-    def search(self, search_terms, user, search_type=None, keywords=None):
+    def search(
+        self,
+        search_terms: list[str],
+        user: User,
+        search_type: Optional[str] = None,
+        keywords: Optional[list[str]] = None,
+    ) -> list[PluginSearchResult]:
         """
         Return app items based on one or more search terms, user, optional type
         and optional keywords.
@@ -483,7 +566,7 @@ class ProjectAppPlugin(
         :param keywords: List (optional)
         :return: List of PluginSearchResult objects
         """
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         ret = []
         # Materials
         if not search_type or search_type in MATERIAL_SEARCH_TYPES:
@@ -510,7 +593,9 @@ class ProjectAppPlugin(
             ret.append(r)
         return ret
 
-    def get_project_list_value(self, column_id, project, user):
+    def get_project_list_value(
+        self, column_id: str, project: Project, user: User
+    ) -> Union[str, int, None]:
         """
         Return a value for the optional additional project list column specific
         to a project.
@@ -520,69 +605,55 @@ class ProjectAppPlugin(
         :param user: User object (current user)
         :return: String (may contain HTML), integer or None
         """
-        investigation = Investigation.objects.filter(project=project).first()
+        investigation = Investigation.objects.filter(
+            project=project, active=True
+        ).first()
 
         if column_id == 'sheets':
             if investigation:
-                return (
-                    '<a href="{}" title="View project sample sheets">'
-                    # 'data-toggle="tooltip" data-placement="top">'
-                    '<i class="iconify text-primary" '
-                    'data-icon="mdi:flask"></i></a>'.format(
-                        get_sheets_url(project)
-                    )
-                )
+                return SHEET_COL_VIEW.format(url=get_sheets_url(project))
             elif user.has_perm(
                 'samplesheets.edit_sheet', project
             ) and not app_settings.get(APP_NAME, 'sheet_sync_enable', project):
-                return (
-                    '<a href="{}" title="Import sample sheet into project">'
-                    # 'data-toggle="tooltip" data-placement="top">'
-                    '<i class="iconify text-primary" '
-                    'data-icon="mdi:plus-thick"></i></a>'.format(
-                        reverse(
-                            'samplesheets:import',
-                            kwargs={'project': project.sodar_uuid},
-                        )
-                    )
+                url = reverse(
+                    'samplesheets:import',
+                    kwargs={'project': project.sodar_uuid},
                 )
-            else:
-                return (
-                    '<i class="iconify text-muted" data-icon="mdi:flask" '
-                    'title="No sample sheets in project"></i>'
-                    # 'data-toggle="tooltip" data-placement="top"></i>'
-                )
+                return SHEET_COL_IMPORT.format(url=url)
+            return SHEET_COL_NO_SHEETS
 
         elif column_id == 'files':
-            irods_backend = get_backend_api('omics_irods')
+            # Omit for viewer role or below
+            role_as = project.get_role(user)
+            if not user.is_superuser and (
+                not role_as
+                or role_as.role.rank >= ROLE_RANKING[PROJECT_ROLE_VIEWER]
+            ):
+                return ''
+            irods_backend = plugin_api.get_backend_api('omics_irods')
             if (
                 irods_backend
                 and investigation
                 and investigation.irods_status
                 and settings.IRODS_WEBDAV_ENABLED
             ):
-                return (
-                    '<a href="{}" target="_blank" '
-                    'title="View project sample files in iRODS">'
-                    # 'data-toggle="tooltip" data-placement="top">'
-                    '<i class="iconify text-primary" '
-                    'data-icon="mdi:folder-open"></i></a>'.format(
-                        settings.IRODS_WEBDAV_URL
-                        + irods_backend.get_sample_path(project)
-                    )
+                url = settings.IRODS_WEBDAV_URL + irods_backend.get_sample_path(
+                    project
                 )
-            return (
-                '<i class="iconify text-muted" '
-                'data-icon="mdi:folder-open" title="{}" '
-                # 'data-toggle="tooltip" data-placement="top" '
-                '></i>'.format(
-                    'No project sample files in iRODS'
-                    if settings.IRODS_WEBDAV_URL
-                    else 'iRODS WebDAV unavailable'
-                )
-            )
+                return FILE_COL_BROWSE.format(url=url)
+            if settings.IRODS_WEBDAV_ENABLED:
+                title = FILE_COL_TITLE_NO_FILES
+            else:
+                title = FILE_COL_TITLE_NO_DAV
+            return FILE_COL_UNAVAILABLE.format(title=title)
+        return ''
 
-    def validate_form_app_settings(self, app_settings, project=None, user=None):
+    def validate_form_app_settings(
+        self,
+        app_settings: dict,
+        project: Optional[Project] = None,
+        user: Optional[User] = None,
+    ) -> Optional[dict]:
         """
         Validate app settings form data and return a dict of errors.
 
@@ -617,7 +688,9 @@ class ProjectAppPlugin(
     # Project Modify API Implementation ----------------------------------------
 
     @classmethod
-    def _update_public_access(cls, project, taskflow, irods_backend):
+    def _update_public_access(
+        cls, project: Project, taskflow: Any, irods_backend: Any
+    ):
         """
         Update project public access.
 
@@ -632,51 +705,130 @@ class ProjectAppPlugin(
         )
         if (
             not ticket_str
-            and project.public_guest_access
+            and project.public_access
             and settings.PROJECTROLES_ALLOW_ANONYMOUS
         ):
             ticket_str = build_secret(16)
 
         flow_data = {
-            'access': project.public_guest_access,
+            'access': project.get_public_access_name() == PROJECT_ROLE_GUEST,
             'path': sample_path,
             'ticket_str': ticket_str,
         }
         try:
             taskflow.submit(
                 project=project,
+                user=None,
                 flow_name='public_access_update',
                 flow_data=flow_data,
             )
         except Exception as ex:
-            logger.error('Public status update taskflow failed: {}'.format(ex))
+            logger.error(f'Public status update taskflow failed: {ex}')
             if settings.DEBUG:
                 raise ex
 
-        # Update/delete ticket in project settings
+        # Update ticket in project app settings
         if (
-            project.public_guest_access
+            project.get_public_access_name() == PROJECT_ROLE_GUEST
             and settings.PROJECTROLES_ALLOW_ANONYMOUS
         ):
-            app_settings.set(
-                APP_NAME,
-                'public_access_ticket',
-                ticket_str,
-                project=project,
-            )
+            s_val = ticket_str
         else:
-            app_settings.delete(
-                APP_NAME, 'public_access_ticket', project=project
-            )
+            s_val = ''
+        app_settings.set(
+            APP_NAME, 'public_access_ticket', s_val, project=project
+        )
+
+    @classmethod
+    def _update_irods_tickets(cls, project: Project, irods_backend: Any):
+        """
+        Update iRODS access tickets set to the projects to match the SODAR
+        database. Done for tickets other than those set for project public
+        access.
+
+        :param project: Project object
+        :param irods_backend: Irodsbackend API object
+        :raise: Exception if DEBUG==True and an iRODS error is encountered
+        """
+        db_tickets = IrodsAccessTicket.objects.filter(
+            study__investigation__project=project
+        ).order_by('path')
+        sample_path = irods_backend.get_sample_path(project)
+        # Get project tickets from iRODS
+        irods_tickets = []
+        with irods_backend.get_session() as irods:
+            c_args = ['like', TicketQuery.Collection.name, f'{sample_path}/%']
+            try:
+                # Collection and data object tickets must be queried separately
+                res = irods.query(
+                    TicketQuery.Ticket, TicketQuery.Collection
+                ).filter(Criterion(*c_args))
+                for r in res:
+                    irods_tickets.append(r[TicketQuery.Ticket.string])
+                c_args[1] = TicketQuery.DataObject.coll
+                res = irods.query(
+                    TicketQuery.Ticket, TicketQuery.DataObject
+                ).filter(Criterion(*c_args))
+                for r in res:
+                    irods_tickets.append(r[TicketQuery.Ticket.string])
+            except Exception as ex:
+                logger.error(f'Exception in querying iRODS tickets: {ex}')
+                if settings.DEBUG:
+                    raise ex
+
+        # Issue tickets missing from iRODS
+        for dt in db_tickets:
+            t_kw = {
+                'irods': irods,
+                'ticket_str': dt.ticket,
+                'date_expires': dt.date_expires,
+                'allowed_hosts': dt.allowed_hosts,
+            }
+            try:
+                if dt.ticket not in irods_tickets:
+                    irods_backend.issue_ticket(
+                        mode=TICKET_MODE_READ, path=dt.path, **t_kw
+                    )
+                    log_mode = 'Issued'
+                else:
+                    irods_backend.update_ticket(**t_kw)
+                    log_mode = 'Updated'
+                logger.debug(
+                    f'{log_mode} ticket "{dt.ticket}" for path {dt.path}'
+                )
+            except Exception as ex:
+                ex_mode = (
+                    'issuing' if dt.ticket not in irods_tickets else 'updating'
+                )
+                logger.error(
+                    f'Exception in {ex_mode} iRODS ticket "{dt.ticket}" '
+                    f'({dt.sodar_uuid}): {ex}'
+                )
+                if settings.DEBUG:
+                    raise ex
+
+        # Delete tickets missing from SODAR
+        d_tickets = [t.ticket for t in db_tickets]
+        for it in irods_tickets:
+            if it not in d_tickets:
+                try:
+                    irods_backend.delete_ticket(irods, it)
+                    logger.debug(f'Deleted ticket "{it}"')
+                except Exception as ex:
+                    logger.error(
+                        f'Exception in deleting iRODS ticket "{it}": {ex}'
+                    )
+                    if settings.DEBUG:
+                        raise ex
 
     def perform_project_modify(
         self,
-        project,
-        action,
-        project_settings,
-        old_data=None,
-        old_settings=None,
-        request=None,
+        project: Project,
+        action: str,
+        project_settings: dict,
+        old_data: Optional[dict] = None,
+        old_settings: Optional[dict] = None,
+        request: Optional[HttpRequest] = None,
     ):
         """
         Perform additional actions to finalize project creation or update.
@@ -688,12 +840,12 @@ class ProjectAppPlugin(
         :param old_settings: Old app settings in case of update (dict or None)
         :param request: Request object or None
         """
-        taskflow = get_backend_api('taskflow')
-        irods_backend = get_backend_api('omics_irods')
+        taskflow = plugin_api.get_backend_api('taskflow')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
 
         # Check for conditions and skip if not met
         def _skip(msg):
-            logger.debug('Skipping: {}'.format(msg))
+            logger.debug(f'Skipping: {msg}')
 
         if not taskflow or not irods_backend:
             return _skip(
@@ -704,8 +856,9 @@ class ProjectAppPlugin(
             )
         if action == PROJECT_ACTION_CREATE:
             return _skip('Project newly created, no Investigation available')
-        if project.public_guest_access == old_data.get('public_guest_access'):
-            return _skip('Public guest access unchanged')
+
+        if project.get_public_access_name() == old_data.get('public_access'):
+            return _skip('Public access unchanged')
         investigation = Investigation.objects.filter(
             project=project, active=True
         ).first()
@@ -716,16 +869,15 @@ class ProjectAppPlugin(
 
         # Submit flow
         logger.info(
-            'Setting project public access status for {} to: {} '.format(
-                project.get_log_title(), project.public_guest_access
-            )
+            f'Setting project public access status for '
+            f'{project.get_log_title()} to: {project.get_public_access_name()}'
         )
         self._update_public_access(project, taskflow, irods_backend)
         logger.info('Public access status updated')
 
     # NOTE: No reverting from API needed as this always gets called last
 
-    def perform_project_sync(self, project):
+    def perform_project_sync(self, project: Project):
         """
         Synchronize existing projects to ensure related data exists when the
         syncmodifyapi management comment is called. Should mostly be used in
@@ -734,15 +886,15 @@ class ProjectAppPlugin(
 
         :param project: Current project object (Project)
         """
-        taskflow = get_backend_api('taskflow')
-        irods_backend = get_backend_api('omics_irods')
+        taskflow = plugin_api.get_backend_api('taskflow')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
 
         # Set up investigation collections
         investigation = Investigation.objects.filter(
             project=project, active=True
         ).first()
         if not investigation:
-            logger.debug('Skipping: {}'.format(SKIP_MSG_NO_INV))
+            logger.debug(f'Skipping: {SKIP_MSG_NO_INV}')
             return
         if investigation.irods_status:
             logger.info('Syncing iRODS sample data collections..')
@@ -750,11 +902,157 @@ class ProjectAppPlugin(
 
         # Sync public guest access
         if not investigation.irods_status:
-            logger.debug('Skipping: {}'.format(SKIP_MSG_NO_COLLS))
+            logger.debug(f'Skipping: {SKIP_MSG_NO_COLLS}')
             return
+        logger.info('Syncing public access in iRODS..')
         self._update_public_access(project, taskflow, irods_backend)
+        # Update tickets
+        logger.info('Syncing iRODS access tickets..')
+        self._update_irods_tickets(project, irods_backend)
 
-    def update_cache(self, name=None, project=None, user=None):
+    @classmethod
+    def update_irods_stats_cache(
+        cls,
+        project: Project,
+        irods_backend: Any,
+        cache_backend: Any,
+        irods: iRODSSession,
+        user: Optional[User] = None,
+    ):
+        """
+        Update project iRODS stats cache in the database.
+
+        Creates a sodarcache item with the name of
+        "irods/stats/project/{Project.sodar_uuid}".
+
+        :param project: Project object
+        :param irods_backend: IrodsAPI object
+        :param cache_backend: SODARCacheAPI object
+        :param irods: IRODSSession object
+        :param user: User triggering the update (User or None)
+        :return: JSONCacheItem object
+        """
+        path = irods_backend.get_sample_path(project)
+        try:
+            irods.collections.get(path)
+            data = irods_backend.get_stats(irods, path)
+        except CollectionDoesNotExist:
+            data = EMPTY_IRODS_STATS
+        except Exception as ex:
+            logger.error(
+                f'Exception in update_irods_stats_cache() for project '
+                f'{project.get_log_title()}: {ex}'
+            )
+            data = EMPTY_IRODS_STATS
+        return cache_backend.set_cache_item(
+            app_name=APP_NAME,
+            name=IRODS_STATS_CACHE_NAME.format(uuid=project.sodar_uuid),
+            data=data,
+            project=project,
+            user=user,
+        )
+
+    # TODO: Make this into a common helper?
+    @classmethod
+    def _get_coll_status(
+        cls, path: str, irods_backend: Any, irods: iRODSSession
+    ) -> bool:
+        """
+        Return collection status: True if collection exists and contains data
+        objects, otherwise False.
+
+        :param path: Full iRODS collection path (string)
+        :param irods_backend: IrodsAPI object
+        :param irods: IRODSSession object
+        :return: bool
+        """
+        coll_exists = irods.collections.exists(path)
+        if not coll_exists:
+            logger.debug(f'Collection does not exist: {path}')
+            return False
+        try:
+            sc_stats = irods_backend.get_stats(irods, path)
+            ret = sc_stats.get('file_count', 0) > 0
+            logger.debug(f'Data objects found: {ret}')
+            return sc_stats.get('file_count', 0) > 0
+        except Exception as ex:
+            logger.error(f'Exception in _get_coll_status(): {ex}')
+            return False
+
+    @classmethod
+    def update_assay_shortcut_cache(
+        cls,
+        assay: Assay,
+        irods_backend: Any,
+        cache_backend: Any,
+        irods: iRODSSession,
+        user: Optional[User] = None,
+    ):
+        """
+        Update assay shortcut cache in the database.
+
+        Creates a sodarcache item with the name of
+        "irods/shortcuts/assay/{Assay.sodar_uuid}".
+
+        :param assay: Assay object
+        :param irods_backend: IrodsAPI object
+        :param cache_backend: SODARCacheAPI object
+        :param irods: IRODSSession object
+        :param user: User triggering the update (User or None)
+        :return: JSONCacheItem object
+        """
+        logger.debug(
+            f'Updating assay shortcut cache for assay '
+            f'"{assay.get_display_name()}" ({assay.sodar_uuid})..'
+        )
+        assay_path = irods_backend.get_path(assay)
+        assay_plugin = assay.get_plugin()
+        s_args = [irods_backend, irods]
+        # Default assay shortcuts
+        cache_data = {
+            'shortcuts': {
+                'results_reports': cls._get_coll_status(
+                    iRODSPath(assay_path, RESULTS_COLL), *s_args
+                ),
+                'misc_files': cls._get_coll_status(
+                    iRODSPath(assay_path, MISC_FILES_COLL), *s_args
+                ),
+            }
+        }
+        # Plugin assay shortcuts
+        if assay_plugin:
+            logger.debug(f'Using assay plugin "{assay_plugin.name}"')
+            plugin_shortcuts = assay_plugin.get_shortcuts(assay) or []
+            if not plugin_shortcuts:
+                logger.debug('No shortcuts returned by plugin')
+            for sc in plugin_shortcuts:
+                cache_data['shortcuts'][sc['id']] = cls._get_coll_status(
+                    sc['path'], *s_args
+                )
+        else:
+            logger.debug('Assay plugin not found')
+        cache_data['shortcuts']['track_hubs'] = [
+            c.path
+            for c in irods_backend.get_child_colls(
+                irods, iRODSPath(assay_path, TRACK_HUBS_COLL)
+            )
+            if cls._get_coll_status(c.path, *s_args)
+        ]
+        cache_backend.set_cache_item(
+            app_name='samplesheets',
+            name=ASSAY_SHORTCUT_CACHE_NAME.format(uuid=assay.sodar_uuid),
+            data=cache_data,
+            project=assay.get_project(),
+            user=user,
+        )
+        logger.debug('Shortcut cache update done')
+
+    def update_cache(
+        self,
+        name: Optional[str] = None,
+        project: Optional[Project] = None,
+        user: Optional[User] = None,
+    ):
         """
         Update cached data for this app, limitable to item ID and/or project.
 
@@ -767,16 +1065,16 @@ class ProjectAppPlugin(
         # NOTE: This will not sync cached study render tables, they are created
         #       synchronously upon access if not up-to-date. To sync the cache
         #       for all study tables, use the syncstudytables command.
-        cache_backend = get_backend_api('sodar_cache')
-        irods_backend = get_backend_api('omics_irods')
+        cache_backend = plugin_api.get_backend_api('sodar_cache')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         if not cache_backend or not irods_backend:
             backends = {
                 'cache_backend': cache_backend,
                 'irods_backend': irods_backend,
             }
             raise Exception(
-                'Required backend(s) not found: {}'.format(', ').join(
-                    [b for b in backends.keys() if not backends[b]]
+                'Required backend(s) not found: {}'.format(
+                    ', '.join([b for b in backends.keys() if not backends[b]])
                 )
             )
 
@@ -784,7 +1082,7 @@ class ProjectAppPlugin(
         for study_plugin in SampleSheetStudyPluginPoint.get_plugins():
             study_plugin.update_cache(name, project, user)
 
-        # Assay shortcuts
+        # Set up for iRODS stats and assay shortcuts
         projects = (
             [project]
             if project
@@ -796,45 +1094,114 @@ class ProjectAppPlugin(
         )
 
         with irods_backend.get_session() as irods:
-            for assay in assays:
-                item_name = 'irods/shortcuts/assay/{}'.format(assay.sodar_uuid)
-                assay_path = irods_backend.get_path(assay)
-                assay_plugin = assay.get_plugin()
-                # Default assay shortcuts
-                cache_data = {
-                    'shortcuts': {
-                        'results_reports': irods.collections.exists(
-                            assay_path + '/' + RESULTS_COLL
-                        ),
-                        'misc_files': irods.collections.exists(
-                            assay_path + '/' + MISC_FILES_COLL
-                        ),
-                    }
-                }
-                # Plugin assay shortcuts
-                if assay_plugin:
-                    plugin_shortcuts = assay_plugin.get_shortcuts(assay) or []
-                    for sc in plugin_shortcuts:
-                        cache_data['shortcuts'][sc['id']] = (
-                            irods.collections.exists(sc['path'])
-                        )
-                cache_data['shortcuts']['track_hubs'] = [
-                    c.path
-                    for c in irods_backend.get_child_colls(
-                        irods, os.path.join(assay_path, TRACK_HUBS_COLL)
-                    )
-                ]
-                cache_backend.set_cache_item(
-                    name=item_name,
-                    app_name='samplesheets',
-                    user=user,
-                    data=cache_data,
-                    project=assay.get_project(),
+            # iRODS stats
+            logger.debug('Updating iRODS stats cache..')
+            for project in projects:
+                self.update_irods_stats_cache(
+                    project, irods_backend, cache_backend, irods, user
                 )
+            logger.debug('iRODS stats cache update done')
+            # Assay shortcuts
+            logger.debug('Updating assay shortcut cache..')
+            for assay in assays:
+                self.update_assay_shortcut_cache(
+                    assay, irods_backend, cache_backend, irods, user
+                )
+            logger.debug('Assay shortcut cache update done')
 
         # Assay sub-app plugins
+        logger.debug('Updating assay plugin cache..')
         for assay_plugin in SampleSheetAssayPluginPoint.get_plugins():
             assay_plugin.update_cache(name, project, user)
+        logger.debug('Assay plugin cache update done')
+        logger.debug('Cache update done')
+
+    def get_category_stats(
+        self, category: Project
+    ) -> list[PluginCategoryStatistic]:
+        """
+        Return app statistics for the given category. Expected to return
+        cumulative statistics for all projects under the category and its
+        possible subcategories.
+
+        :param category: Project object of CATEGORY type
+        :return: List of PluginCategoryStatistic objects
+        """
+        cache_backend = plugin_api.get_backend_api('sodar_cache')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
+        ret = []
+
+        # Sample count
+        title_k = 'study__investigation__project__full_title__startswith'
+        query_kw = {
+            'item_type': ITEM_TYPE_SAMPLE,
+            title_k: category.full_title + CAT_DELIMITER,
+        }
+        ret.append(
+            PluginCategoryStatistic(
+                plugin=self,
+                title='Samples',
+                value=GenericMaterial.objects.filter(**query_kw).count(),
+                description='Samples in studies under this category',
+                icon='mdi:flask',
+            )
+        )
+
+        # iRODS stats
+        if not cache_backend or not irods_backend:  # Skip if not enabled
+            return ret
+        projects = Project.objects.filter(
+            type=PROJECT_TYPE_PROJECT,
+            full_title__startswith=category.full_title + CAT_DELIMITER,
+        )
+        cache_model = cache_backend.get_model()
+        all_stats = cache_model.objects.filter(
+            name__startswith=IRODS_STATS_CACHE_PREFIX
+        )
+        file_count = 0
+        total_size = 0
+        found_projects = []
+        for s in all_stats:
+            if s.project in projects:
+                file_count += s.data.get('file_count', 0)
+                total_size += s.data.get('total_size', 0)
+                found_projects.append(s.project)
+        # Create missing stats and add to total count
+        missing_projects = [p for p in projects if p not in found_projects]
+        if missing_projects:
+            with irods_backend.get_session() as irods:
+                for project in missing_projects:
+                    s = self.update_irods_stats_cache(
+                        project, irods_backend, cache_backend, irods
+                    )
+                    file_count += s.data.get('file_count', 0)
+                    total_size += s.data.get('total_size', 0)
+        ret.append(
+            PluginCategoryStatistic(
+                plugin=self,
+                title='Files',
+                value=file_count,
+                description='Number of files stored in iRODS under this '
+                'category',
+                icon='mdi:file-multiple',
+            )
+        )
+        size_s = filesizeformat(total_size).split('\xa0')
+        size_f = float(size_s[0])
+        f, _ = modf(size_f)
+        size_display = int(size_f) if f == 0 else size_f
+        ret.append(
+            PluginCategoryStatistic(
+                plugin=self,
+                title='Data',
+                value=size_display,
+                unit=size_s[1],
+                description='Total size of files stored in iRODS under this '
+                'category',
+                icon='mdi:database',
+            )
+        )
+        return ret
 
 
 # Samplesheets study sub-app plugin --------------------------------------------
@@ -865,28 +1232,37 @@ class SampleSheetStudyPluginPoint(PluginPoint):
     # TODO: TBD: Do we need this?
     permission = None
 
-    def get_shortcut_column(self, study, study_tables):
+    def get_shortcut_column(
+        self, study: Study, study_tables: dict
+    ) -> Optional[dict]:
         """
         Return structure containing links for an extra study table links column.
 
         :param study: Study object
         :param study_tables: Rendered study tables (dict)
-        :return: Dict
+        :return: Dict or None if not found
         """
         # TODO: Implement this in your study plugin
         return None
 
-    def get_shortcut_links(self, study, study_tables, **kwargs):
+    def get_shortcut_links(
+        self, study: Study, study_tables: dict, **kwargs
+    ) -> Optional[dict]:
         """
         Return links for shortcut modal.
 
         :param study: Study object
         :param study_tables: Rendered study tables (dict)
-        :return: Dict
+        :return: Dict or None if not found
         """
         return None
 
-    def update_cache(self, name=None, project=None, user=None):
+    def update_cache(
+        self,
+        name: Optional[str] = None,
+        project: Optional[Project] = None,
+        user: Optional[User] = None,
+    ):
         """
         Update cached data for this app, limitable to item ID and/or project.
 
@@ -898,7 +1274,7 @@ class SampleSheetStudyPluginPoint(PluginPoint):
         return None
 
 
-def get_study_plugin(plugin_name):
+def get_study_plugin(plugin_name: str) -> Optional[SampleSheetStudyPluginPoint]:
     """
     Return active study plugin.
 
@@ -960,14 +1336,14 @@ class SampleSheetAssayPluginPoint(PluginPoint):
 
     def __init__(self):
         super().__init__()
-        self.irods_backend = get_backend_api('omics_irods')
+        self.irods_backend = plugin_api.get_backend_api('omics_irods')
 
-    def get_assay_path(self, assay):
+    def get_assay_path(self, assay: Assay) -> Optional[str]:
         """
         Return the iRODS path for the given assay.
 
         :param assay: Assay object
-        :return: Full iRODS path for the assay
+        :return: String with full iRODS path or None
         """
         if not self.assay_path:
             self.assay_path = (
@@ -977,7 +1353,9 @@ class SampleSheetAssayPluginPoint(PluginPoint):
             )
         return self.assay_path
 
-    def get_row_path(self, row, table, assay, assay_path):
+    def get_row_path(
+        self, row: list[dict], table: dict, assay: Assay, assay_path: str
+    ) -> Optional[str]:
         """
         Return iRODS path for an assay row in a sample sheet. If None,
         display default path.
@@ -992,7 +1370,9 @@ class SampleSheetAssayPluginPoint(PluginPoint):
         # TODO: Implement this in your assay plugin if display_row_links=True
         return None
 
-    def update_row(self, row, table, assay, index):
+    def update_row(
+        self, row: list[dict], table: dict, assay: Assay, index: int
+    ) -> list[dict]:
         """
         Update render table row with e.g. links. Return the modified row.
 
@@ -1005,7 +1385,7 @@ class SampleSheetAssayPluginPoint(PluginPoint):
         # TODO: Implement this in your assay plugin
         raise NotImplementedError('Implement update_row() in your assay plugin')
 
-    def get_shortcuts(self, assay):
+    def get_shortcuts(self, assay: Assay) -> Optional[list]:
         """
         Return assay iRODS shortcuts.
 
@@ -1015,7 +1395,12 @@ class SampleSheetAssayPluginPoint(PluginPoint):
         # TODO: Implement this in your app plugin
         return None
 
-    def update_cache(self, name=None, project=None, user=None):
+    def update_cache(
+        self,
+        name: Optional[str] = None,
+        project: Optional[str] = None,
+        user: Optional[User] = None,
+    ):
         """
         Update cached data for this app, limitable to item ID and/or project.
 
@@ -1028,7 +1413,13 @@ class SampleSheetAssayPluginPoint(PluginPoint):
 
     # Common cache update utilities --------------------------------------
 
-    def update_cache_rows(self, app_name, name=None, project=None, user=None):
+    def update_cache_rows(
+        self,
+        app_name: str,
+        name: Optional[str] = None,
+        project: Optional[Project] = None,
+        user: Optional[User] = None,
+    ):
         """
         Update cache for row-based iRODS links using get_row_path().
 
@@ -1042,7 +1433,7 @@ class SampleSheetAssayPluginPoint(PluginPoint):
         ):
             return
         try:
-            cache_backend = get_backend_api('sodar_cache')
+            cache_backend = plugin_api.get_backend_api('sodar_cache')
         except Exception:
             return
         if not cache_backend or not self.irods_backend:
@@ -1081,7 +1472,7 @@ class SampleSheetAssayPluginPoint(PluginPoint):
                 assay_table = study_tables['assays'][str(assay.sodar_uuid)]
                 assay_path = self.irods_backend.get_path(assay)
                 row_paths = []
-                item_name = 'irods/rows/{}'.format(assay.sodar_uuid)
+                item_name = f'irods/rows/{assay.sodar_uuid}'
 
                 for row in assay_table['table_data']:
                     path = self.get_row_path(
@@ -1109,7 +1500,7 @@ class SampleSheetAssayPluginPoint(PluginPoint):
                 )
 
 
-def get_assay_plugin(plugin_name):
+def get_assay_plugin(plugin_name: str) -> Optional[SampleSheetAssayPluginPoint]:
     """
     Return active assay plugin.
 
@@ -1122,7 +1513,9 @@ def get_assay_plugin(plugin_name):
         return None
 
 
-def get_irods_content(inv, study, irods_backend, ret_data):
+def get_irods_content(
+    inv: Investigation, study: Study, irods_backend: Any, ret_data: dict
+) -> dict:
     """
     Return iRODS content for a study.
 
@@ -1132,7 +1525,7 @@ def get_irods_content(inv, study, irods_backend, ret_data):
     :param ret_data: Return data to be modified (dict)
     :return: Dict
     """
-    cache_backend = get_backend_api('sodar_cache')
+    cache_backend = plugin_api.get_backend_api('sodar_cache')
     ret_data = deepcopy(ret_data)
     if not (inv.irods_status and irods_backend):
         return ret_data
@@ -1143,9 +1536,8 @@ def get_irods_content(inv, study, irods_backend, ret_data):
     study_plugin = study.get_plugin()
     if study_plugin:
         logger.debug(
-            'Retrieving study shortcuts for study "{}" (plugin={})..'.format(
-                study.get_display_name(), study_plugin.name
-            )
+            f'Retrieving study shortcuts for study '
+            f'"{study.get_name()}" (plugin={study_plugin.name})..'
         )
         shortcuts = study_plugin.get_shortcut_column(study, ret_data['tables'])
         ret_data['tables']['study']['shortcuts'] = shortcuts
@@ -1162,13 +1554,13 @@ def get_irods_content(inv, study, irods_backend, ret_data):
             {
                 'id': RESULTS_COLL_ID,
                 'label': 'Results and Reports',
-                'path': assay_path + '/' + RESULTS_COLL,
+                'path': iRODSPath(assay_path, RESULTS_COLL),
                 'assay_plugin': False,
             },
             {
                 'id': MISC_FILES_COLL_ID,
                 'label': 'Misc Files',
-                'path': assay_path + '/' + MISC_FILES_COLL,
+                'path': iRODSPath(assay_path, MISC_FILES_COLL),
                 'assay_plugin': False,
             },
         ]
@@ -1176,16 +1568,16 @@ def get_irods_content(inv, study, irods_backend, ret_data):
         assay_plugin = assay.get_plugin()
         if assay_plugin:
             logger.debug(
-                'Retrieving assay shortcuts for assay "{}" '
-                '(plugin={})..'.format(
-                    assay.get_display_name(), assay_plugin.name
-                )
+                f'Retrieving assay shortcuts for assay '
+                f'"{assay.get_display_name()}" (plugin={assay_plugin.name})..'
             )
+            cache_name = f'irods/rows/{a_uuid}'
             cache_item = cache_backend.get_cache_item(
-                name='irods/rows/{}'.format(a_uuid),
+                name=cache_name,
                 app_name=assay_plugin.app_name,
                 project=assay.get_project(),
             )
+            logger.debug(f'Cache item {cache_name}: {cache_item is not None}')
 
             for idx, row in enumerate(a_data['table_data']):
                 # Update assay links column
@@ -1199,7 +1591,8 @@ def get_irods_content(inv, study, irods_backend, ret_data):
                     and path in cache_item.data['paths']
                     and (
                         not cache_item.data['paths'][path]
-                        or cache_item.data['paths'][path] == 0
+                        or cache_item.data['paths'][path].get('file_count', 0)
+                        == 0
                     )
                 ):
                     enabled = False
@@ -1220,7 +1613,7 @@ def get_irods_content(inv, study, irods_backend, ret_data):
 
         # Check assay shortcut cache and set initial enabled value
         cache_item = cache_backend.get_cache_item(
-            name='irods/shortcuts/assay/{}'.format(a_uuid),
+            name=f'irods/shortcuts/assay/{a_uuid}',
             app_name=APP_NAME,
             project=assay.get_project(),
         )

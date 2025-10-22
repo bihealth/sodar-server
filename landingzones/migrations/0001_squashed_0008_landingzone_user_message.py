@@ -74,7 +74,8 @@ class Migration(migrations.Migration):
                 (
                     "description",
                     models.TextField(
-                        blank=True, help_text="Landing zone description (optional)"
+                        blank=True,
+                        help_text="Landing zone description (optional)",
                     ),
                 ),
                 (

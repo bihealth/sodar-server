@@ -12,27 +12,26 @@ from test_plus.test import TestCase
 
 # Projectroles dependency
 from projectroles.constants import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.tests.test_models import (
     ProjectMixin,
     RoleMixin,
     RoleAssignmentMixin,
 )
 
+import landingzones.constants as lc
 from landingzones.management.commands.inactivezones import (
     get_inactive_zones,
     get_output,
-)
-from landingzones.constants import (
-    ZONE_STATUS_MOVED,
-    ZONE_STATUS_DELETED,
-    ZONE_STATUS_ACTIVE,
-    ZONE_STATUS_MOVING,
 )
 from landingzones.tests.test_models import LandingZoneMixin
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
 
+plugin_api = PluginAPI()
+
+
+# Local constants
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
@@ -103,7 +102,7 @@ class TestInactiveZones(LandingzonesCommandTestBase):
                 description=ZONE_DESC,
                 configuration=None,
                 config_data={},
-                status=ZONE_STATUS_MOVED,
+                status=lc.ZONE_STATUS_MOVED,
             )
             # Create landing zone 3 from 3 weeks ago but status DELETED
             self.zone4 = self.make_landing_zone(
@@ -114,7 +113,7 @@ class TestInactiveZones(LandingzonesCommandTestBase):
                 description=ZONE_DESC,
                 configuration=None,
                 config_data={},
-                status=ZONE_STATUS_DELETED,
+                status=lc.ZONE_STATUS_DELETED,
             )
             mock_now.return_value = testtime2
             # Create landing zone 2 from 1 week ago
@@ -128,7 +127,7 @@ class TestInactiveZones(LandingzonesCommandTestBase):
                 config_data={},
             )
 
-        self.irods_backend = get_backend_api('omics_irods')
+        self.irods_backend = plugin_api.get_backend_api('omics_irods')
         self.irods = self.irods_backend.get_session_obj()
 
         # Create iRODS collections
@@ -149,7 +148,7 @@ class TestInactiveZones(LandingzonesCommandTestBase):
             get_output(zones, self.irods_backend, self.irods),
             [
                 '{};{};{};{};0;0 bytes'.format(
-                    str(self.project.sodar_uuid),
+                    self.project.sodar_uuid,
                     self.project.full_title,
                     self.zone.user.username,
                     self.irods_backend.get_path(self.zone),
@@ -164,7 +163,7 @@ class TestInactiveZones(LandingzonesCommandTestBase):
         ) as cm:
             call_command('inactivezones')
         expected = '{};{};{};{};0;0 bytes'.format(
-            str(self.project.sodar_uuid),
+            self.project.sodar_uuid,
             self.project.full_title,
             self.zone.user.username,
             self.irods_backend.get_path(self.zone),
@@ -186,7 +185,7 @@ class TestBusyZones(LandingzonesCommandTestBase):
             description=ZONE_DESC,
             configuration=None,
             config_data={},
-            status=ZONE_STATUS_ACTIVE,
+            status=lc.ZONE_STATUS_ACTIVE,
         )
         self.zone2 = self.make_landing_zone(
             title=ZONE2_TITLE,
@@ -196,7 +195,7 @@ class TestBusyZones(LandingzonesCommandTestBase):
             description=ZONE_DESC,
             configuration=None,
             config_data={},
-            status=ZONE_STATUS_ACTIVE,
+            status=lc.ZONE_STATUS_ACTIVE,
         )
 
     def test_active_zones(self):
@@ -207,7 +206,7 @@ class TestBusyZones(LandingzonesCommandTestBase):
 
     def test_command(self):
         """Test command with a busy zone"""
-        self.zone2.status = ZONE_STATUS_MOVING
+        self.zone2.status = lc.ZONE_STATUS_MOVING
         self.zone2.save()
         with self.assertLogs(LOGGER_BUSY_ZONES, level='INFO') as cm:
             call_command('busyzones')

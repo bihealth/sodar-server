@@ -3,10 +3,13 @@
 from test_plus.test import TestCase
 
 # Projectroles dependency
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 from ontologyaccess.models import DEFAULT_TERM_URL
 from ontologyaccess.tests.test_models import OBOFormatOntologyModelMixin
+
+
+plugin_api = PluginAPI()
 
 
 # Local constants
@@ -64,7 +67,7 @@ class TestOntologyAccessAPI(OBOFormatOntologyModelMixin, TestCase):
             comment=OBO_TERM_COMMENT,
         )
         # Get API
-        self.ontology_api = get_backend_api('ontologyaccess_backend')
+        self.ontology_api = plugin_api.get_backend_api('ontologyaccess_backend')
 
     def test_get_obo_dict_name(self):
         """Test get_obo_dict() with name as key"""

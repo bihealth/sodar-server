@@ -4,7 +4,10 @@ import logging
 import time
 import uuid
 
+from typing import Optional
+
 from tooz import coordination
+from tooz.locking import Lock
 
 from django.conf import settings
 
@@ -26,7 +29,9 @@ class ProjectLockAPI:
     """Project locking and unlocking API"""
 
     @classmethod
-    def _log_status(cls, lock, unlock=False, failed=False):
+    def _log_status(
+        cls, lock: Lock, unlock: bool = False, failed: bool = False
+    ):
         msg = '{} {} for project {}'.format(
             'Unlock' if unlock else 'Lock',
             'FAILED' if failed else 'OK',
@@ -35,9 +40,11 @@ class ProjectLockAPI:
         logger.error(msg) if failed else logger.info(msg)
 
     @classmethod
-    def get_coordinator(cls):
-        """Return a Tooz coordinator object"""
-        host_id = 'sodar_{}'.format(uuid.uuid4())
+    def get_coordinator(
+        cls,
+    ) -> Optional[coordination.CoordinationDriverWithExecutor]:
+        """Return a Tooz coordinator object or None if failed"""
+        host_id = f'sodar_{uuid.uuid4()}'
         try:
             coordinator = coordination.get_coordinator(
                 backend_url=settings.REDIS_URL,
@@ -48,16 +55,16 @@ class ProjectLockAPI:
                 coordinator.start(start_heart=True)
                 return coordinator
         except coordination.ToozConnectionError as ex:
-            logger.error('Tooz connection error: {}'.format(ex))
+            logger.error(f'Tooz connection error: {ex}')
         return None
 
     @classmethod
     def acquire(
         cls,
-        lock,
-        retry_count=LOCK_RETRY_COUNT,
-        retry_interval=LOCK_RETRY_INTERVAL,
-    ):
+        lock: Lock,
+        retry_count: int = LOCK_RETRY_COUNT,
+        retry_interval: int = LOCK_RETRY_INTERVAL,
+    ) -> bool:
         """
         Acquire project lock.
 
@@ -83,7 +90,7 @@ class ProjectLockAPI:
         raise LockAcquireException(PROJECT_LOCKED_MSG)
 
     @classmethod
-    def release(cls, lock):
+    def release(cls, lock: Lock) -> bool:
         """
         Release project lock.
 

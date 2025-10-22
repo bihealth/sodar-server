@@ -6,7 +6,7 @@ from test_plus.test import TestCase
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.tests.test_models import (
     ProjectMixin,
     RoleMixin,
@@ -27,6 +27,7 @@ from samplesheets.tests.test_sheet_config import SheetConfigMixin
 
 
 app_settings = AppSettingAPI()
+plugin_api = PluginAPI()
 
 
 # Local constants
@@ -83,7 +84,7 @@ class SamplesheetsRenderingTestBase(
         self.assay = self.study.assays.first()
         self.tb = SampleSheetTableBuilder()
         # Set up helpers
-        self.cache_backend = get_backend_api('sodar_cache')
+        self.cache_backend = plugin_api.get_backend_api('sodar_cache')
         self.cache_name = STUDY_TABLE_CACHE_ITEM.format(
             study=self.study.sodar_uuid
         )
@@ -95,13 +96,13 @@ class TestSampleSheetTableBuilder(
 ):
     """Tests for SampleSheetTableBuilder"""
 
-    def _assert_row_length(self, table):
+    def _assert_row_length(self, table: dict):
         """Assert uniform row length"""
         row_lengths = set([len(r) for r in table['table_data']])
         self.assertEqual(len(row_lengths), 1)
 
     @classmethod
-    def _get_column_set(cls, table, pos):
+    def _get_column_set(cls, table: dict, pos: int) -> set:
         """Return set of distinct values for a column at pos"""
         return set([r[pos]['value'] for r in table['table_data']])
 
@@ -274,7 +275,7 @@ class TestSampleSheetTableBuilder(
         """Test get_study_tables() with SHEETS_ENABLE_STUDY_TABLE_CACHE=False"""
         tables = self.tb.get_study_tables(self.study)
         t_field = tables['study']['field_header'][2]
-        self.assertEqual(t_field['value'], 'Age')
+        self.assertEqual(t_field['value'], 'age')
         self.sheet_config = self.build_sheet_config(self.investigation)
 
         # Change name in a model
@@ -297,7 +298,7 @@ class TestSampleSheetTableBuilder(
         """Test get_study_tables() with SHEETS_ENABLE_STUDY_TABLE_CACHE=True"""
         tables = self.tb.get_study_tables(self.study)
         t_field = tables['study']['field_header'][2]
-        self.assertEqual(t_field['value'], 'Age')
+        self.assertEqual(t_field['value'], 'age')
         self.build_sheet_config(self.investigation)
 
         # Change name in a model

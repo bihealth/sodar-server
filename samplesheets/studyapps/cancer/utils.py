@@ -1,7 +1,11 @@
-""" Utilities for the cancer study app"""
+"""Utilities for the cancer study app"""
 
-import os
+from typing import Any
 
+from irods.path import iRODSPath
+from irods.session import iRODSSession
+
+from samplesheets.models import Assay
 from samplesheets.studyapps.utils import (
     get_igv_omit_list,
     check_igv_file_suffix,
@@ -10,7 +14,13 @@ from samplesheets.studyapps.utils import (
 from samplesheets.utils import get_latest_file_path
 
 
-def get_library_file_path(assay, library_name, file_type, irods_backend, irods):
+def get_library_file_path(
+    assay: Assay,
+    library_name: str,
+    file_type: str,
+    irods_backend: Any,
+    irods: iRODSSession,
+):
     """
     Return iRODS path for the most recent file of type "bam" or "vcf"
     linked to the library. CRAM files are included in "bam" searches.
@@ -23,7 +33,7 @@ def get_library_file_path(assay, library_name, file_type, irods_backend, irods):
     :return: String
     """
     assay_path = irods_backend.get_path(assay)
-    query_path = os.path.join(assay_path, library_name)
+    query_path = iRODSPath(assay_path, library_name)
     file_paths = []
     omit_list = get_igv_omit_list(assay.get_project(), file_type)
     try:

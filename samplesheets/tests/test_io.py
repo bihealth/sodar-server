@@ -4,6 +4,8 @@ import csv
 import io
 import os
 import warnings
+
+from typing import Optional
 from zipfile import ZipFile
 
 from altamisa.exceptions import (
@@ -23,7 +25,7 @@ from django.test import override_settings
 from test_plus.test import TestCase
 
 # Projectroles dependency
-from projectroles.models import Role, SODAR_CONSTANTS
+from projectroles.models import Project, Role, SODARUser, SODAR_CONSTANTS
 from projectroles.tests.test_models import (
     ProjectMixin,
     RoleMixin,
@@ -47,7 +49,9 @@ class SampleSheetIOMixin:
     """Helper functions for sample sheet i/o"""
 
     @classmethod
-    def import_isa_from_file(cls, path, project, user=None):
+    def import_isa_from_file(
+        cls, path: str, project: Project, user: Optional[SODARUser] = None
+    ) -> Investigation:
         """
         Import ISA from a zip file.
 
@@ -69,7 +73,9 @@ class SampleSheetIOMixin:
         return investigation
 
     @classmethod
-    def read_isa(cls, path, project):
+    def read_isa(
+        cls, path: str, project: Project
+    ) -> tuple[isa_models.InvestigationInfo, dict, dict]:
         """
         Read ISA-Tab into the altamISA API
 
@@ -95,7 +101,7 @@ class SampleSheetIOMixin:
         study_count = 0
         assay_count = 0
         for study_info in isa_inv.studies:
-            study_id = 'p{}-s{}'.format(project.pk, study_count)
+            study_id = f'p{project.pk}-s{study_count}'
             with warnings.catch_warnings(record=True):
                 isa_studies[str(study_info.info.path)] = (
                     StudyReader.from_stream(
@@ -119,7 +125,7 @@ class SampleSheetIOMixin:
                     ),
                     None,
                 )
-                assay_id = 'a{}'.format(assay_count)
+                assay_id = f'a{assay_count}'
                 with warnings.catch_warnings(record=True):
                     isa_assays[str(assay_path)] = AssayReader.from_stream(
                         study_id=study_id,
@@ -133,7 +139,7 @@ class SampleSheetIOMixin:
         return isa_inv, isa_studies, isa_assays
 
     @classmethod
-    def get_isatab_files(cls):
+    def get_isatab_files(cls) -> dict:
         """
         Return all test ISA-Tab files.
 
@@ -147,9 +153,9 @@ class SampleSheetIOMixin:
             )
         }
 
-    def fail_isa(self, zip_name, ex):
+    def fail_isa(self, zip_name: str, ex: Exception):
         """Fail with exception message and ISA-Tab zip file name"""
-        self.fail('Exception in {}: {}'.format(zip_name, ex))
+        self.fail(f'Exception in {zip_name}: {ex}')
 
 
 class SampleSheetIOTestBase(
@@ -174,7 +180,7 @@ class SampleSheetIOTestBase(
         )
 
     @classmethod
-    def _get_flat_export_data(cls, export_data):
+    def get_flat_export_data(cls, export_data):
         """Return export ISA data as a flat list"""
         ret = {
             export_data['investigation']['path'].split('/')[-1]: export_data[
@@ -197,7 +203,7 @@ class TestSampleSheetIOBatch(SampleSheetIOTestBase):
         self.assertEqual(ISATab.objects.count(), 0)
 
         for zip_name, zip_file in self.get_isatab_files().items():
-            msg = 'file={}'.format(zip_name)
+            msg = f'file={zip_name}'
             try:
                 investigation = self.import_isa_from_file(
                     zip_file.path, self.project
@@ -220,7 +226,7 @@ class TestSampleSheetIOBatch(SampleSheetIOTestBase):
                 zip_file.path, self.project
             )
             try:
-                export_data = self._get_flat_export_data(
+                export_data = self.get_flat_export_data(
                     sheet_io.export_isa(investigation)
                 )
             except Exception as ex:
@@ -231,7 +237,7 @@ class TestSampleSheetIOBatch(SampleSheetIOTestBase):
                 isa_name = isa_path.split('/')[-1]
                 import_file = zf.read(isa_path)
                 export_file = export_data[isa_name]
-                msg = 'file = {} / {}'.format(zip_name, isa_name)
+                msg = f'file = {zip_name} / {isa_name}'
 
                 # Get import file statistics
                 ib = io.StringIO(import_file.decode('utf-8'))
@@ -262,7 +268,7 @@ class TestSampleSheetIOBatch(SampleSheetIOTestBase):
                     )
 
                 # Compare rows
-                def _get_row(row):
+                def _get_row(row: list) -> list:
                     # HACK for missing tabs for empty fields in certain files
                     # TODO: Fix input files instead
                     if (len(row) == 2 and not row[1]) or (
@@ -301,7 +307,7 @@ class TestSampleSheetIOBatch(SampleSheetIOTestBase):
             zf = ZipFile(zip_file.path)
 
             for f in [f for f in zf.filelist if f.file_size > 0]:
-                msg = 'zip={}, file={}'.format(zip_name, f.filename)
+                msg = f'zip={zip_name}, file={f.filename}'
                 zip_data = zf.open(f.filename).read().decode('utf-8')
                 file_name = f.filename.split('/')[-1]
                 if file_name.startswith('i_'):
@@ -333,13 +339,13 @@ class TestSampleSheetIOImport(SampleSheetIOTestBase):
         (self.isa_inv, self.isa_studies, self.isa_assays) = self.read_isa(
             SHEET_PATH, self.project
         )
-        self.p_id = 'p{}'.format(self.project.pk)
+        self.p_id = f'p{self.project.pk}'
 
     def test_import_ref_val_ontology(self):
         """Test _import_ref_val() with ontology value"""
         in_data = (
             self.isa_studies['s_BII-S-1.txt']
-            .materials['{}-s0-source-culture1'.format(self.p_id)]
+            .materials[f'{self.p_id}-s0-source-culture1']
             .characteristics[0]
             .value[0]
         )
@@ -362,7 +368,7 @@ class TestSampleSheetIOImport(SampleSheetIOTestBase):
         # Should return just a single dict
         in_data = (
             self.isa_studies['s_BII-S-1.txt']
-            .materials['{}-s0-source-culture1'.format(self.p_id)]
+            .materials[f'{self.p_id}-s0-source-culture1']
             .characteristics[0]
             .value
         )
@@ -403,7 +409,7 @@ class TestSampleSheetIOImport(SampleSheetIOTestBase):
         """Test _import_multi_val() with factor value"""
         in_data = (
             self.isa_studies['s_BII-S-1.txt']
-            .materials['{}-s0-sample-C-0.07-aliquot9'.format(self.p_id)]
+            .materials[f'{self.p_id}-s0-sample-C-0.07-aliquot9']
             .factor_values[0]
             .value
         )
@@ -419,7 +425,7 @@ class TestSampleSheetIOImport(SampleSheetIOTestBase):
         """Test _import_multi_val() with ontology unit"""
         in_data = (
             self.isa_studies['s_BII-S-1.txt']
-            .materials['{}-s0-sample-C-0.07-aliquot9'.format(self.p_id)]
+            .materials[f'{self.p_id}-s0-sample-C-0.07-aliquot9']
             .factor_values[1]
             .unit
         )
@@ -435,7 +441,7 @@ class TestSampleSheetIOImport(SampleSheetIOTestBase):
         """Test _import_ontology_vals()"""
         in_data = (
             self.isa_studies['s_BII-S-1.txt']
-            .materials['{}-s0-source-culture1'.format(self.p_id)]
+            .materials[f'{self.p_id}-s0-source-culture1']
             .characteristics
         )
         out_data = self.sheet_io._import_ontology_vals(in_data)
@@ -587,7 +593,7 @@ class TestSampleSheetIOExport(SampleSheetIOTestBase):
         super().setUp()
         self.sheet_io = SampleSheetIO(warn=False, allow_critical=True)
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
-        self.p_id = 'p{}'.format(self.project.pk)
+        self.p_id = f'p{self.project.pk}'
 
     def test_export_value(self):
         """Test _export_value()"""
@@ -690,7 +696,7 @@ class TestSampleSheetIOExport(SampleSheetIOTestBase):
         """Test _export_characteristics()"""
         study = self.investigation.studies.get(identifier='BII-S-1')
         in_data = study.materials.get(
-            unique_name='{}-s0-source-culture1'.format(self.p_id)
+            unique_name=f'{self.p_id}-s0-source-culture1'
         ).characteristics
         out_data = self.sheet_io._export_characteristics(in_data)
         expected = tuple(
@@ -726,7 +732,7 @@ class TestSampleSheetIOExport(SampleSheetIOTestBase):
         """Test _export_factor_vals()"""
         study = self.investigation.studies.get(identifier='BII-S-1')
         in_data = study.materials.get(
-            unique_name='{}-s0-sample-C-0.07-aliquot1'.format(self.p_id)
+            unique_name=f'{self.p_id}-s0-sample-C-0.07-aliquot1'
         ).factor_values
         out_data = self.sheet_io._export_factor_vals(in_data)
         expected = tuple(
@@ -751,7 +757,7 @@ class TestSampleSheetIOExport(SampleSheetIOTestBase):
         """Test _export_param_values()"""
         study = self.investigation.studies.get(identifier='BII-S-1')
         in_data = study.processes.get(
-            unique_name='{}-s0-a0-metabolite extraction-2-1'.format(self.p_id)
+            unique_name=f'{self.p_id}-s0-a0-metabolite extraction-2-1'
         ).parameter_values
         out_data = self.sheet_io._export_param_values(in_data)
         expected = tuple(

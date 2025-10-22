@@ -5,6 +5,177 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+v1.2.0 (2025-10-22)
+===================
+
+Added
+-----
+
+- **General**
+    - ``pyproject.toml`` configuration file (#2187)
+    - Type hints (#2196, #2255)
+- **Irodsadmin**
+    - ``irodsorphans`` command optional project limiting (#2283)
+- **Irodsbackend**
+    - ``setPeriodicStatsUpdate()`` in JQuery (#2243)
+    - ``get_stats()`` ``include_checksum`` arg (#2293)
+- **Landingzones**
+    - Project viewer role support (#2200)
+    - ``notify_alert_zone_status`` user app setting (#2205)
+    - ``ZoneSettingsRetrieveAPIView`` REST API view (#2174, #2294)
+    - Periodic celery task setup logging (#2275)
+    - ``zone_file_list_colls`` user app setting (#2284)
+    - File list modal collection display toggling (#2284, #2300, #2324)
+    - ``zone_access_restrict`` project app setting (#2199)
+    - Landing zone contributor access restricting (#2199)
+    - ``ZoneIrodsFileListAPIView`` REST API view (#2291)
+    - Zone file list modal UI tests (#2169)
+    - ``LANDINGZONES_ZONE_MOVE_VERIFY`` Django setting (#2309)
+    - ``SubmitZoneVerifyFlowTask`` taskflow task (#2309)
+    - ``LandingZone.coll_creation`` field (#1534, #2325, #2330)
+    - Administrator landing zone state resetting (#1534)
+    - ``resetzone`` management command (#1534, #2328)
+    - ``verifyzone`` management command (#2326)
+    - ``sodar_uuid`` field in zone creation timeline event extra data (#2329)
+- **Samplesheets**
+    - Project viewer role support (#2200)
+    - Category statistics for sample count and iRODS statistics (#2213)
+    - Project iRODS stats caching (#2213)
+    - ``ProjectAppPlugin.update_irods_stats_cache()`` helper (#2213)
+    - ``notify_alert_irods_request`` user app setting (#2205)
+    - ``UpdateProjectSheetCacheTask`` Taskflow task (#2254)
+    - ``ProjectIrodsFileListAPIView`` ``include_colls`` parameter (#2256, #2292)
+    - ``checksampleaccess`` command debug logging (#2261)
+    - ``syncstudytables`` ``check`` arg (#1794)
+    - ``SheetContextAjaxView`` assay details and comments (#1827)
+    - ``TableDetailModal`` Vue app component for displaying study and assay details (#1827, #2265, #2303)
+    - ``SheetContextAjaxView`` additional study details (#2265)
+    - ``TableDetailList`` and ``TableDetailListRow`` Vue app components (#2011, #2268, #2303)
+    - Assay details in sheet overview (#2011)
+    - ``SHEETS_SYNC_ENABLE`` Django setting (#2247)
+    - Periodic celery task setup logging (#2247)
+    - Disabled iRODS data request batch selection checkbox tooltips (#2295)
+    - ``perform_project_sync()`` iRODS ticket updating (#2133)
+- **Taskflowbackend**
+    - Project viewer role support (#2200)
+    - ``user`` arg for ``TaskflowAPI.submit()`` (#2157)
+    - ``constants`` module for common constants (#2225)
+    - ``TaskflowUITestBase`` base test class (#2168)
+    - ``landing_zone_delete`` timeline event extra data file list (#2307)
+    - ``landing_zone_verify`` flow (#2309)
+    - ``set_icat_checksum()`` test helper (#2309)
+    - ``BatchVerifySampleChecksumsTask`` iRODS task (#2309)
+    - ``landing_zone_reset`` flow (#1534)
+
+Changed
+-------
+
+- **General**
+    - Upgrade to Django v4.2.25 (#2232)
+    - Upgrade to django-sodar-core v1.2.4 (#2187, #2232, #2245)
+    - Upgrade to Nodejs v22 (#2229)
+    - Upgrade supported develoment and CI platform to Ubuntu v24.04 (#2067)
+    - Upgrade general Python depedencies (#2187, #2232, #2310)
+    - Upgrade to irods-docker v4.3.4-1 in CI (#2276)
+    - Upgrade minimum supported iRODS version to v4.3.4 (#2276)
+    - Refactor plugin helpers to use ``PluginAPI`` (#2187)
+    - Move black configuration to ``pyproject.toml`` (#2187)
+    - Reformat migrations (#2187)
+    - Reformat JQuery (#2187, #2287)
+    - Update format strings (#2197)
+    - Refactor iRODS path handling (#2218)
+    - Update ``test.py`` settings hardcoding (#2281)
+    - Use ``headless=new`` mode in UI tests (#2305)
+    - Pin redis CI dependency to v8.x (#2310)
+    - Unify app alert message formatting (#2318)
+- **Irodsadmin**
+    - Refactor ``irodsorphans`` command (#2207, #2246)
+    - Refactor ``irodsorphans`` tests (#2279)
+- **Irodsbackend**
+    - Update app for ``public_access`` support (#2202)
+- **Landingzones**
+    - Update views for project access blocking support (#2233)
+    - Hide project list zone column content for guest roles and below (#2200)
+    - Update app for ``public_access`` support (#2202)
+    - Upgrade landingzones REST API version to v1.1 (#2174)
+    - Move project sheet cache update to ``UpdateProjectSheetCacheTask`` (#2254)
+    - Upgrade Sample Sheets REST API version to v1.2 (#2256)
+    - Refactor server side variables for JQuery (#2286)
+    - Refactor rules (#2199)
+    - Disable vertical centering for zone file list modal (#2298)
+    - Update zone creation form collection creation UI (#2325)
+    - Skip ``TriggerZoneMoveTask`` execution if active jobs for task exist (#2323)
+- **Samplesheets**
+    - Update views for project access blocking support (#2233)
+    - Update app for ``public_access`` support (#2202)
+    - Refactor ``ProjectAppPlugin.update_cache()`` (#2213)
+    - Upgrade critical Vue app dependencies (#2232)
+    - Refactor ``SheetContextAjaxView`` (#2262)
+    - Update overview study detail displaying to reuse ``TableDetailList`` (#2268)
+    - Improve table details metadata displaying (#2012)
+    - Improve sheet overview layout (#2012, #2013)
+    - Hide assay row links if no plugin enabled (#1454)
+    - Hide project form sheet sync settings with ``SHEETS_SYNC_ENABLE`` unset (#2247)
+    - Set ``IRODS_WEBDAV_IGV_PROXY`` default to ``False`` (#2289)
+    - Disable study title and header name reformatting (#1776)
+    - Optimize magic number generation for cell width estimation (#1284)
+    - Refactor ``IrodsDataRequest`` UI creation and update (#1865)
+    - Refactor ``IrodsAccessTicket`` UI creation and update (#2306)
+    - Improve cache update debug logging (#1501)
+- **Taskflowbackend**
+    - Update iRODS ACL handling for v4.3+ scheme (#2215)
+    - Grant ``delete_object`` access instead of ``own`` for landing zone owner (#2215)
+    - Move iRODS constants to ``constants`` (#2215, #2258)
+    - Refactor iRODS ACL constant use (#2225)
+    - Remove redundant ``landing_zone_move`` admin access setting task (#2257)
+    - Remove ``landing_zone_move`` access cleanup (#2260)
+    - Refactor ``TaskflowProjectTestMixin`` to not require ``login()`` (#2167)
+    - Refactor task tests (#2226)
+    - Update batch checksum tasks to support sample data verification (#2309)
+    - Update "flow finished" log message to include flow name (#2314)
+
+Fixed
+-----
+
+- **General**
+    - Local settings used for ``geticons`` and ``collectstatic`` in CI (#2251)
+    - ``metadata_advanced.rst`` references broken in docs (#2274)
+- **Irodsadmin**
+    - Redundant queries for category iRODS paths in ``irodsorphans`` (#2280)
+    - Nested paths set by assay plugin reported as orphaned (#2207)
+- **Landingzones**
+    - Missing investigation setup in certain ``TestProjectZoneView`` tests (#2290)
+    - Missing ``HTTPRefererMixin`` inheritance in views (#206)
+- **Samplesheets**
+    - Details card iRODS stats badge fails with guest role (#2243, #2271)
+    - Sheet Operations dropdown disabled for guest user (#2244)
+    - Assay table title row content wrapping (#2267)
+    - Vue app modal close button alignment (#2304)
+    - Missing ``HTTPRefererMixin`` inheritance in views (#206)
+    - Redundant ``AppSetting`` object deletion in ``_update_public_access()`` (#2308)
+    - ``update_assay_shortcut_cache()`` returns ``True`` for empty collections (#1501)
+    - ``get_irods_content()`` enables iRODS link with ``file_count==0`` (#2321)
+- **Taskflowbackend**
+    - Incorrect user in landing zone move sheet cache update timeline event (#2152)
+    - ``BatchCalculateChecksumTask`` ``force`` kwarg not working (#2311)
+
+Removed
+-------
+
+- **General**
+    - django-cprofile-middleware dependency (#2249)
+    - ``local.txt`` dependencies from CI (#2250)
+    - Legacy ``local_extra.txt`` dependency file (#2252)
+    - Legacy ``ENABLE_IRODS`` Django setting (#2100)
+- **Landingzones**
+    - ``zone_access_cleanup`` site app setting (#2260)
+- **Samplesheets**
+    - ``ListRow`` Vue app component (#2273)
+- **Taskflowbackend**
+    - Legacy iRODS ACL value support (#2225)
+    - ``CleanupAccessTask`` iRODS task (#2260)
+
+
 v1.1.4 (2025-08-12)
 ===================
 

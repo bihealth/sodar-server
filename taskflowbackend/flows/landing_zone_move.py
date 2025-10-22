@@ -1,6 +1,10 @@
 from irods.exception import GroupDoesNotExist
+from irods.path import iRODSPath
 
 from django.conf import settings
+
+# Samplesheets dependency
+import samplesheets.tasks_taskflow as ss_tasks
 
 # Landingzones dependency
 from landingzones.constants import (
@@ -13,6 +17,7 @@ from landingzones.constants import (
 import landingzones.tasks_taskflow as lz_tasks
 from landingzones.models import LandingZone
 
+from taskflowbackend.constants import IRODS_ACCESS_READ_OBJ, IRODS_ACCESS_NULL
 from taskflowbackend.flows.base_flow import BaseLinearFlow
 from taskflowbackend.tasks import irods_tasks, sodar_tasks
 
@@ -30,7 +35,9 @@ class Flow(BaseLinearFlow):
     sample data collection in iRODS.
     """
 
-    def _add_extra_data_task(self, zone_path, zone_objects_no_chk, zone_stats):
+    def _add_extra_data_task(
+        self, zone_path: str, zone_objects_no_chk: list[str], zone_stats: dict
+    ):
         """Helper for adding TimelineEventExtraDataUpdateTask to flow"""
         files = [p[len(zone_path) + 1 :] for p in zone_objects_no_chk]
         self.add_task(
@@ -47,15 +54,16 @@ class Flow(BaseLinearFlow):
             )
         )
 
-    def validate(self):
+    def validate(self) -> bool:
         # Only require lock if moving
         self.require_lock = not self.flow_data.get('validate_only', False)
         self.supported_modes = ['sync', 'async']
         self.required_fields = ['zone_uuid']
         return super().validate()
 
-    def build(self, force_fail=False):
+    def build(self, force_fail: bool = False):
         validate_only = self.flow_data.get('validate_only', False)
+        move_verify = self.flow_data.get('move_verify', False)
         zone = LandingZone.objects.get(sodar_uuid=self.flow_data['zone_uuid'])
         project_group = self.irods_backend.get_group_name(self.project)
         owner_group = self.irods_backend.get_group_name(self.project, True)
@@ -70,8 +78,6 @@ class Flow(BaseLinearFlow):
         admin_name = self.irods.username
         file_name_prohibit = self.flow_data.get('file_name_prohibit')
         script_user = self.flow_data.get('script_user')
-        # TODO: Remove after implementing #2215
-        access_cleanup = self.flow_data.get('access_cleanup', True)
 
         # HACK: Set zone status in the Django site
         zone.set_status(
@@ -105,7 +111,7 @@ class Flow(BaseLinearFlow):
         # Convert paths to collections inside sample collection
         zone_path_len = len(zone_path.split('/'))
         sample_colls = [
-            sample_path + '/' + '/'.join(p.split('/')[zone_path_len:])
+            iRODSPath(sample_path, *p.split('/')[zone_path_len:])
             for p in zone_object_colls
             if len(p.split('/')) > zone_path_len
         ]
@@ -134,49 +140,21 @@ class Flow(BaseLinearFlow):
         )
 
         if not validate_only:
-            # Enforce access cleanup in case of e.g. admin ACL modifications
-            # TODO: Remove after implementing #2215
-            if access_cleanup:
-                self.add_task(
-                    irods_tasks.CleanupAccessTask(
-                        name='Cleanup zone user access',
-                        irods=self.irods,
-                        inject={
-                            'path': zone_path,
-                            'user_names': allowed_users,
-                        },
-                    )
-                )
-
             self.add_task(
                 irods_tasks.SetInheritanceTask(
-                    name='Set inheritance for landing zone collection '
-                    '{}'.format(zone_path),
+                    name=f'Set inheritance for landing zone collection '
+                    f'{zone_path}',
                     irods=self.irods,
                     inject={'path': zone_path, 'inherit': True},
                 )
             )
             self.add_task(
                 irods_tasks.SetAccessTask(
-                    name='Set admin "{}" owner access for zone coll {}'.format(
-                        admin_name, zone_path
-                    ),
+                    name=f'Set user "{zone.user.username}" read_object access '
+                    f'for zone collection {zone_path}',
                     irods=self.irods,
                     inject={
-                        'access_name': 'own',
-                        'path': zone_path,
-                        'user_name': admin_name,
-                        'irods_backend': self.irods_backend,
-                    },
-                )
-            )
-            self.add_task(
-                irods_tasks.SetAccessTask(
-                    name='Set user "{}" read access for zone collection '
-                    '{}'.format(zone.user.username, zone_path),
-                    irods=self.irods,
-                    inject={
-                        'access_name': 'read',
+                        'access_name': IRODS_ACCESS_READ_OBJ,
                         'path': zone_path,
                         'user_name': zone.user.username,
                         'irods_backend': self.irods_backend,
@@ -186,11 +164,11 @@ class Flow(BaseLinearFlow):
             if owner_group_exists:  # Support for legacy zones
                 self.add_task(
                     irods_tasks.SetAccessTask(
-                        name='Set project owner group read access for zone '
-                        'collection {}'.format(zone_path),
+                        name=f'Set project owner group read_object access for '
+                        f'zone collection {zone_path}',
                         irods=self.irods,
                         inject={
-                            'access_name': 'read',
+                            'access_name': IRODS_ACCESS_READ_OBJ,
                             'path': zone_path,
                             'user_name': owner_group,
                             'irods_backend': self.irods_backend,
@@ -202,11 +180,11 @@ class Flow(BaseLinearFlow):
             if script_user:
                 self.add_task(
                     irods_tasks.SetAccessTask(
-                        name='Set script user "{}" read access to landing '
-                        'zone'.format(script_user),
+                        name=f'Set script user "{script_user}" read_object '
+                        f'access to landing zone',
                         irods=self.irods,
                         inject={
-                            'access_name': 'read',
+                            'access_name': IRODS_ACCESS_READ_OBJ,
                             'path': zone_path,
                             'user_name': script_user,
                             'irods_backend': self.irods_backend,
@@ -295,10 +273,8 @@ class Flow(BaseLinearFlow):
             )
         )
         self.add_task(
-            irods_tasks.BatchValidateChecksumsTask(
-                name='Batch validate checksums of {} data objects'.format(
-                    file_count
-                ),
+            irods_tasks.BatchValidateZoneChecksumsTask(
+                name=f'Batch validate checksums of {file_count} data objects',
                 irods=self.irods,
                 inject={
                     'landing_zone': zone,
@@ -341,8 +317,8 @@ class Flow(BaseLinearFlow):
                 inject={
                     'landing_zone': zone,
                     'status': ZONE_STATUS_MOVING,
-                    'status_info': 'Validation OK, '
-                    'moving {} files into {}'.format(file_count, SAMPLE_COLL),
+                    'status_info': f'Validation OK, moving {file_count} files '
+                    f'into {SAMPLE_COLL}',
                     'flow_name': self.flow_name,
                 },
             )
@@ -350,22 +326,22 @@ class Flow(BaseLinearFlow):
         if sample_colls:
             self.add_task(
                 irods_tasks.BatchCreateCollectionsTask(
-                    name='Create collections in {}'.format(SAMPLE_COLL),
+                    name=f'Create collections in {SAMPLE_COLL}',
                     irods=self.irods,
                     inject={'coll_paths': sample_colls},
                 )
             )
         self.add_task(
             irods_tasks.BatchMoveDataObjectsTask(
-                name='Move {} files and set project group '
-                'read access'.format(len(zone_objects)),
+                name=f'Move {len(zone_objects)} files and set project group '
+                f'read_object access',
                 irods=self.irods,
                 inject={
                     'landing_zone': zone,
                     'src_root': zone_path,
                     'dest_root': sample_path,
                     'src_paths': zone_objects,
-                    'access_name': 'read',
+                    'access_name': IRODS_ACCESS_READ_OBJ,
                     'user_name': project_group,
                     'irods_backend': self.irods_backend,
                 },
@@ -373,12 +349,11 @@ class Flow(BaseLinearFlow):
         )
         self.add_task(
             irods_tasks.SetAccessTask(
-                name='Remove user "{}" access from sample collection {}'.format(
-                    zone.user.username, sample_path
-                ),
+                name=f'Remove user "{zone.user.username}" access from sample '
+                f'collection {sample_path}',
                 irods=self.irods,
                 inject={
-                    'access_name': 'null',
+                    'access_name': IRODS_ACCESS_NULL,
                     'path': sample_path,
                     'user_name': zone.user.username,
                     'irods_backend': self.irods_backend,
@@ -388,11 +363,11 @@ class Flow(BaseLinearFlow):
         if owner_group_exists:  # Support for legacy zones
             self.add_task(
                 irods_tasks.SetAccessTask(
-                    name='Remove project owner group access from sample '
-                    'collection {}'.format(sample_path),
+                    name=f'Remove project owner group access from sample '
+                    f'collection {sample_path}',
                     irods=self.irods,
                     inject={
-                        'access_name': 'null',
+                        'access_name': IRODS_ACCESS_NULL,
                         'path': sample_path,
                         'user_name': owner_group,
                         'irods_backend': self.irods_backend,
@@ -403,11 +378,11 @@ class Flow(BaseLinearFlow):
         if script_user:
             self.add_task(
                 irods_tasks.SetAccessTask(
-                    name='Remove script user "{}" access to sample path '
-                    'zone'.format(script_user),
+                    name=f'Remove script user "{script_user}" access to sample '
+                    f'path zone',
                     irods=self.irods,
                     inject={
-                        'access_name': 'null',
+                        'access_name': IRODS_ACCESS_NULL,
                         'path': sample_path,
                         'user_name': script_user,
                         'irods_backend': self.irods_backend,
@@ -439,6 +414,30 @@ class Flow(BaseLinearFlow):
                     'flow_name': self.flow_name,
                     'extra_data': {'file_count': file_count},
                 },
+            )
+        )
+        self.add_task(
+            ss_tasks.UpdateProjectSheetCacheTask(
+                name='Trigger asynchronous project sheet cache update',
+                project=self.project,
+                inject={
+                    'user': self.user,
+                    'add_alert': True,
+                    'alert_msg': f'Moved landing zone "{zone.title}".',
+                },
                 force_fail=force_fail,
             )
         )
+        # Verify files after move if enabled
+        if move_verify:
+            self.add_task(
+                lz_tasks.SubmitZoneVerifyFlowTask(
+                    name='Submit landing_zone_verify flow for zone files',
+                    project=self.project,
+                    inject={
+                        'landing_zone': zone,
+                        'file_paths': zone_objects_no_chk,  # NOTE: OG zone paths
+                        'user': self.user,
+                    },
+                )
+            )

@@ -1,28 +1,29 @@
 """API view model serializers for the landingzone app"""
 
+from packaging.version import parse as parse_version
 from typing import Optional
 
 from rest_framework import serializers
 from rest_framework.exceptions import APIException
 
 # Projectroles dependency
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.serializers import SODARProjectModelSerializer
 
 # Samplesheets dependency
 from samplesheets.models import Investigation, Assay
 
-from landingzones.constants import (
-    ZONE_STATUS_OK,
-    ZONE_STATUS_DELETED,
-    ZONE_STATUS_NOT_CREATED,
-)
+import landingzones.constants as lc
 from landingzones.models import LandingZone
 from landingzones.utils import get_zone_title
 
 
+plugin_api = PluginAPI()
+
+
 # Local constants
 ZONE_NO_INV_MSG = 'No investigation found for project'
+VERSION_1_1 = parse_version('1.1')
 
 
 class LandingZoneSerializer(SODARProjectModelSerializer):
@@ -34,6 +35,7 @@ class LandingZoneSerializer(SODARProjectModelSerializer):
     status_locked = serializers.SerializerMethodField(read_only=True)
     create_colls = serializers.BooleanField(write_only=True, default=False)
     restrict_colls = serializers.BooleanField(write_only=True, default=False)
+    coll_creation = serializers.CharField(read_only=True)
     irods_path = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
@@ -51,23 +53,24 @@ class LandingZoneSerializer(SODARProjectModelSerializer):
             'user_message',
             'create_colls',
             'restrict_colls',
+            'coll_creation',
             'configuration',
             'config_data',
             'irods_path',
             'sodar_uuid',
         ]
-        read_only_fields = ['status', 'status_info']
+        read_only_fields = ['status', 'status_info', 'coll_creation']
         write_only_fields = ['create_colls', 'restrict_colls']
 
     def get_status_locked(self, obj: LandingZone) -> bool:
         return obj.is_locked()
 
     def get_irods_path(self, obj: LandingZone) -> Optional[str]:
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         if irods_backend and obj.status not in [
-            ZONE_STATUS_OK,
-            ZONE_STATUS_DELETED,
-            ZONE_STATUS_NOT_CREATED,
+            lc.ZONE_STATUS_OK,
+            lc.ZONE_STATUS_DELETED,
+            lc.ZONE_STATUS_NOT_CREATED,
         ]:
             return irods_backend.get_path(obj)
 
@@ -96,6 +99,23 @@ class LandingZoneSerializer(SODARProjectModelSerializer):
             raise serializers.ValidationError(
                 'Assay does not belong to project'
             )
+        # Ensure restrict_colls is not set without create_colls
+        if (
+            not self.instance
+            and not attrs.get('create_colls', False)
+            and attrs.get('restrict_colls', True)
+        ):
+            raise serializers.ValidationError(
+                'Attempting to set restrict_colls True while create_colls is '
+                'False'
+            )
+        # Ensure coll args are not given on update
+        if self.instance and any(
+            a in attrs for a in ['create_colls', 'restrict_colls']
+        ):
+            raise serializers.ValidationError(
+                'Collection creation params can not be updated after creation'
+            )
         return attrs
 
     def create(self, validated_data):
@@ -105,6 +125,15 @@ class LandingZoneSerializer(SODARProjectModelSerializer):
         validated_data['assay'] = Assay.objects.get(
             sodar_uuid=validated_data['assay']['sodar_uuid']
         )
+        create_colls = validated_data.pop('create_colls', False)
+        restrict_colls = validated_data.pop('restrict_colls', False)
+        if create_colls and restrict_colls:
+            coll_creation = lc.ZONE_COLLS_RESTRICT
+        elif create_colls and not restrict_colls:
+            coll_creation = lc.ZONE_COLLS_CREATE
+        else:
+            coll_creation = lc.ZONE_COLLS_NONE
+        validated_data['coll_creation'] = coll_creation
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
@@ -114,4 +143,18 @@ class LandingZoneSerializer(SODARProjectModelSerializer):
         validated_data['assay'] = Assay.objects.get(
             sodar_uuid=self.context['assay']
         )
+        if 'create_colls' in validated_data:
+            validated_data.pop('create_colls')
+        if 'restrict_colls' in validated_data:
+            validated_data.pop('restrict_colls')
         return super().update(instance, validated_data)
+
+    def to_representation(self, instance):
+        """
+        Override to return coll_creation field depending on API version.
+        NOTE: Requires request in context object!
+        """
+        ret = super().to_representation(instance)
+        if parse_version(self.context['request'].version) < VERSION_1_1:
+            ret.pop('coll_creation')
+        return ret

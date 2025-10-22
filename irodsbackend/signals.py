@@ -10,10 +10,11 @@ from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.models import AUTH_TYPE_OIDC
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 
 logger = logging.getLogger(__name__)
+plugin_api = PluginAPI()
 
 
 APP_NAME = 'omics_irods'
@@ -26,16 +27,14 @@ OIDC_USER_PW_MSG = (
 def create_irods_user(sender, user, **kwargs):
     """Signal for creating iRODS user for LDAP user or SODAR auth"""
     try:
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
     except Exception as ex:
-        logger.error('Exception initializing irodsbackend: {}'.format(ex))
+        logger.error(f'Exception initializing irodsbackend: {ex}')
         return
     if not irods_backend or (
         not hasattr(user, 'ldap_username') and not settings.IRODS_SODAR_AUTH
     ):
-        logger.debug(
-            'Skipping iRODS user creation for user "{}"'.format(user.username)
-        )
+        logger.debug(f'Skipping iRODS user creation for user "{user.username}"')
         return  # Skip for local users without SODAR auth, or if no iRODS conn
 
     # Set username
@@ -51,11 +50,11 @@ def create_irods_user(sender, user, **kwargs):
             try:
                 irods.users.get(user_name)
                 logger.debug(
-                    'Skipping iRODS user creation, user "{}" already '
-                    'exists'.format(user_name)
+                    f'Skipping iRODS user creation, user "{user_name}" already '
+                    f'exists'
                 )
             except UserDoesNotExist:
-                logger.info('Creating user "{}" in iRODS..'.format(user_name))
+                logger.info(f'Creating user "{user_name}" in iRODS..')
                 # Create user
                 try:
                     irods.users.create(
@@ -64,12 +63,10 @@ def create_irods_user(sender, user, **kwargs):
                         user_zone=settings.IRODS_ZONE,
                     )
                 except Exception as ex:
-                    logger.error(
-                        'Exception creating user in iRODS: {}'.format(ex)
-                    )
+                    logger.error(f'Exception creating user in iRODS: {ex}')
                     return
                 # Add user alert
-                app_alerts = get_backend_api('appalerts_backend')
+                app_alerts = plugin_api.get_backend_api('appalerts_backend')
                 if app_alerts:
                     if user.get_auth_type() == AUTH_TYPE_OIDC:
                         pw_msg = OIDC_USER_PW_MSG
@@ -81,17 +78,16 @@ def create_irods_user(sender, user, **kwargs):
                         app_name=APP_NAME,
                         alert_name='irods_user_create',
                         user=user,
-                        message='User account "{}" created in iRODS. {}'.format(
-                            user_name, pw_msg
-                        ),
+                        message=f'User account "{user_name}" created in iRODS. '
+                        f'{pw_msg}',
                         url=alert_url,
                     )
                 logger.info('User creation OK')
     except Exception as ex:
         # NOTE: Logging warning because this does not actually prevent login
         logger.warning(
-            'Unable to update user in iRODS, exception in opening session: '
-            '{}'.format(ex)
+            f'Unable to update user in iRODS, exception in opening session: '
+            f'{ex}'
         )
 
 

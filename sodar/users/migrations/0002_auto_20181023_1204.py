@@ -17,5 +17,4 @@ class Migration(migrations.Migration):
             name='user',
             options={},
         ),
-
     ]

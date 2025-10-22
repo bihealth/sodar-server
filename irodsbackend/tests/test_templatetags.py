@@ -20,9 +20,10 @@ app_settings = AppSettingAPI()
 
 
 # SODAR constants
-PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
-PROJECT_TYPE_CATEGORY = SODAR_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
+PROJECT_TYPE_CATEGORY = SODAR_CONSTANTS['PROJECT_TYPE_CATEGORY']
+PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
+PROJECT_ROLE_GUEST = SODAR_CONSTANTS['PROJECT_ROLE_GUEST']
 
 # Local constants
 IRODS_TICKET_STR = 'ooChaa1t'
@@ -36,6 +37,7 @@ class TestTemplatetags(
     def setUp(self):
         # Init roles
         self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
+        self.role_guest = Role.objects.get_or_create(name=PROJECT_ROLE_GUEST)[0]
         # Init users
         self.user = self.make_user('user_owner')
         # Init category
@@ -66,8 +68,7 @@ class TestTemplatetags(
     def test_get_webdav_url_anon(self):
         """Test get_webdav_url() with anonymous access"""
         # Mock public project update
-        self.project.public_guest_access = True
-        self.project.save()
+        self.project.set_public_access(self.role_guest)
         app_settings.set(
             'samplesheets',
             'public_access_ticket',

@@ -1,15 +1,18 @@
 import logging
 
 from datetime import datetime as dt
+from typing import Optional
 
 # Projectroles dependency
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 from landingzones.configapps.bih_proteomics_smb.urls import urlpatterns
+from landingzones.models import LandingZone
 from landingzones.plugins import LandingZoneConfigPluginPoint
 
 
 logger = logging.getLogger(__name__)
+plugin_api = PluginAPI()
 
 
 # Local constants
@@ -57,7 +60,9 @@ class LandingZoneConfigPlugin(LandingZoneConfigPluginPoint):
     # TODO: TBD: Do we need this?
     permission = None
 
-    def get_extra_flow_data(self, zone, flow_name):
+    def get_extra_flow_data(
+        self, zone: LandingZone, flow_name: str
+    ) -> Optional[dict]:
         """
         Return extra zone data parameters.
 
@@ -67,13 +72,13 @@ class LandingZoneConfigPlugin(LandingZoneConfigPluginPoint):
         """
         return {'script_user': 'bih_proteomics_smb'}  # Workaround for #297
 
-    def cleanup_zone(self, zone):
+    def cleanup_zone(self, zone: LandingZone):
         """
         Perform actions before landing zone deletion.
 
         :param zone: LandingZone object
         """
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         if not irods_backend:
             return
         if (

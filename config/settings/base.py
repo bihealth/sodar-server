@@ -8,7 +8,6 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
-import itertools
 import os
 import re
 
@@ -126,7 +125,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django_cprofile_middleware.middleware.ProfilerMiddleware',
 ]
 
 # MIGRATIONS CONFIGURATION
@@ -425,12 +423,9 @@ if ENABLE_LDAP:
     AUTH_LDAP_DOMAIN_PRINTABLE = env.str(
         'AUTH_LDAP_DOMAIN_PRINTABLE', AUTH_LDAP_USERNAME_DOMAIN
     )
-    AUTHENTICATION_BACKENDS = tuple(
-        itertools.chain(
-            ('projectroles.auth_backends.PrimaryLDAPBackend',),
-            AUTHENTICATION_BACKENDS,
-        )
-    )
+    AUTHENTICATION_BACKENDS = [
+        'projectroles.auth_backends.PrimaryLDAPBackend'
+    ] + AUTHENTICATION_BACKENDS
 
     # Secondary LDAP server (optional)
     if ENABLE_LDAP_SECONDARY:
@@ -461,12 +456,9 @@ if ENABLE_LDAP:
         AUTH_LDAP2_DOMAIN_PRINTABLE = env.str(
             'AUTH_LDAP2_DOMAIN_PRINTABLE', AUTH_LDAP2_USERNAME_DOMAIN
         )
-        AUTHENTICATION_BACKENDS = tuple(
-            itertools.chain(
-                ('projectroles.auth_backends.SecondaryLDAPBackend',),
-                AUTHENTICATION_BACKENDS,
-            )
-        )
+        AUTHENTICATION_BACKENDS = [
+            'projectroles.auth_backends.SecondaryLDAPBackend'
+        ] + AUTHENTICATION_BACKENDS
 
 
 # OpenID Connect (OIDC) configuration
@@ -475,12 +467,9 @@ if ENABLE_LDAP:
 ENABLE_OIDC = env.bool('ENABLE_OIDC', False)
 
 if ENABLE_OIDC:
-    AUTHENTICATION_BACKENDS = tuple(
-        itertools.chain(
-            ('social_core.backends.open_id_connect.OpenIdConnectAuth',),
-            AUTHENTICATION_BACKENDS,
-        )
-    )
+    AUTHENTICATION_BACKENDS = [
+        'social_core.backends.open_id_connect.OpenIdConnectAuth'
+    ] + AUTHENTICATION_BACKENDS
     TEMPLATES[0]['OPTIONS']['context_processors'] += [
         'social_django.context_processors.backends',
         'social_django.context_processors.login_redirect',
@@ -623,6 +612,7 @@ PROJECTROLES_HELP_HIGHLIGHT_DAYS = env.int(
 )
 PROJECTROLES_ENABLE_SEARCH = env.bool('PROJECTROLES_ENABLE_SEARCH', True)
 PROJECTROLES_SEARCH_PAGINATION = env.int('PROJECTROLES_SEARCH_PAGINATION', 5)
+PROJECTROLES_ROLE_PAGINATION = env.int('PROJECTROLES_ROLE_PAGINATION', 15)
 PROJECTROLES_DELEGATE_LIMIT = env.int('PROJECTROLES_DELEGATE_LIMIT', 1)
 PROJECTROLES_DEFAULT_ADMIN = env.str('PROJECTROLES_DEFAULT_ADMIN', 'admin')
 PROJECTROLES_ALLOW_LOCAL_USERS = env.bool(
@@ -679,7 +669,6 @@ TOKENS_CREATE_PROJECT_USER_RESTRICT = env.bool(
 
 
 # iRODS settings shared by iRODS using apps
-ENABLE_IRODS = env.bool('ENABLE_IRODS', True)
 IRODS_HOST = env.str('IRODS_HOST', '127.0.0.1')
 IRODS_HOST_FQDN = env.str('IRODS_HOST_FQDN', IRODS_HOST)
 IRODS_PORT = env.int('IRODS_PORT', 4477)
@@ -706,16 +695,6 @@ IRODS_ENV_CLIENT = env.dict('IRODS_ENV_CLIENT', default={})
 # Optional iRODS certificate path on server
 IRODS_CERT_PATH = env.str('IRODS_CERT_PATH', None)
 
-# Taskflow backend settings
-# Connection timeout for taskflowbackend flows (other sessions not affected)
-TASKFLOW_IRODS_CONN_TIMEOUT = env.int('TASKFLOW_IRODS_CONN_TIMEOUT', 3600)
-TASKFLOW_LOCK_RETRY_COUNT = env.int('TASKFLOW_LOCK_RETRY_COUNT', 2)
-TASKFLOW_LOCK_RETRY_INTERVAL = env.int('TASKFLOW_LOCK_RETRY_INTERVAL', 3)
-# Interval in seconds for zone progress counters (0 for update on every file)
-TASKFLOW_ZONE_PROGRESS_INTERVAL = env.int('TASKFLOW_ZONE_PROGRESS_INTERVAL', 10)
-TASKFLOW_LOCK_ENABLED = True
-TASKFLOW_TEST_MODE = False  # Important to protect iRODS data
-
 # Samplesheets and Landingzones link settings
 IRODS_WEBDAV_ENABLED = env.bool('IRODS_WEBDAV_ENABLED', True)
 IRODS_WEBDAV_URL = env.str('IRODS_WEBDAV_URL', 'https://127.0.0.1')
@@ -724,7 +703,7 @@ IRODS_WEBDAV_URL_ANON_TMPL = re.sub(
     r'^(https?://)(.*)$', r'\1{user}:{ticket}@\2{path}', IRODS_WEBDAV_URL_ANON
 )
 IRODS_WEBDAV_USER_ANON = env.str('IRODS_WEBDAV_USER_ANON', 'ticket')
-IRODS_WEBDAV_IGV_PROXY = env.bool('IRODS_WEBDAV_IGV_PROXY', True)
+IRODS_WEBDAV_IGV_PROXY = env.bool('IRODS_WEBDAV_IGV_PROXY', False)
 
 
 # Irodsbackend settings
@@ -733,6 +712,12 @@ IRODSBACKEND_STATUS_INTERVAL = env.int('IRODSBACKEND_STATUS_INTERVAL', 15)
 # Set batch query size for improving sequential iRODS query performance (#432)
 IRODS_QUERY_BATCH_SIZE = env.int('IRODS_QUERY_BATCH_SIZE', 24)
 
+
+# Isatemplates settings
+# Enable templates from cubi-isa-templates
+ISATEMPLATES_ENABLE_CUBI_TEMPLATES = env.bool(
+    'ISATEMPLATES_ENABLE_CUBI_TEMPLATES', True
+)
 
 # Samplesheets settings
 # Allow critical altamISA warnings on import
@@ -773,6 +758,8 @@ SHEETS_EXTERNAL_LINK_PATH = env.str(
     'SHEETS_EXTERNAL_LINK_PATH',
     os.path.join(ROOT_DIR, 'samplesheets/config/ext_links.json'),
 )
+# Enable remote sample sheet sync
+SHEETS_SYNC_ENABLE = env.bool('SHEETS_SYNC_ENABLE', False)
 # Remote sample sheet sync interval in minutes
 SHEETS_SYNC_INTERVAL = env.int('SHEETS_SYNC_INTERVAL', 5)
 # BAM/CRAM file path glob patterns to omit from study shortcuts and IGV sessions
@@ -823,6 +810,8 @@ LANDINGZONES_ZONE_VALIDATE_LIMIT = env.int(
 LANDINGZONES_FILE_LIST_PAGINATION = env.int(
     'LANDINGZONES_FILE_LIST_PAGINATION', 15
 )
+# Enable verification of landing zone files after zone move
+LANDINGZONES_ZONE_MOVE_VERIFY = env.bool('LANDINGZONES_ZONE_MOVE_VERIFY', True)
 
 # Landingzones configapp plugin settings
 LZ_BIH_PROTEOMICS_SMB_EXPIRY_DAYS = env.int(
@@ -833,15 +822,21 @@ LZ_BIH_PROTEOMICS_SMB_USER = env.str(
 )
 LZ_BIH_PROTEOMICS_SMB_PASS = env.str('LZ_BIH_PROTEOMICS_SMB_PASS', 'CHANGE ME!')
 
+
 # Ontologyaccess settings
 ONTOLOGYACCESS_BULK_CREATE = env.int('ONTOLOGYACCESS_BULK_CREATE', 5000)
 ONTOLOGYACCESS_QUERY_LIMIT = env.int('ONTOLOGYACCESS_QUERY_LIMIT', 250)
 
-# Isatemplates settings
-# Enable templates from cubi-isa-templates
-ISATEMPLATES_ENABLE_CUBI_TEMPLATES = env.bool(
-    'ISATEMPLATES_ENABLE_CUBI_TEMPLATES', True
-)
+
+# Taskflowbackend settings
+# Connection timeout for taskflowbackend flows (other sessions not affected)
+TASKFLOW_IRODS_CONN_TIMEOUT = env.int('TASKFLOW_IRODS_CONN_TIMEOUT', 3600)
+TASKFLOW_LOCK_RETRY_COUNT = env.int('TASKFLOW_LOCK_RETRY_COUNT', 2)
+TASKFLOW_LOCK_RETRY_INTERVAL = env.int('TASKFLOW_LOCK_RETRY_INTERVAL', 3)
+# Interval in seconds for zone progress counters (0 for update on every file)
+TASKFLOW_ZONE_PROGRESS_INTERVAL = env.int('TASKFLOW_ZONE_PROGRESS_INTERVAL', 10)
+TASKFLOW_LOCK_ENABLED = True
+TASKFLOW_TEST_MODE = False  # Important to protect iRODS data
 
 
 # Settings for HTTP AuthBasic

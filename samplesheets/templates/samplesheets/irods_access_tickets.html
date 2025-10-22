@@ -124,7 +124,7 @@
   {{ block.super }}
   {# Tour content #}
   <script type="text/javascript">
-    tourEnabled = true;
+    tourEnabled = true
     tour.addStep('irods_ticket', {
         title: 'iRODS Access Tickets',
         text: 'In this view you can manage access tickets for iRODS ' +
@@ -134,7 +134,7 @@
               'integrating data from SODAR to external software.',
         advanceOn: '.docs-link click',
         showCancelLink: true
-    });
+    })
     tour.addStep('irods_ticket_warning', {
         title: 'iRODS Access Warning',
         text: 'WARNING: Anyone with the URL and network access to your iRODS ' +
@@ -143,7 +143,7 @@
               'whom tickets are provided.',
         advanceOn: '.docs-link click',
         showCancelLink: true
-    });
+    })
     if ($('#sodar-ss-ticket-list').length) {
         tour.addStep('irods_ticket_list', {
             title: 'iRODS Access Ticket List',
@@ -152,66 +152,65 @@
             attachTo: '#sodar-ss-ticket-list top',
             advanceOn: '.docs-link click',
             showCancelLink: true
-        });
+        })
     }
     if ($('.sodar-ss-ticket-item-title').length) {
-        tour.addStep('irods_ticket_title', {
-            title: 'iRODS Access Ticket Title',
-            text: 'The title of the ticket is displayed here. It consists of ' +
-                  'the name of the collection or the data object the ticket ' +
-                  'targets, along with an optional string identified or the ' +
-                  'ticket creation timestamp. The title links to the ' +
-                  'anonymous ticket URL via WebDAV. The column also includes ' +
-                  'a link for copying the URL into the clipboard.',
-            attachTo: '.sodar-ss-ticket-item-title top',
-            advanceOn: '.docs-link click',
-            showCancelLink: true
-        });
+      tour.addStep('irods_ticket_title', {
+        title: 'iRODS Access Ticket Title',
+        text: 'The title of the ticket is displayed here. It consists of the ' +
+              'name of the collection or the data object the ticket targets ' +
+              'along with an optional string identified or the ticket ' +
+              'creation timestamp. The title links to the anonymous ticket ' +
+              'URL via WebDAV. The column also includes a link for copying ' +
+              'the URL into the clipboard.',
+        attachTo: '.sodar-ss-ticket-item-title top',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+      })
     }
     if ($('.sodar-ss-ticket-item-str').length) {
-        tour.addStep('irods_ticket_str', {
-            title: 'iRODS Access Ticket String',
-            text: 'The access ticket string is displayed here.',
-            attachTo: '.sodar-ss-ticket-item-str top',
-            advanceOn: '.docs-link click',
-            showCancelLink: true
-        });
+      tour.addStep('irods_ticket_str', {
+        title: 'iRODS Access Ticket String',
+        text: 'The access ticket string is displayed here.',
+        attachTo: '.sodar-ss-ticket-item-str top',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+      })
     }
     if ($('.sodar-ss-ticket-item-expiry').length) {
-        tour.addStep('irods_ticket_expiry', {
-            title: 'iRODS Access Ticket Expiration',
-            text: 'The expiration date is displayed here.',
-            attachTo: '.sodar-ss-ticket-item-expiry top',
-            advanceOn: '.docs-link click',
-            showCancelLink: true
-        });
+      tour.addStep('irods_ticket_expiry', {
+        title: 'iRODS Access Ticket Expiration',
+        text: 'The expiration date is displayed here.',
+        attachTo: '.sodar-ss-ticket-item-expiry top',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+      })
     }
     if ($('.sodar-ss-ticket-dropdown').length) {
-        tour.addStep('irods_ticket_dropdown', {
-            title: 'iRODS Access Ticket Dropdown',
-            text: 'From the dropdown associated with a ticket, you can ' +
-                  'update or delete it.',
-            attachTo: '.sodar-ss-ticket-dropdown left',
-            advanceOn: '.docs-link click',
-            showCancelLink: true
-        });
+      tour.addStep('irods_ticket_dropdown', {
+        title: 'iRODS Access Ticket Dropdown',
+        text: 'From the dropdown associated with a ticket, you can update or ' +
+              'delete it.',
+        attachTo: '.sodar-ss-ticket-dropdown left',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+      })
     }
     tour.addStep('irods_ticket_create', {
-        title: 'iRODS Access Ticket Creation',
-        text: 'Click on this button to create a new access ticket. You will ' +
-              'be taken to a form where you can set the target collection or ' +
-              'data object, optional expiration date and optional host ' +
-              'restrictions.',
-        attachTo: '#sodar-ss-btn-ticket-create left',
-        advanceOn: '.docs-link click',
-        showCancelLink: true
-    });
+      title: 'iRODS Access Ticket Creation',
+      text: 'Click on this button to create a new access ticket. You will be ' +
+            'taken to a form where you can set the target collection or data ' +
+            'object, optional expiration date and optional host restrictions.',
+      attachTo: '#sodar-ss-btn-ticket-create left',
+      advanceOn: '.docs-link click',
+      showCancelLink: true
+    })
     tour.addStep('sheets_btn_back', {
-        title: 'Back to Project Sample Sheets',
-        text: 'Click on this button to return to the project sample sheets.',
-        attachTo: '#sodar-ss-btn-back left',
-        advanceOn: '.docs-link click',
-        showCancelLink: true
-    });
+      title: 'Back to Project Sample Sheets',
+      text: 'Click on this button to return to the project sample sheets.',
+      attachTo: '#sodar-ss-btn-back left',
+      advanceOn: '.docs-link click',
+      showCancelLink: true
+    })
   </script>
 {% endblock javascript %}

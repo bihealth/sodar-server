@@ -200,16 +200,18 @@ For the SODAR **project**, please provide a **project title** and a **short
 description** as well as the **people** who should be associated with the
 project. In general, all people with valid Charite or MDC account are
 eligible to access SODAR and thus can be associated with a project.
-Following roles are available:
+The following roles are available:
 
-* **Project owner**: usually the PI in charge of and accountable for the
+**Project owner**: Usually the PI in charge of and accountable for the
   project and (meta-) data.
-* **Project delegate**: second in charge, maybe a PI of a collaborating lab
+* **Project delegate**: Second in charge, maybe a PI of a collaborating lab
   (optional).
-* **Project contributor(s)**: staff who is generating and uploading (meta-)
+* **Project contributor(s)**: Staff who is generating and uploading (meta-)
   data (optional but recommended).
-* **Project guest(s)**: people who are supposed to view but not alter any
-  (meta-) data (optional).
+* **Project guest(s)**: People who are supposed to view but not alter any
+  metadata or files (optional).
+* **Project viewer(s)**: People who are supposed to view but not alter any
+  metadata, with no access to files (optional).
 
 Furthermore, indicate the **studies** and **assays** needed.
 

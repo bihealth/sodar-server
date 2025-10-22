@@ -1,15 +1,17 @@
 """Import and export utilities for the ontologyaccess app"""
 
 import csv
+import fastobo.header as fh
 import io
 import logging
+import pronto
 import sys
 import urllib
-from importlib import import_module
 
-import fastobo.header as fh
-import pronto
+from importlib import import_module
+from fastobo.doc import OboDoc
 from fastobo.term import TermFrame
+from typing import Optional, Union
 
 from django.conf import settings
 from django.db import transaction
@@ -50,7 +52,7 @@ class OBOFormatOntologyIO:
     """Importing class for OBO format ontologies"""
 
     @classmethod
-    def _create_terms(cls, term_vals):
+    def _create_terms(cls, term_vals: list[dict]):
         """Helper for bulk creating ontology terms"""
         logger.debug(
             'Bulk creating {} terms (start={})'.format(
@@ -62,7 +64,9 @@ class OBOFormatOntologyIO:
         )
 
     @classmethod
-    def owl_to_obo(cls, owl, verbose=False):
+    def owl_to_obo(
+        cls, owl: Union[str, io.BytesIO], verbose: bool = False
+    ) -> io.BytesIO:
         """
         Convert an OWL format ontology into the OBO format.
 
@@ -71,7 +75,7 @@ class OBOFormatOntologyIO:
         :return: File pointer
         """
         logger.info('Converting OWL format ontology to OBO..')
-        logger.debug('OWL = {}'.format(owl))
+        logger.debug(f'OWL = {owl}')
         if not verbose:
             sys.stdout = io.StringIO()
             sys.stderr = io.StringIO()
@@ -83,7 +87,7 @@ class OBOFormatOntologyIO:
         if not verbose:
             sys.stdout = sys.__stdout__
             sys.stderr = sys.__stderr__
-        logger.info('Parsed OWL ontology with {} terms'.format(len(o.terms())))
+        logger.info(f'Parsed OWL ontology with {len(o.terms())} terms')
         f = io.BytesIO()
         o.dump(f, format='obo')
         logger.info('Converted OWL ontology into OBO')
@@ -92,7 +96,14 @@ class OBOFormatOntologyIO:
 
     @classmethod
     @transaction.atomic
-    def import_obo(cls, obo_doc, name, file, title=None, term_url=None):
+    def import_obo(
+        cls,
+        obo_doc: OboDoc,
+        name: str,
+        file: str,
+        title: Optional[str] = None,
+        term_url: Optional[str] = None,
+    ) -> OBOFormatOntology:
         """
         Import data from an OBO format ontology into the SODAR database.
 
@@ -103,9 +114,7 @@ class OBOFormatOntologyIO:
         :param term_url: Term URL for the object (string)
         :return: OBOFormatOntology object
         """
-        logger.info(
-            'Importing OBO format ontology "{}" from {}'.format(name, file)
-        )
+        logger.info(f'Importing OBO format ontology "{name}" from {file}')
         o_kwargs = {
             'name': name,
             'file': str(file),
@@ -141,9 +150,7 @@ class OBOFormatOntologyIO:
 
         obo_obj = OBOFormatOntology.objects.create(**o_kwargs)
         logger.debug(
-            'OBOFormatOntology created: {} (UUID={})'.format(
-                o_kwargs, obo_obj.sodar_uuid
-            )
+            f'OBOFormatOntology created: {o_kwargs} (UUID={obo_obj.sodar_uuid})'
         )
 
         logger.debug('Parsing terms..')
@@ -157,14 +164,10 @@ class OBOFormatOntologyIO:
             if not isinstance(term, TermFrame):
                 continue  # Skip typedefs
             if str(term.id) in db_term_ids:
-                logger.warning(
-                    'Skipping term already in database: {}'.format(term.id)
-                )
+                logger.warning(f'Skipping term already in database: {term.id}')
                 continue
             if ':' not in str(term.id):
-                logger.warning(
-                    'Skipping term without id space: {}'.format(term.id)
-                )
+                logger.warning(f'Skipping term without id space: {term.id}')
                 continue
 
             t_kwargs = {'ontology': obo_obj, 'term_id': str(term.id)}
@@ -217,8 +220,8 @@ class OBOFormatOntologyIO:
 
         if term_count == 0:
             logger.warning(
-                '0 terms imported for OBOFormatOntology "{}", '
-                'this is probably not what you wanted'.format(obo_obj.name)
+                f'0 terms imported for OBOFormatOntology "{obo_obj.name}", '
+                f'this is probably not what you wanted'
             )
         logger.info(
             'Imported OBOFormatOntology "{}" ({}) with {} term{} '
@@ -233,7 +236,9 @@ class OBOFormatOntologyIO:
         return obo_obj
 
     @classmethod
-    def get_obo_header(cls, obo_doc, raw_tag, raw_value=True):
+    def get_obo_header(
+        cls, obo_doc: OboDoc, raw_tag: str, raw_value: bool = True
+    ) -> Optional[str]:
         """
         Get header from an OBO format ontology parsed by fastobo.
 
@@ -248,7 +253,7 @@ class OBOFormatOntologyIO:
 
     @classmethod
     @transaction.atomic
-    def import_omim(cls, csv_data, file):
+    def import_omim(cls, csv_data: io.BytesIO, file: str) -> OBOFormatOntology:
         """
         Import OMIM data as a "fake" OBO ontology in the SODAR database.
 
@@ -257,9 +262,7 @@ class OBOFormatOntologyIO:
         :return: OBOFormatOntology object
         """
         logger.info(
-            'Importing CSV data into ontology "{}" from {}'.format(
-                OMIM_NAME, file
-            )
+            f'Importing CSV data into ontology "{OMIM_NAME}" from {file}'
         )
 
         csv.field_size_limit(sys.maxsize)
@@ -276,9 +279,7 @@ class OBOFormatOntologyIO:
         }
         obo_obj = OBOFormatOntology.objects.create(**o_kwargs)
         logger.debug(
-            'OBOFormatOntology created: {} (UUID={})'.format(
-                o_kwargs, obo_obj.sodar_uuid
-            )
+            f'OBOFormatOntology created: {o_kwargs} (UUID={obo_obj.sodar_uuid})'
         )
 
         logger.debug('Parsing terms..')
@@ -296,14 +297,10 @@ class OBOFormatOntologyIO:
                 continue
             term_id = ts[-2] + ':' + ts[-1]
             if term_id in db_term_ids:
-                logger.warning(
-                    'Skipping term already in database: {}'.format(term_id)
-                )
+                logger.warning(f'Skipping term already in database: {term_id}')
                 continue
             elif term_id in current_ids:
-                logger.warning(
-                    'Skipping subject already inserted: {}'.format(term_id)
-                )
+                logger.warning(f'Skipping subject already inserted: {term_id}')
                 continue
             t_kwargs = {'ontology': obo_obj, 'term_id': term_id, 'name': row[1]}
             term_vals.append(t_kwargs)

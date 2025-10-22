@@ -12,9 +12,9 @@ Versioning
 Media Type
     ``application/vnd.bihealth.sodar.landingzones+json``
 Current Version
-    ``1.0``
+    ``1.1``
 Accepted Versions
-    ``1.0``
+    ``1.0``, ``1.1``
 Header Example
     ``Accept: application/vnd.bihealth.sodar.landingzones+json; version=x.y``
 
@@ -35,3 +35,23 @@ API Views
 .. autoclass:: ZoneSubmitDeleteAPIView
 
 .. autoclass:: ZoneSubmitMoveAPIView
+
+.. autoclass:: ZoneSettingsRetrieveAPIView
+
+.. autoclass:: ZoneIrodsFileListAPIView
+
+
+Version Changes
+===============
+
+.. _api_landingzones_version_1_1:
+
+v1.1
+----
+
+- ``ZoneRetrieveAPIView``
+    * Add ``coll_creation`` field
+- ``ZoneIrodsFileListAPIView``
+    * Add view
+- ``ZoneSettingsRetrieveAPIView``
+    * Add view

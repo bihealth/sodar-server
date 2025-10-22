@@ -41,6 +41,7 @@ DEFAULT_STATUS_INFO = {
 STATUS_INFO_DELETE_NO_COLL = (
     'No iRODS collection for zone found, marked as deleted'
 )
+STATUS_INFO_ADMIN_RESET = 'Status reset by administrator'
 
 STATUS_STYLES = {
     ZONE_STATUS_CREATING: 'bg-warning',
@@ -88,4 +89,18 @@ STATUS_DISPLAY_FILES = [
     ZONE_STATUS_VALIDATING,
     ZONE_STATUS_MOVING,
     ZONE_STATUS_FAILED,
+]
+
+# Zone collection creation mode
+# No collections created
+ZONE_COLLS_NONE = 'NONE'
+# Collections created, access not restricted
+ZONE_COLLS_CREATE = 'CREATE'
+# Collections created, access restricted
+ZONE_COLLS_RESTRICT = 'RESTRICT'
+
+ZONE_COLLS_CREATION_MODES = [
+    ZONE_COLLS_NONE,
+    ZONE_COLLS_CREATE,
+    ZONE_COLLS_RESTRICT,
 ]

@@ -162,7 +162,7 @@ iRODS WebDAV Settings
     ``True`` if the WebDAV is deployed on a different host than SODAR itself.
     This will avoid having to log in twice when opening a session file in IGV.
     If SODAR and the WebDAV are deployed on the same host, this should be set
-    ``False`` (boolean, default: ``True``).
+    ``False`` (boolean, default: ``False``).
 
 iRODS Backend Settings
 ----------------------
@@ -204,8 +204,10 @@ Sample Sheets Settings
     parameter containing a display-friendly description of the ID. If linking
     out to an external resource is needed, add a ``url`` parameter containing a
     URL pattern in form of ``https://example.com/{id}``.
+``SHEETS_SYNC_ENABLE``
+    Enable remote sample sheet synchronisation (boolean).
 ``SHEETS_SYNC_INTERVAL``
-    Interval for remote sheet synchronization in minutes (integer).
+    Interval for remote sample sheet synchronization in minutes (integer).
 ``SHEETS_IGV_OMIT_BAM``
     BAM and CRAM file name suffixes to omit from study shortcuts and IGV session
     generation.
@@ -253,6 +255,10 @@ Landing Zones Settings
     this value to ``0`` or ``None`` will be considered as ``1`` (integer).
 ``LANDINGZONES_FILE_LIST_PAGINATION``
     Page size for landing zone iRODS file list modal pagination.
+``LANDINGZONES_ZONE_MOVE_VERIFY``
+    Enable verification of file integrity after landing zone move. Recomputes
+    and validates checksums of recently moved landing zone files in the sample
+    data repository, reports to the zone owner if problems were encountered.
 ``LZ_BIH_PROTEOMICS_SMB_EXPIRY_DAYS``
     BIH proteomics configuration SMB expiry days (integer).
 ``LZ_BIH_PROTEOMICS_SMB_USER``

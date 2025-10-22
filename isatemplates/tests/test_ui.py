@@ -148,7 +148,7 @@ class TestISATemplateDetailView(
         )
         for f in self.template.files.all():
             elem = self.selenium.find_element(
-                By.ID, 'sodar-it-template-detail-file-{}'.format(f.sodar_uuid)
+                By.ID, f'sodar-it-template-detail-file-{f.sodar_uuid}'
             )
             self.assertIn(
                 f.file_name, elem.find_element(By.TAG_NAME, 'h4').text
@@ -182,6 +182,6 @@ class TestCUBIISATemplateDetailView(
                 if any(fn.startswith(x) for x in ISA_FILE_PREFIXES):
                     self.assertIsNotNone(
                         self.selenium.find_element(
-                            By.ID, 'sodar-it-template-detail-file-{}'.format(fn)
+                            By.ID, f'sodar-it-template-detail-file-{fn}'
                         )
                     )
