@@ -45,6 +45,8 @@ Timeline Overview
     Displays the five most recent events taken in the project. Your project role
     define the events that you can see.
 
+.. _ui_project_overview_stats:
+
 In the overview of a category, you can also see cumulative statistics for all
 projects under that category. These statistics list the amount of projects,
 members, samples and files along with the total size of data in iRODS under the

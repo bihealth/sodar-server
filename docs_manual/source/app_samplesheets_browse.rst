@@ -333,6 +333,8 @@ list of files, you can click the rightmost "Browse Files in WebDAV" button
 for folder style browsing.
 
 
+.. _app_samplesheets_browse_overview:
+
 Overview Tab
 ============
 

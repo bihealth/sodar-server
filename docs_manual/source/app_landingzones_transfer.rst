@@ -255,17 +255,22 @@ operation.
     :guilabel:`Landing Zone Move` :ref:`Timeline <ui_project_timeline>` event.
     This information is currently available for project owners and delegates.
 
-.. note::
 
-    If enabled on your SODAR instance by administrators, the files may still be
-    verified after a successful landing zone move. This is done to double check
-    file integrity once the data has been moved to their permanent storage
-    position. This happens silently in the background and the results can be
-    seen in the project timeline as a :guilabel:`Zone Verify` event. You can
-    access your files while verification is running. In the unlikely situation
-    an issue is detected with the files, you will receive a UI alert and/or an
-    email. This depends on how landing zone alerts have been have configured in
-    your :ref:`user profile <ui_user_profile>`.
+.. _app_landingzones_transfer_verify:
+
+Zone Move Verification
+======================
+
+If enabled on your SODAR instance by administrators, the files may still be
+verified after a successful landing zone move. This is done to double check file
+integrity once the data has been moved to their permanent storage position. This
+happens silently in the background and the results can be seen in the project
+timeline as a :guilabel:`Zone Verify` event. You can access your files while
+verification is running.
+
+In the unlikely situation an issue is detected with the files, you will receive
+a UI alert and/or an email. This depends on how landing zone alerts have been
+have configured in your :ref:`user profile <ui_user_profile>`.
 
 
 Landing Zone Deletion
@@ -286,6 +291,8 @@ along with all associated files in iRODS will be deleted.
     event. This information is currently available for project owners and
     delegates.
 
+
+.. _app_landingzones_transfer_reset:
 
 Landing Zone Reset
 ==================

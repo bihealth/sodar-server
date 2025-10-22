@@ -8,23 +8,23 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
-v1.2.0 (WIP)
-============
+v1.2.0 (2025-10-22)
+===================
 
 Major feature update and SODAR Core 1.2 upgrade.
 
-- Add project viewer role support
-- Add landing zone post-move file integrity verification
-- Add category statistics for sample count and iRODS data
+- :ref:`Add project viewer role support <ui_project_members_roles>`
+- :ref:`Add landing zone post-move file integrity verification <app_landingzones_transfer_verify>`
+- :ref:`Add category statistics for sample count and iRODS data <ui_project_overview_stats>`
 - :ref:`Add sample sheets study and assay details modal <app_samplesheets_browse_table_detail>`
-- Add assay details in sheet overview
-- Add user opt-out settings for app alert notifications
+- :ref:`Add assay details in sheet overview <app_samplesheets_browse_overview>`
+- :ref:`Add user opt-out settings for app alert notifications <ui_user_profile>`
 - :ref:`Add landing zone contributor access restricting <app_landingzones_create_restrict>`
-- Add landing zone file list modal collection display toggling
-- Add landing zone settings retrieval REST API view
-- Add landing zone iRODS file list REST API view
-- Add landing zone state reset tools for administrators
-- Add collection support for project file list REST API view
+- :ref:`Add landing zone file list modal collection display toggling <app_landingzones_browse_file_list>`
+- :ref:`Add landing zone settings retrieval REST API view <api_landingzones>`
+- :ref:`Add landing zone iRODS file list REST API view <api_landingzones>`
+- :ref:`Add landing zone state reset tools for administrators <app_landingzones_transfer_reset>`
+- :ref:`Add collection support for samplesheets project file list REST API view <api_samplesheets>`
 - Add irodsorphans management command project limiting
 - Add syncstudytables management command check mode
 - Add syncmodifyapi iRODS ticket updating
@@ -41,6 +41,7 @@ Major feature update and SODAR Core 1.2 upgrade.
 - Upgrade to SODAR Core v1.2.4
 - Remove landing zone access cleanup site app setting
 - Remove Redis <v8 support
+- `SODAR Core v1.2 updates <https://sodar-core.readthedocs.io/en/latest/major_changes.html#v1-2-4-2025-10-10>`_
 
 :ref:`Administrator upgrade guide for v1.2 <admin_upgrade_v1.2>`
 
