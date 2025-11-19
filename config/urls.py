@@ -36,8 +36,6 @@ urlpatterns = [
     path(route='logout/', view=auth_views.logout_then_login, name='logout'),
     # User Profile URLs
     path('user/', include('userprofile.urls')),
-    # Auth
-    path('api/auth/', include('knox.urls')),
     # Iconify SVG icons
     path('icons/', include('dj_iconify.urls')),
     # Social auth for OIDC support

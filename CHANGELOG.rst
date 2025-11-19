@@ -16,6 +16,12 @@ Changed
 - **Samplesheets**
     - Upgrade critical Vue app dependencies (#2336)
 
+Removed
+-------
+
+- **General**
+    - ``django-auth-knox`` URL routes (#2335)
+
 
 v1.2.0 (2025-10-22)
 ===================
