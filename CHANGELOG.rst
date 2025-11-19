@@ -5,6 +5,18 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+Unreleased
+==========
+
+Changed
+-------
+
+- **General**
+    - Upgrade to Django v4.2.26 (#2336)
+- **Samplesheets**
+    - Upgrade critical Vue app dependencies (#2336)
+
+
 v1.2.0 (2025-10-22)
 ===================
 
