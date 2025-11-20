@@ -571,7 +571,7 @@ class ZoneResetMixin(ZoneConfigPluginMixin):
             task_found = any(
                 t.get('name').endswith('.submit_flow_task')
                 and 'args' in t
-                and t['args'][2].get('zone_uuid') == str(zone.sodar_uuid)
+                and t['args'][3].get('zone_uuid') == str(zone.sodar_uuid)
                 for t in v
             )
             if task_found:

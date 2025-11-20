@@ -21,6 +21,7 @@ Fixed
 
 - **Landingzones**
     - ``LandingZone.coll_creation`` populated with invalid value (#2339)
+    - Zone reset Celery task check failing (#2341)
 
 Removed
 -------

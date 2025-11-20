@@ -13,7 +13,8 @@ v1.2.1 (WIP)
 
 Release for minor updates, maintenance and bug fixes.
 
-- Fix LandingZone coll_creation field populating
+- Fix landing zone coll_creation field populating
+- Fix landing zone reset Celery task check
 - Upgrade critical dependencies
 
 
