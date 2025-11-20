@@ -37,6 +37,9 @@ before performing the upgrade.
 v1.2
 ====
 
+Dependencies
+------------
+
 This release requires at least the following versions of SODAR
 environment components:
 
@@ -44,6 +47,9 @@ environment components:
 - `irods-docker <https://github.com/bihealth/irods-docker>`_ ``4.3.4-1``
 - `davrods-docker <https://github.com/bihealth/davrods-docker>`_ ``4.3.4_1.5.2-1``
 - Redis v8.x
+
+Environment Variables
+---------------------
 
 The following changes have been made to environment variables:
 
@@ -61,6 +67,9 @@ The following changes have been made to environment variables:
   the sample sheet synchronization feature between multiple SODAR instances is
   not to be used.
 
+Study Table Cache Update
+------------------------
+
 This release contains changes to sample sheet table header formatting in the UI.
 These changes are stored in the SODAR cache. If your instance has
 ``SHEETS_ENABLE_STUDY_TABLE_CACHE`` set ``True``, you should run the
@@ -71,11 +80,29 @@ sample sheets to the new formatting. Example:
 
     $ ./manage.py syncstudytables
 
+Known Issues
+------------
+
+Due to a migration error in v1.2.0, landing zone operations for previously
+created zones may fail with the error
+``Invalid coll_creation value: ZONE_COLLS_NONE``. This will be fixed in v1.2.1.
+A workaround for v1.2.0 is to enter the following script into the Django shell:
+
+.. code-block:: python
+
+    from landingzones.models import LandingZone
+        for zone in LandingZone.objects.filter(coll_creation='ZONE_COLLS_NONE'):
+        zone.coll_creation = 'NONE'
+        zone.save()
+
 
 .. _admin_upgrade_v1.1:
 
 v1.1
 ====
+
+Dependencies
+------------
 
 This release requires at least the following versions of SODAR
 environment components:
@@ -90,6 +117,9 @@ environment components:
     deploy SODAR v1.0. This means you can **not** upgrade directly from e.g.
     v0.15 straight to v1.1. Doing so risks a database migration failure. This is
     due to squashed migrations removed in v1.1.
+
+Landing Zone Access Update
+--------------------------
 
 SODAR v1.1 adds project owners and delegates iRODS collection ownership to all
 landing zones in the project. To enable owner and delegate access on legacy

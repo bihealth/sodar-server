@@ -16,6 +16,12 @@ Changed
 - **Samplesheets**
     - Upgrade critical Vue app dependencies (#2336)
 
+Fixed
+-----
+
+- **Landingzones**
+    - ``LandingZone.coll_creation`` populated with invalid value (#2339)
+
 Removed
 -------
 
