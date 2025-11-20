@@ -14,6 +14,10 @@ site. These settings are not project or user specific.
 
 Currently available settings:
 
+Landing zone move verification
+    Enable verification of file integrity after landing zone move. Overrides the
+    ``LANDINGZONES_ZONE_MOVE_VERIFY``
+    :ref:`Django setting <admin_settings_sodar_landingzones>`.
 Site read-only mode
     This sets the entire site into a read-only mode. No data including project
     metadata, sample sheets or landing zones can be modified, except by

@@ -5,6 +5,7 @@ import logging
 from typing import Optional, Union
 from uuid import UUID
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 
@@ -106,6 +107,16 @@ LANDINGZONES_APP_SETTINGS = [
         'delegates can still access landing zones if set.',
         placeholder='username or username@DOMAIN',
         user_modifiable=True,
+    ),
+    PluginAppSettingDef(
+        name='zone_move_verify_site',
+        scope=APP_SETTING_SCOPE_SITE,
+        type=APP_SETTING_TYPE_BOOLEAN,
+        default=settings.LANDINGZONES_ZONE_MOVE_VERIFY,
+        label='Landing zone move verification',
+        description='Enable asynchronous verification of landing zone files '
+        'after move if enabled. Overrides LANDINGZONES_ZONE_MOVE_VERIFY in '
+        'Django settings.',
     ),
 ]
 

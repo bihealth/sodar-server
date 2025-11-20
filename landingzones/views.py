@@ -540,7 +540,9 @@ class ZoneMoveMixin(ZoneConfigPluginMixin):
         if validate_only:
             flow_data['validate_only'] = True
         else:
-            flow_data['move_verify'] = settings.LANDINGZONES_ZONE_MOVE_VERIFY
+            flow_data['move_verify'] = app_settings.get(
+                APP_NAME, 'zone_move_verify_site'
+            )
         taskflow.submit(
             project=project,
             user=request.user if request else None,

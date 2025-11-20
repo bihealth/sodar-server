@@ -8,6 +8,13 @@ Changelog for the SODAR project. Loosely follows the
 Unreleased
 ==========
 
+Added
+-----
+
+- **Landingzones**
+    - ``zone_move_verify_site`` site app setting (#2338)
+    - Zone move verification override with site app setting (#2338)
+
 Changed
 -------
 

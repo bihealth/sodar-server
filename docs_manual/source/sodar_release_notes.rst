@@ -13,6 +13,7 @@ v1.2.1 (WIP)
 
 Release for minor updates, maintenance and bug fixes.
 
+- Add landing zone move verification override with site app setting
 - Fix landing zone coll_creation field populating
 - Fix landing zone reset Celery task check
 - Upgrade critical dependencies

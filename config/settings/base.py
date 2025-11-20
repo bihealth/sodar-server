@@ -811,6 +811,7 @@ LANDINGZONES_FILE_LIST_PAGINATION = env.int(
     'LANDINGZONES_FILE_LIST_PAGINATION', 15
 )
 # Enable verification of landing zone files after zone move
+# NOTE: Can be overridden by zone_move_verify_site site app setting
 LANDINGZONES_ZONE_MOVE_VERIFY = env.bool('LANDINGZONES_ZONE_MOVE_VERIFY', True)
 
 # Landingzones configapp plugin settings
