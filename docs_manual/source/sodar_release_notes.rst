@@ -8,12 +8,12 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
-v1.2.1 (WIP)
-============
+v1.2.1 (2025-11-21)
+===================
 
 Release for minor updates, maintenance and bug fixes.
 
-- Add landing zone move verification override with site app setting
+- :ref:`Add landing zone move verification override with site app setting <admin_site_app_settings>`
 - Fix landing zone coll_creation field populating
 - Fix landing zone reset Celery task check
 - Upgrade critical dependencies

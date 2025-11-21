@@ -25,8 +25,9 @@ they will appear as tabs in the navigation section.
 
 .. figure:: _static/app_samplesheets/sheet_ui.png
     :align: center
+    :scale: 50%
 
-    Sample Sheets default UI
+    Sample Sheets browsing UI
 
 From top to bottom, you will see the following elements:
 
