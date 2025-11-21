@@ -20,6 +20,7 @@ Changed
 
 - **General**
     - Upgrade to Django v4.2.26 (#2336)
+    - Update REST API examples in documentation (#2342)
 - **Samplesheets**
     - Upgrade critical Vue app dependencies (#2336)
 
