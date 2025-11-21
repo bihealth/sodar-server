@@ -12,6 +12,7 @@ from django.test import override_settings
 from django.urls import reverse
 
 # Projectroles dependency
+from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import PluginAPI
 
@@ -55,6 +56,7 @@ from landingzones.views_api import (
 )
 
 
+app_settings = AppSettingAPI()
 plugin_api = PluginAPI()
 
 
@@ -67,6 +69,7 @@ PROJECT_TYPE_CATEGORY = SODAR_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 # Local constants
+APP_NAME = 'landingzones'
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 ZONE_STATUS_INFO = 'Testing'
 TEST_OBJ_NAME = 'test1.txt'
@@ -729,9 +732,9 @@ class TestZoneSubmitMoveAPIView(ZoneAPIViewTaskflowTestBase):
         self.assertEqual(len(self.zone_coll.data_objects), 0)
         self.assertEqual(len(self.assay_coll.data_objects), 2)
 
-    @override_settings(LANDINGZONES_ZONE_MOVE_VERIFY=True)
     def test_post_move_verify(self):
         """Test POST for moving with verification enabled"""
+        app_settings.set(APP_NAME, 'zone_move_verify_site', True)
         irods_obj = self.make_irods_object(self.zone_coll, TEST_OBJ_NAME)
         self.make_checksum_object(irods_obj)
         self.assertEqual(self.zone.status, lc.ZONE_STATUS_ACTIVE)

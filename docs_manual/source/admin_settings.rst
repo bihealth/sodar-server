@@ -25,6 +25,8 @@ deployment framework.
     prefixed as ``SODAR_*``.
 
 
+.. _admin_settings_core:
+
 SODAR Core Settings
 ===================
 
@@ -71,10 +73,14 @@ circumstances. If removed from the list, the functionality regarding a specific
 backend will be disabled in SODAR.
 
 
+.. _admin_settings_sodar:
+
 SODAR Settings
 ==============
 
 Settings from SODAR applications themselves are described below.
+
+.. _admin_settings_sodar_irods:
 
 iRODS Settings
 --------------
@@ -127,6 +133,8 @@ iRODS Settings
     installation. In that case, manual moving of existing iRODS collections is
     required or links to iRODS will not work as expected.
 
+.. _admin_settings_sodar_taskflow:
+
 Taskflow Backend Settings
 -------------------------
 
@@ -142,6 +150,8 @@ Taskflow Backend Settings
 ``TASKFLOW_ZONE_PROGRESS_INTERVAL``
     Interval in seconds for zone progress counters, 0 for update on every file
     (int, default: 10).
+
+.. _admin_settings_sodar_webdav:
 
 iRODS WebDAV Settings
 ---------------------
@@ -164,6 +174,8 @@ iRODS WebDAV Settings
     If SODAR and the WebDAV are deployed on the same host, this should be set
     ``False`` (boolean, default: ``False``).
 
+.. _admin_settings_sodar_irodsbackend:
+
 iRODS Backend Settings
 ----------------------
 
@@ -171,6 +183,8 @@ iRODS Backend Settings
     iRODS backend status query interval in seconds (integer).
 ``IRODS_QUERY_BATCH_SIZE``
     Batch query size for improving sequential iRODS query performance (integer).
+
+.. _admin_settings_sodar_samplesheets:
 
 Sample Sheets Settings
 ----------------------
@@ -227,6 +241,8 @@ Sample Sheets Settings
     Limit AltamISA parser warnings to be saved in the database to N per
     investigation (integer).
 
+.. _admin_settings_sodar_landingzones:
+
 Landing Zones Settings
 ----------------------
 
@@ -259,12 +275,16 @@ Landing Zones Settings
     Enable verification of file integrity after landing zone move. Recomputes
     and validates checksums of recently moved landing zone files in the sample
     data repository, reports to the zone owner if problems were encountered.
+    Can be overridden by a :ref:`site app setting <admin_site_app_settings>` in
+    runtime.
 ``LZ_BIH_PROTEOMICS_SMB_EXPIRY_DAYS``
     BIH proteomics configuration SMB expiry days (integer).
 ``LZ_BIH_PROTEOMICS_SMB_USER``
     BIH proteomics configuration SMB user (string).
 ``LZ_BIH_PROTEOMICS_SMB_PASS``
     BIH proteomics configuration SMB password (string).
+
+.. _admin_settings_sodar_ontologyaccess:
 
 Ontology Access Settings
 ------------------------
@@ -274,6 +294,8 @@ Ontology Access Settings
 ``ONTOLOGYACCESS_QUERY_LIMIT``
     Term query limit (integer).
 
+.. _admin_settings_sodar_isatemplates:
+
 ISA Templates Settings
 ----------------------
 
@@ -282,6 +304,8 @@ ISA Templates Settings
     `cubi-isa-templates <https://github.com/bihealth/cubi-isa-templates/>`_
     repository (boolean).
 
+
+.. _admin_settings_docker:
 
 SODAR Docker Compose Settings
 =============================

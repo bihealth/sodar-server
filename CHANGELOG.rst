@@ -5,6 +5,39 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+v1.2.1 (2025-11-21)
+===================
+
+Added
+-----
+
+- **Landingzones**
+    - ``zone_move_verify_site`` site app setting (#2338)
+    - Zone move verification override with site app setting (#2338)
+
+Changed
+-------
+
+- **General**
+    - Upgrade to Django v4.2.26 (#2336)
+    - Update REST API examples in documentation (#2342)
+- **Samplesheets**
+    - Upgrade critical Vue app dependencies (#2336)
+
+Fixed
+-----
+
+- **Landingzones**
+    - ``LandingZone.coll_creation`` populated with invalid value (#2339)
+    - Zone reset Celery task check failing (#2341)
+
+Removed
+-------
+
+- **General**
+    - ``django-auth-knox`` URL routes (#2335)
+
+
 v1.2.0 (2025-10-22)
 ===================
 
