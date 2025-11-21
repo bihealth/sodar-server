@@ -122,6 +122,7 @@ Table of Contents
     iRODS Info API <api_irodsinfo>
     Taskflow Backend API <api_taskflowbackend>
     api_examples
+    api_examples_r
 
 .. toctree::
     :maxdepth: 1
