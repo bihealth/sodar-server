@@ -1760,6 +1760,8 @@ class TestLandingZoneVerify(
         self.build_and_run(flow)
         self.assertIsNone(self._get_app_alert())
         self.assertEqual(len(mail.outbox), 0)
+        self.zone.refresh_from_db()
+        self.assertEqual(self.zone.status, ZONE_STATUS_MOVED)
 
     def test_verify_invalid_in_file(self):
         """Test landing_zone_verify with invalid checksum in file (should fail)"""
@@ -1771,6 +1773,9 @@ class TestLandingZoneVerify(
             self.build_and_run(flow)
         self.assertIsInstance(self._get_app_alert(), AppAlert)
         self.assertEqual(len(mail.outbox), 1)
+        self.zone.refresh_from_db()
+        # Status should still be moved
+        self.assertEqual(self.zone.status, ZONE_STATUS_MOVED)
 
     def test_verify_invalid_in_irods(self):
         """Test landing_zone_verify with invalid checksum in iRODS iCAT database"""
@@ -1787,6 +1792,8 @@ class TestLandingZoneVerify(
         self.assertEqual(self.data_obj.replicas[0].checksum, real_md5)
         self.assertIsNone(self._get_app_alert())
         self.assertEqual(len(mail.outbox), 0)
+        self.zone.refresh_from_db()
+        self.assertEqual(self.zone.status, ZONE_STATUS_MOVED)
 
     def test_verify_invalid_no_checksum_file(self):
         """Test landing_zone_verify with no checksum file (should fail)"""
@@ -1798,6 +1805,8 @@ class TestLandingZoneVerify(
             self.build_and_run(flow)
         self.assertIsInstance(self._get_app_alert(), AppAlert)
         self.assertEqual(len(mail.outbox), 1)
+        self.zone.refresh_from_db()
+        self.assertEqual(self.zone.status, ZONE_STATUS_MOVED)
 
 
 class TestProjectCreate(TaskflowbackendFlowTestBase):

@@ -8,6 +8,14 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v1.2.2 (WIP)
+============
+
+Release for minor updates, maintenance and bug fixes.
+
+- Fix zone move verification updating status of moved zone
+
+
 v1.2.1 (2025-11-21)
 ===================
 

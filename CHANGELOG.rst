@@ -5,6 +5,17 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+Unreleased
+==========
+
+Fixed
+-----
+
+- **Taskflowbackend**
+    - ``landing_zone_move`` flow failure updates status of moved zone (#2346)
+    - ``MOVED`` zone status updated in ``TaskflowAPI`` exception handling (#2346)
+
+
 v1.2.1 (2025-11-21)
 ===================
 
