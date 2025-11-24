@@ -8,11 +8,17 @@ Changelog for the SODAR project. Loosely follows the
 Unreleased
 ==========
 
+Added
+-----
+
+- **General**
+    - CI documentation building check (#2347)
+
 Fixed
 -----
 
 - **Taskflowbackend**
-    - ``landing_zone_move`` flow failure updates status of moved zone (#2346)
+    - ``landing_zone_verify`` flow failure updates status of moved zone (#2346)
     - ``MOVED`` zone status updated in ``TaskflowAPI`` exception handling (#2346)
 
 

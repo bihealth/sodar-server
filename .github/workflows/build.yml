@@ -48,12 +48,16 @@ jobs:
       POSTGRES_HOST: 127.0.0.1
       POSTGRES_PORT: 5432
       DATABASE_URL: 'postgres://postgres:postgres@127.0.0.1/sodar'
+      DJANGO_SECRET_KEY: 'changeme'
     steps:
       - name: Install server dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -qq build-essential zlib1g-dev libtiff5-dev libjpeg8-dev libfreetype6-dev
           sudo apt-get install -qq liblcms2-dev libwebp-dev libpq-dev graphviz-dev
+      - name: Install server production dependencies for docs building
+        run: sudo apt-get install -qq libsasl2-dev libldap2-dev libssl-dev
+        if: ${{ matrix.python-version == '3.11' }}
       - name: Install Python
         uses: actions/setup-python@v4
         with:
@@ -65,6 +69,9 @@ jobs:
           pip install wheel==0.42.0
           pip install -r requirements/base.txt --use-pep517
           pip install -r requirements/test.txt --use-pep517
+      - name: Install production dependencies for docs building
+        run: pip install -r requirements/production.txt --use-pep517
+        if: ${{ matrix.python-version == '3.11' }}
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
@@ -89,6 +96,10 @@ jobs:
         run: flake8 .
       - name: Check Python formatting
         run: make black arg=--check
+        if: ${{ matrix.python-version == '3.11' }}
+      - name: Check docs building
+        working-directory: ./docs_manual
+        run: make html
         if: ${{ matrix.python-version == '3.11' }}
       - name: Report coverage with Coveralls
         uses: coverallsapp/github-action@v2

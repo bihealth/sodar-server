@@ -13,6 +13,7 @@ v1.2.2 (WIP)
 
 Release for minor updates, maintenance and bug fixes.
 
+- Add documentation building check in CI
 - Fix zone move verification updating status of moved zone
 
 
