@@ -21,6 +21,12 @@ Fixed
     - ``landing_zone_verify`` flow failure updates status of moved zone (#2346)
     - ``MOVED`` zone status updated in ``TaskflowAPI`` exception handling (#2346)
 
+Removed
+-------
+
+- **General**
+    - ``wheel`` dependency (#2350)
+
 
 v1.2.1 (2025-11-21)
 ===================

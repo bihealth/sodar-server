@@ -1,7 +1,3 @@
-# Wheel
-# NOTE: For best results wheel should be installed separately before other deps
-wheel==0.45.1
-
 # Setuptools
 setuptools==80.9.0
 
