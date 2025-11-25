@@ -13,6 +13,13 @@ Added
 
 - **General**
     - CI documentation building check (#2347)
+    - ``SENTRY_TRACES_SAMPLE_RATE`` and ``SENTRY_ENVIRONMENT`` Django settings (#2351)
+
+Changed
+-------
+
+- **General**
+    - Update Sentry/GlitchTip support (#2351)
 
 Fixed
 -----

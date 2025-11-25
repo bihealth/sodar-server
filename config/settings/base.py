@@ -555,7 +555,7 @@ def set_logging(level=None):
 LOGGING = set_logging(LOGGING_LEVEL)
 
 
-# Sentry Client (Will be set up in production)
+# Sentry / GlitchTip Client (will be set up in production)
 # ------------------------------------------------------------------------------
 
 ENABLE_SENTRY = env.bool('ENABLE_SENTRY', False)

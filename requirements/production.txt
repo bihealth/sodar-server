@@ -19,4 +19,4 @@ gunicorn==23.0.0
 # django-anymail==7.0.0
 
 # Sentry client
-sentry-sdk==2.35.1
+sentry-sdk==2.46.0

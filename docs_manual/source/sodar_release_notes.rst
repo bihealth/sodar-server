@@ -14,6 +14,7 @@ v1.2.2 (WIP)
 Release for minor updates, maintenance and bug fixes.
 
 - Add documentation building check in CI
+- :ref:`Update Sentry/GlitchTip support <admin_settings_sentry>`
 - Fix zone move verification updating status of moved zone
 
 
