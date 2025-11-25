@@ -8,13 +8,13 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
-v1.2.2 (WIP)
-============
+v1.2.2 (2025-11-26)
+===================
 
 Release for minor updates, maintenance and bug fixes.
 
 - Add documentation building check in CI
-- :ref:`Update Sentry/GlitchTip support <admin_settings_sentry>`
+- :ref:`Update Sentry and GlitchTip support <admin_settings_sentry>`
 - Fix zone move verification updating status of moved zone
 
 

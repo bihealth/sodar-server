@@ -5,8 +5,8 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
-Unreleased
-==========
+v1.2.2 (2025-11-26)
+===================
 
 Added
 -----
@@ -19,7 +19,7 @@ Changed
 -------
 
 - **General**
-    - Update Sentry/GlitchTip support (#2351)
+    - Update Sentry and GlitchTip support (#2351)
 
 Fixed
 -----

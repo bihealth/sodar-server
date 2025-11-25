@@ -1,14 +1,12 @@
 .. _api_examples_r:
 
-Examples of SODAR API usage in R
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+API Examples for R
+^^^^^^^^^^^^^^^^^^
 
-Notes
-=====
+This document presents examples of SODAR API use in R. The examples assume you
+have access to a running instance of the SODAR server. You also need contributor
+access or above to at least one existing category.
 
-The examples below assume you have access to a running instance of the
-SODAR server. You also need contributor access or above to at least one existing
-category.
 
 Libraries
 =========
@@ -29,7 +27,8 @@ can use the `LimsaR R package <https://github.com/bihealth/LimsaR>`_.
 Setup
 =====
 
-First, we need to set up the connection parameters and headers for authentication.
+First, we need to set up the connection parameters and headers for
+authentication.
 
 .. code-block:: r
 
@@ -44,12 +43,10 @@ First, we need to set up the connection parameters and headers for authenticatio
     # UUID for a category in which you have at least contributor access
     category_uuid <- '22222222-2222-2222-2222-222222222222'
 
-Then, we set up the headers for the requests. We will need different
-headers depending on the API endpoint we are calling. Actually, the
-"Accept" header is not strictly required, but it is recommended to ensure
-you are calling the correct version of the API. We are using the
-`add_headers` function from the `httr` package to create the headers.
-
+Then, we set up the headers for the requests. Providing accept headers is not
+explicitly required, but strongly recommended. Including the accept header helps
+ensure you are calling a version of the API which is compatible with your
+requests and returns expected results.
 
 .. code-block:: r
 
@@ -73,24 +70,22 @@ you are calling the correct version of the API. We are using the
       Accept = 'application/vnd.bihealth.sodar.landingzones+json; version=1.1'
     )
 
+
 Simple Operations
 =================
 
-First, we can check that the connection is working by finding more about
-ourselves - that is, about the current user. This uses the projectroles
-API from SODAR Core, so we need to use the respective header. We will issue
-a GET request to the user retrieve endpoint using the ``GET`` function from
-``httr``.
+First, we can check that the connection is working by retrieving details for
+the current user. This uses the projectroles API, so we need to use the
+respective header. We will issue a GET request to the user retrieve endpoint
+using the ``GET`` function from ``httr``.
 
 .. code-block:: r
 
     url <- paste0(sodar_url, '/project/api/users/current')
     response <- GET(url, project_headers)
 
-
 The ``response`` object is a list containing the server response, including
 the status code and the content. We can parse the content as follows:
-
 
 .. code-block:: r
 
@@ -128,8 +123,8 @@ This will show the following information about the current user::
     [1] "33333333-3333-3333-3333-333333333333"
 
 Another useful operation is to list the projects and categories which are
-available to you (i.e., the current user). This also uses the projectroles
-API, so we again use the respective header.
+available to you. This also uses the projectroles API, so we again use the
+respective header.
 
 .. code-block:: r
 
@@ -149,13 +144,13 @@ In a similar way, you can list all users known to the SODAR server:
     content <- fromJSON(rawToChar(response$content))
 
 
-
 Create Project
 ==============
 
 To create a project, we need at least a title and category UUID where the
-project should be created, plus optionally additional information such as
-the description and whether or not the project should be public.
+project should be created. We can optionally provide additional information
+such as description, readme and whether or not public access to the project
+should be granted to non-members.
 
 .. code-block:: r
 
@@ -186,7 +181,8 @@ project, including its UUID, which we can use for further operations.
 
 We use the ``public_access = NA`` parameter to indicate that the
 project should not be public. If you want to create a public project, set
-public access to the desired role, e.g. "project contributor".
+public access to the desired role. Currently supported roles are
+``project guest`` and ``project viewer``.
 
 .. note::
 
@@ -292,9 +288,8 @@ Export Sample Sheets
 ====================
 
 There are several ways to export sample sheets from SODAR. In this example, we
-export them as ISA-Tab TSV data wrapped in a JSON structure. This allows
-you to easily parse the data and convert it into data frames for further
-processing.
+export them as ISA-Tab TSV data wrapped in a JSON structure. This allows you to
+easily parse the data and convert it into data frames for further processing.
 
 .. code-block:: r
 
@@ -306,30 +301,22 @@ processing.
     assay_df <- read.delim(text = content$assays[[1]]$tsv, sep = "\t", header = TRUE)
 
 
-
 Landing Zones Management
 ========================
 
-In SODAR, you do not upload the files directly into the project
-collections, but instead use so-called landing zones (LZs). These are temporary
-collections where you can upload your files first. After uploading files
-and their local checksums (as .md5 files), you can trigger an asynchronous
-validation and moving process that first checks that the file checksums are
-correct before moving the files into the project sample data repository.
-
-However, before you can create landing zones and upload files, you need
-first to create an iRODS collection for your sample data. From the API you
-can do this as follows, again using the samplesheets API.
+Before you can create landing zones and upload files, you need first to create
+an iRODS collection for your sample data. From the API you can do this as
+follows, again using the samplesheets API.
 
 .. code-block:: r
 
     url <- paste0(sodar_url, '/samplesheets/api/irods/collections/create/', project_uuid)
     response <- POST(url, sheet_headers)
 
-The API request below initiates the asynchronous process for creating a
-landing zone. As the LZ is associated with an assay, you need to provide
-an assay UUID, which you can retrieve from the investigation information
-API endpoint as detailed above. Note that we are now using the landingzones API
+The API request below initiates the asynchronous process for creating a landing
+zone. As each zone must be associated with an assay, you need to provide an
+assay UUID, which you can retrieve from the investigation information API
+endpoint as detailed above. Note that we are now using the landingzones API
 from the SODAR server package, so we use the respective headers.
 
 .. code-block:: r
@@ -350,7 +337,6 @@ As with most landing zone operations, the landing zone creation process is
 asynchronous. You need to ensure the zone status has been changed to ``ACTIVE``
 before proceeding with file uploads:
 
-
 .. code-block:: r
 
     url <- paste0(sodar_url, '/landingzones/api/retrieve/', zone_uuid)
@@ -358,8 +344,8 @@ before proceeding with file uploads:
     fromJSON(rawToChar(response$content))$status
 
 In scripts you will want to make sure that the LZ becomes active before
-continuing. You can do this by polling the status until it becomes
-``ACTIVE``, for example as follows:
+continuing. You can do this by polling the status until it becomes ``ACTIVE``,
+for example as follows:
 
 .. code-block:: r
 
@@ -374,10 +360,10 @@ continuing. You can do this by polling the status until it becomes
       Sys.sleep(1)
     }
 
-Once the LZ becomes active, you can upload files using iRODS iCommands or
-file uploading scripts – this operation is not done using the SODAR API.
-After uploading, you can trigger the asynchronous validation and moving
-process as follows:
+Once the LZ becomes active, you can upload files using iRODS iCommands or file
+uploading scripts – this operation is not done using the SODAR API. After
+uploading, you can trigger the asynchronous validation and moving process as
+follows:
 
 .. code-block:: r
 
@@ -387,5 +373,3 @@ process as follows:
 Once the landing zone status is returned as ``MOVED``, the landing zone files
 have been moved into the project sample data repository and the zone has been
 deleted.
-
-

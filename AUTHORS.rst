@@ -7,5 +7,6 @@ Credits
 * Dzmitry Hramyka <dzmitry.hramyka@bih-charite.de>
 * Mathias Kuhring <mathias.kuhring@bih-charite.de>
 * Thomas Sell <thomas.sell@charite.de>
+* January Weiner <january.weiner@bih-charite.de>
 * Franziska Schumann <franziska.schumann@fu-berlin.de>
 * Tim Garrels <tim.garrels@student.hpi.uni-potsdam.de>
