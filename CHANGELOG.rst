@@ -5,6 +5,36 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+v1.2.2 (2025-11-26)
+===================
+
+Added
+-----
+
+- **General**
+    - CI documentation building check (#2347)
+    - ``SENTRY_TRACES_SAMPLE_RATE`` and ``SENTRY_ENVIRONMENT`` Django settings (#2351)
+
+Changed
+-------
+
+- **General**
+    - Update Sentry and GlitchTip support (#2351)
+
+Fixed
+-----
+
+- **Taskflowbackend**
+    - ``landing_zone_verify`` flow failure updates status of moved zone (#2346)
+    - ``MOVED`` zone status updated in ``TaskflowAPI`` exception handling (#2346)
+
+Removed
+-------
+
+- **General**
+    - ``wheel`` dependency (#2350)
+
+
 v1.2.1 (2025-11-21)
 ===================
 

@@ -1,20 +1,15 @@
 .. _api_examples:
 
-API Examples
-^^^^^^^^^^^^
+API Examples for Python
+^^^^^^^^^^^^^^^^^^^^^^^
 
 In this document we present examples of using SODAR via the REST API. It is
 possible to adapt these examples to automate activity via scripts, command line
 tools, notebooks or other external software. In these examples, we call the API
-using the Python ``requests`` package.
+using the Python ``requests`` package. See also :ref:`api_examples_r`.
 
-.. code-block:: python
-
-    import requests
-
-The rest of these examples assume you have access to a running instance of the
-SODAR server. You also need contributor access or above to at least one existing
-category.
+These examples assume you have access to a running instance of the SODAR server.
+You also need contributor access or above to at least one existing category.
 
 The examples show basic functionality with default options unless otherwise
 stated. For all parameters and options for requests, see the detailed
@@ -24,10 +19,12 @@ documentation of the relevant API endpoints.
 Setup
 =====
 
-To get started, you need to retrieve and set up certain variables for accssing
-the SODAR API:
+To get started, you need to import the request library, followed by retrieving
+and setting up certain variables for accssing the SODAR API:
 
 .. code-block:: python
+
+    import requests
 
     # URL of your SODAR server
     sodar_url = 'https://YOUR-URL-HERE'

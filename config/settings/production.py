@@ -6,6 +6,7 @@ Production Configurations
 """
 
 from .base import *  # noqa
+from importlib import import_module
 
 
 # SECRET CONFIGURATION
@@ -121,7 +122,7 @@ LOGGING_APPS = env.list(
 LOGGING = set_logging(LOGGING_LEVEL)
 
 
-# Sentry Client
+# Sentry / GlitchTip Client
 # ------------------------------------------------------------------------------
 
 if ENABLE_SENTRY:
@@ -129,7 +130,15 @@ if ENABLE_SENTRY:
     from sentry_sdk.integrations.django import DjangoIntegration
 
     SENTRY_DSN = '%s?verify_ssl=0' % env.str('SENTRY_DSN')
-    sentry_sdk.init(SENTRY_DSN, integrations=[DjangoIntegration()])
+    site = import_module(SITE_PACKAGE)
+    sentry_sdk.init(
+        SENTRY_DSN,
+        integrations=[DjangoIntegration()],
+        auto_session_tracking=False,
+        traces_sample_rate=env.float('SENTRY_TRACES_SAMPLE_RATE', 0.01),
+        release=site.__version__,
+        environment=env.str('SENTRY_ENVIRONMENT', 'production'),
+    )
 
 
 # EMAIL CONFIGURATION

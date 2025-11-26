@@ -76,13 +76,15 @@ class TaskflowAPI:
             tl_event.set_status(ZONE_STATUS_FAILED, ex_msg)
         # Update landing zone
         if zone:
-            status = (
-                ZONE_STATUS_NOT_CREATED
-                if zone.status == ZONE_STATUS_CREATING
-                else ZONE_STATUS_FAILED
-            )
-            # Truncate to 1024 characters to not exceed limit (see #1953)
-            zone.set_status(status, ex_msg[:1024])
+            zone.refresh_from_db()
+            if zone.status not in STATUS_FINISHED:  # Skip if already finished
+                status = (
+                    ZONE_STATUS_NOT_CREATED
+                    if zone.status == ZONE_STATUS_CREATING
+                    else ZONE_STATUS_FAILED
+                )
+                # Truncate to 1024 characters to not exceed limit (see #1953)
+                zone.set_status(status, ex_msg[:1024])
         # TODO: Create app alert for failure if async (see #1499)
         raise cls.FlowSubmitException(ex_msg)
 
@@ -107,10 +109,7 @@ class TaskflowAPI:
         ex_zone = None
         if zone:
             zone.refresh_from_db()
-            if zone.status not in [
-                ZONE_STATUS_NOT_CREATED,
-                ZONE_STATUS_FAILED,
-            ]:
+            if zone.status not in STATUS_FINISHED:
                 ex_zone = zone
         cls._raise_flow_exception(ex_msg, tl_event, ex_zone)
 

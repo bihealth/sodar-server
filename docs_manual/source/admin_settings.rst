@@ -330,3 +330,22 @@ repository are described here.
     Enable PAM logins via the SODAR server for iRODS.
 ``IRODS_SODAR_API_HOST``
     SODAR server host for iRODS in case the previous setting is set true.
+
+
+.. _admin_settings_sentry:
+
+Sentry / GlitchTip Settings
+===========================
+
+To enable monitoring of your site logs with Sentry or GlitchTip, use the
+following settings.
+
+``ENABLE_SENTRY``
+    Enable support for Sentry/GlitchTip monitoring (boolean).
+``SENTRY_DSN``
+    Data Source Name (DSN) for your project (string).
+``SENTRY_TRACES_SAMPLE_RATE``
+    Percent of requests that are sent as a performance monitoring transaction.
+    Low value recommended for performance (float, default: ``0.01``).
+``SENTRY_ENVIRONMENT``
+    Environment name for your project (string, default: ``production``).
