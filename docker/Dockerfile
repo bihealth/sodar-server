@@ -52,12 +52,12 @@ RUN mkdir -p /usr/src/app/local-static/local/css && \
     \
     cd /usr/src/app/local-static/local/js && \
     wget \
-        https://code.jquery.com/jquery-3.5.1.min.js \
+        https://code.jquery.com/jquery-3.7.1.min.js \
         https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js \
         https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js.map \
         https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.4/js/tether.js \
         https://cdnjs.cloudflare.com/ajax/libs/shepherd/1.8.1/js/shepherd.min.js \
-        https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js \
+        https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.11/clipboard.min.js \
         https://browser.sentry-cdn.com/7.15.0/bundle.tracing.min.js \
         https://browser.sentry-cdn.com/7.15.0/bundle.tracing.min.js.map
 
