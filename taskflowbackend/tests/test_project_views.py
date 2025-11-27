@@ -23,6 +23,7 @@ from projectroles.tests.test_models import ProjectInviteMixin
 
 # Timeline dependency
 from timeline.models import TimelineEvent
+from timeline.tests.test_views import TimelineTestMixin
 
 from taskflowbackend.constants import IRODS_ACCESS_READ_OBJ
 from taskflowbackend.tests.base import TaskflowViewTestBase
@@ -87,7 +88,6 @@ class TestProjectCreateView(TaskflowViewTestBase):
             'parent': self.category.pk,
             'description': 'description',
             'public_access': None,
-            'public_guest_access': False,  # DEPRECATED
             'archive': False,
             'full_title': self.category.title + ' / TestProject',
             'has_public_children': False,
@@ -214,7 +214,6 @@ class TestProjectUpdateView(TaskflowViewTestBase):
             'parent': self.category.pk,
             'description': 'updated description',
             'public_access': self.role_guest.pk,
-            'public_guest_access': True,  # DEPRECATED
             'archive': False,
             'full_title': self.category.title + ' / updated title',
             'has_public_children': False,
@@ -1291,15 +1290,8 @@ class TestProjectInviteAcceptView(ProjectInviteMixin, TaskflowViewTestBase):
         self.assertEqual(ProjectInvite.objects.filter(active=True).count(), 1)
 
 
-class TestProjectDeleteView(TaskflowViewTestBase):
+class TestProjectDeleteView(TimelineTestMixin, TaskflowViewTestBase):
     """Tests for ProjectDeleteView"""
-
-    def _assert_tl_event(self, count: int):
-        """Assert timeline event count"""
-        tl_events = TimelineEvent.objects.filter(
-            app=APP_NAME, event_name='project_delete'
-        )
-        self.assertEqual(tl_events.count(), count)
 
     def setUp(self):
         super().setUp()
@@ -1322,13 +1314,15 @@ class TestProjectDeleteView(TaskflowViewTestBase):
             kwargs={'project': self.project.sodar_uuid},
         )
         self.post_data = {'delete_host_confirm': 'testserver'}
+        self.tl_name = 'project_delete'
+        self.tl_kw = {'app': APP_NAME}
 
     def test_post(self):
         """Test ProjectDeleteView POST with taskflow"""
         self.assertTrue(self.irods.collections.exists(self.project_path))
         self.assertIsNotNone(self.irods.user_groups.get(self.project_group))
         self.assertIsNotNone(self.irods.user_groups.get(self.owner_group))
-        self._assert_tl_event(0)
+        self.assert_tl_event_count(self.tl_name, 0, **self.tl_kw)
 
         with self.login(self.user):
             response = self.client.post(self.url, data=self.post_data)
@@ -1344,7 +1338,7 @@ class TestProjectDeleteView(TaskflowViewTestBase):
             self.irods.user_groups.get(self.project_group)
         with self.assertRaises(GroupDoesNotExist):
             self.irods.user_groups.get(self.owner_group)
-        self._assert_tl_event(1)
+        self.assert_tl_event_count(self.tl_name, 1, **self.tl_kw)
         tl_event = TimelineEvent.objects.filter(
             app=APP_NAME, event_name='project_delete'
         ).first()

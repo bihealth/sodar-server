@@ -7,7 +7,7 @@ from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.tests.test_permissions import ProjectPermissionTestBase
+from projectroles.tests.base import ProjectPermissionTestBase
 from projectroles.utils import build_secret
 
 from samplesheets.models import (

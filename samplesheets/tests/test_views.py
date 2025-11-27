@@ -20,12 +20,12 @@ from test_plus.test import TestCase
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import AppSetting, SODAR_CONSTANTS
 from projectroles.plugins import PluginAPI
+from projectroles.tests.base import SODARAPIViewTestMixin
 from projectroles.tests.test_models import (
     ProjectMixin,
     RoleMixin,
     RoleAssignmentMixin,
 )
-from projectroles.tests.test_views_api import SODARAPIViewTestMixin
 from projectroles.utils import build_secret
 
 # Timeline dependency
@@ -1268,7 +1268,7 @@ class TestSheetVersionUpdateView(SamplesheetsViewTestBase):
         with self.login(self.user):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        self.assertEquals(response.context['object'], self.isatab)
+        self.assertEqual(response.context['object'], self.isatab)
 
     def test_post(self):
         """Test POST"""

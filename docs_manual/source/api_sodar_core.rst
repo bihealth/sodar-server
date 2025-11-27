@@ -1,4 +1,4 @@
-.. _api_projectroles:
+.. _api_sodar_core:
 
 Project Management APIs
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -58,3 +58,29 @@ API Views
 The timeline API is provided by the SODAR Core package. Documentation for the
 API views can be found in the
 `Timeline REST API documentation <https://sodar-core.readthedocs.io/en/latest/app_timeline_api_rest.html>`_.
+
+
+Tokens API
+==========
+
+This API can be used to initialize a user programmatically to use the REST API
+and generate an API token.
+
+Versioning
+----------
+
+Media Type
+    ``application/vnd.bihealth.sodar-core.tokens+json``
+Current Version
+    ``1.0``
+Accepted Versions
+    ``1.0``
+Header Example
+    ``Accept: application/vnd.bihealth.sodar-core.tokens+json; version=1.0``
+
+API Views
+---------
+
+The tokens API is provided by the SODAR Core package. Documentation for the
+API views can be found in the
+`Tokens REST API documentation <https://sodar-core.readthedocs.io/en/latest/app_tokens_api_rest.html>`_.

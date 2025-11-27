@@ -5,13 +5,13 @@ import io
 import json
 import logging
 import os
-import pytz
 import requests
 import zipfile
 
 from packaging import version
 from typing import Any, Optional, Union
 from urllib.parse import urljoin
+from zoneinfo import ZoneInfo
 
 from cubi_isa_templates import IsaTabTemplate, _TEMPLATES as CUBI_TEMPLATES
 from irods.collection import iRODSCollection
@@ -1316,7 +1316,7 @@ class SheetRemoteSyncAPI(SheetImportMixin):
         source_date = datetime.datetime.strptime(
             source_data.pop('date_modified'),
             '%Y-%m-%d %H:%M:%S.%f+00:00',
-        ).replace(tzinfo=pytz.UTC)
+        ).replace(tzinfo=ZoneInfo('UTC'))
         old_inv = project.investigations.first()
         replace = bool(old_inv)
         if old_inv and source_date < old_inv.date_modified:

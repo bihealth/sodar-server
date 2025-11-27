@@ -2,10 +2,10 @@
 Django settings for the SODAR project.
 
 For more information on this file, see
-https://docs.djangoproject.com/en/3.2/topics/settings/
+https://docs.djangoproject.com/en/5.2/topics/settings/
 
 For the full list of settings and their values, see
-https://docs.djangoproject.com/en/3.2/ref/settings/
+https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import os
@@ -62,6 +62,7 @@ THIRD_PARTY_APPS = [
     'rest_framework',  # For API views
     'knox',  # For token auth
     'social_django',  # For OIDC authentication
+    'axes',  # Django-axes for login security
     'docs',  # For the online user documentation/manual
     'dal',  # For user search combo box
     'dal_select2',
@@ -125,6 +126,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'axes.middleware.AxesMiddleware',  # Should be the last one on the list
 ]
 
 # MIGRATIONS CONFIGURATION
@@ -152,12 +154,12 @@ EMAIL_SUBJECT_PREFIX = env('EMAIL_SUBJECT_PREFIX', default='')
 # ------------------------------------------------------------------------------
 # Provide ADMINS as: Name:email,Name:email
 ADMINS = [x.split(':') for x in env.list('ADMINS', default=[])]
-# See: https://docs.djangoproject.com/en/3.2/ref/settings/#managers
+# See: https://docs.djangoproject.com/en/5.2/ref/settings/#managers
 MANAGERS = ADMINS
 
 # DATABASE CONFIGURATION
 # ------------------------------------------------------------------------------
-# See: https://docs.djangoproject.com/en/3.2/ref/settings/#databases
+# See: https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 # Uses django-environ to accept uri format
 # See: https://django-environ.readthedocs.io/en/latest/#supported-types
 DATABASES = {'default': env.db('DATABASE_URL', 'postgres:///sodar')}
@@ -177,24 +179,21 @@ REDIS_URL = env.str('REDIS_URL', 'redis://127.0.0.1:6379/0')
 # In a Windows environment this must be set to your system time zone.
 TIME_ZONE = 'Europe/Berlin'
 
-# See: https://docs.djangoproject.com/en/3.2/ref/settings/#language-code
+# See: https://docs.djangoproject.com/en/5.2/ref/settings/#language-code
 LANGUAGE_CODE = 'en-us'
 
-# See: https://docs.djangoproject.com/en/3.2/ref/settings/#site-id
+# See: https://docs.djangoproject.com/en/5.2/ref/settings/#site-id
 SITE_ID = 1
 
-# See: https://docs.djangoproject.com/en/3.2/ref/settings/#use-i18n
+# See: https://docs.djangoproject.com/en/5.2/ref/settings/#use-i18n
 USE_I18N = False
 
-# See: https://docs.djangoproject.com/en/3.2/ref/settings/#use-l10n
-USE_L10N = True
-
-# See: https://docs.djangoproject.com/en/3.2/ref/settings/#use-tz
+# See: https://docs.djangoproject.com/en/5.2/ref/settings/#use-tz
 USE_TZ = True
 
 # TEMPLATE CONFIGURATION
 # ------------------------------------------------------------------------------
-# See: https://docs.djangoproject.com/en/3.2/ref/settings/#templates
+# See: https://docs.djangoproject.com/en/5.2/ref/settings/#templates
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -296,7 +295,7 @@ AUTH_PASSWORD_VALIDATORS = [
 AUTHENTICATION_BACKENDS = [
     'rules.permissions.ObjectPermissionBackend',  # For rules
     'django.contrib.auth.backends.ModelBackend',
-]
+]  # NOTE: django-axes added after LDAP/OIDC setup
 
 # Custom user app defaults
 AUTH_USER_MODEL = 'users.User'
@@ -371,6 +370,18 @@ REST_FRAMEWORK = {
 SPECTACULAR_SETTINGS = {
     'PREPROCESSING_HOOKS': ['config.drf_spectacular.exclude_knox_hook']
 }
+
+# Additional authentication settings
+# ------------------------------------------------------------------------------
+
+# Knox settings
+KNOX_TOKEN_MODEL = 'tokens.SODARAuthToken'
+
+# Settings for HTTP AuthBasic
+BASICAUTH_REALM = env.str(
+    'BASICAUTH_REALM', 'Log in with your SODAR user name and password.'
+)
+BASICAUTH_DISABLE = env.bool('BASICAUTH_DISABLE', False)
 
 
 # LDAP configuration
@@ -492,6 +503,39 @@ if ENABLE_OIDC:
     SOCIAL_AUTH_OIDC_USERNAME_KEY = env.str(
         'SOCIAL_AUTH_OIDC_USERNAME_KEY', 'username'
     )
+
+
+# Django-Axes
+# ------------------------------------------------------------------------------
+
+# NOTE: Axes backend should be the first backend in the list
+AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesBackend'
+] + AUTHENTICATION_BACKENDS
+
+# Enable django-axes
+AXES_ENABLED = env.bool('AXES_ENABLED', False)
+
+if AXES_ENABLED:
+    # Number of login attempts allowed before a record is created
+    AXES_FAILURE_LIMIT = env.int('AXES_FAILURE_LIMIT', 5)
+    # Lock out user at failure if True
+    AXES_LOCK_OUT_AT_FAILURE = env.bool('AXES_LOCK_OUT_AT_FAILURE', False)
+    # Cooloff time for failure lock-out in hours
+    AXES_COOLOFF_TIME = env.int('AXES_COOLOFF_TIME', None)
+    # Lockout parameters. by default, block by username only (GRPR compliance)
+    AXES_LOCKOUT_PARAMETERS = env.list(
+        'AXES_LOCKOUT_PARAMETERS', default=['username']
+    )
+    # Only enable lock for admin site if True
+    AXES_ONLY_ADMIN_SITE = env.bool('AXES_ONLY_ADMIN_SITE', False)
+    # For GDPR compliance, disable storing IP addresses
+    # NOTE: We make this setting up, not a real Axes Django setting
+    AXES_DISABLE_CLIENT_IP_STORAGE = env.bool(
+        'AXES_DISABLE_CLIENT_IP_STORAGE', True
+    )
+    if AXES_DISABLE_CLIENT_IP_STORAGE:
+        AXES_CLIENT_IP_CALLABLE = lambda x: None  # noqa: E731
 
 
 # Logging
@@ -619,6 +663,9 @@ PROJECTROLES_ALLOW_LOCAL_USERS = env.bool(
     'PROJECTROLES_ALLOW_LOCAL_USERS', False
 )
 PROJECTROLES_ALLOW_ANONYMOUS = env.bool('PROJECTROLES_ALLOW_ANONYMOUS', False)
+PROJECTROLES_LOCAL_USER_UPDATE = env.bool(
+    'PROJECTROLES_LOCAL_USER_UPDATE', True
+)
 PROJECTROLES_ENABLE_MODIFY_API = True
 PROJECTROLES_MODIFY_API_APPS = ['taskflow', 'samplesheets', 'landingzones']
 PROJECTROLES_DISABLE_CATEGORIES = env.bool(
@@ -657,6 +704,9 @@ if PROJECTROLES_ENABLE_PROFILING:
     MIDDLEWARE += ['projectroles.middleware.ProfilerMiddleware']
 
 # Adminalerts app settings
+ADMINALERTS_EMAIL_SENDING_DEFAULT = env.bool(
+    'ADMINALERTS_EMAIL_SENDING_DEFAULT', True
+)
 ADMINALERTS_PAGINATION = env.int('ADMINALERTS_PAGINATION', 15)
 
 # Timeline app settings
@@ -838,10 +888,3 @@ TASKFLOW_LOCK_RETRY_INTERVAL = env.int('TASKFLOW_LOCK_RETRY_INTERVAL', 3)
 TASKFLOW_ZONE_PROGRESS_INTERVAL = env.int('TASKFLOW_ZONE_PROGRESS_INTERVAL', 10)
 TASKFLOW_LOCK_ENABLED = True
 TASKFLOW_TEST_MODE = False  # Important to protect iRODS data
-
-
-# Settings for HTTP AuthBasic
-BASICAUTH_REALM = env.str(
-    'BASICAUTH_REALM', 'Log in with your SODAR user name and password.'
-)
-BASICAUTH_DISABLE = env.bool('BASICAUTH_DISABLE', False)

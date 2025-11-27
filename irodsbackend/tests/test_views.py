@@ -8,10 +8,7 @@ from django.urls import reverse
 from test_plus.test import TestCase
 
 # Projectroles dependency
-from projectroles.tests.test_views_api import (
-    SODARAPIViewTestMixin,
-    EMPTY_KNOX_TOKEN,
-)
+from projectroles.tests.base import SODARAPIViewTestMixin, EMPTY_KNOX_TOKEN
 
 
 # Local constants

@@ -14,7 +14,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.tests.test_ui import UITestBase
+from projectroles.tests.base import ProjectUITestBase
 
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
@@ -46,7 +46,7 @@ class LandingZoneUITestBase(
     SheetConfigMixin,
     LandingZoneMixin,
     LandingzonesViewTestMixin,
-    UITestBase,
+    ProjectUITestBase,
 ):
     """Base class for landingzones UI tests"""
 

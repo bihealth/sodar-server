@@ -132,7 +132,7 @@ class Command(BaseCommand):
                 )
             else:
                 logger.info(
-                    f'Version "{ obo_obj.data_version}" of ontology "{name}" '
+                    f'Version "{obo_obj.data_version}" of ontology "{name}" '
                     f'already exists, please delete the existing version '
                     f'before importing'
                 )

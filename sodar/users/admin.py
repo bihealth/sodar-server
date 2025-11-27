@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin as AuthUserAdmin
 from django.contrib.auth.forms import UserChangeForm, UserCreationForm
+from projectroles.admin import SODARUserAdmin
 from .models import User
 
 
@@ -28,11 +28,6 @@ class MyUserCreationForm(UserCreationForm):
 
 
 @admin.register(User)
-class MyUserAdmin(AuthUserAdmin):
+class MyUserAdmin(SODARUserAdmin):
     form = MyUserChangeForm
     add_form = MyUserCreationForm
-    fieldsets = (
-        ('User Profile', {'fields': ('name',)}),
-    ) + AuthUserAdmin.fieldsets
-    list_display = ('username', 'name', 'is_superuser')
-    search_fields = ['name']

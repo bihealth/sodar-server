@@ -1,7 +1,8 @@
 """Tests for Ajax API views in the landingzones app with Taskflow"""
 
 import json
-import pytz
+
+from zoneinfo import ZoneInfo
 
 from irods.path import iRODSPath
 
@@ -45,6 +46,7 @@ IRODS_TYPE_COLL = 'coll'
 IRODS_TYPE_OBJ = 'obj'
 TEST_OBJ_NAME = 'test1.txt'
 TEST_OBJ_NAME2 = 'test2.txt'
+TZ_SITE = ZoneInfo(settings.TIME_ZONE)
 
 
 class TestZoneIrodsListRetrieveAjaxView(
@@ -189,9 +191,9 @@ class TestZoneIrodsListRetrieveAjaxView(
             'type': IRODS_TYPE_OBJ,
             'path': irods_obj.path,
             'size': 1024,
-            'modify_time': irods_obj.modify_time.astimezone(
-                pytz.timezone(settings.TIME_ZONE)
-            ).strftime('%Y-%m-%d %H:%M'),
+            'modify_time': irods_obj.modify_time.astimezone(TZ_SITE).strftime(
+                '%Y-%m-%d %H:%M'
+            ),
         }
         self.assertEqual(res[1], expected)
 
@@ -212,9 +214,9 @@ class TestZoneIrodsListRetrieveAjaxView(
             'type': IRODS_TYPE_OBJ,
             'path': irods_obj.path,
             'size': 1024,
-            'modify_time': irods_obj.modify_time.astimezone(
-                pytz.timezone(settings.TIME_ZONE)
-            ).strftime('%Y-%m-%d %H:%M'),
+            'modify_time': irods_obj.modify_time.astimezone(TZ_SITE).strftime(
+                '%Y-%m-%d %H:%M'
+            ),
         }
         self.assertEqual(res[0], expected)
 
@@ -236,9 +238,9 @@ class TestZoneIrodsListRetrieveAjaxView(
             'type': IRODS_TYPE_OBJ,
             'path': irods_obj.path,
             'size': 1024,
-            'modify_time': irods_obj.modify_time.astimezone(
-                pytz.timezone(settings.TIME_ZONE)
-            ).strftime('%Y-%m-%d %H:%M'),
+            'modify_time': irods_obj.modify_time.astimezone(TZ_SITE).strftime(
+                '%Y-%m-%d %H:%M'
+            ),
         }
         self.assertEqual(res[1], expected)
 

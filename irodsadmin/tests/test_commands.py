@@ -462,7 +462,7 @@ class TestIrodsOrphans(
     def test_command_multiple(self):
         """Test command with multiple orphans"""
         self._setup_investigation()
-        path = iRODSPath(self.sample_path, f'study_{uuid.uuid4() }')
+        path = iRODSPath(self.sample_path, f'study_{uuid.uuid4()}')
         self.irods.collections.create(path)
 
         path2 = iRODSPath(

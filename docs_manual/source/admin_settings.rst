@@ -40,6 +40,7 @@ Documentation on settings is linked below.
 - `Timeline <https://sodar-core.readthedocs.io/en/latest/app_timeline_install.html#optional-settings>`_
 - `LDAP auth settings <https://sodar-core.readthedocs.io/en/latest/app_projectroles_settings.html#ldap-ad-configuration-optional>`_
 - `OIDC auth settings <https://sodar-core.readthedocs.io/en/latest/app_projectroles_settings.html#openid-connect-oidc-configuration-optional>`_
+- `Django-Axes settings <https://sodar-core.readthedocs.io/en/latest/app_projectroles_settings.html#django-axes-configuration-optional>`_
 
 .. _admin_settings_backend:
 

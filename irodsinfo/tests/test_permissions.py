@@ -3,7 +3,7 @@
 from django.urls import reverse
 
 # Projectroles dependency
-from projectroles.tests.test_permissions import SiteAppPermissionTestBase
+from projectroles.tests.base import SiteAppPermissionTestBase
 
 
 class TestIrodsinfoPermissions(SiteAppPermissionTestBase):

@@ -1,10 +1,10 @@
 """Tests for the API in the irodsbackend app with Taskflow and iRODS"""
 
-import pytz
 import random
 import string
 
 from datetime import timedelta
+from zoneinfo import ZoneInfo
 
 from irods.models import TicketQuery
 from irods.path import iRODSPath
@@ -58,6 +58,8 @@ TEST_FILE_NAME3 = 'test3'
 TICKET_STR = 'Ahn1kah9Lai2hies'
 SUBCOLL_NAME = 'subcoll'
 INVALID_COLL = 'DOES-NOT-EXIST'
+TZ_GMT = ZoneInfo('GMT')
+TZ_SITE = ZoneInfo(settings.TIME_ZONE)
 
 
 class IrodsAPITaskflowTestBase(
@@ -242,8 +244,8 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
             iRODSPath(self.assay_path, TEST_FILE_NAME)
         )
         modify_time = (
-            data_obj.modify_time.replace(tzinfo=pytz.timezone('GMT'))
-            .astimezone(pytz.timezone(settings.TIME_ZONE))
+            data_obj.modify_time.replace(tzinfo=TZ_GMT)
+            .astimezone(TZ_SITE)
             .strftime('%Y-%m-%d %H:%M')
         )
         expected = {
@@ -267,8 +269,8 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
             iRODSPath(self.assay_path, TEST_FILE_NAME)
         )
         modify_time = (
-            data_obj.modify_time.replace(tzinfo=pytz.timezone('GMT'))
-            .astimezone(pytz.timezone(settings.TIME_ZONE))
+            data_obj.modify_time.replace(tzinfo=TZ_GMT)
+            .astimezone(TZ_SITE)
             .strftime('%Y-%m-%d %H:%M')
         )
         expected = [
@@ -569,8 +571,8 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
             iRODSPath(self.assay_path, TEST_FILE_NAME)
         )
         modify_time = (
-            data_obj.modify_time.replace(tzinfo=pytz.timezone('GMT'))
-            .astimezone(pytz.timezone(settings.TIME_ZONE))
+            data_obj.modify_time.replace(tzinfo=TZ_GMT)
+            .astimezone(TZ_SITE)
             .isoformat()
         )
         expected = {
@@ -595,8 +597,8 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
             iRODSPath(self.assay_path, TEST_FILE_NAME)
         )
         modify_time = (
-            data_obj.modify_time.replace(tzinfo=pytz.timezone('GMT'))
-            .astimezone(pytz.timezone(settings.TIME_ZONE))
+            data_obj.modify_time.replace(tzinfo=TZ_GMT)
+            .astimezone(TZ_SITE)
             .strftime('%Y-%m-%d %H:%M')
         )
         expected = {
@@ -748,7 +750,7 @@ class TestIrodsAPITickets(IrodsAPITaskflowTestBase):
             self.irods, TICKET_STR, date_expires=date_expires
         )
         ticket_res = self._get_ticket_res(ticket)
-        obj_exp = date_expires.replace(tzinfo=pytz.timezone('GMT'))
+        obj_exp = date_expires.replace(tzinfo=TZ_GMT)
         self.assertEqual(
             int(ticket_res[TicketQuery.Ticket.expiry_ts]),
             int(obj_exp.timestamp()),
@@ -765,7 +767,7 @@ class TestIrodsAPITickets(IrodsAPITaskflowTestBase):
             date_expires=date_expires,
         )
         ticket_res = self._get_ticket_res(ticket)
-        obj_exp = date_expires.replace(tzinfo=pytz.timezone('GMT'))
+        obj_exp = date_expires.replace(tzinfo=TZ_GMT)
         self.assertEqual(
             int(ticket_res[TicketQuery.Ticket.expiry_ts]),
             int(obj_exp.timestamp()),

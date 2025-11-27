@@ -139,7 +139,6 @@ class TestProjectUpdateAPIView(CoreTaskflowAPITestBase):
             'description': UPDATED_DESC,
             'readme': UPDATED_README,
             'public_access': None,
-            'public_guest_access': False,  # DEPRECATED
             'archive': False,
             'full_title': UPDATED_TITLE,
             'has_public_children': False,
@@ -184,7 +183,6 @@ class TestProjectUpdateAPIView(CoreTaskflowAPITestBase):
             'description': UPDATED_DESC,
             'readme': UPDATED_README,
             'public_access': self.role_guest.pk,
-            'public_guest_access': True,  # DEPRECATED
             'archive': False,
             'full_title': self.category.title + ' / ' + UPDATED_TITLE,
             'has_public_children': False,
@@ -237,7 +235,6 @@ class TestProjectUpdateAPIView(CoreTaskflowAPITestBase):
             'description': UPDATED_DESC,
             'readme': UPDATED_README,
             'public_access': None,
-            'public_guest_access': False,  # DEPRECATED
             'archive': False,
             'full_title': UPDATED_TITLE,
             'has_public_children': False,
@@ -275,7 +272,6 @@ class TestProjectUpdateAPIView(CoreTaskflowAPITestBase):
             'description': UPDATED_DESC,
             'readme': UPDATED_README,
             'public_access': None,
-            'public_guest_access': False,  # DEPRECATED
             'archive': False,
             'full_title': self.category.title + ' / ' + UPDATED_TITLE,
             'has_public_children': False,

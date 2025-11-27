@@ -321,32 +321,32 @@ class TestIrodsDataRequestCreateAjaxView(IrodsDataRequestViewTestBase):
     def test_post(self):
         """Test IrodsDataRequestCreateAjaxView POST"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
-        self._assert_alert_count(CREATE_ALERT, self.user, 0)
-        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
+        self.assert_app_alert_count(CREATE_ALERT, 0, user=self.user)
+        self.assert_app_alert_count(CREATE_ALERT, 0, user=self.user_delegate)
         with self.login(self.user):
             response = self.client.post(self.url, self.get_data)
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['detail'], 'ok')
         self.assertEqual(response.data['status'], 'ACTIVE')
-        self._assert_alert_count(CREATE_ALERT, self.user, 0)
-        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
+        self.assert_app_alert_count(CREATE_ALERT, 0, user=self.user)
+        self.assert_app_alert_count(CREATE_ALERT, 1, user=self.user_delegate)
 
     def test_post_exists_same_user(self):
         """Test POST with existing request for same user"""
         with self.login(self.user_contributor):
             self.client.post(self.url, self.get_data)
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
-        self._assert_alert_count(CREATE_ALERT, self.user, 1)
-        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
+        self.assert_app_alert_count(CREATE_ALERT, 1, user=self.user)
+        self.assert_app_alert_count(CREATE_ALERT, 1, user=self.user_delegate)
         with self.login(self.user_contributor):
             response = self.client.post(self.url, self.get_data)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(
             response.data['detail'], 'active request for path already exists'
         )
-        self._assert_alert_count(CREATE_ALERT, self.user, 1)
-        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
+        self.assert_app_alert_count(CREATE_ALERT, 1, user=self.user)
+        self.assert_app_alert_count(CREATE_ALERT, 1, user=self.user_delegate)
 
     def test_post_exists_as_admin_by_contributor(self):
         """Test POST as admin with request from contributor"""
@@ -381,15 +381,15 @@ class TestIrodsDataRequestCreateAjaxView(IrodsDataRequestViewTestBase):
         obj_path2 = iRODSPath(self.assay_path, IRODS_FILE_NAME2)
         self.irods.data_objects.create(obj_path2)
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
-        self._assert_alert_count(CREATE_ALERT, self.user, 0)
-        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
+        self.assert_app_alert_count(CREATE_ALERT, 0, user=self.user)
+        self.assert_app_alert_count(CREATE_ALERT, 0, user=self.user_delegate)
         with self.login(self.user):
             self.client.post(self.url, self.get_data)
         with self.login(self.user):
             self.client.post(self.url, {'path': obj_path2})
         self.assertEqual(IrodsDataRequest.objects.count(), 2)
-        self._assert_alert_count(CREATE_ALERT, self.user, 0)
-        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
+        self.assert_app_alert_count(CREATE_ALERT, 0, user=self.user)
+        self.assert_app_alert_count(CREATE_ALERT, 1, user=self.user_delegate)
 
 
 class TestIrodsDataRequestDeleteAjaxView(IrodsDataRequestViewTestBase):
@@ -416,16 +416,16 @@ class TestIrodsDataRequestDeleteAjaxView(IrodsDataRequestViewTestBase):
     def test_post(self):
         """Test IrodsDataRequestDeleteAjaxView POST"""
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
-        self._assert_alert_count(CREATE_ALERT, self.user, 1)
-        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
+        self.assert_app_alert_count(CREATE_ALERT, 1, user=self.user)
+        self.assert_app_alert_count(CREATE_ALERT, 1, user=self.user_delegate)
         with self.login(self.user_contributor):
             response = self.client.post(self.url, self.post_data)
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['detail'], 'ok')
         self.assertEqual(response.data['status'], None)
-        self._assert_alert_count(CREATE_ALERT, self.user, 0)
-        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
+        self.assert_app_alert_count(CREATE_ALERT, 0, user=self.user)
+        self.assert_app_alert_count(CREATE_ALERT, 0, user=self.user_delegate)
 
     def test_post_as_admin_by_contributor(self):
         """Test POST as admin with request by contributor"""

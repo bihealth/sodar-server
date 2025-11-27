@@ -45,6 +45,7 @@ CACHES = {
 # TESTING
 # ------------------------------------------------------------------------------
 TEST_RUNNER = 'django.test.runner.DiscoverRunner'
+SILENCED_SYSTEM_CHECKS = ['axes.W003']  # Silence missing axes backend warning
 
 # PASSWORD HASHING
 # ------------------------------------------------------------------------------
@@ -67,8 +68,9 @@ TEMPLATES[0]['OPTIONS']['loaders'] = [
 # AUTHENTICATION CONFIGURATION
 # ------------------------------------------------------------------------------
 # NOTE: Hardcoding this due to issue #2288
+# Override with AUTHENTICATION_BACKENDS_AXES when testing Axes features
 AUTHENTICATION_BACKENDS = [
-    'rules.permissions.ObjectPermissionBackend',  # For rules
+    'rules.permissions.ObjectPermissionBackend',
     'django.contrib.auth.backends.ModelBackend',
 ]
 
@@ -80,12 +82,21 @@ ENABLE_LDAP_SECONDARY = False
 LDAP_DEBUG = False
 LDAP_ALT_DOMAINS = []
 
-
 # OpenID Connect (OIDC) configuration
 # ------------------------------------------------------------------------------
 
 ENABLE_OIDC = False
 
+# Django-Axes
+# ------------------------------------------------------------------------------
+
+AXES_ENABLED = False  # Enable by override when testing
+AXES_FAILURE_LIMIT = 3
+AXES_LOCK_OUT_AT_FAILURE = True
+AXES_COOLOFF_TIME = None
+AXES_LOCKOUT_PARAMETERS = ['username']
+AXES_ONLY_ADMIN_SITE = False
+AXES_CLIENT_IP_CALLABLE = lambda x: None  # noqa: E731
 
 # Logging
 # ------------------------------------------------------------------------------
@@ -94,17 +105,14 @@ LOGGING_LEVEL = env.str('LOGGING_LEVEL', 'CRITICAL')
 LOGGING = set_logging(LOGGING_LEVEL)
 LOGGING_DISABLE_CMD_OUTPUT = True
 
-
 # Celery settings
 # ------------------------------------------------------------------------------
 
 CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_EAGER_PROPAGATES = True
 
-
 # Local App Settings
 # ------------------------------------------------------------------------------
-
 
 # Plugin settings
 ENABLED_BACKEND_PLUGINS = [
@@ -133,6 +141,7 @@ PROJECTROLES_DELEGATE_LIMIT = 1
 PROJECTROLES_DEFAULT_ADMIN = 'admin'
 PROJECTROLES_ALLOW_LOCAL_USERS = True
 PROJECTROLES_ALLOW_ANONYMOUS = False
+PROJECTROLES_LOCAL_USER_UPDATE = True
 PROJECTROLES_ENABLE_MODIFY_API = True
 PROJECTROLES_MODIFY_API_APPS = ['taskflow', 'samplesheets', 'landingzones']
 PROJECTROLES_DISABLE_CATEGORIES = False
@@ -146,6 +155,7 @@ PROJECTROLES_INLINE_HEAD_INCLUDE = None
 PROJECTROLES_ENABLE_PROFILING = False
 
 # Adminalerts app settings
+ADMINALERTS_EMAIL_SENDING_DEFAULT = True
 ADMINALERTS_PAGINATION = 15
 
 # Timeline app settings

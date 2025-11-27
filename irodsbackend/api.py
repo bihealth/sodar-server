@@ -2,7 +2,6 @@
 
 import logging
 import math
-import pytz
 import random
 import re
 import string
@@ -12,6 +11,7 @@ from base64 import b64decode, b64encode
 from contextlib import contextmanager
 from datetime import datetime
 from typing import Any, Generator, Optional, Union
+from zoneinfo import ZoneInfo
 
 from irods.api_number import api_number
 from irods.collection import iRODSCollection
@@ -131,7 +131,7 @@ class IrodsAPI:
         :param api_format: Return in REST API format (bool, default=False)
         :return: String
         """
-        dt = naive_dt.replace(tzinfo=pytz.timezone('GMT'))
+        dt = naive_dt.replace(tzinfo=ZoneInfo('GMT'))
         dt = dt.astimezone(timezone.get_default_timezone())
         if api_format:
             return dt.isoformat()
@@ -776,7 +776,7 @@ class IrodsAPI:
         if name_like:
             if not isinstance(name_like, list):
                 name_like = [name_like]
-            name_like = [n.replace('_', '\_') for n in name_like]  # noqa
+            name_like = [n.replace('_', '\\_') for n in name_like]  # noqa
         ret = self.get_objs_recursively(
             irods,
             coll,

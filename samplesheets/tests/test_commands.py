@@ -20,7 +20,7 @@ from projectroles.tests.test_models import (
 from sodarcache.models import JSONCacheItem
 
 # Timeline dependency
-from timeline.models import TimelineEvent
+from timeline.tests.test_views import TimelineTestMixin
 
 from samplesheets.management.commands.normalizesheets import (
     LIB_NAME,
@@ -51,7 +51,12 @@ ALT_NAMES_INVALID = ['XXX', 'YYY', 'ZZZ']
 
 
 class TestNormalizeSheets(
-    ProjectMixin, RoleMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase
+    ProjectMixin,
+    RoleMixin,
+    RoleAssignmentMixin,
+    SampleSheetIOMixin,
+    TimelineTestMixin,
+    TestCase,
 ):
     """Tests for the normalizesheets command"""
 
@@ -86,14 +91,6 @@ class TestNormalizeSheets(
             expected,
         )
 
-    def _assert_tl_event(self, expected: int):
-        self.assertEqual(
-            TimelineEvent.objects.filter(
-                event_name='sheet_normalize', project=self.project
-            ).count(),
-            expected,
-        )
-
     def setUp(self):
         # Init roles
         self.init_roles()
@@ -118,6 +115,8 @@ class TestNormalizeSheets(
         )
         self.cache_args = [APP_NAME, self.cache_name, self.project]
         self.tb.get_study_tables(self.study)
+        self.tl_name = 'sheet_normalize'
+        self.tl_kw = {'project': self.project}
 
     def test_command(self):
         """Test normalizesheets"""
@@ -136,7 +135,7 @@ class TestNormalizeSheets(
         # Sheet version
         self.assertEqual(ISATab.objects.count(), 1)
         # Timeline event
-        self._assert_tl_event(0)
+        self.assert_tl_event_count(self.tl_name, 0, **self.tl_kw)
         call_command('normalizesheets')
         materials = GenericMaterial.objects.filter(assay=self.assay)
         self._assert_material_header(materials, LIB_NAME, 0)
@@ -151,7 +150,7 @@ class TestNormalizeSheets(
         # Sheet version
         self.assertEqual(ISATab.objects.count(), 2)
         # Timeline event
-        self._assert_tl_event(1)
+        self.assert_tl_event_count(self.tl_name, 1, **self.tl_kw)
 
     def test_command_check(self):
         """Test normalizesheets with check mode"""
@@ -166,7 +165,7 @@ class TestNormalizeSheets(
             cache_item.data, self.assay, LIB_NAME_REPLACE, 0
         )
         self.assertEqual(ISATab.objects.count(), 1)
-        self._assert_tl_event(0)
+        self.assert_tl_event_count(self.tl_name, 0, **self.tl_kw)
         call_command('normalizesheets', check=True)
         materials = GenericMaterial.objects.filter(assay=self.assay)
         self._assert_material_header(materials, LIB_NAME, 2)
@@ -179,7 +178,7 @@ class TestNormalizeSheets(
             cache_item.data, self.assay, LIB_NAME_REPLACE, 0
         )
         self.assertEqual(ISATab.objects.count(), 1)
-        self._assert_tl_event(0)
+        self.assert_tl_event_count(self.tl_name, 0, **self.tl_kw)
 
 
 class TestSyncNames(

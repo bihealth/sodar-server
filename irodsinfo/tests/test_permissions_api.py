@@ -3,8 +3,10 @@
 from django.urls import reverse
 
 # Projectroles dependency
-from projectroles.tests.test_permissions import SiteAppPermissionTestBase
-from projectroles.tests.test_permissions_api import SODARAPIPermissionTestMixin
+from projectroles.tests.base import (
+    SiteAppPermissionTestBase,
+    SODARAPIPermissionTestMixin,
+)
 
 from irodsinfo.views_api import (
     IRODSINFO_API_MEDIA_TYPE,

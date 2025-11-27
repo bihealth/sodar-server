@@ -69,7 +69,7 @@ class Command(BaseCommand):
             return self._fail('Required backends not enabled')
 
         # HACK: Get file list from timeline event (see issue #2327)
-        TimelineEvent, TimelineEventObjectRef = timeline.get_models()
+        TimelineEvent, TimelineEventObjectRef, _ = timeline.get_models()
         obj_ref = (
             TimelineEventObjectRef.objects.filter(
                 object_uuid=zone.sodar_uuid, event__event_name='zone_move'

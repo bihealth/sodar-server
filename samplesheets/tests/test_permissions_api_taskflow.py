@@ -10,7 +10,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 # Projectroles dependency
-from projectroles.tests.test_permissions import PermissionTestMixin
+from projectroles.tests.base import PermissionTestMixin
 
 # Irodsbackend dependency
 from irodsbackend.api import TICKET_MODE_READ

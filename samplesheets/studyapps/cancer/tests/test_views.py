@@ -8,10 +8,7 @@ import os
 from django.urls import reverse
 
 # Projectroles dependency
-from projectroles.tests.test_views_api import (
-    SODARAPIViewTestMixin,
-    EMPTY_KNOX_TOKEN,
-)
+from projectroles.tests.base import SODARAPIViewTestMixin, EMPTY_KNOX_TOKEN
 
 from samplesheets.models import GenericMaterial
 from samplesheets.tests.test_io import SHEET_DIR

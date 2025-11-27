@@ -21,7 +21,7 @@ from selenium.webdriver.support import expected_conditions as ec
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODARUser
 from projectroles.plugins import PluginAPI
-from projectroles.tests.test_ui import UITestBase
+from projectroles.tests.base import ProjectUITestBase
 
 from samplesheets.forms import TPL_DIR_FIELD, TPL_DIR_LABEL
 from samplesheets.models import (
@@ -63,7 +63,9 @@ with open(CONFIG_PATH_UPDATED) as fp:
     CONFIG_DATA_UPDATED = json.load(fp)
 
 
-class SamplesheetsUITestBase(SampleSheetIOMixin, SheetConfigMixin, UITestBase):
+class SamplesheetsUITestBase(
+    SampleSheetIOMixin, SheetConfigMixin, ProjectUITestBase
+):
     """Base view samplesheets view UI tests"""
 
     def setup_investigation(self, config_data: Optional[dict] = None):
@@ -822,7 +824,7 @@ class TestIrodsDataRequestListView(
 
 
 class TestSheetVersionCompareView(
-    SampleSheetIOMixin, SheetConfigMixin, UITestBase
+    SampleSheetIOMixin, SheetConfigMixin, ProjectUITestBase
 ):
     """Tests for sheet version compare view UI"""
 
@@ -860,7 +862,7 @@ class TestSheetVersionCompareView(
 
 
 class TestSheetVersionCompareFileView(
-    SampleSheetIOMixin, SheetConfigMixin, UITestBase
+    SampleSheetIOMixin, SheetConfigMixin, ProjectUITestBase
 ):
     """Tests for sheet version compare file view UI"""
 

@@ -42,19 +42,19 @@ from projectroles.models import (
     SODAR_CONSTANTS,
 )
 from projectroles.plugins import PluginAPI
+from projectroles.tests.base import (
+    PermissionTestMixin,
+    SODARAPIPermissionTestMixin,
+    SODARAPIViewTestMixin,
+    LiveUserMixin,
+    SeleniumSetupMixin,
+    UITestMixin,
+)
 from projectroles.tests.test_models import (
     ProjectMixin,
     RoleMixin,
     RoleAssignmentMixin,
 )
-from projectroles.tests.test_permissions import PermissionTestMixin
-from projectroles.tests.test_permissions_api import SODARAPIPermissionTestMixin
-from projectroles.tests.test_ui import (
-    LiveUserMixin,
-    SeleniumSetupMixin,
-    UITestMixin,
-)
-from projectroles.tests.test_views_api import SODARAPIViewTestMixin
 from projectroles.views import ProjectModifyMixin, RoleAssignmentModifyMixin
 from projectroles.views_api import (
     PROJECTROLES_API_MEDIA_TYPE,

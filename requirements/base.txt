@@ -5,14 +5,14 @@ setuptools==80.9.0
 packaging==25.0
 
 # Django
-django==4.2.27
+django==5.2.8
 
 # Configuration
 django-environ==0.12.0
 
 # Forms
 django-crispy-forms==2.4
-crispy-bootstrap4==2024.10
+crispy-bootstrap4==2025.6
 
 # Models
 django-model-utils==5.0.0
@@ -21,24 +21,23 @@ django-model-utils==5.0.0
 argon2-cffi==25.1.0
 
 # Python-PostgreSQL Database Adapter
-psycopg2-binary==2.9.10
+psycopg2-binary==2.9.11
 
-# NOTE: Replaces awesome-slugify, see bihealth/sodar-core#1547
+# Unicode slugification
 python-slugify==8.0.4
 
-# Time zones support
-pytz==2025.2
-
 # SVG icon support
-django-iconify==0.3  # NOTE: v0.4 requires Python>=3.10
+django-iconify==0.4.1
 
 # OpenID Connect (OIDC) authentication support
-social-auth-app-django==5.4.3
+social-auth-app-django==5.6.0
+
+# Login security
+django-axes[ipware]==8.0.0
 
 # Online documentation via django-docs
 docutils==0.21.2
-# NOTE: Sphinx 8.0 requires Python 3.10+, Sphinx 8.2 requires 3.11+
-Sphinx==7.4.7
+Sphinx==8.2.3
 django-docs==0.3.3
 sphinx-rtd-theme==3.0.2
 sphinxcontrib-youtube==1.4.1
@@ -47,7 +46,7 @@ sphinxcontrib-youtube==1.4.1
 versioneer==0.29
 
 # Redis support
-redis>=6.4.0, <6.5
+redis>=7.0.0
 
 
 #####################
@@ -58,23 +57,23 @@ redis>=6.4.0, <6.5
 rules==3.5
 
 # REST framework
-djangorestframework==3.16.0
+djangorestframework==3.16.1
 
 # Token authentication
-django-rest-knox==4.2.0
+django-rest-knox==5.0.2
 
 # Markdown field support
-markdown==3.8
+markdown==3.9
 django-markupfield==2.0.1
 django-pagedown==2.2.1
-mistune==3.1.3
+mistune==3.1.4
 
 # Pin to avoid issue with v3.9.5
 # See issue #166 and bihealth/sodar-core#1225
 django-autocomplete-light==3.12.1
 
 # SODAR Core
-django-sodar-core==1.2.5
+django-sodar-core==1.3.0
 # -e git+https://github.com/bihealth/sodar-core.git@82c6acf88567748de7a2928c7a832bef7bdf7ec5#egg=django-sodar-core
 
 # Celery

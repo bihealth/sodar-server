@@ -2,4 +2,4 @@
 -r base.txt
 
 django-auth-ldap>=5.2.0, <5.3
-python-ldap>=3.4.4, <3.5
+python-ldap>=3.4.5, <3.5
