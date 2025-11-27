@@ -84,7 +84,7 @@ celery==5.5.3
 ####################
 
 # CUBI AltamISA parser
-altamisa==0.3.0
+altamisa==0.3.1
 # -e git+https://github.com/bihealth/altamisa.git@f6de23aa6073d446f7c49ede0af7fa8729992209#egg=altamisa
 
 # Python iRODS client
