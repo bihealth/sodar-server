@@ -103,6 +103,11 @@ AXES_CLIENT_IP_CALLABLE = lambda x: None  # noqa: E731
 
 LOGGING_LEVEL = env.str('LOGGING_LEVEL', 'CRITICAL')
 LOGGING = set_logging(LOGGING_LEVEL)
+LOGGING['loggers']['axes'] = {
+    'level': LOGGING_LEVEL,
+    'handlers': ['console'],
+    'propagate': False,
+}  # Disable redundant axes logging in tests
 LOGGING_DISABLE_CMD_OUTPUT = True
 
 # Celery settings

@@ -96,3 +96,12 @@ operations regarding sample sheets, landing zones, iRODS data and ontologies.
     Provide the landing zone UUID with the ``-z`` or ``--zone`` argument. Run
     in synchronous mode with ``-s`` or ``--sync`` (only recommended for testing
     or development).
+
+
+Django-Axes Commands
+====================
+
+If `django-axes is enabled <https://sodar-core.readthedocs.io/en/latest/app_projectroles_settings.html#django-axes-configuration-optional>`_,
+it provides a number of commands to e.g. reset access for locked out users. For
+more intormation on these, see
+`django-axes documentation <https://django-axes.readthedocs.io/en/latest/>`_.
