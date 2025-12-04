@@ -12,6 +12,7 @@ Changed
 -------
 
 - **General**
+    - Upgrade to django-sodar-core v1.2.4 (#2361)
     - Upgrade to Django v4.2.27 (#2361)
     - Upgrade to Werkzeug v3.1.4 (#2361)
 - **Samplesheets**

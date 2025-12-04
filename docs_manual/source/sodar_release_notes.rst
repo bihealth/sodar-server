@@ -14,6 +14,7 @@ v1.2.3 (2025-12-04)
 Hotfix release.
 
 - Fix superuser user settings view crash
+- Upgrade to SODAR Core v1.2.5
 - Upgrade critical dependencies
 
 
