@@ -8,6 +8,15 @@ Changelog for the SODAR project. Loosely follows the
 Unreleased
 ==========
 
+Changed
+-------
+
+- **General**
+    - Upgrade to Django v4.2.27 (#2361)
+    - Upgrade to Werkzeug v3.1.4 (#2361)
+- **Samplesheets**
+    - Upgrade critical Vue app dependencies (#2361)
+
 Fixed
 -----
 

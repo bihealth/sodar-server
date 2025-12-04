@@ -14,6 +14,7 @@ v1.2.3 (WIP)
 Hotfix release.
 
 - Fix superuser user settings view crash
+- Upgrade critical dependencies
 
 
 v1.2.2 (2025-11-26)
