@@ -8,7 +8,7 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
-v1.2.3 (2025-12-04)
+v1.2.3 (2025-12-05)
 ===================
 
 Hotfix release.
