@@ -8,6 +8,14 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v1.2.3 (WIP)
+============
+
+Hotfix release.
+
+- Fix superuser user settings view crash
+
+
 v1.2.2 (2025-11-26)
 ===================
 

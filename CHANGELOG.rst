@@ -5,6 +5,16 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+Unreleased
+==========
+
+Fixed
+-----
+
+- **Landingzones**
+    - Superuser user settings view crash from missing ``zone_file_lst_colls`` description (#2360)
+
+
 v1.2.2 (2025-11-26)
 ===================
 

@@ -94,6 +94,8 @@ LANDINGZONES_APP_SETTINGS = [
         scope=APP_SETTING_SCOPE_USER,
         type=APP_SETTING_TYPE_BOOLEAN,
         default=True,
+        label='Display zone file list colls',
+        description='Display collections in landing zone file list modal',
         user_modifiable=False,  # Modification via zone file list modal UI
     ),
     PluginAppSettingDef(
