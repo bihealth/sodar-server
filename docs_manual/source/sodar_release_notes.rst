@@ -8,6 +8,19 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v1.3.0 (WIP)
+============
+
+- Add django-axes support for login security
+- Add Python v3.12 and v3.13 support
+- Upgrade to Django v5.2
+- Upgrade to SODAR Core v1.3.0
+- Upgrade to django-rest-knox v5.0
+- Remove Python v3.9 and v3.10 support
+
+:ref:`Administrator upgrade guide for v1.3 <admin_upgrade_v1.3>`
+
+
 v1.2.3 (2025-12-05)
 ===================
 

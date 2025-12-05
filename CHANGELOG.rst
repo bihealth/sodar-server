@@ -5,6 +5,41 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+Unreleased
+==========
+
+Added
+-----
+
+- **General**
+    - Python v3.12 and v3.13 support (#2334)
+    - ``django-axes`` support for login security (#1976, #2334)
+
+Changed
+-------
+
+- **General**
+    - Upgrade to Django v5.2.8 (#2334)
+    - Upgrade to django-sodar-core v1.3.0 (#2334, #2358)
+    - Upgrade to django-rest-knox v5.0 (#2334)
+    - Upgrade to Sentry Javascript SDK v10.27 (#2357)
+    - Upgrade general Python dependencies (#2317, #2334)
+    - Upgrade Docker build Javascript dependencies (#2355, #2357)
+    - Use ``zoneinfo`` instead of ``pytz`` (#2334)
+    - Use ``SODARUserAdmin`` as ``User`` model admin (#2334)
+    - Update base test classes (#2334)
+    - Update ``AppAlert`` and ``TimelineEvent`` test assertions for common helpers (#2334)
+    - Rename ``api_projectroles.rst`` to ``api_sodar_core.rst`` (#2334)
+- **Samplesheets**
+    - Upgrade critical Vue app dependencies (#2317)
+
+Removed
+-------
+
+- **General**
+    - Python v3.9 and v3.10 support (#2334)
+
+
 v1.2.3 (2025-12-05)
 ===================
 
