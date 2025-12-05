@@ -5,14 +5,14 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
-v1.2.3 (2025-12-04)
+v1.2.3 (2025-12-05)
 ===================
 
 Changed
 -------
 
 - **General**
-    - Upgrade to django-sodar-core v1.2.4 (#2361)
+    - Upgrade to django-sodar-core v1.2.5 (#2361)
     - Upgrade to Django v4.2.27 (#2361)
     - Upgrade to Werkzeug v3.1.4 (#2361)
 - **Samplesheets**
