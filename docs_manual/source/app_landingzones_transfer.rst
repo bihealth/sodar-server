@@ -304,12 +304,13 @@ owner and the project owner group, as well as set its status as ``ACTIVE``,
 making the zone available for further actions.
 
 This can be done from the zone dropdown in the SODAR UI under
-:guilabel:`Reset Zone`. Alternatively, the following management command can be
-used:
+:guilabel:`Reset Zone`. Alternatively, the command-line option "-z", expects a
+LandingZone.sodar_uuid as its value:
 
 .. code-block:: bash
 
-    $ ./manage.py resetzone -z {ZONE_UUID}
+    $ ./manage.py resetzone -z {SODAR_UUID}
+
 
 As these actions require administrator access, you should contact the admins of
 your SODAR instance to request a reset.
