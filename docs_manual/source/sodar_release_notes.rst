@@ -15,6 +15,7 @@ Hotfix release.
 
 - Fix samplesheets crashes if SHEETS_SYNC_ENABLE is set false
 - Fix samplesheets overview study and assay UUID display
+- Fix landing zone status info truncating
 - Upgrade critical dependencies
 
 

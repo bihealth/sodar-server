@@ -15,6 +15,8 @@ Changed
     - Upgrade to Werkzeug v3.1.5 (#2372)
 - **Samplesheets**
     - Upgrade critical Vue app dependencies (#2373)
+- **Taskflowbackend**
+    - Unnecessary landing zone status info truncating for flow exceptions (#2365)
 
 Fixed
 -----
