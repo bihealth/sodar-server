@@ -28,7 +28,7 @@ describe('TableDetailModal.vue', () => {
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    expect(wrapper.find('#sodar-ss-table-detail-container').exists()).toBe(true)
+    expect(wrapper.find('.sodar-ss-table-detail-container').exists()).toBe(true)
     expect(wrapper.findAll('.sodar-ss-table-detail-row').length).toBe(9)
     expect(wrapper.findAll('.sodar-ss-table-detail-legend').length).toBe(9)
     expect(wrapper.findAll('.sodar-ss-table-detail-value').length).toBe(9)
@@ -45,7 +45,7 @@ describe('TableDetailModal.vue', () => {
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    expect(wrapper.find('#sodar-ss-table-detail-container').exists()).toBe(true)
+    expect(wrapper.find('.sodar-ss-table-detail-container').exists()).toBe(true)
     expect(wrapper.findAll('.sodar-ss-table-detail-row').length).toBe(10)
     expect(wrapper.findAll('.sodar-ss-table-detail-value-empty').length).toBe(5)
     expect(wrapper.findAll('.sodar-ss-table-detail-row-meta').length).toBe(4)
@@ -64,7 +64,7 @@ describe('TableDetailModal.vue', () => {
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    expect(wrapper.find('#sodar-ss-table-detail-container').exists()).toBe(true)
+    expect(wrapper.find('.sodar-ss-table-detail-container').exists()).toBe(true)
     expect(wrapper.findAll('.sodar-ss-table-detail-row').length).toBe(11)
     expect(wrapper.findAll('.sodar-ss-table-detail-row-comment').length).toBe(2)
     expect(wrapper.findAll('.sodar-ss-table-detail-value-empty').length).toBe(4)

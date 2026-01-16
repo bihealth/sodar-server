@@ -104,7 +104,8 @@
             :assay-mode="false"
             :table-context="studyContext"
             :table-meta-fields="studyMetaFields"
-            :table-sodar-fields="studySODARFields">
+            :table-sodar-fields="studySODARFields"
+            :table-uuid="studyUuid">
           </table-detail-list>
         </div>
       </div>
@@ -131,7 +132,8 @@
             :assay-mode="true"
             :table-context="assayContext"
             :table-meta-fields="assayMetaFields"
-            :table-sodar-fields="assaySODARFields">
+            :table-sodar-fields="assaySODARFields"
+            :table-uuid="assayUuid">
           </table-detail-list>
         </div>
       </div>

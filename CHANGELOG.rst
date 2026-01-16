@@ -40,6 +40,28 @@ Removed
     - Python v3.9 and v3.10 support (#2334)
 
 
+v1.2.4 (2026-01-16)
+===================
+
+Changed
+-------
+
+- **General**
+    - Upgrade to Werkzeug v3.1.5 (#2372)
+- **Samplesheets**
+    - Upgrade critical Vue app dependencies (#2373)
+- **Taskflowbackend**
+    - Unnecessary landing zone status info truncating for flow exceptions (#2365)
+
+Fixed
+-----
+
+- **Samplesheets**
+    - Uncaught exceptions if ``SHEETS_SYNC_ENABLE==False`` (#2371)
+    - Missing study and assay UUIDs in ``Overview.vue`` (#2366)
+    - Duplicate ``sodar-ss-table-detail-container`` attribute IDs (#2374)
+
+
 v1.2.3 (2025-12-05)
 ===================
 

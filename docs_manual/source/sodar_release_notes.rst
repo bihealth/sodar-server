@@ -21,6 +21,17 @@ v1.3.0 (WIP)
 :ref:`Administrator upgrade guide for v1.3 <admin_upgrade_v1.3>`
 
 
+v1.2.4 (2026-01-16)
+===================
+
+Hotfix release.
+
+- Fix samplesheets crashes if SHEETS_SYNC_ENABLE is set false
+- Fix samplesheets overview study and assay UUID display
+- Fix landing zone status info truncating
+- Upgrade critical dependencies
+
+
 v1.2.3 (2025-12-05)
 ===================
 

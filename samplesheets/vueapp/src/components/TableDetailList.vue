@@ -1,6 +1,6 @@
 <template>
   <div v-if="tableContext"
-       id="sodar-ss-table-detail-container">
+       class="sodar-ss-table-detail-container">
     <table-detail-list-row
         v-for="(val, idx) in tableMetaFields"
         :key="'meta' + idx"
