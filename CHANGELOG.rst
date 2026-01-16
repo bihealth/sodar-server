@@ -21,6 +21,8 @@ Fixed
 
 - **Samplesheets**
     - Uncaught exceptions if ``SHEETS_SYNC_ENABLE==False`` (#2371)
+    - Missing study and assay UUIDs in ``Overview.vue`` (#2366)
+    - Duplicate ``sodar-ss-table-detail-container`` attribute IDs (#2374)
 
 
 v1.2.3 (2025-12-05)

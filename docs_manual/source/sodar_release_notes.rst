@@ -14,6 +14,7 @@ v1.2.4 (WIP)
 Hotfix release.
 
 - Fix samplesheets crashes if SHEETS_SYNC_ENABLE is set false
+- Fix samplesheets overview study and assay UUID display
 - Upgrade critical dependencies
 
 
