@@ -556,7 +556,8 @@ class SheetContextAjaxView(SODARBaseProjectAjaxView):
                 if hasattr(request.user, 'sodar_uuid')
                 else None
             ),
-            'sheet_sync_enabled': app_settings.get(
+            'sheet_sync_enabled': settings.SHEETS_SYNC_ENABLE
+            and app_settings.get(
                 APP_NAME, 'sheet_sync_enable', project=project
             ),
             'site_read_only': app_settings.get(

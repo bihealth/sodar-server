@@ -612,9 +612,10 @@ class ProjectAppPlugin(
         if column_id == 'sheets':
             if investigation:
                 return SHEET_COL_VIEW.format(url=get_sheets_url(project))
-            elif user.has_perm(
-                'samplesheets.edit_sheet', project
-            ) and not app_settings.get(APP_NAME, 'sheet_sync_enable', project):
+            elif user.has_perm('samplesheets.edit_sheet', project) and (
+                not settings.SHEETS_SYNC_ENABLE
+                or not app_settings.get(APP_NAME, 'sheet_sync_enable', project)
+            ):
                 url = reverse(
                     'samplesheets:import',
                     kwargs={'project': project.sodar_uuid},

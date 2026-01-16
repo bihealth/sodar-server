@@ -687,7 +687,9 @@ class SheetCreateImportAccessMixin:
 
     def dispatch(self, *args, **kwargs):
         project = self.get_project()
-        if app_settings.get(APP_NAME, 'sheet_sync_enable', project=project):
+        if settings.SHEETS_SYNC_ENABLE and app_settings.get(
+            APP_NAME, 'sheet_sync_enable', project=project
+        ):
             messages.error(
                 self.request,
                 'Sheet synchronization enabled in project: import and '
@@ -3013,12 +3015,11 @@ class SheetRemoteSyncView(
         tl_add = False
         tl_status_type = timeline.TL_STATUS_OK if timeline else 'OK'
         tl_status_desc = 'Sync OK'
-        sheet_sync_enable = app_settings.get(
-            APP_NAME, 'sheet_sync_enable', project=project
-        )
 
         # Sanity check, view is not shown in UI when variable is disabled
-        if not sheet_sync_enable:
+        if not settings.SHEETS_SYNC_ENABLE or not app_settings.get(
+            APP_NAME, 'sheet_sync_enable', project=project
+        ):
             messages.error(request, SYNC_FAIL_DISABLED)
             return self._redirect()
 

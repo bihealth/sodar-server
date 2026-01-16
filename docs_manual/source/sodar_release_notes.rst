@@ -8,6 +8,14 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v1.2.4 (WIP)
+============
+
+Hotfix release.
+
+- Fix samplesheets crashes if SHEETS_SYNC_ENABLE is set false
+
+
 v1.2.3 (2025-12-05)
 ===================
 
