@@ -19,8 +19,8 @@ Changed
 -------
 
 - **General**
-    - Upgrade to Django v5.2.9 (#2317, #2334)
-    - Upgrade to django-sodar-core v1.3.1 (#2317, #2334, #2358)
+    - Upgrade to Django v5.2.10 (#2317, #2334)
+    - Upgrade to django-sodar-core v1.3.2 (#2317, #2334, #2358)
     - Upgrade to django-rest-knox v5.0 (#2334)
     - Upgrade to Sentry Javascript SDK v10.27 (#2357)
     - Upgrade general Python dependencies (#2317, #2334)

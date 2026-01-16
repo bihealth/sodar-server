@@ -14,7 +14,7 @@ v1.3.0 (WIP)
 - Add django-axes support for login security
 - Add Python v3.12 and v3.13 support
 - Upgrade to Django v5.2
-- Upgrade to SODAR Core v1.3.1
+- Upgrade to SODAR Core v1.3.2
 - Upgrade to django-rest-knox v5.0
 - Remove Python v3.9 and v3.10 support
 
