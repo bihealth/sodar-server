@@ -14,6 +14,7 @@ v1.2.4 (WIP)
 Hotfix release.
 
 - Fix samplesheets crashes if SHEETS_SYNC_ENABLE is set false
+- Upgrade critical dependencies
 
 
 v1.2.3 (2025-12-05)

@@ -8,6 +8,14 @@ Changelog for the SODAR project. Loosely follows the
 Unreleased
 ==========
 
+Changed
+-------
+
+- **General**
+    - Upgrade to Werkzeug v3.1.5 (#2372)
+- **Samplesheets**
+    - Upgrade critical Vue app dependencies (#2373)
+
 Fixed
 -----
 
