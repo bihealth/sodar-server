@@ -33,6 +33,12 @@ Changed
 - **Samplesheets**
     - Upgrade critical Vue app dependencies (#2317)
 
+Fixed
+-----
+
+- **Landingzones**
+    - Unsupported ``assay`` field choice setup in ``LandingZoneForm`` (#2376)
+
 Removed
 -------
 

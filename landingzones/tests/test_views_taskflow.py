@@ -241,8 +241,24 @@ class TestZoneCreateView(
             'coll_creation': lc.ZONE_COLLS_NONE,
         }
 
+    def test_get(self):
+        """Test ZoneCreateView GET"""
+        assay_label = (
+            f'{self.assay.study.get_name()} / '
+            f'{self.assay.get_display_name()}'
+        )
+        with self.login(self.user):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        form = response.context['form']
+        # This should be populated with self.assay
+        self.assertEqual(
+            form.fields['assay'].widget.choices,
+            [(self.assay.sodar_uuid, assay_label)],
+        )
+
     def test_post(self):
-        """Test ZoneCreateView POST"""
+        """Test POST"""
         self.assertEqual(LandingZone.objects.count(), 0)
         self.assertEqual(
             TimelineEvent.objects.filter(event_name='zone_create').count(), 0

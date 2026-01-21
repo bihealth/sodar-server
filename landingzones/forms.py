@@ -90,7 +90,7 @@ class LandingZoneForm(forms.ModelForm):
 
         # Creation
         if not self.instance.pk:
-            self.fields['assay'].choices = []
+            self.fields['assay'].widget.choices = []
             # Only show choices for assays which are in iRODS
             with irods_backend.get_session() as irods:
                 for assay in Assay.objects.filter(
@@ -98,7 +98,7 @@ class LandingZoneForm(forms.ModelForm):
                     study__investigation__active=True,
                 ):
                     if irods.collections.exists(irods_backend.get_path(assay)):
-                        self.fields['assay'].choices.append(
+                        self.fields['assay'].widget.choices.append(
                             (
                                 assay.sodar_uuid,
                                 f'{assay.study.get_name()} / '
