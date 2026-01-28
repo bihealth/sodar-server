@@ -13,7 +13,7 @@ v1.2.5 (WIP)
 
 Hotfix release.
 
-- Fix iRODS file list API view returning SHA256 checksums as base64 instead of hex
+- Fix iRODS file list API view returning SHA256 checksums as base64
 
 
 v1.2.4 (2026-01-16)

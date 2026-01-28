@@ -14,11 +14,16 @@ Added
 - **General**
     - ``.vite`` in ``.gitignore`` (#2383)
 
+Changed
+-------
+- **Irodsbackend**
+    - Refactor ``get_objs_recursively()`` (#2381)
+
 Fixed
 -----
 
 - **Irodsbackend**
-    - ``get_objs_recursively()`` returns SHA256 checksums as base64 instead of hex (#2380)
+    - ``get_objs_recursively()`` returns SHA256 checksums as base64 (#2380)
 
 
 v1.2.4 (2026-01-16)
