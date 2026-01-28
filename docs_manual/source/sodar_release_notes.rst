@@ -8,6 +8,14 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v1.2.5 (WIP)
+============
+
+Hotfix release.
+
+- Fix iRODS file list API view returning SHA256 checksums as base64 instead of hex
+
+
 v1.2.4 (2026-01-16)
 ===================
 

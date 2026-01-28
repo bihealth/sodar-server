@@ -4,6 +4,15 @@ SODAR Changelog
 Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
+Unreleased
+==========
+
+Fixed
+-----
+
+- **Irodsbackend**
+    - ``get_objs_recursively()`` returns SHA256 checksums as base64 instead of hex (#2380)
+
 
 v1.2.4 (2026-01-16)
 ===================

@@ -62,6 +62,7 @@ ENV_INT_PARAMS = [
 USER_GROUP_TEMPLATE = 'omics_project_{uuid}'
 OWNER_GROUP_TEMPLATE = USER_GROUP_TEMPLATE + '_owner'
 IRODS_SHA256_PREFIX = 'sha2:'
+IRODS_HASH_SCHEME_SHA256 = 'SHA256'
 TRASH_COLL_NAME = 'trash'
 PATH_PARENT_SUBSTRING = '/..'
 ERROR_PATH_PARENT = 'Use of parent not allowed in path'
@@ -659,6 +660,7 @@ class IrodsAPI:
         path_lookup = []
         q_count = 1
 
+        # TODO: Refactor this into separate internal method
         def _do_query(irods, nl=None):
             sql = (
                 'SELECT DISTINCT ON (data_id) data_name, data_size, '
@@ -699,6 +701,7 @@ class IrodsAPI:
             try:
                 results = query.get_results()
                 for row in results:
+                    # TODO: Refactor object formatting into separate method
                     obj_path = iRODSPath(
                         row[Collection.name], row[DataObject.name]
                     )
@@ -714,7 +717,22 @@ class IrodsAPI:
                         ),
                     }
                     if checksum:
-                        d['checksum'] = row[DataObject.checksum]
+                        chk = row[DataObject.checksum]
+                        # Convert SHA256 to hex
+                        if (
+                            chk
+                            and settings.IRODS_HASH_SCHEME
+                            == IRODS_HASH_SCHEME_SHA256
+                        ):
+                            try:
+                                chk = self.get_sha256_hex(chk)
+                            except Exception as ex:
+                                logger.error(
+                                    f'Exception in converting SHA256 checksum '
+                                    f'"{chk}": {ex}'
+                                )
+                                chk = ''
+                        d['checksum'] = chk
                     ret.append(d)
                     if q_count > 1:
                         path_lookup.append(obj_path)
