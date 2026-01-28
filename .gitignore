@@ -66,7 +66,7 @@ docs/pycharm/*
 *.swp
 *.swo
 
-# Node.js and Webpack
+# Node.js, Webpack, Vite
 node_modules/
 dist/
 tests/node/unit/coverage/
@@ -74,6 +74,7 @@ tests/node/e2e/reports/
 *.ntvs*
 *.njsproj
 webpack-stats.json
+.vite/
 
 # Compass
 .sass-cache

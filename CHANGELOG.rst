@@ -4,8 +4,15 @@ SODAR Changelog
 Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
+
 Unreleased
 ==========
+
+Added
+-----
+
+- **General**
+    - ``.vite`` in ``.gitignore`` (#2383)
 
 Fixed
 -----
