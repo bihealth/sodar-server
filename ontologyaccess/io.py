@@ -8,6 +8,7 @@ import pronto
 import sys
 import urllib
 
+from http.client import HTTPResponse
 from importlib import import_module
 from fastobo.doc import OboDoc
 from fastobo.term import TermFrame
@@ -65,17 +66,18 @@ class OBOFormatOntologyIO:
 
     @classmethod
     def owl_to_obo(
-        cls, owl: Union[str, io.BytesIO], verbose: bool = False
+        cls, owl: Union[str, io.BytesIO, HTTPResponse], verbose: bool = False
     ) -> io.BytesIO:
         """
         Convert an OWL format ontology into the OBO format.
 
-        :param owl: Path, URL or file pointer to an OWL file
+        :param owl: Path, URL, file pointer or HTTPResponse to an OWL file
         :param verbose: Display pronto output if True (bool)
         :return: File pointer
         """
         logger.info('Converting OWL format ontology to OBO..')
-        logger.debug(f'OWL = {owl}')
+        owl_log = owl.geturl() if isinstance(owl, HTTPResponse) else owl
+        logger.debug(f'OWL = {owl_log}')
         if not verbose:
             sys.stdout = io.StringIO()
             sys.stderr = io.StringIO()

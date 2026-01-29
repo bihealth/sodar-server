@@ -46,6 +46,29 @@ Removed
     - Python v3.9 and v3.10 support (#2334)
 
 
+v1.2.5 (2026-01-29)
+===================
+
+Added
+-----
+
+- **General**
+    - ``.vite`` in ``.gitignore`` (#2383)
+
+Changed
+-------
+- **Irodsbackend**
+    - Refactor ``get_objs_recursively()`` (#2381)
+
+Fixed
+-----
+
+- **Irodsbackend**
+    - ``get_objs_recursively()`` returns SHA256 checksums as base64 (#2380)
+- **Ontologyaccess**
+    - ``owl_to_obo()`` logging for URL access (#2378)
+
+
 v1.2.4 (2026-01-16)
 ===================
 

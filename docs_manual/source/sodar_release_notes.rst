@@ -21,6 +21,15 @@ v1.3.0 (WIP)
 :ref:`Administrator upgrade guide for v1.3 <admin_upgrade_v1.3>`
 
 
+v1.2.5 (2026-01-29)
+===================
+
+Hotfix release.
+
+- Fix iRODS file list API view returning SHA256 checksums as base64
+- Fix OWL ontology parser logging with URL access
+
+
 v1.2.4 (2026-01-16)
 ===================
 

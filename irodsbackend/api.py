@@ -17,7 +17,6 @@ from irods.api_number import api_number
 from irods.collection import iRODSCollection
 from irods.column import Criterion
 from irods.exception import CollectionDoesNotExist, CAT_NO_ROWS_FOUND
-from django.http import HttpRequest
 from irods.message import TicketAdminRequest, iRODSMessage
 from irods.models import Collection, DataObject, TicketQuery
 from irods.path import iRODSPath
@@ -27,6 +26,7 @@ from irods.ticket import Ticket
 
 from django.conf import settings
 from django.db.models import Model
+from django.http import HttpRequest
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.http import urlencode
@@ -62,6 +62,7 @@ ENV_INT_PARAMS = [
 USER_GROUP_TEMPLATE = 'omics_project_{uuid}'
 OWNER_GROUP_TEMPLATE = USER_GROUP_TEMPLATE + '_owner'
 IRODS_SHA256_PREFIX = 'sha2:'
+HASH_SCHEME_SHA256 = 'SHA256'
 TRASH_COLL_NAME = 'trash'
 PATH_PARENT_SUBSTRING = '/..'
 ERROR_PATH_PARENT = 'Use of parent not allowed in path'
@@ -184,6 +185,139 @@ class IrodsAPI:
             raise ValueError('Argument "project" is not a Project object')
         if project.is_category():
             raise ValueError(f'Project type is not {PROJECT_TYPE_PROJECT}')
+
+    def _get_query_obj_dict(
+        self,
+        row: dict,
+        api_format: bool = False,
+        checksum: bool = False,
+    ):
+        """
+        Return data object from iRODS query as dictionary.
+        The row is expected to include the following columns:
+        DataObject.name
+        DataObject.size
+        DataObject.modify_time
+        Collection.name
+        :param row: iRODS query result row (dict)
+        :param api_format: Format data for REST API (bool, default=False)
+        :param checksum: Include checksum in info (bool, default=False)
+        :return: Dict
+        """
+        path = iRODSPath(row[Collection.name], row[DataObject.name])
+        ret = {
+            'name': row[DataObject.name],
+            'type': 'obj',
+            'path': path,
+            'size': row[DataObject.size],
+            'modify_time': self._get_datetime(
+                row[DataObject.modify_time], api_format
+            ),
+        }
+        if checksum:
+            chk = row[DataObject.checksum]
+            # Convert SHA256 to hex
+            if chk and settings.IRODS_HASH_SCHEME == HASH_SCHEME_SHA256:
+                try:
+                    chk = self.get_sha256_hex(chk)
+                except Exception as ex:
+                    logger.error(
+                        f'Exception in converting SHA256 checksum '
+                        f'"{chk}": {ex}'
+                    )
+                    chk = ''
+            ret['checksum'] = chk
+        return ret
+
+    def _make_object_query(
+        self,
+        irods: iRODSSession,
+        path: str,
+        include_checksum: bool = False,
+        name_like: Union[str, list[str], None] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+        api_format: bool = False,
+        checksum: bool = False,
+        omit_paths: Optional[list[str]] = None,
+    ) -> list[dict]:
+        """
+        Make iRODS query for data objects within a collection given specific
+        parameters. Returns a flat list of dictionaries with data object
+        details.
+        :param irods: iRODSSession object
+        :param path: Full path to iRODS collection (string)
+        :param include_checksum: if True, include .md5/.sha256 files (bool,
+                                 default=False)
+        :param name_like: Filtering of file names (string or list of strings)
+        :param limit: Limit retrieval to N rows (int or None)
+        :param offset: Offset retrieval by N rows (int or None)
+        :param api_format: Format data for REST API (bool, default=False)
+        :param checksum: Include checksum in info (bool, default=False)
+        :param omit_paths: Omit paths given in this list (list of strings, will
+                           be modified)
+        :return: List of dicts
+        """
+        ret = []
+        chk_filter = (
+            ''
+            if include_checksum
+            else 'AND data_name NOT LIKE \'%.md5\' AND data_name NOT LIKE '
+            '\'%.sha256\''
+        )
+        sql = (
+            'SELECT DISTINCT ON (data_id) data_name, data_size, '
+            'r_data_main.modify_ts as modify_ts, coll_name{checksum}'
+            'FROM r_data_main JOIN r_coll_main USING (coll_id) '
+            'WHERE (coll_name = \'{coll_path}\' '
+            'OR coll_name LIKE \'{coll_path}/%\') {chk_filter}'.format(
+                checksum=', data_checksum ' if checksum else ' ',
+                coll_path=path,
+                chk_filter=chk_filter,
+            )
+        )
+        if name_like:
+            if not isinstance(name_like, list):
+                name_like = [name_like]
+            sql += ' AND ('
+            for i, n in enumerate(name_like):
+                if i > 0:
+                    sql += ' OR '
+                sql += f'data_name LIKE \'%{n}%\''
+            sql += ')'
+        if limit:
+            sql += f' LIMIT {limit}'
+        if offset:
+            sql += f' OFFSET {offset}'
+
+        # logger.debug(f'Object list query = "{sql}"')
+        columns = [
+            DataObject.name,
+            DataObject.size,
+            DataObject.modify_time,
+            Collection.name,
+        ]
+        if checksum:
+            columns.append(DataObject.checksum)
+        query = self.get_query(irods, sql, columns)
+
+        try:
+            results = query.get_results()
+            for row in results:
+                d = self._get_query_obj_dict(row, api_format, checksum)
+                ret.append(d)
+                if omit_paths is not None and d['path'] not in omit_paths:
+                    omit_paths.append(d['path'])
+        except CAT_NO_ROWS_FOUND:
+            pass
+        except Exception as ex:
+            logger.error(
+                f'iRODS exception in _make_object_query(): '
+                f'{ex.__class__.__name__}'
+            )
+        finally:
+            query.remove()
+        return ret
 
     # Helpers ------------------------------------------------------------------
 
@@ -650,95 +784,30 @@ class IrodsAPI:
         :return: List of dicts
         """
         ret = []
-        chk_filter = (
-            ''
-            if include_checksum
-            else 'AND data_name NOT LIKE \'%.md5\' AND data_name NOT LIKE '
-            '\'%.sha256\''
-        )
         path_lookup = []
-        q_count = 1
-
-        def _do_query(irods, nl=None):
-            sql = (
-                'SELECT DISTINCT ON (data_id) data_name, data_size, '
-                'r_data_main.modify_ts as modify_ts, coll_name{checksum}'
-                'FROM r_data_main JOIN r_coll_main USING (coll_id) '
-                'WHERE (coll_name = \'{coll_path}\' '
-                'OR coll_name LIKE \'{coll_path}/%\') {chk_filter}'.format(
-                    checksum=', data_checksum ' if checksum else ' ',
-                    coll_path=coll.path,
-                    chk_filter=chk_filter,
-                )
-            )
-            if nl:
-                if not isinstance(nl, list):
-                    nl = [nl]
-                sql += ' AND ('
-                for i, n in enumerate(nl):
-                    if i > 0:
-                        sql += ' OR '
-                    sql += f'data_name LIKE \'%{n}%\''
-                sql += ')'
-            if limit:
-                sql += f' LIMIT {limit}'
-            if offset:
-                sql += f' OFFSET {offset}'
-
-            # logger.debug(f'Object list query = "{sql}"')
-            columns = [
-                DataObject.name,
-                DataObject.size,
-                DataObject.modify_time,
-                Collection.name,
-            ]
-            if checksum:
-                columns.append(DataObject.checksum)
-            query = self.get_query(irods, sql, columns)
-
-            try:
-                results = query.get_results()
-                for row in results:
-                    obj_path = iRODSPath(
-                        row[Collection.name], row[DataObject.name]
-                    )
-                    if q_count > 1 and obj_path in path_lookup:
-                        continue  # Skip possible dupes in case of split query
-                    d = {
-                        'name': row[DataObject.name],
-                        'type': 'obj',
-                        'path': obj_path,
-                        'size': row[DataObject.size],
-                        'modify_time': self._get_datetime(
-                            row[DataObject.modify_time], api_format
-                        ),
-                    }
-                    if checksum:
-                        d['checksum'] = row[DataObject.checksum]
-                    ret.append(d)
-                    if q_count > 1:
-                        path_lookup.append(obj_path)
-            except CAT_NO_ROWS_FOUND:
-                pass
-            except Exception as ex:
-                logger.error(
-                    f'iRODS exception in get_objs_recursively(): '
-                    f'{ex.__class__.__name__}'
-                )
-            finally:
-                query.remove()
-
         # HACK: Long queries cause a crash with iRODS so we have to split them
+        q_args = [
+            irods,
+            coll.path,
+            include_checksum,
+            name_like,
+            limit,
+            offset,
+            api_format,
+            checksum,
+            path_lookup,
+        ]
         if name_like and isinstance(name_like, list) and len(name_like) > 1:
             f_len = sum([len(x) + NAME_LIKE_OVERHEAD for x in name_like])
             q_count = math.ceil(f_len / NAME_LIKE_MAX_LEN)
             q_len = math.ceil(len(name_like) / q_count)
             q_idx = 0
             for i in range(q_count):
-                _do_query(irods, name_like[q_idx : q_idx + q_len])
+                q_args[3] = name_like[q_idx : q_idx + q_len]
+                ret += self._make_object_query(*q_args)
                 q_idx = q_idx + q_len
         else:  # Single query
-            _do_query(irods, name_like)
+            ret += self._make_object_query(*q_args)
         return sorted(ret, key=lambda x: x['path'])
 
     def get_objects(
