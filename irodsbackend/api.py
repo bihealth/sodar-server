@@ -17,7 +17,6 @@ from irods.api_number import api_number
 from irods.collection import iRODSCollection
 from irods.column import Criterion
 from irods.exception import CollectionDoesNotExist, CAT_NO_ROWS_FOUND
-from django.http import HttpRequest
 from irods.message import TicketAdminRequest, iRODSMessage
 from irods.models import Collection, DataObject, TicketQuery
 from irods.path import iRODSPath
@@ -27,6 +26,7 @@ from irods.ticket import Ticket
 
 from django.conf import settings
 from django.db.models import Model
+from django.http import HttpRequest
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.http import urlencode

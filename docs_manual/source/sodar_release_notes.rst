@@ -8,12 +8,12 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
-v1.2.5 (WIP)
-============
+v1.2.5 (2026-01-29)
+===================
 
 Hotfix release.
 
-- Fix iRODS file list API view returning SHA256 checksums as base64 instead of hex
+- Fix iRODS file list API view returning SHA256 checksums as base64
 - Fix OWL ontology parser logging with URL access
 
 
