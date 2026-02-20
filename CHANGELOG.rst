@@ -29,6 +29,7 @@ Changed
     - Upgrade to Sentry Javascript SDK v10.27 (#2357)
     - Upgrade general Python dependencies (#2317, #2334)
     - Upgrade Docker build Javascript dependencies (#2355, #2357)
+    - Upgrade Docker build for Python v3.13 (#2397)
     - Use ``zoneinfo`` instead of ``pytz`` (#2334)
     - Use ``SODARUserAdmin`` as ``User`` model admin (#2334)
     - Update base test classes (#2334)
