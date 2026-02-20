@@ -1,7 +1,13 @@
 from django import forms
 from django.contrib import admin
-from django.contrib.auth.forms import UserChangeForm, UserCreationForm
+from django.contrib.auth.forms import (
+    AdminUserCreationForm,
+    UserChangeForm,
+    UserCreationForm,
+)
+
 from projectroles.admin import SODARUserAdmin
+
 from .models import User
 
 
@@ -10,8 +16,8 @@ class MyUserChangeForm(UserChangeForm):
         model = User
 
 
-class MyUserCreationForm(UserCreationForm):
-    error_message = UserCreationForm.error_messages.update(
+class MyUserCreationForm(AdminUserCreationForm):
+    error_message = AdminUserCreationForm.error_messages.update(
         {'duplicate_username': 'This username has already been taken.'}
     )
 
@@ -19,7 +25,7 @@ class MyUserCreationForm(UserCreationForm):
         model = User
 
     def clean_username(self):
-        username = self.cleaned_data["username"]
+        username = self.cleaned_data['username']
         try:
             User.objects.get(username=username)
         except User.DoesNotExist:
