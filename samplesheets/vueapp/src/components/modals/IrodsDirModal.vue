@@ -58,7 +58,7 @@
               <b-button
                   v-if="objInfo.irods_request_status === 'ACTIVE'"
                   variant="primary"
-                  class="sodar-list-btn sodar-ss-popup-list-btn sodar-ss-req-btn
+                  class="sodar-ss-popup-list-btn sodar-ss-req-btn
                          sodar-ss-request-cancel-btn"
                   :title="getRequestCancelTitle(objInfo)"
                   :disabled="!allowRequestCancel(objInfo)"
@@ -69,7 +69,7 @@
               <b-button
                   v-else
                   variant="danger"
-                  class="sodar-list-btn sodar-ss-popup-list-btn sodar-ss-req-btn
+                  class="sodar-ss-popup-list-btn sodar-ss-req-btn
                          sodar-ss-request-delete-btn"
                   :title="getRequestIssueTitle(objInfo)"
                   :disabled="!allowRequestIssue(objInfo)"
@@ -279,7 +279,6 @@ export default {
 </script>
 
 <style scoped>
-
 table.sodar-irods-obj-table thead tr th:nth-child(1),
 table.sodar-irods-obj-table tbody tr td:nth-child(1) {
   width: 100%;
@@ -308,6 +307,10 @@ table.sodar-irods-obj-table tbody tr td:nth-child(4) {
   text-align: right;
 }
 
+table.sodar-irods-obj-table tbody tr td:nth-child(-n+3) {
+  padding-top: 14px !important;
+}
+
 h5 {
   width: 100%;
 }
@@ -317,6 +320,9 @@ input#sodar-ss-irods-filter {
 }
 
 .sodar-ss-req-btn {
-  padding-top: 0 !important;
+  padding: 0;
+  width: 26px;
+  height: 26px;
+  vertical-align: top !important;
 }
 </style>
