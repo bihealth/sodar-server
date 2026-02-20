@@ -232,6 +232,22 @@ class TestProjectSheetsView(IrodsDataRequestMixin, SamplesheetsUITestBase):
             with self.assertRaises(NoSuchElementException):
                 self.selenium.find_element(By.ID, 'sodar-ss-alert-error')
 
+    def test_render_vue3(self):
+        """Test rendering view with Vue3 app"""
+        app_settings.set(APP_NAME, 'use_vue3_app', True, user=self.user_owner)
+        self._login_and_render(
+            user=self.user_owner, wait_elem='sodar-ss-table-grid-study'
+        )
+        self.assertIsNotNone(
+            self.selenium.find_element(
+                By.ID,
+                f'sodar-ss-table-grid-assay-{self.assay.sodar_uuid}',
+            )
+        )
+        with self.assertRaises(NoSuchElementException):
+            # Old ID from Vue2 app, should not be present
+            self.selenium.find_element(By.ID, 'sodar-ss-grid-study')
+
     def test_render_no_sheet(self):
         """Test rendering view with no sheet"""
         self.investigation.delete()

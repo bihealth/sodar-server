@@ -1,0 +1,64 @@
+<script setup lang="ts">
+import TableDetailListRow from '@/components/TableDetailListRow.vue'
+
+const props = defineProps([
+    'assayMode',
+    'tableUuid',
+    'tableContext',
+    'tableMetaFields',
+    'tableSodarFields'
+])
+
+function getMetaIconClass (): string {
+  if (props.assayMode) return 'text-danger'
+  return 'text-info'
+}
+</script>
+
+<template>
+  <div v-if="tableContext"
+       id="sodar-ss-table-detail-container">
+    <TableDetailListRow
+        v-for="(val, idx) in tableMetaFields"
+        :key="'meta' + idx"
+        :legend="val[0]"
+        :value="tableContext[val[1]]"
+        icon="mdi:file"
+        :icon-class="getMetaIconClass()"
+        title="ISA-Tab metadata"
+        row-class="sodar-ss-table-detail-row-meta">
+    </TableDetailListRow>
+    <TableDetailListRow
+        v-for="(val, key) in tableContext.comments"
+        :key="'comment-' + key"
+        :legend="key"
+        :value="val"
+        icon="mdi:comment"
+        icon-class="text-primary"
+        title="ISA-Tab comment"
+        row-class="sodar-ss-table-detail-row-comment">
+    </TableDetailListRow>
+    <TableDetailListRow
+        v-for="(val, idx) in tableSodarFields"
+        :key="'sodar' + idx"
+        :legend="val[0]"
+        :value="tableContext[val[1]]"
+        icon="mdi:code-braces"
+        icon-class="text-secondary"
+        title="SODAR metadata"
+        row-class="sodar-ss-table-detail-row-sodar">
+    </TableDetailListRow>
+    <TableDetailListRow
+        legend="SODAR UUID"
+        :value="tableUuid"
+        icon="mdi:code-braces"
+        icon-class="text-secondary"
+        :copy-button="true"
+        title="SODAR metadata"
+        row-class="sodar-ss-table-detail-row-sodar">
+    </TableDetailListRow>
+  </div>
+</template>
+
+<style scoped>
+</style>

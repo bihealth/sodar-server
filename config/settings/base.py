@@ -68,7 +68,8 @@ THIRD_PARTY_APPS = [
     'dal_select2',
     'dj_iconify.apps.DjIconifyConfig',  # Iconify for SVG icons
     'drf_spectacular',  # OpenAPI schema generation
-    'webpack_loader',  # For accessing webpack bundles
+    'webpack_loader',  # For Vue2 app webpack integration
+    'django_vite',  # For Vue3 app vite integration
     # SODAR Core apps
     # Project apps
     'projectroles.apps.ProjectrolesConfig',
@@ -229,21 +230,27 @@ CRISPY_TEMPLATE_PACK = 'bootstrap4'
 # ------------------------------------------------------------------------------
 STATIC_ROOT = str(ROOT_DIR('staticfiles'))
 STATIC_URL = '/static/'
-
 STATICFILES_DIRS = [str(APPS_DIR.path('static'))]
-
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 ]
-
 # Iconify SVG icons
 ICONIFY_JSON_ROOT = os.path.join(STATIC_ROOT, 'iconify')
-
+# Vue2 app Webpack loading
 WEBPACK_LOADER = {
     'SAMPLESHEETS': {
         # 'BUNDLE_DIR_NAME': 'samplesheets-vue/',
         'STATS_FILE': ROOT_DIR('samplesheets/vueapp/webpack-stats.json'),
+    }
+}
+# Vue3 app Vite setup
+DJANGO_VITE = {
+    'default': {
+        'dev_mode': DEBUG,
+        'manifest_path': ROOT_DIR(
+            'samplesheets/vue3app/dist/samplesheets-vue3/manifest.json'
+        ),
     }
 }
 

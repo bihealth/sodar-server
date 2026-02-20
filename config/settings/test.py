@@ -42,6 +42,12 @@ CACHES = {
     }
 }
 
+# STATIC FILE CONFIGURATION
+# ------------------------------------------------------------------------------
+
+# Run Vue3 app in dev mode for tests even though DEBUG=False
+DJANGO_VITE['default']['dev_mode'] = True
+
 # TESTING
 # ------------------------------------------------------------------------------
 TEST_RUNNER = 'django.test.runner.DiscoverRunner'

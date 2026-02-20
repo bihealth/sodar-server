@@ -96,8 +96,12 @@ lxml==6.0.1
 # Excel file generating
 openpyxl==3.1.5
 
-# Webpack loader for Vue.js
+# Webpack loader for legacy Vue2 app
+# TODO: Remove dependency when legacy app is retired
 django-webpack-loader==3.2.1
+
+# Vite integration for Vue3 app
+django-vite==3.1.0
 
 # OBO ontology file parsing
 fastobo==0.13.0

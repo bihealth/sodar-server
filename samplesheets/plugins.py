@@ -231,6 +231,16 @@ SHEETS_APP_SETTINGS = [
         'comma-separated list.',
         user_modifiable=True,
     ),
+    PluginAppSettingDef(
+        name='use_vue3_app',
+        scope=APP_SETTING_SCOPE_USER,
+        type=APP_SETTING_TYPE_BOOLEAN,
+        default=False,
+        label='Enable Sample Sheets Vue3 app',
+        description='Enable the new Vue3 app for sample sheet browsing and '
+        'editing. This app is under development and may not be stable.',
+        user_modifiable=True,
+    ),
 ]
 # Add remote sample sheet sync settings only if sync is enabled
 if settings.SHEETS_SYNC_ENABLE:

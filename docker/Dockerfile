@@ -36,9 +36,15 @@ RUN cd /usr/src/app && \
     pip install --no-cache-dir -r requirements/production.txt && \
     pip install --no-cache-dir -r requirements/local.txt
 
-# Install npm dependencies
+# Build Vue2 app
 RUN cd /usr/src/app/samplesheets/vueapp && \
     mkdir -p /usr/src/app/samplesheets/vueapp/dist && \
+    npm ci && \
+    npm run build
+
+# Build Vue3 app
+RUN cd /usr/src/app/samplesheets/vue3app && \
+    mkdir -p /usr/src/app/samplesheets/vue3app/dist && \
     npm ci && \
     npm run build
 

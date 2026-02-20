@@ -1409,6 +1409,9 @@ class ProjectSheetsView(
         context['app_context'] = json.dumps(app_context)
         context['settings_module'] = os.environ['DJANGO_SETTINGS_MODULE']
         context['EMPTY_VALUE'] = EMPTY_VALUE  # For JQuery
+        context['use_vue3_app'] = app_settings.get(
+            APP_NAME, 'use_vue3_app', user=self.request.user
+        )
         return context
 
 

@@ -10,8 +10,11 @@ echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.co
 sudo apt-get update
 sudo apt-get install nodejs -y
 
+# TODO: Remove once Vue 2 app has been retired
 echo "***********************************************"
 echo "Installing Vue CLI and Init"
 echo "***********************************************"
 npm install -g @vue/cli
 npm install -g @vue/cli-init
+
+# TODO: Vue3 app dev dependencies here if needed

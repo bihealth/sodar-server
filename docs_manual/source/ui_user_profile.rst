@@ -38,6 +38,9 @@ Receive alerts for iRODS data requests
     Receive UI alerts for for iRODS data request accepting or rejecting.
 Receive email for iRODS data requests
     Receive email notifications for iRODS data request accepting or rejecting.
+Enable Sample Sheets Vue3 app
+    Enable the new Vue3 app for sample sheet browsing and editing. This app is
+    under development and may not be stable.
 Receive email for admin alerts
     Receive email notifications for admin alerts where the admin has enabled
     email alering. If unchecked, you can still see the alerts in the SODAR GUI.

@@ -76,29 +76,35 @@ tasks_celery
     Celery tasks for asynchronous actions.
 
 The Django app provides the standard framework for views and backend
-functionality. The app also provides the Ajax API views required for the Vue.js
+functionality. The app also provides the Ajax API views required for the Vue
 app to retrieve data from the server side.
 
 Except for the sample sheet viewer and editor implemented as a Vue.js app, it is
 recommended to develop views in the app as server-side Django views.
 
-Vue.js App
-----------
+Vue App
+-------
 
-The Vue.js app is located under ``samplesheets/vueapp``. It is used as the
-sample sheet viewer and editor. The app is embedded into the Django app view
-``ProjectSheetsView`` and the associated ``project_sheets.html`` template using
+A client side Vue.js sub-app is used within the Samplesheets app as the sample
+sheet viewer and editor. In this SODAR release, the Vue app is provided in two
+versions:
+
+``samplesheets/vueapp``
+    Legacy Vue2 app, to be retired once the Vue3 app is finalized. Currently in
+    maintenance mode.
+``samplesheets/vue3app``
+    New Vue3 app under development. New features are developed into this
+    version of the app.
+
+The Vue apps are embedded into the Django app view ``ProjectSheetsView`` and the
+associated ``project_sheets.html`` template. In the Vue2 app, this is done using
 `django-webpack-loader <https://github.com/django-webpack/django-webpack-loader>`_.
+The new Vue3 app does the same with
+`django-vite <https://github.com/MrBin99/django-vite>`_.
 
-The app uses `ag-grid <https://www.ag-grid.com/vue-data-grid/vue2/>`_ for table
+The app uses `ag-grid <https://www.ag-grid.com/vue-data-grid/>`_ for table
 rendering and interactivity. It is recommended to get familiarized with ag-grid
 before developing this app.
-
-The app is set up with strict linting, which should make following code
-conventions straightfoward.
-
-At the moment, the app is implemented on Vue v2. Upgrading to Vue v3 will be
-considered in the future.
 
 Study Plugin Sub-Apps
 ---------------------

@@ -54,12 +54,15 @@ INSTALLED_APPS += ['gunicorn']
 # Static Assets
 # ------------------------------------------------------------------------------
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
 # Add Samplesheets vue.js app assets
-STATICFILES_DIRS.append(str(ROOT_DIR('samplesheets/vueapp/dist')))
-
+STATICFILES_DIRS += [
+    str(ROOT_DIR('samplesheets/vueapp/dist')),
+    str(ROOT_DIR('samplesheets/vue3app/dist')),
+]
 # Add optonal custom directory for static includes at deployment stage
 STATICFILES_DIRS += env.list('CUSTOM_STATIC_DIR', default=[])
+# Update Vue3 app Vite setup for build path
+DJANGO_VITE['default']['static_url_prefix'] = 'samplesheets-vue3'
 
 # TEMPLATE CONFIGURATION
 # ------------------------------------------------------------------------------

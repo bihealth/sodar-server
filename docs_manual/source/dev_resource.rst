@@ -42,6 +42,11 @@ Vue App Unit Testing Hints
 
 Hints for testing the Sample Sheets Vue.js app can be found below.
 
+.. note::
+
+    This section is written for the legacy Vue2 app to be retired. It will be
+    updated for the new Vue3 app in a future release.
+
 - How to test Bootstrap-vue modals
     * Set ``:static="true"`` on modal
     * Use ``async ()`` on test case

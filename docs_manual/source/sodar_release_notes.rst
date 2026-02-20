@@ -11,6 +11,7 @@ list of changes in current and previous releases, see the
 v1.3.0 (WIP)
 ============
 
+- Add samplesheets Vue3 app
 - Add django-axes support for login security
 - Add Python v3.12 and v3.13 support
 - Upgrade to Django v5.2

@@ -1305,7 +1305,7 @@ export default {
     // Get initial context data from the rendered page
     const initialContext = JSON.parse(
       document.getElementById('sodar-ss-app-context')
-        .getAttribute('app-context') || '{}')
+        .getAttribute('data-app-context') || '{}')
     this.projectUuid = initialContext.project_uuid
 
     const setUpInitialData = async () => {

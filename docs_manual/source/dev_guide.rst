@@ -78,8 +78,9 @@ Code Conventions
 For developing code for the Django site, see
 `SODAR Core code conventions <https://sodar-core.readthedocs.io/en/dev/dev_core_guide.html#code-conventions>`_.
 
-For the samplesheets Vue app, the strict linting used in the development
-environment enforces most critical conventions.
+For the samplesheets Vue app, strict linting used in the development environment
+enforces most critical conventions.
+
 
 .. _dev_guide_test:
 

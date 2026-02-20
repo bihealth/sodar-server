@@ -14,6 +14,10 @@ Added
 - **General**
     - Python v3.12 and v3.13 support (#2334)
     - ``django-axes`` support for login security (#1976, #2334)
+- **Samplesheets**
+    - Vue3 app (#994)
+    - Vite integration using ``django-vite`` (#994)
+    - ``use_vue3_app`` app setting (#994)
 
 Changed
 -------
@@ -38,6 +42,8 @@ Fixed
 
 - **Landingzones**
     - Unsupported ``assay`` field choice setup in ``LandingZoneForm`` (#2376)
+- **Samplesheets**
+    - HPO term copying fails with ``SHEETS_ONTOLOGY_URL_TEMPLATE`` set (#2386)
 
 Removed
 -------

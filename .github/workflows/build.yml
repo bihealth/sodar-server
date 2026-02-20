@@ -75,10 +75,14 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 22.x
-      - name: Build and run Vue app
+      - name: Build and run Vue2 app
         run: |
           npm ci --prefix samplesheets/vueapp
           nohup npm run -prefix samplesheets/vueapp serve &
+      - name: Build and run Vue3 app
+        run: |
+          npm ci --prefix samplesheets/vue3app
+          nohup npm run --prefix samplesheets/vue3app dev &
       - name: Download icons
         run: python manage.py geticons --settings=config.settings.test
       - name: Run collectstatic
@@ -88,8 +92,11 @@ jobs:
           coverage run --rcfile=.coveragerc manage.py test -v 2 --settings=config.settings.test
           coverage lcov
           coverage report
-      - name: Run Vue app tests
+      - name: Run Vue2 app tests
         run: make test_samplesheets_vue
+        if: ${{ matrix.python-version == '3.13' }}
+      - name: Run Vue3 app tests
+        run: make test_samplesheets_vue3
         if: ${{ matrix.python-version == '3.13' }}
       - name: Check Python linting
         run: flake8 .

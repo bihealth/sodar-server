@@ -116,8 +116,8 @@ export default Vue.extend({
       const hpoIds = []
       for (let i = 0; i < this.value.value.length; i++) {
         const term = this.value.value[i]
-        const splitUrl = term.accession.split('/')
-        hpoIds.push(splitUrl[splitUrl.length - 1].replace('_', ':'))
+        const idx = term.accession.indexOf('HP_')
+        hpoIds.push(term.accession.substring(idx).replace('_', ':'))
       }
       this.$copyText(hpoIds.join(';'))
       this.params.app.showNotification('Copied', 'success', 1000)

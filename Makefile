@@ -9,11 +9,13 @@ define USAGE=
 @echo -e "\tmake js-beautify arg=<path>                 -- run js-beautify on JQuery file(s)"
 @echo -e "\tmake celery                                 -- start celery & celerybeat"
 @echo -e "\tmake demo                                   -- start demo server"
-@echo -e "\tmake samplesheets_vue                       -- start samplesheet vue.js app"
+@echo -e "\tmake samplesheets_vue                       -- start samplesheets Vue2 app"
+@echo -e "\tmake samplesheets_vue3                      -- start samplesheets Vue3 app for development"
 @echo -e "\tmake collectstatic                          -- run collectstatic"
 @echo -e "\tmake test [arg=<test_object>]               -- run all django tests or specify module/class/function"
 @echo -e "\tmake test_coverage                          -- run all django tests and provide coverage html report"
-@echo -e "\tmake test_samplesheets_vue [arg=<target>]   -- run all samplesheets vue app tests or specify target"
+@echo -e "\tmake test_samplesheets_vue [arg=<target>]   -- run all samplesheets Vue2 app tests or specify target"
+@echo -e "\tmake test_samplesheets_vue3 [arg=<target>]  -- run all samplesheets Vue3 app tests or specify target"
 @echo -e "\tmake sync_taskflow                          -- sync taskflow"
 @echo -e "\tmake spectacular                            -- generate OpenAPI schemas with drf-spectacular"
 @echo -e
@@ -67,6 +69,11 @@ samplesheets_vue:
 	npm run --prefix samplesheets/vueapp serve
 
 
+.PHONY: samplesheets_vue3
+samplesheets_vue3:
+	npm run --prefix samplesheets/vue3app dev
+
+
 .PHONY: collectstatic
 collectstatic:
 	$(MANAGE) collectstatic --no-input
@@ -87,6 +94,11 @@ test_coverage: collectstatic
 .PHONY: test_samplesheets_vue
 test_samplesheets_vue:
 	npm run --prefix samplesheets/vueapp test:unit $(arg)
+
+
+.PHONY: test_samplesheets_vue3
+test_samplesheets_vue3:
+	npm run --prefix samplesheets/vue3app test:unit $(arg)
 
 
 .PHONY: spectacular
