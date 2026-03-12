@@ -17,6 +17,12 @@ Changed
     - Upgrade to Werkzeug v3.1.6 (#2417)
     - Upgrade critical Vue app dependencies (#2417)
 
+Fixed
+-----
+
+- **Landingzones**
+    - Zone status change ignoring project member notify settings (#2416)
+
 
 v1.2.5 (2026-01-29)
 ===================

@@ -388,7 +388,9 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
                 if a.user != zone.user and a.user.is_active
             ]
             for member in list(set(members)):
-                if app_alerts:
+                if app_alerts and app_settings.get(
+                    APP_NAME, 'notify_alert_zone_status', user=member
+                ):
                     try:
                         cls._add_member_move_alert(
                             app_alerts=app_alerts,
@@ -400,7 +402,9 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
                         logger.error(
                             f'Exception in _add_member_move_alert(): {ex}'
                         )
-                if settings.PROJECTROLES_SEND_EMAIL:
+                if settings.PROJECTROLES_SEND_EMAIL and app_settings.get(
+                    APP_NAME, 'notify_email_zone_status', user=member
+                ):
                     try:
                         cls._send_member_move_email(member, zone, file_count)
                     except Exception as ex:  # NOTE: We won't fail/revert here

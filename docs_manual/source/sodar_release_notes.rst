@@ -13,6 +13,7 @@ v1.2.6 (WIP)
 
 Hotfix release.
 
+- Fix landing zone status change ignoring project member notification settings
 - Upgrade critical dependencies
 
 
