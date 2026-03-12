@@ -4,7 +4,7 @@ import { RouterView, useRouter } from 'vue-router'
 
 import PageHeader from './components/PageHeader.vue'
 import ServerAlerts from './components/ServerAlerts.vue'
-import { useAppStore } from '@/stores/appstore.ts'
+import { useAppStore } from '@/stores/appStore.ts'
 
 const appStore = useAppStore()
 

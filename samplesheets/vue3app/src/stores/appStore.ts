@@ -52,7 +52,7 @@ export interface SodarContext {
   irods_backend_enabled: boolean,
   parser_version: string,
   parser_warnings: boolean,
-  irods_webdab_enabled: boolean,
+  irods_webdav_enabled: boolean,
   irods_webdav_url: string,
   external_link_labels?: { [key: string]: string | SodarContextLinkLabel }
   ontology_url_template?: string,

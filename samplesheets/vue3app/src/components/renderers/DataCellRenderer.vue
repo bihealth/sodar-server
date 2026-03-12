@@ -25,11 +25,14 @@ const props = defineProps({ params: Object })
 const clipboard = useClipboard()
 
 const contactRegex = /(.+?)[<[](.+?)(?=[>\]])/
+const simpleLinkRegex = /([^<>]+)\s*<(https?:\/\/[^<>]+)>/
 const extLinkId = '{id}'
+
 const cellData = props.params!.value as SheetTableCellData
 const enableHover = (props.params!.enableHover === undefined)
   ? true
   : props.params!.enableHover
+
 const colType = ref<string | null>(cellData.colType)
 const displayValue = ref<
   string | Array<string> | Array<ContactValue> | Array<ExternalLink> | FileLink
@@ -80,7 +83,7 @@ function getExternalLinks (): Array<ExternalLink> {
       let url = null
       if (key in labels) {
         label = labels[key].label
-        if ('url' in labels[key] &&
+        if (labels[key].hasOwnProperty('url') &&
             labels[key].url &&
             labels[key].url.includes(extLinkId)) {
           url = labels[key].url.replace(
@@ -104,6 +107,24 @@ function getFileLink(): FileLink {
 function getFileLinkToolTip (): string {
   if ('tooltip' in cellData) return cellData.tooltip as string
   return ''
+}
+
+// Test for simple link regex in value
+// NOTE: This currently only works for non-list values, see #2414
+function testSimpleLink (): boolean {
+  if (Array.isArray(cellData.value)) return false
+  const ret = simpleLinkRegex.test(cellData.value)
+  // TODO: Set up simpleLink in displayValue instead?
+  if (ret) {
+    displayValue.value = cellData.value.match(simpleLinkRegex) as Array<string>
+  }
+  return ret
+}
+
+// Return simple link legend
+// NOTE: This currently only works for non-list values, see #2414
+function getSimpleLinkLegend (): string {
+  return (displayValue.value as Array<string>)[1]!.trim()
 }
 
 // Return file link no url cell class
@@ -144,18 +165,24 @@ if (cellData && cellData.value && cellData.value.length > 0) {
     displayValue.value = getExternalLinks()
   } else if (colType.value == 'LINK_FILE') {
     displayValue.value = getFileLink()
+  } else if (
+      Array.isArray(cellData.value) &&
+      typeof cellData.value[0] === 'string') {
+    // Join list of strings
+    displayValue.value = cellData.value.join('; ')
   }
 }
 </script>
 
 <template>
   <div class="sodar-ss-data"
-      :data-col-num="params?.colDef.field.substring(3)"
-      :data-row-id="params?.node.id"
-      @mouseover="onMouseOver"
-      @mouseout="onMouseOut">
+       :data-col-num="params?.colDef.field.substring(3)"
+       :data-row-id="params?.node.id"
+       @mouseover="onMouseOver"
+       @mouseout="onMouseOut">
     <!-- Ontology term(s) -->
-    <span v-if="colType === 'ONTOLOGY' && cellData.value.length > 0">
+    <span v-if="colType === 'ONTOLOGY' && cellData.value.length > 0"
+          class="sodar-ss-data-val-ontology">
       <span v-if="!params?.editMode && getHeaderName() === 'hpo terms'">
         <BButton
             class="btn sodar-list-btn mr-1 sodar-ss-hpo-copy-btn"
@@ -180,7 +207,8 @@ if (cellData && cellData.value && cellData.value.length > 0) {
       </span>
     </span>
     <!-- Contacts with email -->
-    <span v-else-if="colType === 'CONTACT' && displayValue">
+    <span v-else-if="colType === 'CONTACT' && displayValue"
+          class="sodar-ss-data-val-contact">
       <span v-for="(contact, contactIdx) in displayValue"
             :key="contactIdx">
         <a :href="'mailto:' + (contact as ContactValue).email">
@@ -191,7 +219,8 @@ if (cellData && cellData.value && cellData.value.length > 0) {
       </span>
     </span>
     <!-- External links -->
-    <span v-else-if="colType == 'EXTERNAL_LINKS' && displayValue">
+    <span v-else-if="colType == 'EXTERNAL_LINKS' && displayValue"
+          class="sodar-ss-data-val-ext">
       <span v-for="(idRef, idx) in displayValue"
             :key="idx"
             class="badge-group"
@@ -211,7 +240,8 @@ if (cellData && cellData.value && cellData.value.length > 0) {
       </span>
     </span>
     <!-- File link -->
-    <span v-else-if="colType === 'LINK_FILE' && displayValue">
+    <span v-else-if="colType === 'LINK_FILE' && displayValue"
+          class="sodar-ss-data-val-file">
       <span v-if="(displayValue as FileLink).url">
         <a :href="(displayValue as FileLink).url as string"
            :title="getFileLinkToolTip()"
@@ -224,17 +254,27 @@ if (cellData && cellData.value && cellData.value.length > 0) {
         {{ (displayValue as FileLink).label }}
       </span>
     </span>
+    <!-- Simple links for string columns -->
+    <span v-else-if="testSimpleLink()"
+          class="sodar-ss-data-val-link">
+      <a :href="(displayValue as Array<string>)![2]" target="_blank">
+        {{ getSimpleLinkLegend() }}
+      </a>
+    </span>
     <!-- Special cases -->
-    <span v-else-if="displayValue">
+    <span v-else-if="displayValue"
+          class="sodar-ss-data-val-special">
       {{ displayValue }}
     </span>
     <!-- Plain/numeric/empty/undetected value -->
-    <span v-else>
+    <span v-else
+          class="sodar-ss-data-val-plain">
       {{ cellData.value }}
     </span>
     <!-- Unit -->
-    <span v-if="cellData.value && 'unit' in cellData && cellData.unit">
-      <span class="text-muted ml-1">{{ cellData.unit }}</span>
+    <span v-if="cellData.value && 'unit' in cellData && cellData.unit"
+          class="text-muted ml-1 sodar-ss-data-unit">
+      {{ cellData.unit }}
     </span>
   </div>
 </template>

@@ -6,32 +6,23 @@ import IrodsStatsBadge from '@/components/IrodsStatsBadge.vue'
 import TableDetailList from '@/components/TableDetailList.vue'
 import TableDetailListRow from '@/components/TableDetailListRow.vue'
 import {
+  ASSAY_META_FIELDS,
+  ASSAY_SODAR_FIELDS,
   INV_META_FIELDS,
   STUDY_META_FIELDS,
   STUDY_SODAR_FIELDS,
-  ASSAY_META_FIELDS,
-  ASSAY_SODAR_FIELDS
+  SHEET_STATS,
 } from '@/constants'
 import {
   useAppStore,
   type SodarContextInvestigation
-} from '@/stores/appstore.ts'
+} from '@/stores/appStore.ts'
 
 const router = useRouter()
 const appStore = useAppStore()
 
 const isaMetaTitle = 'ISA-Tab metadata'
 const sodarMetaTitle = 'SODAR metadata'
-const sheetStats = [
-  ['Studies', 'study_count'],
-  ['Assays', 'assay_count'],
-  ['Protocols', 'protocol_count'],
-  ['Processes', 'process_count'],
-  ['Sources', 'source_count'],
-  ['Materials', 'material_count'],
-  ['Samples', 'sample_count'],
-  ['Data Files', 'data_count']
-]
 
 if (!appStore.overviewActive) appStore.overviewActive = true
 const investigation = ref<SodarContextInvestigation>(
@@ -218,7 +209,7 @@ watch(() => appStore.sodarContext, (newContext) => {
           <table class="table sodar-card-table">
             <thead>
               <tr>
-                <th v-for="(v, k) in sheetStats"
+                <th v-for="(v, k) in SHEET_STATS"
                     :key="k"
                     class="text-nowrap text-center">
                   {{ v[0] }}
@@ -227,7 +218,7 @@ watch(() => appStore.sodarContext, (newContext) => {
             </thead>
             <tbody>
               <tr>
-                <td v-for="(v, k) in sheetStats"
+                <td v-for="(v, k) in SHEET_STATS"
                     :key="k"
                     class="text-center">
                   {{ appStore.getStat(v[1]!) }}

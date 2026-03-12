@@ -343,8 +343,9 @@ You can run the SODAR Django server tests using the following command:
 In addition to unit tests, this will run tests against the test iRODS server
 running in the Docker Compose network.
 
-For testing the Sample Sheets Vue app, run the following command:
+For testing the Sample Sheets Vue2 and Vue3 apps, run the following commands:
 
 .. code-block:: bash
 
     $ make test_samplesheets_vue
+    $ make test_samplesheets_vue3

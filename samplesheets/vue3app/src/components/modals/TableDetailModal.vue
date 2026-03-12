@@ -9,8 +9,12 @@ import {
   STUDY_SODAR_FIELDS,
   ASSAY_META_FIELDS,
   ASSAY_SODAR_FIELDS
-} from '@/constants'
-import { useAppStore } from '@/stores/appstore.ts'
+} from '@/constants.ts'
+import {
+  useAppStore,
+  type SodarContextAssay,
+  type SodarContextStudy
+} from '@/stores/appStore.ts'
 
 const appStore = useAppStore()
 
@@ -24,7 +28,7 @@ const tableUuid = ref<string>('')
 const showModal = ref<boolean>(false)
 
 // Modal showing
-function show (uuid: string, context: object) {
+function show (uuid: string, context: SodarContextAssay | SodarContextStudy) {
   tableContext.value = context
   tableUuid.value = uuid
   if (tableUuid.value === appStore.currentStudyUuid) {
@@ -49,7 +53,7 @@ defineExpose({ show })
       ref="tableDetailModal"
       v-model="showModal"
       size="xl"
-      centered no-footer no-animation>
+      centered no-footer no-animation teleport-disabled>
     <template #header>
       <ModalHeader
           :modal-ref="modalRef"

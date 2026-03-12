@@ -4,8 +4,12 @@ import { useRoute, useRouter } from 'vue-router'
 import { BButton, BNav, BDropdown, BDropdownItem } from 'bootstrap-vue-next'
 
 import WinExportModal from '@/components/modals/WinExportModal.vue'
-import { useAppStore } from '@/stores/appstore.ts'
-import { useTableStore } from '@/stores/tablestore.ts'
+import { useAppStore } from '@/stores/appStore.ts'
+import { useTableStore } from '@/stores/tableStore.ts'
+import {
+  STUDY_NAV_DROPDOWN_LEN,
+  STUDY_NAV_TAB_LEN
+} from '@/constants.ts'
 
 const route = useRoute()
 const router = useRouter()
@@ -70,19 +74,21 @@ function handleOverviewNavigation () {
 <template>
   <div class="row sodar-subtitle-container bg-white sticky-top mb-4"
        id="sodar-ss-subtitle">
-    <div class="col" id="sodar-ss-subtitle-col-title">
+    <div class="col"
+         id="sodar-ss-subtitle-col-title">
       <h3 class="text-nowrap">
         <i class="iconify" data-icon="mdi:flask" /> Sample Sheets
       </h3>
     </div>
     <!-- Study navigation -->
-    <div class="col" id="sodar-ss-subtitle-col-study-nav">
+    <div class="col"
+         id="sodar-ss-subtitle-col-study-nav">
       <BNav pills v-if="appStore.sheetsAvailable"
             class="sodar-ss-nav me-0"
             id="sodar-ss-nav-tabs">
         <!-- NOTE: bootstrap-vue-next BNavItem fails if using @click -->
         <BButton
-            v-for="(studyInfo, studyUuid) in appStore.sodarContext!['studies']"
+            v-for="(studyInfo, studyUuid) in appStore.sodarContext!.studies"
             :key="studyUuid"
             variant="light"
             class="sodar-ss-nav-tab sodar-ss-nav-tab-study mr-2"
@@ -91,7 +97,7 @@ function handleOverviewNavigation () {
             :active="isStudyActive(studyUuid as string)"
             :disabled="appStore.gridsBusy">
           <i class="iconify" data-icon="mdi:folder-table"></i>
-          {{ truncate(studyInfo['display_name'], 32) }}
+          {{ truncate(studyInfo.display_name, STUDY_NAV_TAB_LEN) }}
         </BButton>
         <BButton
             variant="light"
@@ -118,30 +124,30 @@ function handleOverviewNavigation () {
           <i class="iconify" data-icon="mdi:menu"></i>
         </template>
         <span
-            v-for="(studyInfo, studyUuid) in appStore.sodarContext!['studies']"
+            v-for="(studyInfo, studyUuid) in appStore.sodarContext!.studies"
             :key="studyUuid">
           <BDropdownItem
               class="sodar-ss-nav-item"
               :id="'sodar-ss-nav-study-' + studyUuid"
               @click="handleStudyNavigation(studyUuid as string, null)">
             <i class="iconify text-info" data-icon="mdi:folder-table"></i>
-            {{ truncate(studyInfo['display_name'], 48) }}
+            {{ truncate(studyInfo.display_name, STUDY_NAV_DROPDOWN_LEN) }}
           </BDropdownItem>
           <BDropdownItem
-              v-for="(assayInfo, assayUuid) in studyInfo['assays']"
+              v-for="(assayInfo, assayUuid) in studyInfo.assays"
               :key="assayUuid"
               class="sodar-ss-nav-item"
               :id="'sodar-ss-nav-assay-' + assayUuid"
               @click="handleStudyNavigation(
                 studyUuid as string, assayUuid as string)">
             <i class="iconify text-danger ml-3" data-icon="mdi:table-large"></i>
-            {{ assayInfo['display_name'] }}
+            {{ assayInfo.display_name }}
           </BDropdownItem>
         </span>
         <BDropdownItem
             class="sodar-ss-nav-item"
             id="sodar-ss-nav-overview"
-            :to="{ name: 'overview' }"
+            @click="handleOverviewNavigation()"
             :disabled="appStore.editMode">
           <i class="iconify" data-icon="mdi:sitemap"></i> Overview
         </BDropdownItem>
@@ -158,7 +164,7 @@ function handleOverviewNavigation () {
                      appStore.getPerm('edit_sheet'))">
         <BDropdownItem
             v-if="appStore.sodarContext &&
-                  appStore.sodarContext['sheet_sync_enabled'] &&
+                  appStore.sodarContext.sheet_sync_enabled &&
                   appStore.getPerm('edit_sheet')"
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-sync"
@@ -169,7 +175,7 @@ function handleOverviewNavigation () {
         <BDropdownItem
             v-if="appStore.sodarContext &&
                   !appStore.sheetsAvailable &&
-                  !appStore.sodarContext['sheet_sync_enabled'] &&
+                  !appStore.sodarContext.sheet_sync_enabled &&
                   appStore.getPerm('edit_sheet')"
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-import"
@@ -179,7 +185,7 @@ function handleOverviewNavigation () {
         <BDropdownItem
             v-if="appStore.sodarContext &&
                   !appStore.sheetsAvailable &&
-                  !appStore.sodarContext['sheet_sync_enabled'] &&
+                  !appStore.sodarContext.sheet_sync_enabled &&
                   appStore.getPerm('edit_sheet')"
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-create"
@@ -191,7 +197,7 @@ function handleOverviewNavigation () {
         <BDropdownItem
             v-if="appStore.sodarContext &&
                   appStore.sheetsAvailable &&
-                  !appStore.sodarContext['sheet_sync_enabled'] &&
+                  !appStore.sodarContext.sheet_sync_enabled &&
                   appStore.getPerm('edit_sheet')"
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-edit"
@@ -205,12 +211,13 @@ function handleOverviewNavigation () {
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-warnings"
             :to="{ name: 'warnings' }"
-            :disabled="!appStore.sodarContext['parser_warnings']">
+            :disabled="!appStore.sodarContext.parser_warnings">
           <i class="iconify" data-icon="mdi:alert"></i> View Parser Warnings
         </BDropdownItem>
         <BDropdownItem
             v-if="appStore.sodarContext &&
-                  appStore.sodarContext['irods_status'] &&
+                  appStore.sheetsAvailable &&
+                  appStore.sodarContext.irods_status &&
                   appStore.getPerm('update_cache')"
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-cache"
@@ -221,7 +228,7 @@ function handleOverviewNavigation () {
         <BDropdownItem
             v-if="appStore.sodarContext &&
                   appStore.sheetsAvailable &&
-                  !appStore.sodarContext['sheet_sync_enabled'] &&
+                  !appStore.sodarContext.sheet_sync_enabled &&
                   appStore.getPerm('edit_sheet')"
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-replace"
@@ -238,7 +245,7 @@ function handleOverviewNavigation () {
         <BDropdownItem
             v-else-if="appStore.sheetsAvailable && appStore.windowsOs"
             class="sodar-ss-op-item"
-            id="sodar-ss-op-item-export"
+            id="sodar-ss-op-item-export-win"
             @click="winExportCompRef!.show()">
           <i class="iconify" data-icon="mdi:download"></i> Export ISA-Tab
         </BDropdownItem>
@@ -250,7 +257,7 @@ function handleOverviewNavigation () {
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-irods"
             :href="'collections/' + appStore.projectUuid">
-          <span v-if="appStore.sodarContext['irods_status']">
+          <span v-if="appStore.sodarContext.irods_status">
             <i class="iconify" data-icon="mdi:database-refresh"></i>
             Update iRODS Collections
           </span>
@@ -262,7 +269,7 @@ function handleOverviewNavigation () {
         <BDropdownItem
             v-if="appStore.sodarContext &&
                   appStore.sheetsAvailable &&
-                  !appStore.sodarContext['sheet_sync_enabled']"
+                  !appStore.sodarContext.sheet_sync_enabled"
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-versions"
             :href="'versions/' + appStore.projectUuid">
@@ -270,7 +277,8 @@ function handleOverviewNavigation () {
         </BDropdownItem>
         <BDropdownItem
             v-if="appStore.sodarContext &&
-                  appStore.sodarContext['irods_status'] &&
+                  appStore.sheetsAvailable &&
+                  appStore.sodarContext.irods_status &&
                   appStore.getPerm('view_tickets')"
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-tickets"
@@ -279,7 +287,8 @@ function handleOverviewNavigation () {
         </BDropdownItem>
         <BDropdownItem
             v-if="appStore.sodarContext &&
-                  appStore.sodarContext['irods_status'] &&
+                  appStore.sheetsAvailable &&
+                  appStore.sodarContext.irods_status &&
                   appStore.getPerm('edit_sheet')"
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-requests"
@@ -290,14 +299,14 @@ function handleOverviewNavigation () {
         <BDropdownItem
             v-if="appStore.sodarContext &&
                   appStore.sheetsAvailable &&
-                  !appStore.sodarContext['sheet_sync_enabled'] &&
+                  !appStore.sodarContext.sheet_sync_enabled &&
                   appStore.getPerm('delete_sheet')"
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-delete"
             variant="danger"
             :href="'delete/' + appStore.projectUuid">
           <i class="iconify" data-icon="mdi:close-thick"></i> Delete Sheets
-          <span v-if="appStore.sodarContext['irods_status']">and Data</span>
+          <span v-if="appStore.sodarContext.irods_status">and Data</span>
         </BDropdownItem>
       </BDropdown>
     </div>

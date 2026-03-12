@@ -22,8 +22,8 @@ import {
   type SheetTableRowData,
   type StudyDisplayConfigNode
 } from '@/types.ts'
-import { useAppStore } from '@/stores/appstore.ts'
-import { useTableStore } from '@/stores/tablestore.ts'
+import { useAppStore } from '@/stores/appStore.ts'
+import { useTableStore } from '@/stores/tableStore.ts'
 
 interface DisplayColGroup {
   headerName: string,
@@ -34,14 +34,11 @@ interface DisplayColGroup {
 // Stores
 const appStore = useAppStore()
 const tableStore = useTableStore()
-
 // Modal setup
 const modalRef = useTemplateRef('columnToggleModal')
 const showModal = ref<boolean>(false)
-
 // Composables
 const { create } = useToast()
-
 // Constants
 const configUrl = '/samplesheets/ajax/display/update/' +
   appStore.currentStudyUuid
@@ -277,7 +274,7 @@ function show (tableUuid: string, assayMode: boolean) {
 function hideModal () {
   if (colsUpdated) postUpdate(false)
 }
-defineExpose({ show })
+defineExpose({ show, hideModal })
 </script>
 
 <template>
@@ -287,7 +284,7 @@ defineExpose({ show })
       v-model="showModal"
       size="md"
       @hide="hideModal"
-      no-footer no-animation>
+      no-footer no-animation teleport-disabled>
     <template #header>
       <ModalHeader
           :modal-ref="modalRef"
@@ -320,11 +317,13 @@ defineExpose({ show })
           :key="topIdx"
           class="table sodar-card-table sodar-ss-col-toggle-table">
         <thead>
-          <tr class="sodar-ss-col-toggle-node">
-            <th :class="getTopHeaderClass(topHeader)">
+          <tr class="sodar-ss-col-toggle-top-header">
+            <th :class="'sodar-ss-col-toggle-top-title ' +
+                        getTopHeaderClass(topHeader)">
               {{ topHeader.headerName }}
             </th>
-            <th :class="getTopHeaderClass(topHeader)">
+            <th :class="'sodar-ss-col-toggle-top-btn ' +
+                        getTopHeaderClass(topHeader)">
               <BButton
                   variant="secondary"
                   class="sodar-list-btn sodar-ss-toggle-node-btn pull-right"
@@ -338,18 +337,21 @@ defineExpose({ show })
         <tbody>
           <tr v-for="(header, headerIdx) in topHeader.children"
               :key="headerIdx"
-              v-show="header.context.visibleInList">
+              v-show="header.context.visibleInList"
+              class="sodar-ss-col-toggle-field">
             <td>
               {{ header.headerName }}
               <span v-if="appStore.editMode &&
                           header.cellRendererParams.fieldEditable"
                     class="text-muted font-italic pull-right
-                           sodar-ss-toggle-field-info">
+                           sodar-ss-toggle-field-info
+                           sodar-ss-toggle-field-editable">
                 Editable
               </span>
               <span v-else-if="!getColValueStatus(header)"
                     class="text-muted font-italic pull-right
-                           sodar-ss-toggle-field-info">
+                           sodar-ss-toggle-field-info
+                           sodar-ss-toggle-field-no-data">
                 No data
               </span>
             </td>

@@ -1,16 +1,6 @@
 <script setup lang="ts">
-import { type TemplateRef } from 'vue'
 import IrodsButtons from '@/components/IrodsButtons.vue'
-import type {AssayIrodsPath} from "@/types.ts"
-
-interface IrodsButtonsRendererParams {
-  assayIrodsPath: string,
-  irodsBackendEnabled: boolean,
-  irodsStatus: boolean,
-  irodsWebdavUrl: string,
-  modalRef: TemplateRef,
-  value: AssayIrodsPath
-}
+import { type IrodsButtonsRendererParams } from '@/types.ts'
 
 defineProps({ params: Object })
 

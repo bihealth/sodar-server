@@ -7,10 +7,9 @@ import {
   type GridOptions,
   type GridReadyEvent
 } from 'ag-grid-community'
-import { useTableStore } from '@/stores/tablestore.ts'
+import { useTableStore } from '@/stores/tableStore.ts'
 
 const tableStore = useTableStore()
-
 const props = defineProps(['assayMode', 'colToggleModalRef', 'tableUuid'])
 
 const filterVal = ref<string>('')
@@ -20,7 +19,6 @@ let cardClass: string = 'card sodar-ss-data-card sodar-ss-data-card-'
 let tableType: string
 let excelExportUrl: string = 'export/excel/'
 let gridIdSuffix: string
-// let gridRef: string // TODO: Is this still needed?
 let gridId: string = 'sodar-ss-table-grid-'
 let gridApi: GridApi
 let gridOptions: GridOptions
@@ -35,7 +33,6 @@ if (!props.assayMode) {
   tableType = 'study'
   gridIdSuffix = tableType
   tableHeight.value = tableStore.tableHeights?.study as number
-  // gridRef = 'studyGrid'
   gridId += tableType
 } else {
   // Setup assay
@@ -45,7 +42,6 @@ if (!props.assayMode) {
   tableType = 'assay'
   gridIdSuffix = tableType + '-' + props.tableUuid
   tableHeight.value = tableStore.tableHeights?.assays[props.tableUuid] as number
-  // gridRef = 'assayGrid' + props.tableUuid
   gridId += tableType + '-' + props.tableUuid
 }
 

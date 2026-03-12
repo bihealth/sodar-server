@@ -1,0 +1,77 @@
+import { type TemplateRef } from 'vue'
+import { type VueWrapper } from '@vue/test-utils'
+
+import { buildColDef, buildRowData } from '@/gridUtils.ts'
+import { type SodarContext } from '@/stores/appStore.ts'
+import { useTableStore } from '@/stores/tableStore.ts'
+import {
+  type AssayRenderTable,
+  type ColDefBuildParams,
+  type RenderTableData,
+  type StudyDisplayConfig,
+  type StudyRenderTable
+} from '@/types.ts'
+
+// Basic copy function for data objects
+export function copy (obj: object): object {
+  return JSON.parse(JSON.stringify(obj))
+}
+
+// Wait for at least n elements to be present by selector
+export const waitSelector = (
+    wrapper: VueWrapper,
+    selector: string,
+    count: number
+) =>
+  new Promise<void>(function (resolve): void {(
+    function waitForSelectorCount () {
+      if (count === undefined) count = 1
+      if ((count > 0 && wrapper.findAll(selector).length >= count) ||
+          (count === 0 && wrapper.findAll(selector).length === count)) {
+        return resolve()
+      }
+      setTimeout(waitForSelectorCount, 10)
+    })()
+  })
+
+// Set up table store with given sodar Context and render tables
+// NOTE: This expects Pinia to be set up beforehand
+// NOTE: This expects exactly one study and assay. Can be updated to multiple
+//       ones later if needed
+export function setUpTableStore (
+    sodarContext: SodarContext,
+    studyTables: RenderTableData,
+    studyUuid: string,
+    assayUuid: string,
+) {
+  const tableStore = useTableStore()
+  tableStore.studyDisplayConfig = copy(
+      studyTables.display_config) as StudyDisplayConfig
+
+  const colDefParams: ColDefBuildParams = {
+      studyUuid: studyUuid,
+      editMode: false,
+      sodarContext: sodarContext,
+      studyDisplayConfig: tableStore.studyDisplayConfig,
+      studyEditConfig: null,
+      irodsDirModal: {} as TemplateRef,
+      studyShortcutModal: {} as TemplateRef,
+  }
+  const studyTable = copy(studyTables.tables.study) as StudyRenderTable
+    const assayTable = copy(
+      (studyTables as unknown as RenderTableData).tables.assays[assayUuid] as
+        AssayRenderTable) as AssayRenderTable
+
+  tableStore.columnDefs.study = buildColDef(
+    studyTable, studyUuid, false, colDefParams
+  )
+  tableStore.columnDefs.assays[assayUuid] = buildColDef(
+    assayTable, assayUuid, true, colDefParams
+  )
+  tableStore.rowData.study = buildRowData(
+    studyTable, false, false, sodarContext
+  )
+  tableStore.rowData.assays[assayUuid] = buildRowData(
+    assayTable, true, false, sodarContext
+  )
+}

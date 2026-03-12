@@ -32,14 +32,17 @@ function updateStats () {
         console.error(
           'irodsStatsBadge query failed: ' + obj.statusText +
           ' (' + obj.status + ')')
+          // TODO: Display error toast
       }
     })
     .catch(function (error) {
       console.error('irodsStatsBadge error: ' + error.message)
+      // TODO: Display error toast
     })
 }
-
-updateStats() // TODO: Set periodic update
+if (props.irodsStatus) {
+  updateStats()
+} // TODO: Set periodic update
 </script>
 
 <template>
@@ -52,7 +55,8 @@ updateStats() // TODO: Set periodic update
     <span v-else-if="error">
       Error
     </span>
-    <span v-else>
+    <span v-else
+          class="sodar-ss-irods-stats-loading">
       <i class="iconify spin" data-icon="mdi:loading"></i>
       Updating..
     </span>

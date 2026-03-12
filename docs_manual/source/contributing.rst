@@ -33,7 +33,7 @@ Report Bugs
 -----------
 
 Report bugs through the
-`SODAR issue tracker <https://github.com/bihealth/sodar-server/issues>`_
+`SODAR Server issue tracker <https://github.com/bihealth/sodar-server/issues>`_
 in GitHub.
 
 When reporting a bug, please follow the provided template. Make sure to include
@@ -105,13 +105,14 @@ Ready to contribute code to SODAR? Here are the steps to get started.
 5. When you're done making changes, make sure to apply proper formatting using
    Black and the settings specified in the accompanying ``black.sh`` script.
    Next, check that your changes pass flake8. Finally, run the tests. It is
-   recommended to use the ``Makefile`` to ensure the correct Django
+   strongly recommended to use the ``Makefile`` to ensure the correct Django
    configuration for testing is selected. ::
 
     $ ./black.sh
     $ flake8 .
     $ make test
     $ make test_samplesheets_vue
+    $ make test_samplesheets_vue3
 
 6. Once the tests and flake8 pass, commit your changes and push your branch to
    GitHub. ::

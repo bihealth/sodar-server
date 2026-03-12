@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import WaitSection from '@/components/WaitSection.vue'
-import { useAppStore } from '@/stores/appstore.ts'
+import { useAppStore } from '@/stores/appStore.ts'
 
 const appStore = useAppStore()
 
@@ -72,7 +72,6 @@ function getWarnings () {
   fetch(url, { credentials: 'same-origin' })
     .then(response => response.json())
     .then(response => {
-      console.log('Warnings retrieved')
       handleWarningsResponse(response)
     }).catch(function (error) {
       message.value = 'Error fetching data: ' + error
@@ -114,11 +113,15 @@ if (appStore.sodarContext) { getWarnings() } else {
           <tr v-for="(warning, index) in warnings"
               :key="index"
               class="sodar-ss-warnings-item">
-            <td class="text-monospace">{{ warning.source }}</td>
-            <td class="text-monospace">
+            <td class="text-monospace sodar-ss-warnings-item-source">
+              {{ warning.source }}
+            </td>
+            <td class="text-monospace sodar-ss-warnings-item-message">
               <span v-html="warning.message"></span>
             </td>
-            <td class="text-monospace">{{ warning.category }}</td>
+            <td class="text-monospace sodar-ss-warnings-item-category">
+              {{ warning.category }}
+            </td>
           </tr>
         </tbody>
       </table>

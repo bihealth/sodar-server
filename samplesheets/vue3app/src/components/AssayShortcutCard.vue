@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import IrodsButtons from '@/components/IrodsButtons.vue'
 import { type AssayShortcut } from '@/types.ts'
-import { useAppStore } from '@/stores/appstore.ts'
-import { useTableStore } from '@/stores/tablestore.ts'
+import { useAppStore } from '@/stores/appStore.ts'
+import { useTableStore } from '@/stores/tableStore.ts'
 
 const appStore = useAppStore()
 const tableStore = useTableStore()
 
 defineProps(['assayUuid', 'modalRef'])
 
+// TODO: Add extra link support (see #2403)
+
 function getTextClass (shortcut: AssayShortcut): string {
   let ret = 'mr-2 sodar-ss-assay-shortcut-text'
-  if (!shortcut.enabled) ret += ' text-muted'
+  if (shortcut.enabled === false) ret += ' text-muted'
   return ret
 }
 </script>
@@ -30,13 +32,15 @@ function getTextClass (shortcut: AssayShortcut): string {
         <span :class="getTextClass(shortcut)">
           {{ shortcut.label }}
           <i v-if="shortcut.id.startsWith('track_hub')"
-             class="iconify text-info ml-1"
+             class="iconify text-info ml-1 sodar-ss-assay-shortcut-icon
+                    sodar-ss-assay-shortcut-icon-hub"
              :data-icon="shortcut.icon"
              :title="shortcut.title">
           </i>
           <i v-else-if="appStore.getPerm('is_superuser') &&
                         shortcut.assay_plugin"
-             class="iconify text-danger ml-1"
+             class="iconify text-danger ml-1 sodar-ss-assay-shortcut-icon
+                    sodar-ss-assay-shortcut-icon-plugin"
              :data-icon="shortcut.icon"
              :title="shortcut.title">
           </i>

@@ -13,17 +13,16 @@ const btnClasses: string = 'sodar-list-btn sodar-ss-irods-btn mr-1'
       <BButton
           v-if="schemaItem.type === 'link'"
           variant="secondary"
-          :class="btnClasses"
+          :class="btnClasses + ' sodar-ss-study-link-btn'"
           :title="schemaItem.title"
           :disabled="!params?.value[schemaId].enabled"
           :href="params?.value[schemaId].url">
         <i class="iconify" :data-icon="schemaItem.icon"></i>
       </BButton>
-      <!-- TODO: Pass args to modal -->
       <BButton
           v-else-if="schemaItem.type === 'modal'"
           variant="secondary"
-          :class="btnClasses + ' sodar-ss-popup-list-btn'"
+          :class="btnClasses + ' sodar-ss-study-modal-btn'"
           :title="schemaItem.title"
           :disabled="!params?.value[schemaId].enabled"
           @click="params?.modalRef.show(params?.value)">

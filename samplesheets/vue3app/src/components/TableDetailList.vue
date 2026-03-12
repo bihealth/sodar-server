@@ -17,7 +17,8 @@ function getMetaIconClass (): string {
 
 <template>
   <div v-if="tableContext"
-       id="sodar-ss-table-detail-container">
+       class="sodar-ss-table-detail-container"
+       :id="'sodar-ss-table-detail-container-' + tableUuid">
     <TableDetailListRow
         v-for="(val, idx) in tableMetaFields"
         :key="'meta' + idx"
@@ -55,7 +56,7 @@ function getMetaIconClass (): string {
         icon-class="text-secondary"
         :copy-button="true"
         title="SODAR metadata"
-        row-class="sodar-ss-table-detail-row-sodar">
+        row-class="sodar-ss-table-detail-row-sodar sodar-ss-table-detail-uuid">
     </TableDetailListRow>
   </div>
 </template>

@@ -4,7 +4,7 @@ defineProps(['modalRef', 'title'])
 </script>
 
 <template>
-  <div class="d-flex w-100 align-top">
+  <div class="d-flex w-100 align-top sodar-ss-modal-header">
     <h5 class="modal-title flex-grow-1">{{ title }}</h5>
       <slot name="extend"></slot>
     <button

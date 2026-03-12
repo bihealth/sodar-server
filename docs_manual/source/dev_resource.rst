@@ -35,17 +35,146 @@ the latter app would not exist without the former. The same is true for the
 study and assay sub-apps within ``samplesheets``.
 
 
+.. _dev_resource_vue3_test:
+
+Vue3 App Unit Testing
+=====================
+
+The Vue3 app, introduced in v1.3, is expected to be unit tested with Vitest and
+Vue Test Utils. Tests should be written in Typescript similar to the app. This
+section presents templates and examples for getting started with unit testing
+for Vue3 app components.
+
+Basic Component Test Template
+-----------------------------
+
+This example sets up a barebones unit test file for a Vue3 app component.
+
+.. code-block:: typescript
+
+    import { beforeEach, describe, expect, test } from 'vitest'
+    import { mount } from '@vue/test-utils'
+
+    import YourComponent from '@/components/YourComponent.vue'
+
+    describe('YourComponent.vue', () => {
+      beforeEach(() => {})
+
+      test('render component', async () => {
+        const wrapper = mount(YourComponent)
+        // TODO: Test here
+      })
+    })
+
+Test Template with Properties
+-----------------------------
+
+This example sets up a component test with props for the component.
+
+.. code-block:: typescript
+
+    import { beforeEach, describe, expect, test } from 'vitest'
+    import { mount, type VueWrapper } from '@vue/test-utils'
+
+    import YourComponent from '@/components/YourComponent.vue'
+    import { copy } from '../testUtils.ts'
+    import { PROJECT_UUID } from '../testConstants.ts'
+
+    const defaultProps = {}
+    let props
+
+    describe('YourComponent.vue', () => {
+      function mountComponent (): VueWrapper {
+        return mount(YourComponent, { props: props })
+      }
+      beforeEach(() => {
+        props = copy(defaultProps)
+      })
+
+      test('render component', async () => {
+        const wrapper = mountComponent()
+        // TODO: Test here
+      })
+    })
+
+Modal Test Template
+-------------------
+
+This example demonstrates component testing with a bootstrap-vue-next modal.
+
+.. code-block:: typescript
+
+    import { nextTick } from 'vue'
+    import { beforeEach, describe, expect, test } from 'vitest'
+    import { config, mount, type VueWrapper } from '@vue/test-utils'
+    import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
+
+    import YourComponent from '@/components/modals/YourComponent.vue'
+
+    config.global.plugins = [createBootstrap()]
+
+    describe('YourComponent.vue', () => {
+      beforeEach(() => {})
+
+      async function showModal (someAttr: string): Promise<VueWrapper> {
+        const wrapper = mount(YourComponent)
+        wrapper.vm.show(someAttr)
+        await nextTick() // Must wait for all reactive vals to update
+        return wrapper
+      }
+
+      test('render component', async () => {
+        const wrapper = await showModal('someVal')
+        // TODO: Test here
+      })
+    })
+
+Stores Testing Example
+----------------------
+
+This example displays how to set up an access Pinia stores in your test cases.
+
+.. code-block:: typescript
+
+    import { setActivePinia, createPinia } from 'pinia'
+
+    import { useAppStore, type SodarContext } from '@/stores/appStore.ts'
+    import { useTableStore } from '@/stores/tableStore.ts'
+
+    import { sodarContext } from '../data/sodarContext.ts'
+    import { copy } from '../testUtils.ts'
+
+    beforeEach(() => {
+      setActivePinia(createPinia())
+      const appStore = useAppStore()
+      appStore.sodarContext = copy(sodarContext) as SodarContext
+      const tableStore = useTableStore()
+    })
+
+Vue-Bootstrap-Next Setup Example
+--------------------------------
+
+For components which make use of vue-bootstrap-next components, we need to set
+up the relevant plugin:
+
+.. code-block:: typescript
+
+    import { config } from '@vue/test-utils'
+    import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
+    config.global.plugins = [createBootstrap()]
+
+
 .. _dev_resource_vue_test:
 
-Vue App Unit Testing Hints
-==========================
+Vue2 App Unit Testing Hints
+===========================
 
-Hints for testing the Sample Sheets Vue.js app can be found below.
+Hints for testing the Sample Sheets Vue2 app can be found below.
 
 .. note::
 
-    This section is written for the legacy Vue2 app to be retired. It will be
-    updated for the new Vue3 app in a future release.
+    This section is written for the legacy Vue2 app, which will be retired in
+    v1.4.
 
 - How to test Bootstrap-vue modals
     * Set ``:static="true"`` on modal

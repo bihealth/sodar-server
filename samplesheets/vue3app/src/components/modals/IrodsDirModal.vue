@@ -5,23 +5,9 @@ import prettyBytes from 'pretty-bytes'
 
 import ModalHeader from '@/components/modals/ModalHeader.vue'
 import WaitSection from '@/components/WaitSection.vue'
-import { useAppStore } from '@/stores/appstore.ts'
+import { useAppStore } from '@/stores/appStore.ts'
+import { type IrodsDirFile, type IrodsDirResponseBody } from '@/types.ts'
 
-interface IrodsDirFile {
-  displayPath?: string, // Added by this component
-  irods_request_status: string | null,
-  irods_request_user: string | null,
-  modify_time: string,
-  name: string,
-  path: string,
-  size: number,
-  type: string,
-  visibleInList?: boolean // Added by this component
-}
-interface IrodsDirResponse {
-  detail?: string
-  irods_data?: Array<IrodsDirFile>
-}
 interface IrodsDataRequestResponse {
   detail: string,
   status: string | null,
@@ -79,7 +65,7 @@ function updateFilter () {
 }
 
 // Handle data received from file list Ajax call
-function handleFileListResponse (response: IrodsDirResponse) {
+function handleFileListResponse (response: IrodsDirResponseBody) {
   if ('irods_data' in response) {
     if (response.irods_data!.length > 0) {
       fileList.value = response.irods_data as Array<IrodsDirFile>
@@ -205,7 +191,7 @@ defineExpose({ show })
       ref="irodsDirModal"
       v-model="showModal"
       size="xl"
-      no-footer no-animation>
+      no-footer no-animation teleport-disabled>
     <template #header>
       <ModalHeader
           :modal-ref="modalRef"
@@ -256,7 +242,7 @@ defineExpose({ show })
             <td :class="getCellClass(file)">
               {{ file.modify_time }}
             </td>
-            <td :class="getCellClass(file)">
+            <td>
               <BButton
                   v-if="file.irods_request_status === 'ACTIVE'"
                   variant="primary"

@@ -46,7 +46,7 @@ function copyPath () {
     <BButton
         v-if="showFileList && irodsBackendEnabled && irodsWebdavUrl"
         variant="secondary"
-        class="sodar-list-btn sodar-ss-irods-btn sodar-ss-popup-list-btn mr-1"
+        class="sodar-list-btn sodar-ss-irods-btn sodar-ss-irods-list-btn mr-1"
         title="List files"
         @click="props.irodsDirModalRef.show(props.irodsPath)"
         :disabled="!getEnabledState()">
@@ -72,8 +72,7 @@ function copyPath () {
     </BButton>
     <BButton
         variant="secondary"
-        class="sodar-list-btn sodar-ss-irods-btn sodar-irods-copy-btn
-               sodar-irods-dav-btn"
+        class="sodar-list-btn sodar-ss-irods-btn sodar-irods-dav-btn"
         title="Browse Files in WebDAV"
         :href="irodsWebdavUrl + irodsPath"
         :disabled="!getEnabledState()">

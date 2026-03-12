@@ -4,7 +4,7 @@ import { BButton } from 'bootstrap-vue-next'
 import IrodsButtons from '@/components/IrodsButtons.vue'
 import IrodsStatsBadge from '@/components/IrodsStatsBadge.vue'
 import TableDetailModal from '@/components/modals/TableDetailModal.vue'
-import { useAppStore } from '@/stores/appstore.ts'
+import { useAppStore } from '@/stores/appStore.ts'
 
 const appStore = useAppStore()
 
@@ -13,21 +13,19 @@ const props = defineProps(['assayMode', 'tableUuid'])
 const tableDetailModalComponent = ref<typeof TableDetailModal | null>(null)
 let tableType
 let tableTitle
-let tableIdSuffix
 let tableContext
 
 if (!props.assayMode) {
   tableType = 'study'
   tableTitle = 'Study'
-  tableIdSuffix = tableType
   tableContext = appStore.sodarContext!.studies[props.tableUuid]
 } else {
   tableType = 'assay'
   tableTitle = 'Assay'
-  tableIdSuffix = tableType + '-' + props.tableUuid
   tableContext = appStore.sodarContext!.studies[
     appStore.currentStudyUuid]!.assays[props.tableUuid]
 }
+const tableIdSuffix = tableType + '-' + props.tableUuid
 
 function getTitleTextClass (): string {
   if (!props.assayMode) return 'text-info'
@@ -37,10 +35,12 @@ function getTitleTextClass (): string {
 
 <template>
   <!-- Header -->
-  <div class="row mb-4 sodar-ss-table-header-row"
-       :id="'sodar-ss-section-' + tableIdSuffix">
+  <div :class="'row mb-4 sodar-ss-table-header-row sodar-ss-sheet-section-' +
+               tableType"
+       :id="'sodar-ss-sheet-section-' + tableIdSuffix">
     <div class="col-8 pl-0">
-      <h4 :class="'font-weight-bold mb-0 ' + getTitleTextClass()">
+      <h4 :class="'font-weight-bold mb-0 sodar-ss-table-title ' +
+                  getTitleTextClass()">
         <i v-if="!assayMode"
            class="iconify"
            data-icon="mdi:folder-table"></i>
@@ -57,7 +57,7 @@ function getTitleTextClass (): string {
         <span v-else-if="appStore.getPerm('edit_sheet') &&
                          !tableContext!.plugin_name &&
                          assayMode"
-              class="sodar-ss-table-plugin">
+              class="sodar-ss-table-plugin sodar-ss-table-plugin-no-assay">
           <i class="iconify text-muted ml-1"
              data-icon="mdi:puzzle-remove"
              title="No assay plugin found: displaying default iRODS links">
@@ -77,8 +77,10 @@ function getTitleTextClass (): string {
               :irods-status="appStore.sodarContext!.irods_status"
               :project-uuid="appStore.projectUuid">
           </IrodsStatsBadge>
+          <!-- TODO: Make this a part of IrodsStatsBadge? -->
           <span v-if="!appStore.sodarContext!.irods_status"
-                class="badge badge-pill badge-danger">
+                class="badge badge-pill badge-danger
+                       sodar-ss-irods-not-created">
             Not Created
           </span>
         </span>

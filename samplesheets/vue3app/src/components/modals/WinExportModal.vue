@@ -25,7 +25,7 @@ defineExpose({ show })
       ref="winExportModal"
       v-model="showModal"
       size="md"
-      centered no-footer no-animation>
+      centered no-footer no-animation teleport-disabled>
     <template #header>
       <ModalHeader
           :modal-ref="modalRef"

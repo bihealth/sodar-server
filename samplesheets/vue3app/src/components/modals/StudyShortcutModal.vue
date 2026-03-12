@@ -1,52 +1,33 @@
 <script setup lang="ts">
-
 import { ref, useTemplateRef } from 'vue'
 import { BButton, BModal } from 'bootstrap-vue-next'
 
 import ModalHeader from '@/components/modals/ModalHeader.vue'
 import WaitSection from '@/components/WaitSection.vue'
-import { type StudyShortcutCell, type StudyShortcutQuery } from '@/types.ts'
-import { useAppStore } from '@/stores/appstore.ts'
+import {
+  type StudyShortcutCell,
+  type StudyShortcutQuery,
+  type StudyShortcutResponseBody,
+  type StudyShortcutResponseCategory,
+  type StudyShortcutResponseData
+} from '@/types.ts'
+import { useAppStore } from '@/stores/appStore.ts'
 
 const appStore = useAppStore()
-
-interface StudyShortcutDataFile {
-  label: string,
-  url: string,
-  title: string,
-  extra_links: [{
-    label: string,
-    icon: string,
-    url: string
-  }]
-}
-interface StudyShortcut {
-  files: Array<StudyShortcutDataFile>,
-  omit_info?: string,
-  title: string
-}
-interface StudyShortcutData {
-  [key: string]: StudyShortcut
-}
-interface StudyShortcutResponse {
-  data?: StudyShortcutData,
-  error?: string,
-  title: string
-}
 
 const modalRef = useTemplateRef('studyShortcutModal')
 const showModal = ref<boolean>(false)
 const modalTitleDefault: string = 'Loading..'
 const modalTitle = ref<string>(modalTitleDefault)
 const message = ref<string>('')
-const modalData = ref<StudyShortcutData | null>(null)
+const modalData = ref<StudyShortcutResponseData | null>(null)
 
-function handleShortcutResponse (response: StudyShortcutResponse) {
+function handleShortcutResponse (response: StudyShortcutResponseBody) {
   if ('data' in response && 'title' in response) {
     modalTitle.value = response.title as string
     let filesFound = false
     for (const cat in response.data) {
-      const catData = response.data[cat] as StudyShortcut
+      const catData = response.data[cat] as StudyShortcutResponseCategory
       if (catData.files.length > 0) {
         filesFound = true
         break
@@ -90,7 +71,7 @@ defineExpose({ show })
       ref="studyShortcutModal"
       v-model="showModal"
       size="md"
-      centered no-footer no-animation>
+      centered no-footer no-animation teleport-disabled>
     <template #header>
       <ModalHeader
           :modal-ref="modalRef"
@@ -122,7 +103,7 @@ defineExpose({ show })
             <td>
               <a :href="file.url"
                  target="_blank"
-                 :title="file.title"
+                 :title="file.title || ''"
                  class="sodar-ss-shortcut-link">
                 {{ file.label }}
               </a>
@@ -141,7 +122,10 @@ defineExpose({ show })
             </td>
           </tr>
           <tr v-if="!cat.files.length">
-            <td class="text-muted" colspan="2">N/A</td>
+            <td class="text-muted sodar-ss-shortcuts-no-files"
+                colspan="2">
+              N/A
+            </td>
           </tr>
         </tbody>
       </table>

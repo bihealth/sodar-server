@@ -3,6 +3,8 @@ Types and interfaces for the Sample Sheets Vue3 app.
 
 NOTE: Some store-specific types are declared in store files.
 */
+import { type TemplateRef } from 'vue'
+import { type SodarContext } from '@/stores/appStore.ts'
 
 /* General render table interfaces ------------------------------------------ */
 
@@ -33,8 +35,10 @@ export interface SheetTableOntologyRef {
 export interface SheetTableCellData {
   colType: string,
   editable: boolean | null, // Only for editing
+  link?: string | null, // For the special case of LINK_FILE
   newInit?: boolean, // Only for editing
   newRow?: boolean, // Only for editing
+  tooltip?: string, // Only used for file link?
   unit?: string,
   uuid?: string,
   uuid_ref?: string,
@@ -199,4 +203,96 @@ export interface RenderTableData {
   display_config: StudyDisplayConfig,
   study_config?: StudyEditConfig,
   edit_context?: StudyEditContext
+}
+
+/* Grid building ------------------------------------------------------------ */
+
+export interface ColDefBuildParams {
+  studyUuid: string,
+  editMode: boolean,
+  sodarContext: SodarContext,
+  studyDisplayConfig: StudyDisplayConfig | null,
+  studyEditConfig: StudyEditConfig | null,
+  irodsDirModal: TemplateRef,
+  studyShortcutModal: TemplateRef
+}
+
+export interface IrodsButtonsRendererParams {
+  assayIrodsPath: string,
+  irodsBackendEnabled: boolean,
+  irodsStatus: boolean,
+  irodsWebdavUrl: string,
+  modalRef: TemplateRef,
+  value: AssayIrodsPath | null
+}
+
+export interface StudyShortcutsRendererParams {
+  modalRef: TemplateRef,
+  schema: StudyShortcutSchema,
+  value: StudyShortcutCell
+}
+
+/* SODAR ajax view data ----------------------------------------------------- */
+
+export interface IrodsDirFile {
+  displayPath?: string,
+  irods_request_status: string | null,
+  irods_request_user: string | null,
+  modify_time: string,
+  name: string,
+  path: string,
+  size: number,
+  type: string,
+  visibleInList?: boolean
+}
+
+export interface IrodsDirResponseBody {
+  detail?: string,
+  irods_data?: Array<IrodsDirFile>
+}
+
+export interface ParserWarning {
+  message: string,
+  category: string
+}
+
+export interface ParserWarningResponseBody {
+  warnings: {
+    all_ok: boolean, // Not actually used
+    critical_count: number, // Not actually used
+    assays: { [key: string]: Array<ParserWarning> },
+    investigation: { [key: string]: Array<ParserWarning> },
+    limit_reached: boolean
+    studies: { [key: string]: Array<ParserWarning> },
+    use_file_names: boolean // Not actually used
+  }
+}
+
+export interface StudyShortcutResponseExtraLink {
+  label: string,
+  icon: string,
+  url: string
+}
+
+export interface StudyShortcutResponseFile {
+  label: string,
+  url: string,
+  title: string | null,
+  extra_links: Array<StudyShortcutResponseExtraLink>
+}
+
+export interface StudyShortcutResponseCategory {
+  files: Array<StudyShortcutResponseFile>,
+  omit_info?: string,
+  title: string
+}
+
+export interface StudyShortcutResponseData {
+  [key: string]: StudyShortcutResponseCategory
+}
+
+export interface StudyShortcutResponseBody {
+  data?: StudyShortcutResponseData,
+  error?: string,
+  title: string
 }
