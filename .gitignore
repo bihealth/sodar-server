@@ -75,6 +75,7 @@ tests/node/e2e/reports/
 *.njsproj
 webpack-stats.json
 .vite/
+.eslintcache
 
 # Compass
 .sass-cache
