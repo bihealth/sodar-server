@@ -22,6 +22,10 @@ Fixed
 
 - **Landingzones**
     - Zone status change ignoring project member notify settings (#2416)
+- **Samplesheets**
+    - ``IrodsDirModal`` data request button icon alignment (#1829)
+    - ``ColumnToggleModal`` incorrect save button size (from v1.3.0) (#2379, #2427)
+    - ``SheetTableHeader`` info button icon alignment (#2427)
 
 
 v1.2.5 (2026-01-29)

@@ -58,18 +58,18 @@
               <b-button
                   v-if="objInfo.irods_request_status === 'ACTIVE'"
                   variant="primary"
-                  class="sodar-list-btn sodar-ss-popup-list-btn sodar-ss-req-btn
+                  class="sodar-list-btn sodar-ss-req-btn pt-0
                          sodar-ss-request-cancel-btn"
                   :title="getRequestCancelTitle(objInfo)"
                   :disabled="!allowRequestCancel(objInfo)"
                   @click="cancelRequest(index)"
                   v-b-tooltip.hover.d300>
-                <img src="/icons/mdi/cancel.svg?color=%23fff" class="mt-0" />
+                <img src="/icons/mdi/cancel.svg?color=%23fff" />
               </b-button>
               <b-button
                   v-else
                   variant="danger"
-                  class="sodar-list-btn sodar-ss-popup-list-btn sodar-ss-req-btn
+                  class="sodar-list-btn sodar-ss-req-btn pt-0
                          sodar-ss-request-delete-btn"
                   :title="getRequestIssueTitle(objInfo)"
                   :disabled="!allowRequestIssue(objInfo)"
@@ -314,9 +314,5 @@ h5 {
 
 input#sodar-ss-irods-filter {
   max-width: 200px;
-}
-
-.sodar-ss-req-btn {
-  padding-top: 0 !important;
 }
 </style>

@@ -56,7 +56,7 @@
             @click="onTableDetailToggle()"
             class="sodar-list-btn btn-info sodar-ss-btn-table-detail"
             :title="gridName + ' details'">
-          <i class="iconify mt-1"
+          <i class="iconify"
              data-icon="mdi:information-slab-circle">
           </i>
         </b-button>

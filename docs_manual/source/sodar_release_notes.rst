@@ -14,6 +14,7 @@ v1.2.6 (WIP)
 Hotfix release.
 
 - Fix landing zone status change ignoring project member notification settings
+- Fix samplesheets Vue app button layout issues
 - Upgrade critical dependencies
 
 

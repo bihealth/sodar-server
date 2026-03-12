@@ -12,7 +12,6 @@
         <b-input-group-prepend v-if="app.sodarContext.perms.edit_sheet">
           <b-button
               variant="secondary"
-              class="sodar-list-btn px-2"
               id="sodar-ss-toggle-save"
               title="Save as default display configuration for all users"
               @click="hideModal(true)"
