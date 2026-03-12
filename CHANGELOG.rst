@@ -13,7 +13,7 @@ Changed
 
 - **General**
     - Upgrade to Django v4.2.29 (#2417)
-    - Upgrade to Selenium v4.41.0 (#2417)
+    - Upgrade to Selenium v4.36.0 (#2417)
     - Upgrade to Werkzeug v3.1.6 (#2417)
     - Upgrade critical Vue app dependencies (#2417)
 
