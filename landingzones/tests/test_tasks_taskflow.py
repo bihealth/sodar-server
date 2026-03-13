@@ -54,6 +54,13 @@ class TestSetLandingZoneStatusTask(ViewTestBase):
             count,
         )
 
+    def _setup_member(self):
+        """Set up member user"""
+        self.user_contributor = self.make_user('user_contributor')
+        self.make_assignment(
+            self.project, self.user_contributor, self.role_contributor
+        )
+
     def setUp(self):
         super().setUp()
         self.task_kw = {
@@ -92,9 +99,31 @@ class TestSetLandingZoneStatusTask(ViewTestBase):
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn('Landing zone moved', mail.outbox[0].subject)
 
+    def test_execute_member_alert(self):
+        """Test execute() with member alert and email"""
+        # Set up member user
+        self._setup_member()
+
+        self._assert_owner_alert(0)
+        self._assert_member_alerts(0)
+        self.assertEqual(len(mail.outbox), 0)
+
+        self._get_task().execute(**self.task_kw)
+        self.zone.refresh_from_db()
+
+        self.assertEqual(self.zone.status, lc.ZONE_STATUS_MOVED)
+        self.assertEqual(
+            self.zone.status_info,
+            lc.DEFAULT_STATUS_INFO[lc.ZONE_STATUS_MOVED],
+        )
+        self._assert_owner_alert(1)
+        self._assert_member_alerts(1)  # We should have member alert now
+        self.assertEqual(len(mail.outbox), 2)  # Email for both owner and member
+
     @override_settings(PROJECTROLES_SEND_EMAIL=False)
     def test_execute_disable_email(self):
         """Test execute() with email disabled"""
+        self._setup_member()
         self.assertEqual(self.zone.status, lc.ZONE_STATUS_ACTIVE)
         self._assert_owner_alert(0)
         self._assert_member_alerts(0)
@@ -103,11 +132,11 @@ class TestSetLandingZoneStatusTask(ViewTestBase):
         self.zone.refresh_from_db()
         self.assertEqual(self.zone.status, lc.ZONE_STATUS_MOVED)
         self._assert_owner_alert(1)
-        self._assert_member_alerts(0)
+        self._assert_member_alerts(1)  # Alerts should still be raised
         self.assertEqual(len(mail.outbox), 0)
 
-    def test_execute_disable_member_notify(self):
-        """Test execute() with member notify disabled"""
+    def test_execute_disable_project_notify(self):
+        """Test execute() with project member notify disabled"""
         app_settings.set(
             APP_NAME, 'member_notify_move', False, project=self.project
         )
@@ -124,7 +153,7 @@ class TestSetLandingZoneStatusTask(ViewTestBase):
         self.assertEqual(mail.outbox[0].recipients(), [self.user_owner.email])
 
     def test_execute_disable_owner_alert_notify(self):
-        """Test execute() with owner email notify disabled"""
+        """Test execute() with owner alert notify disabled"""
         app_settings.set(
             APP_NAME,
             'notify_alert_zone_status',
@@ -134,7 +163,6 @@ class TestSetLandingZoneStatusTask(ViewTestBase):
         self.assertEqual(self.zone.status, lc.ZONE_STATUS_ACTIVE)
         self._assert_owner_alert(0)
         self._assert_member_alerts(0)
-        self.assertEqual(len(mail.outbox), 0)
         self._get_task().execute(**self.task_kw)
         self.zone.refresh_from_db()
         self.assertEqual(self.zone.status, lc.ZONE_STATUS_MOVED)
@@ -159,6 +187,45 @@ class TestSetLandingZoneStatusTask(ViewTestBase):
         self._assert_owner_alert(1)
         self._assert_member_alerts(0)
         self.assertEqual(len(mail.outbox), 0)
+
+    def test_execute_disable_member_alert_notify(self):
+        """Test execute() with member alert notify disabled"""
+        self._setup_member()
+        app_settings.set(
+            APP_NAME,
+            'notify_alert_zone_status',
+            False,
+            user=self.user_contributor,
+        )
+        self.assertEqual(self.zone.status, lc.ZONE_STATUS_ACTIVE)
+        self._assert_owner_alert(0)
+        self._assert_member_alerts(0)
+        self._get_task().execute(**self.task_kw)
+        self.zone.refresh_from_db()
+        self.assertEqual(self.zone.status, lc.ZONE_STATUS_MOVED)
+        self._assert_owner_alert(1)
+        self._assert_member_alerts(0)  # No alerts for member
+
+    def test_execute_disable_member_email_notify(self):
+        """Test execute() with member email notify disabled"""
+        self._setup_member()
+        app_settings.set(
+            APP_NAME,
+            'notify_email_zone_status',
+            False,
+            user=self.user_contributor,
+        )
+        self.assertEqual(self.zone.status, lc.ZONE_STATUS_ACTIVE)
+        self._assert_owner_alert(0)
+        self._assert_member_alerts(0)
+        self.assertEqual(len(mail.outbox), 0)
+        self._get_task().execute(**self.task_kw)
+        self.zone.refresh_from_db()
+        self.assertEqual(self.zone.status, lc.ZONE_STATUS_MOVED)
+        self._assert_owner_alert(1)
+        self._assert_member_alerts(1)
+        self.assertEqual(len(mail.outbox), 1)  # Email only for owner
+        self.assertEqual(mail.outbox[0].recipients(), [self.user_owner.email])
 
     def test_execute_moved_no_files(self):
         """Test execute() with a busy status"""

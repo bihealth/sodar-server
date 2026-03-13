@@ -53,6 +53,29 @@ Removed
     - Python v3.9 and v3.10 support (#2334)
 
 
+v1.2.6 (2026-03-13)
+===================
+
+Changed
+-------
+
+- **General**
+    - Upgrade to Django v4.2.29 (#2417)
+    - Upgrade to Selenium v4.36.0 (#2417)
+    - Upgrade to Werkzeug v3.1.6 (#2417)
+    - Upgrade critical Vue app dependencies (#2417)
+
+Fixed
+-----
+
+- **Landingzones**
+    - Zone status change ignoring project member notify settings (#2416)
+- **Samplesheets**
+    - ``IrodsDirModal`` data request button icon alignment (#1829)
+    - ``ColumnToggleModal`` incorrect save button size (from v1.3.0) (#2379, #2427)
+    - ``SheetTableHeader`` info button icon alignment (#2427)
+
+
 v1.2.5 (2026-01-29)
 ===================
 

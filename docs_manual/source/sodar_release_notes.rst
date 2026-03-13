@@ -22,6 +22,16 @@ v1.3.0 (WIP)
 :ref:`Administrator upgrade guide for v1.3 <admin_upgrade_v1.3>`
 
 
+v1.2.6 (2026-03-13)
+===================
+
+Hotfix release.
+
+- Fix landing zone status change ignoring project member notification settings
+- Fix samplesheets Vue app button layout issues
+- Upgrade critical dependencies
+
+
 v1.2.5 (2026-01-29)
 ===================
 
