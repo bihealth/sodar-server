@@ -48,6 +48,7 @@ function getTextClass (shortcut: AssayShortcut): string {
         <IrodsButtons
             :edit-mode="false"
             :enabled="shortcut.enabled"
+            :extra-links="shortcut.extra_links"
             :irods-backend-enabled="appStore.sodarContext![
               'irods_backend_enabled']"
             :irods-dir-modal-ref="modalRef"

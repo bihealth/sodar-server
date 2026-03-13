@@ -100,18 +100,28 @@ export interface StudyRenderTable extends SheetRenderTable {
 
 // Assay iRODS path
 export interface AssayIrodsPath {
-  path: string,
   enabled: boolean
+  path: string,
+}
+// Assay shortcut extra link
+export interface AssayShortcutExtraLink {
+  class: string
+  enabled: boolean,
+  icon: string,
+  id: string,
+  title: string
+  url: string
 }
 // Assay shortcut
 export interface AssayShortcut {
+  assay_plugin?: boolean
+  enabled: boolean,
+  extra_links?: Array<AssayShortcutExtraLink>,
+  icon?: string,
   id: string,
   label: string,
   path: string,
-  enabled: boolean,
-  icon?: string,
   title?: string,
-  assay_plugin?: boolean
 }
 export interface AssayShortcuts {
   [key: string]: AssayShortcut

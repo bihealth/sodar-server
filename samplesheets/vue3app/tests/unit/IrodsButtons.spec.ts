@@ -3,7 +3,10 @@ import { config, mount, type VueWrapper } from '@vue/test-utils'
 import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
 
 import IrodsButtons from '@/components/IrodsButtons.vue'
+import { type AssayShortcutExtraLink } from '@/types.ts'
+
 import { copy } from '../testUtils.ts'
+import { ticketLink } from '../data/assayShortcuts.ts'
 import { ASSAY_PATH } from '../testConstants.ts'
 import { type IrodsButtonsProps } from '../testTypes.ts'
 
@@ -100,6 +103,28 @@ describe('IrodsButtons.vue', () => {
     expect(mockModal.show).toBeCalled()
   })
 
+  test('display extra link', async () => {
+    props.extraLinks = [ticketLink]
+    const wrapper = mountComponent()
+    expect(wrapper.find('.sodar-ss-irods-links').exists()).toBe(true)
+    const buttons = wrapper.findAll('.sodar-list-btn')
+    expect(buttons.length).toBe(5)
+    for (let i = 0; i < 4; i++) {
+      expect(buttons[i]?.attributes().disabled).not.toBeDefined()
+    }
+    // Ensure extra link button is present
+    expect(wrapper.find('.sodar-irods-ticket-access-1-btn').exists()).toBe(true)
+  })
+
+  test('display disabled extra link', async () => {
+    const link = copy(ticketLink) as AssayShortcutExtraLink
+    link.enabled = false
+    props.extraLinks = [link]
+    const wrapper = mountComponent()
+    expect(wrapper.find('.sodar-ss-irods-links').exists()).toBe(true)
+    const btn = wrapper.find('.sodar-irods-ticket-access-1-btn')
+    expect(btn.attributes().disabled).not.toBeDefined()
+  })
+
   // TODO: Test clipboard copying
-  // TODO: Test extra links display once supported (see #2403)
 })

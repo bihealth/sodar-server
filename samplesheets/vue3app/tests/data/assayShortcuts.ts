@@ -1,7 +1,19 @@
-import { type AssayShortcut, type AssayShortcuts } from '@/types.ts'
+import {
+  type AssayShortcut,
+  type AssayShortcutExtraLink,
+  type AssayShortcuts
+} from '@/types.ts'
 import { ASSAY_PATH_PREFIX } from '../testConstants.ts'
 
-// TODO: Add extra link for ticket once supported (see #2403)
+export const ticketLink: AssayShortcutExtraLink = {
+  url: 'https://ticket:xzy123@0.0.0.0' + ASSAY_PATH_PREFIX + 'TrackHubs/track1',
+  icon: 'mdi:ticket',
+  id: 'ticket_access_1',
+  class: 'sodar-irods-ticket-access-1-btn',
+  title: 'Latest Access Ticket for track1',
+  enabled: true
+}
+
 export const assayShortcuts: AssayShortcuts = {
   results_reports: {
     id: 'results_reports',
@@ -22,7 +34,8 @@ export const assayShortcuts: AssayShortcuts = {
     enabled: true,
     icon: 'mdi:road',
     title: 'Track hub X',
-    assay_plugin: false
+    assay_plugin: false,
+    extra_links: [ticketLink]
   } as AssayShortcut,
   plugin_coll: {
     id: 'plugin_coll',

@@ -80,5 +80,14 @@ describe('AssayShortcutCard.vue', () => {
     expect(buttons[3]?.attributes().disabled).not.toBeDefined()
   })
 
-  // TODO: Test extra data once supported (see #2403)
+  test('render extra link in iRODS buttons', async () => {
+    const wrapper = mountComponent()
+    const shortcuts = wrapper.findAll('.sodar-ss-assay-shortcut')
+    expect(shortcuts[2]?.text()).toContain('TrackHubX')
+    const buttons = shortcuts[2]?.findAll('.sodar-list-btn')
+    expect(buttons?.length).toBe(5)
+    const extraBtn = shortcuts[2]?.find('.sodar-irods-ticket-access-1-btn')
+    expect(extraBtn?.exists()).toBe(true)
+    // Extra link rendering details testsd in IrodsButtons tests
+  })
 })
