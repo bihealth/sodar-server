@@ -35,12 +35,15 @@ Changed
     - Update base test classes (#2334)
     - Update ``AppAlert`` and ``TimelineEvent`` test assertions for common helpers (#2334)
     - Rename ``api_projectroles.rst`` to ``api_sodar_core.rst`` (#2334)
+    - Reorganize ``Makefile`` (#2398, #2435)
 - **Samplesheets**
     - Upgrade critical Vue app dependencies (#2317)
 
 Fixed
 -----
 
+- **General**
+    - ``Makefile`` missing ``default`` target (#2398)
 - **Landingzones**
     - Unsupported ``assay`` field choice setup in ``LandingZoneForm`` (#2376)
 - **Samplesheets**
@@ -51,6 +54,7 @@ Removed
 
 - **General**
     - Python v3.9 and v3.10 support (#2334)
+    - ``Makefile`` ``demo`` target (#2435)
 
 
 v1.2.6 (2026-03-13)
