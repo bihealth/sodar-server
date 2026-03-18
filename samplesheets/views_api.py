@@ -1028,9 +1028,9 @@ class SampleDataFileExistsAPIView(SamplesheetsAPIVersioningMixin, APIView):
         sql = (
             'SELECT DISTINCT ON (data_id) data_name '
             'FROM r_data_main JOIN r_coll_main USING (coll_id) '
-            'WHERE (coll_name LIKE \'%/{coll}\' '
-            'OR coll_name LIKE \'%/{coll}/%\') '
-            'AND r_data_main.data_checksum = \'{sum}\''.format(
+            "WHERE (coll_name LIKE '%/{coll}' "
+            "OR coll_name LIKE '%/{coll}/%') "
+            "AND r_data_main.data_checksum = '{sum}'".format(
                 coll=settings.IRODS_SAMPLE_COLL, sum=c
             )
         )

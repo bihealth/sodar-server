@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('landingzones', '0009_alter_landingzone_status_info'),
     ]

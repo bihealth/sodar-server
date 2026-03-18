@@ -70,9 +70,9 @@ class LandingZoneForm(forms.ModelForm):
         self.fields['assay'].to_field_name = 'sodar_uuid'
         # Set suffix
         self.fields['title_suffix'].label = 'Title suffix'
-        self.fields['title_suffix'].help_text = (
-            'Zone title suffix (optional, maximum 64 characters)'
-        )
+        self.fields[
+            'title_suffix'
+        ].help_text = 'Zone title suffix (optional, maximum 64 characters)'
         self.fields['description'].widget.attrs['rows'] = 4
         self.fields['coll_creation'].label = 'Collection creation'
         self.fields['coll_creation'].help_text = (
@@ -107,9 +107,9 @@ class LandingZoneForm(forms.ModelForm):
                         )
             # Set options and initial value for coll_creation
             self.fields['coll_creation'].widget = forms.Select()
-            self.fields['coll_creation'].widget.choices = (
-                ZONE_COLLS_CREATION_CHOICES
-            )
+            self.fields[
+                'coll_creation'
+            ].widget.choices = ZONE_COLLS_CREATION_CHOICES
             self.initial['coll_creation'] = lc.ZONE_COLLS_RESTRICT
         # Updating
         else:

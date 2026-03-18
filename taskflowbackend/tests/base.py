@@ -183,7 +183,7 @@ class TaskflowTestMixin(
         :return: Updated iRODSDataObject
         """
         sql = (
-            f'UPDATE r_data_main SET data_checksum = \'{checksum}\' WHERE '
+            f"UPDATE r_data_main SET data_checksum = '{checksum}' WHERE "
             f'data_id = {obj.id}'
         )
         query = self.irods_backend.get_query(self.irods, sql)

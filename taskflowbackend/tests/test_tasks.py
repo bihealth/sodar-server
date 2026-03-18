@@ -1371,9 +1371,9 @@ class TestBatchCheckFileExistTask(
     @override_settings(IRODS_HASH_SCHEME=IRODS_HASH_SCHEME_SHA256)
     def test_task_sha256_unexpected_md5(self):
         """Test task unexpected MD5 checksum file"""
-        self.task_kw['inject'][
-            'chk_suffix'
-        ] = self.irods_backend.get_checksum_file_suffix()
+        self.task_kw['inject']['chk_suffix'] = (
+            self.irods_backend.get_checksum_file_suffix()
+        )
         self.task_kw['inject']['chk_paths'] = [self.obj_path + MD5_SUFFIX]
         self.add_task(**self.task_kw)
         with self.assertRaises(Exception) as cm:
@@ -1563,7 +1563,7 @@ class TestBatchVerifySampleChecksumsTask(
         alert = self._get_app_alert()
         self.assertIsInstance(alert, AppAlert)
         alert_msg = (
-            f'{VERIFY_ERR_MSG}:\n' f'Assay: {self.assay.get_display_name()}\n'
+            f'{VERIFY_ERR_MSG}:\nAssay: {self.assay.get_display_name()}\n'
         ) + ex_msg
         expected = {
             'id': alert.pk,

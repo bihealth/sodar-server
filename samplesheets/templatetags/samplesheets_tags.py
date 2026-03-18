@@ -137,7 +137,7 @@ def get_isatab_tag_html(isatab: ISATab) -> str:
         return '<span class="text-muted">N/A</span>'
     ret = ''
     for tag in sorted(isatab.tags):
-        ret += '<span class="badge badge-pill badge-{}">' '{}</span>\n'.format(
+        ret += '<span class="badge badge-pill badge-{}">{}</span>\n'.format(
             TAG_COLORS[tag] if tag in TAG_COLORS else DEFAULT_TAG_COLOR,
             tag.capitalize(),
         )

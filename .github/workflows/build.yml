@@ -87,26 +87,27 @@ jobs:
         run: python manage.py geticons --settings=config.settings.test
       - name: Run collectstatic
         run: python manage.py collectstatic --noinput --settings=config.settings.test
-      - name: Run Django tests
-        run: |
-          coverage run --rcfile=.coveragerc manage.py test -v 2 --settings=config.settings.test
-          coverage lcov
-          coverage report
+      - name: Check Python formatting
+        run: make format-check
+        if: ${{ matrix.python-version == '3.13' }}
+      - name: Check Python linting
+        run: make lint
+        if: ${{ matrix.python-version == '3.13' }}
+      - name: Check docs building
+        working-directory: ./docs_manual
+        run: make html
+        if: ${{ matrix.python-version == '3.13' }}
       - name: Run Vue2 app tests
         run: make test_samplesheets_vue
         if: ${{ matrix.python-version == '3.13' }}
       - name: Run Vue3 app tests
         run: make test_samplesheets_vue3
         if: ${{ matrix.python-version == '3.13' }}
-      - name: Check Python linting
-        run: flake8 .
-      - name: Check Python formatting
-        run: make black arg=--check
-        if: ${{ matrix.python-version == '3.13' }}
-      - name: Check docs building
-        working-directory: ./docs_manual
-        run: make html
-        if: ${{ matrix.python-version == '3.13' }}
+      - name: Run Django tests
+        run: |
+          coverage run --rcfile=.coveragerc manage.py test -v 2 --settings=config.settings.test
+          coverage lcov
+          coverage report
       - name: Report coverage with Coveralls
         uses: coverallsapp/github-action@v2
         with:

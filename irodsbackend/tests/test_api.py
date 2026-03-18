@@ -50,9 +50,9 @@ IRODS_ROOT_PATH_INVALID = 'sodar/../root'
 SAMPLE_COLL = settings.IRODS_SAMPLE_COLL
 LANDING_ZONE_COLL = settings.IRODS_LANDING_ZONE_COLL
 IRODS_ENV = {
-    "irods_encryption_key_size": 32,
-    "irods_encryption_num_hash_rounds": 16,
-    "irods_encryption_salt_size": 8,
+    'irods_encryption_key_size': 32,
+    'irods_encryption_num_hash_rounds': 16,
+    'irods_encryption_salt_size': 8,
 }
 CHECKSUM_SHA256_HEX = (
     '49abd65bbf7f7e40c7055093ed2e3fd75f2f602f2c5fcf955c213e3135eb03f7'

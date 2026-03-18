@@ -918,7 +918,7 @@ class ZoneUpdateView(
         ):
             messages.error(
                 self.request,
-                "You can only update the following fields: {}".format(
+                'You can only update the following fields: {}'.format(
                     ', '.join(ZONE_UPDATE_FIELDS)
                 ),
             )

@@ -203,9 +203,10 @@ class TestVerifyZone(
     def test_verify_non_moved(self):
         """Test verify on non-moved zone"""
         # No move
-        with self.assertLogs(self.logger_name) as cm_logs, self.assertRaises(
-            SystemExit
-        ) as cm_exit:
+        with (
+            self.assertLogs(self.logger_name) as cm_logs,
+            self.assertRaises(SystemExit) as cm_exit,
+        ):
             self.command.handle(**self.cmd_kw)
         self.assertIn(MOVE_EVENT_NOT_FOUND_MSG, cm_logs[-1][0])
         self.assertEqual(cm_exit.exception.code, 1)
@@ -215,8 +216,9 @@ class TestVerifyZone(
         self._make_zone_object()
         move_tl_event = self._move_zone()
         move_tl_event.set_status(TL_STATUS_FAILED)
-        with self.assertLogs(self.logger_name) as cm, self.assertRaises(
-            SystemExit
+        with (
+            self.assertLogs(self.logger_name) as cm,
+            self.assertRaises(SystemExit),
         ):
             self.command.handle(**self.cmd_kw)
         self.assertIn(MOVE_NOT_SUCCESSFUL_MSG, cm[-1][0])
@@ -227,8 +229,9 @@ class TestVerifyZone(
         move_tl_event = self._move_zone()
         move_tl_event.extra_data = {}
         move_tl_event.save()
-        with self.assertLogs(self.logger_name) as cm, self.assertRaises(
-            SystemExit
+        with (
+            self.assertLogs(self.logger_name) as cm,
+            self.assertRaises(SystemExit),
         ):
             self.command.handle(**self.cmd_kw)
         self.assertIn(NO_TL_EXTRA_DATA_MSG, cm[-1][0])

@@ -61,8 +61,8 @@ Before submitting a pull request for review, ensure the following:
   :ref:`dev_guide_test`).
 - You have updated documentation if your pull requests adds or modifies features
   (see :ref:`dev_guide_doc`).
-- ``make black`` has been run for the latest commit.
-- ``flake8 .`` produces no errors.
+- ``make format`` has been run for the latest commit.
+- ``make lint`` produces no errors.
 - All tests pass with ``make test``, ``make test_samplesheets_vue`` and
   ``make test_samplesheets_vue3``.
 

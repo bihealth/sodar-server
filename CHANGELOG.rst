@@ -36,6 +36,9 @@ Changed
     - Update ``AppAlert`` and ``TimelineEvent`` test assertions for common helpers (#2334)
     - Rename ``api_projectroles.rst`` to ``api_sodar_core.rst`` (#2334)
     - Reorganize ``Makefile`` (#2398, #2435)
+    - Replace black and flake8 with ruff for linting and formatting (#2428)
+    - Reformat Python code with ruff (#2428)
+    - Update CI ordering of code checks and tests (#2434)
 - **Samplesheets**
     - Upgrade critical Vue app dependencies (#2317)
 
@@ -55,6 +58,8 @@ Removed
 - **General**
     - Python v3.9 and v3.10 support (#2334)
     - ``Makefile`` ``demo`` target (#2435)
+    - Black and flake8 dependencies (#2428)
+    - Legacy flake8 and pycodestyle configuration (#2428)
 
 
 v1.2.6 (2026-03-13)

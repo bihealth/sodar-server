@@ -14,6 +14,7 @@ v1.3.0 (WIP)
 - Add samplesheets Vue3 app
 - Add django-axes support for login security
 - Add Python v3.12 and v3.13 support
+- Replace Black and Flake8 with Ruff for linting and formatting
 - Upgrade to Django v5.2
 - Upgrade to SODAR Core v1.3.2
 - Upgrade to django-rest-knox v5.0

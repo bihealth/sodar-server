@@ -1,7 +1,6 @@
 # Test dependencies go here.
 -r base.txt
 
-flake8==7.3.0
 django-test-plus==2.3.0
 factory-boy==3.3.3
 coverage==7.11.0
@@ -17,8 +16,8 @@ selenium==4.41.0
 # BeautifulSoup for HTML testing
 beautifulsoup4==4.14.2
 
-# Black for formatting
-black==25.9.0
+# Ruff for linting and formatting (replaces black and flake8)
+ruff==0.15.6
 
 # JQuery beautifying
 jsbeautifier==1.15.4

@@ -3,9 +3,13 @@ MANAGE = python manage.py
 define USAGE=
 @echo -e
 @echo -e "Usage:"
-@echo -e "\tmake black [arg=--<arg>]                    -- format python with black"
-@echo -e "\tmake flake                                  -- run flake8"
+@echo -e "\tmake celery                                 -- start celery worker"
+@echo -e "\tmake check                                  -- check Python code linting and formatting"
+@echo -e "\tmake collectstatic                          -- run collectstatic"
+@echo -e "\tmake format                                 -- format Python code"
+@echo -e "\tmake format-check                           -- check Python code formatting"
 @echo -e "\tmake js-beautify arg=<path>                 -- run js-beautify on JQuery file(s)"
+@echo -e "\tmake lint                                   -- lint Python code"
 @echo -e "\tmake samplesheets_vue                       -- start samplesheets Vue2 app for development"
 @echo -e "\tmake samplesheets_vue3                      -- start samplesheets Vue3 app for development"
 @echo -e "\tmake serve [arg=sync]                       -- start Django server for development"
@@ -24,14 +28,13 @@ default: usage
 arg =
 
 
-.PHONY: black
-black:
-	black . $(arg)
-
-
 .PHONY: celery
 celery:
 	celery -A config worker -l info --beat
+
+
+.PHONY: check
+check: format-check lint
 
 
 .PHONY: collectstatic
@@ -39,14 +42,24 @@ collectstatic:
 	$(MANAGE) collectstatic --no-input
 
 
-.PHONY: flake
-flake:
-	flake8 .
+.PHONY: format
+format:
+	ruff format $(arg)
+
+
+.PHONY: format-check
+format-check:
+	ruff format --check
 
 
 .PHONY: js-beautify
 js-beautify:
 	js-beautify -anr -s 2 -w 80 $(arg)
+
+
+.PHONY: lint
+lint:
+	ruff check $(arg)
 
 
 .PHONY: samplesheets_vue

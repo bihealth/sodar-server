@@ -89,7 +89,7 @@ class CookiecutterISATemplate(models.Model):
             self.sodar_uuid,
         ]
         return 'CookiecutterISATemplate({})'.format(
-            ', '.join('\'{}\''.format(x) for x in values)
+            ', '.join("'{}'".format(x) for x in values)
         )
 
     def _validate_cubi(self):
@@ -160,7 +160,7 @@ class CookiecutterISAFile(models.Model):
             self.sodar_uuid,
         ]
         return 'CookiecutterISAFile({})'.format(
-            ', '.join('\'{}\''.format(x) for x in values)
+            ', '.join("'{}'".format(x) for x in values)
         )
 
     def _validate_file_name(self):

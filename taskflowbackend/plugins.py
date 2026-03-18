@@ -468,8 +468,9 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                 plugin_name='taskflow',
                 user=req_user,
                 event_name='role_update_revert',
-                description='revert adding iRODS access for '
-                'user {{{}}}'.format('user'),
+                description='revert adding iRODS access for user {{{}}}'.format(
+                    'user'
+                ),
                 status_type=timeline.TL_STATUS_OK,
             )
             tl_event.add_object(user, 'user', user_name)
@@ -812,8 +813,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                 logger.debug(f'Project collection deleted: {project_path}')
             except Exception as ex:
                 ex_msg = (
-                    f'Error deleting project collection '
-                    f'({project_path}): {ex}'
+                    f'Error deleting project collection ({project_path}): {ex}'
                 )
                 logger.error(ex_msg)
                 errors.append(ex_msg)

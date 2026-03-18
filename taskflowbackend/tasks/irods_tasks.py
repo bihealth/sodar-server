@@ -58,7 +58,7 @@ CHECKSUM_RETRY = 5
 NO_FILE_CHECKSUM_LABEL = 'None'
 VERIFY_ERR_MSG = 'iRODS sample data verification failed'
 
-EMAIL_MSG_VERIFY_FAILED = r'''
+EMAIL_MSG_VERIFY_FAILED = r"""
 Verifying file integrity in sample data for the project
 "{project_title}"
 has failed. Please contact an administrator or the site
@@ -72,7 +72,7 @@ Reported errors:
 See the project files in the following URL:
 {url}
 
-'''.lstrip()
+""".lstrip()
 
 
 # Mixins -----------------------------------------------------------------------
@@ -448,14 +448,14 @@ class SetInheritanceTask(IrodsBaseTask):
     def revert(self, path: str, inherit: bool = True, *args, **kwargs):
         # TODO: Add checks for inheritance status prior to execute
         pass
-        '''
+        """
         acl = iRODSAccess(
             access_name=INHERIT_STRINGS[!inherit],
             path=path,
             user_name='',
             user_zone=self.irods.zone)
         self.irods.acls.set(acl, recursive=True)
-        '''
+        """
 
 
 class SetAccessTask(IrodsAccessMixin, IrodsBaseTask):

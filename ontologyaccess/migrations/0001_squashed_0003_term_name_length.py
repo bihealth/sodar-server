@@ -7,11 +7,10 @@ import uuid
 
 
 class Migration(migrations.Migration):
-
     replaces = [
-        ("ontologyaccess", "0001_initial"),
-        ("ontologyaccess", "0002_add_name_file"),
-        ("ontologyaccess", "0003_term_name_length"),
+        ('ontologyaccess', '0001_initial'),
+        ('ontologyaccess', '0002_add_name_file'),
+        ('ontologyaccess', '0003_term_name_length'),
     ]
 
     initial = True
@@ -20,208 +19,208 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name="OBOFormatOntology",
+            name='OBOFormatOntology',
             fields=[
                 (
-                    "id",
+                    'id',
                     models.AutoField(
                         auto_created=True,
                         primary_key=True,
                         serialize=False,
-                        verbose_name="ID",
+                        verbose_name='ID',
                     ),
                 ),
                 (
-                    "ontology_id",
+                    'ontology_id',
                     models.CharField(
-                        help_text="Ontology ID", max_length=255, unique=True
+                        help_text='Ontology ID', max_length=255, unique=True
                     ),
                 ),
                 (
-                    "title",
+                    'title',
                     models.CharField(
                         blank=True,
-                        help_text="Ontology title (optional)",
+                        help_text='Ontology title (optional)',
                         max_length=255,
                         null=True,
                     ),
                 ),
                 (
-                    "description",
+                    'description',
                     models.TextField(
                         blank=True,
-                        help_text="Ontology description (optional)",
+                        help_text='Ontology description (optional)',
                         null=True,
                     ),
                 ),
                 (
-                    "format_version",
+                    'format_version',
                     models.CharField(
-                        help_text="Format version", max_length=255
+                        help_text='Format version', max_length=255
                     ),
                 ),
                 (
-                    "data_version",
+                    'data_version',
                     models.CharField(
                         blank=True,
-                        help_text="Data version",
+                        help_text='Data version',
                         max_length=255,
                         null=True,
                     ),
                 ),
                 (
-                    "default_namespace",
+                    'default_namespace',
                     models.CharField(
                         blank=True,
-                        help_text="Default namespace",
+                        help_text='Default namespace',
                         max_length=255,
                         null=True,
                     ),
                 ),
                 (
-                    "term_url",
+                    'term_url',
                     models.CharField(
-                        default="http://purl.obolibrary.org/obo/{id_space}_{local_id}",
-                        help_text="Format string for term accession URL. Supports {id_space} and {local_id}.",
+                        default='http://purl.obolibrary.org/obo/{id_space}_{local_id}',
+                        help_text='Format string for term accession URL. Supports {id_space} and {local_id}.',
                         max_length=2000,
                     ),
                 ),
                 (
-                    "sodar_version",
+                    'sodar_version',
                     models.CharField(
-                        help_text="SODAR version during ontology parsing",
+                        help_text='SODAR version during ontology parsing',
                         max_length=255,
                     ),
                 ),
                 (
-                    "date_created",
+                    'date_created',
                     models.DateTimeField(
                         auto_now=True,
-                        help_text="DateTime of ontology creation in SODAR",
+                        help_text='DateTime of ontology creation in SODAR',
                     ),
                 ),
                 (
-                    "sodar_uuid",
+                    'sodar_uuid',
                     models.UUIDField(
                         default=uuid.uuid4,
-                        help_text="SODAR UUID for the object",
+                        help_text='SODAR UUID for the object',
                         unique=True,
                     ),
                 ),
                 (
-                    "file",
+                    'file',
                     models.CharField(
                         blank=True,
-                        help_text="Ontology file name or URL",
+                        help_text='Ontology file name or URL',
                         max_length=2000,
                         null=True,
                     ),
                 ),
                 (
-                    "name",
+                    'name',
                     models.CharField(
-                        default="ONTOLOGY",
-                        help_text="Ontology name as it appears in sample sheets",
+                        default='ONTOLOGY',
+                        help_text='Ontology name as it appears in sample sheets',
                         max_length=255,
                         unique=True,
                     ),
                 ),
             ],
             options={
-                "ordering": ["name"],
+                'ordering': ['name'],
             },
         ),
         migrations.CreateModel(
-            name="OBOFormatOntologyTerm",
+            name='OBOFormatOntologyTerm',
             fields=[
                 (
-                    "id",
+                    'id',
                     models.AutoField(
                         auto_created=True,
                         primary_key=True,
                         serialize=False,
-                        verbose_name="ID",
+                        verbose_name='ID',
                     ),
                 ),
                 (
-                    "term_id",
+                    'term_id',
                     models.CharField(
-                        help_text="Term ID", max_length=255, unique=True
+                        help_text='Term ID', max_length=255, unique=True
                     ),
                 ),
                 (
-                    "alt_ids",
+                    'alt_ids',
                     django.contrib.postgres.fields.ArrayField(
                         base_field=models.CharField(blank=True, max_length=255),
                         default=list,
-                        help_text="Alternative Term IDs",
+                        help_text='Alternative Term IDs',
                         size=None,
                     ),
                 ),
                 (
-                    "name",
-                    models.CharField(help_text="Term name", max_length=1024),
+                    'name',
+                    models.CharField(help_text='Term name', max_length=1024),
                 ),
                 (
-                    "definition",
+                    'definition',
                     models.TextField(
-                        blank=True, help_text="Term definition", null=True
+                        blank=True, help_text='Term definition', null=True
                     ),
                 ),
                 (
-                    "synonyms",
+                    'synonyms',
                     django.contrib.postgres.fields.ArrayField(
                         base_field=models.CharField(blank=True, max_length=255),
                         default=list,
-                        help_text="Term synonyms",
+                        help_text='Term synonyms',
                         size=None,
                     ),
                 ),
                 (
-                    "namespace",
+                    'namespace',
                     models.CharField(
                         blank=True,
-                        help_text="Namespace",
+                        help_text='Namespace',
                         max_length=255,
                         null=True,
                     ),
                 ),
                 (
-                    "comment",
+                    'comment',
                     models.TextField(
-                        blank=True, help_text="Term comment", null=True
+                        blank=True, help_text='Term comment', null=True
                     ),
                 ),
                 (
-                    "is_obsolete",
+                    'is_obsolete',
                     models.BooleanField(
-                        default=False, help_text="Obsolete or deprecated term"
+                        default=False, help_text='Obsolete or deprecated term'
                     ),
                 ),
                 (
-                    "replaced_by",
+                    'replaced_by',
                     models.CharField(
                         blank=True,
-                        help_text="Replaced by ID in case of an obsolete term",
+                        help_text='Replaced by ID in case of an obsolete term',
                         max_length=255,
                         null=True,
                     ),
                 ),
                 (
-                    "sodar_uuid",
+                    'sodar_uuid',
                     models.UUIDField(
                         default=uuid.uuid4,
-                        help_text="SODAR UUID for the object",
+                        help_text='SODAR UUID for the object',
                         unique=True,
                     ),
                 ),
                 (
-                    "ontology",
+                    'ontology',
                     models.ForeignKey(
-                        help_text="Ontology to which the term belongs",
+                        help_text='Ontology to which the term belongs',
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name="terms",
-                        to="ontologyaccess.oboformatontology",
+                        related_name='terms',
+                        to='ontologyaccess.oboformatontology',
                     ),
                 ),
             ],

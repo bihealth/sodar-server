@@ -17,7 +17,6 @@ def update_coll_creation_values(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('landingzones', '0011_alter_landingzone_coll_creation'),
     ]

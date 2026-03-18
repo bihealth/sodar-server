@@ -222,8 +222,7 @@ class IrodsAPI:
                     chk = self.get_sha256_hex(chk)
                 except Exception as ex:
                     logger.error(
-                        f'Exception in converting SHA256 checksum '
-                        f'"{chk}": {ex}'
+                        f'Exception in converting SHA256 checksum "{chk}": {ex}'
                     )
                     chk = ''
             ret['checksum'] = chk
@@ -262,15 +261,15 @@ class IrodsAPI:
         chk_filter = (
             ''
             if include_checksum
-            else 'AND data_name NOT LIKE \'%.md5\' AND data_name NOT LIKE '
-            '\'%.sha256\''
+            else "AND data_name NOT LIKE '%.md5' AND data_name NOT LIKE "
+            "'%.sha256'"
         )
         sql = (
             'SELECT DISTINCT ON (data_id) data_name, data_size, '
             'r_data_main.modify_ts as modify_ts, coll_name{checksum}'
             'FROM r_data_main JOIN r_coll_main USING (coll_id) '
-            'WHERE (coll_name = \'{coll_path}\' '
-            'OR coll_name LIKE \'{coll_path}/%\') {chk_filter}'.format(
+            "WHERE (coll_name = '{coll_path}' "
+            "OR coll_name LIKE '{coll_path}/%') {chk_filter}".format(
                 checksum=', data_checksum ' if checksum else ' ',
                 coll_path=path,
                 chk_filter=chk_filter,
@@ -283,7 +282,7 @@ class IrodsAPI:
             for i, n in enumerate(name_like):
                 if i > 0:
                     sql += ' OR '
-                sql += f'data_name LIKE \'%{n}%\''
+                sql += f"data_name LIKE '%{n}%'"
             sql += ')'
         if limit:
             sql += f' LIMIT {limit}'
@@ -697,16 +696,15 @@ class IrodsAPI:
 
         ret = {}
         chk_exclude = (
-            'AND data_name NOT LIKE \'%.md5\' '
-            'AND data_name NOT LIKE \'%.sha256\' '
+            "AND data_name NOT LIKE '%.md5' AND data_name NOT LIKE '%.sha256' "
         )
         sql = (
             'SELECT COUNT(data_id) as file_count, '
             'SUM(data_size) as total_size '
             'FROM (SELECT data_id, data_size FROM r_data_main '
             'JOIN r_coll_main USING (coll_id) '
-            'WHERE (coll_name = \'{coll_path}\' '
-            'OR coll_name LIKE \'{coll_path}/%\') {chk_exclude}'
+            "WHERE (coll_name = '{coll_path}' "
+            "OR coll_name LIKE '{coll_path}/%') {chk_exclude}"
             'GROUP BY data_id, data_size) AS sub_query'.format(
                 coll_path=coll.path,
                 chk_exclude=chk_exclude if not include_checksum else '',

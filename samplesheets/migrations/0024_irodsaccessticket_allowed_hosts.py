@@ -4,18 +4,17 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ("samplesheets", "0001_squashed_0023_alter_process_performer"),
+        ('samplesheets', '0001_squashed_0023_alter_process_performer'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name="irodsaccessticket",
-            name="allowed_hosts",
+            model_name='irodsaccessticket',
+            name='allowed_hosts',
             field=models.CharField(
                 blank=True,
-                help_text="Comma-separated list of allowed hosts (optional)",
+                help_text='Comma-separated list of allowed hosts (optional)',
                 null=True,
             ),
         ),

@@ -883,8 +883,7 @@ class GenericMaterial(NodeMixin, BaseSampleSheet):
         """Validate fields related to specific material types"""
         if self.item_type == 'DATA' and self.characteristics:
             raise ValidationError(
-                'Field "characteristics" should not be included for a data '
-                'file'
+                'Field "characteristics" should not be included for a data file'
             )
         if self.item_type != ITEM_TYPE_SAMPLE and self.factor_values:
             raise ValidationError('Factor values included for a non-sample')

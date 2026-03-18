@@ -244,8 +244,7 @@ class TestZoneCreateView(
     def test_get(self):
         """Test ZoneCreateView GET"""
         assay_label = (
-            f'{self.assay.study.get_name()} / '
-            f'{self.assay.get_display_name()}'
+            f'{self.assay.study.get_name()} / {self.assay.get_display_name()}'
         )
         with self.login(self.user):
             response = self.client.get(self.url)

@@ -144,7 +144,7 @@ SYNC_FAIL_STATUS_CODE = 'Source API responded with status code'
 CUBI_TPL_DICT = {t.name: t for t in CUBI_TEMPLATES}
 ISA_ERROR_REPLACE_ARGS = ['\\n', '<br />']
 
-EMAIL_DELETE_REQUEST_ACCEPT = r'''
+EMAIL_DELETE_REQUEST_ACCEPT = r"""
 Your delete request has been accepted.
 
 Project: {project}
@@ -152,8 +152,8 @@ Path: {path}
 User: {user} <{user_email}>
 
 All data has been removed.
-'''.lstrip()
-EMAIL_DELETE_REQUEST_REJECT = r'''
+""".lstrip()
+EMAIL_DELETE_REQUEST_REJECT = r"""
 Your delete request has been rejected.
 
 Project: {project}
@@ -161,7 +161,7 @@ Path: {path}
 User: {user} <{user_email}>
 
 No data has been removed.
-'''.lstrip()
+""".lstrip()
 
 
 # Mixins -----------------------------------------------------------------------

@@ -2,7 +2,43 @@
 requires = ["setuptools>=80.9.0", "versioneer[toml]==0.29"]
 build-backend = "setuptools.build_meta"
 
-[tool.black]
+[tool.ruff]
 line-length = 80
-skip-string-normalization = true
-exclude = ".git|.venv|.tox|build|env|src|docs_manual|node_modules|versioneer.py|_version.py"
+indent-width = 4
+exclude = [
+    ".git",
+    ".venv",
+    ".tox",
+    "build",
+    "env",
+    "src",
+    "docs_manual",
+    "versioneer.py",
+    "node_modules",
+    "_version.py"
+]
+
+[tool.ruff.format]
+quote-style = "single"
+
+[tool.ruff.lint]
+exclude = [
+    ".git",
+    "*/migrations/*",
+    "*/static/CACHE/*",
+    "docs_manual",
+    "node_modules",
+    "config/*",
+    "versioneer.py",
+    "env/*",
+    ".venv",
+    "_version.py"
+]
+ignore = ["E203", "E266", "E501", "F405"]
+select = ["E", "F", "W"]
+
+[tool.ruff.lint.flake8-quotes]
+inline-quotes = "single"
+
+[tool.ruff.lint.mccabe]
+max-complexity = 18

@@ -25,9 +25,9 @@ class FallbackToAuthBasicMiddleware(MiddlewareMixin):
 
     def process_request(self, request):
         # Authentication middleware must be active.
-        assert hasattr(
-            request, 'user'
-        ), 'AuthenticationMiddleware must be active'
+        assert hasattr(request, 'user'), (
+            'AuthenticationMiddleware must be active'
+        )
         # We are already done if the user is already authenticated.
         if request.user.is_authenticated:
             return

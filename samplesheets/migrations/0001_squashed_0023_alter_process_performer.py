@@ -61,7 +61,6 @@ def update_igv_genome_reverse(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     replaces = [
         ('samplesheets', '0001_initial'),
         ('samplesheets', '0002_investigation_irods_status'),

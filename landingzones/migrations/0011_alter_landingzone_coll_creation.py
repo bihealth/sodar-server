@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('landingzones', '0010_landingzone_coll_creation'),
     ]

@@ -47,7 +47,7 @@ Zone UUID: {zone_uuid}
 Status message:
 "{status_info}"'''.lstrip()
 
-EMAIL_MSG_MOVE_FAILED = r'''
+EMAIL_MSG_MOVE_FAILED = r"""
 Validating and moving data from your landing zone into the
 project sample data repository has failed. Please verify your
 data and request for support if the problem persists.
@@ -63,9 +63,9 @@ Zone UUID: {zone_uuid}
 
 Status message:
 "{status_info}"
-'''.lstrip()
+""".lstrip()
 
-EMAIL_MSG_MOVE_MEMBER = r'''
+EMAIL_MSG_MOVE_MEMBER = r"""
 {user} has uploaded {file_count} file{file_count_suffix}
 into assay "{assay}"
 under the project "{project}".
@@ -76,15 +76,15 @@ Message from zone owner:
 You can browse the assay metadata and related files at
 the following URL:
 {url}
-'''.lstrip()
+""".lstrip()
 
-EMAIL_MSG_RESET = r'''
+EMAIL_MSG_RESET = r"""
 The state of your landing zone was reset by an administrator.
 
 You are now able to access this landing zone for further
 operations at the following URL:
 {url}
-'''.lstrip()
+""".lstrip()
 
 
 class BaseLandingZoneStatusTask(SODARBaseTask):

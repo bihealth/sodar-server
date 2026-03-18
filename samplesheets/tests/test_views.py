@@ -1560,8 +1560,8 @@ class TestSheetVersionCompareFileView(SamplesheetsViewTestBase):
         """Test SheetVersionCompareFileView GET"""
         with self.login(self.user):
             response = self.client.get(
-                self.url + '?source={}&target={}&filename={}'
-                '&category={}'.format(
+                self.url
+                + '?source={}&target={}&filename={}&category={}'.format(
                     str(self.isa1.sodar_uuid),
                     str(self.isa2.sodar_uuid),
                     'a_small2.txt',
