@@ -5,6 +5,22 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+Unreleased
+==========
+
+Added
+-----
+
+- **Samplesheets**
+    - Germline IGV session VCF file cache search by family ID (#2439)
+
+Fixed
+-----
+
+- **Samplesheets**
+    - Germline IGV session VCF file cache search by source name (#2442)
+
+
 v1.2.7 (2026-03-19)
 ===================
 

@@ -8,6 +8,15 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v1.2.8 (WIP)
+============
+
+Hotfix release.
+
+- Add germline IGV session VCF file cache search by family ID
+- Fix germline IGV session VCF file cache search by source name
+
+
 v1.2.7 (2026-03-19)
 ===================
 

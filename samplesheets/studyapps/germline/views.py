@@ -99,7 +99,7 @@ class IGVSessionFileRenderView(BaseGermlineConfigView):
         :return: String or None
         """
         if cache_item and source.name in cache_item.data[file_type]:
-            return cache_item.data['bam'][source.name]
+            return cache_item.data[file_type][source.name]
         return get_pedigree_file_path(
             file_type=file_type,
             source=source,
@@ -164,8 +164,12 @@ class IGVSessionFileRenderView(BaseGermlineConfigView):
                 bam_urls[self.source.name] = webdav_url + bam_path
 
         # Build XML
-        # Get URL to latest family vcf file
-        vcf_path = self._get_path('vcf', self.source, obj_list, cache_item)
+        # Get path and URL to latest family vcf file
+        # First check for entry by family ID in cache
+        if fam_id and cache_item and fam_id in cache_item.data['vcf']:
+            vcf_path = cache_item.data['vcf'][fam_id]
+        else:
+            vcf_path = self._get_path('vcf', self.source, obj_list, cache_item)
         if vcf_path:
             # Use source name if family ID not known
             if not fam_id:

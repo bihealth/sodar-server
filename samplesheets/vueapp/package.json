@@ -1,6 +1,6 @@
 {
   "name": "samplesheets",
-  "version": "1.2.7",
+  "version": "1.2.8-wip",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
