@@ -12,6 +12,7 @@ Added
 -----
 
 - **Samplesheets**
+    - SODAR cache support in germline study app ``IGVSessionFileRenderView`` (#1524)
     - Germline study app ``get_pedigree_file_path()`` ``obj_list`` arg (#1525)
 
 Fixed

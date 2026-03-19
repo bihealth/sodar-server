@@ -1,5 +1,7 @@
 """Views for the germline study app"""
 
+from typing import Any, Optional
+
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -28,6 +30,10 @@ from sodar.users.auth import fallback_to_auth_basic
 
 plugin_api = PluginAPI()
 table_builder = SampleSheetTableBuilder()
+
+
+# Local constants
+APP_NAME = 'samplesheets.studyapps.germline'
 
 
 class BaseGermlineConfigView(
@@ -78,23 +84,60 @@ class IGVSessionFileRenderView(BaseGermlineConfigView):
 
     permission_required = 'samplesheets.view_files'
 
+    def _get_path(
+        self,
+        file_type: str,
+        source: GenericMaterial,
+        obj_list: Optional[list[dict]] = None,
+        cache_item: Any = None,
+    ) -> Optional[str]:
+        """
+        Return pedigree file path, either from the cache or by querying iRODS.
+
+        :param file_type: String ("bam" or "vcf", "bam" is also used for CRAM)
+        :param source: GenericMaterial of type SOURCE
+        :return: String or None
+        """
+        if cache_item and source.name in cache_item.data[file_type]:
+            return cache_item.data['bam'][source.name]
+        return get_pedigree_file_path(
+            file_type=file_type,
+            source=source,
+            study_tables=self.study_tables,
+            obj_list=obj_list,
+        )
+
     def get(self, request, *args, **kwargs):
         """Override get() to return IGV session file"""
         super().get(request, *args, **kwargs)
+        cache_backend = plugin_api.get_backend_api('sodar_cache')
         irods_backend = plugin_api.get_backend_api('omics_irods')
         vcf_urls = {}
         bam_urls = {}
         webdav_url = settings.IRODS_WEBDAV_URL
         study = self.source.study
         project = study.get_project()
+        cache_item = None
+        obj_list = None
 
-        try:  # Pre-fetch study iRODS files
-            with irods_backend.get_session() as irods:
-                obj_list = irods_backend.get_objects(
-                    irods, irods_backend.get_path(study)
+        # Get iRODS paths from cache if available
+        if cache_backend:
+            try:
+                cache_item = cache_backend.get_cache_item(
+                    app_name=APP_NAME,
+                    name=f'irods/{study.sodar_uuid}',
+                    project=study.get_project(),
                 )
-        except Exception:
-            obj_list = None
+            except Exception:
+                cache_item = None
+        if not cache_item:  # If no cache item, pre-fetch study iRODS files
+            try:
+                with irods_backend.get_session() as irods:
+                    obj_list = irods_backend.get_objects(
+                        irods, irods_backend.get_path(study)
+                    )
+            except Exception:
+                obj_list = None
 
         # Get resource URLs
         # Get URLs to all latest bam files for all sources in family
@@ -109,33 +152,20 @@ class IGVSessionFileRenderView(BaseGermlineConfigView):
                 characteristics__Family__value=fam_id,
             ).order_by('name')
             for fam_source in fam_sources:
-                bam_path = get_pedigree_file_path(
-                    file_type='bam',
-                    source=fam_source,
-                    study_tables=self.study_tables,
-                    obj_list=obj_list,
+                bam_path = self._get_path(
+                    'bam', fam_source, obj_list, cache_item
                 )
                 if bam_path:
                     bam_urls[fam_source.name] = webdav_url + bam_path
         # If not, just add for the current source
         else:
-            bam_path = get_pedigree_file_path(
-                file_type='bam',
-                source=self.source,
-                study_tables=self.study_tables,
-                obj_list=obj_list,
-            )
+            bam_path = self._get_path('bam', self.source, obj_list, cache_item)
             if bam_path:
                 bam_urls[self.source.name] = webdav_url + bam_path
 
         # Build XML
         # Get URL to latest family vcf file
-        vcf_path = get_pedigree_file_path(
-            file_type='vcf',
-            source=self.source,
-            study_tables=self.study_tables,
-            obj_list=obj_list,
-        )
+        vcf_path = self._get_path('vcf', self.source, obj_list, cache_item)
         if vcf_path:
             # Use source name if family ID not known
             if not fam_id:

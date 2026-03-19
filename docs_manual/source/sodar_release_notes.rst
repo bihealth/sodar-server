@@ -13,6 +13,7 @@ v1.2.7 (WIP)
 
 Hotfix release.
 
+- Add SODAR cache support in germline IGV session file rendering
 - Fix redundant germline IGV session file rendering queries
 
 
