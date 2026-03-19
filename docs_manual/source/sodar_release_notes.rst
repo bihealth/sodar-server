@@ -14,6 +14,7 @@ v1.2.8 (WIP)
 Hotfix release.
 
 - Add germline IGV session VCF file cache search by family ID
+- Optimize germline IGV session generation iRODS queries
 - Fix germline IGV session VCF file cache search by source name
 
 

@@ -14,6 +14,12 @@ Added
 - **Samplesheets**
     - Germline IGV session VCF file cache search by family ID (#2439)
 
+Changed
+-------
+
+- **Samplesheets**
+    - Reduce germline ``IGVSessionFileRenderView`` iRODS queries (#2440)
+
 Fixed
 -----
 
