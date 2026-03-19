@@ -8,6 +8,14 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v1.2.7 (WIP)
+============
+
+Hotfix release.
+
+- Fix redundant germline IGV session file rendering queries
+
+
 v1.2.6 (2026-03-13)
 ===================
 

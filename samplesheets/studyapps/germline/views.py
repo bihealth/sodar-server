@@ -81,11 +81,20 @@ class IGVSessionFileRenderView(BaseGermlineConfigView):
     def get(self, request, *args, **kwargs):
         """Override get() to return IGV session file"""
         super().get(request, *args, **kwargs)
+        irods_backend = plugin_api.get_backend_api('omics_irods')
         vcf_urls = {}
         bam_urls = {}
         webdav_url = settings.IRODS_WEBDAV_URL
         study = self.source.study
         project = study.get_project()
+
+        try:  # Pre-fetch study iRODS files
+            with irods_backend.get_session() as irods:
+                obj_list = irods_backend.get_objects(
+                    irods, irods_backend.get_path(study)
+                )
+        except Exception:
+            obj_list = None
 
         # Get resource URLs
         # Get URLs to all latest bam files for all sources in family
@@ -104,6 +113,7 @@ class IGVSessionFileRenderView(BaseGermlineConfigView):
                     file_type='bam',
                     source=fam_source,
                     study_tables=self.study_tables,
+                    obj_list=obj_list,
                 )
                 if bam_path:
                     bam_urls[fam_source.name] = webdav_url + bam_path
@@ -113,6 +123,7 @@ class IGVSessionFileRenderView(BaseGermlineConfigView):
                 file_type='bam',
                 source=self.source,
                 study_tables=self.study_tables,
+                obj_list=obj_list,
             )
             if bam_path:
                 bam_urls[self.source.name] = webdav_url + bam_path
@@ -120,7 +131,10 @@ class IGVSessionFileRenderView(BaseGermlineConfigView):
         # Build XML
         # Get URL to latest family vcf file
         vcf_path = get_pedigree_file_path(
-            file_type='vcf', source=self.source, study_tables=self.study_tables
+            file_type='vcf',
+            source=self.source,
+            study_tables=self.study_tables,
+            obj_list=obj_list,
         )
         if vcf_path:
             # Use source name if family ID not known

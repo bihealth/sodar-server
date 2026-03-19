@@ -2,6 +2,8 @@
 
 import logging
 
+from typing import Optional
+
 from django.db.models import QuerySet
 
 # Projectroles dependency
@@ -21,8 +23,11 @@ plugin_api = PluginAPI()
 
 
 def get_pedigree_file_path(
-    file_type: str, source: GenericMaterial, study_tables: dict
-) -> str:
+    file_type: str,
+    source: GenericMaterial,
+    study_tables: dict,
+    obj_list: Optional[list[dict]] = None,
+) -> Optional[str]:
     """
     Return iRODS path for the most recent file of type "bam" or "vcf"
     linked to the source.
@@ -30,7 +35,8 @@ def get_pedigree_file_path(
     :param file_type: String ("bam" or "vcf", "bam" is also used for CRAM)
     :param source: GenericMaterial of type SOURCE
     :param study_tables: Render study tables
-    :return: String
+    :param obj_list: List of iRODS data objects (optional)
+    :return: String or None
     """
     irods_backend = plugin_api.get_backend_api('omics_irods')
     if not irods_backend:
@@ -77,13 +83,14 @@ def get_pedigree_file_path(
 
     # Get paths to relevant files
     file_paths = []
-    try:
-        with irods_backend.get_session() as irods:
-            obj_list = irods_backend.get_objects(
-                irods, irods_backend.get_path(source.study)
-            )
-    except Exception:
-        obj_list = None
+    if not obj_list:
+        try:  # Query for objects in iRODS if not pre-fetched
+            with irods_backend.get_session() as irods:
+                obj_list = irods_backend.get_objects(
+                    irods, irods_backend.get_path(source.study)
+                )
+        except Exception:
+            obj_list = None
     if obj_list:
         for query_path in query_paths:
             for obj in obj_list:

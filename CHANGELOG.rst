@@ -5,6 +5,22 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+Unreleased
+==========
+
+Added
+-----
+
+- **Samplesheets**
+    - Germline study app ``get_pedigree_file_path()`` ``obj_list`` arg (#1525)
+
+Fixed
+-----
+
+- **Samplesheets**
+    - Germline study app ``IGVSessionFileRenderView`` redundant queries (#1525)
+
+
 v1.2.6 (2026-03-13)
 ===================
 
