@@ -5,8 +5,8 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
-Unreleased
-==========
+v1.2.7 (2026-03-19)
+===================
 
 Added
 -----
@@ -14,6 +14,12 @@ Added
 - **Samplesheets**
     - SODAR cache support in germline study app ``IGVSessionFileRenderView`` (#1524)
     - Germline study app ``get_pedigree_file_path()`` ``obj_list`` arg (#1525)
+
+Changed
+-------
+
+- **Samplesheets**
+    - Upgrade critical Vue app dependencies (#2436)
 
 Fixed
 -----

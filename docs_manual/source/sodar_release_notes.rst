@@ -8,13 +8,14 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
-v1.2.7 (WIP)
-============
+v1.2.7 (2026-03-19)
+===================
 
 Hotfix release.
 
 - Add SODAR cache support in germline IGV session file rendering
 - Fix redundant germline IGV session file rendering queries
+- Upgrade critical dependencies
 
 
 v1.2.6 (2026-03-13)
