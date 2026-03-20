@@ -23,6 +23,26 @@ v1.3.0 (WIP)
 :ref:`Administrator upgrade guide for v1.3 <admin_upgrade_v1.3>`
 
 
+v1.2.8 (2026-03-19)
+===================
+
+Hotfix release.
+
+- Add germline IGV session VCF file cache search by family ID
+- Optimize germline IGV session generation iRODS queries
+- Fix germline IGV session VCF file cache search by source name
+
+
+v1.2.7 (2026-03-19)
+===================
+
+Hotfix release.
+
+- Add SODAR cache support in germline IGV session file rendering
+- Fix redundant germline IGV session file rendering queries
+- Upgrade critical dependencies
+
+
 v1.2.6 (2026-03-13)
 ===================
 

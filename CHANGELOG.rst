@@ -62,6 +62,51 @@ Removed
     - Legacy flake8 and pycodestyle configuration (#2428)
 
 
+v1.2.8 (2026-03-19)
+===================
+
+Added
+-----
+
+- **Samplesheets**
+    - Germline IGV session VCF file cache search by family ID (#2439)
+
+Changed
+-------
+
+- **Samplesheets**
+    - Reduce germline ``IGVSessionFileRenderView`` iRODS queries (#2440)
+
+Fixed
+-----
+
+- **Samplesheets**
+    - Germline IGV session VCF file cache search by source name (#2442)
+
+
+v1.2.7 (2026-03-19)
+===================
+
+Added
+-----
+
+- **Samplesheets**
+    - SODAR cache support in germline study app ``IGVSessionFileRenderView`` (#1524)
+    - Germline study app ``get_pedigree_file_path()`` ``obj_list`` arg (#1525)
+
+Changed
+-------
+
+- **Samplesheets**
+    - Upgrade critical Vue app dependencies (#2436)
+
+Fixed
+-----
+
+- **Samplesheets**
+    - Germline study app ``IGVSessionFileRenderView`` redundant queries (#1525)
+
+
 v1.2.6 (2026-03-13)
 ===================
 

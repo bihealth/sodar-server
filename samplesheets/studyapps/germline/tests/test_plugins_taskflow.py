@@ -262,15 +262,21 @@ class TestGermlinePlugin(
                 kwargs={'genericmaterial': self.source.sodar_uuid},
             ),
         )
+        plugin_bam_path = get_pedigree_file_path(
+            'bam', self.source, study_tables
+        )
+        plugin_vcf_path = get_pedigree_file_path(
+            'vcf', self.source, study_tables
+        )
+        self.assertEqual(plugin_bam_path, bam_path)
+        self.assertEqual(plugin_vcf_path, vcf_path)
         self.assertEqual(
             sl['data']['bam']['files'][0]['url'],
-            settings.IRODS_WEBDAV_URL
-            + get_pedigree_file_path('bam', self.source, study_tables),
+            settings.IRODS_WEBDAV_URL + plugin_bam_path,
         )
         self.assertEqual(
             sl['data']['vcf']['files'][0]['url'],
-            settings.IRODS_WEBDAV_URL
-            + get_pedigree_file_path('vcf', self.source, study_tables),
+            settings.IRODS_WEBDAV_URL + plugin_vcf_path,
         )
 
     def test_get_shortcut_links_cram(self):

@@ -196,7 +196,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         else:
             sources = get_family_sources(study, query_id)
 
-        # Get iRODS URLs from cache if it's available
+        # Get iRODS paths from cache if available
         if cache_backend:
             cache_item = cache_backend.get_cache_item(
                 app_name=APP_NAME,
