@@ -59,11 +59,11 @@ jobs:
         run: sudo apt-get install -qq libsasl2-dev libldap2-dev libssl-dev
         if: ${{ matrix.python-version == '3.13' }}
       - name: Install Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
       - name: Install project Python dependencies
         run: |
           pip install -r requirements/base.txt --use-pep517
@@ -72,9 +72,9 @@ jobs:
         run: pip install -r requirements/production.txt --use-pep517
         if: ${{ matrix.python-version == '3.13' }}
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
-          node-version: 22.x
+          node-version: 24.x
       - name: Build and run Vue2 app
         run: |
           npm ci --prefix samplesheets/vueapp

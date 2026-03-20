@@ -18,6 +18,7 @@ v1.3.0 (WIP)
 - Upgrade to Django v5.2
 - Upgrade to SODAR Core v1.3.2
 - Upgrade to django-rest-knox v5.0
+- Upgrade to Node.js v24
 - Remove Python v3.9 and v3.10 support
 
 :ref:`Administrator upgrade guide for v1.3 <admin_upgrade_v1.3>`
