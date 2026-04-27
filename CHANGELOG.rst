@@ -53,6 +53,7 @@ Fixed
     - Unsupported ``assay`` field choice setup in ``LandingZoneForm`` (#2376)
 - **Samplesheets**
     - HPO term copying fails with ``SHEETS_ONTOLOGY_URL_TEMPLATE`` set (#2386)
+    - Vue2 app ontology edit modal search input disabling (#2454)
 
 Removed
 -------
