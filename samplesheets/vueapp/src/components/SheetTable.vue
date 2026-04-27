@@ -136,4 +136,7 @@ export default {
 </script>
 
 <style scoped>
+.sodar-ss-row-insert-btn {
+  padding: 3px 12px;
+}
 </style>

@@ -14,7 +14,8 @@
             <b-input-group class="sodar-header-input-group">
               <b-input-group-prepend>
                 <b-button
-                    class="sodar-list-btn"
+                    variant="secondary"
+                    id="sodar-ss-ontology-btn-copy"
                     title="Copy terms to clipboard"
                     v-clipboard:copy="getCopyData()"
                     v-clipboard:success="onCopySuccess"
@@ -283,7 +284,7 @@
               <td class="text-right">
                 <b-button
                     variant="primary"
-                    class="sodar-list-btn sodar-ss-row-btn"
+                    class="sodar-ss-row-btn"
                     id="sodar-ss-btn-insert"
                     title="Insert ontology term"
                     @click="onTermInsertClick()"
@@ -808,44 +809,37 @@ export default {
 </script>
 
 <style scoped>
-
+#sodar-ss-ontology-btn-copy {
+  padding: 2px 8px 5px;
+}
 div#sodar-ss-ontology-modal-ui {
   min-height: 550px !important;
 }
-
 #sodar-ss-ontology-input-paste {
   width: 70px;
 }
-
 div#sodar-ss-ontology-order {
   white-space: nowrap !important;
   padding-top: 7px;
 }
-
 table#sodar-ss-ontology-term-table {
 }
-
 table#sodar-ss-ontology-term-table tbody tr td:not(:last-child) {
   padding-top: 14px; /* Hack for padding vs button */
 }
-
 table#sodar-ss-ontology-term-table tbody tr td:nth-child(1) {
   width: 450px;
 }
-
 table#sodar-ss-ontology-term-table tbody tr td:nth-child(2) {
   width: 150px;
 }
-
 table#sodar-ss-ontology-term-table tbody tr td:nth-child(3) {
   max-width: 275px;
 }
-
 table#sodar-ss-ontology-term-table tbody tr td:nth-child(4) {
   white-space: nowrap !important;
   width: 150px;
 }
-
 div.sodar-ss-ontology-url {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -853,44 +847,33 @@ div.sodar-ss-ontology-url {
   word-wrap: anywhere;
   min-width: 75px;
 }
-
 tr#sodar-ss-ontology-free-row td {
   vertical-align: middle;
 }
-
 input.sodar-ss-ontology-input-row {
   height: 23px;
 }
-
 input#sodar-ss-ontology-input-search,
 select#sodar-ss-ontology-select-limit,
 select#sodar-ss-ontology-select-term {
   margin-bottom: 8px;
 }
-
 select#sodar-ss-ontology-select-term {
   height: 155px;
 }
-
 div.sodar-ss-ontology-alert {
   margin-bottom: 0;
 }
-
 div#sodar-ss-alert-placeholder {
   height: 50px;
 }
-
 tr#sodar-ss-ontology-free-row td:last-child {
     padding-top: 14px;
 }
-
 div#sodar-ss-ontology-btn-group {
   margin-top: 16px;
 }
-
 .sodar-ss-row-btn {
-  padding-top: 1px !important;
   padding-left: 4px !important;
 }
-
 </style>

@@ -16,7 +16,7 @@
           <b-input-group class="sodar-header-input-group">
             <b-input-group-prepend>
               <b-button
-                  class="sodar-list-btn"
+                  variant="secondary"
                   id="sodar-ss-col-btn-copy"
                   ref="copyBtn"
                   title="Copy configuration to clipboard"
@@ -186,7 +186,7 @@
                 <b-input-group-append>
                   <b-button
                       variant="danger"
-                      class="sodar-list-btn sodar-ss-row-btn"
+                      class="sodar-ss-row-btn pl-1"
                       title="Clear default ontology terms"
                       @click="onOntologyDefaultDelete()"
                       :disabled="!fieldConfig.default"
@@ -1294,46 +1294,39 @@ export default {
 div#sodar-ss-col-content {
   min-height: 620px !important;
 }
-
+#sodar-ss-col-btn-copy {
+  padding: 2px 8px 5px;
+}
 .sodar-ss-col-input-paste {
   width: 70px;
 }
-
 #sodar-ss-col-ontology-default-paste {
   max-width: 80px !important;
 }
-
 table#sodar-ss-col-table tbody td:first-child {
   width: 100px;
   max-width: 250px;
   vertical-align: middle;
   white-space: nowrap;
 }
-
 #sodar-ss-col-btn-group {
   padding-right: 12px;
 }
-
 .sodar-ss-column-wrapper .form-check {
   width: 20px !important;
 }
-
 td.sodar-ss-td-info {
   white-space: normal !important;
 }
-
 td#sodar-ss-col-td-allow-list div.form-check {
   width: 15px !important;
 }
-
 table#sodar-ss-col-post-ontology tbody td:nth-child(2) {
   white-space: nowrap !important;
   width: 120px;
 }
-
 table#sodar-ss-col-post-ontology tbody tr td {
   vertical-align: middle;
   height: 63px;
 }
-
 </style>
