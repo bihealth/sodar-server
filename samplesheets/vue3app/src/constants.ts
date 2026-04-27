@@ -50,6 +50,9 @@ export const SHEET_STATS = [
   ['Data Files', 'data_count']
 ]
 
+// Table rendering
+export const CELL_EMPTY_VAL: string = '-'
+
 // Edit mode message strings
 export const EDIT_MODE_EXIT_MSG: string = 'Exit edit mode'
 export const EDIT_MODE_SAVE_MSG: string =

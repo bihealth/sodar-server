@@ -6,6 +6,7 @@ import {
   type SheetTableCellData,
   type SheetTableOntologyRef
 } from '@/types.ts'
+import { CELL_EMPTY_VAL } from '@/constants.ts'
 
 interface ContactValue {
   name: string,
@@ -170,7 +171,10 @@ if (cellData && cellData.value && cellData.value.length > 0) {
       typeof cellData.value[0] === 'string') {
     // Join list of strings
     displayValue.value = cellData.value.join('; ')
-  }
+  } // TODO: Add support for newInit
+} else {
+  // Add empty value placeholder for displaying
+  displayValue.value = CELL_EMPTY_VAL
 }
 </script>
 
@@ -219,7 +223,9 @@ if (cellData && cellData.value && cellData.value.length > 0) {
       </span>
     </span>
     <!-- External links -->
-    <span v-else-if="colType == 'EXTERNAL_LINKS' && displayValue"
+    <span v-else-if="colType == 'EXTERNAL_LINKS' &&
+                     displayValue &&
+                     displayValue != CELL_EMPTY_VAL"
           class="sodar-ss-data-val-ext">
       <span v-for="(idRef, idx) in displayValue"
             :key="idx"
@@ -240,7 +246,9 @@ if (cellData && cellData.value && cellData.value.length > 0) {
       </span>
     </span>
     <!-- File link -->
-    <span v-else-if="colType === 'LINK_FILE' && displayValue"
+    <span v-else-if="colType === 'LINK_FILE' &&
+                     displayValue &&
+                     displayValue !== CELL_EMPTY_VAL"
           class="sodar-ss-data-val-file">
       <span v-if="(displayValue as FileLink).url">
         <a :href="(displayValue as FileLink).url as string"

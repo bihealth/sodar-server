@@ -7,6 +7,7 @@ import {
   type SheetTableCellData,
   type SheetTableOntologyRef
 } from '@/types.ts'
+import { CELL_EMPTY_VAL } from '@/constants.ts'
 
 import { copy } from '../testUtils.ts'
 import { sodarContext } from '../data/sodarContext.ts'
@@ -254,5 +255,24 @@ describe('DataCellRenderer.vue', () => {
     // NOTE: No actual whitespace character here
     expect(wrapper.find('.sodar-ss-data').text()).toBe('90day')
     expect(wrapper.find('.sodar-ss-data-unit').text()).toBe('day')
+  })
+
+  test('render empty value', async () => {
+    params.value!.value = ''
+    // Use defaultParams for name field
+    const wrapper = mountComponent()
+    expect(wrapper.find('.sodar-ss-data').exists()).toBe(true)
+    const data = wrapper.find('.sodar-ss-data-val-special')
+    expect(data.exists()).toBe(true)
+    expect(data.text()).toBe(CELL_EMPTY_VAL)
+  })
+
+  test('render empty value for external links field', async () => {
+    params.colType = 'EXTERNAL_LINKS'
+    params.value!.value = []
+    const wrapper = mountComponent()
+    const data = wrapper.find('.sodar-ss-data-val-special')
+    expect(data.exists()).toBe(true)
+    expect(data.text()).toBe(CELL_EMPTY_VAL)
   })
 })
