@@ -33,7 +33,7 @@ const enableHover = (props.params!.enableHover === undefined)
   ? true
   : props.params!.enableHover
 
-const colType = ref<string | null>(cellData.colType)
+const colType = ref<string | null>(props.params?.colType)
 const displayValue = ref<
   string | Array<string> | Array<ContactValue> | Array<ExternalLink> | FileLink
 >('')

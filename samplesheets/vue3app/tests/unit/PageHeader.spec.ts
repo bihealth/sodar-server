@@ -6,9 +6,19 @@ import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
 
 import PageHeader from '@/components/PageHeader.vue'
 import { useAppStore, type SodarContext } from '@/stores/appStore.ts'
+import { useEditStore } from '@/stores/editStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
 import { routes } from '@/router/index.ts'
-import { STUDY_NAV_DROPDOWN_LEN, STUDY_NAV_TAB_LEN } from '@/constants.ts'
+import {
+  EDIT_BADGE_DEFAULT_LABEL,
+  EDIT_BADGE_SAVED_LABEL,
+  EDIT_BADGE_UNSAVED_LABEL,
+  EDIT_MODE_EXIT_MSG,
+  EDIT_MODE_SAVE_MSG,
+  EDIT_MODE_UNSAVED_MSG,
+  STUDY_NAV_DROPDOWN_LEN,
+  STUDY_NAV_TAB_LEN
+} from '@/constants.ts'
 
 import { sodarContext } from '../data/sodarContext.ts'
 import { copy } from '../testUtils.ts'
@@ -135,6 +145,61 @@ describe('PageHeader.vue', () => {
     expect(overBtn.classes()).not.toContain('active')
   })
 
+  test('hide badge container with default settings', async() => {
+    const appStore = useAppStore()
+    expect(appStore.editMode).toBe(false)
+    const editStore = useEditStore()
+    expect(editStore.editDataUpdated).toBe(false)
+    expect(editStore.unsavedData).toBe(false)
+    expect(editStore.unsavedRow).toBe(null)
+    const wrapper = mountComponent()
+    expect(wrapper.find(
+      '#sodar-ss-subtitle-badge-container').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-badge-edit').exists()).toBe(false)
+  })
+
+  test('show badge container with editMode=true', async() => {
+    const appStore = useAppStore()
+    appStore.editMode = true
+    const wrapper = mountComponent()
+    const badge = wrapper.find('#sodar-ss-badge-edit')
+    expect(badge.exists()).toBe(true)
+    expect(badge.text()).toBe(EDIT_BADGE_DEFAULT_LABEL)
+  })
+
+  test('show badge container with editMode and unsavedData', async() => {
+    const appStore = useAppStore()
+    appStore.editMode = true
+    const editStore = useEditStore()
+    editStore.unsavedData = true
+    const wrapper = mountComponent()
+    const badge = wrapper.find('#sodar-ss-badge-edit')
+    expect(badge.exists()).toBe(true)
+    expect(badge.text()).toBe(EDIT_BADGE_UNSAVED_LABEL)
+  })
+
+  test('show badge container with editMode and unsavedRow', async() => {
+    const appStore = useAppStore()
+    appStore.editMode = true
+    const editStore = useEditStore()
+    editStore.unsavedRow = { id: 'row0', tableUuid: STUDY_UUID }
+    const wrapper = mountComponent()
+    const badge = wrapper.find('#sodar-ss-badge-edit')
+    expect(badge.exists()).toBe(true)
+    expect(badge.text()).toBe(EDIT_BADGE_UNSAVED_LABEL)
+  })
+
+    test('show badge container with editMode and editDataUpdated', async() => {
+    const appStore = useAppStore()
+    appStore.editMode = true
+    const editStore = useEditStore()
+    editStore.editDataUpdated = true
+    const wrapper = mountComponent()
+    const badge = wrapper.find('#sodar-ss-badge-edit')
+    expect(badge.exists()).toBe(true)
+    expect(badge.text()).toBe(EDIT_BADGE_SAVED_LABEL)
+  })
+
   test('render nav dropdown with default settings', async () => {
     const wrapper = mountComponent()
     expect(wrapper.find('#sodar-ss-nav-dropdown').exists()).toBe(true)
@@ -147,6 +212,21 @@ describe('PageHeader.vue', () => {
     expect(wrapper.find('#sodar-ss-nav-overview').exists()).toBe(true)
     expect(wrapper.find(
       '#sodar-ss-nav-overview').attributes().disabled).not.toBeDefined()
+  })
+
+  test('render nav dropdown with editMode=true', async () => {
+    const appStore = useAppStore()
+    appStore.editMode = true
+    const wrapper = mountComponent()
+    expect(wrapper.find('#sodar-ss-nav-dropdown').exists()).toBe(true)
+    expect(wrapper.findAll('.sodar-ss-nav-item').length).toBe(3)
+    expect(wrapper.find('#sodar-ss-nav-study-' + STUDY_UUID).attributes(
+    ).disabled).not.toBeDefined()
+    expect(wrapper.find('#sodar-ss-nav-assay-' + ASSAY_UUID).attributes(
+    ).disabled).not.toBeDefined()
+    // Overview link should be disabled
+    expect(wrapper.find(
+      '#sodar-ss-nav-overview').attributes().disabled).toBeDefined()
   })
 
   test('hide nav dropdown with no sheets available', async () => {
@@ -199,7 +279,7 @@ describe('PageHeader.vue', () => {
 
   test('render ops dropdown with default settings', async () => {
     const wrapper = mountComponent()
-    const dropdown = wrapper.find('#sodar-ss-nav-dropdown')
+    const dropdown = wrapper.find('#sodar-ss-op-dropdown')
     expect(dropdown.exists()).toBe(true)
     expect(dropdown.attributes().disabled).not.toBeDefined()
     expect(wrapper.findAll('.sodar-ss-op-item').length).toBe(10)
@@ -222,11 +302,13 @@ describe('PageHeader.vue', () => {
     expectDropdownItems(wrapper, expected)
     // Disabled for now
     expect(wrapper.find(
-      '#sodar-ss-op-item-edit').attributes().disabled).toBeDefined()
+      '#sodar-ss-op-item-edit').attributes().disabled).not.toBeDefined()
     expect(wrapper.find(
       '#sodar-ss-op-item-irods').text()).toBe('Update iRODS Collections')
     expect(wrapper.find(
       '#sodar-ss-op-item-delete').text()).toBe('Delete Sheets and Data')
+    // Finish editing button should not be displayed
+    expect(wrapper.find('#sodar-ss-btn-edit-finish').exists()).toBe(false)
   })
 
   test('render ops dropdown with gridsBusy=true', async () => {
@@ -234,7 +316,7 @@ describe('PageHeader.vue', () => {
     appStore.gridsBusy = true
     const wrapper = mountComponent()
     expect(wrapper.find(
-      '#sodar-ss-nav-dropdown').attributes().disabled).toBeDefined()
+      '#sodar-ss-op-dropdown').attributes().disabled).toBeDefined()
   })
 
   test('render ops dropdown with irods_status=false', async () => {
@@ -409,4 +491,71 @@ describe('PageHeader.vue', () => {
     }
     expectDropdownItems(wrapper, expected)
   })
+
+  test('hide ops dropdown and show exit button with editMode',  async () => {
+    const appStore = useAppStore()
+    appStore.editMode = true
+    const wrapper = mountComponent()
+    expect(wrapper.find('#sodar-ss-op-dropdown').exists()).toBe(false)
+    const btn = wrapper.find('#sodar-ss-btn-edit-finish')
+    expect(btn.exists()).toBe(true)
+    expect(btn.attributes().title).toBe(EDIT_MODE_EXIT_MSG)
+    expect(btn.attributes().disabled).not.toBeDefined()
+  })
+
+  test('display exit button save title with editDataUpdated',  async () => {
+    const appStore = useAppStore()
+    appStore.editMode = true
+    const editStore = useEditStore()
+    expect(editStore.versionSaved).toBe(false)
+    editStore.editDataUpdated = true
+    const wrapper = mountComponent()
+    expect(wrapper.find('#sodar-ss-op-dropdown').exists()).toBe(false)
+    const btn = wrapper.find('#sodar-ss-btn-edit-finish')
+    expect(btn.exists()).toBe(true)
+    expect(btn.attributes().title).toBe(EDIT_MODE_EXIT_MSG + EDIT_MODE_SAVE_MSG)
+    expect(btn.attributes().disabled).not.toBeDefined()
+  })
+
+  test('display exit button save title with unsavedRow',  async () => {
+    const appStore = useAppStore()
+    appStore.editMode = true
+    const editStore = useEditStore()
+    editStore.unsavedRow = { id: 'row0', tableUuid: STUDY_UUID }
+    const wrapper = mountComponent()
+    expect(wrapper.find('#sodar-ss-op-dropdown').exists()).toBe(false)
+    const btn = wrapper.find('#sodar-ss-btn-edit-finish')
+    expect(btn.exists()).toBe(true)
+    expect(btn.attributes().title).toBe(EDIT_MODE_UNSAVED_MSG)
+    // Button should be disabled
+    expect(btn.attributes().disabled).toBeDefined()
+  })
+
+  test('enable edit mode from ops dropdown item',  async () => {
+    const appStore = useAppStore()
+    expect(appStore.editMode).toBe(false)
+    expect(appStore.overviewActive).toBe(false)
+    const wrapper = mountComponent()
+    await wrapper.find('#sodar-ss-op-item-edit').trigger('click')
+    expect(appStore.editMode).toBe(true)
+  })
+
+  test('enable edit mode in overview view',  async () => {
+    const appStore = useAppStore()
+    appStore.overviewActive = true
+    const wrapper = mountComponent()
+    await wrapper.find('#sodar-ss-op-item-edit').trigger('click')
+    expect(appStore.editMode).toBe(true)
+    expect(appStore.overviewActive).toBe(false)
+  })
+
+  test('disable edit mode from finish edit button',  async () => {
+    const appStore = useAppStore()
+    appStore.editMode = true
+    const wrapper = mountComponent()
+    await wrapper.find('#sodar-ss-btn-edit-finish').trigger('click')
+    expect(appStore.editMode).toBe(false)
+  })
+
+  // TODO: Assert finish editing actions once implemented
 })

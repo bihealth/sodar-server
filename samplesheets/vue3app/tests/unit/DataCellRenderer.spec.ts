@@ -1,26 +1,18 @@
 import { beforeEach, describe, expect, test } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
-import { type ColDef, type IRowNode } from 'ag-grid-community'
 
 import DataCellRenderer from '@/components/renderers/DataCellRenderer.vue'
-import { type SodarContextLinkLabel } from '@/stores/appStore.ts'
-import { type SheetTableCellData, type SheetTableOntologyRef } from '@/types.ts'
+import {
+  type DataCellRendererParams,
+  type SheetTableCellData,
+  type SheetTableOntologyRef
+} from '@/types.ts'
 
 import { copy } from '../testUtils.ts'
 import { sodarContext } from '../data/sodarContext.ts'
 import studyTables from '../data/studyTables.json'
 
-interface DataCellRendererParams {
-  colDef?: ColDef,
-  editMode: boolean,
-  enableHover?: boolean,
-  linkLabels: { [key: string]: string | SodarContextLinkLabel },
-  node: IRowNode,
-  value: SheetTableCellData,
-}
-
 const defaultCellData: SheetTableCellData = {
-  colType: 'NAME',
   editable: false,
   value: '0814'
 }
@@ -28,6 +20,7 @@ const defaultCellData: SheetTableCellData = {
 // NOTE: headerName does not matter except with ontology and HPO terms
 const defaultParams = {
   colDef: { headerName: 'Header', field: 'col0' },
+  colType: 'NAME',
   editMode: false,
   enableHover: true,
   linkLabels: sodarContext.external_link_labels,
@@ -59,7 +52,7 @@ describe('DataCellRenderer.vue', () => {
     expect(wrapper.find('.sodar-ss-data').exists()).toBe(true)
     const data = wrapper.find('.sodar-ss-data-val-plain')
     expect(data.exists()).toBe(true)
-    expect(data.text()).toBe(params.value.value)
+    expect(data.text()).toBe(params.value?.value)
     // Assert other value types and unit are not present
     expect(wrapper.find('.sodar-ss-data-val-ontology').exists()).toBe(false)
     expect(wrapper.find('.sodar-ss-data-val-contact').exists()).toBe(false)
@@ -71,9 +64,9 @@ describe('DataCellRenderer.vue', () => {
   })
 
   test('render ontology field', async () => {
-    params.value.colType = 'ONTOLOGY'
+    params.colType = 'ONTOLOGY'
     // Example ontology value is two NCBITAXON terms
-    params.value.value = studyTables.tables.study.table_data[0]![1]!.value as
+    params.value!.value = studyTables.tables.study.table_data[0]![1]!.value as
       Array<SheetTableOntologyRef>
     const wrapper = mountComponent()
 
@@ -81,52 +74,52 @@ describe('DataCellRenderer.vue', () => {
     expect(val.exists()).toBe(true)
     expect(val.find('.sodar-ss-hpo-copy-btn').exists()).toBe(false)
     expect(val.text()).toBe(
-      params.value.value[0]!.name + '; ' + params.value.value[1]!.name
+      params.value?.value[0]!.name + '; ' + params.value?.value[1]!.name
     )
     const links = val.findAll('a')
     expect(links.length).toBe(2)
     for (let i = 0; i < 2; i++) {
-      expect(links[i]!.attributes().href).toBe(params.value.value[i]!.accession)
+      expect(links[i]!.attributes().href).toBe(params.value?.value[i]!.accession)
       expect(links[i]!.attributes().title).toBe(
-        params.value.value[i]!.ontology_name)
-      expect(links[i]!.text()).toBe(params.value.value[i]!.name)
+        params.value?.value[i]!.ontology_name)
+      expect(links[i]!.text()).toBe(params.value?.value[i]!.name)
     }
   })
 
   test('render ontology field in edit mode', async () => {
     params.editMode = true
-    params.value.colType = 'ONTOLOGY'
-    params.value.value = studyTables.tables.study.table_data[0]![1]!.value as
+    params.colType = 'ONTOLOGY'
+    params.value!.value = studyTables.tables.study.table_data[0]![1]!.value as
       Array<SheetTableOntologyRef>
     const wrapper = mountComponent()
 
     const val = wrapper.find('.sodar-ss-data-val-ontology')
     expect(val.text()).toBe(
-      params.value.value[0]!.name + '; ' + params.value.value[1]!.name
+      params.value?.value[0]!.name + '; ' + params.value?.value[1]!.name
     )
     expect(val.find('a').exists()).toBe(false) // No links in edit mode
   })
 
   test('render ontology field with HPO term', async () => {
     params.colDef!.headerName = 'HPO terms'
-    params.value.colType = 'ONTOLOGY'
-    params.value.value = [{
+    params.colType = 'ONTOLOGY'
+    params.value!.value = [{
         name: 'Renal tubular atrophy',
-        accession: 'http://purl.obolibrary.org/obo/HP_0000092',
+        accession: 'https://purl.obolibrary.org/obo/HP_0000092',
         ontology_name: 'HP'
     }]
     const wrapper = mountComponent()
 
     const val = wrapper.find('.sodar-ss-data-val-ontology')
     expect(val.find('.sodar-ss-hpo-copy-btn').exists()).toBe(true)
-    expect(val.text()).toBe(params.value.value[0]!.name)
+    expect(val.text()).toBe(params.value!.value[0]!.name)
   })
 
   // TODO: Test HPO term clipboard copying
 
   test('render contact field', async () => {
-    params.value.colType = 'CONTACT'
-    params.value.value = [
+    params.colType = 'CONTACT'
+    params.value!.value = [
       'Alice Example <alice@example.com>',
       'Bob Example <bob@example.com>'
     ]
@@ -140,8 +133,8 @@ describe('DataCellRenderer.vue', () => {
   })
 
   test('render contact field with single contact', async () => {
-    params.value.colType = 'CONTACT'
-    params.value.value = ['Alice Example <alice@example.com>']
+    params.colType = 'CONTACT'
+    params.value!.value = ['Alice Example <alice@example.com>']
     const wrapper = mountComponent()
 
     const val = wrapper.find('.sodar-ss-data-val-contact')
@@ -154,9 +147,9 @@ describe('DataCellRenderer.vue', () => {
   // TODO: Test contact field without email (see #2412)
 
   test('render eternal links field', async () => {
-    params.value.colType = 'EXTERNAL_LINKS'
+    params.colType = 'EXTERNAL_LINKS'
     // Second badge should be rendered as a link
-    params.value.value = ['x-generic-remote:123', 'x-sodar-example-link:456']
+    params.value!.value = ['x-generic-remote:123', 'x-sodar-example-link:456']
     const wrapper = mountComponent()
 
     const val = wrapper.find('.sodar-ss-data-val-ext')
@@ -174,8 +167,8 @@ describe('DataCellRenderer.vue', () => {
   })
 
   test('render eternal links field with unknown ID types', async () => {
-    params.value.colType = 'EXTERNAL_LINKS'
-    params.value.value = ['abc:123', 'def:456']
+    params.colType = 'EXTERNAL_LINKS'
+    params.value!.value = ['abc:123', 'def:456']
     const wrapper = mountComponent()
 
     const val = wrapper.find('.sodar-ss-data-val-ext')
@@ -190,9 +183,9 @@ describe('DataCellRenderer.vue', () => {
   })
 
   test('render file link field', async () => {
-    params.value.colType = 'LINK_FILE'
-    params.value.link = 'https://example.com'
-    params.value.value = 'Example Link'
+    params.colType = 'LINK_FILE'
+    params.value!.link = 'https://example.com'
+    params.value!.value = 'Example Link'
     const wrapper = mountComponent()
 
     const val = wrapper.find('.sodar-ss-data-val-file')
@@ -206,19 +199,19 @@ describe('DataCellRenderer.vue', () => {
 
   // TODO: Remove tooltip support? (see #2413)
   test('render file link field with tooltip', async () => {
-    params.value.colType = 'LINK_FILE'
-    params.value.link = 'https://example.com'
-    params.value.tooltip = 'Tooltip'
-    params.value.value = 'Example Link'
+    params.colType = 'LINK_FILE'
+    params.value!.link = 'https://example.com'
+    params.value!.tooltip = 'Tooltip'
+    params.value!.value = 'Example Link'
     const wrapper = mountComponent()
     const val = wrapper.find('.sodar-ss-data-val-file')
-    expect(val.find('a').attributes().title).toBe(params.value.tooltip)
+    expect(val.find('a').attributes().title).toBe(params.value?.tooltip)
   })
 
   test('render file link field without link', async () => {
-    params.value.colType = 'LINK_FILE'
+    params.colType = 'LINK_FILE'
     // No link added to value
-    params.value.value = 'Example Link'
+    params.value!.value = 'Example Link'
     const wrapper = mountComponent()
 
     const val = wrapper.find('.sodar-ss-data-val-file')
@@ -229,7 +222,7 @@ describe('DataCellRenderer.vue', () => {
 
   test('render field with value as simple link', async () => {
     // NOTE: Yes, this also works with name field
-    params.value.value = 'Link <https://example.com>'
+    params.value!.value = 'Link <https://example.com>'
     const wrapper = mountComponent()
     expect(wrapper.find('.sodar-ss-data').exists()).toBe(true)
     const data = wrapper.find('.sodar-ss-data-val-link')
@@ -241,7 +234,7 @@ describe('DataCellRenderer.vue', () => {
   })
 
   test('render field with value as list of strings', async () => {
-    params.value.value = ['val1', 'val2']
+    params.value!.value = ['val1', 'val2']
     const wrapper = mountComponent()
     expect(wrapper.find('.sodar-ss-data').exists()).toBe(true)
     const data = wrapper.find('.sodar-ss-data-val-special')
@@ -250,9 +243,9 @@ describe('DataCellRenderer.vue', () => {
   })
 
   test('render unit field', async () => {
-    params.value.colType = 'UNIT'
-    params.value.value = '90'
-    params.value.unit = 'day'
+    params.colType = 'UNIT'
+    params.value!.value = '90'
+    params.value!.unit = 'day'
     const wrapper = mountComponent()
 
     // const val = wrapper.find('.sodar-ss-data-val-')

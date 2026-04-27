@@ -15,7 +15,7 @@ import {
   getFieldVisibility,
   getFlatValue,
   getStudyShortcutHeaderGroup
-} from '@/gridUtils.ts'
+} from '@/utils/gridUtils.ts'
 import {
   type SodarContext,
   type SodarContextAssay,

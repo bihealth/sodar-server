@@ -1,12 +1,14 @@
-// Helpers for SODAR ag-grid setup
+// API and helpers for ag-grid setup
 
 import { type TemplateRef } from 'vue'
 import {
   themeQuartz,
   type CellClassParams,
+  type CellEditorSelectorResult,
   type ColDef,
   type ColGroupDef,
   type GridOptions,
+  type ICellEditorParams,
   type ValueGetterParams,
 } from 'ag-grid-community'
 
@@ -18,7 +20,9 @@ import {
 import {
   type AssayIrodsPath,
   type AssayRenderTable,
+  type CellEditorParamInput,
   type ColDefBuildParams,
+  type DataCellRendererParams,
   type SheetTableCellData,
   type SheetTableFieldHeader,
   type SheetTableOntologyRef,
@@ -264,7 +268,7 @@ export function getFieldVisibility (
 }
 
 // Return edit configuration for field column
-export function getFieldEditConfig (
+export function getEditConfigField (
     tableUuid: string,
     assayMode: boolean,
     topIdx: number,
@@ -319,7 +323,7 @@ export function getFieldHeader (
         editMode: editMode,
         fieldEditable: fieldEditable, // Needed here to update cellClass
         linkLabels: externalLinkLabels
-      },
+      } as DataCellRendererParams,
       comparator: compareDataCellValues,
       context: {},
       filterValueGetter: getDataCellFilterValue
@@ -350,6 +354,75 @@ export function getFieldHeader (
   return header
 }
 
+/* Grid setup edit mode helpers --------------------------------------------- */
+
+export function getHeaderEditRendererParams (
+    tableUuid: string,
+    assayMode: boolean,
+    fieldHeader: SheetTableFieldHeader,
+    nodeIdx: number,
+    editConfigField: StudyEditConfigNodeField,
+    configFieldIdx: number,
+    studyNodeLen: number,
+    editable: boolean,
+) {
+  let configAssayUuid = assayMode ? tableUuid : null
+  let configNodeIdx = nodeIdx
+  if (assayMode) {
+    if (configNodeIdx < studyNodeLen) configAssayUuid = null
+    else configNodeIdx = nodeIdx - studyNodeLen
+  }
+  return {
+    // modalComponent: null, // TODO: Implement this
+    colType: fieldHeader.col_type,
+    editConfigField: editConfigField,
+    assayUuid: configAssayUuid,
+    configNodeIdx: configNodeIdx,
+    configFieldIdx: configFieldIdx,
+    editable: editable, // Add here to allow checking by cell
+    headerType: fieldHeader.type,
+    assayMode: assayMode, // Needed for sample col in assay
+    canEditConfig: true // TODO: Is this redundant now?
+  }
+}
+
+// Cell editor selector
+export function getCellEditor (
+    params: ICellEditorParams
+): CellEditorSelectorResult {
+  // NOTE: no need to set additional editorParams, we can get these from
+  //       editStore within the editor now
+  const editorParams = params.colDef.cellEditorParams
+  const hcParams = params.colDef.headerComponentParams
+  let editorName = 'DataCellEditor'
+
+  if (hcParams.assayMode &&
+      params.column.getOriginalParent(
+      )?.getColGroupDef()?.headerName === 'Sample' &&
+      params.colDef.headerName === 'Name' &&
+      'newRow' in params.value &&
+      params.value.newRow) {
+    // If sample name in an assay or an object ref, return object selector
+    editorName = 'ObjectSelectEditor'
+  } else if (editorParams.fieldHeader.type === 'protocol') {
+    // If protocol, return object selector
+    editorName = 'ObjectSelectEditor'
+  } else if (hcParams.colType === 'ONTOLOGY') {
+    // For ontology, return OntologyEditor
+    editorName = 'OntologyEditor'
+  }
+  const ret: CellEditorSelectorResult = {
+    component: editorName,
+    params: editorParams
+  }
+  // Set popup for unit columns
+  if (editorParams.editConfigField.unit) {
+    ret.popup = true
+    ret.popupPosition = 'over'
+  }
+  return ret
+}
+
 /* Grid setup --------------------------------------------------------------- */
 
 // Initialize ag-grid gridOptions
@@ -370,6 +443,7 @@ export function initGridOptions (
     pagination: false,
     rowHeight: 38,
     singleClickEdit: false,
+    stopEditingWhenCellsLoseFocus: false,
     suppressColumnMoveAnimation: true,
     suppressColumnVirtualisation: false,
     suppressHeaderFocus: true,
@@ -379,8 +453,6 @@ export function initGridOptions (
 }
 
 // Build column definitions for a study/assay grid
-// TODO: Split this into multiple functions and simplify (ongoing)
-// TODO: Simplify params
 export function buildColDef (
     table: AssayRenderTable | StudyRenderTable,
     tableUuid: string,
@@ -422,11 +494,11 @@ export function buildColDef (
       headerGroup.cellRendererParams = { headers: topHeader.headers }
     }
     */
-    // let configFieldIdx = 0 // For config management
+    let configFieldIdx = 0 // For config management
 
     // Iterate through field headers
     while (j < headerIdx + topHeader.colspan) {
-      let fieldEditConfig: StudyEditConfigNodeField | null | undefined
+      let editConfigField: StudyEditConfigNodeField | null | undefined
       const fieldHeader = table.field_header[j]
       if (!fieldHeader) continue
       let fieldEditable = false
@@ -448,14 +520,15 @@ export function buildColDef (
 
       // Get editFieldConfig if editing
       if (params.editMode && params.studyEditConfig) {
-        fieldEditConfig = getFieldEditConfig(
+        editConfigField = getEditConfigField(
           tableUuid, assayMode, i, fieldHeader, params.studyEditConfig)
       }
-      if (fieldEditConfig &&
-          'editable' in fieldEditConfig &&
-          fieldEditConfig.editable !== undefined) {
-        fieldEditable = fieldEditConfig.editable
+      if (editConfigField &&
+          'editable' in editConfigField &&
+          editConfigField.editable !== undefined) {
+        fieldEditable = editConfigField.editable
       }
+      // if (params.editMode) fieldEditable = true // DEBUG
 
       // Get field column visibility
       const fieldVisible = getFieldVisibility(
@@ -496,103 +569,57 @@ export function buildColDef (
       }
 
       // Update header for edit mode
-      // TODO: Refactor and re-enable once adding edit mode support
-      /*
-      if (appStore.editMode) {
+      if (params.editMode) {
         // Set header renderer for fields we can manage
-        if (appStore.getPerm('edit_sheet')) {
-          let configAssayUuid = assayMode ? tableUuid : null
-          let configNodeIdx = i
-          if (assayMode) {
-            const studyNodeLen = tableStore.columnDefs.study.length - 3
-            if (configNodeIdx < studyNodeLen) configAssayUuid = null
-            else configNodeIdx = i - studyNodeLen
-          }
-
+        // TODO: This perm check should be redundant now?
+        if (params.sodarContext.perms.edit_sheet) {
           header.headerComponent = 'HeaderEditRenderer'
-          header.headerComponentParams = {
-            app: params.app,
-            modalComponent: params.app.$refs.columnConfigModal,
-            colType: colType,
-            fieldConfig: fieldEditConfig,
-            assayUuid: configAssayUuid,
-            configNodeIdx: configNodeIdx,
-            configFieldIdx: configFieldIdx,
-            editable: fieldEditable, // Add here to allow checking by cell
-            headerType: fieldHeader.type,
-            assayMode: params.assayMode, // Needed for sample col in assay
-            canEditConfig: params.sodarContext.perms.edit_sheet
-          }
-          header.width = header.width + 20 // Fit button in header
-          header.minWidth = header.minWidth + 20
+          header.headerComponentParams = getHeaderEditRendererParams(
+            tableUuid,
+            assayMode,
+            fieldHeader,
+            i,
+            editConfigField as StudyEditConfigNodeField,
+            configFieldIdx,
+            params.studyNodeLen,
+            fieldEditable,
+          )
+          header.width = header.width! + 20 // Fit button in header
+          header.minWidth = header.minWidth! + 20
         }
 
         // Set up field editing
-        if (fieldEditConfig) {
+        if (editConfigField) {
           // Allow overriding field editability cell-by-cell
           header.editable = function (p) {
-            if (p.colDef.field in p.node.data &&
-                'editable' in p.node.data[p.colDef.field]) {
-              return p.node.data[p.colDef.field].editable
+            const field = p.colDef.field as string
+            if (field in p.node.data &&
+                'editable' in p.node.data[field]) {
+              return p.node.data[field].editable
             } else if ('headerComponentParams' in p.colDef) {
               return p.colDef.headerComponentParams.editable
             } else return false
           }
-
           // Set up cell editor selector
-          header.cellEditorSelector = function (p) {
-            let editorName = 'DataCellEditor'
-            // TODO: Refactor so that default params are read from header
-            const editorParams = Object.assign(p.colDef.cellEditorParams)
-            const editContext = params.editContext
-
-            // If sample name in an assay or an object ref, return selector
-            // TODO: Simplify?
-            if (p.colDef.headerComponentParams.assayMode &&
-                p.column.originalParent.colGroupDef.headerName === 'Sample' &&
-                p.colDef.headerName === 'Name' &&
-                'newRow' in p.value &&
-                p.value.newRow) {
-              editorName = 'ObjectSelectEditor'
-              editorParams.selectOptions = editContext.samples
-            } else if (editorParams.headerInfo.header_type === 'protocol') {
-              editorName = 'ObjectSelectEditor'
-              editorParams.selectOptions = Object.assign(editContext.protocols)
-            } else if (colType === 'ONTOLOGY') {
-              editorName = 'OntologyEditor'
-              editorParams.sodarOntologies = editContext.sodar_ontologies
-            }
-
-            return { component: editorName, params: editorParams }
-          }
-
+          header.cellEditorSelector = getCellEditor
           // Set default cellEditorParams (may be updated in the selector)
           header.cellEditorParams = {
-            app: params.app,
-            // Header information to be passed for calling server
-            headerInfo: {
-              header_name: fieldHeader.name,
-              header_type: fieldHeader.type,
-              header_field: header.field, // For updating other cells
-              obj_cls: fieldHeader.obj_cls
-            },
-            renderInfo: { align: colAlign, width: colWidth },
-            editConfig: fieldEditConfig, // Editor configuration
-            gridUuid: params.gridUuid, // TODO: Could get this from header params
-            sampleColId: params.sampleColId
-          }
-
-          // Add item type to generic material name
-          if (fieldHeader.obj_cls === 'GenericMaterial' &&
-              fieldHeader.type === 'name') {
-            header.cellEditorParams.headerInfo.item_type = fieldHeader.item_type
-          }
+            assayMode: assayMode,
+            colAlign: colAlign,
+            colWidth: colWidth,
+            editConfigField: editConfigField,
+            fieldHeader: fieldHeader,
+            fieldId: header.field,
+            notifyCb: params.notifyCb,
+            ontologyEditModal: params.ontologyEditModal,
+            sampleColId: params.sampleColId,
+            tableUuid: tableUuid
+          } as CellEditorParamInput
         }
       }
-      */
       if (j > 0) headerGroup.children.push(header)
       j++
-      // configFieldIdx += 1
+      configFieldIdx += 1
     }
 
     headerIdx = j
@@ -636,20 +663,25 @@ export function buildRowData (
     const row: SheetTableRowData = { 'rowNum': i + 1 }
     let nodeUuid = null
     for (let j = 0; j < rowCells!.length; j++) {
+      // HACK: Reformat protocol UUID reference
+      const cellInput = rowCells![j]
+      let uuidRef: string = ''
+      if (editMode && cellInput && 'uuid_ref' in cellInput) {
+        uuidRef = cellInput.uuid_ref as string
+        delete cellInput.uuid_ref
+      }
       const cellData = rowCells![j] as SheetTableCellData
+      if (uuidRef) cellData.uuidRef = uuidRef
 
       // Set node UUID
       if ('uuid' in cellData && cellData.uuid) {
         nodeUuid = cellData.uuid // Get node UUID from first node cell
       } else cellData.uuid = nodeUuid as string // Set node UUID to other cells
 
-      // Copy col_type info to each cell (comparator can't access colDef)
-      cellData.colType = table.field_header[j]?.col_type as string
-
       // Set user friendly ontology accession URL
       if (sodarContext.ontology_url_template &&
           !editMode &&
-          cellData.colType === 'ONTOLOGY') {
+          table.field_header[j]?.col_type === 'ONTOLOGY') {
         for (const term of (cellData.value as Array<SheetTableOntologyRef>)) {
           if (term.accession &&
               sodarContext.ontology_url_skip &&
@@ -708,17 +740,11 @@ export function compareDataCellValues (
   dataA: SheetTableCellData,
   dataB: SheetTableCellData
 ): number {
-  let valueA = dataA.value
-  let valueB = dataB.value
-  if (['UNIT', 'NUMERIC'].includes(dataA.colType)) {
-    const vA = valueA as string
-    const vB = valueB as string
-    if (!isNaN(parseFloat(vA)) && !isNaN(parseFloat(vB))) {
-      return parseFloat(vA) - parseFloat(vB)
-    }
-  }
-  valueA = getFlatValue(valueA) as string
-  valueB = getFlatValue(valueB) as string
+  const valueA = getFlatValue(dataA.value) as string
+  const valueB = getFlatValue(dataB.value) as string
+  const floatA = parseFloat(valueA)
+  const floatB = parseFloat(valueB)
+  if (!isNaN(floatA) && !isNaN(floatB)) return floatA - floatB
   return valueA.localeCompare(valueB)
 }
 

@@ -7,6 +7,9 @@ export const STUDY_NAV_TAB_LEN: number = 32
 // Default toast display interval in milliseconds
 export const TOAST_INTERVAL: number = 1500
 
+// SODAR sample sheet model
+// export const DB_OBJ_CLASS_MATERIAL = 'GenericMaterial'
+
 // Detail table fields
 export const INV_META_FIELDS = [
   ['Identifier', 'identifier'],
@@ -46,3 +49,28 @@ export const SHEET_STATS = [
   ['Samples', 'sample_count'],
   ['Data Files', 'data_count']
 ]
+
+// Edit mode message strings
+export const EDIT_MODE_EXIT_MSG: string = 'Exit edit mode'
+export const EDIT_MODE_SAVE_MSG: string =
+  ' and save current sheet version as backup'
+export const EDIT_MODE_UNSAVED_MSG: string =
+  'Please save or discard your unsaved table row before exiting edit mode'
+
+// Edit mode badge strings
+export const EDIT_BADGE_DEFAULT_LABEL: string = 'Edit Mode'
+export const EDIT_BADGE_SAVED_LABEL: string = 'Changes Saved'
+export const EDIT_BADGE_UNSAVED_LABEL: string = 'Unsaved Changes'
+
+// Default regex for sheet editor
+export const EDIT_REGEX: { [key: string]: RegExp } = {
+  dataName:       /^[\w\-.]+$/,
+  date:           /^\d{4}-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])$/,
+  double:         /^-?[0-9]+\.[0-9]+?$/,
+  externalLinks:  /^([\w-]+:[\w\-_]+)(;\s*[\w-]+:[\w-_]+)*$/,
+  integer:        /^(([1-9][0-9]*)|(0?))$/, // TODO: TBD: Allow negative?
+  name:           /^([A-Za-z0-9-_/]*)$/
+}
+
+// Misc edit mode constants
+export const EDIT_TERM_QUERY_MIN_LEN: number = 3

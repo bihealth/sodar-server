@@ -36,52 +36,52 @@ export interface TableHeights {
 }
 
 export const useTableStore = defineStore('table', () => {
+  // Variables
+  // TODO: Remove repetition for default values
+  const assayShortcuts = ref<SheetAssayShortcuts>({})
+  const columnDefs = ref<SheetColumnDefs>({ study: [], assays: {} })
+  const gridApi = ref<SheetGridApi>({ study: null, assays: {} })
+  const gridOptions = ref<SheetGridOptions>({ study: {}, assays: {} })
+  const renderError = ref<string | null>(null)
+  const rowData = ref<SheetRowData>({ study: [], assays: {} })
+  const sampleColId = ref<string>('')
+  const sampleIdx = ref<number>(-1)
+  const sourceColSpan = ref<number>(-1)
+  const studyDisplayConfig = ref<StudyDisplayConfig | null>(null)
+  const studyEditConfig = ref<StudyEditConfig | null>(null)
+  const tableHeights = ref<TableHeights | null>(null)
+
+  // Functions
+  function $reset () {
+    assayShortcuts.value = {}
+    columnDefs.value  = { study: [], assays: {} }
+    gridApi.value = { study: null, assays: {} }
+    gridOptions.value = { study: {}, assays: {} }
+    renderError.value = null
+    rowData.value = { study: [], assays: {} }
+    sampleColId.value = ''
+    sampleIdx.value = -1
+    sourceColSpan.value = -1
+    studyDisplayConfig.value = null
+    studyEditConfig.value = null
+    tableHeights.value = null
+  }
+
+  return {
     // Variables
-    // TODO: Remove repetition for default values
-    const assayShortcuts = ref<SheetAssayShortcuts>({})
-    const columnDefs = ref<SheetColumnDefs>({ study: [], assays: {} })
-    const gridApi = ref<SheetGridApi>({ study: null, assays: {} })
-    const gridOptions = ref<SheetGridOptions>({ study: {}, assays: {} })
-    const renderError = ref<string | null>(null)
-    const rowData = ref<SheetRowData>({ study: [], assays: {} })
-    const sampleColId = ref<string>('')
-    const sampleIdx = ref<number>(-1)
-    const sourceColSpan = ref<number>(-1)
-    const studyDisplayConfig = ref<StudyDisplayConfig | null>(null)
-    const studyEditConfig = ref<StudyEditConfig | null>(null)
-    const tableHeights = ref<TableHeights | null>(null)
-
+    assayShortcuts,
+    columnDefs,
+    gridApi,
+    gridOptions,
+    renderError,
+    rowData,
+    sampleColId,
+    sampleIdx,
+    sourceColSpan,
+    studyDisplayConfig,
+    studyEditConfig,
+    tableHeights,
     // Functions
-    function $reset () {
-      assayShortcuts.value = {}
-      columnDefs.value  = { study: [], assays: {} }
-      gridApi.value = { study: null, assays: {} }
-      gridOptions.value = { study: {}, assays: {} }
-      renderError.value = null
-      rowData.value = { study: [], assays: {} }
-      sampleColId.value = ''
-      sampleIdx.value = -1
-      sourceColSpan.value = -1
-      studyDisplayConfig.value = null
-      studyEditConfig.value = null
-      tableHeights.value = null
-    }
-
-    return {
-        // Variables
-        assayShortcuts,
-        columnDefs,
-        gridApi,
-        gridOptions,
-        renderError,
-        rowData,
-        sampleColId,
-        sampleIdx,
-        sourceColSpan,
-        studyDisplayConfig,
-        studyEditConfig,
-        tableHeights,
-        // Functions
-        $reset
-    }
+    $reset
+  }
 })

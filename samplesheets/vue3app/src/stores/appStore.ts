@@ -89,10 +89,14 @@ export const useAppStore = defineStore('app', ()=> {
     () => currentStudyUuid.value && sodarContext.value)
 
   // Functions
+
+  // Get perms value for given key
   function getPerm (permName: string): boolean | undefined {
     if (!sodarContext.value || !('perms' in sodarContext.value)) return false
     return sodarContext.value['perms'][permName]
   }
+
+  // Get sheet_stats value for given key
   function getStat (statName: string): number | undefined {
     if (!sodarContext.value || !('sheet_stats' in sodarContext.value)) {
       return undefined
@@ -101,20 +105,20 @@ export const useAppStore = defineStore('app', ()=> {
   }
 
   return {
-      // Variables
-      currentAssayUuid,
-      currentStudyUuid,
-      editMode,
-      gridsBusy,
-      gridsLoaded,
-      overviewActive,
-      projectUuid,
-      sodarContext,
-      windowsOs,
-      // Computed
-      sheetsAvailable,
-      // Functions
-      getPerm,
-      getStat
+    // Variables
+    currentAssayUuid,
+    currentStudyUuid,
+    editMode,
+    gridsBusy,
+    gridsLoaded,
+    overviewActive,
+    projectUuid,
+    sodarContext,
+    windowsOs,
+    // Computed
+    sheetsAvailable,
+    // Functions
+    getPerm,
+    getStat
   }
 })

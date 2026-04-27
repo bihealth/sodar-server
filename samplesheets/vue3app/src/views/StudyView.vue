@@ -1,44 +1,66 @@
 <script setup lang="ts">
 import { nextTick, onMounted, useTemplateRef, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { useToast, type BaseColorVariant } from 'bootstrap-vue-next'
 
 import AssayShortcutCard from '@/components/AssayShortcutCard.vue'
 import ColumnToggleModal from '@/components/modals/ColumnToggleModal.vue'
+import DataCellEditor from '@/components/editors/DataCellEditor.vue'
 import DataCellRenderer from '@/components/renderers/DataCellRenderer.vue'
+import HeaderEditRenderer from '@/components/renderers/HeaderEditRenderer.vue'
 import IrodsButtonsRenderer from '@/components/renderers/IrodsButtonsRenderer.vue'
 import IrodsDirModal from '@/components/modals/IrodsDirModal.vue'
+import ObjectSelectEditor from '@/components/editors/ObjectSelectEditor.vue'
+import OntologyEditModal from '@/components/modals/OntologyEditModal.vue'
+import OntologyEditor from '@/components/editors/OntologyEditor.vue'
 import SheetTable from '@/components/SheetTable.vue'
 import SheetTableHeader from '@/components/SheetTableHeader.vue'
 import StudyShortcutModal from '@/components/modals/StudyShortcutModal.vue'
 import StudyShortcutsRenderer from '@/components/renderers/StudyShortcutsRenderer.vue'
 import WaitSection from '@/components/WaitSection.vue'
-import { buildColDef, buildRowData, initGridOptions } from '@/gridUtils.ts'
+import { useAppStore, type SodarContext } from '@/stores/appStore.ts'
+import { useEditStore } from '@/stores/editStore.ts'
+import { useTableStore } from '@/stores/tableStore.ts'
+import {
+  buildColDef,
+  buildRowData,
+  initGridOptions
+} from '@/utils/gridUtils.ts'
 import {
   type AssayRenderTable,
   type AssayShortcuts,
   type ColDefBuildParams,
   type RenderTableData,
   type StudyEditConfig,
+  type StudyEditContext
 } from '@/types.ts'
-import { useAppStore, type SodarContext } from '@/stores/appStore.ts'
-import { useTableStore } from '@/stores/tableStore.ts'
+import { TOAST_INTERVAL } from '@/constants.ts'
 
 // Set up route
 const route = useRoute()
 
 // Set up stores
 const appStore = useAppStore()
+const editStore = useEditStore()
 const tableStore = useTableStore()
 
 // Set up template references
 const columnToggleCompRef = useTemplateRef('columnToggleModalComponent')
 const irodsDirCompRef = useTemplateRef('irodsDirModalComponent')
+const ontologyEditCompRef = useTemplateRef('ontologyEditModalComponent')
 const studyShortcutCompRef = useTemplateRef('studyShortcutModalComponent')
+
+// Init toasts
+const { create } = useToast()
 
 // Expose components for ag-grid
 defineExpose({
+  DataCellEditor,
   DataCellRenderer,
+  HeaderEditRenderer,
   IrodsButtonsRenderer,
+  ObjectSelectEditor,
+  OntologyEditor,
   StudyShortcutsRenderer
 })
 
@@ -56,6 +78,19 @@ async function scrollToCurrentTable () {
   }
 }
 
+function showToast (
+    body: string,
+    variant: keyof BaseColorVariant,
+    interval: number | undefined | null
+) {
+  if (!interval || interval === 0) interval = TOAST_INTERVAL
+  create({
+    body: body,
+    variant: variant,
+    modelValue: interval
+  })
+}
+
 /* Study building ----------------------------------------------------------- */
 
 function buildStudy (data: RenderTableData) {
@@ -63,7 +98,9 @@ function buildStudy (data: RenderTableData) {
   if (appStore.editMode && 'study_config' in data) {
     tableStore.studyEditConfig = data.study_config as StudyEditConfig
   }
-  // TODO: Set up editContext
+  if (appStore.editMode && 'edit_context' in data) {
+    editStore.editContext = data.edit_context as StudyEditContext
+  }
   tableStore.tableHeights = data.table_heights
   tableStore.studyDisplayConfig = data.display_config
   tableStore.sourceColSpan = data.tables.study.top_header[0]?.colspan || -1
@@ -83,13 +120,20 @@ function buildStudy (data: RenderTableData) {
   // TODO: Setup context for gridOptions if needed
   tableStore.gridOptions.study = initGridOptions({}, appStore.editMode)
   const colDefBuildParams: ColDefBuildParams = {
-    studyUuid: appStore.currentStudyUuid,
     editMode: appStore.editMode,
-    sodarContext: appStore.sodarContext as SodarContext,
-    studyDisplayConfig: tableStore.studyDisplayConfig,
-    studyEditConfig: tableStore.studyEditConfig,
     irodsDirModal: irodsDirCompRef,
-    studyShortcutModal: studyShortcutCompRef
+    notifyCb: showToast,
+    sampleColId: tableStore.sampleColId,
+    sodarContext: appStore.sodarContext as SodarContext,
+    studyEditConfig: tableStore.studyEditConfig,
+    studyDisplayConfig: tableStore.studyDisplayConfig,
+    studyNodeLen: data.tables.study.field_header.length,
+    studyShortcutModal: studyShortcutCompRef,
+    studyUuid: appStore.currentStudyUuid,
+  }
+  if (appStore.editMode) {
+    colDefBuildParams.editContext = editStore.editContext as StudyEditContext
+    colDefBuildParams.ontologyEditModal = ontologyEditCompRef
   }
   tableStore.columnDefs.study = buildColDef(
       data.tables.study, appStore.currentStudyUuid, false, colDefBuildParams
@@ -129,7 +173,7 @@ function getStudy (studyUuid: string, editMode: boolean) {
   appStore.gridsBusy = true
   appStore.gridsLoaded = false
   tableStore.$reset()
-  // TODO: Clear edit data once implemented
+  editStore.$reset()
   // TODO: Set filter state
 
   // Retrieve study tables
@@ -243,6 +287,10 @@ onMounted(() => {
       id="sodar-ss-column-toggle-modal-component"
       ref="columnToggleModalComponent">
   </ColumnToggleModal>
+  <OntologyEditModal
+      id="sodar-ss-ontology-edit-modal-component"
+      ref="ontologyEditModalComponent">
+  </OntologyEditModal>
 </template>
 
 <style scoped>

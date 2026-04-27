@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Common modal header
-defineProps(['modalRef', 'title'])
+defineProps(['modalRef', 'title', 'hideCloseButton'])
 </script>
 
 <template>
@@ -8,6 +8,7 @@ defineProps(['modalRef', 'title'])
     <h5 class="modal-title flex-grow-1">{{ title }}</h5>
       <slot name="extend"></slot>
     <button
+        v-if="hideCloseButton !== true"
         class="close modal-close"
         type="button"
         @click="modalRef.hide()">

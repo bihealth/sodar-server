@@ -5,8 +5,15 @@ import { BButton, BNav, BDropdown, BDropdownItem } from 'bootstrap-vue-next'
 
 import WinExportModal from '@/components/modals/WinExportModal.vue'
 import { useAppStore } from '@/stores/appStore.ts'
+import { useEditStore } from '@/stores/editStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
 import {
+  EDIT_BADGE_DEFAULT_LABEL,
+  EDIT_BADGE_SAVED_LABEL,
+  EDIT_BADGE_UNSAVED_LABEL,
+  EDIT_MODE_EXIT_MSG,
+  EDIT_MODE_SAVE_MSG,
+  EDIT_MODE_UNSAVED_MSG,
   STUDY_NAV_DROPDOWN_LEN,
   STUDY_NAV_TAB_LEN
 } from '@/constants.ts'
@@ -14,6 +21,7 @@ import {
 const route = useRoute()
 const router = useRouter()
 const appStore = useAppStore()
+const editStore = useEditStore()
 const tableStore = useTableStore()
 
 const winExportCompRef = ref<typeof WinExportModal | null>(null)
@@ -69,6 +77,37 @@ function handleOverviewNavigation () {
   appStore.overviewActive = true
   router.push({ name: 'overview', replace: true })
 }
+
+function toggleEditMode () {
+  appStore.editMode = !appStore.editMode
+  if (appStore.editMode) { // Edit mode
+    // Navigate to default study if needed
+    if (appStore.overviewActive || !appStore.currentStudyUuid) {
+      appStore.currentStudyUuid = Object.keys(
+        appStore.sodarContext!.studies)[0] as string
+      handleStudyNavigation(appStore.currentStudyUuid, null)
+    }
+  } else { // Browsing mode
+    // TODO: Call finish editing handler once implemented
+    // TODO: Update selectEnabled
+    if (appStore.currentStudyUuid) {
+      handleStudyNavigation(
+        appStore.currentStudyUuid, appStore.currentAssayUuid)
+    }
+  }
+  // NOTE: editDataUpdated was originally reset here, but that should not be
+  //       needed anymore with the editStore reset. Ensure this is correct.
+}
+
+function getFinishEditTitle () {
+  if (!editStore.unsavedRow) {
+    let title = EDIT_MODE_EXIT_MSG
+    if (!editStore.versionSaved && editStore.editDataUpdated) {
+      title += EDIT_MODE_SAVE_MSG
+    }
+    return title
+  } else return EDIT_MODE_UNSAVED_MSG
+}
 </script>
 
 <template>
@@ -105,13 +144,33 @@ function handleOverviewNavigation () {
             id="sodar-ss-nav-tab-overview"
             @click="handleOverviewNavigation()"
             :active="appStore.overviewActive"
-            :disabled="appStore.gridsBusy">
+            :disabled="appStore.gridsBusy || appStore.editMode">
           <i class="iconify" data-icon="mdi:sitemap"></i> Overview
         </BButton>
       </BNav>
     </div>
     <div class="col d-flex justify-content-end"
          id="sodar-ss-subtitle-right">
+      <!-- Edit mode badge -->
+      <!-- TODO: Implement editor help modal showing -->
+      <div class="mr-1"
+           id="sodar-ss-subtitle-badge-container">
+      <span v-if="appStore.editMode"
+            class="badge badge-pill badge-info mr-2"
+            id="sodar-ss-badge-edit">
+        <a id="sodar-ss-link-edit-help"
+           title="Editor status">
+          <i class="iconify mr-1" data-icon="mdi:lead-pencil"></i>
+          <span v-if="editStore.unsavedData || editStore.unsavedRow">
+            {{ EDIT_BADGE_UNSAVED_LABEL }}
+          </span>
+          <span v-else-if="editStore.editDataUpdated">
+            {{ EDIT_BADGE_SAVED_LABEL }}
+          </span>
+          <span v-else>{{ EDIT_BADGE_DEFAULT_LABEL }}</span>
+        </a>
+      </span>
+        </div>
       <!-- Nav dropdown -->
       <BDropdown
           v-if="appStore.sheetsAvailable"
@@ -155,6 +214,7 @@ function handleOverviewNavigation () {
       <!-- TODO: Add save version button -->
       <!-- Operations dropdown -->
       <BDropdown
+          v-if="!appStore.editMode"
           id="sodar-ss-op-dropdown"
           text="Sheet Operations"
           variant="primary"
@@ -192,8 +252,6 @@ function handleOverviewNavigation () {
             :href="'template/select/' + appStore.projectUuid">
           <i class="iconify" data-icon="mdi:auto-fix"></i> Create from Template
         </BDropdownItem>
-        <!-- TODO: Add edit triggering logic -->
-        <!-- TODO: Enable once enabling edit mode support -->
         <BDropdownItem
             v-if="appStore.sodarContext &&
                   appStore.sheetsAvailable &&
@@ -201,7 +259,7 @@ function handleOverviewNavigation () {
                   appStore.getPerm('edit_sheet')"
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-edit"
-            :disabled="true">
+            @click="toggleEditMode()">
           <i class="iconify" data-icon="mdi:lead-pencil"></i> Edit Sheets
         </BDropdownItem>
         <BDropdownItem
@@ -309,6 +367,20 @@ function handleOverviewNavigation () {
           <span v-if="appStore.sodarContext.irods_status">and Data</span>
         </BDropdownItem>
       </BDropdown>
+       <!-- Finish editing button (replace op dropdown in edit mode) -->
+      <BButton
+          v-if="appStore.editMode"
+          variant="primary"
+          class="text-left"
+          id="sodar-ss-btn-edit-finish"
+          :title="getFinishEditTitle()"
+          @click="toggleEditMode()"
+          :disabled="editStore.unsavedRow !== null">
+        Finish editing
+        <span class="pull-right">
+          <i class="iconify" data-icon="mdi:check-bold"></i>
+        </span>
+      </BButton>
     </div>
   </div>
   <WinExportModal
@@ -335,6 +407,12 @@ div#sodar-ss-subtitle-right {
 }
 .sodar-ss-nav-tab {
   border: 0 !important;
+}
+#sodar-ss-subtitle-badge-container {
+  margin-top: 6px;
+}
+#sodar-ss-btn-edit-finish {
+  width: 163px;
 }
 /* Hide navbar if browser is too narrow */
 @media screen and (max-width: 1300px) {

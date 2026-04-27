@@ -1,7 +1,7 @@
 import { type TemplateRef } from 'vue'
 import { type VueWrapper } from '@vue/test-utils'
 
-import { buildColDef, buildRowData } from '@/gridUtils.ts'
+import { buildColDef, buildRowData } from '@/utils/gridUtils.ts'
 import { type SodarContext } from '@/stores/appStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
 import {
@@ -17,7 +17,13 @@ export function copy (obj: object): object {
   return JSON.parse(JSON.stringify(obj))
 }
 
-// Wait for at least n elements to be present by selector
+// Wait for N milliseconds
+// NOTE: Don't use unless no other reasonable options exist :)
+export async function waitMs (ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+// Wait for at least N elements to be present by selector
 export const waitSelector = (
     wrapper: VueWrapper,
     selector: string,
@@ -38,6 +44,7 @@ export const waitSelector = (
 // NOTE: This expects Pinia to be set up beforehand
 // NOTE: This expects exactly one study and assay. Can be updated to multiple
 //       ones later if needed
+// TODO: Update for edit mode
 export function setUpTableStore (
     sodarContext: SodarContext,
     studyTables: RenderTableData,
@@ -49,14 +56,17 @@ export function setUpTableStore (
       studyTables.display_config) as StudyDisplayConfig
 
   const colDefParams: ColDefBuildParams = {
-      studyUuid: studyUuid,
-      editMode: false,
-      sodarContext: sodarContext,
-      studyDisplayConfig: tableStore.studyDisplayConfig,
-      studyEditConfig: null,
-      irodsDirModal: {} as TemplateRef,
-      studyShortcutModal: {} as TemplateRef,
+    studyUuid: studyUuid,
+    editMode: false,
+    sampleColId: 'col7',
+    sodarContext: sodarContext,
+    studyDisplayConfig: tableStore.studyDisplayConfig,
+    irodsDirModal: {} as TemplateRef,
+    studyEditConfig: null,
+    studyNodeLen: studyTables.tables.study.field_header.length,
+    studyShortcutModal: {} as TemplateRef,
   }
+  // TODO: Add ontologyEditModal if edit mode
   const studyTable = copy(studyTables.tables.study) as StudyRenderTable
     const assayTable = copy(
       (studyTables as unknown as RenderTableData).tables.assays[assayUuid] as

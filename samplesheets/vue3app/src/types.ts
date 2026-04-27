@@ -4,7 +4,22 @@ Types and interfaces for the Sample Sheets Vue3 app.
 NOTE: Some store-specific types are declared in store files.
 */
 import { type TemplateRef } from 'vue'
-import { type SodarContext } from '@/stores/appStore.ts'
+import { type BaseColorVariant } from 'bootstrap-vue-next'
+import {
+  type ColDef,
+  type ICellEditorParams,
+  type IRowNode
+} from 'ag-grid-community'
+import {
+  type SodarContext,
+  type SodarContextLinkLabel
+} from '@/stores/appStore.ts'
+
+/* Types -------------------------------------------------------------------- */
+
+export type SheetTableCellDataValue = string |
+  Array<string> |
+  Array<SheetTableOntologyRef>
 
 /* General render table interfaces ------------------------------------------ */
 
@@ -31,18 +46,19 @@ export interface SheetTableOntologyRef {
   accession: string,
   ontology_name: string | null
 }
+
 // Render table cell data
 export interface SheetTableCellData {
-  colType: string,
-  editable: boolean | null, // Only for editing
+  // colType: string, // NOTE: Removed in the Vue3 app (see #2446)
+  editable?: boolean | null, // For overriding editing for specific field
   link?: string | null, // For the special case of LINK_FILE
   newInit?: boolean, // Only for editing
   newRow?: boolean, // Only for editing
   tooltip?: string, // Only used for file link?
   unit?: string,
   uuid?: string,
-  uuid_ref?: string,
-  value: string | Array<string> | Array<SheetTableOntologyRef>,
+  uuidRef?: string,
+  value: SheetTableCellDataValue,
 }
 // Render table row
 export interface SheetTableRowData {
@@ -149,13 +165,18 @@ export interface StudyDisplayConfig {
 
 // Edit configuration node field
 export interface StudyEditConfigNodeField {
-  name: string,
-  type: string,
-  format?: string,
   allow_list?: boolean,
-  ontologies?: Array<string>,
   default?: string | number | boolean,
   editable?: boolean
+  format?: string,
+  name: string,
+  ontologies?: Array<string>,
+  options?: Array<string | number>,
+  range?: [string, string], // TODO: How do we parse this?
+  regex?: string,
+  type: string,
+  unit?: Array<string>,
+  unit_default?: string,
 }
 // Edit configuration node
 export interface StudyEditConfigNode {
@@ -192,8 +213,8 @@ export interface StudyEditContextProtocol {
 }
 // Edit context
 export interface StudyEditContext {
-  sodar_ontologies: { [key: string]: StudyEditContextOntology }
   samples: { [key: string]: StudyEditContextSample }
+  sodar_ontologies: { [key: string]: StudyEditContextOntology }
   protocols: Array<StudyEditContextProtocol>
 }
 
@@ -218,13 +239,29 @@ export interface RenderTableData {
 /* Grid building ------------------------------------------------------------ */
 
 export interface ColDefBuildParams {
-  studyUuid: string,
+  editContext?: StudyEditContext,
   editMode: boolean,
-  sodarContext: SodarContext,
-  studyDisplayConfig: StudyDisplayConfig | null,
-  studyEditConfig: StudyEditConfig | null,
   irodsDirModal: TemplateRef,
-  studyShortcutModal: TemplateRef
+  notifyCb?: NotifyCb,
+  ontologyEditModal?: TemplateRef,
+  sampleColId: string,
+  sodarContext: SodarContext,
+  studyEditConfig: StudyEditConfig | null,
+  studyDisplayConfig: StudyDisplayConfig | null,
+  studyNodeLen: number,
+  studyShortcutModal: TemplateRef,
+  studyUuid: string,
+}
+
+export interface DataCellRendererParams {
+  colDef?: ColDef,
+  colType: string,
+  editMode: boolean,
+  enableHover?: boolean,
+  fieldEditable?: boolean,
+  linkLabels: { [key: string]: string | SodarContextLinkLabel },
+  node?: IRowNode,
+  value?: SheetTableCellData,
 }
 
 export interface IrodsButtonsRendererParams {
@@ -305,4 +342,107 @@ export interface StudyShortcutResponseBody {
   data?: StudyShortcutResponseData,
   error?: string,
   title: string
+}
+
+export interface OntologyTermResponseRef extends SheetTableOntologyRef {
+  term_id: string,
+  is_obsolete: boolean
+}
+
+export interface OntologyTermResponseBody {
+  detail?: string,
+  detail_type?: string,
+  terms?: Array<OntologyTermResponseRef>,
+}
+
+export interface GenericResponseBody {
+  detail: string
+}
+
+/* Edit mode data ----------------------------------------------------------- */
+
+export interface EditUnsavedRow {
+  tableUuid: string,
+  id: string
+}
+
+export interface HeaderEditRendererParams {
+  assayMode: boolean,
+  assayUuid: string,
+  canEditConfig: boolean
+  colType: string,
+  configFieldIdx: number,
+  configNodeIdx: number,
+  editConfigField: StudyEditConfigNodeField,
+  editable: boolean,
+  headerType: string,
+  // modalComponent: TemplateRef,
+}
+
+// CellEditorParams we input to ag-grid
+// NOTE: Editors can access stores
+export interface CellEditorParamInput {
+  assayMode: boolean,
+  colAlign: string,
+  colWidth: number,
+  editConfigField: StudyEditConfigNodeField,
+  fieldHeader: SheetTableFieldHeader,
+  fieldId: string | undefined, // Formerly headerField
+  notifyCb?: NotifyCb,
+  ontologyEditModal?: TemplateRef,
+  sampleColId: string,
+  tableUuid: string,
+}
+
+// Full cell editor params with ag-grid additions passed to editors
+export interface GridCellEditorParams extends
+  ICellEditorParams, CellEditorParamInput {}
+
+// Override of SheetTableOntologyRef for OntologyEditModal
+export interface EditOntologyRef extends SheetTableOntologyRef {
+  editing?: boolean,
+  obsolete?: boolean,
+  unknown?: boolean,
+}
+
+// Override of SheetTableCellData for OntologyEditModal
+export interface OntologyTermCellData extends SheetTableCellData {
+  value: Array<EditOntologyRef>
+}
+
+// Edit data from cell
+export interface CellEditData {
+  fieldId: string,
+  headerName: string,
+  headerType: string,
+  itemType?: string,
+  objCls: string,
+  ogUnit?: string,
+  ogValue: SheetTableCellDataValue | null,
+  unit?: string,
+  uuid?: string,
+  uuidRef?: string,
+  value: SheetTableCellDataValue,
+}
+
+// Edit data for server Ajax request
+export interface EditRequestCell {
+  header_name: string,
+  header_type: string,
+  item_type?: string,
+  obj_cls: string,
+  unit?: string,
+  uuid: string | null,
+  uuid_ref?: string | null,
+  value: SheetTableCellDataValue,
+}
+
+/* Function callbacks ------------------------------------------------------- */
+
+export interface NotifyCb {
+  (
+    body: string,
+    variant: keyof BaseColorVariant,
+    interval: number | undefined | null
+  ): void
 }
