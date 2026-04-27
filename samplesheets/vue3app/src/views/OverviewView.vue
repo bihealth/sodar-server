@@ -5,6 +5,7 @@ import { useRouter } from 'vue-router'
 import IrodsStatsBadge from '@/components/IrodsStatsBadge.vue'
 import TableDetailList from '@/components/TableDetailList.vue'
 import TableDetailListRow from '@/components/TableDetailListRow.vue'
+import { useAppStore } from '@/stores/appStore.ts'
 import {
   ASSAY_META_FIELDS,
   ASSAY_SODAR_FIELDS,
@@ -12,11 +13,8 @@ import {
   STUDY_META_FIELDS,
   STUDY_SODAR_FIELDS,
   SHEET_STATS,
-} from '@/constants'
-import {
-  useAppStore,
-  type SodarContextInvestigation
-} from '@/stores/appStore.ts'
+} from '@/constants.ts'
+import { type SodarContextInvestigation } from '@/types.ts'
 
 const router = useRouter()
 const appStore = useAppStore()

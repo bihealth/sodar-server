@@ -11,17 +11,18 @@ import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
 import { type GridApi } from 'ag-grid-community'
 
 import ColumnToggleModal from '@/components/modals/ColumnToggleModal.vue'
-import { useAppStore, type SodarContext } from '@/stores/appStore.ts'
+import { useAppStore } from '@/stores/appStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
 import {
   type RenderTableData,
   type SheetTableCellData,
   type SheetTableFieldHeader,
+  type SodarContext,
 } from '@/types.ts'
 
+import { copy, setUpTableStore } from '../testUtils.ts'
 import { sodarContext } from '../data/sodarContext.ts'
 import studyTables from '../data/studyTables.json'
-import { copy, setUpTableStore } from '../testUtils.ts'
 import { ASSAY_UUID, STUDY_UUID } from '../testConstants.ts'
 
 config.global.plugins = [createBootstrap()]

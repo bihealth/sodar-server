@@ -4,13 +4,13 @@ import { setActivePinia, createPinia } from 'pinia'
 import { type GridApi } from 'ag-grid-community'
 
 import { updateCellUIValues, updateCells } from '@/utils/editUtils.ts'
-import { useAppStore, type SodarContext } from '@/stores/appStore.ts'
+import { useAppStore } from '@/stores/appStore.ts'
 import { useEditStore } from '@/stores/editStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
-import { type CellEditData } from '@/types.ts'
+import { type CellEditData, type SodarContext } from '@/types.ts'
 
-import { sodarContext } from '../data/sodarContext.ts'
 import { copy } from '../testUtils.ts'
+import { sodarContext } from '../data/sodarContext.ts'
 import {
   ASSAY_UUID,
   PROJECT_UUID,

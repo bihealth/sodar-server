@@ -4,17 +4,14 @@ import { BModal } from 'bootstrap-vue-next'
 
 import ModalHeader from '@/components/modals/ModalHeader.vue'
 import TableDetailList from '@/components/TableDetailList.vue'
+import { useAppStore } from '@/stores/appStore.ts'
 import {
   STUDY_META_FIELDS,
   STUDY_SODAR_FIELDS,
   ASSAY_META_FIELDS,
   ASSAY_SODAR_FIELDS
 } from '@/constants.ts'
-import {
-  useAppStore,
-  type SodarContextAssay,
-  type SodarContextStudy
-} from '@/stores/appStore.ts'
+import { type SodarContextAssay, type SodarContextStudy } from '@/types.ts'
 
 const appStore = useAppStore()
 

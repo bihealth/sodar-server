@@ -2,12 +2,12 @@ import { type TemplateRef } from 'vue'
 import { type VueWrapper } from '@vue/test-utils'
 
 import { buildColDef, buildRowData } from '@/utils/gridUtils.ts'
-import { type SodarContext } from '@/stores/appStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
 import {
   type AssayRenderTable,
   type ColDefBuildParams,
   type RenderTableData,
+  type SodarContext,
   type StudyDisplayConfig,
   type StudyRenderTable
 } from '@/types.ts'

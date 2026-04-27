@@ -5,7 +5,7 @@ import { createRouter, createWebHashHistory, type Router } from 'vue-router'
 import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
 
 import PageHeader from '@/components/PageHeader.vue'
-import { useAppStore, type SodarContext } from '@/stores/appStore.ts'
+import { useAppStore } from '@/stores/appStore.ts'
 import { useEditStore } from '@/stores/editStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
 import { routes } from '@/router/index.ts'
@@ -19,9 +19,10 @@ import {
   STUDY_NAV_DROPDOWN_LEN,
   STUDY_NAV_TAB_LEN
 } from '@/constants.ts'
+import { type SodarContext } from '@/types.ts'
 
-import { sodarContext } from '../data/sodarContext.ts'
 import { copy } from '../testUtils.ts'
+import { sodarContext } from '../data/sodarContext.ts'
 import { ASSAY_UUID, PROJECT_UUID, STUDY_UUID } from '../testConstants.ts'
 
 let router: Router

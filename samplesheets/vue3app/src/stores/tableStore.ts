@@ -1,39 +1,15 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import {
-  type ColGroupDef,
-  type GridApi,
-  type GridOptions
-} from 'ag-grid-community'
-import {
-  type AssayShortcuts,
+  type SheetAssayShortcuts,
+  type SheetColumnDefs,
+  type SheetGridApi,
+  type SheetGridOptions,
+  type SheetRowData,
   type StudyEditConfig,
-  type StudyDisplayConfig, type SheetTableRowData
+  type StudyDisplayConfig,
+  type TableHeights
 } from '@/types.ts'
-
-export interface SheetAssayShortcuts {
-  [key: string]: AssayShortcuts
-}
-export interface SheetColumnDefs {
-  study: Array<ColGroupDef>,
-  assays: { [key: string]: Array<ColGroupDef> }
-}
-export interface SheetGridApi {
-  study: GridApi | null,
-  assays: { [key: string]: GridApi | null }
-}
-export interface SheetGridOptions {
-  study: GridOptions,
-  assays: { [key: string]: GridOptions }
-}
-export interface SheetRowData {
-  study: Array<SheetTableRowData>,
-  assays: { [key: string]: Array<SheetTableRowData> }
-}
-export interface TableHeights {
-  study: number | null,
-  assays: { [key: string]: number }
-}
 
 export const useTableStore = defineStore('table', () => {
   // Variables

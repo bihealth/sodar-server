@@ -4,8 +4,12 @@ import { setActivePinia, createPinia } from 'pinia'
 import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
 
 import SheetTableHeader from '@/components/SheetTableHeader.vue'
-import { useAppStore, type SodarContext } from '@/stores/appStore.ts'
+import { useAppStore } from '@/stores/appStore.ts'
+import { type SodarContext } from '@/types.ts'
+
 import { copy } from '../testUtils.ts'
+import { sodarContext } from '../data/sodarContext.ts'
+import { type SheetTableHeaderProps } from '../testTypes.ts'
 import {
   ASSAY_PLUGIN_NAME,
   ASSAY_PLUGIN_TITLE,
@@ -15,8 +19,6 @@ import {
   STUDY_PLUGIN_TITLE,
   STUDY_UUID
 } from '../testConstants.ts'
-import { sodarContext } from '../data/sodarContext.ts'
-import { type SheetTableHeaderProps } from '../testTypes.ts'
 
 const studyProps: SheetTableHeaderProps = {
   assayMode: false,

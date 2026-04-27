@@ -18,7 +18,7 @@ import SheetTableHeader from '@/components/SheetTableHeader.vue'
 import StudyShortcutModal from '@/components/modals/StudyShortcutModal.vue'
 import StudyShortcutsRenderer from '@/components/renderers/StudyShortcutsRenderer.vue'
 import WaitSection from '@/components/WaitSection.vue'
-import { useAppStore, type SodarContext } from '@/stores/appStore.ts'
+import { useAppStore } from '@/stores/appStore.ts'
 import { useEditStore } from '@/stores/editStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
 import {
@@ -31,6 +31,7 @@ import {
   type AssayShortcuts,
   type ColDefBuildParams,
   type RenderTableData,
+  type SodarContext,
   type StudyEditConfig,
   type StudyEditContext
 } from '@/types.ts'

@@ -5,13 +5,7 @@ import { setActivePinia, createPinia } from 'pinia'
 import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
 
 import OverviewView from '@/views/OverviewView.vue'
-import {
-  useAppStore,
-  type SodarContext,
-  type SodarContextAssay,
-  type SodarContextInvestigation,
-  type SodarContextStudy
-} from '@/stores/appStore.ts'
+import { useAppStore } from '@/stores/appStore.ts'
 import { routes } from '@/router/index.ts'
 import {
   ASSAY_META_FIELDS,
@@ -21,9 +15,15 @@ import {
   STUDY_SODAR_FIELDS,
   SHEET_STATS
 } from '@/constants.ts'
+import {
+  type SodarContext,
+  type SodarContextAssay,
+  type SodarContextInvestigation,
+  type SodarContextStudy
+} from '@/types.ts'
 
-import { sodarContext } from '../data/sodarContext.ts'
 import { copy, waitSelector } from '../testUtils.ts'
+import { sodarContext } from '../data/sodarContext.ts'
 import { ASSAY_UUID, PROJECT_UUID, STUDY_UUID } from '../testConstants.ts'
 
 let router: Router

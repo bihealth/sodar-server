@@ -6,8 +6,11 @@ import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community'
 
 import SheetTable from '@/components/SheetTable.vue'
 import DataCellRenderer from '@/components/renderers/DataCellRenderer.vue'
-import { type SodarContext } from '@/stores/appStore.ts'
-import { type RenderTableData, type StudyShortcuts } from '@/types.ts'
+import {
+  type RenderTableData,
+  type SodarContext,
+  type StudyShortcuts
+} from '@/types.ts'
 
 import { copy, setUpTableStore } from '../testUtils.ts'
 import { sodarContext } from '../data/sodarContext.ts'

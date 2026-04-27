@@ -13,11 +13,6 @@ import {
 } from 'ag-grid-community'
 
 import {
-  type SodarContext,
-  type SodarContextAssay,
-  type SodarContextLinkLabel
-} from '@/stores/appStore.ts'
-import {
   type AssayIrodsPath,
   type AssayRenderTable,
   type CellEditorParamInput,
@@ -28,6 +23,9 @@ import {
   type SheetTableOntologyRef,
   type SheetTableRowData,
   type SheetTableTopHeader,
+  type SodarContext,
+  type SodarContextAssay,
+  type SodarContextLinkLabel,
   type StudyDisplayConfig,
   type StudyDisplayConfigNode,
   type StudyEditConfig,

@@ -17,14 +17,12 @@ import {
   getStudyShortcutHeaderGroup
 } from '@/utils/gridUtils.ts'
 import {
-  type SodarContext,
-  type SodarContextAssay,
-  type SodarContextLinkLabel
-} from '@/stores/appStore.ts'
-import {
   type SheetTableCellData,
   type SheetTableFieldHeader,
   type SheetTableOntologyRef,
+  type SodarContext,
+  type SodarContextAssay,
+  type SodarContextLinkLabel,
   type StudyDisplayConfig,
   type StudyRenderTable,
   type StudyShortcuts,

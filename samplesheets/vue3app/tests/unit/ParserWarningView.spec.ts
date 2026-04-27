@@ -3,11 +3,11 @@ import { mount, type VueWrapper } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 
 import ParserWarningView from '@/views/ParserWarningView.vue'
-import { useAppStore, type SodarContext } from '@/stores/appStore.ts'
-import { type ParserWarningResponseBody } from '@/types.ts'
+import { useAppStore } from '@/stores/appStore.ts'
+import { type ParserWarningResponseBody, type SodarContext } from '@/types.ts'
 
-import { sodarContext } from '../data/sodarContext.ts'
 import { copy, waitSelector } from '../testUtils.ts'
+import { sodarContext } from '../data/sodarContext.ts'
 import parserWarnings from '../data/parserWarnings.json'
 
 const assayFile = 'a_small.txt'

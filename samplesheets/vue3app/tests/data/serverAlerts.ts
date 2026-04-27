@@ -1,4 +1,4 @@
-import { type SodarContextAlert } from '@/stores/appStore.ts'
+import { type SodarContextAlert } from '@/types.ts'
 
 export const serverAlerts: Array<SodarContextAlert> = [
   {

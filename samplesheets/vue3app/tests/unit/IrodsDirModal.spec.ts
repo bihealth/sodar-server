@@ -11,12 +11,12 @@ import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
 import prettyBytes from 'pretty-bytes'
 
 import IrodsDirModal from '@/components/modals/IrodsDirModal.vue'
-import { useAppStore, type SodarContext } from '@/stores/appStore.ts'
-import { type IrodsDirResponseBody } from '@/types.ts'
+import { useAppStore } from '@/stores/appStore.ts'
+import { type IrodsDirResponseBody, type SodarContext } from '@/types.ts'
 
+import { copy, waitSelector } from '../testUtils.ts'
 import { irodsDirFiles } from '../data/irodsDirFiles.ts'
 import { sodarContext } from '../data/sodarContext.ts'
-import { copy, waitSelector } from '../testUtils.ts'
 import {
   ASSAY_PATH_PREFIX,
   MISC_FILES_DIR,

@@ -3,7 +3,7 @@ import {
   type SodarContextAssay,
   type SodarContextInvestigation,
   type SodarContextStudy
-} from '@/stores/appStore.ts'
+} from '@/types.ts'
 import {
   ASSAY_PATH,
   ASSAY_UUID,

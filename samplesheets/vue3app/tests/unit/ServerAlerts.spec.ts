@@ -3,8 +3,10 @@ import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 
 import ServerAlerts from '@/components/ServerAlerts.vue'
+import { useAppStore } from '@/stores/appStore.ts'
+import { type SodarContext } from '@/types.ts'
+
 import { copy } from '../testUtils.ts'
-import { useAppStore, type SodarContext } from '@/stores/appStore.ts'
 import { sodarContext } from '../data/sodarContext.ts'
 import { serverAlerts } from '../data/serverAlerts.ts'
 

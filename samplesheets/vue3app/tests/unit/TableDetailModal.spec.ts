@@ -5,11 +5,8 @@ import { setActivePinia, createPinia } from 'pinia'
 import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
 
 import TableDetailModal from '@/components/modals/TableDetailModal.vue'
-import {
-  useAppStore,
-  type SodarContextAssay,
-  type SodarContextStudy
-} from '@/stores/appStore.ts'
+import { useAppStore } from '@/stores/appStore.ts'
+import { type SodarContextAssay, type SodarContextStudy } from '@/types.ts'
 import {
   STUDY_META_FIELDS,
   STUDY_SODAR_FIELDS,
