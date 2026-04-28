@@ -51,7 +51,7 @@
                   v-model="searchValue"
                   placeholder="Search for term"
                   @update="onSearchUpdate()"
-                  :disabled="!enableSearch()">
+                  :disabled="editIdx !== null">
               </b-input>
             </b-col>
             <b-col class="col-md-2 px-0">

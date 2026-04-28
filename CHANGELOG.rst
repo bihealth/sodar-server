@@ -16,6 +16,12 @@ Changed
     - Upgrade to lxml v6.1.0 (#2462)
     - Upgrade critical Vue app dependencies (#2462)
 
+Fixed
+-----
+
+- **Samplesheets**
+    - Vue app ontology edit modal search input disabling (from v1.3.0-WIP) (#2454)
+
 
 v1.2.8 (2026-03-19)
 ===================
