@@ -21,6 +21,7 @@ Fixed
 
 - **Samplesheets**
     - Vue app ontology edit modal search input disabling (from v1.3.0-WIP) (#2454)
+    - ``IrodsAccessTicket`` objects deleted on sheet replace (#2460)
 
 
 v1.2.8 (2026-03-19)

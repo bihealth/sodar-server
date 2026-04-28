@@ -13,6 +13,7 @@ v1.2.9 (WIP)
 
 Hotfix release.
 
+- Fix iRODS access ticket database object deletion on sheet replace
 - Fix samplesheets Vue app ontology edit modal search disabling
 - Upgrade critical dependencies
 
