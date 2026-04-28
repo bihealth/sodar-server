@@ -5,6 +5,18 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+Unreleased
+==========
+
+Changed
+-------
+
+- **General**
+    - Upgrade to Django v4.2.30 (#2462)
+    - Upgrade to lxml v6.1.0 (#2462)
+    - Upgrade critical Vue app dependencies (#2462)
+
+
 v1.2.8 (2026-03-19)
 ===================
 
