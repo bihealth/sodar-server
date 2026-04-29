@@ -15,6 +15,7 @@ Hotfix release.
 
 - Fix iRODS access ticket database object deletion on sheet replace
 - Fix samplesheets Vue app ontology edit modal search disabling
+- Fix IGV omit pattern partial path matching
 - Upgrade critical dependencies
 
 

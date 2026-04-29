@@ -15,6 +15,7 @@ Changed
     - Upgrade to Django v4.2.30 (#2462)
     - Upgrade to lxml v6.1.0 (#2462)
     - Upgrade critical Vue app dependencies (#2462)
+    - Update IGV omit pattern documentation for pattern matching (#2464)
 
 Fixed
 -----
@@ -22,6 +23,7 @@ Fixed
 - **Samplesheets**
     - Vue app ontology edit modal search input disabling (from v1.3.0-WIP) (#2454)
     - ``IrodsAccessTicket`` objects deleted on sheet replace (#2460)
+    - ``check_igv_file_path()`` partial path matching (#2464)
 
 
 v1.2.8 (2026-03-19)

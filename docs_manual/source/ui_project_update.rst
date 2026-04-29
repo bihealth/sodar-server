@@ -78,21 +78,21 @@ IGV session genome
     Genome used in generating IGV session files for the project. The name needs
     to be in a format accepted by IGV. Affects cancer and germline projects.
 BAM and CRAM paths to omit from IGV sessions
-    Comma-separated list of iRODS path glob patterns for omitting BAM and CRAM
-    files from IGV sessions and study shortcuts. Overrides site-wide setting,
-    affects cancer and germline projects. You can input paths to subcollections
-    under project sample data as well as file names. Using wildcards like ``*``
-    and ``?`` is permitted. Providing full iRODS paths is not necessary: each
-    pattern is assumed to start with a ``*`` wildcard. An empty setting means no
-    files or collections are excluded. You need to run
+    Comma-separated list of iRODS path Unix shell-style wildcard patterns for
+    omitting BAM and CRAM files from IGV sessions and study shortcuts. Overrides
+    site-wide setting, affects cancer and germline projects. You can input paths
+    to subcollections under project sample data as well as file names. Using
+    wildcards like ``*`` and ``?`` is permitted. Paths can be relative. Empty
+    value means no files or collections are excluded. You need to run
     :guilabel:`Update Sheet Cache` in the Sample Sheet application for changes
     to take effect.
 VCF paths to omit from IGV sessions
-    Comma-separated list of iRODS path glob patterns for omitting VCF files from
-    IGV sessions and study shortcuts. Overrides site-wide setting, affects
-    cancer and germline projects. Behaves similarly to the related BAM/CRAM
-    setting. You need to run :guilabel:`Update Sheet Cache` in the Sample Sheet
-    application for changes to take effect.
+    Comma-separated list of iRODS path Unix shell-style wildcard patterns for
+    omitting VCF files from IGV sessions and study shortcuts. Overrides
+    site-wide setting, affects cancer and germline projects. Behaves similarly
+    to the related BAM/CRAM setting. You need to run
+    :guilabel:`Update Sheet Cache` in the Sample Sheet application for changes
+    to take effect.
 Allowed hosts for iRODS access tickets
     Comma-separated list of host names or IP addresses that specify default
     allowed hosts for

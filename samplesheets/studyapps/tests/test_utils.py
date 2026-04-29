@@ -160,6 +160,12 @@ class TestCheckIGVFilePath(TestCase):
 
     def test_path(self):
         """Test check_igv_file_path()"""
+        path = '/xxx/yyy.bam'
+        omit_list = ['*zzz.bam']
+        self.assertTrue(check_igv_file_path(path, omit_list))
+
+    def test_path_relative(self):
+        """Test check_igv_file_path() with relative path"""
         path = 'xxx/yyy.bam'
         omit_list = ['*zzz.bam']
         self.assertTrue(check_igv_file_path(path, omit_list))
@@ -172,37 +178,49 @@ class TestCheckIGVFilePath(TestCase):
 
     def test_path_empty_list(self):
         """Test check_igv_file_path() with empty omit list"""
-        path = 'xxx/yyy.bam'
+        path = '/xxx/yyy.bam'
         omit_list = []
         self.assertTrue(check_igv_file_path(path, omit_list))
 
     def test_path_omit_multiple(self):
         """Test check_igv_file_path() with multiple patterns"""
-        path = 'xxx/yyy.bam'
+        path = '/xxx/yyy.bam'
         omit_list = ['*yyy.bam', '*zzz.bam']
         self.assertFalse(check_igv_file_path(path, omit_list))
 
     def test_path_omit_no_math(self):
         """Test check_igv_file_path() with multiple non-matching patterns"""
-        path = 'xxx/yyy.bam'
+        path = '/xxx/yyy.bam'
         omit_list = ['*aaa.bam', '*bbb.bam']
         self.assertTrue(check_igv_file_path(path, omit_list))
 
     def test_path_omit_case(self):
         """Test check_igv_file_path() with file name in different case"""
-        path = 'xxx/YYY.BAM'
+        path = '/xxx/YYY.BAM'
         omit_list = ['*yyy.bam']
         self.assertFalse(check_igv_file_path(path, omit_list))
 
     def test_path_omit_collections(self):
         """Test check_igv_file_path() with matching collections"""
-        path = '000/aaa/bbb/yyy.bam'
+        path = '/000/aaa/bbb/yyy.bam'
         omit_list = ['*/aaa/bbb/*']
+        self.assertFalse(check_igv_file_path(path, omit_list))
+
+    def test_path_omit_collection_no_slashes(self):
+        """Test check_igv_file_path() with matching collection and no slashes"""
+        path = '/000/aaa/bbb/yyy.bam'
+        omit_list = ['*aaa*']
         self.assertFalse(check_igv_file_path(path, omit_list))
 
     def test_path_omit_collections_middle(self):
         """Test check_igv_file_path() with partial collection match"""
-        path = '000/aaa/bbb/yyy.bam'
+        path = '/000/aaa/bbb/yyy.bam'
+        omit_list = ['*/aaa/*/yyy.bam']
+        self.assertFalse(check_igv_file_path(path, omit_list))
+
+    def test_path_omit_collections_middle_relative(self):
+        """Test check_igv_file_path() with partial match and relative path"""
+        path = '000/aaa/bbb/yyy.bam'  # No preceeding slash
         omit_list = ['*/aaa/*/yyy.bam']
         self.assertFalse(check_igv_file_path(path, omit_list))
 

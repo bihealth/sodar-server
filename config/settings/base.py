@@ -762,11 +762,11 @@ SHEETS_EXTERNAL_LINK_PATH = env.str(
 SHEETS_SYNC_ENABLE = env.bool('SHEETS_SYNC_ENABLE', False)
 # Remote sample sheet sync interval in minutes
 SHEETS_SYNC_INTERVAL = env.int('SHEETS_SYNC_INTERVAL', 5)
-# BAM/CRAM file path glob patterns to omit from study shortcuts and IGV sessions
+# BAM/CRAM file path patterns to omit from study shortcuts and IGV sessions
 SHEETS_IGV_OMIT_BAM = env.list(
     'SHEETS_IGV_OMIT_BAM', default=['*dragen_evidence.bam']
 )
-# VCF file path glob patterns to omit from study shortcuts and IGV sessions
+# VCF file path patterns to omit from study shortcuts and IGV sessions
 SHEETS_IGV_OMIT_VCF = env.list(
     'SHEETS_IGV_OMIT_VCF',
     default=['*cnv.vcf.gz', '*ploidy.vcf.gz', '*sv.vcf.gz'],

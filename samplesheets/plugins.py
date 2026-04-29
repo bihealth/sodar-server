@@ -173,10 +173,10 @@ SHEETS_APP_SETTINGS = [
         type=APP_SETTING_TYPE_STRING,
         default=', '.join(settings.SHEETS_IGV_OMIT_BAM),
         label='BAM and CRAM paths to omit from IGV sessions',
-        description='Comma-separated list of iRODS path glob patterns for '
-        'omitting BAM and CRAM files from IGV sessions and study shortcuts. '
-        'Overrides site-wide setting, affects cancer and germline projects. '
-        'Update sheet cache after updating this value.',
+        description='Comma-separated list of Unix shell-style wildcard '
+        'patterns for omitting BAM/CRAM file iRODS paths from IGV sessions and '
+        'study shortcuts. Overrides site-wide setting, affects cancer and '
+        'germline studies. Update sheet cache after updating this value.',
         user_modifiable=True,
     ),
     PluginAppSettingDef(
@@ -185,10 +185,10 @@ SHEETS_APP_SETTINGS = [
         type=APP_SETTING_TYPE_STRING,
         default=', '.join(settings.SHEETS_IGV_OMIT_VCF),
         label='VCF paths to omit from IGV sessions',
-        description='Comma-separated list of iRODS path glob patterns for '
-        'omitting VCF files from IGV sessions and study shortcuts. Overrides '
-        'site-wide setting, affects cancer and germline projects. Update sheet '
-        'cache after updating this value.',
+        description='Comma-separated list of Unix shell-style wildcard '
+        'patterns for omitting VCF file iRODS paths from IGV sessions and '
+        'study shortcuts. Overrides site-wide setting, affects cancer and '
+        'germline studies. Update sheet cache after updating this value.',
         user_modifiable=True,
     ),
     PluginAppSettingDef(
