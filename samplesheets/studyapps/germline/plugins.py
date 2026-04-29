@@ -209,10 +209,12 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             # Use cached value if present
             if cache_item and source.name in cache_item.data['bam']:
                 bam_path = cache_item.data['bam'][source.name]
-            else:  # Else query iRODS
+            elif not cache_item:  # Query iRODS if cache is not present
                 bam_path = get_pedigree_file_path(
                     file_type='bam', source=source, study_tables=study_tables
                 )
+            else:  # Cache exists but source name not present = don't add
+                bam_path = None
             if bam_path:
                 ret['data']['bam']['files'].append(
                     {
@@ -236,12 +238,14 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             and cache_item.data['vcf'][query_id]
         ):
             vcf_path = cache_item.data['vcf'][query_id]
-        else:
+        elif not cache_item:
             vcf_path = get_pedigree_file_path(
                 file_type='vcf',
                 source=sources.first(),
                 study_tables=study_tables,
             )
+        else:
+            vcf_path = None
         if vcf_path:
             ret['data']['vcf']['files'].append(
                 {
