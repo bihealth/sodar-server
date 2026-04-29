@@ -72,6 +72,7 @@ from samplesheets.tests.test_io import (
 from samplesheets.tests.test_models import (
     SampleSheetModelMixin,
     IrodsDataRequestMixin,
+    IrodsAccessTicketMixin,
 )
 from samplesheets.tests.test_sheet_config import CONFIG_PATH_DEFAULT
 
@@ -90,6 +91,7 @@ from samplesheets.views import (
     SYNC_FAIL_UNSET_URL,
     SYNC_FAIL_INVALID_URL,
     SYNC_FAIL_STATUS_CODE,
+    MISC_FILES_COLL,
 )
 
 
@@ -275,7 +277,10 @@ class TestProjectSheetsView(SamplesheetsViewTestBase):
 
 
 class TestSheetImportView(
-    SheetImportMixin, LandingZoneMixin, SamplesheetsViewTestBase
+    SheetImportMixin,
+    LandingZoneMixin,
+    IrodsAccessTicketMixin,
+    SamplesheetsViewTestBase,
 ):
     """Tests for SheetImportView"""
 
@@ -327,6 +332,7 @@ class TestSheetImportView(
         """Test POST to replace replacing existing investigation"""
         inv = self.import_isa_from_file(SHEET_PATH, self.project)
         uuid = inv.sodar_uuid
+        old_inv_pk = inv.pk
         app_settings.set(
             'samplesheets',
             'display_config',
@@ -347,7 +353,9 @@ class TestSheetImportView(
 
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Investigation.objects.count(), 1)
-        self.assertEqual(uuid, Investigation.objects.first().sodar_uuid)
+        inv = Investigation.objects.get(project=self.project, active=True)
+        self.assertEqual(inv.sodar_uuid, uuid)
+        self.assertNotEqual(inv.pk, old_inv_pk)  # Db id should have changed
         self.assertEqual(ISATab.objects.count(), 2)
         self.assertListEqual(
             ISATab.objects.all().order_by('-pk').first().tags,
@@ -477,6 +485,50 @@ class TestSheetImportView(
             zone.assay,
             Assay.objects.filter(study__investigation=inv).first(),
         )
+
+    def test_post_replace_ticket(self):
+        """Test POST to replace with existing iRODS access ticket"""
+        irods_backend = PluginAPI.get_backend_api('omics_irods')
+        inv = self.import_isa_from_file(SHEET_PATH, self.project)
+        inv.irods_status = True
+        inv.save()
+        old_inv_pk = inv.pk
+        uuid = inv.sodar_uuid
+        app_settings.set(
+            'samplesheets',
+            'display_config',
+            {},
+            project=self.project,
+            user=self.user,
+        )
+        conf_api.get_sheet_config(inv)
+
+        study = inv.studies.first()
+        assay = study.assays.first()
+        ticket = self.make_irods_ticket(
+            study=study,
+            assay=assay,
+            path=os.path.join(irods_backend.get_path(assay), MISC_FILES_COLL),
+            user=self.user,
+        )
+        self.assertEqual(Investigation.objects.count(), 1)
+
+        with open(SHEET_PATH_INSERTED, 'rb') as file:
+            post_data = {'file_upload': file}
+            with self.login(self.user):
+                response = self.client.post(self.url, post_data)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Investigation.objects.count(), 1)
+        self.assertEqual(uuid, Investigation.objects.first().sodar_uuid)
+        inv = Investigation.objects.get(project=self.project, active=True)
+        self.assertNotEqual(inv.pk, old_inv_pk)
+        study = inv.studies.first()
+
+        # Assert ticket still exists and refers current study/assay
+        ticket.refresh_from_db()
+        self.assertEqual(ticket.study, study)
+        self.assertEqual(ticket.assay, study.assays.first())
 
     def test_post_replace_study_cache(self):
         """Test POST to replace with existing study table cache"""

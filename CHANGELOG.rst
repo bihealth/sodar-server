@@ -65,6 +65,28 @@ Removed
     - Legacy flake8 and pycodestyle configuration (#2428)
 
 
+v1.2.9 (2026-04-29)
+===================
+
+Changed
+-------
+
+- **General**
+    - Upgrade to Django v4.2.30 (#2462)
+    - Upgrade to lxml v6.1.0 (#2462)
+    - Upgrade critical Vue app dependencies (#2462)
+    - Update IGV omit pattern documentation for pattern matching (#2464)
+
+Fixed
+-----
+
+- **Samplesheets**
+    - Vue app ontology edit modal search input disabling (from v1.3.0-WIP) (#2454)
+    - ``IrodsAccessTicket`` objects deleted on sheet replace (#2460)
+    - Study app ``check_igv_file_path()`` partial path matching (#2464)
+    - Germline study app redundant ``get_pedigree_file_path()`` calls (#2465)
+
+
 v1.2.8 (2026-03-19)
 ===================
 

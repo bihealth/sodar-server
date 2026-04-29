@@ -24,6 +24,18 @@ v1.3.0 (WIP)
 :ref:`Administrator upgrade guide for v1.3 <admin_upgrade_v1.3>`
 
 
+v1.2.9 (2026-04-29)
+===================
+
+Hotfix release.
+
+- Fix iRODS access ticket database object deletion on sheet replace
+- Fix samplesheets Vue app ontology edit modal search disabling
+- Fix IGV omit pattern partial path matching
+- Fix germline study app redundant IGV shortcut file path queries
+- Upgrade critical dependencies
+
+
 v1.2.8 (2026-03-19)
 ===================
 

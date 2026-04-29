@@ -2,8 +2,8 @@
 
 import hashlib
 
+from fnmatch import fnmatch
 from lxml import etree as ET
-from pathlib import PurePosixPath
 
 from django.conf import settings
 from django.http import HttpRequest
@@ -28,7 +28,9 @@ INVALID_TYPE_MSG = 'Invalid value for file_type'
 
 def get_igv_omit_list(project: Project, file_type: str) -> list:
     """
-    Get list of IGV omit glob patterns for a specific file type in a project.
+    Get list of IGV omit wildcard patterns for a specific file type in a
+    project.
+
     NOTE: Added as a separate method to avoid redundant database queries.
 
     :param project: Project object
@@ -74,12 +76,10 @@ def check_igv_file_path(path: str, omit_list: list) -> bool:
     pattern is found in IGV omit settings.
 
     :param path: Full or partial iRODS path (string)
-    :param omit_list: List of path glob patterns to omit (list)
+    :param omit_list: List of path wildcard patterns to omit (list)
     :return: Boolean (True if path is OK)
     """
-    return not any(
-        [p for p in omit_list if PurePosixPath(path.lower()).match(p.lower())]
-    )
+    return not any([p for p in omit_list if fnmatch(path.lower(), p.lower())])
 
 
 def get_igv_session_url(

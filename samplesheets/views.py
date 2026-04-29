@@ -191,6 +191,41 @@ class SheetImportMixin:
     #: TimelineAPI
     timeline = None
 
+    @classmethod
+    def _update_relations(cls, investigation: Investigation):
+        """
+        Update object foreign key relations on sheet replace.
+
+        :param investigation: New Investigation object
+        """
+        project = investigation.project
+        assay_lookup = {a.get_name(): a for a in investigation.get_assays()}
+
+        # Update unfinished landing zones to point to new assays
+        for zone in LandingZone.objects.filter(project=project):
+            zone.assay = assay_lookup[zone.assay.get_name()]
+            zone.save()
+            logger.debug(
+                f'Updated assay foreign key for landing zone '
+                f'"{zone.title}" ({zone.sodar_uuid})'
+            )
+
+        # Update iRODS access tickets
+        for ticket in IrodsAccessTicket.objects.filter(
+            study__investigation__project=project
+        ):
+            # NOTE: This assumes all tickets are on assay level, which is true
+            #       right now. If we ever change that, make sure to update this.
+            #       (Technically, the assay field is optional in the model)
+            assay = assay_lookup[ticket.assay.get_name()]
+            ticket.assay = assay
+            ticket.study = assay.study
+            ticket.save()
+            logger.debug(
+                f'Updated study and assay foreign keys for iRODS access ticket '
+                f'"{ticket.ticket}" ({ticket.sodar_uuid})'
+            )
+
     def add_tl_event(
         self, project: Project, action: str, tpl_name: Optional[str] = None
     ) -> Any:
@@ -282,11 +317,11 @@ class SheetImportMixin:
             ):
                 self.replace_configs = False
 
-            # Update unfinished landing zones to point to new assays
-            new_assays = {a.get_name(): a for a in investigation.get_assays()}
-            for zone in LandingZone.objects.filter(project=project):
-                zone.assay = new_assays[zone.assay.get_name()]
-                zone.save()
+            # Update foreign key relations to point to new sheets
+            try:
+                self._update_relations(investigation)
+            except Exception as ex:
+                raise Exception(f'Exception in updating object relations: {ex}')
 
             # If replacing with alt sheet, clear study cache (force delete)
             if not compare_ok:
