@@ -8,8 +8,8 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
-v1.2.9 (WIP)
-============
+v1.2.9 (2026-04-29)
+===================
 
 Hotfix release.
 

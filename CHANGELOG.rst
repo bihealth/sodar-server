@@ -5,8 +5,8 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
-Unreleased
-==========
+v1.2.9 (2026-04-29)
+===================
 
 Changed
 -------
@@ -23,7 +23,7 @@ Fixed
 - **Samplesheets**
     - Vue app ontology edit modal search input disabling (from v1.3.0-WIP) (#2454)
     - ``IrodsAccessTicket`` objects deleted on sheet replace (#2460)
-    - ``check_igv_file_path()`` partial path matching (#2464)
+    - Study app ``check_igv_file_path()`` partial path matching (#2464)
     - Germline study app redundant ``get_pedigree_file_path()`` calls (#2465)
 
 
