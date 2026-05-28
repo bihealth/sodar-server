@@ -44,8 +44,8 @@ This release requires at least the following versions of SODAR
 environment components:
 
 - `sodar-docker-compose <https://github.com/bihealth/sodar-docker-compose>`_ ``dev``
-- `irods-docker <https://github.com/bihealth/irods-docker>`_ ``4.3.4-1``
-- `davrods-docker <https://github.com/bihealth/davrods-docker>`_ ``4.3.4_1.5.2-1``
+- `irods-docker <https://github.com/bihealth/irods-docker>`_ ``4.3.4-2``
+- `davrods-docker <https://github.com/bihealth/davrods-docker>`_ ``4.3.4_1.5.2-2``
 
 Environment Variables
 ---------------------
