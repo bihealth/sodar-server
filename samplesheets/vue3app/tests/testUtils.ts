@@ -63,7 +63,7 @@ export function setUpTableStore (
     studyDisplayConfig: tableStore.studyDisplayConfig,
     irodsDirModal: {} as TemplateRef,
     studyEditConfig: null,
-    studyNodeLen: studyTables.tables.study.field_header.length,
+    studyNodeLen: studyTables.tables.study.top_header.length,
     studyShortcutModal: {} as TemplateRef,
   }
   // TODO: Add ontologyEditModal if edit mode

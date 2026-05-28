@@ -8,7 +8,8 @@ export const STUDY_NAV_TAB_LEN: number = 32
 export const TOAST_INTERVAL: number = 1500
 
 // SODAR sample sheet model
-// export const DB_OBJ_CLASS_MATERIAL = 'GenericMaterial'
+export const DB_OBJ_CLASS_MATERIAL = 'GenericMaterial'
+export const DB_OBJ_CLASS_PROCESS = 'Process'
 
 // Detail table fields
 export const INV_META_FIELDS = [
@@ -65,6 +66,40 @@ export const EDIT_BADGE_DEFAULT_LABEL: string = 'Edit Mode'
 export const EDIT_BADGE_SAVED_LABEL: string = 'Changes Saved'
 export const EDIT_BADGE_UNSAVED_LABEL: string = 'Unsaved Changes'
 
+// Edit config actions
+export const EDIT_CONFIG_ACTION_UPDATE = 'update'
+// Edit config column types
+export const EDIT_COL_TYPE_CONTACT = 'CONTACT'
+export const EDIT_COL_TYPE_DATE = 'DATE'
+export const EDIT_COL_TYPE_EXT_LINKS = 'EXTERNAL_LINKS'
+export const EDIT_COL_TYPE_LINK = 'LINK_FILE'
+export const EDIT_COL_TYPE_NAME = 'NAME'
+export const EDIT_COL_TYPE_NUMERIC = 'NUMERIC'
+export const EDIT_COL_TYPE_ONTOLOGY = 'ONTOLOGY'
+export const EDIT_COL_TYPE_PROTOCOL = 'PROTOCOL'
+export const EDIT_COL_TYPE_UNIT = 'UNIT'
+// Edit config formats
+export const EDIT_FORMAT_DATE = 'date'
+export const EDIT_FORMAT_DOUBLE = 'double'
+export const EDIT_FORMAT_EXT = 'external_links'
+export const EDIT_FORMAT_INTEGER = 'integer'
+export const EDIT_FORMAT_ONTOLOGY = 'ontology'
+export const EDIT_FORMAT_PROTOCOL = 'protocol'
+export const EDIT_FORMAT_SELECT = 'select'
+export const EDIT_FORMAT_STRING = 'string'
+// Edit config item types
+export const EDIT_ITEM_TYPE_DATA = 'DATA'
+export const EDIT_ITEM_TYPE_MATERIAL = 'MATERIAL'
+export const EDIT_ITEM_TYPE_SAMPLE = 'SAMPLE'
+export const EDIT_ITEM_TYPE_SOURCE = 'SOURCE'
+// Edit config header types
+export const EDIT_HEADER_TYPE_CHAR = 'characteristics'
+export const EDIT_HEADER_TYPE_EXTRACT_LABEL = 'extract_label'
+export const EDIT_HEADER_TYPE_NAME = 'name'
+export const EDIT_HEADER_TYPE_PERFORM_DATE = 'perform_date'
+export const EDIT_HEADER_TYPE_PERFORMER = 'performer'
+export const EDIT_HEADER_TYPE_PROTOCOL = 'protocol'
+
 // Default regex for sheet editor
 export const EDIT_REGEX: { [key: string]: RegExp } = {
   dataName:       /^[\w\-.]+$/,
@@ -77,3 +112,11 @@ export const EDIT_REGEX: { [key: string]: RegExp } = {
 
 // Misc edit mode constants
 export const EDIT_TERM_QUERY_MIN_LEN: number = 3
+
+// Ontology constants
+export const OBO_ID_HP = 'HP'
+export const OBO_ID_OMIM = 'OMIM'
+export const OBO_ID_ORDO = 'ORDO'
+export const OBO_HEADER_HP = 'hpo terms'
+export const OBO_HEADER_OMIM = 'omim disease'
+export const OBO_HEADER_ORDO = 'orphanet disease'

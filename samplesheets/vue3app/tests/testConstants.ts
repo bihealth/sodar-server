@@ -31,6 +31,7 @@ export const ASSAY_PLUGIN_TITLE: string = 'DNA Sequencing Assay Plugin'
 
 /* Ontologies --------------------------------------------------------------- */
 
+// NOTE: Some IDs defined in app constants
 export const OBO_ID_NCBITAXON: string = 'NCBITAXON'
 export const OBO_ID_UBERON: string = 'UBERON'
 export const OBO_ID_UNKNOWN: string = 'NOT_A_REAL_ONTOLOGY'

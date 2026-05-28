@@ -8,6 +8,7 @@ import {
   type GridApi,
   type GridOptions,
   type ICellEditorParams,
+  type ICellRendererParams,
   type IRowNode
 } from 'ag-grid-community'
 
@@ -250,13 +251,13 @@ export interface StudyDisplayConfig {
 // Edit configuration node field
 export interface StudyEditConfigNodeField {
   allow_list?: boolean
-  default?: string | number | boolean
+  default?: SheetTableCellDataValue
   editable?: boolean
   format?: string
   name: string
   ontologies?: Array<string>
   options?: Array<string | number>
-  range?: [string, string] // TODO: How do we parse this?
+  range?: [string, string]
   regex?: string
   type: string
   unit?: Array<string>
@@ -360,6 +361,7 @@ export interface TableHeights {
 /* Grid building ------------------------------------------------------------ */
 
 export interface ColDefBuildParams {
+  colConfigModal?: TemplateRef
   editContext?: StudyEditContext
   editMode: boolean
   irodsDirModal: TemplateRef
@@ -487,20 +489,27 @@ export interface EditUnsavedRow {
   tableUuid: string
 }
 
-/*
-export interface HeaderEditRendererParams {
+// Header edit renderer params we input to ag-Grid
+// TODO: Ensure all critical fields are present
+export interface HeaderEditRendererParamInput {
   assayMode: boolean
-  assayUuid: string
+  assayUuid: string | null
   canEditConfig: boolean
-  colType: string
+  colType: string | null
   configFieldIdx: number
   configNodeIdx: number
   editConfigField: StudyEditConfigNodeField
   editable: boolean
-  headerType: string
-  // modalComponent: TemplateRef
+  headerType: string // TODO: Isn't this dupe for editConfigField.type?
+  itemType?: string
+  modalRef: TemplateRef
+  notifyCb?: NotifyCb
+  objCls: string
 }
-*/
+
+// Full header edit renderer params with ag-grid additions
+export interface HeaderEditRendererParams extends
+  ICellRendererParams, HeaderEditRendererParamInput {}
 
 // CellEditorParams we input to ag-grid
 // NOTE: Editors can access stores
@@ -548,7 +557,7 @@ export interface CellEditData {
   value: SheetTableCellDataValue
 }
 
-// Edit data for server Ajax request
+// Edit data for server cell edit Ajax request
 export interface EditRequestCell {
   header_name: string
   header_type: string
@@ -558,6 +567,20 @@ export interface EditRequestCell {
   uuid: string | null
   uuid_ref?: string | null
   value: SheetTableCellDataValue
+}
+
+// Field for server edit config update Ajax request
+export interface EditConfigRequestField {
+  action: string
+  assay: string | null
+  config: StudyEditConfigNodeField
+  field_idx: number
+  node_idx: number
+  study: string
+}
+
+export interface EditConfigRequestBody {
+  fields: Array<EditConfigRequestField>
 }
 
 /* Function callbacks ------------------------------------------------------- */

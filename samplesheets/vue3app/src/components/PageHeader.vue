@@ -376,7 +376,7 @@ function getFinishEditTitle () {
           :title="getFinishEditTitle()"
           @click="toggleEditMode()"
           :disabled="editStore.unsavedRow !== null">
-        Finish editing
+        Finish Editing
         <span class="pull-right">
           <i class="iconify" data-icon="mdi:check-bold"></i>
         </span>

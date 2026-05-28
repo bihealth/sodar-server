@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import { useToast, type BaseColorVariant } from 'bootstrap-vue-next'
 
 import AssayShortcutCard from '@/components/AssayShortcutCard.vue'
+import ColumnConfigModal from '@/components/modals/ColumnConfigModal.vue'
 import ColumnToggleModal from '@/components/modals/ColumnToggleModal.vue'
 import DataCellEditor from '@/components/editors/DataCellEditor.vue'
 import DataCellRenderer from '@/components/renderers/DataCellRenderer.vue'
@@ -46,7 +47,8 @@ const editStore = useEditStore()
 const tableStore = useTableStore()
 
 // Set up template references
-const columnToggleCompRef = useTemplateRef('columnToggleModalComponent')
+const colConfigCompRef = useTemplateRef('columnConfigModalComponent')
+const colToggleCompRef = useTemplateRef('columnToggleModalComponent')
 const irodsDirCompRef = useTemplateRef('irodsDirModalComponent')
 const ontologyEditCompRef = useTemplateRef('ontologyEditModalComponent')
 const studyShortcutCompRef = useTemplateRef('studyShortcutModalComponent')
@@ -128,11 +130,12 @@ function buildStudy (data: RenderTableData) {
     sodarContext: appStore.sodarContext as SodarContext,
     studyEditConfig: tableStore.studyEditConfig,
     studyDisplayConfig: tableStore.studyDisplayConfig,
-    studyNodeLen: data.tables.study.field_header.length,
+    studyNodeLen: data.tables.study.top_header.length,
     studyShortcutModal: studyShortcutCompRef,
     studyUuid: appStore.currentStudyUuid,
   }
   if (appStore.editMode) {
+    colDefBuildParams.colConfigModal = colConfigCompRef
     colDefBuildParams.editContext = editStore.editContext as StudyEditContext
     colDefBuildParams.ontologyEditModal = ontologyEditCompRef
   }
@@ -229,7 +232,7 @@ onMounted(() => {
     </SheetTableHeader>
     <SheetTable
         :assay-mode="false"
-        :col-toggle-modal-ref="columnToggleCompRef"
+        :col-toggle-modal-ref="colToggleCompRef"
         :table-uuid="appStore.currentStudyUuid">
     </SheetTable>
     <!-- Assays -->
@@ -253,7 +256,7 @@ onMounted(() => {
       </AssayShortcutCard>
       <SheetTable
           :assay-mode="true"
-          :col-toggle-modal-ref="columnToggleCompRef"
+          :col-toggle-modal-ref="colToggleCompRef"
           :table-uuid="assayUuid">
       </SheetTable>
     </div>
@@ -276,22 +279,26 @@ onMounted(() => {
   </div>
   <WaitSection v-else></WaitSection>
   <!-- Modals -->
+  <ColumnConfigModal
+      id="sodar-ss-col-config-modal-component"
+      ref="columnConfigModalComponent">
+  </ColumnConfigModal>
+  <ColumnToggleModal
+      id="sodar-ss-col-toggle-modal-component"
+      ref="columnToggleModalComponent">
+  </ColumnToggleModal>
   <IrodsDirModal
       id="sodar-ss-irods-dir-modal-component"
       ref="irodsDirModalComponent">
   </IrodsDirModal>
-  <StudyShortcutModal
-      id="sodar-ss-study-shortcut-modal-component"
-      ref="studyShortcutModalComponent">
-  </StudyShortcutModal>
-  <ColumnToggleModal
-      id="sodar-ss-column-toggle-modal-component"
-      ref="columnToggleModalComponent">
-  </ColumnToggleModal>
   <OntologyEditModal
       id="sodar-ss-ontology-edit-modal-component"
       ref="ontologyEditModalComponent">
   </OntologyEditModal>
+  <StudyShortcutModal
+      id="sodar-ss-study-shortcut-modal-component"
+      ref="studyShortcutModalComponent">
+  </StudyShortcutModal>
 </template>
 
 <style scoped>

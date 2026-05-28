@@ -18,6 +18,8 @@ import {
   type CellEditorParamInput,
   type ColDefBuildParams,
   type DataCellRendererParams,
+  type HeaderEditRendererParamInput,
+  type NotifyCb,
   type SheetTableCellData,
   type SheetTableFieldHeader,
   type SheetTableOntologyRef,
@@ -102,6 +104,7 @@ export function getStudyShortcutHeaderGroup (
           'sodar-ss-data-unselectable',
           'sodar-ss-data-no-focus'
         ],
+        cellDataType: 'object',
         cellRenderer: 'StudyShortcutsRenderer',
         cellRendererParams: {
           schema: table.shortcuts?.schema,
@@ -117,6 +120,7 @@ export function getStudyShortcutHeaderGroup (
         sortable: false,
         suppressAutoSize: true,
         suppressSizeToFit: true,
+        valueFormatter: params => params.value.value,
         width: 40 * Object.keys(table.shortcuts?.schema || {}).length
       }
     ]
@@ -139,6 +143,7 @@ export function getAssayIrodsHeaderGroup (
           'sodar-ss-data-unselectable',
           'sodar-ss-data-no-focus'
         ],
+        cellDataType: 'text',
         cellRenderer: 'IrodsButtonsRenderer',
         cellRendererParams: {
           assayIrodsPath: assayContext.irods_path,
@@ -200,6 +205,7 @@ export function getRowEditHeaderGroup (): ColGroupDef {
 }
 
 // Return column width and minimum width
+// TODO: Refactor args into params object
 export function getColWidth (
     colIdx: number,
     colType: string,
@@ -226,6 +232,7 @@ export function getColWidth (
 }
 
 // Return visibility for field column
+// TODO: Refactor args into params object
 export function getFieldVisibility (
     tableUuid: string,
     topIdx: number,
@@ -297,6 +304,7 @@ export function getEditConfigField (
 }
 
 // Get field column header ColDef
+// TODO: Refactor args into params object
 export function getFieldHeader (
     fieldHeader: SheetTableFieldHeader,
     fieldIdx: number,
@@ -315,6 +323,7 @@ export function getFieldHeader (
       minWidth: minColWidth,
       hide: !fieldVisible,
       headerClass: ['sodar-ss-data-header'],
+      cellDataType: 'object',
       cellRenderer: 'DataCellRenderer',
       cellRendererParams: {
         colType: fieldHeader.col_type,
@@ -324,13 +333,14 @@ export function getFieldHeader (
       } as DataCellRendererParams,
       comparator: compareDataCellValues,
       context: {},
-      filterValueGetter: getDataCellFilterValue
+      filterValueGetter: getDataCellFilterValue,
+      valueFormatter: params => params.value.value
     }
 
     // Cell classes
     if (!editMode) {
       header.cellClass = ['sodar-ss-data-cell', 'text-' + colAlign]
-    } else {
+    } else { // Edit mode
       header.cellClass = function (p: CellClassParams): Array<string> {
         const colAlign = ['UNIT', 'NUMERIC'].includes(
           p.colDef?.cellRendererParams.colType)
@@ -348,12 +358,14 @@ export function getFieldHeader (
         }
         return cellClass
       }
+      header.valueParser = params => params.newValue
     }
   return header
 }
 
 /* Grid setup edit mode helpers --------------------------------------------- */
 
+// TODO: Refactor args into params object
 export function getHeaderEditRendererParams (
     tableUuid: string,
     assayMode: boolean,
@@ -363,25 +375,31 @@ export function getHeaderEditRendererParams (
     configFieldIdx: number,
     studyNodeLen: number,
     editable: boolean,
-) {
+    colConfigModal: TemplateRef,
+    notifyCb: NotifyCb | undefined,
+): HeaderEditRendererParamInput {
   let configAssayUuid = assayMode ? tableUuid : null
   let configNodeIdx = nodeIdx
   if (assayMode) {
     if (configNodeIdx < studyNodeLen) configAssayUuid = null
     else configNodeIdx = nodeIdx - studyNodeLen
   }
-  return {
-    // modalComponent: null, // TODO: Implement this
-    colType: fieldHeader.col_type,
-    editConfigField: editConfigField,
-    assayUuid: configAssayUuid,
-    configNodeIdx: configNodeIdx,
-    configFieldIdx: configFieldIdx,
-    editable: editable, // Add here to allow checking by cell
-    headerType: fieldHeader.type,
+  const ret: HeaderEditRendererParamInput = {
     assayMode: assayMode, // Needed for sample col in assay
-    canEditConfig: true // TODO: Is this redundant now?
+    assayUuid: configAssayUuid,
+    canEditConfig: true, // TODO: Is this redundant now?
+    colType: fieldHeader.col_type || null,
+    configFieldIdx: configFieldIdx,
+    configNodeIdx: configNodeIdx,
+    editConfigField: editConfigField,
+    editable: editable, // Add here to allow checking by cell
+    headerType: fieldHeader.type as string,
+    modalRef: colConfigModal,
+    notifyCb: notifyCb,
+    objCls: fieldHeader.obj_cls,
   }
+  if (fieldHeader.item_type) ret.itemType = fieldHeader.item_type
+  return ret
 }
 
 // Cell editor selector
@@ -581,6 +599,8 @@ export function buildColDef (
             configFieldIdx,
             params.studyNodeLen,
             fieldEditable,
+            params.colConfigModal as TemplateRef,
+            params.notifyCb
           )
           header.width = header.width! + 20 // Fit button in header
           header.minWidth = header.minWidth! + 20

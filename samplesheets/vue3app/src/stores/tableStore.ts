@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
+import { type GridApi } from 'ag-grid-community'
 import {
   type SheetAssayShortcuts,
   type SheetColumnDefs,
@@ -43,6 +44,19 @@ export const useTableStore = defineStore('table', () => {
     tableHeights.value = null
   }
 
+  // return grid APIs for each grid
+  function getGridApis(): Array<GridApi> {
+    const ret = []
+    if (gridApi.value.study)
+      ret.push(gridApi.value.study)
+    for (const k in gridApi.value.assays) {
+      if (gridApi.value.assays[k]) {
+        ret.push(gridApi.value.assays[k])
+      }
+    }
+    return ret
+  }
+
   return {
     // Variables
     assayShortcuts,
@@ -58,6 +72,7 @@ export const useTableStore = defineStore('table', () => {
     studyEditConfig,
     tableHeights,
     // Functions
-    $reset
+    $reset,
+    getGridApis
   }
 })
