@@ -1821,9 +1821,9 @@ class TestProjectCreate(TaskflowbackendFlowTestBase):
         """Test project_create for creating a project"""
         self.assert_irods_coll(self.project, expected=False)
         with self.assertRaises(GroupDoesNotExist):
-            self.irods.user_groups.get(self.project_group)
+            self.irods.groups.get(self.project_group)
         with self.assertRaises(GroupDoesNotExist):
-            self.irods.user_groups.get(self.owner_group)
+            self.irods.groups.get(self.owner_group)
 
         flow_data = {
             'owner': self.user.username,
@@ -1842,9 +1842,9 @@ class TestProjectCreate(TaskflowbackendFlowTestBase):
         self.build_and_run(flow)
 
         self.assert_irods_coll(self.project, expected=True)
-        group = self.irods.user_groups.get(self.project_group)
+        group = self.irods.groups.get(self.project_group)
         self.assertIsInstance(group, iRODSUserGroup)
-        group = self.irods.user_groups.get(self.owner_group)
+        group = self.irods.groups.get(self.owner_group)
         self.assertIsInstance(group, iRODSUserGroup)
         self.assert_irods_access(
             self.project_group,
@@ -2238,8 +2238,8 @@ class TestRoleUpdateIrodsBatch(TaskflowbackendFlowTestBase):
         )
         self.project_group = self.irods_backend.get_group_name(self.project)
         self.owner_group = self.irods_backend.get_group_name(self.project, True)
-        self.project_group = self.irods.user_groups.get(self.project_group)
-        self.owner_group = self.irods.user_groups.get(self.owner_group)
+        self.project_group = self.irods.groups.get(self.project_group)
+        self.owner_group = self.irods.groups.get(self.owner_group)
         self.user_new = self.make_user('user_new')
         self.user_new2 = self.make_user('user_new2')
         self.set_flow_kw()

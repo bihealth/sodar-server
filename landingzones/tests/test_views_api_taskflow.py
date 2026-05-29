@@ -188,7 +188,7 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
         owner_group = self.irods_backend.get_group_name(self.project, True)
         self.irods.users.remove(owner_group)
         with self.assertRaises(GroupDoesNotExist):
-            self.irods.user_groups.get(owner_group)
+            self.irods.groups.get(owner_group)
         self.assertEqual(LandingZone.objects.count(), 0)
         # NOTE: No optional create_colls and restrict_colls args, default=False
         response = self.request_knox(
@@ -213,7 +213,7 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
             self.owner_group, zone_coll, IRODS_ACCESS_DELETE_OBJ
         )
         self.assert_irods_access(self.project_group, zone_coll, None)
-        self.assertIsNotNone(self.irods.user_groups.get(owner_group))
+        self.assertIsNotNone(self.irods.groups.get(owner_group))
         self.assert_group_member(self.project, self.user, True, True)
         self.assert_group_member(self.project, self.user_owner_cat, True, True)
 

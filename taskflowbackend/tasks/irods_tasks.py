@@ -418,9 +418,9 @@ class CreateUserGroupTask(IrodsBaseTask):
 
     def execute(self, name: str, *args, **kwargs):
         try:
-            self.irods.user_groups.get(name)
+            self.irods.groups.get(name)
         except GroupDoesNotExist:
-            self.irods.user_groups.create(name=name, user_zone=self.irods.zone)
+            self.irods.groups.create(name=name, user_zone=self.irods.zone)
             self.data_modified = True
         super().execute(*args, **kwargs)
 
@@ -603,7 +603,7 @@ class AddUserToGroupTask(IrodsBaseTask):
 
     def execute(self, group_name: str, user_name: str, *args, **kwargs):
         try:
-            group = self.irods.user_groups.get(group_name)
+            group = self.irods.groups.get(group_name)
         except Exception as ex:
             self.raise_irods_exception(
                 ex, info=f'Failed to retrieve group "{group_name}"'
@@ -622,7 +622,7 @@ class AddUserToGroupTask(IrodsBaseTask):
 
     def revert(self, group_name: str, user_name: str, *args, **kwargs):
         if self.data_modified:
-            group = self.irods.user_groups.get(group_name)
+            group = self.irods.groups.get(group_name)
             group.removemember(user_name=user_name, user_zone=self.irods.zone)
 
 
@@ -631,7 +631,7 @@ class RemoveUserFromGroupTask(IrodsBaseTask):
 
     def execute(self, group_name: str, user_name: str, *args, **kwargs):
         try:
-            group = self.irods.user_groups.get(group_name)
+            group = self.irods.groups.get(group_name)
         except GroupDoesNotExist:
             # This is ok, user isn't in a group that doesn't exist :)
             group = None
@@ -648,7 +648,7 @@ class RemoveUserFromGroupTask(IrodsBaseTask):
 
     def revert(self, group_name: str, user_name: str, *args, **kwargs):
         if self.data_modified:
-            group = self.irods.user_groups.get(group_name)
+            group = self.irods.groups.get(group_name)
             group.addmember(user_name=user_name, user_zone=self.irods.zone)
 
 

@@ -113,7 +113,7 @@ class TestSyncModifyAPI(TaskflowViewTestBase):
         with self.assertRaises(CollectionDoesNotExist):
             self.irods.collections.get(self.project_path)
         with self.assertRaises(GroupDoesNotExist):
-            self.irods.user_groups.get(self.project_group)
+            self.irods.groups.get(self.project_group)
         with self.assertRaises(UserDoesNotExist):
             self.irods.users.get(self.user.username)
         with self.assertRaises(UserDoesNotExist):
@@ -128,7 +128,7 @@ class TestSyncModifyAPI(TaskflowViewTestBase):
             self.irods.collections.get(self.category_path)
         self.assertEqual(self.irods.collections.exists(self.project_path), True)
         self.assertIsInstance(
-            self.irods.user_groups.get(self.project_group), iRODSUserGroup
+            self.irods.groups.get(self.project_group), iRODSUserGroup
         )
         self.assert_irods_access(
             self.project_group, self.project_path, IRODS_ACCESS_READ_OBJ
@@ -145,7 +145,7 @@ class TestSyncModifyAPI(TaskflowViewTestBase):
         with self.assertRaises(CollectionDoesNotExist):
             self.irods.collections.get(self.project_path)
         with self.assertRaises(GroupDoesNotExist):
-            self.irods.user_groups.get(self.project_group)
+            self.irods.groups.get(self.project_group)
         with self.assertRaises(UserDoesNotExist):
             self.irods.users.get(self.user.username)
         with self.assertRaises(UserDoesNotExist):
@@ -167,7 +167,7 @@ class TestSyncModifyAPI(TaskflowViewTestBase):
         with self.assertRaises(CollectionDoesNotExist):
             self.irods.collections.get(self.project_path)
         with self.assertRaises(GroupDoesNotExist):
-            self.irods.user_groups.get(self.project_group)
+            self.irods.groups.get(self.project_group)
         with self.assertRaises(UserDoesNotExist):
             self.irods.users.get(self.user.username)
         with self.assertRaises(UserDoesNotExist):
@@ -190,7 +190,7 @@ class TestSyncModifyAPI(TaskflowViewTestBase):
         with self.assertRaises(CollectionDoesNotExist):
             self.irods.collections.get(self.project_path)
         with self.assertRaises(GroupDoesNotExist):
-            self.irods.user_groups.get(self.project_group)
+            self.irods.groups.get(self.project_group)
         with self.assertRaises(UserDoesNotExist):
             self.irods.users.get(self.user.username)
         with self.assertRaises(UserDoesNotExist):
@@ -212,7 +212,7 @@ class TestSyncModifyAPI(TaskflowViewTestBase):
         with self.assertRaises(CollectionDoesNotExist):
             self.irods.collections.get(self.project_path)
         with self.assertRaises(GroupDoesNotExist):
-            self.irods.user_groups.get(self.project_group)
+            self.irods.groups.get(self.project_group)
         with self.assertRaises(UserDoesNotExist):
             self.irods.users.get(self.user.username)
         with self.assertRaises(UserDoesNotExist):
@@ -235,7 +235,7 @@ class TestSyncModifyAPI(TaskflowViewTestBase):
         with self.assertRaises(CollectionDoesNotExist):
             self.irods.collections.get(self.project_path)
         with self.assertRaises(GroupDoesNotExist):
-            self.irods.user_groups.get(self.project_group)
+            self.irods.groups.get(self.project_group)
         with self.assertRaises(UserDoesNotExist):
             self.irods.users.get(self.user.username)
         with self.assertRaises(UserDoesNotExist):

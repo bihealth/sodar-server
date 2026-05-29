@@ -307,7 +307,7 @@ class TestZoneCreateView(
         """Test POST with no project owner group"""
         self.irods.users.remove(self.owner_group)
         with self.assertRaises(GroupDoesNotExist):
-            self.irods.user_groups.get(self.owner_group)
+            self.irods.groups.get(self.owner_group)
         self.assertEqual(LandingZone.objects.count(), 0)
         self.assertEqual(
             TimelineEvent.objects.filter(event_name='zone_create').count(), 0
@@ -325,7 +325,7 @@ class TestZoneCreateView(
         for c in ZONE_BASE_COLLS:
             self.assert_irods_coll(zone, c, False)
         root_coll = self.irods.collections.get(self.zone_root_path)
-        self.assertIsNotNone(self.irods.user_groups.get(self.owner_group))
+        self.assertIsNotNone(self.irods.groups.get(self.owner_group))
         self.assert_group_member(self.project, self.user, True, True)
         self.assert_group_member(self.project, self.user_owner_cat, True, True)
         self.assert_irods_access(

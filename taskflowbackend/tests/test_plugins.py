@@ -66,9 +66,9 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
 
         self.assert_irods_coll(project, expected=False)
         with self.assertRaises(GroupDoesNotExist):
-            self.irods.user_groups.get(project_group)
+            self.irods.groups.get(project_group)
         with self.assertRaises(GroupDoesNotExist):
-            self.irods.user_groups.get(owner_group)
+            self.irods.groups.get(owner_group)
         with self.assertRaises(UserDoesNotExist):
             self.irods.users.get(self.user.username)
         with self.assertRaises(UserDoesNotExist):
@@ -84,14 +84,14 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
         )
 
         self.assert_irods_coll(project, expected=True)
-        group = self.irods.user_groups.get(project_group)
+        group = self.irods.groups.get(project_group)
         self.assertIsInstance(group, iRODSUserGroup)
         self.assert_irods_access(
             project_group,
             self.irods_backend.get_path(project),
             IRODS_ACCESS_READ_OBJ,
         )
-        owner_group = self.irods.user_groups.get(owner_group)
+        owner_group = self.irods.groups.get(owner_group)
         self.assertIsInstance(owner_group, iRODSUserGroup)
         # NOTE: Owner group does not need special access here
         self.assert_irods_access(
@@ -310,9 +310,9 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
 
         self.assert_irods_coll(category, expected=False)
         with self.assertRaises(GroupDoesNotExist):
-            self.irods.user_groups.get(project_group)
+            self.irods.groups.get(project_group)
         with self.assertRaises(GroupDoesNotExist):
-            self.irods.user_groups.get(owner_group)
+            self.irods.groups.get(owner_group)
 
         self.plugin.perform_project_modify(
             project=category,
@@ -325,9 +325,9 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
 
         self.assert_irods_coll(category, expected=False)
         with self.assertRaises(GroupDoesNotExist):
-            self.irods.user_groups.get(project_group)
+            self.irods.groups.get(project_group)
         with self.assertRaises(GroupDoesNotExist):
-            self.irods.user_groups.get(owner_group)
+            self.irods.groups.get(owner_group)
         self.assertEqual(
             TimelineEvent.objects.filter(
                 project=category,
@@ -434,9 +434,9 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
         owner_group = OWNER_GROUP_TEMPLATE.format(uuid=self.category.sodar_uuid)
         self.assert_irods_coll(self.category, expected=False)
         with self.assertRaises(GroupDoesNotExist):
-            self.irods.user_groups.get(project_group)
+            self.irods.groups.get(project_group)
         with self.assertRaises(GroupDoesNotExist):
-            self.irods.user_groups.get(owner_group)
+            self.irods.groups.get(owner_group)
         with self.assertRaises(UserDoesNotExist):
             self.irods.users.get(self.user_owner_cat.username)
 
@@ -455,9 +455,9 @@ class TestPerformProjectModify(ModifyAPITaskflowTestBase):
 
         self.assert_irods_coll(self.category, expected=False)
         with self.assertRaises(GroupDoesNotExist):
-            self.irods.user_groups.get(project_group)
+            self.irods.groups.get(project_group)
         with self.assertRaises(GroupDoesNotExist):
-            self.irods.user_groups.get(owner_group)
+            self.irods.groups.get(owner_group)
         with self.assertRaises(UserDoesNotExist):
             self.irods.users.get(self.user_owner_cat.username)
 
@@ -555,9 +555,9 @@ class TestRevertProjectModify(ModifyAPITaskflowTestBase):
 
         self.assert_irods_coll(self.project, expected=False)
         with self.assertRaises(GroupDoesNotExist):
-            self.irods.user_groups.get(self.project_group)
+            self.irods.groups.get(self.project_group)
         with self.assertRaises(GroupDoesNotExist):
-            self.irods.user_groups.get(self.owner_group)
+            self.irods.groups.get(self.owner_group)
         tl_events = TimelineEvent.objects.filter(
             project=self.project,
             plugin='taskflow',
@@ -1867,9 +1867,9 @@ class TestPerformProjectSync(ModifyAPITaskflowTestBase):
         owner_group = self.irods_backend.get_group_name(project, True)
         self.assert_irods_coll(project, expected=False)
         with self.assertRaises(GroupDoesNotExist):
-            self.irods.user_groups.get(project_group)
+            self.irods.groups.get(project_group)
         with self.assertRaises(GroupDoesNotExist):
-            self.irods.user_groups.get(owner_group)
+            self.irods.groups.get(owner_group)
         with self.assertRaises(UserDoesNotExist):
             self.irods.users.get(self.user.username)
         with self.assertRaises(UserDoesNotExist):
@@ -1878,7 +1878,7 @@ class TestPerformProjectSync(ModifyAPITaskflowTestBase):
         self.plugin.perform_project_sync(project)
 
         self.assert_irods_coll(project, expected=True)
-        group = self.irods.user_groups.get(project_group)
+        group = self.irods.groups.get(project_group)
         self.assertIsInstance(group, iRODSUserGroup)
         self.assert_irods_access(
             project_group,
@@ -1891,7 +1891,7 @@ class TestPerformProjectSync(ModifyAPITaskflowTestBase):
             self.irods_backend.get_path(project),
             None,
         )
-        owner_group = self.irods.user_groups.get(owner_group)
+        owner_group = self.irods.groups.get(owner_group)
         self.assertIsInstance(owner_group, iRODSUserGroup)
         self.assertIsInstance(
             self.irods.users.get(self.user.username), iRODSUser
@@ -1928,14 +1928,14 @@ class TestPerformProjectSync(ModifyAPITaskflowTestBase):
         owner_group = self.irods_backend.get_group_name(project, True)
 
         self.assert_irods_coll(project, expected=True)
-        group = self.irods.user_groups.get(project_group)
+        group = self.irods.groups.get(project_group)
         self.assertIsInstance(group, iRODSUserGroup)
         self.assert_irods_access(
             project_group,
             self.irods_backend.get_path(project),
             IRODS_ACCESS_READ_OBJ,
         )
-        owner_group = self.irods.user_groups.get(owner_group)
+        owner_group = self.irods.groups.get(owner_group)
         self.assertIsInstance(owner_group, iRODSUserGroup)
         self.assert_irods_access(
             owner_group,

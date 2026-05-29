@@ -25,6 +25,7 @@ Changed
 - **General**
     - Upgrade to Django v5.2.13 (#2317, #2334)
     - Upgrade to django-sodar-core v1.3.2 (#2317, #2334, #2358)
+    - Upgrade to python-irodsclient v3.3.0 (#2253, #2471)
     - Upgrade to django-rest-knox v5.0 (#2334)
     - Upgrade to irods-docker v4.3.4-2 in CI (#2472)
     - Upgrade to Sentry Javascript SDK v10.27 (#2357)

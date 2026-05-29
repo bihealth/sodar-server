@@ -68,7 +68,7 @@ class Flow(BaseLinearFlow):
         project_group = self.irods_backend.get_group_name(self.project)
         owner_group = self.irods_backend.get_group_name(self.project, True)
         try:  # Support for legacy zones
-            self.irods.user_groups.get(owner_group)
+            self.irods.groups.get(owner_group)
             owner_group_exists = True
         except GroupDoesNotExist:
             owner_group_exists = False

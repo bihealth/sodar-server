@@ -245,14 +245,14 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                 irods.collections.remove(project_path)
             project_group = irods_backend.get_group_name(project)
             try:
-                irods.user_groups.get(project_group)
+                irods.groups.get(project_group)
                 logger.debug(f'Removing user group: {project_group}')
                 irods.users.remove(project_group)
             except GroupDoesNotExist:
                 pass
             project_group = irods_backend.get_group_name(project, owner=True)
             try:
-                irods.user_groups.get(project_group)
+                irods.groups.get(project_group)
                 logger.debug(f'Removing owner group: {project_group}')
                 irods.users.remove(project_group)
             except GroupDoesNotExist:
@@ -746,7 +746,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         project_group = irods_backend.get_group_name(project)
         flow_data = {'roles_add': [], 'roles_delete': []}
         with irods_backend.get_session() as irods:
-            for irods_user in irods.user_groups.getmembers(project_group):
+            for irods_user in irods.groups.getmembers(project_group):
                 user = User.objects.filter(username=irods_user.name).first()
                 role_as = project.get_role(user)
                 if not role_as or role_as.role.rank >= RANK_VIEWER:
@@ -818,7 +818,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                 logger.error(ex_msg)
                 errors.append(ex_msg)
             try:  # Delete project user group
-                # NOTE: Use users instead of user_groups here
+                # NOTE: Use users instead of groups here
                 irods.users.remove(user_group)
                 logger.debug(f'User group deleted: {user_group}')
             except Exception as ex:
