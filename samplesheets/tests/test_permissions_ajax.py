@@ -627,8 +627,8 @@ class TestSheetEditFinishAjaxView(SampleSheetsAjaxPermissionTestBase):
         self.assert_response(self.url, self.non_superusers, 403, method='POST')
 
 
-class TestSheetEditConfigAjaxView(SampleSheetsAjaxPermissionTestBase):
-    """Permission tests for SheetEditConfigAjaxView"""
+class TestSheetEditConfigUpdateAjaxView(SampleSheetsAjaxPermissionTestBase):
+    """Permission tests for SheetEditConfigUpdateAjaxView"""
 
     def setUp(self):
         super().setUp()
@@ -639,7 +639,7 @@ class TestSheetEditConfigAjaxView(SampleSheetsAjaxPermissionTestBase):
         # TODO: Set up request data
 
     def test_post(self):
-        """Test SheetEditConfigAjaxView POST"""
+        """Test SheetEditConfigUpdateAjaxView POST"""
         # NOTE: We need post data for status 200
         self.assert_response(
             self.url, self.good_users_write, 400, method='POST'
@@ -682,8 +682,8 @@ class TestSheetEditConfigAjaxView(SampleSheetsAjaxPermissionTestBase):
         self.assert_response(self.url, self.non_superusers, 403, method='POST')
 
 
-class TestStudyDisplayConfigAjaxView(SampleSheetsAjaxPermissionTestBase):
-    """Permission tests for StudyDisplayConfigAjaxView"""
+class TestStudyDisplayConfigUpdateAjaxView(SampleSheetsAjaxPermissionTestBase):
+    """Permission tests for StudyDisplayConfigUpdateAjaxView"""
 
     def setUp(self):
         super().setUp()
@@ -694,7 +694,7 @@ class TestStudyDisplayConfigAjaxView(SampleSheetsAjaxPermissionTestBase):
         # TODO: Set up request data
 
     def test_post(self):
-        """Test StudyDisplayConfigAjaxView POST"""
+        """Test StudyDisplayConfigUpdateAjaxView POST"""
         # NOTE: We need post data for status 200
         self.assert_response(self.url, self.good_users_read, 400, method='POST')
         self.assert_response(self.url, self.bad_users_read, 403, method='POST')

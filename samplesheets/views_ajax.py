@@ -1789,7 +1789,7 @@ class SheetEditFinishAjaxView(SheetVersionMixin, SODARBaseProjectAjaxView):
         return Response({'detail': export_ex}, status=500)
 
 
-class SheetEditConfigAjaxView(SODARBaseProjectAjaxView):
+class SheetEditConfigUpdateAjaxView(SODARBaseProjectAjaxView):
     """View to update sample sheet editing configuration"""
 
     # NOTE: Currently not requiring manage_sheet perm (see issue #880)
@@ -1907,7 +1907,7 @@ class SheetEditConfigAjaxView(SODARBaseProjectAjaxView):
         return Response({'detail': 'ok'}, status=200)
 
 
-class StudyDisplayConfigAjaxView(SODARBaseProjectAjaxView):
+class StudyDisplayConfigUpdateAjaxView(SODARBaseProjectAjaxView):
     """View to update sample sheet display configuration for a study"""
 
     permission_required = 'samplesheets.view_sheet'

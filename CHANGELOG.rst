@@ -45,6 +45,8 @@ Changed
     - Update CI ordering of code checks and tests (#2434)
 - **Samplesheets**
     - Upgrade critical Vue app dependencies (#2317)
+    - Rename ``SheetEditConfigUpdateAjaxView`` (#2469)
+    - Rename ``StudyDisplayConfigUpdateAjaxView`` (#2469)
 
 Fixed
 -----

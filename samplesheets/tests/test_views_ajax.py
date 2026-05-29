@@ -2011,8 +2011,10 @@ class TestSheetEditFinishAjaxView(SamplesheetsViewTestBase):
         self.assertEqual(ISATab.objects.count(), 1)
 
 
-class TestSheetEditConfigAjaxView(SheetConfigMixin, SamplesheetsViewTestBase):
-    """Tests for SheetEditConfigAjaxView"""
+class TestSheetEditConfigUpdateAjaxView(
+    SheetConfigMixin, SamplesheetsViewTestBase
+):
+    """Tests for SheetEditConfigUpdateAjaxView"""
 
     # TODO: Test with assay updates (needs a better test ISA-Tab)
 
@@ -2064,7 +2066,7 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, SamplesheetsViewTestBase):
         self.cache_args = [APP_NAME, self.cache_name, self.project]
 
     def test_post_study_column(self):
-        """Test SheetEditConfigAjaxView POST with study column"""
+        """Test SheetEditConfigUpdateAjaxView POST with study column"""
         sheet_config = app_settings.get(
             APP_NAME, 'sheet_config', project=self.project
         )
@@ -2156,10 +2158,10 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, SamplesheetsViewTestBase):
         self.assertEqual(JSONCacheItem.objects.count(), 1)
 
 
-class TestStudyDisplayConfigAjaxView(
+class TestStudyDisplayConfigUpdateAjaxView(
     SheetConfigMixin, SamplesheetsViewTestBase
 ):
-    """Tests for StudyDisplayConfigAjaxView"""
+    """Tests for StudyDisplayConfigUpdateAjaxView"""
 
     def setUp(self):
         super().setUp()
@@ -2191,7 +2193,7 @@ class TestStudyDisplayConfigAjaxView(
         self.study_config = self.display_config['studies'][self.s_uuid]
 
     def test_post(self):
-        """Test StudyDisplayConfigAjaxView POST"""
+        """Test StudyDisplayConfigUpdateAjaxView POST"""
         self.assertEqual(
             self.study_config['nodes'][0]['fields'][2]['visible'], True
         )

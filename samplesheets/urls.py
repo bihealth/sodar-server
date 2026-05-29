@@ -317,12 +317,12 @@ urls_ajax = [
     ),
     path(
         route='ajax/config/update/<uuid:project>',
-        view=views_ajax.SheetEditConfigAjaxView.as_view(),
+        view=views_ajax.SheetEditConfigUpdateAjaxView.as_view(),
         name='ajax_config_update',
     ),
     path(
         route='ajax/display/update/<str:study>',
-        view=views_ajax.StudyDisplayConfigAjaxView.as_view(),
+        view=views_ajax.StudyDisplayConfigUpdateAjaxView.as_view(),
         name='ajax_display_update',
     ),
     path(
