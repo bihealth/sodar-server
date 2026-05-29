@@ -43,6 +43,8 @@ Changed
     - Replace black and flake8 with ruff for linting and formatting (#2428)
     - Reformat Python code with ruff (#2428)
     - Update CI ordering of code checks and tests (#2434)
+- **Landingzones**
+    - Update ``resetzone`` and ``verifyzone`` arg help texts (#2368)
 - **Samplesheets**
     - Upgrade critical Vue app dependencies (#2317)
     - Rename ``SheetEditConfigUpdateAjaxView`` (#2469)

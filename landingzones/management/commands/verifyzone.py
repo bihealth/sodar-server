@@ -53,7 +53,7 @@ class Command(BaseCommand):
             dest='zone',
             type=str,
             required=True,
-            help='Landing zone from which files were moved',
+            help='UUID of landing zone from which files were moved',
         )
 
     def handle(self, *args, **options):

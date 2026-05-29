@@ -26,7 +26,7 @@ class Command(ZoneResetMixin, BaseCommand):
             dest='zone',
             type=str,
             required=True,
-            help='Landing zone to reset',
+            help='UUID of landing zone to reset',
         )
 
     def handle(self, *args, **options):
