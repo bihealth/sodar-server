@@ -20,6 +20,7 @@ import {
   type DataCellRendererParams,
   type HeaderEditRendererParamInput,
   type NotifyCb,
+  type RowEditRendererParamInput,
   type SheetTableCellData,
   type SheetTableFieldHeader,
   type SheetTableOntologyRef,
@@ -170,24 +171,17 @@ export function getAssayIrodsHeaderGroup (
 }
 
 // Return header group ColGroupDef for row edit column
-// TODO: Setup cell renderer
-export function getRowEditHeaderGroup (): ColGroupDef {
+export function getRowEditHeaderGroup (
+    params: RowEditRendererParamInput
+): ColGroupDef {
   return {
     headerClass: ['text-white', 'bg-secondary', 'sodar-ss-data-links-top'],
     headerName: 'Edit',
     children: [
       {
         cellClass: ['sodar-ss-data-links-cell', 'sodar-ss-data-unselectable'],
-        /*
         cellRenderer: 'RowEditRenderer',
-        cellRendererParams: {
-          app: params.app,
-          gridUuid: params.gridUuid,
-          assayMode: params.assayMode,
-          sampleColId: params.sampleColId,
-          sampleIdx: params.sampleIdx
-        },
-        */
+        cellRendererParams: params,
         editable: false,
         field: 'rowEdit',
         headerClass: ['sodar-ss-data-header', 'sodar-ss-data-links-header'],
@@ -662,7 +656,12 @@ export function buildColDef (
   }
   // Row editing column
   if (params.editMode) {
-    colDef.push(getRowEditHeaderGroup())
+    const rowEditHeaderParams: RowEditRendererParamInput = {
+      assayMode: assayMode,
+      notifyCb: params.notifyCb,
+      tableUuid: tableUuid
+    }
+    colDef.push(getRowEditHeaderGroup(rowEditHeaderParams))
   }
   return colDef
 }

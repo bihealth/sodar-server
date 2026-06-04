@@ -5,11 +5,21 @@ import { type GridApi } from 'ag-grid-community'
 import { useAppStore } from '@/stores/appStore.ts'
 import { useEditStore } from '@/stores/editStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
+import { getAjaxRequestInit } from '@/utils/appUtils.ts'
 import {
   type CellEditData,
   type EditRequestCell,
-  type NotifyCb
+  type GenericResponseBody,
+  type NotifyCb,
+  type RowDeleteData,
+  type RowDeleteParams,
 } from '@/types.ts'
+import {
+  AJAX_RES_OK,
+  URL_ROW_DEL_PREFIX
+} from '@/constants.ts'
+
+// TODO: Sort functions alphabetically
 
 // Update values of given cells in given grid
 export function updateCellUIValues (
@@ -124,4 +134,89 @@ export function updateCells (
       console.error(msg)
       if (notifyCb) notifyCb(msg, 'danger', 0)
     })
+}
+
+export function deleteRow (params: RowDeleteParams) {
+  const appStore = useAppStore()
+  const editStore = useEditStore()
+  const tableStore = useTableStore()
+
+  // Unsaved row: simply remove from grid
+  const newRow: boolean = editStore.unsavedRow !== null &&
+    editStore.unsavedRow.tableUuid === params.tableUuid &&
+    editStore.unsavedRow.id === params.rowNode.id
+  if (newRow) {
+    params.api.applyTransaction({ remove: [params.rowNode.data] })
+    editStore.unsavedRow = null
+    return
+  }
+
+  // Else update row in database
+  editStore.updatingRow = true
+  const delUrl = URL_ROW_DEL_PREFIX + appStore.projectUuid as string
+
+  const rowData: RowDeleteData = {
+    assay: params.assayMode ? params.tableUuid : null,
+    nodes: [],
+    study: appStore.currentStudyUuid
+  }
+  const cols = params.api.getColumns()
+  if (!cols) return
+  let startIdx = 1
+  let currentNodeUuid = null
+  if (params.assayMode) startIdx = tableStore.sampleIdx
+  for (let i = startIdx; i < cols.length - 1; i++) {
+    const cell = params.rowNode.data[cols![i]!.getColId() as string]
+    if ('uuid' in cell && cell.uuid && cell.uuid !== currentNodeUuid) {
+      rowData.nodes.push({
+        obj_cls: cols![i]!.getColDef().cellEditorParams.fieldHeader.obj_cls,
+        uuid: cell.uuid,
+      })
+      currentNodeUuid = cell.uuid
+    }
+  }
+
+  fetch(delUrl, getAjaxRequestInit('POST', { del_row: rowData }))
+  .then(res => res.json())
+  .then(res => {
+    if ((res as GenericResponseBody).detail === AJAX_RES_OK) {
+      editStore.editDataUpdated = true
+
+      // Update sample list
+      const sc: string = tableStore.sampleColId
+      const su: string = params.rowNode.data[sc].uuid
+      let sFound: boolean = false
+      params.api.forEachNode(function (r) {
+        if (r.data[sc].uuid === su && r.id !== params.rowNode.id) sFound = true
+      })
+      if (params.assayMode &&
+          editStore.editContext!.samples[su]!.assays.includes(
+            params.tableUuid) &&
+          !sFound) {
+        // Remove assay table UUID from sample list for the sample
+        editStore.editContext!.samples[su]!.assays =
+          editStore.editContext!.samples[su]!.assays.filter(
+            v => v !== params.tableUuid)
+      } else if (!params.assayMode && !sFound) {
+        // Delete sample from editContext if deleted from study
+        delete editStore.editContext!.samples[su]
+      }
+
+      // Update grid and row numbers
+      params.api.applyTransaction({ remove: [params.rowNode.data] })
+      let rowNum = 1
+      params.api.forEachNode(function (r) {
+        r.setDataValue('rowNum', rowNum)
+        rowNum += 1
+      })
+      if (params.notifyCb) params.notifyCb('Row deleted', 'success', 0)
+    } else {
+      const msg = 'Row delete failed'
+      console.error(
+        `${msg}: ${(res as GenericResponseBody).detail}`)
+      if (params.notifyCb) params.notifyCb(msg, 'danger', 0)
+    }
+    if (params.finishCb) params.finishCb()
+    editStore.updatingRow = false
+  }) // TODO: Catch and handle fetch() error
 }

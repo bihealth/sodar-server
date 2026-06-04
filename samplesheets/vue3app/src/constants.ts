@@ -1,11 +1,17 @@
 /* General constants */
 
+// URLs
+export const URL_ROW_DEL_PREFIX = '/samplesheets/ajax/edit/row/delete/'
+
+// Standard Ajax data
+export const AJAX_RES_OK = 'ok'
+
 // Study name truncate length in page header nav dropdown
-export const STUDY_NAV_DROPDOWN_LEN: number = 48
+export const STUDY_NAV_DROPDOWN_LEN = 48
 // Study name truncate length in page header nav tabs
-export const STUDY_NAV_TAB_LEN: number = 32
+export const STUDY_NAV_TAB_LEN = 32
 // Default toast display interval in milliseconds
-export const TOAST_INTERVAL: number = 1500
+export const TOAST_INTERVAL = 1500
 
 // SODAR sample sheet model
 export const DB_OBJ_CLASS_MATERIAL = 'GenericMaterial'
@@ -52,19 +58,19 @@ export const SHEET_STATS = [
 ]
 
 // Table rendering
-export const CELL_EMPTY_VAL: string = '-'
+export const CELL_EMPTY_VAL = '-'
 
 // Edit mode message strings
-export const EDIT_MODE_EXIT_MSG: string = 'Exit edit mode'
-export const EDIT_MODE_SAVE_MSG: string =
+export const EDIT_MODE_EXIT_MSG = 'Exit edit mode'
+export const EDIT_MODE_SAVE_MSG =
   ' and save current sheet version as backup'
-export const EDIT_MODE_UNSAVED_MSG: string =
+export const EDIT_MODE_UNSAVED_MSG =
   'Please save or discard your unsaved table row before exiting edit mode'
 
 // Edit mode badge strings
-export const EDIT_BADGE_DEFAULT_LABEL: string = 'Edit Mode'
-export const EDIT_BADGE_SAVED_LABEL: string = 'Changes Saved'
-export const EDIT_BADGE_UNSAVED_LABEL: string = 'Unsaved Changes'
+export const EDIT_BADGE_DEFAULT_LABEL = 'Edit Mode'
+export const EDIT_BADGE_SAVED_LABEL = 'Changes Saved'
+export const EDIT_BADGE_UNSAVED_LABEL = 'Unsaved Changes'
 
 // Edit config actions
 export const EDIT_CONFIG_ACTION_UPDATE = 'update'
@@ -110,8 +116,21 @@ export const EDIT_REGEX: { [key: string]: RegExp } = {
   name:           /^([A-Za-z0-9-_/]*)$/
 }
 
+// Edit mode text labels
+export const ROW_DEL_MSG_ALL = 'Deleting all rows of a table is currently ' +
+  'not supported'
+export const ROW_DEL_MSG_ASSAY = 'Assay rows containing the sample must be ' +
+  'first deleted'
+export const ROW_DEL_MSG_CANCEL = 'Cancel row insertion'
+export const ROW_DEL_MSG_CONFIRM = 'Delete row? This can not be undone.'
+export const ROW_DEL_MSG_CONFIRM_CANCEL = 'Cancel row insert?'
+export const ROW_DEL_MSG_CONFIRM_IRODS = ' Note that if related sample data ' +
+  'exists in iRODS, it may become unreachable.'
+export const ROW_DEL_MSG_OK = 'Delete row'
+export const ROW_DEL_MSG_UNSAVED = 'New row needs to be saved or cancelled'
+
 // Misc edit mode constants
-export const EDIT_TERM_QUERY_MIN_LEN: number = 3
+export const EDIT_TERM_QUERY_MIN_LEN = 3
 
 // Ontology constants
 export const OBO_ID_HP = 'HP'

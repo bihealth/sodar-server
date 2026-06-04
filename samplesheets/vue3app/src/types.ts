@@ -583,7 +583,42 @@ export interface EditConfigRequestBody {
   fields: Array<EditConfigRequestField>
 }
 
+// Row edit renderer params we input to ag-grid
+export interface RowEditRendererParamInput {
+  assayMode: boolean
+  notifyCb?: NotifyCb
+  tableUuid: string
+}
+
+// Full row edit renderer params with ag-grid additions
+export interface RowEditRendererParams extends
+  ICellRendererParams, RowEditRendererParamInput {}
+
+export interface RowDeleteDataNode {
+  obj_cls: string
+  uuid: string
+}
+
+export interface RowDeleteData {
+  assay: string | null
+  nodes: Array<RowDeleteDataNode>
+  study: string
+}
+
+export interface RowDeleteParams {
+  api: GridApi
+  assayMode: boolean
+  finishCb?: RowEditFinishCb
+  notifyCb?: NotifyCb
+  rowNode: IRowNode
+  tableUuid: string
+}
+
 /* Function callbacks ------------------------------------------------------- */
+
+export interface RowEditFinishCb {
+  (): void
+}
 
 export interface NotifyCb {
   (

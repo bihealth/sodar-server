@@ -14,6 +14,7 @@ import IrodsDirModal from '@/components/modals/IrodsDirModal.vue'
 import ObjectSelectEditor from '@/components/editors/ObjectSelectEditor.vue'
 import OntologyEditModal from '@/components/modals/OntologyEditModal.vue'
 import OntologyEditor from '@/components/editors/OntologyEditor.vue'
+import RowEditRenderer from '@/components/renderers/RowEditRenderer.vue'
 import SheetTable from '@/components/SheetTable.vue'
 import SheetTableHeader from '@/components/SheetTableHeader.vue'
 import StudyShortcutModal from '@/components/modals/StudyShortcutModal.vue'
@@ -64,6 +65,7 @@ defineExpose({
   IrodsButtonsRenderer,
   ObjectSelectEditor,
   OntologyEditor,
+  RowEditRenderer,
   StudyShortcutsRenderer
 })
 
