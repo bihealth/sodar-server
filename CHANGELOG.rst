@@ -14,6 +14,7 @@ Added
 - **General**
     - Python v3.12 and v3.13 support (#2334)
     - ``django-axes`` support for login security (#1976, #2334)
+    - ``app_landingzones_transfer.rst`` landing zone file deletion note (#2478)
 - **Samplesheets**
     - Vue3 app (#994, #2389, #2390, #2403, #2457, #2458)
     - Vite integration using ``django-vite`` (#994)

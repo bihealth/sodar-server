@@ -273,6 +273,19 @@ a UI alert and/or an email. This depends on how landing zone alerts have been
 have configured in your :ref:`user profile <ui_user_profile>`.
 
 
+Deleting Files
+==============
+
+If you want to delete files from your landing zone before submitting it, due to
+e.g. erroneous uploads, you must use the force flag ``-f`` in your iRODS
+commands. Moving files to trash from landing zones is not permitted, they must
+be permanently deleted. Example:
+
+.. code-block:: bash
+
+    $ irm -f filename.txt
+
+
 Landing Zone Deletion
 =====================
 
