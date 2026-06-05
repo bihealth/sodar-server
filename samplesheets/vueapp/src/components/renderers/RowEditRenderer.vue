@@ -7,8 +7,7 @@
         :disabled="!enableDelete()"
         @click="onDelete()"
         v-b-tooltip.hover.d300>
-      <img :src="'/icons/mdi/' + getBtnIcon(false) + '.svg?color=%23fff'"
-           :class="getBtnClass(false)" />
+      <i class="iconify" data-icon="mdi:close-thick"></i>
     </b-button>
     <b-button
         v-if="isNewRow()"
@@ -18,8 +17,7 @@
         :disabled="!enableSave()"
         @click="onSave()"
         v-b-tooltip.hover.d300>
-      <img :src="'/icons/mdi/' + getBtnIcon(true) + '.svg?color=%23fff'"
-           :class="getBtnClass(true)" />
+      <i class="iconify" data-icon="mdi:check-bold"></i>
     </b-button>
  </span>
 </template>
@@ -172,19 +170,6 @@ export default Vue.extend({
       return true
       // NOTE: This allows saving incomplete rows (not yet implemented)
       // return !this.rowNode.data[cols[1].colId].newInit && !this.app.updatingRow
-    },
-    getBtnClass (insert) {
-      if ((insert && this.inserting) || ((!insert && this.deleting))) {
-        return 'spin'
-      }
-      return ''
-    },
-    getBtnIcon (insert) {
-      if ((insert && this.inserting) || ((!insert && this.deleting))) {
-        return 'loading'
-      }
-      if (insert) return 'check-bold'
-      return 'close-thick'
     },
     enableDelete () {
       if (this.app.updatingRow ||
@@ -361,10 +346,4 @@ export default Vue.extend({
 </script>
 
 <style scoped>
-
-.sodar-ss-row-btn {
-  padding-top: 0 !important;
-  padding-left: 4px !important;
-}
-
 </style>
