@@ -33,6 +33,7 @@ from drf_spectacular.utils import extend_schema, inline_serializer
 from projectroles.app_settings import AppSettingAPI
 from projectroles.plugins import PluginAPI
 from projectroles.views_api import (
+    ServiceUnavailable,
     SODARAPIBaseProjectMixin,
     SODARAPIGenericProjectMixin,
     SODARPageNumberPagination,
@@ -244,8 +245,8 @@ class ZoneCreateAPIView(
     """
     Create a landing zone.
 
-    Returns ``503`` if an investigation for the project is not found or project
-    iRODS collections have not been created.
+    Returns ``ServiceUnavailable`` (HTTP code 503) if an investigation for the
+    project is not found or project iRODS collections have not been created.
 
     **URL:** ``/landingzones/api/create/{Project.sodar_uuid}``
 
@@ -270,12 +271,6 @@ class ZoneCreateAPIView(
     permission_required = 'landingzones.create_zone'
     serializer_class = LandingZoneSerializer
 
-    @classmethod
-    def _raise_503(cls, msg: str):
-        ex = APIException(msg)
-        ex.status_code = 503
-        raise ex
-
     def post(self, request, *args, **kwargs):
         project = self.get_project()
         try:
@@ -291,7 +286,7 @@ class ZoneCreateAPIView(
         ex_prefix = 'Creating landing zone failed: '
         # Check taskflow status
         if not plugin_api.get_backend_api('taskflow'):
-            self._raise_503(f'{ex_prefix}Taskflow not enabled')
+            raise ServiceUnavailable(f'{ex_prefix}Taskflow not enabled')
 
         # Ensure project has investigation with iRODS collections created
         project = self.get_project()
@@ -300,7 +295,7 @@ class ZoneCreateAPIView(
         ).first()
         # NOTE: Lack of investigation is already caught in serializer
         if not investigation.irods_status:
-            self._raise_503(f'{ex_prefix}{ZONE_NO_COLLS_MSG}')
+            raise ServiceUnavailable(f'{ex_prefix}{ZONE_NO_COLLS_MSG}')
 
         # If all is OK, go forward with object creation and taskflow submission
         super().perform_create(serializer)
@@ -441,8 +436,9 @@ class ZoneSubmitMoveAPIView(ZoneMoveMixin, ZoneSubmitBaseAPIView):
     For validating data without moving it to the sample repository, this view
     should be called with ``submit/validate``.
 
-    Returns ``503`` if the project is currently locked by another operation or
-    if the concurrent validation limit for the project has been reached.
+    Returns ``ServiceUnavailable`` (HTTP code 503) if the project is currently
+    locked by another operation or if the concurrent validation limit for the
+    project has been reached.
 
     **URL for Validation:** ``/landingzones/api/submit/validate/{LandingZone.sodar_uuid}``
 
@@ -467,9 +463,7 @@ class ZoneSubmitMoveAPIView(ZoneMoveMixin, ZoneSubmitBaseAPIView):
         ).count()
         valid_limit = settings.LANDINGZONES_ZONE_VALIDATE_LIMIT or 1
         if valid_count >= valid_limit:
-            ex = APIException(ZONE_VALIDATE_LIMIT_MSG)
-            ex.status_code = 503
-            raise ex
+            raise ServiceUnavailable(ZONE_VALIDATE_LIMIT_MSG)
 
         # Validate/move or validate only
         if self.request.get_full_path() == reverse(

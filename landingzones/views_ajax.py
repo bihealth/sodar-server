@@ -7,6 +7,7 @@ from django.conf import settings
 from django.http import Http404, HttpResponseForbidden, HttpResponseBadRequest
 from django.urls import reverse
 
+from rest_framework import status
 from rest_framework.response import Response
 
 # Projectroles dependency
@@ -112,7 +113,10 @@ class ZoneIrodsListRetrieveAjaxView(ZoneBaseAjaxView):
     def get(self, request, *args, **kwargs):
         irods_backend = plugin_api.get_backend_api('omics_irods')
         if not irods_backend:
-            return Response({'detail': 'iRODS backend not enabled'}, status=503)
+            return Response(
+                {'detail': 'iRODS backend not enabled'},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
         # TODO: Remove repetition
         zone = LandingZone.objects.filter(
             sodar_uuid=self.kwargs.get('landingzone')
@@ -178,7 +182,10 @@ class ZoneChecksumStatusRetrieveAjaxView(ZoneBaseAjaxView):
     def post(self, request, *args, **kwargs):
         irods_backend = plugin_api.get_backend_api('omics_irods')
         if not irods_backend:
-            return Response({'detail': 'iRODS backend not enabled'}, status=503)
+            return Response(
+                {'detail': 'iRODS backend not enabled'},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
 
         # TODO: Remove repetition
         zone = LandingZone.objects.filter(

@@ -4,11 +4,11 @@ from packaging.version import parse as parse_version
 from typing import Optional
 
 from rest_framework import serializers
-from rest_framework.exceptions import APIException
 
 # Projectroles dependency
 from projectroles.plugins import PluginAPI
 from projectroles.serializers import SODARProjectModelSerializer
+from projectroles.views_api import ServiceUnavailable
 
 # Samplesheets dependency
 from samplesheets.models import Investigation, Assay
@@ -80,9 +80,7 @@ class LandingZoneSerializer(SODARProjectModelSerializer):
             project=self.context.get('project'), active=True
         ).first()
         if not investigation:
-            ex = APIException(ZONE_NO_INV_MSG)
-            ex.status_code = 503
-            raise ex
+            raise ServiceUnavailable(ZONE_NO_INV_MSG)
         # Else continue validating the input
         try:
             if 'assay' in attrs:
