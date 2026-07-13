@@ -60,6 +60,7 @@ from projectroles.views import (
     ProjectPermissionMixin,
     CurrentUserFormMixin,
     HTTPRefererMixin,
+    HostConfirmDeleteView,
 )
 
 # Landingzones dependency
@@ -1790,19 +1791,22 @@ class SheetISAExportView(
 
 
 class SheetDeleteView(
-    LoginRequiredMixin,
-    LoggedInPermissionMixin,
     InvestigationContextMixin,
     ProjectPermissionMixin,
-    TemplateView,
+    HostConfirmDeleteView,
 ):
     """Sample sheet deletion view"""
 
     permission_required = 'samplesheets.delete_sheet'
-    template_name = 'samplesheets/samplesheet_confirm_delete.html'
+    template_name = 'samplesheets/samplesheet_confirm_delete_host.html'
+
+    def get_object(self):
+        project = self.get_project()
+        return Investigation.objects.get(project=project, active=True)
 
     def get_context_data(self, *args, **kwargs):
         """Override get_context_data() to check for data objects in iRODS"""
+        self.object = self.get_object()
         context = super().get_context_data(*args, **kwargs)
         irods_backend = plugin_api.get_backend_api('omics_irods')
         if not irods_backend:
@@ -1843,9 +1847,9 @@ class SheetDeleteView(
         timeline = plugin_api.get_backend_api('timeline_backend')
         taskflow = plugin_api.get_backend_api('taskflow')
         tl_event = None
-        project = Project.objects.get(sodar_uuid=kwargs['project'])
+        project = self.get_project()
         req_user = self.request.user
-        investigation = Investigation.objects.get(project=project, active=True)
+        investigation = self.get_object()
         redirect_url = get_sheets_url(project)
 
         # Don't allow deletion for everybody if files exist in iRODS
@@ -1880,23 +1884,6 @@ class SheetDeleteView(
                 label='investigation',
                 name=investigation.title,
             )
-
-        # Don't allow deletion unless user has input the host name
-        host_confirm = request.POST.get('delete_host_confirm')
-        actual_host = request.get_host().split(':')[0]
-
-        if not host_confirm or host_confirm != actual_host:
-            msg = (
-                f'Incorrect host name for confirming sheet deletion: '
-                f'"{host_confirm}"'
-            )
-            if tl_event:
-                tl_event.set_status(timeline.TL_STATUS_FAILED, msg)
-            logger.error(msg + f' (correct={actual_host})')
-            messages.error(
-                request, 'Host name input incorrect, deletion cancelled.'
-            )
-            return redirect(redirect_url)
 
         delete_success = True
         if taskflow and investigation.irods_status:

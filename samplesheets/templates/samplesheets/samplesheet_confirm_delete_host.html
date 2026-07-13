@@ -1,16 +1,18 @@
 {% extends 'projectroles/project_base.html' %}
+
 {% load rules %}
 
 {% block title %}
-  Confirm Sample Sheet Deletion
+  Confirm Deletion of {{ object_display_name|title }}
 {% endblock title %}
 
 {% block projectroles_extend %}
 
-<div class="container-fluid sodar-subtitle-container">
-  <h3>Confirm Sample Sheet Deletion</h3>
+<div class="row sodar-subtitle-container">
+  {% block form_header %}
+    <h3>Confirm Deletion of {{ object_display_name|title }}<h3>
+  {% endblock form_header %}
 </div>
-
 <div class="container-fluid sodar-page-container">
   {% if can_delete_sheets %}
     <div class="alert alert-warning" role="alert">
