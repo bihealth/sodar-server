@@ -3,6 +3,7 @@
 import json
 import os
 
+
 from django.conf import settings
 from django.urls import reverse
 
@@ -583,4 +584,123 @@ class TestIrodsObjectListAjaxView(
         self.assertEqual(
             response_data[0]['irods_request_status'],
             IRODS_REQUEST_STATUS_ACTIVE,
+        )
+
+
+class TestPluginSearchResultsAjaxView(
+    SampleSheetIOMixin, SampleSheetTaskflowMixin, TaskflowViewTestBase
+):
+    """
+    Tests for PluginSearchResultsAjaxView with taskflow and sample sheet items
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.project, self.owner_as = self.make_project_taskflow(
+            title='TestProject',
+            type=PROJECT_TYPE_PROJECT,
+            parent=self.category,
+            owner=self.user,
+        )
+        self.investigation = self.import_isa_from_file(
+            SHEET_DIR + 'i_small.zip', self.project
+        )
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+        self.make_irods_colls(self.investigation)
+        self.assay_path = self.irods_backend.get_path(self.assay)
+        self.source_id = '0815'
+        self.sample_id = '0815-N1'
+        # Create test file
+        self.file_name = f'{self.sample_id}_test.txt'
+        self.file_path = iRODSPath(self.assay_path, self.file_name)
+        self.irods.data_objects.create(self.file_path)
+
+    def test_post(self):
+        """Test PluginSearchResultsAjaxView POST without keyword limiting"""
+        with self.login(self.user):
+            response = self.client.post(
+                reverse('projectroles:ajax_search'),
+                {
+                    'plugin': 'samplesheets',
+                    'terms': f'["{self.sample_id}"]',
+                    'keywords': '{}',
+                },
+            )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIsNone(data['error'])
+        self.assertEqual(len(data['results']), 2)
+        self.assertEqual(data['results'][0]['category'], 'materials')
+        self.assertEqual(len(data['results'][0]['rows']), 1)
+        self.assertEqual(
+            data['results'][0]['rows'][0][0]['value'], self.sample_id
+        )
+        self.assertEqual(data['results'][1]['category'], 'files')
+        self.assertEqual(len(data['results'][1]['rows']), 1)
+        self.assertEqual(
+            data['results'][1]['rows'][0][0]['value'], self.file_name
+        )
+
+    def test_post_limit_source(self):
+        """Test POST with source type limit"""
+        with self.login(self.user):
+            response = self.client.post(
+                reverse('projectroles:ajax_search'),
+                {
+                    'plugin': 'samplesheets',
+                    'terms': f'["{self.source_id}"]',
+                    'keywords': '{"type": "source"}',
+                },
+            )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIsNone(data['error'])
+        self.assertEqual(len(data['results']), 1)
+        self.assertEqual(data['results'][0]['category'], 'materials')
+        self.assertEqual(len(data['results'][0]['rows']), 1)
+        self.assertEqual(
+            data['results'][0]['rows'][0][0]['value'], self.source_id
+        )
+
+    def test_post_limit_sample(self):
+        """Test POST with sample type limit"""
+        with self.login(self.user):
+            response = self.client.post(
+                reverse('projectroles:ajax_search'),
+                {
+                    'plugin': 'samplesheets',
+                    'terms': f'["{self.sample_id}"]',
+                    'keywords': '{"type": "sample"}',
+                },
+            )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIsNone(data['error'])
+        self.assertEqual(len(data['results']), 1)
+        self.assertEqual(data['results'][0]['category'], 'materials')
+        self.assertEqual(len(data['results'][0]['rows']), 1)
+        self.assertEqual(
+            data['results'][0]['rows'][0][0]['value'], self.sample_id
+        )
+
+    def test_post_limit_file(self):
+        """Test POST with file type limit"""
+        with self.login(self.user):
+            response = self.client.post(
+                reverse('projectroles:ajax_search'),
+                {
+                    'plugin': 'samplesheets',
+                    'terms': f'["{self.sample_id}"]',
+                    'keywords': '{"type": "file"}',
+                },
+            )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIsNone(data['error'])
+        self.assertEqual(len(data['results']), 1)
+        self.assertEqual(data['results'][0]['category'], 'files')
+        self.assertEqual(len(data['results'][0]['rows']), 1)
+        self.assertEqual(
+            data['results'][0]['rows'][0][0]['value'], self.file_name
         )
