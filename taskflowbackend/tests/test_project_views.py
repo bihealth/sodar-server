@@ -222,7 +222,7 @@ class TestProjectUpdateView(TaskflowViewTestBase):
         model_dict = model_to_dict(self.project)
         model_dict.pop('readme', None)
         self.assertEqual(model_dict, expected)
-        self.assertEqual(self.project.readme.raw, 'updated readme')
+        self.assertEqual(self.project.readme, 'updated readme')
 
         project_coll = self.irods.collections.get(
             self.irods_backend.get_path(self.project)

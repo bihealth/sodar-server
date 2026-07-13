@@ -130,7 +130,7 @@ class TestProjectUpdateAPIView(CoreTaskflowAPITestBase):
 
         self.category.refresh_from_db()
         model_dict = model_to_dict(self.category)
-        model_dict['readme'] = model_dict['readme'].raw
+        model_dict['readme'] = model_dict['readme']
         expected = {
             'id': self.category.pk,
             'title': UPDATED_TITLE,
@@ -174,7 +174,7 @@ class TestProjectUpdateAPIView(CoreTaskflowAPITestBase):
 
         self.project.refresh_from_db()
         model_dict = model_to_dict(self.project)
-        model_dict['readme'] = model_dict['readme'].raw
+        model_dict['readme'] = model_dict['readme']
         expected = {
             'id': self.project.pk,
             'title': UPDATED_TITLE,
@@ -226,7 +226,7 @@ class TestProjectUpdateAPIView(CoreTaskflowAPITestBase):
 
         self.category.refresh_from_db()
         model_dict = model_to_dict(self.category)
-        model_dict['readme'] = model_dict['readme'].raw
+        model_dict['readme'] = model_dict['readme']
         expected = {
             'id': self.category.pk,
             'title': UPDATED_TITLE,
@@ -263,7 +263,7 @@ class TestProjectUpdateAPIView(CoreTaskflowAPITestBase):
 
         self.project.refresh_from_db()
         model_dict = model_to_dict(self.project)
-        model_dict['readme'] = model_dict['readme'].raw
+        model_dict['readme'] = model_dict['readme']
         expected = {
             'id': self.project.pk,
             'title': UPDATED_TITLE,
