@@ -1847,7 +1847,7 @@ class SheetDeleteView(
         timeline = plugin_api.get_backend_api('timeline_backend')
         taskflow = plugin_api.get_backend_api('taskflow')
         tl_event = None
-        project = self.get_project()
+        project = Project.objects.get(sodar_uuid=kwargs['project'])
         req_user = self.request.user
         investigation = self.get_object()
         redirect_url = get_sheets_url(project)

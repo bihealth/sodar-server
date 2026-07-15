@@ -384,7 +384,7 @@ class ProjectAppPlugin(
     #: List of search object types for the app
     search_types = ['source', 'sample', 'file']
 
-    #: Search results template
+    #: Search results styling
     search_css = 'samplesheets/css/search.css'
 
     #: App card template for the project details page
@@ -595,8 +595,6 @@ class ProjectAppPlugin(
                     ),  # Assay
                 ]
             )
-            # Q: is it possible to reach the limit here, given that we also set
-            # a limit in the irods_backend query?
             if len(ret) == settings.SHEETS_IRODS_LIMIT:
                 break
 
