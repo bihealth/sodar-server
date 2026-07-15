@@ -51,6 +51,7 @@ Table of Contents
     ui_irods_info
     ui_api_tokens
     ui_user_profile
+    ui_search
     ui_project_overview
     ui_project_members
     ui_project_update
