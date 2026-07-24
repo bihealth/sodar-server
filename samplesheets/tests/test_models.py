@@ -1333,7 +1333,7 @@ class TestGenericMaterialManager(SamplesheetsModelTestBase):
         self.assertEqual(result.count(), 1)
         self.assertEqual(result.first(), self.sample)
 
-    def test_find_with_project_limiting_success(self):
+    def test_find_project_limit_success(self):
         """Test find() material with project limiting"""
         result = GenericMaterial.objects.find(
             ['other_sample'],
@@ -1345,7 +1345,7 @@ class TestGenericMaterialManager(SamplesheetsModelTestBase):
         self.assertEqual(result.count(), 1)
         self.assertEqual(result.first(), self.sample2)
 
-    def test_find_with_project_limiting_fail(self):
+    def test_find_project_limit_fail(self):
         """Test find() material with project limiting (should fail)"""
         result = GenericMaterial.objects.find(
             ['other_sample'],

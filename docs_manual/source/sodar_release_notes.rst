@@ -16,11 +16,13 @@ v1.3.0 (WIP)
 - Add Python v3.12 and v3.13 support
 - Replace Black and Flake8 with Ruff for linting and formatting
 - Upgrade to Django v5.2
-- Upgrade to SODAR Core v1.3.2
+- Upgrade to SODAR Core v1.4.2
 - Upgrade to python-irodsclient v3.3
 - Upgrade to django-rest-knox v5.0
 - Upgrade to Node.js v24
 - Remove Python v3.9 and v3.10 support
+- `SODAR Core v1.4 updates <https://sodar-core.readthedocs.io/en/latest/major_changes.html#v1-4-2-2026-07-23>`_
+- `SODAR Core v1.3 updates <https://sodar-core.readthedocs.io/en/latest/major_changes.html#v1-3-2-2026-01-12>`_
 
 :ref:`Administrator upgrade guide for v1.3 <admin_upgrade_v1.3>`
 
