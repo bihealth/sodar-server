@@ -66,14 +66,14 @@ django-rest-knox==5.0.4
 markdown==3.10.2
 django-markupfield==2.0.1
 django-pagedown==2.2.1
-mistune==3.2.1
+mistune==3.3.3
 martor==1.8.2
 
 # Django autocomplete light (DAL)
 django-autocomplete-light==5.0.0
 
 # SODAR Core
-django-sodar-core==1.4.1
+django-sodar-core==1.4.2
 # -e git+https://github.com/bihealth/sodar-core.git@82c6acf88567748de7a2928c7a832bef7bdf7ec5#egg=django-sodar-core
 
 # Celery
