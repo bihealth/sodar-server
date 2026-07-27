@@ -46,6 +46,8 @@ These commands originate in SODAR Core. More information can be found in the
 ``syncremote``
     Synchronize project and user data from a remote site if remote project sync
     is enabled.
+``transferroles``
+    Transfer all project roles from one user to another.
 
 
 .. _admin_commands_sodar:

@@ -23,6 +23,7 @@ from landingzones.models import LandingZone
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import Project, SODARUser, SODAR_CONSTANTS
 from projectroles.plugins import PluginAPI
+from projectroles.views_api import ServiceUnavailable
 
 from taskflowbackend import flows
 from taskflowbackend.flows.base_flow import BaseLinearFlow
@@ -156,9 +157,7 @@ class TaskflowAPI:
         """
         msg = f'{msg_prefix}{ex}'
         if PROJECT_LOCKED_MSG in msg:
-            ex = APIException(msg)
-            ex.status_code = 503
-            raise ex
+            raise ServiceUnavailable(msg)
         raise default_class(msg)
 
     @classmethod

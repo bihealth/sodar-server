@@ -57,6 +57,7 @@ THIRD_PARTY_APPS = [
     'crispy_bootstrap4',  # Bootstrap4 theme for Crispy
     'rules.apps.AutodiscoverRulesConfig',  # Django rules engine
     'djangoplugins',  # Django plugins
+    'martor',  # For markdown
     'pagedown',  # For markdown
     'markupfield',  # For markdown
     'rest_framework',  # For API views
@@ -340,6 +341,26 @@ CELERY_IMPORTS = [
     'taskflowbackend.tasks_celery',
 ]
 
+# Martor Configuration for Markdown
+# ------------------------------------------------------------------------------
+
+# NOTE: Setting CSRF_COOKIE_HTTPONLY to `False` is required for AJAX uploads
+# Choose your preferred theme: "bootstrap" or "semantic"
+MARTOR_THEME = 'bootstrap'
+MARTOR_ENABLE_LABEL = True
+MARTOR_ENABLE_CONFIGS = {
+    'imgur': 'false',
+    'mention': 'false',
+    'jquery': 'false',
+    'living': 'true',
+    'spellcheck': 'false',
+    'hljs': 'false',
+}
+# By default, martor loads bootstrap v5. We don't want that, so we supply an
+# alternative CSS file.
+MARTOR_ALTERNATIVE_CSS_FILE_THEME = 'projectroles/css/martor_theme.css'
+MARTOR_ENABLE_ADMIN_CSS = False
+
 
 # API Settings
 # ------------------------------------------------------------------------------
@@ -524,9 +545,9 @@ if AXES_ENABLED:
     AXES_LOCK_OUT_AT_FAILURE = env.bool('AXES_LOCK_OUT_AT_FAILURE', False)
     # Cooloff time for failure lock-out in hours
     AXES_COOLOFF_TIME = env.int('AXES_COOLOFF_TIME', None)
-    # Lockout parameters. by default, block by username only (GRPR compliance)
+    # Lockout parameters. by default, block by username and IP (GDPR compliance)
     AXES_LOCKOUT_PARAMETERS = env.list(
-        'AXES_LOCKOUT_PARAMETERS', default=['username']
+        'AXES_LOCKOUT_PARAMETERS', default=['ip_address', 'username']
     )
     # Only enable lock for admin site if True
     AXES_ONLY_ADMIN_SITE = env.bool('AXES_ONLY_ADMIN_SITE', False)

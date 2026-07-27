@@ -64,6 +64,9 @@ Project list title highlight
     Highlight project title in paths displayed in the project list.
 Project list page size
     Amount of projects per page in the project list.
+Show username in user dropdown
+    Display the name of the current user directly in the user dropdown button.
+    Useful for owners of multiple accounts.
 
 .. figure:: _static/sodar_ui/user_profile_settings.png
     :align: center

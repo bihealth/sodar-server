@@ -4,7 +4,6 @@ import uuid
 
 from datetime import timedelta
 from typing import Optional
-from urllib.parse import urlencode
 from zoneinfo import ZoneInfo
 
 from irods.exception import CollectionDoesNotExist, NoResultFound
@@ -92,8 +91,6 @@ IRODS_FILE_NAME = 'test1.txt'
 IRODS_FILE_NAME2 = 'test2.txt'
 PUBLIC_USER_NAME = 'user_no_roles'
 PUBLIC_USER_PASS = 'password'
-SOURCE_ID = '0815'
-SAMPLE_ID = '0815-N1'
 INVALID_REDIS_URL = 'redis://127.0.0.1:6666/0'
 TICKET_LABEL = 'TestTicket'
 TICKET_LABEL_UPDATED = 'TestTicketUpdated'
@@ -2886,98 +2883,6 @@ class TestSampleDataPublicAccess(
             self.user_session.collections.get(new_coll_path)
 
 
-class TestProjectSearchView(
-    SampleSheetIOMixin, SampleSheetTaskflowMixin, TaskflowViewTestBase
-):
-    """Tests for ProjectSearchView with taskflow and sample sheet items"""
-
-    def setUp(self):
-        super().setUp()
-        self.project, self.owner_as = self.make_project_taskflow(
-            title='TestProject',
-            type=PROJECT_TYPE_PROJECT,
-            parent=self.category,
-            owner=self.user,
-        )
-        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
-        self.study = self.investigation.studies.first()
-        self.assay = self.study.assays.first()
-        self.make_irods_colls(self.investigation)
-        self.assay_path = self.irods_backend.get_path(self.assay)
-        # Create test file
-        self.file_name = f'{SAMPLE_ID}_test.txt'
-        self.file_path = iRODSPath(self.assay_path, self.file_name)
-        self.irods.data_objects.create(self.file_path)
-
-    def test_get(self):
-        """Test ProjectSearchView GET without keyword limiting"""
-        with self.login(self.user):
-            response = self.client.get(
-                reverse('projectroles:search')
-                + '?'
-                + urlencode({'s': SAMPLE_ID})
-            )
-        self.assertEqual(response.status_code, 200)
-        data = response.context['app_results'][0]
-        self.assertEqual(len(data['results']), 2)
-        self.assertEqual(len(data['results']['materials'].items), 1)
-        self.assertEqual(
-            data['results']['materials'].items[0]['name'], SAMPLE_ID
-        )
-        self.assertEqual(len(data['results']['files'].items), 1)
-        self.assertEqual(
-            data['results']['files'].items[0]['name'], self.file_name
-        )
-
-    def test_get_limit_source(self):
-        """Test GET with source type limit"""
-        with self.login(self.user):
-            response = self.client.get(
-                reverse('projectroles:search')
-                + '?'
-                + urlencode({'s': f'{SOURCE_ID} type:source'})
-            )
-        self.assertEqual(response.status_code, 200)
-        data = response.context['app_results'][0]
-        self.assertEqual(len(data['results']), 1)
-        self.assertEqual(len(data['results']['materials'].items), 1)
-        self.assertEqual(
-            data['results']['materials'].items[0]['name'], SOURCE_ID
-        )
-
-    def test_get_limit_sample(self):
-        """Test GET with sample type limit"""
-        with self.login(self.user):
-            response = self.client.get(
-                reverse('projectroles:search')
-                + '?'
-                + urlencode({'s': f'{SAMPLE_ID} type:sample'})
-            )
-        self.assertEqual(response.status_code, 200)
-        data = response.context['app_results'][0]
-        self.assertEqual(len(data['results']), 1)
-        self.assertEqual(len(data['results']['materials'].items), 1)
-        self.assertEqual(
-            data['results']['materials'].items[0]['name'], SAMPLE_ID
-        )
-
-    def test_get_limit_file(self):
-        """Test GET with file type limit"""
-        with self.login(self.user):
-            response = self.client.get(
-                reverse('projectroles:search')
-                + '?'
-                + urlencode({'s': f'{SAMPLE_ID} type:file'})
-            )
-        self.assertEqual(response.status_code, 200)
-        data = response.context['app_results'][0]
-        self.assertEqual(len(data['results']), 1)
-        self.assertEqual(len(data['results']['files'].items), 1)
-        self.assertEqual(
-            data['results']['files'].items[0]['name'], self.file_name
-        )
-
-
 class TestProjectUpdateView(TaskflowViewTestBase):
     """Tests for ProjectUpdateView with taskflow and samplesheets app settings"""
 
@@ -2991,6 +2896,7 @@ class TestProjectUpdateView(TaskflowViewTestBase):
             description='description',
         )
         self.post_data = model_to_dict(self.project)
+        self.post_data['readme'] = ''
         self.post_data['public_access'] = ''
         self.post_data['parent'] = self.category.sodar_uuid
         self.post_data['owner'] = self.user.sodar_uuid

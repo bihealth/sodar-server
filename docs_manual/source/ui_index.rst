@@ -46,7 +46,8 @@ Search
     Search in SODAR projects and data. Start the search by pressing :kbd:`Enter`
     or clicking :guilabel:`Search`. You need to enter at least three characters.
     Left to the search box is a button to access advanced search, in which you
-    can enter multiple search terms at once.
+    can enter multiple search terms at once. See the :ref:`Search <ui_search>`
+    docs for further information.
 Manual
     Access this manual.
 Help

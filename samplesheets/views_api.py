@@ -196,7 +196,8 @@ class IrodsCollsCreateAPIView(
     """
     Create iRODS collections for a project.
 
-    Returns ``503`` if the project is currently locked by another operation.
+    Returns ``ServiceUnavailable`` (HTTP code 503) if the project is currently
+    locked by another operation.
 
     **URL:** ``/samplesheets/api/irods/collections/create/{Project.sodar_uuid}``
 
@@ -868,7 +869,8 @@ class IrodsDataRequestAcceptAPIView(
     Accepting will delete the iRODS collection or data object targeted by the
     request. This action can not be undone.
 
-    Returns ``503`` if the project is currently locked by another operation.
+    Returns ``ServiceUnavailable`` (HTTP code 503) if the project is currently
+    locked by another operation.
 
     **URL:** ``/samplesheets/api/irods/request/accept/{IrodsDataRequest.sodar_uuid}``
 

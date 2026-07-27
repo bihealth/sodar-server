@@ -540,7 +540,7 @@ class TaskflowProjectTestMixin(ProjectModifyMixin, RoleAssignmentModifyMixin):
         request = req_factory.post(url)
         request.user = self.user  # TODO: Replace with owner
         post_data = {'project': project, 'user': user, 'role': role}
-        role_as = self.modify_assignment(post_data, request, project)
+        role_as = self.modify_assignment(post_data, project, request)
         return role_as
 
 

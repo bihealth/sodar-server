@@ -62,15 +62,16 @@ user dropdown on the top right corner of the site and selecting
 Administrator Alerts
 ====================
 
-SODAR administrators can issue alert messages to all users. Admin alerts can
-be used to inform users about e.g. upcoming downtime. These alerts are visible
-as a permanent blue bar which can not be dismissed. Some alerts can contain
-additional detailed information, which can be accessed by the
+SODAR administrators can issue alert messages to all users. Admin alerts
+can be used to inform users about e.g. upcoming downtime. Similarly to
+application-specific alerts, admin alerts are visible as a blue bar at the top
+of the page, and can be dismissed by clicking the cross on the right. Some
+alerts can contain additional detailed information, which can be accessed by the
 :guilabel:`Details` link. By default, administrator alerts are also sent out to
 users as email.
 
 .. figure:: _static/sodar_ui/alert_admin.png
     :align: center
-    :scale: 50%
+    :scale: 35%
 
     Admin alert
