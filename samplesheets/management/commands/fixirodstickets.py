@@ -1,6 +1,7 @@
 """Management command to find and fix orphaned IrodsAccessTickets objects"""
 
 from datetime import datetime
+from typing import Optional
 
 from irods.models import TicketQuery
 from irods.path import iRODSPath
@@ -12,8 +13,6 @@ from django.core.management.base import BaseCommand
 # Projectroles dependency
 from projectroles.management.logging import ManagementCommandLogger
 from projectroles.plugins import PluginAPI
-
-from irodsbackend.api import IrodsAPI
 
 from samplesheets.models import Assay, Study, IrodsAccessTicket
 
@@ -30,7 +29,7 @@ class Command(BaseCommand):
     )
 
     @classmethod
-    def _find_irods_tickets(cls, irods_backend: IrodsAPI) -> tuple[str, str]:
+    def _get_irods_tickets(cls, irods_backend) -> tuple[dict, iRODSPath]:
         """
         Iterator for iRODS tickets.
 
@@ -55,6 +54,45 @@ class Command(BaseCommand):
                     ),
                 )
 
+    @classmethod
+    def _extract_ticket_properties(
+        cls, irods_backend, ticket, path
+    ) -> Optional[dict]:
+        props = {}
+        ticket_string = ticket[TicketQuery.Ticket.string]
+        ticket_study = irods_backend.get_uuid_from_path(path, 'study')
+        if ticket_study:
+            try:
+                props['study'] = Study.objects.get(sodar_uuid=ticket_study)
+            except Study.DoesNotExist:
+                logger.warning(
+                    f'Ticket {ticket_string} is associated with a Study '
+                    f"which doesn't exist ({ticket_study})"
+                )
+                return None
+        else:
+            logger.warning(
+                f'Ticket {ticket_string} does not have an associated study'
+            )
+            return None
+        ticket_assay = irods_backend.get_uuid_from_path(path, 'assay')
+        if ticket_assay:
+            try:
+                props['assay'] = Assay.objects.get(sodar_uuid=ticket_assay)
+            except Assay.DoesNotExist:
+                logger.warning(
+                    f'Ticket {ticket_string} is associated with an Assay'
+                    f"which doesn't exist ({ticket_assay})"
+                )
+                return None
+        props['date_created'] = ticket[TicketQuery.Ticket.create_time]
+        ticket_expires = ticket[TicketQuery.Ticket.expiry_ts]
+        if ticket_expires:
+            props['date_expires'] = datetime.fromtimestamp(int(ticket_expires))
+        else:
+            props['date_expires'] = None
+        return props
+
     def add_arguments(self, parser):
         parser.add_argument(
             '-c',
@@ -64,51 +102,42 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        logger.info('Finding orphaned access tickets..')
+        orphaned_tickets_count = 0
         irods_backend = plugin_api.get_backend_api('omics_irods')
         default_admin = User.objects.get(
             username=settings.PROJECTROLES_DEFAULT_ADMIN
         )
         check = options.get('check')
-        for ticket, path in self._find_irods_tickets(irods_backend):
+        for ticket, path in self._get_irods_tickets(irods_backend):
             ticket_string = ticket[TicketQuery.Ticket.string]
             try:
                 IrodsAccessTicket.objects.get(ticket=ticket_string)
-                logger.info(f'Found existing ticket object for {ticket_string}')
-            except IrodsAccessTicket.DoesNotExist:
-                ticket_study = irods_backend.get_uuid_from_path(path, 'study')
-                if ticket_study:
-                    ticket_study = Study.objects.get(sodar_uuid=ticket_study)
-                else:
-                    logger.warning(
-                        f'Ticket {ticket_string} does not have '
-                        'an associated study'
+                if not check:
+                    logger.info(
+                        'Found existing object for ticket {ticket_string}'
                     )
+            except IrodsAccessTicket.DoesNotExist:
+                ticket_props = self._extract_ticket_properties(
+                    irods_backend, ticket, path
+                )
+                if not ticket_props:
                     continue
-                ticket_assay = irods_backend.get_uuid_from_path(path, 'assay')
-                if ticket_assay:
-                    ticket_assay = Assay.objects.get(sodar_uuid=ticket_assay)
-                ticket_expires = ticket[TicketQuery.Ticket.expiry_ts]
-                if ticket_expires:
-                    ticket_expires = datetime.fromtimestamp(int(ticket_expires))
                 obj = IrodsAccessTicket(
-                    study=ticket_study,
-                    assay=ticket_assay,
                     ticket=ticket_string,
                     path=path,
                     user=default_admin,
-                    date_created=ticket[TicketQuery.Ticket.create_time],
-                    date_expires=ticket_expires,
+                    **ticket_props,
                 )
-                logger.info(
-                    f'Need to recreate ticket object for {ticket_string} (\n'
-                    f'\tstudy: {obj.study.sodar_uuid} ({obj.study}),\n'
-                    f'\tassay: {obj.assay.sodar_uuid if obj.assay else None},\n'
-                    f'\tticket: {obj.ticket},\n'
-                    f'\tpath: {obj.path},\n'
-                    f'\tuser: {obj.user},\n'
-                    f'\tdate_created: {obj.date_created},\n'
-                    f'\tdate_expires: {obj.date_expires},\n'
-                    ')'
-                )
+                orphaned_tickets_count += 1
                 if not check:
                     obj.save()
+                    logger.info(
+                        f'Created database object for ticket {ticket_string} '
+                        f'in {obj.study.investigation.project.get_log_title()} '
+                        f'(UUID={obj.sodar_uuid})'
+                    )
+        logger.info(
+            ('Found' if check else 'Recreated')
+            + f' {orphaned_tickets_count} orphaned tickets objects.'
+        )
