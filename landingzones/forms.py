@@ -105,6 +105,9 @@ class LandingZoneForm(forms.ModelForm):
                                 f'{assay.get_display_name()}',
                             )
                         )
+            # Disable assay dropdown if only one assay is availalbe
+            if len(self.fields['assay'].widget.choices) == 1:
+                self.fields['assay'].widget.attrs['disabled'] = True
             # Set options and initial value for coll_creation
             self.fields['coll_creation'].widget = forms.Select()
             self.fields[

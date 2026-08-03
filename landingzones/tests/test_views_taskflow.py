@@ -255,6 +255,38 @@ class TestZoneCreateView(
             form.fields['assay'].widget.choices,
             [(self.assay.sodar_uuid, assay_label)],
         )
+        # Since there is only one assay, the dropdown should be disabled
+        self.assertTrue(form.fields['assay'].widget.attrs['disabled'])
+
+    def test_get_with_multiple_assays(self):
+        """Test GET with multiple assays (dropdown should not be disabled)"""
+        sheet_path = SHEET_DIR + 'BII-I-1_edited.zip'
+        other_project, _ = self.make_project_taskflow(
+            title='OtherProject',
+            type=PROJECT_TYPE_PROJECT,
+            parent=self.category,
+            owner=self.user,
+        )
+        investigation = self.import_isa_from_file(sheet_path, other_project)
+        num_assays = sum(s.assays.count() for s in investigation.studies.all())
+        self.assertEqual(num_assays, 4)
+        # Create iRODS collections
+        self.make_irods_colls(investigation)
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'landingzones:create',
+                    kwargs={'project': other_project.sodar_uuid},
+                )
+            )
+        self.assertEqual(response.status_code, 200)
+        form = response.context['form']
+        self.assertEqual(
+            len(form.fields['assay'].widget.choices),
+            num_assays,
+        )
+        # The dropdown should not be disabled
+        self.assertFalse('disabled' in form.fields['assay'].widget.attrs)
 
     def test_post(self):
         """Test POST"""
