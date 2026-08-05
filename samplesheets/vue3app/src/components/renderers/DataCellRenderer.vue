@@ -209,7 +209,9 @@ if (cellData && cellData.value && cellData.value.length > 0) {
       </span>
     </span>
     <!-- Contacts -->
-    <span v-else-if="colType === 'CONTACT' && displayValue"
+    <span v-else-if="colType === 'CONTACT' &&
+                     displayValue &&
+                     Array.isArray(displayValue)"
           class="sodar-ss-data-val-contact">
       <span v-for="(contact, contactIdx) in displayValue"
             :key="contactIdx">
@@ -223,6 +225,10 @@ if (cellData && cellData.value && cellData.value.length > 0) {
                     displayValue as Array<ContactValue>
                     ).length - 1">; </span>
       </span>
+    </span>
+    <span v-else-if="colType === 'CONTACT'"
+          class="sodar-ss-data-val-contact">
+      {{ displayValue }}
     </span>
     <!-- External links -->
     <span v-else-if="colType == 'EXTERNAL_LINKS' &&

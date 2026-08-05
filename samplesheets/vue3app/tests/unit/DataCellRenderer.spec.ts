@@ -167,6 +167,14 @@ describe('DataCellRenderer.vue', () => {
     expect(links[0]!.attributes().href).toBe('mailto:alice@example.com')
   })
 
+  test('render contact field with empty value', async () => {
+    params.colType = 'CONTACT'
+    params.value!.value = []
+    const wrapper = mountComponent()
+    const val = wrapper.find('.sodar-ss-data-val-contact')
+    expect(val.text()).toBe(CELL_EMPTY_VAL)
+  })
+
   test('render eternal links field', async () => {
     params.colType = 'EXTERNAL_LINKS'
     // Second badge should be rendered as a link
