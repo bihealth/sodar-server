@@ -208,16 +208,20 @@ if (cellData && cellData.value && cellData.value.length > 0) {
         </span>
       </span>
     </span>
-    <!-- Contacts with email -->
+    <!-- Contacts -->
     <span v-else-if="colType === 'CONTACT' && displayValue"
           class="sodar-ss-data-val-contact">
       <span v-for="(contact, contactIdx) in displayValue"
             :key="contactIdx">
-        <a :href="'mailto:' + (contact as ContactValue).email">
-          {{ (contact as ContactValue).name }}
-        </a><span v-if="(contactIdx as number) < (
-                          displayValue as Array<ContactValue>
-                        ).length - 1">; </span>
+        <span v-if="(contact as ContactValue).email">
+          <a :href="'mailto:' + (contact as ContactValue).email">
+            {{ (contact as ContactValue).name }}
+          </a>
+        </span>
+        <span v-else>{{ (contact as ContactValue).name }}</span>
+        <span v-if="(contactIdx as number) < (
+                    displayValue as Array<ContactValue>
+                    ).length - 1">; </span>
       </span>
     </span>
     <!-- External links -->

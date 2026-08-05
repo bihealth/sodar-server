@@ -145,7 +145,27 @@ describe('DataCellRenderer.vue', () => {
     expect(link!.text()).toBe('Alice Example')
   })
 
-  // TODO: Test contact field without email (see #2412)
+  test('render contact field without email', async () => {
+    params.colType = 'CONTACT'
+    params.value!.value = ['Alice Example']
+    const wrapper = mountComponent()
+
+    const val = wrapper.find('.sodar-ss-data-val-contact')
+    expect(val.text()).toBe('Alice Example')
+    expect(val.findAll('a').length).toBe(0)
+  })
+
+  test('render contact field with mixed input', async () => {
+    params.colType = 'CONTACT'
+    params.value!.value = ['Alice Example <alice@example.com>', 'Bob Example']
+    const wrapper = mountComponent()
+
+    const val = wrapper.find('.sodar-ss-data-val-contact')
+    expect(val.text()).toBe('Alice Example; Bob Example')
+    const links = val.findAll('a')
+    expect(links.length).toBe(1)
+    expect(links[0]!.attributes().href).toBe('mailto:alice@example.com')
+  })
 
   test('render eternal links field', async () => {
     params.colType = 'EXTERNAL_LINKS'
