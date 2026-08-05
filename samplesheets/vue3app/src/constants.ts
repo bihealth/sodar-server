@@ -2,6 +2,7 @@
 
 // URLs
 export const URL_ROW_DEL_PREFIX = '/samplesheets/ajax/edit/row/delete/'
+export const URL_ROW_INS_PREFIX = '/samplesheets/ajax/edit/row/insert/'
 
 // Standard Ajax data
 export const AJAX_RES_OK = 'ok'
@@ -58,6 +59,7 @@ export const SHEET_STATS = [
 ]
 
 // Table rendering
+export const HEADER_NAME_SAMPLE = 'sample'
 export const CELL_EMPTY_VAL = '-'
 
 // Edit mode message strings
@@ -104,7 +106,14 @@ export const EDIT_HEADER_TYPE_EXTRACT_LABEL = 'extract_label'
 export const EDIT_HEADER_TYPE_NAME = 'name'
 export const EDIT_HEADER_TYPE_PERFORM_DATE = 'perform_date'
 export const EDIT_HEADER_TYPE_PERFORMER = 'performer'
+export const EDIT_HEADER_TYPE_PROCESS = 'process_name'
 export const EDIT_HEADER_TYPE_PROTOCOL = 'protocol'
+// Common lists of header types
+export const NODE_ID_HEADER_TYPES = [
+  EDIT_HEADER_TYPE_NAME,
+  EDIT_HEADER_TYPE_PROCESS,
+  EDIT_HEADER_TYPE_PROTOCOL
+]
 
 // Default regex for sheet editor
 export const EDIT_REGEX: { [key: string]: RegExp } = {
@@ -117,6 +126,11 @@ export const EDIT_REGEX: { [key: string]: RegExp } = {
 }
 
 // Edit mode text labels
+export const CELL_NODE_NAME_NEW = 'Enter name of new or existing node'
+export const CELL_NODE_NAME_RENAME = 'Rename node'
+export const NODE_RENAME_MSG = 'A node with the same name already exists in ' +
+  'this column. Renaming will replace all values in the fields of the ' +
+  'material or process. Proceed?'
 export const ROW_DEL_MSG_ALL = 'Deleting all rows of a table is currently ' +
   'not supported'
 export const ROW_DEL_MSG_ASSAY = 'Assay rows containing the sample must be ' +
@@ -128,6 +142,9 @@ export const ROW_DEL_MSG_CONFIRM_IRODS = ' Note that if related sample data ' +
   'exists in iRODS, it may become unreachable.'
 export const ROW_DEL_MSG_OK = 'Delete row'
 export const ROW_DEL_MSG_UNSAVED = 'New row needs to be saved or cancelled'
+export const ROW_INS_MSG_DISABLED = 'Please save or discard your unsaved row ' +
+  'before inserting a new one'
+export const ROW_SAVE_MSG_IDENTICAL = 'Identical row exists, unable to save'
 
 // Misc edit mode constants
 export const EDIT_TERM_QUERY_MIN_LEN = 3

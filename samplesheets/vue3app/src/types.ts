@@ -5,6 +5,7 @@ import { type BaseColorVariant } from 'bootstrap-vue-next'
 import {
   type ColDef,
   type ColGroupDef,
+  type Column,
   type GridApi,
   type GridOptions,
   type ICellEditorParams,
@@ -612,6 +613,90 @@ export interface RowDeleteParams {
   notifyCb?: NotifyCb
   rowNode: IRowNode
   tableUuid: string
+}
+
+export interface RowInsertParams {
+  api: GridApi
+  assayMode: boolean
+  notifyCb?: NotifyCb
+  tableUuid: string
+}
+
+export interface NewRowData {
+  [key: string]: SheetTableCellData | string | number
+}
+
+export interface CellDefaultParams {
+  api: GridApi
+  colId: string
+  forceEmpty?: boolean
+  newInit?: boolean
+}
+
+export interface NodeEnableParams {
+  api: GridApi
+  rowNode: IRowNode
+  startIdx: number
+  tableUuid: string
+}
+
+export interface NodeUpdateParams {
+  api: GridApi
+  assayMode: boolean
+  column: Column
+  createNew: boolean
+  nameCellData: SheetTableCellData | null
+  rowNode: IRowNode
+  tableUuid: string
+}
+
+// Params for getRowSaveCell()
+export interface RowSaveCellParams {
+  assayMode: boolean
+  column: Column
+  rowNode: IRowNode
+}
+
+// Params for getRowSaveData()
+export interface RowSaveDataParams {
+  api: GridApi
+  assayMode: boolean
+  rowNode: IRowNode
+  tableUuid: string
+}
+
+// Cell returned by getRowSaveCell()
+export interface RowSaveDataCell {
+  header_field?: string
+  header_name?: string
+  header_type?: string
+  item_type?: string | null
+  obj_cls: string
+  uuid?: string
+  uuid_ref?: string
+  value?: SheetTableCellDataValue
+}
+
+// Node returned in getRowSaveData() return data
+export interface RowSaveDataNode {
+  headers?: Array<string>
+  cells: Array<RowSaveDataCell>
+}
+
+// Data returned by getRowSaveData()
+export interface RowSaveData {
+  assay: string | null
+  nodes: Array<RowSaveDataNode>
+  study: string
+}
+
+export interface RowSaveParams {
+  api: GridApi
+  assayMode: boolean
+  finishCb?: RowEditFinishCb
+  notifyCb?: NotifyCb
+  rowNode: IRowNode
+  saveData: RowSaveData
 }
 
 /* Function callbacks ------------------------------------------------------- */

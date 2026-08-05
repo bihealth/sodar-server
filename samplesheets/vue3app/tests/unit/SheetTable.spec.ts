@@ -6,11 +6,14 @@ import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community'
 
 import SheetTable from '@/components/SheetTable.vue'
 import DataCellRenderer from '@/components/renderers/DataCellRenderer.vue'
+import { useAppStore } from '@/stores/appStore.ts'
+import { useEditStore } from '@/stores/editStore.ts'
 import {
   type RenderTableData,
   type SodarContext,
   type StudyShortcuts
 } from '@/types.ts'
+import { ROW_INS_MSG_DISABLED } from '@/constants.ts'
 
 import { copy, setUpTableStore } from '../testUtils.ts'
 import { sodarContext } from '../data/sodarContext.ts'
@@ -47,6 +50,16 @@ let props: SheetTableProps
 let context: SodarContext
 let tables: RenderTableData
 
+// Selectors
+const studyCardSel = '.sodar-ss-data-card-study'
+const assayCardSel = '.sodar-ss-data-card-assay'
+const studyGridSel = '#sodar-ss-table-grid-study'
+const assayGridSel = '#sodar-ss-table-grid-assay-' + ASSAY_UUID
+const rowBtnSel = '.sodar-ss-row-insert-btn'
+const excelBtnSel = '.sodar-ss-excel-export-btn'
+
+// Global setup
+
 ModuleRegistry.registerModules([AllCommunityModule])
 // TODO: How to expose renderers globally for ag-grid? (see warnings)
 
@@ -63,38 +76,44 @@ describe('SheetTable.vue', () => {
     return mount(
       SheetTable, { props: props, expose: { DataCellRenderer } })
   }
+
   beforeEach(() => {
     setActivePinia(createPinia())
+    const appStore = useAppStore()
+    appStore.editMode = false
+
     context = copy(sodarContext) as SodarContext
     tables = copy(studyTables) as RenderTableData
+
     // Suppress ag-grid warnings
     vi.spyOn(console, 'warn').mockImplementation(() => undefined)
   })
 
   test('render study table', async () => {
     const wrapper = mountComponent(STUDY_UUID, false)
-    expect(wrapper.find('.sodar-ss-data-card-study').exists()).toBe(true)
-    expect(wrapper.find('.sodar-ss-data-card-assay').exists()).toBe(false)
+    expect(wrapper.find(studyCardSel).exists()).toBe(true)
+    expect(wrapper.find(assayCardSel).exists()).toBe(false)
     expect(wrapper.find('h4').text()).toBe('Study Table')
-    expect(wrapper.find('.sodar-ss-excel-export-btn').attributes().href).toBe(
+    expect(wrapper.find(excelBtnSel).attributes().href).toBe(
       'export/excel/study/' + STUDY_UUID
     )
+    expect(wrapper.find(rowBtnSel).exists()).toBe(false)
     expect(wrapper.find('#sodar-ss-data-filter-study').exists()).toBe(true)
-    expect(wrapper.find('#sodar-ss-table-grid-study').exists()).toBe(true)
+    expect(wrapper.find(studyGridSel).exists()).toBe(true)
   })
 
   test('render assay table', async () => {
     const wrapper = mountComponent(ASSAY_UUID, true)
-    expect(wrapper.find('.sodar-ss-data-card-study').exists()).toBe(false)
-    expect(wrapper.find('.sodar-ss-data-card-assay').exists()).toBe(true)
+    expect(wrapper.find(studyCardSel).exists()).toBe(false)
+    expect(wrapper.find(assayCardSel).exists()).toBe(true)
     expect(wrapper.find('h4').text()).toBe('Assay Table')
-    expect(wrapper.find('.sodar-ss-excel-export-btn').attributes().href).toBe(
+    expect(wrapper.find(rowBtnSel).exists()).toBe(false)
+    expect(wrapper.find(excelBtnSel).attributes().href).toBe(
       'export/excel/assay/' + ASSAY_UUID
     )
     expect(wrapper.find(
       '#sodar-ss-data-filter-assay-' + ASSAY_UUID).exists()).toBe(true)
-    expect(wrapper.find(
-      '#sodar-ss-table-grid-assay-' + ASSAY_UUID).exists()).toBe(true)
+    expect(wrapper.find(assayGridSel).exists()).toBe(true)
   })
 
   test('open column toggle modal on button click', async () => {
@@ -107,7 +126,7 @@ describe('SheetTable.vue', () => {
 
   test('render study grid top header', async () => {
     const wrapper = mountComponent(STUDY_UUID, false)
-    const grid = wrapper.find('#sodar-ss-table-grid-study')
+    const grid = wrapper.find(studyGridSel)
     const topHeaders = grid.findAll('.ag-header-group-cell')
     expect(topHeaders.length).toBe(5)
     for (let i = 0; i < exTopHeaderStudy.length; i++) {
@@ -119,7 +138,7 @@ describe('SheetTable.vue', () => {
 
   test('render study grid field header', async () => {
     const wrapper = mountComponent(STUDY_UUID, false)
-    const grid = wrapper.find('#sodar-ss-table-grid-study')
+    const grid = wrapper.find(studyGridSel)
     const headers = grid.findAll('.ag-header-cell')
     const headerInput = ['#'].concat(
       studyTables.tables.study.field_header.map(x => x.value))
@@ -134,7 +153,7 @@ describe('SheetTable.vue', () => {
       unknown as StudyShortcuts
 
     const wrapper = mountComponent(STUDY_UUID, false)
-    const grid = wrapper.find('#sodar-ss-table-grid-study')
+    const grid = wrapper.find(studyGridSel)
     const topHeaders = grid.findAll('.ag-header-group-cell')
     expect(topHeaders.length).toBe(6)
     expect(topHeaders[5]?.text()).toBe('Links')
@@ -153,7 +172,7 @@ describe('SheetTable.vue', () => {
     exTopHeader = exTopHeader.concat(exTopHeaderAssay)
 
     const wrapper = mountComponent(ASSAY_UUID, true)
-    const grid = wrapper.find('#sodar-ss-table-grid-assay-' + ASSAY_UUID)
+    const grid = wrapper.find(assayGridSel)
     const topHeaders = grid.findAll('.ag-header-group-cell')
     expect(topHeaders.length).toBe(exTopHeader.length)
     for (let i = 0; i < exTopHeader.length; i++) {
@@ -169,7 +188,7 @@ describe('SheetTable.vue', () => {
     tables.display_config.assays[ASSAY_UUID].nodes[0].fields[1].visible = true
 
     const wrapper = mountComponent(ASSAY_UUID, true)
-    const grid = wrapper.find('#sodar-ss-table-grid-assay-' + ASSAY_UUID)
+    const grid = wrapper.find(assayGridSel)
     const topHeaders = grid.findAll('.ag-header-group-cell')
     expect(topHeaders.length).toBe(exTopHeader.length)
     for (let i = 0; i < exTopHeader.length; i++) {
@@ -181,7 +200,7 @@ describe('SheetTable.vue', () => {
 
   test('render assay grid field header', async () => {
     const wrapper = mountComponent(ASSAY_UUID, true)
-    const grid = wrapper.find('#sodar-ss-table-grid-assay-' + ASSAY_UUID)
+    const grid = wrapper.find(assayGridSel)
     const headers = grid.findAll('.ag-header-cell')
     // Name fields are visible by default for study columns
     const exStudy = ['#', 'Name', 'Protocol', 'Name']
@@ -209,7 +228,7 @@ describe('SheetTable.vue', () => {
     context.studies[STUDY_UUID]!.assays[ASSAY_UUID]!.display_row_links = true
 
     const wrapper = mountComponent(ASSAY_UUID, true)
-    const grid = wrapper.find('#sodar-ss-table-grid-assay-' + ASSAY_UUID)
+    const grid = wrapper.find(assayGridSel)
     const topHeaders = grid.findAll('.ag-header-group-cell')
     expect(topHeaders.length).toBe(12)
     expect(topHeaders[11]?.text()).toBe('iRODS')
@@ -220,5 +239,39 @@ describe('SheetTable.vue', () => {
     expect(headers[12]?.text()).toBe('Links')
   })
 
+  test('render study table in edit mode', async () => {
+    const appStore = useAppStore()
+    appStore.editMode = true
+    const wrapper = mountComponent(STUDY_UUID, false)
+    // Row insert button should be visible and enabled
+    const rowBtn = wrapper.find(rowBtnSel)
+    expect(rowBtn.exists()).toBe(true)
+    expect(rowBtn.attributes().disabled).not.toBeDefined()
+    expect(rowBtn.attributes().title).toBe('')
+  })
+
+  test('render assay table in edit mode', async () => {
+    const appStore = useAppStore()
+    appStore.editMode = true
+    const wrapper = mountComponent(ASSAY_UUID, true)
+    const rowBtn = wrapper.find(rowBtnSel)
+    expect(rowBtn.exists()).toBe(true)
+    expect(rowBtn.attributes().disabled).not.toBeDefined()
+    expect(rowBtn.attributes().title).toBe('')
+  })
+
+  test('render study table in edit mode with unsaved row', async () => {
+    const appStore = useAppStore()
+    const editStore = useEditStore()
+    appStore.editMode = true
+    editStore.unsavedRow = { id: '0', tableUuid: STUDY_UUID }
+    const wrapper = mountComponent(STUDY_UUID, false)
+    // Row insert button should be disabled with title message
+    const rowBtn = wrapper.find(rowBtnSel)
+    expect(rowBtn.attributes().disabled).toBeDefined()
+    expect(rowBtn.attributes().title).toBe(ROW_INS_MSG_DISABLED)
+  })
+
+  // TODO: Test insertRow() call once implemented
   // TODO: Test render assay grid rows once expose issue is solved
 })

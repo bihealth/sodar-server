@@ -157,7 +157,6 @@ function onMouseOut (event: MouseEvent) {
 }
 
 // Setup cell data
-// TODO: Handle newInit and newRow once we add edit mode support
 if (cellData && cellData.value && cellData.value.length > 0) {
   // TODO: Enabled/disable hover overflow
   if (colType.value === 'CONTACT') {
@@ -166,15 +165,14 @@ if (cellData && cellData.value && cellData.value.length > 0) {
     displayValue.value = getExternalLinks()
   } else if (colType.value == 'LINK_FILE') {
     displayValue.value = getFileLink()
-  } else if (
-      Array.isArray(cellData.value) &&
+  } else if (Array.isArray(cellData.value) &&
       typeof cellData.value[0] === 'string') {
     // Join list of strings
     displayValue.value = cellData.value.join('; ')
-  } // TODO: Add support for newInit
+  }
 } else {
   // Add empty value placeholder for displaying
-  displayValue.value = CELL_EMPTY_VAL
+  displayValue.value = cellData.newInit ? '' : CELL_EMPTY_VAL
 }
 </script>
 

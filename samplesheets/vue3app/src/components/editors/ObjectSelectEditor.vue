@@ -2,12 +2,17 @@
 import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 
 import { useEditStore } from '@/stores/editStore.ts'
-import { updateCells } from '@/utils/editUtils.ts'
+import { updateCells, updateNode } from '@/utils/editUtils.ts'
 import {
   type CellEditData,
-  type NotifyCb,
+  type GridCellEditorParams,
   type SheetTableCellData
 } from '@/types.ts'
+import {
+  EDIT_HEADER_TYPE_NAME,
+  EDIT_HEADER_TYPE_PROTOCOL,
+  EDIT_ITEM_TYPE_SAMPLE,
+} from '@/constants.ts'
 
 interface ObjectSelectOption {
   name: string,
@@ -19,7 +24,9 @@ interface ObjectSelectOption {
 // Props and external
 const editStore = useEditStore()
 const props = defineProps({ params: Object })
-const cellData = props.params?.value as SheetTableCellData
+const params = props.params as GridCellEditorParams
+const cellData: SheetTableCellData = params.value
+// console.dir(params)
 
 // Refs
 const editUuid = ref<string>(cellData.uuidRef as string)
@@ -27,18 +34,29 @@ const input = ref<HTMLInputElement | undefined>()
 const selectOptions = ref<Array<ObjectSelectOption>>([])
 
 // Internal
-const notifyCb: NotifyCb | undefined = props.params?.notifyCb
+const nodeUpdateHeaders = [EDIT_HEADER_TYPE_NAME, EDIT_HEADER_TYPE_PROTOCOL]
 const ogValue: string = cellData.value as string
 const optionLookup: { [k: string]: string } = {}
+const isSampleNameField: boolean = params.fieldHeader.type ===
+  EDIT_HEADER_TYPE_NAME &&
+  params.fieldHeader.item_type === EDIT_ITEM_TYPE_SAMPLE
 
-if (props.params?.fieldHeader.type === 'protocol') {
+if (params.fieldHeader.type === EDIT_HEADER_TYPE_PROTOCOL) {
   selectOptions.value = editStore.editContext?.protocols as
     Array<ObjectSelectOption>
   for (const p of editStore.editContext!.protocols) {
     optionLookup[p.uuid] = p.name
   }
+} else if (isSampleNameField) {
+  selectOptions.value = []
+  for (const sUuid in editStore.editContext!.samples) {
+    const s = editStore.editContext!.samples[sUuid]
+    selectOptions.value.push({ name: s!.name as string, uuid: sUuid })
+    optionLookup[sUuid] = s!.name
+  }
+  selectOptions.value = selectOptions.value.sort(
+    (a, b) => a.name.localeCompare(b.name))
 }
-// TODO: Add support for samples once row editing is added (see #2458)
 
 // Helpers ---------------------------------------------------------------------
 
@@ -67,18 +85,34 @@ onUnmounted(() => {
   // Update value on server and tables if changed
   const newValue = optionLookup[editUuid.value] as string
   if (editUuid.value && newValue !== ogValue) {
-    const cellEditData: CellEditData = {
-      fieldId: props.params?.fieldId,
-      headerName: props.params?.fieldHeader.name,
-      headerType: props.params?.fieldHeader.type || '',
-      itemType: props.params?.fieldHeader.item_type || '',
-      objCls: props.params?.fieldHeader.obj_cls,
-      ogValue: ogValue,
-      uuid: cellData.uuid,
-      uuidRef: editUuid.value,
-      value: newValue,
+    if (nodeUpdateHeaders.includes(params.fieldHeader.type as string) &&
+        (!editUuid.value || cellData.newRow)) {
+      // Update node if on a new row
+      cellData.newInit = false
+      updateNode({
+        api: params.api,
+        assayMode: params.assayMode,
+        column: params.column,
+        createNew: params.fieldHeader.type === EDIT_HEADER_TYPE_PROTOCOL,
+        nameCellData: isSampleNameField ? cellData : null,
+        rowNode: params.node,
+        tableUuid: params.tableUuid
+      })
+    } else {
+      // Else update cell and related cells in other tables
+      const cellEditData: CellEditData = {
+        fieldId: params.fieldId as string,
+        headerName: params.fieldHeader.name,
+        headerType: params.fieldHeader.type || '',
+        itemType: params.fieldHeader.item_type || '',
+        objCls: params.fieldHeader.obj_cls,
+        ogValue: ogValue,
+        uuid: cellData.uuid,
+        uuidRef: editUuid.value,
+        value: newValue,
+      }
+      updateCells(cellEditData, true, params.notifyCb)
     }
-    updateCells(cellEditData, true, notifyCb)
   }
 })
 </script>

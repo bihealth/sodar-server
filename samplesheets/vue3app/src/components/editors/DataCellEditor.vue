@@ -2,41 +2,55 @@
 import { nextTick, ref, watch } from 'vue'
 import { onMounted, onUnmounted } from 'vue'
 
-// import { useEditStore } from '@/stores/editStore.ts'
-// import { useTableStore } from '@/stores/tableStore.ts'
-import { updateCells } from '@/utils/editUtils.ts'
+import { useEditStore } from '@/stores/editStore.ts'
+import { useTableStore } from '@/stores/tableStore.ts'
+import { updateCells, updateNode } from '@/utils/editUtils.ts'
 import {
   type SheetTableCellData,
   type CellEditData,
+  type GridCellEditorParams,
   type NotifyCb,
   type SheetTableCellDataValue,
   type StudyEditConfigNodeField
 } from '@/types.ts'
-import { EDIT_REGEX } from '@/constants.ts'
-
-// const editStore = useEditStore()
-// const tableStore = useTableStore()
-const props = defineProps({ params: Object })
+import {
+  CELL_NODE_NAME_NEW,
+  CELL_NODE_NAME_RENAME,
+  EDIT_HEADER_TYPE_NAME,
+  EDIT_HEADER_TYPE_PROCESS,
+  EDIT_REGEX,
+  NODE_RENAME_MSG
+} from '@/constants.ts'
 
 // Data and initial setup ------------------------------------------------------
 
+// External
+const editStore = useEditStore()
+const tableStore = useTableStore()
+const props = defineProps({ params: Object })
+
 // Params shortcuts
-const cellData = props.params?.value as SheetTableCellData
-const editConfig = props.params?.editConfigField as
-  StudyEditConfigNodeField
-const headerType: string = props.params?.fieldHeader.type
-const itemType: string | undefined = props.params?.fieldHeader.item_type
-const notifyCb: NotifyCb | undefined = props.params?.notifyCb
+const params = props.params as GridCellEditorParams
+const cellData = params.value as SheetTableCellData
+const editConfig = params.editConfigField as StudyEditConfigNodeField
+const headerType: string = params.fieldHeader.type as string
+const itemType: string | null = params.fieldHeader.item_type
+const notifyCb: NotifyCb | undefined = params.notifyCb
+
+// console.log('DataCellEditor params:')
+// console.dir(params)
 
 // Internal variables
 let inputStyle: string = ''
-const nameColumn: boolean = ['name', 'process_name'].includes(headerType)
+const nameColumn: boolean = [
+  EDIT_HEADER_TYPE_NAME, EDIT_HEADER_TYPE_PROCESS].includes(headerType)
+const nameUuids: { [key: string]: string } = {}
 const nameValues: Array<string> = []
 // const navKeyCodes = [33, 34, 35, 36, 37, 38, 39, 40]
 let ogValue: SheetTableCellDataValue // Original value for saving and revert
 if (cellData.value) {
   ogValue = JSON.parse(
-    JSON.stringify(props.params!.value.value)) as SheetTableCellDataValue
+    JSON.stringify(params.value.value)) as SheetTableCellDataValue
 } else ogValue = ''
 let ogUnit: string // Original unit for saving and revert
 let regex: RegExp
@@ -46,6 +60,7 @@ let valueSelect: boolean = false
 
 // Refs
 const containerClass = ref<string>('')
+const containerTitle = ref<string>('')
 const editUnit = ref<string | undefined>(undefined) // Unit if supported
 const editValue = ref<string | undefined>(undefined) // Value to be edited
 if (Array.isArray(cellData.value)) {
@@ -76,7 +91,7 @@ if (editConfig.unit) {
 // Set classes and styling for popup
 if (unitEnabled) {
   containerClass.value = 'sodar-ss-data-cell-popup text-nowrap'
-  let inputWidth = props.params?.colWidth
+  let inputWidth = params.colWidth
   const unitWidth = Math.max(
     0, ...editConfig.unit!.map(e => e.length)) * 15 + 15
   inputWidth = Math.max(inputWidth - unitWidth, 120)
@@ -99,7 +114,12 @@ if (editConfig.format !== 'select' && editConfig.regex) {
   regex = EDIT_REGEX.double as RegExp
 }
 
-// TODO: Set up name column handling (incl. nameValues)
+// Set up name column handling
+if (nameColumn) {
+  containerTitle.value = cellData.newRow ?
+    CELL_NODE_NAME_NEW : CELL_NODE_NAME_RENAME
+  setNameData() // Set nameValues and nameUuids
+}
 
 // Get initial valid state
 valid.value = isValid()
@@ -132,7 +152,7 @@ function isValid (): boolean {
       return false
     }
     // Prevent pooling of samples
-    if (props.params?.fieldId === props.params?.sampleColId &&
+    if (params.fieldId === params.sampleColId &&
         editValue.value !== ogValue &&
         nameValues.includes(editValue.value as string)) {
       return false
@@ -185,12 +205,32 @@ function getInputClass () {
   let ret = ''
   if (unitEnabled) ret += ' sodar-ss-popup-input'
   if (!valid.value) ret += ' text-danger'
-  return ret + ' text-' + props.params?.colAlign
+  return ret + ' text-' + params.colAlign
 }
 
 // TODO: add getSelectClass if needed
 function selectEmptyValue (value: string | null | undefined): boolean {
   return value === '' || !value
+}
+
+// Save node names and UUIDs for comparison
+// TODO: We should maintain these in a store instead of building here
+function setNameData () {
+  const fieldId = params.fieldId as string
+  // TODO: Do we need to iterate through all grids? (see old implementation)
+  for (const api of tableStore.getGridApis()) {
+    if (!api.getColumn(fieldId)) continue // Skip grid if column is not present
+    api.forEachNode(function (rowNode) {
+      if (fieldId in rowNode.data) {
+        const cmpData = rowNode.data[fieldId]
+        if (cmpData.uuid !== cellData.uuid &&
+            !nameValues.includes(cmpData.value)) {
+          nameValues.push(cmpData.value)
+          nameUuids[cmpData.value] = cmpData.uuid
+        }
+      }
+    })
+  }
 }
 
 // API and lifecycle -----------------------------------------------------------
@@ -233,20 +273,50 @@ onUnmounted(() => {
     // TODO: Implement and call finalization func
     return
   }
-
-  // TODO: Add new row node renaming check and handling
-
+  // Update cell/node
   const finalValue = getValue().value
 
-  // TODO: Update/initialize node
-  // Update value of existing cell
-  if (JSON.stringify(finalValue) !== JSON.stringify(ogValue) || (
-      unitEnabled && finalValue !== '' && editUnit.value != ogUnit)) {
+  // Confirm renaming node into an existing node and overwriting values
+  if (nameColumn &&
+      cellData.newRow &&
+      ogValue &&
+      nameValues.includes(finalValue as string) &&
+      !confirm(NODE_RENAME_MSG)) {
+    cellData.value = ogValue
+    // TODO: Implement and call finalization func
+    if (params.notifyCb) params.notifyCb('Renaming cancelled', 'info', 0)
+  }
+
+  if (nameColumn && (!cellData.uuid || cellData.newRow)) { // Update/init node
+     cellData.newInit = false
+
+    // Set or clear UUID
+    if (nameValues.includes(finalValue as string)) {
+      cellData.uuid = nameUuids[finalValue as string]
+    } else cellData.uuid = ''
+
+    // Set unit
+    if (!editUnit.value || !finalValue) cellData.unit = ''
+    else cellData.unit = editUnit.value
+
+    updateNode({
+      api: params.api,
+      assayMode: params.assayMode,
+      column: params.column,
+      createNew: !(finalValue && nameValues.includes(finalValue as string)),
+      nameCellData: cellData,
+      rowNode: params.node,
+      tableUuid: params.tableUuid
+    })
+  } else if ( // Update value of existing cell
+      cellData.uuid && (
+      JSON.stringify(finalValue) !== JSON.stringify(ogValue) || (
+      unitEnabled && finalValue !== '' && editUnit.value != ogUnit))) {
     const cellEditData: CellEditData = {
       fieldId: props.params?.fieldId,
       headerName: props.params?.fieldHeader.name,
       headerType: headerType,
-      itemType: itemType,
+      itemType: itemType as string,
       objCls: props.params?.fieldHeader.obj_cls,
       ogUnit: ogUnit,
       ogValue: ogValue,
@@ -256,8 +326,11 @@ onUnmounted(() => {
       value: finalValue
     }
     updateCells(cellEditData, true, notifyCb)
-    // TODO: Update sample list if sample has been renamed
-    // TODO: Update selectEnabled
+    // Update sample list if sample has been renamed
+    if (headerType === EDIT_HEADER_TYPE_NAME &&
+        params.fieldId === params.sampleColId) {
+      editStore.editContext!.samples[cellData.uuid]!.name = finalValue as string
+    }
   }
   // TODO: Implement and call finalization func
 })
@@ -265,7 +338,8 @@ onUnmounted(() => {
 
 <template>
   <div v-if="editValue !== undefined"
-       :class="'sodar-ss-editor-cell ' + containerClass">
+       :class="'sodar-ss-editor-cell ' + containerClass"
+       :title="containerTitle">
     <!-- Select input -->
     <span v-if="valueSelect">
       <select
@@ -319,5 +393,4 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-/* See vue3app.css for common editor component styles */
 </style>

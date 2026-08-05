@@ -493,15 +493,19 @@ export function buildColDef (
   for (let i = 0; i < topHeaderLength; i++) {
     const topHeader = table.top_header[i] as SheetTableTopHeader
     // Set up header group
+    // NOTE: ColGroupDef no longer has cellRendererParams, set headers in
+    //       headerGroupComponentParams instead
+    // TODO: Only add headers if editMode is enabled (need to add editMode in
+    //       params)
     let headerGroup: ColGroupDef = {
       headerName: topHeader?.value,
       headerClass: ['text-white', 'bg-' + topHeader.colour],
+      headerGroupComponentParams: { headers: topHeader.headers },
       children: []
     }
     /*
     if (appStore.editMode) {
-      // TODO: cellRendererParams not in ColGroupDef, has this been removed?
-      headerGroup.cellRendererParams = { headers: topHeader.headers }
+      headerGroup.headerGroupComponentParams = { headers: topHeader.headers }
     }
     */
     let configFieldIdx = 0 // For config management

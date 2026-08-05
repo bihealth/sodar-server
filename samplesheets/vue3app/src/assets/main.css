@@ -1,1 +1,7 @@
 /* @import './base.css'; */
+
+.sodar-ss-data-forbidden {
+  background: repeating-linear-gradient(
+    -45deg, #ddd, #ddd 5px, #eee 5px, #eee 10px
+  );
+}

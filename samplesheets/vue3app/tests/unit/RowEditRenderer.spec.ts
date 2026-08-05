@@ -7,15 +7,17 @@ import { type GridApi } from 'ag-grid-community'
 import RowEditRenderer from '@/components/renderers/RowEditRenderer.vue'
 import { useEditStore } from '@/stores/editStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
-import { deleteRow } from '@/utils/editUtils.ts'
+import { deleteRow, getRowSaveData, saveRow } from '@/utils/editUtils.ts'
 import { type RowEditRendererParams, type StudyEditContext } from '@/types.ts'
 import {
   AJAX_RES_OK,
+  EDIT_HEADER_TYPE_NAME,
   ROW_DEL_MSG_ALL,
   ROW_DEL_MSG_ASSAY,
   ROW_DEL_MSG_CANCEL,
   ROW_DEL_MSG_OK,
   ROW_DEL_MSG_UNSAVED,
+  ROW_SAVE_MSG_IDENTICAL,
 } from '@/constants.ts'
 
 import studyTablesEdit from '../data/studyTablesEdit.json'
@@ -40,12 +42,17 @@ const defaultParams = {
   assayMode: false,
   node: {
     data: {
+      rowNum: 1,
       [sourceColId]: { value: '0814', uuid: sourceUuid },
-      [sampleColId]: { value: '0814-N1', uuid: sampleUuid }
+      [sampleColId]: { value: '0814-N1', uuid: sampleUuid },
+      rowEdit: ''
     },
     id: nodeId
   },
   tableUuid: STUDY_UUID
+}
+const nameColDef = {
+  cellEditorParams: { fieldHeader: { type: EDIT_HEADER_TYPE_NAME } }
 }
 let params: RowEditRendererParams
 let rowCount: number
@@ -59,7 +66,12 @@ config.global.plugins = [createBootstrap()]
 
 vi.mock('@/utils/editUtils.ts', async () => {
   const actual = await vi.importActual('@/utils/editUtils.ts')
-  return { ...actual, deleteRow: vi.fn() }
+  return {
+    ...actual,
+    deleteRow: vi.fn(),
+    getRowSaveData: vi.fn(),
+    saveRow: vi.fn()
+  }
 })
 
 describe('RowEditRenderer.vue', () => {
@@ -75,8 +87,22 @@ describe('RowEditRenderer.vue', () => {
       forEachNode: forEachNode,
       getColumns: () => {
         return [
-          { getColId: () => { return sourceColId } },
-          { getColId: () => { return sampleColId } },
+          { getColId: () => { return 'rowNum' } },
+          {
+            getColDef: () => { return nameColDef },
+            getColId: () => { return sourceColId },
+            getOriginalParent: () => {
+              return { getGroupId: () => { return '1' } }
+            }
+          },
+          {
+            getColDef: () => { return nameColDef },
+            getColId: () => { return sampleColId },
+            getOriginalParent: () => {
+              return { getGroupId: () => { return '2' } }
+            }
+          },
+          { getColId: () => { return 'rowEdit' } },
         ]
       },
       getDisplayedRowCount: () => { return rowCount }
@@ -114,6 +140,7 @@ describe('RowEditRenderer.vue', () => {
 
     params = copy(defaultParams) as RowEditRendererParams
     params.api = getMockGridApi()
+    params.notifyCb = vi.fn()
     rowCount = 2
 
     const fetchData = { detail: AJAX_RES_OK }
@@ -256,5 +283,86 @@ describe('RowEditRenderer.vue', () => {
     expect(deleteRow).not.toHaveBeenCalled()
   })
 
-  // TODO: Test insertion
+  test('save study row', async () => {
+    setUnsavedRow(nodeId, STUDY_UUID)
+    expect(getRowSaveData).not.toHaveBeenCalled()
+    expect(saveRow).not.toHaveBeenCalled()
+
+    const wrapper = mountComponent()
+    await wrapper.find(saveBtnSel).trigger('click')
+    await flushPromises()
+
+    expect(getRowSaveData).toHaveBeenCalledWith({
+      api: params.api,
+      assayMode: false,
+      rowNode: params.node,
+      tableUuid: STUDY_UUID,
+    })
+    expect(saveRow).toHaveBeenCalled()
+  })
+
+  test('save assay row', async () => {
+    setAssayMode()
+    setUnsavedRow(nodeId, ASSAY_UUID)
+
+    const wrapper = mountComponent()
+    await wrapper.find(saveBtnSel).trigger('click')
+    await flushPromises()
+
+    expect(getRowSaveData).toHaveBeenCalledWith({
+      api: params.api,
+      assayMode: true,
+      rowNode: params.node,
+      tableUuid: ASSAY_UUID,
+    })
+    expect(saveRow).toHaveBeenCalled()
+  })
+
+  test('save with identical existing row', async () => {
+    // Disable logging as error message is expected
+    vi.spyOn(console, 'error').mockImplementation(() => undefined)
+
+    const otherRowNode = {
+      data: {
+        rowNum: 2,
+        [sourceColId]: { value: '0814' },
+        [sampleColId]: { value: '0814-N1' },
+        rowEdit: ''
+      },
+      id: '1'
+    }
+    params.api = getMockGridApi([params.node, otherRowNode])
+    setUnsavedRow(nodeId, STUDY_UUID)
+
+    const wrapper = mountComponent()
+    await wrapper.find(saveBtnSel).trigger('click')
+    await flushPromises()
+
+    expect(getRowSaveData).not.toHaveBeenCalled()
+    expect(saveRow).not.toHaveBeenCalled()
+    expect(params.notifyCb).toHaveBeenCalledWith(
+      ROW_SAVE_MSG_IDENTICAL, 'danger', 2000)
+  })
+
+  test('save with different existing row', async () => {
+    const otherRowNode = {
+      data: {
+        rowNum: 2,
+        [sourceColId]: { value: '0814' },
+        [sampleColId]: { value: '0814-T1' }, // Different sample name
+        rowEdit: ''
+      },
+      id: '1'
+    }
+    params.api = getMockGridApi([params.node, otherRowNode])
+    setUnsavedRow(nodeId, STUDY_UUID)
+
+    const wrapper = mountComponent()
+    await wrapper.find(saveBtnSel).trigger('click')
+    await flushPromises()
+
+    // Saving should be OK
+    expect(getRowSaveData).toHaveBeenCalled()
+    expect(saveRow).toHaveBeenCalled()
+  })
 })
