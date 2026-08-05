@@ -1092,8 +1092,10 @@ class SheetCellEditAjaxView(BaseSheetEditAjaxView):
                 study = node_obj.get_study()
                 if study not in studies:
                     studies.append(study)
-            except self.SheetEditException as ex:
-                return Response({'detail': str(ex)}, status=500)
+            except Exception as ex:
+                err_msg = f'Exception in cell update: {ex}'
+                logger.error(err_msg)
+                return Response({'detail': err_msg}, status=500)
 
         # Update investigation ontology refs
         if updated_cells:

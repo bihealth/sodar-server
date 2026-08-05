@@ -61,6 +61,7 @@ Fixed
 - **Samplesheets**
     - HPO term copying fails with ``SHEETS_ONTOLOGY_URL_TEMPLATE`` set (#2386)
     - Vue2 app ontology edit modal search input disabling (#2454)
+    - ``SheetCellEditAjaxView._update_cell()`` exceptions not properly handled (#2495)
 
 Removed
 -------
