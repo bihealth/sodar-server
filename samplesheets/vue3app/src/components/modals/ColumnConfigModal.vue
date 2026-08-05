@@ -1274,6 +1274,7 @@ div#sodar-ss-col-config-content {
   border-bottom-right-radius: 0 !important;
 }
 #sodar-ss-col-config-input-clip-paste {
+  max-height: 30px;
   max-width: 60px;
   border: 1px solid #CED4DA;
   border-top-right-radius: 4px;
