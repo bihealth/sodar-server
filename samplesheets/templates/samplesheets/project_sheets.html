@@ -6,13 +6,6 @@
 {% load rules %}
 {% load samplesheets_tags %}
 
-{% if use_vue3_app %}
-  {% block css %}
-    {{ block.super }}
-    <link rel="stylesheet" type="text/css" href="{% static 'samplesheets/css/vue3app.css' %}" />
-  {% endblock css %}
-{% endif %}
-
 {% block title %}
   Sample Sheets for {{ project.title }}
 {% endblock title %}
