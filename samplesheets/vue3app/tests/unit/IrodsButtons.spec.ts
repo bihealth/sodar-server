@@ -10,8 +10,7 @@ import { ticketLink } from '../data/assayShortcuts.ts'
 import { ASSAY_PATH } from '../testConstants.ts'
 import { type IrodsButtonsProps } from '../testTypes.ts'
 
-// Set up bootstrap-vue-next plugin to enable composable use
-config.global.plugins = [createBootstrap()]
+// Test Data -------------------------------------------------------------------
 
 const defaultProps: IrodsButtonsProps = {
   editMode: false,
@@ -26,11 +25,33 @@ const defaultProps: IrodsButtonsProps = {
 }
 let props: IrodsButtonsProps
 
+// Global Setup ----------------------------------------------------------------
+
+// Set up bootstrap-vue-next plugin to enable composable use
+config.global.plugins = [createBootstrap()]
+
+// Mock clipboard (NOTE: has to be done in module root)
+const mockCopy = vi.fn()
+vi.mock('@vueuse/core', async () => {
+  const actual = await vi.importActual('@vueuse/core')
+  return { ...actual, useClipboard: () => ({ copy: mockCopy }) }
+})
+
+// Replace useToast with mock
+// TODO: Remove once the component is updated to use NotifyCb
+vi.mock('bootstrap-vue-next', async () => {
+  const actual = await vi.importActual('bootstrap-vue-next')
+  return { ...actual, useToast: () => ({ create: vi.fn(), show: vi.fn() }) }
+})
+
+// Tests -----------------------------------------------------------------------
+
 describe('IrodsButtons.vue', () => {
   function mountComponent (): VueWrapper {
     return mount(IrodsButtons, { props: props })
   }
   beforeEach(() => {
+    vi.resetAllMocks()
     props = copy(defaultProps) as IrodsButtonsProps
   })
 
@@ -126,5 +147,9 @@ describe('IrodsButtons.vue', () => {
     expect(btn.attributes().disabled).not.toBeDefined()
   })
 
-  // TODO: Test clipboard copying
+  test('copy path to clipboard on button click', async () => {
+    const wrapper = mountComponent()
+    await wrapper.find('.sodar-ss-irods-copy-btn').trigger('click')
+    expect(mockCopy).toHaveBeenCalledWith(props.irodsPath)
+  })
 })

@@ -31,9 +31,8 @@ import {
   TMP_UUID
 } from '../testConstants.ts'
 
-config.global.plugins = [createBootstrap()]
+// Test Data -------------------------------------------------------------------
 
-// Data
 const inputTerm: EditOntologyRef = {
   name: 'Homo sapiens',
   accession: 'https://purl.bioontology.org/ontology/NCBITAXON/9606',
@@ -141,6 +140,26 @@ const delBtnSel = '.sodar-ss-ontology-btn-delete'
 const insertBtnSel = '#sodar-ss-ontology-btn-insert'
 const updateBtnSel = '#sodar-ss-ontology-btn-update'
 const rowInputSel = '.sodar-ss-ontology-row-input'
+
+// Global Setup ----------------------------------------------------------------
+
+config.global.plugins = [createBootstrap()]
+
+// Mock clipboard
+const mockCopy = vi.fn()
+vi.mock('@vueuse/core', async () => {
+  const actual = await vi.importActual('@vueuse/core')
+  return { ...actual, useClipboard: () => ({ copy: mockCopy }) }
+})
+
+// Replace useToast with mock
+// TODO: Remove once the component is updated to use NotifyCb
+vi.mock('bootstrap-vue-next', async () => {
+  const actual = await vi.importActual('bootstrap-vue-next')
+  return { ...actual, useToast: () => ({ create: vi.fn(), show: vi.fn() }) }
+})
+
+// Tests -----------------------------------------------------------------------
 
 describe('OntologyEditModal.vue', () => {
   beforeEach(() => {
@@ -1060,6 +1079,13 @@ describe('OntologyEditModal.vue', () => {
     expect(copyBtn.attributes().disabled).toBeDefined() // Should be disabled
   })
 
+  test('copy ontology terms into clipboard on button click', async () => {
+    const wrapper = await showModal()
+    const copyBtn = wrapper.find(clipCopySel)
+    await copyBtn.trigger('click')
+    expect(mockCopy).toHaveBeenCalledWith(JSON.stringify([inputTerm]))
+  })
+
   test('paste term to replace existing', async () => {
     const wrapper = await showModal()
     expect(wrapper.findAll(termRowSel).length).toBe(1)
@@ -1149,7 +1175,6 @@ describe('OntologyEditModal.vue', () => {
     expect(term?.find(termAccSel).text()).toBe(inputTerm.accession)
   })
 
-  // TODO: Test clipboard copying
   // TODO: Test state reset on modal reopen
   // TODO: Test title with node name (needs mocked api or real grid)
 })

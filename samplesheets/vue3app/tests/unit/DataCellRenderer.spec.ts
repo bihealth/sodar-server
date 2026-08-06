@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from 'vitest'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
 
 import DataCellRenderer from '@/components/renderers/DataCellRenderer.vue'
@@ -12,6 +12,8 @@ import { CELL_EMPTY_VAL } from '@/constants.ts'
 import { copy } from '../testUtils.ts'
 import { sodarContext } from '../data/sodarContext.ts'
 import studyTables from '../data/studyTables.json'
+
+// Test Data -------------------------------------------------------------------
 
 const defaultCellData: SheetTableCellData = {
   editable: false,
@@ -30,11 +32,30 @@ const defaultParams = {
 }
 let params: DataCellRendererParams
 
+// Global Setup ----------------------------------------------------------------
+
+// Mock clipboard
+const mockCopy = vi.fn()
+vi.mock('@vueuse/core', async () => {
+  const actual = await vi.importActual('@vueuse/core')
+  return { ...actual, useClipboard: () => ({ copy: mockCopy }) }
+})
+
+// Replace useToast with mock
+// TODO: Remove once the component is updated to use NotifyCb
+vi.mock('bootstrap-vue-next', async () => {
+  const actual = await vi.importActual('bootstrap-vue-next')
+  return { ...actual, useToast: () => ({ create: vi.fn(), show: vi.fn() }) }
+})
+
+// Tests -----------------------------------------------------------------------
+
 describe('DataCellRenderer.vue', () => {
   function mountComponent (): VueWrapper {
     return mount(DataCellRenderer, { props: { params: params } })
   }
   beforeEach(() => {
+    vi.resetAllMocks()
     params = copy(defaultParams) as DataCellRendererParams
   })
 
@@ -116,7 +137,20 @@ describe('DataCellRenderer.vue', () => {
     expect(val.text()).toBe(params.value!.value[0]!.name)
   })
 
-  // TODO: Test HPO term clipboard copying
+  test('copy HPO terms into clipboard on button click', async () => {
+    params.colDef!.headerName = 'HPO terms'
+    params.colType = 'ONTOLOGY'
+    params.value!.value = [{
+        name: 'Renal tubular atrophy',
+        accession: 'https://purl.obolibrary.org/obo/HP_0000092',
+        ontology_name: 'HP'
+    }]
+    const wrapper = mountComponent()
+
+    const val = wrapper.find('.sodar-ss-data-val-ontology')
+    await val.find('.sodar-ss-hpo-copy-btn').trigger('click')
+    expect(mockCopy).toHaveBeenCalledWith('HP:0000092')
+  })
 
   test('render contact field', async () => {
     params.colType = 'CONTACT'

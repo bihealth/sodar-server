@@ -1,10 +1,12 @@
-import { beforeEach, describe, expect, test } from 'vitest'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { config, mount, type VueWrapper } from '@vue/test-utils'
 import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
 
 import TableDetailListRow from '@/components/TableDetailListRow.vue'
 import { copy } from '../testUtils.ts'
 import { type TableDetailListRowProps } from '../testTypes.ts'
+
+// Test Data -------------------------------------------------------------------
 
 const defaultProps: TableDetailListRowProps = {
   legend: 'Example legend',
@@ -17,13 +19,32 @@ const defaultProps: TableDetailListRowProps = {
 }
 let props: TableDetailListRowProps
 
+// Global Setup ----------------------------------------------------------------
+
 config.global.plugins = [createBootstrap()]
+
+// Mock clipboard
+const mockCopy = vi.fn()
+vi.mock('@vueuse/core', async () => {
+  const actual = await vi.importActual('@vueuse/core')
+  return { ...actual, useClipboard: () => ({ copy: mockCopy }) }
+})
+
+// Replace useToast with mock
+// TODO: Remove once the component is updated to use NotifyCb
+vi.mock('bootstrap-vue-next', async () => {
+  const actual = await vi.importActual('bootstrap-vue-next')
+  return { ...actual, useToast: () => ({ create: vi.fn(), show: vi.fn() }) }
+})
+
+// Tests -----------------------------------------------------------------------
 
 describe('TableDetailListRow.vue', () => {
   function mountComponent (): VueWrapper {
     return mount(TableDetailListRow, { props: props })
   }
   beforeEach(() => {
+    vi.resetAllMocks()
     props = copy(defaultProps) as TableDetailListRowProps
   })
 
@@ -54,5 +75,11 @@ describe('TableDetailListRow.vue', () => {
     expect(wrapper.find('.sodar-ss-clip-copy-btn').exists()).toBe(true)
   })
 
-  // TODO: Test clipboard copying
+  test('copy value into clipboard', async () => {
+    expect(mockCopy).not.toHaveBeenCalled()
+    props.copyButton = true
+    const wrapper = mountComponent()
+    await wrapper.find('.sodar-ss-clip-copy-btn').trigger('click')
+    expect(mockCopy).toHaveBeenCalledWith(props.value)
+  })
 })
