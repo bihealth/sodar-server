@@ -46,6 +46,7 @@ Changed
     - Update CI ordering of code checks and tests (#2434)
 - **Landingzones**
     - Update ``resetzone`` and ``verifyzone`` arg help texts (#2368)
+    - Disable ``ZoneCreateView`` assay dropdown with single assay (#2394, #2500)
 - **Samplesheets**
     - Upgrade critical Vue app dependencies (#2317)
     - Rename ``SheetEditConfigUpdateAjaxView`` (#2469)
