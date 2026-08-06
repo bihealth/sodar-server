@@ -2017,6 +2017,7 @@ class TestSheetEditConfigUpdateAjaxView(
     """Tests for SheetEditConfigUpdateAjaxView"""
 
     # TODO: Test with assay updates (needs a better test ISA-Tab)
+    # TODO: Test with process name
 
     def setUp(self):
         super().setUp()

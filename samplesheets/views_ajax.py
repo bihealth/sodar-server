@@ -1815,7 +1815,11 @@ class SheetEditConfigUpdateAjaxView(SODARBaseProjectAjaxView):
             a_uuid = field['assay']
             n_idx = field['node_idx']
             f_idx = field['field_idx']
-            is_name = True if field['config']['name'] == 'Name' else False
+            is_name = (
+                True
+                if field['config']['type'] in ['name', 'process_name']
+                else False
+            )
             debug_info = (
                 f'study="{s_uuid}"; assay="{a_uuid}"; n={n_idx}; f={f_idx})'
             )
@@ -1849,26 +1853,33 @@ class SheetEditConfigUpdateAjaxView(SODARBaseProjectAjaxView):
                 return Response({'detail': msg}, status=500)
 
             # Cleanup data
-            c = field['config']
-            if not is_name:
-                if c['format'] != 'integer':
-                    c.pop('range', None)
-                    c.pop('unit', None)
-                    c.pop('unit_default', None)
-                elif 'range' in c and not c['range'][0] and not c['range'][1]:
-                    c.pop('range', None)
-                if c['format'] in ['protocol', 'select']:
-                    c.pop('regex', None)
-                if c['format'] != 'select':
-                    c.pop('options', None)
-            if a_uuid:
-                sheet_config['studies'][s_uuid]['assays'][a_uuid]['nodes'][
-                    n_idx
-                ]['fields'][f_idx] = c
-            else:
-                sheet_config['studies'][s_uuid]['nodes'][n_idx]['fields'][
-                    f_idx
-                ] = c
+            try:
+                c = field['config']
+                if not is_name:
+                    if c['format'] != 'integer':
+                        c.pop('range', None)
+                        c.pop('unit', None)
+                        c.pop('unit_default', None)
+                    elif (
+                        'range' in c and not c['range'][0] and not c['range'][1]
+                    ):
+                        c.pop('range', None)
+                    if c['format'] in ['protocol', 'select']:
+                        c.pop('regex', None)
+                    if c['format'] != 'select':
+                        c.pop('options', None)
+                if a_uuid:
+                    sheet_config['studies'][s_uuid]['assays'][a_uuid]['nodes'][
+                        n_idx
+                    ]['fields'][f_idx] = c
+                else:
+                    sheet_config['studies'][s_uuid]['nodes'][n_idx]['fields'][
+                        f_idx
+                    ] = c
+            except Exception as ex:
+                msg = f'Exception in data cleanup: {ex}'
+                logger.error(msg)
+                return Response({'detail': msg}, status=500)
 
             app_settings.set(
                 APP_NAME, 'sheet_config', sheet_config, project=project
