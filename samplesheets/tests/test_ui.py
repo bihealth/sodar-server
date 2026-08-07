@@ -1,6 +1,7 @@
 """UI tests for the samplesheets app"""
 
 import json
+import time
 
 from cubi_isa_templates import _TEMPLATES as ISA_TEMPLATES
 from datetime import timedelta
@@ -82,6 +83,10 @@ class SamplesheetsUITestBase(
             )
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
+
+    def tearDown(self):
+        time.sleep(0.5)  # HACK: See #2501 and bihealth/sodar-core#1969
+        super().tearDown()
 
 
 class TestProjectDetailView(IrodsDataRequestMixin, SamplesheetsUITestBase):

@@ -57,6 +57,8 @@ Fixed
 
 - **General**
     - ``Makefile`` missing ``default`` target (#2398)
+- **Irodsbackend**
+    - ``IrodsStatisticsAjaxView`` uncaught exceptions (#2501)
 - **Landingzones**
     - Unsupported ``assay`` field choice setup in ``LandingZoneForm`` (#2376)
 - **Samplesheets**

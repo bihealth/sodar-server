@@ -178,25 +178,25 @@ class IrodsStatisticsAjaxView(BaseIrodsAjaxView):
         project_path = self.irods_backend.get_path(self.project)
         try:
             irods = self.irods_backend.get_session_obj()
+            for p in request.POST.getlist('paths'):
+                d = {}
+                if not p.startswith(project_path):
+                    d['status'] = 400
+                elif not self._check_collection_perm(p, request.user, irods):
+                    d['status'] = 403
+                else:
+                    try:
+                        if irods.collections.exists(p):
+                            stats = self.irods_backend.get_stats(irods, p)
+                            d.update(stats)
+                            d['status'] = 200
+                        else:
+                            d['status'] = 404
+                    except Exception:
+                        d['status'] = 500
+                ret[p] = d
         except Exception as ex:
             return JsonResponse(self._get_detail(ex), status=500)
-        for p in request.POST.getlist('paths'):
-            d = {}
-            if not p.startswith(project_path):
-                d['status'] = 400
-            elif not self._check_collection_perm(p, request.user, irods):
-                d['status'] = 403
-            else:
-                try:
-                    if irods.collections.exists(p):
-                        stats = self.irods_backend.get_stats(irods, p)
-                        d.update(stats)
-                        d['status'] = 200
-                    else:
-                        d['status'] = 404
-                except Exception:
-                    d['status'] = 500
-            ret[p] = d
         irods.cleanup()
         return Response({'irods_stats': ret}, status=200)
 
