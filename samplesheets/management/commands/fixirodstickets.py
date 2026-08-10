@@ -71,6 +71,15 @@ class Command(BaseCommand):
     def _get_ticket_fields(
         cls, irods_backend: Any, ticket: dict, path: iRODSPath
     ) -> Optional[dict]:
+        """
+        Get the fields needed to construct an IrodsAccessTicket object.
+
+        :param irods_backend: IrodsAPI object
+        :param ticket: Ticket dictionary returned by the iRODS API
+        :param path: iRODSPath associated to the ticket
+        :return: Dictionary of IrodsAccessTicket fields if the ticket is valid,
+            "None" if some of the required fields are missing
+        """
         fields = {}
         ticket_string = ticket[TicketQuery.Ticket.string]
         ticket_study = irods_backend.get_uuid_from_path(path, 'study')
