@@ -17,6 +17,12 @@ from taskflowbackend.constants import IRODS_ACCESS_READ_OBJ
 from taskflowbackend.tests.base import TaskflowViewTestBase, IRODS_GROUP_PUBLIC
 
 # Samplesheets dependency
+from samplesheets.management.commands.fixirodstickets import (
+    ASSAY_DOES_NOT_EXIST,
+    STUDY_DOES_NOT_EXIST,
+    STUDY_IS_MISSING,
+    TICKET_OBJECT_ACTION_COUNT,
+)
 from samplesheets.models import IrodsAccessTicket
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_models import IrodsAccessTicketMixin
@@ -38,6 +44,7 @@ COLLECTION_TICKET_STR = 'collection_ticket'
 DATA_TICKET_STR = 'data_ticket'
 ORPHAN_TICKET_STR = 'orphan_ticket'
 NULL_STUDY_TICKET_STR = 'null_study_ticket'
+LOGGER_PREFIX = 'samplesheets.management.commands.'
 
 
 class TestSyncModifyAPI(
@@ -230,7 +237,7 @@ class TestFixIrodsTickets(
     def setUp(self):
         super().setUp()
         self.admin = self.make_user(settings.PROJECTROLES_DEFAULT_ADMIN)
-        # Create project locally
+        # Create project with taskflow
         self.project, _ = self.make_project_taskflow(
             'NewProject', PROJECT_TYPE_PROJECT, self.category, self.user
         )
@@ -284,6 +291,9 @@ class TestFixIrodsTickets(
             user=self.user,
             ticket=DATA_TICKET_STR,
         )
+        # Set up test vars
+        self.cmd_name = 'fixirodstickets'
+        self.logger_name = LOGGER_PREFIX + self.cmd_name
 
     def test_fixirodstickets(self):
         """Test that fixirodstickets recreates orphaned ticket objects"""
@@ -291,7 +301,7 @@ class TestFixIrodsTickets(
             IrodsAccessTicket.objects.filter(ticket=ORPHAN_TICKET_STR).count(),
             0,
         )
-        call_command('fixirodstickets')
+        call_command(self.cmd_name)
         self.assertEqual(
             IrodsAccessTicket.objects.filter(ticket=ORPHAN_TICKET_STR).count(),
             1,
@@ -310,7 +320,7 @@ class TestFixIrodsTickets(
             IrodsAccessTicket.objects.filter(ticket=DATA_TICKET_STR).count(),
             0,
         )
-        call_command('fixirodstickets')
+        call_command(self.cmd_name)
         self.assertEqual(
             IrodsAccessTicket.objects.filter(ticket=DATA_TICKET_STR).count(),
             1,
@@ -323,12 +333,21 @@ class TestFixIrodsTickets(
             IrodsAccessTicket.objects.filter(ticket=ORPHAN_TICKET_STR).count(),
             0,
         )
-        call_command('fixirodstickets', check=True)
-        # Nothing should have changed
-        self.assertEqual(
-            IrodsAccessTicket.objects.filter(ticket=ORPHAN_TICKET_STR).count(),
-            0,
-        )
+        with self.assertLogs(self.logger_name) as cm:
+            call_command(self.cmd_name, check=True)
+            # Nothing should have changed in the db
+            self.assertEqual(
+                IrodsAccessTicket.objects.filter(
+                    ticket=ORPHAN_TICKET_STR
+                ).count(),
+                0,
+            )
+            self.assertIn(
+                TICKET_OBJECT_ACTION_COUNT.format(
+                    action='Found', count=1, plural=''
+                ),
+                cm.output[2],
+            )
 
     def test_fixirodstickets_null_study(self):
         """Test fixirodstickets when ticket study is None"""
@@ -339,49 +358,74 @@ class TestFixIrodsTickets(
             ).count(),
             0,
         )
-        call_command('fixirodstickets')
-        # Tickets without a study are ignored, so nothing should have changed
-        self.assertEqual(
-            IrodsAccessTicket.objects.filter(
-                ticket=NULL_STUDY_TICKET_STR
-            ).count(),
-            0,
-        )
+        with self.assertLogs(self.logger_name) as cm:
+            call_command(self.cmd_name)
+            # Tickets without a study are ignored, so the db should not change
+            self.assertEqual(
+                IrodsAccessTicket.objects.filter(
+                    ticket=NULL_STUDY_TICKET_STR
+                ).count(),
+                0,
+            )
+            self.assertIn(
+                STUDY_IS_MISSING.format(ticket_string=NULL_STUDY_TICKET_STR),
+                cm.output[4],
+            )
 
     def test_fixirodstickets_orphaned_study(self):
-        """test fixirodstickets with deleted study"""
+        """Test fixirodstickets with deleted study"""
         self.assertEqual(
             IrodsAccessTicket.objects.filter(ticket=DATA_TICKET_STR).count(),
             1,
         )
+        study_uuid = self.study.sodar_uuid
         self.study.delete()
         self.assertEqual(
             IrodsAccessTicket.objects.filter(ticket=DATA_TICKET_STR).count(),
             0,
         )
-        call_command('fixirodstickets')
         # Nothing should happen to the database, but a warning will be shown
         # to the user running the command
-        self.assertEqual(
-            IrodsAccessTicket.objects.filter(ticket=DATA_TICKET_STR).count(),
-            0,
-        )
+        with self.assertLogs(self.logger_name) as cm:
+            call_command(self.cmd_name)
+            self.assertEqual(
+                IrodsAccessTicket.objects.filter(
+                    ticket=DATA_TICKET_STR
+                ).count(),
+                0,
+            )
+            self.assertIn(
+                STUDY_DOES_NOT_EXIST.format(
+                    ticket_string=DATA_TICKET_STR, ticket_study=study_uuid
+                ),
+                cm.output[2],
+            )
 
     def test_fixirodstickets_orphaned_assay(self):
-        """test fixirodstickets with deleted assay"""
+        """Test fixirodstickets with deleted assay"""
         self.assertEqual(
             IrodsAccessTicket.objects.filter(ticket=DATA_TICKET_STR).count(),
             1,
         )
+        assay_uuid = self.assay.sodar_uuid
         self.assay.delete()
         self.assertEqual(
             IrodsAccessTicket.objects.filter(ticket=DATA_TICKET_STR).count(),
             0,
         )
-        call_command('fixirodstickets')
         # Nothing should happen to the database, but a warning will be shown
         # to the user running the command
-        self.assertEqual(
-            IrodsAccessTicket.objects.filter(ticket=DATA_TICKET_STR).count(),
-            0,
-        )
+        with self.assertLogs(self.logger_name) as cm:
+            call_command(self.cmd_name)
+            self.assertEqual(
+                IrodsAccessTicket.objects.filter(
+                    ticket=DATA_TICKET_STR
+                ).count(),
+                0,
+            )
+            self.assertIn(
+                ASSAY_DOES_NOT_EXIST.format(
+                    ticket_string=DATA_TICKET_STR, ticket_assay=assay_uuid
+                ),
+                cm.output[2],
+            )
