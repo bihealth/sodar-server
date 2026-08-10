@@ -2,8 +2,8 @@
 import { BApp } from 'bootstrap-vue-next'
 import { RouterView, useRouter } from 'vue-router'
 
-import PageHeader from './components/PageHeader.vue'
 import ServerAlerts from './components/ServerAlerts.vue'
+import ViewHeader from './components/ViewHeader.vue'
 import { useAppStore } from '@/stores/appStore.ts'
 
 const appStore = useAppStore()
@@ -41,7 +41,7 @@ getSodarContext()
 
 <template>
   <BApp>
-    <PageHeader></PageHeader>
+    <ViewHeader></ViewHeader>
     <ServerAlerts></ServerAlerts>
     <RouterView></RouterView>
   </BApp>

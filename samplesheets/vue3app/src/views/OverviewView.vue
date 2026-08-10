@@ -28,7 +28,7 @@ const investigation = ref<SodarContextInvestigation>(
 
 // Navigate to study and optionally assay
 function handleNavigation (studyUuid: string, assayUuid: string | null) {
-  // NOTE: Contains repetition from handleStudyNavigation() in PageHeader, ideas
+  // NOTE: Contains repetition from handleStudyNavigation() in ViewHeader, ideas
   //       on how to nicely combine these?
   appStore.overviewActive = false
   appStore.gridsLoaded = false

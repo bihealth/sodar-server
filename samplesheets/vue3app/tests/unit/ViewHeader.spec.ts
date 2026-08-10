@@ -4,7 +4,7 @@ import { setActivePinia, createPinia } from 'pinia'
 import { createRouter, createWebHashHistory, type Router } from 'vue-router'
 import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
 
-import PageHeader from '@/components/PageHeader.vue'
+import ViewHeader from '@/components/ViewHeader.vue'
 import { useAppStore } from '@/stores/appStore.ts'
 import { useEditStore } from '@/stores/editStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
@@ -27,7 +27,7 @@ import { ASSAY_UUID, PROJECT_UUID, STUDY_UUID } from '../testConstants.ts'
 
 let router: Router
 
-describe('PageHeader.vue', () => {
+describe('ViewHeader.vue', () => {
   function expectDropdownItems (
       wrapper: VueWrapper,
       items: { [key: string]: boolean }
@@ -40,7 +40,7 @@ describe('PageHeader.vue', () => {
   }
 
   function mountComponent (): VueWrapper {
-    return mount(PageHeader, {
+    return mount(ViewHeader, {
       global: {plugins: [router, createBootstrap()]} })
   }
 
