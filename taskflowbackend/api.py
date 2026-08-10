@@ -258,7 +258,7 @@ class TaskflowAPI:
             if not coordinator:
                 cls._raise_lock_exception(COORDINATOR_EX_MSG, tl_event, zone)
             else:
-                lock_id = str(project.sodar_uuid)
+                lock_id = str(project.sodar_uuid).encode()
                 lock = coordinator.get_lock(lock_id)
                 try:
                     lock_api.acquire(lock)
