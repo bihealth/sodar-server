@@ -16,6 +16,9 @@ import {
   EDIT_MSG_SAVE_ERR_PREFIX,
   EDIT_MSG_SAVE_FAIL_PREFIX,
   URL_VERSION_SAVE_PREFIX,
+  VARIANT_DANGER,
+  VARIANT_INFO,
+  VARIANT_SUCCESS,
 } from '@/constants.ts'
 
 // Data and initial setup ------------------------------------------------------
@@ -44,16 +47,16 @@ function postSave () {
     .then(data => {
       if (data.detail === 'ok') {
         editStore.versionSaved = true
-        if (notifyCb) notifyCb(EDIT_MSG_SAVE, 'success')
+        if (notifyCb) notifyCb(EDIT_MSG_SAVE, VARIANT_SUCCESS)
       } else {
         const msg = EDIT_MSG_SAVE_FAIL_PREFIX + data.detail
         console.error(msg)
-        if (notifyCb) notifyCb(msg, 'danger', 2000)
+        if (notifyCb) notifyCb(msg, VARIANT_DANGER)
       }
     }).catch(function (error) {
       const msg = EDIT_MSG_SAVE_ERR_PREFIX + error
       console.error(msg)
-      if (notifyCb) notifyCb(msg, 'danger', 2000)
+      if (notifyCb) notifyCb(msg, VARIANT_DANGER)
   })
 }
 

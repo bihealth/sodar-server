@@ -56,7 +56,9 @@ import {
   OBO_ID_ORDO,
   OBO_HEADER_HP,
   OBO_HEADER_OMIM,
-  OBO_HEADER_ORDO
+  OBO_HEADER_ORDO,
+  VARIANT_DANGER,
+  VARIANT_SUCCESS,
 } from '@/constants.ts'
 
 // Data and initial setup ------------------------------------------------------
@@ -190,7 +192,7 @@ function copyConfig () {
   cleanupConfig(copyConfig)
   clipboard.copy(JSON.stringify(copyConfig))
   if (params.notifyCb) {
-    params.notifyCb('Configuration copied into clipboard', 'success', 0)
+    params.notifyCb('Configuration copied into clipboard', VARIANT_SUCCESS)
   }
 }
 
@@ -235,14 +237,14 @@ function onConfigPaste () {
   try {
     c = JSON.parse(configPasteInput.value)
   } catch (error) {
-    if (params.notifyCb) params.notifyCb('Invalid JSON', 'danger', 0)
+    if (params.notifyCb) params.notifyCb('Invalid JSON', VARIANT_DANGER)
     console.error('Invalid JSON: ' + error)
     valid = false
   }
 
   // Reject paste if invalid data or incompatible format
   if (valid && (!('format' in c) || !('editable' in c))) {
-    if (params.notifyCb) params.notifyCb('Invalid data', 'danger', 0)
+    if (params.notifyCb) params.notifyCb('Invalid data', VARIANT_DANGER)
     console.error('Invalid data: ' + configPasteInput.value)
     valid = false
   } else if (
@@ -253,7 +255,7 @@ function onConfigPaste () {
       (colType.value === EDIT_COL_TYPE_UNIT &&
         (!NUM_FORMATS.includes(c.format))) ||
       (colType.value !== EDIT_COL_TYPE_UNIT && c.format.unit)) {
-    if (params.notifyCb) params.notifyCb('Invalid data', 'danger', 0)
+    if (params.notifyCb) params.notifyCb('Invalid data', VARIANT_DANGER)
     console.error(
       `Invalid format for column type "${colType.value}": ${c.format}`)
     valid = false
@@ -282,9 +284,7 @@ function onConfigPaste () {
       rangeMax.value = c.range[1]
     }
   }
-  if (params.notifyCb) {
-    params.notifyCb('Configuration pasted', 'success', 0)
-  }
+  if (params.notifyCb) params.notifyCb('Configuration pasted', VARIANT_SUCCESS)
   validate() // Validate after paste
   // Clear input
   nextTick().then(() => {
@@ -301,7 +301,7 @@ function onOntologyDefaultInput () {
   try {
     p = JSON.parse(ontologyDefaultInput.value)
   } catch (error) {
-    if (params.notifyCb) params.notifyCb('Invalid JSON', 'danger', 0)
+    if (params.notifyCb) params.notifyCb('Invalid JSON', VARIANT_DANGER)
     console.error('Invalid JSON: ' + error)
     valid = false
   }
@@ -315,7 +315,7 @@ function onOntologyDefaultInput () {
           !('ontology_name' in t) ||
           !('accession' in t)) {
         valid = false
-        if (params.notifyCb) params.notifyCb('Invalid format', 'danger', 0)
+        if (params.notifyCb) params.notifyCb('Invalid format', VARIANT_DANGER)
         console.error('Invalid term: ' + JSON.stringify(t))
         valid = false
       }
@@ -323,14 +323,14 @@ function onOntologyDefaultInput () {
   }
   if (valid) {
     if (p.length > 1 && !config.value?.allow_list) {
-      if (params.notifyCb) params.notifyCb('List not allowed', 'danger', 0)
+      if (params.notifyCb) params.notifyCb('List not allowed', VARIANT_DANGER)
       valid = false
     }
   }
   // Update config if valid
   if (valid) {
     config.value!.default = p
-    if (params.notifyCb) params.notifyCb('Default updated', 'success', 0)
+    if (params.notifyCb) params.notifyCb('Default updated', VARIANT_SUCCESS)
   }
   // Clear input
   nextTick().then(() => {
@@ -586,12 +586,12 @@ async function updateConfig () {
     updateGrids()
     if (params.notifyCb) {
       const msg: string = `Updated column "${modalTitle.value}"`
-      params.notifyCb(msg, 'success', 0)
+      params.notifyCb(msg, VARIANT_SUCCESS)
     }
   } else {
     const msg: string = `Failed to update column "${modalTitle.value}":
                          ${resBody.detail}`
-    if (params.notifyCb) params.notifyCb(msg, 'danger', 0)
+    if (params.notifyCb) params.notifyCb(msg, VARIANT_DANGER)
     console.error(msg)
   }
 }
@@ -748,7 +748,7 @@ function hide (update: boolean) {
     } catch (error) {
       const msg: string = `Error updating field config: ${error}`
       console.error(msg)
-      if (params.notifyCb) params.notifyCb(msg, 'danger', 0)
+      if (params.notifyCb) params.notifyCb(msg, VARIANT_DANGER)
     }
   }
   modalRef.value?.hide()

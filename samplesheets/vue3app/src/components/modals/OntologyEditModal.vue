@@ -28,7 +28,11 @@ import {
   type StudyEditConfigNodeField,
   type StudyEditContextOntology,
 } from '@/types.ts'
-import { EDIT_TERM_QUERY_MIN_LEN } from '@/constants.ts'
+import {
+  EDIT_TERM_QUERY_MIN_LEN,
+  VARIANT_DANGER,
+  VARIANT_SUCCESS,
+} from '@/constants.ts'
 
 // Data and initial setup ------------------------------------------------------
 
@@ -100,7 +104,7 @@ function copyValue () {
   let s = ''
   if (cellData.value?.value.length !== 1) s = 's'
   if (params.notifyCb) {
-    params.notifyCb(`Ontology term${s} copied into clipboard`, 'success', 0)
+    params.notifyCb(`Ontology term${s} copied into clipboard`, VARIANT_SUCCESS)
   }
 }
 
@@ -241,7 +245,7 @@ function onPasteInput () {
     val = JSON.parse(pasteData.value)
   } catch (error) {
     if (params.notifyCb) {
-      params.notifyCb('Error parsing pasted terms: ' + error, 'danger', 0)
+      params.notifyCb('Error parsing pasted terms: ' + error, VARIANT_DANGER)
       pasteOk = false
     }
   }
@@ -253,8 +257,7 @@ function onPasteInput () {
         if (params.notifyCb) {
           params.notifyCb(
             'Ontology not allowed: ' + (val[i]?.ontology_name as string),
-            'danger',
-            0)
+            VARIANT_DANGER)
         }
         pasteOk = false
         break
@@ -263,7 +266,7 @@ function onPasteInput () {
   }
   if (val && pasteOk && !editConfig.value?.allow_list && val.length > 1) {
     if (params.notifyCb) {
-      params.notifyCb('List of terms not allowed', 'danger', 0)
+      params.notifyCb('List of terms not allowed', VARIANT_DANGER)
     }
     pasteOk = false
   }
@@ -272,7 +275,7 @@ function onPasteInput () {
     if (params.notifyCb) {
       let s = ''
       if (val.length !== 1) s = 's'
-      params.notifyCb(`Ontology term${s} replaced`, 'success', 0)
+      params.notifyCb(`Ontology term${s} replaced`, VARIANT_SUCCESS)
     }
     updated.value = true
   }

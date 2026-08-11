@@ -19,7 +19,9 @@ import {
   EDIT_HEADER_TYPE_NAME,
   EDIT_HEADER_TYPE_PROCESS,
   EDIT_REGEX,
-  NODE_RENAME_MSG
+  NODE_RENAME_MSG,
+  VARIANT_DANGER,
+  VARIANT_INFO,
 } from '@/constants.ts'
 
 // Data and initial setup ------------------------------------------------------
@@ -269,7 +271,7 @@ onUnmounted(() => {
   // Check and reject invalid value
   if (!valid.value) {
     cellData.value = ogValue
-    if (notifyCb) notifyCb('Invalid cell value', 'danger', 0)
+    if (notifyCb) notifyCb('Invalid cell value', VARIANT_DANGER)
     // TODO: Implement and call finalization func
     return
   }
@@ -284,7 +286,7 @@ onUnmounted(() => {
       !confirm(NODE_RENAME_MSG)) {
     cellData.value = ogValue
     // TODO: Implement and call finalization func
-    if (params.notifyCb) params.notifyCb('Renaming cancelled', 'info', 0)
+    if (params.notifyCb) params.notifyCb('Renaming cancelled', VARIANT_INFO)
   }
 
   if (nameColumn && (!cellData.uuid || cellData.newRow)) { // Update/init node

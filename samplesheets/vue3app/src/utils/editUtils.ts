@@ -49,7 +49,9 @@ import {
   HEADER_NAME_SAMPLE,
   NODE_ID_HEADER_TYPES,
   URL_ROW_DEL_PREFIX,
-  URL_ROW_INS_PREFIX
+  URL_ROW_INS_PREFIX,
+  VARIANT_DANGER,
+  VARIANT_SUCCESS,
 } from '@/constants.ts'
 
 export function deleteRow (params: RowDeleteParams) {
@@ -125,12 +127,12 @@ export function deleteRow (params: RowDeleteParams) {
         r.setDataValue('rowNum', rowNum)
         rowNum += 1
       })
-      if (params.notifyCb) params.notifyCb('Row deleted', 'success', 0)
+      if (params.notifyCb) params.notifyCb('Row deleted', VARIANT_SUCCESS)
     } else {
       const msg = 'Row delete failed'
       console.error(
         `${msg}: ${(res as GenericResponseBody).detail}`)
-      if (params.notifyCb) params.notifyCb(msg, 'danger', 0)
+      if (params.notifyCb) params.notifyCb(msg, VARIANT_DANGER)
     }
     if (params.finishCb) params.finishCb()
     editStore.updatingRow = false
@@ -625,11 +627,11 @@ export function saveRow (params: RowSaveParams) {
         editStore.unsavedRow = null
         editStore.editDataUpdated = true
         editStore.versionSaved = false
-        if (params.notifyCb) params.notifyCb('Row inserted', 'success', 0)
+        if (params.notifyCb) params.notifyCb('Row inserted', VARIANT_SUCCESS)
       } else {
         const msg = 'Row insert failed: ' + data.detail
         console.error(msg)
-        if (params.notifyCb) params.notifyCb(msg, 'danger', 2000)
+        if (params.notifyCb) params.notifyCb(msg, VARIANT_DANGER)
       }
       if (params.finishCb) params.finishCb()
       editStore.updatingRow = false
@@ -736,7 +738,7 @@ export function updateCells (
           let bodyPrefix: string
           if (cells.length > 1) bodyPrefix = cells.length.toString() + ' cells '
           else bodyPrefix = 'Cell '
-          if (notifyCb) notifyCb(bodyPrefix + 'updated', 'success', 0)
+          if (notifyCb) notifyCb(bodyPrefix + 'updated', VARIANT_SUCCESS)
           */
           editStore.editDataUpdated = true
           editStore.versionSaved = false
@@ -758,14 +760,14 @@ export function updateCells (
         } else {
           const msg = 'Cell update failed: ' + data.detail
           console.error(msg)
-          if (notifyCb) notifyCb(msg, 'danger', 0)
+          if (notifyCb) notifyCb(msg, VARIANT_DANGER)
           // TODO: Mark invalid/unsaved field(s) in UI
         }
       }
     ).catch(function (error) {
       const msg = 'Cell update error: ' + error
       console.error(msg)
-      if (notifyCb) notifyCb(msg, 'danger', 0)
+      if (notifyCb) notifyCb(msg, VARIANT_DANGER)
     })
 }
 

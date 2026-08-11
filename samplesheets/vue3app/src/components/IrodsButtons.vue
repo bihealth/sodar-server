@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { BButton, useToast } from 'bootstrap-vue-next'
 import { useClipboard } from '@vueuse/core'
-import { TOAST_INTERVAL } from '@/constants.ts'
+import { TOAST_INTERVAL_DEFAULT } from '@/constants.ts'
 
 const props = defineProps([
   'editMode',
@@ -27,7 +27,7 @@ function copyPath () {
   create({
     body: 'iRODS path copied into clipboard',
     variant: 'info',
-    modelValue: TOAST_INTERVAL
+    modelValue: TOAST_INTERVAL_DEFAULT
   })
 }
 </script>

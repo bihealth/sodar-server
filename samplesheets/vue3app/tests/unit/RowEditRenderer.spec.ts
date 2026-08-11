@@ -18,6 +18,7 @@ import {
   ROW_DEL_MSG_OK,
   ROW_DEL_MSG_UNSAVED,
   ROW_SAVE_MSG_IDENTICAL,
+  VARIANT_DANGER,
 } from '@/constants.ts'
 
 import studyTablesEdit from '../data/studyTablesEdit.json'
@@ -341,7 +342,7 @@ describe('RowEditRenderer.vue', () => {
     expect(getRowSaveData).not.toHaveBeenCalled()
     expect(saveRow).not.toHaveBeenCalled()
     expect(params.notifyCb).toHaveBeenCalledWith(
-      ROW_SAVE_MSG_IDENTICAL, 'danger', 2000)
+      ROW_SAVE_MSG_IDENTICAL, VARIANT_DANGER)
   })
 
   test('save with different existing row', async () => {

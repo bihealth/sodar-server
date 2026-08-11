@@ -12,10 +12,7 @@ import {
   getRowSaveData,
   saveRow
 } from '@/utils/editUtils.ts'
-import {
-  type RowEditRendererParams,
-  type RowSaveData
-} from '@/types.ts'
+import { type RowEditRendererParams, type RowSaveData } from '@/types.ts'
 import {
   NODE_ID_HEADER_TYPES,
   ROW_DEL_MSG_ALL,
@@ -27,6 +24,7 @@ import {
   ROW_DEL_MSG_OK,
   ROW_DEL_MSG_UNSAVED,
   ROW_SAVE_MSG_IDENTICAL,
+  VARIANT_DANGER,
 } from '@/constants.ts'
 
 // Data and initial setup ------------------------------------------------------
@@ -164,7 +162,7 @@ function onSave () {
   })
   if (newRowNodes && oldRowNodes.includes(newRowNodes)) {
     const msg = ROW_SAVE_MSG_IDENTICAL
-    if (params.notifyCb) params.notifyCb(msg, 'danger', 2000)
+    if (params.notifyCb) params.notifyCb(msg, VARIANT_DANGER)
     console.error(msg)
     inserting.value = false
     return

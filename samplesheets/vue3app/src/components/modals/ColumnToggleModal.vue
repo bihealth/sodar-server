@@ -16,7 +16,7 @@ import {
 } from 'ag-grid-community'
 
 import ModalHeader from '@/components/modals/ModalHeader.vue'
-import { TOAST_INTERVAL } from '@/constants.ts'
+import { TOAST_INTERVAL_DEFAULT } from '@/constants.ts'
 import {
   type SheetTableCellData,
   type SheetTableRowData,
@@ -184,14 +184,14 @@ function postUpdate (setDefault: boolean) {
         create({
           body: toastBody,
           variant: 'success',
-          modelValue: TOAST_INTERVAL
+          modelValue: TOAST_INTERVAL_DEFAULT
         })
       }
     }).catch(function (error) {
       create({
         body: 'Error saving display config: ' + error.detail,
         variant: 'danger',
-        modelValue: TOAST_INTERVAL
+        modelValue: TOAST_INTERVAL_DEFAULT
       })
     })
 }

@@ -13,6 +13,8 @@ import {
   EDIT_MSG_SAVE,
   EDIT_MSG_SAVE_FAIL_PREFIX,
   URL_VERSION_SAVE_PREFIX,
+  VARIANT_DANGER,
+  VARIANT_SUCCESS,
 } from '@/constants.ts'
 
 import { PROJECT_UUID } from '../testConstants.ts'
@@ -78,7 +80,7 @@ describe('VersionSaveModal.vue', () => {
     expect(fetch).toHaveBeenCalledWith(
       url, expect.objectContaining({
         body: JSON.stringify({ save: true, description: '' }) }))
-    expect(mockNotifyCb).toHaveBeenCalledWith(EDIT_MSG_SAVE, 'success')
+    expect(mockNotifyCb).toHaveBeenCalledWith(EDIT_MSG_SAVE, VARIANT_SUCCESS)
   })
 
   test('save version with description', async () => {
@@ -118,6 +120,6 @@ describe('VersionSaveModal.vue', () => {
     expect(editStore.versionSaved).toBe(false)
     expect(fetch).toHaveBeenCalled()
     expect(mockNotifyCb).toHaveBeenCalledWith(
-      EDIT_MSG_SAVE_FAIL_PREFIX + 'error', 'danger', 2000)
+      EDIT_MSG_SAVE_FAIL_PREFIX + 'error', VARIANT_DANGER)
   })
 })

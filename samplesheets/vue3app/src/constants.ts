@@ -6,6 +6,11 @@ export const URL_ROW_DEL_PREFIX = '/samplesheets/ajax/edit/row/delete/'
 export const URL_ROW_INS_PREFIX = '/samplesheets/ajax/edit/row/insert/'
 export const URL_VERSION_SAVE_PREFIX = '/samplesheets/ajax/version/save/'
 
+// Color variants
+export const VARIANT_DANGER = 'danger'
+export const VARIANT_INFO = 'info'
+export const VARIANT_SUCCESS = 'success'
+
 // Standard Ajax data
 export const AJAX_RES_OK = 'ok'
 
@@ -13,8 +18,9 @@ export const AJAX_RES_OK = 'ok'
 export const STUDY_NAV_DROPDOWN_LEN = 48
 // Study name truncate length in page header nav tabs
 export const STUDY_NAV_TAB_LEN = 32
-// Default toast display interval in milliseconds
-export const TOAST_INTERVAL = 1500
+// Default toast display intervals in milliseconds
+export const TOAST_INTERVAL_DEFAULT = 1500
+export const TOAST_INTERVAL_DANGER = 2500
 
 // SODAR sample sheet model
 export const DB_OBJ_CLASS_MATERIAL = 'GenericMaterial'
