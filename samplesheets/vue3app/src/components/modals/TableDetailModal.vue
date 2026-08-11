@@ -9,13 +9,18 @@ import {
   STUDY_META_FIELDS,
   STUDY_SODAR_FIELDS,
   ASSAY_META_FIELDS,
-  ASSAY_SODAR_FIELDS
+  ASSAY_SODAR_FIELDS,
 } from '@/constants.ts'
-import { type SodarContextAssay, type SodarContextStudy } from '@/types.ts'
+import {
+  type NotifyCb,
+  type SodarContextAssay,
+  type SodarContextStudy,
+} from '@/types.ts'
 
 const appStore = useAppStore()
 
 const modalRef = useTemplateRef('tableDetailModal')
+let notifyCb: NotifyCb | undefined = undefined
 const assayMode = ref<boolean>(false)
 const metaFields = ref<object | null>(null)
 const sodarFields = ref<object | null>(null)
@@ -25,7 +30,12 @@ const tableUuid = ref<string>('')
 const showModal = ref<boolean>(false)
 
 // Modal showing
-function show (uuid: string, context: SodarContextAssay | SodarContextStudy) {
+function show (
+    uuid: string,
+    context: SodarContextAssay | SodarContextStudy,
+    modalNotifyCb?: NotifyCb,
+) {
+  notifyCb = modalNotifyCb
   tableContext.value = context
   tableUuid.value = uuid
   if (tableUuid.value === appStore.currentStudyUuid) {
@@ -60,6 +70,7 @@ defineExpose({ show })
     <div id="sodar-ss-table-detail-modal-content">
       <TableDetailList
           :assay-mode="assayMode"
+          :notify-cb="notifyCb"
           :table-context="tableContext"
           :table-meta-fields="metaFields"
           :table-sodar-fields="sodarFields"

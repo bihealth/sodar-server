@@ -56,6 +56,7 @@ const studyShortcutCompRef = useTemplateRef('studyShortcutModalComponent')
 
 // Init toasts
 const { create } = useToast()
+const notifyCb = getNotifyCb(create)
 
 // Expose components for ag-grid
 defineExpose({
@@ -114,7 +115,7 @@ function buildStudy (data: RenderTableData) {
   const colDefBuildParams: ColDefBuildParams = {
     editMode: appStore.editMode,
     irodsDirModal: irodsDirCompRef,
-    notifyCb: getNotifyCb(create), // showToast,
+    notifyCb: notifyCb,
     sampleColId: tableStore.sampleColId,
     sodarContext: appStore.sodarContext as SodarContext,
     studyEditConfig: tableStore.studyEditConfig,
@@ -216,12 +217,14 @@ onMounted(() => {
   <div v-if="!appStore.gridsBusy && appStore.gridsLoaded">
     <!-- Study -->
     <SheetTableHeader
-        :table-uuid="appStore.currentStudyUuid"
-        :assay-mode="false">
+        :assay-mode="false"
+        :notify-cb="notifyCb"
+        :table-uuid="appStore.currentStudyUuid">
     </SheetTableHeader>
     <SheetTable
         :assay-mode="false"
         :col-toggle-modal-ref="colToggleCompRef"
+        :notify-cb="notifyCb"
         :table-uuid="appStore.currentStudyUuid">
     </SheetTable>
     <!-- Assays -->
@@ -232,8 +235,9 @@ onMounted(() => {
       <a class="sodar-ss-anchor"
          :id="'assay-anchor-' + assayUuid.toString()"></a>
       <SheetTableHeader
-          :table-uuid="assayUuid"
-          :assay-mode="true">
+          :assay-mode="true"
+          :notify-cb="notifyCb"
+          :table-uuid="assayUuid">
       </SheetTableHeader>
       <AssayShortcutCard
           v-if="!appStore.editMode &&
@@ -246,6 +250,7 @@ onMounted(() => {
       <SheetTable
           :assay-mode="true"
           :col-toggle-modal-ref="colToggleCompRef"
+          :notify-cb="notifyCb"
           :table-uuid="assayUuid">
       </SheetTable>
     </div>

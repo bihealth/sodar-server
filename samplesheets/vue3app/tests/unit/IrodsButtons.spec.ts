@@ -4,6 +4,7 @@ import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
 
 import IrodsButtons from '@/components/IrodsButtons.vue'
 import { type AssayShortcutExtraLink } from '@/types.ts'
+import { IRODS_PATH_COPY_MSG, VARIANT_INFO } from '@/constants.ts'
 
 import { copy } from '../testUtils.ts'
 import { ticketLink } from '../data/assayShortcuts.ts'
@@ -50,6 +51,7 @@ describe('IrodsButtons.vue', () => {
   function mountComponent (): VueWrapper {
     return mount(IrodsButtons, { props: props })
   }
+
   beforeEach(() => {
     vi.resetAllMocks()
     props = copy(defaultProps) as IrodsButtonsProps
@@ -148,8 +150,12 @@ describe('IrodsButtons.vue', () => {
   })
 
   test('copy path to clipboard on button click', async () => {
+    props.notifyCb = vi.fn()
+    expect(props.notifyCb).not.toHaveBeenCalled()
     const wrapper = mountComponent()
     await wrapper.find('.sodar-ss-irods-copy-btn').trigger('click')
     expect(mockCopy).toHaveBeenCalledWith(props.irodsPath)
+    expect(props.notifyCb).toHaveBeenCalledWith(
+      IRODS_PATH_COPY_MSG, VARIANT_INFO)
   })
 })

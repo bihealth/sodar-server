@@ -6,7 +6,6 @@ import {
   BFormInput,
   BInputGroup,
   BModal,
-  useToast,
   type CheckboxValue
 } from 'bootstrap-vue-next'
 import {
@@ -16,11 +15,12 @@ import {
 } from 'ag-grid-community'
 
 import ModalHeader from '@/components/modals/ModalHeader.vue'
-import { TOAST_INTERVAL_DEFAULT } from '@/constants.ts'
+import { VARIANT_DANGER, VARIANT_SUCCESS } from '@/constants.ts'
 import {
+  type NotifyCb,
   type SheetTableCellData,
   type SheetTableRowData,
-  type StudyDisplayConfigNode
+  type StudyDisplayConfigNode,
 } from '@/types.ts'
 import { useAppStore } from '@/stores/appStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
@@ -37,8 +37,6 @@ const tableStore = useTableStore()
 // Modal setup
 const modalRef = useTemplateRef('columnToggleModal')
 const showModal = ref<boolean>(false)
-// Composables
-const { create } = useToast()
 // Constants
 const configUrl = '/samplesheets/ajax/display/update/' +
   appStore.currentStudyUuid
@@ -54,6 +52,7 @@ const modalTitle = ref<string>('')
 let colValueStatus: {[key: string]: boolean} // Formerly columnValues
 let colDefs: Array<ColGroupDef>
 let colsUpdated: boolean = false
+let notifyCb: NotifyCb | undefined = undefined
 let gridApi: GridApi
 let rowData: Array<SheetTableRowData>
 
@@ -181,27 +180,26 @@ function postUpdate (setDefault: boolean) {
       if (data.detail === 'ok') {
         let toastBody = 'Display configuration saved'
         if (setDefault) toastBody += ' as default'
-        create({
-          body: toastBody,
-          variant: 'success',
-          modelValue: TOAST_INTERVAL_DEFAULT
-        })
+        if (notifyCb) notifyCb(toastBody, VARIANT_SUCCESS)
       }
     }).catch(function (error) {
-      create({
-        body: 'Error saving display config: ' + error.detail,
-        variant: 'danger',
-        modelValue: TOAST_INTERVAL_DEFAULT
-      })
+      const msg = 'Error saving display config: ' + error.detail
+      console.error(msg)
+      if (notifyCb) notifyCb(msg, VARIANT_DANGER)
     })
 }
 
 // Show modal
-function show (tableUuid: string, assayMode: boolean) {
+function show (
+    tableUuid: string,
+    assayMode: boolean,
+    modalNotifyCb?: NotifyCb
+) {
   checkVals.value = []
   colValueStatus = {}
   colsUpdated = false
   displayCols.value = []
+  notifyCb = modalNotifyCb
   const titleType = assayMode ? 'Assay' : 'Study'
   modalTitle.value = 'Toggle ' + titleType + ' Columns'
 
@@ -296,7 +294,8 @@ defineExpose({ show, hideModal })
                 id="sodar-ss-col-toggle-save-btn"
                 title="Save current configuration as default for all project
                        members"
-                @click="saveDefaultConfig">
+                @click="saveDefaultConfig"
+                :disabled="!colsUpdated">
               <i class="iconify" data-icon="mdi:content-save"></i>
             </BButton>
             <BFormInput

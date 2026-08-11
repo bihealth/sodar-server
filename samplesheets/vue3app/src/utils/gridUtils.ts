@@ -132,7 +132,8 @@ export function getStudyShortcutHeaderGroup (
 export function getAssayIrodsHeaderGroup (
     sodarContext: SodarContext,
     assayContext: SodarContextAssay,
-    modalRef: TemplateRef
+    modalRef: TemplateRef,
+    notifyCb?: NotifyCb
 ): ColGroupDef {
   return {
     headerClass: ['text-white', 'bg-secondary', 'sodar-ss-data-links-top'],
@@ -151,7 +152,8 @@ export function getAssayIrodsHeaderGroup (
           irodsStatus: sodarContext.irods_status,
           irodsBackendEnabled: sodarContext.irods_backend_enabled,
           irodsWebdavUrl: sodarContext.irods_webdav_url,
-          modalRef: modalRef
+          modalRef: modalRef,
+          notifyCb: notifyCb,
         },
         editable: false,
         field: 'irodsLinks',
@@ -655,7 +657,10 @@ export function buildColDef (
     if (params.sodarContext.irods_status &&
         assayContext?.display_row_links) {
       colDef.push(getAssayIrodsHeaderGroup(
-        params.sodarContext, assayContext, params.irodsDirModal))
+        params.sodarContext,
+        assayContext,
+        params.irodsDirModal,
+        params.notifyCb))
     }
   }
   // Row editing column

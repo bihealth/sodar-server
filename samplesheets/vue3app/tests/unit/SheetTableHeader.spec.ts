@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from 'vitest'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { config, mount, type VueWrapper } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
@@ -20,6 +20,8 @@ import {
   STUDY_UUID
 } from '../testConstants.ts'
 
+// Test Data -------------------------------------------------------------------
+
 const studyProps: SheetTableHeaderProps = {
   assayMode: false,
   tableUuid: STUDY_UUID
@@ -30,17 +32,24 @@ const assayProps: SheetTableHeaderProps = {
 }
 const statsBadgeClass = 'mock-irods-stats-badge'
 
+// Global Setup ----------------------------------------------------------------
+
 config.global.plugins = [createBootstrap()]
 config.global.stubs = {
   IrodsStatsBadge: { template: '<span class="' + statsBadgeClass + '" />'}
 }
 
+// Tests -----------------------------------------------------------------------
+
 describe('SheetTableHeader.vue', () => {
   function mountComponent (propVals: SheetTableHeaderProps): VueWrapper {
-    // props = copy(propVals)
-    return mount(SheetTableHeader, { props: copy(propVals) })
+    const props = copy(propVals) as SheetTableHeaderProps
+    props.notifyCb = vi.fn()
+    return mount(SheetTableHeader, { props: props })
   }
+
   beforeEach(() => {
+    vi.resetAllMocks()
     setActivePinia(createPinia())
     const appStore = useAppStore()
     appStore.currentStudyUuid = STUDY_UUID

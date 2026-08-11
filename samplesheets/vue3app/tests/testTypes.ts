@@ -1,5 +1,10 @@
+import { type TemplateRef } from 'vue'
 import { type Mock } from 'vitest'
-import { type SodarContextAssay, type SodarContextStudy } from '@/types.ts'
+import {
+  type NotifyCb,
+  type SodarContextAssay,
+  type SodarContextStudy
+} from '@/types.ts'
 
 export interface IrodsButtonsProps {
   editMode: boolean
@@ -10,6 +15,7 @@ export interface IrodsButtonsProps {
   irodsPath: string
   irodsStatus: boolean
   irodsWebdavUrl: string
+  notifyCb?: NotifyCb
   showFileList: boolean
 }
 
@@ -26,11 +32,20 @@ export interface IrodsStatsResponseBody {
 
 export interface SheetTableHeaderProps {
   assayMode: boolean
+  notifyCb?: NotifyCb
+  tableUuid: string
+}
+
+export interface SheetTableProps {
+  assayMode: boolean,
+  colToggleModalRef: TemplateRef,
+  notifyCb?: NotifyCb,
   tableUuid: string
 }
 
 export interface TableDetailListProps {
   assayMode: boolean
+  notifyCb?: NotifyCb
   tableContext: SodarContextAssay | SodarContextStudy
   tableMetaFields: Array<Array<string>>
   tableSodarFields: Array<Array<string>>
@@ -42,6 +57,7 @@ export interface TableDetailListRowProps {
   icon: string
   iconClass: string
   legend: string
+  notifyCb?: NotifyCb
   rowClass: string
   title: string
   value: string

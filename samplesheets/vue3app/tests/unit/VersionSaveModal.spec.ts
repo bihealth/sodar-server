@@ -109,6 +109,8 @@ describe('VersionSaveModal.vue', () => {
   })
 
   test('handle save failure', async () => {
+    // Suppress logging as error message is expected
+    vi.spyOn(console, 'error').mockImplementation(() => undefined)
     const editStore = useEditStore()
     fetchDetail = 'error'
     fetchStatus = 500

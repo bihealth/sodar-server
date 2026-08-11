@@ -15,17 +15,14 @@ import {
 } from '@/types.ts'
 import { ROW_INS_MSG_DISABLED } from '@/constants.ts'
 
+import { type SheetTableProps } from '../testTypes.ts'
 import { copy, setUpTableStore } from '../testUtils.ts'
 import { sodarContext } from '../data/sodarContext.ts'
 import studyTables from '../data/studyTables.json'
 import studyShortcutsGermline from '../data/studyShortcutsGermline.json'
 import { ASSAY_UUID, STUDY_PLUGIN_NAME, STUDY_UUID } from '../testConstants.ts'
 
-interface SheetTableProps {
-  assayMode: boolean,
-  colToggleModalRef: TemplateRef,
-  tableUuid: string
-}
+// Test Data -------------------------------------------------------------------
 
 // Expected values for default table
 const exTopHeaderStudy = [
@@ -58,10 +55,14 @@ const assayGridSel = '#sodar-ss-table-grid-assay-' + ASSAY_UUID
 const rowBtnSel = '.sodar-ss-row-insert-btn'
 const excelBtnSel = '.sodar-ss-excel-export-btn'
 
-// Global setup
+// Global Setup ----------------------------------------------------------------
 
 ModuleRegistry.registerModules([AllCommunityModule])
 // TODO: How to expose renderers globally for ag-grid? (see warnings)
+
+const mockNotifyCb = vi.fn()
+
+// Tests -----------------------------------------------------------------------
 
 describe('SheetTable.vue', () => {
   function mountComponent (tableUuid: string, assayMode: boolean): VueWrapper {
@@ -69,6 +70,7 @@ describe('SheetTable.vue', () => {
     props = {
       assayMode: assayMode,
       colToggleModalRef: mockModal as unknown as TemplateRef,
+      notifyCb: mockNotifyCb,
       tableUuid: tableUuid
     }
     // NOTE: Testing with shallowMount() as there are issues with exposing
@@ -118,10 +120,10 @@ describe('SheetTable.vue', () => {
 
   test('open column toggle modal on button click', async () => {
     const wrapper = mountComponent(STUDY_UUID, false)
-    expect(mockModal.show).not.toBeCalled()
+    expect(mockModal.show).not.toHaveBeenCalled()
     const btn = wrapper.find('.sodar-ss-column-toggle-btn')
     await btn.trigger('click')
-    expect(mockModal.show).toBeCalled()
+    expect(mockModal.show).toHaveBeenCalled()
   })
 
   test('render study grid top header', async () => {

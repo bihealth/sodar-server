@@ -133,6 +133,10 @@ export const EDIT_REGEX: { [key: string]: RegExp } = {
   name:           /^([A-Za-z0-9-_/]*)$/
 }
 
+// Browse mode text labels
+export const COPY_MSG_SUFFIX = ' copied into clipboard'
+export const IRODS_PATH_COPY_MSG = 'iRODS path copied into clipboard'
+
 // Edit mode text labels
 export const CELL_NODE_NAME_NEW = 'Enter name of new or existing node'
 export const CELL_NODE_NAME_RENAME = 'Rename node'

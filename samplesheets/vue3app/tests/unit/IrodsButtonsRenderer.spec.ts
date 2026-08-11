@@ -1,5 +1,5 @@
 import { type TemplateRef } from 'vue'
-import { beforeEach, describe, expect, test } from 'vitest'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { config, mount, type VueWrapper } from '@vue/test-utils'
 import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
 
@@ -8,11 +8,14 @@ import {
   type AssayIrodsPath,
   type IrodsButtonsRendererParams
 } from '@/types.ts'
+import { IRODS_PATH_COPY_MSG, VARIANT_INFO } from '@/constants.ts'
+
 import { copy } from '../testUtils.ts'
 import { ASSAY_PATH, ASSAY_PATH_PREFIX } from '../testConstants.ts'
 
-const collName: string = '0814-N1-DNA1-WGS1'
+// Test Data -------------------------------------------------------------------
 
+const collName: string = '0814-N1-DNA1-WGS1'
 const defaultParams: IrodsButtonsRendererParams = {
   assayIrodsPath: ASSAY_PATH,
   irodsBackendEnabled: true,
@@ -23,14 +26,27 @@ const defaultParams: IrodsButtonsRendererParams = {
 }
 let params: IrodsButtonsRendererParams
 
+// Global Setup ----------------------------------------------------------------
+
 config.global.plugins = [createBootstrap()]
+
+// Mock clipboard (NOTE: has to be done in module root)
+const mockCopy = vi.fn()
+vi.mock('@vueuse/core', async () => {
+  const actual = await vi.importActual('@vueuse/core')
+  return { ...actual, useClipboard: () => ({ copy: mockCopy }) }
+})
+
+// Tests -----------------------------------------------------------------------
 
 describe('IrodsButtonsRenderer.vue', () => {
   function mountComponent (): VueWrapper {
     return mount(IrodsButtonsRenderer, { props: { params: params } })
   }
+
   beforeEach(() => {
     params = copy(defaultParams) as IrodsButtonsRendererParams
+    params.notifyCb = vi.fn()
   })
 
   test('render component with default params', async () => {
@@ -87,5 +103,13 @@ describe('IrodsButtonsRenderer.vue', () => {
     }
   })
 
-  // TODO: Test with edit mode once supported
+  test('copy iRODS path to clipboard on button click', async () => {
+    const wrapper = mountComponent()
+    await wrapper.find('.sodar-ss-irods-copy-btn').trigger('click')
+    expect(mockCopy).toHaveBeenCalledWith(params.value!.path)
+    expect(params.notifyCb).toHaveBeenCalledWith(
+      IRODS_PATH_COPY_MSG, VARIANT_INFO)
+  })
+
+  // TODO: Test with edit mode
 })

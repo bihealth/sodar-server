@@ -690,7 +690,6 @@ export function updateCells (
     verify: boolean,
     notifyCb: NotifyCb | undefined
 ) {
-  // const { create } = useToast()
   const appStore = useAppStore()
   const editStore = useEditStore()
   const tableStore = useTableStore()

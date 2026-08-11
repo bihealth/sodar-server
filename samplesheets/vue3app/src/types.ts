@@ -394,6 +394,7 @@ export interface IrodsButtonsRendererParams {
   irodsStatus: boolean
   irodsWebdavUrl: string
   modalRef: TemplateRef
+  notifyCb?: NotifyCb
   value: AssayIrodsPath | null
 }
 

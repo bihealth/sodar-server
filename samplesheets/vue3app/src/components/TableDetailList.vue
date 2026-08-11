@@ -3,6 +3,7 @@ import TableDetailListRow from '@/components/TableDetailListRow.vue'
 
 const props = defineProps([
     'assayMode',
+    'notifyCb',
     'tableUuid',
     'tableContext',
     'tableMetaFields',
@@ -55,6 +56,7 @@ function getMetaIconClass (): string {
         icon="mdi:code-braces"
         icon-class="text-secondary"
         :copy-button="true"
+        :notify-cb="props.notifyCb"
         title="SODAR metadata"
         row-class="sodar-ss-table-detail-row-sodar sodar-ss-table-detail-uuid">
     </TableDetailListRow>

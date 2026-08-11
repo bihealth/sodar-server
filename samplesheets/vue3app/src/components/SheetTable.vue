@@ -19,7 +19,12 @@ import { ROW_INS_MSG_DISABLED } from '@/constants.ts'
 const appStore = useAppStore()
 const editStore = useEditStore()
 const tableStore = useTableStore()
-const props = defineProps(['assayMode', 'colToggleModalRef', 'tableUuid'])
+const props = defineProps([
+  'assayMode',
+  'colToggleModalRef',
+  'notifyCb',
+  'tableUuid',
+])
 
 // Refs ------------------------------------------------------------------------
 
@@ -115,8 +120,8 @@ function onRowInsert () {
                 class="sodar-ss-table-header-btn sodar-ss-column-toggle-btn"
                 variant="secondary"
                 :title="'Toggle ' + tableType + ' column visibility'"
-                @click="props.colToggleModalRef.show(
-                          props.tableUuid, props.assayMode)">
+                @click="colToggleModalRef.show(
+                        tableUuid, assayMode, notifyCb)">
               <i class="iconify" data-icon="mdi:eye"></i>
             </BButton>
             <BButton

@@ -25,9 +25,16 @@ import { sodarContext } from '../data/sodarContext.ts'
 import studyTables from '../data/studyTables.json'
 import { ASSAY_UUID, STUDY_UUID } from '../testConstants.ts'
 
-config.global.plugins = [createBootstrap()]
+// Test Data -------------------------------------------------------------------
 
 let fieldVisible: boolean
+const mockNotifyCb = vi.fn()
+
+// Global Setup ----------------------------------------------------------------
+
+config.global.plugins = [createBootstrap()]
+
+// Tests -----------------------------------------------------------------------
 
 describe('ColumnToggleModal.vue', () => {
   async function showModal (
@@ -35,7 +42,7 @@ describe('ColumnToggleModal.vue', () => {
       assayMode: boolean
   ): Promise<VueWrapper> {
     const wrapper = mount(ColumnToggleModal)
-    wrapper.vm.show(studyUuid, assayMode)
+    wrapper.vm.show(studyUuid, assayMode, mockNotifyCb)
     await nextTick() // Must wait for all reactive vals to update
     return wrapper
   }
@@ -47,11 +54,12 @@ describe('ColumnToggleModal.vue', () => {
   }
 
   beforeEach(() => {
+    vi.clearAllMocks()
+
+    // Set up stores
     setActivePinia(createPinia())
     const appStore = useAppStore()
     const tableStore = useTableStore()
-
-    // Set up stores
     appStore.currentStudyUuid = STUDY_UUID
     appStore.editMode = false
     appStore.sodarContext = copy(sodarContext) as SodarContext

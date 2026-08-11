@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { BButton, useToast } from 'bootstrap-vue-next'
+import { BButton } from 'bootstrap-vue-next'
 import { useClipboard } from '@vueuse/core'
-import { TOAST_INTERVAL_DEFAULT } from '@/constants.ts'
+import { IRODS_PATH_COPY_MSG, VARIANT_INFO } from '@/constants.ts'
 
 const props = defineProps([
   'editMode',
@@ -12,9 +12,9 @@ const props = defineProps([
   'irodsWebdavUrl',
   'irodsPath',
   'irodsStatus',
-  'showFileList'
+  'notifyCb',
+  'showFileList',
 ])
-const { create } = useToast()
 const clipboard = useClipboard()
 
 function getEnabledState (): boolean {
@@ -24,11 +24,7 @@ function getEnabledState (): boolean {
 // Copy path and display notification toast
 function copyPath () {
   clipboard.copy(props.irodsPath)
-  create({
-    body: 'iRODS path copied into clipboard',
-    variant: 'info',
-    modelValue: TOAST_INTERVAL_DEFAULT
-  })
+  if (props.notifyCb) props.notifyCb(IRODS_PATH_COPY_MSG, VARIANT_INFO)
 }
 </script>
 

@@ -3,6 +3,8 @@ import { config, mount, type VueWrapper } from '@vue/test-utils'
 import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
 
 import TableDetailListRow from '@/components/TableDetailListRow.vue'
+import { COPY_MSG_SUFFIX, VARIANT_INFO } from '@/constants.ts'
+
 import { copy } from '../testUtils.ts'
 import { type TableDetailListRowProps } from '../testTypes.ts'
 
@@ -30,13 +32,6 @@ vi.mock('@vueuse/core', async () => {
   return { ...actual, useClipboard: () => ({ copy: mockCopy }) }
 })
 
-// Replace useToast with mock
-// TODO: Remove once the component is updated to use NotifyCb
-vi.mock('bootstrap-vue-next', async () => {
-  const actual = await vi.importActual('bootstrap-vue-next')
-  return { ...actual, useToast: () => ({ create: vi.fn(), show: vi.fn() }) }
-})
-
 // Tests -----------------------------------------------------------------------
 
 describe('TableDetailListRow.vue', () => {
@@ -46,6 +41,7 @@ describe('TableDetailListRow.vue', () => {
   beforeEach(() => {
     vi.resetAllMocks()
     props = copy(defaultProps) as TableDetailListRowProps
+    props.notifyCb = vi.fn()
   })
 
   test('render component with default properties', async () => {
@@ -77,9 +73,14 @@ describe('TableDetailListRow.vue', () => {
 
   test('copy value into clipboard', async () => {
     expect(mockCopy).not.toHaveBeenCalled()
+    expect(props.notifyCb).not.toHaveBeenCalled()
     props.copyButton = true
+
     const wrapper = mountComponent()
     await wrapper.find('.sodar-ss-clip-copy-btn').trigger('click')
+
     expect(mockCopy).toHaveBeenCalledWith(props.value)
+    expect(props.notifyCb).toHaveBeenCalledWith(
+      'Example legend' + COPY_MSG_SUFFIX, VARIANT_INFO)
   })
 })

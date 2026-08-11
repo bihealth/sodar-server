@@ -25,6 +25,7 @@ function getEnabledState (params: IrodsButtonsRendererParams) {
       :irods-path="getIrodsPath(params as IrodsButtonsRendererParams)"
       :irods-status="params?.irodsStatus"
       :irods-webdav-url="params?.irodsWebdavUrl"
+      :notify-cb="params?.notifyCb"
       :show-file-list="true">
   </IrodsButtons>
 </template>

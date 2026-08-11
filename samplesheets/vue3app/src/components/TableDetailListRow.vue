@@ -1,28 +1,24 @@
 <script setup lang="ts">
-import { BButton, useToast } from 'bootstrap-vue-next'
+import { BButton } from 'bootstrap-vue-next'
 import { useClipboard } from '@vueuse/core'
-import { TOAST_INTERVAL_DEFAULT } from '@/constants.ts'
+import { COPY_MSG_SUFFIX, VARIANT_INFO } from '@/constants.ts'
 
-defineProps([
+const props = defineProps([
   'legend',
   'value',
   'icon',
   'iconClass',
+  'notifyCb',
   'title',
   'rowClass',
   'copyButton'
 ])
-const { create } = useToast()
 const clipboard = useClipboard()
 
 // Copy value to clipboard and display toast
 function onCopy (legend: string, value: string) {
   clipboard.copy(value)
-  create({
-    body: legend + ' copied into clipboard',
-    variant: 'info',
-    modelValue: TOAST_INTERVAL_DEFAULT
-  })
+  if (props.notifyCb) props.notifyCb(legend + COPY_MSG_SUFFIX, VARIANT_INFO)
 }
 </script>
 
