@@ -258,7 +258,7 @@ class TaskflowAPI:
             if not coordinator:
                 cls._raise_lock_exception(COORDINATOR_EX_MSG, tl_event, zone)
             else:
-                lock_id = str(project.sodar_uuid).encode()
+                lock_id = str(project.sodar_uuid)
                 lock = coordinator.get_lock(lock_id)
                 try:
                     lock_api.acquire(lock)
@@ -392,6 +392,6 @@ class TaskflowAPI:
         """
         # NOTE: We query redis directly to allow having to call acquire()
         # NOTE: Yes, this is how tooz encodes the lock IDs (see #2144)
-        lock_db_id = f"b'_tooz'_{project.sodar_uuid}_lock".encode()
+        lock_db_id = f'_tooz_{project.sodar_uuid}_lock'.encode()
         redis_conn = redis.from_url(settings.REDIS_URL, decode_responses=True)
         return redis_conn.get(lock_db_id) is not None
