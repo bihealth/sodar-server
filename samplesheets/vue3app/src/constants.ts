@@ -1,8 +1,10 @@
 /* General constants */
 
 // URLs
+export const URL_EDIT_FINISH_PREFIX = '/samplesheets/ajax/edit/finish/'
 export const URL_ROW_DEL_PREFIX = '/samplesheets/ajax/edit/row/delete/'
 export const URL_ROW_INS_PREFIX = '/samplesheets/ajax/edit/row/insert/'
+export const URL_VERSION_SAVE_PREFIX = '/samplesheets/ajax/version/save/'
 
 // Standard Ajax data
 export const AJAX_RES_OK = 'ok'
@@ -128,6 +130,10 @@ export const EDIT_REGEX: { [key: string]: RegExp } = {
 // Edit mode text labels
 export const CELL_NODE_NAME_NEW = 'Enter name of new or existing node'
 export const CELL_NODE_NAME_RENAME = 'Rename node'
+export const EDIT_MSG_FINISH = 'Finished editing'
+export const EDIT_MSG_SAVE = 'Sheet version saved'
+export const EDIT_MSG_SAVE_ERR_PREFIX = 'Error saving version: '
+export const EDIT_MSG_SAVE_FAIL_PREFIX = 'Saving version failed: '
 export const NODE_RENAME_MSG = 'A node with the same name already exists in ' +
   'this column. Renaming will replace all values in the fields of the ' +
   'material or process. Proceed?'

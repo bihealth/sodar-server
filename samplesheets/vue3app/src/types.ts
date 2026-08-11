@@ -709,6 +709,6 @@ export interface NotifyCb {
   (
     body: string,
     variant: keyof BaseColorVariant,
-    interval: number | undefined | null
+    interval?: number
   ): void
 }

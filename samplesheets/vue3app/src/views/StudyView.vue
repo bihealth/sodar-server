@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { nextTick, onMounted, useTemplateRef, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { useToast, type BaseColorVariant } from 'bootstrap-vue-next'
+import { useToast } from 'bootstrap-vue-next'
 
 import AssayShortcutCard from '@/components/AssayShortcutCard.vue'
 import ColumnConfigModal from '@/components/modals/ColumnConfigModal.vue'
@@ -28,6 +28,7 @@ import {
   buildRowData,
   initGridOptions
 } from '@/utils/gridUtils.ts'
+import { getNotifyCb } from '@/utils/notifyCb.ts'
 import {
   type AssayRenderTable,
   type AssayShortcuts,
@@ -37,7 +38,6 @@ import {
   type StudyEditConfig,
   type StudyEditContext
 } from '@/types.ts'
-import { TOAST_INTERVAL } from '@/constants.ts'
 
 // Set up route
 const route = useRoute()
@@ -83,19 +83,6 @@ async function scrollToCurrentTable () {
   }
 }
 
-function showToast (
-    body: string,
-    variant: keyof BaseColorVariant,
-    interval: number | undefined | null
-) {
-  if (!interval || interval === 0) interval = TOAST_INTERVAL
-  create({
-    body: body,
-    variant: variant,
-    modelValue: interval
-  })
-}
-
 /* Study building ----------------------------------------------------------- */
 
 function buildStudy (data: RenderTableData) {
@@ -127,7 +114,7 @@ function buildStudy (data: RenderTableData) {
   const colDefBuildParams: ColDefBuildParams = {
     editMode: appStore.editMode,
     irodsDirModal: irodsDirCompRef,
-    notifyCb: showToast,
+    notifyCb: getNotifyCb(create), // showToast,
     sampleColId: tableStore.sampleColId,
     sodarContext: appStore.sodarContext as SodarContext,
     studyEditConfig: tableStore.studyEditConfig,

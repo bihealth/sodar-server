@@ -374,7 +374,7 @@ describe('saveRow()', () => {
     global.fetch = vi.fn(() => Promise.resolve({
         json: () => Promise.resolve({ detail: 'error' }
       ), status: 500} as Response))
-    // Disable logging as error message is expected
+    // Suppress logging as error message is expected
     vi.spyOn(console, 'error').mockImplementation(() => undefined)
 
     expect(fetch).not.toHaveBeenCalled()

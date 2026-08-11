@@ -319,7 +319,7 @@ describe('RowEditRenderer.vue', () => {
   })
 
   test('save with identical existing row', async () => {
-    // Disable logging as error message is expected
+    // Suppress logging as error message is expected
     vi.spyOn(console, 'error').mockImplementation(() => undefined)
 
     const otherRowNode = {

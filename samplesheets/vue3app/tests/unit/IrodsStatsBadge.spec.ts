@@ -50,7 +50,7 @@ describe('IrodsStatsBadge.vue', () => {
   })
 
   test('display error message', async () => {
-    // Disable logging as error message is expected
+    // Suppress logging as error message is expected
     vi.spyOn(console, 'error').mockImplementation(() => undefined)
     mockFetch(403, statusTextError, {})
     const wrapper = mountComponent()

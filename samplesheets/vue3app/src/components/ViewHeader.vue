@@ -1,21 +1,34 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { BButton, BNav, BDropdown, BDropdownItem } from 'bootstrap-vue-next'
+import {
+  BButton,
+  BNav,
+  BDropdown,
+  BDropdownItem,
+  useToast,
+} from 'bootstrap-vue-next'
 
+import VersionSaveModal from '@/components/modals/VersionSaveModal.vue'
 import WinExportModal from '@/components/modals/WinExportModal.vue'
 import { useAppStore } from '@/stores/appStore.ts'
 import { useEditStore } from '@/stores/editStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
+import { getNotifyCb } from '@/utils/notifyCb.ts'
 import {
+  AJAX_RES_OK,
   EDIT_BADGE_DEFAULT_LABEL,
   EDIT_BADGE_SAVED_LABEL,
   EDIT_BADGE_UNSAVED_LABEL,
   EDIT_MODE_EXIT_MSG,
   EDIT_MODE_SAVE_MSG,
   EDIT_MODE_UNSAVED_MSG,
+  EDIT_MSG_FINISH,
+  EDIT_MSG_SAVE_ERR_PREFIX,
+  EDIT_MSG_SAVE_FAIL_PREFIX,
   STUDY_NAV_DROPDOWN_LEN,
-  STUDY_NAV_TAB_LEN
+  STUDY_NAV_TAB_LEN,
+  URL_EDIT_FINISH_PREFIX,
 } from '@/constants.ts'
 
 const route = useRoute()
@@ -24,6 +37,13 @@ const appStore = useAppStore()
 const editStore = useEditStore()
 const tableStore = useTableStore()
 
+// Init toasts and notify callback
+// NOTE: This component is outside StudyView and we can't init this in App.vue
+//       outside BApp, hence local init is necessary
+const { create } = useToast()
+const notifyCb = getNotifyCb(create)
+
+const versionSaveCompRef = ref<typeof VersionSaveModal | null>(null)
 const winExportCompRef = ref<typeof WinExportModal | null>(null)
 
 // TODO: Move to common utils?
@@ -88,8 +108,47 @@ function toggleEditMode () {
       handleStudyNavigation(appStore.currentStudyUuid, null)
     }
   } else { // Browsing mode
-    // TODO: Call finish editing handler once implemented
+    // Call finish update on server
+    const url = URL_EDIT_FINISH_PREFIX + appStore.projectUuid
+    fetch(url, {
+      method: 'POST',
+      body: JSON.stringify({
+        updated: editStore.editDataUpdated,
+        version_saved: editStore.versionSaved,
+      }),
+      credentials: 'same-origin',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'X-CSRFToken': appStore.sodarContext!.csrf_token
+      }
+    }).then(data => data.json())
+      .then(data => {
+        if (data.detail === AJAX_RES_OK) {
+          create(
+            { body: EDIT_MSG_FINISH, variant: 'success', modelValue: 1000 })
+        } else {
+          const msg = EDIT_MSG_SAVE_FAIL_PREFIX + data.detail
+          console.error(msg)
+          create({ body: msg, variant: 'danger', modelValue: 2000 })
+        }
+      }).catch(function (e) {
+        const msg = EDIT_MSG_SAVE_ERR_PREFIX + e
+        console.error(msg)
+        create({ body: msg, variant: 'danger', modelValue: 2000 })
+    })
+
+    // Reset editStore
+    editStore.editContext = null
+    editStore.editDataUpdated = false
+    editStore.editStudyData = false
+    editStore.unsavedData = false
+    editStore.unsavedRow = null
+    editStore.updatingRow = false
+    editStore.versionSaved = false
+
     // TODO: Update selectEnabled
+    // Navigate to current study
     if (appStore.currentStudyUuid) {
       handleStudyNavigation(
         appStore.currentStudyUuid, appStore.currentAssayUuid)
@@ -211,7 +270,17 @@ function getFinishEditTitle () {
           <i class="iconify" data-icon="mdi:sitemap"></i> Overview
         </BDropdownItem>
       </BDropdown>
-      <!-- TODO: Add save version button -->
+      <!-- Save version button -->
+      <BButton
+          v-if="appStore.editMode"
+          id="sodar-ss-btn-version-save"
+          variant="primary"
+          class="mr-1"
+          title="Save current sheet version as backup"
+          :disabled="editStore.versionSaved"
+          @click="versionSaveCompRef!.show(notifyCb)">
+        <i class="iconify" data-icon="mdi:content-save-all"></i>
+      </BButton>
       <!-- Operations dropdown -->
       <BDropdown
           v-if="!appStore.editMode"
@@ -388,10 +457,14 @@ function getFinishEditTitle () {
       ref="winExportCompRef"
       :project-uuid="appStore.projectUuid">
   </WinExportModal>
+  <VersionSaveModal
+      id="sodar-ss-version-save-modal-component"
+      ref="versionSaveCompRef">
+  </VersionSaveModal>
 </template>
 
 <style scoped>
-/* NOTE: See vue3app.css for further modifications */
+/* NOTE: See main.css for further modifications */
 /* Subtitle container elements behave differenly on Bootstrap v5 */
 div.sodar-subtitle-container {
   background-color: #fff !important;

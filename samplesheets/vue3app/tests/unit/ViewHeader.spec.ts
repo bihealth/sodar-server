@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, test } from 'vitest'
-import { mount, type VueWrapper } from '@vue/test-utils'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import { createRouter, createWebHashHistory, type Router } from 'vue-router'
 import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
@@ -9,6 +9,7 @@ import { useAppStore } from '@/stores/appStore.ts'
 import { useEditStore } from '@/stores/editStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
 import { routes } from '@/router/index.ts'
+import { type SodarContext } from '@/types.ts'
 import {
   EDIT_BADGE_DEFAULT_LABEL,
   EDIT_BADGE_SAVED_LABEL,
@@ -16,16 +17,32 @@ import {
   EDIT_MODE_EXIT_MSG,
   EDIT_MODE_SAVE_MSG,
   EDIT_MODE_UNSAVED_MSG,
+  EDIT_MSG_FINISH,
+  EDIT_MSG_SAVE_FAIL_PREFIX,
   STUDY_NAV_DROPDOWN_LEN,
-  STUDY_NAV_TAB_LEN
+  STUDY_NAV_TAB_LEN,
+  URL_EDIT_FINISH_PREFIX
 } from '@/constants.ts'
-import { type SodarContext } from '@/types.ts'
 
 import { copy } from '../testUtils.ts'
 import { sodarContext } from '../data/sodarContext.ts'
 import { ASSAY_UUID, PROJECT_UUID, STUDY_UUID } from '../testConstants.ts'
 
+// Test Data -------------------------------------------------------------------
+
+const finishUrl = URL_EDIT_FINISH_PREFIX + PROJECT_UUID
 let router: Router
+
+// Global Setup ----------------------------------------------------------------
+
+// Replace useToast with mock
+const mockCreate = vi.fn()
+vi.mock('bootstrap-vue-next', async () => {
+  const actual = await vi.importActual('bootstrap-vue-next')
+  return { ...actual, useToast: () => ({ create: mockCreate, show: vi.fn() }) }
+})
+
+// Tests -----------------------------------------------------------------------
 
 describe('ViewHeader.vue', () => {
   function expectDropdownItems (
@@ -39,12 +56,21 @@ describe('ViewHeader.vue', () => {
     }
   }
 
+  function mockFetch (detail?: string, status?: number) {
+    if (!detail) detail = 'ok'
+    if (!status) status = 200
+    global.fetch = vi.fn(() => Promise.resolve({
+      json: () => Promise.resolve({ detail: detail }), status: status} as Response)
+    )
+  }
+
   function mountComponent (): VueWrapper {
     return mount(ViewHeader, {
       global: {plugins: [router, createBootstrap()]} })
   }
 
   beforeEach(async () => {
+    vi.resetAllMocks()
     // Setup router
     // NOTE: Router must be initialized before setting up stores
     router = createRouter({history: createWebHashHistory(), routes: routes})
@@ -278,6 +304,37 @@ describe('ViewHeader.vue', () => {
     expect(appStore.overviewActive).toBe(false)
   })
 
+  test('hide save version button in edit mode', async () => {
+    const appStore = useAppStore()
+    expect(appStore.editMode).toBe(false)
+    const wrapper = mountComponent()
+    expect(wrapper.find('#sodar-ss-btn-version-save').exists()).toBe(false)
+  })
+
+  test('display save version button in edit mode', async () => {
+    const appStore = useAppStore()
+    appStore.editMode = true
+    const editStore = useEditStore()
+    expect(editStore.versionSaved).toBe(true)
+    const wrapper = mountComponent()
+    // Button should be disabled
+    expect(wrapper.find(
+      '#sodar-ss-btn-version-save').attributes().disabled).toBeDefined()
+  })
+
+  test('display save version button with versionSaved=false', async () => {
+    const appStore = useAppStore()
+    appStore.editMode = true
+    const editStore = useEditStore()
+    editStore.versionSaved = false
+    const wrapper = mountComponent()
+    // Button should be enabled
+    expect(wrapper.find(
+      '#sodar-ss-btn-version-save').attributes().disabled).not.toBeDefined()
+  })
+
+  // TODO: Test version save modal opening
+
   test('render ops dropdown with default settings', async () => {
     const wrapper = mountComponent()
     const dropdown = wrapper.find('#sodar-ss-op-dropdown')
@@ -508,7 +565,7 @@ describe('ViewHeader.vue', () => {
     const appStore = useAppStore()
     appStore.editMode = true
     const editStore = useEditStore()
-    expect(editStore.versionSaved).toBe(false)
+    editStore.versionSaved = false
     editStore.editDataUpdated = true
     const wrapper = mountComponent()
     expect(wrapper.find('#sodar-ss-op-dropdown').exists()).toBe(false)
@@ -550,13 +607,59 @@ describe('ViewHeader.vue', () => {
     expect(appStore.overviewActive).toBe(false)
   })
 
-  test('disable edit mode from finish edit button',  async () => {
+  test('disable edit mode with finish edit button click',  async () => {
     const appStore = useAppStore()
+    const editStore = useEditStore()
     appStore.editMode = true
+    editStore.editDataUpdated = true
+
+    mockFetch()
     const wrapper = mountComponent()
+    expect(fetch).not.toHaveBeenCalled()
     await wrapper.find('#sodar-ss-btn-edit-finish').trigger('click')
+    await flushPromises()
+
     expect(appStore.editMode).toBe(false)
+    expect(editStore.editContext).toBe(null)
+    expect(editStore.editDataUpdated).toBe(false)
+    expect(editStore.editStudyData).toBe(false)
+    expect(editStore.unsavedData).toBe(false)
+    expect(editStore.unsavedRow).toBe(null)
+    expect(editStore.updatingRow).toBe(false)
+    expect(editStore.versionSaved).toBe(false)
+
+    expect(fetch).toHaveBeenCalledWith(
+      finishUrl,
+      expect.objectContaining({
+        body: JSON.stringify({
+          updated: true, version_saved: true
+        })
+      }))
+    expect(mockCreate).toHaveBeenCalledWith({
+      body: EDIT_MSG_FINISH, modelValue: 1000, variant: 'success'
+    })
   })
 
-  // TODO: Assert finish editing actions once implemented
+  test('disable edit mode with failed version save',  async () => {
+    // Suppress logging as error message is expected
+    vi.spyOn(console, 'error').mockImplementation(() => undefined)
+
+    const appStore = useAppStore()
+    const editStore = useEditStore()
+    appStore.editMode = true
+    editStore.editDataUpdated = true
+
+    mockFetch('error', 500)
+    const wrapper = mountComponent()
+    await wrapper.find('#sodar-ss-btn-edit-finish').trigger('click')
+    await flushPromises()
+
+    expect(appStore.editMode).toBe(false)
+    expect(fetch).toHaveBeenCalled()
+    expect(mockCreate).toHaveBeenCalledWith({
+      body: EDIT_MSG_SAVE_FAIL_PREFIX + 'error',
+      modelValue: 2000,
+      variant: 'danger',
+    })
+  })
 })
