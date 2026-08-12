@@ -346,7 +346,7 @@ class TestFixIrodsTickets(
                 TICKET_OBJECT_ACTION_COUNT.format(
                     action='Found', count=1, plural=''
                 ),
-                cm.output[5],
+                cm.output[3],
             )
 
     def test_fixirodstickets_null_study(self):
@@ -369,7 +369,7 @@ class TestFixIrodsTickets(
             )
             self.assertIn(
                 STUDY_IS_MISSING.format(ticket_string=NULL_STUDY_TICKET_STR),
-                cm.output[4],
+                cm.output[2],
             )
 
     def test_fixirodstickets_orphaned_study(self):
