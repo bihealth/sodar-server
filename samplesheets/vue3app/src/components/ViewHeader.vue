@@ -211,7 +211,6 @@ function getFinishEditTitle () {
     <div class="col d-flex justify-content-end"
          id="sodar-ss-subtitle-right">
       <!-- Edit mode badge -->
-      <!-- TODO: Implement editor help modal showing -->
       <div class="mr-1"
            id="sodar-ss-subtitle-badge-container">
       <span v-if="appStore.editMode"
