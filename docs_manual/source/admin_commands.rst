@@ -64,6 +64,9 @@ operations regarding sample sheets, landing zones, iRODS data and ontologies.
     Check for expected user access in all project sample data collections in
     iRODS and report discrepancies. Useful for validating expected access rights
     in case of e.g. manual admin user cleanup operations.
+``fixirodstickets``
+    Find iRODS tickets which lost their associated ``IrodsAccessTicket`` object
+    and recreate the missing database objects.
 ``importobo``
     Import OBO format ontology. See :ref:`admin_ontologyaccess`.
 ``importomimm``
