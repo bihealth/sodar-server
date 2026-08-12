@@ -135,28 +135,30 @@ class Command(BaseCommand):
             ticket_string = ticket[TicketQuery.Ticket.string]
             try:
                 IrodsAccessTicket.objects.get(ticket=ticket_string)
-                if not check:
-                    logger.info(
-                        'Found existing object for ticket {ticket_string}'
-                    )
             except IrodsAccessTicket.DoesNotExist:
                 ticket_fields = self._get_ticket_fields(
                     irods_backend, ticket, path
                 )
                 if not ticket_fields:
                     continue
-                obj = IrodsAccessTicket(
-                    ticket=ticket_string,
-                    path=path,
-                    user=default_admin,
-                    **ticket_fields,
-                )
                 orphaned_ticket_count += 1
-                if not check:
+                ticket_project = ticket_fields['study'].investigation.project
+                if check:
+                    logger.info(
+                        f'Found orhpaned ticket ({ticket_string}) '
+                        f'in {ticket_project.get_log_title()} '
+                    )
+                else:
+                    obj = IrodsAccessTicket(
+                        ticket=ticket_string,
+                        path=path,
+                        user=default_admin,
+                        **ticket_fields,
+                    )
                     obj.save()
                     logger.info(
                         f'Created database object for ticket {ticket_string} '
-                        f'in {obj.study.investigation.project.get_log_title()} '
+                        f'in {ticket_project.get_log_title()} '
                         f'(UUID={obj.sodar_uuid})'
                     )
         logger.info(

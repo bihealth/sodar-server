@@ -346,7 +346,7 @@ class TestFixIrodsTickets(
                 TICKET_OBJECT_ACTION_COUNT.format(
                     action='Found', count=1, plural=''
                 ),
-                cm.output[2],
+                cm.output[5],
             )
 
     def test_fixirodstickets_null_study(self):
