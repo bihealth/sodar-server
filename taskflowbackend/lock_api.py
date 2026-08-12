@@ -35,7 +35,7 @@ class ProjectLockAPI:
         msg = '{} {} for project {}'.format(
             'Unlock' if unlock else 'Lock',
             'FAILED' if failed else 'OK',
-            lock.name.split('_')[2],
+            str(lock.name).split('_')[2],
         )
         logger.error(msg) if failed else logger.info(msg)
 
