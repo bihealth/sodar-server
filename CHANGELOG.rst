@@ -19,6 +19,7 @@ Added
     - Vue3 app (#994, #2389, #2390, #2403, #2457, #2458, #2459)
     - Vite integration using ``django-vite`` (#994)
     - ``use_vue3_app`` app setting (#994)
+    - ``fixirodstickets`` management command (#2461)
 
 Changed
 -------
@@ -28,6 +29,7 @@ Changed
     - Upgrade to django-sodar-core v1.4.2 (#2317, #2334, #2358, #2375)
     - Upgrade to python-irodsclient v3.3.0 (#2253, #2471)
     - Upgrade to django-rest-knox v5.0 (#2334)
+    - Upgrade to tooz v9.0 (#2485)
     - Upgrade to irods-docker v4.3.5-1 in CI (#2472, #2482)
     - Upgrade to Sentry Javascript SDK v10.27 (#2357)
     - Upgrade general Python dependencies (#2317, #2334)
@@ -67,6 +69,9 @@ Fixed
     - ``SheetCellEditAjaxView._update_cell()`` uncaught exceptions (#2495)
     - ``SheetEditConfigUpdateAjaxView`` uncaught exceptions in cleanup (#2499)
     - ``SheetEditConfigUpdateAjaxView`` process name column type check fails (#2487)
+    - ``ColumnToggleModal`` incorrect save button size (#2379)
+- **Taskflowbackend**
+    - Maligned tooz lock IDs (#2144, #2485)
 
 Removed
 -------
