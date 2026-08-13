@@ -59,6 +59,7 @@ Fixed
 
 - **General**
     - ``Makefile`` missing ``default`` target (#2398)
+    - Base template top header visual artifacts on Firefox (#2507)
 - **Irodsbackend**
     - ``IrodsStatisticsAjaxView`` uncaught exceptions (#2501)
 - **Landingzones**
