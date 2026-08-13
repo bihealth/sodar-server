@@ -456,6 +456,8 @@ class IrodsAccessTicketListAPIView(
     """
     List iRODS access tickets for a project.
 
+    Results are ordered by time of creation from oldest to newest.
+
     Supports optional pagination for listing by providing the ``page`` query
     string. This will return results in the Django Rest Framework
     ``PageNumberPagination`` format.
@@ -710,6 +712,8 @@ class IrodsDataRequestListAPIView(
 ):
     """
     List the iRODS data requests for a project.
+
+    Results are ordered by time of creation from oldest to newest.
 
     If the requesting user is an owner, delegate or superuser, the view lists
     all requests with the status of ACTIVE or FAILED. If called as a
@@ -1087,6 +1091,8 @@ class ProjectIrodsFileListAPIView(
     """
     Return a list of files in the project sample data repository. Optionally
     also returns collections.
+
+    Results are ordered alphabetically by iRODS path.
 
     Supports optional pagination for listing by providing the ``page`` query
     string. This will return results in the Django Rest Framework

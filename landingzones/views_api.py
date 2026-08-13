@@ -145,6 +145,8 @@ class ZoneListAPIView(
     """
     List the landing zones in a project.
 
+    Results are ordered by time of creation from oldest to newest.
+
     If the user has rights to view all zones, every zone in the project will be
     listed. Otherwise only their own zones appear in the list. Also returns
     finished (meaning moved or deleted) zones if the "finished" parameter is
@@ -580,6 +582,8 @@ class ZoneIrodsFileListAPIView(
     """
     Return a list of files in a landing zone. Optionally also returns
     collections and MD5/SHA256 checksum files.
+
+    Results are ordered alphabetically by iRODS path.
 
     Supports optional pagination for listing by providing the ``page`` query
     string. This will return results in the Django Rest Framework

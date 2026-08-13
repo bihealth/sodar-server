@@ -46,6 +46,7 @@ Changed
     - Replace black and flake8 with ruff for linting and formatting (#2428)
     - Reformat Python code with ruff (#2428)
     - Update CI ordering of code checks and tests (#2434)
+    - Update REST API list view docs with result ordering (#2508)
 - **Landingzones**
     - Update ``resetzone`` and ``verifyzone`` arg help texts (#2368)
     - Disable ``ZoneCreateView`` assay dropdown with single assay (#2394, #2500)
