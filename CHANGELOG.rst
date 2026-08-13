@@ -62,6 +62,7 @@ Fixed
     - Base template top header visual artifacts on Firefox (#2507)
 - **Irodsbackend**
     - ``IrodsStatisticsAjaxView`` uncaught exceptions (#2501)
+    - iRODS path sorting with mixed case characters (#2509)
 - **Landingzones**
     - Unsupported ``assay`` field choice setup in ``LandingZoneForm`` (#2376)
 - **Samplesheets**

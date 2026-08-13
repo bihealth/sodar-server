@@ -806,7 +806,7 @@ class IrodsAPI:
                 q_idx = q_idx + q_len
         else:  # Single query
             ret += self._make_object_query(*q_args)
-        return sorted(ret, key=lambda x: x['path'])
+        return sorted(ret, key=lambda x: x['path'].lower())
 
     def get_objects(
         self,
@@ -861,7 +861,7 @@ class IrodsAPI:
             colls = self.get_colls_recursively(coll)
             for c in colls:
                 ret.append({'name': c.name, 'type': 'coll', 'path': c.path})
-            ret = sorted(ret, key=lambda x: x['path'])
+            ret = sorted(ret, key=lambda x: x['path'].lower())
             if offset:  # See #2159
                 ret = ret[offset:]
             if limit:
