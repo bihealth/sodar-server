@@ -81,6 +81,8 @@ Removed
     - ``Makefile`` ``demo`` target (#2435)
     - Black and flake8 dependencies (#2428)
     - Legacy flake8 and pycodestyle configuration (#2428)
+- **Samplesheets**
+    - Unused template tags (#2506)
 
 
 v1.2.9 (2026-04-29)
