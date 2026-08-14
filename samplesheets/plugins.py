@@ -433,13 +433,20 @@ class ProjectAppPlugin(
             item_types = [kwargs['type'].upper()]
         else:
             item_types = ['SOURCE', 'SAMPLE']
+        use_vue3 = app_settings.get(APP_NAME, 'use_vue3_app', user=user)
         materials = GenericMaterial.objects.find(
             search_terms, projects, kwargs, item_types=item_types
         )
+
         for m in materials:
             if not user.has_perm('samplesheets.view_sheet', m.get_project()):
                 continue
             project = m.get_project()
+            study_val = ''
+            study_url = ''
+            assays = []
+            assay_val = ''
+
             project_link = (
                 '<a href="{}" title="{}" data-toggle="tooltip" '
                 'data-placement="top">{}</a>'.format(
@@ -452,33 +459,28 @@ class ProjectAppPlugin(
                 )
             )
             if m.study:
-                study_value = m.study.get_name()
-                study_value_url = m.study.get_url()
-            else:
-                study_value = study_value_url = None
+                study_val = m.study.get_name()
+                study_url = m.study.get_url()
             if m.item_type == 'SAMPLE':
                 assays = m.get_sample_assays()
             elif m.assay:
                 assays = [m.assay]
-            else:
-                assays = []
             if assays:
-                assays_value = '<br/>\n'.join(
+                assay_val = '<br/>\n'.join(
                     '<div class="sodar-overflow-container">'
                     f'<a href="{assay.get_url()}">'
                     f'{assay.get_display_name()}'
-                    '</a>'
-                    '</div>'
+                    '</a></div>'
                     for assay in assays
                 )
-            else:
-                assays_value = None
+            if use_vue3:
+                url = f'{study_url}?filter={m.name}'
+            else:  # TODO: Remove this once legacy vueapp is removed (#2393)
+                url = f'{study_url}/filter/{m.name}'
+
             ret.append(
                 [
-                    PluginSearchResultCell(
-                        value=m.name,
-                        value_url=f'{m.study.get_url()}/filter/{m.name}',
-                    ),  # Name
+                    PluginSearchResultCell(value=m.name, value_url=url),  # Name
                     PluginSearchResultCell(
                         value=GENERIC_MATERIAL_TYPES[m.item_type],
                     ),  # Type
@@ -486,12 +488,9 @@ class ProjectAppPlugin(
                         value=project_link,
                     ),  # Project
                     PluginSearchResultCell(
-                        value=study_value,
-                        value_url=study_value_url,
+                        value=study_val, value_url=study_url
                     ),  # Study
-                    PluginSearchResultCell(
-                        value=assays_value,
-                    ),  # Assays
+                    PluginSearchResultCell(value=assay_val),  # Assays
                 ]
             )
         return ret
@@ -580,7 +579,7 @@ class ProjectAppPlugin(
                     '</div>'
                 )
             else:
-                assay_value = None
+                assay_value = ''
             ret.append(
                 [
                     PluginSearchResultCell(

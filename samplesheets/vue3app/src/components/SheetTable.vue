@@ -28,7 +28,7 @@ const props = defineProps([
 
 // Refs ------------------------------------------------------------------------
 
-const filterVal = ref<string>('')
+const filterVal = ref<string>(tableStore.initialFilter)
 const tableHeight = ref<number>(400)
 
 // Internal --------------------------------------------------------------------
@@ -75,11 +75,12 @@ function getControlColClass () {
   return appStore.editMode ? 'col-sm-4' : 'col-sm-3'
 }
 
-// Handle grid ready event to store grid API
+// Handle grid ready event to store grid API and update table
 function onGridReady (params: GridReadyEvent) {
   if (!props.assayMode) tableStore.gridApi.study = params.api
   else tableStore.gridApi.assays[props.tableUuid] = params.api
   gridApi = params.api
+  if (filterVal.value) onFilterUpdate() // Apply filter if initially set
 }
 
 // Update table filter

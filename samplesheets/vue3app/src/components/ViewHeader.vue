@@ -77,6 +77,7 @@ function handleStudyNavigation (studyUuid: string, assayUuid: string | null) {
       //       you have a better idea on how to handle this, PR:s are welcome :)
       appStore.gridsLoaded = false
       appStore.currentStudyUuid = studyUuid
+      tableStore.initialFilter = ''
     if (assayUuid) {
       router.push({
         name: 'assay',

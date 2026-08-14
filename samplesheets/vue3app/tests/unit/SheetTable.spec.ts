@@ -8,6 +8,7 @@ import SheetTable from '@/components/SheetTable.vue'
 import DataCellRenderer from '@/components/renderers/DataCellRenderer.vue'
 import { useAppStore } from '@/stores/appStore.ts'
 import { useEditStore } from '@/stores/editStore.ts'
+import { useTableStore } from '@/stores/tableStore.ts'
 import {
   type RenderTableData,
   type SodarContext,
@@ -100,7 +101,9 @@ describe('SheetTable.vue', () => {
       'export/excel/study/' + STUDY_UUID
     )
     expect(wrapper.find(rowBtnSel).exists()).toBe(false)
-    expect(wrapper.find('#sodar-ss-data-filter-study').exists()).toBe(true)
+    const filterInput = wrapper.find('#sodar-ss-data-filter-study')
+    expect(filterInput.exists()).toBe(true)
+    expect(filterInput.attributes().value).toBe('')
     expect(wrapper.find(studyGridSel).exists()).toBe(true)
   })
 
@@ -274,6 +277,14 @@ describe('SheetTable.vue', () => {
     expect(rowBtn.attributes().title).toBe(ROW_INS_MSG_DISABLED)
   })
 
-  // TODO: Test insertRow() call once implemented
+  test('display initial filter value', async () => {
+    const tableStore = useTableStore()
+    tableStore.initialFilter = '0814'
+    const wrapper = mountComponent(STUDY_UUID, false)
+    expect(wrapper.find(
+      '#sodar-ss-data-filter-study').attributes().value).toBe('0814')
+  })
+
+  // TODO: Test insertRow() call
   // TODO: Test render assay grid rows once expose issue is solved
 })

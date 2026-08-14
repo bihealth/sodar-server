@@ -19,6 +19,7 @@ export const useTableStore = defineStore('table', () => {
   const columnDefs = ref<SheetColumnDefs>({ study: [], assays: {} })
   const gridApi = ref<SheetGridApi>({ study: null, assays: {} })
   const gridOptions = ref<SheetGridOptions>({ study: {}, assays: {} })
+  const initialFilter = ref<string>('')
   const renderError = ref<string | null>(null)
   const rowData = ref<SheetRowData>({ study: [], assays: {} })
   const sampleColId = ref<string>('')
@@ -63,6 +64,7 @@ export const useTableStore = defineStore('table', () => {
     columnDefs,
     gridApi,
     gridOptions,
+    initialFilter,
     renderError,
     rowData,
     sampleColId,

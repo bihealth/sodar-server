@@ -166,9 +166,13 @@ function getStudy (studyUuid: string, editMode: boolean) {
   // Clear existing data
   appStore.gridsBusy = true
   appStore.gridsLoaded = false
-  tableStore.$reset()
+  tableStore.$reset() // TODO: $reset() might not work here, see #2511
   editStore.$reset()
-  // TODO: Set filter state
+  // Set filter state
+  if (route.query.filter) {
+    tableStore.initialFilter = route.query.filter as string
+    route.query.filter = '' // Clear filter from further navigation
+  }
 
   // Retrieve study tables
   let url: string = appStore.sodarContext!.studies[studyUuid]!.table_url
