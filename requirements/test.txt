@@ -11,7 +11,7 @@ pytest-django==4.12.0
 pytest-sugar==1.1.1
 
 # Selenium for UI testing
-selenium==4.44.0
+selenium==4.46.0
 
 # BeautifulSoup for HTML testing
 beautifulsoup4==4.15.0

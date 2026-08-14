@@ -1,11 +1,11 @@
 # Setuptools
-setuptools==82.0.1
+setuptools==83.0.0
 
 # Packaging
 packaging==26.2
 
 # Django
-django==5.2.16
+django==5.2.17
 
 # Configuration
 django-environ==0.13.0
@@ -73,7 +73,7 @@ martor==1.8.2
 django-autocomplete-light==5.0.0
 
 # SODAR Core
-django-sodar-core==1.4.2
+django-sodar-core==1.4.3
 # -e git+https://github.com/bihealth/sodar-core.git@82c6acf88567748de7a2928c7a832bef7bdf7ec5#egg=django-sodar-core
 
 # Celery

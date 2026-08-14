@@ -17,7 +17,7 @@ v1.3.0 (WIP)
 - Add fixirodstickets management command
 - Replace Black and Flake8 with Ruff for linting and formatting
 - Upgrade to Django v5.2
-- Upgrade to SODAR Core v1.4.2
+- Upgrade to SODAR Core v1.4.3
 - Upgrade to python-irodsclient v3.3
 - Upgrade to django-rest-knox v5.0
 - Upgrade to Node.js v24
