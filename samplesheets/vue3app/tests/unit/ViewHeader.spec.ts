@@ -21,7 +21,10 @@ import {
   EDIT_MSG_SAVE_FAIL_PREFIX,
   STUDY_NAV_DROPDOWN_LEN,
   STUDY_NAV_TAB_LEN,
-  URL_EDIT_FINISH_PREFIX
+  URL_EDIT_FINISH_PREFIX,
+  VIEW_PARSER_WARNING,
+  VIEW_OVERVIEW,
+  VIEW_STUDY
 } from '@/constants.ts'
 
 import { copy } from '../testUtils.ts'
@@ -83,7 +86,7 @@ describe('ViewHeader.vue', () => {
     appStore.editMode = false
     appStore.gridsBusy = false
     appStore.gridsLoaded = true
-    appStore.overviewActive = false
+    appStore.viewActive = VIEW_STUDY
     appStore.projectUuid = PROJECT_UUID
     appStore.sodarContext = copy(sodarContext) as SodarContext
     appStore.windowsOs = false
@@ -133,9 +136,9 @@ describe('ViewHeader.vue', () => {
       '#sodar-ss-nav-tab-overview').attributes().disabled).toBeDefined()
   })
 
-  test('render nav tabs with overviewActive=true', async () => {
+  test('render nav tabs with viewActive=VIEW_OVERVIEW', async () => {
     const appStore = useAppStore()
-    appStore.overviewActive = true
+    appStore.viewActive = VIEW_OVERVIEW
     const wrapper = mountComponent()
     const studyBtn = wrapper.find('.sodar-ss-nav-tab-study')
     expect(studyBtn.classes()).not.toContain('active')
@@ -145,14 +148,27 @@ describe('ViewHeader.vue', () => {
     expect(overBtn.attributes().disabled).not.toBeDefined()
   })
 
+  test('render nav tabs with viewActive=VIEW_PARSER_WARNING', async () => {
+    const appStore = useAppStore()
+    appStore.viewActive = VIEW_PARSER_WARNING
+    const wrapper = mountComponent()
+    // Neither tab should be active
+    const studyBtn = wrapper.find('.sodar-ss-nav-tab-study')
+    expect(studyBtn.classes()).not.toContain('active')
+    expect(studyBtn.attributes().disabled).not.toBeDefined()
+    const overBtn = wrapper.find('#sodar-ss-nav-tab-overview')
+    expect(overBtn.classes()).not.toContain('active')
+    expect(overBtn.attributes().disabled).not.toBeDefined()
+  })
+
   test('navigate to overview with nav tabs', async () => {
     const appStore = useAppStore()
-    expect(appStore.overviewActive).toBe(false)
+    expect(appStore.viewActive).toBe(VIEW_STUDY)
     const wrapper = mountComponent()
     const studyBtn = wrapper.find('.sodar-ss-nav-tab-study')
     const overBtn = wrapper.find('#sodar-ss-nav-tab-overview')
     await overBtn.trigger('click')
-    expect(appStore.overviewActive).toBe(true)
+    expect(appStore.viewActive).toBe(VIEW_OVERVIEW)
     // TODO: The following does not seem to work, fix?
     // await router.isReady()
     // expect(router.currentRoute.value.name).toBe('overview')
@@ -162,12 +178,12 @@ describe('ViewHeader.vue', () => {
 
   test('navigate to study view with nav tabs', async () => {
     const appStore = useAppStore()
-    appStore.overviewActive = true
+    appStore.viewActive = VIEW_OVERVIEW
     const wrapper = mountComponent()
     const studyBtn = wrapper.find('.sodar-ss-nav-tab-study')
     const overBtn = wrapper.find('#sodar-ss-nav-tab-overview')
     await studyBtn.trigger('click')
-    expect(appStore.overviewActive).toBe(false)
+    expect(appStore.viewActive).toBe(VIEW_STUDY)
     expect(studyBtn.classes()).toContain('active')
     expect(overBtn.classes()).not.toContain('active')
   })
@@ -288,20 +304,20 @@ describe('ViewHeader.vue', () => {
 
   test('navigate to overview with nav dropdown', async () => {
     const appStore = useAppStore()
-    expect(appStore.overviewActive).toBe(false)
+    expect(appStore.viewActive).toBe(VIEW_STUDY)
     const wrapper = mountComponent()
     const overLink = wrapper.find('#sodar-ss-nav-overview')
     await overLink.trigger('click')
-    expect(appStore.overviewActive).toBe(true)
+    expect(appStore.viewActive).toBe(VIEW_OVERVIEW)
   })
 
   test('navigate to study view with nav dropdown', async () => {
     const appStore = useAppStore()
-    appStore.overviewActive = true
+    appStore.viewActive = VIEW_OVERVIEW
     const wrapper = mountComponent()
     const studyLink = wrapper.find('#sodar-ss-nav-study-' + STUDY_UUID)
     await studyLink.trigger('click')
-    expect(appStore.overviewActive).toBe(false)
+    expect(appStore.viewActive).toBe(VIEW_STUDY)
   })
 
   test('hide save version button in edit mode', async () => {
@@ -592,7 +608,6 @@ describe('ViewHeader.vue', () => {
   test('enable edit mode from ops dropdown item',  async () => {
     const appStore = useAppStore()
     expect(appStore.editMode).toBe(false)
-    expect(appStore.overviewActive).toBe(false)
     const wrapper = mountComponent()
     await wrapper.find('#sodar-ss-op-item-edit').trigger('click')
     expect(appStore.editMode).toBe(true)
@@ -600,11 +615,20 @@ describe('ViewHeader.vue', () => {
 
   test('enable edit mode in overview view',  async () => {
     const appStore = useAppStore()
-    appStore.overviewActive = true
+    appStore.viewActive = VIEW_OVERVIEW
     const wrapper = mountComponent()
     await wrapper.find('#sodar-ss-op-item-edit').trigger('click')
     expect(appStore.editMode).toBe(true)
-    expect(appStore.overviewActive).toBe(false)
+    expect(appStore.viewActive).toBe(VIEW_STUDY)
+  })
+
+  test('enable edit mode in parser warning view',  async () => {
+    const appStore = useAppStore()
+    appStore.viewActive = VIEW_PARSER_WARNING
+    const wrapper = mountComponent()
+    await wrapper.find('#sodar-ss-op-item-edit').trigger('click')
+    expect(appStore.editMode).toBe(true)
+    expect(appStore.viewActive).toBe(VIEW_STUDY)
   })
 
   test('disable edit mode with finish edit button click',  async () => {

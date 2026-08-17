@@ -13,6 +13,8 @@ import {
   STUDY_META_FIELDS,
   STUDY_SODAR_FIELDS,
   SHEET_STATS,
+  VIEW_OVERVIEW,
+  VIEW_STUDY,
 } from '@/constants.ts'
 import { type SodarContextInvestigation } from '@/types.ts'
 
@@ -22,7 +24,7 @@ const appStore = useAppStore()
 const isaMetaTitle = 'ISA-Tab metadata'
 const sodarMetaTitle = 'SODAR metadata'
 
-if (!appStore.overviewActive) appStore.overviewActive = true
+appStore.viewActive = VIEW_OVERVIEW
 const investigation = ref<SodarContextInvestigation>(
   appStore.sodarContext?.investigation as SodarContextInvestigation)
 
@@ -30,9 +32,9 @@ const investigation = ref<SodarContextInvestigation>(
 function handleNavigation (studyUuid: string, assayUuid: string | null) {
   // NOTE: Contains repetition from handleStudyNavigation() in ViewHeader, ideas
   //       on how to nicely combine these?
-  appStore.overviewActive = false
   appStore.gridsLoaded = false
   appStore.currentStudyUuid = studyUuid
+  appStore.viewActive = VIEW_STUDY
   if (assayUuid) {
     router.push({
       name: 'assay',

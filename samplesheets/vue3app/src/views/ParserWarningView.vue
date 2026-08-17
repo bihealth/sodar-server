@@ -2,6 +2,7 @@
 import { ref, watch } from 'vue'
 import WaitSection from '@/components/WaitSection.vue'
 import { useAppStore } from '@/stores/appStore.ts'
+import { VIEW_PARSER_WARNING } from '@/constants.ts'
 
 const appStore = useAppStore()
 
@@ -10,6 +11,9 @@ interface warningOutput { source: string, message: string, category: string }
 const warnings = ref<Array<warningOutput>>([])
 const message = ref<string>('')
 const limitReached = ref<boolean>(false)
+
+// Set current view on setup
+appStore.viewActive = VIEW_PARSER_WARNING
 
 function buildWarnings (
     warnings: Array<warningInput>, source: string): Array<warningOutput> {

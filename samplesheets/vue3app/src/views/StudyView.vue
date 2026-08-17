@@ -110,7 +110,6 @@ function buildStudy (data: RenderTableData) {
   }
 
   // Build study gridOptions, columnDefs and rowData
-  // TODO: Setup context for gridOptions if needed
   tableStore.gridOptions.study = initGridOptions({}, appStore.editMode)
   const colDefBuildParams: ColDefBuildParams = {
     editMode: appStore.editMode,

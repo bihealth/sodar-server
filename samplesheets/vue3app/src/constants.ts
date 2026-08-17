@@ -1,5 +1,10 @@
 /* General constants */
 
+// Views
+export const VIEW_PARSER_WARNING = 'ParserWarning'
+export const VIEW_STUDY = 'Study'
+export const VIEW_OVERVIEW = 'Overview'
+
 // URLs
 export const URL_EDIT_FINISH_PREFIX = '/samplesheets/ajax/edit/finish/'
 export const URL_ROW_DEL_PREFIX = '/samplesheets/ajax/edit/row/delete/'

@@ -5,6 +5,7 @@ import { RouterView, useRouter } from 'vue-router'
 import ServerAlerts from './components/ServerAlerts.vue'
 import ViewHeader from './components/ViewHeader.vue'
 import { useAppStore } from '@/stores/appStore.ts'
+import { VIEW_STUDY } from '@/constants.ts'
 
 const appStore = useAppStore()
 
@@ -21,6 +22,7 @@ const baseRe = /^\/samplesheets\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}
 const loc = location.pathname + location.search + location.hash
 // Update URL if entering with default
 if (baseRe.test(loc)) {
+  appStore.viewActive = VIEW_STUDY
   router.push({
     name: 'study',
     params: { studyUuid: appStore.currentStudyUuid },

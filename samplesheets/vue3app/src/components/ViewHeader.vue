@@ -29,6 +29,8 @@ import {
   STUDY_NAV_DROPDOWN_LEN,
   STUDY_NAV_TAB_LEN,
   URL_EDIT_FINISH_PREFIX,
+  VIEW_OVERVIEW,
+  VIEW_STUDY,
 } from '@/constants.ts'
 
 const route = useRoute()
@@ -53,11 +55,12 @@ function truncate (s: string, maxLen: number): string {
 }
 
 function isStudyActive (studyUuid: string): boolean {
-  return appStore.currentStudyUuid === studyUuid && !appStore.overviewActive
+  return appStore.currentStudyUuid === studyUuid &&
+    appStore.viewActive === VIEW_STUDY
 }
 
 function handleStudyNavigation (studyUuid: string, assayUuid: string | null) {
-  appStore.overviewActive = false
+  appStore.viewActive = VIEW_STUDY
   // Scroll to study or assay in current view
   if (studyUuid === appStore.currentStudyUuid &&
       ['study', 'assay'].includes(route.name!.toString())) {
@@ -95,7 +98,7 @@ function handleStudyNavigation (studyUuid: string, assayUuid: string | null) {
 }
 
 function handleOverviewNavigation () {
-  appStore.overviewActive = true
+  appStore.viewActive = VIEW_OVERVIEW
   router.push({ name: 'overview', replace: true })
 }
 
@@ -103,7 +106,8 @@ function toggleEditMode () {
   appStore.editMode = !appStore.editMode
   if (appStore.editMode) { // Edit mode
     // Navigate to default study if needed
-    if (appStore.overviewActive || !appStore.currentStudyUuid) {
+    if (appStore.viewActive !== VIEW_STUDY ||
+        !appStore.currentStudyUuid) {
       appStore.currentStudyUuid = Object.keys(
         appStore.sodarContext!.studies)[0] as string
       handleStudyNavigation(appStore.currentStudyUuid, null)
@@ -203,7 +207,7 @@ function getFinishEditTitle () {
             class="sodar-ss-nav-tab"
             id="sodar-ss-nav-tab-overview"
             @click="handleOverviewNavigation()"
-            :active="appStore.overviewActive"
+            :active="appStore.viewActive === VIEW_OVERVIEW"
             :disabled="appStore.gridsBusy || appStore.editMode">
           <i class="iconify" data-icon="mdi:sitemap"></i> Overview
         </BButton>
@@ -298,8 +302,7 @@ function getFinishEditTitle () {
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-sync"
             :href="'sync/' + appStore.projectUuid">
-          <i class="iconify" data-icon="mdi:table-refresh"></i>
-          Sync Sheets
+          <i class="iconify" data-icon="mdi:table-refresh"></i> Sync Sheets
         </BDropdownItem>
         <BDropdownItem
             v-if="appStore.sodarContext &&

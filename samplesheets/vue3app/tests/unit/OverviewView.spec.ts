@@ -8,19 +8,21 @@ import OverviewView from '@/views/OverviewView.vue'
 import { useAppStore } from '@/stores/appStore.ts'
 import { routes } from '@/router/index.ts'
 import {
-  ASSAY_META_FIELDS,
-  ASSAY_SODAR_FIELDS,
-  INV_META_FIELDS,
-  STUDY_META_FIELDS,
-  STUDY_SODAR_FIELDS,
-  SHEET_STATS
-} from '@/constants.ts'
-import {
   type SodarContext,
   type SodarContextAssay,
   type SodarContextInvestigation,
   type SodarContextStudy
 } from '@/types.ts'
+import {
+  ASSAY_META_FIELDS,
+  ASSAY_SODAR_FIELDS,
+  INV_META_FIELDS,
+  STUDY_META_FIELDS,
+  STUDY_SODAR_FIELDS,
+  SHEET_STATS,
+  VIEW_OVERVIEW,
+  VIEW_STUDY
+} from '@/constants.ts'
 
 import { copy, waitSelector } from '../testUtils.ts'
 import { sodarContext } from '../data/sodarContext.ts'
@@ -128,20 +130,20 @@ describe('OverviewView.vue', () => {
   test('navigate to study from study card title link', async () => {
     const appStore = useAppStore()
     const wrapper = mountComponent()
-    expect(appStore.overviewActive).toBe(true)
+    expect(appStore.viewActive).toBe(VIEW_OVERVIEW)
     const card = wrapper.find('#sodar-ss-overview-study-' + STUDY_UUID)
     const link = card.find('h4').find('a')
     await link.trigger('click')
-    expect(appStore.overviewActive).toBe(false)
+    expect(appStore.viewActive).toBe(VIEW_STUDY)
   })
 
   test('navigate to assay from assay card title link', async () => {
     const appStore = useAppStore()
     const wrapper = mountComponent()
-    expect(appStore.overviewActive).toBe(true)
+    expect(appStore.viewActive).toBe(VIEW_OVERVIEW)
     const card = wrapper.find('#sodar-ss-overview-assay-' + ASSAY_UUID)
     const link = card.find('h4').find('a')
     await link.trigger('click')
-    expect(appStore.overviewActive).toBe(false)
+    expect(appStore.viewActive).toBe(VIEW_STUDY)
   })
 })

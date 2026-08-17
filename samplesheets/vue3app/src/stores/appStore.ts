@@ -12,9 +12,9 @@ export const useAppStore = defineStore('app', ()=> {
   const editMode = ref<boolean>(false)
   const gridsBusy = ref<boolean>(false)
   const gridsLoaded = ref<boolean>(false)
-  const overviewActive = ref<boolean>(false)
   const projectUuid = ref<string | null>(null)
   const sodarContext = ref<SodarContext | null>(null)
+  const viewActive = ref<string | null>(null)
   const windowsOs = windowsPlatforms.test(window.navigator.userAgent)
 
   // Computed
@@ -44,9 +44,9 @@ export const useAppStore = defineStore('app', ()=> {
     editMode,
     gridsBusy,
     gridsLoaded,
-    overviewActive,
     projectUuid,
     sodarContext,
+    viewActive,
     windowsOs,
     // Computed
     sheetsAvailable,
