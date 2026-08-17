@@ -36,6 +36,7 @@ Changed
     - Upgrade to Node.js v24 (#2444)
     - Upgrade Docker build Javascript dependencies (#2355, #2357)
     - Upgrade Docker build for Python v3.13 (#2397)
+    - Upgrade Docker build for Debian v13 Trixie (#2512)
     - Upgrade GitHub Actions in CI (#2443)
     - Use ``zoneinfo`` instead of ``pytz`` (#2334)
     - Use ``SODARUserAdmin`` as ``User`` model admin (#2334)

@@ -22,6 +22,7 @@ v1.3.0 (WIP)
 - Upgrade to django-rest-knox v5.0
 - Upgrade to Node.js v24
 - Upgrade minimum supported iRODS version to v4.3.5
+- Upgrade Docker image build to Debian v13 Trixie
 - Remove Python v3.9 and v3.10 support
 - `SODAR Core v1.4 updates <https://sodar-core.readthedocs.io/en/latest/major_changes.html#v1-4-2-2026-07-23>`_
 - `SODAR Core v1.3 updates <https://sodar-core.readthedocs.io/en/latest/major_changes.html#v1-3-2-2026-01-12>`_
