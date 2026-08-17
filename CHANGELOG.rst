@@ -20,6 +20,7 @@ Added
     - Vite integration using ``django-vite`` (#994)
     - ``use_vue3_app`` app setting (#994)
     - ``fixirodstickets`` management command (#2461)
+    - Vue3 app cell edit value revert on server error (#2494)
 
 Changed
 -------

@@ -6,6 +6,7 @@ export const VIEW_STUDY = 'Study'
 export const VIEW_OVERVIEW = 'Overview'
 
 // URLs
+export const URL_CELL_EDIT_PREFIX = '/samplesheets/ajax/edit/cell/'
 export const URL_EDIT_FINISH_PREFIX = '/samplesheets/ajax/edit/finish/'
 export const URL_ROW_DEL_PREFIX = '/samplesheets/ajax/edit/row/delete/'
 export const URL_ROW_INS_PREFIX = '/samplesheets/ajax/edit/row/insert/'
@@ -145,6 +146,8 @@ export const IRODS_PATH_COPY_MSG = 'iRODS path copied into clipboard'
 // Edit mode text labels
 export const CELL_NODE_NAME_NEW = 'Enter name of new or existing node'
 export const CELL_NODE_NAME_RENAME = 'Rename node'
+export const CELL_UPDATE_ERR_PREFIX = 'Cell update error: '
+export const CELL_UPDATE_FAIL_PREFIX = 'Cell update failed: '
 export const EDIT_MSG_FINISH = 'Finished editing'
 export const EDIT_MSG_SAVE = 'Sheet version saved'
 export const EDIT_MSG_SAVE_ERR_PREFIX = 'Error saving version: '

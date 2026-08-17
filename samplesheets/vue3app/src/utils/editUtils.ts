@@ -38,6 +38,8 @@ import {
   AJAX_RES_OK,
   DB_OBJ_CLASS_MATERIAL,
   DB_OBJ_CLASS_PROCESS,
+  CELL_UPDATE_ERR_PREFIX,
+  CELL_UPDATE_FAIL_PREFIX,
   EDIT_COL_TYPE_ONTOLOGY,
   EDIT_FORMAT_PROTOCOL,
   EDIT_HEADER_TYPE_NAME,
@@ -48,11 +50,29 @@ import {
   EDIT_ITEM_TYPE_SOURCE,
   HEADER_NAME_SAMPLE,
   NODE_ID_HEADER_TYPES,
+  URL_CELL_EDIT_PREFIX,
   URL_ROW_DEL_PREFIX,
   URL_ROW_INS_PREFIX,
   VARIANT_DANGER,
   VARIANT_SUCCESS,
 } from '@/constants.ts'
+
+// Internal helpers ------------------------------------------------------------
+
+function revertCellUpdate (
+    apis: Array<GridApi>,
+    cells: Array<CellEditData>,
+    msg?: string,
+    notifyCb?: NotifyCb
+) {
+  for (const api of apis) updateCellUIValues(api, cells, true, true) // Revert
+  if (msg) {
+    console.error(msg)
+    if (notifyCb) notifyCb(msg, VARIANT_DANGER)
+  }
+}
+
+// Exported functions ----------------------------------------------------------
 
 export function deleteRow (params: RowDeleteParams) {
   const appStore = useAppStore()
@@ -688,7 +708,7 @@ export function getNamePrefix (
 export function updateCells (
     cells: CellEditData | Array<CellEditData>,
     verify: boolean,
-    notifyCb: NotifyCb | undefined
+    notifyCb?: NotifyCb
 ) {
   const appStore = useAppStore()
   const editStore = useEditStore()
@@ -715,7 +735,13 @@ export function updateCells (
     if (c.uuidRef) r.uuid_ref = c.uuidRef
     requestCells.push(r)
   }
-  fetch('/samplesheets/ajax/edit/cell/' + appStore.projectUuid, {
+  const gridApis: Array<GridApi> = [tableStore.gridApi.study as GridApi]
+  for (const k in tableStore.gridApi.assays) {
+    gridApis.push(tableStore.gridApi.assays[k] as GridApi)
+  }
+  const url = URL_CELL_EDIT_PREFIX + appStore.projectUuid
+
+  fetch(url, {
     method: 'POST',
     body: JSON.stringify({ updated_cells: requestCells, verify: verify }),
     credentials: 'same-origin',
@@ -727,11 +753,6 @@ export function updateCells (
   }).then(data => data.json())
     .then(
       data => {
-        const gridApis: Array<GridApi> = [tableStore.gridApi.study as GridApi]
-        for (const k in tableStore.gridApi.assays) {
-          gridApis.push(tableStore.gridApi.assays[k] as GridApi)
-        }
-
         if (data.detail === 'ok') {
           /*
           let bodyPrefix: string
@@ -743,7 +764,6 @@ export function updateCells (
           editStore.versionSaved = false
           // Update other occurrences of cell in UI
           for (const api of gridApis) {
-            // TODO: Omit current table? That wasn't done in the original impl
             updateCellUIValues(api, cells, true, false)
           }
         } else if (data.detail === 'alert') {
@@ -751,22 +771,17 @@ export function updateCells (
           if (confirm(data.alert_msg)) {
             // Call update again
             updateCells(cells, false, notifyCb)
-          } else { // Revert values in UI
-            for (const api of gridApis) {
-              updateCellUIValues(api, cells, true, true)
-            }
+          } else {
+            revertCellUpdate(gridApis, cells)
           }
         } else {
-          const msg = 'Cell update failed: ' + data.detail
-          console.error(msg)
-          if (notifyCb) notifyCb(msg, VARIANT_DANGER)
-          // TODO: Mark invalid/unsaved field(s) in UI
+          revertCellUpdate(
+            gridApis, cells, CELL_UPDATE_FAIL_PREFIX + data.detail, notifyCb)
         }
       }
     ).catch(function (error) {
-      const msg = 'Cell update error: ' + error
-      console.error(msg)
-      if (notifyCb) notifyCb(msg, VARIANT_DANGER)
+      revertCellUpdate(
+        gridApis, cells, CELL_UPDATE_ERR_PREFIX + error, notifyCb)
     })
 }
 

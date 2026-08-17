@@ -8,7 +8,11 @@ import { useAppStore } from '@/stores/appStore.ts'
 import { useEditStore } from '@/stores/editStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
 import { type CellEditData, type SodarContext } from '@/types.ts'
-import { AJAX_RES_OK } from '@/constants.ts'
+import {
+  AJAX_RES_OK,
+  CELL_UPDATE_FAIL_PREFIX,
+  VARIANT_DANGER
+} from '@/constants.ts'
 
 import { sodarContext } from '../data/sodarContext.ts'
 import { copy } from '../testUtils.ts'
@@ -19,7 +23,7 @@ import {
   TMP_UUID2
 } from '../testConstants.ts'
 
-// Test data -------------------------------------------------------------------
+// Test Data -------------------------------------------------------------------
 
 let cell: CellEditData
 const defaultCell: CellEditData = {
@@ -45,19 +49,26 @@ const defaultRequest: RequestInit = {
 const editCellUrl = '/samplesheets/ajax/edit/cell/' + PROJECT_UUID
 let mockGridApi: GridApi
 
+// Global Setup ----------------------------------------------------------------
+
+const mockNotifyCb = vi.fn()
+
 // Tests for updateCells() -----------------------------------------------------
 
 describe('updateCells()', () => {
-  function mockFetch (data: object) {
+  function mockFetch (data: object, status: number) {
     global.fetch = vi.fn(() => Promise.resolve({
-      json: () => Promise.resolve(data), status: 200} as Response)
+      json: () => Promise.resolve(data), status: status} as Response)
     )
   }
   function mockFetchOk () {
-    mockFetch({ detail: AJAX_RES_OK })
+    mockFetch({ detail: AJAX_RES_OK }, 200)
   }
   function mockFetchAlert () {
-    mockFetch({ detail: 'alert', alert_msg: 'alert message' })
+    mockFetch({ detail: 'alert', alert_msg: 'alert message' }, 200)
+  }
+  function mockFetchError () {
+    mockFetch({ detail: 'error' }, 500)
   }
   function exceptFetchBody (body: object) {
     const request = copy(defaultRequest) as RequestInit
@@ -97,7 +108,7 @@ describe('updateCells()', () => {
     mockFetchOk()
     expect(fetch).not.toHaveBeenCalled()
 
-    updateCells(cell, true, undefined)
+    updateCells(cell, true, mockNotifyCb)
     const body = {
       updated_cells: [{
         header_name: 'Name',
@@ -113,12 +124,14 @@ describe('updateCells()', () => {
     await flushPromises() // Needed to check store state
     expect(editStore.editDataUpdated).toBe(true)
     expect(editStore.versionSaved).toBe(false)
+    // Notify callback should not be called with success
+    expect(mockNotifyCb).not.toHaveBeenCalled()
   })
 
   test('update cell with unit', async () => {
     cell.unit = 'unit' // Not a realistic example but works here
     mockFetchOk()
-    updateCells(cell, true, undefined)
+    updateCells(cell, true, mockNotifyCb)
     const body = {
       updated_cells: [{
         header_name: 'Name',
@@ -132,12 +145,13 @@ describe('updateCells()', () => {
       verify: true
     }
     exceptFetchBody(body)
+    expect(mockNotifyCb).not.toHaveBeenCalled()
   })
 
   test('update cell with no uuid', async () => {
     delete cell.uuid
     mockFetchOk()
-    updateCells(cell, true, undefined)
+    updateCells(cell, true, mockNotifyCb)
     const body = {
       updated_cells: [{
         header_name: 'Name',
@@ -150,12 +164,13 @@ describe('updateCells()', () => {
       verify: true
     }
     exceptFetchBody(body)
+    expect(mockNotifyCb).not.toHaveBeenCalled()
   })
 
   test('update cell with uuid_ref', async () => {
     cell.uuidRef = TMP_UUID2 // In reality uuidRef is only for protocols
     mockFetchOk()
-    updateCells(cell, true, undefined)
+    updateCells(cell, true, mockNotifyCb)
     const body = {
       updated_cells: [{
         header_name: 'Name',
@@ -169,12 +184,13 @@ describe('updateCells()', () => {
       verify: true
     }
     exceptFetchBody(body)
+    expect(mockNotifyCb).not.toHaveBeenCalled()
   })
 
   test('update cell with item_type and non-name header', async () => {
     cell.headerType = 'characteristics'
     mockFetchOk()
-    updateCells(cell, true, undefined)
+    updateCells(cell, true, mockNotifyCb)
     const body = {
       updated_cells: [{
         header_name: 'Name',
@@ -186,6 +202,7 @@ describe('updateCells()', () => {
       verify: true
     }
     exceptFetchBody(body)
+    expect(mockNotifyCb).not.toHaveBeenCalled()
   })
 
   test('update cell with multiple cells', async () => {
@@ -196,7 +213,7 @@ describe('updateCells()', () => {
     cell2.headerType = 'characteristics'
     cell2.value = '42'
 
-    updateCells([cell, cell2], true, undefined)
+    updateCells([cell, cell2], true, mockNotifyCb)
     const body = {
       updated_cells: [{
         header_name: 'Name',
@@ -216,6 +233,7 @@ describe('updateCells()', () => {
       verify: true
     }
     exceptFetchBody(body)
+    expect(mockNotifyCb).not.toHaveBeenCalled()
   })
 
   test('update cell with verification alert returned', async () => {
@@ -224,14 +242,38 @@ describe('updateCells()', () => {
     expect(editStore.editDataUpdated).toBe(false)
     expect(editStore.versionSaved).toBe(true)
     mockFetchAlert() // Mock alert result
-    updateCells(cell, true, undefined)
+    updateCells(cell, true, mockNotifyCb)
     await flushPromises()
     // Store values should remain the same
+    expect(editStore.editDataUpdated).toBe(false)
+    expect(editStore.versionSaved).toBe(true)
+    expect(mockNotifyCb).not.toHaveBeenCalled()
+  })
+
+  test('update cell with error', async () => {
+    const editStore = useEditStore()
+    mockFetchError()
+    updateCells(cell, true, mockNotifyCb)
+    expect(fetch).toHaveBeenCalled()
+    await flushPromises()
+    // Edit store data should remain
+    expect(editStore.editDataUpdated).toBe(false)
+    expect(editStore.versionSaved).toBe(true)
+    // Notify callback should be called with failure
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      CELL_UPDATE_FAIL_PREFIX + 'error', VARIANT_DANGER)
+  })
+
+  test('update cell with error without notify callback', async () => {
+    const editStore = useEditStore()
+    mockFetchError()
+    updateCells(cell, true) // No callback
+    expect(fetch).toHaveBeenCalled()
+    await flushPromises()
+    // No error should be raised even if callback is not present
     expect(editStore.editDataUpdated).toBe(false)
     expect(editStore.versionSaved).toBe(true)
   })
 
   // TODO: Test with verification and confirm dialog clicked
-  // TODO: Test with mocked updateCellUIValues once enabled
-  // TODO: Test updateCellUIValues revert once enabled
 })
