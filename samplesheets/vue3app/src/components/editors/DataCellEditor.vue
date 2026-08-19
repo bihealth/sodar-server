@@ -2,6 +2,7 @@
 import { nextTick, ref, watch } from 'vue'
 import { onMounted, onUnmounted } from 'vue'
 
+import { useAppStore } from '@/stores/appStore.ts'
 import { useEditStore } from '@/stores/editStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
 import { updateCells, updateNode } from '@/utils/editUtils.ts'
@@ -27,6 +28,7 @@ import {
 // Data and initial setup ------------------------------------------------------
 
 // External
+const appStore = useAppStore()
 const editStore = useEditStore()
 const tableStore = useTableStore()
 const props = defineProps({ params: Object })
@@ -260,7 +262,7 @@ watch(() => editValue.value, () => {
 })
 
 onMounted(() => {
-  // TODO: Add selectEnabled in appStore, update
+  appStore.selectEnabled = false
   // Force focus into input
   nextTick(() => {
     input.value?.focus()
@@ -334,7 +336,7 @@ onUnmounted(() => {
       editStore.editContext!.samples[cellData.uuid]!.name = finalValue as string
     }
   }
-  // TODO: Implement and call finalization func
+  appStore.selectEnabled = true
 })
 </script>
 

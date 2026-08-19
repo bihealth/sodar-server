@@ -143,6 +143,8 @@ function toggleEditMode () {
         create({ body: msg, variant: 'danger', modelValue: 2000 })
     })
 
+    // Reset selectEnabled just in case
+    appStore.selectEnabled = true
     // Reset editStore
     editStore.editContext = null
     editStore.editDataUpdated = false
@@ -152,15 +154,12 @@ function toggleEditMode () {
     editStore.updatingRow = false
     editStore.versionSaved = false
 
-    // TODO: Update selectEnabled
     // Navigate to current study
     if (appStore.currentStudyUuid) {
       handleStudyNavigation(
         appStore.currentStudyUuid, appStore.currentAssayUuid)
     }
   }
-  // NOTE: editDataUpdated was originally reset here, but that should not be
-  //       needed anymore with the editStore reset. Ensure this is correct.
 }
 
 function getFinishEditTitle () {

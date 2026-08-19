@@ -78,6 +78,12 @@ div.sodar-ss-data-hover {
   animation: fadeOut 0.2s;
 }
 
+/* Drag Select -------------------------------------------------------------- */
+
+.agds-selected {
+  background-color: #e2f0ff !important;
+}
+
 /* Editor ------------------------------------------------------------------- */
 
 .sodar-ss-data-cell-popup {

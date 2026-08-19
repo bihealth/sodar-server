@@ -5,7 +5,7 @@ import { type SodarContext } from '@/types.ts'
 
 const windowsPlatforms = /(win32|win64|windows|wince)/i
 
-export const useAppStore = defineStore('app', ()=> {
+export const useAppStore = defineStore('app', () => {
   // Variables
   const currentAssayUuid = ref<string>('')
   const currentStudyUuid = ref<string>('')
@@ -13,6 +13,7 @@ export const useAppStore = defineStore('app', ()=> {
   const gridsBusy = ref<boolean>(false)
   const gridsLoaded = ref<boolean>(false)
   const projectUuid = ref<string | null>(null)
+  const selectEnabled = ref<boolean>(true)
   const sodarContext = ref<SodarContext | null>(null)
   const viewActive = ref<string | null>(null)
   const windowsOs = windowsPlatforms.test(window.navigator.userAgent)
@@ -45,6 +46,7 @@ export const useAppStore = defineStore('app', ()=> {
     gridsBusy,
     gridsLoaded,
     projectUuid,
+    selectEnabled,
     sodarContext,
     viewActive,
     windowsOs,

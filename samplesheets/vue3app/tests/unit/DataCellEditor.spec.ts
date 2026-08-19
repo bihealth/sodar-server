@@ -39,7 +39,8 @@ import {
   TMP_UUID2
 } from '../testConstants.ts'
 
-// Data
+// Test Data -------------------------------------------------------------------
+
 const sampleColId = 'col7'
 const sampleUuid = TMP_UUID2
 
@@ -92,6 +93,12 @@ const unitEditField: StudyEditConfigNodeField = {
   type: EDIT_HEADER_TYPE_CHAR,
 }
 
+const mockGridApi = {
+  forEachNode: vi.fn(),
+  getColumn: () => { return null }, // TODO: Mock for real
+  refreshCells: vi.fn()
+}
+
 const cellUpdateUrl: string = '/samplesheets/ajax/edit/cell/' + PROJECT_UUID
 const exLinksInput: string = 'x-generic-remote:123;x-sodar-example-link:456'
 // NOTE: Purposefully defined as a string, will be converted to RegExp
@@ -103,19 +110,16 @@ const inputSel = '.sodar-ss-edit-input'
 const selectSel = '.sodar-ss-edit-select'
 const unitSel = '.sodar-ss-edit-unit'
 
-// Global config and mocks
+// Global Setup ----------------------------------------------------------------
+
 vi.mock('@/utils/editUtils.ts', async () => {
   const actual = await vi.importActual('@/utils/editUtils.ts')
   return { ...actual, updateNode: vi.fn() }
 })
 
-describe('DataCellEditor.vue', () => {
-  const mockGridApi = {
-    forEachNode: vi.fn(),
-    getColumn: () => { return null }, // TODO: Mock for real
-    refreshCells: vi.fn()
-  }
+// Tests -----------------------------------------------------------------------
 
+describe('DataCellEditor.vue', () => {
   async function mountComponent (): Promise<VueWrapper> {
     const wrapper = mount(DataCellEditor, { props: { params: params } })
     await waitSelector(wrapper, '.sodar-ss-editor-cell', 1)
@@ -132,6 +136,7 @@ describe('DataCellEditor.vue', () => {
     // Set up stores
     setActivePinia(createPinia())
     const appStore = useAppStore()
+    appStore.selectEnabled = true
     appStore.projectUuid = PROJECT_UUID
     const editStore = useEditStore()
     editStore.editContext = copy(
@@ -148,6 +153,9 @@ describe('DataCellEditor.vue', () => {
   })
 
   test('render component with text input and default value', async () => {
+    const appStore = useAppStore()
+    expect(appStore.selectEnabled).toBe(true)
+
     const wrapper = await mountComponent()
     // Name cell for an existing node
     expect(wrapper.find(
@@ -156,6 +164,7 @@ describe('DataCellEditor.vue', () => {
     expect(wrapper.find(unitSel).exists()).toBe(false)
     const input = wrapper.find(inputSel)
     expect(input.exists()).toBe(true) // NOTE: Can't assert value here
+    expect(appStore.selectEnabled).toBe(false) // Should be disabled
   })
 
   test('return text value with getValue()', async () => {
@@ -310,8 +319,11 @@ describe('DataCellEditor.vue', () => {
   })
 
   test('unmount with updated value', async () => {
+    const appStore = useAppStore()
+    expect(appStore.selectEnabled).toBe(true)
     expect(fetch).not.toHaveBeenCalled()
     const wrapper = await mountComponent()
+    expect(appStore.selectEnabled).toBe(false)
 
     await wrapper.find(inputSel).setValue('0815')
     wrapper.unmount()
@@ -330,6 +342,7 @@ describe('DataCellEditor.vue', () => {
     expect(fetch).toHaveBeenCalledWith(
       cellUpdateUrl,
       expect.objectContaining({ body: JSON.stringify(reqBody)}))
+    expect(appStore.selectEnabled).toBe(true) // Should be re-enabled
   })
 
   test('unmount with updated sample name', async () => {
@@ -365,10 +378,15 @@ describe('DataCellEditor.vue', () => {
   })
 
   test('unmount with unchanged value', async () => {
+    const appStore = useAppStore()
+    expect(appStore.selectEnabled).toBe(true)
     expect(fetch).not.toHaveBeenCalled()
+
     const wrapper = await mountComponent()
+    expect(appStore.selectEnabled).toBe(false)
     wrapper.unmount()
     expect(fetch).not.toHaveBeenCalled()
+    expect(appStore.selectEnabled).toBe(true) // Should be re-enabled
   })
 
   test('unmount with updated unit', async () => {

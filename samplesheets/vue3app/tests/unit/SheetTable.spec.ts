@@ -287,4 +287,5 @@ describe('SheetTable.vue', () => {
 
   // TODO: Test insertRow() call
   // TODO: Test render assay grid rows once expose issue is solved
+  // TODO: Test AgGridDragSelect once expose issue is solved
 })

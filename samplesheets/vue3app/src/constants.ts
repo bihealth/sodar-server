@@ -5,6 +5,11 @@ export const VIEW_PARSER_WARNING = 'ParserWarning'
 export const VIEW_STUDY = 'Study'
 export const VIEW_OVERVIEW = 'Overview'
 
+// Selectors
+export const SEL_APP_CONTAINER = 'div#sodar-app-container'
+export const SEL_APP_CONTENT = 'div#sodar-app-content'
+export const SEL_CONTENT_LEFT = 'div#sodar-content-left'
+
 // URLs
 export const URL_CELL_EDIT_PREFIX = '/samplesheets/ajax/edit/cell/'
 export const URL_EDIT_FINISH_PREFIX = '/samplesheets/ajax/edit/finish/'

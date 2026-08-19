@@ -635,6 +635,7 @@ describe('ViewHeader.vue', () => {
     const appStore = useAppStore()
     const editStore = useEditStore()
     appStore.editMode = true
+    appStore.selectEnabled = false
     editStore.editDataUpdated = true
 
     mockFetch()
@@ -644,6 +645,7 @@ describe('ViewHeader.vue', () => {
     await flushPromises()
 
     expect(appStore.editMode).toBe(false)
+    expect(appStore.selectEnabled).toBe(true)
     expect(editStore.editContext).toBe(null)
     expect(editStore.editDataUpdated).toBe(false)
     expect(editStore.editStudyData).toBe(false)

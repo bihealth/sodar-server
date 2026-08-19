@@ -8,6 +8,7 @@ import {
   type GridReadyEvent
 } from 'ag-grid-community'
 
+import AgGridDragSelect from '@/components/AgGridDragSelect.vue'
 import { useAppStore } from '@/stores/appStore.ts'
 import { useEditStore } from '@/stores/editStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
@@ -146,15 +147,20 @@ function onRowInsert () {
       </div>
     </div>
     <div class="card-body p-0">
-      <AgGridVue
-          v-if="colDefs && rowData"
-          :id="gridId"
-          :grid-options="gridOptions"
-          :column-defs="colDefs"
-          :row-data="rowData"
-          :style="'height: ' + tableHeight + 'px;'"
-          @grid-ready="onGridReady">
-      </AgGridVue>
+      <AgGridDragSelect
+          :assay-mode="assayMode"
+          :notify-cb="notifyCb"
+          :tableUuid="tableUuid">
+        <AgGridVue
+            v-if="colDefs && rowData"
+            :id="gridId"
+            :grid-options="gridOptions"
+            :column-defs="colDefs"
+            :row-data="rowData"
+            :style="'height: ' + tableHeight + 'px;'"
+            @grid-ready="onGridReady">
+        </AgGridVue>
+      </AgGridDragSelect>
     </div>
   </div>
 </template>
