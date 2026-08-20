@@ -11,6 +11,8 @@ import { DB_OBJ_CLASS_MATERIAL } from '@/constants.ts'
 import { copy } from '../testUtils.ts'
 import { STUDY_UUID } from '../testConstants.ts'
 
+// Test Data -------------------------------------------------------------------
+
 const mockModal = { show: vi.fn() }
 const defaultParams: HeaderEditRendererParamInput = {
   assayMode: false,
@@ -31,10 +33,13 @@ const defaultParams: HeaderEditRendererParamInput = {
 let params: HeaderEditRendererParamInput
 const unsavedRow = { id: 'row170', tableUuid: STUDY_UUID }
 
+// Tests -----------------------------------------------------------------------
+
 describe('HeaderEditRenderer.vue', () => {
   function mountComponent (): VueWrapper {
     return mount(HeaderEditRenderer, { props: { params: params } })
   }
+
   beforeEach(() => {
     vi.resetAllMocks()
     setActivePinia(createPinia())

@@ -25,9 +25,8 @@ import {
   VARIANT_INFO,
 } from '@/constants.ts'
 
-// Data and initial setup ------------------------------------------------------
+// External Data ---------------------------------------------------------------
 
-// External
 const appStore = useAppStore()
 const editStore = useEditStore()
 const tableStore = useTableStore()
@@ -44,7 +43,8 @@ const notifyCb: NotifyCb | undefined = params.notifyCb
 // console.log('DataCellEditor params:')
 // console.dir(params)
 
-// Internal variables
+// Internal Vars ---------------------------------------------------------------
+
 let inputStyle: string = ''
 const nameColumn: boolean = [
   EDIT_HEADER_TYPE_NAME, EDIT_HEADER_TYPE_PROCESS].includes(headerType)
@@ -62,7 +62,8 @@ let unitEnabled: boolean = false
 let unitStyle: string = ''
 let valueSelect: boolean = false
 
-// Refs
+// Refs ------------------------------------------------------------------------
+
 const containerClass = ref<string>('')
 const containerTitle = ref<string>('')
 const editUnit = ref<string | undefined>(undefined) // Unit if supported
@@ -73,6 +74,8 @@ if (Array.isArray(cellData.value)) {
 const input = ref<HTMLInputElement | undefined>()
 // TODO: Implement getValidState() and get initial value
 const valid = ref<boolean>(true)
+
+// Setup -----------------------------------------------------------------------
 
 // Enable select editor
 if (editConfig.format === 'select' &&
@@ -132,15 +135,12 @@ valid.value = isValid()
 
 // Helpers ---------------------------------------------------------------------
 
-// Test regex with semicolon-separated list support
-function testListRegex (): boolean {
-  // Don't need to add this to multiple regexes this way..
-  if (editValue.value?.slice(-1) === ';') return false
-  const valSplit = editValue.value?.split(';') as Array<string>
-  for (let i = 0; i < valSplit.length; i++) {
-    if (!regex.test((valSplit[i] as string)?.trim())) return false
-  }
-  return true
+// Return input element extra classes
+function getInputClass () {
+  let ret = ''
+  if (unitEnabled) ret += ' sodar-ss-popup-input'
+  if (!valid.value) ret += ' text-danger'
+  return ret + ' text-' + params.colAlign
 }
 
 // Return valid state for current value (formerly getValidState())
@@ -204,14 +204,6 @@ function isValid (): boolean {
   return !(editValue.value !== '' && regex && !testListRegex())
 }
 
-// Return input element extra classes
-function getInputClass () {
-  let ret = ''
-  if (unitEnabled) ret += ' sodar-ss-popup-input'
-  if (!valid.value) ret += ' text-danger'
-  return ret + ' text-' + params.colAlign
-}
-
 // TODO: add getSelectClass if needed
 function selectEmptyValue (value: string | null | undefined): boolean {
   return value === '' || !value
@@ -237,7 +229,18 @@ function setNameData () {
   }
 }
 
-// API and lifecycle -----------------------------------------------------------
+// Test regex with semicolon-separated list support
+function testListRegex (): boolean {
+  // Don't need to add this to multiple regexes this way..
+  if (editValue.value?.slice(-1) === ';') return false
+  const valSplit = editValue.value?.split(';') as Array<string>
+  for (let i = 0; i < valSplit.length; i++) {
+    if (!regex.test((valSplit[i] as string)?.trim())) return false
+  }
+  return true
+}
+
+// API and Life Cycle ----------------------------------------------------------
 
 // Return value for ag-grid API
 function getValue () {

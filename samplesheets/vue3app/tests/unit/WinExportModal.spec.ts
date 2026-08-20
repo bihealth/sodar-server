@@ -7,7 +7,11 @@ import WinExportModal from '@/components/modals/WinExportModal.vue'
 
 import { PROJECT_UUID } from '../testConstants.ts'
 
+// Global Setup ----------------------------------------------------------------
+
 config.global.plugins = [createBootstrap()]
+
+// Tests -----------------------------------------------------------------------
 
 describe('WinExportModal.vue', () => {
   beforeEach(() => {

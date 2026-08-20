@@ -3,6 +3,8 @@ import { BButton } from 'bootstrap-vue-next'
 import { useClipboard } from '@vueuse/core'
 import { COPY_MSG_SUFFIX, VARIANT_INFO } from '@/constants.ts'
 
+// External Data ---------------------------------------------------------------
+
 const props = defineProps([
   'legend',
   'value',
@@ -14,6 +16,8 @@ const props = defineProps([
   'copyButton'
 ])
 const clipboard = useClipboard()
+
+// Helpers ---------------------------------------------------------------------
 
 // Copy value to clipboard and display toast
 function onCopy (legend: string, value: string) {

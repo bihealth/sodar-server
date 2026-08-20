@@ -12,7 +12,13 @@ export const SEL_CONTENT_LEFT = 'div#sodar-content-left'
 
 // URLs
 export const URL_CELL_EDIT_PREFIX = '/samplesheets/ajax/edit/cell/'
+export const URL_DATA_REQUEST_CREATE_PREFIX =
+  '/samplesheets/ajax/irods/request/create/'
+export const URL_DATA_REQUEST_DELETE_PREFIX =
+  '/samplesheets/ajax/irods/request/delete/'
+export const URL_DISPLAY_CONFIG_PREFIX = '/samplesheets/ajax/display/update/'
 export const URL_EDIT_FINISH_PREFIX = '/samplesheets/ajax/edit/finish/'
+export const URL_IRODS_LIST_PREFIX = '/samplesheets/ajax/irods/objects/'
 export const URL_ROW_DEL_PREFIX = '/samplesheets/ajax/edit/row/delete/'
 export const URL_ROW_INS_PREFIX = '/samplesheets/ajax/edit/row/insert/'
 export const URL_VERSION_SAVE_PREFIX = '/samplesheets/ajax/version/save/'

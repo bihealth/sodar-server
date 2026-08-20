@@ -6,14 +6,22 @@ import IrodsStatsBadge from '@/components/IrodsStatsBadge.vue'
 import TableDetailModal from '@/components/modals/TableDetailModal.vue'
 import { useAppStore } from '@/stores/appStore.ts'
 
-const appStore = useAppStore()
+// External Data ---------------------------------------------------------------
 
+const appStore = useAppStore()
 const props = defineProps(['assayMode', 'notifyCb', 'tableUuid'])
 
+// Refs ------------------------------------------------------------------------
+
 const tableDetailModalComponent = ref<typeof TableDetailModal | null>(null)
+
+// Internal Vars ---------------------------------------------------------------
+
 let tableType
 let tableTitle
 let tableContext
+
+// Setup -----------------------------------------------------------------------
 
 if (!props.assayMode) {
   tableType = 'study'
@@ -26,6 +34,8 @@ if (!props.assayMode) {
     appStore.currentStudyUuid]!.assays[props.tableUuid]
 }
 const tableIdSuffix = tableType + '-' + props.tableUuid
+
+// Helpers ---------------------------------------------------------------------
 
 function getTitleTextClass (): string {
   if (!props.assayMode) return 'text-info'

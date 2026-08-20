@@ -8,13 +8,13 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
-v1.3.0 (WIP)
-============
+v1.3.0 (2026-08-20)
+===================
 
-- Add samplesheets Vue3 app
-- Add django-axes support for login security
+- :ref:`Add samplesheets Vue3 app <app_samplesheets_vue3>`
+- :ref:`Add django-axes support for login security <admin_settings_core>`
+- :ref:`Add fixirodstickets management command <admin_commands_sodar>`
 - Add Python v3.12 and v3.13 support
-- Add fixirodstickets management command
 - Replace Black and Flake8 with Ruff for linting and formatting
 - Upgrade to Django v5.2
 - Upgrade to SODAR Core v1.4.3

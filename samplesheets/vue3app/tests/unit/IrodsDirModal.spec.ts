@@ -24,11 +24,17 @@ import {
   USER_UUID
 } from '../testConstants.ts'
 
-config.global.plugins = [createBootstrap()]
+// Test Data -------------------------------------------------------------------
 
 const errorMsg = 'Error'
 const irodsPath = ASSAY_PATH_PREFIX + MISC_FILES_DIR
 let dirBody: IrodsDirResponseBody
+
+// Global Setup ----------------------------------------------------------------
+
+config.global.plugins = [createBootstrap()]
+
+// Tests -----------------------------------------------------------------------
 
 describe('IrodsDirModal.vue', () => {
   function mockListFetch (

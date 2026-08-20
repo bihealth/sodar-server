@@ -4,11 +4,15 @@ import { mount, type VueWrapper } from '@vue/test-utils'
 import ModalHeader from '@/components/modals/ModalHeader.vue'
 import { copy } from '../testUtils.ts'
 
+// Interfaces ------------------------------------------------------------------
+
 interface ModalHeaderProps {
   modalRef: { hide: Mock },
   title: string,
   hideCloseButton?: boolean
 }
+
+// Test Data -------------------------------------------------------------------
 
 const defaultProps: ModalHeaderProps = {
   modalRef: { hide: vi.fn() },
@@ -16,10 +20,13 @@ const defaultProps: ModalHeaderProps = {
 }
 let props: ModalHeaderProps
 
+// Tests -----------------------------------------------------------------------
+
 describe('ModalHeader.vue', () => {
   function mountComponent (): VueWrapper {
     return mount(ModalHeader, { props: props })
   }
+
   beforeEach(() => {
     props = copy(defaultProps) as ModalHeaderProps
     props.modalRef = { hide: vi.fn() }

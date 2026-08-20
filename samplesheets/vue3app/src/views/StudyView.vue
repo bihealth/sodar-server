@@ -39,13 +39,18 @@ import {
   type StudyEditContext
 } from '@/types.ts'
 
+// External Data ---------------------------------------------------------------
+
 // Set up route
 const route = useRoute()
-
 // Set up stores
 const appStore = useAppStore()
 const editStore = useEditStore()
 const tableStore = useTableStore()
+
+// Init toasts
+const { create } = useToast()
+const notifyCb = getNotifyCb(create)
 
 // Set up template references
 const colConfigCompRef = useTemplateRef('columnConfigModalComponent')
@@ -54,37 +59,7 @@ const irodsDirCompRef = useTemplateRef('irodsDirModalComponent')
 const ontologyEditCompRef = useTemplateRef('ontologyEditModalComponent')
 const studyShortcutCompRef = useTemplateRef('studyShortcutModalComponent')
 
-// Init toasts
-const { create } = useToast()
-const notifyCb = getNotifyCb(create)
-
-// Expose components for ag-grid
-defineExpose({
-  DataCellEditor,
-  DataCellRenderer,
-  HeaderEditRenderer,
-  IrodsButtonsRenderer,
-  ObjectSelectEditor,
-  OntologyEditor,
-  RowEditRenderer,
-  StudyShortcutsRenderer
-})
-
-/* General helpers ---------------------------------------------------------- */
-
-async function scrollToCurrentTable () {
-  await nextTick() // Ensure DOM is rendered
-  if (appStore.gridsLoaded && 'assayUuid' in route.params) {
-    const anchorId = 'assay-anchor-' + route.params.assayUuid
-    const anchorElem = document.getElementById(anchorId)
-    if (anchorElem) anchorElem.scrollIntoView()
-  } else {
-    const anchorElem = document.getElementsByClassName('sodar-app-container')[0]
-    if (anchorElem) anchorElem.scrollTop = 0
-  }
-}
-
-/* Study building ----------------------------------------------------------- */
+// Helpers ---------------------------------------------------------------------
 
 function buildStudy (data: RenderTableData) {
   // TODO: Handle render_error
@@ -186,6 +161,32 @@ function getStudy (studyUuid: string, editMode: boolean) {
       scrollToCurrentTable()
     })
 }
+
+async function scrollToCurrentTable () {
+  await nextTick() // Ensure DOM is rendered
+  if (appStore.gridsLoaded && 'assayUuid' in route.params) {
+    const anchorId = 'assay-anchor-' + route.params.assayUuid
+    const anchorElem = document.getElementById(anchorId)
+    if (anchorElem) anchorElem.scrollIntoView()
+  } else {
+    const anchorElem = document.getElementsByClassName('sodar-app-container')[0]
+    if (anchorElem) anchorElem.scrollTop = 0
+  }
+}
+
+// API and Life Cycle ----------------------------------------------------------
+
+// Expose components for ag-grid
+defineExpose({
+  DataCellEditor,
+  DataCellRenderer,
+  HeaderEditRenderer,
+  IrodsButtonsRenderer,
+  ObjectSelectEditor,
+  OntologyEditor,
+  RowEditRenderer,
+  StudyShortcutsRenderer
+})
 
 // Update current study UUID based on route
 if ('studyUuid' in route.params &&

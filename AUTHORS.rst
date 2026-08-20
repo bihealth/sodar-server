@@ -2,6 +2,7 @@ Credits
 =======
 
 * Mikko Nieminen <mikko.nieminen@bih-charite.de>
+* Federico Marotta <federico.marotta@bih-charite.de>
 * Manuel Holtgrewe <manuel.holtgrewe@bih-charite.de>
 * Oliver Stolpe <oliver.stolpe@bih-charite.de>
 * Dzmitry Hramyka <dzmitry.hramyka@bih-charite.de>

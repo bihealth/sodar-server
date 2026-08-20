@@ -27,37 +27,24 @@ import {
   VARIANT_DANGER,
 } from '@/constants.ts'
 
-// Data and initial setup ------------------------------------------------------
+// External Data ---------------------------------------------------------------
 
-// External
 const appStore = useAppStore()
 const editStore = useEditStore()
 const tableStore = useTableStore()
 const props = defineProps({ params: Object })
 
-// Refs
+// Refs ------------------------------------------------------------------------
+
 const deleting = ref<boolean>(false)
 const inserting = ref<boolean>(false) // TODO: Do we actually need this?
 
-// Internal
+// Internal Vars ---------------------------------------------------------------
+
 const params = props.params as RowEditRendererParams
 const sampleUuid: string = params.node.data[tableStore.sampleColId].uuid
 
 // Helpers ---------------------------------------------------------------------
-
-function isNewRow (): boolean {
-  return editStore.unsavedRow !== null &&
-    editStore.unsavedRow.tableUuid === params.tableUuid &&
-    editStore.unsavedRow.id === params.node.id
-}
-
-// Return true if row sample is used in assays
-function isSampleUsed (): boolean {
-  return sampleUuid !== '' &&
-    editStore.editContext !== null &&
-    editStore.editContext!.samples &&
-    editStore.editContext!.samples[sampleUuid]!.assays.length > 0
-}
 
 function enableDelete (): boolean {
   const newRow: boolean = isNewRow()
@@ -86,6 +73,11 @@ function enableSave (): boolean {
   return true
   // NOTE: This allows saving incomplete rows (not yet implemented)
   // return !params.node.data[colId].newInit && !editStore.updatingRow
+}
+
+function finishUpdateCb () {
+  inserting.value = false
+  deleting.value = false
 }
 
 function getDeleteTitle (): string {
@@ -117,11 +109,18 @@ function getNodeNames (rowNode: IRowNode, cols: Array<Column>): string {
   return ret
 }
 
-// Modification API ------------------------------------------------------------
+function isNewRow (): boolean {
+  return editStore.unsavedRow !== null &&
+    editStore.unsavedRow.tableUuid === params.tableUuid &&
+    editStore.unsavedRow.id === params.node.id
+}
 
-function finishUpdateCb () {
-  inserting.value = false
-  deleting.value = false
+// Return true if row sample is used in assays
+function isSampleUsed (): boolean {
+  return sampleUuid !== '' &&
+    editStore.editContext !== null &&
+    editStore.editContext!.samples &&
+    editStore.editContext!.samples[sampleUuid]!.assays.length > 0
 }
 
 function onDelete () {

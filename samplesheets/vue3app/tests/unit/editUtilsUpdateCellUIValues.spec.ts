@@ -7,7 +7,7 @@ import { type CellEditData } from '@/types.ts'
 import { copy } from '../testUtils.ts'
 import { TMP_UUID, TMP_UUID2 } from '../testConstants.ts'
 
-// Test data -------------------------------------------------------------------
+// Test Data -------------------------------------------------------------------
 
 const defaultCell: CellEditData = {
   fieldId: 'col0',
@@ -21,7 +21,7 @@ const defaultCell: CellEditData = {
 }
 let mockGridApi: GridApi
 
-// Helpers ---------------------------------------------------------------------
+// Global Setup ----------------------------------------------------------------
 
 function mockForEachNode (nodes: Array<object>) {
   mockGridApi.forEachNode = vi.fn((callback) => {

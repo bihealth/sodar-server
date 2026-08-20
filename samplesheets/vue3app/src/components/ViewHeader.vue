@@ -33,6 +33,8 @@ import {
   VIEW_STUDY,
 } from '@/constants.ts'
 
+// External Data ---------------------------------------------------------------
+
 const route = useRoute()
 const router = useRouter()
 const appStore = useAppStore()
@@ -45,18 +47,26 @@ const tableStore = useTableStore()
 const { create } = useToast()
 const notifyCb = getNotifyCb(create)
 
+// Refs ------------------------------------------------------------------------
+
 const versionSaveCompRef = ref<typeof VersionSaveModal | null>(null)
 const winExportCompRef = ref<typeof WinExportModal | null>(null)
 
-// TODO: Move to common utils?
-function truncate (s: string, maxLen: number): string {
-  if (s.length > maxLen) return s.substring(0, maxLen) + '...'
-  return s
+// Helpers ---------------------------------------------------------------------
+
+function getFinishEditTitle () {
+  if (!editStore.unsavedRow) {
+    let title = EDIT_MODE_EXIT_MSG
+    if (!editStore.versionSaved && editStore.editDataUpdated) {
+      title += EDIT_MODE_SAVE_MSG
+    }
+    return title
+  } else return EDIT_MODE_UNSAVED_MSG
 }
 
-function isStudyActive (studyUuid: string): boolean {
-  return appStore.currentStudyUuid === studyUuid &&
-    appStore.viewActive === VIEW_STUDY
+function handleOverviewNavigation () {
+  appStore.viewActive = VIEW_OVERVIEW
+  router.push({ name: 'overview', replace: true })
 }
 
 function handleStudyNavigation (studyUuid: string, assayUuid: string | null) {
@@ -97,9 +107,9 @@ function handleStudyNavigation (studyUuid: string, assayUuid: string | null) {
   }
 }
 
-function handleOverviewNavigation () {
-  appStore.viewActive = VIEW_OVERVIEW
-  router.push({ name: 'overview', replace: true })
+function isStudyActive (studyUuid: string): boolean {
+  return appStore.currentStudyUuid === studyUuid &&
+    appStore.viewActive === VIEW_STUDY
 }
 
 function toggleEditMode () {
@@ -162,14 +172,10 @@ function toggleEditMode () {
   }
 }
 
-function getFinishEditTitle () {
-  if (!editStore.unsavedRow) {
-    let title = EDIT_MODE_EXIT_MSG
-    if (!editStore.versionSaved && editStore.editDataUpdated) {
-      title += EDIT_MODE_SAVE_MSG
-    }
-    return title
-  } else return EDIT_MODE_UNSAVED_MSG
+// TODO: Move to common utils?
+function truncate (s: string, maxLen: number): string {
+  if (s.length > maxLen) return s.substring(0, maxLen) + '...'
+  return s
 }
 </script>
 
@@ -180,6 +186,10 @@ function getFinishEditTitle () {
          id="sodar-ss-subtitle-col-title">
       <h3 class="text-nowrap">
         <i class="iconify" data-icon="mdi:flask" /> Sample Sheets
+        <i class="iconify text-info ml-1 mb-1"
+           data-icon="mdi:alert-octagram"
+           data-height="20"
+           title="Sample Sheets Vue3 app enabled"></i>
       </h3>
     </div>
     <!-- Study navigation -->
@@ -475,7 +485,7 @@ div.sodar-subtitle-container {
 }
 div#sodar-ss-subtitle-col-title {
   padding-left: 0;
-  max-width: 240px;
+  max-width: 255px;
 }
 div#sodar-ss-subtitle-right {
   padding-right: 0;

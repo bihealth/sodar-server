@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import TableDetailListRow from '@/components/TableDetailListRow.vue'
 
+// External Data ---------------------------------------------------------------
+
 const props = defineProps([
     'assayMode',
     'notifyCb',
@@ -9,6 +11,8 @@ const props = defineProps([
     'tableMetaFields',
     'tableSodarFields'
 ])
+
+// Helpers ---------------------------------------------------------------------
 
 function getMetaIconClass (): string {
   if (props.assayMode) return 'text-danger'

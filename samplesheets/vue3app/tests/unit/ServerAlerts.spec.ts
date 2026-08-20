@@ -10,6 +10,8 @@ import { copy } from '../testUtils.ts'
 import { sodarContext } from '../data/sodarContext.ts'
 import { serverAlerts } from '../data/serverAlerts.ts'
 
+// Tests -----------------------------------------------------------------------
+
 describe('ServerAlerts.vue', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
@@ -19,7 +21,6 @@ describe('ServerAlerts.vue', () => {
 
   test('render component with default parameters', async () => {
     const wrapper = mount(ServerAlerts)
-    expect(wrapper.find('#sodar-ss-version-alert').exists()).toBe(true)
     // No alerts should be present
     expect(wrapper.find('#sodar-ss-alert-container').exists()).toBe(false)
     expect(wrapper.findAll('.sodar-ss-server-alert').length).toBe(0)
@@ -29,7 +30,6 @@ describe('ServerAlerts.vue', () => {
     const appStore = useAppStore()
     appStore.sodarContext!.alerts = serverAlerts
     const wrapper = mount(ServerAlerts)
-    expect(wrapper.find('#sodar-ss-version-alert').exists()).toBe(true)
     expect(wrapper.find('#sodar-ss-alert-container').exists()).toBe(true)
     const alerts = wrapper.findAll('.sodar-ss-server-alert')
     expect(alerts.length).toBe(2)
@@ -47,7 +47,6 @@ describe('ServerAlerts.vue', () => {
     appStore.sodarContext!.perms.edit_sheet = false
     const wrapper = mount(ServerAlerts)
     // Only version alert should be displayed
-    expect(wrapper.find('#sodar-ss-version-alert').exists()).toBe(true)
     expect(wrapper.findAll('.sodar-ss-server-alert').length).toBe(0)
   })
 })

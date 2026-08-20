@@ -17,10 +17,13 @@ import {
   type SodarContextStudy,
 } from '@/types.ts'
 
-const appStore = useAppStore()
+// External Data ---------------------------------------------------------------
 
+const appStore = useAppStore()
 const modalRef = useTemplateRef('tableDetailModal')
-let notifyCb: NotifyCb | undefined = undefined
+
+// Refs ------------------------------------------------------------------------
+
 const assayMode = ref<boolean>(false)
 const metaFields = ref<object | null>(null)
 const sodarFields = ref<object | null>(null)
@@ -29,7 +32,12 @@ const tableTitle = ref<string>('')
 const tableUuid = ref<string>('')
 const showModal = ref<boolean>(false)
 
-// Modal showing
+// Internal Vars ---------------------------------------------------------------
+
+let notifyCb: NotifyCb | undefined = undefined
+
+// API and Life Cycle ----------------------------------------------------------
+
 function show (
     uuid: string,
     context: SodarContextAssay | SodarContextStudy,

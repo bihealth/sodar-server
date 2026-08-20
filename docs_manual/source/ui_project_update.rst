@@ -42,7 +42,8 @@ Public access
     see :ref:`ui_project_members_roles`. This feature should be used with
     caution and is generally intended for demonstration projects. If your SODAR
     server allows anonymous users, this will grant specified access to anyone
-    browsing the site even if they have not logged in.
+    browsing the site even if they have not logged in. Note that in case of
+    external sites, this setting only applies to the current SODAR site.
 Enable project on {target remote site}
     Enable access to project for project members on the selected target site.
     Target sites for which project owner/delegation modifying is enabled by an

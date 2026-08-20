@@ -26,7 +26,7 @@ import {
 import { copy } from '../testUtils.ts'
 import { STUDY_UUID, TMP_UUID } from '../testConstants.ts'
 
-// Test data -------------------------------------------------------------------
+// Test Data -------------------------------------------------------------------
 
 const emptyCellVal = {
   newInit: true,
@@ -43,7 +43,6 @@ const emptyValueParams = {
 }
 let mockGridApi: GridApi
 let mockRowNode: IRowNode
-// const sampleUuid = TMP_UUID2
 const sourceUuid = TMP_UUID
 
 // Tests for updateNode() ------------------------------------------------------

@@ -31,7 +31,8 @@ import {
   TMP_UUID3
 } from '../testConstants.ts'
 
-// Data
+// Test Data -------------------------------------------------------------------
+
 const nodeId = '0'
 const otherNodeId = '170'
 const sourceColId = 'col1'
@@ -62,7 +63,8 @@ let rowCount: number
 const deleteBtnSel = '.sodar-ss-row-delete-btn'
 const saveBtnSel = '.sodar-ss-row-save-btn'
 
-// Global config
+// Global Setup ----------------------------------------------------------------
+
 config.global.plugins = [createBootstrap()]
 
 vi.mock('@/utils/editUtils.ts', async () => {
@@ -74,6 +76,8 @@ vi.mock('@/utils/editUtils.ts', async () => {
     saveRow: vi.fn()
   }
 })
+
+// Tests -----------------------------------------------------------------------
 
 describe('RowEditRenderer.vue', () => {
   function getMockGridApi (nodes?: Array<object>): GridApi {

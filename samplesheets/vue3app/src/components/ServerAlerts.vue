@@ -4,13 +4,6 @@ const appStore = useAppStore()
 </script>
 
 <template>
-  <!-- TODO: Remove this once Vue3 app is finalized -->
-  <div class="alert alert-warning"
-       id="sodar-ss-version-alert">
-    <i class="iconify" data-icon="mdi:alert-octagram"></i>
-    This is the new Sample Sheets Vue3 app. Development is ongoing, some
-    features may be missing or incomplete.
-  </div>
   <div v-if="appStore.sodarContext &&
              appStore.getPerm('edit_sheet') &&
              appStore.sodarContext.alerts.length"

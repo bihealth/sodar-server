@@ -54,6 +54,7 @@ describe('DataCellRenderer.vue', () => {
   function mountComponent (): VueWrapper {
     return mount(DataCellRenderer, { props: { params: params } })
   }
+
   beforeEach(() => {
     vi.resetAllMocks()
     params = copy(defaultParams) as DataCellRendererParams

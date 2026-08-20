@@ -13,14 +13,23 @@ import {
 } from '@/types.ts'
 import { useAppStore } from '@/stores/appStore.ts'
 
+// External Data ---------------------------------------------------------------
+
 const appStore = useAppStore()
 
-const modalRef = useTemplateRef('studyShortcutModal')
-const showModal = ref<boolean>(false)
+// Internal Vars ---------------------------------------------------------------
+
 const modalTitleDefault: string = 'Loading..'
-const modalTitle = ref<string>(modalTitleDefault)
+
+// Refs ------------------------------------------------------------------------
+
 const message = ref<string>('')
 const modalData = ref<StudyShortcutResponseData | null>(null)
+const modalRef = useTemplateRef('studyShortcutModal')
+const modalTitle = ref<string>(modalTitleDefault)
+const showModal = ref<boolean>(false)
+
+// Helpers ---------------------------------------------------------------------
 
 function handleShortcutResponse (response: StudyShortcutResponseBody) {
   if ('data' in response && 'title' in response) {
@@ -51,6 +60,8 @@ function getShortcuts (query: StudyShortcutQuery) {
       message.value = 'Error fetching data: ' + error.detail
   })
 }
+
+// API and Life Cycle ----------------------------------------------------------
 
 // Modal showing
 function show (value: StudyShortcutCell) {

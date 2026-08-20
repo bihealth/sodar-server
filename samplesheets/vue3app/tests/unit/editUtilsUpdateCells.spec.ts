@@ -251,6 +251,8 @@ describe('updateCells()', () => {
   })
 
   test('update cell with error', async () => {
+    // Suppress logging as error message is expected
+    vi.spyOn(console, 'error').mockImplementation(() => undefined)
     const editStore = useEditStore()
     mockFetchError()
     updateCells(cell, true, mockNotifyCb)
@@ -265,6 +267,8 @@ describe('updateCells()', () => {
   })
 
   test('update cell with error without notify callback', async () => {
+    // Suppress logging as error message is expected
+    vi.spyOn(console, 'error').mockImplementation(() => undefined)
     const editStore = useEditStore()
     mockFetchError()
     updateCells(cell, true) // No callback

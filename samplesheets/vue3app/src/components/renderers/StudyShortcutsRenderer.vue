@@ -2,7 +2,6 @@
 import { BButton } from 'bootstrap-vue-next'
 
 defineProps({ params: Object })
-
 const btnClasses: string = 'sodar-list-btn sodar-ss-irods-btn mr-1'
 </script>
 

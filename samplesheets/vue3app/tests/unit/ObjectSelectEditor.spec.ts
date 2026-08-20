@@ -37,6 +37,8 @@ import {
   TMP_UUID3
 } from '../testConstants.ts'
 
+// Test Data -------------------------------------------------------------------
+
 const mockGridApi = {
   forEachNode: vi.fn(),
   refreshCells: vi.fn()
@@ -113,11 +115,14 @@ const samples: { [key: string]: StudyEditContextSample } = {
 }
 const cellUpdateUrl: string = '/samplesheets/ajax/edit/cell/' + PROJECT_UUID
 
-// Global config and mocks
+// Global Setup ----------------------------------------------------------------
+
 vi.mock('@/utils/editUtils.ts', async () => {
   const actual = await vi.importActual('@/utils/editUtils.ts')
   return { ...actual, updateNode: vi.fn() }
 })
+
+// Tests -----------------------------------------------------------------------
 
 describe('ObjectSelectEditor.vue', () => {
   function setSampleParams () {

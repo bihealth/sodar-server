@@ -10,7 +10,10 @@ import {
   type StudyShortcutSchema,
   type StudyShortcutsRendererParams
 } from '@/types.ts'
+
 import { copy } from '../testUtils.ts'
+
+// Test Data -------------------------------------------------------------------
 
 const igvOpenUrlPrefix: string =
   'http://127.0.0.1:60151/load?genome=b37&merge=false&file='
@@ -48,12 +51,17 @@ const defaultParams: StudyShortcutsRendererParams = {
 }
 let params: StudyShortcutsRendererParams
 
+// Global Setup ----------------------------------------------------------------
+
 config.global.plugins = [createBootstrap()]
+
+// Tests -----------------------------------------------------------------------
 
 describe('StudyShortcutsRenderer.vue', () => {
   function mountComponent (): VueWrapper {
     return mount(StudyShortcutsRenderer, { props: { params: params } })
   }
+
   beforeEach(() => {
     params = copy(defaultParams) as StudyShortcutsRendererParams
   })

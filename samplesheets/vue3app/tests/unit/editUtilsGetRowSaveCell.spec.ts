@@ -20,7 +20,7 @@ import {
 import { copy } from '../testUtils.ts'
 import { TMP_UUID } from '../testConstants.ts'
 
-// Test data -------------------------------------------------------------------
+// Test Data -------------------------------------------------------------------
 
 const defaultHeaderName = 'Name'
 const defaultCellData: SheetTableCellData = {

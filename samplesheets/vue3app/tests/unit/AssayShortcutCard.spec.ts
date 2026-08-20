@@ -13,14 +13,19 @@ import { sodarContext } from '../data/sodarContext.ts'
 import { assayShortcuts } from '../data/assayShortcuts.ts'
 import { ASSAY_UUID } from '../testConstants.ts'
 
+// Global Setup ----------------------------------------------------------------
+
 // Set up bootstrap-vue-next plugin to enable composable use
 config.global.plugins = [createBootstrap()]
+
+// Tests -----------------------------------------------------------------------
 
 describe('AssayShortcutCard.vue', () => {
   function mountComponent (): VueWrapper {
     const props = { assayUuid: ASSAY_UUID, modalRef: null }
     return mount(AssayShortcutCard, { props: props })
   }
+
   beforeEach(() => {
     setActivePinia(createPinia())
     const appStore = useAppStore()

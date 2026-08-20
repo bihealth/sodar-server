@@ -4,14 +4,13 @@
 import { onMounted } from 'vue'
 import { type SheetTableCellData } from '@/types.ts'
 
-// Data and initial setup ------------------------------------------------------
+// External Data ---------------------------------------------------------------
 
 const props = defineProps({ params: Object })
 // console.dir(props.params)
-
 const cellData = props.params?.value as SheetTableCellData
 
-// API and lifecycle -----------------------------------------------------------
+// API and Life Cycle ----------------------------------------------------------
 
 // Return value for ag-grid API
 function getValue () {

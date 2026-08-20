@@ -224,10 +224,10 @@ Sample Sheets Settings
 ``SHEETS_SYNC_INTERVAL``
     Interval for remote sample sheet synchronization in minutes (integer).
 ``SHEETS_IGV_OMIT_BAM``
-    BAM and CRAM file name suffixes to omit from study shortcuts and IGV session
+    BAM and CRAM file path patterns to omit from study shortcuts and IGV session
     generation.
 ``SHEETS_IGV_OMIT_VCF``
-    VCF file name suffixes to omit from study shortcuts and IGV session
+    VCF file path patterns suffixes to omit from study shortcuts and IGV session
     generation.
 ``SHEETS_IRODS_TICKET_HOSTS``
     List of host names or IP addresses to be used as default allowed hosts for

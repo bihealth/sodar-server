@@ -15,7 +15,7 @@ import { useTableStore } from '@/stores/tableStore.ts'
 import { insertRow } from '@/utils/editUtils.ts'
 import { ROW_INS_MSG_DISABLED } from '@/constants.ts'
 
-// External --------------------------------------------------------------------
+// External Data ---------------------------------------------------------------
 
 const appStore = useAppStore()
 const editStore = useEditStore()
@@ -32,7 +32,7 @@ const props = defineProps([
 const filterVal = ref<string>(tableStore.initialFilter)
 const tableHeight = ref<number>(400)
 
-// Internal --------------------------------------------------------------------
+// Internal Vars ---------------------------------------------------------------
 
 let cardClass: string = 'card sodar-ss-data-card sodar-ss-data-card-'
 let tableType: string
@@ -44,7 +44,7 @@ let gridOptions: GridOptions
 let colDefs
 let rowData
 
-// Data setup ------------------------------------------------------------------
+// Setup -----------------------------------------------------------------------
 
 if (!props.assayMode) {
   // Setup study
@@ -76,17 +76,17 @@ function getControlColClass () {
   return appStore.editMode ? 'col-sm-4' : 'col-sm-3'
 }
 
+// Update table filter
+function onFilterUpdate () {
+  gridApi.setGridOption('quickFilterText', filterVal.value)
+}
+
 // Handle grid ready event to store grid API and update table
 function onGridReady (params: GridReadyEvent) {
   if (!props.assayMode) tableStore.gridApi.study = params.api
   else tableStore.gridApi.assays[props.tableUuid] = params.api
   gridApi = params.api
   if (filterVal.value) onFilterUpdate() // Apply filter if initially set
-}
-
-// Update table filter
-function onFilterUpdate () {
-  gridApi.setGridOption('quickFilterText', filterVal.value)
 }
 
 function onRowInsert () {

@@ -18,15 +18,26 @@ import {
 } from '@/constants.ts'
 import { type SodarContextInvestigation } from '@/types.ts'
 
+// External Data ---------------------------------------------------------------
+
 const router = useRouter()
 const appStore = useAppStore()
+
+// Refs ------------------------------------------------------------------------
+
+const investigation = ref<SodarContextInvestigation>(
+  appStore.sodarContext?.investigation as SodarContextInvestigation)
+
+// Internal Vars ---------------------------------------------------------------
 
 const isaMetaTitle = 'ISA-Tab metadata'
 const sodarMetaTitle = 'SODAR metadata'
 
+// Setup -----------------------------------------------------------------------
+
 appStore.viewActive = VIEW_OVERVIEW
-const investigation = ref<SodarContextInvestigation>(
-  appStore.sodarContext?.investigation as SodarContextInvestigation)
+
+// Helpers ---------------------------------------------------------------------
 
 // Navigate to study and optionally assay
 function handleNavigation (studyUuid: string, assayUuid: string | null) {
@@ -51,6 +62,8 @@ function handleNavigation (studyUuid: string, assayUuid: string | null) {
     if (anchorElem) anchorElem.scrollTop = 0
   }
 }
+
+// API and Life Cycle ----------------------------------------------------------
 
 watch(() => appStore.sodarContext, (newContext) => {
   if (newContext && newContext.investigation) {

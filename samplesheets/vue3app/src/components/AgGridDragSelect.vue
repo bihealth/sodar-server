@@ -138,17 +138,6 @@ function isSelected (el: HTMLElement): boolean {
   return false
 }
 
-function updateGridLeft () {
-  if (!appContent) return
-  const leftPadding = parseFloat(
-  window.getComputedStyle(
-    appContent as HTMLElement, null).getPropertyValue('padding-left'))
-  gridLeft = leftContent!.clientWidth +
-    document.querySelector('#agds-' + props.tableUuid)!.clientLeft + leftPadding
-}
-
-// Event Handlers --------------------------------------------------------------
-
 function onClickOutside (event: PointerEvent) {
   let el: HTMLElement | null = event.target as HTMLElement
   while (el) {
@@ -253,7 +242,16 @@ function onMouseUp () {
   pointEnd.value = null
 }
 
-// Life Cycle ------------------------------------------------------------------
+function updateGridLeft () {
+  if (!appContent) return
+  const leftPadding = parseFloat(
+  window.getComputedStyle(
+    appContent as HTMLElement, null).getPropertyValue('padding-left'))
+  gridLeft = leftContent!.clientWidth +
+    document.querySelector('#agds-' + props.tableUuid)!.clientLeft + leftPadding
+}
+
+// API and Life Cycle ----------------------------------------------------------
 
 onMounted(() => {
   updateGridLeft()

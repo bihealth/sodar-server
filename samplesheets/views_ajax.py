@@ -1815,11 +1815,7 @@ class SheetEditConfigUpdateAjaxView(SODARBaseProjectAjaxView):
             a_uuid = field['assay']
             n_idx = field['node_idx']
             f_idx = field['field_idx']
-            is_name = (
-                True
-                if field['config']['type'] in ['name', 'process_name']
-                else False
-            )
+            is_name = field['config']['type'] in ['name', 'process_name']
             debug_info = (
                 f'study="{s_uuid}"; assay="{a_uuid}"; n={n_idx}; f={f_idx})'
             )

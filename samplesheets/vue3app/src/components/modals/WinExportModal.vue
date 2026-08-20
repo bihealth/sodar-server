@@ -1,17 +1,26 @@
 <script setup lang="ts">
 import { ref, useTemplateRef } from 'vue'
 import { BButton, BModal } from 'bootstrap-vue-next'
+
 import ModalHeader from '@/components/modals/ModalHeader.vue'
 
-const props = defineProps(['projectUuid'])
+// External Data ---------------------------------------------------------------
 
+const props = defineProps(['projectUuid'])
 const modalRef = useTemplateRef('winExportModal')
+
+// Refs ------------------------------------------------------------------------
+
 const showModal = ref<boolean>(false)
+
+// Helpers ---------------------------------------------------------------------
 
 function onClick () {
   window.location.href = 'export/isa/' + props.projectUuid
   showModal.value = false
 }
+
+// API and Life Cycle ----------------------------------------------------------
 
 function show () {
   showModal.value = true

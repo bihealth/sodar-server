@@ -61,9 +61,8 @@ import {
   VARIANT_SUCCESS,
 } from '@/constants.ts'
 
-// Data and initial setup ------------------------------------------------------
+// Constants -------------------------------------------------------------------
 
-// Constants
 const CONFIG_COPY_KEYS: Array<string> = [
   'allow_list',
   'default',
@@ -104,7 +103,8 @@ const VALIDATE_TARGET_RANGE: string = 'range'
 const VALIDATE_TARGET_REGEX: string = 'regex'
 const VALIDATE_TARGET_SELECT: string = 'select'
 
-// Interfaces
+// Interfaces ------------------------------------------------------------------
+
 interface ValidState {
   [VALIDATE_TARGET_DEFAULT]: boolean
   [VALIDATE_TARGET_RANGE]: boolean
@@ -112,14 +112,16 @@ interface ValidState {
   [VALIDATE_TARGET_SELECT]: boolean
 }
 
-// External
+// External Data ---------------------------------------------------------------
+
 const clipboard = useClipboard()
 const appStore = useAppStore()
 const editStore = useEditStore()
 const tableStore = useTableStore()
 const modalRef = useTemplateRef('columnConfigModal')
 
-// Refs
+// Refs ------------------------------------------------------------------------
+
 const classDefault = ref<string>('')
 const colType = ref<string | null>(null)
 const config = ref<StudyEditConfigNodeField | null>(null)
@@ -146,7 +148,8 @@ const validState = ref<ValidState>({
 }) // Formerly inputValid
 const valueOptions = ref<string>('')
 
-// Internal
+// Internal Vars ---------------------------------------------------------------
+
 let gridApis: Array<GridApi>
 let fieldId: string = ''
 let ogColType: string // Original column type before editing
@@ -361,6 +364,30 @@ function onOntologyInsert () {
   ontologyInsert.value = ''
 }
 
+// Update related cells for all grids
+function refreshGridCells () {
+  for (const api of gridApis) {
+    api.forEachNode(function (rowNode) {
+      if ('newRow' in rowNode.data.col0 && fieldId in rowNode.data) {
+        const newValue = rowNode.data[fieldId]
+        if ([
+            EDIT_COL_TYPE_NAME,
+            EDIT_COL_TYPE_LINK,
+            EDIT_COL_TYPE_PROTOCOL].includes(colType.value as string)) {
+          newValue.editable = true
+        } else if ('newInit' in newValue && !newValue.newInit) {
+          newValue.editable = config.value!.editable
+        }
+        rowNode.setDataValue(fieldId, newValue)
+      }
+    })
+    // TODO: Ensure this works with changed cells (see vueapp comment)
+    api.refreshCells({ columns: [fieldId], force: true })
+    // TODO: If not, call the following
+    // api.redrawRows()
+  }
+}
+
 function resetModalState (p: HeaderEditRendererParams) {
   params = p
 
@@ -505,30 +532,6 @@ function toggleDefaultFill () {
   } else {
     defaultFill.value = false  // No default fill if we don't have default
     defaultFillEnable.value = false
-  }
-}
-
-// Update related cells for all grids
-function refreshGridCells () {
-  for (const api of gridApis) {
-    api.forEachNode(function (rowNode) {
-      if ('newRow' in rowNode.data.col0 && fieldId in rowNode.data) {
-        const newValue = rowNode.data[fieldId]
-        if ([
-            EDIT_COL_TYPE_NAME,
-            EDIT_COL_TYPE_LINK,
-            EDIT_COL_TYPE_PROTOCOL].includes(colType.value as string)) {
-          newValue.editable = true
-        } else if ('newInit' in newValue && !newValue.newInit) {
-          newValue.editable = config.value!.editable
-        }
-        rowNode.setDataValue(fieldId, newValue)
-      }
-    })
-    // TODO: Ensure this works with changed cells (see vueapp comment)
-    api.refreshCells({ columns: [fieldId], force: true })
-    // TODO: If not, call the following
-    // api.redrawRows()
   }
 }
 
@@ -728,7 +731,7 @@ function validate (target?: string) {
   }
 }
 
-// API and lifecycle -----------------------------------------------------------
+// API and Life Cycle ----------------------------------------------------------
 
 function show (p: HeaderEditRendererParams) {
   // console.log('DEBUG: show() called')

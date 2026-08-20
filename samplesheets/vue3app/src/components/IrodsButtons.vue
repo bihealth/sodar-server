@@ -3,6 +3,8 @@ import { BButton } from 'bootstrap-vue-next'
 import { useClipboard } from '@vueuse/core'
 import { IRODS_PATH_COPY_MSG, VARIANT_INFO } from '@/constants.ts'
 
+// External Data ---------------------------------------------------------------
+
 const props = defineProps([
   'editMode',
   'enabled',
@@ -17,14 +19,16 @@ const props = defineProps([
 ])
 const clipboard = useClipboard()
 
-function getEnabledState (): boolean {
-  return !props.editMode && props.irodsStatus && props.enabled !== false
-}
+// Helpers ---------------------------------------------------------------------
 
 // Copy path and display notification toast
 function copyPath () {
   clipboard.copy(props.irodsPath)
   if (props.notifyCb) props.notifyCb(IRODS_PATH_COPY_MSG, VARIANT_INFO)
+}
+
+function getEnabledState (): boolean {
+  return !props.editMode && props.irodsStatus && props.enabled !== false
 }
 </script>
 

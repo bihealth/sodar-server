@@ -43,7 +43,7 @@ Dependencies
 This release requires at least the following versions of SODAR
 environment components:
 
-- `sodar-docker-compose <https://github.com/bihealth/sodar-docker-compose>`_ ``dev``
+- `sodar-docker-compose <https://github.com/bihealth/sodar-docker-compose>`_ ``v4.3.5-1``
 - `irods-docker <https://github.com/bihealth/irods-docker>`_ ``4.3.5-1``
 - `davrods-docker <https://github.com/bihealth/davrods-docker>`_ ``4.3.5_1.5.2-1``
 

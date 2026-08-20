@@ -17,19 +17,23 @@ import {
   EDIT_MSG_SAVE_FAIL_PREFIX,
   URL_VERSION_SAVE_PREFIX,
   VARIANT_DANGER,
-  VARIANT_INFO,
   VARIANT_SUCCESS,
 } from '@/constants.ts'
 
-// Data and initial setup ------------------------------------------------------
+// External Data ---------------------------------------------------------------
 
 const appStore = useAppStore()
 const editStore = useEditStore()
+
+// Refs ------------------------------------------------------------------------
 
 const description = ref<string>('')
 const modalRef = useTemplateRef('versionSaveModal')
 let notifyCb: NotifyCb | undefined = undefined
 const showModal = ref<boolean>(false)
+
+// Internal Vars ---------------------------------------------------------------
+
 const url = URL_VERSION_SAVE_PREFIX + appStore.projectUuid
 
 // Helpers ---------------------------------------------------------------------
@@ -60,7 +64,7 @@ function postSave () {
   })
 }
 
-// API and lifecycle -----------------------------------------------------------
+// API and Life Cycle ----------------------------------------------------------
 
 function show (modalNotifyCb?: NotifyCb) {
   notifyCb = modalNotifyCb

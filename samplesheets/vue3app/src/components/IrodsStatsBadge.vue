@@ -2,12 +2,18 @@
 import { ref } from 'vue'
 import prettyBytes from 'pretty-bytes'
 
+// External Data ---------------------------------------------------------------
+
 const props = defineProps(['irodsPath', 'irodsStatus', 'projectUuid'])
+
+// Refs ------------------------------------------------------------------------
 
 const fileCount = ref<number | null>(null)
 const totalSize = ref<number | null>(null)
 const badgeClass = ref<string>('badge-info')
 const error = ref<boolean>(false)
+
+// Helpers ---------------------------------------------------------------------
 
 function setStats (stats: { file_count: number, total_size: number }) {
   fileCount.value = stats.file_count
@@ -40,6 +46,9 @@ function updateStats () {
       // TODO: Display error toast
     })
 }
+
+// Setup -----------------------------------------------------------------------
+
 if (props.irodsStatus) {
   updateStats()
 } // TODO: Set periodic update

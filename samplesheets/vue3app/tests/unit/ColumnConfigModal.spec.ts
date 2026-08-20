@@ -70,6 +70,8 @@ import {
   TMP_UUID2
 } from '../testConstants.ts'
 
+// Test Data -------------------------------------------------------------------
+
 // Name column is used for default params
 const defaultParams = {
   assayMode: false,
@@ -190,7 +192,8 @@ const pasteInputSel = '#sodar-ss-col-config-input-clip-paste'
 const updateBtnSel = '#sodar-ss-col-config-btn-update'
 const cancelBtnSel = '#sodar-ss-col-config-btn-cancel'
 
-// Global setup
+// Global Setup ----------------------------------------------------------------
+
 config.global.plugins = [createBootstrap()]
 
 // Mock clipboard (NOTE: has to be done in module root)
@@ -199,6 +202,8 @@ vi.mock('@vueuse/core', async () => {
   const actual = await vi.importActual('@vueuse/core')
   return { ...actual, useClipboard: () => ({ copy: mockCopy }) }
 })
+
+// Tests -----------------------------------------------------------------------
 
 describe('ColumnConfigModal.vue', () => {
   async function clickUpdate (wrapper: VueWrapper): Promise<void> {

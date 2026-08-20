@@ -1,10 +1,6 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
-import {
-  type Column,
-  type GridApi,
-  type IRowNode
-} from 'ag-grid-community'
+import { type Column, type GridApi, type IRowNode } from 'ag-grid-community'
 
 import { useAppStore } from '@/stores/appStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
@@ -35,7 +31,7 @@ import {
   TMP_UUID3
 } from '../testConstants.ts'
 
-// Test data -------------------------------------------------------------------
+// Test Data -------------------------------------------------------------------
 
 interface TestCell {
   colId: string,

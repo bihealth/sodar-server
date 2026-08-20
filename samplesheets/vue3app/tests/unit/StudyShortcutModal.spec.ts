@@ -17,6 +17,8 @@ import { studyShortcutResponse } from '../data/studyShortcutResponse.ts'
 import { copy, waitSelector } from '../testUtils.ts'
 import { STUDY_UUID } from '../testConstants.ts'
 
+// Test Data -------------------------------------------------------------------
+
 const urlPrefix: string = 'http://localhost:8000/samplesheets/study/germline/' +
                           'render/igv/'
 const famUuid: string = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
@@ -28,7 +30,11 @@ const errorMsg: string = 'Error'
 let cellValue: StudyShortcutCell
 let resBody: StudyShortcutResponseBody
 
+// Global Setup ----------------------------------------------------------------
+
 config.global.plugins = [createBootstrap()]
+
+// Tests -----------------------------------------------------------------------
 
 describe('StudyShortcutModal.vue', () => {
   beforeEach(() => {

@@ -38,6 +38,7 @@ describe('TableDetailListRow.vue', () => {
   function mountComponent (): VueWrapper {
     return mount(TableDetailListRow, { props: props })
   }
+
   beforeEach(() => {
     vi.resetAllMocks()
     props = copy(defaultProps) as TableDetailListRowProps

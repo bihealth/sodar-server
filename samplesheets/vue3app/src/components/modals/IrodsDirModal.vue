@@ -7,6 +7,13 @@ import ModalHeader from '@/components/modals/ModalHeader.vue'
 import WaitSection from '@/components/WaitSection.vue'
 import { useAppStore } from '@/stores/appStore.ts'
 import { type IrodsDirFile, type IrodsDirResponseBody } from '@/types.ts'
+import {
+  URL_DATA_REQUEST_CREATE_PREFIX,
+  URL_DATA_REQUEST_DELETE_PREFIX,
+  URL_IRODS_LIST_PREFIX,
+} from '@/constants.ts'
+
+// Interfaces ------------------------------------------------------------------
 
 interface IrodsDataRequestResponse {
   detail: string,
@@ -14,21 +21,21 @@ interface IrodsDataRequestResponse {
   user: string | null
 }
 
+// External Data ---------------------------------------------------------------
+
 const appStore = useAppStore()
-
-// Modal setup
 const modalRef = useTemplateRef('irodsDirModal')
-const showModal = ref<boolean>(false)
 
-// Actual constants
-const fileListUrl: string = '/samplesheets/ajax/irods/objects/'
+// Internal Vars ---------------------------------------------------------------
+
 const dataRequestUrls = {
-  issue: '/samplesheets/ajax/irods/request/create/',
-  cancel: '/samplesheets/ajax/irods/request/delete/'
+  issue: URL_DATA_REQUEST_CREATE_PREFIX,
+  cancel: URL_DATA_REQUEST_DELETE_PREFIX
 }
 const modalTitlePrefix = 'Files in iRODS'
 
-// Reactive vars
+// Refs ------------------------------------------------------------------------
+
 const emptyList = ref<boolean>(false)
 const fileCount = ref<number>(0)
 const fileList = ref<Array<IrodsDirFile>>([])
@@ -37,11 +44,66 @@ const filterInput = ref<string>('')
 const irodsPath = ref<string>('')
 const message = ref<string>('')
 const modalTitle = ref<string>(modalTitlePrefix)
+const showModal = ref<boolean>(false)
 const visCount = ref<number>(0)
+
+// Helpers ---------------------------------------------------------------------
+
+// Return true if user is allowed to delete iRODS data request
+function allowDataRequestCancel (file: IrodsDirFile): boolean {
+  return appStore.getPerm('is_superuser') as boolean ||
+    file.irods_request_user === appStore.sodarContext?.user_uuid
+}
+
+// Return true if user is allowed to issue iRODS data request for deletion
+function allowDataRequestIssue (file: IrodsDirFile): boolean {
+  return appStore.getPerm('edit_sheet') as boolean && !file.irods_request_status
+}
 
 // Return cell class with strikethrough if delete request is active
 function getCellClass (fileEntry: IrodsDirFile) {
   return { 'text-strikethrough': fileEntry.irods_request_status === 'ACTIVE' }
+}
+
+// Return button title for data request cancelling
+function getDataRequestCancelTitle (file: IrodsDirFile): string {
+  return allowDataRequestCancel(file)
+    ? 'Cancel iRODS delete request'
+    : 'Already requested by another user'
+}
+
+// Return button title for data request issuing
+function getDataRequestIssueTitle (file: IrodsDirFile): string {
+  return allowDataRequestIssue(file)
+    ? 'Issue iRODS delete request'
+    : 'User not allowed to issue request'
+}
+
+// Get parameters for iRODS data request Ajax view request
+function getDataRequestParams (file: IrodsDirFile): RequestInit {
+  return {
+    method: 'POST',
+      body: JSON.stringify({ path: file.path }),
+      credentials: 'same-origin',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'X-CSRFToken': appStore.sodarContext!['csrf_token'] as string
+      }
+  } as RequestInit
+}
+
+// Get file list with Ajax call
+function getFileList (path: string) {
+  const listUrl: string = URL_IRODS_LIST_PREFIX + appStore.projectUuid +
+      '?path=' + encodeURIComponent(path)
+  fetch(listUrl, { credentials: 'same-origin' })
+    .then(response => response.json())
+    .then(response => {
+      handleFileListResponse(response)
+    }).catch(function (error) {
+      message.value = 'Error fetching data: ' + error.detail
+  })
 }
 
 // Return relative path for file
@@ -51,17 +113,14 @@ function getRelativePath (path: string): string {
     irodsPath.value.split('/').length, pathSplit.length - 1).join('/')
 }
 
-// Update file list for filter input
-function updateFilter () {
-  let vc = 0
-  for (let i = 0; i < fileList.value.length; i++) {
-    const vis = filterInput.value === '' ||
-      fileList.value[i]?.displayPath?.toLowerCase().includes(
-        filterInput.value.toLowerCase())
-    fileList.value[i]!.visibleInList = vis
-    if (vis === true) vc += 1
+// Handle iRODS delete issue/cancel request response
+function handleDataRequestResponse (
+    response: IrodsDataRequestResponse,
+    file: IrodsDirFile) {
+  if (response.detail === 'ok') {
+    file.irods_request_status = response.status
+    file.irods_request_user = response.user
   }
-  visCount.value = vc
 }
 
 // Handle data received from file list Ajax call
@@ -86,68 +145,6 @@ function handleFileListResponse (response: IrodsDirResponseBody) {
   }
 }
 
-// Get file list with Ajax call
-function getFileList (path: string) {
-  const listUrl: string = fileListUrl + appStore.projectUuid + '?path=' +
-    encodeURIComponent(path)
-  fetch(listUrl, { credentials: 'same-origin' })
-    .then(response => response.json())
-    .then(response => {
-      handleFileListResponse(response)
-    }).catch(function (error) {
-      message.value = 'Error fetching data: ' + error.detail
-  })
-}
-
-// Return true if user is allowed to issue iRODS data request for deletion
-function allowDataRequestIssue (file: IrodsDirFile): boolean {
-  return appStore.getPerm('edit_sheet') as boolean && !file.irods_request_status
-}
-
-// Return true if user is allowed to delete iRODS data request
-function allowDataRequestCancel (file: IrodsDirFile): boolean {
-  return appStore.getPerm('is_superuser') as boolean ||
-    file.irods_request_user === appStore.sodarContext?.user_uuid
-}
-
-// Return button title for data request issuing
-function getDataRequestIssueTitle (file: IrodsDirFile): string {
-  return allowDataRequestIssue(file)
-    ? 'Issue iRODS delete request'
-    : 'User not allowed to issue request'
-}
-
-// Return button title for data request cancelling
-function getDataRequestCancelTitle (file: IrodsDirFile): string {
-  return allowDataRequestCancel(file)
-    ? 'Cancel iRODS delete request'
-    : 'Already requested by another user'
-}
-
-// Get parameters for iRODS data request Ajax view request
-function getDataRequestParams (file: IrodsDirFile): RequestInit {
-  return {
-    method: 'POST',
-      body: JSON.stringify({ path: file.path }),
-      credentials: 'same-origin',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        'X-CSRFToken': appStore.sodarContext!['csrf_token'] as string
-      }
-  } as RequestInit
-}
-
-// Handle iRODS delete issue/cancel request response
-function handleDataRequestResponse (
-    response: IrodsDataRequestResponse,
-    file: IrodsDirFile) {
-  if (response.detail === 'ok') {
-    file.irods_request_status = response.status
-    file.irods_request_user = response.user
-  }
-}
-
 // Submit an Ajax request for iRODS data request creation or deletion
 function submitDataRequest (file: IrodsDirFile, action: 'issue' | 'cancel') {
   if (action === 'cancel' || confirm(
@@ -162,6 +159,21 @@ function submitDataRequest (file: IrodsDirFile, action: 'issue' | 'cancel') {
       })
   }
 }
+
+// Update file list for filter input
+function updateFilter () {
+  let vc = 0
+  for (let i = 0; i < fileList.value.length; i++) {
+    const vis = filterInput.value === '' ||
+      fileList.value[i]?.displayPath?.toLowerCase().includes(
+        filterInput.value.toLowerCase())
+    fileList.value[i]!.visibleInList = vis
+    if (vis === true) vc += 1
+  }
+  visCount.value = vc
+}
+
+// API and Life Cycle ----------------------------------------------------------
 
 // Setup data and show modal
 function show (path: string) {

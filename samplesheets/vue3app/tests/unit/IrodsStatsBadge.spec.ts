@@ -9,6 +9,8 @@ import {
   type IrodsStatsResponseBody
 } from '../testTypes.ts'
 
+// Test Data -------------------------------------------------------------------
+
 const defaultProps: IrodsStatsBadgeProps = {
   irodsPath: STUDY_PATH,
   irodsStatus: true,
@@ -19,10 +21,13 @@ const bodySuccess = { file_count: 170, total_size: 170000000 }
 const statusTextSuccess = 'ok'
 const statusTextError = 'Not found'
 
+// Tests -----------------------------------------------------------------------
+
 describe('IrodsStatsBadge.vue', () => {
   function mountComponent (): VueWrapper {
     return mount(IrodsStatsBadge, { props: props })
   }
+
   function mockFetch (
       status: number,
       statusText: string,
@@ -34,6 +39,7 @@ describe('IrodsStatsBadge.vue', () => {
         statusText: statusText
       } as Response))
   }
+
   beforeEach(() => {
     props = copy(defaultProps) as IrodsStatsBadgeProps
   })

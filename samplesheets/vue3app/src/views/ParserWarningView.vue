@@ -1,19 +1,38 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+
 import WaitSection from '@/components/WaitSection.vue'
 import { useAppStore } from '@/stores/appStore.ts'
 import { VIEW_PARSER_WARNING } from '@/constants.ts'
 
+// Interfaces ------------------------------------------------------------------
+
+interface warningInput {
+  category: string
+  message: string
+}
+interface warningOutput {
+  category: string
+  message: string
+  source: string
+}
+
+// External Data ---------------------------------------------------------------
+
 const appStore = useAppStore()
 
-interface warningInput { message: string, category: string }
-interface warningOutput { source: string, message: string, category: string }
-const warnings = ref<Array<warningOutput>>([])
-const message = ref<string>('')
+// Refs ------------------------------------------------------------------------
+
 const limitReached = ref<boolean>(false)
+const message = ref<string>('')
+const warnings = ref<Array<warningOutput>>([])
+
+// Setup -----------------------------------------------------------------------
 
 // Set current view on setup
 appStore.viewActive = VIEW_PARSER_WARNING
+
+// Helpers ---------------------------------------------------------------------
 
 function buildWarnings (
     warnings: Array<warningInput>, source: string): Array<warningOutput> {
@@ -27,6 +46,17 @@ function buildWarnings (
     })
   }
   return ret
+}
+
+function getWarnings () {
+  const url = '/samplesheets/ajax/warnings/' + appStore.projectUuid
+  fetch(url, { credentials: 'same-origin' })
+    .then(response => response.json())
+    .then(response => {
+      handleWarningsResponse(response)
+    }).catch(function (error) {
+      message.value = 'Error fetching data: ' + error
+  })
 }
 
 function handleWarningsResponse (
@@ -71,16 +101,7 @@ function handleWarningsResponse (
   }
 }
 
-function getWarnings () {
-  const url = '/samplesheets/ajax/warnings/' + appStore.projectUuid
-  fetch(url, { credentials: 'same-origin' })
-    .then(response => response.json())
-    .then(response => {
-      handleWarningsResponse(response)
-    }).catch(function (error) {
-      message.value = 'Error fetching data: ' + error
-  })
-}
+// API and Life Cycle ----------------------------------------------------------
 
 // Get parser warnings once sodarContext is retrieved
 if (appStore.sodarContext) { getWarnings() } else {

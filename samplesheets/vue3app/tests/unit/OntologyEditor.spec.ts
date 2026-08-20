@@ -1,7 +1,6 @@
 import { nextTick, type TemplateRef } from 'vue'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
-// import { setActivePinia, createPinia } from 'pinia'
 
 import OntologyEditor from '@/components/editors/OntologyEditor.vue'
 import {
@@ -12,6 +11,8 @@ import {
 import studyTablesEdit from '../data/studyTablesEdit.json'
 import { copy } from '../testUtils.ts'
 import { STUDY_UUID } from '../testConstants.ts'
+
+// Test Data -------------------------------------------------------------------
 
 const defaultParams = {
   assayMode: false,
@@ -33,6 +34,8 @@ const defaultParams = {
 }
 let params: GridCellEditorParams
 const mockModal = { show: vi.fn() }
+
+// Tests -----------------------------------------------------------------------
 
 describe('OntologyEditor.vue', () => {
   async function mountComponent (): Promise<VueWrapper> {

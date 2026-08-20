@@ -2,17 +2,21 @@
 import IrodsButtons from '@/components/IrodsButtons.vue'
 import { type IrodsButtonsRendererParams } from '@/types.ts'
 
+// External Data ---------------------------------------------------------------
+
 defineProps({ params: Object })
 
-function getIrodsPath (params: IrodsButtonsRendererParams) {
-  if (params.value) return params.value.path
-  return params.assayIrodsPath
-}
+// Helpers ---------------------------------------------------------------------
 
 function getEnabledState (params: IrodsButtonsRendererParams) {
   if (!params.value) return true
   if (!params.value.path) return false // Disable buttons if path=null
   return params.value.enabled
+}
+
+function getIrodsPath (params: IrodsButtonsRendererParams) {
+  if (params.value) return params.value.path
+  return params.assayIrodsPath
 }
 </script>
 

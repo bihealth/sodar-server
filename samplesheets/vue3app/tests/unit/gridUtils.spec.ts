@@ -34,7 +34,11 @@ import studyTables from '../data/studyTables.json'
 import studyShortcutsGermline from '../data/studyShortcutsGermline.json'
 import { ASSAY_PATH, ASSAY_UUID, STUDY_UUID } from '../testConstants.ts'
 
+// Test Data -------------------------------------------------------------------
+
 const extColType: string = 'EXTERNAL_LINKS'
+
+// Tests -----------------------------------------------------------------------
 
 describe('getAssayIrodsHeaderGroup()', () => {
   let context: SodarContext
@@ -572,7 +576,7 @@ describe('getDataCellFilterValue()', () => {
   })
 })
 
-// TODO: Test buildColDef() once edit mode is supported
-// TODO: Test buildRowData() once edit mode is supported
-// TODO: Test getRowEditHeaderGroup() once edit mode is supported
-// TODO: Test getFieldEditConfig() once edit mode is supported
+// TODO: Test buildColDef()
+// TODO: Test buildRowData()
+// TODO: Test getRowEditHeaderGroup()
+// TODO: Test getFieldEditConfig()

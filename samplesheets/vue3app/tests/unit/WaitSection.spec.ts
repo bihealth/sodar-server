@@ -2,6 +2,8 @@ import { describe, expect, test } from 'vitest'
 import { mount } from '@vue/test-utils'
 import WaitSection from '@/components/WaitSection.vue'
 
+// Tests -----------------------------------------------------------------------
+
 describe('StudyShortcutsRenderer.vue', () => {
   test('render component', async () => {
     const wrapper = mount(WaitSection)

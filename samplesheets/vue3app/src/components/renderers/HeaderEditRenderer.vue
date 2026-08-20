@@ -3,8 +3,12 @@ import { BButton } from 'bootstrap-vue-next'
 
 import { useEditStore } from '@/stores/editStore.ts'
 
+// External Data ---------------------------------------------------------------
+
 const props = defineProps({ params: Object })
 const editStore = useEditStore()
+
+// Helpers ---------------------------------------------------------------------
 
 function isEnabled (): boolean {
   return !(editStore.unsavedRow &&

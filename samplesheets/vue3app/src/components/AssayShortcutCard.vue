@@ -4,10 +4,13 @@ import { type AssayShortcut } from '@/types.ts'
 import { useAppStore } from '@/stores/appStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
 
+// External Data ---------------------------------------------------------------
+
 const appStore = useAppStore()
 const tableStore = useTableStore()
-
 defineProps(['assayUuid', 'modalRef'])
+
+// Helpers ---------------------------------------------------------------------
 
 // TODO: Add extra link support (see #2403)
 

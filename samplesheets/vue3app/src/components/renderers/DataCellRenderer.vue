@@ -2,11 +2,11 @@
 import { ref } from 'vue'
 import { BButton } from 'bootstrap-vue-next'
 import { useClipboard } from '@vueuse/core'
-import {
-  type SheetTableCellData,
-  type SheetTableOntologyRef
-} from '@/types.ts'
+
+import { type SheetTableCellData, type SheetTableOntologyRef} from '@/types.ts'
 import { CELL_EMPTY_VAL } from '@/constants.ts'
+
+// Interfaces ------------------------------------------------------------------
 
 interface ContactValue {
   name: string,
@@ -22,27 +22,29 @@ interface FileLink {
   url: string | null
 }
 
+// External Data ---------------------------------------------------------------
+
 const props = defineProps({ params: Object })
 const clipboard = useClipboard()
-
-const contactRegex = /(.+?)[<[](.+?)(?=[>\]])/
-const simpleLinkRegex = /([^<>]+)\s*<(https?:\/\/[^<>]+)>/
-const extLinkId = '{id}'
-
 const cellData = props.params!.value as SheetTableCellData
 const enableHover = (props.params!.enableHover === undefined)
-  ? true
-  : props.params!.enableHover
+  ? true : props.params!.enableHover
+
+// Refs ------------------------------------------------------------------------
 
 const colType = ref<string | null>(props.params?.colType)
 const displayValue = ref<
   string | Array<string> | Array<ContactValue> | Array<ExternalLink> | FileLink
 >('')
 
-// Return header name normalized into lower case
-function getHeaderName(): string {
-  return props.params!.colDef.headerName.toLowerCase()
-}
+// Internal Vars ---------------------------------------------------------------
+
+// TODO: Move to constants?
+const contactRegex = /(.+?)[<[](.+?)(?=[>\]])/
+const simpleLinkRegex = /([^<>]+)\s*<(https?:\/\/[^<>]+)>/
+const extLinkId = '{id}'
+
+// Helpers ---------------------------------------------------------------------
 
 // Return contact name(s) and email(s)
 function getContact (): Array<ContactValue> {
@@ -110,22 +112,9 @@ function getFileLinkToolTip (): string {
   return ''
 }
 
-// Test for simple link regex in value
-// NOTE: This currently only works for non-list values, see #2414
-function testSimpleLink (): boolean {
-  if (Array.isArray(cellData.value)) return false
-  const ret = simpleLinkRegex.test(cellData.value)
-  // TODO: Set up simpleLink in displayValue instead?
-  if (ret) {
-    displayValue.value = cellData.value.match(simpleLinkRegex) as Array<string>
-  }
-  return ret
-}
-
-// Return simple link legend
-// NOTE: This currently only works for non-list values, see #2414
-function getSimpleLinkLegend (): string {
-  return (displayValue.value as Array<string>)[1]!.trim()
+// Return header name normalized into lower case
+function getHeaderName(): string {
+  return props.params!.colDef.headerName.toLowerCase()
 }
 
 // Return file link no url cell class
@@ -145,16 +134,36 @@ function getOntologyTermString (): string {
   return ret.join(';')
 }
 
-// Handle mouseover and mouseout events for cell
+// Return simple link legend
+// NOTE: This currently only works for non-list values, see #2414
+function getSimpleLinkLegend (): string {
+  return (displayValue.value as Array<string>)[1]!.trim()
+}
+
+function onMouseOut (event: MouseEvent) {
+  (event.currentTarget as HTMLElement).className = 'sodar-ss-data'
+}
+
 function onMouseOver (event: MouseEvent) {
   const target = event.currentTarget as HTMLElement
   if (enableHover && target.scrollWidth > target.clientWidth) {
     target.className += ' sodar-ss-data-hover'
   }
 }
-function onMouseOut (event: MouseEvent) {
-  (event.currentTarget as HTMLElement).className = 'sodar-ss-data'
+
+// Test for simple link regex in value
+// NOTE: This currently only works for non-list values, see #2414
+function testSimpleLink (): boolean {
+  if (Array.isArray(cellData.value)) return false
+  const ret = simpleLinkRegex.test(cellData.value)
+  // TODO: Set up simpleLink in displayValue instead?
+  if (ret) {
+    displayValue.value = cellData.value.match(simpleLinkRegex) as Array<string>
+  }
+  return ret
 }
+
+// Setup -----------------------------------------------------------------------
 
 // Setup cell data
 if (cellData && cellData.value && cellData.value.length > 0) {

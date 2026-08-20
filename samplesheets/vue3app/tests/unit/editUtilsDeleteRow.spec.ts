@@ -1,20 +1,13 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
-import {
-  type ColDef,
-  type GridApi,
-  type IRowNode
-} from 'ag-grid-community'
+import { type ColDef, type GridApi, type IRowNode } from 'ag-grid-community'
 
 import { deleteRow } from '@/utils/editUtils.ts'
 import { useAppStore } from '@/stores/appStore.ts'
 import { useEditStore } from '@/stores/editStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
-import {
-  type RowDeleteParams,
-  type StudyEditContext
-} from '@/types.ts'
+import { type RowDeleteParams, type StudyEditContext } from '@/types.ts'
 import {
   AJAX_RES_OK,
   DB_OBJ_CLASS_MATERIAL,
@@ -44,7 +37,7 @@ const sourceUuid = TMP_UUID
 const sampleColId = 'col7'
 const sampleUuid = TMP_UUID2
 
-// Helpers ---------------------------------------------------------------------
+// Global Setup ----------------------------------------------------------------
 
 function mockForEachNode (nodes: Array<object>) {
   mockGridApi.forEachNode = vi.fn((callback) => {

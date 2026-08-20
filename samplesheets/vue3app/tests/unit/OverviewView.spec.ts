@@ -28,7 +28,11 @@ import { copy, waitSelector } from '../testUtils.ts'
 import { sodarContext } from '../data/sodarContext.ts'
 import { ASSAY_UUID, PROJECT_UUID, STUDY_UUID } from '../testConstants.ts'
 
+// Test Data -------------------------------------------------------------------
+
 let router: Router
+
+// Tests -----------------------------------------------------------------------
 
 describe('OverviewView.vue', () => {
   function mountComponent (): VueWrapper {

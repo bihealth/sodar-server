@@ -9,7 +9,7 @@ import { type RowInsertParams } from '@/types.ts'
 
 import { ASSAY_UUID, STUDY_UUID } from '../testConstants.ts'
 
-// Test data -------------------------------------------------------------------
+// Test Data -------------------------------------------------------------------
 
 let mockGridApi: GridApi
 let rowInsParams: RowInsertParams

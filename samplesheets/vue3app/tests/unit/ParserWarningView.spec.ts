@@ -10,9 +10,13 @@ import { copy, waitSelector } from '../testUtils.ts'
 import { sodarContext } from '../data/sodarContext.ts'
 import parserWarnings from '../data/parserWarnings.json'
 
+// Test Data -------------------------------------------------------------------
+
 const assayFile = 'a_small.txt'
 const newLineRegex = /\r\n|\r|\n/g
 let fetchBody: ParserWarningResponseBody
+
+// Tests -----------------------------------------------------------------------
 
 describe('ParserWarningView.vue', () => {
   function mountComponent (): VueWrapper {

@@ -8,22 +8,24 @@ import {
   BModal,
   type CheckboxValue
 } from 'bootstrap-vue-next'
-import {
-  type ColDef,
-  type ColGroupDef,
-  type GridApi
-} from 'ag-grid-community'
+import { type ColDef, type ColGroupDef, type GridApi} from 'ag-grid-community'
 
 import ModalHeader from '@/components/modals/ModalHeader.vue'
-import { VARIANT_DANGER, VARIANT_SUCCESS } from '@/constants.ts'
+import { useAppStore } from '@/stores/appStore.ts'
+import { useTableStore } from '@/stores/tableStore.ts'
 import {
   type NotifyCb,
   type SheetTableCellData,
   type SheetTableRowData,
   type StudyDisplayConfigNode,
 } from '@/types.ts'
-import { useAppStore } from '@/stores/appStore.ts'
-import { useTableStore } from '@/stores/tableStore.ts'
+import {
+  URL_DISPLAY_CONFIG_PREFIX,
+  VARIANT_DANGER,
+  VARIANT_SUCCESS
+} from '@/constants.ts'
+
+// Interfaces ------------------------------------------------------------------
 
 interface DisplayColGroup {
   headerName: string,
@@ -31,30 +33,50 @@ interface DisplayColGroup {
   children: Array<ColDef>
 }
 
-// Stores
+// External Data ---------------------------------------------------------------
+
 const appStore = useAppStore()
 const tableStore = useTableStore()
-// Modal setup
 const modalRef = useTemplateRef('columnToggleModal')
-const showModal = ref<boolean>(false)
-// Constants
-const configUrl = '/samplesheets/ajax/display/update/' +
-  appStore.currentStudyUuid
 
-// Reactive vars
+// Refs ------------------------------------------------------------------------
+
 const checkVals = ref<Array<Array<boolean | null>>>([])
 const displayCols = ref<Array<DisplayColGroup>>([]) // Formerly columnList
 const displayConfig = ref<Array<StudyDisplayConfigNode>>([])
 const filterInput = ref<string>('')
 const modalTitle = ref<string>('')
+const showModal = ref<boolean>(false)
 
-// Regular vars
+// Internal Vars ---------------------------------------------------------------
+
 let colValueStatus: {[key: string]: boolean} // Formerly columnValues
 let colDefs: Array<ColGroupDef>
 let colsUpdated: boolean = false
-let notifyCb: NotifyCb | undefined = undefined
+const configUrl = URL_DISPLAY_CONFIG_PREFIX + appStore.currentStudyUuid
 let gridApi: GridApi
+let notifyCb: NotifyCb | undefined = undefined
 let rowData: Array<SheetTableRowData>
+
+// Helpers ---------------------------------------------------------------------
+
+// Get checkbox state
+function getCheckState (
+    header: ColDef,
+    topIdx: number,
+    headerIdx: number
+): boolean {
+  // Update via local lookup table
+  const savedVal = checkVals.value[topIdx]![headerIdx]
+  if (savedVal !== null) return savedVal as boolean
+  // If not yet in lookup table, return column visibility setting
+  return gridApi?.getColumn(header.field as string)?.isVisible() as boolean
+}
+
+// Return true if column values have been filled in for any cell
+function getColValueStatus (header: ColDef): boolean {
+  return colValueStatus[header.field as string] as boolean
+}
 
 // Return column group to be displayed
 function getDisplayColGroup (
@@ -79,24 +101,6 @@ function getDisplayColGroup (
 // Return top header classes as string
 function getTopHeaderClass (topHeader: ColGroupDef): string {
   return (topHeader.headerClass as Array<string>).join(' ')
-}
-
-// Return true if column values have been filled in for any cell
-function getColValueStatus (header: ColDef): boolean {
-  return colValueStatus[header.field as string] as boolean
-}
-
-// Get checkbox state
-function getCheckState (
-    header: ColDef,
-    topIdx: number,
-    headerIdx: number
-): boolean {
-  // Update via local lookup table
-  const savedVal = checkVals.value[topIdx]![headerIdx]
-  if (savedVal !== null) return savedVal as boolean
-  // If not yet in lookup table, return column visibility setting
-  return gridApi?.getColumn(header.field as string)?.isVisible() as boolean
 }
 
 // Update column state
@@ -144,23 +148,6 @@ function onGroupUpdate (topHeader: ColGroupDef, topIdx: number) {
   colsUpdated = true
 }
 
-// Update column list for filter input
-function updateFilter () {
-  const inputVal = filterInput.value.toLowerCase()
-  for (let i = 0; i < displayCols.value.length; i++) {
-    for (let j = 0; j < displayCols.value[i]!.children.length; j++) {
-      const child = (displayCols.value[i]?.children[j] as ColDef)
-      child.context.visibleInList = !!(inputVal.length === 0 ||
-        child.headerName?.toLowerCase().includes(inputVal))
-    }
-  }
-}
-
-// Save current config as default value
-function saveDefaultConfig () {
-  if (colsUpdated) postUpdate(true)
-}
-
 // Post display config update request
 function postUpdate (setDefault: boolean) {
   fetch(configUrl, {
@@ -188,6 +175,25 @@ function postUpdate (setDefault: boolean) {
       if (notifyCb) notifyCb(msg, VARIANT_DANGER)
     })
 }
+
+// Save current config as default value
+function saveDefaultConfig () {
+  if (colsUpdated) postUpdate(true)
+}
+
+// Update column list for filter input
+function updateFilter () {
+  const inputVal = filterInput.value.toLowerCase()
+  for (let i = 0; i < displayCols.value.length; i++) {
+    for (let j = 0; j < displayCols.value[i]!.children.length; j++) {
+      const child = (displayCols.value[i]?.children[j] as ColDef)
+      child.context.visibleInList = !!(inputVal.length === 0 ||
+        child.headerName?.toLowerCase().includes(inputVal))
+    }
+  }
+}
+
+// API and Life Cycle ----------------------------------------------------------
 
 // Show modal
 function show (

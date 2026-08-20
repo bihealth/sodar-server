@@ -31,7 +31,7 @@ import {
 import { copy } from '../testUtils.ts'
 import { STUDY_UUID, TMP_UUID, TMP_UUID2 } from '../testConstants.ts'
 
-// Test data -------------------------------------------------------------------
+// Test Data -------------------------------------------------------------------
 
 const emptyCellVal = {
   newInit: true,

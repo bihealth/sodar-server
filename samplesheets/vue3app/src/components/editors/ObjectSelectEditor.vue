@@ -19,27 +19,30 @@ interface ObjectSelectOption {
   uuid: string,
 }
 
-// Data and initial setup ------------------------------------------------------
+// External Data ---------------------------------------------------------------
 
-// Props and external
-const editStore = useEditStore()
 const props = defineProps({ params: Object })
+const editStore = useEditStore()
 const params = props.params as GridCellEditorParams
 const cellData: SheetTableCellData = params.value
 // console.dir(params)
 
-// Refs
+// Refs ------------------------------------------------------------------------
+
 const editUuid = ref<string>(cellData.uuidRef as string)
 const input = ref<HTMLInputElement | undefined>()
 const selectOptions = ref<Array<ObjectSelectOption>>([])
 
-// Internal
+// Internal Vars ---------------------------------------------------------------
+
 const nodeUpdateHeaders = [EDIT_HEADER_TYPE_NAME, EDIT_HEADER_TYPE_PROTOCOL]
 const ogValue: string = cellData.value as string
 const optionLookup: { [k: string]: string } = {}
 const isSampleNameField: boolean = params.fieldHeader.type ===
   EDIT_HEADER_TYPE_NAME &&
   params.fieldHeader.item_type === EDIT_ITEM_TYPE_SAMPLE
+
+// Setup -----------------------------------------------------------------------
 
 if (params.fieldHeader.type === EDIT_HEADER_TYPE_PROTOCOL) {
   selectOptions.value = editStore.editContext?.protocols as
@@ -64,7 +67,7 @@ function isSelected (uuid: string) {
   return uuid === editUuid.value
 }
 
-// API and lifecycle -----------------------------------------------------------
+// API and Life Cycle ----------------------------------------------------------
 
 // Return value for ag-grid API
 function getValue () {

@@ -123,6 +123,22 @@ Ready to contribute code to SODAR? Here are the steps to get started.
 
 7. Submit a pull request through the GitHub website.
 
+
+LLM Policy
+==========
+
+Regarding the use of tools based on large language models (LLM) or "AI", please
+note the following:
+
+- Pull requests containing obvious LLM slop in code, comments, documentation,
+  pull request descriptions or commit messages will not be reviewed or merged.
+- Issues or pull requests generated using bots or "agents" will be deleted.
+- Repeat offenders will be blocked.
+
+
+Guidelines
+==========
+
 For specific requirements and recommendations regarding work branches, commits
 and pull requests, see :ref:`dev_guide`.
 

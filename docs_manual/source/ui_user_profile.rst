@@ -14,6 +14,8 @@ user details.
     User profile view
 
 
+.. _ui_user_profile_settings:
+
 User Settings
 =============
 
@@ -40,7 +42,8 @@ Receive email for iRODS data requests
     Receive email notifications for iRODS data request accepting or rejecting.
 Enable Sample Sheets Vue3 app
     Enable the new Vue3 app for sample sheet browsing and editing. This app is
-    under development and may not be stable.
+    in beta and may contain issues. In SODAR v1.4, the old Vue2 app will be
+    retired and replaced with the new Vue3 app.
 Receive email for admin alerts
     Receive email notifications for admin alerts where the admin has enabled
     email alering. If unchecked, you can still see the alerts in the SODAR GUI.
@@ -98,7 +101,8 @@ Update User Details
 If local users are enabled on the site and you have a local SODAR account, the
 profile also includes the :guilabel:`Update User` button. This opens a form in
 which you can update your details and password. This form is **not** available
-for users authenticating with an existing user account via LDAP.
+for users authenticating with an existing user account via an external LDAP or
+single sign-on provider.
 
 
 Deactivating Your Account

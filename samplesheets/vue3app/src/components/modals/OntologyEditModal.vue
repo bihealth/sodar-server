@@ -34,14 +34,14 @@ import {
   VARIANT_SUCCESS,
 } from '@/constants.ts'
 
-// Data and initial setup ------------------------------------------------------
+// External Data ---------------------------------------------------------------
 
-// External
 const clipboard = useClipboard()
 const modalRef = useTemplateRef('ontologyEditModal')
 const editStore = useEditStore()
 
-// Refs
+// Refs ------------------------------------------------------------------------
+
 const cellData = ref<OntologyTermCellData | null>(null)
 const editConfig = ref<StudyEditConfigNodeField | null>(null)
 const editDataValid = ref<boolean>(true)
@@ -63,7 +63,8 @@ const sodarOntologies = ref<{ [key: string]: StudyEditContextOntology }>({})
 const termOptions = ref<Array<OntologyTermResponseRef>>([])
 const updated = ref<boolean>(false)
 
-// Internal variables
+// Internal Vars ---------------------------------------------------------------
+
 let allowLimit: boolean = false
 let editIdx: number | null = null
 let editTermVal: string = '' // Stored as string for comparison
@@ -474,7 +475,7 @@ function submitTermQuery(delay: number | undefined) {
   }, delay)
 }
 
-// API and lifecycle -----------------------------------------------------------
+// API and Life Cycle ----------------------------------------------------------
 
 function show (p: GridCellEditorParams) {
   params = p
