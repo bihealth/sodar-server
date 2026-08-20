@@ -11,6 +11,8 @@ list of changes in current and previous releases, see the
 v1.3.0 (2026-08-21)
 ===================
 
+Major feature release for samplesheets Vue3 app, SODAR Core v1.4 upgrade, etc.
+
 - :ref:`Add samplesheets Vue3 app <app_samplesheets_vue3>`
 - :ref:`Add django-axes support for login security <admin_settings_core>`
 - :ref:`Add fixirodstickets management command <admin_commands_sodar>`
