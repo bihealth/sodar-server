@@ -5,7 +5,7 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
-v1.3.0 (2026-08-20)
+v1.3.0 (2026-08-21)
 ===================
 
 Added

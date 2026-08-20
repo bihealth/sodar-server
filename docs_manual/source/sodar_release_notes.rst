@@ -8,7 +8,7 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
-v1.3.0 (2026-08-20)
+v1.3.0 (2026-08-21)
 ===================
 
 - :ref:`Add samplesheets Vue3 app <app_samplesheets_vue3>`
