@@ -40,6 +40,7 @@ Documentation on settings is linked below.
 - `Timeline <https://sodar-core.readthedocs.io/en/latest/app_timeline_install.html#optional-settings>`_
 - `LDAP auth settings <https://sodar-core.readthedocs.io/en/latest/app_projectroles_settings.html#ldap-ad-configuration-optional>`_
 - `OIDC auth settings <https://sodar-core.readthedocs.io/en/latest/app_projectroles_settings.html#openid-connect-oidc-configuration-optional>`_
+- `Django-Axes settings <https://sodar-core.readthedocs.io/en/latest/app_projectroles_settings.html#django-axes-configuration-optional>`_
 
 .. _admin_settings_backend:
 
@@ -223,10 +224,10 @@ Sample Sheets Settings
 ``SHEETS_SYNC_INTERVAL``
     Interval for remote sample sheet synchronization in minutes (integer).
 ``SHEETS_IGV_OMIT_BAM``
-    BAM and CRAM file name suffixes to omit from study shortcuts and IGV session
+    BAM and CRAM file path patterns to omit from study shortcuts and IGV session
     generation.
 ``SHEETS_IGV_OMIT_VCF``
-    VCF file name suffixes to omit from study shortcuts and IGV session
+    VCF file path patterns suffixes to omit from study shortcuts and IGV session
     generation.
 ``SHEETS_IRODS_TICKET_HOSTS``
     List of host names or IP addresses to be used as default allowed hosts for

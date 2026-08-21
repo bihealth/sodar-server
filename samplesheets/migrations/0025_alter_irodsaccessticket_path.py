@@ -4,17 +4,16 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ("samplesheets", "0024_irodsaccessticket_allowed_hosts"),
+        ('samplesheets', '0024_irodsaccessticket_allowed_hosts'),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name="irodsaccessticket",
-            name="path",
+            model_name='irodsaccessticket',
+            name='path',
             field=models.CharField(
-                help_text="Path to iRODS collection or data object",
+                help_text='Path to iRODS collection or data object',
                 max_length=255,
             ),
         ),

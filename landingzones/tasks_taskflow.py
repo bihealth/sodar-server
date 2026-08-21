@@ -47,7 +47,7 @@ Zone UUID: {zone_uuid}
 Status message:
 "{status_info}"'''.lstrip()
 
-EMAIL_MSG_MOVE_FAILED = r'''
+EMAIL_MSG_MOVE_FAILED = r"""
 Validating and moving data from your landing zone into the
 project sample data repository has failed. Please verify your
 data and request for support if the problem persists.
@@ -63,9 +63,9 @@ Zone UUID: {zone_uuid}
 
 Status message:
 "{status_info}"
-'''.lstrip()
+""".lstrip()
 
-EMAIL_MSG_MOVE_MEMBER = r'''
+EMAIL_MSG_MOVE_MEMBER = r"""
 {user} has uploaded {file_count} file{file_count_suffix}
 into assay "{assay}"
 under the project "{project}".
@@ -76,15 +76,15 @@ Message from zone owner:
 You can browse the assay metadata and related files at
 the following URL:
 {url}
-'''.lstrip()
+""".lstrip()
 
-EMAIL_MSG_RESET = r'''
+EMAIL_MSG_RESET = r"""
 The state of your landing zone was reset by an administrator.
 
 You are now able to access this landing zone for further
 operations at the following URL:
 {url}
-'''.lstrip()
+""".lstrip()
 
 
 class BaseLandingZoneStatusTask(SODARBaseTask):
@@ -388,7 +388,9 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
                 if a.user != zone.user and a.user.is_active
             ]
             for member in list(set(members)):
-                if app_alerts:
+                if app_alerts and app_settings.get(
+                    APP_NAME, 'notify_alert_zone_status', user=member
+                ):
                     try:
                         cls._add_member_move_alert(
                             app_alerts=app_alerts,
@@ -400,7 +402,9 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
                         logger.error(
                             f'Exception in _add_member_move_alert(): {ex}'
                         )
-                if settings.PROJECTROLES_SEND_EMAIL:
+                if settings.PROJECTROLES_SEND_EMAIL and app_settings.get(
+                    APP_NAME, 'notify_email_zone_status', user=member
+                ):
                     try:
                         cls._send_member_move_email(member, zone, file_count)
                     except Exception as ex:  # NOTE: We won't fail/revert here

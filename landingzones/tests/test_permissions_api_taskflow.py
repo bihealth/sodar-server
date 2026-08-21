@@ -6,7 +6,7 @@ from django.test import override_settings
 from django.urls import reverse
 
 # Projectroles dependency
-from projectroles.tests.test_permissions import PermissionTestMixin
+from projectroles.tests.base import PermissionTestMixin
 from projectroles.utils import build_secret
 
 # Samplesheets dependency

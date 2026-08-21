@@ -33,7 +33,7 @@ Report Bugs
 -----------
 
 Report bugs through the
-`SODAR issue tracker <https://github.com/bihealth/sodar-server/issues>`_
+`SODAR Server issue tracker <https://github.com/bihealth/sodar-server/issues>`_
 in GitHub.
 
 When reporting a bug, please follow the provided template. Make sure to include
@@ -103,17 +103,18 @@ Ready to contribute code to SODAR? Here are the steps to get started.
     $ git checkout -b 123-branch-name dev
 
 5. When you're done making changes, make sure to apply proper formatting using
-   Black and the settings specified in the accompanying ``black.sh`` script.
-   Next, check that your changes pass flake8. Finally, run the tests. It is
-   recommended to use the ``Makefile`` to ensure the correct Django
-   configuration for testing is selected. ::
+   Ruff with ``make format``. Next, check that your changes pass linting with
+   ``make lint``. Finally, run the tests. It is strongly recommended to use the
+   relevant ``Makefile`` targets to ensure the correct configurations are
+   used. ::
 
-    $ ./black.sh
-    $ flake8 .
+    $ make format
+    $ make lint
     $ make test
     $ make test_samplesheets_vue
+    $ make test_samplesheets_vue3
 
-6. Once the tests and flake8 pass, commit your changes and push your branch to
+6. Once the checks and tests pass, commit your changes and push your branch to
    GitHub. ::
 
     $ git add .
@@ -121,6 +122,22 @@ Ready to contribute code to SODAR? Here are the steps to get started.
     $ git push origin 123-branch-name
 
 7. Submit a pull request through the GitHub website.
+
+
+LLM Policy
+==========
+
+Regarding the use of tools based on large language models (LLM) or "AI", please
+note the following:
+
+- Pull requests containing obvious LLM slop in code, comments, documentation,
+  pull request descriptions or commit messages will not be reviewed or merged.
+- Issues or pull requests generated using bots or "agents" will be deleted.
+- Repeat offenders will be blocked.
+
+
+Guidelines
+==========
 
 For specific requirements and recommendations regarding work branches, commits
 and pull requests, see :ref:`dev_guide`.

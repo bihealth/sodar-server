@@ -214,8 +214,7 @@ class TestCheckSampleAccess(
             call_command(self.cmd_name)
         self.assertEqual(len(cm.output), 3)
         self.assertIn(
-            f'{CHECK_ACCESS_GROUP_MSG}: '
-            f'{IRODS_ACCESS_MODIFY_OBJ};{obj.path}',
+            f'{CHECK_ACCESS_GROUP_MSG}: {IRODS_ACCESS_MODIFY_OBJ};{obj.path}',
             cm.output[1],
         )
         self.assertIn(
@@ -462,7 +461,7 @@ class TestIrodsOrphans(
     def test_command_multiple(self):
         """Test command with multiple orphans"""
         self._setup_investigation()
-        path = iRODSPath(self.sample_path, f'study_{uuid.uuid4() }')
+        path = iRODSPath(self.sample_path, f'study_{uuid.uuid4()}')
         self.irods.collections.create(path)
 
         path2 = iRODSPath(
@@ -539,7 +538,6 @@ class TestIrodsOrphans(
         # Output for orphan project and self.project should be missing
         output = self._call_output(project=project2)
         expected = (
-            f'{project2.sodar_uuid};{project2.full_title};'
-            f'{path2};{OUT_SUFFIX}'
+            f'{project2.sodar_uuid};{project2.full_title};{path2};{OUT_SUFFIX}'
         )
         self.assertEqual(output, expected)

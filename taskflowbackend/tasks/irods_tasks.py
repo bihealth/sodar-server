@@ -58,7 +58,7 @@ CHECKSUM_RETRY = 5
 NO_FILE_CHECKSUM_LABEL = 'None'
 VERIFY_ERR_MSG = 'iRODS sample data verification failed'
 
-EMAIL_MSG_VERIFY_FAILED = r'''
+EMAIL_MSG_VERIFY_FAILED = r"""
 Verifying file integrity in sample data for the project
 "{project_title}"
 has failed. Please contact an administrator or the site
@@ -72,7 +72,7 @@ Reported errors:
 See the project files in the following URL:
 {url}
 
-'''.lstrip()
+""".lstrip()
 
 
 # Mixins -----------------------------------------------------------------------
@@ -418,9 +418,9 @@ class CreateUserGroupTask(IrodsBaseTask):
 
     def execute(self, name: str, *args, **kwargs):
         try:
-            self.irods.user_groups.get(name)
+            self.irods.groups.get(name)
         except GroupDoesNotExist:
-            self.irods.user_groups.create(name=name, user_zone=self.irods.zone)
+            self.irods.groups.create(name=name, user_zone=self.irods.zone)
             self.data_modified = True
         super().execute(*args, **kwargs)
 
@@ -448,14 +448,14 @@ class SetInheritanceTask(IrodsBaseTask):
     def revert(self, path: str, inherit: bool = True, *args, **kwargs):
         # TODO: Add checks for inheritance status prior to execute
         pass
-        '''
+        """
         acl = iRODSAccess(
             access_name=INHERIT_STRINGS[!inherit],
             path=path,
             user_name='',
             user_zone=self.irods.zone)
         self.irods.acls.set(acl, recursive=True)
-        '''
+        """
 
 
 class SetAccessTask(IrodsAccessMixin, IrodsBaseTask):
@@ -603,7 +603,7 @@ class AddUserToGroupTask(IrodsBaseTask):
 
     def execute(self, group_name: str, user_name: str, *args, **kwargs):
         try:
-            group = self.irods.user_groups.get(group_name)
+            group = self.irods.groups.get(group_name)
         except Exception as ex:
             self.raise_irods_exception(
                 ex, info=f'Failed to retrieve group "{group_name}"'
@@ -622,7 +622,7 @@ class AddUserToGroupTask(IrodsBaseTask):
 
     def revert(self, group_name: str, user_name: str, *args, **kwargs):
         if self.data_modified:
-            group = self.irods.user_groups.get(group_name)
+            group = self.irods.groups.get(group_name)
             group.removemember(user_name=user_name, user_zone=self.irods.zone)
 
 
@@ -631,7 +631,7 @@ class RemoveUserFromGroupTask(IrodsBaseTask):
 
     def execute(self, group_name: str, user_name: str, *args, **kwargs):
         try:
-            group = self.irods.user_groups.get(group_name)
+            group = self.irods.groups.get(group_name)
         except GroupDoesNotExist:
             # This is ok, user isn't in a group that doesn't exist :)
             group = None
@@ -648,7 +648,7 @@ class RemoveUserFromGroupTask(IrodsBaseTask):
 
     def revert(self, group_name: str, user_name: str, *args, **kwargs):
         if self.data_modified:
-            group = self.irods.user_groups.get(group_name)
+            group = self.irods.groups.get(group_name)
             group.addmember(user_name=user_name, user_zone=self.irods.zone)
 
 

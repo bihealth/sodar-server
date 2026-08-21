@@ -1,0 +1,57 @@
+/* Materials table */
+
+.table.sodar-ss-search-table-materials thead tr th:nth-child(2) {
+    width: 65px !important;
+}
+
+@media screen and (max-width: 1400px) {
+  .table.sodar-ss-search-table-materials tr th:nth-child(4),
+  .table.sodar-ss-search-table-materials tr td:nth-child(4) {
+    display: none;
+  }
+}
+
+@media screen and (max-width: 1100px) {
+  .table.sodar-ss-search-table-materials tr th:nth-child(5),
+  .table.sodar-ss-search-table-materials tr td:nth-child(5) {
+    display: none;
+  }
+}
+
+@media screen and (max-width: 750px) {
+  .table.sodar-ss-search-table-materials tr th:nth-child(2),
+  .table.sodar-ss-search-table-materials tr td:nth-child(2) {
+    display: none;
+  }
+}
+
+@media screen and (max-width: 650px) {
+  .table.sodar-ss-search-table-materials tr th:nth-child(3),
+  .table.sodar-ss-search-table-materials tr td:nth-child(3) {
+    display: none;
+  }
+}
+
+/* Files table */
+
+.table.sodar-ss-search-table-files thead tr th:nth-child(1) {
+    width: 40% !important;
+}
+
+@media screen and (max-width: 1300px) {
+  .table.sodar-ss-search-table-files tr th:nth-child(3),
+  .table.sodar-ss-search-table-files tr td:nth-child(3) {
+    display: none;
+  }
+
+  .table.sodar-ss-search-table-files tr th:nth-child(2) {
+    width: 25% !important;
+  }
+}
+
+@media screen and (max-width: 900px) {
+  .table.sodar-ss-search-table-files tr th:nth-child(2),
+  .table.sodar-ss-search-table-files tr td:nth-child(2) {
+    display: none;
+  }
+}

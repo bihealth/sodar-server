@@ -48,6 +48,16 @@ Administrators have the following options for deactivating a user:
     disabled by user deactivation.
 
 
+User Account Locking
+====================
+
+If `django-axes is enabled <https://sodar-core.readthedocs.io/en/latest/app_projectroles_settings.html#django-axes-configuration-optional>`_,
+user accounts may get locked out for too many unsuccessful login attempt. See
+the `django-axes documentation <https://django-axes.readthedocs.io/en/latest/>`_
+for instructions on how to reset access for users and perform other
+administrative functions.
+
+
 .. _admin_other_hash_scheme:
 
 iRODS Checksum Hashing Support

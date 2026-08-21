@@ -3,7 +3,7 @@
 from django.urls import reverse
 
 # Projectroles dependency
-from projectroles.tests.test_permissions import SiteAppPermissionTestBase
+from projectroles.tests.base import SiteAppPermissionTestBase
 
 from ontologyaccess.models import DEFAULT_TERM_URL
 from ontologyaccess.tests.test_models import OBOFormatOntologyModelMixin

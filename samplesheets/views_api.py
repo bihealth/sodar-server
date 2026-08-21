@@ -196,7 +196,8 @@ class IrodsCollsCreateAPIView(
     """
     Create iRODS collections for a project.
 
-    Returns ``503`` if the project is currently locked by another operation.
+    Returns ``ServiceUnavailable`` (HTTP code 503) if the project is currently
+    locked by another operation.
 
     **URL:** ``/samplesheets/api/irods/collections/create/{Project.sodar_uuid}``
 
@@ -455,6 +456,8 @@ class IrodsAccessTicketListAPIView(
     """
     List iRODS access tickets for a project.
 
+    Results are ordered by time of creation from oldest to newest.
+
     Supports optional pagination for listing by providing the ``page`` query
     string. This will return results in the Django Rest Framework
     ``PageNumberPagination`` format.
@@ -710,6 +713,8 @@ class IrodsDataRequestListAPIView(
     """
     List the iRODS data requests for a project.
 
+    Results are ordered by time of creation from oldest to newest.
+
     If the requesting user is an owner, delegate or superuser, the view lists
     all requests with the status of ACTIVE or FAILED. If called as a
     contributor, returns the user's own requests regardless of the state.
@@ -868,7 +873,8 @@ class IrodsDataRequestAcceptAPIView(
     Accepting will delete the iRODS collection or data object targeted by the
     request. This action can not be undone.
 
-    Returns ``503`` if the project is currently locked by another operation.
+    Returns ``ServiceUnavailable`` (HTTP code 503) if the project is currently
+    locked by another operation.
 
     **URL:** ``/samplesheets/api/irods/request/accept/{IrodsDataRequest.sodar_uuid}``
 
@@ -1028,9 +1034,9 @@ class SampleDataFileExistsAPIView(SamplesheetsAPIVersioningMixin, APIView):
         sql = (
             'SELECT DISTINCT ON (data_id) data_name '
             'FROM r_data_main JOIN r_coll_main USING (coll_id) '
-            'WHERE (coll_name LIKE \'%/{coll}\' '
-            'OR coll_name LIKE \'%/{coll}/%\') '
-            'AND r_data_main.data_checksum = \'{sum}\''.format(
+            "WHERE (coll_name LIKE '%/{coll}' "
+            "OR coll_name LIKE '%/{coll}/%') "
+            "AND r_data_main.data_checksum = '{sum}'".format(
                 coll=settings.IRODS_SAMPLE_COLL, sum=c
             )
         )
@@ -1085,6 +1091,8 @@ class ProjectIrodsFileListAPIView(
     """
     Return a list of files in the project sample data repository. Optionally
     also returns collections.
+
+    Results are ordered alphabetically by iRODS path.
 
     Supports optional pagination for listing by providing the ``page`` query
     string. This will return results in the Django Rest Framework

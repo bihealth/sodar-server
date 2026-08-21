@@ -10,9 +10,11 @@ from django.utils import timezone
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
+from projectroles.tests.base import (
+    ProjectPermissionTestBase,
+    ProjectAPIPermissionTestBase,
+)
 from projectroles.tests.test_models import RemoteSiteMixin, RemoteProjectMixin
-from projectroles.tests.test_permissions import ProjectPermissionTestBase
-from projectroles.tests.test_permissions_api import ProjectAPIPermissionTestBase
 
 from samplesheets.models import (
     Investigation,

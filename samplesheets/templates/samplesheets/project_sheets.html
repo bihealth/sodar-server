@@ -4,7 +4,6 @@
 
 {% load static %}
 {% load rules %}
-{% load render_bundle from webpack_loader %}
 {% load samplesheets_tags %}
 
 {% block title %}
@@ -12,14 +11,20 @@
 {% endblock title %}
 
 {% block projectroles_extend %}
-{% has_perm 'samplesheets.edit_sheet' request.user project as can_edit_sheet %}
-
-<div id="sodar-ss-app-context" app-context="{{ app_context }}"></div>
-<div id="app"></div>
-
-{# Render vue app #}
-{% render_bundle 'app' config='SAMPLESHEETS' %}
-
+  {% has_perm 'samplesheets.edit_sheet' request.user project as can_edit_sheet %}
+  <div id="sodar-ss-app-context" data-app-context="{{ app_context }}"></div>
+  <div id="app"></div>
+  {% if use_vue3_app %}
+    {# Render Vue3 app #}
+    {# TODO: Move includes to proper blocks (head, javascript) #}
+    {% load django_vite %}
+    {% vite_hmr_client %}
+    {% vite_asset 'src/main.ts' %}
+  {% else %}
+    {# Render Vue2 app #}
+    {% load render_bundle from webpack_loader %}
+    {% render_bundle 'app' config='SAMPLESHEETS' %}
+  {% endif %}
 {% endblock projectroles_extend %}
 
 {% block javascript %}

@@ -114,7 +114,7 @@ class Command(BaseCommand):
             project.full_title if project else OUT_PROJECT_DELETED,
             path,
             str(stats['file_count']),
-            filesizeformat(stats['total_size']).replace(u'\xa0', ' '),
+            filesizeformat(stats['total_size']).replace('\xa0', ' '),
         ]
         sys.stdout.write(';'.join(ret) + '\n')
 

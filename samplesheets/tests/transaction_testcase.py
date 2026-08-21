@@ -49,7 +49,7 @@ class _AssertNumQueriesLessThanContext(CaptureQueriesContext):
         executed = len(self)
         self.test_case.assertTrue(
             executed < self.num,
-            "%d queries executed, expected less than %d" % (executed, self.num),
+            '%d queries executed, expected less than %d' % (executed, self.num),
         )
 
 
@@ -77,7 +77,7 @@ class login(object):
 
         success = testcase.client.login(**credentials)
         self.testcase.assertTrue(
-            success, "login failed with credentials=%r" % (credentials)
+            success, 'login failed with credentials=%r' % (credentials)
         )
 
     def __enter__(self):
@@ -123,9 +123,9 @@ class BaseTestCase(StatusCodeAssertionMixin):
 
         If reverse raises NoReverseMatch attempt to use it as a URL.
         """
-        follow = kwargs.pop("follow", False)
-        extra = kwargs.pop("extra", {})
-        data = kwargs.pop("data", {})
+        follow = kwargs.pop('follow', False)
+        extra = kwargs.pop('extra', {})
+        data = kwargs.pop('data', {})
 
         valid_method_names = [
             'get',
@@ -141,14 +141,14 @@ class BaseTestCase(StatusCodeAssertionMixin):
         if method_name in valid_method_names:
             method = getattr(self.client, method_name)
         else:
-            raise LookupError("Cannot find the method {0}".format(method_name))
+            raise LookupError('Cannot find the method {0}'.format(method_name))
 
         try:
             self.last_response = method(
                 reverse(url_name, args=args, kwargs=kwargs),
                 data=data,
                 follow=follow,
-                **extra
+                **extra,
             )
         except NoReverseMatch:
             self.last_response = method(
@@ -178,8 +178,8 @@ class BaseTestCase(StatusCodeAssertionMixin):
             return self.request('trace', url_name, *args, **kwargs)
         else:
             raise LookupError(
-                "client.trace is not available for your version of django. Please\
-                               update your django version."
+                'client.trace is not available for your version of django. Please\
+                               update your django version.'
             )
 
     def options(self, url_name, *args, **kwargs):
@@ -257,7 +257,7 @@ class BaseTestCase(StatusCodeAssertionMixin):
         response = self.get(url, *args, **kwargs)
         reversed_url = reverse(url, args=args, kwargs=kwargs)
         login_url = str(resolve_url(settings.LOGIN_URL))
-        expected_url = "{0}?next={1}".format(login_url, reversed_url)
+        expected_url = '{0}?next={1}'.format(login_url, reversed_url)
         self.assertRedirects(response, expected_url)
 
     def login(self, *args, **credentials):
@@ -321,7 +321,7 @@ class BaseTestCase(StatusCodeAssertionMixin):
 
     def assertNumQueriesLessThan(self, num, *args, **kwargs):
         func = kwargs.pop('func', None)
-        using = kwargs.pop("using", DEFAULT_DB_ALIAS)
+        using = kwargs.pop('using', DEFAULT_DB_ALIAS)
         conn = connections[using]
 
         context = _AssertNumQueriesLessThanContext(self, num, conn)
@@ -504,7 +504,7 @@ class CBVTestCase(TestCase):
         # an instance of the template renderer callback function.
         data = {}
         on_template_render = partial(store_rendered_templates, data)
-        signal_uid = "template-render-%s" % id(request)
+        signal_uid = 'template-render-%s' % id(request)
         signals.template_rendered.connect(
             on_template_render, dispatch_uid=signal_uid
         )
@@ -514,8 +514,8 @@ class CBVTestCase(TestCase):
             if hasattr(response, 'render') and callable(response.render):
                 response = response.render()
                 # Add any rendered template detail to the response.
-                response.templates = data.get("templates", [])
-                response.context = data.get("context")
+                response.templates = data.get('templates', [])
+                response.context = data.get('context')
             else:
                 response.templates = None
                 response.context = None
@@ -535,7 +535,7 @@ class CBVTestCase(TestCase):
         response = super(CBVTestCase, self).get(url, *args, **kwargs)
         reversed_url = reverse(url, args=args, kwargs=kwargs)
         login_url = str(resolve_url(settings.LOGIN_URL))
-        expected_url = "{0}?next={1}".format(login_url, reversed_url)
+        expected_url = '{0}?next={1}'.format(login_url, reversed_url)
         self.assertRedirects(response, expected_url)
 
     def assertGoodView(self, url_name, *args, **kwargs):

@@ -53,7 +53,7 @@ class Command(BaseCommand):
             dest='zone',
             type=str,
             required=True,
-            help='Landing zone from which files were moved',
+            help='UUID of landing zone from which files were moved',
         )
 
     def handle(self, *args, **options):
@@ -69,7 +69,7 @@ class Command(BaseCommand):
             return self._fail('Required backends not enabled')
 
         # HACK: Get file list from timeline event (see issue #2327)
-        TimelineEvent, TimelineEventObjectRef = timeline.get_models()
+        TimelineEvent, TimelineEventObjectRef, _ = timeline.get_models()
         obj_ref = (
             TimelineEventObjectRef.objects.filter(
                 object_uuid=zone.sodar_uuid, event__event_name='zone_move'

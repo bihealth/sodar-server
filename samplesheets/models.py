@@ -714,6 +714,7 @@ class GenericMaterialManager(models.Manager):
     def find(
         self,
         search_terms: list[str],
+        projects: QuerySet[Project],
         keywords: Optional[dict] = None,
         item_types: Optional[list] = None,
     ) -> QuerySet:
@@ -721,13 +722,22 @@ class GenericMaterialManager(models.Manager):
         Return objects matching the query.
 
         :param search_terms: Search terms (list of strings)
+        :param projects: QuerySet of projects where the terms are searched
         :param keywords: Optional search keywords as key/value pairs (dict)
         :param item_types: Restrict to zero or more specific item types (list)
         :return: QuerySet
         """
         # NOTE: Exclude intermediate materials and data files, at least for now
         objects = (
-            super().get_queryset().exclude(item_type__in=['DATA', 'MATERIAL'])
+            super()
+            .get_queryset()
+            .filter(
+                Q(study__isnull=False)
+                & Q(study__investigation__project__in=projects)
+                | Q(assay__isnull=False)
+                & Q(assay__study__investigation__project__in=projects)
+            )
+            .exclude(item_type__in=['DATA', 'MATERIAL'])
         )
         if item_types:
             if not isinstance(item_types, list):
@@ -883,8 +893,7 @@ class GenericMaterial(NodeMixin, BaseSampleSheet):
         """Validate fields related to specific material types"""
         if self.item_type == 'DATA' and self.characteristics:
             raise ValidationError(
-                'Field "characteristics" should not be included for a data '
-                'file'
+                'Field "characteristics" should not be included for a data file'
             )
         if self.item_type != ITEM_TYPE_SAMPLE and self.factor_values:
             raise ValidationError('Factor values included for a non-sample')

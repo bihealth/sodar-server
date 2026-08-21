@@ -1,6 +1,7 @@
 """UI tests for the samplesheets app"""
 
 import json
+import time
 
 from cubi_isa_templates import _TEMPLATES as ISA_TEMPLATES
 from datetime import timedelta
@@ -21,7 +22,7 @@ from selenium.webdriver.support import expected_conditions as ec
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODARUser
 from projectroles.plugins import PluginAPI
-from projectroles.tests.test_ui import UITestBase
+from projectroles.tests.base import ProjectUITestBase
 
 from samplesheets.forms import TPL_DIR_FIELD, TPL_DIR_LABEL
 from samplesheets.models import (
@@ -63,7 +64,9 @@ with open(CONFIG_PATH_UPDATED) as fp:
     CONFIG_DATA_UPDATED = json.load(fp)
 
 
-class SamplesheetsUITestBase(SampleSheetIOMixin, SheetConfigMixin, UITestBase):
+class SamplesheetsUITestBase(
+    SampleSheetIOMixin, SheetConfigMixin, ProjectUITestBase
+):
     """Base view samplesheets view UI tests"""
 
     def setup_investigation(self, config_data: Optional[dict] = None):
@@ -80,6 +83,10 @@ class SamplesheetsUITestBase(SampleSheetIOMixin, SheetConfigMixin, UITestBase):
             )
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
+
+    def tearDown(self):
+        time.sleep(0.5)  # HACK: See #2501 and bihealth/sodar-core#1969
+        super().tearDown()
 
 
 class TestProjectDetailView(IrodsDataRequestMixin, SamplesheetsUITestBase):
@@ -229,6 +236,22 @@ class TestProjectSheetsView(IrodsDataRequestMixin, SamplesheetsUITestBase):
             # Ensure error alert is not generated
             with self.assertRaises(NoSuchElementException):
                 self.selenium.find_element(By.ID, 'sodar-ss-alert-error')
+
+    def test_render_vue3(self):
+        """Test rendering view with Vue3 app"""
+        app_settings.set(APP_NAME, 'use_vue3_app', True, user=self.user_owner)
+        self._login_and_render(
+            user=self.user_owner, wait_elem='sodar-ss-table-grid-study'
+        )
+        self.assertIsNotNone(
+            self.selenium.find_element(
+                By.ID,
+                f'sodar-ss-table-grid-assay-{self.assay.sodar_uuid}',
+            )
+        )
+        with self.assertRaises(NoSuchElementException):
+            # Old ID from Vue2 app, should not be present
+            self.selenium.find_element(By.ID, 'sodar-ss-grid-study')
 
     def test_render_no_sheet(self):
         """Test rendering view with no sheet"""
@@ -822,7 +845,7 @@ class TestIrodsDataRequestListView(
 
 
 class TestSheetVersionCompareView(
-    SampleSheetIOMixin, SheetConfigMixin, UITestBase
+    SampleSheetIOMixin, SheetConfigMixin, ProjectUITestBase
 ):
     """Tests for sheet version compare view UI"""
 
@@ -860,7 +883,7 @@ class TestSheetVersionCompareView(
 
 
 class TestSheetVersionCompareFileView(
-    SampleSheetIOMixin, SheetConfigMixin, UITestBase
+    SampleSheetIOMixin, SheetConfigMixin, ProjectUITestBase
 ):
     """Tests for sheet version compare file view UI"""
 

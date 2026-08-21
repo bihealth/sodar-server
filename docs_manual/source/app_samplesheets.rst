@@ -28,3 +28,23 @@ actions are presented in following subsections.
 This part of the manual details the graphical user interface of the Sample
 Sheets app. For programmatic access to most of these features, see
 :ref:`api_samplesheets`.
+
+
+.. _app_samplesheets_vue3:
+
+.. hint::
+
+    SODAR v1.3 introduces the new Vue3 app for browsing and editing sample
+    sheets. By default, users still see the old application. To enable the new
+    version on your user account, go to :ref:`ui_user_profile_settings` and
+    toggle *Enable Sample Sheets Vue3 app*.
+
+    Apart from some bug fixes and layout tweaks, the functionality of the Vue3
+    app is intended to be identical to the legacy app.
+
+    The new app is still in beta and may contain bugs. Please report any issues
+    via the
+    `SODAR Server issue tracker in Github <https://github.com/bihealth/sodar-server/issues>`_.
+    In case of encountered issues, you can switch back to the legacy app.
+
+    The legacy Vue2 sample sheets app will be retired in SODAR v1.4.

@@ -10,8 +10,7 @@ from django.db import models
 DEFAULT_LENGTH = 255
 DEFAULT_TERM_URL = 'http://purl.obolibrary.org/obo/{id_space}_{local_id}'
 TERM_URL_HELP = (
-    'Format string for term accession URL. Supports {id_space} '
-    'and {local_id}.'
+    'Format string for term accession URL. Supports {id_space} and {local_id}.'
 )
 
 

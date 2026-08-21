@@ -2,10 +2,10 @@
 Django settings for the SODAR project.
 
 For more information on this file, see
-https://docs.djangoproject.com/en/3.2/topics/settings/
+https://docs.djangoproject.com/en/5.2/topics/settings/
 
 For the full list of settings and their values, see
-https://docs.djangoproject.com/en/3.2/ref/settings/
+https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import os
@@ -57,17 +57,20 @@ THIRD_PARTY_APPS = [
     'crispy_bootstrap4',  # Bootstrap4 theme for Crispy
     'rules.apps.AutodiscoverRulesConfig',  # Django rules engine
     'djangoplugins',  # Django plugins
+    'martor',  # For markdown
     'pagedown',  # For markdown
     'markupfield',  # For markdown
     'rest_framework',  # For API views
     'knox',  # For token auth
     'social_django',  # For OIDC authentication
+    'axes',  # Django-axes for login security
     'docs',  # For the online user documentation/manual
     'dal',  # For user search combo box
     'dal_select2',
     'dj_iconify.apps.DjIconifyConfig',  # Iconify for SVG icons
     'drf_spectacular',  # OpenAPI schema generation
-    'webpack_loader',  # For accessing webpack bundles
+    'webpack_loader',  # For Vue2 app webpack integration
+    'django_vite',  # For Vue3 app vite integration
     # SODAR Core apps
     # Project apps
     'projectroles.apps.ProjectrolesConfig',
@@ -125,6 +128,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'axes.middleware.AxesMiddleware',  # Should be the last one on the list
 ]
 
 # MIGRATIONS CONFIGURATION
@@ -152,12 +156,12 @@ EMAIL_SUBJECT_PREFIX = env('EMAIL_SUBJECT_PREFIX', default='')
 # ------------------------------------------------------------------------------
 # Provide ADMINS as: Name:email,Name:email
 ADMINS = [x.split(':') for x in env.list('ADMINS', default=[])]
-# See: https://docs.djangoproject.com/en/3.2/ref/settings/#managers
+# See: https://docs.djangoproject.com/en/5.2/ref/settings/#managers
 MANAGERS = ADMINS
 
 # DATABASE CONFIGURATION
 # ------------------------------------------------------------------------------
-# See: https://docs.djangoproject.com/en/3.2/ref/settings/#databases
+# See: https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 # Uses django-environ to accept uri format
 # See: https://django-environ.readthedocs.io/en/latest/#supported-types
 DATABASES = {'default': env.db('DATABASE_URL', 'postgres:///sodar')}
@@ -177,24 +181,21 @@ REDIS_URL = env.str('REDIS_URL', 'redis://127.0.0.1:6379/0')
 # In a Windows environment this must be set to your system time zone.
 TIME_ZONE = 'Europe/Berlin'
 
-# See: https://docs.djangoproject.com/en/3.2/ref/settings/#language-code
+# See: https://docs.djangoproject.com/en/5.2/ref/settings/#language-code
 LANGUAGE_CODE = 'en-us'
 
-# See: https://docs.djangoproject.com/en/3.2/ref/settings/#site-id
+# See: https://docs.djangoproject.com/en/5.2/ref/settings/#site-id
 SITE_ID = 1
 
-# See: https://docs.djangoproject.com/en/3.2/ref/settings/#use-i18n
+# See: https://docs.djangoproject.com/en/5.2/ref/settings/#use-i18n
 USE_I18N = False
 
-# See: https://docs.djangoproject.com/en/3.2/ref/settings/#use-l10n
-USE_L10N = True
-
-# See: https://docs.djangoproject.com/en/3.2/ref/settings/#use-tz
+# See: https://docs.djangoproject.com/en/5.2/ref/settings/#use-tz
 USE_TZ = True
 
 # TEMPLATE CONFIGURATION
 # ------------------------------------------------------------------------------
-# See: https://docs.djangoproject.com/en/3.2/ref/settings/#templates
+# See: https://docs.djangoproject.com/en/5.2/ref/settings/#templates
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -230,21 +231,27 @@ CRISPY_TEMPLATE_PACK = 'bootstrap4'
 # ------------------------------------------------------------------------------
 STATIC_ROOT = str(ROOT_DIR('staticfiles'))
 STATIC_URL = '/static/'
-
 STATICFILES_DIRS = [str(APPS_DIR.path('static'))]
-
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 ]
-
 # Iconify SVG icons
 ICONIFY_JSON_ROOT = os.path.join(STATIC_ROOT, 'iconify')
-
+# Vue2 app Webpack loading
 WEBPACK_LOADER = {
     'SAMPLESHEETS': {
         # 'BUNDLE_DIR_NAME': 'samplesheets-vue/',
         'STATS_FILE': ROOT_DIR('samplesheets/vueapp/webpack-stats.json'),
+    }
+}
+# Vue3 app Vite setup
+DJANGO_VITE = {
+    'default': {
+        'dev_mode': DEBUG,
+        'manifest_path': ROOT_DIR(
+            'samplesheets/vue3app/dist/samplesheets-vue3/manifest.json'
+        ),
     }
 }
 
@@ -277,14 +284,8 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.'
         'UserAttributeSimilarityValidator'
     },
-    {
-        'NAME': 'django.contrib.auth.password_validation.'
-        'MinimumLengthValidator'
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.'
-        'CommonPasswordValidator'
-    },
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
     {
         'NAME': 'django.contrib.auth.password_validation.'
         'NumericPasswordValidator'
@@ -296,7 +297,7 @@ AUTH_PASSWORD_VALIDATORS = [
 AUTHENTICATION_BACKENDS = [
     'rules.permissions.ObjectPermissionBackend',  # For rules
     'django.contrib.auth.backends.ModelBackend',
-]
+]  # NOTE: django-axes added after LDAP/OIDC setup
 
 # Custom user app defaults
 AUTH_USER_MODEL = 'users.User'
@@ -340,6 +341,26 @@ CELERY_IMPORTS = [
     'taskflowbackend.tasks_celery',
 ]
 
+# Martor Configuration for Markdown
+# ------------------------------------------------------------------------------
+
+# NOTE: Setting CSRF_COOKIE_HTTPONLY to `False` is required for AJAX uploads
+# Choose your preferred theme: "bootstrap" or "semantic"
+MARTOR_THEME = 'bootstrap'
+MARTOR_ENABLE_LABEL = True
+MARTOR_ENABLE_CONFIGS = {
+    'imgur': 'false',
+    'mention': 'false',
+    'jquery': 'false',
+    'living': 'true',
+    'spellcheck': 'false',
+    'hljs': 'false',
+}
+# By default, martor loads bootstrap v5. We don't want that, so we supply an
+# alternative CSS file.
+MARTOR_ALTERNATIVE_CSS_FILE_THEME = 'projectroles/css/martor_theme.css'
+MARTOR_ENABLE_ADMIN_CSS = False
+
 
 # API Settings
 # ------------------------------------------------------------------------------
@@ -371,6 +392,18 @@ REST_FRAMEWORK = {
 SPECTACULAR_SETTINGS = {
     'PREPROCESSING_HOOKS': ['config.drf_spectacular.exclude_knox_hook']
 }
+
+# Additional authentication settings
+# ------------------------------------------------------------------------------
+
+# Knox settings
+KNOX_TOKEN_MODEL = 'tokens.SODARAuthToken'
+
+# Settings for HTTP AuthBasic
+BASICAUTH_REALM = env.str(
+    'BASICAUTH_REALM', 'Log in with your SODAR user name and password.'
+)
+BASICAUTH_DISABLE = env.bool('BASICAUTH_DISABLE', False)
 
 
 # LDAP configuration
@@ -492,6 +525,39 @@ if ENABLE_OIDC:
     SOCIAL_AUTH_OIDC_USERNAME_KEY = env.str(
         'SOCIAL_AUTH_OIDC_USERNAME_KEY', 'username'
     )
+
+
+# Django-Axes
+# ------------------------------------------------------------------------------
+
+# NOTE: Axes backend should be the first backend in the list
+AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesBackend'
+] + AUTHENTICATION_BACKENDS
+
+# Enable django-axes
+AXES_ENABLED = env.bool('AXES_ENABLED', False)
+
+if AXES_ENABLED:
+    # Number of login attempts allowed before a record is created
+    AXES_FAILURE_LIMIT = env.int('AXES_FAILURE_LIMIT', 5)
+    # Lock out user at failure if True
+    AXES_LOCK_OUT_AT_FAILURE = env.bool('AXES_LOCK_OUT_AT_FAILURE', False)
+    # Cooloff time for failure lock-out in hours
+    AXES_COOLOFF_TIME = env.int('AXES_COOLOFF_TIME', None)
+    # Lockout parameters. by default, block by username and IP (GDPR compliance)
+    AXES_LOCKOUT_PARAMETERS = env.list(
+        'AXES_LOCKOUT_PARAMETERS', default=['ip_address', 'username']
+    )
+    # Only enable lock for admin site if True
+    AXES_ONLY_ADMIN_SITE = env.bool('AXES_ONLY_ADMIN_SITE', False)
+    # For GDPR compliance, disable storing IP addresses
+    # NOTE: We make this setting up, not a real Axes Django setting
+    AXES_DISABLE_CLIENT_IP_STORAGE = env.bool(
+        'AXES_DISABLE_CLIENT_IP_STORAGE', True
+    )
+    if AXES_DISABLE_CLIENT_IP_STORAGE:
+        AXES_CLIENT_IP_CALLABLE = lambda x: None  # noqa: E731
 
 
 # Logging
@@ -619,6 +685,9 @@ PROJECTROLES_ALLOW_LOCAL_USERS = env.bool(
     'PROJECTROLES_ALLOW_LOCAL_USERS', False
 )
 PROJECTROLES_ALLOW_ANONYMOUS = env.bool('PROJECTROLES_ALLOW_ANONYMOUS', False)
+PROJECTROLES_LOCAL_USER_UPDATE = env.bool(
+    'PROJECTROLES_LOCAL_USER_UPDATE', True
+)
 PROJECTROLES_ENABLE_MODIFY_API = True
 PROJECTROLES_MODIFY_API_APPS = ['taskflow', 'samplesheets', 'landingzones']
 PROJECTROLES_DISABLE_CATEGORIES = env.bool(
@@ -657,6 +726,9 @@ if PROJECTROLES_ENABLE_PROFILING:
     MIDDLEWARE += ['projectroles.middleware.ProfilerMiddleware']
 
 # Adminalerts app settings
+ADMINALERTS_EMAIL_SENDING_DEFAULT = env.bool(
+    'ADMINALERTS_EMAIL_SENDING_DEFAULT', True
+)
 ADMINALERTS_PAGINATION = env.int('ADMINALERTS_PAGINATION', 15)
 
 # Timeline app settings
@@ -762,11 +834,11 @@ SHEETS_EXTERNAL_LINK_PATH = env.str(
 SHEETS_SYNC_ENABLE = env.bool('SHEETS_SYNC_ENABLE', False)
 # Remote sample sheet sync interval in minutes
 SHEETS_SYNC_INTERVAL = env.int('SHEETS_SYNC_INTERVAL', 5)
-# BAM/CRAM file path glob patterns to omit from study shortcuts and IGV sessions
+# BAM/CRAM file path patterns to omit from study shortcuts and IGV sessions
 SHEETS_IGV_OMIT_BAM = env.list(
     'SHEETS_IGV_OMIT_BAM', default=['*dragen_evidence.bam']
 )
-# VCF file path glob patterns to omit from study shortcuts and IGV sessions
+# VCF file path patterns to omit from study shortcuts and IGV sessions
 SHEETS_IGV_OMIT_VCF = env.list(
     'SHEETS_IGV_OMIT_VCF',
     default=['*cnv.vcf.gz', '*ploidy.vcf.gz', '*sv.vcf.gz'],
@@ -838,10 +910,3 @@ TASKFLOW_LOCK_RETRY_INTERVAL = env.int('TASKFLOW_LOCK_RETRY_INTERVAL', 3)
 TASKFLOW_ZONE_PROGRESS_INTERVAL = env.int('TASKFLOW_ZONE_PROGRESS_INTERVAL', 10)
 TASKFLOW_LOCK_ENABLED = True
 TASKFLOW_TEST_MODE = False  # Important to protect iRODS data
-
-
-# Settings for HTTP AuthBasic
-BASICAUTH_REALM = env.str(
-    'BASICAUTH_REALM', 'Log in with your SODAR user name and password.'
-)
-BASICAUTH_DISABLE = env.bool('BASICAUTH_DISABLE', False)

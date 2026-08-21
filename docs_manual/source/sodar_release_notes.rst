@@ -8,6 +8,92 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v1.3.0 (2026-08-21)
+===================
+
+Major feature release for samplesheets Vue3 app, SODAR Core v1.4 upgrade, etc.
+
+- :ref:`Add samplesheets Vue3 app <app_samplesheets_vue3>`
+- :ref:`Add django-axes support for login security <admin_settings_core>`
+- :ref:`Add fixirodstickets management command <admin_commands_sodar>`
+- Add Python v3.12 and v3.13 support
+- Replace Black and Flake8 with Ruff for linting and formatting
+- Upgrade to Django v5.2
+- Upgrade to SODAR Core v1.4.3
+- Upgrade to python-irodsclient v3.3
+- Upgrade to django-rest-knox v5.0
+- Upgrade to Node.js v24
+- Upgrade minimum supported iRODS version to v4.3.5
+- Upgrade Docker image build to Debian v13 Trixie
+- Remove Python v3.9 and v3.10 support
+- `SODAR Core v1.4 updates <https://sodar-core.readthedocs.io/en/latest/major_changes.html#v1-4-2-2026-07-23>`_
+- `SODAR Core v1.3 updates <https://sodar-core.readthedocs.io/en/latest/major_changes.html#v1-3-2-2026-01-12>`_
+
+:ref:`Administrator upgrade guide for v1.3 <admin_upgrade_v1.3>`
+
+
+v1.2.9 (2026-04-29)
+===================
+
+Hotfix release.
+
+- Fix iRODS access ticket database object deletion on sheet replace
+- Fix samplesheets Vue app ontology edit modal search disabling
+- Fix IGV omit pattern partial path matching
+- Fix germline study app redundant IGV shortcut file path queries
+- Upgrade critical dependencies
+
+
+v1.2.8 (2026-03-19)
+===================
+
+Hotfix release.
+
+- Add germline IGV session VCF file cache search by family ID
+- Optimize germline IGV session generation iRODS queries
+- Fix germline IGV session VCF file cache search by source name
+
+
+v1.2.7 (2026-03-19)
+===================
+
+Hotfix release.
+
+- Add SODAR cache support in germline IGV session file rendering
+- Fix redundant germline IGV session file rendering queries
+- Upgrade critical dependencies
+
+
+v1.2.6 (2026-03-13)
+===================
+
+Hotfix release.
+
+- Fix landing zone status change ignoring project member notification settings
+- Fix samplesheets Vue app button layout issues
+- Upgrade critical dependencies
+
+
+v1.2.5 (2026-01-29)
+===================
+
+Hotfix release.
+
+- Fix iRODS file list API view returning SHA256 checksums as base64
+- Fix OWL ontology parser logging with URL access
+
+
+v1.2.4 (2026-01-16)
+===================
+
+Hotfix release.
+
+- Fix samplesheets crashes if SHEETS_SYNC_ENABLE is set false
+- Fix samplesheets overview study and assay UUID display
+- Fix landing zone status info truncating
+- Upgrade critical dependencies
+
+
 v1.2.3 (2025-12-05)
 ===================
 

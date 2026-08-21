@@ -25,9 +25,9 @@ class FallbackToAuthBasicMiddleware(MiddlewareMixin):
 
     def process_request(self, request):
         # Authentication middleware must be active.
-        assert hasattr(
-            request, 'user'
-        ), 'AuthenticationMiddleware must be active'
+        assert hasattr(request, 'user'), (
+            'AuthenticationMiddleware must be active'
+        )
         # We are already done if the user is already authenticated.
         if request.user.is_authenticated:
             return
@@ -42,7 +42,12 @@ class FallbackToAuthBasicMiddleware(MiddlewareMixin):
         auth = request.META['HTTP_AUTHORIZATION'].split()
         if len(auth) == 2 and auth[0].lower() == 'basic':
             uname, passwd = base64.b64decode(auth[1]).decode().split(':')
-            user = authenticate(username=uname, password=passwd)
+            try:
+                user = authenticate(
+                    username=uname, password=passwd, request=request
+                )
+            except Exception:  # Catch locked exception from Axes
+                return
             if user:
                 login(request, user)
                 return

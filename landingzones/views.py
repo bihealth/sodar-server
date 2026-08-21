@@ -322,7 +322,7 @@ class ZoneModifyMixin(ZoneConfigPluginMixin):
         owner_group = irods_backend.get_group_name(project, owner=True)
         with irods_backend.get_session() as irods:
             try:
-                irods.user_groups.get(owner_group)
+                irods.groups.get(owner_group)
             except GroupDoesNotExist:
                 logger.info('Creating missing project owner group in iRODS..')
                 od_roles = project.get_roles(
@@ -918,7 +918,7 @@ class ZoneUpdateView(
         ):
             messages.error(
                 self.request,
-                "You can only update the following fields: {}".format(
+                'You can only update the following fields: {}'.format(
                     ', '.join(ZONE_UPDATE_FIELDS)
                 ),
             )

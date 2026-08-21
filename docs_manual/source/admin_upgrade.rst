@@ -32,6 +32,43 @@ All instructions assume you are running the previous major release of SODAR
 before performing the upgrade.
 
 
+.. _admin_upgrade_v1.3:
+
+v1.3
+====
+
+Dependencies
+------------
+
+This release requires at least the following versions of SODAR
+environment components:
+
+- `sodar-docker-compose <https://github.com/bihealth/sodar-docker-compose>`_ ``v4.3.5-1``
+- `irods-docker <https://github.com/bihealth/irods-docker>`_ ``4.3.5-1``
+- `davrods-docker <https://github.com/bihealth/davrods-docker>`_ ``4.3.5_1.5.2-1``
+
+Environment Variables
+---------------------
+
+The following changes have been made to environment variables:
+
+- Settings for `django-axes <https://django-axes.readthedocs.io/en/latest/>`_
+  have been added. For details on how to configure the app, see related
+  `SODAR Core documentation <https://sodar-core.readthedocs.io/en/latest/app_projectroles_settings.html#django-axes-configuration-optional>`_.
+- ``PROJECTROLES_LOCAL_USER_UPDATE`` added. Enabling this will allow local user
+  accounts to update their user details.
+- ``ADMINALERTS_EMAIL_SENDING_DEFAULT`` added. Setting this ``False`` will
+  disable admin alert email sending by default.
+
+API Token Regeneration
+----------------------
+
+Due to a breaking upgrade to django-rest-knox v5.x, existing API tokens no
+longer work and need to be regenerated. You should communicate this to your
+users. This is also mentioned in the :ref:`sodar_release_notes` user upgrade
+guide.
+
+
 .. _admin_upgrade_v1.2:
 
 v1.2

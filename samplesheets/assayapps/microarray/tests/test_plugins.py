@@ -15,7 +15,7 @@ HYBRID_SCAN_NAME = 'alpha-S1-E1-H1'
 SCAN_NAME_UPDATE = 'alpha-S1-E1-scan-name'
 IMAGE_FILE = 'image.tiff'
 ARRAY_DATA_FILE = 'data.dat'
-MATRIX_FILE = "mat.rix"
+MATRIX_FILE = 'mat.rix'
 
 
 class TestMicroarrayAssayPlugin(AssayPluginTestBase):

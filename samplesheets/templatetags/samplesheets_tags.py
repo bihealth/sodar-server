@@ -15,7 +15,6 @@ from samplesheets.models import (
     Assay,
     ISATab,
     IrodsDataRequest,
-    GENERIC_MATERIAL_TYPES,
 )
 
 
@@ -53,14 +52,6 @@ def get_investigation(project: Project) -> Optional[Investigation]:
 
 
 @register.simple_tag
-def get_search_item_type(item: str) -> str:
-    """Return printable version of search item type"""
-    if item['type'] == 'file':
-        return 'Data File'
-    return GENERIC_MATERIAL_TYPES[item['type']]
-
-
-@register.simple_tag
 def get_irods_tree(investigation: Investigation) -> str:
     """Return HTML for iRODS collections"""
     irods_backend = plugin_api.get_backend_api('omics_irods')
@@ -81,12 +72,6 @@ def get_irods_tree(investigation: Investigation) -> str:
         ret += '</li>'
     ret += '</ul></li></ul>'
     return ret
-
-
-@register.simple_tag
-def get_material_search_url(item: dict) -> str:
-    """Return search URL for source or sample material"""
-    return item['study'].get_url() + '/filter/{}'.format(item['name'])
 
 
 # Table rendering --------------------------------------------------------------
@@ -137,7 +122,7 @@ def get_isatab_tag_html(isatab: ISATab) -> str:
         return '<span class="text-muted">N/A</span>'
     ret = ''
     for tag in sorted(isatab.tags):
-        ret += '<span class="badge badge-pill badge-{}">' '{}</span>\n'.format(
+        ret += '<span class="badge badge-pill badge-{}">{}</span>\n'.format(
             TAG_COLORS[tag] if tag in TAG_COLORS else DEFAULT_TAG_COLOR,
             tag.capitalize(),
         )
@@ -159,12 +144,3 @@ def get_request_status_class(irods_request: IrodsDataRequest) -> str:
     if irods_request.status not in REQUEST_STATUS_CLASSES:
         return ''
     return REQUEST_STATUS_CLASSES[irods_request.status]
-
-
-@register.filter
-def trim_base_path(path: str, prefix: str) -> str:
-    """Return modified path that was stripped from a given prefix"""
-    prefix = prefix.rstrip('/')
-    if path.startswith(prefix):
-        return path[len(prefix) : len(path)]
-    return path

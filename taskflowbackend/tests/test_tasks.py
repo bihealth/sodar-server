@@ -2,8 +2,6 @@
 
 import uuid
 
-from typing import Any, Optional, Union
-
 from irods.collection import iRODSCollection
 from irods.exception import CollectionDoesNotExist, DataObjectDoesNotExist
 from irods.meta import iRODSMeta
@@ -632,11 +630,11 @@ class TestCreateUserGroupTask(IRODSTaskTestBase):
         """Test user group creation"""
         self.add_task(**self.task_kw)
         self.assertRaises(
-            GroupDoesNotExist, self.irods.user_groups.get, TEST_USER_GROUP
+            GroupDoesNotExist, self.irods.groups.get, TEST_USER_GROUP
         )
         result = self.run_flow()
         self.assertEqual(result, True)
-        group = self.irods.user_groups.get(TEST_USER_GROUP)
+        group = self.irods.groups.get(TEST_USER_GROUP)
         self.assertIsInstance(group, iRODSUserGroup)
 
     def test_execute_twice(self):
@@ -650,7 +648,7 @@ class TestCreateUserGroupTask(IRODSTaskTestBase):
         result = self.run_flow()
 
         self.assertEqual(result, True)
-        group = self.irods.user_groups.get(TEST_USER_GROUP)
+        group = self.irods.groups.get(TEST_USER_GROUP)
         self.assertIsInstance(group, iRODSUserGroup)
 
     def test_revert_created(self):
@@ -660,7 +658,7 @@ class TestCreateUserGroupTask(IRODSTaskTestBase):
         result = self.run_flow()
         self.assertNotEqual(result, True)
         self.assertRaises(
-            GroupDoesNotExist, self.irods.user_groups.get, TEST_USER_GROUP
+            GroupDoesNotExist, self.irods.groups.get, TEST_USER_GROUP
         )
 
     def test_revert_not_modified(self):
@@ -675,7 +673,7 @@ class TestCreateUserGroupTask(IRODSTaskTestBase):
         result = self.run_flow()
 
         self.assertNotEqual(result, True)
-        group = self.irods.user_groups.get(TEST_USER_GROUP)
+        group = self.irods.groups.get(TEST_USER_GROUP)
         self.assertIsInstance(group, iRODSUserGroup)
 
 
@@ -686,7 +684,7 @@ class TestSetAccessTask(IRODSTaskTestBase):
         super().setUp()
         self.sub_coll_path = iRODSPath(self.test_coll_path, SUB_COLL_NAME)
         # Init default user group
-        self.irods.user_groups.create(DEFAULT_USER_GROUP)
+        self.irods.groups.create(DEFAULT_USER_GROUP)
         self.task_kw = {
             'cls': SetAccessTask,
             'name': 'Set access',
@@ -1061,7 +1059,7 @@ class TestAddUserToGroupTask(IRODSTaskTestBase):
     def setUp(self):
         super().setUp()
         # Init default user group
-        group = self.irods.user_groups.create(DEFAULT_USER_GROUP)
+        group = self.irods.groups.create(DEFAULT_USER_GROUP)
         # Init default users
         self.irods.users.create(
             user_name=GROUP_USER, user_type=RODS_USER_TYPE, user_zone=IRODS_ZONE
@@ -1084,11 +1082,11 @@ class TestAddUserToGroupTask(IRODSTaskTestBase):
     def test_execute(self):
         """Test user addition"""
         self.add_task(**self.task_kw)
-        group = self.irods.user_groups.get(DEFAULT_USER_GROUP)
+        group = self.irods.groups.get(DEFAULT_USER_GROUP)
         self.assertEqual(group.hasmember(GROUPLESS_USER), False)
         result = self.run_flow()
         self.assertEqual(result, True)
-        group = self.irods.user_groups.get(DEFAULT_USER_GROUP)
+        group = self.irods.groups.get(DEFAULT_USER_GROUP)
         self.assertEqual(group.hasmember(GROUPLESS_USER), True)
 
     def test_execute_twice(self):
@@ -1102,7 +1100,7 @@ class TestAddUserToGroupTask(IRODSTaskTestBase):
         result = self.run_flow()
 
         self.assertEqual(result, True)
-        group = self.irods.user_groups.get(DEFAULT_USER_GROUP)
+        group = self.irods.groups.get(DEFAULT_USER_GROUP)
         self.assertEqual(group.hasmember(GROUPLESS_USER), True)
 
     def test_revert_modified(self):
@@ -1111,7 +1109,7 @@ class TestAddUserToGroupTask(IRODSTaskTestBase):
         self.add_task(**self.task_kw)  # FAIL
         result = self.run_flow()
         self.assertNotEqual(result, True)
-        group = self.irods.user_groups.get(DEFAULT_USER_GROUP)
+        group = self.irods.groups.get(DEFAULT_USER_GROUP)
         self.assertEqual(group.hasmember(GROUPLESS_USER), False)
 
     def test_revert_not_modified(self):
@@ -1125,7 +1123,7 @@ class TestAddUserToGroupTask(IRODSTaskTestBase):
         result = self.run_flow()
 
         self.assertNotEqual(result, True)
-        group = self.irods.user_groups.get(DEFAULT_USER_GROUP)
+        group = self.irods.groups.get(DEFAULT_USER_GROUP)
         self.assertEqual(group.hasmember(GROUPLESS_USER), True)
 
 
@@ -1135,7 +1133,7 @@ class TestRemoveUserFromGroupTask(IRODSTaskTestBase):
     def setUp(self):
         super().setUp()
         # Init default user group
-        group = self.irods.user_groups.create(DEFAULT_USER_GROUP)
+        group = self.irods.groups.create(DEFAULT_USER_GROUP)
         # Init default users
         self.irods.users.create(
             user_name=GROUP_USER, user_type=RODS_USER_TYPE, user_zone=IRODS_ZONE
@@ -1153,11 +1151,11 @@ class TestRemoveUserFromGroupTask(IRODSTaskTestBase):
     def test_execute(self):
         """Test user removal"""
         self.add_task(**self.task_kw)
-        group = self.irods.user_groups.get(DEFAULT_USER_GROUP)
+        group = self.irods.groups.get(DEFAULT_USER_GROUP)
         self.assertEqual(group.hasmember(GROUP_USER), True)
         result = self.run_flow()
         self.assertEqual(result, True)
-        group = self.irods.user_groups.get(DEFAULT_USER_GROUP)
+        group = self.irods.groups.get(DEFAULT_USER_GROUP)
         self.assertEqual(group.hasmember(GROUP_USER), False)
 
     def test_execute_twice(self):
@@ -1171,14 +1169,14 @@ class TestRemoveUserFromGroupTask(IRODSTaskTestBase):
         result = self.run_flow()
 
         self.assertEqual(result, True)
-        group = self.irods.user_groups.get(DEFAULT_USER_GROUP)
+        group = self.irods.groups.get(DEFAULT_USER_GROUP)
         self.assertEqual(group.hasmember(GROUP_USER), False)
 
     def test_execute_no_group(self):
         """Test user removal with no existing group"""
         self.irods.users.remove(DEFAULT_USER_GROUP)
         with self.assertRaises(GroupDoesNotExist):
-            self.irods.user_groups.get(DEFAULT_USER_GROUP)
+            self.irods.groups.get(DEFAULT_USER_GROUP)
         self.add_task(**self.task_kw)
         result = self.run_flow()
         self.assertEqual(result, True)
@@ -1190,7 +1188,7 @@ class TestRemoveUserFromGroupTask(IRODSTaskTestBase):
         result = self.run_flow()
         self.assertNotEqual(result, True)
 
-        group = self.irods.user_groups.get(DEFAULT_USER_GROUP)
+        group = self.irods.groups.get(DEFAULT_USER_GROUP)
         self.assertEqual(group.hasmember(GROUP_USER), True)
 
     def test_revert_not_modified(self):
@@ -1204,7 +1202,7 @@ class TestRemoveUserFromGroupTask(IRODSTaskTestBase):
         result = self.run_flow()
 
         self.assertNotEqual(result, True)
-        group = self.irods.user_groups.get(DEFAULT_USER_GROUP)
+        group = self.irods.groups.get(DEFAULT_USER_GROUP)
         self.assertEqual(group.hasmember(GROUP_USER), False)
 
 
@@ -1371,9 +1369,9 @@ class TestBatchCheckFileExistTask(
     @override_settings(IRODS_HASH_SCHEME=IRODS_HASH_SCHEME_SHA256)
     def test_task_sha256_unexpected_md5(self):
         """Test task unexpected MD5 checksum file"""
-        self.task_kw['inject'][
-            'chk_suffix'
-        ] = self.irods_backend.get_checksum_file_suffix()
+        self.task_kw['inject']['chk_suffix'] = (
+            self.irods_backend.get_checksum_file_suffix()
+        )
         self.task_kw['inject']['chk_paths'] = [self.obj_path + MD5_SUFFIX]
         self.add_task(**self.task_kw)
         with self.assertRaises(Exception) as cm:
@@ -1563,7 +1561,7 @@ class TestBatchVerifySampleChecksumsTask(
         alert = self._get_app_alert()
         self.assertIsInstance(alert, AppAlert)
         alert_msg = (
-            f'{VERIFY_ERR_MSG}:\n' f'Assay: {self.assay.get_display_name()}\n'
+            f'{VERIFY_ERR_MSG}:\nAssay: {self.assay.get_display_name()}\n'
         ) + ex_msg
         expected = {
             'id': alert.pk,
@@ -1659,7 +1657,7 @@ class TestBatchSetAccessTask(IRODSTaskTestBase):
         self.irods.collections.create(self.sub_coll_path2)
         self.paths = [self.sub_coll_path, self.sub_coll_path2]
         # Init default user group
-        self.irods.user_groups.create(DEFAULT_USER_GROUP)
+        self.irods.groups.create(DEFAULT_USER_GROUP)
         self.task_kw = {
             'cls': BatchSetAccessTask,
             'name': 'Set access',
@@ -2162,7 +2160,7 @@ class TestBatchMoveDataObjectsTask(
             status=ZONE_STATUS_ACTIVE,
         )
         # Init default user group
-        self.irods.user_groups.create(DEFAULT_USER_GROUP)
+        self.irods.groups.create(DEFAULT_USER_GROUP)
         # Init batch collections
         self.batch_src_path = iRODSPath(self.test_coll_path, BATCH_SRC_NAME)
         self.batch_dest_path = iRODSPath(self.test_coll_path, BATCH_DEST_NAME)

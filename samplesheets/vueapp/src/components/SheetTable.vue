@@ -32,7 +32,7 @@
         <b-button
             v-if="app.editMode"
             variant="primary"
-            class="sodar-header-button sodar-ss-row-insert-btn mr-2 pull-right"
+            class="sodar-ss-row-insert-btn mr-2 pull-right"
             :title="getInsertRowTitle()"
             :disabled="app.unsavedRow !== null"
             @click="app.handleRowInsert(gridUuid, assayMode)"
@@ -136,4 +136,8 @@ export default {
 </script>
 
 <style scoped>
+.sodar-ss-row-insert-btn {
+  height: 30px;
+  padding: 3px 12px;
+}
 </style>

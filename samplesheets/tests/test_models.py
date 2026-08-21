@@ -1195,17 +1195,53 @@ class TestGenericMaterialManager(SamplesheetsModelTestBase):
             extract_label={},
             comments=DEFAULT_COMMENTS,
         )
+        # Set up sample with alternative parent project
+        self.project2 = self.make_project(
+            'Other Project',
+            SODAR_CONSTANTS['PROJECT_TYPE_PROJECT'],
+            parent=None,
+        )
+        self.investigation2 = self.make_investigation(
+            identifier='Other Investigation',
+            file_name='i_Investigation_alt.txt',
+            project=self.project2,
+            title='Other Investigation Title',
+            description=DEFAULT_DESCRIPTION,
+            comments=DEFAULT_COMMENTS,
+        )
+        self.study2 = self.make_study(
+            identifier='Other Study',
+            file_name='s_Study_alt.txt',
+            investigation=self.investigation2,
+            title='Other Study Title',
+            description=DEFAULT_DESCRIPTION,
+            comments=DEFAULT_COMMENTS,
+        )
+        self.sample2 = self.make_material(
+            item_type='SAMPLE',
+            name='other_sample',
+            unique_name='other_sample_123',
+            characteristics=SAMPLE_CHARACTERISTICS,
+            study=self.study2,
+            assay=None,
+            material_type=None,
+            extra_material_type=None,
+            factor_values=None,
+            comments=DEFAULT_COMMENTS,
+        )
 
     def test_find_source(self):
         """Test find() by source name"""
-        result = GenericMaterial.objects.find([SOURCE_NAME])
+        result = GenericMaterial.objects.find(
+            [SOURCE_NAME], projects=Project.objects.all()
+        )
         self.assertEqual(result.count(), 1)
         self.assertEqual(result.first(), self.source)
 
     def test_find_source_type_source(self):
         """Test find() by source name with item_type=SOURCE"""
         result = GenericMaterial.objects.find(
-            [SOURCE_NAME], item_types=['SOURCE']
+            [SOURCE_NAME], projects=Project.objects.all(), item_types=['SOURCE']
         )
         self.assertEqual(result.count(), 1)
         self.assertEqual(result.first(), self.source)
@@ -1213,31 +1249,37 @@ class TestGenericMaterialManager(SamplesheetsModelTestBase):
     def test_find_source_type_sample(self):
         """Test find() by source name with item_type=SAMPLE (should fail)"""
         result = GenericMaterial.objects.find(
-            [SOURCE_NAME], item_types=['SAMPLE']
+            [SOURCE_NAME], projects=Project.objects.all(), item_types=['SAMPLE']
         )
         self.assertEqual(result.count(), 0)
 
     def test_find_source_partial(self):
         """Test find() by partial source name (should fail)"""
-        result = GenericMaterial.objects.find([SOURCE_NAME[:-2]])
+        result = GenericMaterial.objects.find(
+            [SOURCE_NAME[:-2]], projects=Project.objects.all()
+        )
         self.assertEqual(result.count(), 0)
 
     def test_find_source_alt(self):
         """Test find() by alt source name"""
-        result = GenericMaterial.objects.find([get_alt_names(SOURCE_NAME)[0]])
+        result = GenericMaterial.objects.find(
+            [get_alt_names(SOURCE_NAME)[0]], projects=Project.objects.all()
+        )
         self.assertEqual(result.count(), 1)
         self.assertEqual(result.first(), self.source)
 
     def test_find_sample(self):
         """Test find() by sample name"""
-        result = GenericMaterial.objects.find([SAMPLE_NAME])
+        result = GenericMaterial.objects.find(
+            [SAMPLE_NAME], projects=Project.objects.all()
+        )
         self.assertEqual(result.count(), 1)
         self.assertEqual(result.first(), self.sample)
 
     def test_find_sample_type_sample(self):
         """Test find() by sample name with item_type=SAMPLE"""
         result = GenericMaterial.objects.find(
-            [SAMPLE_NAME], item_types=['SAMPLE']
+            [SAMPLE_NAME], projects=Project.objects.all(), item_types=['SAMPLE']
         )
         self.assertEqual(result.count(), 1)
         self.assertEqual(result.first(), self.sample)
@@ -1245,30 +1287,38 @@ class TestGenericMaterialManager(SamplesheetsModelTestBase):
     def test_find_sample_type_source(self):
         """Test find() by sample name with item_type=SOURCE (should fail)"""
         result = GenericMaterial.objects.find(
-            [SAMPLE_NAME], item_types=['SOURCE']
+            [SAMPLE_NAME], projects=Project.objects.all(), item_types=['SOURCE']
         )
         self.assertEqual(result.count(), 0)
 
     def test_find_sample_partial(self):
         """Test find() by partial sample name (should fail)"""
-        result = GenericMaterial.objects.find([SAMPLE_NAME[:-2]])
+        result = GenericMaterial.objects.find(
+            [SAMPLE_NAME[:-2]], projects=Project.objects.all()
+        )
         self.assertEqual(result.count(), 0)
 
     def test_find_sample_alt(self):
         """Test find() by alt sample name"""
-        result = GenericMaterial.objects.find([get_alt_names(SAMPLE_NAME)[0]])
+        result = GenericMaterial.objects.find(
+            [get_alt_names(SAMPLE_NAME)[0]], projects=Project.objects.all()
+        )
         self.assertEqual(result.count(), 1)
         self.assertEqual(result.first(), self.sample)
 
     def test_find_multi(self):
         """Test find() with multiple terms"""
-        result = GenericMaterial.objects.find([SOURCE_NAME, SAMPLE_NAME])
+        result = GenericMaterial.objects.find(
+            [SOURCE_NAME, SAMPLE_NAME], projects=Project.objects.all()
+        )
         self.assertEqual(result.count(), 2)
 
     def test_find_multi_type_source(self):
         """Test find() with multiple terms and item_type=SOURCE"""
         result = GenericMaterial.objects.find(
-            [SOURCE_NAME, SAMPLE_NAME], item_types=['SOURCE']
+            [SOURCE_NAME, SAMPLE_NAME],
+            projects=Project.objects.all(),
+            item_types=['SOURCE'],
         )
         self.assertEqual(result.count(), 1)
         self.assertEqual(result.first(), self.source)
@@ -1276,10 +1326,33 @@ class TestGenericMaterialManager(SamplesheetsModelTestBase):
     def test_find_multi_type_sample(self):
         """Test find() with multiple terms and item_type=SAMPLE"""
         result = GenericMaterial.objects.find(
-            [SOURCE_NAME, SAMPLE_NAME], item_types=['SAMPLE']
+            [SOURCE_NAME, SAMPLE_NAME],
+            projects=Project.objects.all(),
+            item_types=['SAMPLE'],
         )
         self.assertEqual(result.count(), 1)
         self.assertEqual(result.first(), self.sample)
+
+    def test_find_project_limit_success(self):
+        """Test find() material with project limiting"""
+        result = GenericMaterial.objects.find(
+            ['other_sample'],
+            projects=Project.objects.filter(
+                sodar_uuid=self.project2.sodar_uuid
+            ),
+            item_types=['SAMPLE'],
+        )
+        self.assertEqual(result.count(), 1)
+        self.assertEqual(result.first(), self.sample2)
+
+    def test_find_project_limit_fail(self):
+        """Test find() material with project limiting (should fail)"""
+        result = GenericMaterial.objects.find(
+            ['other_sample'],
+            projects=Project.objects.filter(sodar_uuid=self.project.sodar_uuid),
+            item_types=['SAMPLE'],
+        )
+        self.assertEqual(result.count(), 0)
 
 
 class TestProcess(SamplesheetsModelTestBase):

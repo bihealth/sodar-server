@@ -63,7 +63,7 @@ def get_output(
                         path,
                         str(stats['file_count']),
                         filesizeformat(stats['total_size']).replace(
-                            u'\xa0', ' '
+                            '\xa0', ' '
                         ),
                     ]
                 )

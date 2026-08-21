@@ -7,9 +7,9 @@ jobs:
     strategy:
       matrix:
         python-version:
-          - '3.9'
-          - '3.10'
           - '3.11'
+          - '3.12'
+          - '3.13'
     services:
       postgres:
         image: postgres:16
@@ -34,7 +34,7 @@ jobs:
         ports:
           - 6379:6379
       irods:
-        image: ghcr.io/bihealth/irods-docker:4.3.4-1
+        image: ghcr.io/bihealth/irods-docker:4.3.5-1
         env:
           IRODS_DEFAULT_HASH_SCHEME: MD5
           IRODS_ICAT_DBSERVER: postgres
@@ -57,53 +57,61 @@ jobs:
           sudo apt-get install -qq liblcms2-dev libwebp-dev libpq-dev graphviz-dev
       - name: Install server production dependencies for docs building
         run: sudo apt-get install -qq libsasl2-dev libldap2-dev libssl-dev
-        if: ${{ matrix.python-version == '3.11' }}
+        if: ${{ matrix.python-version == '3.13' }}
       - name: Install Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
       - name: Install project Python dependencies
         run: |
           pip install -r requirements/base.txt --use-pep517
           pip install -r requirements/test.txt --use-pep517
       - name: Install production dependencies for docs building
         run: pip install -r requirements/production.txt --use-pep517
-        if: ${{ matrix.python-version == '3.11' }}
+        if: ${{ matrix.python-version == '3.13' }}
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
-          node-version: 22.x
-      - name: Build and run Vue app
+          node-version: 24.x
+      - name: Build and run Vue2 app
         run: |
           npm ci --prefix samplesheets/vueapp
           nohup npm run -prefix samplesheets/vueapp serve &
+      - name: Build and run Vue3 app
+        run: |
+          npm ci --prefix samplesheets/vue3app
+          nohup npm run --prefix samplesheets/vue3app dev &
       - name: Download icons
         run: python manage.py geticons --settings=config.settings.test
       - name: Run collectstatic
         run: python manage.py collectstatic --noinput --settings=config.settings.test
+      - name: Check Python formatting
+        run: make format-check
+        if: ${{ matrix.python-version == '3.13' }}
+      - name: Check Python linting
+        run: make lint
+        if: ${{ matrix.python-version == '3.13' }}
+      - name: Check docs building
+        working-directory: ./docs_manual
+        run: make html
+        if: ${{ matrix.python-version == '3.13' }}
+      - name: Run Vue2 app tests
+        run: make test_samplesheets_vue
+        if: ${{ matrix.python-version == '3.13' }}
+      - name: Run Vue3 app tests
+        run: make test_samplesheets_vue3
+        if: ${{ matrix.python-version == '3.13' }}
       - name: Run Django tests
         run: |
           coverage run --rcfile=.coveragerc manage.py test -v 2 --settings=config.settings.test
           coverage lcov
           coverage report
-      - name: Run Vue app tests
-        run: make test_samplesheets_vue
-        if: ${{ matrix.python-version == '3.11' }}
-      - name: Check Python linting
-        run: flake8 .
-      - name: Check Python formatting
-        run: make black arg=--check
-        if: ${{ matrix.python-version == '3.11' }}
-      - name: Check docs building
-        working-directory: ./docs_manual
-        run: make html
-        if: ${{ matrix.python-version == '3.11' }}
       - name: Report coverage with Coveralls
         uses: coverallsapp/github-action@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path-to-lcov: './coverage.lcov'
           fail-on-error: false
-        if: ${{ matrix.python-version == '3.11' }}
+        if: ${{ matrix.python-version == '3.13' }}

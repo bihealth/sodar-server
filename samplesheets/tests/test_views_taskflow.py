@@ -1,11 +1,10 @@
 """Tests for UI views in the samplesheets app with taskflow"""
 
-import pytz
 import uuid
 
 from datetime import timedelta
 from typing import Optional
-from urllib.parse import urlencode
+from zoneinfo import ZoneInfo
 
 from irods.exception import CollectionDoesNotExist, NoResultFound
 from irods.models import TicketQuery
@@ -29,9 +28,11 @@ from projectroles.views import NO_AUTH_MSG
 
 # Appalerts dependency
 from appalerts.models import AppAlert
+from appalerts.tests.test_views import AppalertsTestMixin
 
 # Timeline dependency
 from timeline.models import TimelineEvent, TL_STATUS_OK
+from timeline.tests.test_views import TimelineTestMixin
 
 # Irodsbackend dependency
 from irodsbackend.api import TICKET_MODE_READ
@@ -90,8 +91,6 @@ IRODS_FILE_NAME = 'test1.txt'
 IRODS_FILE_NAME2 = 'test2.txt'
 PUBLIC_USER_NAME = 'user_no_roles'
 PUBLIC_USER_PASS = 'password'
-SOURCE_ID = '0815'
-SAMPLE_ID = '0815-N1'
 INVALID_REDIS_URL = 'redis://127.0.0.1:6666/0'
 TICKET_LABEL = 'TestTicket'
 TICKET_LABEL_UPDATED = 'TestTicketUpdated'
@@ -156,7 +155,7 @@ class SampleSheetTaskflowMixin:
 class SampleSheetPublicAccessMixin:
     """Helpers for sample sheet public access modification with taskflow"""
 
-    def set_public_access(self, access: Role):
+    def set_public_access(self, access: Optional[Role]):
         """
         Set project public access by issuing a project update POST request.
 
@@ -238,10 +237,13 @@ class IrodsAccessTicketViewTestMixin:
 class IrodsDataRequestViewTestBase(
     SampleSheetIOMixin,
     SampleSheetTaskflowMixin,
+    AppalertsTestMixin,
+    TimelineTestMixin,
     TaskflowViewTestBase,
 ):
     """Base test class for iRODS delete requests"""
 
+    '''
     # TODO: Retrieve this from a common base/helper class instead of redef
     def _assert_alert_count(self, alert_name, user, count, project=None):
         """
@@ -264,25 +266,7 @@ class IrodsDataRequestViewTestBase(
             ).count(),
             count,
         )
-
-    # TODO: Move this into SODAR Core (see bihealth/sodar-core#1243)
-    def _assert_tl_count(self, event_name: str, count: int, **kwargs):
-        """
-        Assert expected timeline event count.
-
-        :param event_name: Event name (string)
-        :param user: SODARUser object
-        :param count: Integer
-        :param kwargs: Extra kwargs for query (dict, optional)
-        """
-        timeline = plugin_api.get_backend_api('timeline_backend')
-        TimelineEvent, _ = timeline.get_models()
-        self.assertEqual(
-            TimelineEvent.objects.filter(
-                event_name=event_name, **kwargs
-            ).count(),
-            count,
-        )
+    '''
 
     def setUp(self):
         super().setUp()
@@ -411,7 +395,10 @@ class TestIrodsCollsCreateView(
 
 
 class TestSheetDeleteView(
-    SampleSheetIOMixin, SampleSheetTaskflowMixin, TaskflowViewTestBase
+    SampleSheetIOMixin,
+    SampleSheetTaskflowMixin,
+    TimelineTestMixin,
+    TaskflowViewTestBase,
 ):
     """Tests for SheetDeleteView with taskflow"""
 
@@ -425,12 +412,6 @@ class TestSheetDeleteView(
         self.file_path = iRODSPath(self.assay_path, IRODS_FILE_NAME)
         self.irods.data_objects.create(self.file_path)
         self.assertEqual(self.irods.data_objects.exists(self.file_path), True)
-
-    def _assert_tl_event_count(self, count: int):
-        self.assertEqual(
-            TimelineEvent.objects.filter(event_name='sheet_delete').count(),
-            count,
-        )
 
     def setUp(self):
         super().setUp()
@@ -450,6 +431,7 @@ class TestSheetDeleteView(
             kwargs={'project': self.project.sodar_uuid},
         )
         self.post_data = {'delete_host_confirm': 'testserver'}
+        self.tl_name = 'sheet_delete'
 
     def test_get_no_files_owner(self):
         """Test SheetDeleteView GET without files as owner"""
@@ -492,7 +474,7 @@ class TestSheetDeleteView(
     def test_post(self):
         """Test POST with no iRODS collections or files"""
         self.assertIsNotNone(self.investigation)
-        self._assert_tl_event_count(0)
+        self.assert_tl_event_count(self.tl_name, 0)
         with self.login(self.user):
             response = self.client.post(self.url, self.post_data)
             self.assertRedirects(
@@ -508,7 +490,7 @@ class TestSheetDeleteView(
                 project__sodar_uuid=self.project.sodar_uuid
             )
         # Assert timeline event status
-        self._assert_tl_event_count(1)
+        self.assert_tl_event_count(self.tl_name, 1)
         tl_event = TimelineEvent.objects.get(event_name='sheet_delete')
         self.assertEqual(
             tl_event.get_status().status_type, self.timeline.TL_STATUS_OK
@@ -520,7 +502,7 @@ class TestSheetDeleteView(
         self.assert_irods_coll(
             self.irods_backend.get_sample_path(self.project), expected=True
         )
-        self._assert_tl_event_count(0)
+        self.assert_tl_event_count(self.tl_name, 0)
         with self.login(self.user):
             self.client.post(self.url, self.post_data)
         with self.assertRaises(Investigation.DoesNotExist):
@@ -530,7 +512,7 @@ class TestSheetDeleteView(
         self.assert_irods_coll(
             self.irods_backend.get_sample_path(self.project), expected=False
         )
-        self._assert_tl_event_count(1)
+        self.assert_tl_event_count(self.tl_name, 1)
         tl_event = TimelineEvent.objects.get(event_name='sheet_delete')
         self.assertEqual(
             tl_event.get_status().status_type, self.timeline.TL_STATUS_OK
@@ -1098,7 +1080,7 @@ class TestIrodsAccessTicketUpdateView(
         self.assertEqual(IrodsAccessTicket.objects.count(), 1)
         ticket_res = self.get_irods_ticket(self.ticket)
         self.assertEqual(ticket_res[TicketQuery.Ticket.type], TICKET_MODE_READ)
-        obj_exp = self.ticket.date_expires.replace(tzinfo=pytz.timezone('GMT'))
+        obj_exp = self.ticket.date_expires.replace(tzinfo=ZoneInfo('GMT'))
         self.assertEqual(
             int(ticket_res[TicketQuery.Ticket.expiry_ts]),
             int(obj_exp.timestamp()),
@@ -1337,9 +1319,9 @@ class TestIrodsDataRequestCreateView(IrodsDataRequestViewTestBase):
     def test_post(self):
         """Test IrodsDataRequestCreateView POST"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
-        self._assert_tl_count(EVENT_CREATE, 0)
-        self._assert_alert_count(EVENT_CREATE, self.user, 0)
-        self._assert_alert_count(EVENT_CREATE, self.user_delegate, 0)
+        self.assert_tl_event_count(EVENT_CREATE, 0)
+        self.assert_app_alert_count(EVENT_CREATE, 0, user=self.user)
+        self.assert_app_alert_count(EVENT_CREATE, 0, user=self.user_delegate)
 
         with self.login(self.user_contributor):
             response = self.client.post(self.url, self.post_data)
@@ -1360,7 +1342,7 @@ class TestIrodsDataRequestCreateView(IrodsDataRequestViewTestBase):
         self.assertEqual(obj.path, self.obj_path)
         self.assertEqual(obj.user, self.user_contributor)
         self.assertEqual(obj.description, IRODS_REQUEST_DESC)
-        self._assert_tl_count(EVENT_CREATE, 1)
+        self.assert_tl_event_count(EVENT_CREATE, 1)
         self.assertEqual(
             TimelineEvent.objects.get(event_name=EVENT_CREATE).extra_data,
             {
@@ -1369,23 +1351,23 @@ class TestIrodsDataRequestCreateView(IrodsDataRequestViewTestBase):
                 'description': obj.description,
             },
         )
-        self._assert_alert_count(EVENT_CREATE, self.user, 1)
-        self._assert_alert_count(EVENT_CREATE, self.user_delegate, 1)
+        self.assert_app_alert_count(EVENT_CREATE, 1, user=self.user)
+        self.assert_app_alert_count(EVENT_CREATE, 1, user=self.user_delegate)
 
     def test_post_inactive_user(self):
         """Test POST with inactive user for receiving nofitications"""
         self.user_delegate.is_active = False
         self.user_delegate.save()
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
-        self._assert_tl_count(EVENT_CREATE, 0)
-        self._assert_alert_count(EVENT_CREATE, self.user, 0)
-        self._assert_alert_count(EVENT_CREATE, self.user_delegate, 0)
+        self.assert_tl_event_count(EVENT_CREATE, 0)
+        self.assert_app_alert_count(EVENT_CREATE, 0, user=self.user)
+        self.assert_app_alert_count(EVENT_CREATE, 0, user=self.user_delegate)
         with self.login(self.user_contributor):
             self.client.post(self.url, self.post_data)
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
-        self._assert_tl_count(EVENT_CREATE, 1)
-        self._assert_alert_count(EVENT_CREATE, self.user, 1)
-        self._assert_alert_count(EVENT_CREATE, self.user_delegate, 0)
+        self.assert_tl_event_count(EVENT_CREATE, 1)
+        self.assert_app_alert_count(EVENT_CREATE, 1, user=self.user)
+        self.assert_app_alert_count(EVENT_CREATE, 0, user=self.user_delegate)
 
     def test_post_trailing_slash(self):
         """Test POST with trailing slash in path"""
@@ -1408,9 +1390,9 @@ class TestIrodsDataRequestCreateView(IrodsDataRequestViewTestBase):
     def test_post_invalid_data(self):
         """Test POST with invalid form data"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
-        self._assert_tl_count(EVENT_CREATE, 0)
-        self._assert_alert_count(EVENT_CREATE, self.user, 0)
-        self._assert_alert_count(EVENT_CREATE, self.user_delegate, 0)
+        self.assert_tl_event_count(EVENT_CREATE, 0)
+        self.assert_app_alert_count(EVENT_CREATE, 0, user=self.user)
+        self.assert_app_alert_count(EVENT_CREATE, 0, user=self.user_delegate)
         post_data = {'path': '/doesnt/exist', 'description': IRODS_REQUEST_DESC}
         with self.login(self.user_contributor):
             response = self.client.post(self.url, post_data)
@@ -1419,9 +1401,9 @@ class TestIrodsDataRequestCreateView(IrodsDataRequestViewTestBase):
             ERROR_MSG_INVALID_PATH,
         )
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
-        self._assert_tl_count(EVENT_CREATE, 0)
-        self._assert_alert_count(EVENT_CREATE, self.user, 0)
-        self._assert_alert_count(EVENT_CREATE, self.user_delegate, 0)
+        self.assert_tl_event_count(EVENT_CREATE, 0)
+        self.assert_app_alert_count(EVENT_CREATE, 0, user=self.user)
+        self.assert_app_alert_count(EVENT_CREATE, 0, user=self.user_delegate)
 
     def test_post_assay_path(self):
         """Test POST with assay path (should fail)"""
@@ -1440,17 +1422,17 @@ class TestIrodsDataRequestCreateView(IrodsDataRequestViewTestBase):
         path2 = iRODSPath(self.assay_path, IRODS_FILE_NAME2)
         self.irods.data_objects.create(path2)
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
-        self._assert_tl_count(EVENT_CREATE, 0)
-        self._assert_alert_count(EVENT_CREATE, self.user, 0)
-        self._assert_alert_count(EVENT_CREATE, self.user_delegate, 0)
+        self.assert_tl_event_count(EVENT_CREATE, 0)
+        self.assert_app_alert_count(EVENT_CREATE, 0, user=self.user)
+        self.assert_app_alert_count(EVENT_CREATE, 0, user=self.user_delegate)
         with self.login(self.user_contributor):
             self.client.post(self.url, self.post_data)
             self.post_data['path'] = path2
             self.client.post(self.url, self.post_data)
         self.assertEqual(IrodsDataRequest.objects.count(), 2)
-        self._assert_tl_count(EVENT_CREATE, 2)
-        self._assert_alert_count(EVENT_CREATE, self.user, 1)
-        self._assert_alert_count(EVENT_CREATE, self.user_delegate, 1)
+        self.assert_tl_event_count(EVENT_CREATE, 2)
+        self.assert_app_alert_count(EVENT_CREATE, 1, user=self.user)
+        self.assert_app_alert_count(EVENT_CREATE, 1, user=self.user_delegate)
 
 
 class TestIrodsDataRequestUpdateView(
@@ -1476,7 +1458,7 @@ class TestIrodsDataRequestUpdateView(
     def test_post(self):
         """Test IrodsDataRequestUpdateView POST"""
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
-        self._assert_tl_count(EVENT_UPDATE, 0)
+        self.assert_tl_event_count(EVENT_UPDATE, 0)
 
         post_data = {
             'path': self.obj_path,
@@ -1494,13 +1476,14 @@ class TestIrodsDataRequestUpdateView(
 
         self.assertEqual(
             list(get_messages(response.wsgi_request))[-1].message,
-            f'iRODS data request "{self.irods_req.get_display_name()}" updated.',
+            f'iRODS data request "{self.irods_req.get_display_name()}" '
+            f'updated.',
         )
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         self.irods_req.refresh_from_db()
         self.assertEqual(self.irods_req.path, self.obj_path)
         self.assertEqual(self.irods_req.description, IRODS_REQUEST_DESC_UPDATE)
-        self._assert_tl_count(EVENT_UPDATE, 1)
+        self.assert_tl_event_count(EVENT_UPDATE, 1)
         self.assertEqual(
             TimelineEvent.objects.get(event_name=EVENT_UPDATE).extra_data,
             {
@@ -1513,7 +1496,7 @@ class TestIrodsDataRequestUpdateView(
     def test_post_superuser(self):
         """Test POST as superuser"""
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
-        self._assert_tl_count(EVENT_UPDATE, 0)
+        self.assert_tl_event_count(EVENT_UPDATE, 0)
 
         post_data = {
             'path': self.obj_path,
@@ -1528,12 +1511,12 @@ class TestIrodsDataRequestUpdateView(
         self.assertEqual(self.irods_req.description, IRODS_REQUEST_DESC_UPDATE)
         # Assert user is not updated when superuser updates the request
         self.assertEqual(self.irods_req.user, self.user_contributor)
-        self._assert_tl_count(EVENT_UPDATE, 1)
+        self.assert_tl_event_count(EVENT_UPDATE, 1)
 
     def test_post_invalid_form_data(self):
         """Test POST with invalid form data"""
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
-        self._assert_tl_count(EVENT_UPDATE, 0)
+        self.assert_tl_event_count(EVENT_UPDATE, 0)
 
         post_data = {
             'path': '/sodarZone/path/does/not/exist',
@@ -1550,7 +1533,7 @@ class TestIrodsDataRequestUpdateView(
         self.irods_req.refresh_from_db()
         self.assertEqual(self.irods_req.path, self.obj_path)
         self.assertEqual(self.irods_req.description, IRODS_REQUEST_DESC)
-        self._assert_tl_count(EVENT_UPDATE, 0)
+        self.assert_tl_event_count(EVENT_UPDATE, 0)
 
 
 class TestIrodsDataRequestDeleteView(
@@ -1572,9 +1555,9 @@ class TestIrodsDataRequestDeleteView(
             self.client.post(self.url_create, self.post_data)
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         self.assert_irods_obj(self.obj_path)
-        self._assert_tl_count(EVENT_DELETE, 0)
-        self._assert_alert_count(EVENT_CREATE, self.user, 1)
-        self._assert_alert_count(EVENT_CREATE, self.user_delegate, 1)
+        self.assert_tl_event_count(EVENT_DELETE, 0)
+        self.assert_app_alert_count(EVENT_CREATE, 1, user=self.user)
+        self.assert_app_alert_count(EVENT_CREATE, 1, user=self.user_delegate)
         obj = IrodsDataRequest.objects.first()
 
         with self.login(self.user_contributor):
@@ -1598,17 +1581,17 @@ class TestIrodsDataRequestDeleteView(
         )
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         self.assert_irods_obj(self.obj_path)
-        self._assert_tl_count(EVENT_DELETE, 1)
+        self.assert_tl_event_count(EVENT_DELETE, 1)
         self.assertEqual(
             TimelineEvent.objects.get(event_name=EVENT_DELETE).extra_data, {}
         )
         # Create alerts should be deleted
-        self._assert_alert_count(EVENT_CREATE, self.user, 0)
-        self._assert_alert_count(EVENT_CREATE, self.user_delegate, 0)
+        self.assert_app_alert_count(EVENT_CREATE, 0, user=self.user)
+        self.assert_app_alert_count(EVENT_CREATE, 0, user=self.user_delegate)
 
     def test_post_one_of_multiple(self):
         """Test POST for one of multiple requests"""
-        self._assert_tl_count(EVENT_DELETE, 0)
+        self.assert_tl_event_count(EVENT_DELETE, 0)
         obj_path2 = iRODSPath(self.assay_path, IRODS_FILE_NAME2)
         self.irods.data_objects.create(obj_path2)
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
@@ -1622,8 +1605,10 @@ class TestIrodsDataRequestDeleteView(
             self.assert_irods_obj(self.obj_path)
             self.assert_irods_obj(obj_path2)
             # NOTE: Still should only have one request for both
-            self._assert_alert_count(EVENT_CREATE, self.user, 1)
-            self._assert_alert_count(EVENT_CREATE, self.user_delegate, 1)
+            self.assert_app_alert_count(EVENT_CREATE, 1, user=self.user)
+            self.assert_app_alert_count(
+                EVENT_CREATE, 1, user=self.user_delegate
+            )
             obj = IrodsDataRequest.objects.filter(path=obj_path2).first()
             self.client.post(
                 reverse(
@@ -1635,10 +1620,10 @@ class TestIrodsDataRequestDeleteView(
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         self.assert_irods_obj(self.obj_path)
         self.assert_irods_obj(obj_path2)
-        self._assert_tl_count(EVENT_DELETE, 1)
+        self.assert_tl_event_count(EVENT_DELETE, 1)
         # NOTE: After deleting just one the requests, alerts remain
-        self._assert_alert_count(EVENT_CREATE, self.user, 1)
-        self._assert_alert_count(EVENT_CREATE, self.user_delegate, 1)
+        self.assert_app_alert_count(EVENT_CREATE, 1, user=self.user)
+        self.assert_app_alert_count(EVENT_CREATE, 1, user=self.user_delegate)
 
 
 class TestIrodsDataRequestAcceptView(
@@ -1705,13 +1690,13 @@ class TestIrodsDataRequestAcceptView(
         with self.login(self.user_contributor):
             self.client.post(self.url_create, self.post_data)
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
-        self._assert_tl_count(EVENT_ACCEPT, 0)
-        self._assert_alert_count(EVENT_CREATE, self.user, 1)
-        self._assert_alert_count(EVENT_CREATE, self.user_delegate, 1)
-        self._assert_alert_count(EVENT_CREATE, self.user_contributor, 0)
-        self._assert_alert_count(EVENT_ACCEPT, self.user, 0)
-        self._assert_alert_count(EVENT_ACCEPT, self.user_delegate, 0)
-        self._assert_alert_count(EVENT_ACCEPT, self.user_contributor, 0)
+        self.assert_tl_event_count(EVENT_ACCEPT, 0)
+        self.assert_app_alert_count(EVENT_CREATE, 1, user=self.user)
+        self.assert_app_alert_count(EVENT_CREATE, 1, user=self.user_delegate)
+        self.assert_app_alert_count(EVENT_CREATE, 0, user=self.user_contributor)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user_delegate)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user_contributor)
         mail_count = len(mail.outbox)
 
         obj = IrodsDataRequest.objects.first()
@@ -1737,13 +1722,13 @@ class TestIrodsDataRequestAcceptView(
         )
         obj.refresh_from_db()
         self.assertEqual(obj.status, IRODS_REQUEST_STATUS_ACCEPTED)
-        self._assert_tl_count(EVENT_ACCEPT, 1)
-        self._assert_alert_count(EVENT_CREATE, self.user, 0)
-        self._assert_alert_count(EVENT_CREATE, self.user_delegate, 0)
-        self._assert_alert_count(EVENT_CREATE, self.user_contributor, 0)
-        self._assert_alert_count(EVENT_ACCEPT, self.user, 0)
-        self._assert_alert_count(EVENT_ACCEPT, self.user_delegate, 0)
-        self._assert_alert_count(EVENT_ACCEPT, self.user_contributor, 1)
+        self.assert_tl_event_count(EVENT_ACCEPT, 1)
+        self.assert_app_alert_count(EVENT_CREATE, 0, user=self.user)
+        self.assert_app_alert_count(EVENT_CREATE, 0, user=self.user_delegate)
+        self.assert_app_alert_count(EVENT_CREATE, 0, user=self.user_contributor)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user_delegate)
+        self.assert_app_alert_count(EVENT_ACCEPT, 1, user=self.user_contributor)
         self.assert_irods_obj(self.obj_path, False)
         tl_event = TimelineEvent.objects.filter(event_name=EVENT_ACCEPT).first()
         self.assertEqual(tl_event.status_changes.count(), 2)
@@ -1809,7 +1794,7 @@ class TestIrodsDataRequestAcceptView(
         self.user_contributor.save()
 
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
-        self._assert_alert_count(EVENT_ACCEPT, self.user_contributor, 0)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user_contributor)
         mail_count = len(mail.outbox)
 
         obj = IrodsDataRequest.objects.first()
@@ -1825,7 +1810,7 @@ class TestIrodsDataRequestAcceptView(
         obj.refresh_from_db()
         self.assertEqual(obj.status, IRODS_REQUEST_STATUS_ACCEPTED)
         # No alert should be raised
-        self._assert_alert_count(EVENT_ACCEPT, self.user_contributor, 0)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user_contributor)
         self.assert_irods_obj(self.obj_path, False)
         self.assertEqual(len(mail.outbox), mail_count)  # No new mail
 
@@ -1848,11 +1833,11 @@ class TestIrodsDataRequestAcceptView(
         with self.login(self.user_contributor):
             self.client.post(self.url_create, self.post_data)
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
-        self._assert_tl_count(EVENT_ACCEPT, 0)
-        self._assert_alert_count(EVENT_CREATE, self.user, 1)
-        self._assert_alert_count(EVENT_CREATE, self.user_delegate, 1)
-        self._assert_alert_count(EVENT_ACCEPT, self.user, 0)
-        self._assert_alert_count(EVENT_ACCEPT, self.user_delegate, 0)
+        self.assert_tl_event_count(EVENT_ACCEPT, 0)
+        self.assert_app_alert_count(EVENT_CREATE, 1, user=self.user)
+        self.assert_app_alert_count(EVENT_CREATE, 1, user=self.user_delegate)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user_delegate)
 
         obj = IrodsDataRequest.objects.first()
         with self.login(self.user):
@@ -1869,11 +1854,11 @@ class TestIrodsDataRequestAcceptView(
             response.context['form'].errors['confirm'][0],
             'This field is required.',
         )
-        self._assert_tl_count(EVENT_ACCEPT, 0)
-        self._assert_alert_count(EVENT_CREATE, self.user, 1)
-        self._assert_alert_count(EVENT_CREATE, self.user_delegate, 1)
-        self._assert_alert_count(EVENT_ACCEPT, self.user, 0)
-        self._assert_alert_count(EVENT_ACCEPT, self.user_delegate, 0)
+        self.assert_tl_event_count(EVENT_ACCEPT, 0)
+        self.assert_app_alert_count(EVENT_CREATE, 1, user=self.user)
+        self.assert_app_alert_count(EVENT_CREATE, 1, user=self.user_delegate)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user_delegate)
         self.assert_irods_obj(self.obj_path)
 
     def test_post_as_owner(self):
@@ -1886,9 +1871,9 @@ class TestIrodsDataRequestAcceptView(
             status=IRODS_REQUEST_STATUS_ACTIVE,
             user=self.user_contributor,
         )
-        self._assert_alert_count(EVENT_ACCEPT, self.user, 0)
-        self._assert_alert_count(EVENT_ACCEPT, self.user_delegate, 0)
-        self._assert_alert_count(EVENT_ACCEPT, self.user_contributor, 0)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user_delegate)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user_contributor)
 
         with self.login(self.user_owner_cat):
             self.client.post(
@@ -1902,9 +1887,9 @@ class TestIrodsDataRequestAcceptView(
         obj.refresh_from_db()
         self.assertEqual(obj.status, IRODS_REQUEST_STATUS_ACCEPTED)
         self.assert_irods_obj(self.obj_path, False)
-        self._assert_alert_count(EVENT_ACCEPT, self.user, 0)
-        self._assert_alert_count(EVENT_ACCEPT, self.user_delegate, 0)
-        self._assert_alert_count(EVENT_ACCEPT, self.user_contributor, 1)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user_delegate)
+        self.assert_app_alert_count(EVENT_ACCEPT, 1, user=self.user_contributor)
 
     def test_post_delegate(self):
         """Test POST as delegate"""
@@ -1916,9 +1901,9 @@ class TestIrodsDataRequestAcceptView(
             status=IRODS_REQUEST_STATUS_ACTIVE,
             user=self.user_contributor,
         )
-        self._assert_alert_count(EVENT_ACCEPT, self.user, 0)
-        self._assert_alert_count(EVENT_ACCEPT, self.user_delegate, 0)
-        self._assert_alert_count(EVENT_ACCEPT, self.user_contributor, 0)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user_delegate)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user_contributor)
 
         with self.login(self.user_delegate):
             self.client.post(
@@ -1932,9 +1917,9 @@ class TestIrodsDataRequestAcceptView(
         obj.refresh_from_db()
         self.assertEqual(obj.status, IRODS_REQUEST_STATUS_ACCEPTED)
         self.assert_irods_obj(self.obj_path, False)
-        self._assert_alert_count(EVENT_ACCEPT, self.user, 0)
-        self._assert_alert_count(EVENT_ACCEPT, self.user_delegate, 0)
-        self._assert_alert_count(EVENT_ACCEPT, self.user_contributor, 1)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user_delegate)
+        self.assert_app_alert_count(EVENT_ACCEPT, 1, user=self.user_contributor)
 
     def test_post_contributor(self):
         """Test POST as contributor"""
@@ -1946,9 +1931,9 @@ class TestIrodsDataRequestAcceptView(
             status=IRODS_REQUEST_STATUS_ACTIVE,
             user=self.user_contributor,
         )
-        self._assert_alert_count(EVENT_ACCEPT, self.user, 0)
-        self._assert_alert_count(EVENT_ACCEPT, self.user_delegate, 0)
-        self._assert_alert_count(EVENT_ACCEPT, self.user_contributor, 0)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user_delegate)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user_contributor)
 
         with self.login(self.user_contributor):
             response = self.client.post(
@@ -1963,9 +1948,9 @@ class TestIrodsDataRequestAcceptView(
         obj.refresh_from_db()
         self.assertEqual(obj.status, IRODS_REQUEST_STATUS_ACTIVE)
         self.assert_irods_obj(self.obj_path)
-        self._assert_alert_count(EVENT_ACCEPT, self.user, 0)
-        self._assert_alert_count(EVENT_ACCEPT, self.user_delegate, 0)
-        self._assert_alert_count(EVENT_ACCEPT, self.user_contributor, 0)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user_delegate)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user_contributor)
 
     def test_post_one_of_multiple(self):
         """Test POST for one of multiple requests"""
@@ -2018,8 +2003,8 @@ class TestIrodsDataRequestAcceptView(
         with self.login(self.user_contributor):
             self.client.post(self.url_create, self.post_data)
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
-        self._assert_alert_count(EVENT_CREATE, self.user, 1)
-        self._assert_alert_count(EVENT_CREATE, self.user_delegate, 1)
+        self.assert_app_alert_count(EVENT_CREATE, 1, user=self.user)
+        self.assert_app_alert_count(EVENT_CREATE, 1, user=self.user_delegate)
 
         obj = IrodsDataRequest.objects.first()
         with self.login(self.user):
@@ -2040,8 +2025,8 @@ class TestIrodsDataRequestAcceptView(
 
         obj.refresh_from_db()
         self.assertEqual(obj.status, IRODS_REQUEST_STATUS_FAILED)
-        self._assert_alert_count(EVENT_CREATE, self.user, 1)
-        self._assert_alert_count(EVENT_CREATE, self.user_delegate, 1)
+        self.assert_app_alert_count(EVENT_CREATE, 1, user=self.user)
+        self.assert_app_alert_count(EVENT_CREATE, 1, user=self.user_delegate)
         self.assert_irods_obj(self.obj_path, True)
         tl_event = TimelineEvent.objects.filter(event_name=EVENT_ACCEPT).first()
         self.assertEqual(tl_event.status_changes.count(), 2)
@@ -2065,9 +2050,9 @@ class TestIrodsDataRequestAcceptView(
             status=IRODS_REQUEST_STATUS_ACTIVE,
             user=self.user_contributor,
         )
-        self._assert_alert_count(EVENT_ACCEPT, self.user, 0)
-        self._assert_alert_count(EVENT_ACCEPT, self.user_delegate, 0)
-        self._assert_alert_count(EVENT_ACCEPT, self.user_contributor, 0)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user_delegate)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user_contributor)
 
         with self.login(self.user):
             self.client.post(
@@ -2080,9 +2065,9 @@ class TestIrodsDataRequestAcceptView(
 
         obj.refresh_from_db()
         self.assertEqual(obj.status, IRODS_REQUEST_STATUS_ACCEPTED)
-        self._assert_alert_count(EVENT_ACCEPT, self.user, 0)
-        self._assert_alert_count(EVENT_ACCEPT, self.user_delegate, 0)
-        self._assert_alert_count(EVENT_ACCEPT, self.user_contributor, 1)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user_delegate)
+        self.assert_app_alert_count(EVENT_ACCEPT, 1, user=self.user_contributor)
         self.assertEqual(self.irods.collections.exists(coll_path), False)
         self.assert_irods_obj(obj_path2, False)
 
@@ -2114,7 +2099,7 @@ class TestIrodsDataRequestAcceptView(
         self.assertEqual(obj.status, IRODS_REQUEST_STATUS_ACCEPTED)
         self.assert_irods_obj(self.obj_path, False)
         # No alert for contributor
-        self._assert_alert_count(EVENT_ACCEPT, self.user_contributor, 0)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user_contributor)
 
     def test_post_disable_email_notify(self):
         """Test POST wth disabled email notifications"""
@@ -2312,10 +2297,10 @@ class TestIrodsDataRequestAcceptBatchView(
             )
 
         self.assertEqual(IrodsDataRequest.objects.count(), 2)
-        self._assert_alert_count(EVENT_CREATE, self.user, 1)
-        self._assert_alert_count(EVENT_CREATE, self.user_delegate, 1)
-        self._assert_alert_count(EVENT_ACCEPT, self.user, 0)
-        self._assert_alert_count(EVENT_ACCEPT, self.user_delegate, 0)
+        self.assert_app_alert_count(EVENT_CREATE, 1, user=self.user)
+        self.assert_app_alert_count(EVENT_CREATE, 1, user=self.user_delegate)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user_delegate)
 
         with self.login(self.user):
             response = self.client.post(
@@ -2346,10 +2331,10 @@ class TestIrodsDataRequestAcceptBatchView(
         obj2 = IrodsDataRequest.objects.last()
         obj2.refresh_from_db()
         self.assertEqual(obj2.status, IRODS_REQUEST_STATUS_ACCEPTED)
-        self._assert_alert_count(EVENT_CREATE, self.user, 0)
-        self._assert_alert_count(EVENT_CREATE, self.user_delegate, 0)
-        self._assert_alert_count(EVENT_ACCEPT, self.user, 0)
-        self._assert_alert_count(EVENT_ACCEPT, self.user_delegate, 0)
+        self.assert_app_alert_count(EVENT_CREATE, 0, user=self.user)
+        self.assert_app_alert_count(EVENT_CREATE, 0, user=self.user_delegate)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user_delegate)
         self.assert_irods_obj(self.obj_path, False)
         self.assert_irods_obj(self.obj_path2, False)
 
@@ -2381,10 +2366,10 @@ class TestIrodsDataRequestAcceptBatchView(
             self.client.post(self.url_create, self.post_data2)
             self.assertEqual(IrodsDataRequest.objects.count(), 2)
 
-        self._assert_alert_count(EVENT_CREATE, self.user, 1)
-        self._assert_alert_count(EVENT_CREATE, self.user_delegate, 1)
-        self._assert_alert_count(EVENT_ACCEPT, self.user, 0)
-        self._assert_alert_count(EVENT_ACCEPT, self.user_delegate, 0)
+        self.assert_app_alert_count(EVENT_CREATE, 1, user=self.user)
+        self.assert_app_alert_count(EVENT_CREATE, 1, user=self.user_delegate)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user_delegate)
 
         with self.login(self.user):
             response = self.client.post(
@@ -2399,10 +2384,10 @@ class TestIrodsDataRequestAcceptBatchView(
             response.context['form'].errors['confirm'][0],
             'This field is required.',
         )
-        self._assert_alert_count(EVENT_CREATE, self.user, 1)
-        self._assert_alert_count(EVENT_CREATE, self.user_delegate, 1)
-        self._assert_alert_count(EVENT_ACCEPT, self.user, 0)
-        self._assert_alert_count(EVENT_ACCEPT, self.user_delegate, 0)
+        self.assert_app_alert_count(EVENT_CREATE, 1, user=self.user)
+        self.assert_app_alert_count(EVENT_CREATE, 1, user=self.user_delegate)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user_delegate)
         self.assert_irods_obj(self.obj_path)
         self.assert_irods_obj(self.obj_path2)
 
@@ -2418,10 +2403,10 @@ class TestIrodsDataRequestAcceptBatchView(
             self.client.post(self.url_create, self.post_data2)
             self.assertEqual(IrodsDataRequest.objects.count(), 2)
 
-        self._assert_alert_count(EVENT_CREATE, self.user, 1)
-        self._assert_alert_count(EVENT_CREATE, self.user_delegate, 1)
-        self._assert_alert_count(EVENT_ACCEPT, self.user, 0)
-        self._assert_alert_count(EVENT_ACCEPT, self.user_delegate, 0)
+        self.assert_app_alert_count(EVENT_CREATE, 1, user=self.user)
+        self.assert_app_alert_count(EVENT_CREATE, 1, user=self.user_delegate)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user)
+        self.assert_app_alert_count(EVENT_ACCEPT, 0, user=self.user_delegate)
 
         with self.login(self.user):
             response = self.client.post(
@@ -2438,8 +2423,8 @@ class TestIrodsDataRequestAcceptBatchView(
         obj2 = IrodsDataRequest.objects.last()
         obj2.refresh_from_db()
         self.assertEqual(obj2.status, IRODS_REQUEST_STATUS_FAILED)
-        self._assert_alert_count(EVENT_CREATE, self.user, 1)
-        self._assert_alert_count(EVENT_CREATE, self.user_delegate, 1)
+        self.assert_app_alert_count(EVENT_CREATE, 1, user=self.user)
+        self.assert_app_alert_count(EVENT_CREATE, 1, user=self.user_delegate)
         self.assert_irods_obj(self.obj_path)
         self.assert_irods_obj(self.obj_path2)
 
@@ -2467,9 +2452,9 @@ class TestIrodsDataRequestRejectView(
         )
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         self.assert_irods_obj(self.obj_path)
-        self._assert_alert_count(EVENT_REJECT, self.user, 0)
-        self._assert_alert_count(EVENT_REJECT, self.user_delegate, 0)
-        self._assert_alert_count(EVENT_REJECT, self.user_contributor, 0)
+        self.assert_app_alert_count(EVENT_REJECT, 0, user=self.user)
+        self.assert_app_alert_count(EVENT_REJECT, 0, user=self.user_delegate)
+        self.assert_app_alert_count(EVENT_REJECT, 0, user=self.user_contributor)
         mail_count = len(mail.outbox)
 
         with self.login(self.user):
@@ -2494,9 +2479,9 @@ class TestIrodsDataRequestRejectView(
         obj.refresh_from_db()
         self.assertEqual(obj.status, IRODS_REQUEST_STATUS_REJECTED)
         self.assert_irods_obj(self.obj_path)
-        self._assert_alert_count(EVENT_REJECT, self.user, 0)
-        self._assert_alert_count(EVENT_REJECT, self.user_delegate, 0)
-        self._assert_alert_count(EVENT_REJECT, self.user_contributor, 1)
+        self.assert_app_alert_count(EVENT_REJECT, 0, user=self.user)
+        self.assert_app_alert_count(EVENT_REJECT, 0, user=self.user_delegate)
+        self.assert_app_alert_count(EVENT_REJECT, 1, user=self.user_contributor)
         self.assertEqual(len(mail.outbox), mail_count + 1)
         self.assertEqual(
             mail.outbox[-1].recipients(), [self.user_contributor.email]
@@ -2514,7 +2499,7 @@ class TestIrodsDataRequestRejectView(
         self.user_contributor.is_active = False
         self.user_contributor.save()
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
-        self._assert_alert_count(EVENT_REJECT, self.user_contributor, 0)
+        self.assert_app_alert_count(EVENT_REJECT, 0, user=self.user_contributor)
         mail_count = len(mail.outbox)
 
         with self.login(self.user):
@@ -2527,7 +2512,7 @@ class TestIrodsDataRequestRejectView(
 
         obj.refresh_from_db()
         self.assertEqual(obj.status, IRODS_REQUEST_STATUS_REJECTED)
-        self._assert_alert_count(EVENT_REJECT, self.user_contributor, 0)
+        self.assert_app_alert_count(EVENT_REJECT, 0, user=self.user_contributor)
         self.assertEqual(len(mail.outbox), mail_count)
 
     def test_get_owner(self):
@@ -2550,9 +2535,9 @@ class TestIrodsDataRequestRejectView(
 
         obj.refresh_from_db()
         self.assertEqual(obj.status, IRODS_REQUEST_STATUS_REJECTED)
-        self._assert_alert_count(EVENT_REJECT, self.user, 0)
-        self._assert_alert_count(EVENT_REJECT, self.user_delegate, 0)
-        self._assert_alert_count(EVENT_REJECT, self.user_contributor, 1)
+        self.assert_app_alert_count(EVENT_REJECT, 0, user=self.user)
+        self.assert_app_alert_count(EVENT_REJECT, 0, user=self.user_delegate)
+        self.assert_app_alert_count(EVENT_REJECT, 1, user=self.user_contributor)
 
     def test_get_delegate(self):
         """Test GET as delegate"""
@@ -2574,9 +2559,9 @@ class TestIrodsDataRequestRejectView(
 
         obj.refresh_from_db()
         self.assertEqual(obj.status, IRODS_REQUEST_STATUS_REJECTED)
-        self._assert_alert_count(EVENT_REJECT, self.user, 0)
-        self._assert_alert_count(EVENT_REJECT, self.user_delegate, 0)
-        self._assert_alert_count(EVENT_REJECT, self.user_contributor, 1)
+        self.assert_app_alert_count(EVENT_REJECT, 0, user=self.user)
+        self.assert_app_alert_count(EVENT_REJECT, 0, user=self.user_delegate)
+        self.assert_app_alert_count(EVENT_REJECT, 1, user=self.user_contributor)
 
     def test_get_contributor(self):
         """Test GET as contributor"""
@@ -2602,9 +2587,9 @@ class TestIrodsDataRequestRejectView(
         )
         obj.refresh_from_db()
         self.assertEqual(obj.status, IRODS_REQUEST_STATUS_ACTIVE)
-        self._assert_alert_count(EVENT_REJECT, self.user, 0)
-        self._assert_alert_count(EVENT_REJECT, self.user_delegate, 0)
-        self._assert_alert_count(EVENT_REJECT, self.user_contributor, 0)
+        self.assert_app_alert_count(EVENT_REJECT, 0, user=self.user)
+        self.assert_app_alert_count(EVENT_REJECT, 0, user=self.user_delegate)
+        self.assert_app_alert_count(EVENT_REJECT, 0, user=self.user_contributor)
 
     def test_get_one_of_multiple(self):
         """Test GET with one of multiple requests"""
@@ -2623,8 +2608,8 @@ class TestIrodsDataRequestRejectView(
             2,
         )
         obj = IrodsDataRequest.objects.filter(path=obj_path2).first()
-        self._assert_alert_count(EVENT_CREATE, self.user, 1)
-        self._assert_alert_count(EVENT_CREATE, self.user_delegate, 1)
+        self.assert_app_alert_count(EVENT_CREATE, 1, user=self.user)
+        self.assert_app_alert_count(EVENT_CREATE, 1, user=self.user_delegate)
 
         with self.login(self.user):
             self.client.get(
@@ -2642,11 +2627,11 @@ class TestIrodsDataRequestRejectView(
         )
         self.assert_irods_obj(self.obj_path)
         self.assert_irods_obj(obj_path2)
-        self._assert_alert_count(EVENT_CREATE, self.user, 1)
-        self._assert_alert_count(EVENT_CREATE, self.user_delegate, 1)
-        self._assert_alert_count(EVENT_REJECT, self.user, 0)
-        self._assert_alert_count(EVENT_REJECT, self.user_delegate, 0)
-        self._assert_alert_count(EVENT_REJECT, self.user_contributor, 1)
+        self.assert_app_alert_count(EVENT_CREATE, 1, user=self.user)
+        self.assert_app_alert_count(EVENT_CREATE, 1, user=self.user_delegate)
+        self.assert_app_alert_count(EVENT_REJECT, 0, user=self.user)
+        self.assert_app_alert_count(EVENT_REJECT, 0, user=self.user_delegate)
+        self.assert_app_alert_count(EVENT_REJECT, 1, user=self.user_contributor)
 
     def test_get_no_request(self):
         """Test GET with non-existing delete request"""
@@ -2686,7 +2671,7 @@ class TestIrodsDataRequestRejectView(
         self.assertEqual(obj.status, IRODS_REQUEST_STATUS_REJECTED)
         self.assert_irods_obj(self.obj_path)
         # No alert for contributor
-        self._assert_alert_count(EVENT_REJECT, self.user_contributor, 0)
+        self.assert_app_alert_count(EVENT_REJECT, 0, user=self.user_contributor)
 
     def test_get_disable_email_notify(self):
         """Test GET with disabled email notifications"""
@@ -2737,9 +2722,9 @@ class TestIrodsDataRequestRejectBatchView(
     def test_post(self):
         """Test IrodsDataRequestRejectBatchView POST"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
-        self._assert_alert_count(EVENT_REJECT, self.user, 0)
-        self._assert_alert_count(EVENT_REJECT, self.user_delegate, 0)
-        self._assert_alert_count(EVENT_REJECT, self.user_contributor, 0)
+        self.assert_app_alert_count(EVENT_REJECT, 0, user=self.user)
+        self.assert_app_alert_count(EVENT_REJECT, 0, user=self.user_delegate)
+        self.assert_app_alert_count(EVENT_REJECT, 0, user=self.user_contributor)
         with self.login(self.user):
             self.client.post(self.url_create, self.post_data)
             self.client.post(self.url_create, self.post_data2)
@@ -2781,9 +2766,9 @@ class TestIrodsDataRequestRejectBatchView(
         obj2 = IrodsDataRequest.objects.last()
         obj2.refresh_from_db()
         self.assertEqual(obj2.status, IRODS_REQUEST_STATUS_REJECTED)
-        self._assert_alert_count(EVENT_REJECT, self.user, 0)
-        self._assert_alert_count(EVENT_REJECT, self.user_delegate, 0)
-        self._assert_alert_count(EVENT_REJECT, self.user_contributor, 0)
+        self.assert_app_alert_count(EVENT_REJECT, 0, user=self.user)
+        self.assert_app_alert_count(EVENT_REJECT, 0, user=self.user_delegate)
+        self.assert_app_alert_count(EVENT_REJECT, 0, user=self.user_contributor)
 
     def test_post_no_request(self):
         """Test POST with non-existing request"""
@@ -2898,98 +2883,6 @@ class TestSampleDataPublicAccess(
             self.user_session.collections.get(new_coll_path)
 
 
-class TestProjectSearchView(
-    SampleSheetIOMixin, SampleSheetTaskflowMixin, TaskflowViewTestBase
-):
-    """Tests for ProjectSearchView with taskflow and sample sheet items"""
-
-    def setUp(self):
-        super().setUp()
-        self.project, self.owner_as = self.make_project_taskflow(
-            title='TestProject',
-            type=PROJECT_TYPE_PROJECT,
-            parent=self.category,
-            owner=self.user,
-        )
-        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
-        self.study = self.investigation.studies.first()
-        self.assay = self.study.assays.first()
-        self.make_irods_colls(self.investigation)
-        self.assay_path = self.irods_backend.get_path(self.assay)
-        # Create test file
-        self.file_name = f'{SAMPLE_ID}_test.txt'
-        self.file_path = iRODSPath(self.assay_path, self.file_name)
-        self.irods.data_objects.create(self.file_path)
-
-    def test_get(self):
-        """Test ProjectSearchView GET without keyword limiting"""
-        with self.login(self.user):
-            response = self.client.get(
-                reverse('projectroles:search')
-                + '?'
-                + urlencode({'s': SAMPLE_ID})
-            )
-        self.assertEqual(response.status_code, 200)
-        data = response.context['app_results'][0]
-        self.assertEqual(len(data['results']), 2)
-        self.assertEqual(len(data['results']['materials'].items), 1)
-        self.assertEqual(
-            data['results']['materials'].items[0]['name'], SAMPLE_ID
-        )
-        self.assertEqual(len(data['results']['files'].items), 1)
-        self.assertEqual(
-            data['results']['files'].items[0]['name'], self.file_name
-        )
-
-    def test_get_limit_source(self):
-        """Test GET with source type limit"""
-        with self.login(self.user):
-            response = self.client.get(
-                reverse('projectroles:search')
-                + '?'
-                + urlencode({'s': f'{SOURCE_ID} type:source'})
-            )
-        self.assertEqual(response.status_code, 200)
-        data = response.context['app_results'][0]
-        self.assertEqual(len(data['results']), 1)
-        self.assertEqual(len(data['results']['materials'].items), 1)
-        self.assertEqual(
-            data['results']['materials'].items[0]['name'], SOURCE_ID
-        )
-
-    def test_get_limit_sample(self):
-        """Test GET with sample type limit"""
-        with self.login(self.user):
-            response = self.client.get(
-                reverse('projectroles:search')
-                + '?'
-                + urlencode({'s': f'{SAMPLE_ID} type:sample'})
-            )
-        self.assertEqual(response.status_code, 200)
-        data = response.context['app_results'][0]
-        self.assertEqual(len(data['results']), 1)
-        self.assertEqual(len(data['results']['materials'].items), 1)
-        self.assertEqual(
-            data['results']['materials'].items[0]['name'], SAMPLE_ID
-        )
-
-    def test_get_limit_file(self):
-        """Test GET with file type limit"""
-        with self.login(self.user):
-            response = self.client.get(
-                reverse('projectroles:search')
-                + '?'
-                + urlencode({'s': f'{SAMPLE_ID} type:file'})
-            )
-        self.assertEqual(response.status_code, 200)
-        data = response.context['app_results'][0]
-        self.assertEqual(len(data['results']), 1)
-        self.assertEqual(len(data['results']['files'].items), 1)
-        self.assertEqual(
-            data['results']['files'].items[0]['name'], self.file_name
-        )
-
-
 class TestProjectUpdateView(TaskflowViewTestBase):
     """Tests for ProjectUpdateView with taskflow and samplesheets app settings"""
 
@@ -3003,6 +2896,7 @@ class TestProjectUpdateView(TaskflowViewTestBase):
             description='description',
         )
         self.post_data = model_to_dict(self.project)
+        self.post_data['readme'] = ''
         self.post_data['public_access'] = ''
         self.post_data['parent'] = self.category.sodar_uuid
         self.post_data['owner'] = self.user.sodar_uuid

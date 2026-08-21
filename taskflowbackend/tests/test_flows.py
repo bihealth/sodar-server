@@ -19,6 +19,7 @@ from projectroles.models import SODAR_CONSTANTS, ROLE_RANKING
 
 # Appalerts dependency
 from appalerts.models import AppAlert
+from appalerts.tests.test_views import AppalertsTestMixin
 
 # Timeline dependency
 from timeline.models import TimelineEvent
@@ -108,6 +109,7 @@ IRODS_ROOT_PATH = 'sodar/root'
 INVALID_REDIS_URL = 'redis://127.0.0.1:6666/0'
 MD5_SUFFIX = '.md5'
 DUMMY_MD5 = '66666666666666666666666666666666'
+RESET_EVENT = 'zone_reset'
 
 
 class TaskflowbackendFlowTestBase(TaskflowViewTestBase):
@@ -1510,6 +1512,7 @@ class TestLandingZoneReset(
     LandingZoneTaskflowMixin,
     SampleSheetIOMixin,
     SampleSheetTaskflowMixin,
+    AppalertsTestMixin,
     TimelineEventMixin,
     TaskflowbackendFlowTestBase,
 ):
@@ -1538,16 +1541,6 @@ class TestLandingZoneReset(
             user_zone=self.irods.zone,
         )
         self.irods.acls.set(acl, recursive=recursive)
-
-    def _assert_alert_count(self, count: int):
-        """
-        Assert zone reset alert count.
-
-        :param count: Integer
-        """
-        self.assertEqual(
-            AppAlert.objects.filter(alert_name='zone_reset').count(), count
-        )
 
     def setUp(self):
         super().setUp()
@@ -1583,7 +1576,7 @@ class TestLandingZoneReset(
             project=self.project,
             app=APP_NAME,
             user=self.user,
-            event_name='zone_reset',
+            event_name=RESET_EVENT,
         )
         self.flow_kw['flow_name'] = 'landing_zone_reset'
         self.flow_kw['flow_data'] = self.flow_data
@@ -1595,7 +1588,7 @@ class TestLandingZoneReset(
         self.make_zone_taskflow(self.zone)
         self.zone.set_status(ZONE_STATUS_VALIDATING)
         self.assertEqual(self.zone.status, ZONE_STATUS_VALIDATING)
-        self._assert_alert_count(0)
+        self.assert_app_alert_count(RESET_EVENT, 0)
         self.assertEqual(len(mail.outbox), 0)
         flow = self.taskflow.get_flow(**self.flow_kw)
         self.assertEqual(type(flow), LandingZoneResetFlow)
@@ -1603,7 +1596,7 @@ class TestLandingZoneReset(
         self.zone.refresh_from_db()
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
         self.assertEqual(self.zone.status_info, STATUS_INFO_ADMIN_RESET)
-        self._assert_alert_count(1)
+        self.assert_app_alert_count(RESET_EVENT, 1)
         self.assertEqual(len(mail.outbox), 1)
 
     def test_reset_coll(self):
@@ -1828,9 +1821,9 @@ class TestProjectCreate(TaskflowbackendFlowTestBase):
         """Test project_create for creating a project"""
         self.assert_irods_coll(self.project, expected=False)
         with self.assertRaises(GroupDoesNotExist):
-            self.irods.user_groups.get(self.project_group)
+            self.irods.groups.get(self.project_group)
         with self.assertRaises(GroupDoesNotExist):
-            self.irods.user_groups.get(self.owner_group)
+            self.irods.groups.get(self.owner_group)
 
         flow_data = {
             'owner': self.user.username,
@@ -1849,9 +1842,9 @@ class TestProjectCreate(TaskflowbackendFlowTestBase):
         self.build_and_run(flow)
 
         self.assert_irods_coll(self.project, expected=True)
-        group = self.irods.user_groups.get(self.project_group)
+        group = self.irods.groups.get(self.project_group)
         self.assertIsInstance(group, iRODSUserGroup)
-        group = self.irods.user_groups.get(self.owner_group)
+        group = self.irods.groups.get(self.owner_group)
         self.assertIsInstance(group, iRODSUserGroup)
         self.assert_irods_access(
             self.project_group,
@@ -2245,8 +2238,8 @@ class TestRoleUpdateIrodsBatch(TaskflowbackendFlowTestBase):
         )
         self.project_group = self.irods_backend.get_group_name(self.project)
         self.owner_group = self.irods_backend.get_group_name(self.project, True)
-        self.project_group = self.irods.user_groups.get(self.project_group)
-        self.owner_group = self.irods.user_groups.get(self.owner_group)
+        self.project_group = self.irods.groups.get(self.project_group)
+        self.owner_group = self.irods.groups.get(self.owner_group)
         self.user_new = self.make_user('user_new')
         self.user_new2 = self.make_user('user_new2')
         self.set_flow_kw()

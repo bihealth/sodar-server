@@ -14,7 +14,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.tests.test_ui import UITestBase
+from projectroles.tests.base import ProjectUITestBase
 
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
@@ -46,7 +46,7 @@ class LandingZoneUITestBase(
     SheetConfigMixin,
     LandingZoneMixin,
     LandingzonesViewTestMixin,
-    UITestBase,
+    ProjectUITestBase,
 ):
     """Base class for landingzones UI tests"""
 
@@ -88,7 +88,7 @@ class LandingZoneUITestBase(
         for i in range(0, 25):
             if status_elem.text == status:
                 return
-            time.sleep(1.0)
+            time.sleep(1)
         raise Exception('Status not changed')
 
     def wait_for_status_update(self):
@@ -110,6 +110,10 @@ class LandingZoneUITestBase(
             self.user_delegate,
             self.user_contributor,
         ]
+
+    def tearDown(self):
+        time.sleep(0.5)  # HACK: See #2501 and bihealth/sodar-core#1969
+        super().tearDown()
 
 
 class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):

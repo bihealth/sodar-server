@@ -4,19 +4,18 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ("landingzones", "0001_squashed_0008_landingzone_user_message"),
+        ('landingzones', '0001_squashed_0008_landingzone_user_message'),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name="landingzone",
-            name="status_info",
+            model_name='landingzone',
+            name='status_info',
             field=models.TextField(
                 blank=True,
-                default="Creating landing zone in iRODS",
-                help_text="Additional status information",
+                default='Creating landing zone in iRODS',
+                help_text='Additional status information',
                 null=True,
             ),
         ),

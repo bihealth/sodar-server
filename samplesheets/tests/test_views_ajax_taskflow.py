@@ -321,32 +321,32 @@ class TestIrodsDataRequestCreateAjaxView(IrodsDataRequestViewTestBase):
     def test_post(self):
         """Test IrodsDataRequestCreateAjaxView POST"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
-        self._assert_alert_count(CREATE_ALERT, self.user, 0)
-        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
+        self.assert_app_alert_count(CREATE_ALERT, 0, user=self.user)
+        self.assert_app_alert_count(CREATE_ALERT, 0, user=self.user_delegate)
         with self.login(self.user):
             response = self.client.post(self.url, self.get_data)
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['detail'], 'ok')
         self.assertEqual(response.data['status'], 'ACTIVE')
-        self._assert_alert_count(CREATE_ALERT, self.user, 0)
-        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
+        self.assert_app_alert_count(CREATE_ALERT, 0, user=self.user)
+        self.assert_app_alert_count(CREATE_ALERT, 1, user=self.user_delegate)
 
     def test_post_exists_same_user(self):
         """Test POST with existing request for same user"""
         with self.login(self.user_contributor):
             self.client.post(self.url, self.get_data)
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
-        self._assert_alert_count(CREATE_ALERT, self.user, 1)
-        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
+        self.assert_app_alert_count(CREATE_ALERT, 1, user=self.user)
+        self.assert_app_alert_count(CREATE_ALERT, 1, user=self.user_delegate)
         with self.login(self.user_contributor):
             response = self.client.post(self.url, self.get_data)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(
             response.data['detail'], 'active request for path already exists'
         )
-        self._assert_alert_count(CREATE_ALERT, self.user, 1)
-        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
+        self.assert_app_alert_count(CREATE_ALERT, 1, user=self.user)
+        self.assert_app_alert_count(CREATE_ALERT, 1, user=self.user_delegate)
 
     def test_post_exists_as_admin_by_contributor(self):
         """Test POST as admin with request from contributor"""
@@ -381,15 +381,15 @@ class TestIrodsDataRequestCreateAjaxView(IrodsDataRequestViewTestBase):
         obj_path2 = iRODSPath(self.assay_path, IRODS_FILE_NAME2)
         self.irods.data_objects.create(obj_path2)
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
-        self._assert_alert_count(CREATE_ALERT, self.user, 0)
-        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
+        self.assert_app_alert_count(CREATE_ALERT, 0, user=self.user)
+        self.assert_app_alert_count(CREATE_ALERT, 0, user=self.user_delegate)
         with self.login(self.user):
             self.client.post(self.url, self.get_data)
         with self.login(self.user):
             self.client.post(self.url, {'path': obj_path2})
         self.assertEqual(IrodsDataRequest.objects.count(), 2)
-        self._assert_alert_count(CREATE_ALERT, self.user, 0)
-        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
+        self.assert_app_alert_count(CREATE_ALERT, 0, user=self.user)
+        self.assert_app_alert_count(CREATE_ALERT, 1, user=self.user_delegate)
 
 
 class TestIrodsDataRequestDeleteAjaxView(IrodsDataRequestViewTestBase):
@@ -416,16 +416,16 @@ class TestIrodsDataRequestDeleteAjaxView(IrodsDataRequestViewTestBase):
     def test_post(self):
         """Test IrodsDataRequestDeleteAjaxView POST"""
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
-        self._assert_alert_count(CREATE_ALERT, self.user, 1)
-        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
+        self.assert_app_alert_count(CREATE_ALERT, 1, user=self.user)
+        self.assert_app_alert_count(CREATE_ALERT, 1, user=self.user_delegate)
         with self.login(self.user_contributor):
             response = self.client.post(self.url, self.post_data)
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['detail'], 'ok')
         self.assertEqual(response.data['status'], None)
-        self._assert_alert_count(CREATE_ALERT, self.user, 0)
-        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
+        self.assert_app_alert_count(CREATE_ALERT, 0, user=self.user)
+        self.assert_app_alert_count(CREATE_ALERT, 0, user=self.user_delegate)
 
     def test_post_as_admin_by_contributor(self):
         """Test POST as admin with request by contributor"""
@@ -583,4 +583,123 @@ class TestIrodsObjectListAjaxView(
         self.assertEqual(
             response_data[0]['irods_request_status'],
             IRODS_REQUEST_STATUS_ACTIVE,
+        )
+
+
+class TestPluginSearchResultsAjaxView(
+    SampleSheetIOMixin, SampleSheetTaskflowMixin, TaskflowViewTestBase
+):
+    """
+    Tests for PluginSearchResultsAjaxView with taskflow and sample sheet items
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.project, self.owner_as = self.make_project_taskflow(
+            title='TestProject',
+            type=PROJECT_TYPE_PROJECT,
+            parent=self.category,
+            owner=self.user,
+        )
+        self.investigation = self.import_isa_from_file(
+            SHEET_DIR + 'i_small.zip', self.project
+        )
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+        self.make_irods_colls(self.investigation)
+        self.assay_path = self.irods_backend.get_path(self.assay)
+        self.source_id = '0815'
+        self.sample_id = '0815-N1'
+        # Create test file
+        self.file_name = f'{self.sample_id}_test.txt'
+        self.file_path = iRODSPath(self.assay_path, self.file_name)
+        self.irods.data_objects.create(self.file_path)
+
+    def test_post(self):
+        """Test PluginSearchResultsAjaxView POST without keyword limiting"""
+        with self.login(self.user):
+            response = self.client.post(
+                reverse('projectroles:ajax_search'),
+                {
+                    'plugin': 'samplesheets',
+                    'terms': f'["{self.sample_id}"]',
+                    'keywords': '{}',
+                },
+            )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIsNone(data['error'])
+        self.assertEqual(len(data['results']), 2)
+        self.assertEqual(data['results'][0]['category'], 'materials')
+        self.assertEqual(len(data['results'][0]['rows']), 1)
+        self.assertEqual(
+            data['results'][0]['rows'][0][0]['value'], self.sample_id
+        )
+        self.assertEqual(data['results'][1]['category'], 'files')
+        self.assertEqual(len(data['results'][1]['rows']), 1)
+        self.assertEqual(
+            data['results'][1]['rows'][0][0]['value'], self.file_name
+        )
+
+    def test_post_limit_source(self):
+        """Test POST with source type limit"""
+        with self.login(self.user):
+            response = self.client.post(
+                reverse('projectroles:ajax_search'),
+                {
+                    'plugin': 'samplesheets',
+                    'terms': f'["{self.source_id}"]',
+                    'keywords': '{"type": "source"}',
+                },
+            )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIsNone(data['error'])
+        self.assertEqual(len(data['results']), 1)
+        self.assertEqual(data['results'][0]['category'], 'materials')
+        self.assertEqual(len(data['results'][0]['rows']), 1)
+        self.assertEqual(
+            data['results'][0]['rows'][0][0]['value'], self.source_id
+        )
+
+    def test_post_limit_sample(self):
+        """Test POST with sample type limit"""
+        with self.login(self.user):
+            response = self.client.post(
+                reverse('projectroles:ajax_search'),
+                {
+                    'plugin': 'samplesheets',
+                    'terms': f'["{self.sample_id}"]',
+                    'keywords': '{"type": "sample"}',
+                },
+            )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIsNone(data['error'])
+        self.assertEqual(len(data['results']), 1)
+        self.assertEqual(data['results'][0]['category'], 'materials')
+        self.assertEqual(len(data['results'][0]['rows']), 1)
+        self.assertEqual(
+            data['results'][0]['rows'][0][0]['value'], self.sample_id
+        )
+
+    def test_post_limit_file(self):
+        """Test POST with file type limit"""
+        with self.login(self.user):
+            response = self.client.post(
+                reverse('projectroles:ajax_search'),
+                {
+                    'plugin': 'samplesheets',
+                    'terms': f'["{self.sample_id}"]',
+                    'keywords': '{"type": "file"}',
+                },
+            )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIsNone(data['error'])
+        self.assertEqual(len(data['results']), 1)
+        self.assertEqual(data['results'][0]['category'], 'files')
+        self.assertEqual(len(data['results'][0]['rows']), 1)
+        self.assertEqual(
+            data['results'][0]['rows'][0][0]['value'], self.file_name
         )

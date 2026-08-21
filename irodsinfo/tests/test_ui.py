@@ -9,7 +9,7 @@ from selenium.webdriver.common.by import By
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.tests.test_ui import UITestBase
+from projectroles.tests.base import ProjectUITestBase
 
 
 # SODAR constants
@@ -19,7 +19,7 @@ AUTH_TYPE_OIDC = SODAR_CONSTANTS['AUTH_TYPE_OIDC']
 OIDC_USER_GROUP = SODAR_CONSTANTS['OIDC_USER_GROUP']
 
 
-class TestIrodsInfoView(UITestBase):
+class TestIrodsInfoView(ProjectUITestBase):
     """Tests for IrodsInfoView"""
 
     def setUp(self):

@@ -76,13 +76,13 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             and top_header['value'].lower() in target_cols
             and (header['value'].lower() == 'name')
         ):
-            cell['link'] = f"{url}/{cell['value']}"
+            cell['link'] = f'{url}/{cell["value"]}'
             return True
         # Handle everything else
         if header['value'].lower() in target_cols:
             cell['value'] = SIMPLE_LINK_TEMPLATE.format(
                 label=cell['value'],
-                url=f"{url}/{cell['value']}",
+                url=f'{url}/{cell["value"]}',
             )
             return True
         return False

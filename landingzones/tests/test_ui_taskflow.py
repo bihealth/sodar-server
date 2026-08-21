@@ -1,7 +1,8 @@
 """UI tests for the landingzones app with taskflow"""
 
-import pytz
 import time
+
+from zoneinfo import ZoneInfo
 
 from irods.path import iRODSPath
 
@@ -251,7 +252,7 @@ class TestZoneFileListModal(
         self.assertEqual(
             columns[2].text,
             data_obj.modify_time.astimezone(
-                pytz.timezone(settings.TIME_ZONE)
+                ZoneInfo(settings.TIME_ZONE)
             ).strftime('%Y-%m-%d %H:%M'),
         )
         self.assertEqual(

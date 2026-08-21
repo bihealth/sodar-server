@@ -2011,10 +2011,13 @@ class TestSheetEditFinishAjaxView(SamplesheetsViewTestBase):
         self.assertEqual(ISATab.objects.count(), 1)
 
 
-class TestSheetEditConfigAjaxView(SheetConfigMixin, SamplesheetsViewTestBase):
-    """Tests for SheetEditConfigAjaxView"""
+class TestSheetEditConfigUpdateAjaxView(
+    SheetConfigMixin, SamplesheetsViewTestBase
+):
+    """Tests for SheetEditConfigUpdateAjaxView"""
 
     # TODO: Test with assay updates (needs a better test ISA-Tab)
+    # TODO: Test with process name
 
     def setUp(self):
         super().setUp()
@@ -2064,7 +2067,7 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, SamplesheetsViewTestBase):
         self.cache_args = [APP_NAME, self.cache_name, self.project]
 
     def test_post_study_column(self):
-        """Test SheetEditConfigAjaxView POST with study column"""
+        """Test SheetEditConfigUpdateAjaxView POST with study column"""
         sheet_config = app_settings.get(
             APP_NAME, 'sheet_config', project=self.project
         )
@@ -2156,10 +2159,10 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, SamplesheetsViewTestBase):
         self.assertEqual(JSONCacheItem.objects.count(), 1)
 
 
-class TestStudyDisplayConfigAjaxView(
+class TestStudyDisplayConfigUpdateAjaxView(
     SheetConfigMixin, SamplesheetsViewTestBase
 ):
-    """Tests for StudyDisplayConfigAjaxView"""
+    """Tests for StudyDisplayConfigUpdateAjaxView"""
 
     def setUp(self):
         super().setUp()
@@ -2191,7 +2194,7 @@ class TestStudyDisplayConfigAjaxView(
         self.study_config = self.display_config['studies'][self.s_uuid]
 
     def test_post(self):
-        """Test StudyDisplayConfigAjaxView POST"""
+        """Test StudyDisplayConfigUpdateAjaxView POST"""
         self.assertEqual(
             self.study_config['nodes'][0]['fields'][2]['visible'], True
         )
@@ -2277,6 +2280,131 @@ class TestStudyDisplayConfigAjaxView(
             updated_config,
             self.display_config,
         )
+
+
+class TestPluginSearchResultsAjaxView(SamplesheetsViewTestBase):
+    """Tests for PluginSearchResultsAjaxView view with sample sheet input"""
+
+    def _get_rows(self, response) -> list[list[dict]]:
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIsNone(data['error'])
+        self.assertEqual(data['results'][0]['category'], 'materials')
+        return data['results'][0]['rows']
+
+    def setUp(self):
+        super().setUp()
+        # Import investigation
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        self.source = self.study.materials.filter(item_type='SOURCE').first()
+        self.sample = (
+            self.study.materials.filter(item_type='SAMPLE')
+            .exclude(name='')
+            .first()
+        )
+
+    def test_search_source(self):
+        """Test simple search with source"""
+        with self.login(self.user):
+            response = self.client.post(
+                reverse('projectroles:ajax_search'),
+                {
+                    'plugin': 'samplesheets',
+                    'terms': f'["{self.source.name}"]',
+                    'keywords': '{}',
+                },
+            )
+        rows = self._get_rows(response)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0][0]['value'], self.source.name)
+
+    def test_search_source_type_source(self):
+        """Test simple search with source and source type"""
+        with self.login(self.user):
+            response = self.client.post(
+                reverse('projectroles:ajax_search'),
+                {
+                    'plugin': 'samplesheets',
+                    'terms': f'["{self.source.name}"]',
+                    'keywords': '{"type": "source"}',
+                },
+            )
+        rows = self._get_rows(response)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0][0]['value'], self.source.name)
+
+    def test_search_source_type_sample(self):
+        """Test simple search with source and sample type (should fail)"""
+        with self.login(self.user):
+            response = self.client.post(
+                reverse('projectroles:ajax_search'),
+                {
+                    'plugin': 'samplesheets',
+                    'terms': f'["{self.source.name}"]',
+                    'keywords': '{"type": "sample"}',
+                },
+            )
+        rows = self._get_rows(response)
+        self.assertEqual(len(rows), 0)
+
+    def test_search_sample(self):
+        """Test simple search with sample"""
+        with self.login(self.user):
+            response = self.client.post(
+                reverse('projectroles:ajax_search'),
+                {
+                    'plugin': 'samplesheets',
+                    'terms': f'["{self.sample.name}"]',
+                    'keywords': '{}',
+                },
+            )
+        rows = self._get_rows(response)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0][0]['value'], self.sample.name)
+
+    def test_search_sample_type_sample(self):
+        """Test simple search with sample and sample type"""
+        with self.login(self.user):
+            response = self.client.post(
+                reverse('projectroles:ajax_search'),
+                {
+                    'plugin': 'samplesheets',
+                    'terms': f'["{self.sample.name}"]',
+                    'keywords': '{"type": "sample"}',
+                },
+            )
+        rows = self._get_rows(response)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0][0]['value'], self.sample.name)
+
+    def test_search_sample_type_source(self):
+        """Test simple search with sample and source type (should fail)"""
+        with self.login(self.user):
+            response = self.client.post(
+                reverse('projectroles:ajax_search'),
+                {
+                    'plugin': 'samplesheets',
+                    'terms': f'["{self.sample.name}"]',
+                    'keywords': '{"type": "source"}',
+                },
+            )
+        rows = self._get_rows(response)
+        self.assertEqual(len(rows), 0)
+
+    def test_search_multi(self):
+        """Test simple search with multiple terms"""
+        with self.login(self.user):
+            response = self.client.post(
+                reverse('projectroles:ajax_search'),
+                {
+                    'plugin': 'samplesheets',
+                    'terms': f'["{self.source.name}", "{self.sample.name}"]',
+                    'keywords': '{}',
+                },
+            )
+        rows = self._get_rows(response)
+        self.assertEqual(len(rows), 2)
 
 
 class TestSheetVersionCompareAjaxView(

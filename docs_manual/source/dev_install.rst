@@ -21,8 +21,8 @@ System requirements for SODAR development are as follows:
     - Other Ubuntu versions and Linux distributions may work but are not
       supported. The instructions in this section assume the use of Ubuntu
       24.04.
-- Python 3.9, 3.10 or 3.11
-    - 3.11 is recommended.
+- Python 3.11, 3.12 or 3.13
+    - 3.13 is recommended.
 - Nodejs (v22 recommended) and NPM
 - `Docker <https://docs.docker.com/get-docker/>`_
 - `Docker Compose <https://docs.docker.com/compose/install/>`_
@@ -48,7 +48,7 @@ repository and running it in development mode.
 The environment is the same used for evaluation and deployment as described
 in the :ref:`administration section <admin_install>`. In this case, we will use
 it to only provide the aforementioned services in a Docker Compose network. The
-Django server, Vue.js app and Celery workers will be run locally for development
+Django server, Vue apps and Celery workers will be run locally for development
 and debugging.
 
 .. note::
@@ -186,12 +186,12 @@ configuration.
 To ensure the file gets read by Django, ensure ``DJANGO_READ_DOT_ENV_FILE=1`` is
 set in your environment variables.
 
-4. Install the Vue.js Application
----------------------------------
+4. Install Vue Application Dependencies
+---------------------------------------
 
-To enable the Sample Sheets Vue.js app in development, you need to install its
-prerequisites. First, install Nodejs and Vue dependencies using the following
-command:
+To enable the Sample Sheets Vue2 and Vue3 apps in development, you need to
+install their prerequisites. First, install Nodejs and Vue development
+dependencies using the following command:
 
 .. code-block:: bash
 
@@ -203,6 +203,13 @@ Once the dependencies have been set up, install the app requirements:
 
     $ cd samplesheets/vueapp
     $ npm install
+    $ cd ../vue3app
+    $ npm install
+
+.. note::
+
+    This release of SODAR supports both the legacy Vue2 app and the new Vue3
+    app. It is strongly recommended to set up and enable both for development.
 
 5. Final Setup
 --------------
@@ -280,16 +287,23 @@ your virtual environment.
     $ source .venv/bin/activate
     $ make serve
 
-3. Sample Sheets Vue App
-------------------------
+3. Sample Sheets Vue Apps
+-------------------------
 
-Open a new terminal tab and run the Sample Sheets Vue.js app with the following
-command. This will serve the development version with hot reloading in
-``http://127.0.0.1:8080``.
+Open a new terminal tab and run the Sample Sheets Vue2 and Vue3 apps with the
+following commands. This will serve the development versions of the apps with
+hot reloading in local hosts. They will appear embedded in the Sample Sheets app
+main view.
 
 .. code-block:: bash
 
     $ make samplesheets_vue
+    $ make samplesheets_vue3
+
+.. note::
+
+    This release of SODAR supports both the legacy Vue2 app and the new Vue3
+    app. It is strongly recommended to run both in development.
 
 4. SODAR Celery Processes
 -------------------------
@@ -329,8 +343,9 @@ You can run the SODAR Django server tests using the following command:
 In addition to unit tests, this will run tests against the test iRODS server
 running in the Docker Compose network.
 
-For testing the Sample Sheets Vue app, run the following command:
+For testing the Sample Sheets Vue2 and Vue3 apps, run the following commands:
 
 .. code-block:: bash
 
     $ make test_samplesheets_vue
+    $ make test_samplesheets_vue3

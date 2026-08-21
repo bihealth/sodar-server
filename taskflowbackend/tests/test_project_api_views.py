@@ -130,7 +130,7 @@ class TestProjectUpdateAPIView(CoreTaskflowAPITestBase):
 
         self.category.refresh_from_db()
         model_dict = model_to_dict(self.category)
-        model_dict['readme'] = model_dict['readme'].raw
+        model_dict['readme'] = model_dict['readme']
         expected = {
             'id': self.category.pk,
             'title': UPDATED_TITLE,
@@ -139,7 +139,6 @@ class TestProjectUpdateAPIView(CoreTaskflowAPITestBase):
             'description': UPDATED_DESC,
             'readme': UPDATED_README,
             'public_access': None,
-            'public_guest_access': False,  # DEPRECATED
             'archive': False,
             'full_title': UPDATED_TITLE,
             'has_public_children': False,
@@ -175,7 +174,7 @@ class TestProjectUpdateAPIView(CoreTaskflowAPITestBase):
 
         self.project.refresh_from_db()
         model_dict = model_to_dict(self.project)
-        model_dict['readme'] = model_dict['readme'].raw
+        model_dict['readme'] = model_dict['readme']
         expected = {
             'id': self.project.pk,
             'title': UPDATED_TITLE,
@@ -184,7 +183,6 @@ class TestProjectUpdateAPIView(CoreTaskflowAPITestBase):
             'description': UPDATED_DESC,
             'readme': UPDATED_README,
             'public_access': self.role_guest.pk,
-            'public_guest_access': True,  # DEPRECATED
             'archive': False,
             'full_title': self.category.title + ' / ' + UPDATED_TITLE,
             'has_public_children': False,
@@ -228,7 +226,7 @@ class TestProjectUpdateAPIView(CoreTaskflowAPITestBase):
 
         self.category.refresh_from_db()
         model_dict = model_to_dict(self.category)
-        model_dict['readme'] = model_dict['readme'].raw
+        model_dict['readme'] = model_dict['readme']
         expected = {
             'id': self.category.pk,
             'title': UPDATED_TITLE,
@@ -237,7 +235,6 @@ class TestProjectUpdateAPIView(CoreTaskflowAPITestBase):
             'description': UPDATED_DESC,
             'readme': UPDATED_README,
             'public_access': None,
-            'public_guest_access': False,  # DEPRECATED
             'archive': False,
             'full_title': UPDATED_TITLE,
             'has_public_children': False,
@@ -266,7 +263,7 @@ class TestProjectUpdateAPIView(CoreTaskflowAPITestBase):
 
         self.project.refresh_from_db()
         model_dict = model_to_dict(self.project)
-        model_dict['readme'] = model_dict['readme'].raw
+        model_dict['readme'] = model_dict['readme']
         expected = {
             'id': self.project.pk,
             'title': UPDATED_TITLE,
@@ -275,7 +272,6 @@ class TestProjectUpdateAPIView(CoreTaskflowAPITestBase):
             'description': UPDATED_DESC,
             'readme': UPDATED_README,
             'public_access': None,
-            'public_guest_access': False,  # DEPRECATED
             'archive': False,
             'full_title': self.category.title + ' / ' + UPDATED_TITLE,
             'has_public_children': False,

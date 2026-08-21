@@ -180,7 +180,7 @@ class TestCookiecutterISATemplate(
             self.template.sodar_uuid,
         ]
         expected = 'CookiecutterISATemplate({})'.format(
-            ', '.join('\'{}\''.format(x) for x in values)
+            ', '.join("'{}'".format(x) for x in values)
         )
         self.assertEqual(self.template.__repr__(), expected)
 
@@ -250,6 +250,6 @@ class TestCookiecutterISAFile(
             self.file.sodar_uuid,
         ]
         expected = 'CookiecutterISAFile({})'.format(
-            ', '.join('\'{}\''.format(x) for x in values)
+            ', '.join("'{}'".format(x) for x in values)
         )
         self.assertEqual(self.file.__repr__(), expected)

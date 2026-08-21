@@ -4,8 +4,6 @@ import json
 import os
 
 from cubi_isa_templates import IsaTabTemplate, _TEMPLATES as ISA_TEMPLATES
-from typing import Any
-from urllib.parse import urlencode
 from zipfile import ZipFile
 
 from django.conf import settings
@@ -20,12 +18,12 @@ from test_plus.test import TestCase
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import AppSetting, SODAR_CONSTANTS
 from projectroles.plugins import PluginAPI
+from projectroles.tests.base import SODARAPIViewTestMixin
 from projectroles.tests.test_models import (
     ProjectMixin,
     RoleMixin,
     RoleAssignmentMixin,
 )
-from projectroles.tests.test_views_api import SODARAPIViewTestMixin
 from projectroles.utils import build_secret
 
 # Timeline dependency
@@ -72,6 +70,7 @@ from samplesheets.tests.test_io import (
 from samplesheets.tests.test_models import (
     SampleSheetModelMixin,
     IrodsDataRequestMixin,
+    IrodsAccessTicketMixin,
 )
 from samplesheets.tests.test_sheet_config import CONFIG_PATH_DEFAULT
 
@@ -90,6 +89,7 @@ from samplesheets.views import (
     SYNC_FAIL_UNSET_URL,
     SYNC_FAIL_INVALID_URL,
     SYNC_FAIL_STATUS_CODE,
+    MISC_FILES_COLL,
 )
 
 
@@ -275,7 +275,10 @@ class TestProjectSheetsView(SamplesheetsViewTestBase):
 
 
 class TestSheetImportView(
-    SheetImportMixin, LandingZoneMixin, SamplesheetsViewTestBase
+    SheetImportMixin,
+    LandingZoneMixin,
+    IrodsAccessTicketMixin,
+    SamplesheetsViewTestBase,
 ):
     """Tests for SheetImportView"""
 
@@ -327,6 +330,7 @@ class TestSheetImportView(
         """Test POST to replace replacing existing investigation"""
         inv = self.import_isa_from_file(SHEET_PATH, self.project)
         uuid = inv.sodar_uuid
+        old_inv_pk = inv.pk
         app_settings.set(
             'samplesheets',
             'display_config',
@@ -347,7 +351,9 @@ class TestSheetImportView(
 
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Investigation.objects.count(), 1)
-        self.assertEqual(uuid, Investigation.objects.first().sodar_uuid)
+        inv = Investigation.objects.get(project=self.project, active=True)
+        self.assertEqual(inv.sodar_uuid, uuid)
+        self.assertNotEqual(inv.pk, old_inv_pk)  # Db id should have changed
         self.assertEqual(ISATab.objects.count(), 2)
         self.assertListEqual(
             ISATab.objects.all().order_by('-pk').first().tags,
@@ -477,6 +483,50 @@ class TestSheetImportView(
             zone.assay,
             Assay.objects.filter(study__investigation=inv).first(),
         )
+
+    def test_post_replace_ticket(self):
+        """Test POST to replace with existing iRODS access ticket"""
+        irods_backend = PluginAPI.get_backend_api('omics_irods')
+        inv = self.import_isa_from_file(SHEET_PATH, self.project)
+        inv.irods_status = True
+        inv.save()
+        old_inv_pk = inv.pk
+        uuid = inv.sodar_uuid
+        app_settings.set(
+            'samplesheets',
+            'display_config',
+            {},
+            project=self.project,
+            user=self.user,
+        )
+        conf_api.get_sheet_config(inv)
+
+        study = inv.studies.first()
+        assay = study.assays.first()
+        ticket = self.make_irods_ticket(
+            study=study,
+            assay=assay,
+            path=os.path.join(irods_backend.get_path(assay), MISC_FILES_COLL),
+            user=self.user,
+        )
+        self.assertEqual(Investigation.objects.count(), 1)
+
+        with open(SHEET_PATH_INSERTED, 'rb') as file:
+            post_data = {'file_upload': file}
+            with self.login(self.user):
+                response = self.client.post(self.url, post_data)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Investigation.objects.count(), 1)
+        self.assertEqual(uuid, Investigation.objects.first().sodar_uuid)
+        inv = Investigation.objects.get(project=self.project, active=True)
+        self.assertNotEqual(inv.pk, old_inv_pk)
+        study = inv.studies.first()
+
+        # Assert ticket still exists and refers current study/assay
+        ticket.refresh_from_db()
+        self.assertEqual(ticket.study, study)
+        self.assertEqual(ticket.assay, study.assays.first())
 
     def test_post_replace_study_cache(self):
         """Test POST to replace with existing study table cache"""
@@ -1268,7 +1318,7 @@ class TestSheetVersionUpdateView(SamplesheetsViewTestBase):
         with self.login(self.user):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        self.assertEquals(response.context['object'], self.isatab)
+        self.assertEqual(response.context['object'], self.isatab)
 
     def test_post(self):
         """Test POST"""
@@ -1380,112 +1430,6 @@ class TestSheetVersionDeleteBatchView(
         self.assertEqual(ISATab.objects.count(), 0)
 
 
-class TestProjectSearchResultsView(SamplesheetsViewTestBase):
-    """Tests for ProjectSearchResultsView view with sample sheet input"""
-
-    def _get_items(self, response) -> Any:
-        return response.context['app_results'][0]['results']['materials'].items
-
-    def setUp(self):
-        super().setUp()
-        # Import investigation
-        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
-        self.study = self.investigation.studies.first()
-        self.source = self.study.materials.filter(item_type='SOURCE').first()
-        self.sample = (
-            self.study.materials.filter(item_type='SAMPLE')
-            .exclude(name='')
-            .first()
-        )
-
-    def test_search_source(self):
-        """Test simple search with source"""
-        with self.login(self.user):
-            response = self.client.get(
-                reverse('projectroles:search')
-                + '?'
-                + urlencode({'s': self.source.name})
-            )
-        self.assertEqual(response.status_code, 200)
-        items = self._get_items(response)
-        self.assertEqual(len(items), 1)
-        self.assertEqual(items[0]['name'], self.source.name)
-
-    def test_search_source_type_source(self):
-        """Test simple search with source and source type"""
-        with self.login(self.user):
-            response = self.client.get(
-                reverse('projectroles:search')
-                + '?'
-                + urlencode({'s': self.source.name + ' type:source'})
-            )
-        self.assertEqual(response.status_code, 200)
-        items = self._get_items(response)
-        self.assertEqual(len(items), 1)
-        self.assertEqual(items[0]['name'], self.source.name)
-
-    def test_search_source_type_sample(self):
-        """Test simple search with source and sample type (should fail)"""
-        with self.login(self.user):
-            response = self.client.get(
-                reverse('projectroles:search')
-                + '?'
-                + urlencode({'s': self.source.name + ' type:sample'})
-            )
-        self.assertEqual(response.status_code, 200)
-        items = self._get_items(response)
-        self.assertEqual(len(items), 0)
-
-    def test_search_sample(self):
-        """Test simple search with sample"""
-        with self.login(self.user):
-            response = self.client.get(
-                reverse('projectroles:search')
-                + '?'
-                + urlencode({'s': self.sample.name})
-            )
-        self.assertEqual(response.status_code, 200)
-        items = self._get_items(response)
-        self.assertEqual(len(items), 1)
-        self.assertEqual(items[0]['name'], self.sample.name)
-
-    def test_search_sample_type_sample(self):
-        """Test simple search with sample and sample type"""
-        with self.login(self.user):
-            response = self.client.get(
-                reverse('projectroles:search')
-                + '?'
-                + urlencode({'s': self.sample.name + ' type:sample'})
-            )
-        self.assertEqual(response.status_code, 200)
-        items = self._get_items(response)
-        self.assertEqual(len(items), 1)
-        self.assertEqual(items[0]['name'], self.sample.name)
-
-    def test_search_sample_type_source(self):
-        """Test simple search with sample and source type (should fail)"""
-        with self.login(self.user):
-            response = self.client.get(
-                reverse('projectroles:search')
-                + '?'
-                + urlencode({'s': self.sample.name + ' type:source'})
-            )
-        self.assertEqual(response.status_code, 200)
-        items = self._get_items(response)
-        self.assertEqual(len(items), 0)
-
-    def test_search_multi(self):
-        """Test simple search with multiple terms"""
-        post_data = {'m': self.source.name + '\r\n' + self.sample.name}
-        with self.login(self.user):
-            response = self.client.post(
-                reverse('projectroles:search'), data=post_data
-            )
-        self.assertEqual(response.status_code, 200)
-        items = self._get_items(response)
-        self.assertEqual(len(items), 2)
-
-
 class TestSheetVersionCompareView(SamplesheetsViewTestBase):
     """Tests for SheetVersionCompareView"""
 
@@ -1560,8 +1504,8 @@ class TestSheetVersionCompareFileView(SamplesheetsViewTestBase):
         """Test SheetVersionCompareFileView GET"""
         with self.login(self.user):
             response = self.client.get(
-                self.url + '?source={}&target={}&filename={}'
-                '&category={}'.format(
+                self.url
+                + '?source={}&target={}&filename={}&category={}'.format(
                     str(self.isa1.sodar_uuid),
                     str(self.isa2.sodar_uuid),
                     'a_small2.txt',

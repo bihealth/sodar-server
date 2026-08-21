@@ -23,6 +23,7 @@ from landingzones.models import LandingZone
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import Project, SODARUser, SODAR_CONSTANTS
 from projectroles.plugins import PluginAPI
+from projectroles.views_api import ServiceUnavailable
 
 from taskflowbackend import flows
 from taskflowbackend.flows.base_flow import BaseLinearFlow
@@ -83,8 +84,7 @@ class TaskflowAPI:
                     if zone.status == ZONE_STATUS_CREATING
                     else ZONE_STATUS_FAILED
                 )
-                # Truncate to 1024 characters to not exceed limit (see #1953)
-                zone.set_status(status, ex_msg[:1024])
+                zone.set_status(status, ex_msg)
         # TODO: Create app alert for failure if async (see #1499)
         raise cls.FlowSubmitException(ex_msg)
 
@@ -157,9 +157,7 @@ class TaskflowAPI:
         """
         msg = f'{msg_prefix}{ex}'
         if PROJECT_LOCKED_MSG in msg:
-            ex = APIException(msg)
-            ex.status_code = 503
-            raise ex
+            raise ServiceUnavailable(msg)
         raise default_class(msg)
 
     @classmethod
@@ -394,6 +392,6 @@ class TaskflowAPI:
         """
         # NOTE: We query redis directly to allow having to call acquire()
         # NOTE: Yes, this is how tooz encodes the lock IDs (see #2144)
-        lock_db_id = f'b\'_tooz\'_{project.sodar_uuid}_lock'.encode()
+        lock_db_id = f'_tooz_{project.sodar_uuid}_lock'.encode()
         redis_conn = redis.from_url(settings.REDIS_URL, decode_responses=True)
         return redis_conn.get(lock_db_id) is not None

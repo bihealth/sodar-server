@@ -241,8 +241,57 @@ class TestZoneCreateView(
             'coll_creation': lc.ZONE_COLLS_NONE,
         }
 
+    def test_get(self):
+        """Test ZoneCreateView GET"""
+        assay_label = (
+            f'{self.assay.study.get_name()} / {self.assay.get_display_name()}'
+        )
+        with self.login(self.user):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        form = response.context['form']
+        # This should be populated with self.assay
+        self.assertEqual(
+            form.fields['assay'].widget.choices,
+            [(self.assay.sodar_uuid, assay_label)],
+        )
+        # Since there is only one assay, the dropdown should be disabled
+        self.assertEqual(form.fields['assay'].disabled, True)
+        # The only available assay should be selected
+        self.assertEqual(form.initial['assay'], self.assay.sodar_uuid)
+
+    def test_get_multiple_assays(self):
+        """Test GET with multiple assays"""
+        sheet_path = SHEET_DIR + 'BII-I-1_edited.zip'
+        other_project, _ = self.make_project_taskflow(
+            title='OtherProject',
+            type=PROJECT_TYPE_PROJECT,
+            parent=self.category,
+            owner=self.user,
+        )
+        investigation = self.import_isa_from_file(sheet_path, other_project)
+        num_assays = sum(s.assays.count() for s in investigation.studies.all())
+        self.assertEqual(num_assays, 4)
+        self.make_irods_colls(investigation)
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'landingzones:create',
+                    kwargs={'project': other_project.sodar_uuid},
+                )
+            )
+        self.assertEqual(response.status_code, 200)
+        form = response.context['form']
+        self.assertEqual(
+            len(form.fields['assay'].widget.choices),
+            num_assays,
+        )
+        # The dropdown should not be disabled and no value should be selected
+        self.assertEqual(form.fields['assay'].disabled, False)
+        self.assertNotIn('assay', form.initial)
+
     def test_post(self):
-        """Test ZoneCreateView POST"""
+        """Test POST"""
         self.assertEqual(LandingZone.objects.count(), 0)
         self.assertEqual(
             TimelineEvent.objects.filter(event_name='zone_create').count(), 0
@@ -292,7 +341,7 @@ class TestZoneCreateView(
         """Test POST with no project owner group"""
         self.irods.users.remove(self.owner_group)
         with self.assertRaises(GroupDoesNotExist):
-            self.irods.user_groups.get(self.owner_group)
+            self.irods.groups.get(self.owner_group)
         self.assertEqual(LandingZone.objects.count(), 0)
         self.assertEqual(
             TimelineEvent.objects.filter(event_name='zone_create').count(), 0
@@ -310,7 +359,7 @@ class TestZoneCreateView(
         for c in ZONE_BASE_COLLS:
             self.assert_irods_coll(zone, c, False)
         root_coll = self.irods.collections.get(self.zone_root_path)
-        self.assertIsNotNone(self.irods.user_groups.get(self.owner_group))
+        self.assertIsNotNone(self.irods.groups.get(self.owner_group))
         self.assert_group_member(self.project, self.user, True, True)
         self.assert_group_member(self.project, self.user_owner_cat, True, True)
         self.assert_irods_access(

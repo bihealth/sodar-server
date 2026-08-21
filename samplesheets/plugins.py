@@ -19,6 +19,7 @@ from irods.session import iRODSSession
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.db.models import QuerySet
 from django.http import HttpRequest
 from django.template.defaultfilters import filesizeformat
 from django.urls import reverse
@@ -39,6 +40,8 @@ from projectroles.plugins import (
     PluginAppSettingDef,
     PluginObjectLink,
     PluginSearchResult,
+    PluginSearchResultColumn,
+    PluginSearchResultCell,
     PluginCategoryStatistic,
     PluginAPI,
 )
@@ -52,12 +55,17 @@ from samplesheets.models import (
     ISATab,
     IrodsAccessTicket,
     IrodsDataRequest,
+    GENERIC_MATERIAL_TYPES,
     ISA_META_ASSAY_PLUGIN,
     ITEM_TYPE_SAMPLE,
 )
 from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.urls import urlpatterns
-from samplesheets.utils import get_isa_field_name, get_sheets_url
+from samplesheets.utils import (
+    get_isa_field_name,
+    get_sheets_url,
+    get_webdav_url,
+)
 from samplesheets.views import (
     IrodsCollsCreateViewMixin,
     RESULTS_COLL,
@@ -173,10 +181,10 @@ SHEETS_APP_SETTINGS = [
         type=APP_SETTING_TYPE_STRING,
         default=', '.join(settings.SHEETS_IGV_OMIT_BAM),
         label='BAM and CRAM paths to omit from IGV sessions',
-        description='Comma-separated list of iRODS path glob patterns for '
-        'omitting BAM and CRAM files from IGV sessions and study shortcuts. '
-        'Overrides site-wide setting, affects cancer and germline projects. '
-        'Update sheet cache after updating this value.',
+        description='Comma-separated list of Unix shell-style wildcard '
+        'patterns for omitting BAM/CRAM file iRODS paths from IGV sessions and '
+        'study shortcuts. Overrides site-wide setting, affects cancer and '
+        'germline studies. Update sheet cache after updating this value.',
         user_modifiable=True,
     ),
     PluginAppSettingDef(
@@ -185,10 +193,10 @@ SHEETS_APP_SETTINGS = [
         type=APP_SETTING_TYPE_STRING,
         default=', '.join(settings.SHEETS_IGV_OMIT_VCF),
         label='VCF paths to omit from IGV sessions',
-        description='Comma-separated list of iRODS path glob patterns for '
-        'omitting VCF files from IGV sessions and study shortcuts. Overrides '
-        'site-wide setting, affects cancer and germline projects. Update sheet '
-        'cache after updating this value.',
+        description='Comma-separated list of Unix shell-style wildcard '
+        'patterns for omitting VCF file iRODS paths from IGV sessions and '
+        'study shortcuts. Overrides site-wide setting, affects cancer and '
+        'germline studies. Update sheet cache after updating this value.',
         user_modifiable=True,
     ),
     PluginAppSettingDef(
@@ -229,6 +237,16 @@ SHEETS_APP_SETTINGS = [
         label='Allowed hosts for iRODS access tickets',
         description='Default allowed hosts for iRODS access tickets as a '
         'comma-separated list.',
+        user_modifiable=True,
+    ),
+    PluginAppSettingDef(
+        name='use_vue3_app',
+        scope=APP_SETTING_SCOPE_USER,
+        type=APP_SETTING_TYPE_BOOLEAN,
+        default=False,
+        label='Enable Sample Sheets Vue3 app',
+        description='Enable the new Vue3 app for sample sheet browsing and '
+        'editing. This app is under development and may not be stable.',
         user_modifiable=True,
     ),
 ]
@@ -366,8 +384,8 @@ class ProjectAppPlugin(
     #: List of search object types for the app
     search_types = ['source', 'sample', 'file']
 
-    #: Search results template
-    search_template = 'samplesheets/_search_results.html'
+    #: Search results styling
+    search_css = 'samplesheets/css/search.css'
 
     #: App card template for the project details page
     details_template = 'samplesheets/_details_card.html'
@@ -406,34 +424,84 @@ class ProjectAppPlugin(
         cls,
         search_terms: list[str],
         user: User,
-        keywords: list[str],
-        item_types: list[str],
+        projects: QuerySet[Project],
+        **kwargs: str,
     ) -> list[dict]:
         """Return materials for search results"""
         ret = []
+        if 'type' in kwargs:
+            item_types = [kwargs['type'].upper()]
+        else:
+            item_types = ['SOURCE', 'SAMPLE']
+        use_vue3 = app_settings.get(APP_NAME, 'use_vue3_app', user=user)
         materials = GenericMaterial.objects.find(
-            search_terms, keywords, item_types=item_types
+            search_terms, projects, kwargs, item_types=item_types
         )
+
         for m in materials:
-            if user.has_perm('samplesheets.view_sheet', m.get_project()):
-                if m.item_type == 'SAMPLE':
-                    assays = m.get_sample_assays()
-                else:
-                    assays = [m.assay]
-                ret.append(
-                    {
-                        'name': m.name,
-                        'type': m.item_type,
-                        'project': m.get_project(),
-                        'study': m.study,
-                        'assays': assays,
-                    }
+            if not user.has_perm('samplesheets.view_sheet', m.get_project()):
+                continue
+            project = m.get_project()
+            study_val = ''
+            study_url = ''
+            assays = []
+            assay_val = ''
+
+            project_link = (
+                '<a href="{}" title="{}" data-toggle="tooltip" '
+                'data-placement="top">{}</a>'.format(
+                    reverse(
+                        'projectroles:detail',
+                        kwargs={'project': project.sodar_uuid},
+                    ),
+                    project.description if project.description else '',
+                    project.title,
                 )
+            )
+            if m.study:
+                study_val = m.study.get_name()
+                study_url = m.study.get_url()
+            if m.item_type == 'SAMPLE':
+                assays = m.get_sample_assays()
+            elif m.assay:
+                assays = [m.assay]
+            if assays:
+                assay_val = '<br/>\n'.join(
+                    '<div class="sodar-overflow-container">'
+                    f'<a href="{assay.get_url()}">'
+                    f'{assay.get_display_name()}'
+                    '</a></div>'
+                    for assay in assays
+                )
+            if use_vue3:
+                url = f'{study_url}?filter={m.name}'
+            else:  # TODO: Remove this once legacy vueapp is removed (#2393)
+                url = f'{study_url}/filter/{m.name}'
+
+            ret.append(
+                [
+                    PluginSearchResultCell(value=m.name, value_url=url),  # Name
+                    PluginSearchResultCell(
+                        value=GENERIC_MATERIAL_TYPES[m.item_type],
+                    ),  # Type
+                    PluginSearchResultCell(
+                        value=project_link,
+                    ),  # Project
+                    PluginSearchResultCell(
+                        value=study_val, value_url=study_url
+                    ),  # Study
+                    PluginSearchResultCell(value=assay_val),  # Assays
+                ]
+            )
         return ret
 
     @classmethod
     def _get_search_files(
-        cls, search_terms: list[str], user: User, irods_backend: Any
+        cls,
+        search_terms: list[str],
+        user: User,
+        projects: QuerySet[Project],
+        irods_backend: Any,
     ) -> list[dict]:
         """Return iRODS files for search results"""
         ret = []
@@ -451,7 +519,7 @@ class ProjectAppPlugin(
 
         projects = {
             str(p.sodar_uuid): p
-            for p in Project.objects.filter(type=PROJECT_TYPE_PROJECT)
+            for p in projects.filter(type=PROJECT_TYPE_PROJECT)
             if user.has_perm('samplesheets.view_sheet', p)
         }
         studies = {
@@ -475,7 +543,7 @@ class ProjectAppPlugin(
 
             try:
                 project = projects[project_uuid]
-                study = studies[
+                _ = studies[
                     irods_backend.get_uuid_from_path(
                         o['path'], obj_type='study'
                     )
@@ -488,21 +556,49 @@ class ProjectAppPlugin(
             except KeyError:
                 continue  # Skip file if the project/etc is not found
 
+            item_webdav_url = get_webdav_url(project, user)
+            if item_webdav_url:
+                item_webdav_url += o['path']
+            project_link = (
+                '<a href="{}" title="{}" data-toggle="tooltip" '
+                'data-placement="top">{}</a>'.format(
+                    reverse(
+                        'projectroles:detail',
+                        kwargs={'project': project.sodar_uuid},
+                    ),
+                    project.description if project.description else '',
+                    project.title,
+                )
+            )
+            if assay:
+                assay_value = (
+                    '<div class="sodar-overflow-container">'
+                    f'<a href="{assay.get_url()}">'
+                    f'{assay.get_display_name()}'
+                    '</a>'
+                    '</div>'
+                )
+            else:
+                assay_value = ''
             ret.append(
-                {
-                    'name': o['name'],
-                    'type': 'file',
-                    'project': project,
-                    'study': study,
-                    'assays': [assay] if assay else None,
-                    'irods_path': o['path'],
-                }
+                [
+                    PluginSearchResultCell(
+                        value=o['name'],
+                        value_url=item_webdav_url,
+                    ),  # Name
+                    PluginSearchResultCell(
+                        value=project_link,
+                    ),  # Project
+                    PluginSearchResultCell(
+                        value=assay_value,
+                    ),  # Assay
+                ]
             )
             if len(ret) == settings.SHEETS_IRODS_LIMIT:
                 break
 
         if ret:
-            ret.sort(key=lambda x: x['name'].lower())
+            ret.sort(key=lambda x: x[0].value.lower())
         return ret
 
     def get_object_link(
@@ -552,8 +648,8 @@ class ProjectAppPlugin(
         self,
         search_terms: list[str],
         user: User,
-        search_type: Optional[str] = None,
-        keywords: Optional[list[str]] = None,
+        projects: QuerySet[Project],
+        **kwargs: str,
     ) -> list[PluginSearchResult]:
         """
         Return app items based on one or more search terms, user, optional type
@@ -562,33 +658,75 @@ class ProjectAppPlugin(
         :param search_terms: Search terms to be joined with the OR operator
                              (list of strings)
         :param user: User object for user initiating the search
-        :param search_type: String
-        :param keywords: List (optional)
+        :param projects: QuerySet of projects where the terms are searched
+        :param kwargs: Search options as key/value pairs (optional)
         :return: List of PluginSearchResult objects
         """
+        search_type = kwargs.get('type')
         irods_backend = plugin_api.get_backend_api('omics_irods')
         ret = []
         # Materials
-        if not search_type or search_type in MATERIAL_SEARCH_TYPES:
-            item_types = ['SOURCE', 'SAMPLE']
-            if search_type in MATERIAL_SEARCH_TYPES:
-                item_types = [search_type.upper()]
+        if search_type is None or search_type in MATERIAL_SEARCH_TYPES:
             r = PluginSearchResult(
                 category='materials',
                 title='Sources and Samples',
                 search_types=['source', 'sample'],
-                items=self._get_search_materials(
-                    search_terms, user, keywords, item_types
+                columns=[
+                    PluginSearchResultColumn(
+                        title='Name',
+                        highlight=True,
+                        overflow=True,
+                    ),
+                    PluginSearchResultColumn(
+                        title='Type',
+                        column_class='text-nowrap',
+                    ),
+                    PluginSearchResultColumn(
+                        title='Project',
+                        value_html=True,
+                        overflow=True,
+                    ),
+                    PluginSearchResultColumn(
+                        title='Study',
+                        overflow=True,
+                    ),
+                    PluginSearchResultColumn(
+                        title='Assay(s)',
+                        value_html=True,
+                    ),
+                ],
+                rows=self._get_search_materials(
+                    search_terms, user, projects, **kwargs
                 ),
+                table_class='sodar-ss-search-table-materials',
             )
             ret.append(r)
         # iRODS files
-        if irods_backend and (not search_type or search_type == 'file'):
+        if irods_backend and (search_type is None or search_type == 'file'):
             r = PluginSearchResult(
                 category='files',
                 title='Sample Files in iRODS',
                 search_types=['file'],
-                items=self._get_search_files(search_terms, user, irods_backend),
+                columns=[
+                    PluginSearchResultColumn(
+                        title='Name',
+                        highlight=True,
+                        overflow=True,
+                    ),
+                    PluginSearchResultColumn(
+                        title='Project',
+                        overflow=True,
+                    ),
+                    PluginSearchResultColumn(
+                        title='Assay',
+                        value_html=True,
+                    ),
+                ],
+                rows=self._get_search_files(
+                    search_terms, user, projects, irods_backend
+                ),
+                table_class='sodar-ss-search-table-files',
+                result_limit=settings.SHEETS_IRODS_LIMIT,
             )
             ret.append(r)
         return ret
@@ -612,9 +750,10 @@ class ProjectAppPlugin(
         if column_id == 'sheets':
             if investigation:
                 return SHEET_COL_VIEW.format(url=get_sheets_url(project))
-            elif user.has_perm(
-                'samplesheets.edit_sheet', project
-            ) and not app_settings.get(APP_NAME, 'sheet_sync_enable', project):
+            elif user.has_perm('samplesheets.edit_sheet', project) and (
+                not settings.SHEETS_SYNC_ENABLE
+                or not app_settings.get(APP_NAME, 'sheet_sync_enable', project)
+            ):
                 url = reverse(
                     'samplesheets:import',
                     kwargs={'project': project.sodar_uuid},

@@ -31,3 +31,8 @@ indent_style = tab
 [nginx.conf]
 indent_style = space
 indent_size = 2
+
+[*.{js,jsx,mjs,cjs,ts,tsx,mts,cts,vue,css,scss,sass,less,styl}]
+indent_size = 2
+indent_style = space
+max_line_length = 80

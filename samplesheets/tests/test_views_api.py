@@ -15,14 +15,14 @@ from django.utils import timezone
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import PluginAPI
+from projectroles.tests.base import APIViewTestBase
 from projectroles.tests.test_models import RemoteSiteMixin, RemoteProjectMixin
-from projectroles.tests.test_views_api import APIViewTestBase
 
 # Sodarcache dependency
 from sodarcache.models import JSONCacheItem
 
 # Timeline dependency
-from timeline.models import TimelineEvent
+from timeline.tests.test_views import TimelineTestMixin
 
 # Landingzones dependency
 from landingzones.models import LandingZone
@@ -1000,18 +1000,9 @@ class TestIrodsDataRequestListAPIView(
 
 
 class TestIrodsDataRequestDestroyAPIView(
-    IrodsDataRequestMixin, SampleSheetAPIViewTestBase
+    IrodsDataRequestMixin, TimelineTestMixin, SampleSheetAPIViewTestBase
 ):
     """Tests for IrodsDataRequestDestroyAPIView"""
-
-    def _assert_tl_count(self, count: int):
-        """Assert timeline TimelineEvent count"""
-        self.assertEqual(
-            TimelineEvent.objects.filter(
-                event_name='irods_request_delete'
-            ).count(),
-            count,
-        )
 
     def setUp(self):
         super().setUp()
@@ -1023,10 +1014,11 @@ class TestIrodsDataRequestDestroyAPIView(
         self.irods_backend = plugin_api.get_backend_api('omics_irods')
         self.assay_path = self.irods_backend.get_path(self.assay)
         self.obj_path = iRODSPath(self.assay_path, IRODS_FILE_NAME)
+        self.tl_name = 'irods_request_delete'
 
     def test_delete(self):
         """Test IrodsDataRequestDestroyAPIView DELETE"""
-        self._assert_tl_count(0)
+        self.assert_tl_event_count(self.tl_name, 0)
         obj = self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
@@ -1044,7 +1036,7 @@ class TestIrodsDataRequestDestroyAPIView(
             )
         self.assertEqual(response.status_code, 204)
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
-        self._assert_tl_count(1)
+        self.assert_tl_event_count(self.tl_name, 1)
 
 
 class TestSampleDataFileExistsAPIView(SampleSheetAPIViewTestBase):

@@ -27,7 +27,7 @@ Database Servers
     - ``redis``: In-memory database for Celery jobs and caching.
 iRODS Servers
     - ``irods``: An iRODS iCAT server for file storage. The minimum supported
-      version is v4.3.4. Note that iRODS v5.x is **not** supported by this
+      version is v4.3.5. Note that iRODS v5.x is **not** supported by this
       version of SODAR.
     - ``davrods``: iRODS WebDAV server for web access and IGV/UCSC integration.
 Networking

@@ -46,6 +46,8 @@ These commands originate in SODAR Core. More information can be found in the
 ``syncremote``
     Synchronize project and user data from a remote site if remote project sync
     is enabled.
+``transferroles``
+    Transfer all project roles from one user to another.
 
 
 .. _admin_commands_sodar:
@@ -62,6 +64,9 @@ operations regarding sample sheets, landing zones, iRODS data and ontologies.
     Check for expected user access in all project sample data collections in
     iRODS and report discrepancies. Useful for validating expected access rights
     in case of e.g. manual admin user cleanup operations.
+``fixirodstickets``
+    Find iRODS tickets which lost their associated ``IrodsAccessTicket`` object
+    and recreate the missing database objects.
 ``importobo``
     Import OBO format ontology. See :ref:`admin_ontologyaccess`.
 ``importomimm``
@@ -96,3 +101,12 @@ operations regarding sample sheets, landing zones, iRODS data and ontologies.
     Provide the landing zone UUID with the ``-z`` or ``--zone`` argument. Run
     in synchronous mode with ``-s`` or ``--sync`` (only recommended for testing
     or development).
+
+
+Django-Axes Commands
+====================
+
+If `django-axes is enabled <https://sodar-core.readthedocs.io/en/latest/app_projectroles_settings.html#django-axes-configuration-optional>`_,
+it provides a number of commands to e.g. reset access for locked out users. For
+more intormation on these, see
+`django-axes documentation <https://django-axes.readthedocs.io/en/latest/>`_.

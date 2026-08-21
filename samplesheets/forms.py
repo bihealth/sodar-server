@@ -190,7 +190,7 @@ class IrodsDataRequestValidateMixin:
                 or irods.collections.exists(path)
             ):
                 raise ValueError(
-                    'Path to collection or data object doesn\'t exist in iRODS',
+                    "Path to collection or data object doesn't exist in iRODS",
                 )
 
 

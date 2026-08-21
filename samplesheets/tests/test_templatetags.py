@@ -3,7 +3,6 @@
 from irods.path import iRODSPath
 
 from django.conf import settings
-from django.urls import reverse
 
 from test_plus.test import TestCase
 
@@ -15,7 +14,6 @@ from projectroles.tests.test_models import (
     RoleAssignmentMixin,
 )
 
-from samplesheets.models import GENERIC_MATERIAL_TYPES
 from samplesheets.templatetags import samplesheets_tags as s_tags
 from samplesheets.tests.test_models import (
     SampleSheetModelMixin,
@@ -115,18 +113,6 @@ class TestSamplesheetsTemplateTags(
         self.investigation.delete()
         self.assertEqual(s_tags.get_investigation(self.project), None)
 
-    def test_get_search_item_type_material_types(self):
-        """Test get_search_item_type() with material types"""
-        for material_type in GENERIC_MATERIAL_TYPES:
-            item = {'type': material_type}
-            expected = GENERIC_MATERIAL_TYPES[material_type]
-            self.assertEqual(s_tags.get_search_item_type(item), expected)
-
-    def test_get_search_item_type_file(self):
-        """Test get_search_item_type() with special case 'file'"""
-        item = {'type': 'file'}
-        self.assertEqual(s_tags.get_search_item_type(item), 'Data File')
-
     def test_get_irods_tree(self):
         """Test get_irods_tree()"""
         ret = s_tags.get_irods_tree(self.investigation)
@@ -140,17 +126,6 @@ class TestSamplesheetsTemplateTags(
         ).split('/')
         self.assertIn(study_path, ret)
         self.assertIn(assay_path, ret)
-
-    def test_get_material_search_url(self):
-        """Test get_material_search_url()"""
-        item = {'study': self.study, 'name': 'Sample1'}
-        url = s_tags.get_material_search_url(item)
-        expected = reverse(
-            'samplesheets:project_sheets',
-            kwargs={'project': self.project.sodar_uuid},
-        )
-        expected += f'#/study/{self.study.sodar_uuid}/filter/Sample1'
-        self.assertEqual(url, expected)
 
     def test_get_irods_path_with_project(self):
         """Test get_irods_path() with project"""
@@ -251,10 +226,3 @@ class TestSamplesheetsTemplateTags(
             'MockIrodsRequest', (object,), {'status': 'UNKNOWN'}
         )
         self.assertEqual(s_tags.get_request_status_class(irods_request), '')
-
-    def test_trim_base_path(self):
-        """Test trim_base_path() with a realistic iRODS path"""
-        prefix = '/base_path'
-        path = iRODSPath(prefix, '/project/subfolder1/subfolder2')
-        expected = '/project/subfolder1/subfolder2'
-        self.assertEqual(s_tags.trim_base_path(path, prefix), expected)

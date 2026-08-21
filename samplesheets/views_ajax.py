@@ -556,7 +556,8 @@ class SheetContextAjaxView(SODARBaseProjectAjaxView):
                 if hasattr(request.user, 'sodar_uuid')
                 else None
             ),
-            'sheet_sync_enabled': app_settings.get(
+            'sheet_sync_enabled': settings.SHEETS_SYNC_ENABLE
+            and app_settings.get(
                 APP_NAME, 'sheet_sync_enable', project=project
             ),
             'site_read_only': app_settings.get(
@@ -1091,8 +1092,10 @@ class SheetCellEditAjaxView(BaseSheetEditAjaxView):
                 study = node_obj.get_study()
                 if study not in studies:
                     studies.append(study)
-            except self.SheetEditException as ex:
-                return Response({'detail': str(ex)}, status=500)
+            except Exception as ex:
+                err_msg = f'Exception in cell update: {ex}'
+                logger.error(err_msg)
+                return Response({'detail': err_msg}, status=500)
 
         # Update investigation ontology refs
         if updated_cells:
@@ -1788,7 +1791,7 @@ class SheetEditFinishAjaxView(SheetVersionMixin, SODARBaseProjectAjaxView):
         return Response({'detail': export_ex}, status=500)
 
 
-class SheetEditConfigAjaxView(SODARBaseProjectAjaxView):
+class SheetEditConfigUpdateAjaxView(SODARBaseProjectAjaxView):
     """View to update sample sheet editing configuration"""
 
     # NOTE: Currently not requiring manage_sheet perm (see issue #880)
@@ -1812,7 +1815,7 @@ class SheetEditConfigAjaxView(SODARBaseProjectAjaxView):
             a_uuid = field['assay']
             n_idx = field['node_idx']
             f_idx = field['field_idx']
-            is_name = True if field['config']['name'] == 'Name' else False
+            is_name = field['config']['type'] in ['name', 'process_name']
             debug_info = (
                 f'study="{s_uuid}"; assay="{a_uuid}"; n={n_idx}; f={f_idx})'
             )
@@ -1846,26 +1849,33 @@ class SheetEditConfigAjaxView(SODARBaseProjectAjaxView):
                 return Response({'detail': msg}, status=500)
 
             # Cleanup data
-            c = field['config']
-            if not is_name:
-                if c['format'] != 'integer':
-                    c.pop('range', None)
-                    c.pop('unit', None)
-                    c.pop('unit_default', None)
-                elif 'range' in c and not c['range'][0] and not c['range'][1]:
-                    c.pop('range', None)
-                if c['format'] in ['protocol', 'select']:
-                    c.pop('regex', None)
-                if c['format'] != 'select':
-                    c.pop('options', None)
-            if a_uuid:
-                sheet_config['studies'][s_uuid]['assays'][a_uuid]['nodes'][
-                    n_idx
-                ]['fields'][f_idx] = c
-            else:
-                sheet_config['studies'][s_uuid]['nodes'][n_idx]['fields'][
-                    f_idx
-                ] = c
+            try:
+                c = field['config']
+                if not is_name:
+                    if c['format'] != 'integer':
+                        c.pop('range', None)
+                        c.pop('unit', None)
+                        c.pop('unit_default', None)
+                    elif (
+                        'range' in c and not c['range'][0] and not c['range'][1]
+                    ):
+                        c.pop('range', None)
+                    if c['format'] in ['protocol', 'select']:
+                        c.pop('regex', None)
+                    if c['format'] != 'select':
+                        c.pop('options', None)
+                if a_uuid:
+                    sheet_config['studies'][s_uuid]['assays'][a_uuid]['nodes'][
+                        n_idx
+                    ]['fields'][f_idx] = c
+                else:
+                    sheet_config['studies'][s_uuid]['nodes'][n_idx]['fields'][
+                        f_idx
+                    ] = c
+            except Exception as ex:
+                msg = f'Exception in data cleanup: {ex}'
+                logger.error(msg)
+                return Response({'detail': msg}, status=500)
 
             app_settings.set(
                 APP_NAME, 'sheet_config', sheet_config, project=project
@@ -1906,7 +1916,7 @@ class SheetEditConfigAjaxView(SODARBaseProjectAjaxView):
         return Response({'detail': 'ok'}, status=200)
 
 
-class StudyDisplayConfigAjaxView(SODARBaseProjectAjaxView):
+class StudyDisplayConfigUpdateAjaxView(SODARBaseProjectAjaxView):
     """View to update sample sheet display configuration for a study"""
 
     permission_required = 'samplesheets.view_sheet'

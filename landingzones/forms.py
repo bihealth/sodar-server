@@ -70,9 +70,9 @@ class LandingZoneForm(forms.ModelForm):
         self.fields['assay'].to_field_name = 'sodar_uuid'
         # Set suffix
         self.fields['title_suffix'].label = 'Title suffix'
-        self.fields['title_suffix'].help_text = (
-            'Zone title suffix (optional, maximum 64 characters)'
-        )
+        self.fields[
+            'title_suffix'
+        ].help_text = 'Zone title suffix (optional, maximum 64 characters)'
         self.fields['description'].widget.attrs['rows'] = 4
         self.fields['coll_creation'].label = 'Collection creation'
         self.fields['coll_creation'].help_text = (
@@ -90,7 +90,7 @@ class LandingZoneForm(forms.ModelForm):
 
         # Creation
         if not self.instance.pk:
-            self.fields['assay'].choices = []
+            self.fields['assay'].widget.choices = []
             # Only show choices for assays which are in iRODS
             with irods_backend.get_session() as irods:
                 for assay in Assay.objects.filter(
@@ -98,18 +98,24 @@ class LandingZoneForm(forms.ModelForm):
                     study__investigation__active=True,
                 ):
                     if irods.collections.exists(irods_backend.get_path(assay)):
-                        self.fields['assay'].choices.append(
+                        self.fields['assay'].widget.choices.append(
                             (
                                 assay.sodar_uuid,
                                 f'{assay.study.get_name()} / '
                                 f'{assay.get_display_name()}',
                             )
                         )
+            # Disable assay dropdown if only one assay is availalbe
+            if len(self.fields['assay'].widget.choices) == 1:
+                self.fields['assay'].disabled = True
+                self.initial['assay'] = self.fields['assay'].widget.choices[0][
+                    0
+                ]
             # Set options and initial value for coll_creation
             self.fields['coll_creation'].widget = forms.Select()
-            self.fields['coll_creation'].widget.choices = (
-                ZONE_COLLS_CREATION_CHOICES
-            )
+            self.fields[
+                'coll_creation'
+            ].widget.choices = ZONE_COLLS_CREATION_CHOICES
             self.initial['coll_creation'] = lc.ZONE_COLLS_RESTRICT
         # Updating
         else:

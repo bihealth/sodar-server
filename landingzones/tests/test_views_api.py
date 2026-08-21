@@ -8,7 +8,7 @@ from django.urls import reverse
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import PluginAPI
-from projectroles.tests.test_views_api import APIViewTestBase
+from projectroles.tests.base import APIViewTestBase
 
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR

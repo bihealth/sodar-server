@@ -20,7 +20,7 @@ from irods.collection import iRODSCollection
 from irods.data_object import iRODSDataObject
 from irods.exception import CollectionDoesNotExist, CAT_NO_ROWS_FOUND
 from irods.keywords import REG_CHKSUM_KW
-from irods.models import TicketQuery, UserGroup
+from irods.models import TicketQuery, Group
 from irods.path import iRODSPath
 from irods.test.helpers import make_object
 
@@ -42,19 +42,19 @@ from projectroles.models import (
     SODAR_CONSTANTS,
 )
 from projectroles.plugins import PluginAPI
+from projectroles.tests.base import (
+    PermissionTestMixin,
+    SODARAPIPermissionTestMixin,
+    SODARAPIViewTestMixin,
+    LiveUserMixin,
+    SeleniumSetupMixin,
+    UITestMixin,
+)
 from projectroles.tests.test_models import (
     ProjectMixin,
     RoleMixin,
     RoleAssignmentMixin,
 )
-from projectroles.tests.test_permissions import PermissionTestMixin
-from projectroles.tests.test_permissions_api import SODARAPIPermissionTestMixin
-from projectroles.tests.test_ui import (
-    LiveUserMixin,
-    SeleniumSetupMixin,
-    UITestMixin,
-)
-from projectroles.tests.test_views_api import SODARAPIViewTestMixin
 from projectroles.views import ProjectModifyMixin, RoleAssignmentModifyMixin
 from projectroles.views_api import (
     PROJECTROLES_API_MEDIA_TYPE,
@@ -183,7 +183,7 @@ class TaskflowTestMixin(
         :return: Updated iRODSDataObject
         """
         sql = (
-            f'UPDATE r_data_main SET data_checksum = \'{checksum}\' WHERE '
+            f"UPDATE r_data_main SET data_checksum = '{checksum}' WHERE "
             f'data_id = {obj.id}'
         )
         query = self.irods_backend.get_query(self.irods, sql)
@@ -241,12 +241,12 @@ class TaskflowTestMixin(
         :param status_owner: Expected owner group membership status (optional,
                              boolean)
         """
-        user_group = self.irods.user_groups.get(
+        user_group = self.irods.groups.get(
             self.irods_backend.get_group_name(project)
         )
         self.assertEqual(user_group.hasmember(user.username), status)
         if status_owner is not None:
-            owner_group = self.irods.user_groups.get(
+            owner_group = self.irods.groups.get(
                 self.irods_backend.get_group_name(project, owner=True)
             )
             self.assertEqual(owner_group.hasmember(user.username), status_owner)
@@ -319,10 +319,10 @@ class TaskflowTestMixin(
                 pass  # This is OK, the root just wasn't there
 
             # Remove created user groups and users
-            for g in irods.query(UserGroup).all():
-                if g[UserGroup.name] not in permanent_users:
-                    irods.users.remove(user_name=g[UserGroup.name])
-                    logger.debug(f'Removed user: {g[UserGroup.name]}')
+            for g in irods.query(Group).all():
+                if g[Group.name] not in permanent_users:
+                    irods.users.remove(user_name=g[Group.name])
+                    logger.debug(f'Removed user: {g[Group.name]}')
 
             # Remove all tickets
             ticket_query = irods.query(TicketQuery.Ticket).all()
@@ -540,7 +540,7 @@ class TaskflowProjectTestMixin(ProjectModifyMixin, RoleAssignmentModifyMixin):
         request = req_factory.post(url)
         request.user = self.user  # TODO: Replace with owner
         post_data = {'project': project, 'user': user, 'role': role}
-        role_as = self.modify_assignment(post_data, request, project)
+        role_as = self.modify_assignment(post_data, project, request)
         return role_as
 
 

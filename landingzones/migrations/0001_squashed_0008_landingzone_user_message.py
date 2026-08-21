@@ -7,140 +7,139 @@ import uuid
 
 
 class Migration(migrations.Migration):
-
     replaces = [
-        ("landingzones", "0001_initial"),
-        ("landingzones", "0002_auto_20180503_1802"),
-        ("landingzones", "0003_auto_20180530_1100"),
-        ("landingzones", "0004_auto_20180628_1112"),
-        ("landingzones", "0005_rename_uuid"),
-        ("landingzones", "0006_update_uuid"),
-        ("landingzones", "0007_update_jsonfields"),
-        ("landingzones", "0008_landingzone_user_message"),
+        ('landingzones', '0001_initial'),
+        ('landingzones', '0002_auto_20180503_1802'),
+        ('landingzones', '0003_auto_20180530_1100'),
+        ('landingzones', '0004_auto_20180628_1112'),
+        ('landingzones', '0005_rename_uuid'),
+        ('landingzones', '0006_update_uuid'),
+        ('landingzones', '0007_update_jsonfields'),
+        ('landingzones', '0008_landingzone_user_message'),
     ]
 
     initial = True
 
     dependencies = [
-        ("projectroles", "0003_populate_roles"),
+        ('projectroles', '0003_populate_roles'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ("samplesheets", "0002_investigation_irods_status"),
+        ('samplesheets', '0002_investigation_irods_status'),
     ]
 
     operations = [
         migrations.CreateModel(
-            name="LandingZone",
+            name='LandingZone',
             fields=[
                 (
-                    "id",
+                    'id',
                     models.AutoField(
                         auto_created=True,
                         primary_key=True,
                         serialize=False,
-                        verbose_name="ID",
+                        verbose_name='ID',
                     ),
                 ),
                 (
-                    "title",
+                    'title',
                     models.CharField(
-                        help_text="Title of the landing zone", max_length=255
+                        help_text='Title of the landing zone', max_length=255
                     ),
                 ),
                 (
-                    "status",
+                    'status',
                     models.CharField(
-                        default="CREATING",
-                        help_text="Status of landing zone",
+                        default='CREATING',
+                        help_text='Status of landing zone',
                         max_length=64,
                     ),
                 ),
                 (
-                    "status_info",
+                    'status_info',
                     models.CharField(
                         blank=True,
-                        default="Creating landing zone in iRODS",
-                        help_text="Additional status information",
+                        default='Creating landing zone in iRODS',
+                        help_text='Additional status information',
                         max_length=1024,
                         null=True,
                     ),
                 ),
                 (
-                    "date_modified",
+                    'date_modified',
                     models.DateTimeField(
                         auto_now=True,
-                        help_text="DateTime of last landing zone modification",
+                        help_text='DateTime of last landing zone modification',
                     ),
                 ),
                 (
-                    "description",
+                    'description',
                     models.TextField(
                         blank=True,
-                        help_text="Landing zone description (optional)",
+                        help_text='Landing zone description (optional)',
                     ),
                 ),
                 (
-                    "sodar_uuid",
+                    'sodar_uuid',
                     models.UUIDField(
                         default=uuid.uuid4,
-                        help_text="Landing zone SODAR UUID",
+                        help_text='Landing zone SODAR UUID',
                         unique=True,
                     ),
                 ),
                 (
-                    "assay",
+                    'assay',
                     models.ForeignKey(
-                        help_text="Assay for which the landing zone belongs",
+                        help_text='Assay for which the landing zone belongs',
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name="landing_zones",
-                        to="samplesheets.assay",
+                        related_name='landing_zones',
+                        to='samplesheets.assay',
                     ),
                 ),
                 (
-                    "project",
+                    'project',
                     models.ForeignKey(
-                        help_text="Project in which the landing zone belongs",
+                        help_text='Project in which the landing zone belongs',
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name="landing_zones",
-                        to="projectroles.project",
+                        related_name='landing_zones',
+                        to='projectroles.project',
                     ),
                 ),
                 (
-                    "user",
+                    'user',
                     models.ForeignKey(
-                        help_text="User who owns the landing zone",
+                        help_text='User who owns the landing zone',
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name="landing_zones",
+                        related_name='landing_zones',
                         to=settings.AUTH_USER_MODEL,
                     ),
                 ),
                 (
-                    "config_data",
+                    'config_data',
                     models.JSONField(
                         default=dict,
-                        help_text="Configuration data (for storing plugin-specific settings)",
+                        help_text='Configuration data (for storing plugin-specific settings)',
                     ),
                 ),
                 (
-                    "configuration",
+                    'configuration',
                     models.CharField(
                         blank=True,
-                        help_text="Special configuration (optional, leave blank for a standard landing zone)",
+                        help_text='Special configuration (optional, leave blank for a standard landing zone)',
                         max_length=64,
                         null=True,
                     ),
                 ),
                 (
-                    "user_message",
+                    'user_message',
                     models.CharField(
                         blank=True,
-                        help_text="Message displayed to project members on successful zone moving if member notifications are enabled (optional)",
+                        help_text='Message displayed to project members on successful zone moving if member notifications are enabled (optional)',
                         max_length=1024,
                     ),
                 ),
             ],
             options={
-                "ordering": ["project", "assay__file_name", "title"],
-                "unique_together": {("title", "project", "user")},
+                'ordering': ['project', 'assay__file_name', 'title'],
+                'unique_together': {('title', 'project', 'user')},
             },
         ),
     ]

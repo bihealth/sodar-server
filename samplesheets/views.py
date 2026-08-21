@@ -5,13 +5,13 @@ import io
 import json
 import logging
 import os
-import pytz
 import requests
 import zipfile
 
 from packaging import version
 from typing import Any, Optional, Union
 from urllib.parse import urljoin
+from zoneinfo import ZoneInfo
 
 from cubi_isa_templates import IsaTabTemplate, _TEMPLATES as CUBI_TEMPLATES
 from irods.collection import iRODSCollection
@@ -60,6 +60,7 @@ from projectroles.views import (
     ProjectPermissionMixin,
     CurrentUserFormMixin,
     HTTPRefererMixin,
+    HostConfirmDeleteView,
 )
 
 # Landingzones dependency
@@ -144,7 +145,7 @@ SYNC_FAIL_STATUS_CODE = 'Source API responded with status code'
 CUBI_TPL_DICT = {t.name: t for t in CUBI_TEMPLATES}
 ISA_ERROR_REPLACE_ARGS = ['\\n', '<br />']
 
-EMAIL_DELETE_REQUEST_ACCEPT = r'''
+EMAIL_DELETE_REQUEST_ACCEPT = r"""
 Your delete request has been accepted.
 
 Project: {project}
@@ -152,8 +153,8 @@ Path: {path}
 User: {user} <{user_email}>
 
 All data has been removed.
-'''.lstrip()
-EMAIL_DELETE_REQUEST_REJECT = r'''
+""".lstrip()
+EMAIL_DELETE_REQUEST_REJECT = r"""
 Your delete request has been rejected.
 
 Project: {project}
@@ -161,7 +162,7 @@ Path: {path}
 User: {user} <{user_email}>
 
 No data has been removed.
-'''.lstrip()
+""".lstrip()
 
 
 # Mixins -----------------------------------------------------------------------
@@ -190,6 +191,41 @@ class SheetImportMixin:
 
     #: TimelineAPI
     timeline = None
+
+    @classmethod
+    def _update_relations(cls, investigation: Investigation):
+        """
+        Update object foreign key relations on sheet replace.
+
+        :param investigation: New Investigation object
+        """
+        project = investigation.project
+        assay_lookup = {a.get_name(): a for a in investigation.get_assays()}
+
+        # Update unfinished landing zones to point to new assays
+        for zone in LandingZone.objects.filter(project=project):
+            zone.assay = assay_lookup[zone.assay.get_name()]
+            zone.save()
+            logger.debug(
+                f'Updated assay foreign key for landing zone '
+                f'"{zone.title}" ({zone.sodar_uuid})'
+            )
+
+        # Update iRODS access tickets
+        for ticket in IrodsAccessTicket.objects.filter(
+            study__investigation__project=project
+        ):
+            # NOTE: This assumes all tickets are on assay level, which is true
+            #       right now. If we ever change that, make sure to update this.
+            #       (Technically, the assay field is optional in the model)
+            assay = assay_lookup[ticket.assay.get_name()]
+            ticket.assay = assay
+            ticket.study = assay.study
+            ticket.save()
+            logger.debug(
+                f'Updated study and assay foreign keys for iRODS access ticket '
+                f'"{ticket.ticket}" ({ticket.sodar_uuid})'
+            )
 
     def add_tl_event(
         self, project: Project, action: str, tpl_name: Optional[str] = None
@@ -282,11 +318,11 @@ class SheetImportMixin:
             ):
                 self.replace_configs = False
 
-            # Update unfinished landing zones to point to new assays
-            new_assays = {a.get_name(): a for a in investigation.get_assays()}
-            for zone in LandingZone.objects.filter(project=project):
-                zone.assay = new_assays[zone.assay.get_name()]
-                zone.save()
+            # Update foreign key relations to point to new sheets
+            try:
+                self._update_relations(investigation)
+            except Exception as ex:
+                raise Exception(f'Exception in updating object relations: {ex}')
 
             # If replacing with alt sheet, clear study cache (force delete)
             if not compare_ok:
@@ -687,7 +723,9 @@ class SheetCreateImportAccessMixin:
 
     def dispatch(self, *args, **kwargs):
         project = self.get_project()
-        if app_settings.get(APP_NAME, 'sheet_sync_enable', project=project):
+        if settings.SHEETS_SYNC_ENABLE and app_settings.get(
+            APP_NAME, 'sheet_sync_enable', project=project
+        ):
             messages.error(
                 self.request,
                 'Sheet synchronization enabled in project: import and '
@@ -1316,7 +1354,7 @@ class SheetRemoteSyncAPI(SheetImportMixin):
         source_date = datetime.datetime.strptime(
             source_data.pop('date_modified'),
             '%Y-%m-%d %H:%M:%S.%f+00:00',
-        ).replace(tzinfo=pytz.UTC)
+        ).replace(tzinfo=ZoneInfo('UTC'))
         old_inv = project.investigations.first()
         replace = bool(old_inv)
         if old_inv and source_date < old_inv.date_modified:
@@ -1407,6 +1445,9 @@ class ProjectSheetsView(
         context['app_context'] = json.dumps(app_context)
         context['settings_module'] = os.environ['DJANGO_SETTINGS_MODULE']
         context['EMPTY_VALUE'] = EMPTY_VALUE  # For JQuery
+        context['use_vue3_app'] = app_settings.get(
+            APP_NAME, 'use_vue3_app', user=self.request.user
+        )
         return context
 
 
@@ -1750,19 +1791,22 @@ class SheetISAExportView(
 
 
 class SheetDeleteView(
-    LoginRequiredMixin,
-    LoggedInPermissionMixin,
     InvestigationContextMixin,
     ProjectPermissionMixin,
-    TemplateView,
+    HostConfirmDeleteView,
 ):
     """Sample sheet deletion view"""
 
     permission_required = 'samplesheets.delete_sheet'
-    template_name = 'samplesheets/samplesheet_confirm_delete.html'
+    template_name = 'samplesheets/samplesheet_confirm_delete_host.html'
+
+    def get_object(self):
+        project = self.get_project()
+        return Investigation.objects.get(project=project, active=True)
 
     def get_context_data(self, *args, **kwargs):
         """Override get_context_data() to check for data objects in iRODS"""
+        self.object = self.get_object()
         context = super().get_context_data(*args, **kwargs)
         irods_backend = plugin_api.get_backend_api('omics_irods')
         if not irods_backend:
@@ -1805,7 +1849,7 @@ class SheetDeleteView(
         tl_event = None
         project = Project.objects.get(sodar_uuid=kwargs['project'])
         req_user = self.request.user
-        investigation = Investigation.objects.get(project=project, active=True)
+        investigation = self.get_object()
         redirect_url = get_sheets_url(project)
 
         # Don't allow deletion for everybody if files exist in iRODS
@@ -1840,23 +1884,6 @@ class SheetDeleteView(
                 label='investigation',
                 name=investigation.title,
             )
-
-        # Don't allow deletion unless user has input the host name
-        host_confirm = request.POST.get('delete_host_confirm')
-        actual_host = request.get_host().split(':')[0]
-
-        if not host_confirm or host_confirm != actual_host:
-            msg = (
-                f'Incorrect host name for confirming sheet deletion: '
-                f'"{host_confirm}"'
-            )
-            if tl_event:
-                tl_event.set_status(timeline.TL_STATUS_FAILED, msg)
-            logger.error(msg + f' (correct={actual_host})')
-            messages.error(
-                request, 'Host name input incorrect, deletion cancelled.'
-            )
-            return redirect(redirect_url)
 
         delete_success = True
         if taskflow and investigation.irods_status:
@@ -3013,12 +3040,11 @@ class SheetRemoteSyncView(
         tl_add = False
         tl_status_type = timeline.TL_STATUS_OK if timeline else 'OK'
         tl_status_desc = 'Sync OK'
-        sheet_sync_enable = app_settings.get(
-            APP_NAME, 'sheet_sync_enable', project=project
-        )
 
         # Sanity check, view is not shown in UI when variable is disabled
-        if not sheet_sync_enable:
+        if not settings.SHEETS_SYNC_ENABLE or not app_settings.get(
+            APP_NAME, 'sheet_sync_enable', project=project
+        ):
             messages.error(request, SYNC_FAIL_DISABLED)
             return self._redirect()
 

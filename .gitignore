@@ -41,6 +41,7 @@ selenium-debug.log
 .tox
 nosetests.xml
 htmlcov
+coverage
 coverage.xml
 coverage.lcov
 
@@ -66,7 +67,7 @@ docs/pycharm/*
 *.swp
 *.swo
 
-# Node.js and Webpack
+# Node.js, Webpack, Vite
 node_modules/
 dist/
 tests/node/unit/coverage/
@@ -74,6 +75,10 @@ tests/node/e2e/reports/
 *.ntvs*
 *.njsproj
 webpack-stats.json
+.vite/
+
+# Vite
+dist-ssr
 
 # Compass
 .sass-cache
@@ -123,3 +128,12 @@ sodar/templates/include/*
 # Samplesheets configuration file directory
 # TODO: Remove ignore once files are moved outside of the repo in docker env
 samplesheets/config/*
+
+# Vue app misc
+*.tsbuildinfo
+.eslintcache
+# Cypress
+/cypress/videos/
+/cypress/screenshots/
+# Vitest
+__screenshots__/

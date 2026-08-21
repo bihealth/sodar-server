@@ -387,6 +387,9 @@ class TestZoneCreateView(ViewTestBase):
         self.assertIsNotNone(form)
         self.assertIsNotNone(form.fields['title_suffix'])
         self.assertIsNotNone(form.fields['assay'])
+        # This should be empty because we don't have iRODS collections
+        # See test_views_taskflow for populated test
+        self.assertEqual(form.fields['assay'].widget.choices, [])
         self.assertIsNotNone(form.fields['description'])
         self.assertIsNotNone(form.fields['configuration'])
         self.assertEqual(response.context['prohibit_files'], None)

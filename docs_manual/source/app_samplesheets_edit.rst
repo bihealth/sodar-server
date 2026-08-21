@@ -30,13 +30,15 @@ UI.
     Sample sheet UI in edit mode
 
 
-Differences of edit mode:
+Differences in edit mode compared to browsing mode:
 
 - The navigation bar displays the edit mode status badge along with the version
   backup button.
-- The Overview tab is disabled.
-- The Sheet Operations dropdown is replaced by a *Finish Editing* button.
-- An *Insert Row* button is added to the table header.
+- The :guilabel:`Overview` tab is disabled.
+- The :guilabel:`Sheet Operations` dropdown is replaced by the
+  :guilabel:`Finish Editing` button.
+- An :guilabel:`Insert Row` button is added to the table header of each study
+  and assay table.
 - Column headers contain buttons for configuring editing options for that
   specific column.
 - Column cells are grayed out if editing the column is currently disabled.
@@ -53,7 +55,7 @@ Differences of edit mode:
 Cell Editing
 ============
 
-To start editing the value of a cell, you can either double click it with the
+To start editing the value of a cell, you can either double-click it with the
 mouse of press enter if you are navigating the table using a keyboard.
 
 Changes to cells are saved immediately when committing the change with the enter
@@ -233,7 +235,7 @@ after saving the row.
 
     The easiest way to fill up new nodes is to set default name suffixes for
     nodes which enable autofilling nodes. For more, see the
-    *Column Configuration* section.
+    :ref:`app_samplesheets_edit_column_config` section.
 
 If you enter the name of an existing node in the same column for splitting or
 booling, other cells of the node are autofilled match the existing "copies" of
@@ -365,6 +367,8 @@ were made and why.
 For further details on browsing and managing backup sheet versions, see
 :ref:`app_samplesheets_version`.
 
+
+.. _app_samplesheets_edit_column_config:
 
 Column Configuration
 ====================

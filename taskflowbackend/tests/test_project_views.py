@@ -23,6 +23,7 @@ from projectroles.tests.test_models import ProjectInviteMixin
 
 # Timeline dependency
 from timeline.models import TimelineEvent
+from timeline.tests.test_views import TimelineTestMixin
 
 from taskflowbackend.constants import IRODS_ACCESS_READ_OBJ
 from taskflowbackend.tests.base import TaskflowViewTestBase
@@ -87,7 +88,6 @@ class TestProjectCreateView(TaskflowViewTestBase):
             'parent': self.category.pk,
             'description': 'description',
             'public_access': None,
-            'public_guest_access': False,  # DEPRECATED
             'archive': False,
             'full_title': self.category.title + ' / TestProject',
             'has_public_children': False,
@@ -214,7 +214,6 @@ class TestProjectUpdateView(TaskflowViewTestBase):
             'parent': self.category.pk,
             'description': 'updated description',
             'public_access': self.role_guest.pk,
-            'public_guest_access': True,  # DEPRECATED
             'archive': False,
             'full_title': self.category.title + ' / updated title',
             'has_public_children': False,
@@ -223,7 +222,7 @@ class TestProjectUpdateView(TaskflowViewTestBase):
         model_dict = model_to_dict(self.project)
         model_dict.pop('readme', None)
         self.assertEqual(model_dict, expected)
-        self.assertEqual(self.project.readme.raw, 'updated readme')
+        self.assertEqual(self.project.readme, 'updated readme')
 
         project_coll = self.irods.collections.get(
             self.irods_backend.get_path(self.project)
@@ -315,10 +314,10 @@ class TestProjectUpdateView(TaskflowViewTestBase):
     def test_post_no_owner_group(self):
         """Test POST with legacy project without owner group"""
         owner_group = self.irods_backend.get_group_name(self.project, True)
-        self.assertIsNotNone(self.irods.user_groups.get(owner_group))
+        self.assertIsNotNone(self.irods.groups.get(owner_group))
         self.irods.users.remove(user_name=owner_group)
         with self.assertRaises(GroupDoesNotExist):
-            self.irods.user_groups.get(owner_group)
+            self.irods.groups.get(owner_group)
 
         request_data = model_to_dict(self.project)
         request_data.update(
@@ -354,7 +353,7 @@ class TestProjectUpdateView(TaskflowViewTestBase):
         self.assertEqual(
             project_coll.metadata.get_one('title').value, self.project.title
         )
-        self.assertIsNotNone(self.irods.user_groups.get(owner_group))
+        self.assertIsNotNone(self.irods.groups.get(owner_group))
         self.assert_group_member(self.project, self.user, True, True)
         self.assert_group_member(self.project, self.user_owner_cat, True, True)
 
@@ -371,7 +370,7 @@ class TestRoleAssignmentCreateView(TaskflowViewTestBase):
             owner=self.user,
         )
         self.user_new = self.make_user('user_new')
-        self.irods_user_group = self.irods.user_groups.get(
+        self.irods_user_group = self.irods.groups.get(
             self.irods_backend.get_group_name(self.project)
         )
         self.url = reverse(
@@ -1291,15 +1290,8 @@ class TestProjectInviteAcceptView(ProjectInviteMixin, TaskflowViewTestBase):
         self.assertEqual(ProjectInvite.objects.filter(active=True).count(), 1)
 
 
-class TestProjectDeleteView(TaskflowViewTestBase):
+class TestProjectDeleteView(TimelineTestMixin, TaskflowViewTestBase):
     """Tests for ProjectDeleteView"""
-
-    def _assert_tl_event(self, count: int):
-        """Assert timeline event count"""
-        tl_events = TimelineEvent.objects.filter(
-            app=APP_NAME, event_name='project_delete'
-        )
-        self.assertEqual(tl_events.count(), count)
 
     def setUp(self):
         super().setUp()
@@ -1322,13 +1314,15 @@ class TestProjectDeleteView(TaskflowViewTestBase):
             kwargs={'project': self.project.sodar_uuid},
         )
         self.post_data = {'delete_host_confirm': 'testserver'}
+        self.tl_name = 'project_delete'
+        self.tl_kw = {'app': APP_NAME}
 
     def test_post(self):
         """Test ProjectDeleteView POST with taskflow"""
         self.assertTrue(self.irods.collections.exists(self.project_path))
-        self.assertIsNotNone(self.irods.user_groups.get(self.project_group))
-        self.assertIsNotNone(self.irods.user_groups.get(self.owner_group))
-        self._assert_tl_event(0)
+        self.assertIsNotNone(self.irods.groups.get(self.project_group))
+        self.assertIsNotNone(self.irods.groups.get(self.owner_group))
+        self.assert_tl_event_count(self.tl_name, 0, **self.tl_kw)
 
         with self.login(self.user):
             response = self.client.post(self.url, data=self.post_data)
@@ -1341,10 +1335,10 @@ class TestProjectDeleteView(TaskflowViewTestBase):
             )
         self.assertFalse(self.irods.collections.exists(self.project_path))
         with self.assertRaises(GroupDoesNotExist):
-            self.irods.user_groups.get(self.project_group)
+            self.irods.groups.get(self.project_group)
         with self.assertRaises(GroupDoesNotExist):
-            self.irods.user_groups.get(self.owner_group)
-        self._assert_tl_event(1)
+            self.irods.groups.get(self.owner_group)
+        self.assert_tl_event_count(self.tl_name, 1, **self.tl_kw)
         tl_event = TimelineEvent.objects.filter(
             app=APP_NAME, event_name='project_delete'
         ).first()
@@ -1365,7 +1359,7 @@ class TestProjectDeleteView(TaskflowViewTestBase):
         self.assertTrue(self.irods.collections.exists(self.project_path))
         self.assertTrue(self.irods.collections.exists(obj_coll_path))
         self.assertTrue(self.irods.data_objects.exists(obj_path))
-        self.assertIsNotNone(self.irods.user_groups.get(self.project_group))
+        self.assertIsNotNone(self.irods.groups.get(self.project_group))
 
         with self.login(self.user):
             self.client.post(self.url, data=self.post_data)
@@ -1374,7 +1368,7 @@ class TestProjectDeleteView(TaskflowViewTestBase):
         self.assertFalse(self.irods.collections.exists(obj_coll_path))
         self.assertFalse(self.irods.data_objects.exists(obj_path))
         with self.assertRaises(GroupDoesNotExist):
-            self.irods.user_groups.get(self.project_group)
+            self.irods.groups.get(self.project_group)
         self.assertIsNone(
             Project.objects.filter(sodar_uuid=self.project_uuid).first()
         )

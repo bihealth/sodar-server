@@ -5,6 +5,226 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+v1.3.0 (2026-08-21)
+===================
+
+Added
+-----
+
+- **General**
+    - Python v3.12 and v3.13 support (#2334)
+    - ``django-axes`` support for login security (#1976, #2334)
+    - ``app_landingzones_transfer.rst`` landing zone file deletion note (#2478)
+- **Samplesheets**
+    - Vue3 app (#994, #2389, #2390, #2401, #2403, #2431, #2457, #2458, #2459)
+    - Vite integration using ``django-vite`` (#994)
+    - ``use_vue3_app`` app setting (#994)
+    - ``fixirodstickets`` management command (#2461)
+    - Vue3 app cell edit value revert on server error (#2494)
+
+Changed
+-------
+
+- **General**
+    - Upgrade to Django v5.2.17 (#2317, #2334)
+    - Upgrade to django-sodar-core v1.4.3 (#2317, #2334, #2358, #2375, #2505)
+    - Upgrade to python-irodsclient v3.3.0 (#2253, #2471)
+    - Upgrade to django-rest-knox v5.0 (#2334)
+    - Upgrade to tooz v9.0 (#2485)
+    - Upgrade to irods-docker v4.3.5-1 in CI (#2472, #2482)
+    - Upgrade to Sentry Javascript SDK v10.27 (#2357)
+    - Upgrade general Python dependencies (#2317, #2334)
+    - Upgrade to Node.js v24 (#2444)
+    - Upgrade Docker build Javascript dependencies (#2355, #2357)
+    - Upgrade Docker build for Python v3.13 (#2397)
+    - Upgrade Docker build for Debian v13 Trixie (#2512)
+    - Upgrade GitHub Actions in CI (#2443)
+    - Use ``zoneinfo`` instead of ``pytz`` (#2334)
+    - Use ``SODARUserAdmin`` as ``User`` model admin (#2334)
+    - Update base test classes (#2334)
+    - Update ``AppAlert`` and ``TimelineEvent`` test assertions for common helpers (#2334)
+    - Rename ``api_projectroles.rst`` to ``api_sodar_core.rst`` (#2334)
+    - Reorganize ``Makefile`` (#2398, #2435)
+    - Replace black and flake8 with ruff for linting and formatting (#2428)
+    - Reformat Python code with ruff (#2428)
+    - Update CI ordering of code checks and tests (#2434)
+    - Update REST API list view docs with result ordering (#2508)
+- **Landingzones**
+    - Update ``resetzone`` and ``verifyzone`` arg help texts (#2368)
+    - Disable ``ZoneCreateView`` assay dropdown with single assay (#2394, #2500)
+- **Samplesheets**
+    - Upgrade critical Vue app dependencies (#2317)
+    - Rename ``SheetEditConfigUpdateAjaxView`` (#2469)
+    - Rename ``StudyDisplayConfigUpdateAjaxView`` (#2469)
+
+Fixed
+-----
+
+- **General**
+    - ``Makefile`` missing ``default`` target (#2398)
+    - Base template top header visual artifacts on Firefox (#2507)
+- **Irodsbackend**
+    - ``IrodsStatisticsAjaxView`` uncaught exceptions (#2501)
+    - iRODS path sorting with mixed case characters (#2509)
+- **Landingzones**
+    - Unsupported ``assay`` field choice setup in ``LandingZoneForm`` (#2376)
+- **Samplesheets**
+    - HPO term copying fails with ``SHEETS_ONTOLOGY_URL_TEMPLATE`` set (#2386)
+    - Vue2 app ontology edit modal search input disabling (#2454)
+    - ``SheetCellEditAjaxView._update_cell()`` uncaught exceptions (#2495)
+    - ``SheetEditConfigUpdateAjaxView`` uncaught exceptions in cleanup (#2499)
+    - ``SheetEditConfigUpdateAjaxView`` process name column type check fails (#2487)
+    - ``ColumnToggleModal`` incorrect save button size (#2379)
+- **Taskflowbackend**
+    - Maligned tooz lock IDs (#2144, #2485)
+
+Removed
+-------
+
+- **General**
+    - Python v3.9 and v3.10 support (#2334)
+    - ``Makefile`` ``demo`` target (#2435)
+    - Black and flake8 dependencies (#2428)
+    - Legacy flake8 and pycodestyle configuration (#2428)
+- **Samplesheets**
+    - Unused template tags (#2506)
+
+
+v1.2.9 (2026-04-29)
+===================
+
+Changed
+-------
+
+- **General**
+    - Upgrade to Django v4.2.30 (#2462)
+    - Upgrade to lxml v6.1.0 (#2462)
+    - Upgrade critical Vue app dependencies (#2462)
+    - Update IGV omit pattern documentation for pattern matching (#2464)
+
+Fixed
+-----
+
+- **Samplesheets**
+    - Vue app ontology edit modal search input disabling (from v1.3.0-WIP) (#2454)
+    - ``IrodsAccessTicket`` objects deleted on sheet replace (#2460)
+    - Study app ``check_igv_file_path()`` partial path matching (#2464)
+    - Germline study app redundant ``get_pedigree_file_path()`` calls (#2465)
+
+
+v1.2.8 (2026-03-19)
+===================
+
+Added
+-----
+
+- **Samplesheets**
+    - Germline IGV session VCF file cache search by family ID (#2439)
+
+Changed
+-------
+
+- **Samplesheets**
+    - Reduce germline ``IGVSessionFileRenderView`` iRODS queries (#2440)
+
+Fixed
+-----
+
+- **Samplesheets**
+    - Germline IGV session VCF file cache search by source name (#2442)
+
+
+v1.2.7 (2026-03-19)
+===================
+
+Added
+-----
+
+- **Samplesheets**
+    - SODAR cache support in germline study app ``IGVSessionFileRenderView`` (#1524)
+    - Germline study app ``get_pedigree_file_path()`` ``obj_list`` arg (#1525)
+
+Changed
+-------
+
+- **Samplesheets**
+    - Upgrade critical Vue app dependencies (#2436)
+
+Fixed
+-----
+
+- **Samplesheets**
+    - Germline study app ``IGVSessionFileRenderView`` redundant queries (#1525)
+
+
+v1.2.6 (2026-03-13)
+===================
+
+Changed
+-------
+
+- **General**
+    - Upgrade to Django v4.2.29 (#2417)
+    - Upgrade to Selenium v4.36.0 (#2417)
+    - Upgrade to Werkzeug v3.1.6 (#2417)
+    - Upgrade critical Vue app dependencies (#2417)
+
+Fixed
+-----
+
+- **Landingzones**
+    - Zone status change ignoring project member notify settings (#2416)
+- **Samplesheets**
+    - ``IrodsDirModal`` data request button icon alignment (#1829)
+    - ``ColumnToggleModal`` incorrect save button size (from v1.3.0) (#2379, #2427)
+    - ``SheetTableHeader`` info button icon alignment (#2427)
+
+
+v1.2.5 (2026-01-29)
+===================
+
+Added
+-----
+
+- **General**
+    - ``.vite`` in ``.gitignore`` (#2383)
+
+Changed
+-------
+- **Irodsbackend**
+    - Refactor ``get_objs_recursively()`` (#2381)
+
+Fixed
+-----
+
+- **Irodsbackend**
+    - ``get_objs_recursively()`` returns SHA256 checksums as base64 (#2380)
+- **Ontologyaccess**
+    - ``owl_to_obo()`` logging for URL access (#2378)
+
+
+v1.2.4 (2026-01-16)
+===================
+
+Changed
+-------
+
+- **General**
+    - Upgrade to Werkzeug v3.1.5 (#2372)
+- **Samplesheets**
+    - Upgrade critical Vue app dependencies (#2373)
+- **Taskflowbackend**
+    - Unnecessary landing zone status info truncating for flow exceptions (#2365)
+
+Fixed
+-----
+
+- **Samplesheets**
+    - Uncaught exceptions if ``SHEETS_SYNC_ENABLE==False`` (#2371)
+    - Missing study and assay UUIDs in ``Overview.vue`` (#2366)
+    - Duplicate ``sodar-ss-table-detail-container`` attribute IDs (#2374)
+
+
 v1.2.3 (2025-12-05)
 ===================
 

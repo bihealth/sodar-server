@@ -51,6 +51,7 @@ Table of Contents
     ui_irods_info
     ui_api_tokens
     ui_user_profile
+    ui_search
     ui_project_overview
     ui_project_members
     ui_project_update
@@ -116,7 +117,7 @@ Table of Contents
     :name: api_docs
 
     api_documentation
-    Project Management APIs <api_projectroles>
+    Project Management APIs <api_sodar_core>
     Sample Sheets API <api_samplesheets>
     Landing Zones API <api_landingzones>
     iRODS Info API <api_irodsinfo>

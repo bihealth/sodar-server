@@ -245,14 +245,14 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                 irods.collections.remove(project_path)
             project_group = irods_backend.get_group_name(project)
             try:
-                irods.user_groups.get(project_group)
+                irods.groups.get(project_group)
                 logger.debug(f'Removing user group: {project_group}')
                 irods.users.remove(project_group)
             except GroupDoesNotExist:
                 pass
             project_group = irods_backend.get_group_name(project, owner=True)
             try:
-                irods.user_groups.get(project_group)
+                irods.groups.get(project_group)
                 logger.debug(f'Removing owner group: {project_group}')
                 irods.users.remove(project_group)
             except GroupDoesNotExist:
@@ -468,8 +468,9 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                 plugin_name='taskflow',
                 user=req_user,
                 event_name='role_update_revert',
-                description='revert adding iRODS access for '
-                'user {{{}}}'.format('user'),
+                description='revert adding iRODS access for user {{{}}}'.format(
+                    'user'
+                ),
                 status_type=timeline.TL_STATUS_OK,
             )
             tl_event.add_object(user, 'user', user_name)
@@ -745,7 +746,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         project_group = irods_backend.get_group_name(project)
         flow_data = {'roles_add': [], 'roles_delete': []}
         with irods_backend.get_session() as irods:
-            for irods_user in irods.user_groups.getmembers(project_group):
+            for irods_user in irods.groups.getmembers(project_group):
                 user = User.objects.filter(username=irods_user.name).first()
                 role_as = project.get_role(user)
                 if not role_as or role_as.role.rank >= RANK_VIEWER:
@@ -812,13 +813,12 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
                 logger.debug(f'Project collection deleted: {project_path}')
             except Exception as ex:
                 ex_msg = (
-                    f'Error deleting project collection '
-                    f'({project_path}): {ex}'
+                    f'Error deleting project collection ({project_path}): {ex}'
                 )
                 logger.error(ex_msg)
                 errors.append(ex_msg)
             try:  # Delete project user group
-                # NOTE: Use users instead of user_groups here
+                # NOTE: Use users instead of groups here
                 irods.users.remove(user_group)
                 logger.debug(f'User group deleted: {user_group}')
             except Exception as ex:
