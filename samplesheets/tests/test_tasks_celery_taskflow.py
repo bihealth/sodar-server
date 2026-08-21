@@ -96,7 +96,7 @@ class TestUpdateProjectCacheTask(
         self.assertEqual(
             JSONCacheItem.objects.filter(project=self.project).count(), 2
         )
-        cache_items = list(JSONCacheItem.objects.all())
+        cache_items = list(JSONCacheItem.objects.order_by('-name'))
         self.assertEqual(
             cache_items[0].name,
             IRODS_STATS_CACHE_NAME.format(uuid=self.project.sodar_uuid),
