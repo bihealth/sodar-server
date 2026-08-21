@@ -13,6 +13,8 @@ Changed
 
 - **General**
     - Upgrade to irods-docker v4.3.5-2 in CI (#2514)
+- **Samplesheets**
+    - Refactor vue3app ``fetch()`` calls (#2475)
 
 Fixed
 -----
@@ -20,6 +22,7 @@ Fixed
 - **Samplesheets**
     - ``IrodsAccessTicketViewTestMixin.get_ticket_hosts()`` result order not guaranteed (#2445)
     - ``TestUpdateProjectCacheTask.test_update_cache()`` query order not enforced (#2402)
+
 
 v1.3.0 (2026-08-21)
 ===================

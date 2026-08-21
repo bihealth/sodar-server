@@ -20,9 +20,12 @@ import SheetTableHeader from '@/components/SheetTableHeader.vue'
 import StudyShortcutModal from '@/components/modals/StudyShortcutModal.vue'
 import StudyShortcutsRenderer from '@/components/renderers/StudyShortcutsRenderer.vue'
 import WaitSection from '@/components/WaitSection.vue'
+
 import { useAppStore } from '@/stores/appStore.ts'
 import { useEditStore } from '@/stores/editStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
+
+import { getAjaxRequestInit } from '@/utils/appUtils.ts'
 import {
   buildColDef,
   buildRowData,
@@ -152,7 +155,7 @@ function getStudy (studyUuid: string, editMode: boolean) {
   let url: string = appStore.sodarContext!.studies[studyUuid]!.table_url
   if (editMode) url += '?edit=1'
   // TODO: Add timeout / retrying / error handling
-  fetch(url, { credentials: 'same-origin' })
+  fetch(url, getAjaxRequestInit())
     .then(data => data.json())
     .then(data => {
       buildStudy(data)

@@ -17,9 +17,12 @@ import { useClipboard } from '@vueuse/core'
 import InfoIcon from '@/components/InfoIcon.vue'
 import ModalHeader from '@/components/modals/ModalHeader.vue'
 import ColumnConfigModalSeparator from '@/components/modals/ColumnConfigModalSeparator.vue'
+
 import { useAppStore } from '@/stores/appStore.ts'
 import { useEditStore } from '@/stores/editStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
+
+import { getAjaxRequestInit } from '@/utils/appUtils.ts'
 import { updateCells } from '@/utils/editUtils.ts'
 import {
   type CellEditData,
@@ -57,6 +60,7 @@ import {
   OBO_HEADER_HP,
   OBO_HEADER_OMIM,
   OBO_HEADER_ORDO,
+  REQ_POST,
   VARIANT_DANGER,
   VARIANT_SUCCESS,
 } from '@/constants.ts'
@@ -572,16 +576,8 @@ async function updateConfig () {
       study: appStore.currentStudyUuid,
     }]
   }
-  const response = await fetch(updateUrl, {
-    method: 'POST',
-    body: JSON.stringify(updateBody),
-    credentials: 'same-origin',
-    headers: {
-      Accept: 'application/json',
-      'Content-type': 'application/json',
-      'X-CSRFToken': appStore.sodarContext!.csrf_token
-    }
-  })
+  const response = await fetch(
+    updateUrl, getAjaxRequestInit(REQ_POST, updateBody))
   const resBody: GenericResponseBody = await response.json()
 
   if (resBody.detail === 'ok') {

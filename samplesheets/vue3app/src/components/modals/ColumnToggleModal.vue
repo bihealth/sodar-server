@@ -13,6 +13,8 @@ import { type ColDef, type ColGroupDef, type GridApi} from 'ag-grid-community'
 import ModalHeader from '@/components/modals/ModalHeader.vue'
 import { useAppStore } from '@/stores/appStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
+
+import { getAjaxRequestInit } from '@/utils/appUtils.ts'
 import {
   type NotifyCb,
   type SheetTableCellData,
@@ -20,6 +22,7 @@ import {
   type StudyDisplayConfigNode,
 } from '@/types.ts'
 import {
+  REQ_POST,
   URL_DISPLAY_CONFIG_PREFIX,
   VARIANT_DANGER,
   VARIANT_SUCCESS
@@ -150,19 +153,11 @@ function onGroupUpdate (topHeader: ColGroupDef, topIdx: number) {
 
 // Post display config update request
 function postUpdate (setDefault: boolean) {
-  fetch(configUrl, {
-    method: 'POST',
-    body: JSON.stringify({
+  fetch(configUrl, getAjaxRequestInit(REQ_POST, {
       study_config: tableStore.studyDisplayConfig,
       set_default: setDefault
-    }),
-    credentials: 'same-origin',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      'X-CSRFToken': appStore.sodarContext?.csrf_token as string
-    }
-  }).then(data => data.json())
+    })
+  ).then(data => data.json())
     .then(data => {
       if (data.detail === 'ok') {
         let toastBody = 'Display configuration saved'

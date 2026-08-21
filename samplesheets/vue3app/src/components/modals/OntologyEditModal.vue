@@ -16,6 +16,7 @@ import { useClipboard } from '@vueuse/core'
 
 import ModalHeader from '@/components/modals/ModalHeader.vue'
 import { useEditStore } from '@/stores/editStore.ts'
+import { getAjaxRequestInit } from '@/utils/appUtils.ts'
 import { updateCells } from '@/utils/editUtils.ts'
 import {
   type CellEditData,
@@ -444,14 +445,8 @@ function submitTermQuery(delay: number | undefined) {
   queryActive.value = true
   setTimeout(() => {
     const searchValue = JSON.parse(JSON.stringify(searchInput.value))
-    fetch(getQueryUrl(searchValue), {
-      method: 'GET',
-      credentials: 'same-origin',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json'
-      }
-    }).then(data => data.json()).then(data => {
+    fetch(getQueryUrl(searchValue), getAjaxRequestInit()
+    ).then(data => data.json()).then(data => {
       const resData: OntologyTermResponseBody = data
       if ('detail' in data) {
         responseDetail.value = data.detail

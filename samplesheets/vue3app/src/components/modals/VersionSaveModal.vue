@@ -10,11 +10,14 @@ import {
 import ModalHeader from '@/components/modals/ModalHeader.vue'
 import { useAppStore } from '@/stores/appStore.ts'
 import { useEditStore } from '@/stores/editStore.ts'
+
+import { getAjaxRequestInit } from '@/utils/appUtils.ts'
 import { type NotifyCb } from '@/types.ts'
 import {
   EDIT_MSG_SAVE,
   EDIT_MSG_SAVE_ERR_PREFIX,
   EDIT_MSG_SAVE_FAIL_PREFIX,
+  REQ_POST,
   URL_VERSION_SAVE_PREFIX,
   VARIANT_DANGER,
   VARIANT_SUCCESS,
@@ -39,15 +42,9 @@ const url = URL_VERSION_SAVE_PREFIX + appStore.projectUuid
 // Helpers ---------------------------------------------------------------------
 
 function postSave () {
-  fetch(url, {
-    method: 'POST',
-    body: JSON.stringify({ save: true, description: description.value }),
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      'X-CSRFToken': appStore.sodarContext!.csrf_token
-    }
-  }).then(data => data.json())
+  fetch(url, getAjaxRequestInit(
+      REQ_POST, { save: true, description: description.value })
+  ).then(data => data.json())
     .then(data => {
       if (data.detail === 'ok') {
         editStore.versionSaved = true

@@ -5,6 +5,8 @@ import { RouterView, useRouter } from 'vue-router'
 import ServerAlerts from './components/ServerAlerts.vue'
 import ViewHeader from './components/ViewHeader.vue'
 import { useAppStore } from '@/stores/appStore.ts'
+
+import { getAjaxRequestInit } from '@/utils/appUtils.ts'
 import { VIEW_STUDY } from '@/constants.ts'
 
 const appStore = useAppStore()
@@ -32,9 +34,9 @@ if (baseRe.test(loc)) {
 
 // Retrieve sodarContext
 const getSodarContext = async () => {
-  const response = await fetch(initialContext.context_url, {
-    credentials: 'same-origin'
-  }) // TODO: Add error handling
+  // TODO: Add error handling
+  const response = await fetch(
+    initialContext.context_url, getAjaxRequestInit())
   const jsonData = await response.json()
   appStore.sodarContext = JSON.parse(jsonData)
 }

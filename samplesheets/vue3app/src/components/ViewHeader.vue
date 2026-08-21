@@ -14,6 +14,8 @@ import WinExportModal from '@/components/modals/WinExportModal.vue'
 import { useAppStore } from '@/stores/appStore.ts'
 import { useEditStore } from '@/stores/editStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
+
+import { getAjaxRequestInit } from '@/utils/appUtils.ts'
 import { getNotifyCb } from '@/utils/notifyCb.ts'
 import {
   AJAX_RES_OK,
@@ -26,6 +28,7 @@ import {
   EDIT_MSG_FINISH,
   EDIT_MSG_SAVE_ERR_PREFIX,
   EDIT_MSG_SAVE_FAIL_PREFIX,
+  REQ_POST,
   STUDY_NAV_DROPDOWN_LEN,
   STUDY_NAV_TAB_LEN,
   URL_EDIT_FINISH_PREFIX,
@@ -124,20 +127,13 @@ function toggleEditMode () {
     }
   } else { // Browsing mode
     // Call finish update on server
-    const url = URL_EDIT_FINISH_PREFIX + appStore.projectUuid
-    fetch(url, {
-      method: 'POST',
-      body: JSON.stringify({
-        updated: editStore.editDataUpdated,
-        version_saved: editStore.versionSaved,
-      }),
-      credentials: 'same-origin',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        'X-CSRFToken': appStore.sodarContext!.csrf_token
-      }
-    }).then(data => data.json())
+    fetch(
+        URL_EDIT_FINISH_PREFIX + appStore.projectUuid,
+        getAjaxRequestInit(REQ_POST, {
+          updated: editStore.editDataUpdated,
+          version_saved: editStore.versionSaved,
+        })
+    ).then(data => data.json())
       .then(data => {
         if (data.detail === AJAX_RES_OK) {
           create(

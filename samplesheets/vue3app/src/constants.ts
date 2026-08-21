@@ -10,6 +10,10 @@ export const SEL_APP_CONTAINER = 'div#sodar-app-container'
 export const SEL_APP_CONTENT = 'div#sodar-app-content'
 export const SEL_CONTENT_LEFT = 'div#sodar-content-left'
 
+// Requests
+export const REQ_GET = 'GET'
+export const REQ_POST = 'POST'
+
 // URLs
 export const URL_CELL_EDIT_PREFIX = '/samplesheets/ajax/edit/cell/'
 export const URL_DATA_REQUEST_CREATE_PREFIX =
@@ -19,8 +23,11 @@ export const URL_DATA_REQUEST_DELETE_PREFIX =
 export const URL_DISPLAY_CONFIG_PREFIX = '/samplesheets/ajax/display/update/'
 export const URL_EDIT_FINISH_PREFIX = '/samplesheets/ajax/edit/finish/'
 export const URL_IRODS_LIST_PREFIX = '/samplesheets/ajax/irods/objects/'
+export const URL_IRODS_STATS_PREFIX = '/irodsbackend/ajax/stats/'
+export const URL_PARSER_WARNING_PREFIX = '/samplesheets/ajax/warnings/'
 export const URL_ROW_DEL_PREFIX = '/samplesheets/ajax/edit/row/delete/'
 export const URL_ROW_INS_PREFIX = '/samplesheets/ajax/edit/row/insert/'
+export const URL_STUDY_LINKS_PREFIX = '/samplesheets/ajax/study/links/'
 export const URL_VERSION_SAVE_PREFIX = '/samplesheets/ajax/version/save/'
 
 // Color variants

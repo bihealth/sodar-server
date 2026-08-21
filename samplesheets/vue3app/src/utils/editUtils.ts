@@ -50,6 +50,7 @@ import {
   EDIT_ITEM_TYPE_SOURCE,
   HEADER_NAME_SAMPLE,
   NODE_ID_HEADER_TYPES,
+  REQ_POST,
   URL_CELL_EDIT_PREFIX,
   URL_ROW_DEL_PREFIX,
   URL_ROW_INS_PREFIX,
@@ -114,7 +115,7 @@ export function deleteRow (params: RowDeleteParams) {
     }
   }
 
-  fetch(delUrl, getAjaxRequestInit('POST', { del_row: rowData }))
+  fetch(delUrl, getAjaxRequestInit(REQ_POST, { del_row: rowData }))
   .then(res => res.json())
   .then(res => {
     if ((res as GenericResponseBody).detail === AJAX_RES_OK) {
@@ -568,16 +569,8 @@ export function saveRow (params: RowSaveParams) {
   editStore.updatingRow = true
   const url = URL_ROW_INS_PREFIX + appStore.projectUuid
 
-  fetch(url, {
-    method: 'POST',
-    body: JSON.stringify({ new_row: params.saveData }),
-    credentials: 'same-origin',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      'X-CSRFToken': appStore.sodarContext!.csrf_token
-    }
-  }).then(data => data.json())
+  fetch(url, getAjaxRequestInit(REQ_POST, { new_row: params.saveData })
+  ).then(data => data.json())
     .then(data => {
       if (data.detail === 'ok') {
         const cols = params.api.getColumns()!
@@ -739,50 +732,41 @@ export function updateCells (
   for (const k in tableStore.gridApi.assays) {
     gridApis.push(tableStore.gridApi.assays[k] as GridApi)
   }
-  const url = URL_CELL_EDIT_PREFIX + appStore.projectUuid
-
-  fetch(url, {
-    method: 'POST',
-    body: JSON.stringify({ updated_cells: requestCells, verify: verify }),
-    credentials: 'same-origin',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      'X-CSRFToken': appStore.sodarContext?.csrf_token as string
-    }
-  }).then(data => data.json())
-    .then(
-      data => {
-        if (data.detail === 'ok') {
-          /*
-          let bodyPrefix: string
-          if (cells.length > 1) bodyPrefix = cells.length.toString() + ' cells '
-          else bodyPrefix = 'Cell '
-          if (notifyCb) notifyCb(bodyPrefix + 'updated', VARIANT_SUCCESS)
-          */
-          editStore.editDataUpdated = true
-          editStore.versionSaved = false
-          // Update other occurrences of cell in UI
-          for (const api of gridApis) {
-            updateCellUIValues(api, cells, true, false)
-          }
-        } else if (data.detail === 'alert') {
-          // Handle verification alert from server
-          if (confirm(data.alert_msg)) {
-            // Call update again
-            updateCells(cells, false, notifyCb)
-          } else {
-            revertCellUpdate(gridApis, cells)
-          }
-        } else {
-          revertCellUpdate(
-            gridApis, cells, CELL_UPDATE_FAIL_PREFIX + data.detail, notifyCb)
+  fetch(URL_CELL_EDIT_PREFIX + appStore.projectUuid,
+    getAjaxRequestInit(
+      REQ_POST, { updated_cells: requestCells, verify: verify })
+  ).then(data => data.json())
+    .then(data => {
+      if (data.detail === 'ok') {
+        /*
+        let bodyPrefix: string
+        if (cells.length > 1) bodyPrefix = cells.length.toString() + ' cells '
+        else bodyPrefix = 'Cell '
+        if (notifyCb) notifyCb(bodyPrefix + 'updated', VARIANT_SUCCESS)
+        */
+        editStore.editDataUpdated = true
+        editStore.versionSaved = false
+        // Update other occurrences of cell in UI
+        for (const api of gridApis) {
+          updateCellUIValues(api, cells, true, false)
         }
+      } else if (data.detail === 'alert') {
+        // Handle verification alert from server
+        if (confirm(data.alert_msg)) {
+          // Call update again
+          updateCells(cells, false, notifyCb)
+        } else {
+          revertCellUpdate(gridApis, cells)
+        }
+      } else {
+        revertCellUpdate(
+          gridApis, cells, CELL_UPDATE_FAIL_PREFIX + data.detail, notifyCb)
       }
-    ).catch(function (error) {
-      revertCellUpdate(
-        gridApis, cells, CELL_UPDATE_ERR_PREFIX + error, notifyCb)
-    })
+    }
+  ).catch(function (error) {
+    revertCellUpdate(
+      gridApis, cells, CELL_UPDATE_ERR_PREFIX + error, notifyCb)
+  })
 }
 
 // Formerly handleNodeUpdate()
