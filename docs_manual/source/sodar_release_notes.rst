@@ -14,6 +14,7 @@ v1.3.1 (WIP)
 Release for minor updates, maintenance and bug fixes.
 
 - Upgrade to irods-docker v4.3.5-2 in CI
+- Minor updates and bug fixes
 
 
 v1.3.0 (2026-08-21)

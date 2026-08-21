@@ -202,12 +202,12 @@ class IrodsAccessTicketViewTestMixin:
         Query for iRODS access ticket allowed hosts.
 
         :param ticket_id: Ticket iRODS database ID
-        :return: list
+        :return: sorted list
         """
         query = self.irods.query(TicketQuery.AllowedHosts).filter(
             TicketQuery.AllowedHosts.ticket_id == ticket_id
         )
-        return [h[TicketQuery.AllowedHosts.host] for h in list(query)]
+        return sorted([h[TicketQuery.AllowedHosts.host] for h in list(query)])
 
     @classmethod
     def get_tl_event_count(cls, action: str) -> int:

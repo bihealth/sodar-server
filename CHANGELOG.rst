@@ -8,9 +8,17 @@ Changelog for the SODAR project. Loosely follows the
 Unreleased
 ==========
 
+Changed
+-------
+
 - **General**
     - Upgrade to irods-docker v4.3.5-2 in CI (#2514)
 
+Fixed
+-----
+
+- **Samplesheets**
+    - ``IrodsAccessTicketViewTestMixin.get_ticket_hosts()`` result order not guaranteed (#2445)
 
 v1.3.0 (2026-08-21)
 ===================
