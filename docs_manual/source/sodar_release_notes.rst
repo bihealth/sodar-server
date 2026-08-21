@@ -8,6 +8,14 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v1.3.1 (WIP)
+============
+
+Release for minor updates, maintenance and bug fixes.
+
+- Upgrade to irods-docker v4.3.5-2 in CI
+
+
 v1.3.0 (2026-08-21)
 ===================
 

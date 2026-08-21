@@ -5,6 +5,13 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+Unreleased
+==========
+
+- **General**
+    - Upgrade to irods-docker v4.3.5-2 in CI (#2514)
+
+
 v1.3.0 (2026-08-21)
 ===================
 
