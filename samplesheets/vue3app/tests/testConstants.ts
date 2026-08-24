@@ -14,6 +14,7 @@ export const TMP_UUID3: string =   '99999999-aaaa-bbbb-cccc-ffffffffffff'
 /* iRODS Collections and Paths ---------------------------------------------- */
 
 export const MISC_FILES_DIR: string = 'MiscFiles'
+export const RESULTS_REPORTS_DIR: string = 'ResultsReports'
 
 export const PROJECT_SAMPLE_PATH: string = '/sodarZone/projects/00/' +
   PROJECT_UUID + '/sample_data'

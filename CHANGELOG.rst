@@ -10,6 +10,7 @@ Unreleased
 
 - **Samplesheets**
     - Vue3app ``IrodsButtons`` WebDAV URL copy notification display (#2519)
+    - Vue3app ``IrodsButtons`` missing ``notifyCb`` props (#2520)
 
 Changed
 -------
@@ -18,7 +19,7 @@ Changed
     - Upgrade to irods-docker v4.3.5-2 in CI (#2514)
 - **Samplesheets**
     - Refactor vue3app ``fetch()`` calls (#2475)
-    - Refactor vue3app ``notifyCb()`` access (#2470)
+    - Refactor vue3app ``notifyCb`` access (#2470)
 
 Fixed
 -----

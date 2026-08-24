@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from 'vitest'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { config, mount, type VueWrapper } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
@@ -7,16 +7,28 @@ import AssayShortcutCard from '@/components/AssayShortcutCard.vue'
 import { useAppStore } from '@/stores/appStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
 import { type SheetAssayShortcuts, type SodarContext } from '@/types.ts'
+import { IRODS_PATH_COPY_MSG, VARIANT_INFO } from '@/constants.ts'
 
 import { copy } from '../testUtils.ts'
 import { sodarContext } from '../data/sodarContext.ts'
 import { assayShortcuts } from '../data/assayShortcuts.ts'
-import { ASSAY_UUID } from '../testConstants.ts'
+import {
+  ASSAY_PATH,
+  ASSAY_UUID,
+  RESULTS_REPORTS_DIR
+} from '../testConstants.ts'
 
 // Global Setup ----------------------------------------------------------------
 
 // Set up bootstrap-vue-next plugin to enable composable use
 config.global.plugins = [createBootstrap()]
+// Mock clipboard (NOTE: has to be done in module root)
+const mockCopy = vi.fn()
+vi.mock('@vueuse/core', async () => {
+  const actual = await vi.importActual('@vueuse/core')
+  return { ...actual, useClipboard: () => ({ copy: mockCopy }) }
+})
+const mockNotifyCb = vi.fn()
 
 // Tests -----------------------------------------------------------------------
 
@@ -27,8 +39,10 @@ describe('AssayShortcutCard.vue', () => {
   }
 
   beforeEach(() => {
+    vi.resetAllMocks()
     setActivePinia(createPinia())
     const appStore = useAppStore()
+    appStore.notifyCb = mockNotifyCb
     appStore.sodarContext = copy(sodarContext) as SodarContext
     const tableStore = useTableStore()
     tableStore.assayShortcuts = {
@@ -95,5 +109,15 @@ describe('AssayShortcutCard.vue', () => {
     const extraBtn = shortcuts[2]?.find('.sodar-irods-ticket-access-1-btn')
     expect(extraBtn?.exists()).toBe(true)
     // Extra link rendering details testsd in IrodsButtons tests
+  })
+
+  test('copy iRODS path to clipboard on button click', async () => {
+    expect(mockNotifyCb).not.toHaveBeenCalled()
+    const wrapper = mountComponent()
+    await wrapper.find('.sodar-ss-irods-copy-btn').trigger('click')
+    expect(mockCopy).toHaveBeenCalledWith(
+      `${ASSAY_PATH}/${RESULTS_REPORTS_DIR}`)
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      IRODS_PATH_COPY_MSG, VARIANT_INFO)
   })
 })

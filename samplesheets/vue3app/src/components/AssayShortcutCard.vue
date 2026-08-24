@@ -58,6 +58,7 @@ function getTextClass (shortcut: AssayShortcut): string {
             :irods-path="shortcut.path"
             :irods-status="appStore.sodarContext!.irods_status"
             :irods-webdav-url="appStore.sodarContext!.irods_webdav_url"
+            :notify-cb="appStore.notifyCb"
             :show-file-list="true">
         </IrodsButtons>
       </span>

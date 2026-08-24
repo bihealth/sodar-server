@@ -111,6 +111,7 @@ function getTitleTextClass (): string {
             :irods-path="tableContext!.irods_path"
             :irods-status="appStore.sodarContext!.irods_status"
             :irods-webdav-url="appStore.sodarContext!.irods_webdav_url"
+            :notify-cb="appStore.notifyCb"
             :show-file-list="false">
         </IrodsButtons>
       </span>

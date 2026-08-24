@@ -13,7 +13,7 @@ v1.3.1 (WIP)
 
 Release for minor updates, maintenance and bug fixes.
 
-- Add vue3app iRODS buttons WebDAV URL copy notification display
+- Add vue3app iRODS buttons clipboard copy notification displaying
 - Upgrade to irods-docker v4.3.5-2 in CI
 - Minor updates and bug fixes
 
