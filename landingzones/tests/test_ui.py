@@ -832,6 +832,12 @@ class TestProjectZoneView(ProjectLockMixin, LandingZoneUITestBase):
             By.ID, f'sodar-lz-zone-status-{zone.sodar_uuid}'
         )
         self.wait_for_status(zone_status, lc.ZONE_STATUS_MOVED)
+        # Wait for badge status just in case (see #2521)
+        for i in range(0, 25):
+            badge_class = valid_badge.get_attribute('class')
+            if 'badge-success' in badge_class:
+                break
+            time.sleep(0.5)
 
         badge_class = valid_badge.get_attribute('class')
         self.assertIn('badge-success', badge_class)

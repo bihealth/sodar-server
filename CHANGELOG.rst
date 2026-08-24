@@ -24,6 +24,8 @@ Changed
 Fixed
 -----
 
+- **Landingzones**
+    - ``test_render_validate_limit_update()`` sporadic CI failure (#2521)
 - **Samplesheets**
     - ``IrodsAccessTicketViewTestMixin.get_ticket_hosts()`` result order not guaranteed (#2445)
     - ``TestUpdateProjectCacheTask.test_update_cache()`` query order not enforced (#2402)
