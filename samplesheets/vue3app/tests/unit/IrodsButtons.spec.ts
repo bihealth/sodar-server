@@ -4,7 +4,11 @@ import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
 
 import IrodsButtons from '@/components/IrodsButtons.vue'
 import { type AssayShortcutExtraLink } from '@/types.ts'
-import { IRODS_PATH_COPY_MSG, VARIANT_INFO } from '@/constants.ts'
+import {
+  IRODS_PATH_COPY_MSG,
+  VARIANT_INFO,
+  WEBDAV_URL_COPY_MSG
+} from '@/constants.ts'
 
 import { copy } from '../testUtils.ts'
 import { ticketLink } from '../data/assayShortcuts.ts'
@@ -36,13 +40,6 @@ const mockCopy = vi.fn()
 vi.mock('@vueuse/core', async () => {
   const actual = await vi.importActual('@vueuse/core')
   return { ...actual, useClipboard: () => ({ copy: mockCopy }) }
-})
-
-// Replace useToast with mock
-// TODO: Remove once the component is updated to use NotifyCb
-vi.mock('bootstrap-vue-next', async () => {
-  const actual = await vi.importActual('bootstrap-vue-next')
-  return { ...actual, useToast: () => ({ create: vi.fn(), show: vi.fn() }) }
 })
 
 // Tests -----------------------------------------------------------------------
@@ -119,11 +116,11 @@ describe('IrodsButtons.vue', () => {
 
   test('open file dir modal on button click', async () => {
     const mockModal = { show: vi.fn() }
-    expect(mockModal.show).not.toBeCalled()
+    expect(mockModal.show).not.toHaveBeenCalled()
     props.irodsDirModalRef = mockModal
     const wrapper = mountComponent()
     await wrapper.find('.sodar-ss-irods-list-btn').trigger('click')
-    expect(mockModal.show).toBeCalled()
+    expect(mockModal.show).toHaveBeenCalled()
   })
 
   test('display extra link', async () => {
@@ -149,7 +146,7 @@ describe('IrodsButtons.vue', () => {
     expect(btn.attributes().disabled).not.toBeDefined()
   })
 
-  test('copy path to clipboard on button click', async () => {
+  test('copy iRODS path to clipboard on button click', async () => {
     props.notifyCb = vi.fn()
     expect(props.notifyCb).not.toHaveBeenCalled()
     const wrapper = mountComponent()
@@ -157,5 +154,16 @@ describe('IrodsButtons.vue', () => {
     expect(mockCopy).toHaveBeenCalledWith(props.irodsPath)
     expect(props.notifyCb).toHaveBeenCalledWith(
       IRODS_PATH_COPY_MSG, VARIANT_INFO)
+  })
+
+  test('copy WebDAV URL to clipboard on button click', async () => {
+    props.notifyCb = vi.fn()
+    expect(props.notifyCb).not.toHaveBeenCalled()
+    const wrapper = mountComponent()
+    await wrapper.find('.sodar-irods-copy-dav-btn').trigger('click')
+    expect(mockCopy).toHaveBeenCalledWith(
+      props.irodsWebdavUrl + props.irodsPath)
+    expect(props.notifyCb).toHaveBeenCalledWith(
+      WEBDAV_URL_COPY_MSG, VARIANT_INFO)
   })
 })

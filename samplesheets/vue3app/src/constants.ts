@@ -160,6 +160,7 @@ export const EDIT_REGEX: { [key: string]: RegExp } = {
 // Browse mode text labels
 export const COPY_MSG_SUFFIX = ' copied into clipboard'
 export const IRODS_PATH_COPY_MSG = 'iRODS path copied into clipboard'
+export const WEBDAV_URL_COPY_MSG = 'WebDAV URL copied into clipboard'
 
 // Edit mode text labels
 export const CELL_NODE_NAME_NEW = 'Enter name of new or existing node'

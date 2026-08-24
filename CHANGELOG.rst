@@ -8,6 +8,9 @@ Changelog for the SODAR project. Loosely follows the
 Unreleased
 ==========
 
+- **Samplesheets**
+    - Vue3app ``IrodsButtons`` WebDAV URL copy notification display (#2519)
+
 Changed
 -------
 
