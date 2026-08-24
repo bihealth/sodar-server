@@ -372,7 +372,6 @@ export function getHeaderEditRendererParams (
     studyNodeLen: number,
     editable: boolean,
     colConfigModal: TemplateRef,
-    notifyCb: NotifyCb | undefined,
 ): HeaderEditRendererParamInput {
   let configAssayUuid = assayMode ? tableUuid : null
   let configNodeIdx = nodeIdx
@@ -391,7 +390,6 @@ export function getHeaderEditRendererParams (
     editable: editable, // Add here to allow checking by cell
     headerType: fieldHeader.type as string,
     modalRef: colConfigModal,
-    notifyCb: notifyCb,
     objCls: fieldHeader.obj_cls,
   }
   if (fieldHeader.item_type) ret.itemType = fieldHeader.item_type
@@ -599,8 +597,7 @@ export function buildColDef (
             configFieldIdx,
             params.studyNodeLen,
             fieldEditable,
-            params.colConfigModal as TemplateRef,
-            params.notifyCb
+            params.colConfigModal as TemplateRef
           )
           header.width = header.width! + 20 // Fit button in header
           header.minWidth = header.minWidth! + 20
@@ -628,7 +625,7 @@ export function buildColDef (
             editConfigField: editConfigField,
             fieldHeader: fieldHeader,
             fieldId: header.field,
-            notifyCb: params.notifyCb,
+            notifyCb: params.notifyCb, // TODO: Fix (see #2518)
             ontologyEditModal: params.ontologyEditModal,
             sampleColId: params.sampleColId,
             tableUuid: tableUuid
@@ -667,7 +664,6 @@ export function buildColDef (
   if (params.editMode) {
     const rowEditHeaderParams: RowEditRendererParamInput = {
       assayMode: assayMode,
-      notifyCb: params.notifyCb,
       tableUuid: tableUuid
     }
     colDef.push(getRowEditHeaderGroup(rowEditHeaderParams))

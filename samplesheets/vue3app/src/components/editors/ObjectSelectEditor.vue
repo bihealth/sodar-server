@@ -114,7 +114,7 @@ onUnmounted(() => {
         uuidRef: editUuid.value,
         value: newValue,
       }
-      updateCells(cellEditData, true, params.notifyCb)
+      updateCells(cellEditData, true)
     }
   }
 })

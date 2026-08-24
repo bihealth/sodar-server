@@ -15,6 +15,7 @@ import {
 import { useClipboard } from '@vueuse/core'
 
 import ModalHeader from '@/components/modals/ModalHeader.vue'
+import { useAppStore } from '@/stores/appStore.ts'
 import { useEditStore } from '@/stores/editStore.ts'
 import { getAjaxRequestInit } from '@/utils/appUtils.ts'
 import { updateCells } from '@/utils/editUtils.ts'
@@ -39,6 +40,7 @@ import {
 
 const clipboard = useClipboard()
 const modalRef = useTemplateRef('ontologyEditModal')
+const appStore = useAppStore()
 const editStore = useEditStore()
 
 // Refs ------------------------------------------------------------------------
@@ -105,8 +107,9 @@ function copyValue () {
   clipboard.copy(JSON.stringify(cellData.value!.value))
   let s = ''
   if (cellData.value?.value.length !== 1) s = 's'
-  if (params.notifyCb) {
-    params.notifyCb(`Ontology term${s} copied into clipboard`, VARIANT_SUCCESS)
+  if (appStore.notifyCb) {
+    appStore.notifyCb(
+      `Ontology term${s} copied into clipboard`, VARIANT_SUCCESS)
   }
 }
 
@@ -246,8 +249,8 @@ function onPasteInput () {
   try {
     val = JSON.parse(pasteData.value)
   } catch (error) {
-    if (params.notifyCb) {
-      params.notifyCb('Error parsing pasted terms: ' + error, VARIANT_DANGER)
+    if (appStore.notifyCb) {
+      appStore.notifyCb('Error parsing pasted terms: ' + error, VARIANT_DANGER)
       pasteOk = false
     }
   }
@@ -256,8 +259,8 @@ function onPasteInput () {
     for (let i = 0; i < val.length; i++) {
       if (!editConfig.value?.ontologies?.includes(
           val[i]?.ontology_name as string)) {
-        if (params.notifyCb) {
-          params.notifyCb(
+        if (appStore.notifyCb) {
+          appStore.notifyCb(
             'Ontology not allowed: ' + (val[i]?.ontology_name as string),
             VARIANT_DANGER)
         }
@@ -267,17 +270,17 @@ function onPasteInput () {
     }
   }
   if (val && pasteOk && !editConfig.value?.allow_list && val.length > 1) {
-    if (params.notifyCb) {
-      params.notifyCb('List of terms not allowed', VARIANT_DANGER)
+    if (appStore.notifyCb) {
+      appStore.notifyCb('List of terms not allowed', VARIANT_DANGER)
     }
     pasteOk = false
   }
   if (pasteOk) {
     cellData.value!.value = val
-    if (params.notifyCb) {
+    if (appStore.notifyCb) {
       let s = ''
       if (val.length !== 1) s = 's'
-      params.notifyCb(`Ontology term${s} replaced`, VARIANT_SUCCESS)
+      appStore.notifyCb(`Ontology term${s} replaced`, VARIANT_SUCCESS)
     }
     updated.value = true
   }
@@ -506,7 +509,7 @@ function hideModal (save: boolean) {
       uuid: cellData.value?.uuid,
       value: cellData.value?.value as SheetTableCellDataValue
     }
-    updateCells(cellEditData, true, params.notifyCb)
+    updateCells(cellEditData, true)
   }
   params.api.stopEditing(!save)
   modalRef.value?.hide()

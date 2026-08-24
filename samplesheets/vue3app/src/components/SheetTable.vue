@@ -23,7 +23,6 @@ const tableStore = useTableStore()
 const props = defineProps([
   'assayMode',
   'colToggleModalRef',
-  'notifyCb',
   'tableUuid',
 ])
 
@@ -122,8 +121,7 @@ function onRowInsert () {
                 class="sodar-ss-table-header-btn sodar-ss-column-toggle-btn"
                 variant="secondary"
                 :title="'Toggle ' + tableType + ' column visibility'"
-                @click="colToggleModalRef.show(
-                        tableUuid, assayMode, notifyCb)">
+                @click="colToggleModalRef.show(tableUuid, assayMode)">
               <i class="iconify" data-icon="mdi:eye"></i>
             </BButton>
             <BButton
@@ -149,7 +147,6 @@ function onRowInsert () {
     <div class="card-body p-0">
       <AgGridDragSelect
           :assay-mode="assayMode"
-          :notify-cb="notifyCb"
           :tableUuid="tableUuid">
         <AgGridVue
             v-if="colDefs && rowData"
@@ -190,7 +187,6 @@ div.sodar-ss-data-card-title {
   height: 30px;
   padding-top: 3px;
 }
-
 .sodar-ss-header-input-group input {
   height: 30px;
 }

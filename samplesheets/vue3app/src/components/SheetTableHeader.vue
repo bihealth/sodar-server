@@ -9,7 +9,7 @@ import { useAppStore } from '@/stores/appStore.ts'
 // External Data ---------------------------------------------------------------
 
 const appStore = useAppStore()
-const props = defineProps(['assayMode', 'notifyCb', 'tableUuid'])
+const props = defineProps(['assayMode', 'tableUuid'])
 
 // Refs ------------------------------------------------------------------------
 
@@ -101,8 +101,7 @@ function getTitleTextClass (): string {
         <BButton
             class="sodar-list-btn btn-info sodar-ss-btn-table-detail mr-1"
             :title="tableTitle + ' details'"
-            @click="tableDetailModalComponent!.show(
-                    tableUuid, tableContext, notifyCb)">
+            @click="tableDetailModalComponent!.show(tableUuid, tableContext)">
           <i class="iconify" data-icon="mdi:information-slab-circle">
           </i>
         </BButton>

@@ -12,7 +12,6 @@ import { useAppStore } from '@/stores/appStore.ts'
 import { useEditStore } from '@/stores/editStore.ts'
 
 import { getAjaxRequestInit } from '@/utils/appUtils.ts'
-import { type NotifyCb } from '@/types.ts'
 import {
   EDIT_MSG_SAVE,
   EDIT_MSG_SAVE_ERR_PREFIX,
@@ -32,7 +31,6 @@ const editStore = useEditStore()
 
 const description = ref<string>('')
 const modalRef = useTemplateRef('versionSaveModal')
-let notifyCb: NotifyCb | undefined = undefined
 const showModal = ref<boolean>(false)
 
 // Internal Vars ---------------------------------------------------------------
@@ -48,23 +46,24 @@ function postSave () {
     .then(data => {
       if (data.detail === 'ok') {
         editStore.versionSaved = true
-        if (notifyCb) notifyCb(EDIT_MSG_SAVE, VARIANT_SUCCESS)
+        if (appStore.notifyCb) {
+          appStore.notifyCb(EDIT_MSG_SAVE, VARIANT_SUCCESS)
+        }
       } else {
         const msg = EDIT_MSG_SAVE_FAIL_PREFIX + data.detail
         console.error(msg)
-        if (notifyCb) notifyCb(msg, VARIANT_DANGER)
+        if (appStore.notifyCb) appStore.notifyCb(msg, VARIANT_DANGER)
       }
     }).catch(function (error) {
       const msg = EDIT_MSG_SAVE_ERR_PREFIX + error
       console.error(msg)
-      if (notifyCb) notifyCb(msg, VARIANT_DANGER)
+      if (appStore.notifyCb) appStore.notifyCb(msg, VARIANT_DANGER)
   })
 }
 
 // API and Life Cycle ----------------------------------------------------------
 
-function show (modalNotifyCb?: NotifyCb) {
-  notifyCb = modalNotifyCb
+function show () {
   showModal.value = true
 }
 

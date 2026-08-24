@@ -32,20 +32,17 @@ export interface IrodsStatsResponseBody {
 
 export interface SheetTableHeaderProps {
   assayMode: boolean
-  notifyCb?: NotifyCb
   tableUuid: string
 }
 
 export interface SheetTableProps {
   assayMode: boolean,
   colToggleModalRef: TemplateRef,
-  notifyCb?: NotifyCb,
   tableUuid: string
 }
 
 export interface TableDetailListProps {
   assayMode: boolean
-  notifyCb?: NotifyCb
   tableContext: SodarContextAssay | SodarContextStudy
   tableMetaFields: Array<Array<string>>
   tableSodarFields: Array<Array<string>>

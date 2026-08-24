@@ -148,12 +148,12 @@ export function deleteRow (params: RowDeleteParams) {
         r.setDataValue('rowNum', rowNum)
         rowNum += 1
       })
-      if (params.notifyCb) params.notifyCb('Row deleted', VARIANT_SUCCESS)
+      if (appStore.notifyCb) appStore.notifyCb('Row deleted', VARIANT_SUCCESS)
     } else {
       const msg = 'Row delete failed'
       console.error(
         `${msg}: ${(res as GenericResponseBody).detail}`)
-      if (params.notifyCb) params.notifyCb(msg, VARIANT_DANGER)
+      if (appStore.notifyCb) appStore.notifyCb(msg, VARIANT_DANGER)
     }
     if (params.finishCb) params.finishCb()
     editStore.updatingRow = false
@@ -640,11 +640,13 @@ export function saveRow (params: RowSaveParams) {
         editStore.unsavedRow = null
         editStore.editDataUpdated = true
         editStore.versionSaved = false
-        if (params.notifyCb) params.notifyCb('Row inserted', VARIANT_SUCCESS)
+        if (appStore.notifyCb) {
+          appStore.notifyCb('Row inserted', VARIANT_SUCCESS)
+        }
       } else {
         const msg = 'Row insert failed: ' + data.detail
         console.error(msg)
-        if (params.notifyCb) params.notifyCb(msg, VARIANT_DANGER)
+        if (appStore.notifyCb) appStore.notifyCb(msg, VARIANT_DANGER)
       }
       if (params.finishCb) params.finishCb()
       editStore.updatingRow = false
@@ -700,8 +702,7 @@ export function getNamePrefix (
 // Update one or multiple cells (formerly handleCellEdit())
 export function updateCells (
     cells: CellEditData | Array<CellEditData>,
-    verify: boolean,
-    notifyCb?: NotifyCb
+    verify: boolean
 ) {
   const appStore = useAppStore()
   const editStore = useEditStore()
@@ -742,7 +743,9 @@ export function updateCells (
         let bodyPrefix: string
         if (cells.length > 1) bodyPrefix = cells.length.toString() + ' cells '
         else bodyPrefix = 'Cell '
-        if (notifyCb) notifyCb(bodyPrefix + 'updated', VARIANT_SUCCESS)
+        if (appStore.notifyCb) {
+          appStore.notifyCb(bodyPrefix + 'updated', VARIANT_SUCCESS)
+        }
         */
         editStore.editDataUpdated = true
         editStore.versionSaved = false
@@ -754,18 +757,21 @@ export function updateCells (
         // Handle verification alert from server
         if (confirm(data.alert_msg)) {
           // Call update again
-          updateCells(cells, false, notifyCb)
+          updateCells(cells, false)
         } else {
           revertCellUpdate(gridApis, cells)
         }
       } else {
         revertCellUpdate(
-          gridApis, cells, CELL_UPDATE_FAIL_PREFIX + data.detail, notifyCb)
+          gridApis,
+          cells,
+          CELL_UPDATE_FAIL_PREFIX + data.detail,
+          appStore.notifyCb)
       }
     }
   ).catch(function (error) {
     revertCellUpdate(
-      gridApis, cells, CELL_UPDATE_ERR_PREFIX + error, notifyCb)
+      gridApis, cells, CELL_UPDATE_ERR_PREFIX + error, appStore.notifyCb)
   })
 }
 

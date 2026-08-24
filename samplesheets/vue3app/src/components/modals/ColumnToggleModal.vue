@@ -16,7 +16,6 @@ import { useTableStore } from '@/stores/tableStore.ts'
 
 import { getAjaxRequestInit } from '@/utils/appUtils.ts'
 import {
-  type NotifyCb,
   type SheetTableCellData,
   type SheetTableRowData,
   type StudyDisplayConfigNode,
@@ -58,7 +57,6 @@ let colDefs: Array<ColGroupDef>
 let colsUpdated: boolean = false
 const configUrl = URL_DISPLAY_CONFIG_PREFIX + appStore.currentStudyUuid
 let gridApi: GridApi
-let notifyCb: NotifyCb | undefined = undefined
 let rowData: Array<SheetTableRowData>
 
 // Helpers ---------------------------------------------------------------------
@@ -162,12 +160,12 @@ function postUpdate (setDefault: boolean) {
       if (data.detail === 'ok') {
         let toastBody = 'Display configuration saved'
         if (setDefault) toastBody += ' as default'
-        if (notifyCb) notifyCb(toastBody, VARIANT_SUCCESS)
+        if (appStore.notifyCb) appStore.notifyCb(toastBody, VARIANT_SUCCESS)
       }
     }).catch(function (error) {
       const msg = 'Error saving display config: ' + error.detail
       console.error(msg)
-      if (notifyCb) notifyCb(msg, VARIANT_DANGER)
+      if (appStore.notifyCb) appStore.notifyCb(msg, VARIANT_DANGER)
     })
 }
 
@@ -193,14 +191,12 @@ function updateFilter () {
 // Show modal
 function show (
     tableUuid: string,
-    assayMode: boolean,
-    modalNotifyCb?: NotifyCb
+    assayMode: boolean
 ) {
   checkVals.value = []
   colValueStatus = {}
   colsUpdated = false
   displayCols.value = []
-  notifyCb = modalNotifyCb
   const titleType = assayMode ? 'Assay' : 'Study'
   modalTitle.value = 'Toggle ' + titleType + ' Columns'
 

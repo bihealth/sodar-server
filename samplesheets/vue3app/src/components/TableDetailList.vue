@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import TableDetailListRow from '@/components/TableDetailListRow.vue'
+import { useAppStore } from '@/stores/appStore.ts'
 
 // External Data ---------------------------------------------------------------
 
 const props = defineProps([
     'assayMode',
-    'notifyCb',
     'tableUuid',
     'tableContext',
     'tableMetaFields',
     'tableSodarFields'
 ])
+const appStore = useAppStore()
 
 // Helpers ---------------------------------------------------------------------
 
@@ -60,7 +61,7 @@ function getMetaIconClass (): string {
         icon="mdi:code-braces"
         icon-class="text-secondary"
         :copy-button="true"
-        :notify-cb="props.notifyCb"
+        :notify-cb="appStore.notifyCb"
         title="SODAR metadata"
         row-class="sodar-ss-table-detail-row-sodar sodar-ss-table-detail-uuid">
     </TableDetailListRow>

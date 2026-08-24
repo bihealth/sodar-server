@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { nextTick, ref, watch } from 'vue'
-import { onMounted, onUnmounted } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 
 import { useAppStore } from '@/stores/appStore.ts'
 import { useEditStore } from '@/stores/editStore.ts'
@@ -10,7 +9,6 @@ import {
   type SheetTableCellData,
   type CellEditData,
   type GridCellEditorParams,
-  type NotifyCb,
   type SheetTableCellDataValue,
   type StudyEditConfigNodeField
 } from '@/types.ts'
@@ -38,7 +36,6 @@ const cellData = params.value as SheetTableCellData
 const editConfig = params.editConfigField as StudyEditConfigNodeField
 const headerType: string = params.fieldHeader.type as string
 const itemType: string | null = params.fieldHeader.item_type
-const notifyCb: NotifyCb | undefined = params.notifyCb
 
 // console.log('DataCellEditor params:')
 // console.dir(params)
@@ -276,7 +273,10 @@ onUnmounted(() => {
   // Check and reject invalid value
   if (!valid.value) {
     cellData.value = ogValue
-    if (notifyCb) notifyCb('Invalid cell value', VARIANT_DANGER)
+    // TODO: Fix (see #2518)
+    if (appStore.notifyCb) {
+      appStore.notifyCb('Invalid cell value', VARIANT_DANGER)
+    }
     // TODO: Implement and call finalization func
     return
   }
@@ -290,8 +290,9 @@ onUnmounted(() => {
       nameValues.includes(finalValue as string) &&
       !confirm(NODE_RENAME_MSG)) {
     cellData.value = ogValue
+    // TODO: Fix (see #2518)
+    if (appStore.notifyCb) appStore.notifyCb('Renaming cancelled', VARIANT_INFO)
     // TODO: Implement and call finalization func
-    if (params.notifyCb) params.notifyCb('Renaming cancelled', VARIANT_INFO)
   }
 
   if (nameColumn && (!cellData.uuid || cellData.newRow)) { // Update/init node
@@ -332,7 +333,7 @@ onUnmounted(() => {
       uuidRef: cellData.uuidRef,
       value: finalValue
     }
-    updateCells(cellEditData, true, notifyCb)
+    updateCells(cellEditData, true)
     // Update sample list if sample has been renamed
     if (headerType === EDIT_HEADER_TYPE_NAME &&
         params.fieldId === params.sampleColId) {

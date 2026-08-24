@@ -387,4 +387,6 @@ describe('saveRow()', () => {
     expect(editStore.updatingRow).toBe(false)
     expect(editStore.versionSaved).toBe(true)
   })
+
+  // TODO: Test notifyCb calls
 })

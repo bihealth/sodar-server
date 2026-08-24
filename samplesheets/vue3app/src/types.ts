@@ -492,7 +492,6 @@ export interface EditUnsavedRow {
 }
 
 // Header edit renderer params we input to ag-Grid
-// TODO: Ensure all critical fields are present
 export interface HeaderEditRendererParamInput {
   assayMode: boolean
   assayUuid: string | null
@@ -505,7 +504,6 @@ export interface HeaderEditRendererParamInput {
   headerType: string // TODO: Isn't this dupe for editConfigField.type?
   itemType?: string
   modalRef: TemplateRef
-  notifyCb?: NotifyCb
   objCls: string
 }
 
@@ -588,7 +586,6 @@ export interface EditConfigRequestBody {
 // Row edit renderer params we input to ag-grid
 export interface RowEditRendererParamInput {
   assayMode: boolean
-  notifyCb?: NotifyCb
   tableUuid: string
 }
 
@@ -611,7 +608,6 @@ export interface RowDeleteParams {
   api: GridApi
   assayMode: boolean
   finishCb?: RowEditFinishCb
-  notifyCb?: NotifyCb
   rowNode: IRowNode
   tableUuid: string
 }
@@ -619,7 +615,6 @@ export interface RowDeleteParams {
 export interface RowInsertParams {
   api: GridApi
   assayMode: boolean
-  notifyCb?: NotifyCb
   tableUuid: string
 }
 
@@ -695,7 +690,6 @@ export interface RowSaveParams {
   api: GridApi
   assayMode: boolean
   finishCb?: RowEditFinishCb
-  notifyCb?: NotifyCb
   rowNode: IRowNode
   saveData: RowSaveData
 }

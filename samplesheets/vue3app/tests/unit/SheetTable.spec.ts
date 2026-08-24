@@ -61,8 +61,6 @@ const excelBtnSel = '.sodar-ss-excel-export-btn'
 ModuleRegistry.registerModules([AllCommunityModule])
 // TODO: How to expose renderers globally for ag-grid? (see warnings)
 
-const mockNotifyCb = vi.fn()
-
 // Tests -----------------------------------------------------------------------
 
 describe('SheetTable.vue', () => {
@@ -71,7 +69,6 @@ describe('SheetTable.vue', () => {
     props = {
       assayMode: assayMode,
       colToggleModalRef: mockModal as unknown as TemplateRef,
-      notifyCb: mockNotifyCb,
       tableUuid: tableUuid
     }
     // NOTE: Testing with shallowMount() as there are issues with exposing

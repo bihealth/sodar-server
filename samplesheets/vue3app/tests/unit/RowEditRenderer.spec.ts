@@ -5,6 +5,7 @@ import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
 import { type GridApi } from 'ag-grid-community'
 
 import RowEditRenderer from '@/components/renderers/RowEditRenderer.vue'
+import { useAppStore } from '@/stores/appStore.ts'
 import { useEditStore } from '@/stores/editStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
 import { deleteRow, getRowSaveData, saveRow } from '@/utils/editUtils.ts'
@@ -66,7 +67,6 @@ const saveBtnSel = '.sodar-ss-row-save-btn'
 // Global Setup ----------------------------------------------------------------
 
 config.global.plugins = [createBootstrap()]
-
 vi.mock('@/utils/editUtils.ts', async () => {
   const actual = await vi.importActual('@/utils/editUtils.ts')
   return {
@@ -76,6 +76,7 @@ vi.mock('@/utils/editUtils.ts', async () => {
     saveRow: vi.fn()
   }
 })
+const mockNotifyCb = vi.fn()
 
 // Tests -----------------------------------------------------------------------
 
@@ -132,6 +133,8 @@ describe('RowEditRenderer.vue', () => {
     vi.resetAllMocks()
     setActivePinia(createPinia())
 
+    const appStore = useAppStore()
+    appStore.notifyCb = mockNotifyCb
     const editStore = useEditStore()
     editStore.unsavedRow = null
     editStore.updatingRow = false
@@ -139,13 +142,11 @@ describe('RowEditRenderer.vue', () => {
       studyTablesEdit.edit_context) as StudyEditContext
     editStore.editContext.samples = {
       [sampleUuid]: { name: '0814-N1', assays: [] } }
-
     const tableStore = useTableStore()
     tableStore.sampleColId = sampleColId
 
     params = copy(defaultParams) as RowEditRendererParams
     params.api = getMockGridApi()
-    params.notifyCb = vi.fn()
     rowCount = 2
 
     const fetchData = { detail: AJAX_RES_OK }
@@ -345,7 +346,7 @@ describe('RowEditRenderer.vue', () => {
 
     expect(getRowSaveData).not.toHaveBeenCalled()
     expect(saveRow).not.toHaveBeenCalled()
-    expect(params.notifyCb).toHaveBeenCalledWith(
+    expect(mockNotifyCb).toHaveBeenCalledWith(
       ROW_SAVE_MSG_IDENTICAL, VARIANT_DANGER)
   })
 

@@ -41,7 +41,7 @@ describe('VersionSaveModal.vue', () => {
     )
     // Mount and return
     const wrapper = mount(VersionSaveModal)
-    wrapper.vm.show(mockNotifyCb)
+    wrapper.vm.show()
     await nextTick() // Must wait for all reactive vals to update
     return wrapper
   }
@@ -51,6 +51,7 @@ describe('VersionSaveModal.vue', () => {
 
     setActivePinia(createPinia())
     const appStore = useAppStore()
+    appStore.notifyCb = mockNotifyCb
     appStore.projectUuid = PROJECT_UUID
     appStore.sodarContext = { csrf_token: 'DummyToken' } as SodarContext
     const editStore = useEditStore()

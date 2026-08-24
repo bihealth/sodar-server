@@ -139,7 +139,6 @@ function onDelete () {
       api: params.api,
       assayMode: params.assayMode,
       finishCb: finishUpdateCb,
-      notifyCb: params.notifyCb,
       rowNode: params.node,
       tableUuid: params.tableUuid
     })
@@ -161,7 +160,7 @@ function onSave () {
   })
   if (newRowNodes && oldRowNodes.includes(newRowNodes)) {
     const msg = ROW_SAVE_MSG_IDENTICAL
-    if (params.notifyCb) params.notifyCb(msg, VARIANT_DANGER)
+    if (appStore.notifyCb) appStore.notifyCb(msg, VARIANT_DANGER)
     console.error(msg)
     inserting.value = false
     return
@@ -179,7 +178,6 @@ function onSave () {
     api: params.api,
     assayMode: params.assayMode,
     finishCb: finishUpdateCb,
-    notifyCb: params.notifyCb,
     rowNode: params.node,
     saveData: saveData,
   })

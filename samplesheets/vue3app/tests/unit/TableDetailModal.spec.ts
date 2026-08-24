@@ -40,6 +40,7 @@ describe('TableDetailModal.vue', () => {
     setActivePinia(createPinia())
     const appStore = useAppStore()
     appStore.currentStudyUuid = STUDY_UUID
+    appStore.notifyCb = mockNotifyCb
   })
 
   async function showModal (
@@ -47,7 +48,7 @@ describe('TableDetailModal.vue', () => {
       context: SodarContextAssay | SodarContextStudy
   ): Promise<VueWrapper> {
     const wrapper = mount(TableDetailModal)
-    wrapper.vm.show(tableUuid, context, mockNotifyCb)
+    wrapper.vm.show(tableUuid, context)
     await nextTick() // Must wait for all reactive vals to update
     return wrapper
   }

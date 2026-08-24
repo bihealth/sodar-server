@@ -1896,4 +1896,5 @@ describe('ColumnConfigModal.vue', () => {
 
   // TODO: Figure out how to assert checkbox states
   // TODO: Support/test other contact types than performer?
+  // TODO: Test notifyCb calls
 })

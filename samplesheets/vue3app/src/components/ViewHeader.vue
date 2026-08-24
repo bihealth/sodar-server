@@ -16,7 +16,6 @@ import { useEditStore } from '@/stores/editStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
 
 import { getAjaxRequestInit } from '@/utils/appUtils.ts'
-import { getNotifyCb } from '@/utils/notifyCb.ts'
 import {
   AJAX_RES_OK,
   EDIT_BADGE_DEFAULT_LABEL,
@@ -48,7 +47,6 @@ const tableStore = useTableStore()
 // NOTE: This component is outside StudyView and we can't init this in App.vue
 //       outside BApp, hence local init is necessary
 const { create } = useToast()
-const notifyCb = getNotifyCb(create)
 
 // Refs ------------------------------------------------------------------------
 
@@ -287,7 +285,7 @@ function truncate (s: string, maxLen: number): string {
           class="mr-1"
           title="Save current sheet version as backup"
           :disabled="editStore.versionSaved"
-          @click="versionSaveCompRef!.show(notifyCb)">
+          @click="versionSaveCompRef!.show()">
         <i class="iconify" data-icon="mdi:content-save-all"></i>
       </BButton>
       <!-- Operations dropdown -->

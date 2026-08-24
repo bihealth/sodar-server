@@ -51,9 +51,9 @@ const appStore = useAppStore()
 const editStore = useEditStore()
 const tableStore = useTableStore()
 
-// Init toasts
+// Init notify callback for bootstrap-vue-next toasts
 const { create } = useToast()
-const notifyCb = getNotifyCb(create)
+appStore.notifyCb = getNotifyCb(create)
 
 // Set up template references
 const colConfigCompRef = useTemplateRef('columnConfigModalComponent')
@@ -92,7 +92,7 @@ function buildStudy (data: RenderTableData) {
   const colDefBuildParams: ColDefBuildParams = {
     editMode: appStore.editMode,
     irodsDirModal: irodsDirCompRef,
-    notifyCb: notifyCb,
+    notifyCb: appStore.notifyCb,
     sampleColId: tableStore.sampleColId,
     sodarContext: appStore.sodarContext as SodarContext,
     studyEditConfig: tableStore.studyEditConfig,
@@ -225,13 +225,11 @@ onMounted(() => {
     <!-- Study -->
     <SheetTableHeader
         :assay-mode="false"
-        :notify-cb="notifyCb"
         :table-uuid="appStore.currentStudyUuid">
     </SheetTableHeader>
     <SheetTable
         :assay-mode="false"
         :col-toggle-modal-ref="colToggleCompRef"
-        :notify-cb="notifyCb"
         :table-uuid="appStore.currentStudyUuid">
     </SheetTable>
     <!-- Assays -->
@@ -243,7 +241,6 @@ onMounted(() => {
          :id="'assay-anchor-' + assayUuid.toString()"></a>
       <SheetTableHeader
           :assay-mode="true"
-          :notify-cb="notifyCb"
           :table-uuid="assayUuid">
       </SheetTableHeader>
       <AssayShortcutCard
@@ -257,7 +254,6 @@ onMounted(() => {
       <SheetTable
           :assay-mode="true"
           :col-toggle-modal-ref="colToggleCompRef"
-          :notify-cb="notifyCb"
           :table-uuid="assayUuid">
       </SheetTable>
     </div>

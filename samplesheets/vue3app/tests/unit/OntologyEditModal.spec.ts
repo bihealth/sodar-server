@@ -152,13 +152,6 @@ vi.mock('@vueuse/core', async () => {
   return { ...actual, useClipboard: () => ({ copy: mockCopy }) }
 })
 
-// Replace useToast with mock
-// TODO: Remove once the component is updated to use NotifyCb
-vi.mock('bootstrap-vue-next', async () => {
-  const actual = await vi.importActual('bootstrap-vue-next')
-  return { ...actual, useToast: () => ({ create: vi.fn(), show: vi.fn() }) }
-})
-
 // Tests -----------------------------------------------------------------------
 
 describe('OntologyEditModal.vue', () => {
@@ -1177,4 +1170,5 @@ describe('OntologyEditModal.vue', () => {
 
   // TODO: Test state reset on modal reopen
   // TODO: Test title with node name (needs mocked api or real grid)
+  // TODO: Test notifyCb calls
 })

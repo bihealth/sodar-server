@@ -287,4 +287,5 @@ describe('editUtils deleteRow()', () => {
   })
 
   // TODO: Test with extra nodes to ensure they get added to ajax request
+  // TODO: Test notifyCb calls
 })

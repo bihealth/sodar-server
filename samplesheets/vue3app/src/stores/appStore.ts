@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 
-import { type SodarContext } from '@/types.ts'
+import { type NotifyCb, type SodarContext } from '@/types.ts'
 
 const windowsPlatforms = /(win32|win64|windows|wince)/i
 
@@ -12,6 +12,7 @@ export const useAppStore = defineStore('app', () => {
   const editMode = ref<boolean>(false)
   const gridsBusy = ref<boolean>(false)
   const gridsLoaded = ref<boolean>(false)
+  const notifyCb = ref<NotifyCb | undefined>(undefined)
   const projectUuid = ref<string | null>(null)
   const selectEnabled = ref<boolean>(true)
   const sodarContext = ref<SodarContext | null>(null)
@@ -45,6 +46,7 @@ export const useAppStore = defineStore('app', () => {
     editMode,
     gridsBusy,
     gridsLoaded,
+    notifyCb,
     projectUuid,
     selectEnabled,
     sodarContext,

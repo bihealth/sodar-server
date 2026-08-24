@@ -44,7 +44,6 @@ config.global.stubs = {
 describe('SheetTableHeader.vue', () => {
   function mountComponent (propVals: SheetTableHeaderProps): VueWrapper {
     const props = copy(propVals) as SheetTableHeaderProps
-    props.notifyCb = vi.fn()
     return mount(SheetTableHeader, { props: props })
   }
 

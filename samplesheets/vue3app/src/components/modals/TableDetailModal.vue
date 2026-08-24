@@ -11,11 +11,7 @@ import {
   ASSAY_META_FIELDS,
   ASSAY_SODAR_FIELDS,
 } from '@/constants.ts'
-import {
-  type NotifyCb,
-  type SodarContextAssay,
-  type SodarContextStudy,
-} from '@/types.ts'
+import { type SodarContextAssay, type SodarContextStudy } from '@/types.ts'
 
 // External Data ---------------------------------------------------------------
 
@@ -32,18 +28,12 @@ const tableTitle = ref<string>('')
 const tableUuid = ref<string>('')
 const showModal = ref<boolean>(false)
 
-// Internal Vars ---------------------------------------------------------------
-
-let notifyCb: NotifyCb | undefined = undefined
-
 // API and Life Cycle ----------------------------------------------------------
 
 function show (
     uuid: string,
-    context: SodarContextAssay | SodarContextStudy,
-    modalNotifyCb?: NotifyCb,
+    context: SodarContextAssay | SodarContextStudy
 ) {
-  notifyCb = modalNotifyCb
   tableContext.value = context
   tableUuid.value = uuid
   if (tableUuid.value === appStore.currentStudyUuid) {
@@ -78,7 +68,6 @@ defineExpose({ show })
     <div id="sodar-ss-table-detail-modal-content">
       <TableDetailList
           :assay-mode="assayMode"
-          :notify-cb="notifyCb"
           :table-context="tableContext"
           :table-meta-fields="metaFields"
           :table-sodar-fields="sodarFields"
