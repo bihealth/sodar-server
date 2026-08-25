@@ -36,14 +36,14 @@ SECURE_CONTENT_TYPE_NOSNIFF = env.bool(
 )
 SECURE_BROWSER_XSS_FILTER = True
 SESSION_COOKIE_SECURE = True
-SESSION_COOKIE_HTTPONLY = False  # Must be False for Martor previews
+SESSION_COOKIE_HTTPONLY = True
 SECURE_SSL_REDIRECT = env.bool('DJANGO_SECURE_SSL_REDIRECT', True)
 SECURE_REDIRECT_EXEMPT = env.list(
     'DJANGO_SECURE_REDIRECT_EXEMPT',
     default=['/taskflow/', r'^irodsbackend/api/auth$'],
 )
 CSRF_COOKIE_SECURE = True
-CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = False  # Must be False for Martor previews
 CSRF_TRUSTED_ORIGINS = env.list('DJANGO_CSRF_TRUSTED_ORIGINS', default=[])
 CSRF_COOKIE_DOMAIN = env.str('DJANGO_CSRF_COOKIE_DOMAIN', None)
 
