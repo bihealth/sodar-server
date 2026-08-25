@@ -15,6 +15,7 @@ Release for minor updates, maintenance and bug fixes.
 
 - Add vue3app iRODS buttons clipboard copy notification displaying
 - Upgrade to irods-docker v4.3.5-2 in CI
+- Fix Markdown previews in production deployments
 - Minor updates and bug fixes
 
 

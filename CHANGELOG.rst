@@ -24,6 +24,8 @@ Changed
 Fixed
 -----
 
+- **General**
+    - ``SESSION_COOKIE_HTTPONLY=True`` breaking Markdown previews (#2523)
 - **Landingzones**
     - ``test_render_validate_limit_update()`` sporadic CI failure (#2521)
 - **Samplesheets**
