@@ -8,6 +8,11 @@ Changelog for the SODAR project. Loosely follows the
 Unreleased
 ==========
 
+Added
+-----
+
+- **Irodsbackend**
+    - ``updateCollectionStats()`` error displaying (#2524)
 - **Samplesheets**
     - Vue3app ``IrodsButtons`` WebDAV URL copy notification display (#2519)
     - Vue3app ``IrodsButtons`` missing ``notifyCb`` props (#2520)
