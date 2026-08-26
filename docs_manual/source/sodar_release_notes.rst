@@ -15,6 +15,7 @@ Release for minor updates, maintenance and bug fixes.
 
 - Add iRODS statistics badge error displaying
 - Add vue3app iRODS buttons clipboard copy notification displaying
+- Upgrade to SODAR Core v1.4.4
 - Upgrade to irods-docker v4.3.5-2 in CI
 - Fix Markdown previews in production deployments
 - Minor updates and bug fixes

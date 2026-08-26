@@ -21,6 +21,7 @@ Changed
 -------
 
 - **General**
+    - Upgrade to django-sodar-core v1.4.4 (#2526)
     - Upgrade to irods-docker v4.3.5-2 in CI (#2514)
 - **Samplesheets**
     - Refactor vue3app ``fetch()`` calls (#2475)
