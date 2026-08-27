@@ -41,6 +41,12 @@ Fixed
     - ``IrodsAccessTicketViewTestMixin.get_ticket_hosts()`` result order not guaranteed (#2445)
     - ``TestUpdateProjectCacheTask.test_update_cache()`` query order not enforced (#2402)
 
+Removed
+-------
+
+- **General**
+    - ``.pylintrc`` file (#2522)
+
 
 v1.3.0 (2026-08-21)
 ===================
