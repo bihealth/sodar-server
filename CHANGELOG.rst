@@ -23,6 +23,8 @@ Changed
 - **General**
     - Upgrade to django-sodar-core v1.4.4 (#2526)
     - Upgrade to irods-docker v4.3.5-2 in CI (#2514)
+- **Landingzones**
+    - Update ``zone_access_restrict`` validation testing on project create (#2354)
 - **Samplesheets**
     - Refactor vue3app ``fetch()`` calls (#2475)
     - Refactor vue3app ``notifyCb`` access (#2470)

@@ -533,6 +533,9 @@ class TestValidateFormAppSettings(LandingzonesPluginTestBase):
             {ZONE_ACCESS_RESTRICT: ACCESS_RESTRICT_NO_ROLE_MSG},
         )
 
+    # NOTE: For testing validation with new project under creation, see
+    #       test_project_views
+
     # TODO: Fix
     '''
     def test_validate_restrict_no_role_new_project(self):
