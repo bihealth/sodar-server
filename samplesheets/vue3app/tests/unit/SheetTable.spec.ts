@@ -81,10 +81,8 @@ describe('SheetTable.vue', () => {
     setActivePinia(createPinia())
     const appStore = useAppStore()
     appStore.editMode = false
-
     context = copy(sodarContext) as SodarContext
     tables = copy(studyTables) as RenderTableData
-
     // Suppress ag-grid warnings
     vi.spyOn(console, 'warn').mockImplementation(() => undefined)
   })

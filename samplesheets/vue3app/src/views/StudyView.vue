@@ -37,7 +37,6 @@ import {
   type AssayShortcuts,
   type ColDefBuildParams,
   type RenderTableData,
-  type SodarContext,
   type StudyEditConfig,
   type StudyEditContext
 } from '@/types.ts'
@@ -90,30 +89,19 @@ function buildStudy (data: RenderTableData) {
   // Build study gridOptions, columnDefs and rowData
   tableStore.gridOptions.study = initGridOptions({}, appStore.editMode)
   const colDefBuildParams: ColDefBuildParams = {
-    editMode: appStore.editMode,
+    assayMode: false,
     irodsDirModal: irodsDirCompRef,
-    notifyCb: appStore.notifyCb,
-    sampleColId: tableStore.sampleColId,
-    sodarContext: appStore.sodarContext as SodarContext,
-    studyEditConfig: tableStore.studyEditConfig,
-    studyDisplayConfig: tableStore.studyDisplayConfig,
     studyNodeLen: data.tables.study.top_header.length,
     studyShortcutModal: studyShortcutCompRef,
-    studyUuid: appStore.currentStudyUuid,
+    table: data.tables.study,
+    tableUuid: appStore.currentStudyUuid,
   }
   if (appStore.editMode) {
     colDefBuildParams.colConfigModal = colConfigCompRef
-    colDefBuildParams.editContext = editStore.editContext as StudyEditContext
     colDefBuildParams.ontologyEditModal = ontologyEditCompRef
   }
-  tableStore.columnDefs.study = buildColDef(
-      data.tables.study, appStore.currentStudyUuid, false, colDefBuildParams
-  )
-  tableStore.rowData.study = buildRowData(
-      data.tables.study,
-      false,
-      appStore.editMode,
-      appStore.sodarContext as SodarContext)
+  tableStore.columnDefs.study = buildColDef(colDefBuildParams)
+  tableStore.rowData.study = buildRowData(data.tables.study, false)
 
   for (const assayUuid in data.tables.assays) {
     // Build assay gridOptions, columnDefs and rowData
@@ -121,13 +109,12 @@ function buildStudy (data: RenderTableData) {
       {}, appStore.editMode)
     const assayTable = data.tables.assays[assayUuid] as AssayRenderTable
     tableStore.columnDefs.assays[assayUuid] = buildColDef(
-        assayTable, assayUuid, true, colDefBuildParams)
-    tableStore.rowData.assays[assayUuid] = buildRowData(
-        assayTable,
-        true,
-        appStore.editMode,
-        appStore.sodarContext as SodarContext
-    )
+        Object.assign(colDefBuildParams, {
+          assayMode: true,
+          table: assayTable,
+          tableUuid: assayUuid
+        }))
+    tableStore.rowData.assays[assayUuid] = buildRowData(assayTable, true)
 
     // Get assay shortcuts
     if ('shortcuts' in (data.tables.assays[assayUuid] as AssayRenderTable)) {

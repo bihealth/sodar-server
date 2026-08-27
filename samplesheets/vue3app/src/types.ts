@@ -362,19 +362,23 @@ export interface TableHeights {
 /* Grid building ------------------------------------------------------------ */
 
 export interface ColDefBuildParams {
+  assayMode: boolean
   colConfigModal?: TemplateRef
-  editContext?: StudyEditContext
-  editMode: boolean
   irodsDirModal: TemplateRef
-  notifyCb?: NotifyCb
   ontologyEditModal?: TemplateRef
-  sampleColId: string
-  sodarContext: SodarContext
-  studyDisplayConfig: StudyDisplayConfig | null
-  studyEditConfig: StudyEditConfig | null
   studyNodeLen: number
   studyShortcutModal: TemplateRef
-  studyUuid: string
+  table: AssayRenderTable | StudyRenderTable
+  tableUuid: string
+}
+
+export interface ColWidthGetParams {
+  colIdx: number
+  colType: string
+  lastVis: number
+  maxColWidth: number
+  minColWidth: number
+  maxValueLen: number
 }
 
 export interface DataCellRendererParams {
@@ -386,6 +390,49 @@ export interface DataCellRendererParams {
   linkLabels: { [key: string]: string | SodarContextLinkLabel }
   node?: IRowNode
   value?: SheetTableCellData
+}
+
+export interface EditConfigFieldGetParams {
+  assayMode: boolean
+  fieldHeader: SheetTableFieldHeader
+  studyEditConfig: StudyEditConfig
+  tableUuid: string
+  topIdx: number
+}
+
+export interface FieldHeaderGetParams {
+  colAlign: string
+  colWidth: number
+  editMode: boolean
+  externalLinkLabels: { [key: string]: string | SodarContextLinkLabel }
+  fieldEditable: boolean
+  fieldHeader: SheetTableFieldHeader
+  fieldIdx: number
+  fieldVisible: boolean
+  minColWidth: number
+}
+
+export interface FieldVisibilityGetParams {
+  assayMode: boolean
+  colValues: number | undefined
+  fieldEditable: boolean
+  fieldHeader: SheetTableFieldHeader
+  studyDisplayConfig: StudyDisplayConfig | null
+  studySection: boolean
+  tableUuid: string
+  topIdx: number
+}
+
+export interface HeaderEditRendererGetParams {
+  assayMode: boolean
+  colConfigModal: TemplateRef
+  configFieldIdx: number
+  editConfigField: StudyEditConfigNodeField
+  editable: boolean
+  fieldHeader: SheetTableFieldHeader
+  nodeIdx: number
+  studyNodeLen: number
+  tableUuid: string
 }
 
 export interface IrodsButtonsRendererParams {

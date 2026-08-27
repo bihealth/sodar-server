@@ -12,33 +12,37 @@ import {
   type ValueGetterParams,
 } from 'ag-grid-community'
 
+import { useAppStore } from '@/stores/appStore.ts'
+import { useTableStore } from '@/stores/tableStore.ts'
 import {
   type AssayIrodsPath,
   type AssayRenderTable,
   type CellEditorParamInput,
   type ColDefBuildParams,
+  type ColWidthGetParams,
   type DataCellRendererParams,
+  type EditConfigFieldGetParams,
+  type FieldHeaderGetParams,
+  type FieldVisibilityGetParams,
+  type HeaderEditRendererGetParams,
   type HeaderEditRendererParamInput,
   type NotifyCb,
   type RowEditRendererParamInput,
   type SheetTableCellData,
-  type SheetTableFieldHeader,
   type SheetTableOntologyRef,
   type SheetTableRowData,
   type SheetTableTopHeader,
   type SodarContext,
   type SodarContextAssay,
   type SodarContextLinkLabel,
-  type StudyDisplayConfig,
   type StudyDisplayConfigNode,
-  type StudyEditConfig,
   type StudyEditConfigNodeField,
   type StudyRenderTable,
   type StudyShortcut,
   type StudyShortcutCell
 } from '@/types.ts'
 
-/* Theme setup -------------------------------------------------------------- */
+// Theme setup -----------------------------------------------------------------
 
 const sodarTheme = themeQuartz.withParams({
   browserColorScheme: 'light',
@@ -58,7 +62,7 @@ const sodarTheme = themeQuartz.withParams({
   wrapperBorderRadius: 0
 })
 
-/* Grid setup helpers ------------------------------------------------------- */
+// Grid setup helpers ----------------------------------------------------------
 
 // Return header group ColGroupDef for row number column
 export function getRowNumHeaderGroup (): ColGroupDef {
@@ -201,25 +205,17 @@ export function getRowEditHeaderGroup (
 }
 
 // Return column width and minimum width
-// TODO: Refactor args into params object
-export function getColWidth (
-    colIdx: number,
-    colType: string,
-    maxValueLen: number,
-    lastVis: number,
-    minColWidth: number,
-    maxColWidth: number
-): [number, number] {
-  let minW: number = minColWidth
-  const maxW: number = maxColWidth
-  let calcW = maxValueLen * 10 + 25 // Default
+export function getColWidth (params: ColWidthGetParams): [number, number] {
+  let minW: number = params.minColWidth
+  const maxW: number = params.maxColWidth
+  let calcW = params.maxValueLen * 10 + 25 // Default
   let colW
   // External links are a special case
-  if (colType === 'EXTERNAL_LINKS') {
+  if (params.colType === 'EXTERNAL_LINKS') {
     minW = 150
-    calcW = maxValueLen * 120
+    calcW = params.maxValueLen * 120
   }
-  if (colIdx < lastVis) {
+  if (params.colIdx < params.lastVis) {
     colW = calcW < minW ? minW : (calcW > maxW ? maxW : calcW)
   } else { // Last visible column is a special case
     colW = Math.max(calcW, minW)
@@ -228,30 +224,20 @@ export function getColWidth (
 }
 
 // Return visibility for field column
-// TODO: Refactor args into params object
-export function getFieldVisibility (
-    tableUuid: string,
-    topIdx: number,
-    assayMode: boolean,
-    studySection: boolean,
-    fieldHeader: SheetTableFieldHeader,
-    fieldEditable: boolean,
-    colValues: number | undefined,
-    studyDisplayConfig: StudyDisplayConfig | null,
-): boolean {
+export function getFieldVisibility (params: FieldVisibilityGetParams): boolean {
   let displayConfig
-  if (studyDisplayConfig) {
+  if (params.studyDisplayConfig) {
     let displayNode: StudyDisplayConfigNode | undefined
-    if (!assayMode) {
-      displayNode = studyDisplayConfig.nodes[topIdx]
+    if (!params.assayMode) {
+      displayNode = params.studyDisplayConfig.nodes[params.topIdx]
     } else {
-      displayNode = studyDisplayConfig.assays[
-        tableUuid]!.nodes[topIdx]
+      displayNode = params.studyDisplayConfig.assays[
+        params.tableUuid]!.nodes[params.topIdx]
     }
     if (displayNode) {
       for (let k = 0; k < displayNode.fields.length; k++) {
         const f = displayNode.fields[k]
-        if (f!.name.toLowerCase() === fieldHeader.name.toLowerCase()) {
+        if (f!.name.toLowerCase() === params.fieldHeader.name.toLowerCase()) {
           displayConfig = f
           break
         }
@@ -260,38 +246,36 @@ export function getFieldVisibility (
   }
   if (displayConfig) { // Visibility from config
     return displayConfig.visible
-  } else if (assayMode && studySection && fieldHeader.value !== 'Name') {
+  } else if (params.assayMode &&
+        params.studySection &&
+        params.fieldHeader.value !== 'Name') {
     // Hide study data in assay
     return false
   } else { // Hide if empty and not editing
-    return !!(fieldEditable || colValues)
+    return !!(params.fieldEditable || params.colValues)
   }
 }
 
 // Return edit configuration for field column
 export function getEditConfigField (
-    tableUuid: string,
-    assayMode: boolean,
-    topIdx: number,
-    fieldHeader: SheetTableFieldHeader,
-    studyEditConfig: StudyEditConfig
+    params: EditConfigFieldGetParams
 ): StudyEditConfigNodeField | undefined {
   let editNode = null
-  const studyNodeLen = studyEditConfig.nodes.length
+  const studyNodeLen = params.studyEditConfig.nodes.length
   if (!studyNodeLen) return undefined
-  if (!assayMode || topIdx < studyNodeLen) {
-    editNode = studyEditConfig.nodes[topIdx]
+  if (!params.assayMode || params.topIdx < studyNodeLen) {
+    editNode = params.studyEditConfig.nodes[params.topIdx]
   } else {
-    editNode = studyEditConfig.assays[tableUuid]?.nodes[
-      topIdx - studyNodeLen]
+    editNode = params.studyEditConfig.assays[params.tableUuid]?.nodes[
+      params.topIdx - studyNodeLen]
   }
   if (editNode) {
     for (let k = 0; k < editNode.fields.length; k++) {
       const f = editNode.fields[k]
       if (f &&
-          f.name === fieldHeader.name &&
+          f.name === params.fieldHeader.name &&
           (['Name', 'Protocol'].includes(f.name) ||
-          f.type === fieldHeader.type)) {
+          f.type === params.fieldHeader.type)) {
         return f
       }
     }
@@ -300,32 +284,21 @@ export function getEditConfigField (
 }
 
 // Get field column header ColDef
-// TODO: Refactor args into params object
-export function getFieldHeader (
-    fieldHeader: SheetTableFieldHeader,
-    fieldIdx: number,
-    colAlign: string,
-    colWidth: number,
-    minColWidth: number,
-    fieldEditable: boolean,
-    fieldVisible: boolean,
-    editMode: boolean,
-    externalLinkLabels: { [key: string]: string | SodarContextLinkLabel }
-): ColDef {
+export function getFieldHeader (params: FieldHeaderGetParams): ColDef {
   const header: ColDef = {
-      headerName: fieldHeader.value,
-      field: 'col' + fieldIdx.toString(),
-      width: colWidth,
-      minWidth: minColWidth,
-      hide: !fieldVisible,
+      headerName: params.fieldHeader.value,
+      field: 'col' + params.fieldIdx.toString(),
+      width: params.colWidth,
+      minWidth: params.minColWidth,
+      hide: !params.fieldVisible,
       headerClass: ['sodar-ss-data-header'],
       cellDataType: 'object',
       cellRenderer: 'DataCellRenderer',
       cellRendererParams: {
-        colType: fieldHeader.col_type,
-        editMode: editMode,
-        fieldEditable: fieldEditable, // Needed here to update cellClass
-        linkLabels: externalLinkLabels
+        colType: params.fieldHeader.col_type,
+        editMode: params.editMode,
+        fieldEditable: params.fieldEditable, // Needed here to update cellClass
+        linkLabels: params.externalLinkLabels
       } as DataCellRendererParams,
       comparator: compareDataCellValues,
       context: {},
@@ -334,8 +307,8 @@ export function getFieldHeader (
     }
 
     // Cell classes
-    if (!editMode) {
-      header.cellClass = ['sodar-ss-data-cell', 'text-' + colAlign]
+    if (!params.editMode) {
+      header.cellClass = ['sodar-ss-data-cell', 'text-' + params.colAlign]
     } else { // Edit mode
       header.cellClass = function (p: CellClassParams): Array<string> {
         const colAlign = ['UNIT', 'NUMERIC'].includes(
@@ -359,40 +332,31 @@ export function getFieldHeader (
   return header
 }
 
-/* Grid setup edit mode helpers --------------------------------------------- */
+// Grid setup edit mode helpers ------------------------------------------------
 
-// TODO: Refactor args into params object
 export function getHeaderEditRendererParams (
-    tableUuid: string,
-    assayMode: boolean,
-    fieldHeader: SheetTableFieldHeader,
-    nodeIdx: number,
-    editConfigField: StudyEditConfigNodeField,
-    configFieldIdx: number,
-    studyNodeLen: number,
-    editable: boolean,
-    colConfigModal: TemplateRef,
+    params: HeaderEditRendererGetParams
 ): HeaderEditRendererParamInput {
-  let configAssayUuid = assayMode ? tableUuid : null
-  let configNodeIdx = nodeIdx
-  if (assayMode) {
-    if (configNodeIdx < studyNodeLen) configAssayUuid = null
-    else configNodeIdx = nodeIdx - studyNodeLen
+  let configAssayUuid = params.assayMode ? params.tableUuid : null
+  let configNodeIdx = params.nodeIdx
+  if (params.assayMode) {
+    if (configNodeIdx < params.studyNodeLen) configAssayUuid = null
+    else configNodeIdx = params.nodeIdx - params.studyNodeLen
   }
   const ret: HeaderEditRendererParamInput = {
-    assayMode: assayMode, // Needed for sample col in assay
+    assayMode: params.assayMode, // Needed for sample col in assay
     assayUuid: configAssayUuid,
     canEditConfig: true, // TODO: Is this redundant now?
-    colType: fieldHeader.col_type || null,
-    configFieldIdx: configFieldIdx,
+    colType: params.fieldHeader.col_type || null,
+    configFieldIdx: params.configFieldIdx,
     configNodeIdx: configNodeIdx,
-    editConfigField: editConfigField,
-    editable: editable, // Add here to allow checking by cell
-    headerType: fieldHeader.type as string,
-    modalRef: colConfigModal,
-    objCls: fieldHeader.obj_cls,
+    editConfigField: params.editConfigField,
+    editable: params.editable, // Add here to allow checking by cell
+    headerType: params.fieldHeader.type as string,
+    modalRef: params.colConfigModal,
+    objCls: params.fieldHeader.obj_cls,
   }
-  if (fieldHeader.item_type) ret.itemType = fieldHeader.item_type
+  if (params.fieldHeader.item_type) ret.itemType = params.fieldHeader.item_type
   return ret
 }
 
@@ -433,12 +397,12 @@ export function getCellEditor (
   return ret
 }
 
-/* Grid setup --------------------------------------------------------------- */
+// Grid setup ------------------------------------------------------------------
 
 // Initialize ag-grid gridOptions
 export function initGridOptions (
-  context: object,
-  editMode: boolean
+    context: object,
+    editMode: boolean
 ): GridOptions {
   return {
     animateRows: false,
@@ -463,19 +427,19 @@ export function initGridOptions (
 }
 
 // Build column definitions for a study/assay grid
-export function buildColDef (
-    table: AssayRenderTable | StudyRenderTable,
-    tableUuid: string,
-    assayMode: boolean,
-    params: ColDefBuildParams,
-): Array<ColGroupDef> {
-  // Default columns
+export function buildColDef (params: ColDefBuildParams): Array<ColGroupDef> {
+  const appStore = useAppStore()
+  const tableStore = useTableStore()
+
+  const assayMode = params.assayMode
+  const table = params.table
+  const tableUuid = params.tableUuid
   const colDef: Array<ColGroupDef> = []
 
   // Set up row column header group
   const rowHeaderGroup = getRowNumHeaderGroup()
   // Editing: gray out row column to avoid confusion
-  if (params.editMode) {
+  if (appStore.editMode) {
     const col = rowHeaderGroup.children[0] as ColDef
     if (col.cellClass?.constructor == Array) {
       col.cellClass?.push('bg-light')
@@ -522,51 +486,59 @@ export function buildColDef (
       if (['UNIT', 'NUMERIC'].includes(colType)) colAlign = 'right'
 
       // Get column width
-      const colWidthRes = getColWidth(
-        j,
-        colType,
-        maxValueLen,
-        table.col_last_vis,
-        params.sodarContext.min_col_width,
-        params.sodarContext.max_col_width)
+      const colWidthRes = getColWidth({
+        colIdx: j,
+        colType: colType,
+        lastVis: table.col_last_vis,
+        maxColWidth: appStore.sodarContext!.max_col_width,
+        minColWidth: appStore.sodarContext!.min_col_width,
+        maxValueLen: maxValueLen,
+      })
       const colWidth = colWidthRes[0]
       const minColWidth = colWidthRes[1]
 
       // Get editFieldConfig if editing
-      if (params.editMode && params.studyEditConfig) {
-        editConfigField = getEditConfigField(
-          tableUuid, assayMode, i, fieldHeader, params.studyEditConfig)
+      if (appStore.editMode && tableStore.studyEditConfig) {
+        editConfigField = getEditConfigField({
+          assayMode: assayMode,
+          fieldHeader: fieldHeader,
+          studyEditConfig: tableStore.studyEditConfig,
+          tableUuid: tableUuid,
+          topIdx: i,
+        })
       }
       if (editConfigField &&
           'editable' in editConfigField &&
           editConfigField.editable !== undefined) {
         fieldEditable = editConfigField.editable
       }
-      // if (params.editMode) fieldEditable = true // DEBUG
+      // if (appStore.editMode) fieldEditable = true // DEBUG
 
       // Get field column visibility
-      const fieldVisible = getFieldVisibility(
-        tableUuid,
-        i,
-        assayMode,
-        studySection,
-        fieldHeader,
-        fieldEditable,
-        table.col_values[j],
-        params.studyDisplayConfig)
+      const fieldVisible = getFieldVisibility({
+        assayMode: assayMode,
+        colValues: table.col_values[j],
+        fieldEditable: fieldEditable,
+        fieldHeader: fieldHeader,
+        studyDisplayConfig: tableStore.studyDisplayConfig,
+        studySection: studySection,
+        tableUuid: tableUuid,
+        topIdx: i,
+      })
 
       // Create field column header
-      const header = getFieldHeader(
-        fieldHeader,
-        j,
-        colAlign,
-        colWidth,
-        minColWidth,
-        fieldEditable,
-        fieldVisible,
-        params.editMode,
-        params.sodarContext.external_link_labels as {
-          [key: string]: string | SodarContextLinkLabel })
+      const header = getFieldHeader({
+        fieldHeader: fieldHeader,
+        fieldIdx: j,
+        colAlign: colAlign,
+        colWidth: colWidth,
+        minColWidth: minColWidth,
+        fieldEditable: fieldEditable,
+        fieldVisible: fieldVisible,
+        editMode: appStore.editMode,
+        externalLinkLabels: appStore.sodarContext!.external_link_labels as {
+          [key: string]: string | SodarContextLinkLabel }
+      })
 
       // Make source name column pinned, disable hover
       // HACK: also create new header group to avoid name duplication
@@ -583,22 +555,22 @@ export function buildColDef (
       }
 
       // Update header for edit mode
-      if (params.editMode) {
+      if (appStore.editMode) {
         // Set header renderer for fields we can manage
         // TODO: This perm check should be redundant now?
-        if (params.sodarContext.perms.edit_sheet) {
+        if (appStore.sodarContext!.perms.edit_sheet) {
           header.headerComponent = 'HeaderEditRenderer'
-          header.headerComponentParams = getHeaderEditRendererParams(
-            tableUuid,
-            assayMode,
-            fieldHeader,
-            i,
-            editConfigField as StudyEditConfigNodeField,
-            configFieldIdx,
-            params.studyNodeLen,
-            fieldEditable,
-            params.colConfigModal as TemplateRef
-          )
+          header.headerComponentParams = getHeaderEditRendererParams({
+            assayMode: assayMode,
+            colConfigModal: params.colConfigModal as TemplateRef,
+            configFieldIdx: configFieldIdx,
+            editConfigField: editConfigField as StudyEditConfigNodeField,
+            editable: fieldEditable,
+            fieldHeader: fieldHeader,
+            nodeIdx: i,
+            studyNodeLen: params.studyNodeLen,
+            tableUuid: tableUuid,
+          })
           header.width = header.width! + 20 // Fit button in header
           header.minWidth = header.minWidth! + 20
         }
@@ -625,9 +597,9 @@ export function buildColDef (
             editConfigField: editConfigField,
             fieldHeader: fieldHeader,
             fieldId: header.field,
-            notifyCb: params.notifyCb, // TODO: Fix (see #2518)
+            notifyCb: appStore.notifyCb, // TODO: Fix (see #2518)
             ontologyEditModal: params.ontologyEditModal,
-            sampleColId: params.sampleColId,
+            sampleColId: tableStore.sampleColId,
             tableUuid: tableUuid
           } as CellEditorParamInput
         }
@@ -643,25 +615,25 @@ export function buildColDef (
   }
 
   // Study shortcut column
-  if (!params.editMode && !assayMode && 'shortcuts' in table) {
+  if (!appStore.editMode && !assayMode && 'shortcuts' in table) {
     colDef.push(getStudyShortcutHeaderGroup(
         table as StudyRenderTable, params.studyShortcutModal))
   }
   // Assay iRODS button column
-  if (!params.editMode && assayMode) {
-    const assayContext = params.sodarContext.studies[
-      params.studyUuid]?.assays[tableUuid]
-    if (params.sodarContext.irods_status &&
+  if (!appStore.editMode && assayMode) {
+    const assayContext = appStore.sodarContext!.studies[
+      appStore.currentStudyUuid]?.assays[tableUuid]
+    if (appStore.sodarContext!.irods_status &&
         assayContext?.display_row_links) {
       colDef.push(getAssayIrodsHeaderGroup(
-        params.sodarContext,
+        appStore.sodarContext!,
         assayContext,
         params.irodsDirModal,
-        params.notifyCb))
+        appStore.notifyCb))
     }
   }
   // Row editing column
-  if (params.editMode) {
+  if (appStore.editMode) {
     const rowEditHeaderParams: RowEditRendererParamInput = {
       assayMode: assayMode,
       tableUuid: tableUuid
@@ -675,10 +647,10 @@ export function buildColDef (
 export function buildRowData (
     table: AssayRenderTable | StudyRenderTable,
     assayMode: boolean,
-    editMode: boolean,
-    sodarContext: SodarContext
 ) {
+  const appStore = useAppStore()
   const rowData = []
+
   // Iterate through input rows
   for (let i = 0; i < table.table_data.length; i++) {
     const rowCells = table.table_data[i]
@@ -688,7 +660,7 @@ export function buildRowData (
       // HACK: Reformat protocol UUID reference
       const cellInput = rowCells![j]
       let uuidRef: string = ''
-      if (editMode && cellInput && 'uuid_ref' in cellInput) {
+      if (appStore.editMode && cellInput && 'uuid_ref' in cellInput) {
         uuidRef = cellInput.uuid_ref as string
         delete cellInput.uuid_ref
       }
@@ -701,18 +673,18 @@ export function buildRowData (
       } else cellData.uuid = nodeUuid as string // Set node UUID to other cells
 
       // Set user friendly ontology accession URL
-      if (sodarContext.ontology_url_template &&
-          !editMode &&
+      if (appStore.sodarContext!.ontology_url_template &&
+          !appStore.editMode &&
           table.field_header[j]?.col_type === 'ONTOLOGY') {
         for (const term of (cellData.value as Array<SheetTableOntologyRef>)) {
           if (term.accession &&
-              sodarContext.ontology_url_skip &&
-              !sodarContext.ontology_url_skip.some(
+              appStore.sodarContext!.ontology_url_skip &&
+              !appStore.sodarContext!.ontology_url_skip.some(
                 x => term.accession.includes(x))) {
             let ontologyName = term.ontology_name
             // HACK for mislabeled HP terms
             if (ontologyName === 'HPO') ontologyName = 'HP'
-            let url = sodarContext.ontology_url_template
+            let url = appStore.sodarContext!.ontology_url_template
             url = url.replace('{ontology_name}', ontologyName as string)
             url = url.replace('{accession}', encodeURIComponent(term.accession))
             term.accession = url
@@ -722,7 +694,7 @@ export function buildRowData (
       row['col' + j.toString()] = cellData
     }
     // Add study shortcut column cell
-    if (!editMode &&
+    if (!appStore.editMode &&
         !assayMode &&
         'shortcuts' in table &&
         table.shortcuts &&
@@ -732,8 +704,8 @@ export function buildRowData (
       ).data[i] as StudyShortcutCell
     }
     // Add iRODS column cell
-    if (!editMode &&
-        sodarContext.irods_status &&
+    if (!appStore.editMode &&
+        appStore.sodarContext!.irods_status &&
         'irods_paths' in table &&
         table.irods_paths.length > 0) {
       row.irodsLinks = table.irods_paths[i] as AssayIrodsPath
@@ -743,11 +715,11 @@ export function buildRowData (
   return rowData
 }
 
-/* Cell data handling ------------------------------------------------------- */
+// Cell data handling ----------------------------------------------------------
 
 // Get flat value for comparator
 export function getFlatValue (
-  value: Array<never> | number | object | string
+    value: Array<never> | number | object | string
 ): number | object | string {
   if (Array.isArray(value) && value.length > 0) {
     if (typeof value[0] === 'object' && 'name' in value[0]) {
@@ -759,8 +731,8 @@ export function getFlatValue (
 
 // Compare data cell values
 export function compareDataCellValues (
-  dataA: SheetTableCellData,
-  dataB: SheetTableCellData
+    dataA: SheetTableCellData,
+    dataB: SheetTableCellData
 ): number {
   const valueA = getFlatValue(dataA.value) as string
   const valueB = getFlatValue(dataB.value) as string
@@ -772,7 +744,7 @@ export function compareDataCellValues (
 
 // Custom filter value for data cells (fix for #686)
 export function getDataCellFilterValue (
-  params: ValueGetterParams
+    params: ValueGetterParams
 ): number | object | string {
   return getFlatValue(params.data[params.column.getColId() as string].value)
 }

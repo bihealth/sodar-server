@@ -28,6 +28,7 @@ Changed
 - **Samplesheets**
     - Refactor vue3app ``fetch()`` calls (#2475)
     - Refactor vue3app ``notifyCb`` access (#2470)
+    - Refactor vue3app ``gridUtils`` storage and params (#2448)
 
 Fixed
 -----

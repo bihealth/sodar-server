@@ -2,6 +2,7 @@ import { type TemplateRef } from 'vue'
 import { type VueWrapper } from '@vue/test-utils'
 
 import { buildColDef, buildRowData } from '@/utils/gridUtils.ts'
+import { useAppStore } from '@/stores/appStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
 import {
   type AssayRenderTable,
@@ -51,37 +52,36 @@ export function setUpTableStore (
     studyUuid: string,
     assayUuid: string,
 ) {
+  const appStore = useAppStore()
+  appStore.currentStudyUuid = studyUuid
+  appStore.sodarContext = sodarContext
   const tableStore = useTableStore()
+  tableStore.sampleColId = 'col7'
   tableStore.studyDisplayConfig = copy(
       studyTables.display_config) as StudyDisplayConfig
 
+  const studyTable = copy(studyTables.tables.study) as StudyRenderTable
+  const assayTable = copy(
+    (studyTables as unknown as RenderTableData).tables.assays[assayUuid] as
+      AssayRenderTable) as AssayRenderTable
+
   const colDefParams: ColDefBuildParams = {
-    studyUuid: studyUuid,
-    editMode: false,
-    sampleColId: 'col7',
-    sodarContext: sodarContext,
-    studyDisplayConfig: tableStore.studyDisplayConfig,
+    assayMode: false,
     irodsDirModal: {} as TemplateRef,
-    studyEditConfig: null,
     studyNodeLen: studyTables.tables.study.top_header.length,
     studyShortcutModal: {} as TemplateRef,
+    table: studyTable,
+    tableUuid: studyUuid,
   }
   // TODO: Add ontologyEditModal if edit mode
-  const studyTable = copy(studyTables.tables.study) as StudyRenderTable
-    const assayTable = copy(
-      (studyTables as unknown as RenderTableData).tables.assays[assayUuid] as
-        AssayRenderTable) as AssayRenderTable
 
-  tableStore.columnDefs.study = buildColDef(
-    studyTable, studyUuid, false, colDefParams
-  )
+  tableStore.columnDefs.study = buildColDef(colDefParams)
   tableStore.columnDefs.assays[assayUuid] = buildColDef(
-    assayTable, assayUuid, true, colDefParams
-  )
-  tableStore.rowData.study = buildRowData(
-    studyTable, false, false, sodarContext
-  )
-  tableStore.rowData.assays[assayUuid] = buildRowData(
-    assayTable, true, false, sodarContext
-  )
+    Object.assign(colDefParams, {
+      assayMode: true,
+      table: assayTable,
+      tableUuid: assayUuid
+    }))
+  tableStore.rowData.study = buildRowData(studyTable, false)
+  tableStore.rowData.assays[assayUuid] = buildRowData(assayTable, true)
 }
