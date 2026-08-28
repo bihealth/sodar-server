@@ -30,6 +30,7 @@ Changed
     - Refactor vue3app ``notifyCb`` access (#2470)
     - Refactor vue3app ``gridUtils`` storage and params (#2448)
     - Update vue3app new row save enabling (#2490)
+    - Refactor vue3app store reset (#2511)
 
 Fixed
 -----

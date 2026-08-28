@@ -4,7 +4,6 @@ import { defineStore } from 'pinia'
 import { type EditUnsavedRow, type StudyEditContext } from '@/types.ts'
 
 export const useEditStore = defineStore('edit', () => {
-  // TODO: Review if all Vue2 app values are needed once implementing edit mode
   const editContext = ref<StudyEditContext | null>(null)
   const editDataUpdated = ref<boolean>(false)
   const editStudyData = ref<boolean>(false)
@@ -18,6 +17,7 @@ export const useEditStore = defineStore('edit', () => {
     editContext.value = null
     editDataUpdated.value = false
     editStudyData.value = false
+    enableRowSave.value = false
     unsavedData.value = false
     unsavedRow.value = null
     updatingRow.value = false

@@ -654,7 +654,7 @@ describe('ViewHeader.vue', () => {
     expect(editStore.unsavedData).toBe(false)
     expect(editStore.unsavedRow).toBe(null)
     expect(editStore.updatingRow).toBe(false)
-    expect(editStore.versionSaved).toBe(false)
+    expect(editStore.versionSaved).toBe(true)
 
     expect(fetch).toHaveBeenCalledWith(
       finishUrl,

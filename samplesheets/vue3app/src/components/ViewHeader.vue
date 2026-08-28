@@ -147,19 +147,10 @@ function toggleEditMode () {
         create({ body: msg, variant: 'danger', modelValue: 2000 })
     })
 
-    // Reset selectEnabled just in case
+    // Update stores
     appStore.selectEnabled = true
-    // Reset editStore
-    editStore.editContext = null
-    editStore.editDataUpdated = false
-    editStore.editStudyData = false
-    editStore.enableRowSave = false
-    editStore.unsavedData = false
-    editStore.unsavedRow = null
-    editStore.updatingRow = false
-    editStore.versionSaved = false
+    editStore.$reset()
 
-    // Navigate to current study
     if (appStore.currentStudyUuid) {
       handleStudyNavigation(
         appStore.currentStudyUuid, appStore.currentAssayUuid)

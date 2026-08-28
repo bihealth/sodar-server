@@ -130,8 +130,8 @@ function getStudy (studyUuid: string, editMode: boolean) {
   // Clear existing data
   appStore.gridsBusy = true
   appStore.gridsLoaded = false
-  tableStore.$reset() // TODO: $reset() might not work here, see #2511
-  editStore.$reset()
+  // NOTE: editStore is reset in ViewHeader toggleEditMode()
+  tableStore.$reset()
   // Set filter state
   if (route.query.filter) {
     tableStore.initialFilter = route.query.filter as string
