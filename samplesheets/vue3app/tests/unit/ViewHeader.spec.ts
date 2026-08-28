@@ -9,7 +9,7 @@ import { useAppStore } from '@/stores/appStore.ts'
 import { useEditStore } from '@/stores/editStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
 import { routes } from '@/router/index.ts'
-import { type SodarContext } from '@/types.ts'
+import { type SodarContext, type SodarContextStudy } from '@/types.ts'
 import {
   EDIT_BADGE_DEFAULT_LABEL,
   EDIT_BADGE_SAVED_LABEL,
@@ -29,7 +29,12 @@ import {
 
 import { copy } from '../testUtils.ts'
 import { sodarContext } from '../data/sodarContext.ts'
-import { ASSAY_UUID, PROJECT_UUID, STUDY_UUID } from '../testConstants.ts'
+import {
+  ASSAY_UUID,
+  PROJECT_UUID,
+  STUDY_UUID,
+  TMP_UUID
+} from '../testConstants.ts'
 
 // Test Data -------------------------------------------------------------------
 
@@ -132,6 +137,25 @@ describe('ViewHeader.vue', () => {
     const wrapper = mountComponent()
     expect(wrapper.find(
       '.sodar-ss-nav-tab-study').attributes().disabled).toBeDefined()
+    expect(wrapper.find(
+      '#sodar-ss-nav-tab-overview').attributes().disabled).toBeDefined()
+  })
+
+  test('render nav tabs with editMode=true and multiple studies', async () => {
+    const appStore = useAppStore()
+    appStore.editMode = true
+    // Fake extra study
+    appStore.sodarContext!.studies[TMP_UUID] = {
+      assays: {},
+      display_name: 'Fake Study'
+    } as SodarContextStudy
+
+    const wrapper = mountComponent()
+    const studyNavs = wrapper.findAll('.sodar-ss-nav-tab-study')
+    expect(studyNavs.length).toBe(2)
+    for (const s of studyNavs) {
+      expect(s.attributes().disabled).toBeDefined()
+    }
     expect(wrapper.find(
       '#sodar-ss-nav-tab-overview').attributes().disabled).toBeDefined()
   })
@@ -262,14 +286,9 @@ describe('ViewHeader.vue', () => {
     appStore.editMode = true
     const wrapper = mountComponent()
     expect(wrapper.find('#sodar-ss-nav-dropdown').exists()).toBe(true)
-    expect(wrapper.findAll('.sodar-ss-nav-item').length).toBe(3)
-    expect(wrapper.find('#sodar-ss-nav-study-' + STUDY_UUID).attributes(
-    ).disabled).not.toBeDefined()
-    expect(wrapper.find('#sodar-ss-nav-assay-' + ASSAY_UUID).attributes(
-    ).disabled).not.toBeDefined()
-    // Overview link should be disabled
+    // The entire dropdown should be disabled
     expect(wrapper.find(
-      '#sodar-ss-nav-overview').attributes().disabled).toBeDefined()
+      '#sodar-ss-nav-dropdown').attributes().disabled).toBeDefined()
   })
 
   test('hide nav dropdown with no sheets available', async () => {

@@ -193,7 +193,7 @@ function truncate (s: string, maxLen: number): string {
             :id="'sodar-ss-nav-tab-study-' + studyUuid"
             @click="handleStudyNavigation(studyUuid as string, null)"
             :active="isStudyActive(studyUuid as string)"
-            :disabled="appStore.gridsBusy">
+            :disabled="appStore.gridsBusy || appStore.editMode">
           <i class="iconify" data-icon="mdi:folder-table"></i>
           {{ truncate(studyInfo.display_name, STUDY_NAV_TAB_LEN) }}
         </BButton>
@@ -236,7 +236,7 @@ function truncate (s: string, maxLen: number): string {
           id="sodar-ss-nav-dropdown"
           placement="bottom-end"
           variant="success"
-          :disabled="appStore.gridsBusy">
+          :disabled="appStore.gridsBusy || appStore.editMode">
         <template #button-content>
           <i class="iconify" data-icon="mdi:menu"></i>
         </template>
@@ -264,8 +264,7 @@ function truncate (s: string, maxLen: number): string {
         <BDropdownItem
             class="sodar-ss-nav-item"
             id="sodar-ss-nav-overview"
-            @click="handleOverviewNavigation()"
-            :disabled="appStore.editMode">
+            @click="handleOverviewNavigation()">
           <i class="iconify" data-icon="mdi:sitemap"></i> Overview
         </BDropdownItem>
       </BDropdown>

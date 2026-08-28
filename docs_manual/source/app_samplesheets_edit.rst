@@ -29,7 +29,6 @@ UI.
 
     Sample sheet UI in edit mode
 
-
 Differences in edit mode compared to browsing mode:
 
 - The navigation bar displays the edit mode status badge along with the version
@@ -50,6 +49,13 @@ Differences in edit mode compared to browsing mode:
     :scale: 75%
 
     Editing status badge and navigation buttons
+
+.. note::
+
+    Currently, SODAR allows editing a single study at a time. When in edit mode,
+    study navigation is disabled. To switch to editing a different study in a
+    multi-study project, you need to first click on :ref:`Finish Editing` and
+    then navigate to the desired study.
 
 
 Cell Editing

@@ -16,6 +16,7 @@ Added
 - **Samplesheets**
     - Vue3app ``IrodsButtons`` WebDAV URL copy notification display (#2519)
     - Vue3app ``IrodsButtons`` missing ``notifyCb`` props (#2520)
+    - Study navigation disabling in edit mode (#2529)
 
 Changed
 -------
